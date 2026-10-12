@@ -28,6 +28,31 @@ pub struct Target {
 }
 
 impl Target {
+    /// A temporal edit must name exactly one concrete branch at every Repeat
+    /// level. A displayed representative of All plays is not that authority.
+    pub fn pause_instance(&self, workspace: &Workspace) -> Result<&InstancePath, String> {
+        self.validate(workspace)?;
+        if !self.also.is_empty()
+            || self.target.repeats.is_empty()
+            || self
+                .target
+                .repeats
+                .iter()
+                .any(|step| matches!(step.branch, RepeatEditBranch::Default))
+        {
+            return Err("Choose This play at every enclosing Repeat before inserting a pause. All plays and multiple-play timing edits are not available yet.".into());
+        }
+        let instance = self
+            .presentation
+            .as_ref()
+            .ok_or("This play has no visible occurrence for a pause.")?;
+        workspace
+            .document
+            .pause_insertion_within(self.cursor, instance)
+            .map_err(|error| error.to_string())?;
+        Ok(instance)
+    }
+
     pub fn validate(&self, workspace: &Workspace) -> Result<(), String> {
         if self.session != workspace.session
             || &self.project != workspace.document.project_id()

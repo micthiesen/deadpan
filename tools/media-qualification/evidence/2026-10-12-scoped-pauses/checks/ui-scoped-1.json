@@ -1,0 +1,31 @@
+{
+  "name": "ui-scoped-1",
+  "command": [
+    "target/debug/deadpan-app",
+    "--ui-check",
+    "--scenario",
+    "scoped-plays",
+    "--mode",
+    "visual",
+    "--output",
+    "/tmp/deadpan-scoped-pauses-20261012/ui-scoped-1",
+    "--retain-projects",
+    "--kestrel-source",
+    "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+  ],
+  "cwd": "/Users/michael/Code/deadpan",
+  "started_utc": "2026-10-12T23:30:23.635355+00:00",
+  "head": "d387788d06dc08b68687d6414bd19203c159c7de",
+  "diff_sha256": "554c2dbce68327bc9b9ecabb826edc51f5c4a4c29757ad436b4e650b442a9eff",
+  "untracked_sha256": {
+    "crates/deadpan-app/src/preview/harness/scoped_plays/pauses.rs": "8adaf654a2bc797b78fd67846b43e9e86a89fc211989889f93c0fb53ab91b1d1",
+    "crates/deadpan-app/src/project/tests/scoped/pauses.rs": "b10b4ec2125e26b13a8e013630f1d2e0a608c2a9d7e13f78b953c5bacfe35f7c",
+    "crates/deadpan-core/src/insert_time/occurrence/tests/scoped.rs": "f9081581344404db733fb610c32aace2ec97658d4ce61e7b5d15e0c81d99aaf7"
+  },
+  "exit": 1,
+  "seconds": 97.39088399987668,
+  "log_sha256": "3aefd7090b7ee1efe7ca92b38542347bf488af56984fc715b5835d6fba1deb33",
+  "binaries": {
+    "target/debug/deadpan-app": "c23eac91b3fa1df7186f44e37b523db9c744b33c9b0d7762a45af3add030a9b0"
+  }
+}

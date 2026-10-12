@@ -1172,6 +1172,22 @@ impl Service {
             )?;
             return self.edit_scoped(*target, edit);
         }
+        if let ProjectEdit::ScopedPause {
+            target,
+            duration,
+            black,
+            ai,
+        } = edit
+        {
+            target.validate_request(
+                workspace,
+                expected_session,
+                &expected_revision,
+                &scope,
+                cursor,
+            )?;
+            return self.insert_scoped_pause(*target, duration, black, ai);
+        }
         if let ProjectEdit::DeleteRange { parent, range } = edit {
             return self.delete_range(expected_revision, scope, parent, range);
         }
@@ -1219,6 +1235,7 @@ impl Service {
         }
         let target = match &edit {
             ProjectEdit::Scoped { .. }
+            | ProjectEdit::ScopedPause { .. }
             | ProjectEdit::InsertTime { .. }
             | ProjectEdit::InsertBlack { .. }
             | ProjectEdit::DeleteRange { .. } => {
@@ -1362,6 +1379,7 @@ impl Service {
                 )
             }
             ProjectEdit::Scoped { .. }
+            | ProjectEdit::ScopedPause { .. }
             | ProjectEdit::InsertTime { .. }
             | ProjectEdit::InsertBlack { .. }
             | ProjectEdit::DeleteRange { .. } => {
@@ -2445,11 +2463,11 @@ fn source_label(path: &std::path::Path) -> String {
         .unwrap_or_else(|| "Original".into())
 }
 
-fn revision() -> RevisionId {
+pub(super) fn revision() -> RevisionId {
     RevisionId::new(uuid::Uuid::new_v4().to_string()).expect("UUID is a valid revision identity")
 }
 
-fn node() -> NodeId {
+pub(super) fn node() -> NodeId {
     NodeId::new(uuid::Uuid::new_v4().to_string()).expect("UUID is a valid node identity")
 }
 

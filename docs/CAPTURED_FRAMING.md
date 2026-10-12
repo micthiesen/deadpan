@@ -29,6 +29,13 @@ transparent Sequence inherits the existing Repeat parent, so only layers below
 that Repeat are captured. Enclosing Repeat framing and escalation stay live.
 Authored Retime interiors still require exact derived-clock authoring.
 
+An explicit scoped insertion also owns the selected occurrence's edges. Freeze
+capture still samples the picture immediately before that boundary (the first
+picture at project start). If its complete parent instance is absent from that
+picture's framing path, capture refuses before writing. It does not substitute
+the right-hand picture or apply a different play's parent transform. Black
+pauses do not need this picture capture.
+
 The new Hold can be reframed independently. Camera and its reset operate on that
 new framing; the captured view remains its input. Resetting Camera does not recover
 pixels removed by a captured child crop. Provider changes, generated acceptance,

@@ -1,0 +1,28 @@
+{
+  "name": "clippy-final",
+  "command": [
+    "cargo",
+    "clippy",
+    "--locked",
+    "--workspace",
+    "--all-targets",
+    "--features",
+    "deadpan-app/ui-harness",
+    "--",
+    "-D",
+    "warnings"
+  ],
+  "cwd": "/Users/michael/Code/deadpan",
+  "started_utc": "2026-10-12T23:41:42.131082+00:00",
+  "head": "d387788d06dc08b68687d6414bd19203c159c7de",
+  "diff_sha256": "c0044243e684e7e0d03bb8f58efc41c33dd589d2fb28bcff18d4ecee59eb3f6e",
+  "untracked_sha256": {
+    "crates/deadpan-app/src/preview/harness/scoped_plays/pauses.rs": "8adaf654a2bc797b78fd67846b43e9e86a89fc211989889f93c0fb53ab91b1d1",
+    "crates/deadpan-app/src/project/tests/scoped/pauses.rs": "b10b4ec2125e26b13a8e013630f1d2e0a608c2a9d7e13f78b953c5bacfe35f7c",
+    "crates/deadpan-core/src/insert_time/occurrence/tests/scoped.rs": "f9081581344404db733fb610c32aace2ec97658d4ce61e7b5d15e0c81d99aaf7"
+  },
+  "exit": 0,
+  "seconds": 432.75911983428523,
+  "log_sha256": "92ce523a6d2a26d6d18bff58428ffd6648eb218f9c5b65f36acc33d33b93bc80",
+  "binaries": {}
+}

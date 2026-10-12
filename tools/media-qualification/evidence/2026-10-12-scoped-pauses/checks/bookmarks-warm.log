@@ -1,0 +1,20 @@
+
+running 2 tests
+test project::tests::backups::a_moved_file_with_different_bytes_is_reported_missing_not_relinked ... 
+thread 'project::tests::backups::a_moved_file_with_different_bytes_is_reported_missing_not_relinked' (129283694) panicked at crates/deadpan-app/src/project/tests.rs:993:9:
+project update timed out: busy=false, stopping=false, shutdown_complete=false, last=Some("error=None, import=Some(ImportStatus { path: \"/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmp4yeeAS/linked.mp4\", stage: Retaining, error: None, asset: None }), message=None, session=Some(1), committed=None, render=None")
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+test project::tests::backups::a_moved_linked_original_is_found_by_its_bookmark_and_relinked_on_open ... 
+thread 'project::tests::backups::a_moved_linked_original_is_found_by_its_bookmark_and_relinked_on_open' (129303952) panicked at crates/deadpan-app/src/project/tests.rs:993:9:
+project update timed out: busy=false, stopping=false, shutdown_complete=false, last=Some("error=None, import=Some(ImportStatus { path: \"/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpLT7NnA/linked.mp4\", stage: Retaining, error: None, asset: None }), message=None, session=Some(1), committed=None, render=None")
+FAILED
+
+failures:
+
+failures:
+    project::tests::backups::a_moved_file_with_different_bytes_is_reported_missing_not_relinked
+    project::tests::backups::a_moved_linked_original_is_found_by_its_bookmark_and_relinked_on_open
+
+test result: FAILED. 0 passed; 2 failed; 0 ignored; 0 measured; 1135 filtered out; finished in 40.18s
+

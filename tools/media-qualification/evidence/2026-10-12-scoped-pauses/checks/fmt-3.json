@@ -1,0 +1,21 @@
+{
+  "name": "fmt-3",
+  "command": [
+    "cargo",
+    "fmt",
+    "--all"
+  ],
+  "cwd": "/Users/michael/Code/deadpan",
+  "started_utc": "2026-10-12T23:25:01.170764+00:00",
+  "head": "d387788d06dc08b68687d6414bd19203c159c7de",
+  "diff_sha256": "457118b403d4f9541f43f62b9a4dde2d056d16bd1807e17c19cf0c7e3fec37b8",
+  "untracked_sha256": {
+    "crates/deadpan-app/src/preview/harness/scoped_plays/pauses.rs": "8adaf654a2bc797b78fd67846b43e9e86a89fc211989889f93c0fb53ab91b1d1",
+    "crates/deadpan-app/src/project/tests/scoped/pauses.rs": "b10b4ec2125e26b13a8e013630f1d2e0a608c2a9d7e13f78b953c5bacfe35f7c",
+    "crates/deadpan-core/src/insert_time/occurrence/tests/scoped.rs": "32d73db74ee88509283c1d9e2740e77f2f2d9cf7b4bbfa8dda9878f757dfc271"
+  },
+  "exit": 0,
+  "seconds": 26.9577671661973,
+  "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "binaries": {}
+}

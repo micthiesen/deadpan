@@ -176,6 +176,10 @@ define_commands! {
     /// branches outside-in before capturing its temporal placement.
     InsertOccurrenceTime {
         at: crate::ProjectFrame,
+        /// Explicit inspected occurrence, including ownership of its edges.
+        /// None keeps ordinary project-boundary descent and its left bias.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        within: Option<InstancePath>,
         hold: HoldRecipe,
         id: NodeId,
         identities: crate::OccurrencePauseIdentities,

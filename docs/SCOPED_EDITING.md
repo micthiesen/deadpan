@@ -1,8 +1,9 @@
 # Editing Repeat contents
 
 `Enter` opens a selected Repeat or Retime. Inside it, `j/k` selects children,
-`Enter` descends and `Backspace` returns to the parent. The ordinary Sequence
-timeline remains the authority for temporal editing.
+`Enter` descends and `Backspace` returns to the parent. Choose This play at every
+enclosing Repeat to insert a pause in one concrete occurrence. Other temporal
+edits still use the ordinary Sequence timeline.
 
 Choose `:scope all` to edit a Repeat's shared definition or `:scope play N` to
 edit one stable play by its current one-based number. These choices apply at the
@@ -42,9 +43,22 @@ Stepping is read-only, like `:scope`, and Macros do not record it.
 Gain, Camera, Hold audio and [AI pictures](AI_HOLDS.md#repeat-and-retime-scopes) use the captured scope. Changing a shared node in
 This play isolates only the necessary selected ancestors, then applies the
 value in the same reversible transaction. An unchanged value creates no
-override or history entry. Timing edits, copy/paste and macros inside these
-contents remain required work; their native actions currently refuse without
-editing the retained outer beat.
+override or history entry. `,h`, `,a` and `:hold` insert a silent freeze, AI
+fallback or black pause at the retained Edit cursor when every enclosing Repeat
+names This play. Both edges belong to the selected occurrence, including the
+start of a later play. One transaction isolates the necessary branches and
+inserts time; the inspector keeps the new Hold selected. AI insertion saves its
+durable preparation with the fallback and still requires explicit acceptance.
+
+All plays, multiple plays and Retime ancestors refuse pause insertion. Freeze
+capture also refuses a boundary whose preceding picture does not pass through
+the selected insertion parent; black pauses need no sampled picture. Other
+timing edits, copy/paste and macros inside these contents remain required work;
+their native actions refuse without editing the retained outer beat.
+
+The [This play pause qualification](qualification/scoped-pauses-2026-10-12.md)
+records exact-boundary, PCM, durable-history and offscreen keyboard verification,
+including the compact inspector correction and retained failed runs.
 
 ## Authoring and presentation
 
@@ -86,7 +100,11 @@ covers name collisions, nested remapping and native durable Undo/Redo.
 Selective isolation preserves sparse overrides, retained clocks, concrete and
 definition marks, and per-play sound permissions. Default ancestors are
 wildcards only for actual uses of their shared definition. Duration and source
-coordinates do not change in this command family.
+coordinates do not change in the value-edit command family. Scoped pause
+insertion uses `InsertOccurrenceTime` with an explicit `within: InstancePath`;
+its query checks the captured boundary and remaps that instance through
+outside-in isolation before the time insertion. Later allocations retain their
+pre-edit sampling clocks.
 
 Native requests capture session, project, revision, outer Sequence scope,
 inspected root, authoring target, optional presentation and root cursor. The

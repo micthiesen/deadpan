@@ -1,0 +1,81 @@
+import gzip, hashlib, json, pathlib, re, shutil, subprocess
+
+root = pathlib.Path('/Users/michael/Code/deadpan')
+scratch = pathlib.Path(__file__).resolve().parent
+dest = root / 'tools/media-qualification/evidence/2026-10-12-scoped-pauses'
+dest.mkdir(parents=True, exist_ok=True)
+
+def sha(path):
+    with path.open('rb') as stream:
+        return hashlib.file_digest(stream, 'sha256').hexdigest()
+
+def copy(source, relative):
+    target = dest / relative
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(source, target)
+
+for file in scratch.iterdir():
+    if file.is_file() and file.suffix in {'.json', '.log'}:
+        copy(file, pathlib.Path('checks') / file.name)
+for name in ['run.py', 'collect.py', 'sample-bookmark.py', 'bookmark.swift']:
+    copy(scratch / name, pathlib.Path('scripts') / (name + '.txt'))
+copy(scratch / 'bookmark-stacks.txt', pathlib.Path('bookmark-stacks.txt'))
+
+replays = {}
+for name in ['ui-scoped-1', 'ui-scoped-2', 'ui-ai-insertion']:
+    directory = scratch / name
+    raw_report = (directory / 'report.json').read_bytes()
+    (dest / name).mkdir(exist_ok=True)
+    (dest / name / 'report.json.gz').write_bytes(gzip.compress(raw_report, mtime=0))
+    report = json.loads((directory / 'report.json').read_text())
+    replays[name] = {
+        'failed': report['failed'],
+        'binary_sha256': report['metadata']['binary_sha256'],
+        'report_uncompressed_sha256': hashlib.sha256(raw_report).hexdigest(),
+        'scenarios': [{
+            'name': s['name'], 'checks': len(s['checks']), 'failed': s['failed'],
+            'skipped': s['skipped'],
+        } for s in report['scenarios']],
+    }
+    if name.startswith('ui-scoped-'):
+        copy(directory / 'scoped-plays-104.png', pathlib.Path(name) / 'scoped-plays-104.png')
+
+project_root = scratch / 'ui-scoped-2/projects'
+shutil.make_archive(str(dest / 'scoped-replay-projects'), 'zip', project_root)
+
+counts = {}
+for name in ['scoped-tests-2', 'regression-1', 'core-audio-regression', 'final-scope-tests']:
+    log = (scratch / (name + '.log')).read_text()
+    rows = [tuple(map(int, m)) for m in re.findall(r'test result: (?:ok|FAILED)\. (\d+) passed; (\d+) failed; (\d+) ignored;', log)]
+    counts[name] = dict(zip(['passed', 'failed', 'ignored'], map(sum, zip(*rows))))
+    counts[name]['failures'] = re.findall(r'^test (.+?) \.\.\. FAILED$', log, re.M)
+    counts[name]['ignored_tests'] = re.findall(r'^test (.+?) \.\.\. ignored(.*)$', log, re.M)
+(dest / 'test-counts.json').write_text(json.dumps(counts, indent=2)+'\n')
+(dest / 'replays.json').write_text(json.dumps(replays, indent=2)+'\n')
+
+code_roots = ['crates', 'native', 'Cargo.toml', 'Cargo.lock', 'rust-toolchain.toml']
+patch = subprocess.check_output(['git', 'diff', '--binary', '--', *code_roots], cwd=root)
+names = subprocess.check_output(['git', 'diff', '--name-only', '--', *code_roots], cwd=root, text=True).splitlines()
+untracked = subprocess.check_output(['git', 'ls-files', '--others', '--exclude-standard', '--', 'crates', 'native'], cwd=root, text=True).splitlines()
+for name in untracked:
+    result = subprocess.run(['git', 'diff', '--no-index', '--binary', '--', '/dev/null', name], cwd=root, capture_output=True)
+    assert result.returncode == 1, (name, result.stderr)
+    patch += result.stdout
+names += untracked
+(dest / 'source.patch').write_bytes(patch)
+identity = {
+    'base': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=root, text=True).strip(),
+    'source_patch_sha256': sha(dest / 'source.patch'),
+    'source_files': {name: sha(root / name) for name in sorted(names)},
+    'debug_app_sha256': sha(root / 'target/debug/deadpan-app'),
+    'cargo_lock_sha256': sha(root / 'Cargo.lock'),
+    'fixture_sha256': sha(root / 'native/deadpan-source/tests/fixtures/cfr-bframes.mp4'),
+    'review': 'Primary implemented and self-reviewed alone. No subagents, native window, browser, or audio device.',
+    'limits': 'No real model execution or new release/performance qualification. UI reports retain all checks and semantic snapshots; only the inspected compact frames are copied here.',
+}
+assert identity['debug_app_sha256'] == replays['ui-scoped-2']['binary_sha256']
+assert identity['debug_app_sha256'] == replays['ui-ai-insertion']['binary_sha256']
+(dest / 'identity.json').write_text(json.dumps(identity, indent=2)+'\n')
+files = [p for p in dest.rglob('*') if p.is_file() and p.name != 'manifest.json']
+(dest / 'manifest.json').write_text(json.dumps({str(p.relative_to(dest)): {'sha256': sha(p), 'bytes': p.stat().st_size} for p in sorted(files)}, indent=2)+'\n')
+print(json.dumps({'files': len(files), 'bytes': sum(p.stat().st_size for p in files), 'tests': counts, 'replays': replays}, indent=2))

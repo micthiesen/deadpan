@@ -369,6 +369,7 @@ where
         let command = if let Some(identities) = occurrence {
             Command::InsertOccurrenceTime {
                 at,
+                within: None,
                 hold,
                 id: id.clone(),
                 identities,

@@ -4,6 +4,19 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 
 ## Resumed implementation, 2026-10-06
 
+[Pauses in This play](qualification/scoped-pauses-2026-10-12.md) now carry an
+explicit occurrence address from the scoped inspector through insertion and
+the saved selection receipt. Both edges belong to the selected play; stale
+commands and broader play selections cannot retarget it. All 1,725 core/audio
+tests and 13 final scope/service tests pass. Final offscreen replays pass 78
+scoped-edit and 56 ordinary AI-insertion checks, including the corrected compact
+controls and delayed-history guard. Strict workspace/all-target Clippy and
+formatting pass. The qualification retains the broad app
+run, corrected reference/scope assertions and bookmark timeout diagnosis with
+the same executable passing in an isolated directory. All/multiple-play pauses,
+Retime, cross-parent freezes and other temporal operations remain open. No
+requirement or gate is newly complete.
+
 [Pauses inside Repeat](qualification/occurrence-pauses-2026-10-12.md) now
 isolate one concrete play or gap before inserting time. The enclosing Repeat
 and its live framing remain intact; later allocations retain their exact sample
@@ -15,7 +28,7 @@ pause tests and strict Clippy checks pass. Debug and release exports verify all
 15 pictures and 31 audio blocks with zero measured offset, and six authored-PCM
 windows match bit-for-bit across builds. The qualification record retains failed
 runs, source/binary identities and actual media. Authored Retime/fractional
-insertion and scoped-inspector temporal intent remain required. No requirement
+insertion and general scoped-inspector temporal editing remain required. No requirement
 or gate is newly complete.
 
 [Selected-play preflight](qualification/scoped-preflight-2026-10-12.md) now

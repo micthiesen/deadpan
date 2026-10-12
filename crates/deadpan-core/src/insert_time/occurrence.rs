@@ -35,6 +35,7 @@ pub(crate) fn prepare(
 ) -> Result<Option<Prepared>, EditError> {
     let Command::InsertOccurrenceTime {
         at,
+        within,
         hold,
         id,
         identities,
@@ -68,9 +69,7 @@ pub(crate) fn prepare(
         .duration()?
         .checked_add(hold.duration)
         .map_err(crate::DocumentError::from)?;
-    let PauseInsertionTarget::Occurrence(target) = document.pause_insertion_target(*at)? else {
-        return Err(invalid("occurrence pause requires a Repeat interior"));
-    };
+    let target = target::for_command(document, *at, within.as_ref())?;
     if identities.isolation.nodes.len() != target.isolation_nodes
         || identities.isolation.marks.len() != target.isolation_marks
         || identities.split.nodes.len() != target.split_nodes
@@ -112,11 +111,19 @@ pub(crate) fn prepare(
             sound_clocks: None,
         },
     )?;
+    let isolation: Vec<_> = maps.into_iter().map(|mapping| mapping.proof()).collect();
+    let mut within = within.clone();
+    if let Some(instance) = &mut within {
+        for step in &isolation {
+            if crate::scoped_edit::matches_prefix(instance, step.before_prefix()) {
+                crate::occurrence_edit::remap_instance(instance, step.nodes());
+            }
+        }
+        instance.validate(&result)?;
+    }
     let mut timing = timing.clone();
     if let Some(gap) = &identities.gap {
-        let PauseInsertionTarget::Occurrence(target) = result.pause_insertion_target(*at)? else {
-            return Err(invalid("isolated pause lost its Repeat placement"));
-        };
+        let target = target::for_command(&result, *at, within.as_ref())?;
         let Site::Gap { repeat, after, .. } = target.site else {
             return Err(invalid("isolated pause lost its default gap"));
         };
@@ -148,6 +155,7 @@ pub(crate) fn prepare(
         document: result,
         command: Command::InsertOccurrenceTime {
             at: *at,
+            within,
             hold: hold.clone(),
             id: id.clone(),
             ai: *ai,
@@ -159,7 +167,7 @@ pub(crate) fn prepare(
                 container: identities.container.clone(),
             },
         },
-        isolation: maps.into_iter().map(|mapping| mapping.proof()).collect(),
+        isolation,
     }))
 }
 
@@ -170,6 +178,7 @@ pub(crate) fn apply(
 ) -> Result<ProjectDocument, EditError> {
     let Command::InsertOccurrenceTime {
         at,
+        within,
         hold,
         id,
         identities,
@@ -179,9 +188,7 @@ pub(crate) fn apply(
     else {
         return Err(invalid("expected an occurrence pause"));
     };
-    let PauseInsertionTarget::Occurrence(target) = document.pause_insertion_target(*at)? else {
-        return Err(invalid("occurrence pause requires a Repeat interior"));
-    };
+    let target = target::for_command(document, *at, within.as_ref())?;
     if target.isolation_nodes != 0 || target.gap {
         return Err(invalid(
             "pause branch must be isolated before placement capture",

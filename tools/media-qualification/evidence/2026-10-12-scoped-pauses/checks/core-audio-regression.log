@@ -1,0 +1,2182 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling deadpan-source v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-source)
+   Compiling deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2m 27s
+     Running unittests src/lib.rs (target/debug/deps/deadpan_audio-8b41d98d090460e0)
+
+running 165 tests
+test edges::tests::tiny_fragments_and_default_two_millisecond_edges_are_sample_centered ... ok
+test finite_wet::tests::admission_includes_native_plan_and_temporary_kernel_and_network ... ok
+test equalizer::tests::unity_retains_exact_bits_including_signed_zero_and_tiny_values ... ok
+test edges::tests::derived_fade_validation_is_atomic_for_a_later_invalid_span ... ok
+test edges::tests::editorial_ramps_merge_by_minimum_and_keep_independent_sides ... ok
+test edges::tests::bounded_pcm_keeps_wide_allocation_and_envelope_progress ... ok
+test edges::tests::raw_reads_keep_in_domain_pcm_and_silence_both_retained_endpoints ... ok
+test edges::tests::hard_coincident_owners_disable_only_in_domain_fades ... ok
+test edges::tests::invalid_queries_owners_and_progress_fail_before_modifying_pcm ... ok
+test equalizer::tests::complementary_bands_cancel_to_exact_uniform_gain_and_preserve_phase ... ok
+test edges::tests::tiny_retained_envelopes_do_not_widen_to_fit_the_shifted_allocation ... ok
+test hold_effects::tests::cancellation_stops_both_recipes ... ok
+test edges::tests::ntsc_shift_resumes_old_progress_and_silences_the_extra_allocated_sample ... ok
+test equalizer::tests::bypass_and_active_eq_both_validate_complete_context_and_leave_failed_outputs_untouched ... ok
+test hold_effects::tests::reverse_rejects_invalid_samples_and_empty_output ... ok
+test hold_effects::tests::tail_recipe_bounds_its_ring ... ok
+test hold_effects::tests::reverse_plays_each_sample_once_in_reverse_order_then_silence ... ok
+test hold_effects::tests::tones_hold_their_frequency_level_and_exact_zero_ends ... ok
+test limiter::tests::coefficient_bits_match_the_retained_pilot ... ok
+test loudness::tests::both_gates_are_strict_and_the_absolute_gate_remains_in_force ... ok
+test loudness::tests::full_day_capacity_and_window_edges_are_exact ... ok
+test matrix::tests::ambiguous_invalid_and_unsupported_layouts_fail_explicitly ... ok
+test matrix::tests::every_supported_non_lfe_speaker_can_be_interpreted ... ok
+test matrix::tests::fixed_matrix_preserves_dynamics_without_normalizing_or_clipping ... ok
+test equalizer::tests::real_eq_processing_changes_bands_and_cuts_without_moving_sample_coordinates ... ok
+test matrix::tests::malformed_pcm_and_invalid_omitted_lfe_are_rejected ... ok
+test matrix::tests::mono_and_stereo_retain_unity_gain_and_channel_separation ... ok
+test matrix::tests::native_channel_impulses_follow_speaker_bits_with_holes ... ok
+test matrix::tests::sparse_surround_layout_uses_native_interleaved_order ... ok
+test persistent_pcm::tests::hostile_entries_and_replaced_roots_cannot_reach_other_files ... ok
+test limiter::tests::exact_integer_envelope_has_the_declared_finite_horizons ... ok
+test hold_effects::tests::delay_tail_repeats_every_300ms_at_half_level_after_the_source ... ok
+test limiter::tests::final_verification_rejects_peaks_on_actual_outer_project_rows ... ok
+test equalizer::tests::changed_recipes_and_cold_fixed_tiles_never_reuse_another_response ... ok
+test equalizer::tests::cutoffs_have_measured_transition_centers_and_stopbands_including_extremes ... ok
+test progress::tests::child_scopes_restore_parent_work_on_failure ... ok
+test finite_wet::tests::declared_delay_is_26_exact_unscaled_echoes_with_no_dry_signal ... ok
+test room_tone::tests::integer_seam_follows_complementary_linear_overlap ... ok
+test room_tone::tests::phase_modulo_remains_exact_beyond_float_integer_precision ... ok
+test hold_effects::tests::reverb_tail_rings_decays_and_ends_in_exact_silence ... ok
+test room_tone::tests::rejects_invalid_extents_allocations_pcm_and_reads_and_cancels ... ok
+test equalizer::tests::bounded_extreme_tone_and_cut_combinations_keep_one_symmetric_kernel ... ok
+test room_tone::tests::unity_weights_preserve_dc_and_levels_without_normalizing ... ok
+test persistent_pcm::tests::temporary_lock_contention_does_not_disable_a_new_cache_handle ... ok
+test persistent_pcm::tests::last_use_and_abandoned_staging_obey_the_grace_period ... ok
+test session::tests::index_comparison_stops_on_deadline_in_raw_and_derived_chunks ... ok
+test session::tests::index_comparison_checks_cancellation_through_raw_and_derived_chunks ... ok
+test persistent_pcm::tests::the_shared_budget_reserves_in_progress_output ... ok
+test persistent_pcm::tests::cleanup_and_replacement_skip_an_active_reader ... ok
+test persistent_pcm::tests::restart_reads_exact_private_pcm_and_clear_preserves_the_result ... ok
+test persistent_pcm::tests::incomplete_writes_and_cancelled_reads_never_publish ... ok
+test finite_wet::tests::continuous_delay_matches_direct_all_echo_sum_at_exact_sample_positions ... ok
+test edges::tests::derived_creative_gain_preserves_integer_fades_and_exact_fractional_progress ... ok
+test stages::bound_reads::bound_hidden_negative_support_is_not_capped_to_the_old_project ... ok
+test sequence::sampling_recipes::sequence_source_recipe_resumes_current_ntsc_phase_with_full_44100_support ... ok
+test stages::bound_reads::cached_intrinsic_depth_is_readmitted_before_dependency_access ... ok
+test stages::bound_reads::captured_source_keeps_current_coincident_ancestor_hard_edges ... ok
+test stages::bound_reads::bound_reads_share_cancellation_work_and_complete_cached_dependencies ... ok
+test hold_effects::tests::reverb_decays_sixty_decibels_in_about_one_point_one_seconds ... ok
+test session::tests::provenance_hashing_retains_deadline_errors_and_stops_writing ... ok
+test stages::bound_reads::expanded_edit_reveals_current_source_without_reclocking_its_binding ... ok
+test stages::bound_reads::bound_preserve_evaluates_changed_room_tone_without_old_silence ... ok
+test stages::bound_reads::capture_only_preserve_keeps_the_consuming_output_envelope ... ok
+test stages::bound_reads::new_ordinary_edit_crop_excludes_filter_context_from_bound_raw_source ... ok
+test stages::bound_reads::bound_source_retains_nonzero_point_origin_inside_current_preserve ... ok
+test persistent_pcm::tests::corrupt_payloads_headers_and_lengths_reject_before_use ... ok
+test stages::bound_reads::bound_hold_with_no_old_input_point_still_suppresses_new_preserve_output ... ok
+test stages::bound_reads::fresh_follow_speed_keeps_two_millisecond_post_mapping_fades ... ok
+test stages::bound_reads::normal_root_binding_retains_fractional_ntsc_source_phase_and_block_parity ... ok
+test stages::bound_reads::capture_only_zero_point_source_absence_preserves_processed_decay ... ok
+test stages::bound_reads::owner_input::authored_eq_tests::authored_eq_independent_root_sound_bypasses_child_equalizer ... ok
+test stages::bound_reads::owner_input::authored_eq_tests::authored_eq_silent_hold_masks_filter_history_and_limits_release_pcm ... ok
+test finite_wet::tests::reverb_retains_stereo_network_then_tapers_to_exact_finite_end ... ok
+test room_tone::tests::tiny_fragments_shorten_fades_and_skip_unobserved_cycles ... ok
+test room_tone::tests::fractional_44100_extent_keeps_exact_period_and_partition_identity ... ok
+test finite_wet::tests::cancellation_and_invalid_context_do_not_publish_partial_output ... ok
+test finite_wet::tests::reverb_matches_linear_network_within_untapered_history_and_never_crossfeeds ... ok
+test stages::bound_reads::owner_input::eq_input_uses_hidden_group_audio_and_matches_uncropped_processing ... ok
+test stages::bound_reads::owner_input::authored_eq_tests::shared_eq_limit_and_cancellation_release_residency ... ok
+test stages::bound_reads::owner_input::equalizer_tests::ordered_eq_rejects_invalid_admission_and_releases_failed_reservations ... ok
+test stages::bound_reads::owner_input::equalizer_tests::ordered_eq_cannot_fill_silent_hold_or_extend_owner_support ... ok
+test stages::bound_reads::owner_input::owner_input_rejections_happen_before_media_admission ... ok
+test stages::bound_reads::owner_input::authored_eq_tests::authored_eq_whole_repeat_reuses_one_owner_across_many_play_clocks ... ok
+test stages::bound_reads::owner_input::descendant_input_runs_enclosing_time_pitch_before_edges_and_keeps_cold_parity ... ok
+test stages::bound_reads::owner_input::resumed_owner_exposes_readable_reference_history_before_current_delivery ... ok
+test stages::bound_reads::owner_input::retained_point_input_fades_keep_fractional_source_phase_before_delivery ... ok
+test stages::bound_reads::owner_input::retained_treatments_keep_reference_gain_mute_and_order_without_exterior_owners ... ok
+test stages::bound_reads::resumed_binding_retains_old_envelope_progress_and_exhaustion ... ok
+test stages::bound_reads::reordered_survivors_keep_old_phase_and_a_fresh_play_uses_definition_phase ... ok
+test stages::bound_reads::source_origin::endpoints::absent_source_audio_keeps_endpoint_clock_without_reading_media ... ok
+test stages::bound_reads::owner_input::authored_eq_tests::authored_eq_stored_order_matches_explicit_owner_processing_and_silence ... ok
+test stages::bound_reads::source_origin::endpoints::disjoint_later_endpoint_keeps_literal_phase_through_rebase_and_inverse ... ok
+test stages::bound_reads::source_origin::endpoints::endpoint_extends_prior_resume_terms_and_reanchors_without_recapturing_phase ... ok
+test stages::bound_reads::source_origin::endpoints::previously_dormant_source_uses_structural_endpoint_then_reveals_real_pcm ... ok
+test stages::bound_reads::source_origin::endpoints::disjoint_earlier_endpoint_uses_signed_old_origin_with_offset_once ... ok
+test stages::bound_reads::owner_input::equalizer_tests::ordered_eq_uses_preserve_output_before_filtering_hidden_group_history ... ok
+test stages::bound_reads::source_origin::gain::slip::slip_keeps_symbolic_resume_and_chronological_reanchors_on_the_same_sample_clock ... ok
+test stages::bound_reads::owner_input::equalizer_tests::ordered_eq_retained_point_clock_keeps_fractional_source_phase ... ok
+test stages::bound_reads::owner_input::retained_ntsc_binding_and_silence_keep_the_current_output_policy ... ok
+test stages::bound_reads::source_origin::gain::trim::in_extension_activates_audio_before_the_window_and_keeps_absence_silent ... ok
+test stages::bound_reads::source_origin::gain::trim::in_extension_keeps_symbolic_resume_and_chronological_entries_before_physical_rebase ... ok
+test stages::bound_reads::source_origin::gain::trim::combined::combined_mixed_intent_preserves_old_phase_through_distinct_source_prefixes ... ok
+test stages::bound_reads::source_origin::gain::trim::roll::reverse_roll_grows_the_right_physical_prefix_without_shifting_its_retained_body ... ok
+test stages::bound_reads::owner_input::equalizer_tests::ordered_eq_repeat_escalation_feeds_filter_once_across_play_boundaries ... ok
+test stages::bound_reads::source_origin::gain::trim::roll::roll_exposes_dormant_right_audio_but_keeps_intentionally_absent_audio_silent ... ok
+test stages::bound_reads::source_origin::gain::trim::roll::roll_right_prefix_preserves_symbolic_resume_and_chronological_reanchors ... ok
+test stages::bound_reads::source_origin::gain::trim::roll::roll_preserves_explicit_hard_on_one_side_without_suppressing_the_other_sides_default_fade ... ok
+test stages::bound_reads::source_origin::gain::physical_source_prefix_translates_gain_keys_once_and_preserves_authored_pcm ... ok
+test stages::bound_reads::owner_input::equalizer_tests::ordered_eq_cold_cropped_group_keeps_hidden_history_and_is_partition_invariant ... ok
+test stages::bound_reads::source_origin::gain::trim::slip_fades_a_previously_continuous_split_seam_without_changing_raw_clocks ... ok
+test stages::bound_reads::owner_input::authored_eq_tests::shared_eq_allowed_sound_cannot_release_forbidden_original_or_peer_history ... ok
+test stages::bound_reads::source_origin::gain::slip::slip_activates_dormant_measured_audio_without_replacing_its_captured_lattice ... ok
+test stages::bound_reads::translated_binding_retains_two_sample_automatic_envelope ... ok
+test stages::controlled_reads::controlled_depth_cannot_restart_at_a_domain_or_bypass_through_cache ... ok
+test stages::bound_reads::source_origin::gain::trim::trim_preserves_filter_context_and_authors_only_the_new_entry_fade ... ok
+test stages::bound_reads::source_origin::gain::trim::trim_fades_both_new_join_sides_but_keeps_an_untouched_split_join_continuous ... ok
+test stages::controlled_reads::every_controlled_block_retains_dependencies_already_observed_or_cached ... ok
+test stages::controlled_reads::placed_point_source_keeps_selected_origin_and_matches_partitioned_pcm ... ok
+test stages::controlled_reads::placed_ntsc_source_preserves_signed_reference_phase_and_controlled_dependencies ... ok
+test stages::controlled_reads::controlled_transfer_unions_halo_dependencies_and_keeps_parent_work_limit ... ok
+test stages::prepared_pcm::tests::damaged_or_cancelled_disk_reads_reject_instead_of_returning_partial_pcm ... ok
+test stages::prepared_pcm::tests::disk_pcm_matches_memory_bits_across_flushes_and_random_windows ... ok
+test stages::prepared_pcm::tests::incomplete_invalid_cancelled_and_failed_writes_never_publish_pcm ... ok
+test stages::controlled_reads::shortened_streamed_output_still_admits_unused_input_dependencies ... ok
+test stages::bound_reads::owner_input::equalizer_tests::ordered_eq_resumed_history_keeps_reference_mute_and_excludes_exterior_gain ... ok
+test stages::owner_equalizer::tests::controlled_eq_shares_work_deadline_depth_and_retains_all_halo_dependencies ... ok
+test stages::sampling_recipes::prepared_and_source_recipe_steps_come_from_sampling_not_structure ... ok
+test stages::bound_reads::owner_input::authored_eq_tests::authored_eq_tail_uses_processed_input_and_shared_parent_once ... ok
+test stages::bound_reads::source_origin::gain::trim::in_extension_exposes_one_and_three_frame_prefixes_on_the_retained_sample_grid ... ok
+test stages::sound_clocks::tests::seeking_between_birth_cohorts_replaces_cached_processing_plans ... ok
+test stages::controlled_reads::placed_point_preserve_rechecks_policy_that_owned_no_input_point ... ok
+test stages::sound_clocks::tests::one_sound_reuses_its_first_clock_plan_for_long_journal_and_retry ... ok
+test stages::sound_clocks::tests::distinct_first_clocks_keep_each_sound_asset_contract_separate ... ok
+test stages::sampling_recipes::prepared_stage_recipes_resume_full_canonical_pcm_without_repreparation ... ok
+test stages::sampling_recipes::processing_source_recipes_use_resumed_root_and_signal_maps ... ok
+test stages::stage_projection::tests::source_projection_reuse_rechecks_depth_source_and_preparation_limits ... ok
+test stages::stage_cache::tests::persistent_key_budget_cannot_spend_the_canonical_query_allowance ... ok
+test stages::bound_reads::owner_input::equalizer_tests::ordered_eq_matches_direct_convolution_and_mute_stays_on_its_authored_side ... ok
+test waveform::edit_window::tests::absolute_ntsc_window_preserves_partial_terminal_bin_and_sample_grid ... ok
+test waveform::edit_window::tests::closed_geometry_and_shared_definition_ledger_keep_terminal_storage_available ... ok
+test waveform::edit_window::tests::partial_and_invalid_blocks_do_not_publish_unknown_samples_or_zero_origin ... ok
+test waveform::tests::aggregate_reservations_survive_all_arc_clones_and_release_after_final_drop ... ok
+test waveform::tests::empty_and_huge_extents_have_bounded_geometry_without_eager_sample_work ... ok
+test waveform::tests::failed_admission_releases_its_descriptor_and_all_limits_are_closed ... ok
+test waveform::tests::invalid_block_is_atomic_even_when_its_good_prefix_would_finish_a_leaf ... ok
+test waveform::tests::ntsc_terminal_frame_clamps_only_the_final_exact_sample_boundary ... ok
+test waveform::tests::partial_leaf_and_unpaired_prefix_never_claim_parent_coverage ... ok
+test waveform::tests::signed_stereo_extrema_keep_polarity_boundary_impulses_and_over_range_values ... ok
+test waveform::tests::irregular_blocks_and_signed_zero_produce_identical_pyramids ... ok
+test stages::stage_projection::tests::source_projection_reconstruction_reuses_pcm_without_aliasing_recipes_or_plans ... ok
+test stages::stage_cache::tests::persistent_stage_never_bypasses_missing_sources_or_cancellation ... ok
+test stages::stage_cache::tests::persistent_stage_full_cache_preserves_canonical_output ... ok
+test stages::stage_cache::tests::persistent_stage_corruption_rebuilds_exact_pcm_and_reports_why ... ok
+test stages::bound_reads::source_origin::physical_prefix_keeps_symbolic_resume_and_chronological_reanchor_pcm ... ok
+test stages::bound_reads::owner_input::authored_eq_tests::shared_eq_saturation_processes_combined_voices_in_authored_order ... ok
+test stages::stage_cache::tests::persistent_stage_restart_matches_uncached_pcm_and_readmits_sources ... ok
+test stages::bound_reads::owner_input::authored_eq_tests::shared_eq_nested_owners_match_explicit_shared_prefix ... ok
+test stages::bound_reads::source_origin::gain::trim::roll::roll_ntsc_transfers_1601_samples_and_marks_only_the_changed_join ... ok
+test sting::tests::the_sting_is_a_bounded_fanfare_ending_in_silence ... ok
+test stages::bound_reads::owner_input::authored_eq_tests::authored_eq_nested_owners_keep_f64_order_hidden_crops_and_cold_partitioning ... ok
+test stages::bound_reads::source_origin::gain::slip::slip_moves_decoded_media_phase_and_keeps_retained_owner_gain_mute_and_root_sound ... ok
+test finite_wet::tests::both_effects_seek_bit_identically_and_forget_samples_outside_complete_history ... ok
+test stages::bound_reads::owner_input::authored_eq_tests::shared_eq_crop_keeps_complete_attachment_history_and_cold_partitioning ... ok
+test stages::bound_reads::owner_input::authored_eq_tests::authored_eq_retained_nested_history_matches_unmoved_owner_clocks ... ok
+test stages::bound_reads::source_origin::physical_prefix_keeps_plain_captured_and_previously_bound_ntsc_pcm ... ok
+
+test result: ok. 165 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.38s
+
+     Running tests/audio_context.rs (target/debug/deps/audio_context-57d0b94c53f239ae)
+
+running 5 tests
+test context_provider_is_required_and_retained_asset_contract_is_checked ... ok
+test tail_context_retains_its_effect_and_renders_the_live_tail ... ok
+test reversed_and_tone_contexts_render_the_live_hold ... ok
+test cached_context_stages_recheck_admission_before_returning_pcm ... ok
+test restored_context_renders_qualified_source_room_tone_nested_preserve_split_and_silence ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/audio_definition.rs (target/debug/deps/audio_definition-597591745afd78e2)
+
+running 138 tests
+test mix::a_tail_hidden_inside_a_preserve_voice_is_an_invalid_document ... ok
+test edit_waveform::partial_limit_and_cancellation_publish_only_complete_window_bins ... ok
+test mix::gated_voice_still_requires_source_admission_and_invalid_requests_read_nothing ... ok
+test edit_waveform::root_routes_and_silent_hold_permissions_change_actual_window_peaks ... ok
+test historical_definition_survives_live_deletion_and_rechecks_cached_context_admission ... ok
+test definitions_reject_foreign_handles_invalid_ranges_cancel_and_bounded_work ... ok
+test all_overridden_repeat_still_renders_its_unheard_default_definition ... ok
+test edit_waveform::exact_ntsc_window_retains_fractional_phase_offset_ancestor_gain_and_filter_context ... ok
+test projection::a_tail_hidden_in_nested_preserve_stages_is_an_invalid_document ... ok
+test projection::a_tail_inside_a_projected_preserve_stage_is_an_invalid_document ... ok
+test owned_root_domain_rejects_foreign_handles_ranges_cancellation_and_work_limits ... ok
+test projection::nested_projection_enforces_depth_and_residency_then_recovers ... ok
+test definition_preserve_retains_silent_policy_without_an_input_grid_point ... ok
+test edit_waveform::late_window_keeps_complete_nested_preserve_histories_and_room_tone ... ok
+test owned_root_placements_share_intrinsic_preparation_without_rebinding_clocks ... ok
+test owned_nested_preserve_uses_edited_room_tone_in_the_same_root_clock ... ok
+test owned_root_placement_keeps_silent_hold_without_any_preserve_input_point ... ok
+test mix::mix_residency_includes_the_voice_reader_and_its_span_buffer ... ok
+test projection::projected_root_admission_precedes_source_reads_and_failures_recover ... ok
+test projection::routed::fully_masked_routes_admit_hidden_depth_before_source_io ... ok
+test definitions_keep_nested_history_silence_room_phase_and_distinct_cache_scopes ... ok
+test mix::a_silent_hold_voice_does_not_suppress_the_other_voice ... ok
+test tape::tape_keeps_repeat_default_and_actual_room_tone_occurrence_scopes_distinct ... ok
+test projection::projected_output_preserves_processed_decay_past_the_source_selection ... ok
+test projection::disk_projection_keeps_child_files_pinned_and_charges_their_storage ... ok
+test projection::projected_memo_rechecks_source_admission_within_one_read ... ok
+test projection::projected_root_regrids_a_hold_with_no_intrinsic_point_before_rounding ... ok
+test tape::tape_uses_one_ntsc_point_ceil_grid_across_an_exact_run_seam ... ok
+test tape::tape_uses_live_source_mapping_when_one_asset_is_referenced_twice ... ok
+test tape_admission::bound_source_reads_keep_the_physical_allocation_anchor_across_tape_seams ... ok
+test tape_admission::tape_reads_reject_foreign_handles_bad_ranges_and_cancellation ... ok
+test tape_admission::tape_preflights_all_runs_and_shares_preparation_limits_between_them ... ok
+test owned_source_root_clock_retains_signed_ntsc_phase_and_exact_filter_crop ... ok
+test projection::nested_projection_prepares_each_intrinsic_once_and_places_pause_after_stretch ... ok
+test voice_occurrence::beat_sounds::saved_beat_sound_preflights_all_occurrences_before_media_or_dsp ... ok
+test voice_occurrence::beat_sounds::saved_beat_sound_on_gap_override_inherits_current_repeat_gap_edges ... ok
+test voice_occurrence::beat_sounds::saved_beat_sound_edges_use_whole_audible_islands_and_exact_hard_boundaries ... ok
+test tape::tape_preserves_nested_preserve_history_suppression_and_cache_admission ... ok
+test projection::routed::fully_masked_routes_reject_revoked_history_and_recover ... ok
+test voice_occurrence::beat_sounds::saved_beat_sound_with_no_current_occurrence_still_admits_source ... ok
+test projection::two_routes_through_one_stage_do_not_alias_prepared_pcm ... ok
+test tape::tape_run_seams_do_not_crop_source_filter_context ... ok
+test projection::routed::routed_spans_share_one_complete_projection_preparation ... ok
+test voice_occurrence::beat_sounds::sound_clocks::group_mix::cancelling_inputs_keep_the_shared_saturation_zero_limit_before_mute ... ok
+test mix::scoped_mix_sums_two_decoded_rates_and_keeps_exhaustion_and_gates_per_voice ... ok
+test mix_limits::exactly_1024_distinct_dependencies_are_admitted_with_duplicate_and_gated_voices ... ok
+test voice_occurrence::beat_sounds::sound_clocks::group_mix::contribution_pcm_is_admitted_before_media_and_cancellation_recovers ... ok
+test projection::projected_root_ntsc_resume_keeps_phase_and_later_domain_origin_independent ... ok
+test voice_occurrence::beat_sounds::saved_beat_sound_uses_exact_ntsc_phase_and_independent_sample_offset ... ok
+test projection::routed::retained_projection_input_survives_fully_deleted_delivery ... ok
+test mix::mixed_projection_memo_rechecks_every_voice_and_shares_nested_limits ... ok
+test ntsc_definition_uses_local_zero_and_point_ceil_instead_of_root_allocation ... ok
+test voice_occurrence::beat_sounds::saved_beat_sound_takes_its_repeat_escalation_on_later_plays ... ok
+test voice_occurrence::beat_sounds::saved_beat_sound_renders_nested_preserve_and_restarts_owner_gain_each_play ... ok
+test mix::enclosing_preserve_processes_the_complete_sum_once_and_retains_source_decay ... ok
+test voice_occurrence::beat_sounds::sound_clocks::group_mix::muted_independent_clocks_keep_dependency_admission ... ok
+test mix_limits::all_hidden_dependency_kinds_enforce_the_shared_cap_before_any_source_io_and_recover ... ok
+test voice_occurrence::beat_sounds::sound_clocks::group_mix::absent_original_does_not_supply_a_nonlinear_automation_clock ... ok
+test voice_occurrence::beat_sounds::sound_clocks::beat_object_copies_carry_the_beat_sound_only_with_its_attachments ... ok
+test voice_occurrence::beat_sounds::sound_clocks::group_mix::independent_automation_is_invariant_across_owner_activation_boundaries ... ok
+test voice_occurrence::beat_sounds::sound_clocks::owner_input::shared_eq_saved_crop_neutral_recipe_preserves_current_delivery_edges ... ok
+test voice_occurrence::beat_sounds::sound_clocks::owner_input::sound_owner_input_admits_limits_before_media_and_recovers_after_failure ... ok
+test voice_occurrence::beat_sounds::sound_clocks::group_mix::independent_post_saturation_mute_preserves_the_shared_drive ... ok
+test voice_occurrence::beat_sounds::sound_clocks::group_mix::independent_pre_saturation_mute_preserves_each_input_clock ... ok
+test voice_occurrence::beat_sounds::sound_clocks::command_created_clocks_keep_ntsc_pcm_and_edge_progress_through_move_and_return ... ok
+test voice_occurrence::beat_sounds::sound_clocks::owner_input::sound_owner_input_saved_hidden_history_keeps_current_hold_fades ... ok
+test voice_occurrence::beat_sounds::sound_clocks::owner_input::sound_owner_input_keeps_saved_crop_clock_after_fractional_move_and_copy ... ok
+test voice_occurrence::beat_sounds::sound_clocks::partial::partial_range_of_preserve_owner_still_rejects_before_sound_capture ... ok
+test voice_occurrence::beat_sounds::sound_clocks::partial::copied_owner_preparation_keeps_the_terminal_sample_hidden_by_new_rounding ... ok
+test voice_occurrence::beat_sounds::saved_beat_sound_sums_overlapping_preserve_histories_before_one_limiter ... ok
+test voice_occurrence::beat_sounds::sound_clocks::owner_input::sound_owner_input_preserves_nested_saved_preserve_and_current_edges ... ok
+test voice_occurrence::beat_sounds::sound_clocks::partial::shared_copy_history_preserves_half_sample_ties_after_an_odd_move ... ok
+test voice_occurrence::beat_sounds::sound_clocks::group_mix::nonlinear_owner_mixes_ntsc_sound_after_retained_clock_move ... ok
+test voice_occurrence::beat_sounds::sound_clocks::group_mix::independent_post_saturation_envelope_preserves_the_shared_drive ... ok
+test voice_occurrence::beat_sounds::sound_clocks::group_mix::independent_envelope_keeps_fractional_onset_clock_through_a_root_move ... ok
+test voice_occurrence::beat_sounds::sound_clocks::group_mix::independent_post_saturation_inputs_rejoin_the_parent_bus ... ok
+test voice_occurrence::beat_sounds::sound_clocks::group_mix::independent_pre_saturation_envelope_preserves_each_input_clock ... ok
+test voice_occurrence::beat_sounds::sound_clocks::owner_input::shared_eq_saved_copied_crop_filters_complete_history_and_rechecks_sources ... ok
+test voice_occurrence::beat_sounds::sound_clocks::group_mix::independent_clocks_share_one_eq_processing_context ... ok
+test voice_occurrence::beat_sounds::sound_clocks::repeats::repeat_sound_isolation_copy_and_recopy_keep_independent_sample_offset ... ok
+test voice_occurrence::beat_sounds::sound_clocks::partial::partial_sound_copy_and_recopy_keep_dry_samples_and_virtual_edges ... ok
+test voice_occurrence::beat_sounds::sound_clocks::repeats::repeat_sound_pcm_copies_initial_plays_and_allocates_later_births_at_their_own_phase ... ok
+test voice_occurrence::beat_sounds::sound_clocks::repeats::partial_repeat_keeps_dry_sound_fragments_and_new_play_phase ... ok
+test voice_occurrence::beat_sounds::sound_clocks::partial::new_copy_wrapper_equalizer_uses_delivered_sound_as_its_input ... ok
+test voice_occurrence::beat_sounds::sound_clocks::retained_sound_and_current_bus_share_the_pcm_residency_cap ... ok
+test voice_occurrence::beat_sounds::sound_clocks::retained_sound_histories_join_current_nonlinear_owners_after_a_move ... ok
+test voice_occurrence::beat_sounds::sound_clocks::saved_clocks_keep_complete_nested_preserve_while_current_gain_and_source_admission_stay_live ... ok
+test voice_occurrence::beat_sounds::sound_clocks::sound_clock_current_coincident_hold_owns_the_automatic_fade_boundary ... ok
+test voice_occurrence::beat_sounds::sound_clocks::repeats::repeat_sound_wrap_retains_complete_nested_preserve_recipe_context ... ok
+test voice_occurrence::beat_sounds::sound_clocks::sound_clocks_translate_processed_ntsc_extent_through_nested_preserve ... ok
+test voice_occurrence::beat_sounds::sound_clocks::split_owner::interior_pauses_keep_dry_attached_sound_on_every_surviving_fragment ... ok
+test voice_occurrence::beat_sounds::sound_clocks::repeats::splits::partial_existing_repeat_keeps_dry_sound_clocks ... ok
+test voice_occurrence::beat_sounds::summed_nested_preserve_sounds_keep_repeat_clocks_and_escalation_through_saturation ... ok
+test voice_occurrence::routed_occurrence::retained_input_reads_nested_preserve_before_route_gaps_and_moves ... ok
+test voice_occurrence::routed_occurrence::routed_occurrence_gap_admits_complete_processing_and_live_source ... ok
+test voice_occurrence::beat_sounds::sound_clocks::repeats::partial_repeat_keeps_complete_nested_preserve_context ... ok
+test voice_occurrence::routed_occurrence::routed_occurrence_ntsc_transport_keeps_phase_and_cannot_revive_clipped_terminal_samples ... ok
+test voice_occurrence::routed_occurrence::routed_occurrence_retains_raw_sound_before_consuming_hold_gates_and_gain ... ok
+test voice_occurrence::routed_occurrence::routed_occurrence_keeps_nested_preserve_history_across_edits_and_shuffled_reads ... ok
+test voice_occurrence::sound_owner_context::sound_owner_context_reads_cold_hidden_pcm_and_current_hold_gates ... ok
+test voice_occurrence::routed_occurrence::windows::cropped_occurrence_transport_selects_complete_nested_preserve_output ... ok
+test voice_occurrence::beat_sounds::sound_clocks::group_mix::shared_eq_independent_input_automation_keeps_gain_filter_and_saturation_order ... ok
+test voice_occurrence::source_voice_occurrence_admits_source_even_outside_the_audible_recipe ... ok
+test voice_occurrence::sound_owner_context::sound_owner_context_retains_selection_inside_the_enclosing_processor ... ok
+test voice_occurrence::source_voice_occurrence_applies_silent_holds_after_complete_nested_processing ... ok
+test voice_occurrence::source_voice_occurrence_keeps_ntsc_root_phase_and_sample_offset_independent ... ok
+test voice_occurrence::source_voice_occurrence_rejects_foreign_ranges_and_cancelled_reads_before_media ... ok
+test voice_occurrence::sound_owner_context::sound_owner_context_reads_full_nested_preserve_before_current_delivery ... ok
+test voice_occurrence::source_voice_occurrences_admit_all_histories_and_residency_before_media ... ok
+test voice_occurrence::source_voice_occurrence_processes_only_its_enclosing_preserve_stages ... ok
+test voice_occurrence::source_voice_occurrences_empty_window_still_checks_live_source ... ok
+test voice_occurrence::source_voice_occurrences_reject_invalid_foreign_cancelled_and_overflowing_reads_without_io ... ok
+test voice_occurrence::source_voice_occurrences_sum_complete_independent_preserve_histories ... ok
+test waveform::waveform_empty_definition_completes_without_source_access ... ok
+test waveform::waveform_foreign_resource_cancel_deadline_and_cached_admission_failures_are_explicit ... ok
+test waveform::waveform_later_source_failure_keeps_a_truthful_measured_prefix ... ok
+test voice_occurrence::source_voice_occurrences_cross_repeat_seams_and_keep_query_cuts_exact ... ok
+test voice_occurrence::source_voice_occurrence_resamples_mono_before_its_independent_processing_chain ... ok
+test waveform::waveform_one_request_cannot_renew_stage_work_at_block_boundaries ... ok
+test waveform::waveform_output_cap_and_interruption_preserve_only_completed_prefix_bins ... ok
+test waveform::waveform_repeat_gap_and_selection_exhaustion_use_intrinsic_definition_clocks ... ok
+test voice_occurrence::beat_sounds::sound_clocks::group_mix::independent_eq_automation_keeps_rebound_input_history_across_a_new_pause ... ok
+test waveform::waveform_ntsc_preserve_uses_point_ceil_and_an_exact_terminal_owner_end ... ok
+test waveform::waveform_matches_canonical_nested_preserve_tape_room_tone_and_suppression ... ok
+test voice_occurrence::beat_sounds::sound_clocks::split_owner::interior_pauses_keep_attached_and_shared_equalizer_history ... ok
+test voice_occurrence::beat_sounds::sound_clocks::group_mix::independent_post_shared_automation_preserves_every_eq_order ... ok
+test voice_occurrence::beat_sounds::sound_clocks::split_owner::split_edits_keep_original_and_attached_sound_in_the_shared_equalizer ... ok
+test voice_occurrence::beat_sounds::sound_clocks::neutral_groups_outside_retained_sound_scopes_preserve_pcm_and_allow_later_timing_edits ... ok
+test voice_occurrence::beat_sounds::sound_clocks::copied_nested_sound_clocks_keep_old_pcm_labels_and_terminal_clip_across_recopy ... ok
+test voice_occurrence::beat_sounds::sound_clocks::repeats::splits::partial_existing_repeat_keeps_nested_preserve_clocks ... ok
+test voice_occurrence::beat_sounds::sound_clocks::repeats::partial_repeat_keeps_event_and_shared_equalizer_history ... ok
+test voice_occurrence::beat_sounds::sound_clocks::copied_nested_event_returns_keep_old_history_across_recopy ... ok
+test voice_occurrence::beat_sounds::sound_clocks::repeats::partial_repeat_keeps_equalized_nested_preserve_context ... ok
+test voice_occurrence::beat_sounds::sound_clocks::partial::partial_sound_copy_and_recopy_keep_event_processing_history ... ok
+test voice_occurrence::beat_sounds::sound_clocks::repeats::splits::partial_existing_repeat_keeps_equalized_sound_clocks ... ok
+test voice_occurrence::beat_sounds::sound_clocks::repeats::occurrence_pause::occurrence_pause_transports_fresh_and_saved_beat_sound_processing ... ok
+test voice_occurrence::beat_sounds::sound_clocks::partial::partial_sound_copy_and_recopy_keep_shared_processing_history ... ok
+test voice_occurrence::beat_sounds::sound_clocks::repeats::splits::partial_existing_repeat_keeps_equalized_nested_preserve_clocks ... ok
+
+test result: ok. 138 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 60.46s
+
+     Running tests/audio_domain.rs (target/debug/deps/audio_domain-639730e1f518284a)
+
+running 12 tests
+test domain_transfer_masks_outside_signed_support_before_returning_filtered_pcm ... ok
+test bounded_read_does_not_materialize_or_narrow_a_wide_signed_domain ... ok
+test transferred_domain_keeps_one_provenance_observation_across_halo_callbacks ... ok
+test moved_partition_reads_its_hidden_source_instead_of_the_colliding_root_voice ... ok
+test ordinary_edit_crop_keeps_excluded_source_filter_context_out_of_the_domain ... ok
+test hidden_room_tone_gap_keeps_its_loop_origin_and_rechecks_cached_admission ... ok
+test domain_reads_reject_foreign_plans_ranges_cancellation_and_preparation_overruns ... ok
+test hidden_nested_preserve_keeps_full_history_and_distinguishes_absence_from_silence ... ok
+test transferred_domain_rejects_foreign_context_and_uses_the_full_stage_budget ... ok
+test negative_hidden_domain_transfers_fractional_pcm_and_silence_into_a_new_preserve ... ok
+test domain_transfer_halo_callbacks_share_one_deadline ... ok
+test ntsc_hidden_44100_context_keeps_the_captured_fractional_root_origin ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s
+
+     Running tests/composite_insert.rs (target/debug/deps/composite_insert-d30bd03b3953fe00)
+
+running 82 tests
+test delete_range::nested_partition::repeated_nested_deletions_transform_the_existing_root_sound_route_exactly_once ... ok
+test delete::historical_delete_keeps_its_unbound_phase_for_replay ... ok
+test delete::delete_before_preserve_crop_retains_full_preparation_history ... ok
+test delete_range::nested_partition::nested_terminal_allocation_keeps_the_last_supported_sample_and_suppresses_only_the_extra ... ok
+test delete::delete_preserves_nonzero_ntsc_source_suffix_phase ... ok
+test edited_slice::contents_exclude_unselected_parent_gain_while_owned_group_retains_it ... ok
+test delete_range::interior_range_delete_preserves_every_ntsc_prefix_and_suffix_sample ... ok
+test delete::repeated_deletes_keep_preexisting_insert_time_bindings ... ok
+test delete::nested_delete_preserves_inner_and_outer_source_suffixes ... ok
+test delete_range::range_delete_retains_clocks_from_an_earlier_pause_insertion ... ok
+test delete_range::aligned_range_delete_retains_suffix_and_terminal_prefix_without_extra_capture ... ok
+test delete::delete_preserves_fractional_ntsc_preserve_output_entry ... ok
+test edited_slice::move_range::moved_voice_keeps_its_gain_clock_and_uses_live_destination_gain_once ... ok
+test delete::delete_preserves_repeat_play_and_roomtone_gap_entries ... ok
+test delete::delete_preserves_roomtone_loop_phase_through_the_final_sample ... ok
+test edited_slice::crop_retains_prior_insert_and_delete_resume_terms ... ok
+test delete_range::range_delete_preserves_ntsc_preserve_suffix_full_history ... ok
+test edited_slice::immutable_capture_survives_source_change_and_deletion_and_pastes_independently ... ok
+test edited_slice::move_range::prior_pause_delete_bindings_survive_another_move_without_restarting_the_source ... ok
+test delete_range::range_delete_preserves_every_repeated_play_and_roomtone_gap_sample ... ok
+test edited_slice::move_range::root_sound_stays_at_frames_one_to_three_when_a_moves_to_the_end ... ok
+test edited_slice::placement::equal_replacement_keeps_the_final_4804_sample_without_a_shorter_intermediate_clock ... ok
+test edited_slice::move_range::whole_owner_move_allocates_the_new_terminal_sample_but_reports_exhausted_old_support ... ok
+test delete_range::children::exact_forest_delete_keeps_ntsc_preserve_pcm_and_transforms_root_sound_once ... ok
+test edited_slice::move_range::root_sound_recipe_stays_fixed_while_live_hold_gates_and_grants_follow_the_hold ... ok
+test edited_slice::move_range::three_cuts_in_one_source_move_left_and_right_with_a_real_extra_continuing_sample ... ok
+test edited_slice::placement::interior_in_a_previously_cut_fragment_composes_both_retained_histories ... ok
+test edited_slice::placement::partial_endpoint_replacement_across_repeat_and_preserve_keeps_both_outer_joins ... ok
+test edited_slice::placement::copied_nested_partitions_remain_editable_by_interior_and_range_replacement ... ok
+test edited_slice::terminal_source_crop_allocates_the_destination_interval_without_invented_support ... ok
+test edited_slice::move_range::cross_parent_moves_preserve_every_source_sample_entry_in_both_directions ... ok
+test edited_slice::move_range::existing_root_sound_routes_and_sample_labels_are_unchanged_by_left_and_right_moves ... ok
+test delete_range::nested_range_delete_preserves_roomtone_source_and_outer_siblings ... ok
+test delete_range::nested_partition::different_nested_children_keep_partial_source_and_roomtone_with_a_real_extra_sample ... ok
+test edited_slice::nested_nonzero_source_and_roomtone_crop_keep_phase_and_exact_destination_allocation ... ok
+test edited_slice::unrelated_repeats_with_equal_raw_play_ids_keep_distinct_historical_clocks ... ok
+test edited_slice::move_range::full_repeat_families_and_preserve_contexts_move_without_changing_their_prepared_pcm ... ok
+test edited_slice::preserve_partition_copy_keeps_complete_input_history_on_cold_final_read ... ok
+test inserting_before_preserve_crop_keeps_full_history_and_exact_silence ... ok
+test interior_pause_before_nested_retime_preserves_intrinsic_dsp_input_clock ... ok
+test edited_slice::placement::nested_interior_keeps_source_and_roomtone_suffixes_and_prior_copied_phase ... ok
+test interior_source_fragment_pause_composes_an_existing_resume_before_repeat ... ok
+test nested_sequence::nested_fragment_split_composes_a_previously_shifted_source_clock ... ok
+test nested_sequence::nested_pause_resumes_each_level_at_its_own_ntsc_sample_and_stays_editable ... ok
+test interior_source_pause_uses_each_suffix_boundary_instead_of_one_rounded_shift ... ok
+test nested_sequence::nested_sequence_pause_preserves_later_preserve_input_and_roomtone_gap_clocks ... ok
+test edited_slice::copied_repeat_keeps_reordered_births_sparse_overrides_retired_runs_and_copy_of_copy ... ok
+test repeat_selection::partial_preserve_repeat_retains_complete_intrinsic_history_on_every_play ... ok
+test inserted_composite_keeps_isolated_gap_phase_and_default_gap_births ... ok
+test group_selection::partial_ntsc_source_group_keeps_offset_pcm_and_exact_picture_coordinates ... ok
+test repeat_selection::ntsc_range_repeat_keeps_first_play_and_suffix_samples_exact ... ok
+test source_splice::fresh_ntsc_source_uses_project_phase_while_repeat_fragments_keep_distinct_entries ... ok
+test source_replace::replacement_before_repeated_and_preserved_suffix_retains_their_entries ... ok
+test repeat_selection::resizing_repeated_range_preserves_surviving_pcm_and_suffix ... ok
+test repeat_selection::ntsc_gap_changes_move_each_play_and_the_suffix_as_identical_samples ... ok
+test source_splice::pasted_selected_audio_ends_on_its_exact_interval_after_another_splice ... ok
+test source_splice::interior_ntsc_source_splice_and_fragment_refinement_keep_nonzero_pcm_at_both_joins ... ok
+test source_splice::nested_group_edges_keep_ownership_ancestor_suffix_clocks_and_live_recipe_edits ... ok
+test split_repeat_suffix_inserts_twice_and_resumes_each_old_ntsc_play ... ok
+test trim::combined::combined_ripple_appends_one_root_map_after_a_prior_route_with_exact_44100_phase ... ok
+test trim::combined::overwrite_keeps_complete_preserve_history_and_repeat_play_gap_context ... ok
+test source_splice::source_splice_leaves_shifted_preserve_preparation_and_roomtone_on_their_own_clocks ... ok
+test edited_slice::replacement_children::nested_exact_children_replacement_keeps_suffix_and_root_sound_on_one_ntsc_clock ... ok
+test trim::source_endpoints::disjoint_source_endpoint_keeps_44100_phase_and_chunk_independent_kernel ... ok
+test trim::trim_44100_crop_keeps_filter_context_and_tail_growth_uses_the_original_rate ... ok
+test source_splice::interior_ntsc_roomtone_splice_keeps_nonzero_hold_recipe_phase ... ok
+test edited_slice::placement::interior_and_replacement_keep_imported_repeat_and_complete_preserve_contexts ... ok
+test interior_roomtone_hold_and_fragment_keep_phase_before_repeat_gaps ... ok
+test source_replace::ntsc_replacement_retains_source_roomtone_and_outer_suffix_samples_in_one_shift ... ok
+test trim::in_extension_reanchors_repeat_gap_preserve_and_outer_suffix_owners_once ... ok
+test delete_range::nested_partition::two_and_three_windows_retain_source_and_roomtone_prefix_suffix_and_owned_gain ... ok
+test trim::roll::roll_44100_keeps_exact_offset_kernel_and_every_composite_suffix_at_its_absolute_position ... ok
+test edited_slice::placement::shorter_equal_and_longer_replacements_use_exact_new_allocations_and_old_support ... ok
+test explode::exploded_beat_sounds_and_root_sounds_keep_every_ntsc_sample ... ok
+test explode::exploded_born_plays_keep_definition_clocks_and_isolated_gap_phase ... ok
+test bound_preserve::edits_binding_unrelated_owners_keep_a_gained_preserve_repeat_playable ... ok
+test group_selection::partial_repeat_preserve_group_and_ordinary_ungroup_keep_authored_pcm_and_routes ... ok
+test bound_preserve::isolating_one_gap_keeps_every_ntsc_sample_around_a_repeated_preserve ... ok
+test structural_capture::empty_group_paste_preserves_all_pcm_gain_and_routed_sounds_at_every_seam ... ok
+test explode::exploding_inner_then_outer_repeat_keeps_nested_occurrence_samples ... ok
+test bound_preserve::bound_repeated_preserve_keeps_its_gain_owners_at_a_rounded_down_start ... ok
+test explode::exploded_default_plays_gaps_preserve_and_escalation_keep_every_ntsc_sample ... ok
+
+test result: ok. 82 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 39.73s
+
+     Running tests/dormant_source.rs (target/debug/deps/dormant_source-abcfdc57855854dc)
+
+running 4 tests
+test intentionally_absent_audio_stays_absent_and_cannot_be_created_by_growing_support ... ok
+test explicit_empty_support_is_digital_silence_without_media_for_live_and_retained_clocks ... ok
+test growing_support_reveals_canonical_pcm_without_reclocking_fractional_source_mapping ... ok
+test edit_window::editorial_window_does_not_activate_dormant_audio_or_change_selected_pcm ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.11s
+
+     Running tests/gap_bindings.rs (target/debug/deps/gap_bindings-684fd9b0d7bde7e8)
+
+running 10 tests
+test bound_silent_gap_with_zero_input_points_suppresses_nested_preserve_output ... ok
+test isolation::materializing_a_born_gap_keeps_its_canonical_clock_and_discards_old_outer_window ... ok
+test gaps_survive_overridden_preceding_children_and_follow_stable_play_reordering ... ok
+test interrupted_first_gap_and_later_full_gap_resume_distinct_ntsc_phases ... ok
+test isolation::isolated_gap_keeps_decoded_ntsc_phase_and_live_owned_recipe ... ok
+test isolation::materialized_gap_retains_distinct_outer_play_clocks_and_definition_birth ... ok
+test moved_gap_uses_current_duration_media_and_policy_without_recapturing_phase ... ok
+test isolation::materialized_gap_edges_match_independent_fades_and_explicit_hard_choices ... ok
+test captured_one_play_gap_and_former_final_gap_are_born_on_the_definition_clock ... ok
+test isolation::isolated_gap_under_real_preserve_matches_the_unedited_pcm_and_fresh_seeks ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.35s
+
+     Running tests/gap_definition.rs (target/debug/deps/gap_definition-3968c5a9fdc9915a)
+
+running 6 tests
+test silence_policy_survives_a_zero_point_gap_and_later_expanded_placement ... ok
+test missing_and_zero_gaps_are_rejected_and_a_tail_gap_definition_is_silent ... ok
+test gap_reads_recheck_cached_admission_and_enforce_preparation_limits_and_cancellation ... ok
+test current_gap_recipe_changes_audio_while_preserving_explicit_clock ... ok
+test one_play_gap_renders_44100_pcm_without_child_leakage_or_loop_phase_rounding ... ok
+test root_and_point_gap_clocks_keep_signed_ntsc_phase_and_full_finite_filter_context ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.87s
+
+     Running tests/limiter.rs (target/debug/deps/limiter-7722f3841ccc0953)
+
+running 9 tests
+test an_empty_project_has_no_native_preparation_or_fabricated_samples ... ok
+test range_context_samples_and_work_fail_before_returning_output ... ok
+test complete_zero_context_preserves_signed_bits_and_still_requires_its_halo ... ok
+test root_end_near_i64_max_keeps_signed_filter_context_in_wide_coordinates ... ok
+test ordinary_tones_and_tiny_hard_fragments_keep_their_exact_samples ... ok
+test hot_linked_stereo_preserves_silent_islands_and_passes_the_independent_meter ... ok
+test the_long_ordinary_tone_ending_is_not_attenuated_by_the_guard ... ok
+test cold_unaligned_crops_match_the_same_owned_project_context ... ok
+test exact_retained_failure_inputs_are_not_replaced_with_approximations ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.56s
+
+     Running tests/loudness.rs (target/debug/deps/loudness-543442191caa412f)
+
+running 9 tests
+test admission_is_bounded_and_preserves_full_scale_pcm ... ok
+test incomplete_final_hop_neither_pads_nor_changes_existing_blocks ... ok
+test rejected_blocks_and_cancellation_leave_all_state_unchanged ... ok
+test no_complete_or_audible_window_has_no_numeric_loudness ... ok
+test arbitrary_chunk_partitions_are_bit_identical ... ok
+test itu_997_hz_single_channel_reference_and_channel_energy ... ok
+test a_long_silent_gap_does_not_dilute_the_gated_programme ... ok
+test low_and_high_frequency_weighting_matches_analytic_filter_gain ... ok
+test ebu_published_stereo_tone_and_gating_cases ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.77s
+
+     Running tests/reanchors.rs (target/debug/deps/reanchors-b1399c309ee55dbf)
+
+running 6 tests
+test hidden_retained_occurrence_does_not_replace_its_legacy_resume_anchor ... ok
+test born_play_drops_outer_window_but_preserves_intrinsic_partition_entry ... ok
+test sequential_reanchors_compose_prior_resume_on_each_retained_ntsc_grid ... ok
+test insert_time_after_a_reanchor_resumes_the_pre_edit_bound_waveform ... ok
+test repeat_suffix_reanchors_first_partial_play_and_later_full_play_separately ... ok
+test opaque_preserve_reanchor_reads_full_history_and_enforces_full_preparation_budget ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running tests/reference_policy.rs (target/debug/deps/reference_policy-c13b9c5d8bed4057)
+
+running 4 tests
+test reference_masks_are_partition_independent_bounded_and_atomic ... ok
+test retained_root_silence_closes_the_prepared_point_grid_hole_after_resume ... ok
+test current_silence_wins_when_rounding_starts_it_before_the_retained_mask ... ok
+test absent_source_and_placement_gaps_preserve_prepared_decay ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/resample.rs (target/debug/deps/resample-6b0c45d8d2c1ea45)
+
+running 7 tests
+test invalid_recipes_and_arithmetic_overflow_fail_without_clamping ... ok
+test source_halo_is_bounded_and_missing_or_invalid_pcm_is_never_substituted ... ok
+test integer_unity_is_exact_and_zero_extension_never_reads_outside_authored_trim ... ok
+test translating_huge_signed_source_and_output_clocks_preserves_fractional_phase ... ok
+test dc_calibration_is_independent_of_level_and_does_not_renormalize_trim_edges ... ok
+test partitions_and_isolated_seeks_are_bit_equal_for_fractional_negative_and_large_origins ... ok
+test actual_tones_preserve_passband_phase_and_reject_aliases_and_images ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.27s
+
+     Running tests/root_sound_trim.rs (target/debug/deps/root_sound_trim-4b0a2110afe09d59)
+
+running 10 tests
+test retained_input_rejects_foreign_ranges_and_cancellation_before_source_io ... ok
+test tiny_fractional_selection_keeps_physical_samples_and_shortened_ramps ... ok
+test only_exact_hard_coincidence_suppresses_a_new_cut_ramp ... ok
+test initially_sampleless_intent_survives_without_inventing_pcm_but_exhausted_support_rejects ... ok
+test both_true_cuts_use_sample_centered_ramps_and_keep_outer_hard_policy ... ok
+test zero_trim_projection_is_identity_and_does_not_reset_existing_pcm ... ok
+test complete_equal_in_out_keeps_terminal_sample_lost_by_sequential_editing ... ok
+test retained_input_keeps_removed_history_and_old_extent_at_both_source_rates ... ok
+test in_only_merges_nonzero_translation_before_phase_and_fades_at_both_source_rates ... ok
+test prior_route_and_two_new_gaps_preserve_complete_filter_context ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.07s
+
+     Running tests/sequence.rs (target/debug/deps/sequence-80ea83103136e3b8)
+
+running 12 tests
+test transparent_partition_retains_full_filter_support_while_an_authored_crop_excludes_it ... ok
+test unsupported_audio_policies_fail_before_any_source_is_requested ... ok
+test cancellation_and_invalid_block_budgets_do_not_touch_the_provider ... ok
+test billion_play_repeat_seeks_the_last_play_without_a_trailing_gap ... ok
+test inserted_silence_resumes_untouched_speech_and_repeat_has_three_total_plays ... ok
+test unity_preserve_and_retimed_silence_need_no_unimplemented_dsp ... ok
+test source_placement_and_sequence_order_preserve_original_samples_and_revision_identity ... ok
+test nested_follow_speed_retimes_keep_the_exact_composed_mapping ... ok
+test structural_crops_exclude_filter_context_and_use_half_open_discrete_samples ... ok
+test pure_partition_keeps_ntsc_sampling_phase_and_signed_source_placement ... ok
+test original_44100_clock_is_resampled_to_the_mix_clock_and_mono_stays_centered ... ok
+test ntsc_boundaries_keep_exact_fractional_phase_across_partitions_and_seeks ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.06s
+
+     Running tests/session.rs (target/debug/deps/session-8f09bd6a8ed3540d)
+
+running 8 tests
+test verified_stereo_unity_preserves_actual_fixture_amplitudes_and_terminal_samples ... ok
+test private_media_read_limits_and_preparation_limits_are_not_silently_relaxed ... ok
+test cancellation_prevents_admission_and_block_preparation_without_poisoning_the_source ... ok
+test filter_context_reads_only_the_authored_trim_and_unavailable_selected_samples_fail ... ok
+test mono_44100_to_mix_rate_keeps_fractional_origin_across_partitions_and_random_seeks ... ok
+test admission_rechecks_identity_stream_and_raw_observations_before_exposing_pcm ... ok
+test unspecified_original_layouts_require_explicit_consistent_host_interpretation ... ok
+test actual_native_aac_layout_cannot_be_reinterpreted_as_different_speakers ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/signal_transfer.rs (target/debug/deps/signal_transfer-f37f88388694624e)
+
+running 7 tests
+test invalid_callbacks_and_cancellation_never_return_partial_audio ... ok
+test explicit_silence_masks_input_taps_and_zero_pcm_does_not_create_policy ... ok
+test negative_mapped_positions_and_support_endpoints_are_explicit_output_silence ... ok
+test old_no_input_regions_keep_real_preserve_decay_after_root_to_signal_transfer ... ok
+test retained_domain_resume_drives_fractional_transfer_into_another_real_preserve ... ok
+test real_preserve_root_rounding_hole_stays_closed_through_transfer_and_another_preserve ... ok
+test materialized_carrier_matches_fractional_nonzero_grids_and_suffix_first_queries ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.49s
+
+     Running tests/sound_events.rs (target/debug/deps/sound_events-ee79d708b11d8266)
+
+running 6 tests
+test nonlinear_bus_pcm_is_admitted_before_media_and_released_after_failure ... ok
+test initial_and_inflight_cancellation_leave_the_same_sound_renderer_reusable ... ok
+test resident_budget_rejection_and_provider_failure_release_bus_reservations ... ok
+test gap_masked_sound_keeps_dependency_and_releases_failed_and_cancelled_reservations ... ok
+test original_and_sound_dependencies_share_one_limit_before_provider_resolution ... ok
+test routed_sound_and_original_admit_dependencies_under_one_budget ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.16s
+
+     Running tests/stages.rs (target/debug/deps/stages-629ec9c4134d4981)
+
+running 134 tests
+test a_tail_inside_preserve_stages_is_an_invalid_document ... ok
+test a_reversed_44100_span_with_fractional_extent_ends_exactly_one_mix_sample_before_its_end ... ok
+test cancellation_during_source_access_leaves_no_partial_stage_and_retry_replays_exactly ... ok
+test disk_cache::disk_budget_rejects_before_source_access_and_cancellation_can_retry ... ok
+test gain::balance_has_exact_center_and_endpoints_and_preserves_channel_identity ... ok
+test gain::beat_balance_leaves_independent_sound_and_root_balance_reaches_it_once ... ok
+test a_subsample_room_tone_hold_renders_through_preserve_without_becoming_silence ... ok
+test gain::exhausted_bound_original_keeps_independent_sound_and_current_root_gain ... ok
+test gain::explicit_unity_and_opposing_owner_gains_are_bit_identical ... ok
+test gain::gain_conversion_reuses_original_with_exact_three_frame_residency ... ok
+test gain::definition_waveform_ignores_gain_edges_and_independent_placed_sound_mix ... ok
+test gain::fully_muted_cached_bus_still_readmits_and_rejects_revoked_original ... ok
+test event_treatments::event_fade_precedes_saturation_once_and_balance_keeps_other_channel ... ok
+test gain::nonfinite_authored_output_rejects_after_admission_without_poisoning_inspection_or_budget ... ok
+test gain::nested_group_saturation_sums_only_its_members_before_parent_processing ... ok
+test edge_fades_follow_continuous_preserve_and_inner_cuts_without_query_edges ... ok
+test gain::overlapping_db_trim_and_exact_mute_follow_edges_without_changing_inspection ... ok
+test disk_cache::disk_stage_matches_memory_and_releases_evicted_storage ... ok
+test gain::nested_balance_follows_saturation_and_survives_partitions_and_random_reads ... ok
+test gain::root_saturation_shapes_the_sum_of_original_and_independent_sound ... ok
+test gain::repeat_child_restarts_and_repeat_gain_spans_plays_and_roomtone_gaps_once ... ok
+test gain::repeat_escalation_adds_its_step_to_each_later_play_and_its_gap ... ok
+test gain::saturation_shapes_each_owner_output_inner_first_in_its_serialized_order ... ok
+test gain::source_mute_leaves_independent_sound_and_root_gain_composes_with_event_gain_once ... ok
+test edge_fades_follow_nested_mixed_room_tone_retimes_and_authored_crops ... ok
+test hold_effects::a_read_that_starts_inside_a_tail_hears_the_same_samples ... ok
+test hold_effects::marked_fragment_seams_fade_or_cut_the_sound_and_a_split_seam_stays_continuous ... ok
+test actual_split_and_refinement_preserve_ntsc_44100_pcm_and_two_sample_envelopes ... ok
+test hold_effects::reversed_hold_plays_its_source_backwards_then_silence ... ok
+test hold_effects::a_tail_does_not_feed_the_next_tail ... ok
+test hold_effects::a_tail_follows_later_edits_to_the_sound_before_it ... ok
+test gain::odd_sample_insert_keeps_source_envelope_origin_and_current_sequence_keys ... ok
+test hold_effects::tail_hold_rings_the_processed_sound_heard_before_it_then_exact_silence ... ok
+test hold_effects::tail_sends::cancelled_send_preparation_can_retry_without_partial_tail_state ... ok
+test hold_effects::tail_sends::a_shared_root_send_does_not_double_its_output_gain ... ok
+test hold_effects::tail_sends::beat_sends_tap_the_processed_group_mix_and_preserve_shared_drive ... ok
+test hold_effects::gain_shared_by_the_tail_and_the_sound_before_it_applies_once ... ok
+test hold_effects::tail_sends::send_preparation_respects_residency_before_media_reads ... ok
+test gain::preserve_gain_uses_nominal_output_map_after_complete_processing_and_partitions ... ok
+test hold_effects::tail_sends::sends_respect_silent_hold_permissions_in_the_input_window ... ok
+test hold_effects::tail_sends::selected_root_and_attached_sound_sends_exclude_the_original ... ok
+test hold_effects::tail_sends::sends_are_identical_on_cold_seek_and_irregular_reads ... ok
+test actual_split_preserves_mixed_retime_and_room_tone_history_when_suffix_is_read_first ... ok
+test hold_effects::the_source_stage_explains_that_a_tail_is_read_from_the_processed_stages ... ok
+test hold_effects::tone_hold_renders_the_canonical_sine_without_reading_media ... ok
+test insert_time::a_pause_preserves_the_two_sample_creative_envelope_on_both_sides ... ok
+test hold_effects::tail_sends::shared_ancestor_gain_applies_once_on_the_tail_output ... ok
+test hold_effects::tail_sends::tail_returns_never_feed_another_selected_send ... ok
+test hold_effects::tail_sends::sends_are_off_by_default_and_do_not_change_the_dry_mix ... ok
+test hold_effects::tails_in_repeats_splits_and_bound_clocks_render_and_the_original_after_them_reads ... ok
+test hold_effects::tail_sends::selected_sends_keep_repeat_gap_and_split_tail_phase ... ok
+test insert_time::extending_moved_room_tone_retains_its_binding_and_uses_the_current_duration ... ok
+test insert_time::ntsc_44100_pause_at_an_existing_split_resumes_1602_and_exhausts_4804 ... ok
+test insert_time::a_second_interior_pause_composes_the_current_resume_without_changing_its_prefix ... ok
+test insert_time::insertion_preserves_fractional_source_placement_offset_and_first_speech_sample ... ok
+test insert_time::inserting_before_several_split_fragments_reanchors_every_surviving_entry ... ok
+test insert_time::extending_a_captured_repeat_hold_keeps_each_surviving_play_clock ... ok
+test insert_time::start_and_end_pauses_retain_hard_source_edges_room_tone_phase_and_silence ... ok
+test insert_time::ntsc_pause_reanchors_room_tone_from_its_old_visible_entry ... ok
+test insert_time::selected_original_window_survives_ntsc_split_pause_and_endpoint_exhaustion ... ok
+test event_returns::event_return_limits_and_cancellation_preserve_reusability ... ok
+test limited::limited_admission_cache_residency_and_empty_dependency_cancellation_are_bounded ... ok
+test insert_time::occurrence_pause::occurrence_pause_in_permitted_gap_keeps_root_sound_pcm_and_silences_only_new_time ... ok
+test hold_effects::tail_sends::selected_sends_keep_eq_and_shared_saturation_in_authored_order ... ok
+test mixed_pitch_policies_keep_their_order_even_when_overall_speed_is_unity ... ok
+test nested_depth_and_configured_input_limits_fail_without_decoding_originals ... ok
+test nested_preserve_retains_inner_history_and_outer_crop_matches_full_render ... ok
+test hold_effects::tail_sends::event_return_is_excluded_from_its_own_allocated_tail_tap ... ok
+test ntsc_fractional_input_and_output_origins_preserve_exact_three_over_two_speed ... ok
+test one_hard_repeat_override_and_room_tone_gap_edges_preserve_silence_masks ... ok
+test partition_inside_a_repeat_gap_keeps_its_full_room_tone_origin ... ok
+test event_returns::automatic_event_edges_feed_the_effect_and_fade_the_bounded_return ... ok
+test ntsc_partition_keeps_44100_filter_phase_placement_and_original_fades_in_both_readers ... ok
+test partition_inside_preserve_input_retains_full_source_filter_context ... ok
+test placement_hard_end_does_not_mistake_the_host_start_for_its_later_onset ... ok
+test preparation::preparation_does_not_renew_stage_allowance_at_each_small_read ... ok
+test preparation::preparation_rejects_bad_admission_and_cancellation_without_a_partial_block ... ok
+test preparation::preparation_matches_irregular_reads_and_cold_crops_across_all_stages ... ok
+test preserve_processes_both_source_cuts_continuously_and_query_partitions_cannot_restart_it ... ok
+test progress::cancelled_preparation_restores_activity_without_publishing_a_stage ... ok
+test prepared_cache_rechecks_explicit_source_layout_including_nested_dependencies ... ok
+test pure_partition_preserves_a_two_sample_envelope_and_standalone_fragment_offset ... ok
+test repeat_and_override_occurrences_do_not_alias_prepared_history ... ok
+test repeated_room_tone_and_override_restart_locally_with_two_distinct_gap_caches ... ok
+test limited::bus_cache_does_not_round_context_into_an_unavailable_following_source ... ok
+test retime_edits::edit_time_preserve_bounds_match_default_preparation_work_and_output ... ok
+test limited::limited_cache_rechecks_nested_stage_provenance_and_recovers_after_cancellation ... ok
+test partitions_of_mixed_retimes_retain_full_preserve_and_room_tone_histories ... ok
+test progress::preparation_progress_reports_real_frames_without_changing_pcm_or_rebuilding_hits ... ok
+test room_tone_cache_layout_changes_invalidate_both_holds_and_dependent_preserve_stages ... ok
+test limited::two_tile_read_cannot_mix_source_interpretations_even_when_both_tiles_are_warm ... ok
+test room_tone_keeps_fractional_44100_source_extent_and_long_hold_duration_across_loops ... ok
+test selection::changing_a_selected_window_keeps_retained_phase_and_uses_current_support ... ok
+test selection::fractional_selected_source_preserves_original_phase_and_excludes_outside_taps ... ok
+test selection::selected_empty_host_intersections_and_zero_point_windows_do_not_read_media ... ok
+test selection::selected_source_follow_speed_uses_exact_window_on_its_retained_physical_grid ... ok
+test selection::selection_masks_physical_transfer_but_preserve_retains_its_decay ... ok
+test retime_edits::shifted_stages_keep_their_bound_pcm_through_insert_split_and_move ... ok
+test silent_hold_is_suppressed_even_when_its_input_interval_owns_no_grid_sample ... ok
+test room_tone_retimes_keep_pitch_order_and_outer_crop_keeps_the_intrinsic_loop_history ... ok
+test stage_budget_failures_and_initial_cancellation_do_not_decode_or_publish_cache_entries ... ok
+test streaming::streamed_work_limit_still_admits_the_whole_input_before_media ... ok
+test shared_per_read_work_limits_bound_repeated_stage_preparation_and_allow_warm_retry ... ok
+test transferred_halo_rejects_changed_source_provenance_between_input_blocks ... ok
+test transferred_halo_shares_preparation_work_and_rejects_invalid_context_before_io ... ok
+test retime_edits::definition_waveform_retains_odd_phase_bindings_through_split_partitions ... ok
+test transferred_root_uses_qualified_pcm_without_baking_in_creative_fades ... ok
+test gain::limiter_halos_use_authored_gain_for_whole_and_cold_shuffled_reads ... ok
+test transferred_preserve_keeps_root_silence_and_intrinsic_preparation_on_fractional_grid ... ok
+test retime_edits::wrapping_a_split_partition_retains_child_processing_history_for_both_policies ... ok
+test wet_owners::default_repeat_tail_gap_excludes_parent_returns_and_resumes_them_afterward ... ok
+test event_returns::event_return_enters_the_parent_return_without_self_feedback ... ok
+test event_returns::root_route_transports_processed_history_without_advancing_through_inserted_time ... ok
+test wet_owners::explicit_tail_provider_excludes_unselected_incoming_parent_returns ... ok
+test wet_owners::return_admission_and_cancellation_leave_reader_reusable ... ok
+test wet_owners::allowed_sound_cannot_carry_forbidden_original_history_into_silent_hold ... ok
+test event_returns::current_hold_blocks_event_return_until_that_sound_is_explicitly_allowed ... ok
+test wet_owners::silent_hold_suppresses_incoming_root_return_and_resumed_source_keeps_history ... ok
+test wet_owners::child_owner_returns_enter_before_parent_saturation ... ok
+test wet_owners::split_source_keeps_full_wet_history_and_repeat_occurrence_identity ... ok
+test retime_edits::rate_and_pitch_changes_use_fresh_output_but_keep_bound_child_pcm ... ok
+test event_treatments::processed_event_history_and_envelope_progress_survive_insert_and_cut ... ok
+test limited::adjacent_tiles_reuse_exact_bus_context_and_revalidate_its_source_layout ... ok
+test wet_owners::wet_return_precedes_parent_equalizer_with_complete_prefix_context ... ok
+test wet_owners::nested_wet_returns_share_bounded_workspace_without_self_feedback ... ok
+test wet_owners::root_returns_match_dry_plus_finite_wet_and_cold_partitions ... ok
+test limited::limited_bus_matches_direct_full_context_and_cold_shuffled_reads ... ok
+test streaming::two_minute_preserve_streams_under_a_budget_smaller_than_its_input ... ok
+test event_returns::root_and_beat_returns_match_finite_history_before_parent_saturation ... ok
+test insert_time::occurrence_pause::scoped_pause_edges_keep_44100_pcm_in_plain_and_nested_plays ... ok
+test streaming::four_minute_disk_output_matches_canonical_history_under_fixed_memory ... ok
+test event_treatments::root_and_attached_treatments_match_scalar_order_and_cold_queries ... ok
+test insert_time::occurrence_pause::occurrence_pause_keeps_each_44100_source_and_room_tone_allocation_at_ntsc_boundaries ... ok
+test event_treatments::allocated_tails_use_treated_event_input_and_keep_history_on_cold_seek has been running for over 60 seconds
+test event_treatments::allocated_tails_use_treated_event_input_and_keep_history_on_cold_seek ... ok
+
+test result: ok. 134 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 68.54s
+
+     Running tests/timing_representation.rs (target/debug/deps/timing_representation-f6ec7460384901fa)
+
+running 1 test
+test compact_timing_matches_the_reference_representation_sample_for_sample ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 46.09s
+
+     Running tests/true_peak.rs (target/debug/deps/true_peak-60b4aeb33513ddfb)
+
+running 7 tests
+test final_flush_catches_intersample_peak_after_the_last_input_block ... ok
+test rejected_admissions_preserve_counts_peaks_and_history ... ok
+test sample_peak_is_a_floor_and_channels_are_measured_independently ... ok
+test silence_and_empty_input_have_no_fabricated_db_value ... ok
+test chunk_partition_and_zero_context_do_not_reset_fir_history ... ok
+test generated_ebu_3341_peak_cases_15_through_19_meet_published_tolerances ... ok
+test generated_ebu_3341_peak_cases_20_through_23_cover_all_decimation_offsets ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.15s
+
+     Running unittests src/lib.rs (target/debug/deps/deadpan_core-1a9b6647343f54bd)
+
+running 412 tests
+test audio_mapping::tests::selection_translates_without_changing_full_span_rate ... ok
+test audio_gain::numeric::tests::full_width_owner_coordinates_need_more_than_five_limbs ... ok
+test audio_gain::numeric::tests::six_limb_carries_borrows_and_rejection_are_checked ... ok
+test audio_reference::preflight::tests::malformed_nested_values_never_reach_the_materializing_typed_parser ... ok
+test audio_mapping::tests::empty_selection_retains_full_mapping_and_exact_offset ... ok
+test audio_mapping::tests::typed_and_wire_selection_validation_reject_the_same_invalid_intervals ... ok
+test audio_mapping::tests::selected_wire_is_closed_and_requires_every_boundary ... ok
+test audio_reference::scoped_capture_tests::complete_wire_count_equals_serialization ... ok
+test audio_binding::wire_bound_tests::structural_wire_bound_exceeds_worst_case_serialization ... ok
+test audio_binding_lifecycle::tests::composite_capture_keeps_compact_default_play_and_gap_branch_scopes ... ok
+test audio_binding_lifecycle::tests::composite_capture_moves_preserve_output_but_keeps_intrinsic_recipes_on_input_clock ... ok
+test audio_binding_lifecycle::tests::removing_the_last_owner_removes_its_tables_in_the_same_reversible_patch ... ok
+test audio_binding_lifecycle::tests::occurrence_isolation_retains_the_selected_old_clock_and_undo_restores_state ... ok
+test audio_binding_lifecycle::tests::pruning_keeps_a_table_still_referenced_only_by_a_phase_term ... ok
+test audio_binding_lifecycle::tests::split_copies_live_scope_and_phase_arguments_but_keeps_historical_aliases ... ok
+test caption::tests::captions_show_inside_their_range_from_their_reveal_play ... ok
+test caption::tests::validation_bounds_text_and_orders_disjoint_ranges_per_placement ... ok
+test audio_binding_lifecycle::tests::composite_capture_refreshes_bound_placements_without_changing_owned_phase ... ok
+test command::binding_patch_tests::binding_patch_rejects_stale_before_state_without_mutation ... ok
+test boundary_replacement::tests::constructor_and_wire_refuse_empty_duplicate_noncanonical_and_nested_entries ... ok
+test command::binding_patch_tests::changed_binding_owners_exclude_untouched_values_and_clocks ... ok
+test boundary_replacement::tests::exact_fallback_marker_is_allowed_but_mismatched_provider_or_target_refuses ... ok
+test boundary_replacement::tests::owned_gap_and_default_can_be_replaced_together ... ok
+test command::binding_patch_tests::changed_step_only_clock_marks_its_owner_as_changed ... ok
+test command::binding_patch_tests::binding_patch_records_only_changed_entries_and_roundtrips ... ok
+test boundary_replacement::tests::private_inner_branch_under_shared_outer_play_still_refuses ... ok
+test boundary_replacement::tests::literal_defaults_are_valid_but_shared_play_addresses_refuse ... ok
+test command::patch_wire::tests::an_inverse_other_than_the_reverse_is_kept ... ok
+test command::patch_wire::tests::malformed_splices_are_refused ... ok
+test compound::tests::late_error_leaves_document_and_frozen_values_unchanged ... ok
+test compound::tests::existing_mark_updates_are_allowed_but_deleted_marks_cannot_be_reallocated ... ok
+test boundary_replacement::tests::ordinary_insertion_preserves_allocation_timing_and_sound_transforms_once ... ok
+test compound::tests::macro_inputs_are_frozen_values_but_cannot_be_captured_or_pasted ... ok
+test compound::tests::capture_must_match_current_stage_and_cut_exact_selection ... ok
+test compound::tests::revision_reuse_and_retired_node_identity_are_rejected ... ok
+test compound::tests::visitor_rejection_returns_no_completed_transaction ... ok
+test compound::tests::paste_requires_exact_selected_payload_and_frozen_absence_is_not_a_value ... ok
+test compound::tests::original_capture_and_paste_bind_qualified_video_and_allow_video_without_audio ... ok
+test cutaway::tests::a_prefix_moves_the_range_with_the_host_content ... ok
+test cutaway::tests::bounce_mirrors_exact_source_ticks_at_a_non_unity_tick_rate ... ok
+test cutaway::tests::pictures_play_at_their_natural_rate_then_follow_the_fit ... ok
+test cutaway::tests::the_wire_omits_the_default_fit ... ok
+test document::serialization_tests::canonical_json_limit_counts_escaping_utf8_and_terminal_newline ... ok
+test compound::tests::yank_only_visits_no_leaf_and_named_write_sets_unnamed ... ok
+test audio_reference::preflight::tests::duplicate_closed_record_fields_never_reach_the_materializing_typed_parser ... ok
+test equalizer::tests::exact_recipe_round_trips_and_neutral_is_a_distinct_bypass ... ok
+test equalizer::tests::typed_and_wire_ingress_reject_invalid_frequency_gain_and_reversed_cuts ... ok
+test exact::tests::cross_cancellation_and_wire_format_preserve_wide_values ... ok
+test exact::tests::exact_mapping_and_negative_boundaries_do_not_round_intermediate_frames ... ok
+test exact::tests::ratio_comparison_keeps_extreme_signed_values_and_adjacent_fractions_exact ... ok
+test command::patch_wire::tests::compact_and_complete_forms_decode_to_the_same_transaction ... ok
+test framing::numeric::tests::comparison_handles_signed_extremes_without_products ... ok
+test audio_binding_lifecycle::tests::composite_capture_rejects_aggregate_lexical_expansion_without_mutation ... ok
+test framing::numeric::tests::wide_carries_borrows_and_failures ... ok
+test boundary_replacement::tests::exclusive_scopes_keep_direct_and_compound_isolation_proofs_and_inverse ... ok
+test framing::preflight::tests::scanner_rejects_the_extra_segment_before_reading_its_malformed_body ... ok
+test generated::extension::tests::extension_core_accepts_general_counts_and_rates_without_provider_rules ... ok
+test generated::extension::tests::extension_nine_plus_eight_to_twelve_clamps_generated_edges ... ok
+test generated::extension::tests::extension_one_output_uses_center_and_equal_count_is_identity ... ok
+test generated::extension::tests::extension_sampling_checks_counts_indices_and_maximum_arithmetic ... ok
+test document::validated_tests::reused_proofs_still_reject_every_changed_owner_and_table ... ok
+test compound::tests::repeat_cut_paste_uses_intermediate_capture_and_one_exact_inverse ... ok
+test generated::extension::tests::extension_sampling_wire_is_versioned_strict_and_revalidated ... ok
+test document::validated_tests::scoped_binding_validation_rechecks_owners_of_a_replaced_timing_table ... ok
+test exact::tests::ratio_comparison_matches_independent_widened_cross_products ... ok
+test group_selection::tests::exact_pools_labels_and_scope_refuse_before_mutation ... ok
+test group_selection::tests::exact_child_and_range_include_empty_structure_only_when_selected ... ok
+test group_selection::tests::exact_forest_groups_empty_endpoints_including_an_all_empty_span ... ok
+test compound::tests::streaming_wire_rejects_excess_before_reading_its_payload_and_rejects_duplicates_and_depth ... ok
+test group_selection::tests::ungroup_reports_removed_mark_host_and_refuses_non_neutral_owners ... ok
+test hdr::tests::mastering_volume_bounds ... ok
+test boundary_replacement::tests::compound_keeps_leaf_revisions_frozen_capture_and_register_writes ... ok
+test insert_time::occurrence::tests::occurrence_pause_is_compact_at_maximum_repeat_count_and_rejects_bad_pools ... ok
+test generated::extension::tests::extension_sampling_matches_independent_center_oracle_and_never_reads_context ... ok
+test group_selection::tests::added_depth_and_retained_identity_reuse_are_rejected_atomically ... ok
+test group_selection::tests::root_sound_routes_and_permissions_survive_whole_and_partial_grouping ... ok
+test insert_time::occurrence::tests::occurrence_pause_preserves_gap_permissions_without_granting_the_new_hold ... ok
+test group_selection::tests::partial_group_preserves_logical_mark_fragments_at_the_same_root_boundary ... ok
+test insert_time::occurrence::tests::scoped::scoped_pause_rejects_foreign_boundaries_instances_and_retimed_ancestors ... ok
+test legacy_audio_binding_v20::tests::projection_rejects_gap_intent_and_decoder_retains_duplicate_detection ... ok
+test legacy_audio_binding_v36::endpoint_tests::old_projection_rejects_endpoint_on_both_patch_sides ... ok
+test legacy_audio_mapping_v35::tests::positive_selected_support_round_trips_but_empty_support_cannot_project ... ok
+test marks::tests::binding_rebuild_deduplicates_complete_identity_and_keeps_first_primary ... ok
+test legacy_audio_binding_v36::endpoint_tests::old_binding_ingress_rejects_even_default_or_escaped_anchor_fields ... ok
+test occurrence::tests::billions_of_plays_stay_compact_and_removed_ids_do_not_return ... ok
+test boundary_replacement::tests::typed_count_bound_precedes_entry_validation ... ok
+test occurrence::tests::high_ordinals_after_small_prefix_do_not_overflow_position ... ok
+test occurrence::tests::reorder_and_insertion_preserve_identity_and_round_trip ... ok
+test group_selection::tests::partial_composite_group_retains_picture_owner_clocks_and_sample_boundaries ... ok
+test output_color::tests::tone_map_peak_prefers_mastering_and_ignores_low_content_light ... ok
+test insert_time::occurrence::tests::occurrence_pause_reuses_owned_branches_on_later_insertions ... ok
+test picture_context::preflight::tests::only_actual_recipe_paths_are_inspected ... ok
+test picture_context::tests::bounded_deserialization_rejects_per_context_overflows ... ok
+test picture_context::tests::capture_compacts_identity_clips_and_merges_same_size_fit_without_quantizing ... ok
+test picture_context::tests::capture_is_atomic_and_keeps_nontrivial_clip_order ... ok
+test picture_context::tests::merge_retains_implicit_fill_clip_before_new_pose_and_reuses_prior_clip ... ok
+test repeat_escalation::tests::decimal_steps_round_once_to_the_grid ... ok
+test repeat_escalation::tests::every_play_must_stay_in_range ... ok
+test repeat_escalation::tests::multiplying_scale_compounds ... ok
+test repeat_escalation::tests::plays_add_gain_and_scale_and_the_first_play_is_unchanged ... ok
+test repeat_escalation::tests::the_wire_omits_defaults ... ok
+test repeat_layout::tests::bounded_lookup_enforces_exact_comparison_allowance_on_sparse_runs ... ok
+test document::validated_tests::reused_proofs_equal_complete_validation_through_edits ... ok
+test repeat_selection::tests::count_shrink_removes_only_permissions_for_retired_plays_and_terminal_gaps ... ok
+test repeat_selection::tests::count_setter_preserves_gap_and_sparse_survivors_and_activates_old_terminal_gap ... ok
+test repeat_selection::tests::exact_child_identity_and_range_body_are_distinct_even_at_shared_empty_boundaries ... ok
+test repeat_selection::tests::exact_forest_repeat_retains_empty_endpoints_in_its_body ... ok
+test repeat_selection::tests::first_play_marks_keep_concrete_occurrences_and_suffix_resume_is_captured_once ... ok
+test repeat_selection::tests::gap_setter_retires_only_replaced_default_gap_permissions_and_refuses_invalid_targets ... ok
+test repeat_selection::tests::invalid_identity_context_counts_and_wire_are_atomic ... ok
+test insert_time::occurrence::tests::occurrence_pause_keeps_content_marks_in_selected_and_later_plays_and_gaps ... ok
+test repeat_selection::tests::nested_sequence_terminal_repeat_moves_ancestor_suffix_and_refuses_repeated_scope ... ok
+test framing::preflight::tests::scanner_counts_aggregate_controls_before_materializing_node_values ... ok
+test repeat_selection::tests::partial_composite_ranges_keep_complete_contexts_and_compact_nested_iterations ... ok
+test scoped_edit::tests::default_edits_preserve_existing_overrides_and_dormant_defaults_have_no_fake_instance ... ok
+test repeat_selection::tests::root_sound_routes_and_concrete_allowances_follow_only_the_retained_first_play ... ok
+test scoped_edit::tests::exact_noop_never_isolates_or_authors_a_revision ... ok
+test scoped_edit::tests::compound_scoped_steps_have_one_inverse_and_reject_identity_reuse_or_late_failure ... ok
+test scoped_edit::tests::explicit_final_gap_is_editable_but_is_not_a_default_or_a_project_occurrence ... ok
+test scoped_edit::tests::invalid_paths_and_untrusted_pools_fail_before_any_isolation ... ok
+test scoped_edit::tests::fresh_mark_pools_and_presentation_mapping_are_revision_bound ... ok
+test scoped_edit::tests::late_value_validation_failure_leaves_isolation_and_owned_marks_unpublished ... ok
+test scoped_edit::tests::nested_mark_counts_are_exact_and_concrete_marks_follow_wildcard_outer_defaults ... ok
+test scoped_edit::tests::each_default_play_combination_isolates_only_its_declared_scope_and_maps_presentations ... ok
+test repeat_selection::tests::gap_setter_shortens_later_gaps_with_independent_holds_and_moves_the_suffix_once ... ok
+test scoped_edit::tests::proof_tests::default_ancestor_maps_the_same_definition_in_its_concrete_plays ... ok
+test scoped_edit::tests::proof_tests::direct_and_default_value_edits_have_empty_proofs_but_noops_refuse ... ok
+test scoped_edit::tests::proof_tests::direct_reversion_rejects_other_picture_providers_without_an_edit ... ok
+test scoped_edit::tests::permissions_follow_each_matching_concrete_play_and_hold_audio_retires_only_changed_issuers ... ok
+test scoped_edit::tests::proof_tests::compound_leaf_isolations_compose_and_reverse_as_one_history_entry ... ok
+test scoped_edit::tests::proof_tests::invalid_scoped_acceptance_cannot_admit_assets_or_isolate ... ok
+test scoped_edit::tests::proof_tests::exact_command_and_full_result_are_part_of_mapping_admission ... ok
+test scoped_edit::tests::proof_tests::first_play_attachment_isolation_also_carries_unrelated_pending_descendants ... ok
+test scoped_edit::tests::proof_tests::later_concrete_edit_follows_an_earlier_shared_default_isolation ... ok
+test scoped_edit::tests::proof_tests::nested_isolation_maps_every_descendant_and_reverses_new_captures ... ok
+test scoped_edit::tests::proof_tests::many_targets_retain_sequential_maps_and_inverse_order ... ok
+test scoped_edit::tests::proof_tests::occurrence_commands_capture_their_actual_isolation_too ... ok
+test scoped_edit::tests::proof_tests::scoped_reversion_rejects_other_picture_providers_before_identity_allocation ... ok
+test scoped_edit::tests::proof_tests::scoped_fallback_reassertion_records_intent_without_manufacturing_overrides ... ok
+test scoped_edit::tests::proof_tests::scoped_generated_acceptance_preserves_the_recipe_and_other_plays ... ok
+test scoped_edit::tests::proof_tests::selected_play_never_remaps_default_or_other_shared_plays ... ok
+test marks::tests::mark_count_limit_applies_to_retained_unresolved_records_too ... ok
+test scoped_edit::tests::proof_tests::scoped_reversion_restores_the_captured_recipe_only_in_selected_plays ... ok
+test scoped_edit::tests::proof_tests::serialized_mapping_forgery_never_obtains_a_validated_capability ... ok
+test scoped_edit::tests::requirements_tests::allocation_query_avoids_live_lineage_origins ... ok
+test scoped_edit::tests::requirements_tests::allocation_query_avoids_live_node_names ... ok
+test scoped_edit::tests::requirements_tests::allocation_query_does_not_resolve_private_node_names ... ok
+test scoped_edit::tests::requirements_tests::allocation_query_does_not_resolve_private_repeat_names ... ok
+test scoped_edit::tests::requirements_tests::allocation_query_avoids_mark_names ... ok
+test scoped_edit::tests::requirements_tests::allocation_query_keeps_large_repeat_orders_compact ... ok
+test scoped_edit::tests::requirements_tests::allocation_query_avoids_retained_timing_node_names ... ok
+test scoped_edit::tests::requirements_tests::allocation_query_avoids_retained_timing_lineage_origins ... ok
+test scoped_edit::tests::scoped_wire_rejects_unknown_fields_temporal_edits_and_excessive_ancestry ... ok
+test scoped_edit::tests::scoped_framing_and_edges_preserve_other_values_and_reject_incompatible_payloads ... ok
+test semantic::gags::tests::every_recipe_label_parses_back_to_exactly_its_recipe ... ok
+test semantic::gags::tests::recipes_expand_to_ordinary_instructions_under_a_pinning_group ... ok
+test semantic::gags::tests::seeded_variation_resolves_fixed_bounded_gaps_and_pins_its_seed ... ok
+test semantic::planner::tests::beat_objects::beat_objects_resolve_the_selected_or_right_hand_beat_with_one_picture_range ... ok
+test scoped_edit::tests::retained_clocks_and_fractional_retime_positions_survive_nested_gain_isolation ... ok
+test semantic::planner::tests::beat_objects::first_play_attachment_command_requires_exact_fresh_nodes_and_keeps_mark_identity ... ok
+test semantic::planner::tests::beat_objects::cutting_either_beat_object_removes_the_same_time_and_owned_attachments ... ok
+test semantic::planner::tests::beat_objects::rib_keeps_attachments_on_the_first_play_while_rab_repeats_them ... ok
+test semantic::planner::tests::beat_objects::rib_and_rab_keep_their_distinct_sound_attachment_ownership ... ok
+test semantic::planner::tests::beat_objects::rib_moves_mark_only_hosts_and_keeps_every_logical_fragment ... ok
+test semantic::planner::tests::beat_objects::rib_without_attachments_matches_rab_and_dot_keeps_the_object_kind ... ok
+test semantic::planner::tests::beat_objects::rib_moves_nested_default_override_and_gap_attachments_together ... ok
+test audio_gain::numeric::tests::fraction_has_independent_integer_round_even_oracle ... ok
+test semantic::planner::tests::content::clamped_motion_selects_last_empty_child_at_terminal_and_all_empty_boundaries ... ok
+test semantic::planner::tests::beat_objects::visual_beat_objects_finish_and_replace_their_exact_beat ... ok
+test scoped_edit::tests::requirements_tests::allocation_query_skips_dense_names_at_each_stage ... ok
+test semantic::planner::tests::content::empty_sequence_accepts_paste_without_selection_but_nonempty_sequence_requires_one ... ok
+test semantic::planner::tests::content::new_content_instructions_are_closed_and_round_trip ... ok
+test semantic::planner::tests::content::original_resolution_failure_after_an_edit_is_atomic ... ok
+test semantic::planner::tests::content::frame_motion_reselects_even_when_clamped_but_yank_never_infers_selection ... ok
+test semantic::planner::tests::beat_objects::yank_takes_attachments_only_with_ab_and_both_copies_share_their_picture_time ... ok
+test semantic::planner::tests::content::original_resolver_observes_each_staged_document_and_core_checks_register_type_binding ... ok
+test semantic::planner::tests::content::yank_only_calls_count_toward_resolved_steps_before_allocation ... ok
+test semantic::planner::tests::content::paste_uses_selected_beat_instead_of_cursor_and_keeps_empty_import_selected ... ok
+test semantic::planner::tests::content::yank_uses_explicit_selected_empty_sibling_and_keeps_cursor_and_revision ... ok
+test semantic::planner::tests::cumulative_document_and_capture_budgets_refuse_before_another_leaf_allocation ... ok
+test semantic::planner::tests::content::yank_and_paste_require_matching_exact_fresh_allocations ... ok
+test semantic::planner::tests::explode::explode_instruction_keeps_selection_time_and_replays_its_exact_command ... ok
+test boundary_replacement::tests::streaming_ingress_keeps_collection_depth_duplicate_and_value_limits ... ok
+test semantic::planner::tests::content::counted_nested_body_freezes_macro_while_yanks_capture_each_staged_paste ... ok
+test semantic::planner::tests::explode::duplicate_instruction_copies_selected_beat_and_visual_range_then_selects_the_copy ... ok
+test semantic::planner::tests::counted_call_freezes_its_body_while_later_calls_read_staged_register_writes ... ok
+test semantic::planner::tests::gag_edit::a_gag_set_refuses_other_recipes_unchanged_values_and_reshaped_parts ... ok
+test semantic::planner::tests::fuel_charges_calls_and_clamped_motions_and_rejects_huge_counts_without_allocating ... ok
+test semantic::planner::tests::fresh_identity_contract_rejects_revision_capture_and_split_reuse ... ok
+test semantic::planner::tests::gag_edit::a_hand_changed_part_refuses_instead_of_being_rebuilt ... ok
+test semantic::planner::tests::gag_edit::named_parameters_change_only_themselves_so_dot_keeps_the_other_gags_values ... ok
+test semantic::planner::tests::gag_edit::setting_a_long_answers_parameters_edits_its_pause_and_creep_and_relabels_it ... ok
+test semantic::planner::tests::group::absent_wrong_kind_visual_and_stale_targets_refuse_without_fallback ... ok
+test semantic::planner::tests::group::group_allocations_are_exact_fresh_and_late_failure_is_atomic ... ok
+test semantic::planner::tests::group::group_wire_labels_and_counted_step_budget_are_bounded ... ok
+test semantic::planner::tests::group::counted_frozen_calls_group_and_ungroup_in_one_transaction ... ok
+test semantic::planner::tests::group::selected_group_uses_exact_child_including_empty_independently_of_cursor ... ok
+test semantic::planner::tests::group::ungroup_selects_promoted_or_following_literal_empty_sibling ... ok
+test semantic::planner::tests::late_failure_cannot_mutate_inputs_or_return_partial_register_writes ... ok
+test semantic::planner::tests::motion_clamps_without_overflowing_an_absolute_end_boundary ... ok
+test semantic::planner::tests::motion_only_handles_empty_scope_and_right_bias_without_allocations ... ok
+test semantic::planner::tests::gag_edit::setting_an_escalators_plays_and_steps_rewrites_its_repeat_and_zero_zoom_removes_the_zoom ... ok
+test semantic::planner::tests::motions_use_shortened_scope_and_cuts_retain_requested_counts_after_clamping ... ok
+test semantic::planner::tests::nested_scope_clamps_absolute_motion_and_preserves_outside_siblings ... ok
+test semantic::planner::tests::group::visual_and_motion_group_resolve_staged_ranges_and_clear_selection ... ok
+test semantic::planner::tests::objects::around_empty_child_cut_chooses_literal_following_empty_sibling ... ok
+test semantic::planner::tests::gag_edit::every_gag_set_stays_within_its_resolved_step_estimate ... ok
+test semantic::planner::tests::gag_edit::setting_one_more_time_changes_its_plays_and_gap_ladder ... ok
+test semantic::planner::tests::objects::empty_contents_are_explicit_and_all_empty_children_remain_real_objects ... ok
+test semantic::planner::tests::objects::extending_object_converts_to_time_but_finished_object_survives_independent_motion ... ok
+test semantic::planner::tests::objects::around_cut_continues_in_outer_scope_and_counted_calls_use_that_new_scope ... ok
+test semantic::planner::tests::objects::empty_inner_object_paste_inserts_at_zero_and_around_replacement_leaves_deleted_scope ... ok
+test semantic::planner::tests::objects::inner_capture_retains_empty_endpoints_and_excludes_parent_effects_while_around_owns_them ... ok
+test semantic::planner::tests::nested_calls_resolve_in_execution_order_and_freeze_each_selected_input ... ok
+test semantic::planner::tests::objects::object_and_time_wire_is_tagged_closed_and_keeps_programs_relative ... ok
+test semantic::planner::tests::objects::late_object_failure_and_wrong_replacement_identity_pool_leave_inputs_unchanged ... ok
+test semantic::planner::tests::objects::objects_choose_explicit_group_then_containing_group_without_cursor_inference ... ok
+test semantic::planner::tests::objects::inner_cut_preserves_inside_or_outside_navigation_and_exact_empty_siblings ... ok
+test semantic::planner::tests::objects::legacy_captures_have_exact_provenance_and_select_object_calls_obey_fuel ... ok
+test semantic::planner::tests::objects::stale_foreign_and_nonordinary_objects_refuse_without_fallback_or_allocation ... ok
+test semantic::planner::tests::objects::original_object_replacement_uses_effective_parent_and_resolves_each_staged_document ... ok
+test semantic::planner::tests::objects::group_and_repeat_objects_select_the_correct_surviving_navigation_owner ... ok
+test semantic::planner::tests::pause::a_caption_lands_on_the_selected_beat_after_its_delay_in_one_leaf ... ok
+test semantic::planner::tests::pause::a_black_pause_needs_no_picture_resolver_and_keeps_its_wire_form ... ok
+test semantic::planner::tests::objects::zero_duration_edited_object_replacement_removes_old_contents_but_time_paste_remains_seam ... ok
+test semantic::planner::tests::pause::a_tail_on_a_pause_whose_picture_cannot_be_resolved_still_applies ... ok
+test semantic::planner::tests::pause::a_pause_inside_a_beat_splits_it_and_milliseconds_round_once ... ok
+test semantic::planner::tests::pause::a_tail_sets_the_selected_hold_from_its_start_or_inserts_a_tail_pause ... ok
+test semantic::planner::tests::pause::ai_pause_refuses_non_silent_or_non_deterministic_host_recipes ... ok
+test semantic::planner::tests::pause::audio_changes_set_trim_steps_and_saturation_on_the_selected_beat_in_order ... ok
+test semantic::planner::tests::objects::staged_inner_yank_and_object_paste_replace_exact_children_in_one_transaction ... ok
+test semantic::planner::tests::pause::ai_pause_matches_ordinary_pause_at_rational_rate_and_retains_allocated_identity ... ok
+test semantic::planner::tests::pause::framing_needs_a_selected_direct_child ... ok
+test semantic::planner::tests::pause::are_we_done_hangs_a_reverb_tail_under_a_reaction_cutaway_in_one_group ... ok
+test semantic::planner::tests::pause::one_more_time_repeats_with_each_gap_shorter_than_the_last ... ok
+test semantic::planner::tests::pause::one_repeat_change_wraps_or_sets_plays_gaps_and_escalation_together ... ok
+test semantic::planner::tests::pause::restating_a_repeats_gaps_spends_no_revision ... ok
+test semantic::planner::tests::pause::nothing_happens_holds_room_tone_then_true_silence_in_one_group ... ok
+test semantic::planner::tests::pause::reverse_and_ping_pong_insert_the_host_provider_with_their_exact_lengths ... ok
+test semantic::planner::tests::pause::the_long_answer_inserts_a_pause_and_creeps_on_it_in_one_transaction ... ok
+test semantic::planner::tests::pause::the_long_answer_gag_is_one_editable_group_pinning_its_recipe ... ok
+test semantic::planner::tests::pause::repeat_gaps_set_the_default_and_refuse_more_gaps_than_plays_allow ... ok
+test semantic::planner::tests::recursion_missing_content_and_depth_limits_refuse ... ok
+test semantic::planner::tests::pause::the_long_answer_refuses_a_pause_hidden_in_a_nested_group ... ok
+test semantic::planner::tests::repeat::an_escalating_repeat_wraps_and_escalates_in_one_transaction ... ok
+test semantic::planner::tests::repeat::counted_calls_keep_requested_repeat_plays_and_motion_clamping ... ok
+test semantic::planner::tests::repeat::repeat_failures_do_not_publish_staged_edits_and_allocations_are_checked ... ok
+test semantic::planner::tests::resolved_edit_limit_is_separate_from_instruction_fuel ... ok
+test semantic::planner::tests::retime::a_caption_over_a_visual_range_lands_on_that_range_of_its_beat ... ok
+test semantic::planner::tests::retime::a_pause_duration_changes_only_the_selected_hold ... ok
+test semantic::planner::tests::repeat::selected_beat_repeat_is_independent_of_cursor_and_wraps_instead_of_setting ... ok
+test semantic::planner::tests::retime::a_split_fragments_play_seams_are_marked_before_their_policy_applies ... ok
+test semantic::planner::tests::retime::a_split_seam_has_no_edge_while_a_cut_between_fragments_marks_both_sides ... ok
+test semantic::planner::tests::retime::gain_steps_over_a_visual_range_adjust_one_envelope_of_that_beat ... ok
+test semantic::planner::tests::retime::mute_and_audio_lag_change_one_beat_without_time ... ok
+test semantic::planner::tests::retime::pitch_keeps_the_speed_or_wraps_at_unity_and_zero_restores_preservation ... ok
+test semantic::planner::tests::retime::speed_wraps_a_beat_then_updates_its_own_retime_from_the_exact_input ... ok
+test semantic::planner::tests::selectors::empty_motion_and_absent_selectors_refuse_before_allocating_without_child_fallback ... ok
+test semantic::planner::tests::retime::sound_edges_set_a_beats_ends_a_repeats_play_seams_or_its_gap_edges ... ok
+test semantic::planner::tests::selectors::explicit_visual_yank_finishes_but_motion_yank_preserves_oriented_selection ... ok
+test semantic::planner::tests::repeat::oriented_visual_and_motion_ranges_repeat_exact_staged_contents ... ok
+test semantic::planner::tests::selectors::typed_selector_wire_is_strict_and_retains_requested_counts ... ok
+test semantic::planner::tests::selectors::typed_selectors_enforce_step_limits_and_exact_child_cut_allocations ... ok
+test semantic::planner::tests::selectors::selected_child_cut_uses_exact_identity_and_zero_split_pool_even_for_empty_children ... ok
+test semantic::planner::tests::semantic_program_wire_is_strict_bounded_and_has_no_capture_provenance ... ok
+test semantic::planner::tests::selectors::typed_selectors_resolve_each_counted_staged_document_and_freeze_called_body ... ok
+test semantic::planner::tests::set_repeat::cutaways_belong_only_to_source_and_hold_beats ... ok
+test semantic::planner::tests::set_repeat::escalation_is_one_reversible_parameter_change_checked_against_play_count ... ok
+test semantic::planner::tests::sequential_cuts_capture_each_staged_document_and_form_one_reversible_compound ... ok
+test semantic::planner::tests::set_repeat::huge_count_stays_compact_and_regrowth_does_not_reuse_retired_play_ids ... ok
+test semantic::planner::tests::pause::occurrence_pause_macro_replays_one_selected_play_and_ai_intent ... ok
+test semantic::planner::tests::set_repeat::setter_checks_allocation_variant_freshness_and_late_failure_atomically ... ok
+test semantic::planner::tests::set_repeat::setter_refuses_visual_absence_wrong_kind_and_stale_selection_before_allocation ... ok
+test semantic::planner::tests::set_repeat::setter_wire_and_counted_step_limits_refuse_without_expanding_work ... ok
+test semantic::planner::tests::set_repeat::setter_uses_selected_repeat_independently_of_cursor_and_retains_surviving_plays ... ok
+test semantic::planner::tests::set_repeat::unchanged_count_still_uses_fresh_leaf_revisions_and_bounded_counted_calls ... ok
+test semantic::gags::tests::adversarial_gag_recipes_and_labels ... ok
+test semantic::planner::tests::speech::around_words_select_visual_time_with_handles ... ok
+test semantic::planner::tests::speech::speech_is_requested_only_when_needed_and_explains_its_absence ... ok
+test semantic::planner::tests::speech::word_and_sentence_motions_follow_supplied_speech ... ok
+test semantic::planner::tests::speech::pause_motions_and_objects_resolve_without_words ... ok
+test semantic::planner::tests::visual::beat_and_scope_motions_match_explicit_empty_siblings_and_boundary_fallback ... ok
+test semantic::planner::tests::speech::word_objects_cut_exact_ranges_and_speech_follows_the_staged_edit ... ok
+test semantic::planner::tests::visual::bleep_resolves_the_range_pictures_before_cutting_and_refills_its_time ... ok
+test semantic::planner::tests::visual::empty_finished_and_absent_selections_have_distinct_behavior ... ok
+test semantic::planner::tests::set_repeat::wrap_then_set_then_move_resolves_each_new_staged_repeat_in_one_compound ... ok
+test semantic::planner::tests::set_repeat::setter_matches_ordinary_retained_clock_edit_in_nested_scope_with_root_sound ... ok
+test semantic::planner::tests::visual::invalid_visual_context_is_rejected_before_resolution_or_allocation ... ok
+test semantic::planner::tests::visual::range_steps_and_selection_only_instructions_obey_separate_limits ... ok
+test semantic::planner::tests::visual::replacement_refuses_empty_copies_and_wrong_register_types_without_fallback ... ok
+test semantic::planner::tests::visual::counted_range_body_freezes_self_overwrite_and_late_failure_is_atomic ... ok
+test semantic::planner::tests::visual::original_replacement_resolves_the_current_document_and_retains_exact_source ... ok
+test semantic::planner::tests::visual::lift_cuts_the_range_and_refills_its_time_with_a_silent_black_pause ... ok
+test semantic::planner::tests::visual::reverse_selection_yank_finishes_without_moving_and_remains_bank_only ... ok
+test semantic::planner::tests::visual::visual_wire_is_closed_and_keeps_oriented_context_explicit ... ok
+test semantic::speech::tests::around_objects_take_half_of_each_pause_capped_at_eighty_milliseconds ... ok
+test semantic::speech::tests::inner_objects_are_exact_and_pauses_hold_no_word ... ok
+test semantic::speech::tests::pause_motions_go_to_pause_starts_and_report_when_there_are_none ... ok
+test semantic::speech::tests::pause_objects_select_the_pause_with_handles_of_adjoining_speech ... ok
+test semantic::speech::tests::replayed_sentences_are_separate_and_scopes_clip_runs ... ok
+test semantic::speech::tests::sentence_motions_use_sentence_starts ... ok
+test semantic::speech::tests::shot_motions_and_objects_follow_shot_occurrences ... ok
+test semantic::speech::tests::timelines_reject_empty_overlapping_and_unsorted_runs ... ok
+test semantic::speech::tests::word_motions_step_between_starts_and_ends_and_clamp_to_the_scope ... ok
+test semantic::speech::tests::words_and_pauses_explain_their_own_absence ... ok
+test semantic::tests::arithmetic_overflow_refuses_instead_of_turning_into_a_clamped_selection ... ok
+test semantic::tests::empty_missing_and_nonsequence_scopes_refuse_without_fallback ... ok
+test semantic::tests::moving_the_cursor_resolves_again_without_changing_the_requested_count ... ok
+test semantic::tests::partial_composite_endpoint_refuses_but_a_complete_composite_can_be_cut ... ok
+test semantic::tests::nested_scope_uses_absolute_bounds_and_stops_before_its_siblings ... ok
+test semantic::tests::repeat_retime_and_override_ancestry_require_explicit_occurrence_resolution ... ok
+test semantic::tests::wire_format_retains_only_a_strict_positive_u32_count ... ok
+test semantic::tests::resolution_uses_the_supplied_snapshot_and_does_not_grant_revision_authority ... ok
+test semantic::planner::tests::visual::replacements_use_exact_disjoint_pools_and_seam_pastes_require_zero_splits ... ok
+test sound_clock::tests::edits::direct_occurrence_clone_cannot_drop_retained_clocks ... ok
+test sound_clock::tests::compact_repeat_overrides_and_preserve_processing_are_compared_without_play_expansion ... ok
+test sound_clock::tests::edits::changed_processing_subtree_refuses_and_partial_deletion_keeps_the_sound_alias ... ok
+test sound_clock::tests::edits::edits_after_owner_need_no_journal_and_whole_deletion_retires_exact_owner ... ok
+test sound_clock::tests::edits::grouping::selected_groups_still_refuse_partial_sound_owners_with_or_without_clocks ... ok
+test sound_clock::tests::edits::grouping::sound_clock_scope_interiors_and_removal_refuse_atomically ... ok
+test sound_clock::tests::edits::grouping::ungroup_never_discards_a_sequences_own_sounds_with_or_without_clocks ... ok
+test sound_clock::tests::edits::explicit_source_and_range_commands_transport_after_unsounded_endpoint_splits ... ok
+test sound_clock::tests::edits::late_compound_failure_does_not_publish_first_transport ... ok
+test sound_clock::tests::edits::grouping::unrelated_and_empty_selected_groups_preserve_existing_sound_clocks ... ok
+test semantic::planner::tests::visual::staged_visual_yank_replace_cut_and_paste_keep_composites_and_one_exact_inverse ... ok
+test sound_clock::tests::edits::metadata_and_rename_preserve_journals_recipe_replacement_retires_only_one ... ok
+test sound_clock::tests::edits::reordering_equal_shaped_siblings_cannot_reassign_an_unclocked_owner ... ok
+test sound_clock::tests::edits::prefix_insertion_deletion_and_moves_keep_chronology_and_exact_inverse ... ok
+test sound_clock::tests::edits::ordinary_whole_owner_paste_merges_imported_events_and_saved_clocks ... ok
+test sound_clock::tests::edits::repeats::an_edit_after_a_repeated_sound_does_not_consume_another_clock ... ok
+test sound_clock::tests::edits::repeats::a_sound_on_a_dormant_final_gap_is_born_only_when_that_gap_activates ... ok
+test sound_clock::tests::edits::repeats::first_play_isolation_moves_retained_sounds_without_losing_their_history ... ok
+test sound_clock::tests::edits::repeats::repeat_owned_sound_refuses_a_changed_processing_extent_atomically ... ok
+test sound_clock::tests::edits::grouping::sound_clocks_survive_direct_and_selected_groups_without_a_new_clock ... ok
+test sound_clock::tests::edits::repeats::split_owners_with_preexisting_external_repeat_ancestry_keep_sound_recipes ... ok
+test sound_clock::tests::edits::retained_clock_slice_wire_roundtrips_and_rejects_duplicate_history ... ok
+test sound_clock::tests::edits::reused_capture_identity_and_wrong_allocation_refuse ... ok
+test sound_clock::tests::edits::split_sound_limit_failure_is_atomic ... ok
+test semantic::planner::tests::selectors::motion_selectors_match_navigation_and_preserve_yank_context_in_nested_scopes ... ok
+test sound_clock::tests::journal_and_relation_wire_are_strict_and_bounded ... ok
+test sound_clock::tests::edits::repeats::partially_repeating_a_sound_owner_keeps_fragments_and_exact_clock_births ... ok
+test sound_clock::tests::physical_binding_admission_does_not_accept_sequence_owner_clocks ... ok
+test sound_clock::tests::edits::successive_interior_pauses_restore_every_sound_copy_and_narrow_old_scopes ... ok
+test sound_clock::tests::missing_addresses_roots_and_timing_references_refuse ... ok
+test sound_clock::tests::pruning_tracks_exact_event_addresses_and_shared_physical_clocks ... ok
+test sound_clock::tests::processing_comparison_ignores_policy_but_rejects_topology_and_duration_changes ... ok
+test sound_events::beat_sound_tests::beat_sound_guard_does_not_change_root_only_ripple_admission ... ok
+test sound_clock::tests::edits::repeats::repeat_wrap_count_gap_and_regrowth_keep_exact_stable_clock_births ... ok
+test sound_clock::tests::source_primary_placement_is_not_an_independent_sound_clock ... ok
+test sound_events::beat_sound_tests::beat_sound_set_roundtrips_and_patch_inverse_restores_exact_recipe ... ok
+test sound_events::beat_sound_tests::owner_copy_preserves_local_id_and_independent_source_recipe ... ok
+test sound_events::cut_tests::a_cut_ends_the_sound_at_the_exact_frame_boundary_with_a_hard_edge ... ok
+test sound_events::beat_sound_tests::malformed_source_is_rejected_and_timing_edit_is_atomic ... ok
+test sound_routing::tests::exhausted_physical_sample_does_not_resurrect_as_sampleless_intent ... ok
+test sound_clock::tests::sound_only_clocks_roundtrip_and_retain_distinct_equal_layouts ... ok
+test sound_routing::tests::initially_sampleless_intent_survives_only_kept_logical_support ... ok
+test sound_routing::tests::identity_capture_restores_exact_objects_with_or_without_prior_routes ... ok
+test sound_routing::tests::nonidentity_same_duration_removes_only_exhausted_event_and_allowances ... ok
+test source_edit_window::tests::exact_window_is_positive_bounded_and_strict_at_serde_ingress ... ok
+test sound_routing::tests::one_append_keeps_prior_recipe_grid_policies_and_exact_qualified_recipe ... ok
+test source_edit_window::tests::prefix_translation_is_exact_and_overflow_leaves_original_usable ... ok
+test source_index::tests::exact_spans_require_valid_clocks_extent_and_measured_coverage ... ok
+test source_index::tests::fractional_selection_preserves_half_open_vfr_endpoint_holds ... ok
+test source_index::tests::malformed_presentation_and_seek_metadata_are_rejected ... ok
+test source_index::tests::selected_span_endpoints_hold_only_intersecting_presentation_intervals ... ok
+test source_index::tests::selected_span_requires_matching_clocks_and_complete_measured_coverage ... ok
+test source_index::tests::vfr_lookup_uses_pts_preserves_negative_origin_and_has_explicit_endpoints ... ok
+test source_mapping::tests::placement_wire_requires_every_field_and_rejects_unknown_even_null_fields ... ok
+test source_trim_edit::tests::temporary_copies_must_fit_before_consumed_neighbors_are_removed ... ok
+test source_trim_geometry::tests::wrapper_budget_admits_exact_capacity_and_rejects_allocation_overflow ... ok
+test tail_sends::tests::changing_other_treatments_keeps_sends_and_removing_a_send_keeps_stages ... ok
+test tail_sends::tests::continuous_returns_are_distinct_reversible_and_survive_other_treatments ... ok
+test tail_sends::tests::wire_is_closed_and_levels_are_exact_and_bounded ... ok
+test target::tests::an_unrepresentable_interpolation_is_unavailable_not_a_held_region ... ok
+test sound_events::beat_sound_tests::empty_owner_and_duplicate_sound_maps_reject_before_authoring ... ok
+test target::tests::evaluated_confidence_follows_the_same_interpolation_and_correction ... ok
+test target::tests::invalid_targets_are_refused ... ok
+test target::tests::moving_samples_interpolate_but_never_across_loss_state_or_correction ... ok
+test target::tests::provenance_is_optional_enumerated_bounded_and_round_trips ... ok
+test target::tests::regions_follow_samples_and_corrections_in_source_time ... ok
+test target::tests::set_and_delete_target_are_reversible_edits_without_picture_time ... ok
+test target::tests::copying_a_followed_beat_carries_its_target_to_a_destination_without_it ... ok
+test time::tests::duration_arithmetic_checks_each_overflow_path ... ok
+test framing::numeric::tests::fraction_matches_independent_small_integer_division ... ok
+test source_edit_window::tests::prefix_composition_retains_fractional_width ... ok
+test time::tests::half_open_ranges_reject_reversal_and_duration_overflow ... ok
+test time::tests::rates_and_time_bases_are_positive_and_normalized ... ok
+test time::tests::repeats_count_total_plays_and_have_no_trailing_gap ... ok
+test time::tests::sample_boundaries_report_overflow_without_restricting_signed_positions ... ok
+test time::tests::boundaries_are_monotonic_and_symmetric ... ok
+test time::tests::ties_round_to_even_on_both_sides_of_zero ... ok
+test time::tests::equivalent_rational_rates_produce_identical_boundaries ... ok
+test video_mapping::tests::existing_mappings_keep_their_entire_selected_source_span ... ok
+test video_mapping::tests::selected_picture_window_projects_exact_endpoints_without_refitting_the_source ... ok
+test video_mapping::tests::typed_and_wire_picture_windows_reject_invalid_and_unbounded_selections ... ok
+test video_mapping::tests::selected_picture_wire_is_closed_and_requires_every_field ... ok
+test time::tests::ten_thousand_single_frame_edits_have_no_fractional_rate_drift ... ok
+test audio_reference::scoped_capture_property::scoped_capture_matches_the_complete_capture_at_ten_thousand_children ... ok
+test time::tests::partition_boundaries_telescope ... ok
+test sound_clock::tests::edits::repeats::split_repeat_aliases_preserve_historical_cohorts_and_later_births ... ok
+test picture_context::preflight::tests::aggregate_bound_includes_gaps_and_decodes_escaped_recipe_keys ... ok
+test sound_routing::tests::capacity_failure_and_duration_mismatch_leave_original_capture_untouched ... ok
+test audio_reference::scoped_capture_property::scoped_capture_slices_like_the_complete_capture_on_random_documents ... ok
+test occurrence_edit::tests::isolation_rejects_mark_and_node_growth_at_document_limits ... ok
+test scoped_edit::tests::isolation_checks_cumulative_growth_and_never_expands_repeat_count ... ok
+test insert_time::occurrence::tests::occurrence_pause_all_play_and_gap_boundaries_are_one_reversible_frame ... ok
+test occurrence::tests::compact_moves_match_an_expanded_identity_model ... ok
+test compound::tests::nested_historical_and_oversized_programs_reject_before_execution ... ok
+test insert_time::occurrence::tests::scoped::scoped_pause_owns_both_edges_of_the_named_play_and_nested_child ... ok
+test boundary_replacement::tests::complete_wrapper_budget_applies_to_native_typed_input ... ok
+test compound::tests::canonical_size_limit_includes_the_complete_compound_command ... ok
+test semantic::planner::tests::objects::original_object_replacement_is_admitted_at_the_document_node_limit ... ok
+
+test result: ok. 412 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 14.02s
+
+     Running tests/adversarial.rs (target/debug/deps/adversarial-86cd3dece0805b87)
+
+running 6 tests
+test adversarial_macro_programs_reject_hostile_json ... ok
+test adversarial_project_documents_reject_hostile_json ... ok
+test adversarial_frozen_audio_contexts_and_layouts_reject_hostile_json ... ok
+test adversarial_command_requests_are_atomic_and_reversible_under_mutation ... ok
+test adversarial_edited_slices_and_registers_reject_hostile_json ... ok
+test adversarial_deep_cyclic_and_shared_structures_fail_cleanly ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.82s
+
+     Running tests/allocation_projection.rs (target/debug/deps/allocation_projection-31ede61ff19845f9)
+
+running 8 tests
+test empty_root_allocation_is_none ... ok
+test follow_speed_keeps_signed_fractional_origin_and_physical_local_allocation ... ok
+test opaque_preserve_requires_its_input_clock_or_its_output_occurrence ... ok
+test nested_intrinsic_partitions_clip_only_inside_the_explicit_definition_root ... ok
+test billion_play_sparse_projection_charges_exact_compact_work ... ok
+test nested_real_gaps_keep_local_duration_and_hidden_gaps_are_not_endpoints ... ok
+test fractional_gap_allocation_and_stable_gap_identity_survive_reordering ... ok
+test repeated_sources_and_holds_have_clipped_full_and_hidden_allocations ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/anchors.rs (target/debug/deps/anchors-0242ec5a7c424061)
+
+running 36 tests
+test dormant_source_audio_has_no_resolvable_source_boundary ... ok
+test endpoint_holding_does_not_rebind_video_anchors_outside_the_beat ... ok
+test location::descent_retains_every_owner_and_fractional_clock_without_rounding ... ok
+test billions_of_plays_and_unused_overflowing_gap_do_not_expand ... ok
+test location::stale_foreign_outside_and_overflow_queries_fail_without_mutation ... ok
+test location::sequence_bias_skips_empty_children_and_outward_edges_have_no_provider ... ok
+test location::billion_play_lookup_keeps_stable_reordered_overrides_and_a_shared_work_budget ... ok
+test location::nested_repeats_keep_outer_ownership_for_implicit_and_explicit_gap_branches ... ok
+test location::transparent_split_still_reports_full_retained_owner_clocks ... ok
+test natural_video_mapping_keeps_exact_source_time_and_independent_audio ... ok
+test nested_occurrences_require_exact_complete_order_and_scope ... ok
+test nested_retime_boundaries_round_once_and_reject_cropped_content ... ok
+test audio_offsets_use_mix_clock_and_are_not_silently_clamped ... ok
+test location::crop_edges_choose_only_visible_content_and_keep_gap_local_clock_separate ... ok
+test placement_boundaries_and_combined_audio_arithmetic_reject_atomically ... ok
+test revision_guards_pinned_boundaries_and_quantized_ranges_are_explicit ... ok
+test natural_audio_duration_is_independent_of_picture_and_preserves_alignment ... ok
+test exact_audio_duration_composes_through_repeat_and_retime_without_rounding ... ok
+test audio_placement_isolates_one_play_and_retains_source_marks_through_retimes ... ok
+test occurrences_follow_stable_plays_and_groups_but_never_choose_a_play ... ok
+test audio_mapping_edits_keep_source_marks_fixed_and_isolate_one_repeat_play ... ok
+test independent_stream_placements_preserve_exact_anchors_offsets_and_inverse_history ... ok
+test source_pts_and_original_samples_preserve_negative_origin_and_clock_conversion ... ok
+test signed_audio_offsets_keep_excluded_boundaries_unavailable ... ok
+test invalid_audio_extents_and_missing_selections_reject_atomically ... ok
+test strict_wire_and_bias_round_trip_do_not_imply_edit_transforms ... ok
+test exact_audio_selection_rejects_hidden_original_boundaries_and_preserves_phase ... ok
+test invalid_video_mapping_and_non_stream_targets_reject_atomically ... ok
+test video_mapping_keeps_source_marks_and_composes_isolated_retimed_occurrences ... ok
+test location::default_scope_budget_includes_the_root_at_maximum_document_depth ... ok
+test nested_retimes_map_exactly_without_intermediate_rounding ... ok
+test signed_fractional_placements_map_independent_source_midpoints_exactly ... ok
+test natural_video_mapping_preserves_exact_elapsed_time ... ok
+test natural_audio_mapping_preserves_fractional_sample_positions ... ok
+test sequence_prefix_index_matches_expanded_boundary_sum ... ok
+test location::small_repeats_match_an_expanded_half_frame_boundary_reference ... ok
+
+test result: ok. 36 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.45s
+
+     Running tests/audio_binding_capture.rs (target/debug/deps/audio_binding_capture-7ea0875f00a342c6)
+
+running 6 tests
+test captures_a_billion_plays_compactly_and_empty_projects_are_noops ... ok
+test source_capture_retains_its_current_placement_without_freezing_raw_assets ... ok
+test nested_preserve_resets_input_scope_after_capturing_its_output ... ok
+test captures_unplayed_defaults_and_closes_each_override_at_its_stable_play ... ok
+test an_existing_intrinsic_binding_survives_a_new_wrapper_and_more_capture ... ok
+test capture_includes_gaps_and_rejects_path_expansion_atomically ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/audio_bindings.rs (target/debug/deps/audio_bindings-d11aeb251e105001)
+
+running 50 tests
+test every_template_clock_stays_inside_its_nearest_preserve_input ... ok
+test clear_override_exposes_a_definition_birth_even_for_a_surviving_play_id ... ok
+test gaps::a_gap_own_argument_cannot_be_confused_with_its_outer_repeat_path ... ok
+test gaps::an_authored_gap_definition_has_no_preceding_play_or_outer_arguments ... ok
+test gaps::outer_birth_retains_surviving_inner_gap_and_own_birth_is_innermost ... ok
+test gaps::hidden_gap_has_no_reanchor_entry_and_later_visible_gap_starts_at_zero ... ok
+test gaps::repeat_output_window_does_not_survive_same_id_gap_definition_birth ... ok
+test gaps::historical_child_override_does_not_turn_its_following_gap_into_a_birth ... ok
+test captured_arguments_survive_extraction_and_explicit_definition_exclusion_is_required ... ok
+test origins::local_rebase_overflow_keeps_input_intact_in_every_coordinate_family ... ok
+test live_validation_bounds_resume_anchors_without_narrowing_exact_phase ... ok
+test gaps::transparent_partition_hidden_gap_does_not_gain_a_clamped_reanchor ... ok
+test gaps::gap_capture_and_resolution_are_bounded_for_a_billion_plays ... ok
+test origins::signed_local_rebase_composes_and_inverts_every_current_coordinate ... ok
+test gaps::shortening_a_gap_preserves_its_existing_resume_coordinate ... ok
+test gaps::one_play_capture_retains_a_configured_gap_before_growth_and_direct_definition ... ok
+test origins::translated_point_clock_keeps_captured_support ... ok
+test gaps::gap_admission_rejects_cross_kind_arguments_and_malformed_maps ... ok
+test outer_wrap_and_inner_birth_choose_their_captured_lexical_roots ... ok
+test origins::chronological_reanchors_convert_historical_entries_after_local_translation ... ok
+test gaps::gap_removal_prunes_intent_and_readding_does_not_resurrect_it ... ok
+test reanchors::born_play_drops_outer_cut_but_keeps_intrinsic_partition_entry ... ok
+test gaps::surviving_preceding_plays_keep_gaps_and_former_final_or_new_plays_are_born ... ok
+test origins::symbolic_local_translation_preserves_each_repeated_sample_count ... ok
+test gaps::insertion_captures_gap_prefixes_and_moves_seams_but_refuses_repeat_interiors ... ok
+test reanchors::hidden_retained_plays_leave_the_previous_map_intact ... ok
+test reanchors::chronological_steps_extend_an_existing_phase_on_each_captured_clock ... ok
+test reanchors::outer_birth_at_the_same_retained_root_keeps_its_intrinsic_window ... ok
+test reanchors::preserve_input_selection_constrains_the_step_on_its_point_grid ... ok
+test reanchors::reanchor_queries_stay_bounded_for_billion_play_and_birth_occurrences ... ok
+test reanchors::clipped_first_play_and_full_later_plays_have_distinct_resume_entries ... ok
+test source_endpoints::closed_start_accepts_negative_historical_projection_and_empty_audio_support ... ok
+test selected_point_clock_and_meaningful_edit_support_are_not_round_even_partitions ... ok
+test source_endpoints::source_endpoint_resolves_billion_play_and_new_birth_without_expansion ... ok
+test source_endpoints::endpoint_uses_each_birth_scope_and_keeps_intrinsic_crops ... ok
+test source_endpoints::closed_source_end_keeps_the_endpoint_not_its_last_sample_and_rebases_once ... ok
+test symbolic_phase_retains_each_play_rounding_and_composes_another_clock ... ok
+test gaps::split_and_occurrence_isolation_remap_live_gap_owner_and_restore_exact_inverse ... ok
+test source_endpoints::split_copies_symbolic_endpoint_and_inverse_restores_exact_state ... ok
+test source_endpoints::source_endpoint_follows_previous_symbolic_phase_and_chronological_steps ... ok
+test source_endpoints::source_endpoint_rejects_wrong_kinds_window_and_hidden_old_allocation ... ok
+test state_round_trips_structured_ids_and_rejects_invalid_or_unbounded_intent ... ok
+test source_endpoints::captured_slice_renames_endpoint_aliases_on_two_independent_pastes ... ok
+test source_endpoints::endpoint_terms_stay_bounded_and_current_wire_is_closed ... ok
+test reanchors::aggregate_terms_steps_and_invalid_windows_fail_typed_and_wire_admission ... ok
+test programmatic_bindings_obey_the_same_individual_wire_cap ... ok
+test constructor_validation_charges_all_template_walks_together ... ok
+test near_limit_binding_round_trips_inside_a_pretty_project_document ... ok
+test gaps::gap_and_node_templates_share_the_aggregate_admission_budget ... ok
+test aggregate_wire_admission_precedes_any_typed_layout_body ... ok
+
+test result: ok. 50 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.13s
+
+     Running tests/audio_context.rs (target/debug/deps/audio_context-d10ce3339631fdc9)
+
+running 21 tests
+test copied_snapshot_is_independent_of_later_document_revision ... ok
+test effective_placement_can_exceed_authored_placement_bounds ... ok
+test legacy_context_roundtrips_its_closed_mapping_vocabulary_without_upgrading ... ok
+test balance_is_retained_in_authenticated_contexts_and_needs_schema_9 ... ok
+test continuous_returns_are_authenticated_and_require_context_schema_12 ... ok
+test compact_repeat_overrides_and_lineage_survive_capture ... ok
+test old_context_versions_reject_even_empty_gap_branch_vocabulary ... ok
+test captures_exact_inputs_and_only_their_full_asset_records ... ok
+test equalizer_is_authenticated_and_requires_context_schema_10 ... ok
+test frozen_gain_retains_group_and_picture_only_owners_and_authenticates_every_recipe ... ok
+test selected_context_keeps_full_phase_mapping_and_captures_only_its_audible_extent ... ok
+test pitch_shifts_and_saturation_need_context_schema_8_and_validate_their_shape ... ok
+test dormant_context_keeps_input_asset_offset_and_distinguishes_absent_audio ... ok
+test tail_sends_are_authenticated_and_require_context_schema_11 ... ok
+test legacy_context_gain_vocabulary_is_closed_even_for_null_empty_or_escaped_names ... ok
+test positive_audio_context_support_keeps_all_pre_dormant_versions_readable ... ok
+test frozen_gain_rejects_unknown_empty_duplicate_and_overlayered_owners ... ok
+test editorial_edges_survive_context_capture_with_closed_historical_vocabulary ... ok
+test ingress_rejects_open_or_inconsistent_inventory ... ok
+test reverse_tone_and_live_tail_need_context_schema_seven ... ok
+test frozen_context_rejects_aggregate_gain_records_during_ingress ... ok
+
+test result: ok. 21 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.58s
+
+     Running tests/audio_edges.rs (target/debug/deps/audio_edges-1e1811f720db7530)
+
+running 6 tests
+test editorial_edge_wire_is_optional_but_closed_and_boolean_when_present ... ok
+test current_wire_defaults_an_absent_object_but_requires_complete_known_policies_when_present ... ok
+test policy_edits_preserve_time_basis_marks_and_unselected_edges ... ok
+test automatic_edges_are_omitted_from_document_request_and_patch_json ... ok
+test ungroup_cannot_silently_drop_an_explicit_edge_exception ... ok
+test source_and_gap_choices_are_kind_checked_and_retained_when_not_audible ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/audio_gain.rs (target/debug/deps/audio_gain-e2db8ed0cdc99479)
+
+running 17 tests
+test non_dyadic_boundary_neighbors_never_quantize_onto_the_wrong_side ... ok
+test independent_trim_adjustment_preserves_curves_mutes_and_rejects_without_mutation ... ok
+test discontinuities_are_right_continuous_and_range_exits_are_unity ... ok
+test full_width_ratio_times_use_bounded_wide_products_instead_of_overflowing_subtraction ... ok
+test q32_progress_uses_ties_to_even_without_changing_segment_selection ... ok
+test gain_is_db_interpolation_with_independent_quarter_point_oracles ... ok
+test sample_derived_keys_and_extent_clipping_never_normalize_the_curve ... ok
+test overlaps_add_db_and_true_mute_is_separate_from_finite_attenuation ... ok
+test saturation_is_an_ordered_bounded_stage_with_a_closed_wire ... ok
+test every_curve_has_a_closed_standalone_wire_without_changing_its_public_shape ... ok
+test malformed_curve_payloads_fail_before_depth_parsing_or_content_buffering ... ok
+test equalizer_is_ordered_serialized_and_preserved_by_other_treatment_edits ... ok
+test stereo_balance_preserves_other_stages_and_rejects_ambiguous_order ... ok
+test closed_wire_and_typed_ingress_share_validation ... ok
+test collection_limits_reject_typed_and_wire_growth_before_parsing_extra_records ... ok
+test record_and_owner_path_limits_are_separate_and_include_explicit_unity ... ok
+test standalone_json_has_an_upfront_byte_cap_and_fits_the_maximum_recipe ... ok
+
+test result: ok. 17 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/audio_gain_prefix.rs (target/debug/deps/audio_gain_prefix-c4fc7061ab6a7097)
+
+running 3 tests
+test new_prefix_factor_uses_current_keys_without_retranslating_existing_factors ... ok
+test unrepresentable_shift_rejects_without_mutating_any_existing_factor ... ok
+test physical_prefix_translates_every_key_and_preserves_independent_gain_oracles ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/audio_lineage.rs (target/debug/deps/audio_lineage-60cb15512b0cb090)
+
+running 10 tests
+test moving_a_context_preserves_its_local_lineage_and_invalidates_both_processing_parents ... ok
+test identity_exhaustion_is_atomic_before_any_lineage_is_seeded ... ok
+test deleting_original_physical_owner_preserves_the_copy_and_historical_origin_name ... ok
+test split_seeds_unchanged_complete_contexts_in_patch_and_changed_ids ... ok
+test nested_billion_play_isolation_preserves_compact_families_then_detaches_only_edited_branch ... ok
+test clearing_replacing_and_shrinking_overrides_prunes_only_removed_live_owners ... ok
+test picture_labels_edges_and_transparent_grouping_preserve_audio_families ... ok
+test shallow_refinement_reuses_allocation_and_root_split_retains_payload_identity ... ok
+test real_audio_edits_detach_only_the_changed_live_contribution_and_its_ancestors ... ok
+test lineage_wire_and_patch_guards_reject_unknown_duplicate_dangling_and_oversized_entries ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.57s
+
+     Running tests/audio_reference.rs (target/debug/deps/audio_reference-9b73f96e602969cf)
+
+running 15 tests
+test billion_plays_and_sparse_override_have_bounded_projection_and_explicit_gap_clock ... ok
+test complete_nested_paths_are_required_and_signed_hidden_coordinates_are_not_clamped ... ok
+test scanner_keeps_field_named_aliases_and_escaped_keys_legal_and_rejects_trailing_input ... ok
+test capture_roundtrips_only_timing_and_audibility ... ok
+test frozen_phase_survives_live_play_reorder_move_and_deleted_siblings ... ok
+test tail_capture_preserves_local_maximum_for_holds_and_repeat_gaps_without_media ... ok
+test closed_grammar_rejects_unknown_missing_and_duplicate_fields ... ok
+test frozen_copy_lineage_roundtrips_owned_aliases_and_keeps_legacy_empty ... ok
+test reference_audibility_has_closed_tagged_grammar_and_checked_tail_limits ... ok
+test depth_budget_is_enforced_on_flat_wire_without_recursive_json ... ok
+test admission_rejects_tampered_structure_durations_placements_and_policies ... ok
+test frozen_copy_lineage_preflight_is_closed_unique_and_bounded ... ok
+test streaming_preflight_aggregates_edges_and_runs_across_collections ... ok
+test streaming_preflight_stops_oversized_lists_and_maps_before_their_malformed_tail ... ok
+test capture_enforces_the_frozen_only_aggregate_run_cap_and_accepts_its_exact_boundary ... ok
+
+test result: ok. 15 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 1.09s
+
+     Running tests/command_work.rs (target/debug/deps/command_work-9a6b9c9044967d33)
+
+running 3 tests
+test merged_diff_matches_key_union_lookup ... ok
+test binding_byte_check_equals_to_json_on_both_sides_of_the_structural_bound ... ok
+test local_command_work_equals_the_reference_on_random_edit_sequences ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 7.90s
+
+     Running tests/document.rs (target/debug/deps/document-6668c5288d367ff3)
+
+running 18 tests
+test deserialization_preserves_timing_invariants ... ok
+test original_hold_clock_overflow_is_refused_before_editing ... ok
+test rejected_edits_preserve_specific_error_codes_and_input ... ok
+test patch_preconditions_and_fresh_undo_revisions_prevent_stale_edits ... ok
+test failed_edits_do_not_mutate_input_and_conflicts_identify_revision ... ok
+test hold_provider_changes_are_explicit_and_duration_checked ... ok
+test instance_paths_require_exact_ordered_repeat_ancestry ... ok
+test inserted_repeat_cannot_reserve_a_future_revision_and_revive_retired_plays ... ok
+test repeat_setter_is_not_a_wrapper_and_gaps_are_between_plays ... ok
+test retime_range_is_in_child_clock_and_overflow_is_rejected ... ok
+test structural_operations_preserve_identity_and_atomic_inverse ... ok
+test tree_rejects_missing_orphans_cycles_and_multiple_parents ... ok
+test dump_is_deterministic_and_unknown_schemas_are_rejected ... ok
+test source_streams_retain_timestamps_and_validate_bounds_independently ... ok
+test structural_depth_is_bounded_without_recursive_documents ... ok
+test repeat_identity_survives_move_insert_group_and_exact_inverse ... ok
+test malformed_random_json_never_panics ... ok
+test arbitrary_grouping_and_repeat_edits_round_trip ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.22s
+
+     Running tests/edited_slice.rs (target/debug/deps/edited_slice-4cccc410888c344c)
+
+running 54 tests
+test child::zero_rejects_interior_replacement_move_and_invalid_pools_without_mutation ... ok
+test children::missing_reversed_nonchild_and_nonordinary_ancestry_refuse_without_mutation ... ok
+test child::empty_child_retains_dormant_source_mark_asset_without_capturing_audio ... ok
+test child::owned_empty_metadata_and_marks_survive_with_fresh_identities ... ok
+test children::historical_recapture_detects_missing_or_reordered_interior_empty_children ... ok
+test child::old_range_wire_stays_canonical_and_explicit_range_must_match_metadata ... ok
+test capture_provenance_rejects_other_revisions_and_valid_forged_content ... ok
+test child::exact_child_distinguishes_same_time_siblings_and_copies_empty_structure_again ... ok
+test incompatible_historical_play_union_rejects_capture_without_expanding_plays ... ok
+test child::child_scope_and_historical_payload_are_explicit_and_closed ... ok
+test children::all_empty_forest_pastes_at_exact_slots_with_fresh_ids_and_no_clock ... ok
+test insufficient_conflicting_stale_and_overflow_requests_fail_atomically ... ok
+test existing_root_local_mark_shifts_once_while_sequence_pin_stays_absolute ... ok
+test children::equal_endpoint_is_one_whole_child_without_changing_child_wire ... ok
+test children::identity_span_includes_empty_endpoints_and_nested_structure_at_exact_slots ... ok
+test lineage_allocation_origin_pairs_rename_injectively_across_live_and_history ... ok
+test child::zero_seam_uses_exact_slots_and_max_timing_ordinal_without_any_clock ... ok
+test children::forest_preserves_owned_effects_and_marks_but_excludes_the_unselected_parent ... ok
+test missing_external_host_uses_loss_policy_and_wire_cannot_bind_to_omitted_parent ... ok
+test history_neutral_capture_survives_source_deletion_and_repeated_paste ... ok
+test partial_marks_keep_exact_positions_bias_and_each_fragments_state ... ok
+test pins_stay_absolute_and_resolve_loss_policy_without_rebinding_dormant_intent ... ok
+test child::whole_child_retains_positive_composites_and_excludes_adjacent_empty_siblings ... ok
+test partial_windows_preserve_the_original_external_endpoint_biases ... ok
+test replacement_children::empty_to_empty_replacement_still_retires_selected_owner_and_mark ... ok
+test replacement_children::positive_span_to_empty_slice_removes_exact_empty_endpoints_and_owned_marks ... ok
+test replacement_children::source_replaces_empty_siblings_with_one_exact_new_owner ... ok
+test placement::equal_replacement_keeps_the_suffix_clock_through_its_last_rounded_sample ... ok
+test replacement_children::positive_to_positive_replacement_preserves_exact_duration_and_fresh_identity ... ok
+test replacement_children::empty_nested_forest_to_positive_slice_moves_ancestor_suffix_once ... ok
+test children::positive_forest_repeated_pastes_are_independent_and_exactly_reversible ... ok
+test placement::repeated_interior_paste_retains_original_lattice_and_chronological_sample_phase ... ok
+test partial_copy_of_an_untreated_copy_retains_every_complete_context ... ok
+test pasted_contents_exclude_root_sound_bus_and_append_one_exact_route_edit ... ok
+test child::zero_paste_preserves_existing_bound_clocks_root_bus_routes_allowances_and_marks ... ok
+test child::child_under_repeat_clock_is_rejected_and_extra_wrapper_obeys_depth_limit ... ok
+test children::children_wire_requires_exact_endpoints_distinct_whole_parts_and_contiguous_time ... ok
+test placement::placement_transforms_marks_root_sound_and_split_allowances_once ... ok
+test source_marks_use_the_captured_explicit_occurrence_and_exact_boundary ... ok
+test placement::replacement_uses_only_needed_destination_timing_slots_even_at_max_ordinal ... ok
+test whole_units_keep_hidden_marks_partial_endpoints_filter_them ... ok
+test sound_clocks::sound_clock_states_skip_the_structural_byte_bound_and_count_exactly ... ok
+test sound_clocks::copied_sound_clocks_link_fresh_repeat_plays_to_every_historical_alias ... ok
+test sound_clocks::first_sound_copy_retains_source_phase_and_can_move_after_paste ... ok
+test sound_clocks::copied_sound_clocks_reject_capture_collisions_and_forged_aliases ... ok
+test placement::pasted_nested_partitions_support_both_new_placements_without_broadening_source_admission ... ok
+test wire_mark_and_scoped_play_union_limits_fail_without_cloning_a_paste ... ok
+test sound_clocks::excluded_attachments_leave_beat_sounds_clocks_and_captions_behind ... ok
+test placement::joint_pools_clock_overflow_and_split_mark_fragment_limits_reject_atomically ... ok
+test sound_clocks::copied_sound_clocks_survive_interior_insertion_and_range_replacement_timing_slots ... ok
+test sound_clocks::partial_sound_owner_copy_keeps_full_recipe_and_chronological_clocks ... ok
+test sound_clocks::copied_sound_clocks_narrow_ordinary_scope_and_survive_deleted_original_and_recopy ... ok
+test sound_clocks::copied_shared_sound_clock_scope_is_checked_once_for_all_events ... ok
+test replacement_children::source_replacement_at_node_capacity_removes_an_owner_before_inserting ... ok
+
+test result: ok. 54 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 5.03s
+
+     Running tests/explode.rs (target/debug/deps/explode-f5a325891007aeea)
+
+running 7 tests
+test explode_refuses_without_changing_anything ... ok
+test exploded_copies_can_then_be_duplicated_and_edited_independently ... ok
+test retained_clocks_resolve_identically_for_every_exploded_play ... ok
+test escalation_becomes_explicit_per_play_gain_and_scale ... ok
+test all_overridden_plays_drop_the_unused_definition_and_dormant_gap ... ok
+test plays_become_independent_children_with_marks_captions_and_overrides ... ok
+test duplicate_copies_children_spans_and_ranges_after_themselves ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+     Running tests/framing.rs (target/debug/deps/framing-5139e922f3a17263)
+
+running 18 tests
+test exact_clock::exact_clock_rejects_invalid_extents_and_positions_for_static_and_moving_framing ... ok
+test retained_clock::retained_clock_keeps_fractional_domain_and_step_boundaries_exact ... ok
+test step_boundary_and_quantization_do_not_move_segment_selection ... ok
+test all_curves_use_explicit_frame_edge_progress_and_exact_endpoints ... ok
+test retained_clock::retained_clock_composes_prefixes_and_freezes_tail_growth ... ok
+test wide_local_time_and_small_segment_denominators_do_not_overflow ... ok
+test interpolation_matches_independent_fraction_oracles_at_extreme_coordinates ... ok
+test retained_clock::retained_clock_admission_and_arithmetic_fail_without_mutation ... ok
+test setters_are_atomic_reversible_and_duration_changes_reflow_the_host ... ok
+test retained_clock::retained_framing_round_trips_atomic_commands_and_exact_inverse_patches ... ok
+test occurrence_copy_is_independent_and_framed_ungroup_is_refused ... ok
+test split_retains_framed_partition_as_a_complete_owned_effect_scope ... ok
+test explicit_pause_can_split_a_retained_framed_partition_without_losing_its_clock ... ok
+test exact_clock::exact_clock_matches_independent_unbounded_fraction_oracles ... ok
+test hostile_envelopes_and_layers_are_rejected ... ok
+test typed_subtree_aggregate_framing_is_rejected_before_installation ... ok
+test retained_clock::retained_paths_hold_endpoints_without_retiming_any_curve ... ok
+test exact_clock::derived_owner_extents_keep_all_curve_shapes_and_exact_segment_boundaries ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running tests/gap_overrides.rs (target/debug/deps/gap_overrides-3fda631ce0ce9cde)
+
+running 9 tests
+test set_and_clear_gap_branch_preserve_default_and_play_child ... ok
+test retiring_preceding_identity_removes_only_its_gap_branch_and_undo_restores_it ... ok
+test empty_override_suppresses_one_gap_and_survives_default_removal ... ok
+test arbitrary_gap_replacement_does_not_claim_old_default_gap_marks ... ok
+test split_copies_gap_branch_with_independent_owned_nodes ... ok
+test final_branch_is_dormant_then_reorder_and_growth_reactivate_it ... ok
+test nested_occurrence_isolation_copies_owned_gap_branch ... ok
+test isolate_gap_rejects_final_missing_and_already_isolated_gaps ... ok
+test isolate_gap_retains_existing_marks_and_exact_undo ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/gap_projection.rs (target/debug/deps/gap_projection-f1e0e21bf11d9aea)
+
+running 7 tests
+test ancestor_crop_composes_fractional_gap_support_through_a_tape_retime ... ok
+test support_scope_stops_at_nonunity_preserve_but_its_input_and_output_are_independent ... ok
+test nested_repeat_and_tape_retime_keep_exact_gap_origin_scale_and_local_support ... ok
+test gap_projection_independently_rejects_bad_scope_path_identity_and_budget ... ok
+test gap_support_uses_actual_duration_after_sparse_unequal_plays_at_ntsc ... ok
+test stable_gap_identity_follows_reordering_and_only_current_nonfinal_plays_have_gaps ... ok
+test partitions_retain_hidden_gap_support_while_edit_crops_clip_in_local_coordinates ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/generated_holds.rs (target/debug/deps/generated_holds-511cf7681c32f19b)
+
+running 8 tests
+test sampling_map_is_exact_strict_and_never_samples_an_endpoint ... ok
+test extension::accepted_sampling_sum_dispatches_exact_maps_and_requires_strict_operation_wire ... ok
+test extension::extension_acceptance_rejects_generated_only_native_count_sample_count_and_wrong_rate ... ok
+test acceptance_rejects_missing_unrelated_or_incompatible_assets_and_legacy_provider ... ok
+test acceptance_is_atomic_reversible_and_resize_preserves_or_restores_fallback ... ok
+test occurrence_acceptance_isolates_only_the_selected_play ... ok
+test extension::extension_acceptance_history_and_shortening_keep_complete_native_context_and_sampling ... ok
+test extension::copied_extension_survives_original_hold_deletion_and_slice_roundtrip_without_new_sampling ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/hold_audio.rs (target/debug/deps/hold_audio-17fe1d9dc1c6aba2)
+
+running 7 tests
+test a_reversed_span_is_bounded_by_the_one_block_dsp_limit ... ok
+test existing_tail_validation_and_revision_guards_still_apply ... ok
+test invalid_audio_and_targets_fail_without_mutating_the_document ... ok
+test exact_room_tone_and_silence_preserve_picture_timing_and_round_trip ... ok
+test shortening_a_tail_hold_shortens_its_ring_and_new_providers_validate ... ok
+test a_tail_cannot_be_wrapped_in_or_moved_into_a_speed_change ... ok
+test policy_replacement_keeps_retained_sampling_lattice ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/insert_time.rs (target/debug/deps/insert_time-9b8900ebd7d5cb47)
+
+running 72 tests
+test delete::deletion_rejects_root_missing_target_and_wrong_allocation_atomically ... ok
+test delete_children::equal_time_children_are_distinct_and_reversed_or_foreign_names_refuse ... ok
+test delete_range::invalid_selection_identities_and_timing_fail_without_mutation ... ok
+test delete_range::full_range_preserves_endpoint_empty_groups_and_retires_internal_empty_groups ... ok
+test delete_range::complete_composites_are_admitted_but_partial_or_clocked_ancestry_is_rejected ... ok
+test delete::deletion_moves_content_marks_but_keeps_sequence_marks_and_loss_policy ... ok
+test delete::zero_and_terminal_deletion_do_not_capture_unmoved_sampling ... ok
+test billion_play_seam_insertion_keeps_one_step_per_owned_recipe ... ok
+test delete_children::empty_endpoint_owned_marks_follow_loss_policy_without_time_fallback ... ok
+test delete::nested_delete_keeps_every_surviving_suffix_clock_and_one_inverse ... ok
+test delete_range::deleted_marks_follow_loss_policy_and_surviving_marks_keep_their_content ... ok
+test delete_range::nested_partitions::nested_deletion_identity_bounds_and_timing_rejections_are_atomic ... ok
+test composite_seam_moves_root_marks_once_and_retains_occurrence_and_source_clocks ... ok
+test delete::whole_composites_can_be_deleted_but_their_clocked_children_cannot ... ok
+test duration_overflow_and_nonfallback_provider_are_rejected_before_capture ... ok
+test delete::deletion_retains_previous_lattice_and_appends_one_resume ... ok
+test delete_range::nested_partitions::recursive_deletion_does_not_broaden_source_replacement_or_pause_admission ... ok
+test delete_range::nested_partitions::nested_generated_provider_still_requires_a_whole_owned_cut ... ok
+test first_pause_locks_an_automatic_empty_project_before_final_validation ... ok
+test delete_range::one_clock_deletions_use_the_supplied_maximum_timing_ordinal ... ok
+test delete_range::nested_partitions::different_nested_endpoints_keep_their_independent_contexts_and_outer_suffix ... ok
+test delete_range::nested_partitions::nested_cut_preserves_root_mark_bias_pins_and_unresolved_intent ... ok
+test delete_range::nested_partitions::nested_windows_do_not_admit_general_retime_or_repeat_interiors ... ok
+test delete_range::nested_partitions::nested_endpoint_cut_transforms_the_independent_root_bus_once ... ok
+test existing_split_seam_reanchors_without_manufacturing_another_split ... ok
+test ai_insertion_matches_silent_freeze_inside_source_hold_and_nested_sequence ... ok
+test delete_range::nested_partitions::nested_hold_windows_keep_framing_gain_and_owned_recipe_clocks ... ok
+test delete_range::later_deletion_refines_treated_fragments_without_recapturing_framing_or_lattice ... ok
+test nested_sequence::preflight_finds_live_sequence_owner_and_exact_split_identity_count ... ok
+test insertion_after_compact_steps_appends_after_them_and_round_trips_atomically ... ok
+test nested_sequence::nested_insertion_failures_do_not_publish_intermediate_copies_or_clocks ... ok
+test delete_range::nested_range_keeps_outer_nodes_and_reanchors_every_surviving_suffix_once ... ok
+test interior::interior_identity_and_timing_exhaustion_leave_the_input_unchanged ... ok
+test fully_bound_input_keeps_a_phase_only_clock_until_terms_exist_and_prunes_unused_end_clock ... ok
+test source_replace::replacement_admission_and_identity_failures_are_atomic ... ok
+test every_shifted_fragment_gets_its_own_old_entry_and_existing_lattice_survives ... ok
+test interior::interior_cut_before_billion_play_suffix_stays_compact_and_reversible ... ok
+test source_replace::replacement_rejects_repeat_and_retime_ancestors_without_descending ... ok
+test ordinary_hold_interior_and_its_partition_can_be_inserted_into_again ... ok
+test source_replace::replacement_keeps_pinned_marks_valid_against_final_extent ... ok
+test nested_sequence::nested_seam_keeps_empty_children_and_boundary_marks_in_their_own_clocks ... ok
+test repeated_interior_insertion_composes_current_phase_on_one_immutable_lattice ... ok
+test source_splice::empty_project_splice_locks_time_and_has_no_placeholder_or_retained_clock ... ok
+test interior::source_and_hold_interiors_keep_pre_split_lattices_and_distinct_current_placements ... ok
+test source_replace::nested_replacement_removes_whole_composites_and_reanchors_outer_suffix_once ... ok
+test source_replace::whole_replacement_preserves_endpoint_empty_groups_and_removes_interior_groups ... ok
+test source_splice::source_splice_rejects_duration_overflow_before_capturing_clocks ... ok
+test source_splice_interior::interior_splice_never_descends_a_repeat_or_authored_retime ... ok
+test source_splice::malformed_splice_is_atomic_for_typed_and_closed_json_callers ... ok
+test interior::interior_split_and_pause_shift_each_mark_once_without_losing_fragment_identity ... ok
+test source_splice::nested_source_splice_transports_marks_and_each_later_owner_once ... ok
+test source_splice::repeat_or_retime_ancestry_never_silently_changes_scope ... ok
+test delete_range::nested_partitions::two_and_three_windows_split_one_child_with_exact_pools_and_full_context ... ok
+test sequence_interiors_and_root_composite_seams_preserve_their_owners ... ok
+test split_and_insertion_compose_mark_bias_and_keep_sequence_pins ... ok
+test source_replace::second_replacement_refines_existing_fragments_with_exact_identity_budget ... ok
+test zero_bounds_stale_revision_and_identity_errors_leave_input_unchanged ... ok
+test source_replace::same_child_replacement_splits_twice_and_undoes_once ... ok
+test source_replace::replacement_retains_source_framing_and_treated_fragment_clock_ownership ... ok
+test source_splice_interior::interior_splice_preserves_live_framing_and_transports_boundary_and_local_marks_once ... ok
+test nested_sequence::nested_pause_keeps_group_ownership_and_reanchors_every_ancestor_suffix_once ... ok
+test source_splice_interior::interior_splice_rejects_bad_targets_identity_pools_and_stale_requests_atomically ... ok
+test start_interior_end_and_empty_project_insert_one_reversible_pause ... ok
+test source_splice_interior::interior_source_and_hold_splices_keep_explicit_group_and_both_pre_split_clocks ... ok
+test source_splice_interior::transparent_source_and_hold_fragments_refine_without_recapturing_their_lattice ... ok
+test source_splice::explicit_slot_retains_nested_edges_and_zero_duration_child_order ... ok
+test delete_children::every_exact_sibling_span_removes_endpoint_empties_and_has_one_inverse ... ok
+test aggregate_identity_and_composed_phase_limits_fail_before_a_transaction ... ok
+test delete_range::every_single_source_range_keeps_exact_fragments_and_one_inverse ... ok
+test source_splice_interior::interior_splice_reserves_the_inserted_source_in_addition_to_split_nodes ... ok
+test source_replace::replacement_checks_combined_temporary_node_budget_before_any_split ... ok
+test delete_range::deletion_preflight_reserves_only_its_endpoint_nodes_at_the_temporary_limit ... ok
+
+test result: ok. 72 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 9.06s
+
+     Running tests/mark_fragments.rs (target/debug/deps/mark_fragments-3a1c60a299291c98)
+
+running 9 tests
+test moving_an_owner_does_not_retarget_a_binding_hosted_elsewhere ... ok
+test every_fragment_is_validated_even_when_the_primary_is_unresolved ... ok
+test retained_copy_ownership_depends_on_authored_nodes_not_visible_matching_plays ... ok
+test deleting_only_one_owner_promotes_the_next_binding_and_last_loss_removes_the_mark ... ok
+test unresolved_binding_retains_its_last_identity_without_hiding_bound_siblings_or_rebinding ... ok
+test each_binding_uses_the_shared_bias_and_retains_exact_local_content_coordinates ... ok
+test owned_source_bindings_copy_without_inventing_a_timeline_host ... ok
+test occurrence_copy_uses_one_id_for_only_owned_bindings_and_relocates_concrete_bindings_once ... ok
+test per_mark_and_document_limits_include_every_primary_and_fragment_before_copying ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.87s
+
+     Running tests/mark_resolution.rs (target/debug/deps/mark_resolution-bf0ca6205997fb2e)
+
+running 9 tests
+test distinct_exact_boundaries_are_ambiguous_even_when_they_round_to_one_frame ... ok
+test owner_lifetime_is_independent_of_coordinate_visibility ... ok
+test fully_scoped_occurrence_binding_uses_bias_without_changing_stored_lifetime ... ok
+test source_clock_bindings_share_explicit_source_scope_independently_of_ownership ... ok
+test repeated_binding_cannot_be_inferred_away_by_an_unrepeated_match ... ok
+test unresolved_primary_does_not_hide_bound_fragment_or_implicitly_reattach ... ok
+test ordinary_crop_endpoints_are_unchanged_and_equal_results_retain_all_bindings ... ok
+test hidden_partition_bindings_do_not_expand_a_billion_repeat_plays ... ok
+test internal_partition_seams_choose_one_binding_by_bias_and_keep_external_edges ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/marks.rs (target/debug/deps/marks-ab9d4d4e80bf5266)
+
+running 18 tests
+test unrepresentable_exact_mark_transform_rejects_the_whole_edit ... ok
+test source_marks_use_original_clock_independent_of_owner_and_timeline_usage ... ok
+test mark_queries_share_revision_and_exact_range_validation_and_refuse_unresolved ... ok
+test trimming_at_a_mark_preserves_only_the_surviving_content_side ... ok
+test strict_mark_ingress_limits_and_patch_preconditions_are_atomic ... ok
+test billions_of_plays_keep_marks_compact_and_seek_the_last_stable_iteration ... ok
+test parent_local_follows_moves_within_host_and_child_local_follows_global_moves ... ok
+test pinned_sequence_time_stays_fixed_and_trimmed_hold_points_do_not_retarget ... ok
+test nested_retimes_preserve_exact_fractions_and_report_crop_loss ... ok
+test grouping_preserves_content_but_removed_host_has_explicit_loss ... ok
+test empty_hosts_retain_biased_edges_and_zero_children_do_not_capture_time ... ok
+test named_source_and_authored_local_marks_require_explicit_repeat_scope ... ok
+test occurrence_marks_preserve_ids_without_cloning_on_growth_or_reviving_after_shrink ... ok
+test ownership_loss_is_independent_and_unresolved_requires_explicit_reattachment ... ok
+test wrap_policy_inserts_occurrence_step_in_ancestry_and_keeps_authored_local_scope ... ok
+test repeat_gap_belongs_to_preceding_stable_play_and_disappears_when_last ... ok
+test biased_insertions_and_outside_edges_follow_original_content ... ok
+test repeat_reorders_preserve_marked_play_offset_without_expansion ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.20s
+
+     Running tests/move_range.rs (target/debug/deps/move_range-abd01aa3ed0643ec)
+
+running 8 tests
+test partial_boundary_noops_do_not_split_or_capture_even_at_maximum_ordinal ... ok
+test invalid_scope_source_and_identity_budgets_are_atomic ... ok
+test three_cuts_share_one_context_budget_and_reanchor_each_island_once ... ok
+test co_located_empty_slots_reorder_ownership_without_retiming_the_bus ... ok
+test whole_units_move_in_both_directions_without_new_authored_identities ... ok
+test cross_parent_moves_allow_both_ancestor_relationships_and_retain_empty_sources ... ok
+test marks_keep_identity_bias_pins_and_cross_parent_loss_policy ... ok
+test bound_partial_move_needs_only_one_new_clock_and_nested_windows_remain_editable ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/node_gain.rs (target/debug/deps/node_gain-1cc8ff4e44da021b)
+
+running 9 tests
+test explicit_unity_owners_count_toward_sixteen_active_layers ... ok
+test treatment_is_authored_intent_with_guarded_reversible_node_patches ... ok
+test duration_changes_and_internal_insertions_retain_fixed_keys_and_hidden_suffix ... ok
+test copies_and_isolated_repeat_occurrences_keep_independent_gain_intent ... ok
+test postmapping_gain_preserves_raw_lineage_and_preserve_sample_bindings ... ok
+test repeated_pause_insertion_preserves_treated_partition_origins ... ok
+test split_and_refinement_keep_exact_full_owner_envelope_clocks ... ok
+test aggregate_gain_admission_bounds_documents_subtrees_and_both_patch_sides ... ok
+test replacement_and_isolation_bound_transient_gain_without_rejecting_valid_final_inventory ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.16s
+
+     Running tests/occurrence_edits.rs (target/debug/deps/occurrence_edits-f34f1d7876e27511)
+
+running 8 tests
+test isolated_audio_edge_edit_copies_existing_intent_without_changing_other_plays ... ok
+test failures_after_partial_isolation_leave_original_and_history_patch_unmodified ... ok
+test copied_repeat_keeps_compact_reordered_allocations_and_normalizes_new_insertions ... ok
+test source_owned_marks_copy_without_changing_source_time_and_concrete_ancestor_marks_follow_once ... ok
+test owned_marks_copy_but_external_hosts_and_pinned_or_unresolved_coordinates_keep_scope ... ok
+test concrete_gap_marks_follow_selected_owners_and_respect_boundary_bias ... ok
+test nested_edit_isolates_one_play_and_preserves_ancestor_boundaries_and_gaps ... ok
+test variable_counts_change_exactly_one_nested_duration ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.45s
+
+     Running tests/partitions.rs (target/debug/deps/partitions-cd53ac3851a783a1)
+
+running 2 tests
+test transparent_partition_requires_unity_and_cannot_author_edges ... ok
+test partition_metadata_survives_reversible_commands_and_ordinary_retime_stays_default ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/picture_context.rs (target/debug/deps/picture_context-d91cf12c62b08ac9)
+
+running 6 tests
+test unchanged_recapture_is_exactly_constant_after_pose_or_implicit_fill_clip ... ok
+test every_typed_payload_checks_context_before_resolving_its_target ... ok
+test typed_and_serialized_context_bounds_reject_invalid_canvas_pose_and_totals ... ok
+test context_set_clear_undo_and_occurrence_isolation_preserve_live_framing_and_audio ... ok
+test document_budget_counts_hold_and_gap_contexts_at_the_exact_boundary ... ok
+test aggregate_preflight_covers_subtrees_patches_and_repeated_isolation ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.30s
+
+     Running tests/play_overrides.rs (target/debug/deps/play_overrides-1423dee4712ed52f)
+
+running 8 tests
+test override_duration_overflow_and_empty_content_reject_the_whole_edit ... ok
+test billion_play_sparse_layout_and_unused_huge_default_stay_bounded ... ok
+test invalid_override_graphs_and_wire_shapes_fail_without_mutation ... ok
+test clear_replace_and_delete_remove_owned_subtrees_without_reattaching_marks ... ok
+test nested_override_insertion_remaps_ids_and_wrapping_preserves_actual_ancestry ... ok
+test reorder_insert_shrink_and_regrow_preserve_only_surviving_overrides ... ok
+test one_play_override_changes_only_its_content_and_exact_neighbor_offsets ... ok
+test sparse_layout_matches_expanded_durations_and_boundary_sides ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running tests/presentation_basis.rs (target/debug/deps/presentation_basis-784a05404b6c1a0f)
+
+running 12 tests
+test primary_intent_requires_first_qualified_picture_insertion_and_compatible_policy ... ok
+test canvas_choice_locks_provisional_rate_and_requires_even_bounded_geometry ... ok
+test occurrence_edits_use_the_same_timed_lock_and_inverse ... ok
+test presentation_patch_guards_the_complete_pair_and_cannot_omit_timed_lock ... ok
+test provisional_basis_rejects_timed_secondary_bindings_behind_a_source_primary ... ok
+test labels_asset_registration_empty_structure_and_noops_do_not_lock_rate ... ok
+test automatic_registration_and_source_marks_remain_eligible_for_atomic_primary_adoption ... ok
+test all_project_clock_mark_spaces_lock_even_at_zero ... ok
+test default_geometry_and_timed_rate_origins_require_their_actual_default_values ... ok
+test malformed_serialized_policy_cannot_smuggle_authored_time_or_unqualified_primary ... ok
+test audio_secondary_picture_and_hold_insertions_lock_the_rate_and_delete_all_cannot_unlock ... ok
+test locked_primary_recording_and_explicit_geometry_changes_preserve_all_time_and_media ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/repeat_gap_layout.rs (target/debug/deps/repeat_gap_layout-7187ecd1d23dcfc8)
+
+running 6 tests
+test billion_plays_keep_compact_gap_lookup ... ok
+test retired_or_missing_gap_roots_and_overflow_are_rejected ... ok
+test empty_gap_override_suppresses_default_without_affecting_other_gaps ... ok
+test final_override_is_validated_but_dormant_and_revives_after_growth ... ok
+test sparse_play_and_gap_branches_are_independent_across_reorder ... ok
+test expanded_small_reference_matches_every_half_frame_and_bias ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.05s
+
+     Running tests/retime_edits.rs (target/debug/deps/retime_edits-2d69bb60355e2347)
+
+running 9 tests
+test pitch_preserving_stages_over_preparation_work_or_output_refuse_at_edit_time ... ok
+test disk_prepared_preserve_accepts_four_minutes_of_output_with_undo ... ok
+test streamed_preserve_accepts_a_minute_of_input_as_one_reversible_stage ... ok
+test pitch_shift_is_a_bounded_pitch_preserving_stage_independent_of_duration ... ok
+test occurrence_retime_isolates_only_the_selected_repeat_play ... ok
+test update_preserves_a_nonzero_child_trim_and_occurrence_update_keeps_other_plays ... ok
+test partitions_are_wrapped_never_converted_and_bad_requests_are_atomic ... ok
+test wrap_and_update_retain_child_framing_marks_and_exact_mapping ... ok
+test changed_output_releases_only_its_binding_and_noop_keeps_all_clocks ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/scoped_many.rs (target/debug/deps/scoped_many-76fb5f0c32893fea)
+
+running 4 tests
+test a_partial_range_inside_one_play_keeps_the_rest_of_that_play ... ok
+test plays_two_and_three_change_together_and_others_stay_shared ... ok
+test unchanged_targets_are_skipped_and_an_all_unchanged_edit_refuses ... ok
+test a_later_target_follows_the_outer_play_an_earlier_target_isolated ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/sound_allowances.rs (target/debug/deps/sound_allowances-7ec24ce0065ef4ea)
+
+running 13 tests
+test invalid_scope_and_gap_addresses_fail_without_changing_history ... ok
+test allowance_is_reversible_guarded_and_independent_of_recipe_parameters ... ok
+test audio_setter_retires_only_its_hold_permissions_and_undo_restores_them ... ok
+test splitting_a_repeat_remaps_its_gap_owner_and_all_enclosing_play_identities ... ok
+test replacement_splits_allowances_twice_then_prunes_only_the_removed_middle ... ok
+test splice_retains_policy_and_deleting_the_issuer_prunes_it_without_removing_surviving_sound ... ok
+test occurrence_audio_setter_retires_only_the_isolated_hold_permission ... ok
+test nested_occurrence_isolation_moves_selected_addresses_and_preserves_other_plays ... ok
+test explode_moves_concrete_and_default_gap_permissions_to_their_new_holds ... ok
+test split_and_internal_insertion_split_copy_only_existing_hold_issuers_once ... ok
+test interior_source_splice_copies_hold_allowances_once_and_ripples_placed_sound_once ... ok
+test wire_is_closed_canonical_and_bounded_before_document_traversal ... ok
+test document_aggregate_limit_is_shared_by_individually_valid_event_sets ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.12s
+
+     Running tests/sound_events.rs (target/debug/deps/sound_events-b2e2b02c4bf5da55)
+
+running 7 tests
+test exact_terminal_boundary_fits_but_one_sample_of_overflow_does_not ... ok
+test selection_and_sample_offset_preserve_the_complete_source_phase ... ok
+test upsert_and_delete_are_guarded_reversible_nonstructural_edits ... ok
+test temporal_and_occurrence_edits_fail_before_transforming_retained_context ... ok
+test invalid_source_rate_owner_extent_and_gain_are_rejected_atomically ... ok
+test bounded_live_inventory_allows_replacement_and_rejects_unknown_wire_fields ... ok
+test independent_treatments_share_the_document_record_budget ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.48s
+
+     Running tests/sound_routes.rs (target/debug/deps/sound_routes-bae518f473e6755a)
+
+running 19 tests
+test typed_ingress_rejects_bad_indices_cycles_ranges_order_and_repeat_overlap ... ok
+test deleting_the_start_keeps_the_source_suffix_and_complete_recipe ... ok
+test adjacent_keeps_remain_separate_point_anchors_even_when_range_queries_merge_them ... ok
+test point_lookup_returns_complete_leaves_with_explicit_boundary_bias ... ok
+test repeat_input_stride_is_not_repeated_playback_and_gaps_do_not_inherit_source ... ok
+test shared_dag_summaries_are_admitted_without_expanding_output ... ok
+test a_gap_with_zero_rounded_samples_still_has_its_exact_point_interval ... ok
+test billion_repeat_short_seek_does_not_visit_preceding_plays ... ok
+test nested_gapless_repeat_point_lookup_accumulates_strides_at_exact_seams ... ok
+test point_lookup_limits_are_shared_inclusive_and_leave_the_map_unchanged ... ok
+test point_lookup_seeks_a_billion_repeat_and_selects_both_sides_of_its_seams ... ok
+test nested_repeat_strides_accumulate_and_fractional_half_open_queries_do_not_leak ... ok
+test query_limits_fail_atomically_and_do_not_mutate_the_route ... ok
+test chronological_point_anchors_retain_the_ntsc_sample_phase_that_flattening_loses ... ok
+test wire_is_closed_and_checks_computed_extents_and_bytes ... ok
+test composing_delete_insert_and_fractional_window_preserves_exact_phase_coordinates ... ok
+test point_lookup_uses_sequence_indexes_and_compresses_zero_stride_gap_subtrees ... ok
+test sequence_prefix_index_seeks_without_scanning_the_prefix ... ok
+test construction_bounds_depth_nodes_edges_and_checked_arithmetic ... ok
+
+test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.04s
+
+     Running tests/sound_routing.rs (target/debug/deps/sound_routing-16b8da57d07a2440)
+
+running 23 tests
+test translated_support_clips_before_narrowing_extreme_sample_labels ... ok
+test trim::every_scalar_edge_projection_matches_existing_operations_and_cut_flags ... ok
+test delete_onset_keeps_recipe_suffix_and_whole_deletion_removes_bus ... ok
+test trim::trim_normal_form_has_literal_keeps_gaps_and_true_cut_flags ... ok
+test trim::trim_projection_checks_extents_but_not_cancelled_intermediate_arithmetic ... ok
+test equal_replacement_preserves_single_rounded_suffix_sample_4804 ... ok
+test nested_interior_source_splice_routes_the_absolute_boundary_once ... ok
+test retained_delete_routes_the_root_bus_once_and_prunes_its_removed_issuer ... ok
+test initially_sampleless_selection_keeps_intent_until_logically_deleted ... ok
+test splice_and_nonroot_split_preserve_routing_while_root_split_stays_closed ... ok
+test sampleless_selection_survives_unrelated_replacement_and_disappears_when_replaced ... ok
+test replacement_transforms_root_bus_once_and_whole_project_removes_all_old_support ... ok
+test send_edits_preserve_routed_timing_and_are_exactly_reversible ... ok
+test range_deletion_transforms_the_root_bus_once_and_splits_hold_allowances ... ok
+test deep_history_and_large_repeat_queries_use_bounded_iterative_work ... ok
+test compound_delete_and_insert_preserve_sequential_sound_routes_and_one_inverse ... ok
+test parameters_preserve_history_replacement_is_explicit_and_route_patches_are_guarded ... ok
+test trim::trim_wire_is_closed_and_identity_trim_round_trips ... ok
+test linked_move_preserves_the_root_sound_clock_routes_and_allowance_ownership ... ok
+test routed_wire_admission_checks_clocks_ownership_and_capacity ... ok
+test deletion_keeps_a_physical_sample_outside_its_transported_exact_selection ... ok
+test trim::repeated_three_keep_maps_obey_existing_total_arena_budget ... ok
+test nested_pause_captures_once_and_more_than_twenty_one_edits_keep_the_recipe ... ok
+
+test result: ok. 23 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.33s
+
+     Running tests/source_edit_window.rs (target/debug/deps/source_edit_window-8c265b91cb111bce)
+
+running 5 tests
+test audio_only_and_dormant_sources_keep_window_distinct_from_render_support ... ok
+test window_is_optional_and_document_checks_its_exact_owner_extent ... ok
+test actual_generic_mapping_changes_clear_window_but_noops_and_undo_preserve_it ... ok
+test occurrence_mapping_changes_clear_only_the_isolated_play_window ... ok
+test split_and_partial_capture_preserve_complete_physical_window_through_paste ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/source_import.rs (target/debug/deps/source_import-2854ec1b96870b24)
+
+running 7 tests
+test qualification_identity_is_exact_lowercase_hex_and_optional_wire_omits_absence ... ok
+test invalid_import_insertion_or_missing_qualification_leaves_no_registered_asset_or_node ... ok
+test import_registers_and_inserts_in_one_reversible_edit_without_changing_basis ... ok
+test imported_audio_only_and_still_sources_use_the_supplied_asset ... ok
+test import_cannot_substitute_another_registered_asset_or_inject_a_subtree ... ok
+test matching_assets_can_be_registered_once_and_inserted_repeatedly ... ok
+test source_import_applies_normal_biased_marks_and_keeps_source_coordinates ... ok
+
+test result: ok. 7 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/source_interpretation.rs (target/debug/deps/source_interpretation-eec9a6d5b6e7911a)
+
+running 5 tests
+test inverse_guards_cannot_erase_a_later_correction ... ok
+test detached_original_view_retains_the_captured_interpretation ... ok
+test unknown_unqualified_audio_and_empty_interpretations_reject_without_changes ... ok
+test correction_and_reset_are_reversible_without_replacing_assets_or_clocks ... ok
+test copied_edits_capture_choices_but_existing_destination_sources_keep_their_current_choice ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/source_roll.rs (target/debug/deps/source_roll-33bbeb94d7e1bf3d)
+
+running 11 tests
+test roll_shared_limits_keep_strict_fractional_rules_and_report_the_controlling_side ... ok
+test roll_avoids_unary_total_overflow_but_reports_real_physical_prefix_overflow ... ok
+test current_command_wire_round_trips ... ok
+test roll_rejects_bad_identities_metadata_and_zero_without_mutation ... ok
+test roll_refuses_nonadjacent_unqualified_incoherent_and_unsupported_targets ... ok
+test roll_keeps_independent_coherent_affine_rates_and_offsets_on_both_sides ... ok
+test roll_preserves_hidden_windows_until_the_edge_crosses_them ... ok
+test roll_activates_dormant_linked_audio_without_inventing_an_absent_voice ... ok
+test roll_preserves_existing_clocks_effects_root_routes_and_hold_allowances ... ok
+test roll_transforms_marks_once_preserving_physical_bindings_and_seam_bias ... ok
+test roll_uses_one_delta_and_preserves_fractional_padding_in_all_source_view_pairs ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/source_slip.rs (target/debug/deps/source_slip-75c92397c766ad44)
+
+running 10 tests
+test distant_linked_context_overflow_is_an_error_not_a_handle_clamp ... ok
+test treated_nested_and_authored_retimes_are_explicitly_unsupported ... ok
+test common_nonnatural_slope_and_signed_original_origins_stay_exact ... ok
+test neutral_partition_uses_visible_handles_and_preserves_hidden_owner_context ... ok
+test linked_audio_offset_is_subtracted_once_and_dormant_audio_can_activate ... ok
+test fixed_clocks_effects_bindings_and_root_sounds_survive_slip ... ok
+test rejects_unqualified_incoherent_and_unsupported_sources_without_mutation ... ok
+test slip_marks_both_incident_joins_across_groups_without_changing_clocks_or_policies ... ok
+test local_and_sequence_marks_stay_fixed_while_source_pts_resolves_or_leaves_selection ... ok
+test exact_fractional_handles_clamp_inward_and_zero_never_authors ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/source_trim_command.rs (target/debug/deps/source_trim_command-d063d29dc8c3a1b4)
+
+running 13 tests
+test editorial::marked_sequence_cannot_be_ungrouped_and_discard_its_editorial_edge ... ok
+test trim_rejects_missing_extra_colliding_or_stale_command_metadata_atomically ... ok
+test trim_capture_precedes_growth_and_retains_effect_clocks_and_root_sound_once ... ok
+test trim_prefix_moves_physical_content_marks_but_keeps_host_edge_sentinels ... ok
+test trim_marks_distinguish_stored_source_coordinates_from_visible_occurrences ... ok
+test editorial::trim_neighbor_crosses_ordinary_scopes_and_empty_nodes_but_stops_at_silence ... ok
+test trim_loss_policy_applies_per_binding_and_prefix_preserves_unresolved_coordinates ... ok
+test trim_both_edges_grows_only_the_physical_owner_and_round_trips_exactly ... ok
+test editorial::retrim_keeps_one_sided_choices_and_split_retains_the_marked_owner_context ... ok
+test trim_prefix_reconstructs_wrapper_and_ancestor_points_on_their_own_clocks ... ok
+test trim_crop_boundary_bias_changes_visibility_without_erasing_physical_bindings ... ok
+test editorial::trim_marks_only_the_changed_join_and_preserves_every_existing_policy ... ok
+test trim_refuses_a_full_reanchor_budget_without_replacing_the_old_clock ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/source_trim_edit.rs (target/debug/deps/source_trim_edit-1d6f0e69e176c440)
+
+running 19 tests
+test closed_resources_reject_new_vocabulary ... ok
+test near_empty_siblings_move_with_a_while_far_endpoints_survive_and_interior_empties_retire ... ok
+test complete_ripple_intent_has_disjoint_old_owner_groups_and_one_history_patch ... ok
+test nested_scope_ripple_captures_ancestor_suffix_but_overwrite_cannot_consume_it ... ok
+test raw_zero_bad_resources_stale_targets_and_absence_never_author_or_retarget ... ok
+test retained_padding_only_b_tail_keeps_its_full_window_and_is_not_a_retired_owner ... ok
+test split_occurrence_fragments_receive_loss_only_after_the_final_survivor_exists ... ok
+test linked_dormant_support_can_activate_and_absent_audio_stays_absent ... ok
+test two_exterior_splits_retain_both_contexts_without_using_a_cached_target_slot ... ok
+test overwrite_copies_existing_repeat_allowance_but_grants_nothing_to_filler ... ok
+test disjoint_and_exact_touch_use_chronological_source_endpoints_not_invalid_scalar_edits ... ok
+test both_physical_prefixes_translate_content_marks_and_retained_clocks_once ... ok
+test root_sound_mapping_uses_the_complete_in_out_intent_once_and_identity_restores_objects ... ok
+test overwrite_normal_form_handles_compensation_and_disjoint_swept_silence ... ok
+test all_scalar_paths_preserve_their_exact_source_candidates ... ok
+test partial_composite_overwrite_retains_full_context_bindings_and_copied_lineage ... ok
+test reanchor_term_limit_fails_before_mutation_and_does_not_replace_the_old_clock ... ok
+test overwrite_rejects_real_temporary_split_peak_even_when_final_tree_would_fit ... ok
+test full_capacity_geometry_defers_retired_b_wrapper_without_authorizing_capture ... ok
+
+test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 13.37s
+
+     Running tests/source_trim_geometry.rs (target/debug/deps/source_trim_geometry-721e45448ccc8f6c)
+
+running 13 tests
+test signed_origin_vfr_context_retains_fractional_exact_source_endpoints ... ok
+test wrapper_requirements_count_both_owners_and_reuse_retained_partitions ... ok
+test out_and_roll_compensate_without_intermediate_negative_or_oversized_target ... ok
+test dormant_audio_activates_and_absent_audio_remains_absent_in_complete_intent ... ok
+test joint_partition_edges_retain_hidden_selected_context_independently ... ok
+test disjoint_new_material_reports_closed_old_endpoints_without_handle_narrowing ... ok
+test overwrite_uses_selected_scope_bounds_and_never_claims_overlay_admission ... ok
+test one_active_clamp_discards_overshoot_and_other_controls_remain_accepted ... ok
+test joint_geometry_preserves_exact_padding_affine_clocks_and_one_entry_snapshot ... ok
+test zero_and_reverse_restore_representation_without_conflating_audio_intent ... ok
+test absent_ineligible_and_nonadjacent_neighbors_do_not_block_nonroll_values ... ok
+test strict_fractional_width_and_real_storage_overflow_are_separate_limits ... ok
+test every_single_control_matches_scalar_source_geometry_and_clamp ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.03s
+
+     Running tests/source_trim_resolution.rs (target/debug/deps/source_trim_resolution-2b3c438607946ebf)
+
+running 10 tests
+test prefix_overflow_in_dormant_context_is_an_error_without_clamping_or_mutation ... ok
+test linked_non_natural_affine_clock_and_independent_offset_survive_prefix_and_extension ... ok
+test zero_resolution_preserves_mapping_variants_and_carries_no_authored_work ... ok
+test nested_sequence_reports_old_project_windows_and_exact_root_ripple_once ... ok
+test rejects_treated_partition_and_composite_scope_including_zero_queries ... ok
+test fractional_padding_moves_with_either_edge_and_owner_only_grows ... ok
+test exact_handle_reports_distinguish_exclusive_selected_and_inclusive_output_limits ... ok
+test extension_activates_dormant_linked_context_on_either_side_but_never_invents_audio ... ok
+test neutral_crop_retains_hidden_window_and_filters_until_an_edge_reaches_them ... ok
+test rejects_missing_qualification_generic_or_incoherent_clocks_and_held_picture_windows ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/source_view.rs (target/debug/deps/source_view-7ea0f1fb3ab62a81)
+
+running 1 test
+test detached_source_view_keeps_revision_and_asset_but_does_not_edit_the_capture ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/split.rs (target/debug/deps/split-9951f895a464e501)
+
+running 18 tests
+test invalid_boundaries_and_identity_pools_reject_atomically_and_wire_vocabulary_is_strict ... ok
+test source_identity_and_original_clock_scopes_survive_the_cut ... ok
+test root_cut_keeps_root_scopes_and_ownership_while_copying_descendant_hosts ... ok
+test sparse_override_and_nonuniform_play_layout_are_copied_with_stable_identities ... ok
+test root_authored_edges_move_into_both_full_contexts_without_new_partition_edges ... ok
+test one_occurrence_split_isolates_only_the_selected_play_and_copies_one_logical_mark ... ok
+test non_sequence_default_child_and_sparse_override_gain_one_local_container ... ok
+test exact_fractional_occurrence_side_is_not_chosen_from_the_rounded_project_frame ... ok
+test refined_partition_local_output_coordinates_translate_but_context_coordinates_do_not ... ok
+test paired_local_bindings_remain_bound_when_owner_and_host_have_different_visibility ... ok
+test concrete_occurrences_follow_exact_old_output_and_choose_one_side_at_the_seam ... ok
+test hold_sequence_repeat_and_authored_retime_retain_full_context_and_exact_inverse ... ok
+test split_under_an_authored_retime_keeps_its_clock_and_mark_moves_follow_the_chosen_piece ... ok
+test external_sequence_and_root_occurrence_coordinates_keep_one_event_with_two_owner_claims ... ok
+test split_preflights_logical_mark_binding_growth_without_partial_changes ... ok
+test node_capacity_and_excessive_identity_pools_fail_before_inserting_any_context ... ok
+test separate_mark_limits_also_bound_total_fragment_growth ... ok
+test refinement_after_hundreds_of_cuts_keeps_context_depth_and_absolute_mappings_constant ... ok
+
+test result: ok. 18 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 2.00s
+
+     Running tests/split_edit.rs (target/debug/deps/split_edit-e1e74191c288b05f)
+
+running 6 tests
+test split_edits_refuse_without_a_seam_handles_or_whole_length ... ok
+test role_only_deletes_keep_time_and_the_other_role_inside_one_beat ... ok
+test role_repeats_play_one_role_again_without_inserting_time ... ok
+test audio_repeats_follow_root_edits_and_refuse_captures_that_would_leave_them_behind ... ok
+test j_and_l_cuts_move_the_sound_cut_and_keep_every_picture_and_the_duration ... ok
+test split_edits_capture_clocks_beside_a_pitch_shifted_stage ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running tests/structural_properties.rs (target/debug/deps/structural_properties-9f3452aaa86c244c)
+
+running 2 tests
+test random_structural_sequences_keep_transaction_invariants ... ok
+test generated_sequences_commit_every_command_family ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 6.01s
+
+   Doc-tests deadpan_audio
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests deadpan_core
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

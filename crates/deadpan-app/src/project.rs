@@ -865,6 +865,12 @@ pub enum ProjectEdit {
         target: Box<scoped::Target>,
         edit: deadpan_core::ScopedNodeEdit,
     },
+    ScopedPause {
+        target: Box<scoped::Target>,
+        duration: FrameDuration,
+        black: bool,
+        ai: bool,
+    },
     SetAudioTreatments {
         node: NodeId,
         treatments: deadpan_core::AudioTreatments,

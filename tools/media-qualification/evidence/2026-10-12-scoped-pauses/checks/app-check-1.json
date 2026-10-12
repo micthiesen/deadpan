@@ -1,0 +1,26 @@
+{
+  "name": "app-check-1",
+  "command": [
+    "cargo",
+    "check",
+    "--locked",
+    "-p",
+    "deadpan-app",
+    "--all-targets",
+    "--features",
+    "ui-harness"
+  ],
+  "cwd": "/Users/michael/Code/deadpan",
+  "started_utc": "2026-10-12T23:14:58.521031+00:00",
+  "head": "d387788d06dc08b68687d6414bd19203c159c7de",
+  "diff_sha256": "1fb4c7e3273610e2e87368feb8b93f91817bfab435936adf28165477ab3970b1",
+  "untracked_sha256": {
+    "crates/deadpan-app/src/preview/harness/scoped_plays/pauses.rs": "8adaf654a2bc797b78fd67846b43e9e86a89fc211989889f93c0fb53ab91b1d1",
+    "crates/deadpan-app/src/project/tests/scoped/pauses.rs": "b10b4ec2125e26b13a8e013630f1d2e0a608c2a9d7e13f78b953c5bacfe35f7c",
+    "crates/deadpan-core/src/insert_time/occurrence/tests/scoped.rs": "8799caf913291f829a80fa2e73a1996f1553eba585b895e166183eef1655669e"
+  },
+  "exit": 101,
+  "seconds": 66.48570141615346,
+  "log_sha256": "75675a87deec2ac15abec56738bbbbadec24c1f15e0d07457bc1c303fb000276",
+  "binaries": {}
+}

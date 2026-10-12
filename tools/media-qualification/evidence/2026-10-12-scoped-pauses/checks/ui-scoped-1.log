@@ -1,0 +1,3 @@
+scoped-plays: FAIL
+UI feedback: /tmp/deadpan-scoped-pauses-20261012/ui-scoped-1/report.html
+Error: "UI feedback checks failed; inspect report.json and report.html"

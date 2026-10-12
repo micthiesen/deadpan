@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/Users/michael/Code/deadpan/target/debug/deps/deadpan_app-1ce616f62928067a",
+    "project::tests::backups::a_moved_file_with_different_bytes_is_reported_missing_not_relinked",
+    "--exact",
+    "--nocapture"
+  ],
+  "exit": 101,
+  "sample_exit": 0,
+  "seconds": 58.576173999812454
+}

@@ -2,6 +2,15 @@ use super::*;
 
 #[test]
 fn native_occurrence_pause_freezes_one_play_and_keeps_repeat_motion_live() {
+    occurrence_pause(false);
+}
+
+#[test]
+fn native_scoped_pause_start_freezes_preceding_play_and_keeps_repeat_motion_live() {
+    occurrence_pause(true);
+}
+
+fn occurrence_pause(scoped: bool) {
     use deadpan_core::{ExactRatio, Framing, FramingCurve, FramingPose};
     let scratch = tempfile::tempdir().unwrap();
     let service = ProjectService::start(
@@ -72,19 +81,93 @@ fn native_occurrence_pause_freezes_one_play_and_keeps_repeat_motion_live() {
     )
     .workspace
     .unwrap();
-    let at = original.plan.duration().frames() + 5;
+    let at = original.plan.duration().frames() + if scoped { 0 } else { 5 };
     let entry = before.plan.picture(ProjectFrame(at - 1)).unwrap();
     let parent = entry
         .framing
         .iter()
         .position(|scope| scope.instance.node == repeat)
         .unwrap();
-    let inserted = edited(
-        &service,
-        &before,
+    let edit = if scoped {
+        use deadpan_core::{
+            InstancePath, RepeatEditBranch, RepeatEditStep, RepeatInstance, ScopedNodeTarget,
+        };
+        let NodeKind::Repeat { iterations, .. } = &before.document.nodes()[&repeat].kind else {
+            panic!()
+        };
+        let iteration = iterations.at(1).unwrap();
+        // A prior play's Sequence has the same node but a different instance.
+        // Capturing it as this play's parent would flatten or double its crop.
+        let mut grouped = serde_json::to_value(&*before.document).unwrap();
+        grouped["nodes"][repeat.as_str()]["kind"]["child"] = serde_json::json!("capture-group");
+        grouped["nodes"]["capture-group"] =
+            serde_json::to_value(BeatNode::sequence("Captured group", vec![source.clone()]))
+                .unwrap();
+        let grouped = ProjectDocument::from_json(&grouped.to_string()).unwrap();
+        let grouped_plan = RenderPlan::compile(&grouped).unwrap();
+        let within = InstancePath {
+            node: source.clone(),
+            repeats: vec![RepeatInstance {
+                node: repeat.clone(),
+                iteration: iteration.clone(),
+            }],
+        };
+        let refused = deadpan_cli::pause::pause_provider_within(
+            &grouped,
+            &grouped_plan,
+            ProjectFrame(at),
+            Some(&within),
+            &mut |_| panic!("refuse mismatched parent before reading media"),
+        )
+        .unwrap_err();
+        assert!(
+            refused.contains("preceding picture is outside"),
+            "{refused}"
+        );
+        ProjectEdit::ScopedPause {
+            target: Box::new(super::super::scoped::Target {
+                session: before.session,
+                project: before.document.project_id().clone(),
+                revision: before.document.revision_id().clone(),
+                scope: SequenceScope::default(),
+                root: repeat.clone(),
+                target: ScopedNodeTarget {
+                    node: source.clone(),
+                    repeats: vec![RepeatEditStep {
+                        repeat: repeat.clone(),
+                        branch: RepeatEditBranch::Play {
+                            iteration: iteration.clone(),
+                        },
+                    }],
+                },
+                presentation: Some(InstancePath {
+                    node: source.clone(),
+                    repeats: vec![RepeatInstance {
+                        node: repeat.clone(),
+                        iteration,
+                    }],
+                }),
+                cursor: ProjectFrame(at),
+                also: Vec::new(),
+            }),
+            duration: FrameDuration::new(11).unwrap(),
+            black: false,
+            ai: false,
+        }
+    } else {
         ProjectEdit::InsertTime {
             at: ProjectFrame(at),
             duration: FrameDuration::new(11).unwrap(),
+        }
+    };
+    let inserted = command(
+        &service,
+        ProjectRequest::Edit {
+            expected_session: before.session,
+            expected_revision: before.document.revision_id().clone(),
+            scope: SequenceScope::default(),
+            cursor: ProjectFrame(at),
+            edit,
         },
     );
     assert!(inserted.error.is_none(), "{:?}", inserted.error);

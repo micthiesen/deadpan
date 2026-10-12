@@ -1585,6 +1585,25 @@ impl DeadpanApp {
     }
 
     fn edit(&mut self, edit: BeatEdit) {
+        if let BeatEdit::InsertHold(input)
+        | BeatEdit::InsertBlack(input)
+        | BeatEdit::InsertAiHold(input) = edit
+        {
+            self.bindings.clear();
+            self.cancel_repeats("a pause insertion was requested");
+            if self.view == View::Source {
+                self.offer_insert();
+                return;
+            }
+            self.insert_pause(
+                input,
+                matches!(edit, BeatEdit::InsertBlack(_)),
+                matches!(edit, BeatEdit::InsertAiHold(_)),
+                self.capture_macro_target(),
+                self.scoped_target(),
+            );
+            return;
+        }
         if self.refuse_scoped_structure() {
             return;
         }
@@ -1609,16 +1628,6 @@ impl DeadpanApp {
         }
         if let BeatEdit::Escalate(input) = edit {
             self.repeat_change(input);
-            return;
-        }
-        if let BeatEdit::InsertHold(input)
-        | BeatEdit::InsertBlack(input)
-        | BeatEdit::InsertAiHold(input) = edit
-        {
-            let black = matches!(edit, BeatEdit::InsertBlack(_));
-            let ai = matches!(edit, BeatEdit::InsertAiHold(_));
-            let target = self.capture_macro_target();
-            self.insert_pause(input, black, ai, target);
             return;
         }
         if let Some(instruction) = self.semantic_beat_edit(&edit) {
@@ -1720,7 +1729,25 @@ impl DeadpanApp {
         black: bool,
         ai: bool,
         target: Result<macros::Capture, String>,
+        scoped: Result<Option<crate::project::scoped::Target>, String>,
     ) {
+        match scoped {
+            Ok(Some(scoped)) => {
+                self.insert_scoped_pause(input, black, ai, scoped);
+                return;
+            }
+            Ok(None) if self.scoped.is_none() => {}
+            Ok(None) => {
+                self.error = Some(
+                    "The pause scope changed. Enter the command again; no edit was made.".into(),
+                );
+                return;
+            }
+            Err(error) => {
+                self.error = Some(error);
+                return;
+            }
+        }
         let instruction = (|| {
             let captured = target.as_ref().map_err(Clone::clone)?;
             if !captured.matches(self) {
@@ -3192,6 +3219,9 @@ impl DeadpanApp {
                     matches!(edit, BeatEdit::InsertAiHold(_)),
                     macro_target.unwrap_or_else(|| {
                         Err("Enter the pause command again to capture its insertion point.".into())
+                    }),
+                    scoped_target.unwrap_or_else(|| {
+                        Err("Enter the pause command again to capture its scope.".into())
                     }),
                 );
             }

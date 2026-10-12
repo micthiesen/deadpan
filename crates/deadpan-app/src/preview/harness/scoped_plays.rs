@@ -4,6 +4,8 @@ use super::*;
 use deadpan_core::{GainDb, NodeId, NodeKind, ProjectDocument};
 use egui::Key;
 
+mod pauses;
+
 pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     idle(d)?;
     let before = d.revision();
@@ -222,6 +224,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         d.snapshot(),
     )?;
     d.app_mut().feedback.simulate_playback = false;
+    pauses::run(d)?;
     d.report.skipped.push("This replay uses real native widgets, project service and Metal with scripted keyboard delivery. Its final Escape check simulates playback preparation; physical keyboard/IME and acoustic playback are separate checks.".into());
     Ok(())
 }

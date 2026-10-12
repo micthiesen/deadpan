@@ -4,6 +4,27 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[This play pauses](../qualification/scoped-pauses-2026-10-12.md) add the optional
+`InsertOccurrenceTime.within` address and `pause_insertion_within`. Start and end
+belong to the explicitly inspected occurrence; isolation remaps it before the
+final insertion. Native `ScopedPause` captures the session, revision, scope,
+play and cursor, validates the provisional new Hold and retains it through the
+saved receipt. Every enclosing Repeat must choose one Play; All/multiple plays
+and Retime ancestors refuse. Freeze capture refuses when the preceding picture
+lacks the complete insertion-parent instance. Do not match only its node ID or
+substitute the right-hand picture. Black pauses need no sampled picture.
+
+All 1,725 core/audio tests, 13 final scope/service tests and the 78-check scoped
+and 56-check ordinary AI-insertion replays pass. Compact edit controls precede
+Hold details after replay caught them offscreen. Strict workspace/all-target
+Clippy and formatting pass. The broad app run found stale
+reference/scope assertions (corrected) and bookmark import timeouts. Sampling
+located the latter in Foundation scanning the large Cargo directory; the exact
+same test executable copied into a small directory passes both cases without
+code or timeout changes. Keep executable hashes when diagnosing that failure.
+The primary implemented and self-reviewed alone; no live GUI or device output
+ran. General scoped temporal editing and Retime remain open.
+
 [Pauses inside Repeat](../qualification/occurrence-pauses-2026-10-12.md)
 add `InsertOccurrenceTime` and the shared `pause_insertion_target` query.
 Native and macro pauses can insert at an integer boundary in one concrete play
@@ -25,7 +46,7 @@ release exports verify 15 pictures and 31 audio blocks with zero measured offset
 six authored-PCM windows match bit-for-bit. The qualification record retains
 source/binary identities, failures, projects, movies and full reports.
 The primary implemented and self-reviewed alone. Authored Retime and
-fractional interiors, native scoped-inspector temporal intent and remaining
+fractional interiors, general scoped temporal editing and remaining
 sound-scope guards stay open. No requirement or gate is newly complete.
 
 [Selected-play preflight](../qualification/scoped-preflight-2026-10-12.md)

@@ -15,6 +15,7 @@ fn pause(before: &ProjectDocument, at: i64) -> ProjectDocument {
         "pause",
         Command::InsertOccurrenceTime {
             at: ProjectFrame(at),
+            within: None,
             hold: recipe,
             id: id("pause"),
             timing: timing("pause"),

@@ -1,0 +1,6 @@
+{
+  "source": "target/debug/deps/deadpan_app-1ce616f62928067a",
+  "executed_copy": "/tmp/deadpan-scoped-pauses-20261012/isolated/deadpan-app-tests",
+  "sha256": "0b6fdd3bca34a705f1a2b536c28ac108a2b55dd57fc35187be0b046500b6f098",
+  "reason": "CFBundleGetMainBundle sampled scanning build output directory during linked import"
+}

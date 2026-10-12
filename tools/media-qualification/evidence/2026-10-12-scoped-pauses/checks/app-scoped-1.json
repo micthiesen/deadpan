@@ -1,0 +1,30 @@
+{
+  "name": "app-scoped-1",
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-app",
+    "--features",
+    "ui-harness",
+    "scoped_pause"
+  ],
+  "cwd": "/Users/michael/Code/deadpan",
+  "started_utc": "2026-10-12T23:17:30.614744+00:00",
+  "head": "d387788d06dc08b68687d6414bd19203c159c7de",
+  "diff_sha256": "b186d800759a75cfee8c185a9869acf1f46db85c71c1a1220ff9cfe3eccde21a",
+  "untracked_sha256": {
+    "crates/deadpan-app/src/preview/harness/scoped_plays/pauses.rs": "8adaf654a2bc797b78fd67846b43e9e86a89fc211989889f93c0fb53ab91b1d1",
+    "crates/deadpan-app/src/project/tests/scoped/pauses.rs": "b10b4ec2125e26b13a8e013630f1d2e0a608c2a9d7e13f78b953c5bacfe35f7c",
+    "crates/deadpan-core/src/insert_time/occurrence/tests/scoped.rs": "8799caf913291f829a80fa2e73a1996f1553eba585b895e166183eef1655669e"
+  },
+  "exit": 0,
+  "seconds": 95.09483529208228,
+  "log_sha256": "cd9c77c4fda6e8a826d212e93fbca33af354cb02ac89796d15478705accf60d2",
+  "binaries": {
+    "target/debug/deps/deadpan_app-44d6a8ab0a194992": "541282920ef49d98a4c204f793cc13aa136cd9fda0aa3290a1c816f8b327dc52",
+    "target/debug/deps/deadpan_app-fd90e39f19febf8a": "2de0993def96c39a3f6cdcdbdd08464ef744f12c58f633653a016e2759ef53cc",
+    "target/debug/deps/headless-410cedbee467bb1f": "e4c0789893754b392815a378ccf4270d884950c2869ea623797b309bc4f6557c"
+  }
+}

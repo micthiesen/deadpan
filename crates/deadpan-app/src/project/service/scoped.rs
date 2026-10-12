@@ -203,6 +203,71 @@ pub(super) fn prepare(
 }
 
 impl Service {
+    pub(super) fn insert_scoped_pause(
+        &mut self,
+        target: Target,
+        duration: deadpan_core::FrameDuration,
+        black: bool,
+        ai: bool,
+    ) -> Result<()> {
+        self.check_scoped_head(&target)?;
+        let workspace = self.workspace.as_ref().ok_or("Open a project first")?;
+        target.pause_instance(workspace)?;
+        if black && ai {
+            return Err("An AI pause requires its captured freeze fallback.".into());
+        }
+        if duration == deadpan_core::FrameDuration::ZERO {
+            self.message = Some("Pause resolves to 0 frames; no edit was made.".into());
+            return Ok(());
+        }
+        let request =
+            crate::project::pause::prepare_scoped(workspace, &target, duration, black, ai)?;
+        let (_, after) =
+            deadpan_core::apply_with_result(&workspace.document, &request).map_err(display)?;
+        let plan = deadpan_plan::RenderPlan::compile(&after).map_err(display)?;
+        let instance = plan.picture(target.cursor).map_err(display)?.instance;
+        let Command::InsertOccurrenceTime { id, .. } = &request.command else {
+            return Err("Scoped pause did not retain its concrete occurrence.".into());
+        };
+        if &instance.node != id {
+            return Err("Scoped pause is not visible at its captured insertion boundary.".into());
+        }
+        let receipt = Commit {
+            before: target.clone(),
+            revision: request.new_revision.clone(),
+            target: deadpan_core::ScopedNodeTarget {
+                node: instance.node.clone(),
+                repeats: instance
+                    .repeats
+                    .iter()
+                    .map(|step| deadpan_core::RepeatEditStep {
+                        repeat: step.node.clone(),
+                        branch: deadpan_core::RepeatEditBranch::Play {
+                            iteration: step.iteration.clone(),
+                        },
+                    })
+                    .collect(),
+            },
+            presentation: Some(instance),
+        };
+        receipt.target.validate(&after).map_err(display)?;
+        let outcome = self.writer()?.commit(&request).map_err(display)?;
+        self.capture_preparation_notices(&outcome.generation_preparation_notices);
+        self.committed = Some(CommittedEdit {
+            revision: outcome.revision_id,
+            selected_node: Some(target.root),
+            preserve_cursor: true,
+            cursor: Some(target.cursor),
+            scope: target.scope,
+            sound: None,
+            range_selection: None,
+            scoped: Some(receipt),
+        });
+        self.refresh_saved("Pause inserted in This play and saved")?;
+        self.message = Some("Pause inserted in This play and saved".into());
+        Ok(())
+    }
+
     pub(super) fn check_scoped_head(&self, target: &Target) -> Result<()> {
         let head = self
             .store

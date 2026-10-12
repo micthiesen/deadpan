@@ -1,0 +1,72 @@
+{
+  "scoped-tests-2": {
+    "passed": 6,
+    "failed": 0,
+    "ignored": 0,
+    "failures": [],
+    "ignored_tests": []
+  },
+  "regression-1": {
+    "passed": 1124,
+    "failed": 4,
+    "ignored": 9,
+    "failures": [
+      "navigation::registry::tests::commands_reference_is_current",
+      "project::tests::backups::a_moved_linked_original_is_found_by_its_bookmark_and_relinked_on_open",
+      "project::tests::backups::a_moved_file_with_different_bytes_is_reported_missing_not_relinked",
+      "project::tests::scope::scope_resolves_absolute_edges_and_blocks_composite_descent_and_pause_seams"
+    ],
+    "ignored_tests": [
+      [
+        "project::tests::generation::real_worker_generates_a_candidate_that_acceptance_commits",
+        ", runs the local AI model; set DEADPAN_BRIDGE_REAL=1"
+      ],
+      [
+        "worker::project_tests::generated_playback_tests::cancelled_or_different_project_admissions_cannot_be_adopted",
+        ", requires the real accepted bundle fixture; see module documentation"
+      ],
+      [
+        "worker::project_tests::generated_playback_tests::generated_admission_and_first_decode_finish_before_the_hold_is_requested",
+        ", requires the real accepted bundle fixture; see module documentation"
+      ],
+      [
+        "worker::project_tests::generated_playback_tests::generated_holds_preserve_both_verified_decoders_and_original_lookahead",
+        ", requires the real accepted bundle fixture; see module documentation"
+      ],
+      [
+        "worker::project_tests::generated_playback_tests::generated_playback_worker_matches_the_independent_single_slot_reader",
+        ", requires the real accepted bundle fixture; see module documentation"
+      ],
+      [
+        "worker::project_tests::generated_playback_tests::generated_preview_slices_equal_the_single_threaded_offline_reader",
+        ", requires DEADPAN_GENERATED_TRANSITIONS_PACKAGE: two accepted Generated Holds"
+      ],
+      [
+        "worker::project_tests::generated_playback_tests::next_generated_provider_prepares_while_the_current_hold_serves",
+        ", requires DEADPAN_GENERATED_TRANSITIONS_PACKAGE: two accepted Holds separated by one Original picture"
+      ],
+      [
+        "worker::project_tests::generated_playback_tests::starting_on_generated_prepares_original_and_revokes_stale_admissions",
+        ", requires DEADPAN_GENERATED_TRANSITIONS_PACKAGE: two accepted Holds separated by one Original picture"
+      ],
+      [
+        "worker::project_tests::stress_tests::seek_storm_and_jumpy_playback_stay_bounded",
+        ", stress run on a large package; see the module documentation"
+      ]
+    ]
+  },
+  "core-audio-regression": {
+    "passed": 1725,
+    "failed": 0,
+    "ignored": 0,
+    "failures": [],
+    "ignored_tests": []
+  },
+  "final-scope-tests": {
+    "passed": 13,
+    "failed": 0,
+    "ignored": 0,
+    "failures": [],
+    "ignored_tests": []
+  }
+}

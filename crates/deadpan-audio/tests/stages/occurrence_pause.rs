@@ -55,10 +55,22 @@ fn fixture(nested: bool) -> (ProjectDocument, FixtureProvider, Vec<Range<i64>>) 
 }
 
 fn pause(document: &ProjectDocument, at: i64) -> ProjectDocument {
-    let PauseInsertionTarget::Occurrence(target) =
-        document.pause_insertion_target(ProjectFrame(at)).unwrap()
-    else {
-        panic!("expected Repeat at {at}")
+    pause_within(document, at, None)
+}
+
+fn pause_within(
+    document: &ProjectDocument,
+    at: i64,
+    within: Option<InstancePath>,
+) -> ProjectDocument {
+    let target = match &within {
+        Some(instance) => document
+            .pause_insertion_within(ProjectFrame(at), instance)
+            .unwrap(),
+        None => match document.pause_insertion_target(ProjectFrame(at)).unwrap() {
+            PauseInsertionTarget::Occurrence(target) => target,
+            _ => panic!("expected Repeat at {at}"),
+        },
     };
     let revision = RevisionId::new("occurrence-pause").unwrap();
     let request = CommandRequest {
@@ -67,6 +79,7 @@ fn pause(document: &ProjectDocument, at: i64) -> ProjectDocument {
         new_revision: revision.clone(),
         command: Command::InsertOccurrenceTime {
             at: ProjectFrame(at),
+            within,
             hold: HoldRecipe {
                 duration: duration(1),
                 video: HoldVideo::Background,
@@ -149,6 +162,67 @@ fn occurrence_pause_keeps_each_44100_source_and_room_tone_allocation_at_ntsc_bou
                 actual,
                 "chunk independence nested={nested} at={at}"
             );
+        }
+    }
+}
+
+#[test]
+fn scoped_pause_edges_keep_44100_pcm_in_plain_and_nested_plays() {
+    for nested in [false, true] {
+        let (before, mut provider, allocations) = fixture(nested);
+        let old = record(&before, &mut provider, false, &[256]);
+        for outer in 0..if nested { 2 } else { 3 } {
+            for inner in 0..if nested { 2 } else { 1 } {
+                let mut repeats = vec![RepeatInstance {
+                    node: id("repeat"),
+                    iteration: IterationId {
+                        allocation: RevisionId::new(if nested { "body" } else { "source" })
+                            .unwrap(),
+                        ordinal: outer,
+                    },
+                }];
+                if nested {
+                    repeats.push(RepeatInstance {
+                        node: id("inner"),
+                        iteration: IterationId {
+                            allocation: RevisionId::new("source").unwrap(),
+                            ordinal: inner,
+                        },
+                    });
+                }
+                let within = InstancePath {
+                    node: id("source"),
+                    repeats,
+                };
+                let start =
+                    1 + i64::from(outer) * if nested { 14 } else { 6 } + i64::from(inner) * 6;
+                for local in [0, 2, 4] {
+                    let at = start + local;
+                    let after = pause_within(&before, at, Some(within.clone()));
+                    let actual = record(&after, &mut provider, false, &[127, 3, 251]);
+                    let cut = ntsc_boundary(at);
+                    assert_eq!(actual.samples[..cut], old.samples[..cut]);
+                    assert_pause(&actual, cut..ntsc_boundary(at + 1));
+                    for range in allocations.iter().filter(|range| range.end > at) {
+                        let start = range.start.max(at);
+                        let old_samples = ntsc_boundary(start)..ntsc_boundary(range.end);
+                        let new_samples = ntsc_boundary(start + 1)..ntsc_boundary(range.end + 1);
+                        for (offset, sample) in new_samples.enumerate() {
+                            let previous = old_samples.start + offset;
+                            let expected = if previous < old_samples.end {
+                                old.samples[previous]
+                            } else {
+                                [0.; 2]
+                            };
+                            assert_eq!(
+                                actual.samples[sample], expected,
+                                "nested={nested} outer={outer} inner={inner} at={at} allocation={range:?}"
+                            );
+                        }
+                    }
+                    assert_eq!(record(&after, &mut provider, false, &[1, 239]), actual);
+                }
+            }
         }
     }
 }

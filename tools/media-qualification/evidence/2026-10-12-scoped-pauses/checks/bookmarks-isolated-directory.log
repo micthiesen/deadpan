@@ -1,0 +1,7 @@
+
+running 2 tests
+test project::tests::backups::a_moved_file_with_different_bytes_is_reported_missing_not_relinked ... ok
+test project::tests::backups::a_moved_linked_original_is_found_by_its_bookmark_and_relinked_on_open ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 1135 filtered out; finished in 0.36s
+

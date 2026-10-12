@@ -1,0 +1,70 @@
+{
+  "ui-scoped-1": {
+    "failed": true,
+    "binary_sha256": "c23eac91b3fa1df7186f44e37b523db9c744b33c9b0d7762a45af3add030a9b0",
+    "scenarios": [
+      {
+        "name": "kestrel-shortcuts",
+        "checks": 1,
+        "failed": false,
+        "skipped": []
+      },
+      {
+        "name": "scoped-plays",
+        "checks": 63,
+        "failed": true,
+        "skipped": [
+          "OS picker behavior: only its selected path is scripted",
+          "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+        ]
+      }
+    ],
+    "report_uncompressed_sha256": "e60a6a9701377f3a5f454451d381b2ecd2b57f05af98f15d0a1d90a2c9f39729"
+  },
+  "ui-scoped-2": {
+    "failed": false,
+    "binary_sha256": "e21469641650f5d11bcc5d7de61c25d4c07653ed927614685c882a66400e4b8d",
+    "scenarios": [
+      {
+        "name": "kestrel-shortcuts",
+        "checks": 1,
+        "failed": false,
+        "skipped": []
+      },
+      {
+        "name": "scoped-plays",
+        "checks": 78,
+        "failed": false,
+        "skipped": [
+          "This replay uses real native widgets, project service and Metal with scripted keyboard delivery. Its final Escape check simulates playback preparation; physical keyboard/IME and acoustic playback are separate checks.",
+          "OS picker behavior: only its selected path is scripted",
+          "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+        ]
+      }
+    ],
+    "report_uncompressed_sha256": "67210f7956f2b9d776bc8a050bdd66c517a9a0d0c625f8ff3c434e842ea25c94"
+  },
+  "ui-ai-insertion": {
+    "failed": false,
+    "binary_sha256": "e21469641650f5d11bcc5d7de61c25d4c07653ed927614685c882a66400e4b8d",
+    "scenarios": [
+      {
+        "name": "kestrel-shortcuts",
+        "checks": 1,
+        "failed": false,
+        "skipped": []
+      },
+      {
+        "name": "ai-insertion",
+        "checks": 56,
+        "failed": false,
+        "skipped": [
+          "Model preflight reports a scripted missing model. Insertion, exact picture mappings, committed fallback, durable preparation, Retry, Discard, history, dot and macro execution use production paths.",
+          "OS picker behavior: only its selected path is scripted",
+          "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+        ]
+      }
+    ],
+    "report_uncompressed_sha256": "a12eccd291a2497e2dd89756e6caa2e4d30488decc2a3bfcabb259080e7c0032"
+  }
+}

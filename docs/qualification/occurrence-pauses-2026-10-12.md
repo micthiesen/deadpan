@@ -98,7 +98,8 @@ The failed runs are retained with the passing results.
 ## Remaining scope
 
 Authored Retime interiors and fractional insertion points still need exact
-derived-clock authoring. Native temporal edits from the scoped inspector,
+derived-clock authoring. [This play pause insertion from the scoped inspector](scoped-pauses-2026-10-12.md)
+is covered by the follow-up qualification. Other scoped temporal edits,
 selected Original-moment payloads and freezing accepted footage remain open.
 Root-owned attached sounds and changed complete processing scopes retain their
 existing explicit refusals. Physical listening, native-window interaction and

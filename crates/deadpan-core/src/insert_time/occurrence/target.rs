@@ -87,13 +87,38 @@ impl ProjectDocument {
         &self,
         at: ProjectFrame,
     ) -> Result<PauseInsertionTarget, EditError> {
-        resolve(self, at)
+        resolve(self, at, None)
+    }
+
+    /// Resolve a pause within one inspected occurrence. Its start and end
+    /// belong to that occurrence even when the adjacent play shares the same
+    /// project boundary. The caller must choose a concrete Repeat instance.
+    pub fn pause_insertion_within(
+        &self,
+        at: ProjectFrame,
+        within: &InstancePath,
+    ) -> Result<OccurrencePauseTarget, EditError> {
+        for_command(self, at, Some(within))
+    }
+}
+
+pub(super) fn for_command(
+    document: &ProjectDocument,
+    at: ProjectFrame,
+    within: Option<&InstancePath>,
+) -> Result<OccurrencePauseTarget, EditError> {
+    match resolve(document, at, within)? {
+        PauseInsertionTarget::Occurrence(target) => Ok(target),
+        PauseInsertionTarget::Ordinary(_) => Err(invalid(
+            "occurrence pause requires a concrete Repeat branch",
+        )),
     }
 }
 
 fn resolve(
     document: &ProjectDocument,
     at: ProjectFrame,
+    within: Option<&InstancePath>,
 ) -> Result<PauseInsertionTarget, EditError> {
     let durations = document.durations()?;
     if at.0 < 0 || at.0 > durations[document.root()].frames() {
@@ -107,6 +132,14 @@ fn resolve(
     let mut sequence = None;
     let mut parent = instance.clone();
     let mut navigation_parent = document.root().clone();
+    if let Some(within) = within {
+        let start = scoped_start(document, &durations, at, within)?;
+        instance = within.clone();
+        position = start.position;
+        parent = start.parent;
+        sequence = start.sequence;
+        navigation_parent = start.navigation_parent;
+    }
     for _ in 0..=crate::MAX_DOCUMENT_DEPTH {
         let (site, split_nodes, container, gap) = match &document.nodes()[&instance.node].kind {
             NodeKind::Sequence { children } => {
@@ -147,7 +180,14 @@ fn resolve(
                     document.gap_overrides().get(&instance.node),
                     &durations,
                 )?;
-                let location = layout.locate(ExactRatio::integer(position), InsertionBias::Left)?;
+                // A named scope can start at zero; inward bias selects its
+                // first play rather than the preceding external object.
+                let bias = if position == 0 {
+                    InsertionBias::Right
+                } else {
+                    InsertionBias::Left
+                };
+                let location = layout.locate(ExactRatio::integer(position), bias)?;
                 if location.position.denominator() != 1 {
                     return Err(invalid(
                         "pause insertion needs an exact local frame boundary",
@@ -191,6 +231,16 @@ fn resolve(
             _ => {
                 super::super::physical(document, &instance.node)?;
                 let interior = position > 0 && position < durations[&instance.node].frames();
+                if !interior && let Some((owner, index)) = &sequence {
+                    let site = Site::Sequence {
+                        instance: InstancePath {
+                            node: owner.clone(),
+                            repeats: instance.repeats.clone(),
+                        },
+                        index: index + usize::from(position != 0),
+                    };
+                    return finish(document, navigation_parent, parent, site, 0, false, false);
+                }
                 let split_nodes = if interior {
                     super::super::split_node_count(document, &instance.node)?
                         + usize::from(sequence.is_none())
@@ -215,33 +265,127 @@ fn resolve(
                 .insert_time_target(at)
                 .map(PauseInsertionTarget::Ordinary);
         }
-        let mut target = OccurrencePauseTarget {
+        return finish(
+            document,
             navigation_parent,
-            picture_parent: parent,
-            isolation_nodes: 0,
-            isolation_marks: 0,
+            parent,
+            site,
             split_nodes,
             container,
             gap,
-            site,
-        };
-        let isolation = crate::scoped_edit::temporal_requirements(document, &target.scope())?;
-        target.isolation_nodes = isolation.nodes;
-        target.isolation_marks = isolation.marks;
-        let required = isolation
-            .nodes
-            .checked_add(split_nodes)
-            .and_then(|count| count.checked_add(usize::from(container) + usize::from(gap) + 1))
-            .ok_or_else(|| limit("pause identity count"))?;
-        if document
-            .nodes()
-            .len()
-            .checked_add(required)
-            .is_none_or(|count| count > crate::MAX_DOCUMENT_NODES)
-        {
-            return Err(limit("pause insertion exceeds the document node limit"));
-        }
-        return Ok(PauseInsertionTarget::Occurrence(target));
+        );
     }
     Err(limit("pause insertion exceeds the document depth limit"))
+}
+
+fn finish(
+    document: &ProjectDocument,
+    navigation_parent: NodeId,
+    picture_parent: InstancePath,
+    site: Site,
+    split_nodes: usize,
+    container: bool,
+    gap: bool,
+) -> Result<PauseInsertionTarget, EditError> {
+    let mut target = OccurrencePauseTarget {
+        navigation_parent,
+        picture_parent,
+        isolation_nodes: 0,
+        isolation_marks: 0,
+        split_nodes,
+        container,
+        gap,
+        site,
+    };
+    let isolation = crate::scoped_edit::temporal_requirements(document, &target.scope())?;
+    target.isolation_nodes = isolation.nodes;
+    target.isolation_marks = isolation.marks;
+    let required = isolation
+        .nodes
+        .checked_add(split_nodes)
+        .and_then(|count| count.checked_add(usize::from(container) + usize::from(gap) + 1))
+        .ok_or_else(|| limit("pause identity count"))?;
+    if document
+        .nodes()
+        .len()
+        .checked_add(required)
+        .is_none_or(|count| count > crate::MAX_DOCUMENT_NODES)
+    {
+        return Err(limit("pause insertion exceeds the document node limit"));
+    }
+    Ok(PauseInsertionTarget::Occurrence(target))
+}
+
+struct ScopedStart {
+    position: i64,
+    parent: InstancePath,
+    sequence: Option<(NodeId, usize)>,
+    navigation_parent: NodeId,
+}
+
+fn scoped_start(
+    document: &ProjectDocument,
+    durations: &std::collections::BTreeMap<NodeId, FrameDuration>,
+    at: ProjectFrame,
+    within: &InstancePath,
+) -> Result<ScopedStart, EditError> {
+    within.validate(document)?;
+    let outer = within
+        .repeats
+        .first()
+        .ok_or_else(|| invalid("scoped pause requires an explicitly selected Repeat play"))?;
+    let index = crate::AnchorIndex::from_durations(document, durations.clone())?;
+    let mut ancestor = &within.node;
+    while let Some((parent, _)) = index.parents.get(ancestor) {
+        if matches!(document.nodes()[parent].kind, NodeKind::Retime { .. }) {
+            return Err(invalid(
+                "pause inside Retime needs exact derived-clock authoring",
+            ));
+        }
+        ancestor = parent;
+    }
+    let start = index
+        .resolve_target(&crate::AnchorTarget {
+            boundary: crate::BoundaryAnchor {
+                coordinate: crate::Anchor::Occurrence {
+                    instance: within.clone(),
+                    position: ExactRatio::ZERO,
+                },
+                bias: InsertionBias::Right,
+            },
+            occurrence: None,
+        })
+        .map_err(|error| invalid(&error.to_string()))?;
+    if start.exact_frame.denominator() != 1 {
+        return Err(invalid("scoped pause needs an integral occurrence clock"));
+    }
+    let position = at.0.checked_sub(start.frame.0).ok_or_else(overflow)?;
+    if position < 0 || position > durations[&within.node].frames() {
+        return Err(invalid("pause boundary is outside the selected occurrence"));
+    }
+    let parent_node = &index.parents[&within.node].0;
+    let mut parent = InstancePath {
+        node: parent_node.clone(),
+        repeats: within.repeats.clone(),
+    };
+    if matches!(document.nodes()[parent_node].kind, NodeKind::Repeat { .. }) {
+        parent.repeats.pop();
+    }
+    let sequence = if let NodeKind::Sequence { children } = &document.nodes()[parent_node].kind {
+        Some((
+            parent_node.clone(),
+            children
+                .iter()
+                .position(|id| id == &within.node)
+                .ok_or_else(|| invalid("scoped pause lost its Sequence parent"))?,
+        ))
+    } else {
+        None
+    };
+    Ok(ScopedStart {
+        position,
+        parent,
+        sequence,
+        navigation_parent: index.parents[&outer.node].0.clone(),
+    })
 }

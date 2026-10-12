@@ -5,6 +5,8 @@ use deadpan_core::{
     RepeatEditStep, RepeatInstance, ScopedNodeEdit, ScopedNodeTarget,
 };
 
+mod pauses;
+
 fn seed(path: &Path) {
     seed_named(path, &["a", "b"]);
 }

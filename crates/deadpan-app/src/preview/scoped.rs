@@ -7,9 +7,53 @@ use crate::project::scoped::Target;
 
 pub(super) mod model;
 
-const STRUCTURE_UNAVAILABLE: &str = "Inside Repeat and Retime contents, gain, Camera, pause audio and AI pictures are available. Return to the parent to change timing or copy a range.";
+const STRUCTURE_UNAVAILABLE: &str = "Inside Repeat and Retime contents, gain, Camera, pause audio and AI pictures are available. Choose This play at every Repeat level to insert a pause. Other timing edits and range copying require the parent.";
 
 impl DeadpanApp {
+    pub(super) fn insert_scoped_pause(
+        &mut self,
+        input: navigation::duration::DurationInput,
+        black: bool,
+        ai: bool,
+        target: Target,
+    ) {
+        let request = (|| {
+            if self.view != View::Sequence
+                || matches!(self.pane, Pane::Sources | Pane::Sounds)
+                || self.scoped_target()?.as_ref() != Some(&target)
+            {
+                return Err(
+                    "The pause insertion scope changed. Enter the command again; no edit was made."
+                        .into(),
+                );
+            }
+            if self.macros.recording() || self.macros.is_pending() {
+                return Err("Finish the macro before inserting a scoped pause.".into());
+            }
+            let workspace = self.workspace.as_ref().ok_or("Open a project first.")?;
+            target.pause_instance(workspace)?;
+            let duration = input.resolve(workspace.document.presentation_basis().frame_rate)?;
+            Ok(ProjectRequest::Edit {
+                expected_session: target.session,
+                expected_revision: target.revision.clone(),
+                scope: target.scope.clone(),
+                cursor: target.cursor,
+                edit: ProjectEdit::ScopedPause {
+                    target: Box::new(target),
+                    duration,
+                    black,
+                    ai,
+                },
+            })
+        })();
+        match request {
+            Ok(request) => {
+                self.submit(request);
+            }
+            Err(error) => self.error = Some(error),
+        }
+    }
+
     pub(super) fn reconcile_scoped(
         &mut self,
         before: Option<&Target>,
@@ -612,13 +656,24 @@ impl DeadpanApp {
                     let ready = !self.service.is_busy() && !self.dialogs.is_open();
                     ui.add_space(4.0);
                     if composite && ui.add(style::row_action(ui, "Enter contents", self.editor_key(EditorKey::EnterGroup)).fill(style::SELECTED)).clicked() { self.enter_scoped(ui.ctx()); }
-                    if hold { self.ai_inspector(ui, ready); self.hold_audio_controls(ui, ready); }
-                    self.gain_inspector(ui, ready);
                     ui.add_space(8.0);
                     ui.label(style::section_title("EDIT", false));
                     if ui.add_enabled(ready, style::row_action(ui, "Camera…", self.editor_key(EditorKey::Camera))).clicked() {
                         self.framing_action(navigation::FramingAction::EnterCamera, ui.ctx());
                     }
+                    if ui.add_enabled(ready, style::row_action(ui, "Insert pause", self.editor_key(EditorKey::Hold)))
+                        .on_hover_text("Insert 0.5 s in This play at the cursor. Each enclosing Repeat must name one play.").clicked() {
+                        self.edit(BeatEdit::InsertHold(navigation::duration::DurationInput::half_seconds(1)));
+                    }
+                    if ui.add_enabled(ready, style::row_action(ui, "Insert AI pause", self.editor_key(EditorKey::GenerateAi)))
+                        .on_hover_text("Save the pause in This play, then request pictures. Accepting a candidate is a separate edit.").clicked() {
+                        self.edit(BeatEdit::InsertAiHold(navigation::duration::DurationInput::half_seconds(1)));
+                    }
+                    if ui.add_enabled(ready, style::row_action(ui, "Insert pause of…", ":hold")).clicked() {
+                        self.open_command("hold 0.5s".into(), ui.ctx());
+                    }
+                    if hold { self.ai_inspector(ui, ready); self.hold_audio_controls(ui, ready); }
+                    self.gain_inspector(ui, ready);
                     ui.add_space(4.0);
                     ui.small(format!("{} children · {} enter · {} parent", self.editor_pair(EditorKey::BeatPrevious, EditorKey::BeatNext, "/"), self.editor_key(EditorKey::EnterGroup), self.editor_key(EditorKey::LeaveGroup)));
                     ui.small(STRUCTURE_UNAVAILABLE);
@@ -628,6 +683,14 @@ impl DeadpanApp {
 }
 
 fn scoped_structural_action(action: Action) -> bool {
+    if matches!(
+        action,
+        Action::Edit(
+            BeatEdit::InsertHold(_) | BeatEdit::InsertBlack(_) | BeatEdit::InsertAiHold(_)
+        )
+    ) {
+        return false;
+    }
     matches!(
         action,
         Action::Insert

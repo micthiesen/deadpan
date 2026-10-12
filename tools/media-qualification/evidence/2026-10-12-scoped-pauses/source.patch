@@ -1,0 +1,1737 @@
+diff --git a/crates/deadpan-app/src/navigation/registry/entries.rs b/crates/deadpan-app/src/navigation/registry/entries.rs
+index 8d82c395..1a69561e 100644
+--- a/crates/deadpan-app/src/navigation/registry/entries.rs
++++ b/crates/deadpan-app/src/navigation/registry/entries.rs
+@@ -394,7 +394,7 @@ pub static SPECS: &[Spec] = &[
+         contexts: C::EDIT.or(C::PLACED).or(C::CONTENTS),
+         replay: Replay::Ignored,
+         headless: gui("pass the group as parent", NAV),
+-        help: "Open a selected Sequence, Repeat or Retime. Inside Repeat and Retime contents, navigate children and edit gain, Camera or pause audio. Timing edits and range copying still require an ordinary Sequence. In Placed sounds it opens the exact event position.",
++        help: "Open a selected Sequence, Repeat or Retime. Inside contents, navigate children and edit gain, Camera or pause audio. Choose This play at every enclosing Repeat to insert a pause. Other timing edits and range copying require an ordinary Sequence. In Placed sounds it opens the exact event position.",
+     },
+     Spec {
+         id: "group.leave",
+@@ -880,10 +880,10 @@ pub static SPECS: &[Spec] = &[
+             "hold",
+             ":hold 0.5s [video=freeze|black|ai] [audio=silence]",
+         )],
+-        contexts: C::EDIT,
++        contexts: C::EDIT.or(C::CONTENTS),
+         replay: Replay::RecordedAndDot,
+         headless: eq("insert_pause instruction", HOLDS),
+-        help: "Insert a silent freeze at the cursor: 0.5 s per count, so 3{hold!} is 1.5 s. Keeps the following original speech. The cursor stays at the pause; {group.enter} opens its enclosing group when needed. :hold takes an exact duration (12f, 250ms, 1.5s or 01:02.500, rounded once to project frames); zero makes no edit. video=black inserts silent black picture instead. :hold 1.5s video=ai audio=silence saves the same freeze and requests AI pictures; acceptance stays explicit. Repeat and Retime interiors remain unavailable.",
++        help: "Insert a silent freeze at the cursor: 0.5 s per count, so 3{hold!} is 1.5 s. Keeps the following original speech. The cursor stays at the pause; {group.enter} opens its enclosing group when needed. :hold takes an exact duration (12f, 250ms, 1.5s or 01:02.500, rounded once to project frames); zero makes no edit. video=black inserts silent black picture instead. :hold 1.5s video=ai audio=silence saves the same freeze and requests AI pictures; acceptance stays explicit. Inside Repeat contents, choose This play at every level; the new pause stays selected. All plays, multiple plays, Retime ancestors and scoped macros are unavailable. Freeze capture refuses a boundary whose preceding picture is outside its insertion parent.",
+     },
+     Spec {
+         id: "hold.duration",
+@@ -1370,10 +1370,10 @@ pub static SPECS: &[Spec] = &[
+         section: Section::Ai,
+         keys: &[Keys::Editor(B::GenerateAi)],
+         commands: &[verb("ai-hold", ":ai-hold 0.5s")],
+-        contexts: C::EDIT,
++        contexts: C::EDIT.or(C::CONTENTS),
+         replay: Replay::RecordedAndDot,
+         headless: eq("insert_ai_pause instruction", AI),
+-        help: "Insert the same silent freeze as {hold}: 0.5 s per count, so 3{ai.generate!} inserts 1.5 s. Save the pause and its AI request together, then prepare pictures in the background. :hold 1.5s video=ai audio=silence is the same insertion with an explicit duration. The freeze works without a model; Jobs shows unavailable work with Retry and Discard. A Ready candidate needs explicit acceptance. Dot and macros insert a fresh pause and request at their new location. :hold-provider ai requests pictures for an existing pause without inserting time.",
++        help: "Insert the same silent freeze as {hold}: 0.5 s per count, so 3{ai.generate!} inserts 1.5 s. Save the pause and its AI request together, then prepare pictures in the background. :hold 1.5s video=ai audio=silence is the same insertion with an explicit duration. The freeze works without a model; Jobs shows unavailable work with Retry and Discard. A Ready candidate needs explicit acceptance. In the ordinary Sequence view, dot and macros insert a fresh pause and request at their new location. Inside Repeat contents, choose This play at every level; the same limits as {hold} apply. :hold-provider ai requests pictures for an existing pause without inserting time.",
+     },
+     Spec {
+         id: "ai.generate_existing",
+diff --git a/crates/deadpan-app/src/preview.rs b/crates/deadpan-app/src/preview.rs
+index 9e3b4ea4..58e1ac20 100644
+--- a/crates/deadpan-app/src/preview.rs
++++ b/crates/deadpan-app/src/preview.rs
+@@ -1585,6 +1585,25 @@ impl DeadpanApp {
+     }
+ 
+     fn edit(&mut self, edit: BeatEdit) {
++        if let BeatEdit::InsertHold(input)
++        | BeatEdit::InsertBlack(input)
++        | BeatEdit::InsertAiHold(input) = edit
++        {
++            self.bindings.clear();
++            self.cancel_repeats("a pause insertion was requested");
++            if self.view == View::Source {
++                self.offer_insert();
++                return;
++            }
++            self.insert_pause(
++                input,
++                matches!(edit, BeatEdit::InsertBlack(_)),
++                matches!(edit, BeatEdit::InsertAiHold(_)),
++                self.capture_macro_target(),
++                self.scoped_target(),
++            );
++            return;
++        }
+         if self.refuse_scoped_structure() {
+             return;
+         }
+@@ -1611,16 +1630,6 @@ impl DeadpanApp {
+             self.repeat_change(input);
+             return;
+         }
+-        if let BeatEdit::InsertHold(input)
+-        | BeatEdit::InsertBlack(input)
+-        | BeatEdit::InsertAiHold(input) = edit
+-        {
+-            let black = matches!(edit, BeatEdit::InsertBlack(_));
+-            let ai = matches!(edit, BeatEdit::InsertAiHold(_));
+-            let target = self.capture_macro_target();
+-            self.insert_pause(input, black, ai, target);
+-            return;
+-        }
+         if let Some(instruction) = self.semantic_beat_edit(&edit) {
+             // An offset gives a trimmed beat's sound its own clock, so the
+             // common picture/sound window that Slip and Trim need ends.
+@@ -1720,7 +1729,25 @@ impl DeadpanApp {
+         black: bool,
+         ai: bool,
+         target: Result<macros::Capture, String>,
++        scoped: Result<Option<crate::project::scoped::Target>, String>,
+     ) {
++        match scoped {
++            Ok(Some(scoped)) => {
++                self.insert_scoped_pause(input, black, ai, scoped);
++                return;
++            }
++            Ok(None) if self.scoped.is_none() => {}
++            Ok(None) => {
++                self.error = Some(
++                    "The pause scope changed. Enter the command again; no edit was made.".into(),
++                );
++                return;
++            }
++            Err(error) => {
++                self.error = Some(error);
++                return;
++            }
++        }
+         let instruction = (|| {
+             let captured = target.as_ref().map_err(Clone::clone)?;
+             if !captured.matches(self) {
+@@ -3193,6 +3220,9 @@ impl DeadpanApp {
+                     macro_target.unwrap_or_else(|| {
+                         Err("Enter the pause command again to capture its insertion point.".into())
+                     }),
++                    scoped_target.unwrap_or_else(|| {
++                        Err("Enter the pause command again to capture its scope.".into())
++                    }),
+                 );
+             }
+             Ok(navigation::command::Entry::Track {
+diff --git a/crates/deadpan-app/src/preview/harness/scoped_plays.rs b/crates/deadpan-app/src/preview/harness/scoped_plays.rs
+index 7fb8a9bc..f97c1da7 100644
+--- a/crates/deadpan-app/src/preview/harness/scoped_plays.rs
++++ b/crates/deadpan-app/src/preview/harness/scoped_plays.rs
+@@ -4,6 +4,8 @@ use super::*;
+ use deadpan_core::{GainDb, NodeId, NodeKind, ProjectDocument};
+ use egui::Key;
+ 
++mod pauses;
++
+ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
+     idle(d)?;
+     let before = d.revision();
+@@ -222,6 +224,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
+         d.snapshot(),
+     )?;
+     d.app_mut().feedback.simulate_playback = false;
++    pauses::run(d)?;
+     d.report.skipped.push("This replay uses real native widgets, project service and Metal with scripted keyboard delivery. Its final Escape check simulates playback preparation; physical keyboard/IME and acoustic playback are separate checks.".into());
+     Ok(())
+ }
+diff --git a/crates/deadpan-app/src/preview/scoped.rs b/crates/deadpan-app/src/preview/scoped.rs
+index 851c5968..674d45b2 100644
+--- a/crates/deadpan-app/src/preview/scoped.rs
++++ b/crates/deadpan-app/src/preview/scoped.rs
+@@ -7,9 +7,53 @@ use crate::project::scoped::Target;
+ 
+ pub(super) mod model;
+ 
+-const STRUCTURE_UNAVAILABLE: &str = "Inside Repeat and Retime contents, gain, Camera, pause audio and AI pictures are available. Return to the parent to change timing or copy a range.";
++const STRUCTURE_UNAVAILABLE: &str = "Inside Repeat and Retime contents, gain, Camera, pause audio and AI pictures are available. Choose This play at every Repeat level to insert a pause. Other timing edits and range copying require the parent.";
+ 
+ impl DeadpanApp {
++    pub(super) fn insert_scoped_pause(
++        &mut self,
++        input: navigation::duration::DurationInput,
++        black: bool,
++        ai: bool,
++        target: Target,
++    ) {
++        let request = (|| {
++            if self.view != View::Sequence
++                || matches!(self.pane, Pane::Sources | Pane::Sounds)
++                || self.scoped_target()?.as_ref() != Some(&target)
++            {
++                return Err(
++                    "The pause insertion scope changed. Enter the command again; no edit was made."
++                        .into(),
++                );
++            }
++            if self.macros.recording() || self.macros.is_pending() {
++                return Err("Finish the macro before inserting a scoped pause.".into());
++            }
++            let workspace = self.workspace.as_ref().ok_or("Open a project first.")?;
++            target.pause_instance(workspace)?;
++            let duration = input.resolve(workspace.document.presentation_basis().frame_rate)?;
++            Ok(ProjectRequest::Edit {
++                expected_session: target.session,
++                expected_revision: target.revision.clone(),
++                scope: target.scope.clone(),
++                cursor: target.cursor,
++                edit: ProjectEdit::ScopedPause {
++                    target: Box::new(target),
++                    duration,
++                    black,
++                    ai,
++                },
++            })
++        })();
++        match request {
++            Ok(request) => {
++                self.submit(request);
++            }
++            Err(error) => self.error = Some(error),
++        }
++    }
++
+     pub(super) fn reconcile_scoped(
+         &mut self,
+         before: Option<&Target>,
+@@ -612,13 +656,24 @@ impl DeadpanApp {
+                     let ready = !self.service.is_busy() && !self.dialogs.is_open();
+                     ui.add_space(4.0);
+                     if composite && ui.add(style::row_action(ui, "Enter contents", self.editor_key(EditorKey::EnterGroup)).fill(style::SELECTED)).clicked() { self.enter_scoped(ui.ctx()); }
+-                    if hold { self.ai_inspector(ui, ready); self.hold_audio_controls(ui, ready); }
+-                    self.gain_inspector(ui, ready);
+                     ui.add_space(8.0);
+                     ui.label(style::section_title("EDIT", false));
+                     if ui.add_enabled(ready, style::row_action(ui, "Camera…", self.editor_key(EditorKey::Camera))).clicked() {
+                         self.framing_action(navigation::FramingAction::EnterCamera, ui.ctx());
+                     }
++                    if ui.add_enabled(ready, style::row_action(ui, "Insert pause", self.editor_key(EditorKey::Hold)))
++                        .on_hover_text("Insert 0.5 s in This play at the cursor. Each enclosing Repeat must name one play.").clicked() {
++                        self.edit(BeatEdit::InsertHold(navigation::duration::DurationInput::half_seconds(1)));
++                    }
++                    if ui.add_enabled(ready, style::row_action(ui, "Insert AI pause", self.editor_key(EditorKey::GenerateAi)))
++                        .on_hover_text("Save the pause in This play, then request pictures. Accepting a candidate is a separate edit.").clicked() {
++                        self.edit(BeatEdit::InsertAiHold(navigation::duration::DurationInput::half_seconds(1)));
++                    }
++                    if ui.add_enabled(ready, style::row_action(ui, "Insert pause of…", ":hold")).clicked() {
++                        self.open_command("hold 0.5s".into(), ui.ctx());
++                    }
++                    if hold { self.ai_inspector(ui, ready); self.hold_audio_controls(ui, ready); }
++                    self.gain_inspector(ui, ready);
+                     ui.add_space(4.0);
+                     ui.small(format!("{} children · {} enter · {} parent", self.editor_pair(EditorKey::BeatPrevious, EditorKey::BeatNext, "/"), self.editor_key(EditorKey::EnterGroup), self.editor_key(EditorKey::LeaveGroup)));
+                     ui.small(STRUCTURE_UNAVAILABLE);
+@@ -628,6 +683,14 @@ impl DeadpanApp {
+ }
+ 
+ fn scoped_structural_action(action: Action) -> bool {
++    if matches!(
++        action,
++        Action::Edit(
++            BeatEdit::InsertHold(_) | BeatEdit::InsertBlack(_) | BeatEdit::InsertAiHold(_)
++        )
++    ) {
++        return false;
++    }
+     matches!(
+         action,
+         Action::Insert
+diff --git a/crates/deadpan-app/src/project.rs b/crates/deadpan-app/src/project.rs
+index eaf91e42..66bdd542 100644
+--- a/crates/deadpan-app/src/project.rs
++++ b/crates/deadpan-app/src/project.rs
+@@ -865,6 +865,12 @@ pub enum ProjectEdit {
+         target: Box<scoped::Target>,
+         edit: deadpan_core::ScopedNodeEdit,
+     },
++    ScopedPause {
++        target: Box<scoped::Target>,
++        duration: FrameDuration,
++        black: bool,
++        ai: bool,
++    },
+     SetAudioTreatments {
+         node: NodeId,
+         treatments: deadpan_core::AudioTreatments,
+diff --git a/crates/deadpan-app/src/project/pause.rs b/crates/deadpan-app/src/project/pause.rs
+index 7275dd83..8a3b7fdb 100644
+--- a/crates/deadpan-app/src/project/pause.rs
++++ b/crates/deadpan-app/src/project/pause.rs
+@@ -14,8 +14,67 @@ pub(super) fn prepare(
+     new_revision: RevisionId,
+     id: NodeId,
+     black: bool,
++    allocate: impl FnMut() -> NodeId,
++) -> Result<CommandRequest, String> {
++    prepare_selected(
++        workspace,
++        duration,
++        new_revision,
++        id,
++        Selection {
++            at,
++            black,
++            ai: false,
++            within: None,
++        },
++        allocate,
++    )
++}
++
++pub(super) fn prepare_scoped(
++    workspace: &Workspace,
++    target: &super::scoped::Target,
++    duration: FrameDuration,
++    black: bool,
++    ai: bool,
++) -> Result<CommandRequest, String> {
++    let within = target.pause_instance(workspace)?.clone();
++    prepare_selected(
++        workspace,
++        duration,
++        super::service::revision(),
++        super::service::node(),
++        Selection {
++            at: target.cursor,
++            black,
++            ai,
++            within: Some(within),
++        },
++        super::service::node,
++    )
++}
++
++struct Selection {
++    at: ProjectFrame,
++    black: bool,
++    ai: bool,
++    within: Option<deadpan_core::InstancePath>,
++}
++
++fn prepare_selected(
++    workspace: &Workspace,
++    duration: FrameDuration,
++    new_revision: RevisionId,
++    id: NodeId,
++    selection: Selection,
+     mut allocate: impl FnMut() -> NodeId,
+ ) -> Result<CommandRequest, String> {
++    let Selection {
++        at,
++        black,
++        ai,
++        within,
++    } = selection;
+     let document = &workspace.document;
+     let total = workspace.plan.duration().frames();
+     if at.0 < 0 || at.0 > total {
+@@ -25,15 +84,19 @@ pub(super) fn prepare(
+         return Err("Pause resolves to 0 frames; no edit was made.".into());
+     }
+     // Resolve ownership before sampling a fallback or allocating an edit.
+-    let target = document
+-        .pause_insertion_target(at)
+-        .map_err(|error| error.to_string())?;
++    let target = match &within {
++        Some(within) => document
++            .pause_insertion_within(at, within)
++            .map(deadpan_core::PauseInsertionTarget::Occurrence),
++        None => document.pause_insertion_target(at),
++    }
++    .map_err(|error| error.to_string())?;
+     // Black punctuation shows the project background: no picture is sampled
+     // or captured, so inner framing has nothing to retain.
+     let (video, picture_context) = if black {
+         (HoldVideo::Background, None)
+     } else {
+-        fallback(workspace, at)?
++        fallback(workspace, at, within.as_ref())?
+     };
+     let hold = HoldRecipe {
+         duration,
+@@ -60,10 +123,11 @@ pub(super) fn prepare(
+         },
+         deadpan_core::PauseInsertionTarget::Occurrence(target) => Command::InsertOccurrenceTime {
+             at,
++            within,
+             hold,
+             id,
+             timing,
+-            ai: false,
++            ai,
+             identities: deadpan_core::OccurrencePauseIdentities {
+                 isolation: deadpan_core::OccurrenceIdentities {
+                     nodes: (0..target.isolation_nodes).map(|_| allocate()).collect(),
+@@ -93,11 +157,13 @@ pub(super) fn prepare(
+ fn fallback(
+     workspace: &Workspace,
+     at: ProjectFrame,
++    within: Option<&deadpan_core::InstancePath>,
+ ) -> Result<(HoldVideo, Option<deadpan_core::CapturedFraming>), String> {
+-    let provider = deadpan_cli::pause::pause_provider(
++    let provider = deadpan_cli::pause::pause_provider_within(
+         &workspace.document,
+         &workspace.plan,
+         at,
++        within,
+         &mut |asset| {
+             workspace
+                 .sources
+diff --git a/crates/deadpan-app/src/project/scoped.rs b/crates/deadpan-app/src/project/scoped.rs
+index ca2aaaf8..9111c591 100644
+--- a/crates/deadpan-app/src/project/scoped.rs
++++ b/crates/deadpan-app/src/project/scoped.rs
+@@ -28,6 +28,31 @@ pub struct Target {
+ }
+ 
+ impl Target {
++    /// A temporal edit must name exactly one concrete branch at every Repeat
++    /// level. A displayed representative of All plays is not that authority.
++    pub fn pause_instance(&self, workspace: &Workspace) -> Result<&InstancePath, String> {
++        self.validate(workspace)?;
++        if !self.also.is_empty()
++            || self.target.repeats.is_empty()
++            || self
++                .target
++                .repeats
++                .iter()
++                .any(|step| matches!(step.branch, RepeatEditBranch::Default))
++        {
++            return Err("Choose This play at every enclosing Repeat before inserting a pause. All plays and multiple-play timing edits are not available yet.".into());
++        }
++        let instance = self
++            .presentation
++            .as_ref()
++            .ok_or("This play has no visible occurrence for a pause.")?;
++        workspace
++            .document
++            .pause_insertion_within(self.cursor, instance)
++            .map_err(|error| error.to_string())?;
++        Ok(instance)
++    }
++
+     pub fn validate(&self, workspace: &Workspace) -> Result<(), String> {
+         if self.session != workspace.session
+             || &self.project != workspace.document.project_id()
+diff --git a/crates/deadpan-app/src/project/service.rs b/crates/deadpan-app/src/project/service.rs
+index ed95159f..588f8b7e 100644
+--- a/crates/deadpan-app/src/project/service.rs
++++ b/crates/deadpan-app/src/project/service.rs
+@@ -1172,6 +1172,22 @@ impl Service {
+             )?;
+             return self.edit_scoped(*target, edit);
+         }
++        if let ProjectEdit::ScopedPause {
++            target,
++            duration,
++            black,
++            ai,
++        } = edit
++        {
++            target.validate_request(
++                workspace,
++                expected_session,
++                &expected_revision,
++                &scope,
++                cursor,
++            )?;
++            return self.insert_scoped_pause(*target, duration, black, ai);
++        }
+         if let ProjectEdit::DeleteRange { parent, range } = edit {
+             return self.delete_range(expected_revision, scope, parent, range);
+         }
+@@ -1219,6 +1235,7 @@ impl Service {
+         }
+         let target = match &edit {
+             ProjectEdit::Scoped { .. }
++            | ProjectEdit::ScopedPause { .. }
+             | ProjectEdit::InsertTime { .. }
+             | ProjectEdit::InsertBlack { .. }
+             | ProjectEdit::DeleteRange { .. } => {
+@@ -1362,6 +1379,7 @@ impl Service {
+                 )
+             }
+             ProjectEdit::Scoped { .. }
++            | ProjectEdit::ScopedPause { .. }
+             | ProjectEdit::InsertTime { .. }
+             | ProjectEdit::InsertBlack { .. }
+             | ProjectEdit::DeleteRange { .. } => {
+@@ -2445,11 +2463,11 @@ fn source_label(path: &std::path::Path) -> String {
+         .unwrap_or_else(|| "Original".into())
+ }
+ 
+-fn revision() -> RevisionId {
++pub(super) fn revision() -> RevisionId {
+     RevisionId::new(uuid::Uuid::new_v4().to_string()).expect("UUID is a valid revision identity")
+ }
+ 
+-fn node() -> NodeId {
++pub(super) fn node() -> NodeId {
+     NodeId::new(uuid::Uuid::new_v4().to_string()).expect("UUID is a valid node identity")
+ }
+ 
+diff --git a/crates/deadpan-app/src/project/service/scoped.rs b/crates/deadpan-app/src/project/service/scoped.rs
+index eb1b4cf4..9780805b 100644
+--- a/crates/deadpan-app/src/project/service/scoped.rs
++++ b/crates/deadpan-app/src/project/service/scoped.rs
+@@ -203,6 +203,71 @@ pub(super) fn prepare(
+ }
+ 
+ impl Service {
++    pub(super) fn insert_scoped_pause(
++        &mut self,
++        target: Target,
++        duration: deadpan_core::FrameDuration,
++        black: bool,
++        ai: bool,
++    ) -> Result<()> {
++        self.check_scoped_head(&target)?;
++        let workspace = self.workspace.as_ref().ok_or("Open a project first")?;
++        target.pause_instance(workspace)?;
++        if black && ai {
++            return Err("An AI pause requires its captured freeze fallback.".into());
++        }
++        if duration == deadpan_core::FrameDuration::ZERO {
++            self.message = Some("Pause resolves to 0 frames; no edit was made.".into());
++            return Ok(());
++        }
++        let request =
++            crate::project::pause::prepare_scoped(workspace, &target, duration, black, ai)?;
++        let (_, after) =
++            deadpan_core::apply_with_result(&workspace.document, &request).map_err(display)?;
++        let plan = deadpan_plan::RenderPlan::compile(&after).map_err(display)?;
++        let instance = plan.picture(target.cursor).map_err(display)?.instance;
++        let Command::InsertOccurrenceTime { id, .. } = &request.command else {
++            return Err("Scoped pause did not retain its concrete occurrence.".into());
++        };
++        if &instance.node != id {
++            return Err("Scoped pause is not visible at its captured insertion boundary.".into());
++        }
++        let receipt = Commit {
++            before: target.clone(),
++            revision: request.new_revision.clone(),
++            target: deadpan_core::ScopedNodeTarget {
++                node: instance.node.clone(),
++                repeats: instance
++                    .repeats
++                    .iter()
++                    .map(|step| deadpan_core::RepeatEditStep {
++                        repeat: step.node.clone(),
++                        branch: deadpan_core::RepeatEditBranch::Play {
++                            iteration: step.iteration.clone(),
++                        },
++                    })
++                    .collect(),
++            },
++            presentation: Some(instance),
++        };
++        receipt.target.validate(&after).map_err(display)?;
++        let outcome = self.writer()?.commit(&request).map_err(display)?;
++        self.capture_preparation_notices(&outcome.generation_preparation_notices);
++        self.committed = Some(CommittedEdit {
++            revision: outcome.revision_id,
++            selected_node: Some(target.root),
++            preserve_cursor: true,
++            cursor: Some(target.cursor),
++            scope: target.scope,
++            sound: None,
++            range_selection: None,
++            scoped: Some(receipt),
++        });
++        self.refresh_saved("Pause inserted in This play and saved")?;
++        self.message = Some("Pause inserted in This play and saved".into());
++        Ok(())
++    }
++
+     pub(super) fn check_scoped_head(&self, target: &Target) -> Result<()> {
+         let head = self
+             .store
+diff --git a/crates/deadpan-app/src/project/tests/pause.rs b/crates/deadpan-app/src/project/tests/pause.rs
+index 85a81602..380fc23c 100644
+--- a/crates/deadpan-app/src/project/tests/pause.rs
++++ b/crates/deadpan-app/src/project/tests/pause.rs
+@@ -2,6 +2,15 @@ use super::*;
+ 
+ #[test]
+ fn native_occurrence_pause_freezes_one_play_and_keeps_repeat_motion_live() {
++    occurrence_pause(false);
++}
++
++#[test]
++fn native_scoped_pause_start_freezes_preceding_play_and_keeps_repeat_motion_live() {
++    occurrence_pause(true);
++}
++
++fn occurrence_pause(scoped: bool) {
+     use deadpan_core::{ExactRatio, Framing, FramingCurve, FramingPose};
+     let scratch = tempfile::tempdir().unwrap();
+     let service = ProjectService::start(
+@@ -72,19 +81,93 @@ fn native_occurrence_pause_freezes_one_play_and_keeps_repeat_motion_live() {
+     )
+     .workspace
+     .unwrap();
+-    let at = original.plan.duration().frames() + 5;
++    let at = original.plan.duration().frames() + if scoped { 0 } else { 5 };
+     let entry = before.plan.picture(ProjectFrame(at - 1)).unwrap();
+     let parent = entry
+         .framing
+         .iter()
+         .position(|scope| scope.instance.node == repeat)
+         .unwrap();
+-    let inserted = edited(
+-        &service,
+-        &before,
++    let edit = if scoped {
++        use deadpan_core::{
++            InstancePath, RepeatEditBranch, RepeatEditStep, RepeatInstance, ScopedNodeTarget,
++        };
++        let NodeKind::Repeat { iterations, .. } = &before.document.nodes()[&repeat].kind else {
++            panic!()
++        };
++        let iteration = iterations.at(1).unwrap();
++        // A prior play's Sequence has the same node but a different instance.
++        // Capturing it as this play's parent would flatten or double its crop.
++        let mut grouped = serde_json::to_value(&*before.document).unwrap();
++        grouped["nodes"][repeat.as_str()]["kind"]["child"] = serde_json::json!("capture-group");
++        grouped["nodes"]["capture-group"] =
++            serde_json::to_value(BeatNode::sequence("Captured group", vec![source.clone()]))
++                .unwrap();
++        let grouped = ProjectDocument::from_json(&grouped.to_string()).unwrap();
++        let grouped_plan = RenderPlan::compile(&grouped).unwrap();
++        let within = InstancePath {
++            node: source.clone(),
++            repeats: vec![RepeatInstance {
++                node: repeat.clone(),
++                iteration: iteration.clone(),
++            }],
++        };
++        let refused = deadpan_cli::pause::pause_provider_within(
++            &grouped,
++            &grouped_plan,
++            ProjectFrame(at),
++            Some(&within),
++            &mut |_| panic!("refuse mismatched parent before reading media"),
++        )
++        .unwrap_err();
++        assert!(
++            refused.contains("preceding picture is outside"),
++            "{refused}"
++        );
++        ProjectEdit::ScopedPause {
++            target: Box::new(super::super::scoped::Target {
++                session: before.session,
++                project: before.document.project_id().clone(),
++                revision: before.document.revision_id().clone(),
++                scope: SequenceScope::default(),
++                root: repeat.clone(),
++                target: ScopedNodeTarget {
++                    node: source.clone(),
++                    repeats: vec![RepeatEditStep {
++                        repeat: repeat.clone(),
++                        branch: RepeatEditBranch::Play {
++                            iteration: iteration.clone(),
++                        },
++                    }],
++                },
++                presentation: Some(InstancePath {
++                    node: source.clone(),
++                    repeats: vec![RepeatInstance {
++                        node: repeat.clone(),
++                        iteration,
++                    }],
++                }),
++                cursor: ProjectFrame(at),
++                also: Vec::new(),
++            }),
++            duration: FrameDuration::new(11).unwrap(),
++            black: false,
++            ai: false,
++        }
++    } else {
+         ProjectEdit::InsertTime {
+             at: ProjectFrame(at),
+             duration: FrameDuration::new(11).unwrap(),
++        }
++    };
++    let inserted = command(
++        &service,
++        ProjectRequest::Edit {
++            expected_session: before.session,
++            expected_revision: before.document.revision_id().clone(),
++            scope: SequenceScope::default(),
++            cursor: ProjectFrame(at),
++            edit,
+         },
+     );
+     assert!(inserted.error.is_none(), "{:?}", inserted.error);
+diff --git a/crates/deadpan-app/src/project/tests/scope.rs b/crates/deadpan-app/src/project/tests/scope.rs
+index 2d9286d0..0415a428 100644
+--- a/crates/deadpan-app/src/project/tests/scope.rs
++++ b/crates/deadpan-app/src/project/tests/scope.rs
+@@ -190,8 +190,9 @@ fn scope_resolves_absolute_edges_and_blocks_composite_descent_and_pause_seams()
+     // Ordinary Hold interiors and seams before a composite remain legal.
+     outer.check_pause(&workspace, ProjectFrame(28)).unwrap();
+     outer.check_pause(&workspace, ProjectFrame(32)).unwrap();
+-    // The scoped UI cannot address the interior of a Repeat play or Retime.
+-    assert!(outer.check_pause(&workspace, ProjectFrame(33)).is_err());
++    // The ordinary timeline can now select one concrete Repeat play by its
++    // boundary. Retime interiors still require exact derived-clock authoring.
++    outer.check_pause(&workspace, ProjectFrame(33)).unwrap();
+     assert!(outer.check_pause(&workspace, ProjectFrame(37)).is_err());
+     command(&service, ProjectRequest::Close);
+ }
+diff --git a/crates/deadpan-app/src/project/tests/scoped.rs b/crates/deadpan-app/src/project/tests/scoped.rs
+index b8b2e20c..df0d9f6b 100644
+--- a/crates/deadpan-app/src/project/tests/scoped.rs
++++ b/crates/deadpan-app/src/project/tests/scoped.rs
+@@ -5,6 +5,8 @@ use deadpan_core::{
+     RepeatEditStep, RepeatInstance, ScopedNodeEdit, ScopedNodeTarget,
+ };
+ 
++mod pauses;
++
+ fn seed(path: &Path) {
+     seed_named(path, &["a", "b"]);
+ }
+diff --git a/crates/deadpan-audio/tests/audio_definition/sound_clocks/occurrence_pause.rs b/crates/deadpan-audio/tests/audio_definition/sound_clocks/occurrence_pause.rs
+index 53070c97..89710ad0 100644
+--- a/crates/deadpan-audio/tests/audio_definition/sound_clocks/occurrence_pause.rs
++++ b/crates/deadpan-audio/tests/audio_definition/sound_clocks/occurrence_pause.rs
+@@ -15,6 +15,7 @@ fn pause(before: &ProjectDocument, at: i64) -> ProjectDocument {
+         "pause",
+         Command::InsertOccurrenceTime {
+             at: ProjectFrame(at),
++            within: None,
+             hold: recipe,
+             id: id("pause"),
+             timing: timing("pause"),
+diff --git a/crates/deadpan-audio/tests/stages/occurrence_pause.rs b/crates/deadpan-audio/tests/stages/occurrence_pause.rs
+index a9d298ea..ddea3d62 100644
+--- a/crates/deadpan-audio/tests/stages/occurrence_pause.rs
++++ b/crates/deadpan-audio/tests/stages/occurrence_pause.rs
+@@ -55,10 +55,22 @@ fn fixture(nested: bool) -> (ProjectDocument, FixtureProvider, Vec<Range<i64>>)
+ }
+ 
+ fn pause(document: &ProjectDocument, at: i64) -> ProjectDocument {
+-    let PauseInsertionTarget::Occurrence(target) =
+-        document.pause_insertion_target(ProjectFrame(at)).unwrap()
+-    else {
+-        panic!("expected Repeat at {at}")
++    pause_within(document, at, None)
++}
++
++fn pause_within(
++    document: &ProjectDocument,
++    at: i64,
++    within: Option<InstancePath>,
++) -> ProjectDocument {
++    let target = match &within {
++        Some(instance) => document
++            .pause_insertion_within(ProjectFrame(at), instance)
++            .unwrap(),
++        None => match document.pause_insertion_target(ProjectFrame(at)).unwrap() {
++            PauseInsertionTarget::Occurrence(target) => target,
++            _ => panic!("expected Repeat at {at}"),
++        },
+     };
+     let revision = RevisionId::new("occurrence-pause").unwrap();
+     let request = CommandRequest {
+@@ -67,6 +79,7 @@ fn pause(document: &ProjectDocument, at: i64) -> ProjectDocument {
+         new_revision: revision.clone(),
+         command: Command::InsertOccurrenceTime {
+             at: ProjectFrame(at),
++            within,
+             hold: HoldRecipe {
+                 duration: duration(1),
+                 video: HoldVideo::Background,
+@@ -153,6 +166,67 @@ fn occurrence_pause_keeps_each_44100_source_and_room_tone_allocation_at_ntsc_bou
+     }
+ }
+ 
++#[test]
++fn scoped_pause_edges_keep_44100_pcm_in_plain_and_nested_plays() {
++    for nested in [false, true] {
++        let (before, mut provider, allocations) = fixture(nested);
++        let old = record(&before, &mut provider, false, &[256]);
++        for outer in 0..if nested { 2 } else { 3 } {
++            for inner in 0..if nested { 2 } else { 1 } {
++                let mut repeats = vec![RepeatInstance {
++                    node: id("repeat"),
++                    iteration: IterationId {
++                        allocation: RevisionId::new(if nested { "body" } else { "source" })
++                            .unwrap(),
++                        ordinal: outer,
++                    },
++                }];
++                if nested {
++                    repeats.push(RepeatInstance {
++                        node: id("inner"),
++                        iteration: IterationId {
++                            allocation: RevisionId::new("source").unwrap(),
++                            ordinal: inner,
++                        },
++                    });
++                }
++                let within = InstancePath {
++                    node: id("source"),
++                    repeats,
++                };
++                let start =
++                    1 + i64::from(outer) * if nested { 14 } else { 6 } + i64::from(inner) * 6;
++                for local in [0, 2, 4] {
++                    let at = start + local;
++                    let after = pause_within(&before, at, Some(within.clone()));
++                    let actual = record(&after, &mut provider, false, &[127, 3, 251]);
++                    let cut = ntsc_boundary(at);
++                    assert_eq!(actual.samples[..cut], old.samples[..cut]);
++                    assert_pause(&actual, cut..ntsc_boundary(at + 1));
++                    for range in allocations.iter().filter(|range| range.end > at) {
++                        let start = range.start.max(at);
++                        let old_samples = ntsc_boundary(start)..ntsc_boundary(range.end);
++                        let new_samples = ntsc_boundary(start + 1)..ntsc_boundary(range.end + 1);
++                        for (offset, sample) in new_samples.enumerate() {
++                            let previous = old_samples.start + offset;
++                            let expected = if previous < old_samples.end {
++                                old.samples[previous]
++                            } else {
++                                [0.; 2]
++                            };
++                            assert_eq!(
++                                actual.samples[sample], expected,
++                                "nested={nested} outer={outer} inner={inner} at={at} allocation={range:?}"
++                            );
++                        }
++                    }
++                    assert_eq!(record(&after, &mut provider, false, &[1, 239]), actual);
++                }
++            }
++        }
++    }
++}
++
+ #[test]
+ fn occurrence_pause_in_permitted_gap_keeps_root_sound_pcm_and_silences_only_new_time() {
+     let (base, mut provider, _) = fixture(false);
+diff --git a/crates/deadpan-cli/src/pause.rs b/crates/deadpan-cli/src/pause.rs
+index 90834ec6..4502bbe3 100644
+--- a/crates/deadpan-cli/src/pause.rs
++++ b/crates/deadpan-cli/src/pause.rs
+@@ -67,6 +67,17 @@ pub fn pause_provider(
+     plan: &RenderPlan,
+     at: ProjectFrame,
+     index: &mut IndexLookup<'_>,
++) -> Result<PauseProvider, String> {
++    pause_provider_within(document, plan, at, None, index)
++}
++
++/// Resolve a freeze at a boundary owned by an explicitly inspected occurrence.
++pub fn pause_provider_within(
++    document: &ProjectDocument,
++    plan: &RenderPlan,
++    at: ProjectFrame,
++    within: Option<&deadpan_core::InstancePath>,
++    index: &mut IndexLookup<'_>,
+ ) -> Result<PauseProvider, String> {
+     if plan.duration() == FrameDuration::ZERO {
+         return Ok(PauseProvider {
+@@ -75,10 +86,15 @@ pub fn pause_provider(
+             audio: HoldAudio::Silence,
+         });
+     }
+-    let insertion_parent = document
+-        .pause_insertion_target(at)
+-        .map_err(|error| error.to_string())?
+-        .picture_parent();
++    let insertion_parent = match within {
++        Some(within) => document
++            .pause_insertion_within(at, within)
++            .map(|target| target.picture_parent),
++        None => document
++            .pause_insertion_target(at)
++            .map(|target| target.picture_parent()),
++    }
++    .map_err(|error| error.to_string())?;
+     let sample = plan
+         .picture(ProjectFrame(if at.0 == 0 { 0 } else { at.0 - 1 }))
+         .map_err(|error| error.to_string())?;
+@@ -91,7 +107,7 @@ pub fn pause_provider(
+                 .framing
+                 .iter()
+                 .position(|scope| scope.instance == insertion_parent)
+-                .ok_or("The stopped picture has no selected Sequence scope.")?;
++                .ok_or("The preceding picture is outside this insertion parent. Choose an interior boundary or insert a black pause.")?;
+             freeze(document, &sample, parent, index)
+         }
+         _ => freeze(document, &sample, 0, index),
+diff --git a/crates/deadpan-cli/tests/preview_export/partial_sounds.rs b/crates/deadpan-cli/tests/preview_export/partial_sounds.rs
+index 03c3c9aa..9096d8b2 100644
+--- a/crates/deadpan-cli/tests/preview_export/partial_sounds.rs
++++ b/crates/deadpan-cli/tests/preview_export/partial_sounds.rs
+@@ -435,6 +435,7 @@ pub fn occurrence_pauses(dir: &Path) -> Result<Fixture> {
+             };
+             Ok(Command::InsertOccurrenceTime {
+                 at: ProjectFrame(at),
++                within: None,
+                 id: project.fresh(1)?.remove(0),
+                 hold: HoldRecipe {
+                     duration: FrameDuration::new(1)?,
+diff --git a/crates/deadpan-core/src/command.rs b/crates/deadpan-core/src/command.rs
+index fe5aa2e7..81764c4c 100644
+--- a/crates/deadpan-core/src/command.rs
++++ b/crates/deadpan-core/src/command.rs
+@@ -176,6 +176,10 @@ define_commands! {
+     /// branches outside-in before capturing its temporal placement.
+     InsertOccurrenceTime {
+         at: crate::ProjectFrame,
++        /// Explicit inspected occurrence, including ownership of its edges.
++        /// None keeps ordinary project-boundary descent and its left bias.
++        #[serde(default, skip_serializing_if = "Option::is_none")]
++        within: Option<InstancePath>,
+         hold: HoldRecipe,
+         id: NodeId,
+         identities: crate::OccurrencePauseIdentities,
+diff --git a/crates/deadpan-core/src/insert_time/occurrence.rs b/crates/deadpan-core/src/insert_time/occurrence.rs
+index c059706f..ffa430fc 100644
+--- a/crates/deadpan-core/src/insert_time/occurrence.rs
++++ b/crates/deadpan-core/src/insert_time/occurrence.rs
+@@ -35,6 +35,7 @@ pub(crate) fn prepare(
+ ) -> Result<Option<Prepared>, EditError> {
+     let Command::InsertOccurrenceTime {
+         at,
++        within,
+         hold,
+         id,
+         identities,
+@@ -68,9 +69,7 @@ pub(crate) fn prepare(
+         .duration()?
+         .checked_add(hold.duration)
+         .map_err(crate::DocumentError::from)?;
+-    let PauseInsertionTarget::Occurrence(target) = document.pause_insertion_target(*at)? else {
+-        return Err(invalid("occurrence pause requires a Repeat interior"));
+-    };
++    let target = target::for_command(document, *at, within.as_ref())?;
+     if identities.isolation.nodes.len() != target.isolation_nodes
+         || identities.isolation.marks.len() != target.isolation_marks
+         || identities.split.nodes.len() != target.split_nodes
+@@ -112,11 +111,19 @@ pub(crate) fn prepare(
+             sound_clocks: None,
+         },
+     )?;
++    let isolation: Vec<_> = maps.into_iter().map(|mapping| mapping.proof()).collect();
++    let mut within = within.clone();
++    if let Some(instance) = &mut within {
++        for step in &isolation {
++            if crate::scoped_edit::matches_prefix(instance, step.before_prefix()) {
++                crate::occurrence_edit::remap_instance(instance, step.nodes());
++            }
++        }
++        instance.validate(&result)?;
++    }
+     let mut timing = timing.clone();
+     if let Some(gap) = &identities.gap {
+-        let PauseInsertionTarget::Occurrence(target) = result.pause_insertion_target(*at)? else {
+-            return Err(invalid("isolated pause lost its Repeat placement"));
+-        };
++        let target = target::for_command(&result, *at, within.as_ref())?;
+         let Site::Gap { repeat, after, .. } = target.site else {
+             return Err(invalid("isolated pause lost its default gap"));
+         };
+@@ -148,6 +155,7 @@ pub(crate) fn prepare(
+         document: result,
+         command: Command::InsertOccurrenceTime {
+             at: *at,
++            within,
+             hold: hold.clone(),
+             id: id.clone(),
+             ai: *ai,
+@@ -159,7 +167,7 @@ pub(crate) fn prepare(
+                 container: identities.container.clone(),
+             },
+         },
+-        isolation: maps.into_iter().map(|mapping| mapping.proof()).collect(),
++        isolation,
+     }))
+ }
+ 
+@@ -170,6 +178,7 @@ pub(crate) fn apply(
+ ) -> Result<ProjectDocument, EditError> {
+     let Command::InsertOccurrenceTime {
+         at,
++        within,
+         hold,
+         id,
+         identities,
+@@ -179,9 +188,7 @@ pub(crate) fn apply(
+     else {
+         return Err(invalid("expected an occurrence pause"));
+     };
+-    let PauseInsertionTarget::Occurrence(target) = document.pause_insertion_target(*at)? else {
+-        return Err(invalid("occurrence pause requires a Repeat interior"));
+-    };
++    let target = target::for_command(document, *at, within.as_ref())?;
+     if target.isolation_nodes != 0 || target.gap {
+         return Err(invalid(
+             "pause branch must be isolated before placement capture",
+diff --git a/crates/deadpan-core/src/insert_time/occurrence/target.rs b/crates/deadpan-core/src/insert_time/occurrence/target.rs
+index 0af9f820..92770ff4 100644
+--- a/crates/deadpan-core/src/insert_time/occurrence/target.rs
++++ b/crates/deadpan-core/src/insert_time/occurrence/target.rs
+@@ -87,13 +87,38 @@ impl ProjectDocument {
+         &self,
+         at: ProjectFrame,
+     ) -> Result<PauseInsertionTarget, EditError> {
+-        resolve(self, at)
++        resolve(self, at, None)
++    }
++
++    /// Resolve a pause within one inspected occurrence. Its start and end
++    /// belong to that occurrence even when the adjacent play shares the same
++    /// project boundary. The caller must choose a concrete Repeat instance.
++    pub fn pause_insertion_within(
++        &self,
++        at: ProjectFrame,
++        within: &InstancePath,
++    ) -> Result<OccurrencePauseTarget, EditError> {
++        for_command(self, at, Some(within))
++    }
++}
++
++pub(super) fn for_command(
++    document: &ProjectDocument,
++    at: ProjectFrame,
++    within: Option<&InstancePath>,
++) -> Result<OccurrencePauseTarget, EditError> {
++    match resolve(document, at, within)? {
++        PauseInsertionTarget::Occurrence(target) => Ok(target),
++        PauseInsertionTarget::Ordinary(_) => Err(invalid(
++            "occurrence pause requires a concrete Repeat branch",
++        )),
+     }
+ }
+ 
+ fn resolve(
+     document: &ProjectDocument,
+     at: ProjectFrame,
++    within: Option<&InstancePath>,
+ ) -> Result<PauseInsertionTarget, EditError> {
+     let durations = document.durations()?;
+     if at.0 < 0 || at.0 > durations[document.root()].frames() {
+@@ -107,6 +132,14 @@ fn resolve(
+     let mut sequence = None;
+     let mut parent = instance.clone();
+     let mut navigation_parent = document.root().clone();
++    if let Some(within) = within {
++        let start = scoped_start(document, &durations, at, within)?;
++        instance = within.clone();
++        position = start.position;
++        parent = start.parent;
++        sequence = start.sequence;
++        navigation_parent = start.navigation_parent;
++    }
+     for _ in 0..=crate::MAX_DOCUMENT_DEPTH {
+         let (site, split_nodes, container, gap) = match &document.nodes()[&instance.node].kind {
+             NodeKind::Sequence { children } => {
+@@ -147,7 +180,14 @@ fn resolve(
+                     document.gap_overrides().get(&instance.node),
+                     &durations,
+                 )?;
+-                let location = layout.locate(ExactRatio::integer(position), InsertionBias::Left)?;
++                // A named scope can start at zero; inward bias selects its
++                // first play rather than the preceding external object.
++                let bias = if position == 0 {
++                    InsertionBias::Right
++                } else {
++                    InsertionBias::Left
++                };
++                let location = layout.locate(ExactRatio::integer(position), bias)?;
+                 if location.position.denominator() != 1 {
+                     return Err(invalid(
+                         "pause insertion needs an exact local frame boundary",
+@@ -191,6 +231,16 @@ fn resolve(
+             _ => {
+                 super::super::physical(document, &instance.node)?;
+                 let interior = position > 0 && position < durations[&instance.node].frames();
++                if !interior && let Some((owner, index)) = &sequence {
++                    let site = Site::Sequence {
++                        instance: InstancePath {
++                            node: owner.clone(),
++                            repeats: instance.repeats.clone(),
++                        },
++                        index: index + usize::from(position != 0),
++                    };
++                    return finish(document, navigation_parent, parent, site, 0, false, false);
++                }
+                 let split_nodes = if interior {
+                     super::super::split_node_count(document, &instance.node)?
+                         + usize::from(sequence.is_none())
+@@ -215,33 +265,127 @@ fn resolve(
+                 .insert_time_target(at)
+                 .map(PauseInsertionTarget::Ordinary);
+         }
+-        let mut target = OccurrencePauseTarget {
++        return finish(
++            document,
+             navigation_parent,
+-            picture_parent: parent,
+-            isolation_nodes: 0,
+-            isolation_marks: 0,
++            parent,
++            site,
+             split_nodes,
+             container,
+             gap,
+-            site,
+-        };
+-        let isolation = crate::scoped_edit::temporal_requirements(document, &target.scope())?;
+-        target.isolation_nodes = isolation.nodes;
+-        target.isolation_marks = isolation.marks;
+-        let required = isolation
+-            .nodes
+-            .checked_add(split_nodes)
+-            .and_then(|count| count.checked_add(usize::from(container) + usize::from(gap) + 1))
+-            .ok_or_else(|| limit("pause identity count"))?;
+-        if document
+-            .nodes()
+-            .len()
+-            .checked_add(required)
+-            .is_none_or(|count| count > crate::MAX_DOCUMENT_NODES)
+-        {
+-            return Err(limit("pause insertion exceeds the document node limit"));
+-        }
+-        return Ok(PauseInsertionTarget::Occurrence(target));
++        );
+     }
+     Err(limit("pause insertion exceeds the document depth limit"))
+ }
++
++fn finish(
++    document: &ProjectDocument,
++    navigation_parent: NodeId,
++    picture_parent: InstancePath,
++    site: Site,
++    split_nodes: usize,
++    container: bool,
++    gap: bool,
++) -> Result<PauseInsertionTarget, EditError> {
++    let mut target = OccurrencePauseTarget {
++        navigation_parent,
++        picture_parent,
++        isolation_nodes: 0,
++        isolation_marks: 0,
++        split_nodes,
++        container,
++        gap,
++        site,
++    };
++    let isolation = crate::scoped_edit::temporal_requirements(document, &target.scope())?;
++    target.isolation_nodes = isolation.nodes;
++    target.isolation_marks = isolation.marks;
++    let required = isolation
++        .nodes
++        .checked_add(split_nodes)
++        .and_then(|count| count.checked_add(usize::from(container) + usize::from(gap) + 1))
++        .ok_or_else(|| limit("pause identity count"))?;
++    if document
++        .nodes()
++        .len()
++        .checked_add(required)
++        .is_none_or(|count| count > crate::MAX_DOCUMENT_NODES)
++    {
++        return Err(limit("pause insertion exceeds the document node limit"));
++    }
++    Ok(PauseInsertionTarget::Occurrence(target))
++}
++
++struct ScopedStart {
++    position: i64,
++    parent: InstancePath,
++    sequence: Option<(NodeId, usize)>,
++    navigation_parent: NodeId,
++}
++
++fn scoped_start(
++    document: &ProjectDocument,
++    durations: &std::collections::BTreeMap<NodeId, FrameDuration>,
++    at: ProjectFrame,
++    within: &InstancePath,
++) -> Result<ScopedStart, EditError> {
++    within.validate(document)?;
++    let outer = within
++        .repeats
++        .first()
++        .ok_or_else(|| invalid("scoped pause requires an explicitly selected Repeat play"))?;
++    let index = crate::AnchorIndex::from_durations(document, durations.clone())?;
++    let mut ancestor = &within.node;
++    while let Some((parent, _)) = index.parents.get(ancestor) {
++        if matches!(document.nodes()[parent].kind, NodeKind::Retime { .. }) {
++            return Err(invalid(
++                "pause inside Retime needs exact derived-clock authoring",
++            ));
++        }
++        ancestor = parent;
++    }
++    let start = index
++        .resolve_target(&crate::AnchorTarget {
++            boundary: crate::BoundaryAnchor {
++                coordinate: crate::Anchor::Occurrence {
++                    instance: within.clone(),
++                    position: ExactRatio::ZERO,
++                },
++                bias: InsertionBias::Right,
++            },
++            occurrence: None,
++        })
++        .map_err(|error| invalid(&error.to_string()))?;
++    if start.exact_frame.denominator() != 1 {
++        return Err(invalid("scoped pause needs an integral occurrence clock"));
++    }
++    let position = at.0.checked_sub(start.frame.0).ok_or_else(overflow)?;
++    if position < 0 || position > durations[&within.node].frames() {
++        return Err(invalid("pause boundary is outside the selected occurrence"));
++    }
++    let parent_node = &index.parents[&within.node].0;
++    let mut parent = InstancePath {
++        node: parent_node.clone(),
++        repeats: within.repeats.clone(),
++    };
++    if matches!(document.nodes()[parent_node].kind, NodeKind::Repeat { .. }) {
++        parent.repeats.pop();
++    }
++    let sequence = if let NodeKind::Sequence { children } = &document.nodes()[parent_node].kind {
++        Some((
++            parent_node.clone(),
++            children
++                .iter()
++                .position(|id| id == &within.node)
++                .ok_or_else(|| invalid("scoped pause lost its Sequence parent"))?,
++        ))
++    } else {
++        None
++    };
++    Ok(ScopedStart {
++        position,
++        parent,
++        sequence,
++        navigation_parent: index.parents[&outer.node].0.clone(),
++    })
++}
+diff --git a/crates/deadpan-core/src/insert_time/occurrence/tests.rs b/crates/deadpan-core/src/insert_time/occurrence/tests.rs
+index 4891310c..4a1b7de9 100644
+--- a/crates/deadpan-core/src/insert_time/occurrence/tests.rs
++++ b/crates/deadpan-core/src/insert_time/occurrence/tests.rs
+@@ -1,6 +1,8 @@
+ use super::*;
+ use crate::*;
+ 
++mod scoped;
++
+ fn id(name: &str) -> NodeId {
+     NodeId::new(name).unwrap()
+ }
+@@ -64,9 +66,23 @@ fn fixture(nested: bool) -> ProjectDocument {
+     document
+ }
+ fn request(document: &ProjectDocument, at: ProjectFrame, name: &str) -> CommandRequest {
+-    let PauseInsertionTarget::Occurrence(target) = document.pause_insertion_target(at).unwrap()
+-    else {
+-        panic!()
++    request_within(document, at, name, None)
++}
++
++fn request_within(
++    document: &ProjectDocument,
++    at: ProjectFrame,
++    name: &str,
++    within: Option<InstancePath>,
++) -> CommandRequest {
++    let target = if let Some(within) = &within {
++        document.pause_insertion_within(at, within).unwrap()
++    } else {
++        let PauseInsertionTarget::Occurrence(target) = document.pause_insertion_target(at).unwrap()
++        else {
++            panic!()
++        };
++        target
+     };
+     CommandRequest {
+         project_id: document.project_id().clone(),
+@@ -74,6 +90,7 @@ fn request(document: &ProjectDocument, at: ProjectFrame, name: &str) -> CommandR
+         new_revision: revision(name),
+         command: Command::InsertOccurrenceTime {
+             at,
++            within,
+             hold: hold(1),
+             id: id(&format!("{name}-pause")),
+             ai: false,
+diff --git a/crates/deadpan-core/src/semantic/planner/pause.rs b/crates/deadpan-core/src/semantic/planner/pause.rs
+index 7a102953..20f64c33 100644
+--- a/crates/deadpan-core/src/semantic/planner/pause.rs
++++ b/crates/deadpan-core/src/semantic/planner/pause.rs
+@@ -369,6 +369,7 @@ where
+         let command = if let Some(identities) = occurrence {
+             Command::InsertOccurrenceTime {
+                 at,
++                within: None,
+                 hold,
+                 id: id.clone(),
+                 identities,
+diff --git a/crates/deadpan-store/tests/generation_bundles/preparations/insertion.rs b/crates/deadpan-store/tests/generation_bundles/preparations/insertion.rs
+index 80c1b294..243dc6a9 100644
+--- a/crates/deadpan-store/tests/generation_bundles/preparations/insertion.rs
++++ b/crates/deadpan-store/tests/generation_bundles/preparations/insertion.rs
+@@ -76,6 +76,7 @@ fn occurrence_pause_ai_intent_keeps_one_owned_play_through_reopen_and_history()
+         "paused",
+         Command::InsertOccurrenceTime {
+             at,
++            within: None,
+             hold: HoldRecipe {
+                 duration: FrameDuration::new(3)?,
+                 video: HoldVideo::Background,
+diff --git a/crates/deadpan-app/src/preview/harness/scoped_plays/pauses.rs b/crates/deadpan-app/src/preview/harness/scoped_plays/pauses.rs
+new file mode 100644
+index 00000000..4e347295
+--- /dev/null
++++ b/crates/deadpan-app/src/preview/harness/scoped_plays/pauses.rs
+@@ -0,0 +1,128 @@
++use super::*;
++
++pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
++    d.key(Key::Enter)?;
++    d.command("scope play 2")?;
++    idle(d)?;
++    let before = document(d)?.clone();
++    let cursor = d.app().sequence_cursor;
++    let selected = d.app().scoped_target()?.ok_or("No This play capture")?;
++    let preceding = d
++        .app()
++        .workspace
++        .as_ref()
++        .ok_or("No workspace")?
++        .plan
++        .picture(ProjectFrame(cursor as i64 - 1))
++        .map_err(|error| error.to_string())?;
++    let revision = d.revision();
++    d.chord(&[Key::Comma, Key::H])?;
++    d.changed(&revision)?;
++    idle(d)?;
++    let saved = d
++        .app()
++        .scoped_target()?
++        .ok_or("Scoped pause lost the inspector")?;
++    let after = document(d)?;
++    let NodeKind::Hold { recipe } = &after.nodes()[&saved.target.node].kind else {
++        return Err("Scoped pause did not select its Hold".into());
++    };
++    let index = d
++        .app()
++        .workspace
++        .as_ref()
++        .ok_or("No workspace")?
++        .sources
++        .values()
++        .find_map(|source| source.video_index.as_ref())
++        .ok_or("No measured picture index")?;
++    let shown = d
++        .app()
++        .workspace
++        .as_ref()
++        .ok_or("No workspace")?
++        .plan
++        .picture(ProjectFrame(cursor as i64))
++        .map_err(|error| error.to_string())?;
++    d.check("A pause at This play's start grows only that play and selects the saved Hold",
++        after.duration().map_err(|error| error.to_string())?.frames()
++            == before.duration().map_err(|error| error.to_string())?.frames() + 15
++            && recipe.duration.frames() == 15
++            && saved.target.repeats == selected.target.repeats
++            && d.app().sequence_cursor == cursor
++            && shown.picture.select_source_frame(index).map_err(|error| error.to_string())?
++                == preceding.picture.select_source_frame(index).map_err(|error| error.to_string())?,
++        json!({"added_frames":15,"scope":"This play 2","cursor":cursor,"freeze":"preceding measured picture"}), d.snapshot())?;
++    resize(d, 960.0, 640.0)?;
++    painted(d, "This play 2/3")?;
++    painted(d, "Insert pause")?;
++    scenarios::footer_anchored(d, "Scoped pause controls retain the compact footer")?;
++    d.capture("The inserted Hold remains selected within This play")?;
++    resize(d, 1280.0, 820.0)?;
++
++    let revision = d.revision();
++    d.key(Key::U)?;
++    d.changed(&revision)?;
++    idle(d)?;
++    d.check(
++        "One Undo restores the selected play's complete pre-pause structure",
++        document(d)?.nodes() == before.nodes()
++            && document(d)?.audio_bindings() == before.audio_bindings()
++            && d.app().scoped.is_none(),
++        json!("restored; stale inspector closed"),
++        d.snapshot(),
++    )?;
++    d.key(Key::Enter)?;
++    for scope in ["scope all", "scope plays 1,2"] {
++        d.command(scope)?;
++        idle(d)?;
++        let before = document(d)?.clone();
++        d.command("hold 3f")?;
++        idle(d)?;
++        d.check(
++            &format!("{scope} cannot silently insert in only the displayed play"),
++            document(d)? == &before
++                && d.app()
++                    .error
++                    .as_deref()
++                    .is_some_and(|error| error.contains("Choose This play")),
++            json!("no authored change; choose one play"),
++            d.snapshot(),
++        )?;
++    }
++    d.command("scope play 2")?;
++    let revision = d.revision();
++    d.command("hold 2f")?;
++    d.changed(&revision)?;
++    idle(d)?;
++    let revision = d.revision();
++    let expected_revision = document(d)?.revision_id().clone();
++    d.key(Key::Colon)?;
++    d.events(
++        "Capture a scoped pause before history changes",
++        vec![egui::Event::Text("hold 4f".into())],
++    )?;
++    d.app_mut().feedback.hold_project_updates = true;
++    d.app()
++        .service
++        .submit(ProjectRequest::Undo { expected_revision })?;
++    d.wait_for("Undo completes with the scoped command open", |app| {
++        !app.service.is_busy()
++    })?;
++    d.app_mut().feedback.hold_project_updates = false;
++    d.changed(&revision)?;
++    let restored = document(d)?.clone();
++    d.key(Key::Enter)?;
++    idle(d)?;
++    d.check(
++        "A late history reply cannot retarget the command-entry scoped pause",
++        document(d)? == &restored
++            && d.app()
++                .error
++                .as_deref()
++                .is_some_and(|error| error.contains("changed")),
++        json!("no insertion"),
++        d.snapshot(),
++    )?;
++    Ok(())
++}
+diff --git a/crates/deadpan-app/src/project/tests/scoped/pauses.rs b/crates/deadpan-app/src/project/tests/scoped/pauses.rs
+new file mode 100644
+index 00000000..aba4745c
+--- /dev/null
++++ b/crates/deadpan-app/src/project/tests/scoped/pauses.rs
+@@ -0,0 +1,154 @@
++use super::*;
++
++fn simple(workspace: &Workspace, play_index: u32, at: i64) -> Target {
++    Target {
++        session: workspace.session,
++        project: workspace.document.project_id().clone(),
++        revision: workspace.document.revision_id().clone(),
++        scope: SequenceScope::default(),
++        root: node("repeat"),
++        target: ScopedNodeTarget {
++            node: node("a"),
++            repeats: vec![RepeatEditStep {
++                repeat: node("repeat"),
++                branch: play("plays", play_index),
++            }],
++        },
++        presentation: Some(InstancePath {
++            node: node("a"),
++            repeats: vec![RepeatInstance {
++                node: node("repeat"),
++                iteration: iteration("plays", play_index),
++            }],
++        }),
++        cursor: ProjectFrame(at),
++        also: Vec::new(),
++    }
++}
++
++fn pause(target: Target, black: bool, ai: bool) -> ProjectRequest {
++    ProjectRequest::Edit {
++        expected_session: target.session,
++        expected_revision: target.revision.clone(),
++        scope: target.scope.clone(),
++        cursor: target.cursor,
++        edit: ProjectEdit::ScopedPause {
++            target: Box::new(target),
++            duration: FrameDuration::new(3).unwrap(),
++            black,
++            ai,
++        },
++    }
++}
++
++fn setup() -> (tempfile::TempDir, PathBuf, ProjectService, Arc<Workspace>) {
++    let scratch = tempfile::tempdir().unwrap();
++    let path = scratch.path().join("pauses.deadpan");
++    let mut store = seed_holds(&path, &["a", "b"]);
++    seed_command(
++        &mut store,
++        Command::WrapRepeat {
++            node: node("a"),
++            id: node("repeat"),
++            plays: 3,
++            gap: None,
++            anchor_policy: Default::default(),
++        },
++        "plays",
++    );
++    drop(store);
++    let service = ProjectService::new(Arc::new(|| {})).unwrap();
++    let workspace = command(&service, ProjectRequest::Open(path.clone()))
++        .workspace
++        .unwrap();
++    (scratch, path, service, workspace)
++}
++
++#[test]
++fn scoped_pause_keeps_selected_play_edges_receipts_and_durable_history() {
++    let (_scratch, path, service, mut before) = setup();
++    for play_index in 0..3 {
++        for local in [0, 4, 10] {
++            for (black, ai) in [(false, false), (true, false), (false, true)] {
++                let at = i64::from(play_index) * 10 + local;
++                let target = simple(&before, play_index, at);
++                let rows = counts(&path);
++                let update = command(&service, pause(target.clone(), black, ai));
++                assert!(update.error.is_none(), "{:?}", update.error);
++                let commit = update.committed.unwrap();
++                let receipt = commit.scoped.unwrap();
++                let after = update.workspace.unwrap();
++                assert_eq!(receipt.before, target);
++                assert_eq!(commit.cursor, Some(ProjectFrame(at)));
++                assert_eq!(commit.selected_node, Some(node("repeat")));
++                assert_eq!(after.plan.duration().frames(), 43);
++                assert_eq!(
++                    after.plan.picture(ProjectFrame(at)).unwrap().instance,
++                    receipt.presentation.clone().unwrap()
++                );
++                assert_eq!(receipt.target.repeats[0].branch, play("plays", play_index));
++                assert_eq!(
++                    after.document.nodes()[&node("a")],
++                    before.document.nodes()[&node("a")]
++                );
++                assert_eq!(counts(&path), (rows.0 + 1, rows.1 + 1));
++                continued(&after, &receipt).validate(&after).unwrap();
++                command(&service, ProjectRequest::Close);
++                let reopened = command(&service, ProjectRequest::Open(path.clone()))
++                    .workspace
++                    .unwrap();
++                assert_eq!(*reopened.document, *after.document);
++                let undone = command(
++                    &service,
++                    ProjectRequest::Undo {
++                        expected_revision: reopened.document.revision_id().clone(),
++                    },
++                )
++                .workspace
++                .unwrap();
++                assert_same_content(&undone.document, &before.document);
++                let redone = command(
++                    &service,
++                    ProjectRequest::Redo {
++                        expected_revision: undone.document.revision_id().clone(),
++                    },
++                )
++                .workspace
++                .unwrap();
++                assert_same_content(&redone.document, &after.document);
++                before = command(
++                    &service,
++                    ProjectRequest::Undo {
++                        expected_revision: redone.document.revision_id().clone(),
++                    },
++                )
++                .workspace
++                .unwrap();
++            }
++        }
++    }
++}
++
++#[test]
++fn scoped_pause_rejects_broader_missing_stale_and_foreign_captures_without_writes() {
++    let (_scratch, path, service, before) = setup();
++    let valid = simple(&before, 1, 14);
++    let original_counts = counts(&path);
++    for case in 0..7 {
++        let mut target = valid.clone();
++        match case {
++            0 => target.target.repeats[0].branch = RepeatEditBranch::Default,
++            1 => target.presentation = None,
++            2 => target.cursor = ProjectFrame(4),
++            3 => target.session += 1,
++            4 => target.revision = RevisionId::new("stale").unwrap(),
++            5 => target.also.push(simple(&before, 2, 24).target),
++            _ => target.presentation.as_mut().unwrap().repeats[0].iteration = iteration("plays", 0),
++        }
++        let update = command(&service, pause(target, false, false));
++        assert!(update.error.is_some(), "case {case}");
++        assert!(update.committed.is_none());
++        assert_eq!(*update.workspace.unwrap().document, *before.document);
++        assert_eq!(counts(&path), original_counts);
++    }
++}
+diff --git a/crates/deadpan-core/src/insert_time/occurrence/tests/scoped.rs b/crates/deadpan-core/src/insert_time/occurrence/tests/scoped.rs
+new file mode 100644
+index 00000000..98a29202
+--- /dev/null
++++ b/crates/deadpan-core/src/insert_time/occurrence/tests/scoped.rs
+@@ -0,0 +1,142 @@
++use super::*;
++
++fn instance(node: &str, plays: &[(&str, u32)]) -> InstancePath {
++    InstancePath {
++        node: id(node),
++        repeats: plays
++            .iter()
++            .map(|(name, ordinal)| RepeatInstance {
++                node: id(name),
++                iteration: IterationId {
++                    allocation: revision(name),
++                    ordinal: *ordinal,
++                },
++            })
++            .collect(),
++    }
++}
++
++#[test]
++fn scoped_pause_owns_both_edges_of_the_named_play_and_nested_child() {
++    for nested in [false, true] {
++        let before = fixture(nested);
++        for play in 0..3 {
++            let start = i64::from(play) * if nested { 13 } else { 6 };
++            let mut targets = vec![(
++                instance(if nested { "body" } else { "a" }, &[("outer", play)]),
++                start,
++                if nested { 11 } else { 4 },
++            )];
++            if nested {
++                targets.extend([
++                    (instance("inner", &[("outer", play)]), start, 9),
++                    (instance("a", &[("outer", play), ("inner", 0)]), start, 4),
++                    (
++                        instance("a", &[("outer", play), ("inner", 1)]),
++                        start + 5,
++                        4,
++                    ),
++                    (instance("b", &[("outer", play)]), start + 9, 2),
++                ]);
++            }
++            for (within, start, length) in targets {
++                for local in 0..=length {
++                    let at = ProjectFrame(start + local);
++                    let request = request_within(&before, at, "scoped", Some(within.clone()));
++                    let request = serde_json::from_str::<CommandRequest>(
++                        &serde_json::to_string(&request).unwrap(),
++                    )
++                    .unwrap();
++                    let (transaction, after) =
++                        apply_with_result(&before, &request).unwrap_or_else(|error| {
++                            panic!("nested={nested} within={within:?} at={at:?}: {error}")
++                        });
++                    assert_eq!(transaction.duration_delta, 1);
++                    assert_eq!(transaction.inverse.apply(&after).unwrap(), before);
++                    assert_eq!(
++                        ProjectDocument::from_json(&after.to_json().unwrap()).unwrap(),
++                        after
++                    );
++                    let proof = derive_scoped_isolation(&before, &request, &after).unwrap();
++                    proof.record().validate(&before, &request, &after).unwrap();
++                    let location = AnchorIndex::new(&after)
++                        .unwrap()
++                        .locate_boundary(
++                            &BoundaryLocationRequest {
++                                project_id: after.project_id().clone(),
++                                expected_revision: after.revision_id().clone(),
++                                position: ExactRatio::new(i128::from(at.0) * 2 + 1, 2).unwrap(),
++                                bias: InsertionBias::Right,
++                            },
++                            BoundaryQueryLimits::default(),
++                        )
++                        .unwrap();
++                    let pause_instance = location.scopes.last().unwrap().instance.clone();
++                    assert_eq!(pause_instance.node, id("scoped-pause"));
++                    assert_eq!(pause_instance.repeats[0].iteration.ordinal, play);
++                    let position = AnchorIndex::new(&after)
++                        .unwrap()
++                        .resolve_target(&AnchorTarget {
++                            boundary: BoundaryAnchor {
++                                coordinate: Anchor::Occurrence {
++                                    instance: pause_instance,
++                                    position: ExactRatio::ZERO,
++                                },
++                                bias: InsertionBias::Right,
++                            },
++                            occurrence: None,
++                        })
++                        .unwrap();
++                    assert_eq!(position.exact_frame, ExactRatio::integer(at.0));
++                    assert_eq!(after.nodes()[&id("a")], before.nodes()[&id("a")]);
++                    assert_eq!(after.overrides()[&id("outer")].len(), 1);
++                }
++            }
++        }
++    }
++}
++
++#[test]
++fn scoped_pause_rejects_foreign_boundaries_instances_and_retimed_ancestors() {
++    let before = fixture(false);
++    let within = instance("a", &[("outer", 1)]);
++    for at in [0, 5, 11, 19] {
++        assert!(
++            before
++                .pause_insertion_within(ProjectFrame(at), &within)
++                .is_err()
++        );
++    }
++    for within in [
++        instance("a", &[]),
++        instance("a", &[("outer", 3)]),
++        instance("tail", &[("outer", 1)]),
++    ] {
++        assert!(
++            before
++                .pause_insertion_within(ProjectFrame(7), &within)
++                .is_err()
++        );
++    }
++    let mut retimed = before.clone();
++    let NodeKind::Repeat { child, .. } = &mut retimed.nodes.get_mut(&id("outer")).unwrap().kind
++    else {
++        panic!()
++    };
++    *child = id("retime");
++    let mut wrapper = BeatNode::sequence("Retime", vec![]);
++    wrapper.kind = NodeKind::Retime {
++        child: id("a"),
++        duration: FrameDuration::new(3).unwrap(),
++        mapping: FrameRange::new(ProjectFrame(0), ProjectFrame(4)).unwrap(),
++        pitch: PitchPolicy::Preserve,
++        purpose: RetimePurpose::Edit,
++    };
++    retimed.nodes.insert(id("retime"), wrapper);
++    retimed.validate().unwrap();
++    assert!(
++        retimed
++            .pause_insertion_within(ProjectFrame(6), &within)
++            .is_err()
++    );
++}

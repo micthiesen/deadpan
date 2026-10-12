@@ -1,0 +1,23 @@
+{
+  "name": "commands-reference-verified",
+  "command": [
+    "target/debug/deps/deadpan_app-1ce616f62928067a",
+    "navigation::registry::tests::commands_reference_is_current",
+    "--exact"
+  ],
+  "cwd": "/Users/michael/Code/deadpan",
+  "started_utc": "2026-10-12T23:32:02.569128+00:00",
+  "head": "d387788d06dc08b68687d6414bd19203c159c7de",
+  "diff_sha256": "c3e5e276b9adde3e735bcc9931179bb3b635fb3de39ad7b70fa6eaae14cbd673",
+  "untracked_sha256": {
+    "crates/deadpan-app/src/preview/harness/scoped_plays/pauses.rs": "8adaf654a2bc797b78fd67846b43e9e86a89fc211989889f93c0fb53ab91b1d1",
+    "crates/deadpan-app/src/project/tests/scoped/pauses.rs": "b10b4ec2125e26b13a8e013630f1d2e0a608c2a9d7e13f78b953c5bacfe35f7c",
+    "crates/deadpan-core/src/insert_time/occurrence/tests/scoped.rs": "f9081581344404db733fb610c32aace2ec97658d4ce61e7b5d15e0c81d99aaf7"
+  },
+  "exit": 0,
+  "seconds": 0.10944954119622707,
+  "log_sha256": "cfefd0024cfe101d675687ccbbcb7d8edbf0f12fc0fec82086a3e63f09b9882e",
+  "binaries": {
+    "target/debug/deps/deadpan_app-1ce616f62928067a": "0b6fdd3bca34a705f1a2b536c28ac108a2b55dd57fc35187be0b046500b6f098"
+  }
+}

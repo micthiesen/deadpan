@@ -190,8 +190,9 @@ fn scope_resolves_absolute_edges_and_blocks_composite_descent_and_pause_seams() 
     // Ordinary Hold interiors and seams before a composite remain legal.
     outer.check_pause(&workspace, ProjectFrame(28)).unwrap();
     outer.check_pause(&workspace, ProjectFrame(32)).unwrap();
-    // The scoped UI cannot address the interior of a Repeat play or Retime.
-    assert!(outer.check_pause(&workspace, ProjectFrame(33)).is_err());
+    // The ordinary timeline can now select one concrete Repeat play by its
+    // boundary. Retime interiors still require exact derived-clock authoring.
+    outer.check_pause(&workspace, ProjectFrame(33)).unwrap();
     assert!(outer.check_pause(&workspace, ProjectFrame(37)).is_err());
     command(&service, ProjectRequest::Close);
 }

@@ -80,6 +80,14 @@ the Repeat remains the live enclosing owner. No play-count expansion occurs.
 Existing Sequence seams keep their level; a Repeat seam chooses its left branch,
 matching the picture sampled immediately before the insertion boundary.
 
+The scoped inspector supplies `within: InstancePath` to name one concrete
+occurrence. `pause_insertion_within` starts there and admits both its edges,
+so insertion at the beginning of play two cannot fall into play one. The
+command remaps the address through its own isolation before resolving the
+insertion again. Native requests retain the session, revision, scope and cursor;
+the saved receipt selects the new Hold within the same stable play. All plays,
+multiple plays and Retime ancestors are refused for this operation.
+
 The command captures every later play, gap and enclosing Sequence sibling on
 its own pre-edit sampling clock. The inserted time grows only the selected
 occurrence. Native pauses and semantic macro pauses share the target query;

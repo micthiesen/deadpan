@@ -68,6 +68,17 @@ pub fn pause_provider(
     at: ProjectFrame,
     index: &mut IndexLookup<'_>,
 ) -> Result<PauseProvider, String> {
+    pause_provider_within(document, plan, at, None, index)
+}
+
+/// Resolve a freeze at a boundary owned by an explicitly inspected occurrence.
+pub fn pause_provider_within(
+    document: &ProjectDocument,
+    plan: &RenderPlan,
+    at: ProjectFrame,
+    within: Option<&deadpan_core::InstancePath>,
+    index: &mut IndexLookup<'_>,
+) -> Result<PauseProvider, String> {
     if plan.duration() == FrameDuration::ZERO {
         return Ok(PauseProvider {
             video: HoldVideo::Background,
@@ -75,10 +86,15 @@ pub fn pause_provider(
             audio: HoldAudio::Silence,
         });
     }
-    let insertion_parent = document
-        .pause_insertion_target(at)
-        .map_err(|error| error.to_string())?
-        .picture_parent();
+    let insertion_parent = match within {
+        Some(within) => document
+            .pause_insertion_within(at, within)
+            .map(|target| target.picture_parent),
+        None => document
+            .pause_insertion_target(at)
+            .map(|target| target.picture_parent()),
+    }
+    .map_err(|error| error.to_string())?;
     let sample = plan
         .picture(ProjectFrame(if at.0 == 0 { 0 } else { at.0 - 1 }))
         .map_err(|error| error.to_string())?;
@@ -91,7 +107,7 @@ pub fn pause_provider(
                 .framing
                 .iter()
                 .position(|scope| scope.instance == insertion_parent)
-                .ok_or("The stopped picture has no selected Sequence scope.")?;
+                .ok_or("The preceding picture is outside this insertion parent. Choose an interior boundary or insert a black pause.")?;
             freeze(document, &sample, parent, index)
         }
         _ => freeze(document, &sample, 0, index),

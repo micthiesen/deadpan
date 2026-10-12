@@ -435,6 +435,7 @@ pub fn occurrence_pauses(dir: &Path) -> Result<Fixture> {
             };
             Ok(Command::InsertOccurrenceTime {
                 at: ProjectFrame(at),
+                within: None,
                 id: project.fresh(1)?.remove(0),
                 hold: HoldRecipe {
                     duration: FrameDuration::new(1)?,

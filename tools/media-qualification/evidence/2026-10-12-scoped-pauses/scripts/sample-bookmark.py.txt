@@ -1,0 +1,12 @@
+import pathlib, subprocess, time, json
+scratch = pathlib.Path(__file__).resolve().parent
+binary = '/Users/michael/Code/deadpan/target/debug/deps/deadpan_app-1ce616f62928067a'
+command = [binary, 'project::tests::backups::a_moved_file_with_different_bytes_is_reported_missing_not_relinked', '--exact', '--nocapture']
+start = time.monotonic()
+with (scratch / 'bookmark-sampled-test.log').open('wb') as log:
+    process = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT)
+    sampled = subprocess.run(['sample', str(process.pid), '3', '1', '-file', str(scratch / 'bookmark-stacks.txt')], capture_output=True, text=True)
+    result = process.wait(timeout=30)
+(scratch / 'bookmark-sampled-test.json').write_text(json.dumps({'command': command, 'exit': result, 'sample_exit': sampled.returncode, 'seconds': time.monotonic() - start}, indent=2)+'\n')
+print(json.dumps({'exit': result, 'sample_exit': sampled.returncode}))
+print((scratch / 'bookmark-sampled-test.log').read_text()[-3500:])

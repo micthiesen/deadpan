@@ -14,8 +14,67 @@ pub(super) fn prepare(
     new_revision: RevisionId,
     id: NodeId,
     black: bool,
+    allocate: impl FnMut() -> NodeId,
+) -> Result<CommandRequest, String> {
+    prepare_selected(
+        workspace,
+        duration,
+        new_revision,
+        id,
+        Selection {
+            at,
+            black,
+            ai: false,
+            within: None,
+        },
+        allocate,
+    )
+}
+
+pub(super) fn prepare_scoped(
+    workspace: &Workspace,
+    target: &super::scoped::Target,
+    duration: FrameDuration,
+    black: bool,
+    ai: bool,
+) -> Result<CommandRequest, String> {
+    let within = target.pause_instance(workspace)?.clone();
+    prepare_selected(
+        workspace,
+        duration,
+        super::service::revision(),
+        super::service::node(),
+        Selection {
+            at: target.cursor,
+            black,
+            ai,
+            within: Some(within),
+        },
+        super::service::node,
+    )
+}
+
+struct Selection {
+    at: ProjectFrame,
+    black: bool,
+    ai: bool,
+    within: Option<deadpan_core::InstancePath>,
+}
+
+fn prepare_selected(
+    workspace: &Workspace,
+    duration: FrameDuration,
+    new_revision: RevisionId,
+    id: NodeId,
+    selection: Selection,
     mut allocate: impl FnMut() -> NodeId,
 ) -> Result<CommandRequest, String> {
+    let Selection {
+        at,
+        black,
+        ai,
+        within,
+    } = selection;
     let document = &workspace.document;
     let total = workspace.plan.duration().frames();
     if at.0 < 0 || at.0 > total {
@@ -25,15 +84,19 @@ pub(super) fn prepare(
         return Err("Pause resolves to 0 frames; no edit was made.".into());
     }
     // Resolve ownership before sampling a fallback or allocating an edit.
-    let target = document
-        .pause_insertion_target(at)
-        .map_err(|error| error.to_string())?;
+    let target = match &within {
+        Some(within) => document
+            .pause_insertion_within(at, within)
+            .map(deadpan_core::PauseInsertionTarget::Occurrence),
+        None => document.pause_insertion_target(at),
+    }
+    .map_err(|error| error.to_string())?;
     // Black punctuation shows the project background: no picture is sampled
     // or captured, so inner framing has nothing to retain.
     let (video, picture_context) = if black {
         (HoldVideo::Background, None)
     } else {
-        fallback(workspace, at)?
+        fallback(workspace, at, within.as_ref())?
     };
     let hold = HoldRecipe {
         duration,
@@ -60,10 +123,11 @@ pub(super) fn prepare(
         },
         deadpan_core::PauseInsertionTarget::Occurrence(target) => Command::InsertOccurrenceTime {
             at,
+            within,
             hold,
             id,
             timing,
-            ai: false,
+            ai,
             identities: deadpan_core::OccurrencePauseIdentities {
                 isolation: deadpan_core::OccurrenceIdentities {
                     nodes: (0..target.isolation_nodes).map(|_| allocate()).collect(),
@@ -93,11 +157,13 @@ pub(super) fn prepare(
 fn fallback(
     workspace: &Workspace,
     at: ProjectFrame,
+    within: Option<&deadpan_core::InstancePath>,
 ) -> Result<(HoldVideo, Option<deadpan_core::CapturedFraming>), String> {
-    let provider = deadpan_cli::pause::pause_provider(
+    let provider = deadpan_cli::pause::pause_provider_within(
         &workspace.document,
         &workspace.plan,
         at,
+        within,
         &mut |asset| {
             workspace
                 .sources

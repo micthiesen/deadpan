@@ -1,0 +1,15 @@
+
+running 1 test
+
+thread 'project::tests::backups::a_moved_file_with_different_bytes_is_reported_missing_not_relinked' (129344502) panicked at crates/deadpan-app/src/project/tests.rs:993:9:
+project update timed out: busy=false, stopping=false, shutdown_complete=false, last=Some("error=None, import=Some(ImportStatus { path: \"/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpl7pYrb/linked.mp4\", stage: Retaining, error: None, asset: None }), message=None, session=Some(1), committed=None, render=None")
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+test project::tests::backups::a_moved_file_with_different_bytes_is_reported_missing_not_relinked ... FAILED
+
+failures:
+
+failures:
+    project::tests::backups::a_moved_file_with_different_bytes_is_reported_missing_not_relinked
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1136 filtered out; finished in 20.10s
+

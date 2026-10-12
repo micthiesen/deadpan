@@ -1,6 +1,8 @@
 use super::*;
 use crate::*;
 
+mod scoped;
+
 fn id(name: &str) -> NodeId {
     NodeId::new(name).unwrap()
 }
@@ -64,9 +66,23 @@ fn fixture(nested: bool) -> ProjectDocument {
     document
 }
 fn request(document: &ProjectDocument, at: ProjectFrame, name: &str) -> CommandRequest {
-    let PauseInsertionTarget::Occurrence(target) = document.pause_insertion_target(at).unwrap()
-    else {
-        panic!()
+    request_within(document, at, name, None)
+}
+
+fn request_within(
+    document: &ProjectDocument,
+    at: ProjectFrame,
+    name: &str,
+    within: Option<InstancePath>,
+) -> CommandRequest {
+    let target = if let Some(within) = &within {
+        document.pause_insertion_within(at, within).unwrap()
+    } else {
+        let PauseInsertionTarget::Occurrence(target) = document.pause_insertion_target(at).unwrap()
+        else {
+            panic!()
+        };
+        target
     };
     CommandRequest {
         project_id: document.project_id().clone(),
@@ -74,6 +90,7 @@ fn request(document: &ProjectDocument, at: ProjectFrame, name: &str) -> CommandR
         new_revision: revision(name),
         command: Command::InsertOccurrenceTime {
             at,
+            within,
             hold: hold(1),
             id: id(&format!("{name}-pause")),
             ai: false,

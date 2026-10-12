@@ -1,0 +1,42 @@
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+   Compiling deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+warning: linker stderr: ld: __eh_frame section too large (max 16MB) to encode dwarf unwind offsets in compact unwind table, performance of exception handling might be affected
+  |
+  = note: `#[warn(linker_messages)]` on by default
+
+warning: `deadpan-app` (bin "deadpan-app") generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 31.97s
+     Running unittests src/lib.rs (target/debug/deps/deadpan_app-44d6a8ab0a194992)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/deadpan_app-fd90e39f19febf8a)
+
+running 13 tests
+test project::tests::scoped::carried_gain_keeps_each_plays_recipe_or_refuses ... ok
+test project::tests::scope::scope_resolves_absolute_edges_and_blocks_composite_descent_and_pause_seams ... ok
+test project::tests::scope::stale_nested_scope_and_revision_are_rejected_and_reconcile_to_nearest_parent ... ok
+test project::tests::scoped::pauses::scoped_pause_rejects_broader_missing_stale_and_foreign_captures_without_writes ... ok
+test project::tests::scoped::multi_play_scope_commits_one_edit_in_every_selected_play_and_carries_steps ... ok
+test project::tests::scoped::scoped_gain_proposals_preview_the_same_branches_and_commit_without_reusing_draft_ids ... ok
+test project::tests::scope::nested_edits_validate_direct_membership_and_rebuild_sibling_selection_in_scope ... ok
+test project::tests::scoped::scoped_default_and_play_capture_rejects_forged_context_before_noop_or_write ... ok
+test project::tests::scoped::scoped_saved_refresh_failure_retains_remapped_receipt_and_blocks_stale_noop ... ok
+test project::tests::scoped::multi_play_scope_accepts_existing_preflight_names_and_reopens_undo_redo ... ok
+test project::tests::scoped::scoped_commit_maps_nested_plays_keeps_root_cursor_and_survives_undo_redo_reopen ... ok
+test project::tests::scope::nested_insert_checks_parent_and_retains_captured_scope_for_cached_and_async_paths ... ok
+test project::tests::scoped::pauses::scoped_pause_keeps_selected_play_edges_receipts_and_durable_history ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 1124 filtered out; finished in 10.01s
+
+     Running tests/headless.rs (target/debug/deps/headless-410cedbee467bb1f)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 4 filtered out; finished in 0.00s
+
