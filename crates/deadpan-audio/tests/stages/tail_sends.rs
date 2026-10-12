@@ -75,6 +75,7 @@ fn sound(send: TailSends) -> SoundEvent {
         offset: AudioSample(0),
         gain_millidecibels: -3_000,
         tail_sends: send,
+        wet_sends: Default::default(),
         start_edge: AudioEdgePolicy::Hard,
         end_edge: AudioEdgePolicy::Hard,
         overflow: SoundOverflowPolicy::Reject,
@@ -93,6 +94,39 @@ fn with_sound(document: &ProjectDocument, event: SoundEvent, attached: bool) -> 
         wire["sounds"] = serde_json::json!({"effect": event});
     }
     ProjectDocument::from_json(&wire.to_string()).unwrap()
+}
+
+#[test]
+fn event_return_is_excluded_from_its_own_allocated_tail_tap() {
+    for attached in [false, true] {
+        for effect in [TailEffect::Reverb, TailEffect::Delay] {
+            let base = document(effect);
+            let dry_event = sound(sends(effect, -6000));
+            let dry = with_sound(&base, dry_event.clone(), attached);
+            let mut wet_event = dry_event;
+            wet_event.wet_sends = sends(TailEffect::Reverb, 0);
+            let wet = with_sound(&base, wet_event, attached);
+            let prepare = |document: &ProjectDocument| {
+                StageAudio::new(planned(document))
+                    .prepare_authored_bus(
+                        &mut FixtureProvider::new(),
+                        AudioSample(4800),
+                        20_000,
+                        TIMEOUT,
+                        &AtomicBool::new(false),
+                    )
+                    .unwrap()
+                    .samples
+            };
+            assert_pcm_close(&prepare(&dry), &prepare(&wet));
+            assert!(
+                heard(&dry)
+                    .iter()
+                    .zip(heard(&wet))
+                    .any(|(a, b)| (a[0] - b[0]).abs() > 0.001)
+            );
+        }
+    }
 }
 
 #[test]

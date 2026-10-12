@@ -569,6 +569,7 @@ fn with_sound(document: &ProjectDocument) -> ProjectDocument {
     let source = audio(0, 256);
     let event = SoundEvent {
         tail_sends: Default::default(),
+        wet_sends: Default::default(),
         owner: id("root"),
         label: "Independent sound".into(),
         mapping: SourceAudioMapping::natural_rate(
@@ -598,6 +599,7 @@ fn with_owned_sound(
     let source = audio(0, frames);
     let event = BeatSound {
         tail_sends: Default::default(),
+        wet_sends: Default::default(),
         label: "Group contribution".into(),
         mapping: SourceAudioMapping::natural_rate(
             source.span,

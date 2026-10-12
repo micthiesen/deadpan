@@ -114,6 +114,7 @@ const EXTRA_INPUTS: &[&str] = &[
     ":sound-at 137",
     ":sound-gain -96",
     ":sound-tail-send delay -6dB",
+    ":sound-wet-send delay -6dB",
     ":tail-send reverb off",
     ":wet-send delay -6dB",
     ":tail 1s input=sends",

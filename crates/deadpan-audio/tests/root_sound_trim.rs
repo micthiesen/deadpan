@@ -168,6 +168,7 @@ fn event(fixture: Fixture, selection: ExactFrameRange, offset: i64) -> SoundEven
     let source = fixture.source();
     SoundEvent {
         tail_sends: Default::default(),
+        wet_sends: Default::default(),
         owner: node("root"),
         label: "Retained sound".into(),
         mapping: SourceAudioMapping::SelectedPlacement {

@@ -11,6 +11,7 @@ use deadpan_plan::AudioOwnerClock;
 #[derive(Clone, Copy, Default)]
 struct Sample {
     value: [f64; 2],
+    send_input: [f64; 2],
     permitted: bool,
 }
 
@@ -168,7 +169,7 @@ impl<'plan> Components<'plan> {
         &mut self,
         route: usize,
         at: usize,
-        value: [f32; 2],
+        (dry, wet): ([f64; 2], [f64; 2]),
         event_gain: i32,
         control: WorkControl<'_>,
     ) -> Result<(), StageAudioError> {
@@ -182,9 +183,10 @@ impl<'plan> Components<'plan> {
         }
         route.event_gain = Some(event_gain);
         let output = &mut route.pcm[at];
-        for (out, value) in output.value.iter_mut().zip(value) {
-            *out += f64::from(value);
-            if !out.is_finite() {
+        for ch in 0..2 {
+            output.value[ch] += dry[ch] + wet[ch];
+            output.send_input[ch] += dry[ch];
+            if !output.value[ch].is_finite() || !output.send_input[ch].is_finite() {
                 return Err(PreparationError::InvalidSamples.into());
             }
         }
@@ -225,7 +227,7 @@ impl<'plan> Components<'plan> {
                     && let Some(level) = self.send.and_then(|effect| route.sends.level(effect))
                 {
                     control.spend_plan_work(1)?;
-                    let value = gains[id].send_sample(route.pcm[at].value, level)?;
+                    let value = gains[id].send_sample(route.pcm[at].send_input, level)?;
                     for ch in 0..2 {
                         sent[ch] += value[ch];
                     }

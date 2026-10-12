@@ -11,7 +11,7 @@ tests prove each mode router acts on exactly them. Native shortcuts
 (menus, ⌘ chords, panel controls) are described, not router-verified.
 Headless status links to [PARITY](PARITY.md).
 
-208 actions, 131 command verbs.
+209 actions, 132 command verbs.
 
 ## Start & View
 
@@ -152,6 +152,7 @@ Headless status links to [PARITY](PARITY.md).
 | Action | Keys | Command | Where | Macro / dot | Headless |
 | --- | --- | --- | --- | --- | --- |
 | **Placed sound tail send** (`sound-tail-send`)<br>Send the selected placed sound, after its gain and edges, to a later :tail input=sends pause. Reverb and delay have separate levels. Keeps its dry signal, exact placement, cuts and Hold allowances. Select a sound before opening the command. One Undo. | - | `:sound-tail-send reverb\|delay -6dB\|off` | Placed sounds | edits; not recorded | [Equivalent](PARITY.md#audio-and-gain): `SetSound tail_sends` |
+| **Placed sound continuous return** (`sound-wet-send`)<br>Add reverb or a 300 ms echo to the selected placed sound before group treatments. Reverb and delay have independent levels; off removes one return. Keeps the sound's selected time, cuts and Hold permissions. Select a sound before opening the command. One Undo. | - | `:sound-wet-send reverb\|delay -6dB\|off` | Placed sounds | edits; not recorded | [Equivalent](PARITY.md#audio-and-gain): `SetSound wet_sends` |
 | **Add a sound** (`sound.import`)<br>Add an audio-only sound, or retry an incomplete Original. Audio selection is automatic; advanced stream choices are in import options. | `⌘I` (native) | `:import` | Every editor context | edits; not recorded | [Equivalent](PARITY.md#placed-sounds): `project register-source with audio_only streams` |
 | **Unlabelled sound channels** (`sound.channels`)<br>How the next imported sound without a declared speaker layout (such as a plain WAV) is heard; none refuses it. | - | `:sound-channels mono\|stereo\|none` | Every editor context | not recorded | [Equivalent](PARITY.md#project-and-files): `project register-source with an explicit layout` |
 | **Place the catalog sound** (`sound.place`)<br>Place the complete selected catalog sound at the edit cursor, without changing picture duration. A sound that ends beyond the edit is rejected; move the edit cursor earlier. | `,s` (`sound.place`) | `:sound-place` | Your edit, Sound catalog | edits; not recorded | [Equivalent](PARITY.md#placed-sounds): `sound <p> --json place` |

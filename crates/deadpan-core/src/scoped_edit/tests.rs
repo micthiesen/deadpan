@@ -539,6 +539,7 @@ fn add_sound(document: &mut ProjectDocument) -> SourceAudio {
         SoundId::new("sound").unwrap(),
         SoundEvent {
             tail_sends: Default::default(),
+            wet_sends: Default::default(),
             owner: node("root"),
             label: "sound".into(),
             source: source.clone(),

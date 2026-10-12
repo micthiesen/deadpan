@@ -119,6 +119,7 @@ fn rib_and_rab_keep_their_distinct_sound_attachment_ownership() {
     let sound = crate::SoundId::new("effect").unwrap();
     let event = crate::BeatSound {
         tail_sends: Default::default(),
+        wet_sends: Default::default(),
         label: "Effect".into(),
         source: crate::SourceAudio { asset, span },
         mapping: crate::SourceAudioMapping::natural_rate(

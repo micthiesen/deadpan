@@ -94,6 +94,7 @@ fn sound(document: &ProjectDocument, gain: i32) -> Option<SoundEvent> {
     let source = audio(document, "right", true)?;
     Some(SoundEvent {
         tail_sends: Default::default(),
+        wet_sends: Default::default(),
         owner: document.root().clone(),
         label: "Overlay".into(),
         mapping: SourceAudioMapping::natural_rate(

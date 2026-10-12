@@ -146,8 +146,7 @@ pub fn parse_tail(
 
 /// Parse one bounded effect level for continuous returns or allocated tails.
 pub fn parse_send(words: &[&str]) -> Result<(TailEffect, Option<deadpan_core::GainDb>), String> {
-    const USAGE: &str =
-        "Use reverb|delay -6dB|off after :wet-send, :tail-send or :sound-tail-send.";
+    const USAGE: &str = "Use reverb|delay -6dB|off after :wet-send, :sound-wet-send, :tail-send or :sound-tail-send.";
     let [effect, level] = words else {
         return Err(USAGE.into());
     };
@@ -203,12 +202,21 @@ mod tests {
                 level: None
             })))
         );
+        assert_eq!(
+            parse("sound-wet-send delay -6.001dB"),
+            Ok(Entry::Action(Action::Sound(SoundAction::WetSend {
+                effect: TailEffect::Delay,
+                level,
+            })))
+        );
         for bad in [
             "tail-send",
             "tail-send reverb",
             "tail-send chorus 0dB",
             "tail-send delay 24.001dB",
             "tail-send reverb off extra",
+            "sound-wet-send delay 24.001dB",
+            "sound-wet-send chorus off",
         ] {
             assert!(parse(bad).is_err(), "{bad}");
         }

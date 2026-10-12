@@ -17,6 +17,7 @@ use crate::{
 pub struct AudioRootSource<'plan> {
     plan: &'plan RenderPlan,
     source: SourceAudio,
+    audible: Range<AudioSample>,
     extent: ExactRatio,
     grid: AudioSampleGrid<AudioSample>,
     input: AudioSignalTape<'plan>,
@@ -83,6 +84,7 @@ impl<'plan> AudioRootSource<'plan> {
         Ok(Self {
             plan,
             source,
+            audible: grid.boundary(selected.start)?..grid.boundary(selected.end)?,
             extent,
             grid,
             input,
@@ -91,6 +93,10 @@ impl<'plan> AudioRootSource<'plan> {
 
     pub fn source(&self) -> &SourceAudio {
         &self.source
+    }
+    /// Exact selected input on the retained root clock, before delivery edits.
+    pub fn audible_samples(&self) -> Range<AudioSample> {
+        self.audible.clone()
     }
     pub fn extent(&self) -> ExactRatio {
         self.extent

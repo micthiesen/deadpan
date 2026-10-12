@@ -323,7 +323,7 @@ fn independent_eq_automation_keeps_rebound_input_history_across_a_new_pause() {
     let attached = ProjectDocument::from_json(&wire.to_string()).unwrap();
     let sound: BeatSound =
         serde_json::from_value(wire["beat_sounds"]["owner"]["effect"].clone()).unwrap();
-    wire["sounds"] = serde_json::json!({"effect": SoundEvent { tail_sends: Default::default(),
+    wire["sounds"] = serde_json::json!({"effect": SoundEvent { tail_sends: Default::default(), wet_sends: Default::default(),
         owner: id("root"), label: sound.label, source: sound.source, mapping: sound.mapping,
         offset: AudioSample(START), gain_millidecibels: sound.gain_millidecibels,
         start_edge: sound.start_edge, end_edge: sound.end_edge, overflow: sound.overflow,

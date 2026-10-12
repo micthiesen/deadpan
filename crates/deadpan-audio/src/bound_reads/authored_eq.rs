@@ -418,6 +418,7 @@ fn authored_eq_independent_root_sound_bypasses_child_equalizer() {
         SoundId::new("sound").unwrap(),
         SoundEvent {
             tail_sends: Default::default(),
+            wet_sends: Default::default(),
             owner: id("root"),
             label: "Independent".into(),
             mapping: SourceAudioMapping::natural_rate(audio.span, rate).unwrap(),
@@ -473,6 +474,7 @@ fn shared_fixture(treatments: AudioTreatments, cropped: bool) -> (ProjectDocumen
     wire["assets"]["media"]["still_image"] = serde_json::json!(false);
     let sound = BeatSound {
         tail_sends: Default::default(),
+        wet_sends: Default::default(),
         label: "Shared sound".into(),
         source: audio.clone(),
         mapping: SourceAudioMapping::natural_rate(audio.span, rate).unwrap(),
@@ -688,6 +690,7 @@ fn allowed_sound_history(components: bool) {
     wire["assets"]["media"]["still_image"] = serde_json::json!(false);
     let event = SoundEvent {
         tail_sends: Default::default(),
+        wet_sends: Default::default(),
         owner: id("root"),
         label: "Independent".into(),
         mapping: SourceAudioMapping::natural_rate(audio.span, rate).unwrap(),

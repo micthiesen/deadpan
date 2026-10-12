@@ -51,6 +51,7 @@ fn sounded(document: &ProjectDocument, start: i64, name: &str) -> ProjectDocumen
             id: SoundId::new("effect").unwrap(),
             event: SoundEvent {
                 tail_sends: Default::default(),
+                wet_sends: Default::default(),
                 owner: id("root"),
                 label: "Root sound across replacement".into(),
                 source: audio(100..20_100),

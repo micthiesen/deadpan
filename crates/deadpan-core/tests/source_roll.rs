@@ -665,6 +665,7 @@ fn roll_preserves_existing_clocks_effects_root_routes_and_hold_allowances() {
             sound_id.clone(),
             SoundEvent {
                 tail_sends: Default::default(),
+                wet_sends: Default::default(),
                 owner: id("root"),
                 label: "Crossing root sound".into(),
                 source: source(&base, "left").audio.clone().unwrap(),

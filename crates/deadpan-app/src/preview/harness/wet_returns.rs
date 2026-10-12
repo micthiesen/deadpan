@@ -243,5 +243,6 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         d.widgets(),
     )?;
     d.capture("Continuous returns at minimum size")?;
+    super::tail_sends::placed_sound(d, true)?;
     Ok(())
 }

@@ -76,6 +76,7 @@ fn with_controls(document: &ProjectDocument, start: i64) -> ProjectDocument {
         SoundId::new("independent").unwrap(),
         SoundEvent {
             tail_sends: Default::default(),
+            wet_sends: Default::default(),
             owner: id("root"),
             label: "Independent root sound".into(),
             mapping: SourceAudioMapping::natural_rate(

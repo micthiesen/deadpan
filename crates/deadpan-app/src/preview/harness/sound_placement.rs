@@ -110,6 +110,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         d.snapshot(),
     )?;
     d.key_modified(Key::Tab, Modifiers::SHIFT)?;
+    scenarios::reveal_original_rail(d, &catalog.1, false)?;
     d.click(&catalog.1)?;
     // The catalog click changes selection on release; its dependent controls
     // enter the UI tree on the next paint, as in the native event loop.
@@ -362,6 +363,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     )?;
     // A valid command also proves recovery from the rejected edit.
     commit(d, "sound-gain -6")?;
+    scenarios::reveal_original_rail(d, &catalog.1, false)?;
     d.click(&catalog.1)?;
     let before = d.revision();
     d.chord(&[Key::Comma, Key::S])?;
@@ -958,6 +960,8 @@ fn command_targets(d: &mut Driver<'_>, id: &SoundId, baseline: &Value) -> Result
         (false, "sound-delete"),
         (false, "delete"),
         (true, "sound-gain -9"),
+        (false, "sound-wet-send delay -6dB"),
+        (true, "sound-wet-send delay -6dB"),
     ] {
         choose(d, id)?;
         let before = d.revision();

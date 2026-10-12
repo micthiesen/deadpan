@@ -1596,6 +1596,7 @@ fn place_catalog_sound(project: &mut Project, wav: &Path, label: &str) -> Result
             id: SoundId::new("click")?,
             event: SoundEvent {
                 tail_sends: Default::default(),
+                wet_sends: Default::default(),
                 owner: document.root().clone(),
                 label: "Click".into(),
                 mapping: SourceAudioMapping::natural_rate(source.span, rate)?,
@@ -2512,6 +2513,7 @@ pub fn post_shared_automation(dir: &Path) -> Result<Fixture> {
             id: SoundId::new("owner-click")?,
             event: deadpan_core::BeatSound {
                 tail_sends: Default::default(),
+                wet_sends: Default::default(),
                 label: "Attached sound".into(),
                 source: event.source.clone(),
                 mapping: SourceAudioMapping::Placement {
@@ -2642,6 +2644,7 @@ fn shared_processing(dir: &Path, equalizer: bool) -> Result<Fixture> {
             id: SoundId::new("group-click")?,
             event: deadpan_core::BeatSound {
                 tail_sends: Default::default(),
+                wet_sends: Default::default(),
                 label: "Group sound".into(),
                 source: sound.source.clone(),
                 mapping: sound.mapping,
@@ -3588,5 +3591,62 @@ pub fn continuous_owner_return(dir: &Path) -> Result<Fixture> {
         // at a -6 dB send is about 0.376, below the generic "loud" check.
         peak: Some((0.37, 0.39)),
     });
+    Ok(fixture)
+}
+
+pub fn continuous_event_return(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "continuous-event-return")?;
+    project.shorten()?;
+    // Original deterministic stereo PCM, including enough selected silence for
+    // two 300 ms echoes. The sound still ends before the unchanged picture.
+    let samples = 32_000u32;
+    let bytes = samples * 4;
+    let mut wav = Vec::with_capacity(bytes as usize + 44);
+    wav.extend_from_slice(b"RIFF");
+    wav.extend_from_slice(&(bytes + 36).to_le_bytes());
+    wav.extend_from_slice(b"WAVEfmt ");
+    wav.extend_from_slice(&16u32.to_le_bytes());
+    wav.extend_from_slice(&1u16.to_le_bytes());
+    wav.extend_from_slice(&2u16.to_le_bytes());
+    wav.extend_from_slice(&48_000u32.to_le_bytes());
+    wav.extend_from_slice(&192_000u32.to_le_bytes());
+    wav.extend_from_slice(&4u16.to_le_bytes());
+    wav.extend_from_slice(&16u16.to_le_bytes());
+    wav.extend_from_slice(b"data");
+    wav.extend_from_slice(&bytes.to_le_bytes());
+    for sample in 0..samples {
+        let value = if (1000..1256).contains(&sample) {
+            let at = f64::from(sample - 1000);
+            let envelope = (1.0 - (std::f64::consts::TAU * at / 255.0).cos()) * 0.5;
+            (24_576.0 * envelope * (std::f64::consts::TAU * at / 48.0).sin()).round() as i16
+        } else {
+            0
+        };
+        wav.extend_from_slice(&value.to_le_bytes());
+        wav.extend_from_slice(&value.to_le_bytes());
+    }
+    let path = project.directory.join("event-return.wav");
+    fs::write(&path, wav)?;
+    place_catalog_sound(&mut project, &path, "Independent delay witness")?;
+    project.apply(|_, document, _| {
+        let id = SoundId::new("click")?;
+        let mut event = document.sounds()[&id].clone();
+        event.wet_sends = deadpan_core::TailSends::default()
+            .with_level(deadpan_core::TailEffect::Delay, Some(GainDb::new(-6000)?));
+        Ok(Command::SetSound { id, event })
+    })?;
+    let mut fixture = project.finish(vec!["Continuous delay"],
+        (0..30).map(|frame| (frame,base(frame))).collect(),
+        vec!["A root sound starts at 16016 and ends at 48016. Its burst at 17016 produces -6 dB delay returns at 31416 and 45816; the Original click at 28781 is unchanged.".into()])?;
+    fixture.audio = vec![(16900, true), (28672, true), (24000, false)];
+    for (start, peak) in [(31_400, (0.35, 0.39)), (45_800, (0.17, 0.20))] {
+        fixture.signals.push(Signal {
+            start,
+            count: 512,
+            crossings_per_second: None,
+            crest: None,
+            peak: Some(peak),
+        });
+    }
     Ok(fixture)
 }

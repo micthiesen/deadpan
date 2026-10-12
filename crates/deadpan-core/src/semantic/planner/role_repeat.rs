@@ -205,6 +205,7 @@ where
                     };
                     let event = crate::SoundEvent {
                         tail_sends: Default::default(),
+                        wet_sends: Default::default(),
                         owner: self.current.root().clone(),
                         label: format!("Repeat {} of {plays} · {label}", play + 1),
                         source: audio.clone(),

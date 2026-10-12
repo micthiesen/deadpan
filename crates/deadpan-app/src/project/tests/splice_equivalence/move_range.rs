@@ -561,6 +561,7 @@ fn seed_cross_parent(harness: &Harness, initial: &Workspace) -> Arc<Workspace> {
             id: SoundId::new("root-sound").unwrap(),
             event: SoundEvent {
                 tail_sends: Default::default(),
+                wet_sends: Default::default(),
                 owner: initial.document.root().clone(),
                 label: "Fixed root impulse".into(),
                 source: SourceAudio {

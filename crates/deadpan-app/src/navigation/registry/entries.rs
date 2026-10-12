@@ -1140,6 +1140,20 @@ pub static SPECS: &[Spec] = &[
         help: "Send the selected placed sound, after its gain and edges, to a later :tail input=sends pause. Reverb and delay have separate levels. Keeps its dry signal, exact placement, cuts and Hold allowances. Select a sound before opening the command. One Undo.",
     },
     Spec {
+        id: "sound-wet-send",
+        name: "Placed sound continuous return",
+        section: Section::Sounds,
+        keys: &[],
+        commands: &[verb(
+            "sound-wet-send",
+            ":sound-wet-send reverb|delay -6dB|off",
+        )],
+        contexts: C::PLACED,
+        replay: Replay::NotRecorded,
+        headless: eq("SetSound wet_sends", AUDIO),
+        help: "Add reverb or a 300 ms echo to the selected placed sound before group treatments. Reverb and delay have independent levels; off removes one return. Keeps the sound's selected time, cuts and Hold permissions. Select a sound before opening the command. One Undo.",
+    },
+    Spec {
         id: "audio-lag",
         name: "Offset sound from picture",
         section: Section::Audio,

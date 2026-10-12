@@ -186,6 +186,7 @@ fn fixture() -> ProjectDocument {
         SoundId::new("sound-event").unwrap(),
         SoundEvent {
             tail_sends: Default::default(),
+            wet_sends: Default::default(),
             owner: node("root"),
             label: "Independent sound".into(),
             source: SourceAudio {

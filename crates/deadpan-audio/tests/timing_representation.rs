@@ -202,6 +202,7 @@ fn initial(random: &mut Lcg) -> ProjectDocument {
         let selection_end = random.range(3..total.min(12));
         wire["sounds"]["effect"] = serde_json::to_value(SoundEvent {
             tail_sends: Default::default(),
+            wet_sends: Default::default(),
             owner: id("root"),
             label: "Root sound".into(),
             mapping: SourceAudioMapping::SelectedPlacement {

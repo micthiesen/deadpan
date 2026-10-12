@@ -17,6 +17,10 @@ pub enum SoundAction {
         effect: deadpan_core::TailEffect,
         level: Option<deadpan_core::GainDb>,
     },
+    WetSend {
+        effect: deadpan_core::TailEffect,
+        level: Option<deadpan_core::GainDb>,
+    },
     /// Relative authored millidecibels for the focused placed sound.
     GainStep(i32),
     /// Apply the same policy to both event endpoints.

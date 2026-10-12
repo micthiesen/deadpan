@@ -211,6 +211,7 @@ fn document_with_sound_clock(
             sound_id.clone(),
             BeatSound {
                 tail_sends: Default::default(),
+                wet_sends: Default::default(),
                 label: "event".into(),
                 source,
                 mapping,
@@ -540,6 +541,7 @@ fn sound_processing_compiler_does_not_weaken_full_context_admission() {
             SoundId::new("event").unwrap(),
             BeatSound {
                 tail_sends: Default::default(),
+                wet_sends: Default::default(),
                 label: "event".into(),
                 source,
                 mapping,

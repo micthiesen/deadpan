@@ -1,0 +1,2590 @@
+diff --git a/crates/deadpan-app/src/navigation/command.rs b/crates/deadpan-app/src/navigation/command.rs
+index 0cda20db..0c927c84 100644
+--- a/crates/deadpan-app/src/navigation/command.rs
++++ b/crates/deadpan-app/src/navigation/command.rs
+@@ -517,13 +517,18 @@ pub fn parse(input: &str) -> Result<Entry, String> {
+             },
+         );
+     }
+-    if verb == "wet-send" || verb == "tail-send" || verb == "sound-tail-send" {
++    if matches!(
++        verb.as_str(),
++        "wet-send" | "sound-wet-send" | "tail-send" | "sound-tail-send"
++    ) {
+         let arguments: Vec<&str> = words.collect();
+         let (effect, level) = super::hold_effects::parse_send(&arguments)?;
+         return Ok(if verb == "wet-send" {
+             Entry::WetSend { effect, level }
+         } else if verb == "tail-send" {
+             Entry::TailSend { effect, level }
++        } else if verb == "sound-wet-send" {
++            Entry::Action(Action::Sound(super::SoundAction::WetSend { effect, level }))
+         } else {
+             Entry::Action(Action::Sound(super::SoundAction::TailSend {
+                 effect,
+diff --git a/crates/deadpan-app/src/navigation/hold_effects.rs b/crates/deadpan-app/src/navigation/hold_effects.rs
+index 4bc43321..16760022 100644
+--- a/crates/deadpan-app/src/navigation/hold_effects.rs
++++ b/crates/deadpan-app/src/navigation/hold_effects.rs
+@@ -146,8 +146,7 @@ pub fn parse_tail(
+ 
+ /// Parse one bounded effect level for continuous returns or allocated tails.
+ pub fn parse_send(words: &[&str]) -> Result<(TailEffect, Option<deadpan_core::GainDb>), String> {
+-    const USAGE: &str =
+-        "Use reverb|delay -6dB|off after :wet-send, :tail-send or :sound-tail-send.";
++    const USAGE: &str = "Use reverb|delay -6dB|off after :wet-send, :sound-wet-send, :tail-send or :sound-tail-send.";
+     let [effect, level] = words else {
+         return Err(USAGE.into());
+     };
+@@ -203,12 +202,21 @@ mod tests {
+                 level: None
+             })))
+         );
++        assert_eq!(
++            parse("sound-wet-send delay -6.001dB"),
++            Ok(Entry::Action(Action::Sound(SoundAction::WetSend {
++                effect: TailEffect::Delay,
++                level,
++            })))
++        );
+         for bad in [
+             "tail-send",
+             "tail-send reverb",
+             "tail-send chorus 0dB",
+             "tail-send delay 24.001dB",
+             "tail-send reverb off extra",
++            "sound-wet-send delay 24.001dB",
++            "sound-wet-send chorus off",
+         ] {
+             assert!(parse(bad).is_err(), "{bad}");
+         }
+diff --git a/crates/deadpan-app/src/navigation/registry/baseline-routing.txt b/crates/deadpan-app/src/navigation/registry/baseline-routing.txt
+index 6224c773..e716bd22 100644
+--- a/crates/deadpan-app/src/navigation/registry/baseline-routing.txt
++++ b/crates/deadpan-app/src/navigation/registry/baseline-routing.txt
+@@ -4031,6 +4031,7 @@ parse ":sound-channels stereo_left_right" = Ok(SoundChannels(Some(StereoLeftRigh
+ parse ":sound-at 137" = Ok(Action(Sound(Move(AudioSample(137)))))
+ parse ":sound-gain -96" = Ok(Action(Sound(Gain(-96000))))
+ parse ":sound-tail-send delay -6dB" = Ok(Action(Sound(TailSend { effect: Delay, level: Some(GainDb(-6000)) })))
++parse ":sound-wet-send delay -6dB" = Ok(Action(Sound(WetSend { effect: Delay, level: Some(GainDb(-6000)) })))
+ parse ":tail-send reverb off" = Ok(TailSend { effect: Reverb, level: None })
+ parse ":wet-send delay -6dB" = Ok(WetSend { effect: Delay, level: Some(GainDb(-6000)) })
+ parse ":tail 1s input=sends" = Ok(Action(Tail { length: Some(Seconds(ExactRatio { numerator: 1, denominator: 1 })), effect: Reverb, input: Sends }))
+diff --git a/crates/deadpan-app/src/navigation/registry/baseline.rs b/crates/deadpan-app/src/navigation/registry/baseline.rs
+index 9d28929c..15e3f0b9 100644
+--- a/crates/deadpan-app/src/navigation/registry/baseline.rs
++++ b/crates/deadpan-app/src/navigation/registry/baseline.rs
+@@ -114,6 +114,7 @@ const EXTRA_INPUTS: &[&str] = &[
+     ":sound-at 137",
+     ":sound-gain -96",
+     ":sound-tail-send delay -6dB",
++    ":sound-wet-send delay -6dB",
+     ":tail-send reverb off",
+     ":wet-send delay -6dB",
+     ":tail 1s input=sends",
+diff --git a/crates/deadpan-app/src/navigation/registry/entries.rs b/crates/deadpan-app/src/navigation/registry/entries.rs
+index 3b98adf2..cd01c5f9 100644
+--- a/crates/deadpan-app/src/navigation/registry/entries.rs
++++ b/crates/deadpan-app/src/navigation/registry/entries.rs
+@@ -1139,6 +1139,20 @@ pub static SPECS: &[Spec] = &[
+         headless: eq("SetSound tail_sends", AUDIO),
+         help: "Send the selected placed sound, after its gain and edges, to a later :tail input=sends pause. Reverb and delay have separate levels. Keeps its dry signal, exact placement, cuts and Hold allowances. Select a sound before opening the command. One Undo.",
+     },
++    Spec {
++        id: "sound-wet-send",
++        name: "Placed sound continuous return",
++        section: Section::Sounds,
++        keys: &[],
++        commands: &[verb(
++            "sound-wet-send",
++            ":sound-wet-send reverb|delay -6dB|off",
++        )],
++        contexts: C::PLACED,
++        replay: Replay::NotRecorded,
++        headless: eq("SetSound wet_sends", AUDIO),
++        help: "Add reverb or a 300 ms echo to the selected placed sound before group treatments. Reverb and delay have independent levels; off removes one return. Keeps the sound's selected time, cuts and Hold permissions. Select a sound before opening the command. One Undo.",
++    },
+     Spec {
+         id: "audio-lag",
+         name: "Offset sound from picture",
+diff --git a/crates/deadpan-app/src/navigation/sound.rs b/crates/deadpan-app/src/navigation/sound.rs
+index 88154628..c02250ff 100644
+--- a/crates/deadpan-app/src/navigation/sound.rs
++++ b/crates/deadpan-app/src/navigation/sound.rs
+@@ -17,6 +17,10 @@ pub enum SoundAction {
+         effect: deadpan_core::TailEffect,
+         level: Option<deadpan_core::GainDb>,
+     },
++    WetSend {
++        effect: deadpan_core::TailEffect,
++        level: Option<deadpan_core::GainDb>,
++    },
+     /// Relative authored millidecibels for the focused placed sound.
+     GainStep(i32),
+     /// Apply the same policy to both event endpoints.
+diff --git a/crates/deadpan-app/src/preview/harness/scenarios.rs b/crates/deadpan-app/src/preview/harness/scenarios.rs
+index be902b20..e80f9301 100644
+--- a/crates/deadpan-app/src/preview/harness/scenarios.rs
++++ b/crates/deadpan-app/src/preview/harness/scenarios.rs
+@@ -1469,11 +1469,16 @@ pub(super) fn reveal_inspector_button(d: &mut Driver<'_>, label: &str) -> Result
+     if fully_visible(d) {
+         return Ok(());
+     }
++    let viewport = d.harness.ctx.content_rect();
+     d.report.findings.push(Finding {
+         severity: Severity::Warning,
+-        message: format!("The {label:?} action needs inspector scrolling at 1280×820 before its full button is clickable. The replay includes this extra user step."),
++        message: format!("The {label:?} action needs inspector scrolling at {}×{} before its full button is clickable. The replay includes this extra user step.", viewport.width(), viewport.height()),
+     });
+-    let heading = d.rect("Selected beat inspector pane")?;
++    let heading = d.rect(if d.app().event_focused() {
++        "Selected sound inspector pane"
++    } else {
++        "Selected beat inspector pane"
++    })?;
+     let point = heading.center() + egui::vec2(0.0, 120.0);
+     for attempt in 0..3 {
+         // Selecting a different beat can retain the inspector's scroll offset.
+diff --git a/crates/deadpan-app/src/preview/harness/sound_placement.rs b/crates/deadpan-app/src/preview/harness/sound_placement.rs
+index 4f9e4e9c..6cbc2f81 100644
+--- a/crates/deadpan-app/src/preview/harness/sound_placement.rs
++++ b/crates/deadpan-app/src/preview/harness/sound_placement.rs
+@@ -110,6 +110,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
+         d.snapshot(),
+     )?;
+     d.key_modified(Key::Tab, Modifiers::SHIFT)?;
++    scenarios::reveal_original_rail(d, &catalog.1, false)?;
+     d.click(&catalog.1)?;
+     // The catalog click changes selection on release; its dependent controls
+     // enter the UI tree on the next paint, as in the native event loop.
+@@ -362,6 +363,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
+     )?;
+     // A valid command also proves recovery from the rejected edit.
+     commit(d, "sound-gain -6")?;
++    scenarios::reveal_original_rail(d, &catalog.1, false)?;
+     d.click(&catalog.1)?;
+     let before = d.revision();
+     d.chord(&[Key::Comma, Key::S])?;
+@@ -958,6 +960,8 @@ fn command_targets(d: &mut Driver<'_>, id: &SoundId, baseline: &Value) -> Result
+         (false, "sound-delete"),
+         (false, "delete"),
+         (true, "sound-gain -9"),
++        (false, "sound-wet-send delay -6dB"),
++        (true, "sound-wet-send delay -6dB"),
+     ] {
+         choose(d, id)?;
+         let before = d.revision();
+diff --git a/crates/deadpan-app/src/preview/harness/tail_sends.rs b/crates/deadpan-app/src/preview/harness/tail_sends.rs
+index 82ee04ba..8ab938a3 100644
+--- a/crates/deadpan-app/src/preview/harness/tail_sends.rs
++++ b/crates/deadpan-app/src/preview/harness/tail_sends.rs
+@@ -244,28 +244,50 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
+     d.key(Key::Escape)?;
+     undo(d)?;
+ 
+-    placed_sound(d)
++    placed_sound(d, false)
+ }
+ 
+-fn placed_sound(d: &mut Driver<'_>) -> Result<(), String> {
++pub(super) fn placed_sound(d: &mut Driver<'_>, wet: bool) -> Result<(), String> {
+     d.command("sting")?;
+     d.wait_for("Qualify synthesized sting", |app| {
+         app.sound_rows.len() == 1 && !app.service.is_busy() && !app.importing()
+     })?;
+     let catalog = d.app().sound_rows[0].clone();
+     d.chord(&[Key::G, Key::G])?;
+-    d.click(&catalog.1)?;
++    // At minimum height the catalog is below the sidebar's current scroll.
++    // Use native pane/list navigation rather than clicking an offscreen rect.
++    for _ in 0..6 {
++        if d.app().pane == Pane::Sources {
++            break;
++        }
++        d.key(Key::Tab)?;
++    }
++    d.key(Key::J)?;
+     d.step("Select sting", true)?;
++    d.check(
++        "Keyboard navigation selects the catalog sound before placement",
++        d.app().pane == Pane::Sources && d.app().selected_sound.as_ref() == Some(&catalog.0),
++        json!(catalog.0),
++        d.snapshot(),
++    )?;
+     edit(d, "sound-place")?;
+     d.command("sounds")?;
+     let sound = d.app().selected_event.clone().ok_or("No placed sound")?;
+     let base = d.app().workspace.as_ref().unwrap().document.sounds()[&sound].clone();
+-    edit(d, "sound-tail-send reverb -6dB")?;
++    let command = if wet {
++        "sound-wet-send"
++    } else {
++        "sound-tail-send"
++    };
++    edit(d, &format!("{command} reverb -6dB"))?;
+     let actual = d.app().workspace.as_ref().unwrap().document.sounds()[&sound].clone();
+     let mut expected = base.clone();
+-    expected.tail_sends = expected
+-        .tail_sends
+-        .with_level(TailEffect::Reverb, Some(GainDb::new(-6000).unwrap()));
++    let sends = if wet {
++        &mut expected.wet_sends
++    } else {
++        &mut expected.tail_sends
++    };
++    *sends = sends.with_level(TailEffect::Reverb, Some(GainDb::new(-6000).unwrap()));
+     d.check(
+         "A placed sound send preserves its complete placement and gain",
+         actual == expected,
+@@ -273,19 +295,59 @@ fn placed_sound(d: &mut Driver<'_>) -> Result<(), String> {
+         json!(actual),
+     )?;
+     inspector_top(d, "Selected sound inspector pane")?;
+-    d.capture("Placed sound sends")?;
++    let label = if wet {
++        "reverb return: -6dB"
++    } else {
++        "reverb send: -6dB"
++    };
++    scenarios::reveal_inspector_button(d, &format!("{label}  :{command}"))?;
++    if wet {
++        scenarios::reveal_inspector_button(d, "delay return: off  :sound-wet-send")?;
++        d.check(
++            "Both placed sound return levels are readable at minimum size after scrolling",
++            visible(d, label) && visible(d, "delay return: off"),
++            json!([label, "delay return: off"]),
++            d.widgets(),
++        )?;
++    }
++    d.capture(if wet {
++        "Placed sound continuous returns"
++    } else {
++        "Placed sound sends"
++    })?;
+     d.check(
+         "The placed sound inspector visibly teaches its saved send",
+-        visible(d, "reverb send: -6dB"),
+-        json!("reverb send: -6dB"),
++        visible(d, label),
++        json!(label),
+         d.widgets(),
+     )?;
++    if wet {
++        let viewport = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(1280.0, 820.0));
++        let input = d.harness.input_mut();
++        input.screen_rect = Some(viewport);
++        input
++            .viewports
++            .get_mut(&egui::ViewportId::ROOT)
++            .ok_or("Missing sound return viewport")?
++            .inner_rect = Some(viewport);
++        d.step("Resize placed sound returns to default size", true)?;
++        scenarios::reveal_inspector_button(d, &format!("{label}  :{command}"))?;
++        d.capture("Placed sound continuous returns at default size")?;
++        d.check(
++            "The placed sound return remains readable at default size",
++            visible(d, label),
++            json!(label),
++            d.widgets(),
++        )?;
++    }
+     edit(d, "sound-gain -3")?;
+     d.check(
+         "Sound gain edits retain sends",
+-        d.app().workspace.as_ref().unwrap().document.sounds()[&sound].tail_sends
+-            == expected.tail_sends,
+-        json!(expected.tail_sends),
++        {
++            let event = &d.app().workspace.as_ref().unwrap().document.sounds()[&sound];
++            event.tail_sends == expected.tail_sends && event.wet_sends == expected.wet_sends
++        },
++        json!({"tail": expected.tail_sends, "wet":expected.wet_sends}),
+         d.snapshot(),
+     )?;
+     undo(d)?;
+diff --git a/crates/deadpan-app/src/preview/harness/wet_returns.rs b/crates/deadpan-app/src/preview/harness/wet_returns.rs
+index e8e356d2..9a79d832 100644
+--- a/crates/deadpan-app/src/preview/harness/wet_returns.rs
++++ b/crates/deadpan-app/src/preview/harness/wet_returns.rs
+@@ -243,5 +243,6 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
+         d.widgets(),
+     )?;
+     d.capture("Continuous returns at minimum size")?;
++    super::tail_sends::placed_sound(d, true)?;
+     Ok(())
+ }
+diff --git a/crates/deadpan-app/src/preview/sound_events.rs b/crates/deadpan-app/src/preview/sound_events.rs
+index 0f5ce6c5..5e97f122 100644
+--- a/crates/deadpan-app/src/preview/sound_events.rs
++++ b/crates/deadpan-app/src/preview/sound_events.rs
+@@ -319,6 +319,9 @@ impl DeadpanApp {
+             SoundAction::TailSend { effect, level } => {
+                 return Ok(Some(ProjectSoundEdit::TailSend { id, effect, level }));
+             }
++            SoundAction::WetSend { effect, level } => {
++                return Ok(Some(ProjectSoundEdit::WetSend { id, effect, level }));
++            }
+             SoundAction::Gain(value) => (value, event.start_edge, event.end_edge),
+             SoundAction::GainStep(delta) => (
+                 event
+@@ -560,6 +563,17 @@ impl DeadpanApp {
+                         self.pane = Pane::Inspector;
+                         self.open_command(format!("sound-gain {}", gain_label(event.gain_millidecibels)), ui.ctx());
+                     }
++                    ui.label("Continuous returns");
++                    for effect in [deadpan_core::TailEffect::Reverb, deadpan_core::TailEffect::Delay] {
++                        let level = event.wet_sends.level(effect).map_or_else(|| "off".into(), |gain| format!("{}dB", crate::gain::format_db(gain)));
++                        let response = ui.add_enabled(ready, style::row_action(ui, format!("{} return: {level}", effect.name()), ":sound-wet-send"));
++                        if response.gained_focus() { response.scroll_to_me_animation(None, egui::style::ScrollAnimation::none()); }
++                        if response.clicked() {
++                            self.pane = Pane::Inspector;
++                            self.open_command(format!("sound-wet-send {} {level}", effect.name()), ui.ctx());
++                        }
++                    }
++                    ui.small("Returns follow this sound's cuts and silence permissions. No added time.");
+                     ui.label("Tail sends");
+                     for effect in [deadpan_core::TailEffect::Reverb, deadpan_core::TailEffect::Delay] {
+                         let level = event.tail_sends.level(effect).map_or_else(|| "off".into(), |gain| format!("{}dB", crate::gain::format_db(gain)));
+@@ -621,7 +635,7 @@ pub(super) fn command_hint(command: &str) -> Option<&'static str> {
+     match verb.to_ascii_lowercase().as_str() {
+         "sound-at" => Some("Position: whole 48 kHz samples · 48,000 = 1 second"),
+         "sound-gain" => Some("Gain: −96 to +24 dB · up to 3 decimal places"),
+-        "wet-send" => {
++        "wet-send" | "sound-wet-send" => {
+             Some("reverb|delay −96 to +24 dB or off · continuous return before parent treatments")
+         }
+         "tail-send" | "sound-tail-send" => {
+diff --git a/crates/deadpan-app/src/project.rs b/crates/deadpan-app/src/project.rs
+index c0907e81..f5e13bb2 100644
+--- a/crates/deadpan-app/src/project.rs
++++ b/crates/deadpan-app/src/project.rs
+@@ -807,6 +807,11 @@ pub struct SoundCommit {
+ 
+ #[derive(Clone, Debug)]
+ pub enum ProjectSoundEdit {
++    WetSend {
++        id: SoundId,
++        effect: deadpan_core::TailEffect,
++        level: Option<deadpan_core::GainDb>,
++    },
+     TailSend {
+         id: SoundId,
+         effect: deadpan_core::TailEffect,
+diff --git a/crates/deadpan-app/src/project/service.rs b/crates/deadpan-app/src/project/service.rs
+index 3655223d..fa30c0ba 100644
+--- a/crates/deadpan-app/src/project/service.rs
++++ b/crates/deadpan-app/src/project/service.rs
+@@ -904,6 +904,23 @@ impl Service {
+                     "Sound tail send saved",
+                 )
+             }
++            ProjectSoundEdit::WetSend { id, effect, level } => {
++                let mut event = workspace
++                    .document
++                    .sounds()
++                    .get(&id)
++                    .cloned()
++                    .ok_or("The selected sound no longer exists.")?;
++                event.wet_sends = event.wet_sends.with_level(effect, level);
++                (
++                    Command::SetSound {
++                        id: id.clone(),
++                        event,
++                    },
++                    Some(id),
++                    "Sound continuous return saved",
++                )
++            }
+             ProjectSoundEdit::Update {
+                 id,
+                 gain_millidecibels,
+diff --git a/crates/deadpan-app/src/project/tests/splice_equivalence/move_range.rs b/crates/deadpan-app/src/project/tests/splice_equivalence/move_range.rs
+index a50858c4..371805fd 100644
+--- a/crates/deadpan-app/src/project/tests/splice_equivalence/move_range.rs
++++ b/crates/deadpan-app/src/project/tests/splice_equivalence/move_range.rs
+@@ -561,6 +561,7 @@ fn seed_cross_parent(harness: &Harness, initial: &Workspace) -> Arc<Workspace> {
+             id: SoundId::new("root-sound").unwrap(),
+             event: SoundEvent {
+                 tail_sends: Default::default(),
++                wet_sends: Default::default(),
+                 owner: initial.document.root().clone(),
+                 label: "Fixed root impulse".into(),
+                 source: SourceAudio {
+diff --git a/crates/deadpan-audio/src/bound_reads/authored_eq.rs b/crates/deadpan-audio/src/bound_reads/authored_eq.rs
+index 0ba21f31..9f292273 100644
+--- a/crates/deadpan-audio/src/bound_reads/authored_eq.rs
++++ b/crates/deadpan-audio/src/bound_reads/authored_eq.rs
+@@ -418,6 +418,7 @@ fn authored_eq_independent_root_sound_bypasses_child_equalizer() {
+         SoundId::new("sound").unwrap(),
+         SoundEvent {
+             tail_sends: Default::default(),
++            wet_sends: Default::default(),
+             owner: id("root"),
+             label: "Independent".into(),
+             mapping: SourceAudioMapping::natural_rate(audio.span, rate).unwrap(),
+@@ -473,6 +474,7 @@ fn shared_fixture(treatments: AudioTreatments, cropped: bool) -> (ProjectDocumen
+     wire["assets"]["media"]["still_image"] = serde_json::json!(false);
+     let sound = BeatSound {
+         tail_sends: Default::default(),
++        wet_sends: Default::default(),
+         label: "Shared sound".into(),
+         source: audio.clone(),
+         mapping: SourceAudioMapping::natural_rate(audio.span, rate).unwrap(),
+@@ -688,6 +690,7 @@ fn allowed_sound_history(components: bool) {
+     wire["assets"]["media"]["still_image"] = serde_json::json!(false);
+     let event = SoundEvent {
+         tail_sends: Default::default(),
++        wet_sends: Default::default(),
+         owner: id("root"),
+         label: "Independent".into(),
+         mapping: SourceAudioMapping::natural_rate(audio.span, rate).unwrap(),
+diff --git a/crates/deadpan-audio/src/bound_reads/source_origin/gain.rs b/crates/deadpan-audio/src/bound_reads/source_origin/gain.rs
+index fe284eb8..a8121058 100644
+--- a/crates/deadpan-audio/src/bound_reads/source_origin/gain.rs
++++ b/crates/deadpan-audio/src/bound_reads/source_origin/gain.rs
+@@ -76,6 +76,7 @@ fn with_controls(document: &ProjectDocument, start: i64) -> ProjectDocument {
+         SoundId::new("independent").unwrap(),
+         SoundEvent {
+             tail_sends: Default::default(),
++            wet_sends: Default::default(),
+             owner: id("root"),
+             label: "Independent root sound".into(),
+             mapping: SourceAudioMapping::natural_rate(
+diff --git a/crates/deadpan-audio/src/routed.rs b/crates/deadpan-audio/src/routed.rs
+index 71000b22..fb657153 100644
+--- a/crates/deadpan-audio/src/routed.rs
++++ b/crates/deadpan-audio/src/routed.rs
+@@ -33,7 +33,7 @@ pub struct RoutedRootBlock {
+ }
+ 
+ pub(super) struct PreparedRoutedRootQuery<'plan> {
+-    domain: AudioRoutedRoot<'plan>,
++    pub(super) domain: AudioRoutedRoot<'plan>,
+     start: AudioSample,
+     frames: u32,
+     spans: Vec<PreparedRootSpan<'plan>>,
+@@ -416,7 +416,7 @@ pub(super) fn routed_end(
+     Ok(end)
+ }
+ 
+-fn routed_old_range<S>(
++pub(super) fn routed_old_range<S>(
+     local: ExactRatio,
+     grid: AudioSampleGrid<S>,
+     count: i64,
+diff --git a/crates/deadpan-audio/src/shared_components.rs b/crates/deadpan-audio/src/shared_components.rs
+index 6dba5729..26119d65 100644
+--- a/crates/deadpan-audio/src/shared_components.rs
++++ b/crates/deadpan-audio/src/shared_components.rs
+@@ -11,6 +11,7 @@ use deadpan_plan::AudioOwnerClock;
+ #[derive(Clone, Copy, Default)]
+ struct Sample {
+     value: [f64; 2],
++    send_input: [f64; 2],
+     permitted: bool,
+ }
+ 
+@@ -168,7 +169,7 @@ impl<'plan> Components<'plan> {
+         &mut self,
+         route: usize,
+         at: usize,
+-        value: [f32; 2],
++        (dry, wet): ([f64; 2], [f64; 2]),
+         event_gain: i32,
+         control: WorkControl<'_>,
+     ) -> Result<(), StageAudioError> {
+@@ -182,9 +183,10 @@ impl<'plan> Components<'plan> {
+         }
+         route.event_gain = Some(event_gain);
+         let output = &mut route.pcm[at];
+-        for (out, value) in output.value.iter_mut().zip(value) {
+-            *out += f64::from(value);
+-            if !out.is_finite() {
++        for ch in 0..2 {
++            output.value[ch] += dry[ch] + wet[ch];
++            output.send_input[ch] += dry[ch];
++            if !output.value[ch].is_finite() || !output.send_input[ch].is_finite() {
+                 return Err(PreparationError::InvalidSamples.into());
+             }
+         }
+@@ -225,7 +227,7 @@ impl<'plan> Components<'plan> {
+                     && let Some(level) = self.send.and_then(|effect| route.sends.level(effect))
+                 {
+                     control.spend_plan_work(1)?;
+-                    let value = gains[id].send_sample(route.pcm[at].value, level)?;
++                    let value = gains[id].send_sample(route.pcm[at].send_input, level)?;
+                     for ch in 0..2 {
+                         sent[ch] += value[ch];
+                     }
+diff --git a/crates/deadpan-audio/src/shared_eq.rs b/crates/deadpan-audio/src/shared_eq.rs
+index d2bce17d..24932c04 100644
+--- a/crates/deadpan-audio/src/shared_eq.rs
++++ b/crates/deadpan-audio/src/shared_eq.rs
+@@ -15,6 +15,10 @@ use deadpan_plan::{
+     AudioOwnerClock, AudioOwnerSupport, AudioSoundOwnerContext, AudioTreatmentBoundary,
+ };
+ 
++#[path = "event_returns.rs"]
++mod event_returns;
++use event_returns::{EventKey, EventRead, EventSource};
++
+ #[derive(Clone)]
+ enum Sounds<'plan> {
+     Root,
+@@ -54,6 +58,8 @@ struct Graph<'plan> {
+     nodes: Vec<Node<'plan>>,
+     resident: u64,
+     wet_filters: [Option<crate::FiniteWetEffect>; 2],
++    event_tiles: BTreeMap<EventKey, Arc<WideBlock>>,
++    event_nodes: std::collections::BTreeSet<EventKey>,
+     voices: BTreeMap<Voice, usize>,
+     sends: Option<deadpan_core::TailEffect>,
+     skip: Vec<authored_gain::OwnerIdentity>,
+@@ -138,6 +144,8 @@ impl StageAudio {
+             nodes: Vec::new(),
+             resident: 0,
+             wet_filters: std::array::from_fn(|_| None),
++            event_tiles: BTreeMap::new(),
++            event_nodes: Default::default(),
+             voices: BTreeMap::new(),
+             sends: selection.sends,
+             skip: selection.skip.to_vec(),
+@@ -353,7 +361,7 @@ impl StageAudio {
+             }
+         }
+         let reservation = u64::from(frames)
+-            .checked_mul(6)
++            .checked_mul(8)
+             .and_then(|n| n.checked_add(mix.resident_frames().ok()?))
+             .ok_or(StageAudioError::Limit("shared EQ mix PCM"))?;
+         self.make_room(reservation, false, control)?;
+@@ -424,12 +432,41 @@ impl StageAudio {
+                     event.source.asset.clone(),
+                     control.observe(&event.source.asset, source)?,
+                 );
++                let returned = if event.wet_sends.is_empty() {
++                    None
++                } else {
++                    let input = deadpan_plan::AudioRoutedRootInput::Source(Box::new(
++                        root.voice.processing_source()?,
++                    ));
++                    Some(self.read_event_returns(
++                        provider,
++                        graph,
++                        EventSource {
++                            input: &input,
++                            route: root.voice.routed_input().map(|routed| routed.route()),
++                        },
++                        EventRead {
++                            parent: program.parent,
++                            voice: id,
++                            start: root_range.start,
++                            frames: count(&root_range)?,
++                            sends: event.wet_sends,
++                            edges: root.voice.event_edges(),
++                            depth: program.depth,
++                        },
++                        control,
++                    )?)
++                };
++                if let Some(returned) = &returned {
++                    dependencies.extend(returned.dependencies.clone());
++                    relative_depth = relative_depth.max(returned.relative_depth);
++                }
+                 let raw =
+                     self.read_prepared_root_sound(provider, root.input, root_range.start, control)?;
+                 add_sound(
+                     &mut mix,
+                     &route,
+-                    &raw,
++                    (&raw, returned.as_ref()),
+                     &root.fades,
+                     event.gain_millidecibels,
+                     admitted(id).then_some(id),
+@@ -444,6 +481,55 @@ impl StageAudio {
+                     let (id, route) = routes
+                         .next()
+                         .ok_or(PlanError::InvalidPlan("missing beat sound route"))?;
++                    let returned = if beat.event.wet_sends.is_empty() {
++                        None
++                    } else {
++                        let request = EventRead {
++                            parent: program.parent,
++                            voice: id,
++                            start: occurrence.samples.start,
++                            frames: count(&occurrence.samples)?,
++                            sends: beat.event.wet_sends,
++                            edges: occurrence
++                                .voice
++                                .event_edges((beat.event.start_edge, beat.event.end_edge)),
++                            depth: program.depth,
++                        };
++                        Some(match &occurrence.input {
++                            beat_sounds::PreparedBeatInput::Current(_) => {
++                                let input = deadpan_plan::AudioRoutedRootInput::Occurrence(
++                                    Box::new(occurrence.voice.clone()),
++                                );
++                                self.read_event_returns(
++                                    provider,
++                                    graph,
++                                    EventSource {
++                                        input: &input,
++                                        route: None,
++                                    },
++                                    request,
++                                    control,
++                                )?
++                            }
++                            beat_sounds::PreparedBeatInput::Routed { plan, query } => self
++                                .with_plan_scope(Arc::clone(plan), |reader| {
++                                    reader.read_event_returns(
++                                        provider,
++                                        graph,
++                                        EventSource {
++                                            input: query.domain.input(),
++                                            route: Some(query.domain.route()),
++                                        },
++                                        request,
++                                        control,
++                                    )
++                                })?,
++                        })
++                    };
++                    if let Some(returned) = &returned {
++                        dependencies.extend(returned.dependencies.clone());
++                        relative_depth = relative_depth.max(returned.relative_depth);
++                    }
+                     let raw = self.read_prepared_beat_sound(
+                         provider,
+                         occurrence.input,
+@@ -453,7 +539,7 @@ impl StageAudio {
+                     add_sound(
+                         &mut mix,
+                         &route,
+-                        &raw,
++                        (&raw, returned.as_ref()),
+                         &occurrence.fades,
+                         beat.event.gain_millidecibels,
+                         admitted(id).then_some(id),
+@@ -521,7 +607,9 @@ impl StageAudio {
+         }) {
+             return Ok(id);
+         }
+-        if graph.nodes.len() >= self.limits.maximum_prepared_stages as usize {
++        if graph.nodes.len() + graph.event_nodes.len()
++            >= self.limits.maximum_prepared_stages as usize
++        {
+             return Err(StageAudioError::Limit("temporal owner count"));
+         }
+         let key = OwnerKey::new(owner);
+@@ -705,34 +793,13 @@ impl StageAudio {
+                     // Stateless kernels share one native workspace per effect
+                     // in this request, including nested owners. Acquire only
+                     // after recursive input preparation has finished.
+-                    let slot = match effect {
+-                        deadpan_core::TailEffect::Reverb => 0,
+-                        deadpan_core::TailEffect::Delay => 1,
+-                    };
+-                    if graph.wet_filters[slot].is_none() {
+-                        let resident = (crate::FiniteWetEffect::preparation_bytes_bound(effect)
+-                            as u64)
+-                            .div_ceil(8);
+-                        control.spend_plan_work(
+-                            crate::wet_effect_descriptor(effect).history_frames + 1,
+-                        )?;
+-                        self.make_room(resident, false, control)?;
+-                        let processor = crate::FiniteWetEffect::new(effect, control.cancelled)?;
+-                        control.check()?;
+-                        self.active_frames += resident;
+-                        graph.resident += resident;
+-                        graph.wet_filters[slot] = Some(processor);
+-                    }
+-                    graph.wet_filters[slot]
+-                        .as_mut()
+-                        .ok_or(PlanError::InvalidPlan("wet processor absent"))?
+-                        .process_tile(
+-                            &left,
+-                            &right,
+-                            &mut out_left,
+-                            &mut out_right,
+-                            control.cancelled,
+-                        )?;
++                    self.process_shared_wet(
++                        graph,
++                        effect,
++                        (&left, &right),
++                        (&mut out_left, &mut out_right),
++                        control,
++                    )?;
+                 }
+                 let samples = out_left
+                     .into_iter()
+@@ -764,7 +831,7 @@ impl StageAudio {
+ fn add_sound(
+     mix: &mut SharedMix<'_>,
+     route: &shared_mix::Route<'_>,
+-    raw: &ReadBlock,
++    (raw, returned): (&ReadBlock, Option<&WideBlock>),
+     fades: &[deadpan_plan::AudioSoundGateSpan],
+     gain: i32,
+     id: Option<usize>,
+@@ -793,10 +860,14 @@ fn add_sound(
+             } else {
+                 None
+             };
+-            mix.add(
++            let value = sample.map(|value| f64::from(value * edge));
++            let wet = returned.map_or([0.0; 2], |returned| {
++                returned.samples[(at - raw.start.0) as usize].map(|value| value * f64::from(edge))
++            });
++            mix.add_wide(
+                 route,
+                 (at - start.0) as usize,
+-                sample.map(|value| value * edge),
++                (value, wet),
+                 gain,
+                 allowed,
+                 control,
+diff --git a/crates/deadpan-audio/src/shared_mix.rs b/crates/deadpan-audio/src/shared_mix.rs
+index fb5cf979..82cd70b7 100644
+--- a/crates/deadpan-audio/src/shared_mix.rs
++++ b/crates/deadpan-audio/src/shared_mix.rs
+@@ -420,6 +420,25 @@ impl<'plan> SharedMix<'plan> {
+         event_gain: i32,
+         voice: Option<usize>,
+         control: WorkControl<'_>,
++    ) -> Result<(), StageAudioError> {
++        self.add_wide(
++            route,
++            offset,
++            (sample.map(f64::from), [0.0; 2]),
++            event_gain,
++            voice,
++            control,
++        )
++    }
++
++    pub(super) fn add_wide(
++        &mut self,
++        route: &Route<'_>,
++        offset: usize,
++        sample: ([f64; 2], [f64; 2]),
++        event_gain: i32,
++        voice: Option<usize>,
++        control: WorkControl<'_>,
+     ) -> Result<(), StageAudioError> {
+         if route.ignored {
+             return Ok(());
+@@ -456,7 +475,13 @@ impl<'plan> SharedMix<'plan> {
+         }
+         let mut permissions = Permissions::default();
+         permissions.insert(voice)?;
+-        self.add_value(route.target, offset, gain.apply(sample)?, permissions)
++        let combined = std::array::from_fn(|ch| sample.0[ch] + sample.1[ch]);
++        self.add_value(
++            route.target,
++            offset,
++            gain.apply_wide(combined)?,
++            permissions,
++        )
+     }
+ 
+     fn add_value(
+diff --git a/crates/deadpan-audio/src/sound_clocks/tests.rs b/crates/deadpan-audio/src/sound_clocks/tests.rs
+index b0d8cee5..61373d76 100644
+--- a/crates/deadpan-audio/src/sound_clocks/tests.rs
++++ b/crates/deadpan-audio/src/sound_clocks/tests.rs
+@@ -57,6 +57,7 @@ fn beat_sound(label: &str, asset: &str) -> BeatSound {
+     };
+     BeatSound {
+         tail_sends: Default::default(),
++        wet_sends: Default::default(),
+         label: label.into(),
+         mapping: SourceAudioMapping::natural_rate(
+             source.span,
+diff --git a/crates/deadpan-audio/tests/audio_definition/beat_sounds.rs b/crates/deadpan-audio/tests/audio_definition/beat_sounds.rs
+index 8f7d3e5d..417a36bb 100644
+--- a/crates/deadpan-audio/tests/audio_definition/beat_sounds.rs
++++ b/crates/deadpan-audio/tests/audio_definition/beat_sounds.rs
+@@ -10,6 +10,7 @@ fn saved(document: &ProjectDocument, owner: &str, length: i64) -> ProjectDocumen
+     let recipe = voice_recipe(document.presentation_basis().frame_rate, length);
+     let event = BeatSound {
+         tail_sends: Default::default(),
++        wet_sends: Default::default(),
+         label: "Owned effect".into(),
+         source: recipe.source,
+         mapping: recipe.mapping,
+diff --git a/crates/deadpan-audio/tests/audio_definition/edit_waveform.rs b/crates/deadpan-audio/tests/audio_definition/edit_waveform.rs
+index 01c2f8a7..5ec01d06 100644
+--- a/crates/deadpan-audio/tests/audio_definition/edit_waveform.rs
++++ b/crates/deadpan-audio/tests/audio_definition/edit_waveform.rs
+@@ -155,6 +155,7 @@ fn root_routes_and_silent_hold_permissions_change_actual_window_peaks() {
+     let doc = document(rate, &["pause"], [("pause", pause)], BTreeMap::new());
+     let event = SoundEvent {
+         tail_sends: Default::default(),
++        wet_sends: Default::default(),
+         owner: id("root"),
+         label: "Routed sound".into(),
+         source: audio(0..8197),
+diff --git a/crates/deadpan-audio/tests/audio_definition/sound_clocks.rs b/crates/deadpan-audio/tests/audio_definition/sound_clocks.rs
+index ccf13949..ddcd5404 100644
+--- a/crates/deadpan-audio/tests/audio_definition/sound_clocks.rs
++++ b/crates/deadpan-audio/tests/audio_definition/sound_clocks.rs
+@@ -135,7 +135,7 @@ fn ntsc(edge: AudioEdgePolicy) -> ProjectDocument {
+             end: ExactRatio::integer(4),
+         },
+     };
+-    wire["beat_sounds"] = serde_json::json!({"owner": {"effect": BeatSound { tail_sends: Default::default(),
++    wire["beat_sounds"] = serde_json::json!({"owner": {"effect": BeatSound { tail_sends: Default::default(), wet_sends: Default::default(),
+         label: "Effect".into(), source: recipe.source, mapping: recipe.mapping, offset: recipe.offset,
+         gain_millidecibels: 0, start_edge: edge, end_edge: edge, overflow: SoundOverflowPolicy::Reject,
+     }}});
+@@ -608,7 +608,29 @@ fn sound_clocks_translate_processed_ntsc_extent_through_nested_preserve() {
+ 
+ #[test]
+ fn copied_nested_sound_clocks_keep_old_pcm_labels_and_terminal_clip_across_recopy() {
+-    let before = nested_ntsc_copy_document();
++    copied_nested_sound(false);
++}
++
++#[test]
++fn copied_nested_event_returns_keep_old_history_across_recopy() {
++    copied_nested_sound(true);
++}
++
++fn copied_nested_sound(wet: bool) {
++    let mut before = nested_ntsc_copy_document();
++    if wet {
++        let mut event = before.beat_sounds()[&id("owner")][&sound_id("effect")].clone();
++        event.wet_sends = TailSends::default().with_level(TailEffect::Reverb, Some(GainDb::UNITY));
++        before = edit(
++            &before,
++            "event-return",
++            Command::SetBeatSound {
++                owner: id("owner"),
++                id: sound_id("effect"),
++                event,
++            },
++        );
++    }
+     // Create the destination Sequence before sound clocks exist. Grouping is
+     // intentionally outside the retained-clock edit path exercised below.
+     let grouped = edit(
+diff --git a/crates/deadpan-audio/tests/audio_definition/sound_clocks/group_mix.rs b/crates/deadpan-audio/tests/audio_definition/sound_clocks/group_mix.rs
+index c691d489..3f3f3204 100644
+--- a/crates/deadpan-audio/tests/audio_definition/sound_clocks/group_mix.rs
++++ b/crates/deadpan-audio/tests/audio_definition/sound_clocks/group_mix.rs
+@@ -323,7 +323,7 @@ fn independent_eq_automation_keeps_rebound_input_history_across_a_new_pause() {
+     let attached = ProjectDocument::from_json(&wire.to_string()).unwrap();
+     let sound: BeatSound =
+         serde_json::from_value(wire["beat_sounds"]["owner"]["effect"].clone()).unwrap();
+-    wire["sounds"] = serde_json::json!({"effect": SoundEvent { tail_sends: Default::default(),
++    wire["sounds"] = serde_json::json!({"effect": SoundEvent { tail_sends: Default::default(), wet_sends: Default::default(),
+         owner: id("root"), label: sound.label, source: sound.source, mapping: sound.mapping,
+         offset: AudioSample(START), gain_millidecibels: sound.gain_millidecibels,
+         start_edge: sound.start_edge, end_edge: sound.end_edge, overflow: sound.overflow,
+diff --git a/crates/deadpan-audio/tests/audio_definition/sound_owner_context.rs b/crates/deadpan-audio/tests/audio_definition/sound_owner_context.rs
+index d3e4d2e5..c8dcab03 100644
+--- a/crates/deadpan-audio/tests/audio_definition/sound_owner_context.rs
++++ b/crates/deadpan-audio/tests/audio_definition/sound_owner_context.rs
+@@ -10,6 +10,7 @@ fn attached(document: ProjectDocument, owner: &str) -> ProjectDocument {
+     let recipe = voice_recipe(document.presentation_basis().frame_rate, 6144);
+     let event = BeatSound {
+         tail_sends: Default::default(),
++        wet_sends: Default::default(),
+         label: "Full history".into(),
+         source: recipe.source,
+         mapping: recipe.mapping,
+diff --git a/crates/deadpan-audio/tests/composite_insert/delete_range/children.rs b/crates/deadpan-audio/tests/composite_insert/delete_range/children.rs
+index 7a2fcfe4..30f4c159 100644
+--- a/crates/deadpan-audio/tests/composite_insert/delete_range/children.rs
++++ b/crates/deadpan-audio/tests/composite_insert/delete_range/children.rs
+@@ -57,6 +57,7 @@ fn exact_forest_delete_keeps_ntsc_preserve_pcm_and_transforms_root_sound_once()
+             id: SoundId::new("effect").unwrap(),
+             event: SoundEvent {
+                 tail_sends: Default::default(),
++                wet_sends: Default::default(),
+                 owner: id("root"),
+                 label: "Separate bus".into(),
+                 source: full,
+diff --git a/crates/deadpan-audio/tests/composite_insert/delete_range/nested_partition.rs b/crates/deadpan-audio/tests/composite_insert/delete_range/nested_partition.rs
+index dc422b89..671b002f 100644
+--- a/crates/deadpan-audio/tests/composite_insert/delete_range/nested_partition.rs
++++ b/crates/deadpan-audio/tests/composite_insert/delete_range/nested_partition.rs
+@@ -244,6 +244,7 @@ fn repeated_nested_deletions_transform_the_existing_root_sound_route_exactly_onc
+             id: SoundId::new("effect").unwrap(),
+             event: SoundEvent {
+                 tail_sends: Default::default(),
++                wet_sends: Default::default(),
+                 owner: id("root"),
+                 label: "Independent root bus".into(),
+                 source: audio(100..20_100),
+diff --git a/crates/deadpan-audio/tests/composite_insert/edited_slice/move_range.rs b/crates/deadpan-audio/tests/composite_insert/edited_slice/move_range.rs
+index bd49299d..921ae421 100644
+--- a/crates/deadpan-audio/tests/composite_insert/edited_slice/move_range.rs
++++ b/crates/deadpan-audio/tests/composite_insert/edited_slice/move_range.rs
+@@ -393,6 +393,7 @@ fn sounded(document: &ProjectDocument, start: i64, length: i64) -> ProjectDocume
+             id: SoundId::new("effect").unwrap(),
+             event: SoundEvent {
+                 tail_sends: Default::default(),
++                wet_sends: Default::default(),
+                 owner: id("root"),
+                 label: "Root clock".into(),
+                 source: audio(100..20_100),
+diff --git a/crates/deadpan-audio/tests/composite_insert/edited_slice/replacement_children.rs b/crates/deadpan-audio/tests/composite_insert/edited_slice/replacement_children.rs
+index 9d8e697f..4714bda8 100644
+--- a/crates/deadpan-audio/tests/composite_insert/edited_slice/replacement_children.rs
++++ b/crates/deadpan-audio/tests/composite_insert/edited_slice/replacement_children.rs
+@@ -51,6 +51,7 @@ fn sounded(document: &ProjectDocument, start: i64, name: &str) -> ProjectDocumen
+             id: SoundId::new("effect").unwrap(),
+             event: SoundEvent {
+                 tail_sends: Default::default(),
++                wet_sends: Default::default(),
+                 owner: id("root"),
+                 label: "Root sound across replacement".into(),
+                 source: audio(100..20_100),
+diff --git a/crates/deadpan-audio/tests/composite_insert/explode.rs b/crates/deadpan-audio/tests/composite_insert/explode.rs
+index 6cae50b4..00642147 100644
+--- a/crates/deadpan-audio/tests/composite_insert/explode.rs
++++ b/crates/deadpan-audio/tests/composite_insert/explode.rs
+@@ -288,6 +288,7 @@ fn exploded_beat_sounds_and_root_sounds_keep_every_ntsc_sample() {
+             id: SoundId::new("blip").unwrap(),
+             event: BeatSound {
+                 tail_sends: Default::default(),
++                wet_sends: Default::default(),
+                 label: "Blip".into(),
+                 source: audio(1000..2000),
+                 mapping,
+@@ -306,6 +307,7 @@ fn exploded_beat_sounds_and_root_sounds_keep_every_ntsc_sample() {
+             id: SoundId::new("over").unwrap(),
+             event: SoundEvent {
+                 tail_sends: Default::default(),
++                wet_sends: Default::default(),
+                 owner: id("root"),
+                 label: "Over the gaps".into(),
+                 source: audio(3000..9000),
+diff --git a/crates/deadpan-audio/tests/composite_insert/group_selection.rs b/crates/deadpan-audio/tests/composite_insert/group_selection.rs
+index a17492d9..581402b6 100644
+--- a/crates/deadpan-audio/tests/composite_insert/group_selection.rs
++++ b/crates/deadpan-audio/tests/composite_insert/group_selection.rs
+@@ -362,6 +362,7 @@ fn composite_fixture() -> ProjectDocument {
+             id: SoundId::new("effect").unwrap(),
+             event: SoundEvent {
+                 tail_sends: Default::default(),
++                wet_sends: Default::default(),
+                 owner: id("root"),
+                 label: "Routed effect".into(),
+                 source: full,
+diff --git a/crates/deadpan-audio/tests/composite_insert/structural_capture.rs b/crates/deadpan-audio/tests/composite_insert/structural_capture.rs
+index cbca12ae..19d6ebde 100644
+--- a/crates/deadpan-audio/tests/composite_insert/structural_capture.rs
++++ b/crates/deadpan-audio/tests/composite_insert/structural_capture.rs
+@@ -47,6 +47,7 @@ fn fixture() -> ProjectDocument {
+             id: SoundId::new("effect").unwrap(),
+             event: SoundEvent {
+                 tail_sends: Default::default(),
++                wet_sends: Default::default(),
+                 owner: id("root"),
+                 label: "Retained root effect".into(),
+                 source: audio(100..20_100),
+diff --git a/crates/deadpan-audio/tests/composite_insert/trim/combined.rs b/crates/deadpan-audio/tests/composite_insert/trim/combined.rs
+index c47eef4d..1e8c8184 100644
+--- a/crates/deadpan-audio/tests/composite_insert/trim/combined.rs
++++ b/crates/deadpan-audio/tests/composite_insert/trim/combined.rs
+@@ -303,6 +303,7 @@ fn combined_ripple_appends_one_root_map_after_a_prior_route_with_exact_44100_pha
+     let sound = SoundId::new("effect").unwrap();
+     wire["sounds"]["effect"] = serde_json::to_value(SoundEvent {
+         tail_sends: Default::default(),
++        wet_sends: Default::default(),
+         owner: id("root"),
+         label: "Prior routed sound".into(),
+         source: full.clone(),
+diff --git a/crates/deadpan-audio/tests/root_sound_trim.rs b/crates/deadpan-audio/tests/root_sound_trim.rs
+index 7c9c902f..bfab9934 100644
+--- a/crates/deadpan-audio/tests/root_sound_trim.rs
++++ b/crates/deadpan-audio/tests/root_sound_trim.rs
+@@ -168,6 +168,7 @@ fn event(fixture: Fixture, selection: ExactFrameRange, offset: i64) -> SoundEven
+     let source = fixture.source();
+     SoundEvent {
+         tail_sends: Default::default(),
++        wet_sends: Default::default(),
+         owner: node("root"),
+         label: "Retained sound".into(),
+         mapping: SourceAudioMapping::SelectedPlacement {
+diff --git a/crates/deadpan-audio/tests/sound_events.rs b/crates/deadpan-audio/tests/sound_events.rs
+index 2ba7d632..25655f20 100644
+--- a/crates/deadpan-audio/tests/sound_events.rs
++++ b/crates/deadpan-audio/tests/sound_events.rs
+@@ -89,6 +89,7 @@ fn planned(
+     };
+     let sound = SoundEvent {
+         tail_sends: Default::default(),
++        wet_sends: Default::default(),
+         owner: node("root"),
+         label: "Authored effect".into(),
+         mapping: SourceAudioMapping::natural_rate(source.span, rate).unwrap(),
+diff --git a/crates/deadpan-audio/tests/stages.rs b/crates/deadpan-audio/tests/stages.rs
+index 72dbbfd9..0b4a8071 100644
+--- a/crates/deadpan-audio/tests/stages.rs
++++ b/crates/deadpan-audio/tests/stages.rs
+@@ -47,6 +47,9 @@ mod gain;
+ #[path = "stages/wet_owners.rs"]
+ mod wet_owners;
+ 
++#[path = "stages/event_returns.rs"]
++mod event_returns;
++
+ #[path = "stages/streaming.rs"]
+ mod streaming;
+ 
+diff --git a/crates/deadpan-audio/tests/stages/gain.rs b/crates/deadpan-audio/tests/stages/gain.rs
+index 84539139..c2461d9c 100644
+--- a/crates/deadpan-audio/tests/stages/gain.rs
++++ b/crates/deadpan-audio/tests/stages/gain.rs
+@@ -569,6 +569,7 @@ fn with_sound(document: &ProjectDocument) -> ProjectDocument {
+     let source = audio(0, 256);
+     let event = SoundEvent {
+         tail_sends: Default::default(),
++        wet_sends: Default::default(),
+         owner: id("root"),
+         label: "Independent sound".into(),
+         mapping: SourceAudioMapping::natural_rate(
+@@ -598,6 +599,7 @@ fn with_owned_sound(
+     let source = audio(0, frames);
+     let event = BeatSound {
+         tail_sends: Default::default(),
++        wet_sends: Default::default(),
+         label: "Group contribution".into(),
+         mapping: SourceAudioMapping::natural_rate(
+             source.span,
+diff --git a/crates/deadpan-audio/tests/stages/tail_sends.rs b/crates/deadpan-audio/tests/stages/tail_sends.rs
+index 53b88a85..39aad303 100644
+--- a/crates/deadpan-audio/tests/stages/tail_sends.rs
++++ b/crates/deadpan-audio/tests/stages/tail_sends.rs
+@@ -75,6 +75,7 @@ fn sound(send: TailSends) -> SoundEvent {
+         offset: AudioSample(0),
+         gain_millidecibels: -3_000,
+         tail_sends: send,
++        wet_sends: Default::default(),
+         start_edge: AudioEdgePolicy::Hard,
+         end_edge: AudioEdgePolicy::Hard,
+         overflow: SoundOverflowPolicy::Reject,
+@@ -95,6 +96,39 @@ fn with_sound(document: &ProjectDocument, event: SoundEvent, attached: bool) ->
+     ProjectDocument::from_json(&wire.to_string()).unwrap()
+ }
+ 
++#[test]
++fn event_return_is_excluded_from_its_own_allocated_tail_tap() {
++    for attached in [false, true] {
++        for effect in [TailEffect::Reverb, TailEffect::Delay] {
++            let base = document(effect);
++            let dry_event = sound(sends(effect, -6000));
++            let dry = with_sound(&base, dry_event.clone(), attached);
++            let mut wet_event = dry_event;
++            wet_event.wet_sends = sends(TailEffect::Reverb, 0);
++            let wet = with_sound(&base, wet_event, attached);
++            let prepare = |document: &ProjectDocument| {
++                StageAudio::new(planned(document))
++                    .prepare_authored_bus(
++                        &mut FixtureProvider::new(),
++                        AudioSample(4800),
++                        20_000,
++                        TIMEOUT,
++                        &AtomicBool::new(false),
++                    )
++                    .unwrap()
++                    .samples
++            };
++            assert_pcm_close(&prepare(&dry), &prepare(&wet));
++            assert!(
++                heard(&dry)
++                    .iter()
++                    .zip(heard(&wet))
++                    .any(|(a, b)| (a[0] - b[0]).abs() > 0.001)
++            );
++        }
++    }
++}
++
+ #[test]
+ fn sends_are_off_by_default_and_do_not_change_the_dry_mix() {
+     for effect in [TailEffect::Reverb, TailEffect::Delay] {
+diff --git a/crates/deadpan-audio/tests/stages/wet_owners.rs b/crates/deadpan-audio/tests/stages/wet_owners.rs
+index dcbe2c19..41e4b383 100644
+--- a/crates/deadpan-audio/tests/stages/wet_owners.rs
++++ b/crates/deadpan-audio/tests/stages/wet_owners.rs
+@@ -64,7 +64,7 @@ fn all(document: &ProjectDocument) -> Vec<[f32; 2]> {
+     )
+ }
+ 
+-fn wet(effect: TailEffect, input: &[[f32; 2]]) -> Vec<[f64; 2]> {
++pub(super) fn wet(effect: TailEffect, input: &[[f32; 2]]) -> Vec<[f64; 2]> {
+     let cancel = AtomicBool::new(false);
+     let mut processor = deadpan_audio::FiniteWetEffect::new(effect, &cancel).unwrap();
+     let history = processor.descriptor().history_frames;
+@@ -299,7 +299,7 @@ fn allowed_sound_cannot_carry_forbidden_original_history_into_silent_hold() {
+     wire["sounds"] = serde_json::json!({"sound":SoundEvent {
+         owner:id("root"), label:"Permitted independent sound".into(), source:audio(0,6000),
+         mapping:SourceAudioMapping::natural_rate(audio(0,6000).span,rate).unwrap(),
+-        offset:AudioSample(0), gain_millidecibels:-6000, tail_sends:Default::default(),
++        offset:AudioSample(0), gain_millidecibels:-6000, tail_sends:Default::default(), wet_sends: Default::default(),
+         start_edge:AudioEdgePolicy::Hard, end_edge:AudioEdgePolicy::Hard, overflow:SoundOverflowPolicy::Reject }});
+     wire["sound_allowances"] = serde_json::json!({"sound":SoundHoldAllowances::try_from(vec![SoundHoldIssuer::Node {
+         instance:InstancePath {node:id("pause"),repeats:vec![]}}]).unwrap()});
+diff --git a/crates/deadpan-audio/tests/timing_representation.rs b/crates/deadpan-audio/tests/timing_representation.rs
+index 2682f1e6..6f0b0aa6 100644
+--- a/crates/deadpan-audio/tests/timing_representation.rs
++++ b/crates/deadpan-audio/tests/timing_representation.rs
+@@ -202,6 +202,7 @@ fn initial(random: &mut Lcg) -> ProjectDocument {
+         let selection_end = random.range(3..total.min(12));
+         wire["sounds"]["effect"] = serde_json::to_value(SoundEvent {
+             tail_sends: Default::default(),
++            wet_sends: Default::default(),
+             owner: id("root"),
+             label: "Root sound".into(),
+             mapping: SourceAudioMapping::SelectedPlacement {
+diff --git a/crates/deadpan-cli/src/sound_events.rs b/crates/deadpan-cli/src/sound_events.rs
+index 3c659cad..f995f88b 100644
+--- a/crates/deadpan-cli/src/sound_events.rs
++++ b/crates/deadpan-cli/src/sound_events.rs
+@@ -190,6 +190,7 @@ pub fn placement(
+     }
+     let event = SoundEvent {
+         tail_sends: Default::default(),
++        wet_sends: Default::default(),
+         owner: document.root().clone(),
+         label: metadata.label.clone(),
+         source: SourceAudio {
+diff --git a/crates/deadpan-cli/tests/audio_inspection/sound_allowances.rs b/crates/deadpan-cli/tests/audio_inspection/sound_allowances.rs
+index e776a65f..c69e7b88 100644
+--- a/crates/deadpan-cli/tests/audio_inspection/sound_allowances.rs
++++ b/crates/deadpan-cli/tests/audio_inspection/sound_allowances.rs
+@@ -87,6 +87,7 @@ fn decoded_sound_allowance_preserves_other_silence_and_ripple_sample_history() -
+                 id: SoundId::new(name)?,
+                 event: SoundEvent {
+                     tail_sends: Default::default(),
++                    wet_sends: Default::default(),
+                     owner: node("root"),
+                     label: name.into(),
+                     source: source.clone(),
+diff --git a/crates/deadpan-cli/tests/audio_inspection/sounds.rs b/crates/deadpan-cli/tests/audio_inspection/sounds.rs
+index 462d0a18..56a116d8 100644
+--- a/crates/deadpan-cli/tests/audio_inspection/sounds.rs
++++ b/crates/deadpan-cli/tests/audio_inspection/sounds.rs
+@@ -19,6 +19,7 @@ fn json_sound_command_reaches_shared_limited_bus_without_changing_picture_time()
+     };
+     let event = SoundEvent {
+         tail_sends: Default::default(),
++        wet_sends: Default::default(),
+         owner: before.root().clone(),
+         label: "Original echo".into(),
+         mapping: SourceAudioMapping::natural_rate(
+diff --git a/crates/deadpan-cli/tests/preview_export.rs b/crates/deadpan-cli/tests/preview_export.rs
+index 15af3df5..fbaeb48b 100644
+--- a/crates/deadpan-cli/tests/preview_export.rs
++++ b/crates/deadpan-cli/tests/preview_export.rs
+@@ -397,6 +397,27 @@ fn selected_tail_send_preserves_preview_and_verified_export() -> Result {
+     Ok(())
+ }
+ 
++#[test]
++fn continuous_event_return_preserves_preview_and_verified_export() -> Result {
++    let (root, _guard) = keep_or(tempfile::tempdir()?);
++    let fixture = recipes::continuous_event_return(&root.join("continuous-event-return"))?;
++    check(&fixture)?;
++    let movie = render(&fixture, &root.join("exports"))?;
++    let (report, passed) = verify(&fixture, &movie, &fixture.revision, &[])?;
++    assert!(passed, "{report}");
++    check_provenance(&fixture, &report)?;
++    if let Some(path) = std::env::var_os("DEADPAN_PREVIEW_EXPORT_RESULTS") {
++        std::fs::write(
++            path,
++            serde_json::to_vec_pretty(&json!({
++                "package":fixture.package,"movie":movie,"report":report,"notes":fixture.notes,
++            }))?,
++        )?;
++    }
++    eprintln!("{}", summary_row(&fixture, &report));
++    Ok(())
++}
++
+ #[test]
+ fn continuous_owner_return_preserves_preview_and_verified_export() -> Result {
+     let (root, _guard) = keep_or(tempfile::tempdir()?);
+diff --git a/crates/deadpan-cli/tests/preview_export/recipes.rs b/crates/deadpan-cli/tests/preview_export/recipes.rs
+index d85e1224..763524a4 100644
+--- a/crates/deadpan-cli/tests/preview_export/recipes.rs
++++ b/crates/deadpan-cli/tests/preview_export/recipes.rs
+@@ -1596,6 +1596,7 @@ fn place_catalog_sound(project: &mut Project, wav: &Path, label: &str) -> Result
+             id: SoundId::new("click")?,
+             event: SoundEvent {
+                 tail_sends: Default::default(),
++                wet_sends: Default::default(),
+                 owner: document.root().clone(),
+                 label: "Click".into(),
+                 mapping: SourceAudioMapping::natural_rate(source.span, rate)?,
+@@ -2512,6 +2513,7 @@ pub fn post_shared_automation(dir: &Path) -> Result<Fixture> {
+             id: SoundId::new("owner-click")?,
+             event: deadpan_core::BeatSound {
+                 tail_sends: Default::default(),
++                wet_sends: Default::default(),
+                 label: "Attached sound".into(),
+                 source: event.source.clone(),
+                 mapping: SourceAudioMapping::Placement {
+@@ -2642,6 +2644,7 @@ fn shared_processing(dir: &Path, equalizer: bool) -> Result<Fixture> {
+             id: SoundId::new("group-click")?,
+             event: deadpan_core::BeatSound {
+                 tail_sends: Default::default(),
++                wet_sends: Default::default(),
+                 label: "Group sound".into(),
+                 source: sound.source.clone(),
+                 mapping: sound.mapping,
+@@ -3590,3 +3593,60 @@ pub fn continuous_owner_return(dir: &Path) -> Result<Fixture> {
+     });
+     Ok(fixture)
+ }
++
++pub fn continuous_event_return(dir: &Path) -> Result<Fixture> {
++    let mut project = Project::create(dir, "continuous-event-return")?;
++    project.shorten()?;
++    // Original deterministic stereo PCM, including enough selected silence for
++    // two 300 ms echoes. The sound still ends before the unchanged picture.
++    let samples = 32_000u32;
++    let bytes = samples * 4;
++    let mut wav = Vec::with_capacity(bytes as usize + 44);
++    wav.extend_from_slice(b"RIFF");
++    wav.extend_from_slice(&(bytes + 36).to_le_bytes());
++    wav.extend_from_slice(b"WAVEfmt ");
++    wav.extend_from_slice(&16u32.to_le_bytes());
++    wav.extend_from_slice(&1u16.to_le_bytes());
++    wav.extend_from_slice(&2u16.to_le_bytes());
++    wav.extend_from_slice(&48_000u32.to_le_bytes());
++    wav.extend_from_slice(&192_000u32.to_le_bytes());
++    wav.extend_from_slice(&4u16.to_le_bytes());
++    wav.extend_from_slice(&16u16.to_le_bytes());
++    wav.extend_from_slice(b"data");
++    wav.extend_from_slice(&bytes.to_le_bytes());
++    for sample in 0..samples {
++        let value = if (1000..1256).contains(&sample) {
++            let at = f64::from(sample - 1000);
++            let envelope = (1.0 - (std::f64::consts::TAU * at / 255.0).cos()) * 0.5;
++            (24_576.0 * envelope * (std::f64::consts::TAU * at / 48.0).sin()).round() as i16
++        } else {
++            0
++        };
++        wav.extend_from_slice(&value.to_le_bytes());
++        wav.extend_from_slice(&value.to_le_bytes());
++    }
++    let path = project.directory.join("event-return.wav");
++    fs::write(&path, wav)?;
++    place_catalog_sound(&mut project, &path, "Independent delay witness")?;
++    project.apply(|_, document, _| {
++        let id = SoundId::new("click")?;
++        let mut event = document.sounds()[&id].clone();
++        event.wet_sends = deadpan_core::TailSends::default()
++            .with_level(deadpan_core::TailEffect::Delay, Some(GainDb::new(-6000)?));
++        Ok(Command::SetSound { id, event })
++    })?;
++    let mut fixture = project.finish(vec!["Continuous delay"],
++        (0..30).map(|frame| (frame,base(frame))).collect(),
++        vec!["A root sound starts at 16016 and ends at 48016. Its burst at 17016 produces -6 dB delay returns at 31416 and 45816; the Original click at 28781 is unchanged.".into()])?;
++    fixture.audio = vec![(16900, true), (28672, true), (24000, false)];
++    for (start, peak) in [(31_400, (0.35, 0.39)), (45_800, (0.17, 0.20))] {
++        fixture.signals.push(Signal {
++            start,
++            count: 512,
++            crossings_per_second: None,
++            crest: None,
++            peak: Some(peak),
++        });
++    }
++    Ok(fixture)
++}
+diff --git a/crates/deadpan-cli/tests/source_registration/beat_sounds.rs b/crates/deadpan-cli/tests/source_registration/beat_sounds.rs
+index 239aac65..36c57347 100644
+--- a/crates/deadpan-cli/tests/source_registration/beat_sounds.rs
++++ b/crates/deadpan-cli/tests/source_registration/beat_sounds.rs
+@@ -36,6 +36,7 @@ fn event(document: &ProjectDocument) -> Result<BeatSound> {
+     )?;
+     Ok(BeatSound {
+         tail_sends: Default::default(),
++        wet_sends: Default::default(),
+         label: "Owned overlay".into(),
+         source: SourceAudio { asset, span },
+         mapping: SourceAudioMapping::natural_rate(span, document.presentation_basis().frame_rate)?,
+diff --git a/crates/deadpan-core/src/boundary_replacement/tests.rs b/crates/deadpan-core/src/boundary_replacement/tests.rs
+index 6c186a21..871a23ac 100644
+--- a/crates/deadpan-core/src/boundary_replacement/tests.rs
++++ b/crates/deadpan-core/src/boundary_replacement/tests.rs
+@@ -186,6 +186,7 @@ fn fixture() -> ProjectDocument {
+         SoundId::new("sound-event").unwrap(),
+         SoundEvent {
+             tail_sends: Default::default(),
++            wet_sends: Default::default(),
+             owner: node("root"),
+             label: "Independent sound".into(),
+             source: SourceAudio {
+diff --git a/crates/deadpan-core/src/document.rs b/crates/deadpan-core/src/document.rs
+index a18e1af5..fe504042 100644
+--- a/crates/deadpan-core/src/document.rs
++++ b/crates/deadpan-core/src/document.rs
+@@ -10,7 +10,7 @@ use crate::{
+     SourceVideoMapping, TimeError,
+ };
+ 
+-pub const DOCUMENT_SCHEMA_VERSION: u32 = 51;
++pub const DOCUMENT_SCHEMA_VERSION: u32 = 52;
+ /// Bounds apply before traversal. Structure is walked iteratively, never recursively.
+ pub const MAX_DOCUMENT_NODES: usize = 100_000;
+ pub const MAX_DOCUMENT_ASSETS: usize = 100_000;
+diff --git a/crates/deadpan-core/src/group_selection/tests.rs b/crates/deadpan-core/src/group_selection/tests.rs
+index 7b5c285a..e29748f2 100644
+--- a/crates/deadpan-core/src/group_selection/tests.rs
++++ b/crates/deadpan-core/src/group_selection/tests.rs
+@@ -429,6 +429,7 @@ fn with_sound(mut document: ProjectDocument) -> ProjectDocument {
+         sound.clone(),
+         SoundEvent {
+             tail_sends: Default::default(),
++            wet_sends: Default::default(),
+             owner: node("root"),
+             label: "Effect".into(),
+             source: SourceAudio {
+diff --git a/crates/deadpan-core/src/repeat_selection/tests.rs b/crates/deadpan-core/src/repeat_selection/tests.rs
+index 6bc9ef08..9a06bd46 100644
+--- a/crates/deadpan-core/src/repeat_selection/tests.rs
++++ b/crates/deadpan-core/src/repeat_selection/tests.rs
+@@ -381,6 +381,7 @@ fn with_sound(mut document: ProjectDocument) -> ProjectDocument {
+         SoundId::new("effect").unwrap(),
+         SoundEvent {
+             tail_sends: Default::default(),
++            wet_sends: Default::default(),
+             owner: node("root"),
+             label: "Effect".into(),
+             source: SourceAudio { asset, span },
+diff --git a/crates/deadpan-core/src/scoped_edit/tests.rs b/crates/deadpan-core/src/scoped_edit/tests.rs
+index 9056a9d0..c7292d31 100644
+--- a/crates/deadpan-core/src/scoped_edit/tests.rs
++++ b/crates/deadpan-core/src/scoped_edit/tests.rs
+@@ -539,6 +539,7 @@ fn add_sound(document: &mut ProjectDocument) -> SourceAudio {
+         SoundId::new("sound").unwrap(),
+         SoundEvent {
+             tail_sends: Default::default(),
++            wet_sends: Default::default(),
+             owner: node("root"),
+             label: "sound".into(),
+             source: source.clone(),
+diff --git a/crates/deadpan-core/src/semantic/planner/role_repeat.rs b/crates/deadpan-core/src/semantic/planner/role_repeat.rs
+index a96ab6b7..9d297c48 100644
+--- a/crates/deadpan-core/src/semantic/planner/role_repeat.rs
++++ b/crates/deadpan-core/src/semantic/planner/role_repeat.rs
+@@ -205,6 +205,7 @@ where
+                     };
+                     let event = crate::SoundEvent {
+                         tail_sends: Default::default(),
++                        wet_sends: Default::default(),
+                         owner: self.current.root().clone(),
+                         label: format!("Repeat {} of {plays} · {label}", play + 1),
+                         source: audio.clone(),
+diff --git a/crates/deadpan-core/src/semantic/planner/tests/beat_objects.rs b/crates/deadpan-core/src/semantic/planner/tests/beat_objects.rs
+index 63a91544..f9778b46 100644
+--- a/crates/deadpan-core/src/semantic/planner/tests/beat_objects.rs
++++ b/crates/deadpan-core/src/semantic/planner/tests/beat_objects.rs
+@@ -119,6 +119,7 @@ fn rib_and_rab_keep_their_distinct_sound_attachment_ownership() {
+     let sound = crate::SoundId::new("effect").unwrap();
+     let event = crate::BeatSound {
+         tail_sends: Default::default(),
++        wet_sends: Default::default(),
+         label: "Effect".into(),
+         source: crate::SourceAudio { asset, span },
+         mapping: crate::SourceAudioMapping::natural_rate(
+diff --git a/crates/deadpan-core/src/semantic/planner/tests/set_repeat.rs b/crates/deadpan-core/src/semantic/planner/tests/set_repeat.rs
+index 142d2e93..bf1aba5d 100644
+--- a/crates/deadpan-core/src/semantic/planner/tests/set_repeat.rs
++++ b/crates/deadpan-core/src/semantic/planner/tests/set_repeat.rs
+@@ -253,6 +253,7 @@ fn setter_matches_ordinary_retained_clock_edit_in_nested_scope_with_root_sound()
+             sound.clone(),
+             crate::SoundEvent {
+                 tail_sends: Default::default(),
++                wet_sends: Default::default(),
+                 owner: node("root"),
+                 label: "Sound".into(),
+                 source: crate::SourceAudio { asset, span },
+diff --git a/crates/deadpan-core/src/sound_clock/tests.rs b/crates/deadpan-core/src/sound_clock/tests.rs
+index 93266dbd..b5f51f6a 100644
+--- a/crates/deadpan-core/src/sound_clock/tests.rs
++++ b/crates/deadpan-core/src/sound_clock/tests.rs
+@@ -89,6 +89,7 @@ fn fixture() -> ProjectDocument {
+             sound("effect"),
+             BeatSound {
+                 tail_sends: Default::default(),
++                wet_sends: Default::default(),
+                 label: "Effect".into(),
+                 source: SourceAudio { asset, span },
+                 mapping: SourceAudioMapping::natural_rate(span, doc.presentation_basis.frame_rate)
+diff --git a/crates/deadpan-core/src/sound_events.rs b/crates/deadpan-core/src/sound_events.rs
+index 95085c98..6a2dd375 100644
+--- a/crates/deadpan-core/src/sound_events.rs
++++ b/crates/deadpan-core/src/sound_events.rs
+@@ -97,6 +97,8 @@ pub struct SoundEvent {
+     pub gain_millidecibels: i32,
+     #[serde(default, skip_serializing_if = "crate::TailSends::is_empty")]
+     pub tail_sends: crate::TailSends,
++    #[serde(default, skip_serializing_if = "crate::TailSends::is_empty")]
++    pub wet_sends: crate::TailSends,
+     pub start_edge: AudioEdgePolicy,
+     pub end_edge: AudioEdgePolicy,
+     pub overflow: SoundOverflowPolicy,
+@@ -115,6 +117,8 @@ pub struct BeatSound {
+     pub gain_millidecibels: i32,
+     #[serde(default, skip_serializing_if = "crate::TailSends::is_empty")]
+     pub tail_sends: crate::TailSends,
++    #[serde(default, skip_serializing_if = "crate::TailSends::is_empty")]
++    pub wet_sends: crate::TailSends,
+     pub start_edge: AudioEdgePolicy,
+     pub end_edge: AudioEdgePolicy,
+     pub overflow: SoundOverflowPolicy,
+@@ -614,6 +618,7 @@ mod beat_sound_tests {
+         );
+         let event = BeatSound {
+             tail_sends: Default::default(),
++            wet_sends: Default::default(),
+             label: "Beat effect".into(),
+             source: SourceAudio {
+                 asset: AssetId::new("sound").unwrap(),
+@@ -755,6 +760,7 @@ mod beat_sound_tests {
+             SoundId::new("root-effect").unwrap(),
+             SoundEvent {
+                 tail_sends: Default::default(),
++                wet_sends: Default::default(),
+                 owner: root.clone(),
+                 label: event.label,
+                 source: event.source,
+@@ -818,6 +824,7 @@ mod cut_tests {
+         .unwrap();
+         let event = SoundEvent {
+             tail_sends: Default::default(),
++            wet_sends: Default::default(),
+             owner: NodeId::new("root").unwrap(),
+             label: "Bed".into(),
+             source: SourceAudio {
+diff --git a/crates/deadpan-core/src/sound_routing/tests.rs b/crates/deadpan-core/src/sound_routing/tests.rs
+index 98e3abd7..3e9f5bd5 100644
+--- a/crates/deadpan-core/src/sound_routing/tests.rs
++++ b/crates/deadpan-core/src/sound_routing/tests.rs
+@@ -53,7 +53,7 @@ fn fixture(rate: FrameRate, extent: i64, selection: ExactFrameRange) -> ProjectD
+     let mut wire = json!(empty);
+     wire["assets"] = json!({"sound":AssetRecord {label:"Sound".into(),content_hash:"a".repeat(64),video:None,audio:Some(span),still_image:false,frame_count:None,source_qualification:Some(SourceQualificationId::new("b".repeat(64)).unwrap())}});
+     wire["nodes"] = json!({"root":BeatNode::sequence("Root",vec![node("held")]),"held":BeatNode::hold("Held",HoldRecipe {duration:frames(extent),video:HoldVideo::Background,picture_context:None,audio:HoldAudio::Silence})});
+-    wire["sounds"] = json!({"sound":SoundEvent { tail_sends: Default::default(), owner:node("root"),label:"Exact recipe".into(),source:SourceAudio {asset:AssetId::new("sound").unwrap(),span},mapping:SourceAudioMapping::SelectedPlacement {start:ExactRatio::ZERO,frames:SourceAudioMapping::natural_rate(span,rate).unwrap().duration_frames(FrameDuration::ZERO).unwrap(),selection},offset:AudioSample(0),gain_millidecibels:-1234,start_edge:AudioEdgePolicy::Hard,end_edge:AudioEdgePolicy::Automatic,overflow:SoundOverflowPolicy::Reject}});
++    wire["sounds"] = json!({"sound":SoundEvent { tail_sends: Default::default(), wet_sends: Default::default(), owner:node("root"),label:"Exact recipe".into(),source:SourceAudio {asset:AssetId::new("sound").unwrap(),span},mapping:SourceAudioMapping::SelectedPlacement {start:ExactRatio::ZERO,frames:SourceAudioMapping::natural_rate(span,rate).unwrap().duration_frames(FrameDuration::ZERO).unwrap(),selection},offset:AudioSample(0),gain_millidecibels:-1234,start_edge:AudioEdgePolicy::Hard,end_edge:AudioEdgePolicy::Automatic,overflow:SoundOverflowPolicy::Reject}});
+     ProjectDocument::from_json(&wire.to_string()).unwrap()
+ }
+ 
+diff --git a/crates/deadpan-core/tests/command_work.rs b/crates/deadpan-core/tests/command_work.rs
+index ca775574..40314eaa 100644
+--- a/crates/deadpan-core/tests/command_work.rs
++++ b/crates/deadpan-core/tests/command_work.rs
+@@ -146,6 +146,7 @@ fn sound_source() -> SourceAudio {
+ fn root_sound(document: &ProjectDocument, offset: i64, gain: i32) -> SoundEvent {
+     SoundEvent {
+         tail_sends: Default::default(),
++        wet_sends: Default::default(),
+         owner: document.root().clone(),
+         label: "Effect".into(),
+         source: sound_source(),
+@@ -167,6 +168,7 @@ fn beat_sound(document: &ProjectDocument, offset: i64) -> BeatSound {
+     let selected = span(0, 2000, 48_000);
+     BeatSound {
+         tail_sends: Default::default(),
++        wet_sends: Default::default(),
+         label: "Beat effect".into(),
+         source: SourceAudio {
+             asset: AssetId::new("catalog").unwrap(),
+diff --git a/crates/deadpan-core/tests/edited_slice.rs b/crates/deadpan-core/tests/edited_slice.rs
+index be30f642..eb4e29fe 100644
+--- a/crates/deadpan-core/tests/edited_slice.rs
++++ b/crates/deadpan-core/tests/edited_slice.rs
+@@ -272,6 +272,7 @@ fn pasted_contents_exclude_root_sound_bus_and_append_one_exact_route_edit() {
+                 id: sound.clone(),
+                 event: SoundEvent {
+                     tail_sends: Default::default(),
++                    wet_sends: Default::default(),
+                     owner: id("root"),
+                     label: "Effect".into(),
+                     source: SourceAudio {
+diff --git a/crates/deadpan-core/tests/edited_slice/placement.rs b/crates/deadpan-core/tests/edited_slice/placement.rs
+index d4533949..cdc810cf 100644
+--- a/crates/deadpan-core/tests/edited_slice/placement.rs
++++ b/crates/deadpan-core/tests/edited_slice/placement.rs
+@@ -417,6 +417,7 @@ pub(super) fn with_sound(document: &ProjectDocument) -> ProjectDocument {
+                 id: SoundId::new("sound").unwrap(),
+                 event: SoundEvent {
+                     tail_sends: Default::default(),
++                    wet_sends: Default::default(),
+                     owner: id("root"),
+                     label: "Sound".into(),
+                     source: SourceAudio { asset, span },
+diff --git a/crates/deadpan-core/tests/edited_slice/sound_clocks.rs b/crates/deadpan-core/tests/edited_slice/sound_clocks.rs
+index 749ae069..44c7dd7e 100644
+--- a/crates/deadpan-core/tests/edited_slice/sound_clocks.rs
++++ b/crates/deadpan-core/tests/edited_slice/sound_clocks.rs
+@@ -52,6 +52,7 @@ fn attached(document: &ProjectDocument, owner: &str) -> ProjectDocument {
+                 id: sound(),
+                 event: BeatSound {
+                     tail_sends: Default::default(),
++                    wet_sends: Default::default(),
+                     label: "Effect".into(),
+                     source: SourceAudio { asset, span },
+                     mapping: SourceAudioMapping::natural_rate(
+diff --git a/crates/deadpan-core/tests/insert_time/delete_range/nested_partitions.rs b/crates/deadpan-core/tests/insert_time/delete_range/nested_partitions.rs
+index ace05b21..53a3fc46 100644
+--- a/crates/deadpan-core/tests/insert_time/delete_range/nested_partitions.rs
++++ b/crates/deadpan-core/tests/insert_time/delete_range/nested_partitions.rs
+@@ -462,6 +462,7 @@ fn nested_endpoint_cut_transforms_the_independent_root_bus_once() {
+         sound.clone(),
+         SoundEvent {
+             tail_sends: Default::default(),
++            wet_sends: Default::default(),
+             owner: id("root"),
+             label: "Independent root bus".into(),
+             source: SourceAudio {
+diff --git a/crates/deadpan-core/tests/sound_allowances.rs b/crates/deadpan-core/tests/sound_allowances.rs
+index 1baa1bc9..c0cff08c 100644
+--- a/crates/deadpan-core/tests/sound_allowances.rs
++++ b/crates/deadpan-core/tests/sound_allowances.rs
+@@ -159,6 +159,7 @@ fn fixture(repeated: bool) -> ProjectDocument {
+             id: sound(),
+             event: SoundEvent {
+                 tail_sends: Default::default(),
++                wet_sends: Default::default(),
+                 owner: node("root"),
+                 label: "Effect".into(),
+                 source: SourceAudio {
+diff --git a/crates/deadpan-core/tests/sound_events.rs b/crates/deadpan-core/tests/sound_events.rs
+index d34bf7ff..f942d724 100644
+--- a/crates/deadpan-core/tests/sound_events.rs
++++ b/crates/deadpan-core/tests/sound_events.rs
+@@ -128,6 +128,7 @@ fn event(document: &ProjectDocument) -> SoundEvent {
+             .unwrap();
+     SoundEvent {
+         tail_sends: Default::default(),
++        wet_sends: Default::default(),
+         owner: node("root"),
+         label: "Clang".into(),
+         source,
+diff --git a/crates/deadpan-core/tests/sound_routing.rs b/crates/deadpan-core/tests/sound_routing.rs
+index 1bfd994c..d958d7c4 100644
+--- a/crates/deadpan-core/tests/sound_routing.rs
++++ b/crates/deadpan-core/tests/sound_routing.rs
+@@ -121,6 +121,7 @@ fn fixture() -> ProjectDocument {
+             id: sound(),
+             event: SoundEvent {
+                 tail_sends: Default::default(),
++                wet_sends: Default::default(),
+                 owner: node("root"),
+                 label: "Sound".into(),
+                 source,
+diff --git a/crates/deadpan-core/tests/source_roll.rs b/crates/deadpan-core/tests/source_roll.rs
+index 8c418879..88281f2b 100644
+--- a/crates/deadpan-core/tests/source_roll.rs
++++ b/crates/deadpan-core/tests/source_roll.rs
+@@ -665,6 +665,7 @@ fn roll_preserves_existing_clocks_effects_root_routes_and_hold_allowances() {
+             sound_id.clone(),
+             SoundEvent {
+                 tail_sends: Default::default(),
++                wet_sends: Default::default(),
+                 owner: id("root"),
+                 label: "Crossing root sound".into(),
+                 source: source(&base, "left").audio.clone().unwrap(),
+diff --git a/crates/deadpan-core/tests/source_slip.rs b/crates/deadpan-core/tests/source_slip.rs
+index 08f2d7d3..73e4326f 100644
+--- a/crates/deadpan-core/tests/source_slip.rs
++++ b/crates/deadpan-core/tests/source_slip.rs
+@@ -535,6 +535,7 @@ fn fixed_clocks_effects_bindings_and_root_sounds_survive_slip() {
+         // is 117 frames. Only the selected [1, 2) interval is audible in root.
+         let sound = SoundEvent {
+             tail_sends: Default::default(),
++            wet_sends: Default::default(),
+             owner: id("root"),
+             label: "Sound".into(),
+             source: source(&base).audio.clone().unwrap(),
+diff --git a/crates/deadpan-core/tests/source_trim_command.rs b/crates/deadpan-core/tests/source_trim_command.rs
+index 97acf24b..b434d474 100644
+--- a/crates/deadpan-core/tests/source_trim_command.rs
++++ b/crates/deadpan-core/tests/source_trim_command.rs
+@@ -288,7 +288,7 @@ fn trim_capture_precedes_growth_and_retains_effect_clocks_and_root_sound_once()
+                     .unwrap(),
+                 ))
+                 .unwrap();
+-            v["sounds"] = json!({"sound":SoundEvent { tail_sends: Default::default(),
++            v["sounds"] = json!({"sound":SoundEvent { tail_sends: Default::default(), wet_sends: Default::default(),
+                 owner:id("root"),label:"Independent sound".into(),source:source(&base).audio.clone().unwrap(),
+                 mapping:SourceAudioMapping::SelectedPlacement{start:ExactRatio::ZERO,frames:ExactRatio::integer(100),selection:ExactFrameRange::new(ExactRatio::integer(1),ExactRatio::integer(2)).unwrap()},
+                 offset:AudioSample(0),gain_millidecibels:0,start_edge:AudioEdgePolicy::Hard,end_edge:AudioEdgePolicy::Hard,overflow:SoundOverflowPolicy::Reject,
+diff --git a/crates/deadpan-core/tests/source_trim_edit.rs b/crates/deadpan-core/tests/source_trim_edit.rs
+index 88c5ace4..851f286e 100644
+--- a/crates/deadpan-core/tests/source_trim_edit.rs
++++ b/crates/deadpan-core/tests/source_trim_edit.rs
+@@ -949,7 +949,7 @@ fn split_occurrence_fragments_receive_loss_only_after_the_final_survivor_exists(
+ fn with_sound(d: &ProjectDocument, issuer: Option<SoundHoldIssuer>) -> ProjectDocument {
+     let sound = SoundId::new("sound").unwrap();
+     modify(d, |v| {
+-        v["sounds"] = json!({"sound":SoundEvent{ tail_sends: Default::default(), owner:id("root"),label:"Root bus".into(),source:source(d,"left").audio.clone().unwrap(),mapping:SourceAudioMapping::SelectedPlacement{start:ratio(0,1),frames:ratio(100,1),selection:ExactFrameRange::new(ratio(0,1),ExactRatio::integer(d.duration().unwrap().frames())).unwrap()},offset:AudioSample(0),gain_millidecibels:0,start_edge:AudioEdgePolicy::Automatic,end_edge:AudioEdgePolicy::Hard,overflow:SoundOverflowPolicy::Reject}});
++        v["sounds"] = json!({"sound":SoundEvent{ tail_sends: Default::default(), wet_sends: Default::default(), owner:id("root"),label:"Root bus".into(),source:source(d,"left").audio.clone().unwrap(),mapping:SourceAudioMapping::SelectedPlacement{start:ratio(0,1),frames:ratio(100,1),selection:ExactFrameRange::new(ratio(0,1),ExactRatio::integer(d.duration().unwrap().frames())).unwrap()},offset:AudioSample(0),gain_millidecibels:0,start_edge:AudioEdgePolicy::Automatic,end_edge:AudioEdgePolicy::Hard,overflow:SoundOverflowPolicy::Reject}});
+         v["sound_routes"] = serde_json::to_value(std::collections::BTreeMap::from([(
+             sound.clone(),
+             RootSoundRoute::identity(d.duration().unwrap(), d.presentation_basis().frame_rate),
+diff --git a/crates/deadpan-plan/src/audio_sound_event.rs b/crates/deadpan-plan/src/audio_sound_event.rs
+index a264a3a8..b4fe50f4 100644
+--- a/crates/deadpan-plan/src/audio_sound_event.rs
++++ b/crates/deadpan-plan/src/audio_sound_event.rs
+@@ -159,6 +159,36 @@ impl<'plan> AudioRootSound<'plan> {
+         self.event
+     }
+ 
++    /// Full source input for event treatments, before saved delivery routes.
++    pub fn processing_source(&self) -> Result<AudioRootSource<'plan>, PlanError> {
++        let (extent, grid) = self.routed.as_ref().map_or(
++            (
++                ExactRatio::integer(self.plan.duration().frames()),
++                self.grid,
++            ),
++            |routed| {
++                (
++                    routed.route().route().recipe_extent(),
++                    routed.route().recipe_grid(),
++                )
++            },
++        );
++        AudioRootSource::new(
++            self.plan,
++            AudioSourceVoiceRecipe {
++                source: self.event.source.clone(),
++                mapping: self.event.mapping,
++                offset: self.event.offset,
++            },
++            extent,
++            grid,
++        )
++    }
++
++    pub fn event_edges(&self) -> (AudioEdgePolicy, AudioEdgePolicy) {
++        (self.start_edge, self.end_edge)
++    }
++
+     /// Complete selected allocation on the retained recipe clock. Routed output
+     /// can contain gaps; query its route and gate envelopes for current support.
+     pub fn audible_samples(&self) -> Range<AudioSample> {
+diff --git a/crates/deadpan-plan/src/audio_source_occurrence.rs b/crates/deadpan-plan/src/audio_source_occurrence.rs
+index 409c750f..91c71626 100644
+--- a/crates/deadpan-plan/src/audio_source_occurrence.rs
++++ b/crates/deadpan-plan/src/audio_source_occurrence.rs
+@@ -725,6 +725,29 @@ impl<'plan> AudioSourceOccurrence<'plan> {
+     pub fn audible_extent(&self) -> Range<ExactRatio> {
+         self.audible_extent.clone()
+     }
++    /// Complete event selection before consuming Hold gates, on this input clock.
++    pub fn audible_samples(&self) -> Result<Range<AudioSample>, PlanError> {
++        Ok(self.grid.boundary(self.audible_extent.start)?
++            ..self.grid.boundary(self.audible_extent.end)?)
++    }
++    pub fn event_edges(
++        &self,
++        edges: (deadpan_core::AudioEdgePolicy, deadpan_core::AudioEdgePolicy),
++    ) -> (deadpan_core::AudioEdgePolicy, deadpan_core::AudioEdgePolicy) {
++        use deadpan_core::AudioEdgePolicy::Hard;
++        (
++            if self.inherited_hard_edges.0 {
++                Hard
++            } else {
++                edges.0
++            },
++            if self.inherited_hard_edges.1 {
++                Hard
++            } else {
++                edges.1
++            },
++        )
++    }
+     /// Current owner and ancestor clocks for this independent voice. Original
+     /// sampling bindings cannot substitute their retained effect clocks here.
+     pub fn gain_owners(&self) -> &[crate::AudioOwnerClock<'plan>] {
+diff --git a/crates/deadpan-plan/src/audio_source_root.rs b/crates/deadpan-plan/src/audio_source_root.rs
+index 09925e43..71e79f1d 100644
+--- a/crates/deadpan-plan/src/audio_source_root.rs
++++ b/crates/deadpan-plan/src/audio_source_root.rs
+@@ -17,6 +17,7 @@ use crate::{
+ pub struct AudioRootSource<'plan> {
+     plan: &'plan RenderPlan,
+     source: SourceAudio,
++    audible: Range<AudioSample>,
+     extent: ExactRatio,
+     grid: AudioSampleGrid<AudioSample>,
+     input: AudioSignalTape<'plan>,
+@@ -83,6 +84,7 @@ impl<'plan> AudioRootSource<'plan> {
+         Ok(Self {
+             plan,
+             source,
++            audible: grid.boundary(selected.start)?..grid.boundary(selected.end)?,
+             extent,
+             grid,
+             input,
+@@ -92,6 +94,10 @@ impl<'plan> AudioRootSource<'plan> {
+     pub fn source(&self) -> &SourceAudio {
+         &self.source
+     }
++    /// Exact selected input on the retained root clock, before delivery edits.
++    pub fn audible_samples(&self) -> Range<AudioSample> {
++        self.audible.clone()
++    }
+     pub fn extent(&self) -> ExactRatio {
+         self.extent
+     }
+diff --git a/crates/deadpan-plan/src/plan.rs b/crates/deadpan-plan/src/plan.rs
+index 6b176746..d4ab88b6 100644
+--- a/crates/deadpan-plan/src/plan.rs
++++ b/crates/deadpan-plan/src/plan.rs
+@@ -883,7 +883,16 @@ impl RenderPlan {
+             has_audio_wet_sends: document
+                 .nodes()
+                 .values()
+-                .any(|node| !node.audio_treatments.wet_sends().is_empty()),
++                .any(|node| !node.audio_treatments.wet_sends().is_empty())
++                || document
++                    .sounds()
++                    .values()
++                    .any(|event| !event.wet_sends.is_empty())
++                || document
++                    .beat_sounds()
++                    .values()
++                    .flat_map(|sounds| sounds.values())
++                    .any(|event| !event.wet_sends.is_empty()),
+             has_audio_equalizers: document
+                 .nodes()
+                 .values()
+diff --git a/crates/deadpan-plan/tests/root_sound_routes.rs b/crates/deadpan-plan/tests/root_sound_routes.rs
+index 79818772..25cffc17 100644
+--- a/crates/deadpan-plan/tests/root_sound_routes.rs
++++ b/crates/deadpan-plan/tests/root_sound_routes.rs
+@@ -116,7 +116,7 @@ fn document(
+     }
+     wire["nodes"]["root"] = json!(BeatNode::sequence("root", children));
+     let selection = selection.unwrap_or(ExactRatio::ZERO..ExactRatio::integer(recipe_extent));
+-    wire["sounds"] = json!({"sound": SoundEvent { tail_sends: Default::default(),
++    wire["sounds"] = json!({"sound": SoundEvent { tail_sends: Default::default(), wet_sends: Default::default(),
+         owner: node("root"), label: "event".into(), source: SourceAudio { asset: AssetId::new("sound").unwrap(), span },
+         mapping: SourceAudioMapping::SelectedPlacement { start: ExactRatio::ZERO, frames: SourceAudioMapping::natural_rate(span, rate).unwrap().duration_frames(FrameDuration::ZERO).unwrap(), selection: ExactFrameRange { start: selection.start, end: selection.end } },
+         offset: AudioSample(0), gain_millidecibels: 0, start_edge: AudioEdgePolicy::Automatic, end_edge: AudioEdgePolicy::Automatic, overflow: SoundOverflowPolicy::Reject,
+diff --git a/crates/deadpan-plan/tests/sound_event_fades.rs b/crates/deadpan-plan/tests/sound_event_fades.rs
+index aaf04cf7..972e99f0 100644
+--- a/crates/deadpan-plan/tests/sound_event_fades.rs
++++ b/crates/deadpan-plan/tests/sound_event_fades.rs
+@@ -83,7 +83,7 @@ fn document(parts: &[(i64, bool)], rate: u32) -> ProjectDocument {
+     }
+     wire["nodes"]["root"] = json!(BeatNode::sequence("root", children));
+     let total: i64 = parts.iter().map(|part| part.0).sum();
+-    wire["sounds"] = json!({"sound": SoundEvent { tail_sends: Default::default(),
++    wire["sounds"] = json!({"sound": SoundEvent { tail_sends: Default::default(), wet_sends: Default::default(),
+         owner: node("root"), label: "event".into(), source: SourceAudio { asset: AssetId::new("sound").unwrap(), span },
+         mapping: SourceAudioMapping::SelectedPlacement { start: ExactRatio::ZERO, frames: SourceAudioMapping::natural_rate(span, FrameRate::new(rate,1).unwrap()).unwrap().duration_frames(FrameDuration::ZERO).unwrap(), selection: ExactFrameRange { start: ExactRatio::ZERO, end: ExactRatio::integer(total) } },
+         offset: AudioSample(0), gain_millidecibels: 0, start_edge: AudioEdgePolicy::Automatic, end_edge: AudioEdgePolicy::Automatic, overflow: SoundOverflowPolicy::Reject,
+diff --git a/crates/deadpan-plan/tests/sound_events.rs b/crates/deadpan-plan/tests/sound_events.rs
+index 8f2d8d44..d989659a 100644
+--- a/crates/deadpan-plan/tests/sound_events.rs
++++ b/crates/deadpan-plan/tests/sound_events.rs
+@@ -68,6 +68,7 @@ fn document() -> ProjectDocument {
+     .unwrap();
+     let event = SoundEvent {
+         tail_sends: Default::default(),
++        wet_sends: Default::default(),
+         owner: NodeId::new("root").unwrap(),
+         label: "fractional sound".into(),
+         source: SourceAudio {
+diff --git a/crates/deadpan-plan/tests/sound_processing_layout.rs b/crates/deadpan-plan/tests/sound_processing_layout.rs
+index 49d7d26c..7322a2f2 100644
+--- a/crates/deadpan-plan/tests/sound_processing_layout.rs
++++ b/crates/deadpan-plan/tests/sound_processing_layout.rs
+@@ -211,6 +211,7 @@ fn document_with_sound_clock(
+             sound_id.clone(),
+             BeatSound {
+                 tail_sends: Default::default(),
++                wet_sends: Default::default(),
+                 label: "event".into(),
+                 source,
+                 mapping,
+@@ -540,6 +541,7 @@ fn sound_processing_compiler_does_not_weaken_full_context_admission() {
+             SoundId::new("event").unwrap(),
+             BeatSound {
+                 tail_sends: Default::default(),
++                wet_sends: Default::default(),
+                 label: "event".into(),
+                 source,
+                 mapping,
+diff --git a/crates/deadpan-playback/src/tests/source_voice/events.rs b/crates/deadpan-playback/src/tests/source_voice/events.rs
+index 3ba0a71f..ba550d3a 100644
+--- a/crates/deadpan-playback/src/tests/source_voice/events.rs
++++ b/crates/deadpan-playback/src/tests/source_voice/events.rs
+@@ -8,6 +8,7 @@ fn event(document: &ProjectDocument, asset: &AssetId, offset: i64, gain: i32) ->
+     let recipe = recipe(document, asset, 1000, offset);
+     SoundEvent {
+         tail_sends: Default::default(),
++        wet_sends: Default::default(),
+         owner: document.root().clone(),
+         label: "Placed effect".into(),
+         source: recipe.source,
+diff --git a/crates/deadpan-store/src/schema.rs b/crates/deadpan-store/src/schema.rs
+index 785337c6..a6c18330 100644
+--- a/crates/deadpan-store/src/schema.rs
++++ b/crates/deadpan-store/src/schema.rs
+@@ -3,7 +3,7 @@ use rusqlite::{Connection, limits::Limit};
+ use crate::StoreError;
+ 
+ // Storage has operational tables beyond the independently versioned core JSON.
+-pub const VERSION: u32 = 79;
++pub const VERSION: u32 = 80;
+ pub const APPLICATION_ID: u32 = 0x4450_4e31;
+ pub const MAX_DOCUMENT_BYTES: usize = deadpan_core::MAX_DOCUMENT_JSON_BYTES;
+ 
+@@ -18,7 +18,7 @@ pub fn configure(connection: &Connection) -> Result<(), StoreError> {
+ 
+ pub fn check_version(connection: &Connection) -> Result<(), StoreError> {
+     let version = read_version(connection)?;
+-    // Schema 79 uses core 51's continuous owner wet returns.
++    // Schema 80 uses core 52's independent event wet returns.
+     // Schema 78 uses core 50's selected effect sends and explicit tail inputs.
+     // Schema 77 uses core 49's authored source interpretation and keys shot
+     // analyses/checkpoints by that choice. Unused development packages need no migration.
+diff --git a/crates/deadpan-store/src/source_registration/sound_clocks_tests.rs b/crates/deadpan-store/src/source_registration/sound_clocks_tests.rs
+index 337ea1a9..c2602e49 100644
+--- a/crates/deadpan-store/src/source_registration/sound_clocks_tests.rs
++++ b/crates/deadpan-store/src/source_registration/sound_clocks_tests.rs
+@@ -163,6 +163,7 @@ fn fixture() -> (Connection, ProjectDocument, SourceQualificationReceipt) {
+                 sound(),
+                 BeatSound {
+                     tail_sends: Default::default(),
++                    wet_sends: Default::default(),
+                     label: owner.into(),
+                     source: SourceAudio {
+                         asset: asset.clone(),
+diff --git a/crates/deadpan-store/tests/edited_slice/child_capture/retained_asset.rs b/crates/deadpan-store/tests/edited_slice/child_capture/retained_asset.rs
+index df3e59b8..79961c55 100644
+--- a/crates/deadpan-store/tests/edited_slice/child_capture/retained_asset.rs
++++ b/crates/deadpan-store/tests/edited_slice/child_capture/retained_asset.rs
+@@ -95,6 +95,7 @@ fn zero_paste_preserves_routed_root_bus_and_restores_only_mark_owned_historical_
+             id: SoundId::new("effect")?,
+             event: SoundEvent {
+                 tail_sends: Default::default(),
++                wet_sends: Default::default(),
+                 owner: node("root"),
+                 label: "Root sound".into(),
+                 source: SourceAudio {
+diff --git a/crates/deadpan-store/tests/migration/development_break.rs b/crates/deadpan-store/tests/migration/development_break.rs
+index 6338d0fd..73ced7a9 100644
+--- a/crates/deadpan-store/tests/migration/development_break.rs
++++ b/crates/deadpan-store/tests/migration/development_break.rs
+@@ -136,10 +136,10 @@ fn obsolete_schema_refusal_precedes_writer_lock_and_preserves_live_wal() -> Resu
+ }
+ 
+ #[test]
+-fn current_schema79_migration_is_read_only_and_needs_no_backup_or_writer() -> Result {
++fn current_schema80_migration_is_read_only_and_needs_no_backup_or_writer() -> Result {
+     use deadpan_core::{ColorPolicy, FrameRate, PresentationBasis, ProjectId};
+ 
+-    assert_eq!(DATABASE_SCHEMA_VERSION, 79);
++    assert_eq!(DATABASE_SCHEMA_VERSION, 80);
+     let scratch = tempfile::tempdir()?;
+     let package = scratch.path().join("current.deadpan");
+     let document = ProjectDocument::new(
+@@ -157,7 +157,7 @@ fn current_schema79_migration_is_read_only_and_needs_no_backup_or_writer() -> Re
+     let database = Connection::open(package.join("project.sqlite"))?;
+     let before = cells(&database)?;
+     let outcome = ProjectStore::migrate(&package)?;
+-    assert_eq!((outcome.from_schema, outcome.to_schema), (79, 79));
++    assert_eq!((outcome.from_schema, outcome.to_schema), (80, 80));
+     assert!(outcome.backup.is_none());
+     assert_eq!(cells(&database)?, before);
+     assert_eq!(fs::read_dir(package.join("Snapshots"))?.count(), 0);
+diff --git a/crates/deadpan-store/tests/source_registration/equivalence.rs b/crates/deadpan-store/tests/source_registration/equivalence.rs
+index 95a5345a..1ba6120d 100644
+--- a/crates/deadpan-store/tests/source_registration/equivalence.rs
++++ b/crates/deadpan-store/tests/source_registration/equivalence.rs
+@@ -94,6 +94,7 @@ fn sound(document: &ProjectDocument, gain: i32) -> Option<SoundEvent> {
+     let source = audio(document, "right", true)?;
+     Some(SoundEvent {
+         tail_sends: Default::default(),
++        wet_sends: Default::default(),
+         owner: document.root().clone(),
+         label: "Overlay".into(),
+         mapping: SourceAudioMapping::natural_rate(
+diff --git a/crates/deadpan-store/tests/source_registration/sounds.rs b/crates/deadpan-store/tests/source_registration/sounds.rs
+index 31bd7ecb..0d71c48e 100644
+--- a/crates/deadpan-store/tests/source_registration/sounds.rs
++++ b/crates/deadpan-store/tests/source_registration/sounds.rs
+@@ -21,6 +21,7 @@ fn sound(document: &ProjectDocument) -> Result<SoundEvent> {
+     )?;
+     Ok(SoundEvent {
+         tail_sends: Default::default(),
++        wet_sends: Default::default(),
+         owner: document.root().clone(),
+         label: "Measured overlay".into(),
+         source: SourceAudio {
+diff --git a/crates/deadpan-store/tests/source_registration/sounds/beat_sounds.rs b/crates/deadpan-store/tests/source_registration/sounds/beat_sounds.rs
+index c9568e69..d1b3b02c 100644
+--- a/crates/deadpan-store/tests/source_registration/sounds/beat_sounds.rs
++++ b/crates/deadpan-store/tests/source_registration/sounds/beat_sounds.rs
+@@ -14,6 +14,7 @@ fn event(document: &ProjectDocument) -> Result<BeatSound> {
+     let root = sound(document)?;
+     Ok(BeatSound {
+         tail_sends: Default::default(),
++        wet_sends: Default::default(),
+         label: root.label,
+         source: root.source,
+         mapping: root.mapping,
+diff --git a/crates/deadpan-audio/src/event_returns.rs b/crates/deadpan-audio/src/event_returns.rs
+new file mode 100644
+index 00000000..a2aef7e0
+--- /dev/null
++++ b/crates/deadpan-audio/src/event_returns.rs
+@@ -0,0 +1,316 @@
++//! Independent finite returns are prepared on the original event input clock,
++//! then transported by saved delivery routes. Current output gates stay outside.
++
++use super::*;
++use deadpan_core::{AudioEdgePolicy, TailEffect, TailSends};
++use deadpan_plan::{AudioRoutedRootInput, AudioSoundRoute};
++
++#[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
++pub(super) struct EventKey {
++    // This cache lives only within one immutable preparation request. The
++    // graph prefix and voice identify its checked source/occurrence recipe.
++    parent: usize,
++    voice: usize,
++    effect: u8,
++    tile: i64,
++    allocation: (i64, i64),
++    audible: (i64, i64),
++    edges: (bool, bool),
++}
++
++pub(super) struct EventRead {
++    pub parent: usize,
++    pub voice: usize,
++    pub start: AudioSample,
++    pub frames: u32,
++    pub sends: TailSends,
++    pub edges: (AudioEdgePolicy, AudioEdgePolicy),
++    pub depth: usize,
++}
++
++pub(super) struct EventSource<'a, 'plan> {
++    pub input: &'a AudioRoutedRootInput<'plan>,
++    pub route: Option<&'a AudioSoundRoute<AudioSample>>,
++}
++
++impl StageAudio {
++    pub(super) fn read_event_returns(
++        &mut self,
++        provider: &mut impl AudioSourceProvider,
++        graph: &mut Graph<'_>,
++        source: EventSource<'_, '_>,
++        request: EventRead,
++        control: WorkControl<'_>,
++    ) -> Result<WideBlock, StageAudioError> {
++        let (allocation, audible) = match source.input {
++            AudioRoutedRootInput::Source(input) => (input.samples()?, input.audible_samples()),
++            AudioRoutedRootInput::Occurrence(input) => (input.samples(), input.audible_samples()?),
++            AudioRoutedRootInput::Projected(_) => {
++                return Err(PlanError::InvalidPlan(
++                    "independent event return requires a source or owned occurrence",
++                )
++                .into());
++            }
++        };
++        let end = AudioSample(
++            request
++                .start
++                .0
++                .checked_add(i64::from(request.frames))
++                .ok_or(TimeError::Overflow)?,
++        );
++        let mut output = WideBlock {
++            samples: vec![[0.0; 2]; request.frames as usize],
++            suppressed: Vec::new(),
++            dependencies: Dependencies::new(),
++            relative_depth: 0,
++        };
++        if request.sends.is_empty() {
++            return Ok(output);
++        }
++        self.preflight_retained_sound_input(source.input, control)?;
++        let (dependencies, depth) =
++            self.admit_retained_sound_input(provider, source.input, control)?;
++        output.dependencies.extend(dependencies);
++        output.relative_depth = depth;
++        let spans = if let Some(route) = source.route {
++            let query = route.query(request.start..end, control.query_limits()?)?;
++            control.spend_plan_work(query.stats.work)?;
++            let grid = route.recipe_grid();
++            let retained = route.recipe_samples();
++            query
++                .spans
++                .into_iter()
++                .map(|span| {
++                    let old = span
++                        .sampling
++                        .map(|sampling| {
++                            super::super::routed::routed_old_range(
++                                sampling.local_at(span.samples.start)?,
++                                grid,
++                                span.samples.end.0 - span.samples.start.0,
++                                retained.start.0..retained.end.0,
++                            )
++                        })
++                        .transpose()?;
++                    Ok::<_, StageAudioError>((span.samples, old))
++                })
++                .collect::<Result<Vec<_>, _>>()?
++        } else {
++            vec![(request.start..end, Some(request.start.0..end.0))]
++        };
++        for (destination, old) in spans {
++            let Some(old) = old else { continue };
++            for (effect_id, effect) in [TailEffect::Reverb, TailEffect::Delay]
++                .into_iter()
++                .enumerate()
++            {
++                let Some(level) = request.sends.level(effect) else {
++                    continue;
++                };
++                let gain = 10f64.powf(f64::from(level.millidecibels()) / 20_000.0);
++                let width = crate::wet_effect_descriptor(effect).output_frames as i64;
++                let mut at = old.start;
++                while at < old.end {
++                    control.check()?;
++                    let tile = at
++                        .div_euclid(width)
++                        .checked_mul(width)
++                        .ok_or(TimeError::Overflow)?;
++                    let key = EventKey {
++                        parent: request.parent,
++                        voice: request.voice,
++                        effect: effect_id as u8,
++                        tile,
++                        allocation: (allocation.start.0, allocation.end.0),
++                        audible: (audible.start.0, audible.end.0),
++                        edges: (
++                            request.edges.0 == AudioEdgePolicy::Automatic,
++                            request.edges.1 == AudioEdgePolicy::Automatic,
++                        ),
++                    };
++                    let block =
++                        self.event_return_tile(provider, graph, source.input, key, control)?;
++                    if request
++                        .depth
++                        .checked_add(block.relative_depth)
++                        .is_none_or(|depth| depth > self.limits.maximum_depth)
++                    {
++                        return Err(StageAudioError::Limit("nested stage depth"));
++                    }
++                    let until = old
++                        .end
++                        .min(tile.checked_add(width).ok_or(TimeError::Overflow)?);
++                    for at in at..until {
++                        let current = destination
++                            .start
++                            .0
++                            .checked_add(at - old.start)
++                            .ok_or(TimeError::Overflow)?;
++                        let out = &mut output.samples[(current - request.start.0) as usize];
++                        for (out, value) in out.iter_mut().zip(block.samples[(at - tile) as usize])
++                        {
++                            *out += value * gain;
++                            if !out.is_finite() {
++                                return Err(PreparationError::InvalidSamples.into());
++                            }
++                        }
++                    }
++                    output.dependencies.extend(block.dependencies.clone());
++                    output.relative_depth = output.relative_depth.max(block.relative_depth);
++                    at = until;
++                }
++            }
++        }
++        Ok(output)
++    }
++
++    fn event_return_tile(
++        &mut self,
++        provider: &mut impl AudioSourceProvider,
++        graph: &mut Graph<'_>,
++        input: &AudioRoutedRootInput<'_>,
++        key: EventKey,
++        control: WorkControl<'_>,
++    ) -> Result<Arc<WideBlock>, StageAudioError> {
++        control.check()?;
++        if let Some(block) = graph.event_tiles.get(&key) {
++            return Ok(Arc::clone(block));
++        }
++        let mut node = key.clone();
++        node.tile = 0;
++        if !graph.event_nodes.contains(&node) {
++            if graph.nodes.len() + graph.event_nodes.len()
++                >= self.limits.maximum_prepared_stages as usize
++            {
++                return Err(StageAudioError::Limit("temporal owner count"));
++            }
++            graph.event_nodes.insert(node);
++        }
++        let effect = if key.effect == 0 {
++            TailEffect::Reverb
++        } else {
++            TailEffect::Delay
++        };
++        let shape = crate::wet_effect_descriptor(effect);
++        let frames = shape.history_frames + shape.output_frames;
++        let width = shape.output_frames;
++        if frames as u32 > self.limits.maximum_input_frames
++            || width as u32 > self.limits.maximum_output_frames
++        {
++            return Err(StageAudioError::Limit("event return input/output frames"));
++        }
++        {
++            let mut work = control.work.borrow_mut();
++            work.prepared_frames = work
++                .prepared_frames
++                .checked_add((frames + width) as u64)
++                .ok_or(StageAudioError::Limit("prepared frames per read"))?;
++            if work.prepared_frames > self.limits.maximum_prepared_frames {
++                return Err(StageAudioError::Limit("prepared frames per read"));
++            }
++        }
++        let begin = key
++            .tile
++            .checked_sub(shape.history_frames as i64)
++            .ok_or(TimeError::Overflow)?;
++        let end = key
++            .tile
++            .checked_add(width as i64)
++            .ok_or(TimeError::Overflow)?;
++        let reservation = ((frames + width * 2) * 2) as u64;
++        self.make_room(reservation, false, control)?;
++        self.active_frames += reservation;
++        let result = (|| {
++            let mut left = vec![0.0; frames];
++            let mut right = vec![0.0; frames];
++            let mut dependencies = Dependencies::new();
++            let mut relative_depth = 1;
++            let mut at = begin.max(key.allocation.0).max(key.audible.0);
++            let until = end.min(key.allocation.1).min(key.audible.1);
++            let length = u64::try_from(i128::from(key.audible.1) - i128::from(key.audible.0))
++                .map_err(|_| StageAudioError::Range)?;
++            while at < until {
++                let count = u32::try_from((until - at).min(i64::from(MAX_OUTPUT_FRAMES)))
++                    .map_err(|_| StageAudioError::Range)?;
++                let query =
++                    self.prepare_retained_sound_query(input, AudioSample(at), count, control)?;
++                let raw = self.read_retained_sound_query(provider, input, query, control)?;
++                for (index, sample) in raw.samples.iter().enumerate() {
++                    let at = at.checked_add(index as i64).ok_or(TimeError::Overflow)?;
++                    if permitted(&raw, AudioSample(at)) {
++                        let gain = crate::edges::edge_gain(
++                            length,
++                            i128::from(at) - i128::from(key.audible.0),
++                            key.edges.0,
++                            key.edges.1,
++                        );
++                        left[(at - begin) as usize] = f64::from(sample[0]) * f64::from(gain);
++                        right[(at - begin) as usize] = f64::from(sample[1]) * f64::from(gain);
++                    }
++                }
++                dependencies.extend(raw.dependencies);
++                relative_depth = relative_depth.max(raw.relative_depth + 1);
++                at += i64::from(count);
++            }
++            let mut out_left = vec![0.0; width];
++            let mut out_right = vec![0.0; width];
++            self.process_shared_wet(
++                graph,
++                effect,
++                (&left, &right),
++                (&mut out_left, &mut out_right),
++                control,
++            )?;
++            control.check()?;
++            let resident = (width * 2) as u64;
++            self.make_room(resident, false, control)?;
++            self.active_frames += resident;
++            graph.resident += resident;
++            let block = Arc::new(WideBlock {
++                samples: out_left
++                    .into_iter()
++                    .zip(out_right)
++                    .map(|(l, r)| [l, r])
++                    .collect(),
++                suppressed: Vec::new(),
++                dependencies,
++                relative_depth,
++            });
++            graph.event_tiles.insert(key, Arc::clone(&block));
++            Ok(block)
++        })();
++        self.active_frames -= reservation;
++        result
++    }
++
++    pub(super) fn process_shared_wet(
++        &mut self,
++        graph: &mut Graph<'_>,
++        effect: TailEffect,
++        input: (&[f64], &[f64]),
++        output: (&mut [f64], &mut [f64]),
++        control: WorkControl<'_>,
++    ) -> Result<(), StageAudioError> {
++        let slot = match effect {
++            TailEffect::Reverb => 0,
++            TailEffect::Delay => 1,
++        };
++        if graph.wet_filters[slot].is_none() {
++            let resident =
++                (crate::FiniteWetEffect::preparation_bytes_bound(effect) as u64).div_ceil(8);
++            control.spend_plan_work(crate::wet_effect_descriptor(effect).history_frames + 1)?;
++            self.make_room(resident, false, control)?;
++            let processor = crate::FiniteWetEffect::new(effect, control.cancelled)?;
++            control.check()?;
++            self.active_frames += resident;
++            graph.resident += resident;
++            graph.wet_filters[slot] = Some(processor);
++        }
++        graph.wet_filters[slot]
++            .as_mut()
++            .ok_or(PlanError::InvalidPlan("wet processor absent"))?
++            .process_tile(input.0, input.1, output.0, output.1, control.cancelled)?;
++        Ok(())
++    }
++}
+diff --git a/crates/deadpan-audio/tests/stages/event_returns.rs b/crates/deadpan-audio/tests/stages/event_returns.rs
+new file mode 100644
+index 00000000..03f0b24c
+--- /dev/null
++++ b/crates/deadpan-audio/tests/stages/event_returns.rs
+@@ -0,0 +1,320 @@
++//! Independent event returns enter the shared group bus on retained sound clocks.
++use super::*;
++
++fn provider() -> FixtureProvider {
++    FixtureProvider::from_fixture(
++        "pcm-mono-44100.wav",
++        AudioChannelLayout::Native {
++            channels: 1,
++            mask: 4,
++        },
++    )
++}
++
++fn fixture(beat: bool, effect: Option<TailEffect>, saturation: bool) -> ProjectDocument {
++    let rate = FrameRate::new(48_000, 1).unwrap();
++    let mut picture = source(rate, 48_000, 0..8197);
++    picture.audio_treatments = AudioTreatments::from_clip_gain(
++        ClipGain::new(GainDb::UNITY, true, vec![], vec![]).unwrap(),
++    );
++    let NodeKind::Source { source } = &mut picture.kind else {
++        unreachable!()
++    };
++    let audio = audio_at_rate(0, 8197, 44_100);
++    source.audio_mapping = SourceAudioMapping::natural_rate(audio.span, rate).unwrap();
++    source.audio = Some(audio);
++    let base = document_with_asset(
++        rate,
++        &["owner"],
++        [
++            (
++                "owner",
++                BeatNode::sequence("Sound owner", vec![id("picture")]),
++            ),
++            ("picture", picture),
++        ],
++        BTreeMap::new(),
++        audio_at_rate(0, 44_117, 44_100).span,
++    );
++    let source = audio_at_rate(0, 40_000, 44_100);
++    let event = SoundEvent {
++        owner: id("root"),
++        label: "Independent return".into(),
++        mapping: SourceAudioMapping::natural_rate(source.span, rate).unwrap(),
++        source,
++        offset: AudioSample(37),
++        gain_millidecibels: -6000,
++        tail_sends: Default::default(),
++        wet_sends: effect.map_or_else(TailSends::default, |effect| {
++            TailSends::default().with_level(effect, Some(GainDb::new(-3000).unwrap()))
++        }),
++        start_edge: AudioEdgePolicy::Hard,
++        end_edge: AudioEdgePolicy::Hard,
++        overflow: SoundOverflowPolicy::Reject,
++    };
++    let mut wire = serde_json::to_value(base).unwrap();
++    wire["assets"]["media"]["source_qualification"] = serde_json::json!("c".repeat(64));
++    if beat {
++        let mut event = serde_json::to_value(event).unwrap();
++        event.as_object_mut().unwrap().remove("owner");
++        wire["beat_sounds"] = serde_json::json!({"owner": {"effect": event}});
++    } else {
++        wire["sounds"] = serde_json::json!({"effect": event});
++    }
++    if saturation {
++        wire["nodes"]["root"]["audio_treatments"] = serde_json::to_value(
++            AudioTreatments::default()
++                .with_saturation(Some(Saturation::new(GainDb::new(9000).unwrap()).unwrap()))
++                .unwrap(),
++        )
++        .unwrap();
++    }
++    ProjectDocument::from_json(&wire.to_string()).unwrap()
++}
++
++fn read(document: &ProjectDocument, start: i64, frames: u32) -> Vec<[f32; 2]> {
++    let plan = Arc::new(RenderPlan::compile(document).unwrap());
++    StageAudio::new(plan)
++        .prepare_authored_bus(
++            &mut provider(),
++            AudioSample(start),
++            frames,
++            Duration::from_secs(30),
++            &AtomicBool::new(false),
++        )
++        .unwrap()
++        .samples
++}
++
++#[test]
++fn root_and_beat_returns_match_finite_history_before_parent_saturation() {
++    for beat in [false, true] {
++        let dry = read(&fixture(beat, None, false), 0, 48_000);
++        assert!(dry[37..43_574].iter().any(|sample| sample[0].abs() > 0.001));
++        assert!(dry[43_574..].iter().all(|sample| *sample == [0.0; 2]));
++        for effect in [TailEffect::Reverb, TailEffect::Delay] {
++            let returned = super::wet_owners::wet(effect, &dry);
++            let expected: Vec<_> = dry
++                .iter()
++                .zip(&returned)
++                .enumerate()
++                .map(|(at, (dry, wet))| {
++                    if !(37..43_574).contains(&at) {
++                        return [0.0; 2];
++                    }
++                    std::array::from_fn(|ch| {
++                        (f64::from(dry[ch]) + wet[ch] * 10f64.powf(-3.0 / 20.0)) as f32
++                    })
++                })
++                .collect();
++            let document = fixture(beat, Some(effect), false);
++            assert!(
++                RenderPlan::compile(&document)
++                    .unwrap()
++                    .has_audio_wet_sends()
++            );
++            let actual = read(&document, 0, 48_000);
++            assert_pcm_close(&actual, &expected);
++            assert!(
++                actual
++                    .iter()
++                    .zip(&dry)
++                    .any(|(a, b)| (a[0] - b[0]).abs() > 0.001)
++            );
++            for (at, frames) in [(14_437, 193), (32_767, 257), (43_520, 256), (0, 51)] {
++                assert_pcm_close(
++                    &read(&document, at, frames),
++                    &actual[at as usize..at as usize + frames as usize],
++                );
++            }
++            let saturation = Saturation::new(GainDb::new(9000).unwrap()).unwrap();
++            let expected: Vec<_> = expected
++                .iter()
++                .map(|sample| sample.map(|value| saturation.shape(f64::from(value)) as f32))
++                .collect();
++            assert_pcm_close(
++                &read(&fixture(beat, Some(effect), true), 0, 48_000),
++                &expected,
++            );
++        }
++    }
++}
++
++#[test]
++fn root_route_transports_processed_history_without_advancing_through_inserted_time() {
++    let before = fixture(false, Some(TailEffect::Delay), false);
++    let original = read(&before, 0, 48_000);
++    let mut wire = serde_json::to_value(&before).unwrap();
++    wire["nodes"]["picture"]["kind"]["source"]["duration"] = serde_json::json!(49_000);
++    wire["sound_routes"] = serde_json::json!({"effect": RootSoundRoute {
++        recipe_extent: duration(48_000),
++        recipe_grid: RootSoundGrid::root(before.presentation_basis().frame_rate),
++        edits: vec![RootSoundEdit {
++            grid: RootSoundGrid::root(before.presentation_basis().frame_rate),
++            operation: RootSoundOperation::Insert { at: ProjectFrame(20_000), duration: duration(1000) },
++            cuts: RootSoundCutEdges { before: AudioEdgePolicy::Hard, after: AudioEdgePolicy::Hard },
++        }],
++    }});
++    let moved = ProjectDocument::from_json(&wire.to_string()).unwrap();
++    let mut expected = original.clone();
++    expected.splice(20_000..20_000, vec![[0.0; 2]; 1000]);
++    assert_pcm_close(&read(&moved, 0, 49_000), &expected);
++    for (at, frames) in [(19_950, 1150), (21_000, 256), (35_390, 257)] {
++        assert_pcm_close(
++            &read(&moved, at, frames),
++            &expected[at as usize..at as usize + frames as usize],
++        );
++    }
++}
++
++#[test]
++fn automatic_event_edges_feed_the_effect_and_fade_the_bounded_return() {
++    let mut wire = serde_json::to_value(fixture(false, None, false)).unwrap();
++    wire["sounds"]["effect"]["start_edge"] = serde_json::json!("automatic");
++    wire["sounds"]["effect"]["end_edge"] = serde_json::json!("automatic");
++    let dry = read(
++        &ProjectDocument::from_json(&wire.to_string()).unwrap(),
++        0,
++        48_000,
++    );
++    let wet = super::wet_owners::wet(TailEffect::Reverb, &dry);
++    wire["sounds"]["effect"]["wet_sends"] = serde_json::json!({"reverb": -3000});
++    let document = ProjectDocument::from_json(&wire.to_string()).unwrap();
++    let expected: Vec<_> = dry
++        .iter()
++        .zip(wet)
++        .enumerate()
++        .map(|(at, (dry, wet))| {
++            if !(37..43_574).contains(&at) {
++                return [0.0; 2];
++            }
++            let distance = (at - 37).min(43_573 - at);
++            let edge = ((2 * distance + 1) as f64 / 192.0).min(1.0) as f32;
++            std::array::from_fn(|ch| {
++                (f64::from(dry[ch]) + wet[ch] * 10f64.powf(-3.0 / 20.0) * f64::from(edge)) as f32
++            })
++        })
++        .collect();
++    assert_pcm_close(&read(&document, 0, 48_000), &expected);
++}
++
++#[test]
++fn current_hold_blocks_event_return_until_that_sound_is_explicitly_allowed() {
++    let base = fixture(false, Some(TailEffect::Reverb), false);
++    let expected = read(&base, 0, 48_000);
++    let mut wire = serde_json::to_value(&base).unwrap();
++    wire["nodes"]["after"] = wire["nodes"]["picture"].clone();
++    wire["nodes"]["picture"]["kind"]["source"]["duration"] = serde_json::json!(20_000);
++    wire["nodes"]["after"]["kind"]["source"]["duration"] = serde_json::json!(27_500);
++    wire["nodes"]["pause"] = serde_json::to_value(hold(500)).unwrap();
++    wire["nodes"]["owner"]["kind"]["children"] = serde_json::json!(["picture", "pause", "after"]);
++    let blocked = read(
++        &ProjectDocument::from_json(&wire.to_string()).unwrap(),
++        0,
++        48_000,
++    );
++    assert!(
++        blocked[20_000..20_500]
++            .iter()
++            .all(|frame| *frame == [0.0; 2])
++    );
++    assert_pcm_close(&blocked[..19_900], &expected[..19_900]);
++    assert_pcm_close(&blocked[20_600..], &expected[20_600..]);
++    wire["sound_allowances"] = serde_json::json!({"effect": SoundHoldAllowances::try_from(vec![SoundHoldIssuer::Node {
++        instance: InstancePath {node:id("pause"), repeats:vec![]},
++    }]).unwrap()});
++    let allowed = read(
++        &ProjectDocument::from_json(&wire.to_string()).unwrap(),
++        0,
++        48_000,
++    );
++    assert_pcm_close(&allowed, &expected);
++    assert!(
++        allowed[20_000..20_500]
++            .iter()
++            .any(|frame| frame[0].abs() > 0.001)
++    );
++}
++
++#[test]
++fn event_return_limits_and_cancellation_preserve_reusability() {
++    let mut wire = serde_json::to_value(fixture(false, Some(TailEffect::Delay), false)).unwrap();
++    wire["sounds"]["effect"]["wet_sends"]["reverb"] = serde_json::json!(-6000);
++    let document = ProjectDocument::from_json(&wire.to_string()).unwrap();
++    let plan = Arc::new(RenderPlan::compile(&document).unwrap());
++    for limits in [
++        StageLimits {
++            maximum_prepared_stages: 1,
++            ..Default::default()
++        },
++        StageLimits {
++            maximum_resident_frames: 1024 * 1024,
++            ..Default::default()
++        },
++        StageLimits {
++            maximum_prepared_frames: 1000,
++            ..Default::default()
++        },
++    ] {
++        let mut reader = StageAudio::with_limits(Arc::clone(&plan), limits).unwrap();
++        for _ in 0..2 {
++            assert!(matches!(
++                reader.prepare_authored_bus(
++                    &mut provider(),
++                    AudioSample(20_000),
++                    128,
++                    TIMEOUT,
++                    &AtomicBool::new(false)
++                ),
++                Err(StageAudioError::Limit(_))
++            ));
++        }
++    }
++    let mut reader = StageAudio::new(plan);
++    assert!(
++        reader
++            .prepare_authored_bus(
++                &mut provider(),
++                AudioSample(20_000),
++                128,
++                TIMEOUT,
++                &AtomicBool::new(true)
++            )
++            .unwrap_err()
++            .is_cancelled()
++    );
++    let actual = reader
++        .prepare_authored_bus(
++            &mut provider(),
++            AudioSample(20_000),
++            128,
++            TIMEOUT,
++            &AtomicBool::new(false),
++        )
++        .unwrap();
++    assert_pcm_close(&actual.samples, &read(&document, 20_000, 128));
++}
++
++#[test]
++fn event_return_enters_the_parent_return_without_self_feedback() {
++    let base = fixture(true, Some(TailEffect::Reverb), false);
++    let dry = read(&base, 0, 48_000);
++    let returned = super::wet_owners::wet(TailEffect::Delay, &dry);
++    let mut wire = serde_json::to_value(base).unwrap();
++    wire["nodes"]["root"]["audio_treatments"] =
++        serde_json::to_value(AudioTreatments::default().with_wet_sends(
++            TailSends::default().with_level(TailEffect::Delay, Some(GainDb::new(-6000).unwrap())),
++        ))
++        .unwrap();
++    let document = ProjectDocument::from_json(&wire.to_string()).unwrap();
++    let expected: Vec<_> = dry[32_000..32_256]
++        .iter()
++        .zip(&returned[32_000..32_256])
++        .map(|(dry, wet)| {
++            std::array::from_fn(|ch| {
++                (f64::from(dry[ch]) + wet[ch] * 10f64.powf(-6.0 / 20.0)) as f32
++            })
++        })
++        .collect();
++    assert_pcm_close(&read(&document, 32_000, 256), &expected);
++}

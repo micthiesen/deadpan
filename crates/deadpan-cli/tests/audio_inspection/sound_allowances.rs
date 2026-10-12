@@ -87,6 +87,7 @@ fn decoded_sound_allowance_preserves_other_silence_and_ripple_sample_history() -
                 id: SoundId::new(name)?,
                 event: SoundEvent {
                     tail_sends: Default::default(),
+                    wet_sends: Default::default(),
                     owner: node("root"),
                     label: name.into(),
                     source: source.clone(),

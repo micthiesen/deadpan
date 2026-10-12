@@ -128,6 +128,7 @@ fn event(document: &ProjectDocument) -> SoundEvent {
             .unwrap();
     SoundEvent {
         tail_sends: Default::default(),
+        wet_sends: Default::default(),
         owner: node("root"),
         label: "Clang".into(),
         source,

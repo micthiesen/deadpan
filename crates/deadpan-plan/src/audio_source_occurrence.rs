@@ -725,6 +725,29 @@ impl<'plan> AudioSourceOccurrence<'plan> {
     pub fn audible_extent(&self) -> Range<ExactRatio> {
         self.audible_extent.clone()
     }
+    /// Complete event selection before consuming Hold gates, on this input clock.
+    pub fn audible_samples(&self) -> Result<Range<AudioSample>, PlanError> {
+        Ok(self.grid.boundary(self.audible_extent.start)?
+            ..self.grid.boundary(self.audible_extent.end)?)
+    }
+    pub fn event_edges(
+        &self,
+        edges: (deadpan_core::AudioEdgePolicy, deadpan_core::AudioEdgePolicy),
+    ) -> (deadpan_core::AudioEdgePolicy, deadpan_core::AudioEdgePolicy) {
+        use deadpan_core::AudioEdgePolicy::Hard;
+        (
+            if self.inherited_hard_edges.0 {
+                Hard
+            } else {
+                edges.0
+            },
+            if self.inherited_hard_edges.1 {
+                Hard
+            } else {
+                edges.1
+            },
+        )
+    }
     /// Current owner and ancestor clocks for this independent voice. Original
     /// sampling bindings cannot substitute their retained effect clocks here.
     pub fn gain_owners(&self) -> &[crate::AudioOwnerClock<'plan>] {

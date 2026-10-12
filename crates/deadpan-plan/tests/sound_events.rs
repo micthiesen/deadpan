@@ -68,6 +68,7 @@ fn document() -> ProjectDocument {
     .unwrap();
     let event = SoundEvent {
         tail_sends: Default::default(),
+        wet_sends: Default::default(),
         owner: NodeId::new("root").unwrap(),
         label: "fractional sound".into(),
         source: SourceAudio {

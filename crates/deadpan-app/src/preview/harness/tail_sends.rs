@@ -244,28 +244,50 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     d.key(Key::Escape)?;
     undo(d)?;
 
-    placed_sound(d)
+    placed_sound(d, false)
 }
 
-fn placed_sound(d: &mut Driver<'_>) -> Result<(), String> {
+pub(super) fn placed_sound(d: &mut Driver<'_>, wet: bool) -> Result<(), String> {
     d.command("sting")?;
     d.wait_for("Qualify synthesized sting", |app| {
         app.sound_rows.len() == 1 && !app.service.is_busy() && !app.importing()
     })?;
     let catalog = d.app().sound_rows[0].clone();
     d.chord(&[Key::G, Key::G])?;
-    d.click(&catalog.1)?;
+    // At minimum height the catalog is below the sidebar's current scroll.
+    // Use native pane/list navigation rather than clicking an offscreen rect.
+    for _ in 0..6 {
+        if d.app().pane == Pane::Sources {
+            break;
+        }
+        d.key(Key::Tab)?;
+    }
+    d.key(Key::J)?;
     d.step("Select sting", true)?;
+    d.check(
+        "Keyboard navigation selects the catalog sound before placement",
+        d.app().pane == Pane::Sources && d.app().selected_sound.as_ref() == Some(&catalog.0),
+        json!(catalog.0),
+        d.snapshot(),
+    )?;
     edit(d, "sound-place")?;
     d.command("sounds")?;
     let sound = d.app().selected_event.clone().ok_or("No placed sound")?;
     let base = d.app().workspace.as_ref().unwrap().document.sounds()[&sound].clone();
-    edit(d, "sound-tail-send reverb -6dB")?;
+    let command = if wet {
+        "sound-wet-send"
+    } else {
+        "sound-tail-send"
+    };
+    edit(d, &format!("{command} reverb -6dB"))?;
     let actual = d.app().workspace.as_ref().unwrap().document.sounds()[&sound].clone();
     let mut expected = base.clone();
-    expected.tail_sends = expected
-        .tail_sends
-        .with_level(TailEffect::Reverb, Some(GainDb::new(-6000).unwrap()));
+    let sends = if wet {
+        &mut expected.wet_sends
+    } else {
+        &mut expected.tail_sends
+    };
+    *sends = sends.with_level(TailEffect::Reverb, Some(GainDb::new(-6000).unwrap()));
     d.check(
         "A placed sound send preserves its complete placement and gain",
         actual == expected,
@@ -273,19 +295,59 @@ fn placed_sound(d: &mut Driver<'_>) -> Result<(), String> {
         json!(actual),
     )?;
     inspector_top(d, "Selected sound inspector pane")?;
-    d.capture("Placed sound sends")?;
+    let label = if wet {
+        "reverb return: -6dB"
+    } else {
+        "reverb send: -6dB"
+    };
+    scenarios::reveal_inspector_button(d, &format!("{label}  :{command}"))?;
+    if wet {
+        scenarios::reveal_inspector_button(d, "delay return: off  :sound-wet-send")?;
+        d.check(
+            "Both placed sound return levels are readable at minimum size after scrolling",
+            visible(d, label) && visible(d, "delay return: off"),
+            json!([label, "delay return: off"]),
+            d.widgets(),
+        )?;
+    }
+    d.capture(if wet {
+        "Placed sound continuous returns"
+    } else {
+        "Placed sound sends"
+    })?;
     d.check(
         "The placed sound inspector visibly teaches its saved send",
-        visible(d, "reverb send: -6dB"),
-        json!("reverb send: -6dB"),
+        visible(d, label),
+        json!(label),
         d.widgets(),
     )?;
+    if wet {
+        let viewport = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(1280.0, 820.0));
+        let input = d.harness.input_mut();
+        input.screen_rect = Some(viewport);
+        input
+            .viewports
+            .get_mut(&egui::ViewportId::ROOT)
+            .ok_or("Missing sound return viewport")?
+            .inner_rect = Some(viewport);
+        d.step("Resize placed sound returns to default size", true)?;
+        scenarios::reveal_inspector_button(d, &format!("{label}  :{command}"))?;
+        d.capture("Placed sound continuous returns at default size")?;
+        d.check(
+            "The placed sound return remains readable at default size",
+            visible(d, label),
+            json!(label),
+            d.widgets(),
+        )?;
+    }
     edit(d, "sound-gain -3")?;
     d.check(
         "Sound gain edits retain sends",
-        d.app().workspace.as_ref().unwrap().document.sounds()[&sound].tail_sends
-            == expected.tail_sends,
-        json!(expected.tail_sends),
+        {
+            let event = &d.app().workspace.as_ref().unwrap().document.sounds()[&sound];
+            event.tail_sends == expected.tail_sends && event.wet_sends == expected.wet_sends
+        },
+        json!({"tail": expected.tail_sends, "wet":expected.wet_sends}),
         d.snapshot(),
     )?;
     undo(d)?;

@@ -121,6 +121,7 @@ fn fixture() -> ProjectDocument {
             id: sound(),
             event: SoundEvent {
                 tail_sends: Default::default(),
+                wet_sends: Default::default(),
                 owner: node("root"),
                 label: "Sound".into(),
                 source,

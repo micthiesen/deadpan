@@ -95,6 +95,7 @@ fn zero_paste_preserves_routed_root_bus_and_restores_only_mark_owned_historical_
             id: SoundId::new("effect")?,
             event: SoundEvent {
                 tail_sends: Default::default(),
+                wet_sends: Default::default(),
                 owner: node("root"),
                 label: "Root sound".into(),
                 source: SourceAudio {

@@ -4031,6 +4031,7 @@ parse ":sound-channels stereo_left_right" = Ok(SoundChannels(Some(StereoLeftRigh
 parse ":sound-at 137" = Ok(Action(Sound(Move(AudioSample(137)))))
 parse ":sound-gain -96" = Ok(Action(Sound(Gain(-96000))))
 parse ":sound-tail-send delay -6dB" = Ok(Action(Sound(TailSend { effect: Delay, level: Some(GainDb(-6000)) })))
+parse ":sound-wet-send delay -6dB" = Ok(Action(Sound(WetSend { effect: Delay, level: Some(GainDb(-6000)) })))
 parse ":tail-send reverb off" = Ok(TailSend { effect: Reverb, level: None })
 parse ":wet-send delay -6dB" = Ok(WetSend { effect: Delay, level: Some(GainDb(-6000)) })
 parse ":tail 1s input=sends" = Ok(Action(Tail { length: Some(Seconds(ExactRatio { numerator: 1, denominator: 1 })), effect: Reverb, input: Sends }))

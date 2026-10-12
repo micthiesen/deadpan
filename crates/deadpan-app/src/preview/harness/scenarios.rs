@@ -1469,11 +1469,16 @@ pub(super) fn reveal_inspector_button(d: &mut Driver<'_>, label: &str) -> Result
     if fully_visible(d) {
         return Ok(());
     }
+    let viewport = d.harness.ctx.content_rect();
     d.report.findings.push(Finding {
         severity: Severity::Warning,
-        message: format!("The {label:?} action needs inspector scrolling at 1280×820 before its full button is clickable. The replay includes this extra user step."),
+        message: format!("The {label:?} action needs inspector scrolling at {}×{} before its full button is clickable. The replay includes this extra user step.", viewport.width(), viewport.height()),
     });
-    let heading = d.rect("Selected beat inspector pane")?;
+    let heading = d.rect(if d.app().event_focused() {
+        "Selected sound inspector pane"
+    } else {
+        "Selected beat inspector pane"
+    })?;
     let point = heading.center() + egui::vec2(0.0, 120.0);
     for attempt in 0..3 {
         // Selecting a different beat can retain the inspector's scroll offset.

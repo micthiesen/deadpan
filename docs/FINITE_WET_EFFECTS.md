@@ -92,11 +92,35 @@ prepared-frame, node-count, depth and plan-work limits remain active. A refusal
 does not publish partial PCM. This establishes bounded preparation, not live
 playback performance or persistent cache reuse.
 
-Core 51, store 79 and frozen audio context 12 retain continuous owner recipes.
+## Independent sound returns
+
+`SoundEvent` and `BeatSound` store separate `wet_sends` for reverb and delay.
+The placed-sound inspector teaches `:sound-wet-send reverb|delay -6dB|off`;
+the captured target, typed writer transaction and durable Undo preserve the
+complete source recipe, route, placement, gain, edges and permissions.
+
+Each event filters its complete retained input after time/pitch mapping and
+authored input edges. Constant event gain applies to both dry and wet, which
+is equivalent to applying that gain before these linear kernels. Saved delivery
+routes move the processed samples afterward. Inserted route gaps do not advance
+the retained effect clock. Current consuming gates and their edge fades bound
+the returned signal without adding audible time. An explicit Tail pause remains
+the way to allocate additional time. The event's allocated-Tail send taps dry
+input after event gain, excluding its own continuous return. Parent treatments
+and sends receive the dry sound plus its return.
+
+Event tiles share the owner graph's native workspaces and aggregate node,
+prepared-frame and residency limits. Their cache is private to one immutable
+preparation request: graph prefix plus voice identifies the checked input, with
+effect, absolute tile, allocation and input envelope in the key. No event tile
+is reused across revisions or independent preparation requests.
+
+Core 52, store 80 and frozen audio context 12 retain these recipes.
 Older unused development packages are refused without modification under the
-owner's format-breaking authorization. Independent sound-event continuous
-sends, broader retained/copy/Preserve and loop qualification, partial attached
-sound-owner processing scope, persistent filtered caching and the rest of the
+owner's format-breaking authorization. Event copy/recopy through nested Preserve
+stages is checked; broader retained/loop and incoming-tail qualification, creative
+event envelopes and treatments, partial attached sound-owner processing scope,
+persistent filtered caching and the rest of the
 voice/mastering graph remain agent work. DP-09 and DP-16 remain partial.
 
 The [qualification](qualification/finite-wet-2026-10-12.md) records the numerical

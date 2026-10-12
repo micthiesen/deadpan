@@ -288,6 +288,7 @@ fn exploded_beat_sounds_and_root_sounds_keep_every_ntsc_sample() {
             id: SoundId::new("blip").unwrap(),
             event: BeatSound {
                 tail_sends: Default::default(),
+                wet_sends: Default::default(),
                 label: "Blip".into(),
                 source: audio(1000..2000),
                 mapping,
@@ -306,6 +307,7 @@ fn exploded_beat_sounds_and_root_sounds_keep_every_ntsc_sample() {
             id: SoundId::new("over").unwrap(),
             event: SoundEvent {
                 tail_sends: Default::default(),
+                wet_sends: Default::default(),
                 owner: id("root"),
                 label: "Over the gaps".into(),
                 source: audio(3000..9000),

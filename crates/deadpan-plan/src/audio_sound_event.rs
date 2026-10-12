@@ -159,6 +159,36 @@ impl<'plan> AudioRootSound<'plan> {
         self.event
     }
 
+    /// Full source input for event treatments, before saved delivery routes.
+    pub fn processing_source(&self) -> Result<AudioRootSource<'plan>, PlanError> {
+        let (extent, grid) = self.routed.as_ref().map_or(
+            (
+                ExactRatio::integer(self.plan.duration().frames()),
+                self.grid,
+            ),
+            |routed| {
+                (
+                    routed.route().route().recipe_extent(),
+                    routed.route().recipe_grid(),
+                )
+            },
+        );
+        AudioRootSource::new(
+            self.plan,
+            AudioSourceVoiceRecipe {
+                source: self.event.source.clone(),
+                mapping: self.event.mapping,
+                offset: self.event.offset,
+            },
+            extent,
+            grid,
+        )
+    }
+
+    pub fn event_edges(&self) -> (AudioEdgePolicy, AudioEdgePolicy) {
+        (self.start_edge, self.end_edge)
+    }
+
     /// Complete selected allocation on the retained recipe clock. Routed output
     /// can contain gaps; query its route and gate envelopes for current support.
     pub fn audible_samples(&self) -> Range<AudioSample> {

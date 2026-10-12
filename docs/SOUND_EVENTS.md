@@ -4,10 +4,21 @@
 input on its original sample clock, before saved cuts/moves and current Hold
 gates. Its explicit allocation can extend beyond the shortened live project;
 source selection, resampling phase and nested Preserve history remain intact.
-Ordinary routed reads share this preparation boundary. This supplies input for
-independent event effects; it does not grant extra audible time or implement
-event continuous sends. See the
+Ordinary routed reads share this preparation boundary. Independent event
+returns now consume it without granting extra audible time. See the
 [retained-input qualification](qualification/retained-sound-input-2026-10-12.md).
+
+Root and attached sounds also carry independent `wet_sends`. Native
+`:sound-wet-send reverb|delay -6dB|off` changes the captured placed sound through
+`SetSound`; attached recipes use `SetBeatSound`. Complete time/pitch-mapped
+input and its edge fades feed the finite effect on the retained recipe clock.
+Saved delivery routes then transport the processed samples, preserving history
+through cuts, inserted gaps and repeated copies. The dry sound and its return
+share event gain, current selection/cut fades and silence permissions before
+entering group treatments. Returns stop at the existing audible allocation.
+The event's own allocated-Tail tap excludes its continuous return; parent sends
+can include it. See [finite effects](FINITE_WET_EFFECTS.md#independent-sound-returns)
+and the [event-return qualification](qualification/event-returns-2026-10-12.md).
 
 Selected root and attached sounds carry independent reverb/delay `tail_sends`.
 Native `:sound-tail-send reverb|delay -6dB|off` edits the captured placed sound

@@ -64,7 +64,7 @@ fn all(document: &ProjectDocument) -> Vec<[f32; 2]> {
     )
 }
 
-fn wet(effect: TailEffect, input: &[[f32; 2]]) -> Vec<[f64; 2]> {
+pub(super) fn wet(effect: TailEffect, input: &[[f32; 2]]) -> Vec<[f64; 2]> {
     let cancel = AtomicBool::new(false);
     let mut processor = deadpan_audio::FiniteWetEffect::new(effect, &cancel).unwrap();
     let history = processor.descriptor().history_frames;
@@ -299,7 +299,7 @@ fn allowed_sound_cannot_carry_forbidden_original_history_into_silent_hold() {
     wire["sounds"] = serde_json::json!({"sound":SoundEvent {
         owner:id("root"), label:"Permitted independent sound".into(), source:audio(0,6000),
         mapping:SourceAudioMapping::natural_rate(audio(0,6000).span,rate).unwrap(),
-        offset:AudioSample(0), gain_millidecibels:-6000, tail_sends:Default::default(),
+        offset:AudioSample(0), gain_millidecibels:-6000, tail_sends:Default::default(), wet_sends: Default::default(),
         start_edge:AudioEdgePolicy::Hard, end_edge:AudioEdgePolicy::Hard, overflow:SoundOverflowPolicy::Reject }});
     wire["sound_allowances"] = serde_json::json!({"sound":SoundHoldAllowances::try_from(vec![SoundHoldIssuer::Node {
         instance:InstancePath {node:id("pause"),repeats:vec![]}}]).unwrap()});

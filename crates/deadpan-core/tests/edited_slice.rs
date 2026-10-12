@@ -272,6 +272,7 @@ fn pasted_contents_exclude_root_sound_bus_and_append_one_exact_route_edit() {
                 id: sound.clone(),
                 event: SoundEvent {
                     tail_sends: Default::default(),
+                    wet_sends: Default::default(),
                     owner: id("root"),
                     label: "Effect".into(),
                     source: SourceAudio {

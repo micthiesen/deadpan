@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-12T11:38:28Z",
+  "updated_at": "2026-10-12T13:18:59Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Complete independent sound-event continuous sends and broader retained/Preserve/incoming-tail qualification. Finish partial attached-sound scope routes, filtered caching, mastering, format/color, workflow, performance and release obligations.",
+  "focus": "Complete creative sound-event envelopes/treatments and wider loop/incoming-tail qualification. Finish partial attached-sound scope routes, filtered caching, mastering, format/color, workflow, performance and release obligations.",
   "features": [
     {
       "id": "editing",
@@ -44,7 +44,7 @@
       "requirements": [
         "DP-09"
       ],
-      "note": "Playback, gain, sounds, native EQ, allocated Tail sends and continuous beat/group reverb and delay work. Owner returns preserve parent processing and pause permissions. Independent event sends, broader retained/Preserve qualification, partial sound-owner edits and filtered caching remain."
+      "note": "Playback, gain, sounds, native EQ, allocated Tail sends and continuous beat/group/event reverb and delay work. Event returns retain history through routing and nested Preserve copies. Creative event treatments, partial sound-owner edits, wider loop/tail qualification and filtered caching remain."
     },
     {
       "id": "analysis",

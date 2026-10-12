@@ -421,6 +421,25 @@ impl<'plan> SharedMix<'plan> {
         voice: Option<usize>,
         control: WorkControl<'_>,
     ) -> Result<(), StageAudioError> {
+        self.add_wide(
+            route,
+            offset,
+            (sample.map(f64::from), [0.0; 2]),
+            event_gain,
+            voice,
+            control,
+        )
+    }
+
+    pub(super) fn add_wide(
+        &mut self,
+        route: &Route<'_>,
+        offset: usize,
+        sample: ([f64; 2], [f64; 2]),
+        event_gain: i32,
+        voice: Option<usize>,
+        control: WorkControl<'_>,
+    ) -> Result<(), StageAudioError> {
         if route.ignored {
             return Ok(());
         }
@@ -456,7 +475,13 @@ impl<'plan> SharedMix<'plan> {
         }
         let mut permissions = Permissions::default();
         permissions.insert(voice)?;
-        self.add_value(route.target, offset, gain.apply(sample)?, permissions)
+        let combined = std::array::from_fn(|ch| sample.0[ch] + sample.1[ch]);
+        self.add_value(
+            route.target,
+            offset,
+            gain.apply_wide(combined)?,
+            permissions,
+        )
     }
 
     fn add_value(

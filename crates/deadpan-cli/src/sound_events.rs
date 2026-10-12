@@ -190,6 +190,7 @@ pub fn placement(
     }
     let event = SoundEvent {
         tail_sends: Default::default(),
+        wet_sends: Default::default(),
         owner: document.root().clone(),
         label: metadata.label.clone(),
         source: SourceAudio {

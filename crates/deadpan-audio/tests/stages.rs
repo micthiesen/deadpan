@@ -47,6 +47,9 @@ mod gain;
 #[path = "stages/wet_owners.rs"]
 mod wet_owners;
 
+#[path = "stages/event_returns.rs"]
+mod event_returns;
+
 #[path = "stages/streaming.rs"]
 mod streaming;
 

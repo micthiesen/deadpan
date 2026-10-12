@@ -53,7 +53,7 @@ fn fixture(rate: FrameRate, extent: i64, selection: ExactFrameRange) -> ProjectD
     let mut wire = json!(empty);
     wire["assets"] = json!({"sound":AssetRecord {label:"Sound".into(),content_hash:"a".repeat(64),video:None,audio:Some(span),still_image:false,frame_count:None,source_qualification:Some(SourceQualificationId::new("b".repeat(64)).unwrap())}});
     wire["nodes"] = json!({"root":BeatNode::sequence("Root",vec![node("held")]),"held":BeatNode::hold("Held",HoldRecipe {duration:frames(extent),video:HoldVideo::Background,picture_context:None,audio:HoldAudio::Silence})});
-    wire["sounds"] = json!({"sound":SoundEvent { tail_sends: Default::default(), owner:node("root"),label:"Exact recipe".into(),source:SourceAudio {asset:AssetId::new("sound").unwrap(),span},mapping:SourceAudioMapping::SelectedPlacement {start:ExactRatio::ZERO,frames:SourceAudioMapping::natural_rate(span,rate).unwrap().duration_frames(FrameDuration::ZERO).unwrap(),selection},offset:AudioSample(0),gain_millidecibels:-1234,start_edge:AudioEdgePolicy::Hard,end_edge:AudioEdgePolicy::Automatic,overflow:SoundOverflowPolicy::Reject}});
+    wire["sounds"] = json!({"sound":SoundEvent { tail_sends: Default::default(), wet_sends: Default::default(), owner:node("root"),label:"Exact recipe".into(),source:SourceAudio {asset:AssetId::new("sound").unwrap(),span},mapping:SourceAudioMapping::SelectedPlacement {start:ExactRatio::ZERO,frames:SourceAudioMapping::natural_rate(span,rate).unwrap().duration_frames(FrameDuration::ZERO).unwrap(),selection},offset:AudioSample(0),gain_millidecibels:-1234,start_edge:AudioEdgePolicy::Hard,end_edge:AudioEdgePolicy::Automatic,overflow:SoundOverflowPolicy::Reject}});
     ProjectDocument::from_json(&wire.to_string()).unwrap()
 }
 

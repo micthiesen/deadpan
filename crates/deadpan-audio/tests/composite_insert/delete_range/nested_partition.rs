@@ -244,6 +244,7 @@ fn repeated_nested_deletions_transform_the_existing_root_sound_route_exactly_onc
             id: SoundId::new("effect").unwrap(),
             event: SoundEvent {
                 tail_sends: Default::default(),
+                wet_sends: Default::default(),
                 owner: id("root"),
                 label: "Independent root bus".into(),
                 source: audio(100..20_100),

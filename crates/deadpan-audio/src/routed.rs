@@ -33,7 +33,7 @@ pub struct RoutedRootBlock {
 }
 
 pub(super) struct PreparedRoutedRootQuery<'plan> {
-    domain: AudioRoutedRoot<'plan>,
+    pub(super) domain: AudioRoutedRoot<'plan>,
     start: AudioSample,
     frames: u32,
     spans: Vec<PreparedRootSpan<'plan>>,
@@ -416,7 +416,7 @@ pub(super) fn routed_end(
     Ok(end)
 }
 
-fn routed_old_range<S>(
+pub(super) fn routed_old_range<S>(
     local: ExactRatio,
     grid: AudioSampleGrid<S>,
     count: i64,

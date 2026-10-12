@@ -57,6 +57,7 @@ fn exact_forest_delete_keeps_ntsc_preserve_pcm_and_transforms_root_sound_once() 
             id: SoundId::new("effect").unwrap(),
             event: SoundEvent {
                 tail_sends: Default::default(),
+                wet_sends: Default::default(),
                 owner: id("root"),
                 label: "Separate bus".into(),
                 source: full,

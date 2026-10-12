@@ -904,6 +904,23 @@ impl Service {
                     "Sound tail send saved",
                 )
             }
+            ProjectSoundEdit::WetSend { id, effect, level } => {
+                let mut event = workspace
+                    .document
+                    .sounds()
+                    .get(&id)
+                    .cloned()
+                    .ok_or("The selected sound no longer exists.")?;
+                event.wet_sends = event.wet_sends.with_level(effect, level);
+                (
+                    Command::SetSound {
+                        id: id.clone(),
+                        event,
+                    },
+                    Some(id),
+                    "Sound continuous return saved",
+                )
+            }
             ProjectSoundEdit::Update {
                 id,
                 gain_millidecibels,

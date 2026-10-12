@@ -83,7 +83,7 @@ fn document(parts: &[(i64, bool)], rate: u32) -> ProjectDocument {
     }
     wire["nodes"]["root"] = json!(BeatNode::sequence("root", children));
     let total: i64 = parts.iter().map(|part| part.0).sum();
-    wire["sounds"] = json!({"sound": SoundEvent { tail_sends: Default::default(),
+    wire["sounds"] = json!({"sound": SoundEvent { tail_sends: Default::default(), wet_sends: Default::default(),
         owner: node("root"), label: "event".into(), source: SourceAudio { asset: AssetId::new("sound").unwrap(), span },
         mapping: SourceAudioMapping::SelectedPlacement { start: ExactRatio::ZERO, frames: SourceAudioMapping::natural_rate(span, FrameRate::new(rate,1).unwrap()).unwrap().duration_frames(FrameDuration::ZERO).unwrap(), selection: ExactFrameRange { start: ExactRatio::ZERO, end: ExactRatio::integer(total) } },
         offset: AudioSample(0), gain_millidecibels: 0, start_edge: AudioEdgePolicy::Automatic, end_edge: AudioEdgePolicy::Automatic, overflow: SoundOverflowPolicy::Reject,

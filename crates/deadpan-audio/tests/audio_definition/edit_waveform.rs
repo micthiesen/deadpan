@@ -155,6 +155,7 @@ fn root_routes_and_silent_hold_permissions_change_actual_window_peaks() {
     let doc = document(rate, &["pause"], [("pause", pause)], BTreeMap::new());
     let event = SoundEvent {
         tail_sends: Default::default(),
+        wet_sends: Default::default(),
         owner: id("root"),
         label: "Routed sound".into(),
         source: audio(0..8197),

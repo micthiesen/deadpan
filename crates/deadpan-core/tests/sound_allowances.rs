@@ -159,6 +159,7 @@ fn fixture(repeated: bool) -> ProjectDocument {
             id: sound(),
             event: SoundEvent {
                 tail_sends: Default::default(),
+                wet_sends: Default::default(),
                 owner: node("root"),
                 label: "Effect".into(),
                 source: SourceAudio {

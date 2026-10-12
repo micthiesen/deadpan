@@ -517,13 +517,18 @@ pub fn parse(input: &str) -> Result<Entry, String> {
             },
         );
     }
-    if verb == "wet-send" || verb == "tail-send" || verb == "sound-tail-send" {
+    if matches!(
+        verb.as_str(),
+        "wet-send" | "sound-wet-send" | "tail-send" | "sound-tail-send"
+    ) {
         let arguments: Vec<&str> = words.collect();
         let (effect, level) = super::hold_effects::parse_send(&arguments)?;
         return Ok(if verb == "wet-send" {
             Entry::WetSend { effect, level }
         } else if verb == "tail-send" {
             Entry::TailSend { effect, level }
+        } else if verb == "sound-wet-send" {
+            Entry::Action(Action::Sound(super::SoundAction::WetSend { effect, level }))
         } else {
             Entry::Action(Action::Sound(super::SoundAction::TailSend {
                 effect,

@@ -163,6 +163,7 @@ fn fixture() -> (Connection, ProjectDocument, SourceQualificationReceipt) {
                 sound(),
                 BeatSound {
                     tail_sends: Default::default(),
+                    wet_sends: Default::default(),
                     label: owner.into(),
                     source: SourceAudio {
                         asset: asset.clone(),

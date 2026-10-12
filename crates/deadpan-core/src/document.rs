@@ -10,7 +10,7 @@ use crate::{
     SourceVideoMapping, TimeError,
 };
 
-pub const DOCUMENT_SCHEMA_VERSION: u32 = 51;
+pub const DOCUMENT_SCHEMA_VERSION: u32 = 52;
 /// Bounds apply before traversal. Structure is walked iteratively, never recursively.
 pub const MAX_DOCUMENT_NODES: usize = 100_000;
 pub const MAX_DOCUMENT_ASSETS: usize = 100_000;

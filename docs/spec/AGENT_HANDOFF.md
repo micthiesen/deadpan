@@ -4,12 +4,32 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Independent sound returns](../qualification/event-returns-2026-10-12.md) now
+store `wet_sends` on root and attached events (core 52/store 80, frozen context
+12 unchanged). Native `:sound-wet-send` edits a captured placed sound. Event
+input edges and complete retained history feed finite effects before saved
+delivery routes; current gates bound dry and wet before parent processing.
+Event Tail taps exclude their own continuous return. Combined owner/event
+resource limits remain active. The primary agent works alone.
+
+All 3,962 tests pass (nine existing opt-in ignores), as do strict workspace
+checks and release builds. Five final offscreen replays pass 603 scenario checks
+plus shortcut audits, including stale/absent sound captures. Both inspected
+viewport captures are byte-identical across debug/release. A real release export
+verifies 30 pictures, four audio blocks and one zero-offset window. Initial
+fixture, parser and replay-helper failures are retained. No live GUI/device ran.
+
+Continue creative event envelopes/treatments, partial attached-sound scope
+routes, broader incoming-tail/loop qualification, persistent filtered caching
+and remaining mastering/performance work. Existing scope refusals remain.
+DP-09/DP-16 and the full goal are still open.
+
 [Retained sound input](../qualification/retained-sound-input-2026-10-12.md)
 now has a checked preparation API on the old recipe clock. Raw root sources,
 projected inputs and complete occurrences share it with ordinary routed reads.
 It preserves history removed by a later trim or masked by a route gap and keeps
-current consuming Hold gates separate. Continue event creative envelopes and
-continuous sends before routing; this boundary alone does not implement them.
+current consuming Hold gates separate. Event sends now use this boundary;
+creative event envelopes and the remaining per-event treatments stay open.
 The primary agent continues alone. DP-09/DP-16 and the full goal remain open.
 
 [Continuous owner returns](../qualification/wet-owners-2026-10-12.md) now store
@@ -21,8 +41,8 @@ Tail providers gate incoming Original returns; independent sounds retain their
 own permissions. Native workspaces are shared per effect within a request and
 admitted together with histories and tiles against existing resource bounds.
 
-Core 51, store 79 and frozen context 12 carry the recipes. Continue independent
-sound-event continuous sends, wider copy/retained/Preserve/loop qualification,
+That owner-return increment used core 51, store 79 and frozen context 12.
+The event increment above advances core/store. Continue wider loop qualification,
 partial attached-sound processing scope, persistent filtered caches and remaining
 mastering/performance work. Do not weaken existing scope refusals. The primary
 agent works alone; DP-09/DP-16 and the full goal remain open. The qualification
@@ -46,8 +66,8 @@ the same kernel/input/output hashes. The primary agent worked alone.
 
 The owner integration described above now consumes these processors. Keep its
 returns before parent processing and preserve jointly driven prefixes. Existing
-`tail_sends` still feeds allocated pauses only. Independent event integration and
-the remaining scope/cache work stay open; DP-09/DP-16 remain partial.
+`tail_sends` still feeds allocated pauses only. Independent event integration is
+recorded above; remaining scope/cache work stays open and DP-09/DP-16 stay partial.
 
 [Selected tail sends](../qualification/tail-sends-2026-10-12.md) now store
 independent reverb/delay levels on beat treatments and sound events. Explicit

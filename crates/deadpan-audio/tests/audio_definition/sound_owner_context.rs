@@ -10,6 +10,7 @@ fn attached(document: ProjectDocument, owner: &str) -> ProjectDocument {
     let recipe = voice_recipe(document.presentation_basis().frame_rate, 6144);
     let event = BeatSound {
         tail_sends: Default::default(),
+        wet_sends: Default::default(),
         label: "Full history".into(),
         source: recipe.source,
         mapping: recipe.mapping,

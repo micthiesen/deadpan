@@ -253,6 +253,7 @@ fn setter_matches_ordinary_retained_clock_edit_in_nested_scope_with_root_sound()
             sound.clone(),
             crate::SoundEvent {
                 tail_sends: Default::default(),
+                wet_sends: Default::default(),
                 owner: node("root"),
                 label: "Sound".into(),
                 source: crate::SourceAudio { asset, span },

@@ -135,7 +135,7 @@ fn ntsc(edge: AudioEdgePolicy) -> ProjectDocument {
             end: ExactRatio::integer(4),
         },
     };
-    wire["beat_sounds"] = serde_json::json!({"owner": {"effect": BeatSound { tail_sends: Default::default(),
+    wire["beat_sounds"] = serde_json::json!({"owner": {"effect": BeatSound { tail_sends: Default::default(), wet_sends: Default::default(),
         label: "Effect".into(), source: recipe.source, mapping: recipe.mapping, offset: recipe.offset,
         gain_millidecibels: 0, start_edge: edge, end_edge: edge, overflow: SoundOverflowPolicy::Reject,
     }}});
@@ -608,7 +608,29 @@ fn sound_clocks_translate_processed_ntsc_extent_through_nested_preserve() {
 
 #[test]
 fn copied_nested_sound_clocks_keep_old_pcm_labels_and_terminal_clip_across_recopy() {
-    let before = nested_ntsc_copy_document();
+    copied_nested_sound(false);
+}
+
+#[test]
+fn copied_nested_event_returns_keep_old_history_across_recopy() {
+    copied_nested_sound(true);
+}
+
+fn copied_nested_sound(wet: bool) {
+    let mut before = nested_ntsc_copy_document();
+    if wet {
+        let mut event = before.beat_sounds()[&id("owner")][&sound_id("effect")].clone();
+        event.wet_sends = TailSends::default().with_level(TailEffect::Reverb, Some(GainDb::UNITY));
+        before = edit(
+            &before,
+            "event-return",
+            Command::SetBeatSound {
+                owner: id("owner"),
+                id: sound_id("effect"),
+                event,
+            },
+        );
+    }
     // Create the destination Sequence before sound clocks exist. Grouping is
     // intentionally outside the retained-clock edit path exercised below.
     let grouped = edit(

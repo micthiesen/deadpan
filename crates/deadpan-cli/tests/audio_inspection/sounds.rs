@@ -19,6 +19,7 @@ fn json_sound_command_reaches_shared_limited_bus_without_changing_picture_time()
     };
     let event = SoundEvent {
         tail_sends: Default::default(),
+        wet_sends: Default::default(),
         owner: before.root().clone(),
         label: "Original echo".into(),
         mapping: SourceAudioMapping::natural_rate(

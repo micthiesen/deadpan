@@ -146,6 +146,7 @@ fn sound_source() -> SourceAudio {
 fn root_sound(document: &ProjectDocument, offset: i64, gain: i32) -> SoundEvent {
     SoundEvent {
         tail_sends: Default::default(),
+        wet_sends: Default::default(),
         owner: document.root().clone(),
         label: "Effect".into(),
         source: sound_source(),
@@ -167,6 +168,7 @@ fn beat_sound(document: &ProjectDocument, offset: i64) -> BeatSound {
     let selected = span(0, 2000, 48_000);
     BeatSound {
         tail_sends: Default::default(),
+        wet_sends: Default::default(),
         label: "Beat effect".into(),
         source: SourceAudio {
             asset: AssetId::new("catalog").unwrap(),
