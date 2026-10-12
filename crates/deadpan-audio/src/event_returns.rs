@@ -5,13 +5,22 @@ use super::*;
 use deadpan_core::{AudioEdgePolicy, AudioTreatmentStage, AudioTreatments, TailEffect};
 use deadpan_plan::{AudioRoutedRootInput, AudioSoundRoute};
 
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+enum EventStage {
+    Reverb,
+    Delay,
+    Equalizer,
+    /// Ordered recipe prefix ending immediately before this stage.
+    Prefix(usize),
+}
+
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub(super) struct EventKey {
     // This cache lives only within one immutable preparation request. The
     // graph prefix and voice identify its checked source/occurrence recipe.
     parent: usize,
     voice: usize,
-    effect: u8,
+    stage: EventStage,
     tile: i64,
     allocation: (i64, i64),
     audible: (i64, i64),
@@ -125,7 +134,7 @@ impl StageAudio {
             let template = EventKey {
                 parent: request.parent,
                 voice: request.voice,
-                effect: 2,
+                stage: EventStage::Prefix(request.treatments.order().len()),
                 tile: 0,
                 allocation: (allocation.start.0, allocation.end.0),
                 audible: (audible.start.0, audible.end.0),
@@ -150,10 +159,10 @@ impl StageAudio {
             dry[offset..offset + block.samples.len()].copy_from_slice(&block.samples);
             output.dependencies.extend(block.dependencies);
             output.relative_depth = output.relative_depth.max(block.relative_depth);
-            for (effect_id, effect) in [TailEffect::Reverb, TailEffect::Delay]
-                .into_iter()
-                .enumerate()
-            {
+            for (stage, effect) in [
+                (EventStage::Reverb, TailEffect::Reverb),
+                (EventStage::Delay, TailEffect::Delay),
+            ] {
                 let Some(level) = request.treatments.wet_sends().level(effect) else {
                     continue;
                 };
@@ -169,7 +178,7 @@ impl StageAudio {
                     let key = EventKey {
                         parent: request.parent,
                         voice: request.voice,
-                        effect: effect_id as u8,
+                        stage,
                         tile,
                         allocation: (allocation.start.0, allocation.end.0),
                         audible: (audible.start.0, audible.end.0),
@@ -245,7 +254,8 @@ impl StageAudio {
         }
         let mut node = key.clone();
         node.tile = 0;
-        if !graph.event_nodes.contains(&node) {
+        let temporal = !matches!(key.stage, EventStage::Prefix(_));
+        if temporal && !graph.event_nodes.contains(&node) {
             if graph.nodes.len() + graph.event_nodes.len()
                 >= self.limits.maximum_prepared_stages as usize
             {
@@ -253,7 +263,9 @@ impl StageAudio {
             }
             graph.event_nodes.insert(node);
         }
-        let (history, frames, width, until_stage) = if key.effect == 2 {
+        let (history, frames, width, until_stage) = if let EventStage::Prefix(until) = key.stage {
+            (0, OUTPUT, OUTPUT, until)
+        } else if key.stage == EventStage::Equalizer {
             let stage = recipe
                 .order()
                 .iter()
@@ -261,7 +273,7 @@ impl StageAudio {
                 .ok_or(PlanError::InvalidPlan("event EQ absent"))?;
             (RADIUS, INPUT, OUTPUT, stage)
         } else {
-            let effect = if key.effect == 0 {
+            let effect = if key.stage == EventStage::Reverb {
                 TailEffect::Reverb
             } else {
                 TailEffect::Delay
@@ -303,36 +315,45 @@ impl StageAudio {
             let mut left = vec![0.0; frames];
             let mut right = vec![0.0; frames];
             let mut dependencies = Dependencies::new();
-            let mut relative_depth = 1;
+            let mut relative_depth = usize::from(temporal);
             let mut at = begin.max(key.allocation.0).max(key.audible.0);
             let until = end.min(key.allocation.1).min(key.audible.1);
             while at < until {
                 let count = u32::try_from((until - at).min(i64::from(MAX_OUTPUT_FRAMES)))
                     .map_err(|_| StageAudioError::Range)?;
-                let raw = self.event_prefix(
-                    provider,
-                    graph,
-                    EventProgram {
-                        input,
-                        key: &key,
-                        recipe,
-                    },
-                    AudioSample(at)..AudioSample(at + i64::from(count)),
-                    until_stage,
-                    control,
-                )?;
+                let program = EventProgram {
+                    input,
+                    key: &key,
+                    recipe,
+                };
+                let samples = AudioSample(at)..AudioSample(at + i64::from(count));
+                let raw = if !temporal {
+                    self.event_prefix_uncached(
+                        provider,
+                        graph,
+                        program,
+                        samples,
+                        until_stage,
+                        control,
+                    )
+                } else {
+                    self.event_prefix(provider, graph, program, samples, until_stage, control)
+                }?;
                 for (index, sample) in raw.samples.iter().enumerate() {
                     let at = at.checked_add(index as i64).ok_or(TimeError::Overflow)?;
                     left[(at - begin) as usize] = sample[0];
                     right[(at - begin) as usize] = sample[1];
                 }
                 dependencies.extend(raw.dependencies);
-                relative_depth = relative_depth.max(raw.relative_depth + 1);
+                relative_depth = relative_depth.max(raw.relative_depth + usize::from(temporal));
                 at += i64::from(count);
             }
             let mut out_left = vec![0.0; width];
             let mut out_right = vec![0.0; width];
-            if key.effect == 2 {
+            if !temporal {
+                out_left.copy_from_slice(&left);
+                out_right.copy_from_slice(&right);
+            } else if key.stage == EventStage::Equalizer {
                 let mut node = key.clone();
                 node.tile = 0;
                 if !graph.event_filters.contains_key(&node) {
@@ -363,7 +384,7 @@ impl StageAudio {
             } else {
                 self.process_shared_wet(
                     graph,
-                    if key.effect == 0 {
+                    if key.stage == EventStage::Reverb {
                         TailEffect::Reverb
                     } else {
                         TailEffect::Delay
@@ -395,9 +416,65 @@ impl StageAudio {
         result
     }
 
+    /// Cache each treatment prefix once per fixed tile within this graph.
+    /// Overlapping EQ input windows share their pre-filter prefix; dry output
+    /// and reverb/delay histories share the complete treated input. These tiles
+    /// add no processing stage or history and retain the existing work limits.
+    fn event_prefix(
+        &mut self,
+        provider: &mut impl AudioSourceProvider,
+        graph: &mut Graph<'_>,
+        program: EventProgram<'_, '_>,
+        samples: Range<AudioSample>,
+        until: usize,
+        control: WorkControl<'_>,
+    ) -> Result<WideBlock, StageAudioError> {
+        let frames = count(&samples)?;
+        if frames > MAX_OUTPUT_FRAMES {
+            return Err(StageAudioError::Range);
+        }
+        let mut output = WideBlock {
+            samples: vec![[0.0; 2]; frames as usize],
+            suppressed: Vec::new(),
+            dependencies: Dependencies::new(),
+            relative_depth: 0,
+        };
+        let mut at = samples.start.0;
+        while at < samples.end.0 {
+            control.spend_plan_work(1)?;
+            let tile = at
+                .div_euclid(OUTPUT as i64)
+                .checked_mul(OUTPUT as i64)
+                .ok_or(TimeError::Overflow)?;
+            let mut key = program.key.clone();
+            key.stage = EventStage::Prefix(until);
+            key.tile = tile;
+            let block = self.event_return_tile(
+                provider,
+                graph,
+                program.input,
+                key,
+                program.recipe,
+                control,
+            )?;
+            let end = samples
+                .end
+                .0
+                .min(tile.checked_add(OUTPUT as i64).ok_or(TimeError::Overflow)?);
+            let offset = (at - samples.start.0) as usize;
+            let length = (end - at) as usize;
+            output.samples[offset..offset + length]
+                .copy_from_slice(&block.samples[(at - tile) as usize..(end - tile) as usize]);
+            output.dependencies.extend(block.dependencies.clone());
+            output.relative_depth = output.relative_depth.max(block.relative_depth);
+            at = end;
+        }
+        Ok(output)
+    }
+
     /// Evaluate a strict prefix in the complete retained event clock. Temporal
     /// tiles recurse only to earlier stages; delivery cuts never become history.
-    fn event_prefix(
+    fn event_prefix_uncached(
         &mut self,
         provider: &mut impl AudioSourceProvider,
         graph: &mut Graph<'_>,
@@ -449,7 +526,7 @@ impl StageAudio {
                     .ok_or(TimeError::Overflow)?;
                 let count = count.min((tile + OUTPUT as i64 - at) as u32);
                 let mut key = template.clone();
-                key.effect = 2;
+                key.stage = EventStage::Equalizer;
                 key.tile = tile;
                 let block = self.event_return_tile(provider, graph, input, key, recipe, control)?;
                 for offset in 0..count as usize {

@@ -1,0 +1,543 @@
+diff --git a/crates/deadpan-audio/src/event_returns.rs b/crates/deadpan-audio/src/event_returns.rs
+index 447b3002..8bd7df63 100644
+--- a/crates/deadpan-audio/src/event_returns.rs
++++ b/crates/deadpan-audio/src/event_returns.rs
+@@ -5,13 +5,22 @@ use super::*;
+ use deadpan_core::{AudioEdgePolicy, AudioTreatmentStage, AudioTreatments, TailEffect};
+ use deadpan_plan::{AudioRoutedRootInput, AudioSoundRoute};
+ 
++#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
++enum EventStage {
++    Reverb,
++    Delay,
++    Equalizer,
++    /// Ordered recipe prefix ending immediately before this stage.
++    Prefix(usize),
++}
++
+ #[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
+ pub(super) struct EventKey {
+     // This cache lives only within one immutable preparation request. The
+     // graph prefix and voice identify its checked source/occurrence recipe.
+     parent: usize,
+     voice: usize,
+-    effect: u8,
++    stage: EventStage,
+     tile: i64,
+     allocation: (i64, i64),
+     audible: (i64, i64),
+@@ -125,7 +134,7 @@ impl StageAudio {
+             let template = EventKey {
+                 parent: request.parent,
+                 voice: request.voice,
+-                effect: 2,
++                stage: EventStage::Prefix(request.treatments.order().len()),
+                 tile: 0,
+                 allocation: (allocation.start.0, allocation.end.0),
+                 audible: (audible.start.0, audible.end.0),
+@@ -150,10 +159,10 @@ impl StageAudio {
+             dry[offset..offset + block.samples.len()].copy_from_slice(&block.samples);
+             output.dependencies.extend(block.dependencies);
+             output.relative_depth = output.relative_depth.max(block.relative_depth);
+-            for (effect_id, effect) in [TailEffect::Reverb, TailEffect::Delay]
+-                .into_iter()
+-                .enumerate()
+-            {
++            for (stage, effect) in [
++                (EventStage::Reverb, TailEffect::Reverb),
++                (EventStage::Delay, TailEffect::Delay),
++            ] {
+                 let Some(level) = request.treatments.wet_sends().level(effect) else {
+                     continue;
+                 };
+@@ -169,7 +178,7 @@ impl StageAudio {
+                     let key = EventKey {
+                         parent: request.parent,
+                         voice: request.voice,
+-                        effect: effect_id as u8,
++                        stage,
+                         tile,
+                         allocation: (allocation.start.0, allocation.end.0),
+                         audible: (audible.start.0, audible.end.0),
+@@ -245,7 +254,8 @@ impl StageAudio {
+         }
+         let mut node = key.clone();
+         node.tile = 0;
+-        if !graph.event_nodes.contains(&node) {
++        let temporal = !matches!(key.stage, EventStage::Prefix(_));
++        if temporal && !graph.event_nodes.contains(&node) {
+             if graph.nodes.len() + graph.event_nodes.len()
+                 >= self.limits.maximum_prepared_stages as usize
+             {
+@@ -253,7 +263,9 @@ impl StageAudio {
+             }
+             graph.event_nodes.insert(node);
+         }
+-        let (history, frames, width, until_stage) = if key.effect == 2 {
++        let (history, frames, width, until_stage) = if let EventStage::Prefix(until) = key.stage {
++            (0, OUTPUT, OUTPUT, until)
++        } else if key.stage == EventStage::Equalizer {
+             let stage = recipe
+                 .order()
+                 .iter()
+@@ -261,7 +273,7 @@ impl StageAudio {
+                 .ok_or(PlanError::InvalidPlan("event EQ absent"))?;
+             (RADIUS, INPUT, OUTPUT, stage)
+         } else {
+-            let effect = if key.effect == 0 {
++            let effect = if key.stage == EventStage::Reverb {
+                 TailEffect::Reverb
+             } else {
+                 TailEffect::Delay
+@@ -303,36 +315,45 @@ impl StageAudio {
+             let mut left = vec![0.0; frames];
+             let mut right = vec![0.0; frames];
+             let mut dependencies = Dependencies::new();
+-            let mut relative_depth = 1;
++            let mut relative_depth = usize::from(temporal);
+             let mut at = begin.max(key.allocation.0).max(key.audible.0);
+             let until = end.min(key.allocation.1).min(key.audible.1);
+             while at < until {
+                 let count = u32::try_from((until - at).min(i64::from(MAX_OUTPUT_FRAMES)))
+                     .map_err(|_| StageAudioError::Range)?;
+-                let raw = self.event_prefix(
+-                    provider,
+-                    graph,
+-                    EventProgram {
+-                        input,
+-                        key: &key,
+-                        recipe,
+-                    },
+-                    AudioSample(at)..AudioSample(at + i64::from(count)),
+-                    until_stage,
+-                    control,
+-                )?;
++                let program = EventProgram {
++                    input,
++                    key: &key,
++                    recipe,
++                };
++                let samples = AudioSample(at)..AudioSample(at + i64::from(count));
++                let raw = if !temporal {
++                    self.event_prefix_uncached(
++                        provider,
++                        graph,
++                        program,
++                        samples,
++                        until_stage,
++                        control,
++                    )
++                } else {
++                    self.event_prefix(provider, graph, program, samples, until_stage, control)
++                }?;
+                 for (index, sample) in raw.samples.iter().enumerate() {
+                     let at = at.checked_add(index as i64).ok_or(TimeError::Overflow)?;
+                     left[(at - begin) as usize] = sample[0];
+                     right[(at - begin) as usize] = sample[1];
+                 }
+                 dependencies.extend(raw.dependencies);
+-                relative_depth = relative_depth.max(raw.relative_depth + 1);
++                relative_depth = relative_depth.max(raw.relative_depth + usize::from(temporal));
+                 at += i64::from(count);
+             }
+             let mut out_left = vec![0.0; width];
+             let mut out_right = vec![0.0; width];
+-            if key.effect == 2 {
++            if !temporal {
++                out_left.copy_from_slice(&left);
++                out_right.copy_from_slice(&right);
++            } else if key.stage == EventStage::Equalizer {
+                 let mut node = key.clone();
+                 node.tile = 0;
+                 if !graph.event_filters.contains_key(&node) {
+@@ -363,7 +384,7 @@ impl StageAudio {
+             } else {
+                 self.process_shared_wet(
+                     graph,
+-                    if key.effect == 0 {
++                    if key.stage == EventStage::Reverb {
+                         TailEffect::Reverb
+                     } else {
+                         TailEffect::Delay
+@@ -395,9 +416,65 @@ impl StageAudio {
+         result
+     }
+ 
++    /// Cache each treatment prefix once per fixed tile within this graph.
++    /// Overlapping EQ input windows share their pre-filter prefix; dry output
++    /// and reverb/delay histories share the complete treated input. These tiles
++    /// add no processing stage or history and retain the existing work limits.
++    fn event_prefix(
++        &mut self,
++        provider: &mut impl AudioSourceProvider,
++        graph: &mut Graph<'_>,
++        program: EventProgram<'_, '_>,
++        samples: Range<AudioSample>,
++        until: usize,
++        control: WorkControl<'_>,
++    ) -> Result<WideBlock, StageAudioError> {
++        let frames = count(&samples)?;
++        if frames > MAX_OUTPUT_FRAMES {
++            return Err(StageAudioError::Range);
++        }
++        let mut output = WideBlock {
++            samples: vec![[0.0; 2]; frames as usize],
++            suppressed: Vec::new(),
++            dependencies: Dependencies::new(),
++            relative_depth: 0,
++        };
++        let mut at = samples.start.0;
++        while at < samples.end.0 {
++            control.spend_plan_work(1)?;
++            let tile = at
++                .div_euclid(OUTPUT as i64)
++                .checked_mul(OUTPUT as i64)
++                .ok_or(TimeError::Overflow)?;
++            let mut key = program.key.clone();
++            key.stage = EventStage::Prefix(until);
++            key.tile = tile;
++            let block = self.event_return_tile(
++                provider,
++                graph,
++                program.input,
++                key,
++                program.recipe,
++                control,
++            )?;
++            let end = samples
++                .end
++                .0
++                .min(tile.checked_add(OUTPUT as i64).ok_or(TimeError::Overflow)?);
++            let offset = (at - samples.start.0) as usize;
++            let length = (end - at) as usize;
++            output.samples[offset..offset + length]
++                .copy_from_slice(&block.samples[(at - tile) as usize..(end - tile) as usize]);
++            output.dependencies.extend(block.dependencies.clone());
++            output.relative_depth = output.relative_depth.max(block.relative_depth);
++            at = end;
++        }
++        Ok(output)
++    }
++
+     /// Evaluate a strict prefix in the complete retained event clock. Temporal
+     /// tiles recurse only to earlier stages; delivery cuts never become history.
+-    fn event_prefix(
++    fn event_prefix_uncached(
+         &mut self,
+         provider: &mut impl AudioSourceProvider,
+         graph: &mut Graph<'_>,
+@@ -449,7 +526,7 @@ impl StageAudio {
+                     .ok_or(TimeError::Overflow)?;
+                 let count = count.min((tile + OUTPUT as i64 - at) as u32);
+                 let mut key = template.clone();
+-                key.effect = 2;
++                key.stage = EventStage::Equalizer;
+                 key.tile = tile;
+                 let block = self.event_return_tile(provider, graph, input, key, recipe, control)?;
+                 for offset in 0..count as usize {
+diff --git a/crates/deadpan-audio/tests/stages/event_treatments.rs b/crates/deadpan-audio/tests/stages/event_treatments.rs
+index 542b3226..9bb7c063 100644
+--- a/crates/deadpan-audio/tests/stages/event_treatments.rs
++++ b/crates/deadpan-audio/tests/stages/event_treatments.rs
+@@ -217,3 +217,74 @@ fn processed_event_history_and_envelope_progress_survive_insert_and_cut() {
+         );
+     }
+ }
++
++#[test]
++fn allocated_tails_use_treated_event_input_and_keep_history_on_cold_seek() {
++    for attached in [false, true] {
++        let base = fixture(attached, None, false);
++        let raw = read(
++            &treated(&base, attached, &AudioTreatments::default()),
++            0,
++            48_000,
++        );
++        for (reordered, effect) in [(false, TailEffect::Reverb), (true, TailEffect::Delay)] {
++            let treatments = recipe(reordered);
++            // Assemble the whole treated event independently, including its
++            // original onset, mute window, finite EQ and authored stage order.
++            let input: Vec<_> = oracle(&raw, &treatments)
++                .into_iter()
++                .map(|sample| sample.map(|value| (f64::from(value) * 10f64.powf(-0.3)) as f32))
++                .collect();
++            let mut expected = deadpan_audio::render_tail(
++                deadpan_audio::TailRecipe::new(effect, 16_000, 20_000).unwrap(),
++                &input,
++                &AtomicBool::new(false),
++            )
++            .unwrap();
++            // The authored bus applies this Hold's default 2 ms edge fade
++            // after generating its ring. This is independent of event edges.
++            for (at, frame) in expected.iter_mut().take(96).enumerate() {
++                *frame = frame.map(|value| value * (2 * at + 1) as f32 / 192.0);
++            }
++            assert!(expected.iter().flatten().any(|value| value.abs() > 0.001));
++            assert!(expected[16_000..].iter().all(|frame| *frame == [0.0; 2]));
++
++            let treatments = treatments
++                .with_tail_sends(
++                    TailSends::default().with_level(effect, Some(GainDb::new(-6000).unwrap())),
++                )
++                .with_wet_sends(
++                    TailSends::default()
++                        .with_level(TailEffect::Reverb, Some(GainDb::UNITY))
++                        .with_level(TailEffect::Delay, Some(GainDb::UNITY)),
++                );
++            let mut wire = serde_json::to_value(treated(&base, attached, &treatments)).unwrap();
++            wire["nodes"]["root"]["kind"]["children"] = serde_json::json!(["owner", "tail"]);
++            wire["nodes"]["tail"] = serde_json::to_value(BeatNode::hold(
++                "Allocated tail",
++                HoldRecipe {
++                    duration: duration(20_000),
++                    picture_context: None,
++                    video: HoldVideo::Background,
++                    audio: HoldAudio::Tail {
++                        maximum: duration(16_000),
++                        effect,
++                        input: TailInput::Sends,
++                    },
++                },
++            ))
++            .unwrap();
++            let document = ProjectDocument::from_json(&wire.to_string()).unwrap();
++            let actual = read(&document, 48_000, 20_000);
++            assert_pcm_close(&actual, &expected);
++            // Each fresh reader starts within the tail; it must recover the
++            // event's pre-pause history, without its continuous wet return.
++            for (start, count) in [(9001, 127), (1, 301), (15_900, 401), (4700, 4097)] {
++                assert_pcm_close(
++                    &read(&document, 48_000 + start, count),
++                    &expected[start as usize..start as usize + count as usize],
++                );
++            }
++        }
++    }
++}
+diff --git a/crates/deadpan-playback/src/tests/source_voice.rs b/crates/deadpan-playback/src/tests/source_voice.rs
+index ff3fa1f6..97bcd2b6 100644
+--- a/crates/deadpan-playback/src/tests/source_voice.rs
++++ b/crates/deadpan-playback/src/tests/source_voice.rs
+@@ -6,6 +6,9 @@ mod routed;
+ #[path = "source_voice/events.rs"]
+ mod events;
+ 
++#[path = "source_voice/event_loops.rs"]
++mod event_loops;
++
+ use super::*;
+ 
+ use deadpan_audio::{PcmWindow, ResampleRecipe, Resampler, StageAudio, StereoMatrix};
+diff --git a/crates/deadpan-playback/src/tests/source_voice/event_loops.rs b/crates/deadpan-playback/src/tests/source_voice/event_loops.rs
+new file mode 100644
+index 00000000..ae411eeb
+--- /dev/null
++++ b/crates/deadpan-playback/src/tests/source_voice/event_loops.rs
+@@ -0,0 +1,207 @@
++//! Real registered sound, canonical treatments and returns through the production
++//! loop feeder and output callback. The device only supplies delivery reports.
++use super::*;
++
++fn treatments() -> AudioTreatments {
++    let range = GainRange::new(ExactRatio::ZERO, ExactRatio::integer(28)).unwrap();
++    AudioTreatments::from_clip_gain(
++        ClipGain::new(
++            GainDb::new(-3000).unwrap(),
++            false,
++            vec![
++                GainEnvelope::new(
++                    GainClock::OwnerOutput,
++                    range,
++                    GainDb::new(-9000).unwrap(),
++                    vec![
++                        GainSegment::new(
++                            range.end(),
++                            GainDb::new(3000).unwrap(),
++                            GainCurve::Smoothstep,
++                        )
++                        .unwrap(),
++                    ],
++                )
++                .unwrap(),
++            ],
++            vec![GainRange::new(ExactRatio::integer(8), ExactRatio::integer(9)).unwrap()],
++        )
++        .unwrap(),
++    )
++    .with_equalizer(Some(
++        EqualizerRecipe::new(
++            [GainDb::UNITY, GainDb::new(-6000).unwrap(), GainDb::UNITY],
++            Some(EqCutoffHz::new(80).unwrap()),
++            None,
++        )
++        .unwrap(),
++    ))
++    .unwrap()
++    .with_saturation(Some(Saturation::new(GainDb::new(9000).unwrap()).unwrap()))
++    .unwrap()
++    .with_balance(Some(StereoBalance::new(-35).unwrap()))
++    .unwrap()
++    .with_wet_sends(
++        TailSends::default()
++            .with_level(TailEffect::Reverb, Some(GainDb::new(-9000).unwrap()))
++            .with_level(TailEffect::Delay, Some(GainDb::new(-6000).unwrap())),
++    )
++}
++
++fn placed(store: &mut ProjectStore, asset: &AssetId, attached: bool) {
++    commit(
++        store,
++        "sound-owner",
++        Command::Group {
++            parent: node("root"),
++            start: 0,
++            end: 1,
++            id: node("owner"),
++            label: "Owner".into(),
++        },
++    );
++    // Mute only the Original child, leaving the independent sound and its
++    // owner's bus active. A loop with no event must be digital silence.
++    commit(
++        store,
++        "mute-original",
++        Command::SetAudioTreatments {
++            node: node("source"),
++            treatments: AudioTreatments::from_clip_gain(
++                ClipGain::new(GainDb::UNITY, true, vec![], vec![]).unwrap(),
++            ),
++        },
++    );
++    let recipe = recipe(&store.snapshot().unwrap(), asset, 40_000, 137);
++    let event = SoundEvent {
++        owner: node("root"),
++        label: "Treated loop sound".into(),
++        source: recipe.source,
++        mapping: recipe.mapping,
++        offset: recipe.offset,
++        treatments: treatments(),
++        start_edge: AudioEdgePolicy::Automatic,
++        end_edge: AudioEdgePolicy::Automatic,
++        overflow: SoundOverflowPolicy::Reject,
++    };
++    let command = if attached {
++        Command::SetBeatSound {
++            owner: node("owner"),
++            id: SoundId::new("effect").unwrap(),
++            event: BeatSound {
++                label: event.label,
++                source: event.source,
++                mapping: event.mapping,
++                offset: event.offset,
++                treatments: event.treatments,
++                start_edge: event.start_edge,
++                end_edge: event.end_edge,
++                overflow: event.overflow,
++            },
++        }
++    } else {
++        Command::SetSound {
++            id: SoundId::new("effect").unwrap(),
++            event,
++        }
++    };
++    commit(store, "treated-sound", command);
++}
++
++#[test]
++fn treated_sound_loops_keep_full_history_across_seams_and_resumed_laps() {
++    let permit = crate::tests::resources::pcm();
++    for attached in [false, true] {
++        let directory = tempfile::tempdir().unwrap();
++        let path = directory.path().join("loop.deadpan");
++        let mut store = ProjectStore::create(&path, &empty()).unwrap();
++        register_media(&mut store, "cfr-bframes.mp4", true);
++        let asset = register_mono(&mut store, directory.path());
++        placed(&mut store, &asset, attached);
++        let saved = store.snapshot().unwrap();
++        drop(store);
++        let store = ProjectStore::open(&path, deadpan_store::AccessMode::ReadWrite).unwrap();
++        assert_eq!(store.snapshot().unwrap(), saved);
++        let history = store.history_availability().unwrap();
++        let captured = snapshot(&store, 1);
++        let plan = Arc::new(RenderPlan::compile(&saved).unwrap());
++        let mut canonical = LimitedAudio::new(plan);
++        let mut sources = Sources::new(captured.clone());
++        let mut full = Vec::new();
++        while full.len() < 48_000 {
++            full.extend(
++                canonical
++                    .read(
++                        &mut sources,
++                        AudioSample(full.len() as i64),
++                        (48_000 - full.len()).min(8192) as u32,
++                        TIMEOUT,
++                        &cancelled(),
++                    )
++                    .unwrap_or_else(|error| panic!("canonical at {}: {error:?}", full.len()))
++                    .samples,
++            );
++        }
++        assert!(full.iter().flatten().any(|value| value.abs() > 0.01));
++        assert!(full[43_674..].iter().all(|frame| *frame == [0.0; 2]));
++        let (engine, devices) = engine(&permit);
++        let mut generation = 0;
++        // Begin after the event's own onset and before a mute exit or its end.
++        // Each window is shorter than effect history and crosses neither from
++        // project zero, so resetting a processor at a loop seam cannot pass.
++        for (first, length) in [(14_301_i64, 1021_i64), (43_301, 997)] {
++            let window =
++                Window::new(AudioSample(first), AudioSample(first + length), true).unwrap();
++            assert!(
++                full[first as usize..(first + length) as usize]
++                    .iter()
++                    .flatten()
++                    .any(|value| value.abs() > 0.0001)
++            );
++            for start in [first, first + 2 * length + 13] {
++                engine
++                    .play_window(
++                        generation as u64,
++                        captured.clone(),
++                        Target::Sequence,
++                        window,
++                        AudioSample(start),
++                        0.375,
++                    )
++                    .unwrap();
++                let device = playing_device(&engine, &devices, generation);
++                generation += 1;
++                // Cross two producer boundaries and many content seams. The
++                // heard clock remains monotonic even for a resumed later lap.
++                for chunk in 0..72_u64 {
++                    let delivered = start + chunk as i64 * 256;
++                    let now = 10_000_000 + chunk * 5_333_333;
++                    let (report, pcm) = device.render(256, chunk * 5_333_333, now);
++                    assert_eq!(report.status, RenderStatus::Playing);
++                    assert_eq!(report.first_sample, Some(delivered));
++                    for (frame, actual) in pcm.chunks_exact(2).enumerate() {
++                        let at = first + (delivered - first + frame as i64) % length;
++                        assert_eq!(
++                            actual,
++                            full[at as usize].map(|value| value * 0.375),
++                            "attached={attached}, delivered={delivered}, frame={frame}"
++                        );
++                    }
++                    device.now.store(now, Ordering::Release);
++                    assert!(wait(|| {
++                        engine.poll().is_some_and(|update| {
++                            assert_ne!(update.phase, Phase::Failed, "{update:?}");
++                            update.phase == Phase::Playing
++                                && update.sample == Some(AudioSample(delivered))
++                        })
++                    }));
++                }
++                engine.stop_handle().stop();
++                update(&engine, Phase::Stopped);
++            }
++        }
++        assert_eq!(store.snapshot().unwrap(), saved);
++        assert_eq!(store.history_availability().unwrap(), history);
++        store.validate().unwrap();
++    }
++}

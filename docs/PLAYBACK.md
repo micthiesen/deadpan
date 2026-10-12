@@ -80,16 +80,19 @@ It uses canonical source audio, structural Repeat/Retime/Hold semantics, room
 tone, authored bindings, edge fades and exact owner-clock
 [node gain/mute](AUDIO_GAIN.md). Gain follows complete time/pitch mapping and
 edges. Persisted
-[root sound events](SOUND_EVENTS.md#persisted-root-sounds) enter this same bus
-with their own gain and edges plus root treatments, followed by the shared
-[finite oversampled limiter](AUDIO_MASTERING.md). The full voice/effects graph,
-sends and group mix remain required before this can be a final master.
+[sound events](SOUND_EVENTS.md) enter this same bus with independent treatments,
+edges and sends before their group processing and the shared
+[finite oversampled limiter](AUDIO_MASTERING.md). Bounded treatment-prefix reuse
+fixes a measured work-budget failure with EQ and both returns; see the
+[loop and Tail regression](qualification/event-prefix-cache-2026-10-12.md).
+Remaining sound-owner edit routes, persistent filtered caching and
+mastering/performance qualification keep the full contract open.
 Monitor volume is independent of
 authored and export gain, defaults to 12.5%, and changes while stopped. PCM beyond
 the device's finite ±1 range fails explicitly; the application does not clip or
 normalize individual blocks. Native root sound placement and parameter editing
-are implemented; nested placement, remaining structural sound transforms and
-native node gain controls remain open. Original and catalog audition exclude
+are implemented; nested placement and remaining structural sound transforms
+remain open. Original and catalog audition exclude
 edit overlays and node treatments.
 
 [Speed edits](RETIME_EDITING.md) create or adjust the Retime structures already

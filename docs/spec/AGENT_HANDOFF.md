@@ -4,6 +4,20 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Shared event prefixes](../qualification/event-prefix-cache-2026-10-12.md) fix
+plan-work exhaustion for a treated sound with EQ and both returns. Every required
+ordered prefix now has bounded per-request tiles; limits remain unchanged.
+All 706 audio/playback tests and strict workspace checks pass. The real-media
+callback loops and scalar allocated-Tail checks also pass in release; app/CLI
+release builds pass. A real export verifies 30 pictures, four audio blocks and
+zero sample offset. No persistent cache or
+realtime qualification is claimed; partial sound-owner interval routes remain open.
+
+Partial sound-bearing slices still need exact interval transport: the current
+`SoundClockJournal` proves complete processing subtrees, and
+`sound_clocks::route_occurrence` preserves a constant extent across placements.
+Removing the capture refusal alone would lose cropped sample history.
+
 [Retained viewer verification](../qualification/retained-viewer-pixels-2026-10-12.md)
 resolves the previous black-viewer follow-up as an incorrect visual assessment.
 Both archived PNGs contain sequence frame 3 and identical primary-color counts

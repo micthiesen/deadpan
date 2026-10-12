@@ -4,6 +4,13 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 
 ## Resumed implementation, 2026-10-06
 
+[Shared event treatment prefixes](qualification/event-prefix-cache-2026-10-12.md)
+fix a real canonical-playback work-budget failure with EQ and both event returns.
+Per-request tiles reuse the input before EQ and each return without raising
+limits. All 706 audio/playback tests and strict workspace checks pass; both
+regressions also pass in release. A real export verifies 30 pictures, four audio
+blocks and zero sample offset. Persistent caching and full qualification remain open.
+
 [Retained viewer pixel verification](qualification/retained-viewer-pixels-2026-10-12.md)
 corrects the previous visual assessment of a black placement-replay viewer.
 Both saved images contain the picture. The replay now checks composed fixture

@@ -1,5 +1,11 @@
 # Sound events and scoped audio mixing
 
+Independent event EQ and returns share bounded ordered-prefix tiles within each
+preparation request. This prevents overlapping histories from repeatedly
+evaluating the same input and exhausting plan work. Source admission, exact
+clocks and resource limits remain unchanged. See the
+[regression and loop/Tail qualification](qualification/event-prefix-cache-2026-10-12.md).
+
 `StageAudio::read_retained_sound_input` reads a checked sound route's complete
 input on its original sample clock, before saved cuts/moves and current Hold
 gates. Its explicit allocation can extend beyond the shortened live project;

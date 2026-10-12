@@ -217,3 +217,74 @@ fn processed_event_history_and_envelope_progress_survive_insert_and_cut() {
         );
     }
 }
+
+#[test]
+fn allocated_tails_use_treated_event_input_and_keep_history_on_cold_seek() {
+    for attached in [false, true] {
+        let base = fixture(attached, None, false);
+        let raw = read(
+            &treated(&base, attached, &AudioTreatments::default()),
+            0,
+            48_000,
+        );
+        for (reordered, effect) in [(false, TailEffect::Reverb), (true, TailEffect::Delay)] {
+            let treatments = recipe(reordered);
+            // Assemble the whole treated event independently, including its
+            // original onset, mute window, finite EQ and authored stage order.
+            let input: Vec<_> = oracle(&raw, &treatments)
+                .into_iter()
+                .map(|sample| sample.map(|value| (f64::from(value) * 10f64.powf(-0.3)) as f32))
+                .collect();
+            let mut expected = deadpan_audio::render_tail(
+                deadpan_audio::TailRecipe::new(effect, 16_000, 20_000).unwrap(),
+                &input,
+                &AtomicBool::new(false),
+            )
+            .unwrap();
+            // The authored bus applies this Hold's default 2 ms edge fade
+            // after generating its ring. This is independent of event edges.
+            for (at, frame) in expected.iter_mut().take(96).enumerate() {
+                *frame = frame.map(|value| value * (2 * at + 1) as f32 / 192.0);
+            }
+            assert!(expected.iter().flatten().any(|value| value.abs() > 0.001));
+            assert!(expected[16_000..].iter().all(|frame| *frame == [0.0; 2]));
+
+            let treatments = treatments
+                .with_tail_sends(
+                    TailSends::default().with_level(effect, Some(GainDb::new(-6000).unwrap())),
+                )
+                .with_wet_sends(
+                    TailSends::default()
+                        .with_level(TailEffect::Reverb, Some(GainDb::UNITY))
+                        .with_level(TailEffect::Delay, Some(GainDb::UNITY)),
+                );
+            let mut wire = serde_json::to_value(treated(&base, attached, &treatments)).unwrap();
+            wire["nodes"]["root"]["kind"]["children"] = serde_json::json!(["owner", "tail"]);
+            wire["nodes"]["tail"] = serde_json::to_value(BeatNode::hold(
+                "Allocated tail",
+                HoldRecipe {
+                    duration: duration(20_000),
+                    picture_context: None,
+                    video: HoldVideo::Background,
+                    audio: HoldAudio::Tail {
+                        maximum: duration(16_000),
+                        effect,
+                        input: TailInput::Sends,
+                    },
+                },
+            ))
+            .unwrap();
+            let document = ProjectDocument::from_json(&wire.to_string()).unwrap();
+            let actual = read(&document, 48_000, 20_000);
+            assert_pcm_close(&actual, &expected);
+            // Each fresh reader starts within the tail; it must recover the
+            // event's pre-pause history, without its continuous wet return.
+            for (start, count) in [(9001, 127), (1, 301), (15_900, 401), (4700, 4097)] {
+                assert_pcm_close(
+                    &read(&document, 48_000 + start, count),
+                    &expected[start as usize..start as usize + count as usize],
+                );
+            }
+        }
+    }
+}
