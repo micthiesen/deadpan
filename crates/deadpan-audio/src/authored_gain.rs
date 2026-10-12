@@ -103,9 +103,16 @@ impl GainSum {
                     }
                 }
                 deadpan_core::AudioTreatmentStage::Equalizer => {
-                    return Err(StageAudioError::Unsupported(
-                        "EQ requires temporal owner processing",
-                    ));
+                    // An identity stage must preserve the current delivery
+                    // input, including its exact saved crop-edge resampling.
+                    if treatment
+                        .equalizer()
+                        .is_none_or(|recipe| !recipe.is_unity())
+                    {
+                        return Err(StageAudioError::Unsupported(
+                            "EQ requires temporal owner processing",
+                        ));
+                    }
                 }
             }
         }

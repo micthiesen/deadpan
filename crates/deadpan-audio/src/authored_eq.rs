@@ -15,14 +15,14 @@ use deadpan_plan::{
 use super::*;
 
 #[derive(Clone)]
-enum Context<'plan> {
+pub(super) enum Context<'plan> {
     Root,
     Domain(Arc<AudioDomain<'plan>>),
     Retained(Arc<AudioOwnerRetainedInput<'plan>>),
 }
 
 impl<'plan> Context<'plan> {
-    fn support(
+    pub(super) fn support(
         &self,
         plan: &RenderPlan,
         range: Range<AudioSample>,
@@ -35,7 +35,7 @@ impl<'plan> Context<'plan> {
         Ok(range.start.max(support.start)..range.end.min(support.end))
     }
 
-    fn owners(
+    pub(super) fn owners(
         &self,
         plan: &'plan RenderPlan,
         range: Range<AudioSample>,
@@ -55,7 +55,7 @@ impl<'plan> Context<'plan> {
         Ok(query)
     }
 
-    fn owner_context(
+    pub(super) fn owner_context(
         &self,
         plan: &'plan RenderPlan,
         owner: &AudioOwnerClock<'plan>,
@@ -298,6 +298,9 @@ impl StageAudio {
                                 return None;
                             }
                             let recipe = owner.treatments()?;
+                            if recipe.equalizer()?.is_unity() {
+                                return None;
+                            }
                             let stage = recipe
                                 .order()
                                 .iter()
@@ -547,7 +550,7 @@ impl StageAudio {
         result
     }
 
-    fn reserve_eq_tile(
+    pub(super) fn reserve_eq_tile(
         &mut self,
         resident: u64,
         control: WorkControl<'_>,

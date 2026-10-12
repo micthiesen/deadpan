@@ -5,13 +5,14 @@ use deadpan_core::AudioEdgePolicy;
 
 use super::*;
 
-struct PreparedSoundQuery<'plan> {
-    voice: deadpan_plan::AudioRootSound<'plan>,
-    input: PreparedSoundInput<'plan>,
-    fades: Vec<deadpan_plan::AudioSoundGateSpan>,
+pub(super) struct PreparedSoundQuery<'plan> {
+    pub(super) id: &'plan deadpan_core::SoundId,
+    pub(super) voice: deadpan_plan::AudioRootSound<'plan>,
+    pub(super) input: PreparedSoundInput<'plan>,
+    pub(super) fades: Vec<deadpan_plan::AudioSoundGateSpan>,
 }
 
-enum PreparedSoundInput<'plan> {
+pub(super) enum PreparedSoundInput<'plan> {
     Direct {
         signal: AudioSignalQuery<'plan>,
         policy: AudioPolicyQuery<SignalSample>,
@@ -30,9 +31,7 @@ impl StageAudio {
     ) -> Result<ReadBlock, StageAudioError> {
         if authored_gain && self.plan.has_audio_equalizers() {
             if !self.plan.sounds().is_empty() || !self.plan.beat_sounds().is_empty() {
-                return Err(StageAudioError::Unsupported(
-                    "EQ with independent sound contributions",
-                ));
+                return self.read_shared_equalizers(provider, start, frames, control);
             }
             return self.read_authored_equalizers(provider, start, frames, control, 0, &[]);
         }
@@ -56,43 +55,11 @@ impl StageAudio {
             return result;
         }
         let plan = Arc::clone(&self.plan);
-        let mut voices = Vec::with_capacity(plan.sounds().len());
         let end = start
             .0
             .checked_add(i64::from(frames))
             .ok_or(StageAudioError::Range)?;
-        for id in plan.sounds().keys() {
-            control.check()?;
-            let voice = plan.root_sound(id)?;
-            control.admit_dependency(&voice.event().source.asset)?;
-            let input = if let Some(routed) = voice.routed_input() {
-                PreparedSoundInput::Routed(
-                    self.preflight_routed_root(routed, start, frames, control)?,
-                )
-            } else {
-                let tape = voice
-                    .root_input_tape()
-                    .ok_or(PlanError::InvalidPlan("sound input is absent"))?;
-                let range = SignalSample(start.0)..SignalSample(end);
-                let signal = tape.query(range.clone(), control.query_limits()?)?;
-                control.spend_plan_work(signal.work)?;
-                let policy = tape.policy(range, control.query_limits()?)?;
-                control.spend_plan_work(policy.work)?;
-                for content in &policy.contents {
-                    control.preflight_content(content, &plan)?;
-                }
-                self.preflight_signal_query(&signal, control, 0)?;
-                PreparedSoundInput::Direct { signal, policy }
-            };
-            let fades = voice.gate_fades(start..AudioSample(end), control.query_limits()?)?;
-            control.spend_plan_work(fades.work)?;
-            validate_gate_envelopes(&fades.spans, start..AudioSample(end))?;
-            voices.push(PreparedSoundQuery {
-                voice,
-                input,
-                fades: fades.spans,
-            });
-        }
+        let voices = self.prepare_root_sounds(&plan, start, frames, control)?;
         let retained =
             self.prepare_sound_processing_plans(&plan, start..AudioSample(end), control)?;
         let mut beat_voices =
@@ -123,17 +90,95 @@ impl StageAudio {
         result
     }
 
+    pub(super) fn prepare_root_sounds<'plan>(
+        &mut self,
+        plan: &'plan RenderPlan,
+        start: AudioSample,
+        frames: u32,
+        control: WorkControl<'_>,
+    ) -> Result<Vec<PreparedSoundQuery<'plan>>, StageAudioError> {
+        let mut voices = Vec::with_capacity(plan.sounds().len());
+        let end = start
+            .0
+            .checked_add(i64::from(frames))
+            .ok_or(StageAudioError::Range)?;
+        for id in plan.sounds().keys() {
+            control.check()?;
+            let voice = plan.root_sound(id)?;
+            control.admit_dependency(&voice.event().source.asset)?;
+            let input = if let Some(routed) = voice.routed_input() {
+                PreparedSoundInput::Routed(
+                    self.preflight_routed_root(routed, start, frames, control)?,
+                )
+            } else {
+                let tape = voice
+                    .root_input_tape()
+                    .ok_or(PlanError::InvalidPlan("sound input is absent"))?;
+                let range = SignalSample(start.0)..SignalSample(end);
+                let signal = tape.query(range.clone(), control.query_limits()?)?;
+                control.spend_plan_work(signal.work)?;
+                let policy = tape.policy(range, control.query_limits()?)?;
+                control.spend_plan_work(policy.work)?;
+                for content in &policy.contents {
+                    control.preflight_content(content, plan)?;
+                }
+                self.preflight_signal_query(&signal, control, 0)?;
+                PreparedSoundInput::Direct { signal, policy }
+            };
+            let fades = voice.gate_fades(start..AudioSample(end), control.query_limits()?)?;
+            control.spend_plan_work(fades.work)?;
+            validate_gate_envelopes(&fades.spans, start..AudioSample(end))?;
+            voices.push(PreparedSoundQuery {
+                id,
+                voice,
+                input,
+                fades: fades.spans,
+            });
+        }
+        Ok(voices)
+    }
+
+    pub(super) fn read_prepared_root_sound(
+        &mut self,
+        provider: &mut impl AudioSourceProvider,
+        input: PreparedSoundInput<'_>,
+        start: AudioSample,
+        control: WorkControl<'_>,
+    ) -> Result<ReadBlock, StageAudioError> {
+        match input {
+            PreparedSoundInput::Direct { signal, policy } => {
+                let block = self.read_signal_queries(signal, policy, provider, control, 0)?;
+                Ok(ReadBlock {
+                    start,
+                    samples: block.samples,
+                    dependencies: block.dependencies,
+                    relative_depth: block.relative_depth,
+                    suppressed: block
+                        .suppressed
+                        .into_iter()
+                        .map(|range| AudioSample(range.start.0)..AudioSample(range.end.0))
+                        .collect(),
+                    exhausted: Vec::new(),
+                })
+            }
+            PreparedSoundInput::Routed(prepared) => {
+                self.read_routed_root_controlled(provider, prepared, control)
+            }
+        }
+    }
+
     fn render_root_sounds(
         &mut self,
         provider: &mut impl AudioSourceProvider,
         mut original: ReadBlock,
         voices: Vec<PreparedSoundQuery<'_>>,
-        beat_voices: Vec<super::beat_sounds::PreparedBeatSound<'_>>,
+        beat_voices: Vec<super::beat_sounds::PreparedBeatSound<'_, '_>>,
         control: WorkControl<'_>,
         mut mix: group_mix::GroupMix<'_>,
     ) -> Result<ReadBlock, StageAudioError> {
         mix.original(&original.samples, control)?;
         for PreparedSoundQuery {
+            id: _,
             voice,
             input,
             fades,
@@ -149,26 +194,8 @@ impl StageAudio {
                 event.source.asset.clone(),
                 control.observe(&event.source.asset, source)?,
             );
-            let mut block = match input {
-                PreparedSoundInput::Direct { signal, policy } => {
-                    let block = self.read_signal_queries(signal, policy, provider, control, 0)?;
-                    ReadBlock {
-                        start: original.start,
-                        samples: block.samples,
-                        dependencies: block.dependencies,
-                        relative_depth: block.relative_depth,
-                        suppressed: block
-                            .suppressed
-                            .into_iter()
-                            .map(|range| AudioSample(range.start.0)..AudioSample(range.end.0))
-                            .collect(),
-                        exhausted: Vec::new(),
-                    }
-                }
-                PreparedSoundInput::Routed(prepared) => {
-                    self.read_routed_root_controlled(provider, prepared, control)?
-                }
-            };
+            let mut block =
+                self.read_prepared_root_sound(provider, input, original.start, control)?;
             block.suppressed.extend(
                 fades
                     .iter()

@@ -136,7 +136,12 @@ impl RenderPlan {
     }
 }
 
-impl AudioSoundOwnerContext<'_> {
+impl<'plan> AudioSoundOwnerContext<'plan> {
+    /// Complete current processing domain for Original input sharing this
+    /// checked sound owner. Retained Original clocks still resolve separately.
+    pub fn processing_domain(&self) -> &AudioDomain<'plan> {
+        &self.policy
+    }
     pub fn belongs_to(&self, plan: &RenderPlan) -> bool {
         std::ptr::eq(self.plan, plan)
     }

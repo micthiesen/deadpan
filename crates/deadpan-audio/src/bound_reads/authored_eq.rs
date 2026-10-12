@@ -397,7 +397,7 @@ fn authored_eq_tail_uses_processed_input_and_shared_parent_once() {
 }
 
 #[test]
-fn authored_eq_independent_sounds_fail_explicitly_before_source_admission() {
+fn authored_eq_independent_root_sound_bypasses_child_equalizer() {
     let rate = FrameRate::new(48_000, 1).unwrap();
     let mut a = source(rate, 0, 4096, 4096);
     a.audio_treatments = AudioTreatments::default()
@@ -430,18 +430,305 @@ fn authored_eq_independent_sounds_fail_explicitly_before_source_admission() {
     .unwrap();
     let doc = ProjectDocument::from_json(&wire.to_string()).unwrap();
     let mut renderer = StageAudio::new(Arc::new(RenderPlan::compile(&doc).unwrap()));
+    let actual = authored(&mut renderer, &mut provider, 1024, 256);
+    let mut plain = serde_json::to_value(&doc).unwrap();
+    plain["sounds"] = serde_json::json!({});
+    let plain = ProjectDocument::from_json(&plain.to_string()).unwrap();
+    let mut child = StageAudio::new(Arc::new(RenderPlan::compile(&plain).unwrap()));
+    let wet = authored(&mut child, &mut provider, 1024, 256);
+    let dry = root_samples(&mut child, &mut provider, 1024, 256);
+    let expected: Vec<_> = wet
+        .iter()
+        .zip(dry)
+        .map(|(wet, dry)| {
+            [
+                f64::from(wet[0]) + f64::from(dry[0]),
+                f64::from(wet[1]) + f64::from(dry[1]),
+            ]
+        })
+        .collect();
+    close(&actual, &expected);
+    assert!(provider.calls > 0);
+    assert_eq!(renderer.active_frames, 0);
+}
+
+fn shared_fixture(treatments: AudioTreatments, cropped: bool) -> (ProjectDocument, Provider) {
+    let rate = FrameRate::new(48_000, 1).unwrap();
+    let a = source(rate, 0, 8192, 8192);
+    let NodeKind::Source { source } = &a.kind else {
+        unreachable!()
+    };
+    let audio = source.audio.clone().unwrap();
+    let mut group = BeatNode::sequence("Group", vec![id("a")]);
+    group.audio_treatments = treatments;
+    let mut nodes = vec![("a", a), ("group", group)];
+    if cropped {
+        nodes.push(("crop", crop("group", 2001..7001)));
+    }
+    let (doc, provider) = document(rate, &[if cropped { "crop" } else { "group" }], nodes);
+    let mut wire = serde_json::to_value(&doc).unwrap();
+    wire["assets"]["media"]["source_qualification"] = serde_json::json!("b".repeat(64));
+    wire["assets"]["media"]["still_image"] = serde_json::json!(false);
+    let sound = BeatSound {
+        label: "Shared sound".into(),
+        source: audio.clone(),
+        mapping: SourceAudioMapping::natural_rate(audio.span, rate).unwrap(),
+        offset: AudioSample(0),
+        gain_millidecibels: -3000,
+        start_edge: AudioEdgePolicy::Hard,
+        end_edge: AudioEdgePolicy::Hard,
+        overflow: SoundOverflowPolicy::Reject,
+    };
+    wire["beat_sounds"] = serde_json::json!({"group":{"first":sound.clone(),"second":sound}});
+    (
+        ProjectDocument::from_json(&wire.to_string()).unwrap(),
+        provider,
+    )
+}
+
+#[test]
+fn shared_eq_saturation_processes_combined_voices_in_authored_order() {
+    let recipe = eq([6000, -6000, 3000]);
+    let saturation = Saturation::new(GainDb::new(9000).unwrap()).unwrap();
+    for before in [true, false] {
+        let order = if before {
+            vec![
+                AudioTreatmentStage::Saturation,
+                AudioTreatmentStage::Equalizer,
+            ]
+        } else {
+            vec![
+                AudioTreatmentStage::Equalizer,
+                AudioTreatmentStage::Saturation,
+            ]
+        };
+        let treatments = AudioTreatments::with_equalizer_stages(
+            order,
+            None,
+            Some(saturation),
+            None,
+            Some(recipe),
+        )
+        .unwrap();
+        let (doc, mut provider) = shared_fixture(treatments, false);
+        let prefix = if before {
+            AudioTreatments::default()
+                .with_saturation(Some(saturation))
+                .unwrap()
+        } else {
+            AudioTreatments::default()
+        };
+        let (plain, _) = shared_fixture(prefix, false);
+        let mut reference = StageAudio::new(Arc::new(RenderPlan::compile(&plain).unwrap()));
+        let raw: Vec<_> = authored(&mut reference, &mut provider, 0, 8192)
+            .into_iter()
+            .map(|frame| frame.map(f64::from))
+            .collect();
+        let mut expected = filtered(&raw, recipe);
+        if !before {
+            for frame in &mut expected {
+                *frame = frame.map(|value| saturation.shape(value));
+            }
+        }
+        let plan = Arc::new(RenderPlan::compile(&doc).unwrap());
+        let mut renderer = StageAudio::new(plan);
+        for at in [1024, 0, 8080, 3999] {
+            close(
+                &authored(&mut renderer, &mut provider, at, 96),
+                &expected[at as usize..at as usize + 96],
+            );
+        }
+        assert_eq!(renderer.active_frames, 0);
+    }
+}
+
+#[test]
+fn shared_eq_crop_keeps_complete_attachment_history_and_cold_partitioning() {
+    let treatments = AudioTreatments::default()
+        .with_equalizer(Some(eq([6000, -6000, 3000])))
+        .unwrap()
+        .with_saturation(Some(Saturation::new(GainDb::new(9000).unwrap()).unwrap()))
+        .unwrap();
+    let (whole, mut provider) = shared_fixture(treatments.clone(), false);
+    let (cropped, _) = shared_fixture(treatments, true);
+    let mut oracle = StageAudio::new(Arc::new(RenderPlan::compile(&whole).unwrap()));
+    let plan = Arc::new(RenderPlan::compile(&cropped).unwrap());
+    for at in [0, 1010, 2999, 4900] {
+        let mut renderer = StageAudio::new(Arc::clone(&plan));
+        let actual = authored(&mut renderer, &mut provider, at, 96);
+        let expected = authored(&mut oracle, &mut provider, at + 2001, 96);
+        close(
+            &actual,
+            &expected
+                .iter()
+                .map(|frame| frame.map(f64::from))
+                .collect::<Vec<_>>(),
+        );
+        assert_eq!(
+            authored(&mut renderer, &mut provider, at + 63, 1)[0],
+            actual[63]
+        );
+        assert_eq!(renderer.active_frames, 0);
+    }
+}
+
+#[test]
+fn shared_eq_nested_owners_match_explicit_shared_prefix() {
+    let first = eq([6000, -6000, 3000]);
+    let second = eq([-3000, 6000, -9000]);
+    let saturation = Saturation::new(GainDb::new(9000).unwrap()).unwrap();
+    let (mut doc, mut provider) = shared_fixture(
+        AudioTreatments::default()
+            .with_equalizer(Some(first))
+            .unwrap()
+            .with_saturation(Some(saturation))
+            .unwrap(),
+        false,
+    );
+    let mut wire = serde_json::to_value(&doc).unwrap();
+    wire["nodes"]["root"]["audio_treatments"] = serde_json::to_value(
+        AudioTreatments::default()
+            .with_equalizer(Some(second))
+            .unwrap(),
+    )
+    .unwrap();
+    doc = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    let (plain, _) = shared_fixture(AudioTreatments::default(), false);
+    let mut reference = StageAudio::new(Arc::new(RenderPlan::compile(&plain).unwrap()));
+    let raw: Vec<_> = authored(&mut reference, &mut provider, 0, 8192)
+        .into_iter()
+        .map(|frame| frame.map(f64::from))
+        .collect();
+    let first: Vec<_> = filtered(&raw, first)
+        .into_iter()
+        .map(|frame| frame.map(|value| saturation.shape(value)))
+        .collect();
+    let expected = filtered(&first, second);
+    let mut renderer = StageAudio::new(Arc::new(RenderPlan::compile(&doc).unwrap()));
+    close(
+        &authored(&mut renderer, &mut provider, 3000, 128),
+        &expected[3000..3128],
+    );
+    assert_eq!(renderer.active_frames, 0);
+}
+
+#[test]
+fn shared_eq_limit_and_cancellation_release_residency() {
+    let (doc, mut provider) = shared_fixture(
+        AudioTreatments::default()
+            .with_equalizer(Some(eq([6000, -6000, 3000])))
+            .unwrap(),
+        false,
+    );
+    let plan = Arc::new(RenderPlan::compile(&doc).unwrap());
+    let mut small = StageAudio::with_limits(
+        Arc::clone(&plan),
+        StageLimits {
+            maximum_resident_frames: 1024,
+            ..Default::default()
+        },
+    )
+    .unwrap();
     assert!(matches!(
-        renderer.prepare_authored_bus(
+        small.prepare_authored_bus(
             &mut provider,
-            AudioSample(0),
-            256,
+            AudioSample(2048),
+            64,
             Duration::from_secs(10),
             &AtomicBool::new(false)
         ),
-        Err(StageAudioError::Unsupported(
-            "EQ with independent sound contributions"
-        ))
+        Err(StageAudioError::Limit(_))
     ));
     assert_eq!(provider.calls, 0);
+    assert_eq!(small.active_frames, 0);
+    let mut renderer = StageAudio::new(plan);
+    assert!(
+        renderer
+            .prepare_authored_bus(
+                &mut provider,
+                AudioSample(2048),
+                64,
+                Duration::from_secs(10),
+                &AtomicBool::new(true)
+            )
+            .is_err()
+    );
+    assert_eq!(renderer.active_frames, 0);
+    assert!(
+        authored(&mut renderer, &mut provider, 2048, 64)
+            .iter()
+            .any(|frame| *frame != [0.0; 2])
+    );
+    assert_eq!(renderer.active_frames, 0);
+}
+
+#[test]
+fn shared_eq_allowed_sound_cannot_release_forbidden_original_or_peer_history() {
+    let rate = FrameRate::new(48000, 1).unwrap();
+    let recipe = eq([6000, -6000, 3000]);
+    let saturation = Saturation::new(GainDb::new(9000).unwrap()).unwrap();
+    let a = source(rate, 0, 4096, 4096);
+    let audio = match source(rate, 0, 8192, 8192).kind {
+        NodeKind::Source { source } => source.audio.unwrap(),
+        _ => unreachable!(),
+    };
+    let (doc, mut provider) =
+        document(rate, &["a", "pause"], vec![("a", a), ("pause", hold(4096))]);
+    let mut wire = serde_json::to_value(&doc).unwrap();
+    wire["assets"]["media"]["source_qualification"] = serde_json::json!("b".repeat(64));
+    wire["assets"]["media"]["still_image"] = serde_json::json!(false);
+    let event = SoundEvent {
+        owner: id("root"),
+        label: "Independent".into(),
+        mapping: SourceAudioMapping::natural_rate(audio.span, rate).unwrap(),
+        source: audio,
+        offset: AudioSample(0),
+        gain_millidecibels: 0,
+        start_edge: AudioEdgePolicy::Hard,
+        end_edge: AudioEdgePolicy::Hard,
+        overflow: SoundOverflowPolicy::Reject,
+    };
+    wire["sounds"] = serde_json::json!({"allowed":event.clone(),"forbidden":event});
+    wire["sound_allowances"] = serde_json::json!({"allowed":SoundHoldAllowances::try_from(vec![SoundHoldIssuer::Node {instance:InstancePath {node:id("pause"),repeats:vec![]}}]).unwrap()});
+    let prefix = AudioTreatments::default()
+        .with_saturation(Some(saturation))
+        .unwrap();
+    wire["nodes"]["root"]["audio_treatments"] = serde_json::to_value(
+        AudioTreatments::with_equalizer_stages(
+            vec![
+                AudioTreatmentStage::Saturation,
+                AudioTreatmentStage::Equalizer,
+            ],
+            None,
+            Some(saturation),
+            None,
+            Some(recipe),
+        )
+        .unwrap(),
+    )
+    .unwrap();
+    let mixed = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    // Oracle: only the allowed voice exists for the entire filter history.
+    wire["sounds"].as_object_mut().unwrap().remove("forbidden");
+    wire["nodes"]["a"]["audio_treatments"] = serde_json::to_value(AudioTreatments::from_clip_gain(
+        ClipGain::new(GainDb::UNITY, true, vec![], vec![]).unwrap(),
+    ))
+    .unwrap();
+    wire["nodes"]["root"]["audio_treatments"] = serde_json::to_value(prefix).unwrap();
+    let isolated = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    let mut reference = StageAudio::new(Arc::new(RenderPlan::compile(&isolated).unwrap()));
+    let raw: Vec<_> = authored(&mut reference, &mut provider, 0, 8192)
+        .into_iter()
+        .map(|frame| frame.map(f64::from))
+        .collect();
+    let expected = filtered(&raw, recipe);
+    let mut renderer = StageAudio::new(Arc::new(RenderPlan::compile(&mixed).unwrap()));
+    close(
+        &authored(&mut renderer, &mut provider, 4096, 128),
+        &expected[4096..4224],
+    );
+    let spanning = authored(&mut renderer, &mut provider, 4032, 192);
+    close(&spanning[64..], &expected[4096..4224]);
+    assert!(spanning[64..].iter().any(|frame| frame[0].abs() > 1e-4));
     assert_eq!(renderer.active_frames, 0);
 }

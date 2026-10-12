@@ -4,28 +4,30 @@ use super::*;
 use deadpan_core::{AudioEdgePolicy, BeatSound};
 use deadpan_plan::AudioSourceOccurrence;
 
-pub(super) struct PreparedBeatSound<'plan> {
-    event: &'plan BeatSound,
-    occurrences: Vec<PreparedOccurrence<'plan>>,
+pub(super) struct PreparedBeatSound<'plan, 'history> {
+    pub(super) event: &'plan BeatSound,
+    pub(super) owner: &'plan deadpan_core::NodeId,
+    pub(super) id: &'plan deadpan_core::SoundId,
+    pub(super) occurrences: Vec<PreparedOccurrence<'plan, 'history>>,
 }
 
-struct PreparedOccurrence<'plan> {
-    voice: AudioSourceOccurrence<'plan>,
-    samples: Range<AudioSample>,
-    input: PreparedBeatInput<'plan>,
-    fades: Vec<deadpan_plan::AudioSoundGateSpan>,
+pub(super) struct PreparedOccurrence<'plan, 'history> {
+    pub(super) voice: AudioSourceOccurrence<'plan>,
+    pub(super) samples: Range<AudioSample>,
+    pub(super) input: PreparedBeatInput<'plan, 'history>,
+    pub(super) fades: Vec<deadpan_plan::AudioSoundGateSpan>,
     mix_route: Option<super::group_mix::Route<'plan>>,
 }
 
-enum PreparedBeatInput<'plan> {
+pub(super) enum PreparedBeatInput<'plan, 'history> {
     Current(Box<RootReadQueries<'plan>>),
     Routed {
         plan: Arc<RenderPlan>,
-        query: super::routed::PreparedRoutedRootQuery<'plan>,
+        query: super::routed::PreparedRoutedRootQuery<'history>,
     },
 }
 
-impl<'plan> PreparedBeatSound<'plan> {
+impl<'plan> PreparedBeatSound<'plan, '_> {
     pub(super) fn route_mix(
         &mut self,
         mix: &mut super::group_mix::GroupMix<'plan>,
@@ -49,14 +51,14 @@ impl<'plan> PreparedBeatSound<'plan> {
 }
 
 impl StageAudio {
-    pub(super) fn prepare_beat_sounds<'plan>(
+    pub(super) fn prepare_beat_sounds<'plan, 'history>(
         &mut self,
         plan: &'plan RenderPlan,
-        retained: &'plan super::sound_clocks::SoundProcessingPlans,
+        retained: &'history super::sound_clocks::SoundProcessingPlans,
         samples: Range<AudioSample>,
         control: WorkControl<'_>,
         context: Option<&deadpan_plan::AudioSoundOwnerContext<'plan>>,
-    ) -> Result<Vec<PreparedBeatSound<'plan>>, StageAudioError> {
+    ) -> Result<Vec<PreparedBeatSound<'plan, 'history>>, StageAudioError> {
         let mut prepared = Vec::new();
         for (owner, events) in plan.beat_sounds() {
             for (sound, event) in events {
@@ -194,10 +196,37 @@ impl StageAudio {
                         mix_route: None,
                     });
                 }
-                prepared.push(PreparedBeatSound { event, occurrences });
+                prepared.push(PreparedBeatSound {
+                    event,
+                    owner,
+                    id: sound,
+                    occurrences,
+                });
             }
         }
         Ok(prepared)
+    }
+
+    pub(super) fn read_prepared_beat_sound(
+        &mut self,
+        provider: &mut impl AudioSourceProvider,
+        input: PreparedBeatInput<'_, '_>,
+        samples: Range<AudioSample>,
+        control: WorkControl<'_>,
+    ) -> Result<ReadBlock, StageAudioError> {
+        match input {
+            PreparedBeatInput::Current(queries) => self.read_queries(
+                provider,
+                samples.start,
+                count(&samples)?,
+                control,
+                0,
+                *queries,
+            ),
+            PreparedBeatInput::Routed { plan, query } => self.with_plan_scope(plan, |reader| {
+                reader.read_routed_root_controlled(provider, query, control)
+            }),
+        }
     }
 
     pub(super) fn render_beat_sounds(
@@ -205,7 +234,7 @@ impl StageAudio {
         provider: &mut impl AudioSourceProvider,
         original: &mut ReadBlock,
         mix: &mut super::group_mix::GroupMix<'_>,
-        sounds: Vec<PreparedBeatSound<'_>>,
+        sounds: Vec<PreparedBeatSound<'_, '_>>,
         control: WorkControl<'_>,
     ) -> Result<(), StageAudioError> {
         let end = AudioSample(
@@ -221,20 +250,12 @@ impl StageAudio {
             control.check()?;
             for occurrence in sound.occurrences {
                 control.spend_plan_work(count(&occurrence.samples)? as usize)?;
-                let mut block = match occurrence.input {
-                    PreparedBeatInput::Current(queries) => self.read_queries(
-                        provider,
-                        occurrence.samples.start,
-                        count(&occurrence.samples)?,
-                        control,
-                        0,
-                        *queries,
-                    )?,
-                    PreparedBeatInput::Routed { plan, query } => self
-                        .with_plan_scope(plan, |reader| {
-                            reader.read_routed_root_controlled(provider, query, control)
-                        })?,
-                };
+                let mut block = self.read_prepared_beat_sound(
+                    provider,
+                    occurrence.input,
+                    occurrence.samples.clone(),
+                    control,
+                )?;
                 let offset = usize::try_from(occurrence.samples.start.0 - original.start.0)
                     .map_err(|_| StageAudioError::Range)?;
                 let expected = count(&occurrence.samples)? as usize;

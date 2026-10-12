@@ -35,8 +35,9 @@ persisted treatment and PCM increment's review, verification and remaining limit
 ## Recipe and numerical contract
 
 The [equalizer processor](EQUALIZER.md) stores its validated static recipe as an
-ordered treatment and recursively processes Original owners. Independent
-sound/group integration and native EQ authoring remain open.
+ordered treatment and recursively processes shared Original/sound owners.
+See [shared EQ qualification](qualification/shared-eq-2026-10-12.md); native EQ
+authoring and remaining automation/send/tail work stay open.
 
 `AudioTreatments` has an explicitly serialized closed stage order. Its current
 vocabulary is `ClipGain`, `Equalizer`, `Saturation` and final `StereoBalance`;
@@ -217,8 +218,8 @@ refuse a balance replacement instead of discarding their individual treatments.
 The inspector and its Gain section show the direction; command help explains the law.
 Ranged gain and ordinary gain edits preserve balance.
 
-The treatment is shared by limited audition and Render. Full sound/group EQ,
-arbitrary sends and complete group automation remain open; this stage does not qualify
+The treatment is shared by limited audition and Render. Stored shared EQ now
+uses the same bus; arbitrary sends and complete group automation remain open; this stage does not qualify
 the complete master. See [balance qualification](qualification/stereo-balance-2026-10-11.md).
 
 ## Range steps

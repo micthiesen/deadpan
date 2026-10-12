@@ -2431,7 +2431,22 @@ pub fn equalizer(dir: &Path) -> Result<Fixture> {
 /// root WAV joins only at the root's second saturation. Both stages trim after
 /// shaping, keeping the master below limiting for a direct arithmetic oracle.
 pub fn group_saturation(dir: &Path) -> Result<Fixture> {
-    let mut project = Project::create(dir, "group-saturation")?;
+    shared_processing(dir, false)
+}
+
+pub fn shared_equalizer(dir: &Path) -> Result<Fixture> {
+    shared_processing(dir, true)
+}
+
+fn shared_processing(dir: &Path, equalizer: bool) -> Result<Fixture> {
+    let mut project = Project::create(
+        dir,
+        if equalizer {
+            "shared-equalizer"
+        } else {
+            "group-saturation"
+        },
+    )?;
     tone_pauses(&mut project)?;
     place_click_sound(&mut project)?;
     project.apply(|_, document, _| {
@@ -2485,7 +2500,56 @@ pub fn group_saturation(dir: &Path) -> Result<Fixture> {
             })
         })?;
     }
-    project.finish(vec!["Saturation", "Group mixing"], tone_expectations(),
+    if equalizer {
+        for group in [true, false] {
+            project.apply(|_, document, _| {
+                let owner = if group {
+                    node("tone-group")?
+                } else {
+                    document.root().clone()
+                };
+                let current = &document.nodes()[&owner].audio_treatments;
+                let gains = if group {
+                    [6000, 0, -3000]
+                } else {
+                    [-3000, 6000, 0]
+                };
+                let recipe = deadpan_core::EqualizerRecipe::new(
+                    gains.map(|db| GainDb::new(db).unwrap()),
+                    None,
+                    None,
+                )?;
+                let order = if group {
+                    vec![
+                        deadpan_core::AudioTreatmentStage::Saturation,
+                        deadpan_core::AudioTreatmentStage::Equalizer,
+                        deadpan_core::AudioTreatmentStage::ClipGain,
+                    ]
+                } else {
+                    vec![
+                        deadpan_core::AudioTreatmentStage::Equalizer,
+                        deadpan_core::AudioTreatmentStage::Saturation,
+                        deadpan_core::AudioTreatmentStage::ClipGain,
+                    ]
+                };
+                Ok(Command::SetAudioTreatments {
+                    node: owner.clone(),
+                    treatments: AudioTreatments::with_equalizer_stages(
+                        order,
+                        current.clip_gain().cloned(),
+                        current.saturation(),
+                        None,
+                        Some(recipe),
+                    )?,
+                })
+            })?;
+        }
+    }
+    let mut rows = vec!["Saturation", "Group mixing"];
+    if equalizer {
+        rows.push("EQ / filtering");
+    }
+    project.finish(rows, tone_expectations(),
         vec!["Two shared nonlinear buses; owned and root catalog voices; gain follows saturation; unchanged 54 pictures".into()])
 }
 

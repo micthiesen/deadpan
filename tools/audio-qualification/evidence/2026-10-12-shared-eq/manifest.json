@@ -1,0 +1,19 @@
+{
+  "check-evidence.py": "d5409eab77e998294ee83300b2486cf4f27171687b4315472e4b2eacf503e093",
+  "clippy.log.gz": "f39559031a59b0cbc9dc8f94d979cbb3f2e9bd33006b6d330551b33c50da7b48",
+  "commands.json": "e30fbb697ae276548f02c0c674148ad18015707fc7ae799f3f5133f8f520260d",
+  "export.json": "187c9b0aa4b7511b2266824369d6056dc83bc8890d7a568dae549d396097c921",
+  "fmt.log.gz": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+  "identity.json": "855396a0b3b5efd47a432d340dbc73e8163646b3e29c1134829fe9b7470df1ea",
+  "release-identity.json": "57cb6a051536d6f9223d0c17d1ac751688eae45b351b1dbc1975d007ec6aa011",
+  "release.log.gz": "952e20eaac0a728a3fc7bafbc2688e1b4d65d60d34c1c789d590da20dea6bd5e",
+  "render-receipt.json": "ff7685999a807f4c4b1609dc5700d503c90d4d486f5a4decbc7ad3f821a97bf0",
+  "results.json": "fe663679b82eea27ed30bcaf9ccd933032ce2a57594223a37d31553c088dc565",
+  "retain.py": "05904951ae609a7cecef9d1d9f0ccb6d783c07250a02ebb24fec9e708caf3a9f",
+  "review.md": "aa82b632b00fd4b10441576ffe5a312c2e162a892c6e49dbfdb3e79b257a6b19",
+  "shared-equalizer.deadpan.tar.gz": "970693486e16f07650907e6e1e15b3e56ec40fd0fd3bd66003ab210eaf38fd17",
+  "shared-equalizer.mp4": "9f55b3d0413038294c19f20fa4a4d2b7bf8d77d89e06a43a014ddd99f80a0de2",
+  "tests.log.gz": "0b972aab14754cf8304e218fc0b0f2c064f1c90e9c5bb24737b4aec263a92460",
+  "verify.py": "0b9ef3cb7cbf5a6d9fd66e0f0eb08d3838e56f31b64f1030b4e87e8d636ece33",
+  "whitespace.log.gz": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+}

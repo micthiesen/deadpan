@@ -3,11 +3,11 @@
 Specification §§10.2 and 17 require shared EQ/filter processing with explicit
 history, latency and tails. `AudioTreatments` now stores an explicit `equalizer`
 stage, and semantic `set_audio` changes commit or remove its bounded recipe.
-The shared authored bus recursively evaluates EQ on Original owners, including
-nested groups and retained history, before mastering. Preview and emitted-file
-verification pass for the real headless Render path. Native authoring controls
-and independent sound/group integration remain open; a project combining EQ
-with independent sound events reports an explicit unsupported-combination error.
+The shared authored bus recursively evaluates EQ on Original and independent
+sound owners, including nested groups and retained history, before mastering.
+Shared saturation processes the combined sum in its authored order. Preview
+and emitted-file verification pass for the real headless Render path. Native
+authoring controls and remaining automation/send/tail work remain open.
 
 ## Stored and recursive processing
 
@@ -46,6 +46,17 @@ Tail input uses the same ordered processing while omitting shared exterior
 owners. Those owners process the tail's output once. The tail recursion guard
 remains separate from each EQ graph, and source dependencies cover all halos.
 See [authored EQ qualification](qualification/authored-eq-2026-10-11.md).
+
+## Shared independent sounds
+
+`shared_eq` uses the same Original contexts alongside complete current and saved
+sound contexts. `shared_mix` retains the gain/EQ/saturation order at each owner,
+summing before shared saturation. Root SoundEvents enter at the root only.
+Per-sample contribution permission sets select complete filtered prefixes, so an
+allowed sound cannot release forbidden Original or peer history during a Hold.
+The permission set participates in tile identity; all intermediates remain f64.
+Neutral EQ executes as an identity on current delivery, preserving saved crop
+resampling exactly. See [shared EQ qualification](qualification/shared-eq-2026-10-12.md).
 
 ## Owner input contexts
 
@@ -101,7 +112,7 @@ It does not qualify authored EQ, mixed-voice permissions or the editor workflow.
 The subsequent [retained-treatment qualification](qualification/retained-treatments-2026-10-11.md)
 checks transported fades, reference-clock gain/mute and ordered memoryless
 treatments. The stored recursive path described above extends that foundation
-to authored EQ; independent sound/group integration remains open.
+to authored EQ; the later shared graph now consumes independent sound input.
 
 ## Ordered owner evaluation
 
@@ -186,18 +197,13 @@ while still admitting both complete input channels and honoring cancellation.
 
 ## Integration still owed
 
-Complete captured native controls and the independently timed voice/group graph.
-Extend qualification across the remaining nested bindings, copies, Repeats and
-time/pitch interactions. Sum and process
-group-owned contributions once, with correct order relative to gain and
-saturation. Apply silence and incoming-tail permission per voice, including
-independently permitted sounds under a silent Hold. Admit aggregate graph work
-and resident memory before opening media and share any materialized cache across
-preview, cold seeks, loops and export. Do not treat a halo from the current
-physical timeline as proof of these ownership and policy properties.
+Complete captured native controls and independently timed automation. Extend
+qualification across the remaining nested bindings, copies, Repeats and
+time/pitch interactions, and complete arbitrary sends with incoming-tail policy.
+Request-local filtering is implemented; persistent cache reuse across preview,
+cold seeks, loops and export, and measured interactive latency remain required.
 
-DP-09 remains partial. The qualified Original-only preview/export path does not
-close independent voice/policy interactions, filtered-cache persistence or the
-final native workflow. These remain agent work under the full specification.
-Listening and other hardware remain subject to the existing owner-verification
-scope.
+DP-09 remains partial. The qualified shared preview/export path does not close
+the remaining voice/send/tail interactions or final native workflow. These remain
+agent work under the full specification. Listening and other hardware remain
+subject to the existing owner-verification scope.

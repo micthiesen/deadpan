@@ -4,22 +4,31 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
-[Saved sound input](../qualification/beat-sound-owner-input-2026-10-11.md)
-connects full sound contexts to `prepare_sound_processing_plans_in_context`
-and `prepare_beat_sounds`, including historical aliases and routed Hold gates.
-`read_beat_sound_owner_input` returns f64 attachment input after event edges/gain,
-without Original audio, root SoundEvents or any owner treatment. A separate
-delivery anchor preserves saved sample-label shifts when history expands;
-identity routes and envelopes use it together. The NTSC cropped-copy check
-caught a one-sample shift before this correction.
+[Shared EQ](../qualification/shared-eq-2026-10-12.md) now uses `shared_mix.rs`
+and `shared_eq.rs` for projects with independent sounds. Prepared root and beat
+voices keep separate lifetimes for current owners and historical plans. Each
+complex owner sums f64 contributions, recursively filters its complete prefix,
+and applies its suffix. A permission set per consuming sample is part of the
+tile key; forbidden Original/peer history cannot escape through an allowed sound.
+Shared saturation always receives the combined permitted sum.
 
-Continue directly with the recursive shared group graph. Use the individual
-prepared occurrences for treatment ordering and per-voice delivery permission;
-the already summed raw inspection result cannot stand in for treated children.
-Sum before shared saturation, keep gain/mute on its declared side of EQ, and
-retain independent policy when a permitted sound overlaps a silent Original.
-The mixed-EQ guards remain, and no native or export integration is claimed by
-this input reader. Do not add another unrelated processor or preparation API.
+`AudioSoundOwnerContext` supplies full current sound history; saved journals and
+routing anchors retain copied sample labels. Original context is resolved from
+its own observed owner clock, with a checked current processing-domain fallback
+when sound support extends beyond that observation. Neutral EQ is an identity
+on current delivery; expanding history for it changed NTSC crop-edge resampling
+and is covered by a bit-exact regression. The blanket mixed-EQ guards are gone.
+
+All 970 plan/audio tests, strict workspace Clippy and release preview/export pass:
+54 pictures, 83 audio blocks, two zero-offset windows. The primary agent worked
+alone. Continue with native EQ authoring and the remaining independently timed
+automation, arbitrary sound sends/incoming-tail lifecycle, wider binding/Repeat/
+Preserve qualification and persistent filtered caching. Do not mark DP-09/DP-16
+or the full product complete. No realtime, device or listening claim was added.
+
+[Saved sound input](../qualification/beat-sound-owner-input-2026-10-11.md)
+remains the lower-level inspection operand; the shared graph consumes individual
+prepared occurrences rather than treating that summed operand as treated input.
 
 [Independent sound history](../qualification/sound-owner-context-2026-10-11.md)
 adds `AudioSoundOwnerContext` and its checked `source_voice_occurrences` query.
@@ -27,10 +36,9 @@ It uses current structural clocks, full input behind exterior crops, enclosing
 Preserve and stable Repeat scope. Inner selections and current Hold gates stay
 in force. Existing PCM readers match uncropped references, including negative,
 cold and split reads; all 958 plan/audio tests and strict workspace Clippy pass.
-The shared group graph must now consume this input alongside Original contexts,
-preserving saved sound journals and applying final delivery policy separately.
-Do not remove the mixed-EQ guard until shared stage ordering and per-voice
-silence/tail behavior are implemented and tested.
+The shared graph above now consumes these contexts alongside Original input,
+preserving saved journals and current delivery permission. Broader send/tail
+lifecycle remains separate unfinished work.
 
 [Stored and recursive EQ](../qualification/authored-eq-2026-10-11.md) now adds
 `AudioTreatmentStage::Equalizer`, preserved `AudioTreatments.equalizer`, and
@@ -42,14 +50,9 @@ Tail input omits shared owners and processes their output once. A 70-play
 regression caught and fixed treating each whole-Repeat play as another EQ owner.
 The real release CLI commits EQ and passes preview/emitted-file verification.
 
-The next required work is independent sound/group EQ integration with complete
-incoming-tail policy and independently timed automation, then captured native
-authoring and UI replay. Both `prepare_bus_inner` and `read_authored_bus`
-currently reject EQ plus any independent sound events explicitly before media.
-Remove that temporary restriction through the real group graph, not by ignoring
-EQ or processing each voice independently across shared nonlinear stages.
-Further nested binding, persistent filtered-cache and interactive performance
-qualification remains owed. The full goal and DP-09/DP-16 remain open.
+The later shared graph above adds independent sounds. Remaining native,
+automation, send/tail, persistent-cache and performance work is still required.
+The full goal and DP-09/DP-16 remain open.
 
 The earlier [ordered owner EQ](../qualification/owner-eq-2026-10-11.md) provides checked
 `AudioTreatmentBoundary`, an observed input sample and

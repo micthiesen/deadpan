@@ -1,0 +1,77 @@
+[
+  {
+    "name": "tests",
+    "argv": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-plan",
+      "-p",
+      "deadpan-audio"
+    ],
+    "exit_code": 0
+  },
+  {
+    "name": "fmt",
+    "argv": [
+      "cargo",
+      "fmt",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "started_utc": "2026-10-12T05:51:50.352625+00:00",
+    "seconds": 4.915542291942984,
+    "exit_code": 0
+  },
+  {
+    "name": "clippy",
+    "argv": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "--workspace",
+      "--all-targets",
+      "--features",
+      "ui-harness",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "started_utc": "2026-10-12T05:51:55.268994+00:00",
+    "seconds": 2.0270092501305044,
+    "exit_code": 0
+  },
+  {
+    "name": "release",
+    "argv": [
+      "cargo",
+      "test",
+      "--release",
+      "--locked",
+      "-p",
+      "deadpan-cli",
+      "--test",
+      "preview_export",
+      "shared_equalizer_preserves_mixed_preview_and_verified_export",
+      "--",
+      "--exact",
+      "--nocapture"
+    ],
+    "started_utc": "2026-10-12T05:51:57.296741+00:00",
+    "seconds": 48.663491249550134,
+    "exit_code": 0
+  },
+  {
+    "name": "whitespace",
+    "argv": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "started_utc": "2026-10-12T05:52:45.986359+00:00",
+    "seconds": 0.019788166042417288,
+    "exit_code": 0
+  }
+]

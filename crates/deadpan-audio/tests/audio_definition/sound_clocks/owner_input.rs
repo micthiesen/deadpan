@@ -317,3 +317,124 @@ fn sound_owner_input_saved_hidden_history_keeps_current_hold_fades() {
     );
     assert_eq!(actual.suppressed, vec![AudioSample(29)..AudioSample(93)]);
 }
+
+#[test]
+fn shared_eq_saved_crop_neutral_recipe_preserves_current_delivery_edges() {
+    let before = remove_prefix(&insert_prefix(&cropped()));
+    let mut wire = serde_json::to_value(&before).unwrap();
+    wire["nodes"]["owner"]["audio_treatments"] = serde_json::to_value(
+        AudioTreatments::default()
+            .with_equalizer(Some(EqualizerRecipe::default()))
+            .unwrap(),
+    )
+    .unwrap();
+    let treated = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    let mut reader = StageAudio::new(compile(&treated, false));
+    let mut original = StageAudio::new(compile(&before, false));
+    for at in [0, 101, 1000, 3074] {
+        let actual = bus(&mut reader, &mut ClockProvider::new(&treated), at, 128).samples;
+        let expected = bus(&mut original, &mut ClockProvider::new(&before), at, 128).samples;
+        assert_eq!(actual, expected, "neutral saved crop at {at}");
+    }
+}
+
+#[test]
+fn shared_eq_saved_copied_crop_filters_complete_history_and_rechecks_sources() {
+    let returned = remove_prefix(&insert_prefix(&cropped()));
+    let slice = capture_repeat_slice(&returned, "root", &id("crop"), "capture-eq-crop");
+    let copied = paste_repeat_slice(&returned, "root", 2, &slice, "eq-copied-crop");
+    let owner = copied
+        .beat_sounds()
+        .keys()
+        .find(|owner| **owner != id("owner"))
+        .unwrap();
+    let recipe = EqualizerRecipe::new(
+        [6000, -6000, 3000].map(|db| GainDb::new(db).unwrap()),
+        None,
+        None,
+    )
+    .unwrap();
+    let mut wire = serde_json::to_value(&copied).unwrap();
+    wire["nodes"][owner.as_str()]["audio_treatments"] = serde_json::to_value(
+        AudioTreatments::default()
+            .with_equalizer(Some(recipe))
+            .unwrap(),
+    )
+    .unwrap();
+    let treated = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    let plan = compile(&copied, false);
+    let context = plan
+        .audio_sound_instance_context(
+            &InstancePath {
+                node: owner.clone(),
+                repeats: vec![],
+            },
+            Default::default(),
+        )
+        .unwrap();
+    let support = context.samples();
+    let mut input = StageAudio::new(plan.clone());
+    let mut oracle_provider = ClockProvider::new(&copied);
+    let mut filter = deadpan_audio::Equalizer::new(recipe, &AtomicBool::new(false)).unwrap();
+    let mut renderer = StageAudio::new(compile(&treated, false));
+    let mut provider = ClockProvider::new(&treated);
+    for at in [6406, 6507, 7406, 9480] {
+        let tile = at / 1024 * 1024;
+        let mut left = vec![0.0; 5120];
+        let mut right = vec![0.0; 5120];
+        let first = (tile - 2048).max(support.start.0);
+        let end = (tile + 3072).min(support.end.0);
+        for start in (first..end).step_by(256) {
+            let count = (end - start).min(256) as u32;
+            let raw = input
+                .read_beat_sound_owner_input(
+                    &mut oracle_provider,
+                    &context,
+                    AudioSample(start),
+                    count,
+                    TIMEOUT,
+                    &AtomicBool::new(false),
+                )
+                .unwrap();
+            for (offset, frame) in raw.samples.into_iter().enumerate() {
+                left[(start - tile + 2048) as usize + offset] = frame[0];
+                right[(start - tile + 2048) as usize + offset] = frame[1];
+            }
+        }
+        let mut out_left = vec![0.0; 1024];
+        let mut out_right = vec![0.0; 1024];
+        filter
+            .process_tile(
+                &left,
+                &right,
+                &mut out_left,
+                &mut out_right,
+                &AtomicBool::new(false),
+            )
+            .unwrap();
+        let actual = bus(&mut renderer, &mut provider, at, 32).samples;
+        for (index, frame) in actual.iter().enumerate() {
+            let offset = (at - tile) as usize + index;
+            assert!(
+                (f64::from(frame[0]) - out_left[offset]).abs() < 1e-7,
+                "left at {at}+{index}"
+            );
+            assert!(
+                (f64::from(frame[1]) - out_right[offset]).abs() < 1e-7,
+                "right at {at}+{index}"
+            );
+        }
+    }
+    provider.fixture.unavailable = true;
+    assert!(
+        renderer
+            .prepare_authored_bus(
+                &mut provider,
+                AudioSample(7406),
+                32,
+                TIMEOUT,
+                &AtomicBool::new(false)
+            )
+            .is_err()
+    );
+}

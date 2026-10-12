@@ -58,6 +58,10 @@ mod authored_gain;
 
 #[path = "authored_eq.rs"]
 mod authored_eq;
+#[path = "shared_eq.rs"]
+mod shared_eq;
+#[path = "shared_mix.rs"]
+mod shared_mix;
 
 #[path = "owner_equalizer.rs"]
 mod owner_equalizer;
@@ -839,12 +843,11 @@ impl StageAudio {
         let mut dependencies = Dependencies::new();
         let mut cursor = start;
         if authored_gain && self.plan.has_audio_equalizers() {
-            if !self.plan.sounds().is_empty() || !self.plan.beat_sounds().is_empty() {
-                return Err(StageAudioError::Unsupported(
-                    "EQ with independent sound contributions",
-                ));
-            }
-            let block = self.read_authored_equalizers(provider, start, frames, control, 0, &[])?;
+            let block = if !self.plan.sounds().is_empty() || !self.plan.beat_sounds().is_empty() {
+                self.read_shared_equalizers(provider, start, frames, control)?
+            } else {
+                self.read_authored_equalizers(provider, start, frames, control, 0, &[])?
+            };
             samples = block.samples;
             suppressed = block.suppressed;
             dependencies = block.dependencies;

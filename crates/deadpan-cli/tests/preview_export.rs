@@ -335,6 +335,27 @@ fn group_saturation_matches_summed_voice_oracle_and_verified_export() -> Result 
 }
 
 #[test]
+fn shared_equalizer_preserves_mixed_preview_and_verified_export() -> Result {
+    let (root, _guard) = keep_or(tempfile::tempdir()?);
+    let fixture = recipes::shared_equalizer(&root.join("shared-equalizer"))?;
+    check(&fixture)?;
+    let movie = render(&fixture, &root.join("exports"))?;
+    let (report, passed) = verify(&fixture, &movie, &fixture.revision, &[])?;
+    assert!(passed, "{report}");
+    check_provenance(&fixture, &report)?;
+    if let Some(path) = std::env::var_os("DEADPAN_PREVIEW_EXPORT_RESULTS") {
+        std::fs::write(
+            path,
+            serde_json::to_vec_pretty(
+                &json!({"package":fixture.package,"movie":movie,"report":report}),
+            )?,
+        )?;
+    }
+    eprintln!("{}", summary_row(&fixture, &report));
+    Ok(())
+}
+
+#[test]
 fn every_recipe_builds_a_valid_package_whose_plan_matches_its_expectations() -> Result {
     let scratch = tempfile::tempdir()?;
     // DEADPAN_PREVIEW_EXPORT_KEEP=1 retains the packages for inspection.
