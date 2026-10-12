@@ -138,6 +138,7 @@ struct Prepared {
     target: Target,
     sources: Sources,
     audio: LimitedAudio,
+    cache_unavailable: bool,
     end: AudioSample,
 }
 
@@ -157,6 +158,7 @@ fn admit(
     target: &Target,
     cancelled: &std::sync::atomic::AtomicBool,
     retained: &mut Option<Retained>,
+    cache_root: Option<&std::path::Path>,
 ) -> Result<bool, String> {
     snapshot
         .validate_admission()
@@ -175,12 +177,16 @@ fn admit(
     let document = target.document(snapshot)?;
     let plan = Arc::new(RenderPlan::compile(&document).map_err(|e| e.to_string())?);
     let end = target.effective_end(plan.audio_duration().map_err(|e| e.to_string())?)?;
+    let cache = cache_root.and_then(|root| deadpan_audio::persistent_pcm::PcmCache::at(root).ok());
+    let cache_unavailable = cache_root.is_some() && cache.is_none();
+    let mut stages =
+        StageAudio::with_limits(plan, StageLimits::default()).map_err(|e| e.to_string())?;
+    stages.set_persistent_cache(cache);
     *retained = Some(Retained::Playback(Prepared {
         target: target.clone(),
         sources: Sources::new(Arc::clone(snapshot)),
-        audio: LimitedAudio::from_stages(
-            StageAudio::with_limits(plan, StageLimits::default()).map_err(|e| e.to_string())?,
-        ),
+        audio: LimitedAudio::from_stages(stages),
+        cache_unavailable,
         end,
     }));
     Ok(true)
@@ -193,13 +199,28 @@ fn prepare(shared: &Shared, job: &Job, retained: &mut Option<Retained>) -> Resul
     let admission = job
         .monitor
         .enter(deadpan_audio::PreparationActivity::CheckingPlan);
-    if admit(&job.snapshot, &job.target, &job.cancelled, retained)? {
+    if admit(
+        &job.snapshot,
+        &job.target,
+        &job.cancelled,
+        retained,
+        shared.audio_cache_root.as_deref(),
+    )? {
         #[cfg(test)]
         shared.observe_preparation(PreparationEvent::PlaybackAdmitted, &job.cancelled);
     }
     let Some(Retained::Playback(prepared)) = retained.as_mut() else {
         return Err("playback preparation cache is absent".into());
     };
+    if prepared.cache_unavailable {
+        job.monitor
+            .report_saved_audio(deadpan_audio::SavedAudioStatus {
+                key: None,
+                bytes: 0,
+                event: deadpan_audio::SavedAudioEvent::Unavailable,
+                regenerated_from: None,
+            });
+    }
     prepared
         .audio
         .set_preparation_monitor(Some(Arc::clone(&job.monitor)));
@@ -336,12 +357,27 @@ fn warm(shared: &Shared, job: &crate::warming::Job, retained: &mut Option<Retain
             return Err(reason);
         }
         let mut policy_checked = Instant::now();
-        admit(&job.snapshot, &job.target, &job.cancelled, retained)?;
+        admit(
+            &job.snapshot,
+            &job.target,
+            &job.cancelled,
+            retained,
+            shared.audio_cache_root.as_deref(),
+        )?;
         #[cfg(test)]
         shared.observe_preparation(PreparationEvent::WarmingAdmitted, &job.cancelled);
         let Some(Retained::Playback(prepared)) = retained.as_mut() else {
             return Err("audio warming cache is absent".to_owned());
         };
+        if prepared.cache_unavailable {
+            job.monitor
+                .report_saved_audio(deadpan_audio::SavedAudioStatus {
+                    key: None,
+                    bytes: 0,
+                    event: deadpan_audio::SavedAudioEvent::Unavailable,
+                    regenerated_from: None,
+                });
+        }
         prepared
             .audio
             .set_preparation_monitor(Some(Arc::clone(&job.monitor)));

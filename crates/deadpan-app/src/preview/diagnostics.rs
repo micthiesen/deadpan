@@ -23,6 +23,7 @@ pub(super) struct Sample {
     pub(super) at: Instant,
     pub(super) counters: deadpan_diagnostics::Snapshot,
     pub(super) playback: deadpan_playback::Diagnostics,
+    pub(super) saved_audio: Option<deadpan_audio::SavedAudioStatus>,
     /// Outer UI updates since the app started.
     pub(super) frames: u64,
 }
@@ -258,6 +259,24 @@ pub(super) fn rows(
             cache(counters.caches.limiter_inputs, true),
         ),
     ];
+    rows.push((
+        "PCM CACHES",
+        "Saved stretch",
+        sample.saved_audio.map_or_else(
+            || "not requested in this transport".into(),
+            |status| {
+                let mut text = format!("{} · {}", status.event.label(), binary_bytes(status.bytes));
+                if let Some(reason) = status.regenerated_from {
+                    text.push_str(&format!(" · rebuilt: {}", reason.label()));
+                }
+                text
+            },
+        ),
+    ));
+    if let Some(key) = sample.saved_audio.and_then(|status| status.key) {
+        let key: String = key.iter().map(|byte| format!("{byte:02x}")).collect();
+        rows.push(("PCM CACHES", "Audio cache key", format!("blake3:{key}")));
+    }
     for (name, label) in [
         // Each row names exactly what it counts; other file I/O is not
         // counted (see docs/PERFORMANCE.md#diagnostics).
@@ -349,6 +368,7 @@ impl DeadpanApp {
             at: Instant::now(),
             counters: deadpan_diagnostics::snapshot(),
             playback: self.playback.diagnostics(),
+            saved_audio: self.playback.saved_audio_status(),
             frames: self.diagnostics.frames,
         };
         self.diagnostics.previous = self.diagnostics.latest.replace(sample);
@@ -611,6 +631,7 @@ mod tests {
             at: Instant::now(),
             counters: deadpan_diagnostics::Snapshot::default(),
             playback: deadpan_playback::Diagnostics::default(),
+            saved_audio: None,
             frames: 30,
         };
         let earlier = Sample {
@@ -618,6 +639,28 @@ mod tests {
             frames: 28,
             ..sample
         };
+        let saved = Sample {
+            saved_audio: Some(deadpan_audio::SavedAudioStatus {
+                key: Some([0x12; 32]),
+                bytes: 8192,
+                event: deadpan_audio::SavedAudioEvent::Saved,
+                regenerated_from: Some(deadpan_audio::SavedAudioEvent::Damaged),
+            }),
+            ..sample
+        };
+        let saved_rows = rows(&saved, None);
+        assert!(
+            saved_rows
+                .iter()
+                .any(|(_, label, value)| *label == "Saved stretch"
+                    && value == "saved · 8.0 KiB · rebuilt: damaged cache")
+        );
+        assert!(
+            saved_rows
+                .iter()
+                .any(|(_, label, value)| *label == "Audio cache key"
+                    && value == &format!("blake3:{}", "12".repeat(32)))
+        );
         let rows = rows(&sample, Some(&earlier));
         assert!(rows.iter().any(|(_, label, value)| *label == "UI updates"
             && value == "30 since start · 2.0/s (includes this panel)"));

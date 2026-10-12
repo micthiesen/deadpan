@@ -1099,9 +1099,20 @@ impl DeadpanApp {
                                 .collect();
                             rows.push((
                                 "Not on disk".into(),
-                                "decoded audio, pictures and thumbnails stay in memory".into(),
+                                "active PCM uses private memory or temporary files; pictures and thumbnails use memory".into(),
                             ));
                             section(ui, "DEADPAN CACHES", rows);
+                            if let Some(error) = &user.saved_audio_error {
+                                section(ui, "SAVED AUDIO", vec![("Unavailable".into(), error.clone())]);
+                            } else if !user.saved_audio.is_empty() {
+                                let mut rows = user.saved_audio.iter().take(32).enumerate().map(|(index, entry)| {
+                                    (format!("Stretch {}", index+1), format!("{}\n{} · {} · {}", entry.key, bytes(entry.bytes), entry.origin, entry.validity))
+                                }).collect::<Vec<_>>();
+                                if user.saved_audio.len() > 32 {
+                                    rows.push(("More entries".into(), format!("{} more; cache status lists every key", user.saved_audio.len()-32)));
+                                }
+                                section(ui, "SAVED AUDIO", rows);
+                            }
                         }
                         backup_action = self.backups_section(ui, false);
                     });

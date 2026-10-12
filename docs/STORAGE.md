@@ -20,6 +20,7 @@ Sections 19.2 and 20.1 set the storage classes. The code is
 | Damaged copies | `.damaged-*` (set aside by restore) | Kept for diagnosis | Never |
 | Backups | `Backups/backup-*.sqlite` | By rotation only | [Backup rotation](BACKUPS.md#rotation); hidden `.staging-*` copies older than six hours are removed by rotation |
 | Seek proxies | `~/Library/Caches/Deadpan/Proxies` | Yes | Explicit cache cleanup; also the proxy builder's own budget |
+| Saved stretched audio | `~/Library/Caches/Deadpan/Audio` | Yes, after the unused grace period and with no active reader/writer | Explicit cache cleanup; a 4 GiB shared publication budget |
 | Downloader staging | `~/Library/Application Support/Deadpan/helpers/.staging` | Yes once nothing in a download has changed for the grace period | Explicit cache cleanup |
 | Model packs, AI runtimes, qualification weights | `Application Support/Deadpan/Models`, `Caches/Deadpan/ltx-*` | Reported only | `models remove`; never cache cleanup |
 | Decoded PCM, pictures, thumbnails, limiter tiles | Process memory or anonymous temporary files | Gone with the process | Not on disk |

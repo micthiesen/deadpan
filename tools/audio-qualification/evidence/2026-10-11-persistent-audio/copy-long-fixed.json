@@ -1,0 +1,12 @@
+{
+  "command": [
+    "target/release/deadpan-cli",
+    "project",
+    "copy-portable",
+    "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpUbTsHu/fixtures/disk-preserve.deadpan",
+    "/tmp/deadpan-persistent-audio-20261011/long.deadpan"
+  ],
+  "exit": 0,
+  "seconds": 0.1590505838394165,
+  "log_sha256": "ec1740e1865aeaec45ccac062ad98bb66f4cbaba2c17336130a2730430d95636"
+}

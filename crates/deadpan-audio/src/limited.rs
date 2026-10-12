@@ -117,6 +117,10 @@ impl LimitedAudio {
         self.stages.set_preparation_monitor(monitor);
     }
 
+    pub fn set_persistent_cache(&mut self, cache: Option<crate::persistent_pcm::PcmCache>) {
+        self.stages.set_persistent_cache(cache);
+    }
+
     pub fn read(
         &mut self,
         provider: &mut impl AudioSourceProvider,

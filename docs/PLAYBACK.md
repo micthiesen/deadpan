@@ -45,8 +45,9 @@ reads are bounded
 but cooperative; Play may wait for the in-flight check or canonical read.
 The horizon has a 60-second processing deadline after plan admission, with
 existing source-open limits. Deferred work waits for a new cursor/context;
-there is no automatic retry loop. Preparation during active playback,
-persistent cross-restart PCM reuse and full cache lifecycle remain open.
+there is no automatic retry loop. [Active preparation](qualification/audio-ahead-2026-10-11.md)
+continues into a bounded FIFO; the [saved stretch cache](SAVED_AUDIO.md) supports
+cross-restart reuse and reader-safe cleanup. The remaining audio pipeline stays open.
 See [idle audio preparation](qualification/audio-warming-2026-10-11.md).
 
 Explicit pause of ordinary edit playback selects and reveals the beat under the

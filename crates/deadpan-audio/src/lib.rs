@@ -14,6 +14,8 @@ mod limited;
 mod limiter;
 mod loudness;
 mod matrix;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod persistent_pcm;
 mod progress;
 mod reference_policy;
 mod resample;
@@ -50,7 +52,9 @@ pub use loudness::{
     LOUDNESS_ID, LoudnessError, LoudnessMeter, LoudnessReport, MAX_LOUDNESS_FRAMES,
 };
 pub use matrix::StereoMatrix;
-pub use progress::{PreparationActivity, PreparationMonitor, PreparationScope};
+pub use progress::{
+    PreparationActivity, PreparationMonitor, PreparationScope, SavedAudioEvent, SavedAudioStatus,
+};
 pub use reference_policy::{ReferencePolicyError, RetainedRootPolicy};
 pub use resample::{PcmWindow, ResampleRecipe, Resampler, StereoBlock};
 pub use room_tone::{ROOM_TONE_ID, RoomTone, RoomToneRecipe};

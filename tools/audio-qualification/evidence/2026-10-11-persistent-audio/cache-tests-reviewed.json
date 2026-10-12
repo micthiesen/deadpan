@@ -1,0 +1,15 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-audio",
+    "persistent_",
+    "--",
+    "--nocapture"
+  ],
+  "exit": 0,
+  "seconds": 4.509577666874975,
+  "log_sha256": "95244b0617592b4adbe881b2da1f37dc1e40a07db48301bbae52ac71e6887dc0"
+}

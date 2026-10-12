@@ -203,6 +203,7 @@ pub(crate) struct Shared {
     repaint: Arc<dyn Fn() + Send + Sync>,
     counters: Counters,
     pub(crate) warming_guard: Arc<dyn Fn() -> Option<String> + Send + Sync>,
+    pub(crate) audio_cache_root: Option<std::path::PathBuf>,
     #[cfg(test)]
     pub preparation_observer: Mutex<Option<preparation::Observer>>,
     #[cfg(test)]
@@ -343,7 +344,16 @@ pub struct Engine {
 
 impl Engine {
     pub fn new(repaint: Arc<dyn Fn() + Send + Sync>) -> io::Result<Self> {
-        Self::with_factory(repaint, Box::new(open_device))
+        Self::with_audio_cache(repaint, deadpan_audio::persistent_pcm::default_root())
+    }
+
+    /// Explicit cache location for isolated hosts and qualification runs.
+    /// Opening the directory remains preparation-worker work.
+    pub fn with_audio_cache(
+        repaint: Arc<dyn Fn() + Send + Sync>,
+        root: Option<std::path::PathBuf>,
+    ) -> io::Result<Self> {
+        Self::with_factory_guard_cache(repaint, Box::new(open_device), Arc::new(|| None), root)
     }
 
     /// Host policy for optional idle work, evaluated only on the preparation
@@ -353,9 +363,15 @@ impl Engine {
         repaint: Arc<dyn Fn() + Send + Sync>,
         guard: Arc<dyn Fn() -> Option<String> + Send + Sync>,
     ) -> io::Result<Self> {
-        Self::with_factory_and_guard(repaint, Box::new(open_device), guard)
+        Self::with_factory_guard_cache(
+            repaint,
+            Box::new(open_device),
+            guard,
+            deadpan_audio::persistent_pcm::default_root(),
+        )
     }
 
+    #[cfg(test)]
     pub(crate) fn with_factory(
         repaint: Arc<dyn Fn() + Send + Sync>,
         factory: Factory,
@@ -363,10 +379,20 @@ impl Engine {
         Self::with_factory_and_guard(repaint, factory, Arc::new(|| None))
     }
 
+    #[cfg(test)]
     pub(crate) fn with_factory_and_guard(
         repaint: Arc<dyn Fn() + Send + Sync>,
         factory: Factory,
         warming_guard: Arc<dyn Fn() -> Option<String> + Send + Sync>,
+    ) -> io::Result<Self> {
+        Self::with_factory_guard_cache(repaint, factory, warming_guard, None)
+    }
+
+    fn with_factory_guard_cache(
+        repaint: Arc<dyn Fn() + Send + Sync>,
+        factory: Factory,
+        warming_guard: Arc<dyn Fn() -> Option<String> + Send + Sync>,
+        audio_cache_root: Option<std::path::PathBuf>,
     ) -> io::Result<Self> {
         let shared = Arc::new(Shared {
             state: Mutex::new(State {
@@ -386,6 +412,7 @@ impl Engine {
             repaint,
             counters: Counters::default(),
             warming_guard,
+            audio_cache_root,
             #[cfg(test)]
             preparation_observer: Mutex::new(None),
             #[cfg(test)]
@@ -538,6 +565,14 @@ impl Engine {
     /// Cumulative delivery counters; cheap atomic loads, safe from any thread.
     pub fn diagnostics(&self) -> Diagnostics {
         self.shared.counters.snapshot()
+    }
+    pub fn saved_audio_status(&self) -> Option<deadpan_audio::SavedAudioStatus> {
+        let state = self.shared.lock();
+        state
+            .current
+            .as_ref()
+            .and_then(|job| job.monitor.saved_audio_status())
+            .or_else(|| state.warming.saved_audio_status())
     }
     pub fn shutdown(&self) {
         self.shared.stop(true, true);

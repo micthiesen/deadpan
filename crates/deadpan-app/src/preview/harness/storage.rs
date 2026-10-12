@@ -39,7 +39,8 @@ fn row(d: &Driver<'_>, prefix: &str) -> Option<String> {
         .find(|text| text.starts_with(prefix))
 }
 
-const ROWS: [&str; 6] = [
+const ROWS: [&str; 7] = [
+    "Saved audio: ",
     "Database: ",
     "Originals: ",
     "AI pause media: ",
@@ -78,6 +79,20 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
             )
         })
         .map_err(|error| error.to_string())?;
+    let audio = user.caches.join("Audio");
+    std::fs::create_dir_all(&audio).map_err(|error| error.to_string())?;
+    // Deliberately damaged derived output: listing must not claim it has
+    // verified the payload, and cleanup can still remove the unused file.
+    let saved_key = format!("b3-{}.pcm", "12".repeat(32));
+    let saved_path = audio.join(&saved_key);
+    std::fs::write(&saved_path, [0; 80]).map_err(|error| error.to_string())?;
+    std::fs::File::open(&saved_path)
+        .and_then(|file| {
+            file.set_modified(
+                std::time::SystemTime::now() - std::time::Duration::from_secs(3 * 86_400),
+            )
+        })
+        .map_err(|error| error.to_string())?;
     d.app_mut().storage.user = Some(user);
     let revision = d.revision();
 
@@ -103,6 +118,43 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"open":d.app().storage.open,"dialog":dialog,"focus":focus,"rows":rows}),
     )?;
     d.capture("Storage beside the picture")?;
+    let saved_row = row(d, "Stretch 1: ");
+    d.check(
+        "Saved audio reports the full key, size, origin and unverified payload status",
+        saved_row.as_deref().is_some_and(|text| {
+            text.contains(&saved_key)
+                && text.contains("80 B")
+                && text.contains("canonical stereo f32 stretch output")
+                && text.contains("payload checked on restore")
+        }),
+        json!(saved_key),
+        json!(saved_row),
+    )?;
+
+    let pointer = d.rect("Storage")?.center();
+    d.events(
+        "Scroll Storage to the saved audio entry",
+        vec![
+            egui::Event::PointerMoved(pointer),
+            egui::Event::MouseWheel {
+                unit: egui::MouseWheelUnit::Point,
+                delta: egui::vec2(0.0, -450.0),
+                phase: egui::TouchPhase::Move,
+                modifiers: egui::Modifiers::NONE,
+            },
+        ],
+    )?;
+    for _ in 0..16 {
+        d.step("Storage scroll settles", false)?;
+    }
+    let paint = scenarios::text_paint_visibility(d, &saved_key);
+    d.check(
+        "The complete saved audio key paints inside Storage",
+        !paint.is_empty() && paint.iter().all(|item| item["fully_visible"] == true),
+        json!("fully visible"),
+        json!(paint),
+    )?;
+    d.capture("Saved audio key and validity in Storage")?;
 
     d.key(Key::P)?;
     d.wait_for("Cleanup previewed", |app| {
@@ -135,13 +187,13 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         app.storage
             .status
             .as_deref()
-            .is_some_and(|status| status.starts_with("Removed 1 cache"))
+            .is_some_and(|status| status.starts_with("Removed 2 cache"))
     })?;
     d.check(
-        "C removes only the abandoned download in the private cache root",
-        !abandoned.exists(),
-        json!("abandoned staging removed"),
-        json!({"exists":abandoned.exists(),"status":d.app().storage.status}),
+        "C removes unused saved audio and the abandoned download in the private cache root",
+        !abandoned.exists() && !saved_path.exists(),
+        json!("unused audio and abandoned staging removed"),
+        json!({"exists":abandoned.exists(),"audio_exists":saved_path.exists(),"status":d.app().storage.status}),
     )?;
 
     let destination = root.join("Portable.deadpan");

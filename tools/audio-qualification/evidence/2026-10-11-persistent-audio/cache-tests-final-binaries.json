@@ -1,0 +1,23 @@
+{
+  "/Users/michael/Code/deadpan/target/debug/deps/deadpan_audio-3b7b674540dbcea4": "0794cdd45ed8119369325b6840d47be13a0228b973973d37c6831267594fdf27",
+  "/Users/michael/Code/deadpan/target/debug/deps/audio_context-9855ed3286239240": "1699ecc18736c669d5abe08d3ed3920b02885f8b46544c337c0f6d341a2c57b1",
+  "/Users/michael/Code/deadpan/target/debug/deps/audio_definition-3d3947b9399b2579": "ba50c853bce8ad138a1901490bb3f10e668cb47fc7a758dec39938c09a9137f1",
+  "/Users/michael/Code/deadpan/target/debug/deps/audio_domain-a26776a625947a83": "a7b2b4457c2a8254248326a47a2222991632317ef3fda54aa7495c01e541b83e",
+  "/Users/michael/Code/deadpan/target/debug/deps/composite_insert-c3acd41a12e0b1d6": "01c38e2a3c3ba70a2df6e08760a97511bb121ef884d2d4a37747aa87bb14f48a",
+  "/Users/michael/Code/deadpan/target/debug/deps/dormant_source-8d2c80c92a364ca4": "5a3250d54f21d18af4a9fc8476e3a57f8761502df6c0b3d8bde48ba8e048ac4c",
+  "/Users/michael/Code/deadpan/target/debug/deps/gap_bindings-5ea3051df89b220e": "ed05e98b30e206e4bba8502f32d8d12dbbc617505fd9d93a3c25c2aff472da06",
+  "/Users/michael/Code/deadpan/target/debug/deps/gap_definition-0553c4eb23bf4bd4": "01aae8618dfac45bde0ddbb7f82307cc5223b35e7035ca153db1df251ea7526f",
+  "/Users/michael/Code/deadpan/target/debug/deps/limiter-6bdaa165df68ce14": "b63fa264754a858d585862da9fb60922aece79524a8b3d82decfdec3dc56849c",
+  "/Users/michael/Code/deadpan/target/debug/deps/loudness-b75b99cefdaeb46b": "224f18f84368f9c96939d9a410dc782ba513103f4ca28dbb591ddc09acc4b3db",
+  "/Users/michael/Code/deadpan/target/debug/deps/reanchors-44a7a0b5b08e9577": "e389b8fdcb9f2c65157df007f38819c0111b2d823d73e16996fffb06eb6a96bc",
+  "/Users/michael/Code/deadpan/target/debug/deps/reference_policy-bc9a430f5c9c2600": "6afc85f23977babd8e45d7bfacc46728b67a268cf2ef4aae835fbb4bd88a7978",
+  "/Users/michael/Code/deadpan/target/debug/deps/resample-817e9bc48158ada6": "201f09a8522ce7871b3efa47b780e8a982f2b4ac9c57a6e0b1df401e13ea0136",
+  "/Users/michael/Code/deadpan/target/debug/deps/root_sound_trim-4514bec3ce23a1cb": "3a81c047e5fd17b1260aa98a94574a57e3cf7e004079c69c43b92640e9fc6917",
+  "/Users/michael/Code/deadpan/target/debug/deps/sequence-12fb61af8c478980": "e34b40694ccecbd73ac620124a47cc63530d0723b66de0b2f021c0108d16fb27",
+  "/Users/michael/Code/deadpan/target/debug/deps/session-a30b0e2ac2f2b414": "9f6f5bcad3a0568c41ebe2ed3dd461e465ae6b9a7183a91d333ad6c94e561959",
+  "/Users/michael/Code/deadpan/target/debug/deps/signal_transfer-59064ef2f71d37fb": "fa929f0ac16ab18b93bf7bed9876a5b988bde82671dd3218f4a4766d7bc9f68a",
+  "/Users/michael/Code/deadpan/target/debug/deps/sound_events-436c6c1815c5fe37": "289788b3c5361b7391b167d807ea2dc2507af2f5edb6c9552e496dda924431a4",
+  "/Users/michael/Code/deadpan/target/debug/deps/stages-429c1ebb1a965c8d": "25e4917587074ddd79403d3447a742eefb8717fb98da4686c1564f3ded7b71a0",
+  "/Users/michael/Code/deadpan/target/debug/deps/timing_representation-5fae6a57c7abd7ed": "62ecb80770e1a24694ef6f1c615580e2b142ffcb72e12cf44708803b92cceda7",
+  "/Users/michael/Code/deadpan/target/debug/deps/true_peak-1b0d1ea73159198a": "d238fe7f6dc2fa23dd946f89bbf3a0751279a334aed01d94ce4ded6c3332f881"
+}

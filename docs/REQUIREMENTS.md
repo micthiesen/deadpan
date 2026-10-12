@@ -4,6 +4,17 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 
 ## Resumed implementation, 2026-10-06
 
+[Saved stretched audio](qualification/persistent-audio-2026-10-11.md) adds
+cross-restart reuse with fresh input/source admission, BLAKE3 keys and complete
+payload verification. Atomic publication, a shared 4 GiB budget, reader-safe
+grace-period cleanup and native status keep it derived and inspectable. Cache
+lookup has a separate bounded query allowance after a long-fixture regression
+exposed interference with canonical preparation. Full audio/playback tests and
+Storage/Diagnostics replays pass. The remaining voice/group/mastering pipeline
+keeps DP-09 and DP-16 partial. Six fresh-process device checks verify reuse,
+including a 240.24-second stage; they record the cold cost and have no audio
+faults or missing pictures in their measured intervals.
+
 [Audio preparation during playback](qualification/audio-ahead-2026-10-11.md)
 uses a bounded FIFO on the existing worker: up to 29.867 seconds of canonical
 PCM beyond the native queue, with unchanged first-batch activation and delivery
@@ -11,14 +22,14 @@ clocks. Full-queue Stop, supersession, edited-proposal revocation and exact
 future-stage PCM have regressions; the controlled one-slot variant fails the
 future-stage test. Two real-device runs have no underruns or faults, including
 a 35-second loop that reaches the FIFO bound; all 102 UI replay checks pass.
-Persistent cache reuse and the remaining audio pipeline keep DP-09/DP-16 partial.
+Persistent reuse is recorded above; the remaining audio pipeline keeps DP-09/DP-16 partial.
 
 [Idle audio preparation](qualification/audio-warming-2026-10-11.md) examines up
 to 30 seconds ahead of a settled Original/Edit/Sound cursor on the existing PCM
 worker. Matching Play reuses its work, while navigation, waveform requests and
 Stop cancel obsolete preparation. A future Preserve seek matches canonical PCM;
 native status leaves both clocks, history and output untouched. Active preparation
-is recorded above; persistent cache lifecycle and the remaining audio pipeline
+and saved-cache lifecycle are recorded above; the remaining audio pipeline
 keep DP-09/DP-16 partial.
 
 [Gain scrolling verification](qualification/gain-scroll-2026-10-11.md)

@@ -169,7 +169,8 @@ and does not guarantee that every examined tile remains cached.
 the same worker with a separately bounded canonical PCM FIFO, allowing future
 stages to prepare while the device queue is full. It does not guarantee that
 an arbitrarily expensive stage finishes before its audible deadline.
-Persistent reuse after restart and the remaining
-cache lifecycle stay open. Fractional pitch, variable rates, remaining voice/group effects,
+The [saved stretch cache](SAVED_AUDIO.md) reuses verified output after restart,
+with fresh source admission, exact keys, atomic publication and reader-safe cleanup.
+Fractional pitch, variable rates, remaining voice/group effects,
 full mastering, listening and the complete device/preview/export corpus remain
 open; this qualification does not close DP-09 or DP-16.

@@ -310,6 +310,13 @@ impl Run {
             Activity::LoadingSource => "Verifying source".into(),
             Activity::DecodingSource => "Decoding source".into(),
             Activity::PreparingOutput => "Preparing output".into(),
+            Activity::CheckingSavedAudio { completed, total } => {
+                work("Checking saved audio", completed, total)
+            }
+            Activity::RestoringSavedAudio { completed, total } => {
+                work("Restoring saved audio", completed, total)
+            }
+            Activity::SavingAudioCache => "Saving reusable audio".into(),
             Activity::CheckingStretch {
                 completed, total, ..
             } => work("Checking stretch", completed, total),

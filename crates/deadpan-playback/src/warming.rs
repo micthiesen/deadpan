@@ -70,6 +70,12 @@ pub(crate) struct State {
 }
 
 impl State {
+    pub(crate) fn saved_audio_status(&self) -> Option<deadpan_audio::SavedAudioStatus> {
+        self.current
+            .as_ref()
+            .and_then(|job| job.monitor.saved_audio_status())
+    }
+
     pub(crate) fn take_pending(&mut self) -> Option<Arc<Job>> {
         let job = self.pending.take()?;
         if job.cancelled.load(Ordering::Acquire) {

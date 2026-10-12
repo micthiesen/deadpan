@@ -1,0 +1,28 @@
+{
+  "reviewer": "Primary agent self-review, without subagents at the owner's request",
+  "scope": "Complete implementation diff, filesystem and stage tests, worker/CLI integration, native diagnostics and storage, replay changes, device reports and documentation",
+  "reviewed": [
+    "Every cache hit first re-admits canonical input and its transitive source fingerprints. Exact mappings, input bits, DSP recipe, output policy and engine pin participate in BLAKE3 identity.",
+    "A complete payload checksum, finite samples and exact header/extent are required before private PCM is published. Failed copies drop without replacing canonical output.",
+    "Publication reserves the entire logical size under a nonblocking cache lock, writes and syncs staging, then atomically renames. Cleanup and replacement skip active file locks; pathname operations stay descriptor-relative.",
+    "Cache scans share a separate 16,777,216-unit allowance across nested calls. They do not spend the canonical plan-query allowance. Source checks, stage/frame counts, memory, disk and the original deadline remain shared.",
+    "Optional cache I/O failures rebuild or retain canonical private PCM. Source admission, cancellation and deadlines remain errors. The audio callback and authored store are unchanged.",
+    "Storage reports bounded entries without claiming to verify payloads during listing. Native status reports the request's last saved/restored stage and reason; no report is readiness authority.",
+    "Cold cache creation adds measured work. Fresh-process restoration is verified, but the single-run measurements are not latency distributions or physical listening evidence."
+  ],
+  "fixes": [
+    "Temporary lock contention no longer disables the cache for an entire retained session.",
+    "Idle preparation also exposes cache status; long Storage keys wrap in the value column.",
+    "Corruption tests flip a bit instead of risking replacement with the original byte.",
+    "The four-minute device fixture exposed exhaustion of the canonical query budget by optional lookup. A separate bounded allowance and explicit direct-preparation fallback fix it. Both pre-fix failure reports are retained."
+  ],
+  "verification_notes": [
+    "Initial compiler iterations and the accidentally selected empty app library tests are retained. Corrected app executable-target tests ran the actual native cases.",
+    "Final full suites pass 516 audio and 88 playback tests. They include 13 cache regressions. Storage, diagnostics, transport, strict Clippy, formatting and offscreen replays pass.",
+    "Inspected visual-replays/diagnostics/diagnostics-014.png and visual-replays/storage/storage-015.png. New status text, the entire wrapped key, validity text and fixed controls are visible. Paint assertions include clips and later opaque occluders.",
+    "Six final release device runs restore the same keys across process restart or prepare with caching disabled. They report no audio failures or missed pictures in the observed intervals.",
+    "The pre-fix performance processes exit successfully while their JSON failure field records frozen projection work exhausted. The evidence checker checks the semantic field, not just exit status.",
+    "Executed binaries are pinned by SHA-256. The failed pre-fix executable was not rebuilt as an archived historical checkout. Final changed source and base revision are retained."
+  ],
+  "remaining": "Hold-specific reverse/room-tone caches remain private. Complete voice/group processing, mastering, broader device/export qualification and the full product requirements remain open. This increment does not complete DP-09 or DP-16."
+}

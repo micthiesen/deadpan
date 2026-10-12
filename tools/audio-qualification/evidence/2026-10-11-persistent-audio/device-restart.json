@@ -1,0 +1,165 @@
+{
+  "adapter": "Apple M5 Max",
+  "audio": {
+    "cache_root": "/tmp/deadpan-persistent-audio-20261011/device-cache",
+    "device_faults": 0,
+    "device_reports": 754,
+    "generations": 1,
+    "max_callback_render_cost_us": 7.583,
+    "preparation_lead": [
+      {
+        "at_ms": 564.033,
+        "heard_sample": 404050,
+        "queued_frames": 49152
+      },
+      {
+        "at_ms": 570.364,
+        "heard_sample": 404354,
+        "queued_frames": 98304
+      },
+      {
+        "at_ms": 629.796,
+        "heard_sample": 407206,
+        "queued_frames": 147456
+      }
+    ],
+    "queue_depths": {
+      "playback_device_packets": {
+        "current": 0,
+        "high": 751
+      },
+      "playback_prefill_frames": {
+        "current": 8192,
+        "high": 8192
+      },
+      "playback_prepared": {
+        "current": 0,
+        "high": 20
+      },
+      "playback_prepared_frames": {
+        "current": 0,
+        "high": 163200
+      }
+    },
+    "saved_stretch": {
+      "bytes": 3075072,
+      "event": "verified and restored",
+      "key": "blake3:1d8cd8f74a27617e2f8846061f2696cae461520345a45738ccbafe33c7d6e41f",
+      "regenerated_from": null
+    },
+    "silent_padding_frames": 1664,
+    "underruns_starved": 0
+  },
+  "available_seconds": 8.008,
+  "canvas": [
+    320,
+    180
+  ],
+  "coverable_seconds": 8.008,
+  "covered_requested_interval": true,
+  "failure": null,
+  "frame_rate": {
+    "denominator": 1001,
+    "numerator": 30000
+  },
+  "heard_seconds": 8.008,
+  "loop_end_frame": null,
+  "loop_seams": [],
+  "monitor_gain": 0.05000000074505806,
+  "package": "/tmp/deadpan-audio-ahead-20261011/future.deadpan",
+  "phases": [
+    {
+      "at_ms": 0.01,
+      "phase": "Preparing"
+    },
+    {
+      "at_ms": 156.709,
+      "phase": "Playing"
+    },
+    {
+      "at_ms": 8173.07,
+      "phase": "Ended"
+    }
+  ],
+  "picture_policy": "original",
+  "picture_session_open_ms": 10.188,
+  "pictures": {
+    "decode_and_gpu_ms": {
+      "max": 2.221,
+      "mean": 1.7,
+      "min": 0.765,
+      "n": 240,
+      "p50": 1.752,
+      "p95": 1.947
+    },
+    "dropped_skipped": 0,
+    "exact_on_stop_ms": 1.875,
+    "expected_frames": 240.0,
+    "first_presented_frame": 240,
+    "heard_end_frame": 479,
+    "lag_frames_at_completion": {
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0,
+      "n": 240,
+      "p50": 0.0,
+      "p95": 0.0
+    },
+    "last_presented_frame": 479,
+    "leading_missed": 0,
+    "lookahead": {
+      "failed": 0,
+      "held_decoder": false,
+      "opened": 0,
+      "reached": 0,
+      "started": 0,
+      "stopped": 0,
+      "swaps": 0
+    },
+    "presentation_interval_ms": {
+      "max": 37.458,
+      "mean": 33.368,
+      "min": 29.473,
+      "n": 239,
+      "p50": 33.108,
+      "p95": 35.786
+    },
+    "presented": 240,
+    "proxy": "not_used",
+    "repositions": {
+      "reached": 0,
+      "started": 0
+    },
+    "seek_pictures": 0,
+    "tiers": {
+      "background": 0,
+      "exact": 240,
+      "exact_decode_ms": {
+        "max": 0.448,
+        "mean": 0.28,
+        "min": 0.059,
+        "n": 240,
+        "p50": 0.286,
+        "p95": 0.345
+      },
+      "proxy": 0,
+      "proxy_decode_ms": {
+        "n": 0
+      },
+      "proxy_run_pictures": {
+        "n": 0
+      },
+      "proxy_runs_to_exact_ms": {
+        "n": 0
+      },
+      "unfinished_proxy_run_pictures": null
+    },
+    "trailing_missed": 0
+  },
+  "playback_start_to_first_heard_ms": 156.71,
+  "requested_seconds": 10,
+  "stage": "playback",
+  "stage_wall_ms": 8294.337416,
+  "start_frame": 240,
+  "terminal_phase": "Ended"
+}

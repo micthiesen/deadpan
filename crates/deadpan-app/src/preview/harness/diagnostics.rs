@@ -40,7 +40,8 @@ fn row(d: &Driver<'_>, prefix: &str) -> Option<String> {
     })
 }
 
-const ROWS: [&str; 9] = [
+const ROWS: [&str; 10] = [
+    "Saved stretch: ",
     "Underruns: ",
     "Picture preview: ",
     "Prepared audio frames: ",
@@ -99,6 +100,31 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!(format!("{gpu:?}")),
     )?;
     d.capture("Diagnostics beside the picture")?;
+
+    let pointer = d.rect("Diagnostics")?.center();
+    d.events(
+        "Scroll to the saved audio status",
+        vec![
+            egui::Event::PointerMoved(pointer),
+            egui::Event::MouseWheel {
+                unit: egui::MouseWheelUnit::Point,
+                delta: egui::vec2(0.0, -300.0),
+                phase: egui::TouchPhase::Move,
+                modifiers: egui::Modifiers::NONE,
+            },
+        ],
+    )?;
+    for _ in 0..16 {
+        d.step("Diagnostics scroll settles", false)?;
+    }
+    let paint = scenarios::text_paint_visibility(d, "Saved stretch");
+    d.check(
+        "The saved stretch status paints fully inside the scrolled panel",
+        !paint.is_empty() && paint.iter().all(|item| item["fully_visible"] == true),
+        json!("fully visible"),
+        json!(paint),
+    )?;
+    d.capture("Saved audio status in Diagnostics")?;
 
     let frames = row(d, "UI updates: ");
     let first = d.app().diagnostics.refreshes;

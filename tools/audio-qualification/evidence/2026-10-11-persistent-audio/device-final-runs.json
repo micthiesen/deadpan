@@ -1,0 +1,70 @@
+{
+  "binary": "/Users/michael/Code/deadpan/target/release/examples/perf",
+  "sha256": "5bb7fd6daadad9ab33546239c86c9073b0d91acfccad0fd3fc0d61681b100c40",
+  "fixture": "/tmp/deadpan-audio-ahead-20261011/future.deadpan",
+  "runs": [
+    {
+      "command": [
+        "/usr/bin/time",
+        "-l",
+        "/Users/michael/Code/deadpan/target/release/examples/perf",
+        "playback",
+        "/tmp/deadpan-audio-ahead-20261011/future.deadpan",
+        "--pictures",
+        "original",
+        "--seconds",
+        "10",
+        "--start-frame",
+        "240",
+        "--audio-cache",
+        "/tmp/deadpan-persistent-audio-20261011/final-device-cache"
+      ],
+      "exit": 0,
+      "seconds": 8.345403290819377,
+      "report_sha256": "7f4dabc9b6a94202789af1230e4730d2c2189b252baf69269f9e1f7c86a3c0d9",
+      "log_sha256": "cb377a078fb935666488d198b99b5dceac38b6ab39c8b2df5196273ea752029a"
+    },
+    {
+      "command": [
+        "/usr/bin/time",
+        "-l",
+        "/Users/michael/Code/deadpan/target/release/examples/perf",
+        "playback",
+        "/tmp/deadpan-audio-ahead-20261011/future.deadpan",
+        "--pictures",
+        "original",
+        "--seconds",
+        "10",
+        "--start-frame",
+        "240",
+        "--audio-cache",
+        "/tmp/deadpan-persistent-audio-20261011/final-device-cache"
+      ],
+      "exit": 0,
+      "seconds": 8.315267625264823,
+      "report_sha256": "b6e99de81f97cbaf122bfbd9281421d477ddb54301777414d65092537d29ef2f",
+      "log_sha256": "671d2846a8730ed32529d24487d23889376d1522f1bca00834c27848f735c4c5"
+    },
+    {
+      "command": [
+        "/usr/bin/time",
+        "-l",
+        "/Users/michael/Code/deadpan/target/release/examples/perf",
+        "playback",
+        "/tmp/deadpan-audio-ahead-20261011/future.deadpan",
+        "--pictures",
+        "original",
+        "--seconds",
+        "10",
+        "--start-frame",
+        "240",
+        "--audio-cache",
+        "off"
+      ],
+      "exit": 0,
+      "seconds": 8.315276749897748,
+      "report_sha256": "2005d9a3359736c68780081dd6fe8d86f485e00fdecf30bd6dc211911a1550d1",
+      "log_sha256": "afdb4b805bf1c6ab9343c627d2dc10965bf60a1281bf2e0c08879d6dfd606661"
+    }
+  ]
+}

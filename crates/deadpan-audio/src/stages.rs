@@ -44,6 +44,9 @@ use prepared_pcm::{PcmSamples, PcmWriter, PreparedPcm};
 #[path = "stage_projection.rs"]
 mod stage_projection;
 
+#[path = "stage_cache.rs"]
+mod stage_cache;
+
 #[path = "signal_mix.rs"]
 mod signal_mix;
 
@@ -402,6 +405,10 @@ struct ReadWork {
     // Policy-only and gated leaves still consume their unique asset identities.
     preflight_assets: BTreeSet<AssetId>,
     plan_work: usize,
+    // Optional persistent-key scans cannot consume the canonical render's
+    // allowance. Nested scans share one extra bounded allowance per request.
+    cache_plan_work: usize,
+    cache_key_scopes: usize,
     // Projection identity retains its allocation for this complete request.
     // Different routes through the same authored stage must never alias PCM.
     projected: Vec<(AudioProjectionIdentity, Arc<PreparedBlock>)>,
@@ -413,6 +420,14 @@ struct ReadWork {
 }
 
 const MAX_PLAN_WORK_PER_READ: usize = 16 * 1024 * 1024;
+const CACHE_KEY_WORK_LIMIT: &str = "saved audio key work per read";
+
+struct CacheKeyScope<'a>(&'a RefCell<ReadWork>);
+impl Drop for CacheKeyScope<'_> {
+    fn drop(&mut self) {
+        self.0.borrow_mut().cache_key_scopes -= 1;
+    }
+}
 const MAX_SOURCE_DEPENDENCIES: usize = 1024;
 
 /// One consumer request owns this budget across bus halos and cache checks.
@@ -462,6 +477,10 @@ struct WorkControl<'a> {
 }
 
 impl WorkControl<'_> {
+    fn cache_key_scope(&self) -> CacheKeyScope<'_> {
+        self.work.borrow_mut().cache_key_scopes += 1;
+        CacheKeyScope(self.work)
+    }
     fn check(self) -> Result<Duration, StageAudioError> {
         check_cancel(self.cancelled)?;
         self.deadline
@@ -473,21 +492,46 @@ impl WorkControl<'_> {
     fn spend_plan_work(self, amount: usize) -> Result<(), StageAudioError> {
         self.check()?;
         let mut work = self.work.borrow_mut();
-        work.plan_work = work
-            .plan_work
+        let cache = work.cache_key_scopes > 0;
+        let spent = if cache {
+            &mut work.cache_plan_work
+        } else {
+            &mut work.plan_work
+        };
+        *spent = spent
             .checked_add(amount)
             .filter(|total| *total <= MAX_PLAN_WORK_PER_READ)
-            .ok_or(StageAudioError::Limit("plan work per read"))?;
+            .ok_or(StageAudioError::Limit(if cache {
+                CACHE_KEY_WORK_LIMIT
+            } else {
+                "plan work per read"
+            }))?;
         Ok(())
     }
 
     fn query_limits(self) -> Result<AudioQueryLimits, StageAudioError> {
         self.check()?;
+        let work = self.work.borrow();
+        let cache = work.cache_key_scopes > 0;
+        let spent = if cache {
+            work.cache_plan_work
+        } else {
+            work.plan_work
+        };
         let remaining = MAX_PLAN_WORK_PER_READ
-            .checked_sub(self.work.borrow().plan_work)
+            .checked_sub(spent)
             .filter(|remaining| *remaining > 0)
-            .ok_or(StageAudioError::Limit("plan work per read"))?;
+            .ok_or(StageAudioError::Limit(if cache {
+                CACHE_KEY_WORK_LIMIT
+            } else {
+                "plan work per read"
+            }))?;
         let mut limits = query_limits();
+        // Stop optional work before reducing a core query's usual allowance,
+        // so exhaustion is identifiable and cannot masquerade as a bad plan.
+        if cache && remaining < limits.maximum_work {
+            return Err(StageAudioError::Limit(CACHE_KEY_WORK_LIMIT));
+        }
         limits.maximum_work = limits.maximum_work.min(remaining);
         Ok(limits)
     }
@@ -556,6 +600,7 @@ pub struct StageAudio {
     active_frames: u64,
     active_disk_bytes: u64,
     preparation_monitor: Option<Arc<PreparationMonitor>>,
+    persistent_cache: Option<crate::persistent_pcm::PcmCache>,
     /// Set while a live tail reads the sound before it. Other tails in that
     /// window count as silent, so tails never feed each other or chain.
     feeding_tail: bool,
@@ -597,6 +642,7 @@ impl StageAudio {
             active_frames: 0,
             active_disk_bytes: 0,
             preparation_monitor: None,
+            persistent_cache: None,
             feeding_tail: false,
         }
     }
@@ -642,6 +688,12 @@ impl StageAudio {
     /// retained PCM. Replacing the monitor does not invalidate valid caches.
     pub fn set_preparation_monitor(&mut self, monitor: Option<Arc<PreparationMonitor>>) {
         self.preparation_monitor = monitor;
+    }
+
+    /// The host opens this optional derived cache on a worker. It is never an
+    /// authored media source and cannot replace current source admission.
+    pub fn set_persistent_cache(&mut self, cache: Option<crate::persistent_pcm::PcmCache>) {
+        self.persistent_cache = cache;
     }
 
     /// Retained PCM only; the bounded source halo and active work are separate.
@@ -2157,6 +2209,12 @@ impl StageAudio {
                 });
             }
         }
+        let saved = self.saved_stage_key(input, output, recipe, provider, control, depth)?;
+        if let Some(saved) = &saved
+            && let Some(block) = self.restore_saved_stage(saved, recipe.output_frames(), control)?
+        {
+            return Ok(block);
+        }
         let mut dependencies = Dependencies::new();
         let mut relative_depth = 0;
         let mut input_end = 0;
@@ -2244,13 +2302,17 @@ impl StageAudio {
         if let Some(progress) = &progress {
             progress.report(PreparationActivity::SavingStretch { depth });
         }
-        Ok(PreparedBlock {
+        let block = PreparedBlock {
             samples: samples.finish(control)?,
             dependencies,
             // Consumers query policy in their own point grid. Do not retain a
             // second full-stage interval cache or scale rounded input masks.
             relative_depth,
-        })
+        };
+        if let Some(saved) = &saved {
+            self.save_stage(saved, &block, control)?;
+        }
+        Ok(block)
     }
 
     fn read_stage_input(

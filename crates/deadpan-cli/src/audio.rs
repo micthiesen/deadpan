@@ -102,10 +102,16 @@ impl ProjectAudioSession {
     fn from_plan(store: ProjectStore, document: ProjectDocument, plan: RenderPlan) -> Self {
         let plan = Arc::new(plan);
         let sequence = SequenceAudio::new(Arc::clone(&plan));
+        let cache = deadpan_audio::persistent_pcm::default_root()
+            .and_then(|root| deadpan_audio::persistent_pcm::PcmCache::at(&root).ok());
+        let mut stages = StageAudio::new(Arc::clone(&plan));
+        stages.set_persistent_cache(cache.clone());
+        let mut limited = LimitedAudio::new(plan);
+        limited.set_persistent_cache(cache);
         Self {
             sequence,
-            stages: StageAudio::new(Arc::clone(&plan)),
-            limited: LimitedAudio::new(plan),
+            stages,
+            limited,
             sources: RegisteredSources {
                 store,
                 document,

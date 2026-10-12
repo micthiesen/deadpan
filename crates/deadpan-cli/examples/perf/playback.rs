@@ -102,11 +102,19 @@ pub fn run(options: &Options) -> Result<Value> {
 
     let wake = Arc::new((Mutex::new(false), Condvar::new()));
     let notify = wake.clone();
-    let engine = Engine::new(Arc::new(move || {
-        let (flag, signal) = &*notify;
-        *flag.lock().unwrap_or_else(|e| e.into_inner()) = true;
-        signal.notify_all();
-    }))?;
+    let audio_cache = match options.text("audio-cache") {
+        Some("off") => None,
+        Some(path) => Some(std::path::PathBuf::from(path)),
+        None => deadpan_audio::persistent_pcm::default_root(),
+    };
+    let engine = Engine::with_audio_cache(
+        Arc::new(move || {
+            let (flag, signal) = &*notify;
+            *flag.lock().unwrap_or_else(|e| e.into_inner()) = true;
+            signal.notify_all();
+        }),
+        audio_cache.clone(),
+    )?;
     let start_sample = rate.audio_boundary(ProjectFrame(start_frame))?;
     let window = Window::new(
         if loop_end.is_some() {
@@ -151,6 +159,7 @@ pub fn run(options: &Options) -> Result<Value> {
     // the engine's preparation horizon. This records the actual heard clock
     // beside prepared work rather than inferring lead from producer progress.
     let mut preparation_lead = Vec::new();
+    let mut saved_audio = None;
     let mut recorded_prepared = 0;
     let limit = Duration::from_secs(seconds);
     let frame_of = |sample: AudioSample| -> Result<i64> {
@@ -241,6 +250,7 @@ pub fn run(options: &Options) -> Result<Value> {
             failure = Some("no delivered audio within 20 s".into());
             break;
         }
+        saved_audio = engine.saved_audio_status().or(saved_audio);
         let prepared = deadpan_diagnostics::snapshot()
             .queues
             .playback_prepared_frames
@@ -368,6 +378,12 @@ pub fn run(options: &Options) -> Result<Value> {
         "phases": phases,
         "failure": failure,
         "audio": {
+            "cache_root": audio_cache,
+            "saved_stretch": saved_audio.map(|status| json!({
+                "event": status.event.label(), "bytes": status.bytes,
+                "key": status.key.map(|key| format!("blake3:{}", key.iter().map(|byte| format!("{byte:02x}")).collect::<String>())),
+                "regenerated_from": status.regenerated_from.map(|reason| reason.label()),
+            })),
             "generations": diagnostics.generations,
             "device_reports": diagnostics.reports,
             "underruns_starved": diagnostics.starved,

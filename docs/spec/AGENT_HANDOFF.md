@@ -4,6 +4,18 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Saved stretched audio](../qualification/persistent-audio-2026-10-11.md)
+reuses verified Preserve/integer-pitch output after restart in the native and
+headless paths. Keys retain fresh PCM, exact mappings, source provenance and
+engine identity. A 4 GiB shared cache publishes atomically and skips active
+readers/writers during grace-period cleanup. Native diagnostics and Storage
+show status, keys and validity. Optional scans have their own bounded plan-work
+allowance, fixing the retained four-minute fixture failure. Full audio/playback
+tests and UI replays pass; remaining voice/group/mastering work keeps DP-09/DP-16 partial.
+Six final device runs pass without audio faults or picture misses. On the long
+fixture the first heard report is 4.785 s cold, 2.399 s restored and 2.995 s with
+caching disabled; single observations, not a latency distribution.
+
 [Audio preparation during playback](../qualification/audio-ahead-2026-10-11.md)
 uses a bounded FIFO on the existing worker: up to 29.867 seconds of canonical
 PCM beyond the native queue, with unchanged first-batch activation and delivery
@@ -11,7 +23,7 @@ clocks. Full-queue Stop, supersession, edited-proposal revocation and exact
 future-stage PCM have regressions; the controlled one-slot variant fails the
 future-stage test. Two real-device runs have no underruns or faults, including
 a 35-second loop that reaches the FIFO bound; all 102 UI replay checks pass.
-Persistent cache reuse and the remaining audio pipeline keep DP-09/DP-16 partial.
+Persistent reuse is recorded above; the remaining audio pipeline keeps DP-09/DP-16 partial.
 
 [Idle audio preparation](../qualification/audio-warming-2026-10-11.md) prepares
 a bounded 30-second horizon after the stopped Original/Edit/Sound cursor settles.

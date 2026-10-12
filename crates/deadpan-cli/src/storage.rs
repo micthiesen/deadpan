@@ -10,6 +10,8 @@
 //! - **Rebuildable caches** that cleanup may remove: seek proxies
 //!   (`~/Library/Caches/Deadpan/Proxies`, through the proxy cache's own
 //!   locked cleanup, which never removes an entry a reader holds) and
+//!   saved canonical stretches (`~/Library/Caches/Deadpan/Audio`, with
+//!   independent reader/writer locks and a full checksum on restore), plus
 //!   abandoned downloader-helper staging
 //!   (`~/Library/Application Support/Deadpan/helpers/.staging`).
 //! - **Reported only**: everything else under `~/Library/Caches/Deadpan`
@@ -89,6 +91,8 @@ pub struct UserStorageReport {
     pub removable_bytes: u64,
     /// Caches that exist only in process memory or anonymous files.
     pub not_on_disk: Vec<&'static str>,
+    pub saved_audio: Vec<deadpan_audio::persistent_pcm::CacheEntry>,
+    pub saved_audio_error: Option<String>,
 }
 
 #[derive(Debug, Clone, Default, Serialize)]
@@ -102,7 +106,7 @@ pub struct UserCleanupOutcome {
 const NOT_ON_DISK: [&str; 3] = [
     "decoded source PCM (bounded, per process, anonymous temporary files)",
     "decoded pictures and thumbnails (process memory)",
-    "prepared and limited audio tiles (process memory)",
+    "active prepared PCM and limited tiles (private memory/anonymous files; saved stretches are reported separately)",
 ];
 
 fn age(metadata: &std::fs::Metadata) -> Duration {
@@ -221,9 +225,29 @@ fn stale_helper_staging(root: &Path, grace: Duration) -> Vec<(PathBuf, u64)> {
 }
 
 impl UserStorage {
-    /// Account for every per-user directory. Creates and changes nothing.
+    /// Account for every per-user directory. Entries are unchanged; inspection
+    /// of an existing audio cache may initialize its coordination lock.
     pub fn report(&self, grace: Duration) -> UserStorageReport {
         let mut directories = Vec::new();
+        let audio_path = self.caches.join("Audio");
+        let (saved_audio, saved_audio_error, audio_removable) = if audio_path.exists() {
+            match deadpan_audio::persistent_pcm::PcmCache::at(&audio_path)
+                .and_then(|cache| Ok((cache.entries()?, cache.cleanup(grace, true)?.removed_bytes)))
+            {
+                Ok((entries, removable)) => (entries, None, removable),
+                Err(error) => (Vec::new(), Some(error.to_string()), 0),
+            }
+        } else {
+            (Vec::new(), None, 0)
+        };
+        directories.push(CacheDirectory {
+            name: "Saved audio".into(),
+            path: audio_path.clone(),
+            bytes: tree_bytes(&audio_path),
+            kind: "rebuildable canonical stretches; active readers are retained",
+            cleanable: true,
+            removable_bytes: audio_removable,
+        });
         let proxies = self.proxies();
         let proxy_entries = proxy_entries(&proxies);
         directories.push(CacheDirectory {
@@ -252,7 +276,7 @@ impl UserStorage {
         if let Ok(entries) = std::fs::read_dir(&self.caches) {
             let mut others: Vec<_> = entries
                 .flatten()
-                .filter(|entry| entry.file_name() != "Proxies")
+                .filter(|entry| entry.file_name() != "Proxies" && entry.file_name() != "Audio")
                 .collect();
             others.sort_by_key(std::fs::DirEntry::file_name);
             for entry in others {
@@ -293,6 +317,8 @@ impl UserStorage {
             total_bytes,
             removable_bytes,
             not_on_disk: NOT_ON_DISK.to_vec(),
+            saved_audio,
+            saved_audio_error,
         }
     }
 
@@ -368,6 +394,24 @@ impl UserStorage {
                 outcome.removed.push(proxies.join(name));
             }
             outcome.kept_in_use = report.kept_in_use;
+        }
+        let audio_path = self.caches.join("Audio");
+        if audio_path.exists() {
+            let cleanup = deadpan_audio::persistent_pcm::PcmCache::at(&audio_path)
+                .and_then(|cache| cache.cleanup(grace, dry_run))?;
+            outcome.removed_bytes += cleanup.removed_bytes;
+            outcome.removed.extend(
+                cleanup
+                    .removed
+                    .into_iter()
+                    .map(|name| audio_path.join(name)),
+            );
+            outcome.kept_in_use.extend(
+                cleanup
+                    .kept_in_use
+                    .into_iter()
+                    .map(|name| format!("Audio/{name}")),
+            );
         }
         for (path, bytes) in stale_helper_staging(&self.helper_staging(), grace) {
             if !dry_run {
@@ -829,6 +873,44 @@ mod tests {
         assert!(models.exists());
         // No proxy cache was created by reporting or cleaning.
         assert!(!user.proxies().exists());
+    }
+
+    #[test]
+    fn saved_audio_cleanup_obeys_grace_and_reader_locks() {
+        use rustix::fs::{FlockOperation, flock};
+        let root = tempfile::tempdir().unwrap();
+        let user = UserStorage {
+            caches: root.path().join("caches"),
+            support: root.path().join("support"),
+        };
+        let cache =
+            deadpan_audio::persistent_pcm::PcmCache::at(&user.caches.join("Audio")).unwrap();
+        let old = cache.path().join(format!("b3-{}.pcm", "1".repeat(64)));
+        let active = cache.path().join(format!("b3-{}.pcm", "2".repeat(64)));
+        let fresh = cache.path().join(format!("b3-{}.pcm", "3".repeat(64)));
+        for path in [&old, &active, &fresh] {
+            std::fs::write(path, [0; 80]).unwrap();
+        }
+        backdate(&old, 3 * 24 * 3600);
+        backdate(&active, 3 * 24 * 3600);
+        let reader = std::fs::File::open(&active).unwrap();
+        flock(&reader, FlockOperation::NonBlockingLockShared).unwrap();
+        let report = user.report(DEFAULT_GRACE);
+        assert_eq!(report.saved_audio.len(), 3);
+        assert!(report.saved_audio_error.is_none());
+        assert_eq!(report.removable_bytes, 80);
+        let outcome = user.clean(DEFAULT_GRACE, false, &[]).unwrap();
+        assert_eq!(outcome.removed, vec![old.clone()]);
+        assert_eq!(outcome.kept_in_use.len(), 1);
+        assert!(!old.exists());
+        assert!(active.exists());
+        assert!(fresh.exists());
+        drop(reader);
+        assert_eq!(
+            user.clean(DEFAULT_GRACE, false, &[]).unwrap().removed,
+            vec![active]
+        );
+        assert!(fresh.exists());
     }
 
     #[test]

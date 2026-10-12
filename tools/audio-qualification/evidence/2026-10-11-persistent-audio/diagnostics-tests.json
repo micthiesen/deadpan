@@ -1,0 +1,14 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-app",
+    "--lib",
+    "preview::diagnostics::tests"
+  ],
+  "exit": 0,
+  "seconds": 19.879160874988884,
+  "log_sha256": "02275b485de8b95da968a5282ccfed0e76806ba440b211d91a8f0551067935b9"
+}

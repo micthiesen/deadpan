@@ -1,0 +1,22 @@
+[
+  {
+    "directory": "final-device-cache",
+    "name": "b3-0e91a546a5490989e2fe2eaa699f2b6416717f9d4401075054d5ca42e89d3567.pcm",
+    "bytes": 3075152,
+    "sha256": "a8c102d0d1499333e21a0dbece0544ce6ad2b695dd8297325e952bf71de50767",
+    "format": "DEADPCM1",
+    "key": "blake3:0e91a546a5490989e2fe2eaa699f2b6416717f9d4401075054d5ca42e89d3567",
+    "frames": 384384,
+    "payload_checksum": "blake3:062e94a1c23be6b8332f494bf385180c578dc5180d106574f1911cebce842206"
+  },
+  {
+    "directory": "final-long-cache",
+    "name": "b3-9f8d4e19b48175bfe5462471e66743fda756daea74f8b0f327c91ef9fabc9c61.pcm",
+    "bytes": 92252240,
+    "sha256": "f3c564be6c3c1d44b2c1db240a7301ba9662f930dbe4004a29dc810b8cc5d887",
+    "format": "DEADPCM1",
+    "key": "blake3:9f8d4e19b48175bfe5462471e66743fda756daea74f8b0f327c91ef9fabc9c61",
+    "frames": 11531520,
+    "payload_checksum": "blake3:5dc61e7c48849f37a3ab3bd11b550da346b53310b5f9b1ff74777f7888fc0c1e"
+  }
+]
