@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-12T02:20:44Z",
+  "updated_at": "2026-10-12T02:46:05Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Integrate EQ with retained owner input, ordered gain/mute and group/tail policy, then captured native commands and real preview/export. Complete remaining sends, mastering, independently timed group automation, format/color, workflow and release obligations.",
+  "focus": "Connect owner contexts and retained reference history to the ordered EQ graph: transported edges, gain/mute order, group sums and per-voice silence/tail permissions. Then add captured native commands and real preview/export; complete remaining sends, mastering, independently timed group automation, format/color, workflow and release obligations.",
   "features": [
     {
       "id": "editing",
@@ -44,7 +44,7 @@
       "requirements": [
         "DP-09"
       ],
-      "note": "Playback, gain, sounds and timing work. Verified stretched audio survives restart in a bounded cache. EQ parameters and DSP are qualified; authored EQ, group/tail integration and full voice processing remain."
+      "note": "Playback, gain, sounds and timing work. Verified stretched audio survives restart. EQ DSP and raw owner contexts preserve hidden input and retained clocks; ordered authored EQ, group/tail integration and full voice processing remain."
     },
     {
       "id": "analysis",
@@ -605,6 +605,14 @@
       "revision": "27a361e8",
       "retrospective": false,
       "summary": "Saved stretched audio now survives restart with full integrity and lifecycle checks. Bounded FIR and three-band EQ/cut processing pass numerical, cold-read and response qualification; all 1,051 core and 523 audio tests and workspace checks pass. Authored EQ and retained owner/group/tail integration remain unfinished."
+    },
+    {
+      "date": "2026-10-12",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "3c8758da",
+      "retrospective": false,
+      "summary": "Raw owner contexts retain hidden group and Repeat PCM, enclosing time/pitch processing and separate resumed history. Cold decoded PCM and native EQ comparisons pass, alongside 932 plan/audio tests, the final PointCeil regression and strict workspace Clippy. Authored EQ and complete voice/group processing remain open."
     }
   ]
 }
