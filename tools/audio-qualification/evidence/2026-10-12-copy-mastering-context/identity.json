@@ -1,0 +1,17 @@
+{
+  "base_commit": "a459fc2803ed293a5a2a8a80319d496129784745",
+  "sources": {
+    "crates/deadpan-cli/tests/preview_export.rs": "d36a679243c09f15a79eab93d8f4fd0711799d77a60998546f7341952c49ce8e",
+    "crates/deadpan-cli/tests/preview_export/partial_sounds.rs": "f2a2cca16908f3fae4f1985d893f55f4c4b4085e6c9ffe583bad48f990bf41f2",
+    "crates/deadpan-cli/tests/preview_export/recipes.rs": "92e8207ba11557b7b2d782a7f978ccd923465407e32e0940fb844c9d24b7945a",
+    "crates/deadpan-audio/src/limiter.rs": "b6cc3afb419b61d6dce1d8f87de82090421206197b56ae57721c8d0099da0c4d",
+    "native/deadpan-source/tests/audio-fixtures/pcm-stereo-48000.wav": "e79aba90eab42dc057171be52be9ecb794c3e2790c5731783270ece73c24d2ee",
+    "native/deadpan-source/tests/fixtures/cfr-bframes.mp4": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+    "Cargo.lock": "9d911d67520092b729ae0e5933a39fc57f0ab4933b7d94b2d72d55a125fca93e",
+    "rust-toolchain.toml": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc"
+  },
+  "binaries": {
+    "target/debug/deadpan-cli": "f3632c8165976e45f2f0540202f7e796b85e22b893393c4ad8db892a16ed0ef4",
+    "target/release/deadpan-cli": "84820f8858653775f53d7ea97eaf0953befe61ffb17b4331d3f52f23c14b0335"
+  }
+}

@@ -4,6 +4,15 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 
 ## Resumed implementation, 2026-10-06
 
+[Copy mastering context](qualification/copy-mastering-context-2026-10-12.md)
+resolves the pending mixed-bus comparison: the copied shared-EQ authored PCM
+matches exactly, while a preceding Original transient changes master gain at
+the new placement. The regression verifies every limited sample against the
+independently read authored bus and reported gain. No production change or
+newly complete requirement is claimed. Debug/release, strict CLI Clippy and
+formatting pass; the existing seven-picture/19-block release export still
+verifies zero offset.
+
 [Partial attached-sound copies](qualification/partial-sound-copies-2026-10-12.md)
 now preserve complete recipes, chronological delivery clips and treatment input
 through eligible capture/paste/recopy and original-owner deletion. Shared EQ

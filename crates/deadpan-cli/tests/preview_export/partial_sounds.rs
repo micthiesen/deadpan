@@ -83,6 +83,142 @@ fn copy(
     Ok(())
 }
 
+/// A copied pre-master bus keeps its samples. Master gain belongs to its new
+/// project surroundings: the Original's final transient now precedes this copy.
+pub fn partial_copy_mastering_context(dir: &Path) -> Result<Value> {
+    let mut project = Project::create(dir, "partial-copy-mastering")?;
+    place_click_sound(&mut project)?;
+    let owner = root_children(&project.document()?)?[0].clone();
+    let eq = EqualizerRecipe::new(
+        [3000, -6000, 3000].map(|db| GainDb::new(db).unwrap()),
+        None,
+        None,
+    )?;
+    project.apply(|_, document, _| {
+        let source = document.sounds()[&SoundId::new("click")?].source.clone();
+        Ok(Command::SetBeatSound {
+            owner: owner.clone(),
+            id: SoundId::new("attached")?,
+            event: BeatSound {
+                label: "Mixed Original and attached sound".into(),
+                mapping: SourceAudioMapping::natural_rate(
+                    source.span,
+                    document.presentation_basis().frame_rate,
+                )?,
+                source,
+                offset: AudioSample(0),
+                treatments: AudioTreatments::default()
+                    .with_clip_gain(ClipGain::new(GainDb::new(-12000)?, false, vec![], vec![])?)?
+                    .with_equalizer(Some(eq))?,
+                start_edge: AudioEdgePolicy::Hard,
+                end_edge: AudioEdgePolicy::Hard,
+                overflow: SoundOverflowPolicy::Reject,
+            },
+        })
+    })?;
+    project.apply(|_, _, _| {
+        Ok(Command::DeleteSound {
+            id: SoundId::new("click")?,
+        })
+    })?;
+    project.apply(|_, _, _| {
+        Ok(Command::SetAudioTreatments {
+            node: owner,
+            treatments: AudioTreatments::default().with_equalizer(Some(eq))?,
+        })
+    })?;
+    #[derive(serde::Deserialize)]
+    struct Block {
+        samples: Vec<[f32; 2]>,
+        #[serde(default)]
+        gain: Vec<f64>,
+    }
+    let read = |project: &Project, start: i64, mode: &str| -> Result<Block> {
+        Ok(serde_json::from_value(
+            success(&[
+                "inspect-audio",
+                project.path(),
+                "--samples",
+                &start.to_string(),
+                &(start + 256).to_string(),
+                mode,
+            ])?["audio"]
+                .clone(),
+        )?)
+    };
+    let expected = read(&project, boundary(2)? + 512, "--authored-bus")?;
+    let before = read(&project, boundary(2)? + 512, "--limited")?;
+    let preceding = read(&project, boundary(120)? - 256, "--authored-bus")?;
+    let preceding_peak = preceding
+        .samples
+        .iter()
+        .flatten()
+        .map(|v| v.abs())
+        .fold(0.0, f32::max);
+    assert!(
+        preceding_peak > 0.9,
+        "the preceding Original transient must exercise limiting"
+    );
+    copy(&mut project, None, 2, 6, "mixed-copy-capture")?;
+    let actual = read(&project, boundary(120)? + 512, "--authored-bus")?;
+    let after = read(&project, boundary(120)? + 512, "--limited")?;
+    assert_eq!(expected.samples.len(), 256);
+    assert_eq!(
+        actual
+            .samples
+            .iter()
+            .flatten()
+            .map(|v| v.to_bits())
+            .collect::<Vec<_>>(),
+        expected
+            .samples
+            .iter()
+            .flatten()
+            .map(|v| v.to_bits())
+            .collect::<Vec<_>>(),
+        "the complete shared-EQ bus must retain its PCM"
+    );
+    assert!(actual.samples.iter().flatten().any(|v| v.abs() > 0.1));
+    let mut prediction_error = 0.0_f64;
+    for (raw, limited) in [(&expected, &before), (&actual, &after)] {
+        assert_eq!(limited.samples.len(), raw.samples.len());
+        assert_eq!(limited.gain.len(), raw.samples.len());
+        for ((input, output), gain) in raw.samples.iter().zip(&limited.samples).zip(&limited.gain) {
+            assert!(gain.is_finite() && (0.0..=1.0).contains(gain));
+            for channel in 0..2 {
+                let predicted = (f64::from(input[channel]) * gain) as f32;
+                prediction_error =
+                    prediction_error.max(f64::from((predicted - output[channel]).abs()));
+                assert_eq!(
+                    output[channel].to_bits(),
+                    predicted.to_bits(),
+                    "limited PCM must equal authored PCM times reported master gain"
+                );
+            }
+        }
+    }
+    assert!(before.gain.iter().all(|gain| *gain == 1.0));
+    let after_min_gain = after.gain.iter().copied().fold(1.0, f64::min);
+    assert!(after_min_gain > 0.0 && after_min_gain < 0.99);
+    let difference = before
+        .samples
+        .iter()
+        .flatten()
+        .zip(after.samples.iter().flatten())
+        .map(|(a, b)| (a - b).abs())
+        .fold(0.0, f32::max);
+    assert!(
+        difference > 0.001,
+        "the mastering-context distinction must change PCM magnitude materially"
+    );
+    Ok(json!({
+        "package":project.package,"frames_compared":256,"channels":2,
+        "max_authored_difference":0.0,"max_limited_difference":difference,
+        "before_min_gain":1.0,"after_min_gain":after_min_gain,
+        "max_gain_prediction_error":prediction_error,"preceding_original_peak":preceding_peak,
+    }))
+}
+
 pub fn partial_attached_sound_copies(dir: &Path) -> Result<Fixture> {
     let mut project = Project::create(dir, "partial-attached-sound-copies")?;
     place_click_sound(&mut project)?;

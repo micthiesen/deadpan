@@ -1,0 +1,11 @@
+{
+  "after_min_gain": 0.9466336984187365,
+  "before_min_gain": 1.0,
+  "channels": 2,
+  "frames_compared": 256,
+  "max_authored_difference": 0.0,
+  "max_gain_prediction_error": 0.0,
+  "max_limited_difference": 0.018082082271575928,
+  "package": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmp4lZH7r/mixed/partial-copy-mastering.deadpan",
+  "preceding_original_peak": 0.947795033454895
+}

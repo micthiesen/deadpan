@@ -4,6 +4,16 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Copy mastering context](../qualification/copy-mastering-context-2026-10-12.md)
+resolves the mixed Original/attachment comparison below. The authored shared-EQ
+PCM matches exactly after partial copy; current master gain changes because the
+Original's final transient now precedes the copy. Independent authored/limited
+reads predict every limited sample with zero error. This is a test and evidence
+follow-up, with no production processing change.
+Debug/release results agree; strict CLI Clippy and formatting pass. The existing
+partial-copy release export still verifies seven pictures, 19 audio blocks and
+zero sample offset. Evidence and self-review are retained with the qualification.
+
 [Partial attached-sound copies](../qualification/partial-sound-copies-2026-10-12.md)
 now preserve the full sound owner behind a delivery Partition. Frozen placement
 derives chronological windows and anchors; PCM and envelopes share their sample
@@ -24,9 +34,9 @@ are retained with the qualification.
 
 Keep the remaining guards explicit: Source/Hold or supported-fragment endpoints
 are required, so partial composite Preserve ranges still refuse. Surviving-owner
-splits and attachment Repeat/root-owner transforms remain open. A mixed-bus
-pre-copy equality oracle differed before the Original's contribution was isolated;
-that broader cut-policy qualification is still owed. The primary works alone and
+splits and attachment Repeat/root-owner transforms remain open. The mixed-bus
+pre-copy equality difference is resolved as current mastering context above.
+The primary works alone and
 self-reviews. No DP requirement or release gate is newly complete.
 
 [Occurrence delivery windows](../qualification/sound-occurrence-windows-2026-10-12.md)

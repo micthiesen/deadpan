@@ -419,6 +419,17 @@ fn continuous_event_return_preserves_preview_and_verified_export() -> Result {
 }
 
 #[test]
+fn partial_copy_preserves_authored_mix_and_uses_current_mastering_context() -> Result {
+    let (root, _guard) = keep_or(tempfile::tempdir()?);
+    let report = recipes::partial_sounds::partial_copy_mastering_context(&root.join("mixed"))?;
+    if let Some(path) = std::env::var_os("DEADPAN_COPY_MASTERING_RESULTS") {
+        std::fs::write(path, serde_json::to_vec_pretty(&report)?)?;
+    }
+    eprintln!("{}", serde_json::to_string_pretty(&report)?);
+    Ok(())
+}
+
+#[test]
 fn partial_attached_sound_copies_preserve_preview_and_verified_export() -> Result {
     let (root, _guard) = keep_or(tempfile::tempdir()?);
     let fixture =

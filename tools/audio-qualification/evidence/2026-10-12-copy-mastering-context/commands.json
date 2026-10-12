@@ -1,0 +1,220 @@
+[
+  {
+    "name": "clippy-before",
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "-p",
+      "deadpan-cli",
+      "--all-targets",
+      "--features",
+      "ui-harness",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T17:47:31.247245+00:00",
+    "head": "a459fc2803ed293a5a2a8a80319d496129784745",
+    "diff_sha256": "332fde97c930a7ee983860dda3158ff0d8edc7c4ea7b1f83af7b37c576686ab3",
+    "untracked_sha256": {},
+    "exit": 101,
+    "seconds": 0.32215495873242617,
+    "log_sha256": "77eb3a65b1eb11ca8d15c4210b7ed030fe2ceb792c95173f6a80d8450b158aaa",
+    "binaries": {}
+  },
+  {
+    "name": "clippy",
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "-p",
+      "deadpan-cli",
+      "--all-targets",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T17:49:53.097162+00:00",
+    "head": "a459fc2803ed293a5a2a8a80319d496129784745",
+    "diff_sha256": "1195d8378c7f62124f7808b903c63695c6d44ddccd25f34e312ef31cce1f11c0",
+    "untracked_sha256": {},
+    "exit": 0,
+    "seconds": 79.87003695825115,
+    "log_sha256": "c974a042b100d607a8b4025830aadd89b812cb801a95d1e1d9762717ee657616",
+    "binaries": {}
+  },
+  {
+    "name": "debug",
+    "command": [
+      "env",
+      "DEADPAN_PREVIEW_EXPORT_KEEP=1",
+      "DEADPAN_COPY_MASTERING_RESULTS=/private/tmp/deadpan-original-copy-20261012/debug-result.json",
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-cli",
+      "--test",
+      "preview_export",
+      "partial_copy_preserves_authored_mix_and_uses_current_mastering_context",
+      "--",
+      "--nocapture"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T17:49:42.826463+00:00",
+    "head": "a459fc2803ed293a5a2a8a80319d496129784745",
+    "diff_sha256": "1195d8378c7f62124f7808b903c63695c6d44ddccd25f34e312ef31cce1f11c0",
+    "untracked_sha256": {},
+    "exit": 0,
+    "seconds": 10.211049791891128,
+    "log_sha256": "73aded75ec89256cd5dad9f84b72a2ac49e175d2ca71d5c24fc1209aeff2da04",
+    "binaries": {
+      "target/debug/deps/preview_export-72784a6fae9bfd9d": "3544a94b0e8f76d609d898f590543b24d56d808f51cc38be0acecd7c13d947b7"
+    }
+  },
+  {
+    "name": "fmt-check",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all",
+      "--check"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T17:49:37.396602+00:00",
+    "head": "a459fc2803ed293a5a2a8a80319d496129784745",
+    "diff_sha256": "1195d8378c7f62124f7808b903c63695c6d44ddccd25f34e312ef31cce1f11c0",
+    "untracked_sha256": {},
+    "exit": 0,
+    "seconds": 5.403851166833192,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "binaries": {}
+  },
+  {
+    "name": "fmt-final",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T17:49:06.608026+00:00",
+    "head": "a459fc2803ed293a5a2a8a80319d496129784745",
+    "diff_sha256": "14ea4399d922d3b40e2adade375131538e113e928cbd62f1eccbda1bf93d02af",
+    "untracked_sha256": {},
+    "exit": 0,
+    "seconds": 5.124071708880365,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "binaries": {}
+  },
+  {
+    "name": "fmt",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T17:45:27.160438+00:00",
+    "head": "a459fc2803ed293a5a2a8a80319d496129784745",
+    "diff_sha256": "ae8a51c1ff2cc369551abcd6cde3aa9d8b137d267dc47187080e3ea11ebeab93",
+    "untracked_sha256": {},
+    "exit": 0,
+    "seconds": 5.514345750212669,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "binaries": {}
+  },
+  {
+    "name": "mixed-copy-before",
+    "command": [
+      "env",
+      "DEADPAN_PREVIEW_EXPORT_KEEP=1",
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-cli",
+      "--test",
+      "preview_export",
+      "original_partial_copy_keeps_prepared_pcm",
+      "--",
+      "--nocapture"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T17:42:17.615933+00:00",
+    "head": "a459fc2803ed293a5a2a8a80319d496129784745",
+    "diff_sha256": "dfdc100bedfd55b9eb26b0c28c94ada6483de7bca72697dd52692213c7b0c054",
+    "untracked_sha256": {},
+    "exit": 0,
+    "seconds": 17.45285145798698,
+    "log_sha256": "516779675246a71711369601693d221bfd227dcba92b3f1c511a6f1224c4a254",
+    "binaries": {
+      "target/debug/deps/preview_export-72784a6fae9bfd9d": "c384af22e9fa937e1d4b70ad24f20718dc2e60d7c143f6b7238e95aee4e94564"
+    }
+  },
+  {
+    "name": "original-copy-before",
+    "command": [
+      "env",
+      "DEADPAN_PREVIEW_EXPORT_KEEP=1",
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-cli",
+      "--test",
+      "preview_export",
+      "original_partial_copy_keeps_prepared_pcm",
+      "--",
+      "--nocapture"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T17:39:02.662277+00:00",
+    "head": "a459fc2803ed293a5a2a8a80319d496129784745",
+    "diff_sha256": "5ed2154d72fc4ac3bf5cbb836bcb21e4b3c3c72ace38c26e8404573d0d02622f",
+    "untracked_sha256": {},
+    "exit": 0,
+    "seconds": 13.198194249998778,
+    "log_sha256": "6ce27f70ecbb6c92a7325fd0b99a3f5ec2e9a78f3902f17f14af86394083f6f1",
+    "binaries": {
+      "target/debug/deps/preview_export-72784a6fae9bfd9d": "f413b7722182c514f3a1b04358ab017b52d7997b54fff58aa2209059a4f2f434"
+    }
+  },
+  {
+    "name": "release",
+    "command": [
+      "env",
+      "DEADPAN_PREVIEW_EXPORT_KEEP=1",
+      "DEADPAN_COPY_MASTERING_RESULTS=/private/tmp/deadpan-original-copy-20261012/release-result.json",
+      "DEADPAN_PREVIEW_EXPORT_RESULTS=/private/tmp/deadpan-original-copy-20261012/export-result.json",
+      "cargo",
+      "test",
+      "--locked",
+      "--release",
+      "-p",
+      "deadpan-cli",
+      "--test",
+      "preview_export",
+      "partial_",
+      "--",
+      "--nocapture"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T17:51:12.993504+00:00",
+    "head": "a459fc2803ed293a5a2a8a80319d496129784745",
+    "diff_sha256": "66eeca1cd683dfef7df2f0d7226f02b286487183c9b76ff2dc4f16a0e0f28abe",
+    "untracked_sha256": {
+      "docs/qualification/copy-mastering-context-2026-10-12.md": "43e0c5046b20e58a52a31572d73a5aada203de93a5ed04e5e922503ff451da0e"
+    },
+    "exit": 0,
+    "seconds": 43.755207790993154,
+    "log_sha256": "1fb159245c8359506d696813acdb11032fcb1dfc82a3e22b049ee072dbbefdcd",
+    "binaries": {
+      "target/release/deps/preview_export-13eb73279274fbb4": "20353f0ae134101cf696b28328a48142014b95d12aaa7546b86657a3685a5854"
+    }
+  }
+]

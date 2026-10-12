@@ -85,9 +85,12 @@ fixtures also used an ineligible shortened wrapper or omitted the recopy group.
 A mixed Original/attachment PCM oracle differed before isolation. The final
 fixture tests attachment timing with the Original's audio outside the allocation;
 it does not assert that a combined bus is unchanged across new Original cuts.
+The [mastering-context follow-up](copy-mastering-context-2026-10-12.md) resolves
+that difference: the authored mix is unchanged and current master gain explains
+the limited output exactly.
 
 The primary agent implemented and self-reviewed this increment alone. No
 independent review, live GUI, physical audio or listening evidence is claimed.
-Broader scope transforms, mixed-bus cut behavior, incoming tails, persistent
+Broader scope transforms, incoming tails, persistent
 filtered caching, mastering and performance remain open. No requirement or
 release gate is newly complete.
