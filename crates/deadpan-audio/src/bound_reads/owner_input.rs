@@ -4,6 +4,9 @@ use deadpan_plan::{AudioOwnerClock, AudioOwnerInputScope};
 #[path = "owner_equalizer.rs"]
 mod equalizer_tests;
 
+#[path = "authored_eq.rs"]
+mod authored_eq_tests;
+
 fn owner<'a>(plan: &'a RenderPlan, name: &str, at: i64) -> AudioOwnerClock<'a> {
     plan.audio_gain_owners(AudioSample(at)..AudioSample(at + 1), Default::default())
         .unwrap()

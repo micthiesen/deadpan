@@ -246,6 +246,7 @@ impl RenderPlan {
             compiled_sounds: BTreeMap::new(),
             audio_context: true,
             has_audio_treatments: false,
+            has_audio_equalizers: false,
             has_audio_editorial_edges: false,
             audio_bindings: Default::default(),
             sound_clock_layout: Some(std::sync::Arc::new(layout.clone())),
@@ -442,6 +443,10 @@ impl RenderPlan {
             audio_assets: context.assets().clone(),
             audio_context: true,
             has_audio_treatments: !context.audio_treatments().is_empty(),
+            has_audio_equalizers: context
+                .audio_treatments()
+                .values()
+                .any(|recipe| recipe.equalizer().is_some()),
             has_audio_editorial_edges: layout
                 .nodes()
                 .values()

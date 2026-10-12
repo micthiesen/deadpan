@@ -286,8 +286,14 @@ impl Inspector {
             }
         }
         if let Some(saturation) = node.audio_treatments.saturation() {
-            let gain_first = node.audio_treatments.order().first()
-                == Some(&deadpan_core::AudioTreatmentStage::ClipGain);
+            let position = |stage| {
+                node.audio_treatments
+                    .order()
+                    .iter()
+                    .position(|value| *value == stage)
+            };
+            let gain_first = position(deadpan_core::AudioTreatmentStage::ClipGain)
+                < position(deadpan_core::AudioTreatmentStage::Saturation);
             fields.push((
                 "Saturation",
                 format!(
@@ -305,6 +311,19 @@ impl Inspector {
         }
         if let Some(balance) = node.audio_treatments.balance() {
             fields.push(("Balance", crate::gain::format_balance(Some(balance))));
+        }
+        if let Some(eq) = node.audio_treatments.equalizer() {
+            let [bass, middle, treble] = eq.gains().map(crate::gain::format_db);
+            fields.push((
+                "EQ",
+                format!("Bass {bass} · Mid {middle} · Treble {treble} dB"),
+            ));
+            if let Some(cut) = eq.low_cut() {
+                fields.push(("Low cut", format!("{} Hz", cut.hz())));
+            }
+            if let Some(cut) = eq.high_cut() {
+                fields.push(("High cut", format!("{} Hz", cut.hz())));
+            }
         }
         for (label, removed) in [("Cutaways", false), ("Picture removed", true)] {
             let ranges: Vec<_> = node

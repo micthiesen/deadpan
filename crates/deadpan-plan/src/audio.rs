@@ -464,11 +464,12 @@ impl RenderPlan {
         budget: &mut Budget,
         owner: &super::AudioOwnerClock<'_>,
         capture: &mut Option<AudioDomainSeed>,
+        seed: Option<&AudioWalkSeed>,
     ) -> Result<(), PlanError> {
         self.audio_walk_inner(
             sample,
             budget,
-            None,
+            seed,
             true,
             true,
             (Some(capture), None, Some(owner)),

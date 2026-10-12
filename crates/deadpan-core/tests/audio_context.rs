@@ -365,7 +365,7 @@ fn selected_context_keeps_full_phase_mapping_and_captures_only_its_audible_exten
         context
     );
     let mut wire = serde_json::to_value(context).unwrap();
-    assert_eq!(wire["schema_version"], json!(9));
+    assert_eq!(wire["schema_version"], json!(10));
     wire["schema_version"] = json!(1);
     assert!(FrozenAudioContext::from_json(&wire.to_string()).is_err());
     let escaped = wire
@@ -398,7 +398,7 @@ fn ingress_rejects_open_or_inconsistent_inventory() {
         FrozenAudioContext::capture(&fixture(AudioSample(0), SourceAudioMapping::FitBeat)).unwrap();
     let mut value: Value = serde_json::from_str(&context.to_json().unwrap()).unwrap();
     let baseline = value.clone();
-    value["schema_version"] = json!(10);
+    value["schema_version"] = json!(11);
     assert_eq!(
         FrozenAudioContext::from_json(&value.to_string())
             .unwrap_err()
@@ -447,8 +447,8 @@ fn ingress_rejects_open_or_inconsistent_inventory() {
         DocumentErrorCode::LimitExceeded
     );
     let duplicate = context.to_json().unwrap().replacen(
-        "\"schema_version\":9",
-        "\"schema_version\":9,\"schema_version\":9",
+        "\"schema_version\":10",
+        "\"schema_version\":10,\"schema_version\":10",
         1,
     );
     assert!(FrozenAudioContext::from_json(&duplicate).is_err());
@@ -749,7 +749,7 @@ fn dormant_context_keeps_input_asset_offset_and_distinguishes_absent_audio() {
         context
     );
     let wire = serde_json::to_value(&context).unwrap();
-    assert_eq!(wire["schema_version"], json!(9));
+    assert_eq!(wire["schema_version"], json!(10));
     for version in 1..=4 {
         let mut forged = wire.clone();
         forged["schema_version"] = json!(version);
@@ -837,6 +837,45 @@ fn reverse_tone_and_live_tail_need_context_schema_seven() {
 }
 
 #[test]
+fn equalizer_is_authenticated_and_requires_context_schema_10() {
+    let base = fixture(AudioSample(0), SourceAudioMapping::FitBeat);
+    let treated = edit(
+        &base,
+        Command::SetAudioTreatments {
+            node: node("source"),
+            treatments: AudioTreatments::default()
+                .with_equalizer(Some(
+                    EqualizerRecipe::new(
+                        [GainDb::UNITY, GainDb::new(6000).unwrap(), GainDb::UNITY],
+                        None,
+                        None,
+                    )
+                    .unwrap(),
+                ))
+                .unwrap(),
+        },
+    );
+    let context = FrozenAudioContext::capture(&treated).unwrap();
+    assert!(context.matches_document(&treated).unwrap());
+    assert!(!context.matches_document(&base).unwrap());
+    assert_eq!(
+        FrozenAudioContext::from_json(&context.to_json().unwrap()).unwrap(),
+        context
+    );
+    let mut wire = serde_json::to_value(&context).unwrap();
+    assert_eq!(wire["schema_version"], json!(10));
+    wire["schema_version"] = json!(9);
+    let error = FrozenAudioContext::from_json(&wire.to_string()).unwrap_err();
+    assert!(error.to_string().contains("cannot contain EQ"), "{error}");
+
+    let mut old = serde_json::to_value(FrozenAudioContext::capture(&base).unwrap()).unwrap();
+    old["schema_version"] = json!(9);
+    let old = FrozenAudioContext::from_json(&old.to_string()).unwrap();
+    assert!(old.matches_document(&base).unwrap());
+    assert!(!old.matches_document(&treated).unwrap());
+}
+
+#[test]
 fn balance_is_retained_in_authenticated_contexts_and_needs_schema_9() {
     let base = fixture(AudioSample(0), SourceAudioMapping::FitBeat);
     let balanced = edit(
@@ -890,7 +929,7 @@ fn pitch_shifts_and_saturation_need_context_schema_8_and_validate_their_shape() 
         context
     );
     let wire = serde_json::to_value(&context).unwrap();
-    assert_eq!(wire["schema_version"], json!(9));
+    assert_eq!(wire["schema_version"], json!(10));
     let mut old = wire.clone();
     old["schema_version"] = json!(7);
     assert!(FrozenAudioContext::from_json(&old.to_string()).is_err());

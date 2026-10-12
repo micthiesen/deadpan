@@ -531,6 +531,10 @@ pub enum AudioChange {
     Balance {
         balance: Option<crate::StereoBalance>,
     },
+    /// Set the finite EQ recipe or remove its stage, retaining explicit order.
+    Equalizer {
+        recipe: Option<crate::EqualizerRecipe>,
+    },
     /// Mute or unmute the whole beat (`,m` without a range, `:gain-mute`),
     /// keeping its trim, envelopes and mute ranges.
     Mute { muted: bool },
@@ -553,6 +557,7 @@ impl AudioChange {
                 current.with_saturation(drive.map(crate::Saturation::new).transpose()?)
             }
             Self::Balance { balance } => current.with_balance(balance),
+            Self::Equalizer { recipe } => current.with_equalizer(recipe),
             Self::Mute { muted } => {
                 let clip = clip();
                 current.with_clip_gain_or_none(crate::ClipGain::new(

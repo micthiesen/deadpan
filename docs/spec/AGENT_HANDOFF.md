@@ -4,22 +4,39 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
-[Ordered owner EQ](../qualification/owner-eq-2026-10-11.md) now provides checked
+[Stored and recursive EQ](../qualification/authored-eq-2026-10-11.md) now adds
+`AudioTreatmentStage::Equalizer`, preserved `AudioTreatments.equalizer`, and
+`AudioChange::Equalizer` through the ordinary semantic replay/undo path.
+`authored_eq.rs` recursively evaluates Original owner prefixes and suffixes in
+f64 with request-local tile reuse, exact retained contexts and post-filter
+silence/exhaustion. `AudioDomain::owner_input` resolves hidden child contexts.
+Tail input omits shared owners and processes their output once. A 70-play
+regression caught and fixed treating each whole-Repeat play as another EQ owner.
+The real release CLI commits EQ and passes preview/emitted-file verification.
+
+The next required work is independent sound/group EQ integration with complete
+incoming-tail policy and independently timed automation, then captured native
+authoring and UI replay. Both `prepare_bus_inner` and `read_authored_bus`
+currently reject EQ plus any independent sound events explicitly before media.
+Remove that temporary restriction through the real group graph, not by ignoring
+EQ or processing each voice independently across shared nonlinear stages.
+Further nested binding, persistent filtered-cache and interactive performance
+qualification remains owed. The full goal and DP-09/DP-16 remain open.
+
+The earlier [ordered owner EQ](../qualification/owner-eq-2026-10-11.md) provides checked
 `AudioTreatmentBoundary`, an observed input sample and
 `PreparedOwnerEqualizer`/`StageAudio::read_owner_equalized`. The reader applies
 descendant treatments and the selected owner's prefix, actual finite EQ, then
 its suffix. Mute remains on its authored side. It handles current and retained
 Original contexts, masks explicit silence after filtering and preserves signed
-f64 output, all halo dependencies and shared budgets. The filter remains an
-explicit preparation parameter; `AudioTreatments` still cannot store EQ.
+f64 output, all halo dependencies and shared budgets. That standalone API takes
+an explicit preparation parameter; the recursive path above reads stored EQ.
 
-Continue with the actual recursive authored voice/group graph and its stored
-EQ stage, then captured semantic/native authoring and shared preview/export.
-The one-owner reader is usable logic, not feature completion: it does not
+The one-owner reader alone does not
 recursively evaluate EQ on descendant owners, include independent sounds,
 resolve independently timed group automation or cache filtered tiles. Complete
-per-voice incoming-tail policy and aggregate admission before wiring authored
-EQ into the bus. Retain the existing controlled reader for raw history, and
+per-voice incoming-tail policy and aggregate admission for independent sounds.
+Retain the existing controlled reader for raw history, and
 use a stage prefix rather than `read_retained_owner_treatments` as EQ input.
 Do not spend another increment implementing unrelated DSP numerics.
 
@@ -33,8 +50,8 @@ parent's budget, deadline and depth. All 935 plan/audio tests pass. These full
 memoryless-chain reads are not automatically EQ inputs: use the explicit
 treatment boundaries above in the recursive temporal graph, aggregate
 admission/cache identity and per-voice group/silence/tail routing. GainSum's
-global mute is valid only between temporal stages. Add the authored EQ stage
-and controls together with real shared preview/export support; do not add
+global mute is valid only between temporal stages. Extend the stored graph to
+native controls and sound/group processing; do not add
 another unrelated numerical processor or silently ignore an authored effect.
 
 [Owner input contexts](../qualification/owner-input-2026-10-11.md) now provide
@@ -44,19 +61,19 @@ time/pitch and creative-edge reader. `retained_at` separately exposes a resumed
 binding's full RootRoundEven/PointCeil operand and exact reference map. A current
 delivery domain alone still does not contain that full resumed history.
 Cold decoded PCM, a cropped-group EQ comparison and transferred hidden history
-pass. Continue with the actual ordered effect graph: transport reference output
+pass. The ordered effect graph must transport reference output
 edges, evaluate gain/mute on the correct side of EQ, retain contribution identity
 through group sums and apply per-voice silence/tail permissions. These handles
-are prerequisites, not an isolated-owner mix or authored EQ implementation.
-Then add captured commands and real preview/export. No scope was removed.
+are prerequisites; the authored Original path above uses them. Complete captured
+native commands and mixed-voice preview/export. No scope was removed.
 
 [Equalizer recipes and DSP](../qualification/eq-recipe-2026-10-11.md) now provide
 validated ±24 dB bass/middle/treble gains, 80–20,000 Hz low/high cuts and one
 4,097-tap compensated kernel. All 1,051 core and 523 audio tests pass; frequency
 response, PCM phase, cold reads and exact bypass have direct checks. The typed
-recipe is deliberately not yet stored in `AudioTreatments`, so no authored
-effect is silently ignored. Continue with full retained owner input and group/
-silence/tail integration, then captured commands and actual preview/export.
+recipe was initially separate from `AudioTreatments`; the recursive path above
+now stores and evaluates it. Complete independent group/silence/tail integration
+and captured native commands with actual preview/export.
 The default stage must follow complete time/pitch and edges; adding it inside
 the raw signal tree before ancestor time/pitch would change that order.
 `GainSum` currently collapses mute across memoryless stages; temporal processing

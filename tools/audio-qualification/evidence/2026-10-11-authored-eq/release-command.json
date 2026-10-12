@@ -1,0 +1,24 @@
+{
+  "argv": [
+    "cargo",
+    "test",
+    "--release",
+    "--locked",
+    "-p",
+    "deadpan-cli",
+    "--test",
+    "preview_export",
+    "stored_equalizer_changes_preview_and_matches_verified_export",
+    "--",
+    "--exact",
+    "--nocapture"
+  ],
+  "environment": {
+    "DEADPAN_FFMPEG_PREFIX": "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix",
+    "DEADPAN_PREVIEW_EXPORT_KEEP": "1",
+    "DEADPAN_PREVIEW_EXPORT_RESULTS": "/tmp/deadpan-authored-eq-20261011/export.json"
+  },
+  "started_utc": "2026-10-12T04:22:59.636785+00:00",
+  "seconds": 173.84030970791355,
+  "exit_code": 0
+}

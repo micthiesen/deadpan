@@ -231,6 +231,50 @@ fn stereo_balance_keeps_channels_through_limited_preview_and_render() -> Result 
 }
 
 #[test]
+fn stored_equalizer_changes_preview_and_matches_verified_export() -> Result {
+    let (root, _guard) = keep_or(tempfile::tempdir()?);
+    let fixture = recipes::equalizer(&root.join("equalizer"))?;
+    check(&fixture)?;
+    for (frame, peak) in [
+        (4, 10.0_f64.powf(-4.0 / 20.0)),
+        (16, 10.0_f64.powf(-16.0 / 20.0)),
+    ] {
+        let start = (frame * 16_016 + 5) / 10;
+        let audio = success(&[
+            "inspect-audio",
+            fixture.package.to_str().ok_or("UTF-8")?,
+            "--samples",
+            &start.to_string(),
+            &(start + 256).to_string(),
+            "--limited",
+        ])?;
+        let pairs = audio["audio"]["samples"].as_array().ok_or("samples")?;
+        let measured = pairs
+            .iter()
+            .map(|pair| pair[0].as_f64().unwrap().abs())
+            .fold(0.0_f64, f64::max);
+        assert!(
+            (measured - peak).abs() < 0.001,
+            "EQ tone amplitude {measured}, expected {peak}"
+        );
+    }
+    let movie = render(&fixture, &root.join("exports"))?;
+    let (report, passed) = verify(&fixture, &movie, &fixture.revision, &[])?;
+    assert!(passed, "{report}");
+    check_provenance(&fixture, &report)?;
+    if let Some(path) = std::env::var_os("DEADPAN_PREVIEW_EXPORT_RESULTS") {
+        std::fs::write(
+            path,
+            serde_json::to_vec_pretty(
+                &json!({"package":fixture.package,"movie":movie,"report":report}),
+            )?,
+        )?;
+    }
+    eprintln!("{}", summary_row(&fixture, &report));
+    Ok(())
+}
+
+#[test]
 fn group_saturation_matches_summed_voice_oracle_and_verified_export() -> Result {
     let (root, _guard) = keep_or(tempfile::tempdir()?);
     let fixture = recipes::group_saturation(&root.join("group-saturation"))?;

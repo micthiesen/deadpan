@@ -1,6 +1,6 @@
 //! Bounded static equalizer parameters. PCM and coefficient construction belong
-//! to the audio layer. This recipe is not yet an AudioTreatments stage: storing
-//! it on a node must wait for shared retained-context processing integration.
+//! to the audio layer. AudioTreatments stores its explicit position among the
+//! admitted gain, saturation and balance stages.
 
 use std::{error::Error, fmt};
 

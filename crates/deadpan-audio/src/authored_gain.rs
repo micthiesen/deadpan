@@ -102,6 +102,11 @@ impl GainSum {
                         self.channel_stage(ChannelStage::Balance(balance))?;
                     }
                 }
+                deadpan_core::AudioTreatmentStage::Equalizer => {
+                    return Err(StageAudioError::Unsupported(
+                        "EQ requires temporal owner processing",
+                    ));
+                }
             }
         }
         Ok(())
@@ -171,6 +176,23 @@ impl GainSum {
         Ok(())
     }
 
+    pub(super) fn owner_slice(
+        &mut self,
+        owner: &deadpan_plan::AudioOwnerClock<'_>,
+        at: AudioSample,
+        stages: Range<usize>,
+        escalation: bool,
+        control: WorkControl<'_>,
+    ) -> Result<(), StageAudioError> {
+        if escalation {
+            self.escalation(owner)?;
+        }
+        if let Some(recipe) = owner.treatments() {
+            self.treatment(recipe, owner.sampling().local_at(at)?, control, stages)?;
+        }
+        Ok(())
+    }
+
     fn factor(millidecibels_q32: i128) -> f64 {
         10.0_f64.powf(millidecibels_q32 as f64 / GAIN_NUMERIC_SCALE as f64 / 20_000.0)
     }
@@ -222,7 +244,7 @@ pub(super) type OwnerIdentity = (
     Option<deadpan_core::IterationId>,
 );
 
-fn identity(owner: &deadpan_plan::AudioOwnerClock<'_>) -> OwnerIdentity {
+pub(super) fn identity(owner: &deadpan_plan::AudioOwnerClock<'_>) -> OwnerIdentity {
     (
         owner.instance().clone(),
         owner.kind(),

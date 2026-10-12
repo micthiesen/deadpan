@@ -56,6 +56,9 @@ mod sound_events;
 #[path = "authored_gain.rs"]
 mod authored_gain;
 
+#[path = "authored_eq.rs"]
+mod authored_eq;
+
 #[path = "owner_equalizer.rs"]
 mod owner_equalizer;
 pub use owner_equalizer::{OwnerEqualizedBlock, PreparedOwnerEqualizer};
@@ -831,6 +834,18 @@ impl StageAudio {
         let mut suppressed = Vec::new();
         let mut dependencies = Dependencies::new();
         let mut cursor = start;
+        if authored_gain && self.plan.has_audio_equalizers() {
+            if !self.plan.sounds().is_empty() || !self.plan.beat_sounds().is_empty() {
+                return Err(StageAudioError::Unsupported(
+                    "EQ with independent sound contributions",
+                ));
+            }
+            let block = self.read_authored_equalizers(provider, start, frames, control, 0, &[])?;
+            samples = block.samples;
+            suppressed = block.suppressed;
+            dependencies = block.dependencies;
+            cursor = AudioSample(end);
+        }
         while cursor.0 < end {
             let count = u32::try_from((end - cursor.0).min(i64::from(MAX_OUTPUT_FRAMES)))
                 .map_err(|_| StageAudioError::PreparationRange)?;
@@ -2253,14 +2268,42 @@ impl StageAudio {
                 while cursor.0 < origin.0 {
                     // The root reader, resampler, edge and bound readers all
                     // work in blocks of at most MAX_OUTPUT_FRAMES.
-                    let count =
-                        u32::try_from((origin.0 - cursor.0).min(i64::from(MAX_OUTPUT_FRAMES)))
-                            .map_err(|_| StageAudioError::Range)?;
-                    let block =
-                        self.read_controlled(provider, cursor, count, control, true, depth + 1)?;
-                    let heard = authored_gain::original_samples_except(
-                        &plan, &block, control, true, &shared,
-                    )?;
+                    let maximum = if plan.has_audio_equalizers() {
+                        i64::from(MAX_EDGE_PREPARATION_FRAMES)
+                    } else {
+                        i64::from(MAX_OUTPUT_FRAMES)
+                    };
+                    let count = u32::try_from((origin.0 - cursor.0).min(maximum))
+                        .map_err(|_| StageAudioError::Range)?;
+                    let (block, heard) = if plan.has_audio_equalizers() {
+                        let block = self.read_authored_equalizers(
+                            provider,
+                            cursor,
+                            count,
+                            control,
+                            depth + 1,
+                            &shared,
+                        )?;
+                        let heard = block
+                            .samples
+                            .iter()
+                            .map(|frame| frame.map(f64::from))
+                            .collect();
+                        (block, heard)
+                    } else {
+                        let block = self.read_controlled(
+                            provider,
+                            cursor,
+                            count,
+                            control,
+                            true,
+                            depth + 1,
+                        )?;
+                        let heard = authored_gain::original_samples_except(
+                            &plan, &block, control, true, &shared,
+                        )?;
+                        (block, heard)
+                    };
                     dependencies.extend(block.dependencies);
                     relative_depth = relative_depth.max(1 + block.relative_depth);
                     input.extend(

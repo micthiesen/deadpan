@@ -24,6 +24,86 @@ fn treatment(envelopes: Vec<GainEnvelope>) -> AudioTreatments {
 }
 
 #[test]
+fn equalizer_is_ordered_serialized_and_preserved_by_other_treatment_edits() {
+    let eq = EqualizerRecipe::new(
+        [gain(6000), gain(-3000), gain(9000)],
+        Some(EqCutoffHz::new(80).unwrap()),
+        None,
+    )
+    .unwrap();
+    let recipe = treatment(vec![envelope(-6000, 3000, GainCurve::Linear)])
+        .with_saturation(Some(Saturation::new(gain(6000)).unwrap()))
+        .unwrap()
+        .with_balance(Some(StereoBalance::new(-25).unwrap()))
+        .unwrap()
+        .with_equalizer(Some(eq))
+        .unwrap();
+    assert_eq!(
+        recipe.order(),
+        &[
+            AudioTreatmentStage::ClipGain,
+            AudioTreatmentStage::Equalizer,
+            AudioTreatmentStage::Saturation,
+            AudioTreatmentStage::StereoBalance
+        ]
+    );
+    let wire = serde_json::to_value(&recipe).unwrap();
+    assert_eq!(
+        serde_json::from_value::<AudioTreatments>(wire.clone()).unwrap(),
+        recipe
+    );
+    let edited = recipe
+        .with_clip_gain_or_none(ClipGain::default())
+        .unwrap()
+        .with_saturation(None)
+        .unwrap()
+        .with_balance(None)
+        .unwrap();
+    assert_eq!(edited.equalizer(), Some(eq));
+    assert_eq!(edited.order(), &[AudioTreatmentStage::Equalizer]);
+    assert!(edited.with_equalizer(None).unwrap().is_empty());
+    let reordered = AudioTreatments::with_equalizer_stages(
+        vec![
+            AudioTreatmentStage::Saturation,
+            AudioTreatmentStage::Equalizer,
+            AudioTreatmentStage::ClipGain,
+            AudioTreatmentStage::StereoBalance,
+        ],
+        recipe.clip_gain().cloned(),
+        recipe.saturation(),
+        recipe.balance(),
+        Some(eq),
+    )
+    .unwrap();
+    assert_eq!(
+        reordered
+            .with_equalizer(Some(Default::default()))
+            .unwrap()
+            .order(),
+        reordered.order()
+    );
+    assert_eq!(
+        reordered
+            .with_owner_prefix(FrameDuration::new(10).unwrap())
+            .unwrap()
+            .equalizer(),
+        Some(eq)
+    );
+    for order in [
+        json!(["clip_gain", "saturation", "stereo_balance"]),
+        json!(["clip_gain", "equalizer", "equalizer", "stereo_balance"]),
+        json!(["clip_gain", "saturation", "stereo_balance", "equalizer"]),
+    ] {
+        let mut invalid = wire.clone();
+        invalid["order"] = order;
+        assert!(serde_json::from_value::<AudioTreatments>(invalid).is_err());
+    }
+    let mut invalid = wire;
+    invalid["equalizer"]["bass"] = json!(24001);
+    assert!(serde_json::from_value::<AudioTreatments>(invalid).is_err());
+}
+
+#[test]
 fn gain_is_db_interpolation_with_independent_quarter_point_oracles() {
     // At t=1/4 and 3/4 these Bernstein and smoothstep fractions are dyadic,
     // so the declared Q32 grid represents the independently computed values.
@@ -556,7 +636,7 @@ fn collection_limits_reject_typed_and_wire_growth_before_parsing_extra_records()
     assert!(error.to_string().contains("gain exceeds"), "{error}");
     assert!(
         serde_json::from_str::<AudioTreatments>(
-            r#"{"order":["clip_gain","saturation","stereo_balance",{}],"clip_gain":null}"#
+            r#"{"order":["clip_gain","equalizer","saturation","stereo_balance",{}],"clip_gain":null}"#
         )
         .unwrap_err()
         .to_string()

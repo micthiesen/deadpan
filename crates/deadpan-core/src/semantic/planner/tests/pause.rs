@@ -1251,6 +1251,20 @@ fn audio_changes_set_trim_steps_and_saturation_on_the_selected_beat_in_order() {
         &document,
         selected.clone(),
         vec![
+            change(AudioChange::Equalizer {
+                recipe: Some(
+                    crate::EqualizerRecipe::new(
+                        [
+                            GainDb::new(6000).unwrap(),
+                            GainDb::UNITY,
+                            GainDb::new(-3000).unwrap(),
+                        ],
+                        None,
+                        None,
+                    )
+                    .unwrap(),
+                ),
+            }),
             change(AudioChange::Balance {
                 balance: Some(crate::StereoBalance::new(50).unwrap()),
             }),
@@ -1272,6 +1286,7 @@ fn audio_changes_set_trim_steps_and_saturation_on_the_selected_beat_in_order() {
         treatments.order(),
         &[
             AudioTreatmentStage::ClipGain,
+            AudioTreatmentStage::Equalizer,
             AudioTreatmentStage::Saturation,
             AudioTreatmentStage::StereoBalance,
         ]
@@ -1286,6 +1301,10 @@ fn audio_changes_set_trim_steps_and_saturation_on_the_selected_beat_in_order() {
     );
     assert_eq!(planned.document.duration(), document.duration());
     assert_eq!(treatments.balance().unwrap().percent(), 50);
+    assert_eq!(
+        treatments.equalizer().unwrap().gains()[0].millidecibels(),
+        6000
+    );
     let replay =
         crate::replay_compound::<EditError>(&document, planned.request.as_ref().unwrap(), |_| {
             Ok(())

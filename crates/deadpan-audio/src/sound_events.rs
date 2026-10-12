@@ -28,6 +28,14 @@ impl StageAudio {
         control: WorkControl<'_>,
         authored_gain: bool,
     ) -> Result<ReadBlock, StageAudioError> {
+        if authored_gain && self.plan.has_audio_equalizers() {
+            if !self.plan.sounds().is_empty() || !self.plan.beat_sounds().is_empty() {
+                return Err(StageAudioError::Unsupported(
+                    "EQ with independent sound contributions",
+                ));
+            }
+            return self.read_authored_equalizers(provider, start, frames, control, 0, &[]);
+        }
         if self.plan.sounds().is_empty() && self.plan.beat_sounds().is_empty() {
             if !authored_gain || !self.plan.has_audio_treatments() {
                 return self.read_controlled(provider, start, frames, control, true, 0);

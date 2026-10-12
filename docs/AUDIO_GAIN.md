@@ -34,12 +34,13 @@ persisted treatment and PCM increment's review, verification and remaining limit
 
 ## Recipe and numerical contract
 
-The separate [equalizer processor](EQUALIZER.md) has a validated static recipe
-and measured FIR implementation. It is not yet an `AudioTreatments` stage;
-complete owner context and policy integration must precede authored exposure.
+The [equalizer processor](EQUALIZER.md) stores its validated static recipe as an
+ordered treatment and recursively processes Original owners. Independent
+sound/group integration and native EQ authoring remain open.
 
 `AudioTreatments` has an explicitly serialized closed stage order. Its current
-vocabulary is only `ClipGain`; a configured unity recipe remains authored intent,
+vocabulary is `ClipGain`, `Equalizer`, `Saturation` and final `StereoBalance`;
+a configured unity recipe remains authored intent,
 distinct from an absent stage. This does not introduce a plugin host.
 
 `ClipGain` retains an independent trim, whole-owner mute, fixed gain envelopes
@@ -204,7 +205,8 @@ to each owned contribution, including beat sounds and effect tails; a root
 balance also reaches independent root sounds. Balancing one beat does not
 change an independent sound. Balance adds no state, read halo or cache. Its
 recipe participates in ordinary immutable plan and dependency identity, and
-frozen audio contexts now capture schema 9; older versions reject balance.
+frozen audio contexts require schema 9 or later for balance. Current captures
+use schema 10, which also admits ordered EQ; earlier versions reject EQ.
 
 The command captures the beat, scope and revision at entry and commits through
 the project service. Whole-beat balance is a `set_audio` semantic instruction
@@ -215,8 +217,8 @@ refuse a balance replacement instead of discarding their individual treatments.
 The inspector and its Gain section show the direction; command help explains the law.
 Ranged gain and ordinary gain edits preserve balance.
 
-The treatment is shared by limited audition and Render. EQ/filtering, arbitrary
-sends and complete group automation remain open; this stage does not qualify
+The treatment is shared by limited audition and Render. Full sound/group EQ,
+arbitrary sends and complete group automation remain open; this stage does not qualify
 the complete master. See [balance qualification](qualification/stereo-balance-2026-10-11.md).
 
 ## Range steps

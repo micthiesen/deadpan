@@ -1,11 +1,51 @@
 # Equalizer processing
 
 Specification §§10.2 and 17 require shared EQ/filter processing with explicit
-history, latency and tails. `EqualizerRecipe`, `deadpan_audio::Equalizer` and
-`PreparedOwnerEqualizer` implement parameters, numerical processing and ordered
-evaluation of one checked Original owner. They are not yet connected to
-`AudioTreatments`, project commands, native controls or the shared authored bus.
-Editor playback and export therefore retain their existing treatment chain.
+history, latency and tails. `AudioTreatments` now stores an explicit `equalizer`
+stage, and semantic `set_audio` changes commit or remove its bounded recipe.
+The shared authored bus recursively evaluates EQ on Original owners, including
+nested groups and retained history, before mastering. Preview and emitted-file
+verification pass for the real headless Render path. Native authoring controls
+and independent sound/group integration remain open; a project combining EQ
+with independent sound events reports an explicit unsupported-combination error.
+
+## Stored and recursive processing
+
+The stage vocabulary is gain, EQ, saturation and balance, with balance last.
+Each present recipe appears exactly once in the serialized order. New EQ is
+inserted before saturation/balance without reordering existing stages. Updates
+keep its existing position; gain, saturation, balance and owner-prefix edits
+preserve EQ. A semantic change has the form:
+
+```json
+{"type":"set_audio","change":{"type":"equalizer","recipe":{"bass":0,"middle":6000,"treble":0}}}
+```
+
+`recipe: null` removes EQ. This uses the ordinary selected-owner transaction,
+compound replay and undo path. The native inspector reports stored band and cut
+parameters; a native EQ authoring command has not yet been added.
+Frozen audio contexts capture schema 10 and authenticate the ordered recipe;
+older schema declarations reject EQ rather than adopting new semantics.
+
+`authored_eq` chooses the outermost remaining EQ in an owner's program, evaluates
+its complete input prefix recursively and applies its suffix afterwards. Each
+checked context owns its raw time/pitch processor. Captured domain queries can
+resolve children outside current delivery; retained contexts keep their exact
+consumer map. All temporal intermediates remain stereo f64. Explicit silence
+and exhaustion gate each output; authored mute stays at its program position.
+
+Filtered tiles are reused within one preparation request. Identity includes the
+parent processing context, checked owner provenance, stage position and exact
+affine clock; a whole Repeat's changing play is evaluated by queries instead of
+creating a new owner. Cumulative work, frames, depth and PCM residency cover the
+recursive graph. EQ compilation and tiles spend separate fixed work/frame
+allowances; a finite tile is not another canonical stretch stage. Tile reuse
+does not survive the request, and no realtime latency claim is made.
+
+Tail input uses the same ordered processing while omitting shared exterior
+owners. Those owners process the tail's output once. The tail recursion guard
+remains separate from each EQ graph, and source dependencies cover all halos.
+See [authored EQ qualification](qualification/authored-eq-2026-10-11.md).
 
 ## Owner input contexts
 
@@ -43,7 +83,8 @@ the actual EQ processor, and verifies retained history before current delivery.
 It does not qualify authored EQ, mixed-voice permissions or the editor workflow.
 The subsequent [retained-treatment qualification](qualification/retained-treatments-2026-10-11.md)
 checks transported fades, reference-clock gain/mute and ordered memoryless
-treatments. EQ still needs the shared ordered graph and authored integration.
+treatments. The stored recursive path described above extends that foundation
+to authored EQ; independent sound/group integration remains open.
 
 ## Ordered owner evaluation
 
@@ -89,11 +130,11 @@ is a low-pass filter.
 {"bass":6000,"middle":-6000,"treble":3000,"low_cut_hz":80,"high_cut_hz":12000}
 ```
 
-This standalone JSON record does not authorize adding it to an existing node
-wire. Typed construction and deserialization reject out-of-range gains,
+Typed construction and deserialization reject out-of-range gains,
 frequencies, reversed/narrow cuts and unknown fields. All three gains are
-required; omitted cuts are off. These static parameters do not yet introduce
-automation, treatment order or a persistence schema change.
+required; omitted cuts are off. `AudioTreatments.equalizer` stores this recipe
+beside its explicit `equalizer` order entry. Parameters are static; there is no
+EQ automation stage.
 
 ## Numerical contract
 
@@ -128,10 +169,9 @@ while still admitting both complete input channels and honoring cancellation.
 
 ## Integration still owed
 
-Add the ordered authored stage, typed command and captured editor controls.
-Use the checked contexts and reference maps to evaluate complete owner input
-before clipping current allocation, preserving historical clocks, copies,
-Repeats and nested time/pitch stages. Sum and process
+Complete captured native controls and the independently timed voice/group graph.
+Extend qualification across the remaining nested bindings, copies, Repeats and
+time/pitch interactions. Sum and process
 group-owned contributions once, with correct order relative to gain and
 saturation. Apply silence and incoming-tail permission per voice, including
 independently permitted sounds under a silent Hold. Admit aggregate graph work
@@ -139,7 +179,8 @@ and resident memory before opening media and share any materialized cache across
 preview, cold seeks, loops and export. Do not treat a halo from the current
 physical timeline as proof of these ownership and policy properties.
 
-The numerical tests do not close DP-09 or qualify a working EQ editor. Real-media
-preview/export, full owner/policy interactions and the final UI workflow remain
-agent work under the full specification. Listening and other hardware remain
-subject to the existing owner-verification scope.
+DP-09 remains partial. The qualified Original-only preview/export path does not
+close independent voice/policy interactions, filtered-cache persistence or the
+final native workflow. These remain agent work under the full specification.
+Listening and other hardware remain subject to the existing owner-verification
+scope.

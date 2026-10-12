@@ -32,7 +32,7 @@ pub const MAX_GAIN_MUTE_RANGES: usize = 64;
 /// Document/plan integration must charge these independent aggregate limits.
 pub const MAX_GAIN_LAYERS: usize = 16;
 pub const MAX_GAIN_RECORDS: usize = 100_000;
-pub const MAX_AUDIO_TREATMENT_STAGES: usize = 3;
+pub const MAX_AUDIO_TREATMENT_STAGES: usize = 4;
 /// Saturation drive is authored in exact millidecibels from 0 through 24 dB, the authored gain ceiling.
 pub const MAX_SATURATION_DRIVE_MILLIDECIBELS: i32 = 24_000;
 /// Standalone JSON input/output cap. Enclosing documents and commands must also
@@ -433,6 +433,7 @@ impl ClipGain {
 #[serde(rename_all = "snake_case")]
 pub enum AudioTreatmentStage {
     ClipGain,
+    Equalizer,
     Saturation,
     StereoBalance,
 }
@@ -513,6 +514,7 @@ pub struct AudioTreatments {
     clip_gain: Option<ClipGain>,
     saturation: Option<Saturation>,
     balance: Option<StereoBalance>,
+    equalizer: Option<crate::EqualizerRecipe>,
 }
 
 impl AudioTreatments {
@@ -538,11 +540,24 @@ impl AudioTreatments {
         saturation: Option<Saturation>,
         balance: Option<StereoBalance>,
     ) -> Result<Self, GainError> {
+        Self::with_equalizer_stages(order, clip_gain, saturation, balance, None)
+    }
+
+    /// Complete closed treatment vocabulary, including temporal EQ. Balance
+    /// remains last; gain, EQ and saturation retain their explicitly stored order.
+    pub fn with_equalizer_stages(
+        order: Vec<AudioTreatmentStage>,
+        clip_gain: Option<ClipGain>,
+        saturation: Option<Saturation>,
+        balance: Option<StereoBalance>,
+        equalizer: Option<crate::EqualizerRecipe>,
+    ) -> Result<Self, GainError> {
         let result = Self {
             order,
             clip_gain,
             saturation,
             balance,
+            equalizer,
         };
         result.validate()?;
         Ok(result)
@@ -553,6 +568,7 @@ impl AudioTreatments {
             clip_gain: Some(clip_gain),
             saturation: None,
             balance: None,
+            equalizer: None,
         }
     }
     pub fn order(&self) -> &[AudioTreatmentStage] {
@@ -567,8 +583,47 @@ impl AudioTreatments {
     pub fn balance(&self) -> Option<StereoBalance> {
         self.balance
     }
+    pub fn equalizer(&self) -> Option<crate::EqualizerRecipe> {
+        self.equalizer
+    }
+    /// New EQ follows gain and precedes saturation/balance by default. Editing
+    /// an existing EQ preserves its authored position; removing it closes only
+    /// that stage and keeps all other parameters and ordering.
+    pub fn with_equalizer(
+        &self,
+        equalizer: Option<crate::EqualizerRecipe>,
+    ) -> Result<Self, GainError> {
+        let mut order: Vec<_> = self
+            .order
+            .iter()
+            .copied()
+            .filter(|stage| *stage != AudioTreatmentStage::Equalizer || equalizer.is_some())
+            .collect();
+        if equalizer.is_some() && !order.contains(&AudioTreatmentStage::Equalizer) {
+            let index = order
+                .iter()
+                .position(|stage| {
+                    matches!(
+                        stage,
+                        AudioTreatmentStage::Saturation | AudioTreatmentStage::StereoBalance
+                    )
+                })
+                .unwrap_or(order.len());
+            order.insert(index, AudioTreatmentStage::Equalizer);
+        }
+        Self::with_equalizer_stages(
+            order,
+            self.clip_gain.clone(),
+            self.saturation,
+            self.balance,
+            equalizer,
+        )
+    }
     pub fn is_empty(&self) -> bool {
-        self.clip_gain.is_none() && self.saturation.is_none() && self.balance.is_none()
+        self.clip_gain.is_none()
+            && self.saturation.is_none()
+            && self.balance.is_none()
+            && self.equalizer.is_none()
     }
     /// Balance is the final per-owner treatment. Adding another treatment
     /// later keeps it before balance; removing balance preserves that order.
@@ -582,7 +637,13 @@ impl AudioTreatments {
         if balance.is_some() {
             order.push(AudioTreatmentStage::StereoBalance);
         }
-        Self::with_all_stages(order, self.clip_gain.clone(), self.saturation, balance)
+        Self::with_equalizer_stages(
+            order,
+            self.clip_gain.clone(),
+            self.saturation,
+            balance,
+            self.equalizer,
+        )
     }
     /// The same recipe with `saturation` replaced or removed. A new stage is
     /// placed after clip gain and before balance by default (specification
@@ -601,7 +662,13 @@ impl AudioTreatments {
                 .unwrap_or(order.len());
             order.insert(index, AudioTreatmentStage::Saturation);
         }
-        Self::with_all_stages(order, self.clip_gain.clone(), saturation, self.balance)
+        Self::with_equalizer_stages(
+            order,
+            self.clip_gain.clone(),
+            saturation,
+            self.balance,
+            self.equalizer,
+        )
     }
     /// The same recipe with `clip_gain` replaced, keeping the existing order
     /// and placing a new clip-gain stage first.
@@ -610,7 +677,13 @@ impl AudioTreatments {
         if !order.contains(&AudioTreatmentStage::ClipGain) {
             order.insert(0, AudioTreatmentStage::ClipGain);
         }
-        Self::with_all_stages(order, Some(clip_gain), self.saturation, self.balance)
+        Self::with_equalizer_stages(
+            order,
+            Some(clip_gain),
+            self.saturation,
+            self.balance,
+            self.equalizer,
+        )
     }
     /// `with_clip_gain`, except that a unity, unmuted clip gain with no
     /// envelopes or mute ranges removes the stage, so undoing a change by
@@ -626,7 +699,7 @@ impl AudioTreatments {
             .copied()
             .filter(|stage| *stage != AudioTreatmentStage::ClipGain)
             .collect();
-        Self::with_all_stages(order, None, self.saturation, self.balance)
+        Self::with_equalizer_stages(order, None, self.saturation, self.balance, self.equalizer)
     }
     pub fn validate(&self) -> Result<(), GainError> {
         if self.order.len() > MAX_AUDIO_TREATMENT_STAGES {
@@ -636,6 +709,7 @@ impl AudioTreatments {
         if listed(AudioTreatmentStage::ClipGain) != usize::from(self.clip_gain.is_some())
             || listed(AudioTreatmentStage::Saturation) != usize::from(self.saturation.is_some())
             || listed(AudioTreatmentStage::StereoBalance) != usize::from(self.balance.is_some())
+            || listed(AudioTreatmentStage::Equalizer) != usize::from(self.equalizer.is_some())
             || (self.balance.is_some()
                 && self.order.last() != Some(&AudioTreatmentStage::StereoBalance))
         {
@@ -656,6 +730,7 @@ impl AudioTreatments {
         self.clip_gain.as_ref().map_or(0, ClipGain::record_count)
             + usize::from(self.saturation.is_some())
             + usize::from(self.balance.is_some())
+            + usize::from(self.equalizer.is_some())
     }
     /// Preserve existing effects when a physical owner gains a nonnegative
     /// whole-frame prefix: old material and every authored key move together.

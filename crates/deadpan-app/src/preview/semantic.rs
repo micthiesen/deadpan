@@ -478,6 +478,8 @@ pub(super) fn audio_change_text(change: deadpan_core::AudioChange) -> String {
         }
         AudioChange::Mute { muted: true } => "Beat muted".into(),
         AudioChange::Mute { muted: false } => "Beat unmuted".into(),
+        AudioChange::Equalizer { recipe: Some(_) } => "EQ updated".into(),
+        AudioChange::Equalizer { recipe: None } => "EQ removed".into(),
     }
 }
 

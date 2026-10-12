@@ -141,6 +141,16 @@ impl<'plan> AudioTreatmentBoundary<'plan> {
             && self.owner.gap_after == candidate.gap_after
             && self.owner.origin == candidate.origin
     }
+    /// Reuse within the SAME checked processing context additionally requires
+    /// an equal affine clock. A whole Repeat's current play is evaluated by
+    /// each query and is not part of its input identity. Child occurrence IDs
+    /// still distinguish plays. This alone cannot identify a raw context.
+    pub fn matches_clock_at(&self, candidate: &AudioOwnerClock<'_>, at: AudioSample) -> bool {
+        self.matches(candidate)
+            && self.owner.sampling.local_frames_per_sample()
+                == candidate.sampling.local_frames_per_sample()
+            && matches!((self.owner.sampling.local_at(at), candidate.sampling.local_at(at)), (Ok(a), Ok(b)) if a == b)
+    }
 }
 
 impl<S: Copy> AudioOwnerClock<'_, S> {
@@ -248,6 +258,9 @@ impl RenderPlan {
 
     pub fn has_audio_treatments(&self) -> bool {
         self.has_audio_treatments
+    }
+    pub fn has_audio_equalizers(&self) -> bool {
+        self.has_audio_equalizers
     }
 
     /// Gain evaluation may encounter an absent Original contribution beside

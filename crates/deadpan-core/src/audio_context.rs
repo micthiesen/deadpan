@@ -15,9 +15,8 @@ use crate::{
     RevisionId, SourceAudio, SourceAudioMapping,
 };
 
-/// Schema 7 adds reversed and tone Hold audio, the tail effect, and live
-/// tails without a retained source input. Older schemas reject all of them.
-const AUDIO_CONTEXT_SCHEMA: u32 = 9;
+/// Schema 10 adds ordered EQ. Earlier schemas retain their treatment semantics.
+const AUDIO_CONTEXT_SCHEMA: u32 = 10;
 
 /// Full authored audio input. Source mapping and signed mix offset are retained
 /// because their effective placement need not fit SourceAudioMapping::Placement.
@@ -375,6 +374,16 @@ impl FrozenAudioContext {
         {
             return Err(invalid(
                 "a schema-8 or older audio context cannot contain stereo balance",
+            ));
+        }
+        if self.schema_version < 10
+            && self
+                .audio_treatments
+                .values()
+                .any(|treatments| treatments.equalizer().is_some())
+        {
+            return Err(invalid(
+                "a schema-9 or older audio context cannot contain EQ",
             ));
         }
         self.validate_treatments()?;

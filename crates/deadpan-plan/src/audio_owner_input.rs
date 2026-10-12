@@ -226,50 +226,81 @@ impl RenderPlan {
         }
         let end = AudioSample(at.0.checked_add(1).ok_or(TimeError::Overflow)?);
         let query = self.audio_gain_owners(at..end, limits)?;
-        let observed = query
-            .spans()
-            .first()
-            .and_then(|span| {
-                span.owners()
-                    .iter()
-                    .find(|candidate| candidate.same_at(owner, at))
-            })
-            .ok_or(PlanError::InvalidPlan(
-                "audio input owner is not current at sample",
-            ))?;
-        let mut budget = Budget {
-            remaining: limits.maximum_work - query.work(),
-            lookup: LookupStats::default(),
-        };
-        let mut captured = None;
-        self.audio_walk_owner_input(at, &mut budget, observed, &mut captured)?;
-        let seed = captured.ok_or(PlanError::InvalidPlan("owner input was not captured"))?;
-        let kind = if seed.walk.gap.is_some() {
-            AudioOwnerKind::DefaultGap
-        } else {
-            AudioOwnerKind::Node
-        };
-        let scope = if seed.instance == *observed.instance()
-            && kind == observed.kind()
-            && seed.walk.gap.as_ref().and_then(|gap| gap.after.as_ref()) == observed.gap_after()
-        {
-            AudioOwnerInputScope::Owner
-        } else {
-            AudioOwnerInputScope::EnclosingProcessor
-        };
-        Ok(AudioOwnerInput {
-            owner: observed.clone(),
-            observed_at: at,
-            context: AudioDomain {
-                plan: self,
-                seed: seed.walk,
-                samples: seed.samples,
-                visible: seed.visible,
-                instance: seed.instance,
-                placement: None,
-            },
-            scope,
-            work: limits.maximum_work - budget.remaining,
-        })
+        resolve_input(self, owner, at, limits, query, None)
     }
+}
+
+impl<'plan> AudioDomain<'plan> {
+    /// Resolve a child or enclosing processor from this checked context even
+    /// when its sample is hidden outside current project delivery. Membership
+    /// and capture use the same seed and exact clock, never a root lookup.
+    pub fn owner_input(
+        &self,
+        owner: &AudioOwnerClock<'_>,
+        at: AudioSample,
+        limits: AudioQueryLimits,
+    ) -> Result<AudioOwnerInput<'plan>, PlanError> {
+        limits.validate()?;
+        if !owner.belongs_to(self.plan) {
+            return Err(PlanError::InvalidPlan("foreign audio input owner"));
+        }
+        let end = AudioSample(at.0.checked_add(1).ok_or(TimeError::Overflow)?);
+        let query = self.gain_owners(at..end, limits)?;
+        resolve_input(self.plan, owner, at, limits, query, Some(&self.seed))
+    }
+}
+
+fn resolve_input<'plan>(
+    plan: &'plan RenderPlan,
+    owner: &AudioOwnerClock<'_>,
+    at: AudioSample,
+    limits: AudioQueryLimits,
+    query: super::AudioOwnerQuery<'plan>,
+    context: Option<&super::audio_domain::AudioWalkSeed>,
+) -> Result<AudioOwnerInput<'plan>, PlanError> {
+    let observed = query
+        .spans()
+        .first()
+        .and_then(|span| {
+            span.owners()
+                .iter()
+                .find(|candidate| candidate.same_at(owner, at))
+        })
+        .ok_or(PlanError::InvalidPlan(
+            "audio input owner is not current at sample",
+        ))?;
+    let mut budget = Budget {
+        remaining: limits.maximum_work - query.work(),
+        lookup: LookupStats::default(),
+    };
+    let mut captured = None;
+    plan.audio_walk_owner_input(at, &mut budget, observed, &mut captured, context)?;
+    let seed = captured.ok_or(PlanError::InvalidPlan("owner input was not captured"))?;
+    let kind = if seed.walk.gap.is_some() {
+        AudioOwnerKind::DefaultGap
+    } else {
+        AudioOwnerKind::Node
+    };
+    let scope = if seed.instance == *observed.instance()
+        && kind == observed.kind()
+        && seed.walk.gap.as_ref().and_then(|gap| gap.after.as_ref()) == observed.gap_after()
+    {
+        AudioOwnerInputScope::Owner
+    } else {
+        AudioOwnerInputScope::EnclosingProcessor
+    };
+    Ok(AudioOwnerInput {
+        owner: observed.clone(),
+        observed_at: at,
+        context: AudioDomain {
+            plan,
+            seed: seed.walk,
+            samples: seed.samples,
+            visible: seed.visible,
+            instance: seed.instance,
+            placement: None,
+        },
+        scope,
+        work: limits.maximum_work - budget.remaining,
+    })
 }

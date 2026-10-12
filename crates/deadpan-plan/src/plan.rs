@@ -149,6 +149,7 @@ pub struct RenderPlan {
     // Frozen admission stays distinct even when its catalog is empty.
     audio_context: bool,
     has_audio_treatments: bool,
+    has_audio_equalizers: bool,
     has_audio_editorial_edges: bool,
     audio_bindings: deadpan_core::AudioBindingState,
     // A checked structural snapshot used as the live side of sound-clock
@@ -877,6 +878,10 @@ impl RenderPlan {
                         } if escalation.gain_step != deadpan_core::GainDb::UNITY
                     )
             }),
+            has_audio_equalizers: document
+                .nodes()
+                .values()
+                .any(|node| node.audio_treatments.equalizer().is_some()),
             has_audio_editorial_edges: document
                 .nodes()
                 .values()

@@ -2394,6 +2394,39 @@ pub fn stereo_balance(dir: &Path) -> Result<Fixture> {
     Ok(fixture)
 }
 
+/// Stored finite EQ changes the 1 kHz band through ordinary semantic commands.
+/// Both windows are well beyond the finite filter's edge context.
+pub fn equalizer(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "equalizer")?;
+    tone_pauses(&mut project)?;
+    for (at, name, middle) in [(0, "tone-a", 6000), (12, "tone-b", -6000)] {
+        let saved = project.run_semantic(
+            json!([{"type":"set_audio","change":{"type":"equalizer","recipe":{"bass":0,"middle":middle,"treble":0}}}]),
+            at, Some(&node(name)?),
+        )?;
+        if saved.nodes()[&node(name)?]
+            .audio_treatments
+            .equalizer()
+            .map(|eq| eq.gains()[1].millidecibels())
+            != Some(middle)
+        {
+            return Err("EQ was not committed to the selected tone".into());
+        }
+    }
+    let mut fixture = project.finish(vec!["EQ / filtering"], tone_expectations(), Vec::new())?;
+    for (index, low, high) in [(0, 0.62, 0.64), (1, 0.15, 0.17)] {
+        let (start, count) = tone_window(index);
+        fixture.signals.push(Signal {
+            start,
+            count,
+            crossings_per_second: Some((2000.0, 0.03)),
+            crest: Some((1.4, 1.43)),
+            peak: Some((low, high)),
+        });
+    }
+    Ok(fixture)
+}
+
 /// A group mixes its tone with an owned WAV before saturation; an independent
 /// root WAV joins only at the root's second saturation. Both stages trim after
 /// shaping, keeping the master below limiting for a direct arithmetic oracle.

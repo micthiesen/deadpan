@@ -1,0 +1,9 @@
+{
+  "binaries": {
+    "target/release/deadpan-cli": "a0dcec7fd734d28e6dd5b41b4eece4e35cc3a26a81b706a1175f735ec216b4ad",
+    "target/release/deps/preview_export-13eb73279274fbb4": "867f6087f237b7e0920e0799054c9112ded578ef093ce12ec85183783a39f349"
+  },
+  "source_identity_sha256": "8df92e9d53df90fbeb9cdefa8a92d4086f0acb20db31ff9fcd997cb20b300e99",
+  "fixture_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+  "movie_sha256": "2aab5c282d664df6dc75be35a3232b928f69e78fe32d5d6d42d581a433681499"
+}
