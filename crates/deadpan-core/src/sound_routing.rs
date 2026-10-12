@@ -454,12 +454,12 @@ impl RootSoundEditCapture {
                 };
                 operation
             }
-            Command::InsertTime { at, hold, .. } | Command::InsertAiTime { at, hold, .. } => {
-                RootSoundOperation::Insert {
-                    at: *at,
-                    duration: hold.duration,
-                }
-            }
+            Command::InsertTime { at, hold, .. }
+            | Command::InsertAiTime { at, hold, .. }
+            | Command::InsertOccurrenceTime { at, hold, .. } => RootSoundOperation::Insert {
+                at: *at,
+                duration: hold.duration,
+            },
             Command::SpliceSource {
                 parent,
                 index,

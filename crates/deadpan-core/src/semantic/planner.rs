@@ -103,6 +103,14 @@ pub enum SemanticAllocationRequest {
         step_index: usize,
         required_split_ids: usize,
     },
+    InsertOccurrencePause {
+        step_index: usize,
+        isolation_nodes: usize,
+        isolation_marks: usize,
+        split_nodes: usize,
+        container: bool,
+        gap: bool,
+    },
     Repeat {
         step_index: usize,
         required_split_ids: usize,
@@ -175,6 +183,11 @@ pub enum SemanticAllocation {
         new_revision: RevisionId,
         id: NodeId,
         split: crate::SplitIdentities,
+    },
+    InsertOccurrencePause {
+        new_revision: RevisionId,
+        id: NodeId,
+        identities: crate::OccurrencePauseIdentities,
     },
     Repeat {
         new_revision: RevisionId,

@@ -77,7 +77,9 @@ fn changes_provider(
 
 fn has_birth(command: &Command) -> bool {
     match command.base_command() {
-        Command::SetHoldDuration { .. } | Command::InsertAiTime { .. } => true,
+        Command::SetHoldDuration { .. }
+        | Command::InsertAiTime { .. }
+        | Command::InsertOccurrenceTime { ai: true, .. } => true,
         Command::EditOccurrence {
             edit: OccurrenceEdit::SetHoldDuration { .. },
             ..
@@ -108,7 +110,9 @@ fn leaf_births(
     targets: &CanonicalTargets<'_>,
     budget: &mut AddressBudget,
 ) -> Result<Vec<Birth>, StoreError> {
-    if let Command::InsertAiTime { id, .. } = &request.command {
+    if let Command::InsertAiTime { id, .. } | Command::InsertOccurrenceTime { id, ai: true, .. } =
+        &request.command
+    {
         let target = targets
             .get(id, budget)?
             .ok_or_else(|| invalid("AI insertion has no allocated Hold in its result"))?;

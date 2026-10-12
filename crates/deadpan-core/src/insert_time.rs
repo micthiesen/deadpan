@@ -12,6 +12,8 @@ use crate::{
 };
 
 pub(crate) mod composite;
+pub(crate) mod occurrence;
+pub use occurrence::{OccurrencePauseIdentities, OccurrencePauseTarget, PauseInsertionTarget};
 mod delete;
 mod delete_children;
 mod delete_range;

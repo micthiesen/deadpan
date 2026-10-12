@@ -385,6 +385,111 @@ pub fn partial_existing_repeat_attached_sounds(dir: &Path) -> Result<Fixture> {
     partial_repeat_sound_fixture(dir, true)
 }
 
+pub fn occurrence_pauses(dir: &Path) -> Result<Fixture> {
+    use deadpan_core::{OccurrencePauseIdentities, PauseInsertionTarget};
+    let mut project = copied_project(dir)?;
+    project.apply(|_, document, revision| {
+        Ok(Command::RepeatSelection {
+            parent: document.root().clone(),
+            selection: deadpan_core::SliceCaptureSelection::Child {
+                node: root_children(document)?[0].clone(),
+            },
+            plays: 2,
+            identities: deadpan_core::RepeatSelectionIdentities {
+                repeat: NodeId::new("repeat")?,
+                group: None,
+                split: SplitIdentities::default(),
+            },
+            timing: AudioTimingId {
+                allocation: revision.clone(),
+                ordinal: 0,
+            },
+        })
+    })?;
+    project.apply(|_, _, revision| {
+        Ok(Command::SetRepeatGaps {
+            node: NodeId::new("repeat")?,
+            gap: Some(HoldRecipe {
+                duration: FrameDuration::new(2)?,
+                video: HoldVideo::Background,
+                audio: HoldAudio::Silence,
+                picture_context: None,
+            }),
+            branches: vec![],
+            timing: AudioTimingId {
+                allocation: revision.clone(),
+                ordinal: 0,
+            },
+        })
+    })?;
+    let before = [0, 2, 6, 10]
+        .map(|frame| pcm(&project, boundary(frame).unwrap() + 512))
+        .into_iter()
+        .collect::<Result<Vec<_>>>()?;
+    for at in [2, 6] {
+        project.apply(|project, document, revision| {
+            let PauseInsertionTarget::Occurrence(target) =
+                document.pause_insertion_target(ProjectFrame(at))?
+            else {
+                return Err("expected occurrence".into());
+            };
+            Ok(Command::InsertOccurrenceTime {
+                at: ProjectFrame(at),
+                id: project.fresh(1)?.remove(0),
+                hold: HoldRecipe {
+                    duration: FrameDuration::new(1)?,
+                    video: HoldVideo::Background,
+                    audio: HoldAudio::Silence,
+                    picture_context: None,
+                },
+                timing: AudioTimingId {
+                    allocation: revision.clone(),
+                    ordinal: 0,
+                },
+                ai: false,
+                identities: OccurrencePauseIdentities {
+                    isolation: OccurrenceIdentities {
+                        nodes: project.fresh(target.isolation_nodes)?,
+                        marks: (0..target.isolation_marks)
+                            .map(|n| MarkId::new(format!("{revision}-mark-{n}")))
+                            .collect::<std::result::Result<_, _>>()?,
+                    },
+                    split: SplitIdentities {
+                        nodes: project.fresh(target.split_nodes)?,
+                    },
+                    container: if target.container {
+                        Some(project.fresh(1)?.remove(0))
+                    } else {
+                        None
+                    },
+                    gap: if target.gap {
+                        Some(project.fresh(1)?.remove(0))
+                    } else {
+                        None
+                    },
+                },
+            })
+        })?;
+    }
+    for (expected, frame) in before.iter().zip([0, 3, 8, 12]) {
+        same_pcm(
+            expected,
+            &pcm(&project, boundary(frame)? + 512)?,
+            "one-play/gap pause retains attached PCM",
+        );
+    }
+    let mut fixture = project.finish(
+        vec!["One-play and one-gap pauses"],
+        vec![(0, original(2)), (1, original(3)), (2, Expected::Background), (3, original(4)), (4, original(5)), (5, Expected::Background), (6, Expected::Background), (7, Expected::Background), (8, original(2)), (9, original(3)), (10, original(4)), (11, original(5)), (12, original(3)), (13, original(4)), (14, original(5))],
+        vec!["A copied Source with event and shared-owner EQ repeats twice. One silent frame splits only the first play; another splits only its gap. Four pre-edit limited PCM windows retain their samples within 1e-6.".into()],
+    )?;
+    fixture.audio = [2, 5, 6, 7]
+        .map(|frame| Ok((boundary(frame)? + 512, false)))
+        .into_iter()
+        .collect::<Result<Vec<_>>>()?;
+    Ok(fixture)
+}
+
 fn partial_repeat_sound_fixture(dir: &Path, existing: bool) -> Result<Fixture> {
     let mut project = copied_project(dir)?;
     if existing {

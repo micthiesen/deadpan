@@ -1,6 +1,188 @@
 use super::*;
 
 #[test]
+fn native_occurrence_pause_freezes_one_play_and_keeps_repeat_motion_live() {
+    use deadpan_core::{ExactRatio, Framing, FramingCurve, FramingPose};
+    let scratch = tempfile::tempdir().unwrap();
+    let service = ProjectService::start(
+        Arc::new(|| {}),
+        Some(ProjectLibrary::from_documents(scratch.path().join("Documents")).unwrap()),
+    )
+    .unwrap();
+    service
+        .submit(ProjectRequest::CreateFromSource {
+            ownership: OriginalOwnership::Managed,
+            path: fixture("cfr-bframes.mp4"),
+        })
+        .unwrap();
+    let initialized = wait(&service, |update| {
+        update.import.as_ref().is_some_and(|status| {
+            matches!(status.stage, ImportStage::Complete | ImportStage::Failed)
+        })
+    });
+    assert!(initialized.error.is_none(), "{:?}", initialized.error);
+    let source = initialized.committed.unwrap().selected_node.unwrap();
+    let original = initialized.workspace.unwrap();
+    let source_curve = Framing::creep(
+        FramingPose::identity(),
+        FramingPose {
+            scale: ExactRatio::new(27, 20).unwrap(),
+            ..Default::default()
+        },
+        FramingCurve::Smoothstep,
+    )
+    .unwrap();
+    let framed = edited(
+        &service,
+        &original,
+        ProjectEdit::SetFraming {
+            node: source.clone(),
+            framing: Some(source_curve),
+        },
+    )
+    .workspace
+    .unwrap();
+    let repeated = edited(
+        &service,
+        &framed,
+        ProjectEdit::WrapRepeat {
+            node: source.clone(),
+            plays: 3,
+        },
+    );
+    let repeat = repeated.committed.unwrap().selected_node.unwrap();
+    let repeated = repeated.workspace.unwrap();
+    let curve = Framing::creep(
+        FramingPose::identity(),
+        FramingPose {
+            center_x: ExactRatio::new(3, 5).unwrap(),
+            scale: ExactRatio::new(6, 5).unwrap(),
+            ..Default::default()
+        },
+        FramingCurve::Linear,
+    )
+    .unwrap();
+    let before = edited(
+        &service,
+        &repeated,
+        ProjectEdit::SetFraming {
+            node: repeat.clone(),
+            framing: Some(curve.clone()),
+        },
+    )
+    .workspace
+    .unwrap();
+    let at = original.plan.duration().frames() + 5;
+    let entry = before.plan.picture(ProjectFrame(at - 1)).unwrap();
+    let parent = entry
+        .framing
+        .iter()
+        .position(|scope| scope.instance.node == repeat)
+        .unwrap();
+    let inserted = edited(
+        &service,
+        &before,
+        ProjectEdit::InsertTime {
+            at: ProjectFrame(at),
+            duration: FrameDuration::new(11).unwrap(),
+        },
+    );
+    assert!(inserted.error.is_none(), "{:?}", inserted.error);
+    let after = inserted.workspace.unwrap();
+    assert_eq!(
+        after.plan.duration().frames(),
+        before.plan.duration().frames() + 11
+    );
+    assert_eq!(
+        after.document.nodes()[&source],
+        before.document.nodes()[&source]
+    );
+    assert_eq!(after.document.children(after.document.root()).count(), 1);
+    let picture = after.plan.picture(ProjectFrame(at + 3)).unwrap();
+    let NodeKind::Hold { recipe } = &after.document.nodes()[&picture.instance.node].kind else {
+        panic!()
+    };
+    assert_eq!(
+        recipe.picture_context.as_ref().unwrap().canvases[0].layers,
+        entry.framing[..parent]
+            .iter()
+            .map(|layer| layer.pose)
+            .collect::<Vec<_>>()
+    );
+    let index = after
+        .sources
+        .values()
+        .find_map(|source| source.video_index.as_ref())
+        .unwrap();
+    assert_eq!(
+        picture.picture.select_source_frame(index).unwrap(),
+        entry.picture.select_source_frame(index).unwrap()
+    );
+    let live = picture
+        .framing
+        .iter()
+        .filter(|scope| scope.instance.node == repeat)
+        .collect::<Vec<_>>();
+    assert_eq!(live.len(), 1);
+    assert_eq!(
+        live[0].pose,
+        Some(
+            curve
+                .evaluate(
+                    ExactRatio::new(i128::from((at + 3) * 2 + 1), 2).unwrap(),
+                    after.plan.duration()
+                )
+                .unwrap()
+        )
+    );
+    for frame in 0..after.plan.duration().frames() {
+        if (at..at + 11).contains(&frame) {
+            continue;
+        }
+        let old_frame = if frame < at { frame } else { frame - 11 };
+        assert_eq!(
+            after.plan.picture(ProjectFrame(frame)).unwrap().picture,
+            before
+                .plan
+                .picture(ProjectFrame(old_frame))
+                .unwrap()
+                .picture
+        );
+    }
+    command(&service, ProjectRequest::Close);
+    let reopened = command(&service, ProjectRequest::Open(after.path.clone()))
+        .workspace
+        .unwrap();
+    assert_eq!(*reopened.document, *after.document);
+    let undone = command(
+        &service,
+        ProjectRequest::Undo {
+            expected_revision: reopened.document.revision_id().clone(),
+        },
+    )
+    .workspace
+    .unwrap();
+    assert_eq!(undone.document.nodes(), before.document.nodes());
+    assert_eq!(
+        undone.document.audio_bindings(),
+        before.document.audio_bindings()
+    );
+    let redone = command(
+        &service,
+        ProjectRequest::Redo {
+            expected_revision: undone.document.revision_id().clone(),
+        },
+    )
+    .workspace
+    .unwrap();
+    assert_eq!(redone.document.nodes(), after.document.nodes());
+    assert_eq!(
+        redone.document.audio_bindings(),
+        after.document.audio_bindings()
+    );
+}
+
+#[test]
 fn native_capture_keeps_lower_clips_and_inherits_root_motion_once() {
     use deadpan_core::{ExactRatio, Framing, FramingCurve, FramingPose};
     let scratch = tempfile::tempdir().unwrap();
@@ -494,7 +676,7 @@ fn native_pause_freezes_measured_vfr_picture_and_keeps_one_undo_step() {
 }
 
 #[test]
-fn native_pause_supports_empty_sequence_and_repeat_seams_but_refuses_repeat_interiors() {
+fn native_pause_supports_empty_sequence_repeat_seams_and_one_play_interior() {
     let scratch = tempfile::tempdir().unwrap();
     let path = scratch.path().join("pause.deadpan");
     drop(seed_holds(&path, &[]));
@@ -543,7 +725,7 @@ fn native_pause_supports_empty_sequence_and_repeat_seams_but_refuses_repeat_inte
     assert!(
         matches!(&shifted.document.nodes()[&selected].kind, NodeKind::Hold { recipe } if recipe.duration.frames() == 2)
     );
-    let rejected = command(
+    let scoped_pause = command(
         &service,
         edit_request(
             &shifted,
@@ -553,14 +735,23 @@ fn native_pause_supports_empty_sequence_and_repeat_seams_but_refuses_repeat_inte
             },
         ),
     );
-    assert!(rejected.error.is_some());
-    assert!(rejected.committed.is_none());
-    assert_eq!(*rejected.workspace.unwrap().document, *shifted.document);
+    assert!(scoped_pause.error.is_none(), "{:?}", scoped_pause.error);
+    let scoped_pause = scoped_pause.workspace.unwrap();
+    assert_eq!(scoped_pause.plan.duration().frames(), 24);
+    let restored = command(
+        &service,
+        ProjectRequest::Undo {
+            expected_revision: scoped_pause.document.revision_id().clone(),
+        },
+    )
+    .workspace
+    .unwrap();
+    assert_eq!(restored.document.nodes(), shifted.document.nodes());
     command(&service, ProjectRequest::Close);
     let reopened = command(&service, ProjectRequest::Open(shifted.path.clone()))
         .workspace
         .unwrap();
-    assert_eq!(*reopened.document, *shifted.document);
+    assert_eq!(*reopened.document, *restored.document);
     let undone = command(
         &service,
         ProjectRequest::Undo {

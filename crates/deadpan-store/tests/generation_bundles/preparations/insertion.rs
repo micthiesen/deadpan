@@ -43,6 +43,118 @@ fn commit_insert(store: &mut ProjectStore) -> Result<StoredGenerationPreparation
     commit_insert_at(store, 12)
 }
 
+#[test]
+fn occurrence_pause_ai_intent_keeps_one_owned_play_through_reopen_and_history() -> Result {
+    use deadpan_core::{OccurrenceIdentities, OccurrencePauseIdentities, PauseInsertionTarget};
+    let scratch = tempfile::tempdir()?;
+    let package = scratch.path().join("occurrence.deadpan");
+    let mut store = create(&package)?;
+    store.commit(&command(
+        &store,
+        "repeated",
+        Command::WrapRepeat {
+            node: NodeId::new("hold")?,
+            id: NodeId::new("repeat")?,
+            plays: 3,
+            gap: None,
+            anchor_policy: Default::default(),
+        },
+    )?)?;
+    let before = store.snapshot()?;
+    let at = ProjectFrame(15);
+    let deadpan_core::NodeKind::Repeat { iterations, .. } =
+        &before.nodes()[&NodeId::new("repeat")?].kind
+    else {
+        panic!()
+    };
+    let expected_play = iterations.at(1).unwrap();
+    let PauseInsertionTarget::Occurrence(target) = before.pause_insertion_target(at)? else {
+        panic!()
+    };
+    let request = command(
+        &store,
+        "paused",
+        Command::InsertOccurrenceTime {
+            at,
+            hold: HoldRecipe {
+                duration: FrameDuration::new(3)?,
+                video: HoldVideo::Background,
+                audio: HoldAudio::Silence,
+                picture_context: None,
+            },
+            id: NodeId::new("pause")?,
+            timing: AudioTimingId {
+                allocation: RevisionId::new("paused")?,
+                ordinal: 0,
+            },
+            ai: true,
+            identities: OccurrencePauseIdentities {
+                isolation: OccurrenceIdentities {
+                    nodes: (0..target.isolation_nodes)
+                        .map(|n| NodeId::new(format!("clone-{n}")))
+                        .collect::<std::result::Result<_, _>>()?,
+                    marks: (0..target.isolation_marks)
+                        .map(|n| deadpan_core::MarkId::new(format!("mark-{n}")))
+                        .collect::<std::result::Result<_, _>>()?,
+                },
+                split: SplitIdentities {
+                    nodes: (0..target.split_nodes)
+                        .map(|n| NodeId::new(format!("split-{n}")))
+                        .collect::<std::result::Result<_, _>>()?,
+                },
+                container: target.container.then(|| NodeId::new("container").unwrap()),
+                gap: target.gap.then(|| NodeId::new("gap").unwrap()),
+            },
+        },
+    )?;
+    let outcome = store.commit(&request)?;
+    assert_eq!(outcome.generation_preparations.len(), 1);
+    let prepared = store
+        .generation_preparation(&outcome.generation_preparations[0])?
+        .unwrap();
+    assert_eq!(prepared.origin, PreparationOrigin::inserted_pause());
+    assert_eq!(
+        prepared.target,
+        ScopedNodeTarget {
+            node: NodeId::new("pause")?,
+            repeats: vec![RepeatEditStep {
+                repeat: NodeId::new("repeat")?,
+                branch: RepeatEditBranch::Play {
+                    iteration: expected_play
+                }
+            }]
+        }
+    );
+    assert_eq!(prepared.duration.frames(), 3);
+    let after = store.snapshot()?;
+    assert_eq!(after.duration()?.frames(), before.duration()?.frames() + 3);
+    store.validate_full()?;
+    drop(store);
+    let mut store = ProjectStore::open(&package, AccessMode::ReadWrite)?;
+    store.set_generation_context_resolver(std::sync::Arc::new(Relevant));
+    assert_eq!(store.snapshot()?, after);
+    assert_eq!(
+        store.generation_preparation(&prepared.id)?.unwrap().target,
+        prepared.target
+    );
+    store.undo(&store.head_revision()?, RevisionId::new("undo")?)?;
+    assert_eq!(store.snapshot()?.nodes(), before.nodes());
+    assert_eq!(
+        store.generation_preparation(&prepared.id)?.unwrap().state,
+        PreparationState::Cancelled
+    );
+    let redone = store.redo(&store.head_revision()?, RevisionId::new("redo")?)?;
+    assert_eq!(redone.generation_preparations.len(), 1);
+    let fresh = store
+        .generation_preparation(&redone.generation_preparations[0])?
+        .unwrap();
+    assert_ne!(fresh.id, prepared.id);
+    assert_eq!(fresh.target, prepared.target);
+    assert_eq!(store.snapshot()?.nodes(), after.nodes());
+    store.validate_full()?;
+    Ok(())
+}
+
 fn commit_insert_at(store: &mut ProjectStore, at: i64) -> Result<StoredGenerationPreparation> {
     let request = command(
         store,

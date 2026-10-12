@@ -192,6 +192,36 @@ fn allocate(request: SemanticAllocationRequest) -> Result<SemanticAllocation, Ed
                     .collect(),
             },
         },
+        SemanticAllocationRequest::InsertOccurrencePause {
+            step_index,
+            isolation_nodes,
+            isolation_marks,
+            split_nodes,
+            container,
+            gap,
+        } => SemanticAllocation::InsertOccurrencePause {
+            new_revision: revision(&format!("leaf-{step_index}")),
+            id: node(&format!("pause-{step_index}")),
+            identities: crate::OccurrencePauseIdentities {
+                isolation: crate::OccurrenceIdentities {
+                    nodes: (0..isolation_nodes)
+                        .map(|n| node(&format!("pause-clone-{step_index}-{n}")))
+                        .collect(),
+                    marks: (0..isolation_marks)
+                        .map(|n| {
+                            crate::MarkId::new(format!("pause-mark-{step_index}-{n}")).unwrap()
+                        })
+                        .collect(),
+                },
+                split: crate::SplitIdentities {
+                    nodes: (0..split_nodes)
+                        .map(|n| node(&format!("pause-split-{step_index}-{n}")))
+                        .collect(),
+                },
+                container: container.then(|| node(&format!("pause-container-{step_index}"))),
+                gap: gap.then(|| node(&format!("pause-gap-{step_index}"))),
+            },
+        },
         SemanticAllocationRequest::Repeat {
             step_index,
             required_split_ids,

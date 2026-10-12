@@ -3,6 +3,9 @@ use super::*;
 #[path = "repeat_splits.rs"]
 mod splits;
 
+#[path = "occurrence_pause.rs"]
+mod occurrence_pause;
+
 fn timing(name: &str) -> AudioTimingId {
     AudioTimingId {
         allocation: RevisionId::new(name).unwrap(),

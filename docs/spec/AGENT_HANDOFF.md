@@ -4,6 +4,30 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Pauses inside Repeat](../qualification/occurrence-pauses-2026-10-12.md)
+add `InsertOccurrenceTime` and the shared `pause_insertion_target` query.
+Native and macro pauses can insert at an integer boundary in one concrete play
+or gap, including nested Repeats. Outside-in isolation runs before temporal
+capture; implicit gaps become owned Holds. The enclosing Repeat and its framing
+stay live. Keep ordinary `InsertTime` admission unchanged, and never implement
+this by splitting the whole Repeat at the root.
+
+Two capture-order defects were found and fixed during verification: a new
+transparent container needs a separate placement timing identity, and gap
+materialization temporarily detaches the independent root sound bus. The latter
+restores events/routes before the real insertion ripple. Raw Source/room-tone
+clocks, attached and root sound processing, gap permissions, marks, macro replay,
+stable play identity and the maximum Repeat count have focused regressions.
+The final core/plan/audio/playback/store run passes 2,899 tests and all eight
+native pause tests pass. Strict workspace Clippy passed before the root-bus fix;
+final core/audio Clippy, release builds and formatting pass. Both debug and
+release exports verify 15 pictures and 31 audio blocks with zero measured offset;
+six authored-PCM windows match bit-for-bit. The qualification record retains
+source/binary identities, failures, projects, movies and full reports.
+The primary implemented and self-reviewed alone. Authored Retime and
+fractional interiors, native scoped-inspector temporal intent and remaining
+sound-scope guards stay open. No requirement or gate is newly complete.
+
 [Selected-play preflight](../qualification/scoped-preflight-2026-10-12.md)
 fixes legal names colliding with the query's private temporary IDs. The query
 and real admission share the live/retained node inventory; temporary names also
@@ -17,14 +41,6 @@ Repeat counts; two more reproduced false admission of missing targets. All
 core/native tests, including selective nested gain and durable Undo/Redo
 and reopen. Strict workspace Clippy and focused final core Clippy pass.
 The primary implemented and self-reviewed alone.
-
-Repeat-interior pause work remains research only. Do not remove `physical`'s
-guard or split the whole Repeat at the root: the inserted Hold must inherit live
-enclosing operations and affect its selected occurrence. Extend outside-in
-isolation with exact identity preflight, preserve later occurrence/gap sampling
-entries and attached/root sound routes, and make freeze capture use the concrete
-insertion-parent instance. Ordinary Sequence insertion and the current Repeat /
-Retime refusal remain unchanged. No requirement or gate is newly complete.
 
 [Existing Repeat Split clocks](../qualification/repeat-split-clocks-2026-10-12.md)
 now allow eligible partial RepeatSelection inside an existing sound-bearing
@@ -47,7 +63,7 @@ The old release's historical-replay refusal, failed test setup/oracle attempts,
 source/binary identities, projects, movies and complete reports are retained.
 The primary implemented and self-reviewed alone; no live GUI or device output
 ran. Root-owned sounds, changed complete processing scopes, unsupported partial
-composite captures and pause insertion inside Repeat remain guarded. No DP
+composite captures remain guarded. No DP
 requirement or release gate is newly complete.
 
 [AAC noise substitution](../qualification/aac-noise-substitution-2026-10-12.md)
@@ -3359,7 +3375,9 @@ adds Enter/Backspace, breadcrumbs and direct-child editing at each ordinary
 Sequence depth. A deeper Hold selects its visible enclosing group until entered.
 The `nested-pause` harness exercises insertion, navigation, duration, history and
 Camera when Metal is available. This does
-not implement fractional clocks or insertion under Repeat/Retime ancestors.
+not implement fractional clocks or insertion under authored Retime ancestors.
+Concrete Repeat insertion now uses the shared occurrence pause path described
+above; scoped-inspector temporal intent remains separate work.
 
 Use `AnchorIndex::locate_boundary` for exact project-to-content descent. The
 [headless query](../HEADLESS.md) exposes all owner clocks, Sequence slots, stable

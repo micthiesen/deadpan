@@ -15,6 +15,7 @@ pub(crate) fn timing(command: &Command) -> Option<&AudioTimingId> {
     match command {
         Command::InsertTime { timing, .. }
         | Command::InsertAiTime { timing, .. }
+        | Command::InsertOccurrenceTime { timing, .. }
         | Command::SpliceSource { timing, .. }
         | Command::SpliceSourceAt { timing, .. }
         | Command::ReplaceSource { timing, .. }
@@ -95,6 +96,7 @@ impl SoundClockEditCapture {
             repeat_edit: matches!(
                 command,
                 Command::RepeatSelection { .. }
+                    | Command::InsertOccurrenceTime { .. }
                     | Command::SetRepeatPlays { .. }
                     | Command::SetRepeatGaps { .. }
             ),

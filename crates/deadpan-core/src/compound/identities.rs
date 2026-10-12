@@ -110,6 +110,19 @@ fn allocations<'a>(command: &'a Command, nodes: &mut Vec<&'a NodeId>, marks: &mu
             nodes.extend(&identities.nodes);
         }
         Command::ReplaceSourceChildren { id, .. } => nodes.push(id),
+        Command::InsertOccurrenceTime { id, identities, .. } => {
+            nodes.push(id);
+            nodes.extend(
+                identities
+                    .isolation
+                    .nodes
+                    .iter()
+                    .chain(&identities.split.nodes)
+                    .chain(&identities.container)
+                    .chain(&identities.gap),
+            );
+            marks.extend(&identities.isolation.marks);
+        }
         Command::GroupSelection { identities, .. } => {
             nodes.push(&identities.group);
             nodes.extend(&identities.split.nodes);

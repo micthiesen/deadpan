@@ -295,11 +295,12 @@ impl SequenceScope {
         }
         let target = workspace
             .document
-            .insert_time_target(ProjectFrame(
+            .pause_insertion_target(ProjectFrame(
                 i64::try_from(at).map_err(|_| "Pause boundary exceeds the project frame range")?,
             ))
             .map_err(|error| error.to_string())?;
-        if !sequence_descendant_or_self(&workspace.document, view.owner, &target.parent) {
+        if !sequence_descendant_or_self(&workspace.document, view.owner, target.navigation_parent())
+        {
             return Err(
                 "This is a Sequence edge; leave this scope before inserting a pause".into(),
             );

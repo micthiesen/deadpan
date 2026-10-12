@@ -285,8 +285,8 @@ where
             ));
         }
         let at = self.context.cursor;
-        let target = self.current.insert_time_target(at)?;
-        if !self.within_scope(&target.parent) {
+        let target = self.current.pause_insertion_target(at)?;
+        if !self.within_scope(target.navigation_parent()) {
             return Err(EditError::new(
                 EditErrorCode::SelectionUnavailable,
                 "this boundary belongs to an enclosing group; insert the pause from that group",
@@ -294,21 +294,64 @@ where
         }
         let provider = provider(self)?;
         self.charge_step(false)?;
-        let required = target.split.as_ref().map_or(0, |split| split.required_ids);
-        let SemanticAllocation::InsertPause {
-            new_revision,
-            id,
-            split,
-        } = (self.allocate)(SemanticAllocationRequest::InsertPause {
-            step_index: self.steps.len(),
-            required_split_ids: required,
-        })?
-        else {
-            return Err(invalid("macro pause requires a pause allocation"));
+        let (new_revision, id, split, occurrence) = match target {
+            crate::PauseInsertionTarget::Ordinary(target) => {
+                let required = target.split.as_ref().map_or(0, |split| split.required_ids);
+                let SemanticAllocation::InsertPause {
+                    new_revision,
+                    id,
+                    split,
+                } = (self.allocate)(SemanticAllocationRequest::InsertPause {
+                    step_index: self.steps.len(),
+                    required_split_ids: required,
+                })?
+                else {
+                    return Err(invalid("macro pause requires a pause allocation"));
+                };
+                if split.nodes.len() != required {
+                    return Err(invalid("macro pause requires its exact Split identities"));
+                }
+                (new_revision, id, split, None)
+            }
+            crate::PauseInsertionTarget::Occurrence(target) => {
+                let SemanticAllocation::InsertOccurrencePause {
+                    new_revision,
+                    id,
+                    identities,
+                } = (self.allocate)(SemanticAllocationRequest::InsertOccurrencePause {
+                    step_index: self.steps.len(),
+                    isolation_nodes: target.isolation_nodes,
+                    isolation_marks: target.isolation_marks,
+                    split_nodes: target.split_nodes,
+                    container: target.container,
+                    gap: target.gap,
+                })?
+                else {
+                    return Err(invalid("macro pause requires an occurrence allocation"));
+                };
+                for node in identities
+                    .isolation
+                    .nodes
+                    .iter()
+                    .chain(&identities.split.nodes)
+                    .chain(&identities.container)
+                    .chain(&identities.gap)
+                {
+                    self.reserve_node(node)?;
+                }
+                for mark in &identities.isolation.marks {
+                    if !self.marks.insert(mark.clone()) {
+                        return Err(invalid("macro pause mark identity is already allocated"));
+                    }
+                }
+                (
+                    new_revision,
+                    id,
+                    crate::SplitIdentities::default(),
+                    Some(identities),
+                )
+            }
         };
-        if split.nodes.len() != required {
-            return Err(invalid("macro pause requires its exact Split identities"));
-        }
         self.reserve_revision(&new_revision)?;
         for node in std::iter::once(&id).chain(&split.nodes) {
             self.reserve_node(node)?;
@@ -323,7 +366,16 @@ where
             allocation: new_revision.clone(),
             ordinal: 0,
         };
-        let command = if request_ai {
+        let command = if let Some(identities) = occurrence {
+            Command::InsertOccurrenceTime {
+                at,
+                hold,
+                id: id.clone(),
+                identities,
+                timing,
+                ai: request_ai,
+            }
+        } else if request_ai {
             Command::InsertAiTime {
                 at,
                 hold,
@@ -342,6 +394,7 @@ where
         };
         let edit = LeafEdit::new(new_revision, command)?;
         self.commit_leaf(edit)?;
+        let resolved_parent = self.current.parent_of(&id);
         // The cursor stays at the pause; a hidden Hold selects its visible
         // enclosing child, as natively.
         self.context.cursor = at;
@@ -354,7 +407,7 @@ where
             ProjectFrame(at.0.checked_add(duration.frames()).ok_or_else(|| {
                 EditError::new(EditErrorCode::TimingOverflow, "pause end overflows")
             })?);
-        self.trace[trace_index].resolved_parent = Some(target.parent);
+        self.trace[trace_index].resolved_parent = resolved_parent;
         self.trace[trace_index].resolved_range =
             Some(FrameRange::new(at, end).map_err(crate::DocumentError::from)?);
         Ok(())

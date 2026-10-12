@@ -172,6 +172,16 @@ define_commands! {
         identities: crate::SplitIdentities,
         timing: crate::AudioTimingId,
     },
+    /// Insert time into one concrete Repeat play or gap, isolating shared
+    /// branches outside-in before capturing its temporal placement.
+    InsertOccurrenceTime {
+        at: crate::ProjectFrame,
+        hold: HoldRecipe,
+        id: NodeId,
+        identities: crate::OccurrencePauseIdentities,
+        timing: crate::AudioTimingId,
+        ai: bool,
+    },
     /// Insert one Source at an explicit ordinary Sequence slot, preserving the
     /// sampled entry of every shifted physical owner. Ancestors stay live.
     SpliceSource {
@@ -1207,6 +1217,24 @@ fn apply_with_durations_captured(
     crate::picture_context::validate_command(&request.command)?;
     crate::audio_gain::validate_command(&request.command)?;
     crate::sound_events::validate_command(document, &request.command)?;
+    if let Some(prepared) = crate::insert_time::occurrence::prepare(document, request)? {
+        if let Some(steps) = isolation.as_deref_mut() {
+            steps.extend(prepared.isolation);
+        }
+        let resolved = CommandRequest {
+            command: prepared.command,
+            ..request.clone()
+        };
+        let (_, result, _) =
+            apply_with_durations_captured(&prepared.document, &resolved, None, isolation)?;
+        let (transaction, validation) = net_transaction_with_durations(
+            document,
+            &result,
+            description(&request.command),
+            previous,
+        )?;
+        return Ok((transaction, result, validation));
+    }
     let mut beat_sound_edit = crate::sound_clock::edit::SoundClockEditCapture::prepare(
         document,
         &request.command,
@@ -1237,6 +1265,9 @@ fn apply_with_durations_captured(
     };
     let mut known = KnownValidation::Nothing;
     let mut result = match &request.command {
+        command @ Command::InsertOccurrenceTime { .. } => {
+            crate::insert_time::occurrence::apply(input, command, context)?
+        }
         Command::InsertTime {
             at,
             hold,
@@ -2082,6 +2113,7 @@ pub(crate) fn reduce(
         }
         Command::InsertTime { .. }
         | Command::InsertAiTime { .. }
+        | Command::InsertOccurrenceTime { .. }
         | Command::SpliceSource { .. }
         | Command::SpliceSlice { .. }
         | Command::SpliceSliceAt { .. }
@@ -3351,6 +3383,8 @@ fn description(command: &Command) -> &'static str {
         Command::SetSoundAllowance { .. } => "Set sound Hold allowance",
         Command::InsertTime { .. } => "Insert pause",
         Command::InsertAiTime { .. } => "Insert AI pause",
+        Command::InsertOccurrenceTime { ai: true, .. } => "Insert AI pause in this play",
+        Command::InsertOccurrenceTime { .. } => "Insert pause in this play",
         Command::SpliceSource { .. } => "Paste source moment",
         Command::SpliceSlice { .. } => "Paste edited slice",
         Command::SpliceSliceAt { .. } => "Paste edited slice inside beat",

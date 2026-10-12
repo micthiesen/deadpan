@@ -13,7 +13,10 @@ use crate::{
 mod isolation;
 mod proof;
 pub use isolation::MAX_SCOPED_TARGETS;
-pub(crate) use isolation::{apply_many_mapped, apply_mapped, matches_prefix};
+pub(crate) use isolation::{
+    apply_many_mapped, apply_mapped, isolate_temporal, matches_prefix, occupied_node_ids,
+    temporal_requirements,
+};
 pub use proof::{
     ScopedIsolationRecord, ScopedIsolationStep, ValidatedScopedIsolation, derive_scoped_isolation,
 };

@@ -76,9 +76,9 @@ pub fn pause_provider(
         });
     }
     let insertion_parent = document
-        .insert_time_target(at)
+        .pause_insertion_target(at)
         .map_err(|error| error.to_string())?
-        .parent;
+        .picture_parent();
     let sample = plan
         .picture(ProjectFrame(if at.0 == 0 { 0 } else { at.0 - 1 }))
         .map_err(|error| error.to_string())?;
@@ -90,9 +90,7 @@ pub fn pause_provider(
             let parent = sample
                 .framing
                 .iter()
-                .position(|scope| {
-                    scope.instance.node == insertion_parent && scope.instance.repeats.is_empty()
-                })
+                .position(|scope| scope.instance == insertion_parent)
                 .ok_or("The stopped picture has no selected Sequence scope.")?;
             freeze(document, &sample, parent, index)
         }

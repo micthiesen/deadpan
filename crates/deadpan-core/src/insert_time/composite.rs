@@ -155,6 +155,23 @@ pub(crate) fn shifted_owners(
     parent: &NodeId,
     slot: usize,
 ) -> Result<BTreeSet<NodeId>, EditError> {
+    shifted_owners_with_repeats(document, parent, slot, false)
+}
+
+pub(super) fn occurrence_shifted_owners(
+    document: &ProjectDocument,
+    parent: &NodeId,
+    slot: usize,
+) -> Result<BTreeSet<NodeId>, EditError> {
+    shifted_owners_with_repeats(document, parent, slot, true)
+}
+
+fn shifted_owners_with_repeats(
+    document: &ProjectDocument,
+    parent: &NodeId,
+    slot: usize,
+    repeat_ancestors: bool,
+) -> Result<BTreeSet<NodeId>, EditError> {
     let NodeKind::Sequence { children } = &document.nodes()[parent].kind else {
         return Err(super::invalid("pause insertion parent is not a Sequence"));
     };
@@ -167,6 +184,23 @@ pub(crate) fn shifted_owners(
                 .parents
                 .get(child)
                 .ok_or_else(|| super::invalid("pause parent is outside the project"))?;
+            if repeat_ancestors
+                && matches!(document.nodes()[ancestor].kind, NodeKind::Repeat { .. })
+            {
+                // The selected owned branch grows once. All later concrete
+                // plays and gaps keep their pre-edit entries; the capture's
+                // root window excludes earlier occurrences of shared owners.
+                pending.clear();
+                pending.push(
+                    document
+                        .nodes()
+                        .get_key_value(ancestor)
+                        .expect("validated ancestor")
+                        .0,
+                );
+                child = ancestor;
+                continue;
+            }
             let NodeKind::Sequence { children } = &document.nodes()[ancestor].kind else {
                 return Err(super::invalid(
                     "pause insertion cannot change a Repeat or Retime ancestor",

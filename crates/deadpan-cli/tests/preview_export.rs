@@ -450,6 +450,29 @@ fn partial_existing_repeat_attached_sounds_preserve_preview_and_encoded_fidelity
     partial_repeat_export(true)
 }
 
+#[test]
+fn occurrence_pause_preserves_attached_pcm_and_verified_export() -> Result {
+    let (root, _guard) = keep_or(tempfile::tempdir()?);
+    let fixture = recipes::partial_sounds::occurrence_pauses(&root.join("occurrence-pauses"))?;
+    check(&fixture)?;
+    let movie = render(&fixture, &root.join("exports"))?;
+    let (report, passed) = verify(&fixture, &movie, &fixture.revision, &["--every", "1"])?;
+    assert!(passed, "{report}");
+    assert_eq!(report["summary"]["pictures_checked"], 15);
+    assert_eq!(report["summary"]["nonzero_offsets"], 0);
+    check_provenance(&fixture, &report)?;
+    if let Some(path) = std::env::var_os("DEADPAN_OCCURRENCE_PAUSE_RESULTS") {
+        std::fs::write(
+            path,
+            serde_json::to_vec_pretty(
+                &json!({"package":fixture.package,"movie":movie,"report":report,"notes":fixture.notes}),
+            )?,
+        )?;
+    }
+    eprintln!("{}", summary_row(&fixture, &report));
+    Ok(())
+}
+
 fn partial_repeat_export(existing: bool) -> Result {
     let (root, _guard) = keep_or(tempfile::tempdir()?);
     let factory = if existing {

@@ -2,6 +2,9 @@
 //! derive cut/resume coordinates directly from the project frame clock.
 use super::*;
 
+#[path = "occurrence_pause.rs"]
+mod occurrence_pause;
+
 fn insert_pause(document: &ProjectDocument, at: i64, frames: i64, name: &str) -> ProjectDocument {
     let revision = RevisionId::new(name).unwrap();
     let request = CommandRequest {

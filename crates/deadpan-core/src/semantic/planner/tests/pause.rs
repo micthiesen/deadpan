@@ -40,6 +40,54 @@ fn pause(frames: u32) -> SemanticInstruction {
 }
 
 #[test]
+fn occurrence_pause_macro_replays_one_selected_play_and_ai_intent() {
+    let mut repeated = BeatNode::sequence("Repeat", vec![]);
+    repeated.kind = NodeKind::Repeat {
+        child: node("a"),
+        iterations: crate::IterationOrder::new(revision("plays"), 3).unwrap(),
+        gap: Some(HoldRecipe {
+            duration: FrameDuration::new(2).unwrap(),
+            video: HoldVideo::Background,
+            audio: HoldAudio::Silence,
+            picture_context: None,
+        }),
+        escalation: None,
+    };
+    let document = tree(&["repeat"], vec![("repeat", repeated), ("a", hold(4))]);
+    for at in [1, 4, 5, 6, 9, 12, 15] {
+        for ai in [false, true] {
+            let instruction = if ai {
+                SemanticInstruction::InsertAiPause {
+                    length: PauseLength::Frames {
+                        frames: NonZeroU32::new(1).unwrap(),
+                    },
+                }
+            } else {
+                pause(1)
+            };
+            let planned = plan_pauses(&document, context("root", at), vec![instruction]).unwrap();
+            assert_eq!(planned.document.duration().unwrap().frames(), 17);
+            assert_eq!(planned.context.cursor, ProjectFrame(at));
+            assert_eq!(planned.context.selected_child, Some(node("repeat")));
+            let request = planned.request.as_ref().unwrap();
+            let Command::Compound { transaction } = &request.command else {
+                panic!()
+            };
+            assert!(
+                matches!(transaction.steps()[0].edit().unwrap().command.as_command(), Command::InsertOccurrenceTime { ai: intent, .. } if *intent == ai)
+            );
+            let replay =
+                crate::replay_compound::<EditError>(&document, request, |_| Ok(())).unwrap();
+            assert_eq!(replay.document, planned.document);
+            assert_eq!(
+                replay.edit.inverse.apply(&replay.document).unwrap(),
+                document
+            );
+        }
+    }
+}
+
+#[test]
 fn ai_pause_matches_ordinary_pause_at_rational_rate_and_retains_allocated_identity() {
     let mut document = tree(&["a"], vec![("a", hold(10))]);
     document.presentation_basis.frame_rate = crate::FrameRate::new(30000, 1001).unwrap();

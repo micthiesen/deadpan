@@ -324,6 +324,7 @@ pub(crate) fn validate_command(
             command,
             Command::InsertTime { .. }
                 | Command::InsertAiTime { .. }
+                | Command::InsertOccurrenceTime { .. }
                 | Command::ApplySourceTrim { .. }
                 | Command::TrimSource { .. }
                 | Command::RollSources { .. }
@@ -500,6 +501,7 @@ fn preserves_sound_clocks(command: &Command) -> bool {
         },
         Command::InsertTime { .. }
         | Command::InsertAiTime { .. }
+        | Command::InsertOccurrenceTime { .. }
         | Command::ApplySourceTrim { .. }
         | Command::TrimSource { .. }
         | Command::RollSources { .. }

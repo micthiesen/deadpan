@@ -70,6 +70,23 @@ Sequence level receive their own current-clock reanchor. Repeat suffixes remain
 compact, including a billion-play suffix, and later Preserve inputs stay on
 their intrinsic clocks. This does not admit a Repeat or Retime ancestor.
 
+`Command::InsertOccurrenceTime` now adds a pause at an integer boundary inside
+one concrete Repeat play or gap. The shared `pause_insertion_target` query
+returns the exact isolation, Split, container and gap identity requirements.
+Isolation runs outside-in before temporal capture and preserves stable play
+identities. An implicit gap becomes an owned Hold, retaining its sound clock and
+permissions. A direct Repeat child receives a transparent Sequence when needed;
+the Repeat remains the live enclosing owner. No play-count expansion occurs.
+Existing Sequence seams keep their level; a Repeat seam chooses its left branch,
+matching the picture sampled immediately before the insertion boundary.
+
+The command captures every later play, gap and enclosing Sequence sibling on
+its own pre-edit sampling clock. The inserted time grows only the selected
+occurrence. Native pauses and semantic macro pauses share the target query;
+AI insertion records one durable preparation for the newly allocated Hold in
+that concrete branch. The ordinary `InsertTime` command retains its previous
+admission rules. Authored Retime interiors still require exact derived clocks.
+
 The native service resolves the freeze from its immutable picture plan and
 registered measured source index: the frame left of the cursor, or the first
 frame at project start. It records that frame's original PTS and time base, not
@@ -133,9 +150,11 @@ as old history are rejected before promotion; their original and backup survive.
 Current insertion supports existing root seams before arbitrary composite
 suffixes and interiors of Source or ordinary Background/Freeze Hold beats when
 followed by either physical fragments or composite structures, including inside
-unretimed Sequence groups. Interior cuts beneath Repeat/Retime ancestors, fractional cuts,
-outside-in occurrence isolation and selected Original-moment payloads remain
-required. Arbitrary insertion must inherit its enclosing
+unretimed Sequence groups and concrete Repeat plays or gaps. Interior cuts beneath
+authored Retime ancestors, fractional cuts and selected Original-moment payloads
+remain required. Native scoped-inspector temporal intent also remains guarded;
+the new path addresses the concrete cursor from ordinary Sequence navigation.
+Arbitrary insertion must inherit its enclosing
 group's ownership. These are required follow-ups, not reduced V1 scope.
 
 Active generation requests still require genuine host relevance observations;

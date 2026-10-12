@@ -16,15 +16,18 @@ or decoder state become authored data.
 ## Ownership
 
 Insertion captures every sampled scope below its actual Sequence parent. The
-shared `insert_time_target` query chooses that parent before native capture.
+shared `pause_insertion_target` query chooses that parent before native capture.
 Root seams remain root insertions; strict interiors can descend into unretimed
 Sequence groups. Capture excludes the parent's framing and all its ancestors:
 the inserted Hold inherits those live operations once.
 An inherited envelope keeps its owner clock and stretches with the owner's new
 duration. A captured descendant envelope becomes its static value at the sampled
 frame center. This distinction preserves group ownership and avoids applying the
-same inherited effect twice. Repeat and Retime ancestor insertion still requires
-the separate occurrence and exact derived-clock authoring work.
+same inherited effect twice. Inside a concrete Repeat play or gap, capture matches
+the complete parent instance, including its stable Repeat ancestry. A newly added
+transparent Sequence inherits the existing Repeat parent, so only layers below
+that Repeat are captured. Enclosing Repeat framing and escalation stay live.
+Authored Retime interiors still require exact derived-clock authoring.
 
 The new Hold can be reframed independently. Camera and its reset operate on that
 new framing; the captured view remains its input. Resetting Camera does not recover

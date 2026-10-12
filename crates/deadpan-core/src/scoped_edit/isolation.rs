@@ -137,7 +137,7 @@ pub(super) fn preflight(
 ) -> Result<IsolationPlan, EditError> {
     let roots = validate_target(document, target)?;
     edit.validate(document, &target.node)?;
-    let mut requirements = ScopedEditRequirements {
+    let requirements = ScopedEditRequirements {
         nodes: 0,
         marks: 0,
         unchanged: edit.unchanged(&document.nodes()[&target.node]),
@@ -154,6 +154,18 @@ pub(super) fn preflight(
             steps: Vec::new(),
         });
     }
+    isolation_plan(document, roots)
+}
+
+fn isolation_plan(
+    document: &ProjectDocument,
+    roots: Vec<Option<NodeId>>,
+) -> Result<IsolationPlan, EditError> {
+    let mut requirements = ScopedEditRequirements {
+        nodes: 0,
+        marks: 0,
+        unchanged: false,
+    };
     let mut bindings = 0_usize;
     let mut owned_marks: BTreeMap<&NodeId, Vec<&crate::MarkId>> = BTreeMap::new();
     for (id, mark) in document.marks() {
@@ -406,7 +418,7 @@ pub(crate) fn many_requirements(
 
 /// Freshness includes historical audio aliases even when their authored node
 /// has disappeared. Share this inventory with admission of real host pools.
-fn occupied_node_ids(document: &ProjectDocument) -> BTreeSet<&NodeId> {
+pub(crate) fn occupied_node_ids(document: &ProjectDocument) -> BTreeSet<&NodeId> {
     let mut occupied: BTreeSet<_> = document.nodes().keys().collect();
     occupied.extend(
         document
@@ -484,6 +496,47 @@ pub(crate) fn apply_mapped(
     if unchanged {
         return Err(invalid("scoped edit does not change the selected value"));
     }
+    let (mut result, target, mappings) =
+        apply_isolation(document, resolved, identities, &mut context)?;
+    let before = result.clone();
+    let command = edit.command(target.node);
+    crate::command::reduce(&mut result, &command, context.allocation)?;
+    if let Some(allowances) = context.allowances.as_deref_mut() {
+        allowances.apply_hold_audio_command(&command);
+    }
+    crate::audio_lineage::reconcile(&before, &mut result, &command)?;
+    // Value edits do not move marks. Isolation already moved concrete bindings
+    // and copied owned definitions, including dormant and unresolved intent.
+    crate::compound::wire::size(&result, crate::MAX_DOCUMENT_JSON_BYTES)?;
+    Ok((result, mappings))
+}
+
+/// Identity preflight for a temporal edit that will operate on one owned
+/// branch. It does not manufacture a value edit just to trigger isolation.
+pub(crate) fn temporal_requirements(
+    document: &ProjectDocument,
+    target: &ScopedNodeTarget,
+) -> Result<ScopedEditRequirements, EditError> {
+    isolation_plan(document, validate_target(document, target)?).map(|plan| plan.requirements)
+}
+
+pub(crate) fn isolate_temporal(
+    document: &ProjectDocument,
+    target: &ScopedNodeTarget,
+    identities: &OccurrenceIdentities,
+    mut context: crate::command::EditContext<'_>,
+) -> Result<(ProjectDocument, ScopedNodeTarget, Vec<IsolationMap>), EditError> {
+    let resolved = isolation_plan(document, validate_target(document, target)?)?
+        .resolve(document, target, identities)?;
+    apply_isolation(document, resolved, identities, &mut context)
+}
+
+fn apply_isolation(
+    document: &ProjectDocument,
+    resolved: ResolvedIsolation,
+    identities: &OccurrenceIdentities,
+    context: &mut crate::command::EditContext<'_>,
+) -> Result<(ProjectDocument, ScopedNodeTarget, Vec<IsolationMap>), EditError> {
     let mut result = document.clone();
     let mut marks = identities.marks.iter();
     for mapping in &resolved.mappings {
@@ -519,15 +572,5 @@ pub(crate) fn apply_mapped(
     }
     resolved.target.validate(&result)?;
     result.validate_isolated_context()?;
-    let before = result.clone();
-    let command = edit.command(resolved.target.node);
-    crate::command::reduce(&mut result, &command, context.allocation)?;
-    if let Some(allowances) = context.allowances.as_deref_mut() {
-        allowances.apply_hold_audio_command(&command);
-    }
-    crate::audio_lineage::reconcile(&before, &mut result, &command)?;
-    // Value edits do not move marks. Isolation already moved concrete bindings
-    // and copied owned definitions, including dormant and unresolved intent.
-    crate::compound::wire::size(&result, crate::MAX_DOCUMENT_JSON_BYTES)?;
-    Ok((result, resolved.mappings))
+    Ok((result, resolved.target, resolved.mappings))
 }

@@ -1,0 +1,74 @@
+{
+  "attached-pcm-fixed": {
+    "exit": 0,
+    "passed": 1,
+    "failed": 0,
+    "ignored": 0
+  },
+  "core-path": {
+    "exit": 0,
+    "passed": 2,
+    "failed": 0,
+    "ignored": 0
+  },
+  "core-plan-audio-playback-store-final": {
+    "exit": 0,
+    "passed": 2899,
+    "failed": 0,
+    "ignored": 0
+  },
+  "core-plan-audio-playback-store": {
+    "exit": 101,
+    "passed": 1049,
+    "failed": 1,
+    "ignored": 0
+  },
+  "debug-export": {
+    "exit": 0,
+    "passed": 1,
+    "failed": 0,
+    "ignored": 0
+  },
+  "gap-permissions-fixed": {
+    "exit": 0,
+    "passed": 1,
+    "failed": 0,
+    "ignored": 0
+  },
+  "linked-pcm": {
+    "exit": 0,
+    "passed": 1,
+    "failed": 0,
+    "ignored": 0
+  },
+  "native-pauses": {
+    "exit": 0,
+    "passed": 8,
+    "failed": 0,
+    "ignored": 0
+  },
+  "occurrence-all": {
+    "exit": 101,
+    "passed": 1,
+    "failed": 1,
+    "ignored": 0
+  },
+  "occurrence-focused-2": {
+    "exit": 101,
+    "passed": 8,
+    "failed": 1,
+    "ignored": 0
+  },
+  "release-export": {
+    "exit": 0,
+    "passed": 1,
+    "failed": 0,
+    "ignored": 0
+  },
+  "root-gap-pcm": {
+    "exit": 0,
+    "passed": 1,
+    "failed": 0,
+    "ignored": 0
+  }
+}

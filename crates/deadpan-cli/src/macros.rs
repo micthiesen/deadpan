@@ -470,6 +470,34 @@ fn allocate(request: SemanticAllocationRequest) -> Result<SemanticAllocation, Ed
                 nodes: nodes(required_split_ids)?,
             },
         },
+        SemanticAllocationRequest::InsertOccurrencePause {
+            isolation_nodes,
+            isolation_marks,
+            split_nodes,
+            container,
+            gap,
+            ..
+        } => SemanticAllocation::InsertOccurrencePause {
+            new_revision: crate::new_revision()?,
+            id: NodeId::new(uuid::Uuid::new_v4().to_string())?,
+            identities: deadpan_core::OccurrencePauseIdentities {
+                isolation: OccurrenceIdentities {
+                    nodes: nodes(isolation_nodes)?,
+                    marks: (0..isolation_marks)
+                        .map(|_| MarkId::new(uuid::Uuid::new_v4().to_string()))
+                        .collect::<Result<_, _>>()?,
+                },
+                split: SplitIdentities {
+                    nodes: nodes(split_nodes)?,
+                },
+                container: container
+                    .then(|| NodeId::new(uuid::Uuid::new_v4().to_string()))
+                    .transpose()?,
+                gap: gap
+                    .then(|| NodeId::new(uuid::Uuid::new_v4().to_string()))
+                    .transpose()?,
+            },
+        },
         SemanticAllocationRequest::Repeat {
             required_split_ids,
             needs_group,

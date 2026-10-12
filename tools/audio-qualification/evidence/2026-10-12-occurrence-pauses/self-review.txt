@@ -1,0 +1,44 @@
+Primary-agent self-review; no subagents, live GUI, browser or audio device use.
+
+Reviewed the complete changed production paths: outside-in isolation extraction,
+boundary descent, compact Repeat placement, exact identity admission, implicit
+gap materialization, Split/container placement, root/attached sound transport,
+picture-parent capture, semantic allocation/replay, native scope/commit and
+durable AI preparation birth. Reviewed the new tests and fixture expectations.
+
+The new command preserves the enclosing Repeat and inserts exactly once in its
+selected branch. The old ordinary insertion command retains its admission and
+output. Repeat seams use the left branch, matching the sampled preceding picture.
+No play count is expanded. Caller identities are checked against live and retained
+audio names and remain bounded; timing ordinal increments are checked.
+
+Found and fixed a timing-identity collision at an unsplit direct-child edge:
+the new transparent Sequence changed the layout captured under the attached
+sound's pre-edit identity. The placement capture now uses the next ordinal, as
+the Split path already did. The recorded real-PCM regression initially refused
+the edit, then passed with fresh/saved clocks and dry/treated event/owner audio.
+
+The added gap-permission regression then found a second capture-order defect:
+implicit-gap materialization passed root sound events to a physical-only binding
+capture. Root events/routes now detach only during that zero-time preparatory
+step and restore before the real insertion ripple. The permissions regression
+and actual 44.1 kHz root-sound/EQ PCM pass: original gap permissions survive,
+retained sound history resumes exactly, and the new pause remains silent.
+
+The first expanded core test failed compilation because `apply` was ambiguous
+between the local leaf function and the public command entrypoint. The test now
+explicitly calls crate::apply. The permission test initially constructed a sound
+longer than its owner under Reject; the fixture now fits its original owner.
+Neither fixture correction relaxed production validation or an oracle.
+
+Verified source-clock oracles use authored frame ranges and independently
+rounded 48000 Hz boundaries, not generated render-plan placements. Attached
+audio compares interiors away from intentional new silence-gate fades. Framing
+tests inspect exact source PTS, captured lower layers and the live Repeat curve.
+The native check uses the real service and SQLite without opening a window.
+
+Retained limits: authored Retime/fractional insertion, scoped-inspector temporal
+intent, accepted-footage freeze capture, root-owned attached sounds and changed
+complete processing scopes. The user-authorized unused-project policy permits
+the new command vocabulary without historical schema adapters or migrations.
+No DP requirement or delivery gate is claimed complete by this increment.
