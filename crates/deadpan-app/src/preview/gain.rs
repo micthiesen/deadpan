@@ -55,6 +55,14 @@ pub(super) struct Draft {
 }
 
 impl Draft {
+    pub(super) fn editor_name(&self) -> &'static str {
+        if self.controls.equalizer_mode {
+            "EQ"
+        } else {
+            "Gain"
+        }
+    }
+
     #[cfg(feature = "ui-harness")]
     pub(super) fn prepared_snapshot(&self) -> Option<&Arc<Snapshot>> {
         self.prepared.as_ref()
@@ -156,11 +164,14 @@ impl DeadpanApp {
         let draft = self
             .gain
             .as_ref()
-            .ok_or("Gain preview is no longer open.")?;
+            .ok_or("Audio preview is no longer open.")?;
         self.check_gain_target(&draft.target)?;
         if draft.applying || draft.prepared.is_none() || !draft.controls.ready(&draft.edit) {
             return Err(draft.error.clone().unwrap_or_else(|| {
-                "Finish and prepare the Gain preview before committing it.".into()
+                format!(
+                    "Finish and prepare the {} preview before committing it.",
+                    draft.editor_name()
+                )
             }));
         }
         if draft.target.entry == *draft.edit.recipe() {
@@ -234,7 +245,7 @@ impl DeadpanApp {
             return;
         }
         if treatments == target.entry {
-            self.message = Some("Gain unchanged. No edit was made.".into());
+            self.message = Some("Audio treatments unchanged. No edit was made.".into());
             return;
         }
         self.stop_playback();
@@ -562,6 +573,16 @@ impl DeadpanApp {
         value: Option<GainDb>,
         context: &egui::Context,
     ) {
+        self.audio_draft_command(target, value, false, context);
+    }
+
+    fn audio_draft_command(
+        &mut self,
+        target: Option<Result<Target, String>>,
+        value: Option<GainDb>,
+        equalizer: bool,
+        context: &egui::Context,
+    ) {
         let target =
             target.unwrap_or_else(|| Err("No gain target was captured on command entry.".into()));
         let target = match target.and_then(|target| {
@@ -633,9 +654,12 @@ impl DeadpanApp {
         self.bindings.clear();
         self.error = None;
         let edit = GainEdit::new(target.entry.clone());
-        let controls = controls::Controls::new(&edit, frames);
+        let mut controls = controls::Controls::new(&edit, frames);
+        controls.equalizer_mode = equalizer;
         let mut waveform = waveform::Display::default();
-        waveform.request(&self.playback, &base, &target.node);
+        if !equalizer {
+            waveform.request(&self.playback, &base, &target.node);
+        }
         self.service.set_preview_active(true);
         self.gain = Some(Draft {
             target,
@@ -662,6 +686,51 @@ impl DeadpanApp {
             applying: false,
         });
         context.request_repaint();
+    }
+
+    pub(super) fn open_equalizer(
+        &mut self,
+        target: Option<Result<Target, String>>,
+        context: &egui::Context,
+    ) {
+        self.audio_draft_command(target, None, true, context);
+    }
+
+    pub(super) fn equalizer_command(
+        &mut self,
+        target: Option<Result<Target, String>>,
+        macro_target: Option<Result<super::macros::Capture, String>>,
+        recipe: Option<deadpan_core::EqualizerRecipe>,
+    ) {
+        if let Some(Ok(captured)) = &target
+            && captured.scoped.is_none()
+        {
+            self.record_audio_change(
+                target,
+                macro_target,
+                deadpan_core::AudioChange::Equalizer { recipe },
+            );
+            return;
+        }
+        if self.macros.recording() {
+            self.error = Some(
+                "Recording changes a whole beat's EQ; leave the play scope with :scope all.".into(),
+            );
+            return;
+        }
+        let result = target
+            .unwrap_or_else(|| Err("No beat was captured on command entry.".into()))
+            .and_then(|target| {
+                let treatments = target
+                    .entry
+                    .with_equalizer(recipe)
+                    .map_err(|error| error.to_string())?;
+                Ok((target, treatments))
+            });
+        match result {
+            Ok((target, treatments)) => self.commit_gain(target, treatments),
+            Err(error) => self.error = Some(error),
+        }
     }
 
     pub(super) fn receive_gain(&mut self, update: Option<ProposalUpdate>) {
@@ -918,7 +987,7 @@ impl DeadpanApp {
                         egui::vec2(title_width, 20.0),
                         egui::Layout::left_to_right(egui::Align::Center),
                         |ui| {
-                            let title = format!("Gain · {}", draft.label);
+                            let title = format!("{} · {}", draft.editor_name(), draft.label);
                             accessibility::full_text(
                                 ui.add(
                                     egui::Label::new(egui::RichText::new(&title).strong())
@@ -930,7 +999,11 @@ impl DeadpanApp {
                         },
                     );
                     ui.colored_label(style::LAVENDER, "UNSAVED DRAFT");
-                    ui.weak("Owner-output frames · Out excluded");
+                    ui.weak(if draft.controls.equalizer_mode {
+                        "Whole captured beat · time unchanged"
+                    } else {
+                        "Owner-output frames · Out excluded"
+                    });
                 })
                 .response;
             let focus = ui.interact(heading.rect, egui::Id::new(FOCUS_ID), egui::Sense::click());
@@ -938,7 +1011,11 @@ impl DeadpanApp {
                 egui::WidgetInfo::labeled(
                     egui::WidgetType::Button,
                     !draft.applying,
-                    "Gain draft keyboard focus",
+                    if draft.controls.equalizer_mode {
+                        "EQ draft keyboard focus"
+                    } else {
+                        "Gain draft keyboard focus"
+                    },
                 )
             });
             if std::mem::take(&mut draft.focus_pending) || focus.clicked() {
@@ -1112,8 +1189,9 @@ impl DeadpanApp {
             let target = draft.target.clone();
             let recipe = draft.edit.recipe().clone();
             if target.entry == recipe {
+                let name = draft.editor_name();
                 self.close_gain(context);
-                self.message = Some("Gain unchanged. No edit was made.".into());
+                self.message = Some(format!("{name} unchanged. No edit was made."));
                 return;
             }
             let edit = target.edit(recipe);
@@ -1244,6 +1322,16 @@ impl DeadpanApp {
             "Balance {} · :balance -50% left / +50% right / center",
             crate::gain::format_balance(edit.recipe().balance())
         ));
+        if ui
+            .add_enabled(
+                ready && self.gain.is_none(),
+                style::row_action(ui, "EQ and filters…", ":eq"),
+            )
+            .reveal_on_focus()
+            .clicked()
+        {
+            self.open_equalizer(Some(Ok(target)), ui.ctx());
+        }
     }
 }
 

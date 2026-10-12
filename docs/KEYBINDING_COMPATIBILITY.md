@@ -9,6 +9,14 @@ The comma prefix remains usable while browsing the Original so `,i` can copy it
 into Your edit. Other edit operators keep the Original non-destructive. Native
 text editing retains its own selection, clipboard, undo, and redo behavior.
 
+`:eq` adds a captured EQ editor and complete typed recipes without a new key
+chord. The 2026-10-12 EQ, Gain and audio-treatment release replays pass
+21,884,016 routing cases each against all 62 pinned Kestrel reservations.
+The live Kestrel source was unavailable. EQ fields retain native text editing;
+Tab reveals each control, Enter in fields cannot Apply, and Escape cancels.
+The routing snapshot adds only four EQ parser witnesses. See
+[native EQ qualification](qualification/native-eq-2026-10-12.md).
+
 `:balance` adds signed-percent stereo balance with no new key chord. The
 2026-10-11 audio-treatment and Gain release replays each pass 21,884,016
 production routing cases against the 62 pinned Kestrel reservations. The live

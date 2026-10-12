@@ -11,6 +11,16 @@ The [specification](spec/DEADPAN_SPEC.md), [design targets](design/README.md) an
 
 ## Current status
 
+The `equalizer` replay covers buffered native EQ fields, invalid passbands,
+keyboard Apply/Cancel, complete typed recipes and removal, dot, macros, stale
+captures and one-play isolation. The final release passes 81 checks and actual
+paint/focus assertions at 960×640; the existing Gain and audio-treatment replays
+pass 296 and 123 checks. A separate performance run passes the same EQ checks.
+Inspected captures corrected Gain-labelled footer/owner rows while EQ was open;
+opening EQ no longer requests an unused Gain waveform. See
+[native EQ qualification](qualification/native-eq-2026-10-12.md) for exact
+timings, binary identities and retained offscreen/listening limits.
+
 The explicit `generated-playback` scenario exercises the real playback engine,
 app preview worker and complete offscreen Metal UI on a verified private copy
 of an accepted project. Run it with `--mode performance --project

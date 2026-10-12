@@ -1237,13 +1237,13 @@ impl Service {
         let (command, selected_node, message) = match edit {
             ProjectEdit::SetAudioTreatments { node, treatments } => {
                 if document.nodes()[&node].audio_treatments == treatments {
-                    self.message = Some("Gain is unchanged. No edit was made.".into());
+                    self.message = Some("Audio treatments are unchanged. No edit was made.".into());
                     return Ok(());
                 }
                 (
                     Command::SetAudioTreatments { node, treatments },
                     selected,
-                    "Gain updated and saved",
+                    "Audio treatments updated and saved",
                 )
             }
             ProjectEdit::SetFraming { node, framing } => {

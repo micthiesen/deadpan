@@ -282,6 +282,33 @@ impl GainEdit {
         self.recipe = self.recipe.with_saturation(saturation).map_err(message)?;
         Ok(())
     }
+
+    pub(crate) fn set_equalizer(
+        &mut self,
+        recipe: Option<deadpan_core::EqualizerRecipe>,
+    ) -> Result<(), String> {
+        self.recipe = self.recipe.with_equalizer(recipe).map_err(message)?;
+        Ok(())
+    }
+}
+
+/// Cut fields carry Hz in their label; command parameters additionally require
+/// the Hz suffix. No implicit kHz, rounding or reversed passband is accepted.
+pub(crate) fn parse_eq_cut(value: &str) -> Result<Option<deadpan_core::EqCutoffHz>, String> {
+    let value = value.trim();
+    if value.eq_ignore_ascii_case("off") {
+        return Ok(None);
+    }
+    let value = value.strip_suffix("Hz").unwrap_or(value);
+    if value.is_empty() || !value.bytes().all(|byte| byte.is_ascii_digit()) {
+        return Err("Use a whole frequency from 80 to 20000 Hz, or off.".into());
+    }
+    let hz = value
+        .parse::<u16>()
+        .map_err(|_| "Cutoff must be 80 to 20000 Hz.")?;
+    deadpan_core::EqCutoffHz::new(hz)
+        .map(Some)
+        .map_err(|error| error.to_string())
 }
 
 fn no_envelope() -> String {
@@ -298,6 +325,16 @@ fn message(error: deadpan_core::GainError) -> String {
 }
 
 /// Parse exact dB using integer thousandths, with no rounding or float path.
+pub(crate) fn parse_eq_db(input: &str) -> Result<GainDb, String> {
+    const ERROR: &str = "Enter exact EQ dB from -24 to +24 with at most three decimal places.";
+    let gain = parse_db(input).map_err(|_| ERROR.to_string())?;
+    if (-24_000..=24_000).contains(&gain.millidecibels()) {
+        Ok(gain)
+    } else {
+        Err(ERROR.into())
+    }
+}
+
 pub(crate) fn parse_db(input: &str) -> Result<GainDb, String> {
     let invalid = || "Enter exact dB from -96 to 24 with at most three decimal places.".to_owned();
     if input.len() > 64 {

@@ -11,7 +11,7 @@ tests prove each mode router acts on exactly them. Native shortcuts
 (menus, ⌘ chords, panel controls) are described, not router-verified.
 Headless status links to [PARITY](PARITY.md).
 
-204 actions, 127 command verbs.
+205 actions, 128 command verbs.
 
 ## Start & View
 
@@ -141,6 +141,7 @@ Headless status links to [PARITY](PARITY.md).
 | **Mute** (`gain.mute`)<br>Mute the Visual range inside the selected beat as a mute range, or toggle the whole beat's true mute without a range. The beat keeps its timing; one Undo. | `,m` (`gain.mute`) | `:gain-mute` | Your edit (Normal and Visual) | recorded; . repeats | [Equivalent](PARITY.md#audio-and-gain): `set_audio instruction (mute)` |
 | **Saturation** (`saturate`)<br>Drive the selected beat's sound into a soft clipper (tanh, 0 to 24 dB of drive) after its clip gain and before the master limiter, as intentional distortion; off removes it. One Undo. | - | `:saturate 12dB \| off` | Your edit | recorded; . repeats | [Equivalent](PARITY.md#audio-and-gain): `set_audio instruction (saturation)` |
 | **Stereo balance** (`balance`)<br>Balance the selected beat's stereo sound: negative is left, positive is right, and center removes the stage. The favored channel stays unchanged; the opposite channel fades linearly to silence at 100%. Balance follows gain and saturation, before the master limiter. One Undo; dot and macros retain the chosen value. | - | `:balance -50% \| +50% \| left \| right \| center` | Your edit | recorded; . repeats | [Equivalent](PARITY.md#audio-and-gain): `set_audio instruction (balance)` |
+| **EQ and filters** (`equalizer`)<br>Bare :eq opens an unsaved EQ editor with Before/Draft audition. Set bass, middle and treble within -24 to +24 dB, and optional low/high cuts from 80 to 20000 Hz. A typed recipe supplies all three bands; omitted cuts are off. :eq off removes only EQ. Whole-beat typed recipes support dot and macros; a selected play is isolated. Time, other treatments and authored order stay intact. One Undo. | - | `:eq \| bass=3dB middle=-6dB treble=0dB [low-cut=80Hz] [high-cut=12000Hz] \| off` | Your edit | recorded; . repeats | [Equivalent](PARITY.md#audio-and-gain): `set_audio instruction (equalizer)` |
 | **Offset sound from picture** (`audio-lag`)<br>Offset the selected beat's sound from its picture: later with + (:audio-lag +80ms), earlier with - (-2f), 0 realigns. The beat keeps its picture and timing; the inspector shows the offset beside the link. | - | `:audio-lag 3f` | Your edit | recorded; . repeats | [Equivalent](PARITY.md#audio-and-gain): `set_audio_lag instruction` |
 | **Sound edges** (`edge`)<br>Choose the selected beat's sound edges: hard cuts without the short automatic fade, auto restores it. plays sets every play's start and end inside a selected Repeat (its loop seams); gaps sets its gap edges. Picture and timing are unchanged. One Undo. | - | `:edge hard\|auto [start\|end\|both]` | Your edit | recorded; . repeats | [Equivalent](PARITY.md#audio-and-gain): `set_audio_edges instruction` |
 
@@ -283,13 +284,13 @@ Headless status links to [PARITY](PARITY.md).
 | **Apply room tone** (`room-tone.apply`)<br>Apply the prepared range to the pause as one undoable edit. Tab / Shift+Tab move through controls. | `Enter` (fixed) | - | Room tone | edits; not recorded | [Equivalent](PARITY.md#holds-pauses-and-punctuation): `command set_hold_audio, or set_room_tone instruction` |
 | **Cancel room tone** (`room-tone.cancel`)<br>Discard the draft. | `Esc` (fixed) | - | Room tone | not recorded | [GUI-only](PARITY.md#holds-pauses-and-punctuation): `none needed` |
 
-## Gain Draft
+## Gain And Eq Draft
 
 | Action | Keys | Command | Where | Macro / dot | Headless |
 | --- | --- | --- | --- | --- | --- |
-| **Compare the gain draft** (`gain.draft.audition`)<br>On the heading, audition. Before/Draft compares the same full-mix loop at its heard sample. Tab moves through fields and buttons. | `Space` (fixed) | - | Gain draft | not recorded | [GUI-only](PARITY.md#audio-and-gain): `none needed` |
-| **Apply the gain draft** (`gain.draft.apply`)<br>On the heading, apply the exact owner-output envelopes and mute ranges once. | `Enter` (fixed) | - | Gain draft | edits; not recorded | [Equivalent](PARITY.md#audio-and-gain): `command set_audio_treatments / edit_scoped` |
-| **Cancel the gain draft** (`gain.draft.cancel`)<br>Leave the draft without an edit. | `Esc` (fixed) | - | Gain draft | not recorded | [GUI-only](PARITY.md#audio-and-gain): `none needed` |
+| **Compare the audio draft** (`gain.draft.audition`)<br>On the heading, audition. Before/Draft compares the same full-mix loop at its heard sample. Tab moves through fields and buttons. | `Space` (fixed) | - | Gain draft | not recorded | [GUI-only](PARITY.md#audio-and-gain): `none needed` |
+| **Apply the audio draft** (`gain.draft.apply`)<br>On the heading, apply the prepared gain/envelope/mute or EQ recipe once. | `Enter` (fixed) | - | Gain draft | edits; not recorded | [Equivalent](PARITY.md#audio-and-gain): `command set_audio_treatments / edit_scoped` |
+| **Cancel the audio draft** (`gain.draft.cancel`)<br>Leave the draft without an edit. | `Esc` (fixed) | - | Gain draft | not recorded | [GUI-only](PARITY.md#audio-and-gain): `none needed` |
 
 ## Transcript Corrections
 

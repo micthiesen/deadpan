@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/tmp/deadpan-native-eq-20261012/bin/deadpan-app",
+    "--ui-check",
+    "--scenario",
+    "audio-treatments",
+    "--mode",
+    "visual",
+    "--hz",
+    "120",
+    "--output",
+    "/tmp/deadpan-native-eq-20261012/audio-treatments"
+  ],
+  "exit": 0,
+  "seconds": 13.525355416815728,
+  "log_sha256": "db56d1d953cd1f2fd376c241ca1e08ca9e726afdb9a27fb4bfdcb335ae19165d"
+}

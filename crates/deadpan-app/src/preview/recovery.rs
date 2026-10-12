@@ -321,8 +321,8 @@ impl DeadpanApp {
         if self.camera.is_some() {
             previews.push("Camera framing");
         }
-        if self.gain.is_some() {
-            previews.push("Gain");
+        if let Some(draft) = &self.gain {
+            previews.push(draft.editor_name());
         }
         if self.room_tone.is_some() {
             previews.push("Room tone");

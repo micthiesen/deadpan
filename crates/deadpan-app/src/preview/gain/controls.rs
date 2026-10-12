@@ -8,8 +8,10 @@ use deadpan_core::{
 use eframe::egui::{self, Color32, Id, Pos2, Rect, Sense, Stroke, Vec2};
 
 use crate::gain::{GainEdit, format_db, format_frames, parse_db, parse_frames};
+#[path = "equalizer.rs"]
+mod equalizer;
 
-const FIELD_NAMES: [&str; 9] = [
+const FIELD_NAMES: [&str; 14] = [
     "trim",
     "range-start",
     "range-end",
@@ -19,6 +21,11 @@ const FIELD_NAMES: [&str; 9] = [
     "control-two",
     "mute-start",
     "mute-end",
+    "eq-bass",
+    "eq-middle",
+    "eq-treble",
+    "eq-low",
+    "eq-high",
 ];
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -49,6 +56,8 @@ impl CurveChoice {
 }
 
 pub(super) struct Controls {
+    pub(super) equalizer_mode: bool,
+    equalizer: equalizer::Fields,
     pub(super) error: Option<String>,
     owner_frames: i64,
     trim: String,
@@ -71,6 +80,8 @@ pub(super) struct Controls {
 impl Controls {
     pub(super) fn new(edit: &GainEdit, owner_frames: i64) -> Self {
         let mut controls = Self {
+            equalizer_mode: false,
+            equalizer: equalizer::Fields::new(edit),
             error: None,
             owner_frames,
             trim: format_db(edit.trim()),
@@ -97,6 +108,9 @@ impl Controls {
     /// The parent may apply only the recipe the fields currently describe.
     /// Untouched fields do not create configured unity or otherwise edit intent.
     pub(super) fn ready(&self, edit: &GainEdit) -> bool {
+        if self.equalizer_mode {
+            return self.equalizer.ready(edit);
+        }
         self.error.is_none()
             && !self.trim_pending(edit)
             && !self.envelope_pending(edit)
@@ -117,6 +131,9 @@ impl Controls {
         edit: &mut GainEdit,
         mut waveform: impl FnMut(&mut egui::Ui, i64),
     ) -> bool {
+        if self.equalizer_mode {
+            return self.equalizer.show(ui, edit);
+        }
         let before = edit.recipe().clone();
         ui.vertical(|ui| {
             self.trim_row(ui, edit);

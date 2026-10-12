@@ -36,8 +36,11 @@ persisted treatment and PCM increment's review, verification and remaining limit
 
 The [equalizer processor](EQUALIZER.md) stores its validated static recipe as an
 ordered treatment and recursively processes shared Original/sound owners.
-See [shared EQ qualification](qualification/shared-eq-2026-10-12.md); native EQ
-authoring and remaining automation/send/tail work stay open.
+See [shared EQ qualification](qualification/shared-eq-2026-10-12.md).
+[Native EQ](qualification/native-eq-2026-10-12.md) now uses the captured draft,
+Before/Draft comparison and one-step Apply/Cancel lifecycle through `:eq`, with
+complete typed recipes for dot and macros. Remaining automation/send/tail work
+stays open.
 
 `AudioTreatments` has an explicitly serialized closed stage order. Its current
 vocabulary is `ClipGain`, `Equalizer`, `Saturation` and final `StereoBalance`;

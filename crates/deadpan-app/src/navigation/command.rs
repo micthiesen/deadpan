@@ -4,6 +4,7 @@ use deadpan_core::FrameDuration;
 
 use super::{Action, BeatEdit, duration::DurationInput};
 
+mod equalizer;
 pub(crate) mod generate;
 pub(crate) mod interpretation;
 
@@ -113,6 +114,8 @@ pub enum Entry {
     Saturate(Option<deadpan_core::Saturation>),
     /// Signed whole-percent stereo balance; None restores center.
     Balance(Option<deadpan_core::StereoBalance>),
+    EqualizerEdit,
+    Equalizer(Option<deadpan_core::EqualizerRecipe>),
     Scope(ScopeChoice),
     /// Tenths of one percent, independent of authored or export gain.
     Monitor(u16),
@@ -539,6 +542,9 @@ pub fn parse(input: &str) -> Result<Entry, String> {
             millidecibels,
             range,
         });
+    }
+    if verb.eq_ignore_ascii_case("eq") {
+        return equalizer::parse(words);
     }
     let argument = words.next();
     if words.next().is_some() {

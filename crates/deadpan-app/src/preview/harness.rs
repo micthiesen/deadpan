@@ -25,6 +25,7 @@ mod damaged;
 mod delete_range;
 mod diagnostics;
 mod edit_latency;
+mod equalizer;
 mod faces;
 mod full_session;
 mod gags;

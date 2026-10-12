@@ -3127,6 +3127,12 @@ impl DeadpanApp {
             Ok(navigation::command::Entry::Balance(balance)) => {
                 self.balance_command(gain_target, macro_target, balance)
             }
+            Ok(navigation::command::Entry::Equalizer(recipe)) => {
+                self.equalizer_command(gain_target, macro_target, recipe)
+            }
+            Ok(navigation::command::Entry::EqualizerEdit) => {
+                self.open_equalizer(gain_target, context)
+            }
             Ok(navigation::command::Entry::Slip(amount)) => {
                 self.open_slip(slip_target, amount, context)
             }
@@ -3693,9 +3699,9 @@ impl DeadpanApp {
                 self.youtube_footer(ui);
                 return;
             }
-            if self.gain.is_some() {
+            if let Some(draft) = &self.gain {
                 ui.horizontal_wrapped(|ui| {
-                    ui.colored_label(style::LAVENDER, "GAIN DRAFT · UNSAVED");
+                    ui.colored_label(style::LAVENDER, format!("{} DRAFT · UNSAVED", draft.editor_name().to_ascii_uppercase()));
                     ui.weak(self.beat_scope_label());
                     style::key_hint(ui, "Tab", "reveal controls");
                     style::key_hint(ui, registry::mode_label("gain.draft.audition"), "audition on heading");
@@ -4219,10 +4225,10 @@ impl DeadpanApp {
         }
         style::beat_panel(layout).show(ui, |ui| {
             ui.spacing_mut().item_spacing.y = 4.0;
-            if self.gain.is_some() {
+            if let Some(draft) = &self.gain {
                 if let Some(beat) = self.beat_rows.iter().find(|beat| self.selected_beat.as_ref() == Some(&beat.id)) {
                     ui.horizontal(|ui| {
-                        ui.weak("GAIN OWNER");
+                        ui.weak(format!("{} OWNER", draft.editor_name().to_ascii_uppercase()));
                         { let text = format!("{} · {} f · {}", beat.label, beat.frames, self.beat_scope_label()); accessibility::full_text(ui.add(egui::Label::new(&text).truncate()), &text) }
                             .on_hover_text(&beat.label);
                     });

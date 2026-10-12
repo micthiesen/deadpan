@@ -150,9 +150,9 @@ and write nothing. Headless requests carry an explicit `parent`, `cursor`,
 
 | GUI | Headless | Checks | Status |
 |---|---|---|---|
-| `+` / `-`, `:gain ±dB`, `:gain +=dB`, `,m`, `:gain-mute`, `:saturate`, `:balance` | `set_audio` instruction (`trim`, `step`, `range_step`, `mute`, `saturation`, `balance`) | R, D | Equivalent |
-| Gain sheet draft (Before/Draft audition, waveform) | interactive | - | GUI-only |
-| Gain sheet Apply, scoped gain | `command` `set_audio_treatments` / `edit_scoped` | R, D | Equivalent |
+| `+` / `-`, `:gain ±dB`, `:gain +=dB`, `,m`, `:gain-mute`, `:saturate`, `:balance`, typed `:eq …` / `:eq off` | `set_audio` instruction (`trim`, `step`, `range_step`, `mute`, `saturation`, `balance`, `equalizer`) | R, D | Equivalent |
+| Gain/EQ sheet draft (Before/Draft audition, Gain waveform) | interactive | - | GUI-only |
+| Gain/EQ sheet Apply, scoped audio treatment | `command` `set_audio_treatments` / `edit_scoped` | R, D | Equivalent |
 | `:edge hard|auto …` | `set_audio_edges` instruction; `set_audio_edge` command | R, D | Equivalent |
 | `:audio-lag` | `set_audio_lag` instruction | R, D | Equivalent |
 | `:proxies on|off|retry` | none (personal app setting, not project state) | - | GUI-only |
@@ -274,7 +274,7 @@ registry action.
   `selected_child` and `visual_selection` explicitly.
 - **Audition and monitoring**: hearing is not reproducible headlessly;
   `inspect-audio` reads the exact PCM at any processing stage instead.
-- **Interactive drafts and panels** (Trim, Slip, Place slice, Camera, Gain,
+- **Interactive drafts and panels** (Trim, Slip, Place slice, Camera, Gain, EQ,
   Room tone, AI preview and compare): their pictures, waveforms and audition
   respond to a person. Each panel ends in one write, which is an Equivalent
   row, and each such command has a `--dry-run` returning the exact proposal.

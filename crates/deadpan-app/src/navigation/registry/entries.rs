@@ -1087,6 +1087,20 @@ pub static SPECS: &[Spec] = &[
         help: "Balance the selected beat's stereo sound: negative is left, positive is right, and center removes the stage. The favored channel stays unchanged; the opposite channel fades linearly to silence at 100%. Balance follows gain and saturation, before the master limiter. One Undo; dot and macros retain the chosen value.",
     },
     Spec {
+        id: "equalizer",
+        name: "EQ and filters",
+        section: Section::Audio,
+        keys: &[],
+        commands: &[verb(
+            "eq",
+            ":eq | bass=3dB middle=-6dB treble=0dB [low-cut=80Hz] [high-cut=12000Hz] | off",
+        )],
+        contexts: C::EDIT,
+        replay: Replay::RecordedAndDot,
+        headless: eq("set_audio instruction (equalizer)", AUDIO),
+        help: "Bare :eq opens an unsaved EQ editor with Before/Draft audition. Set bass, middle and treble within -24 to +24 dB, and optional low/high cuts from 80 to 20000 Hz. A typed recipe supplies all three bands; omitted cuts are off. :eq off removes only EQ. Whole-beat typed recipes support dot and macros; a selected play is isolated. Time, other treatments and authored order stay intact. One Undo.",
+    },
+    Spec {
         id: "audio-lag",
         name: "Offset sound from picture",
         section: Section::Audio,
@@ -2214,7 +2228,7 @@ pub static SPECS: &[Spec] = &[
     // GAIN DRAFT
     Spec {
         id: "gain.draft.audition",
-        name: "Compare the gain draft",
+        name: "Compare the audio draft",
         section: Section::GainDraft,
         keys: &[mode(Mode::Gain, "Space", &[chord(Key::Space, Plain)])],
         commands: &[],
@@ -2225,18 +2239,18 @@ pub static SPECS: &[Spec] = &[
     },
     Spec {
         id: "gain.draft.apply",
-        name: "Apply the gain draft",
+        name: "Apply the audio draft",
         section: Section::GainDraft,
         keys: &[mode(Mode::Gain, "Enter", &[chord(Key::Enter, Plain)])],
         commands: &[],
         contexts: C::GAIN,
         replay: Replay::NotRecorded,
         headless: eq("command set_audio_treatments / edit_scoped", AUDIO),
-        help: "On the heading, apply the exact owner-output envelopes and mute ranges once.",
+        help: "On the heading, apply the prepared gain/envelope/mute or EQ recipe once.",
     },
     Spec {
         id: "gain.draft.cancel",
-        name: "Cancel the gain draft",
+        name: "Cancel the audio draft",
         section: Section::GainDraft,
         keys: &[mode(Mode::Gain, "Esc", &[chord(Key::Escape, Plain)])],
         commands: &[],

@@ -415,11 +415,11 @@ impl DeadpanApp {
                 }
             };
             ui.spacing_mut().item_spacing.y = 4.0;
-            if self.gain.is_some() {
+            if let Some(draft) = &self.gain {
                 if let Some(row) = rows.iter().find(|row| row.selected) {
                     let label = format!("{} · {}", row.label, self.beat_scope_label());
                     ui.horizontal(|ui| {
-                        ui.weak("GAIN OWNER");
+                        ui.weak(format!("{} OWNER", draft.editor_name().to_ascii_uppercase()));
                         accessibility::full_text(
                             ui.add(egui::Label::new(&label).truncate()),
                             &label,

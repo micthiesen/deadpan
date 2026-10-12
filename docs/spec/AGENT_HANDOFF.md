@@ -4,6 +4,21 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Native EQ](../qualification/native-eq-2026-10-12.md) now uses `:eq` and an
+inspector action for a captured unsaved editor, or complete typed recipes for
+dot/macros. The existing Gain draft owns proposals, audition and Apply/Cancel;
+its EQ mode uses five buffered fields and skips the unused waveform request.
+Set validates bands/cuts together, removal preserves other stages, and stale
+captures cannot retarget. EQ footer, owner and unsaved-close labels are explicit.
+
+The primary agent worked alone. The full app suite passes 1120 tests with nine
+existing opt-in ignores; final focused tests, workspace Clippy, normal build
+and release replays pass. EQ/Gain/audio visual checks total 500, and the separate
+EQ performance replay passes 81. Final captures and exact metrics are retained.
+Continue with independently timed automation, arbitrary sends/incoming tails,
+broader binding/Repeat/Preserve coverage and persistent filtered caching.
+DP-09/DP-16 and the full product goal remain open.
+
 [Shared EQ](../qualification/shared-eq-2026-10-12.md) now uses `shared_mix.rs`
 and `shared_eq.rs` for projects with independent sounds. Prepared root and beat
 voices keep separate lifetimes for current owners and historical plans. Each
@@ -21,7 +36,7 @@ and is covered by a bit-exact regression. The blanket mixed-EQ guards are gone.
 
 All 970 plan/audio tests, strict workspace Clippy and release preview/export pass:
 54 pictures, 83 audio blocks, two zero-offset windows. The primary agent worked
-alone. Continue with native EQ authoring and the remaining independently timed
+alone. Native EQ authoring is now covered above; continue with independently timed
 automation, arbitrary sound sends/incoming-tail lifecycle, wider binding/Repeat/
 Preserve qualification and persistent filtered caching. Do not mark DP-09/DP-16
 or the full product complete. No realtime, device or listening claim was added.
@@ -50,8 +65,8 @@ Tail input omits shared owners and processes their output once. A 70-play
 regression caught and fixed treating each whole-Repeat play as another EQ owner.
 The real release CLI commits EQ and passes preview/emitted-file verification.
 
-The later shared graph above adds independent sounds. Remaining native,
-automation, send/tail, persistent-cache and performance work is still required.
+The later shared graph above adds independent sounds. Remaining automation,
+send/tail, persistent-cache and performance work is still required.
 The full goal and DP-09/DP-16 remain open.
 
 The earlier [ordered owner EQ](../qualification/owner-eq-2026-10-11.md) provides checked

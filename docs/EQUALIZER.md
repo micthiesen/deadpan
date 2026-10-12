@@ -7,7 +7,35 @@ The shared authored bus recursively evaluates EQ on Original and independent
 sound owners, including nested groups and retained history, before mastering.
 Shared saturation processes the combined sum in its authored order. Preview
 and emitted-file verification pass for the real headless Render path. Native
-authoring controls and remaining automation/send/tail work remain open.
+authoring uses a captured draft or complete typed recipe. Independently timed
+automation and remaining send/tail work remain open.
+
+## Native authoring
+
+Select a beat in Your edit and use **EQ and filters…** in the inspector or
+`:eq`. Tab moves through bass, middle, treble and optional low/high cutoff
+fields. **Set EQ** validates all five values together and prepares an unsaved
+recipe; invalid or unfinished fields disable Apply while retaining the last
+valid draft. **Reset fields** discards buffered text. **Remove EQ** removes
+only this stage. An untouched editor never inserts a unity stage.
+
+Before/Draft shares Gain's captured full-mix audition window. Space on the
+heading auditions, Enter on the heading or Apply commits once, and Escape
+restores the entry state. Enter in a text field never commits the project.
+The editor retains both clocks, other treatments and serialized order. It
+uses the existing immutable proposal worker and requests no hidden waveform.
+
+For a complete, recordable recipe:
+
+```text
+:eq bass=3dB middle=-6dB treble=1.5dB low-cut=80Hz high-cut=12000Hz
+:eq off
+```
+
+All three unit-bearing band values are required; omitted cutoffs mean off.
+Whole-beat typed commands support dot and macros. A selected Repeat play is
+isolated through the same captured reversible edit path. Stale or absent targets
+cannot adopt a later selection. See [native EQ qualification](qualification/native-eq-2026-10-12.md).
 
 ## Stored and recursive processing
 
@@ -23,7 +51,7 @@ preserve EQ. A semantic change has the form:
 
 `recipe: null` removes EQ. This uses the ordinary selected-owner transaction,
 compound replay and undo path. The native inspector reports stored band and cut
-parameters; a native EQ authoring command has not yet been added.
+parameters; the native editor and typed command above use this same recipe.
 Frozen audio contexts capture schema 10 and authenticate the ordered recipe;
 older schema declarations reject EQ rather than adopting new semantics.
 
@@ -73,9 +101,8 @@ event edges and gain, retaining f64 sums. Expanded history keeps the original
 rounded delivery anchor instead of rounding a new crop boundary; a fractional
 copy regression caught a one-sample shift in the first implementation.
 See [saved sound input qualification](qualification/beat-sound-owner-input-2026-10-11.md).
-The authored group EQ graph still needs to consume these per-voice preparations;
-the explicit mixed-EQ restriction remains until stage ordering and final
-per-voice policy are wired.
+The shared graph now consumes these per-voice preparations with authored stage
+ordering and final per-voice policy, as described above.
 
 `RenderPlan::audio_owner_input` now resolves an observed owner's raw processing
 context with one bounded query allowance. The handle belongs to that immutable
@@ -197,13 +224,13 @@ while still admitting both complete input channels and honoring cancellation.
 
 ## Integration still owed
 
-Complete captured native controls and independently timed automation. Extend
+Complete independently timed automation. Extend
 qualification across the remaining nested bindings, copies, Repeats and
 time/pitch interactions, and complete arbitrary sends with incoming-tail policy.
 Request-local filtering is implemented; persistent cache reuse across preview,
 cold seeks, loops and export, and measured interactive latency remain required.
 
 DP-09 remains partial. The qualified shared preview/export path does not close
-the remaining voice/send/tail interactions or final native workflow. These remain
+the remaining voice/send/tail interactions or all native audio workflows. These remain
 agent work under the full specification. Listening and other hardware remain
 subject to the existing owner-verification scope.

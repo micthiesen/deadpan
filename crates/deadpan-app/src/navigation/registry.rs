@@ -392,7 +392,7 @@ impl Section {
             Self::Slip => "SLIP PREVIEW",
             Self::Splice => "PLACE SLICE",
             Self::RoomTone => "ROOM TONE SHEET",
-            Self::GainDraft => "GAIN DRAFT",
+            Self::GainDraft => "GAIN AND EQ DRAFT",
             Self::Corrections => "TRANSCRIPT CORRECTIONS",
             Self::Marks => "MARKS PANEL",
             Self::Jobs => "JOBS PANEL",

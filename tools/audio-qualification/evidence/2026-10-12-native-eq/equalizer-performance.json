@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/tmp/deadpan-native-eq-20261012/bin/deadpan-app",
+    "--ui-check",
+    "--scenario",
+    "equalizer",
+    "--mode",
+    "performance",
+    "--hz",
+    "120",
+    "--output",
+    "/tmp/deadpan-native-eq-20261012/equalizer-performance"
+  ],
+  "exit": 0,
+  "seconds": 12.597592208068818,
+  "log_sha256": "1092799c0e65b7bdf3a63ff15a54cc6d8e00823b03f7ce552138323a053738f2"
+}

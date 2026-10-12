@@ -511,7 +511,8 @@ impl DeadpanApp {
                 | navigation::command::Entry::GainStep(_)
                 | navigation::command::Entry::GainMute
                 | navigation::command::Entry::Saturate(_)
-                | navigation::command::Entry::Balance(_),
+                | navigation::command::Entry::Balance(_)
+                | navigation::command::Entry::Equalizer(_),
             ) => self.macro_action_allowed(Action::GainStep(0)),
             // Recorded as one semantic caption, checked like a whole-beat cutaway.
             Ok(navigation::command::Entry::Caption(_)) => self.macro_action_allowed(Action::Edit(

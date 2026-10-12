@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/tmp/deadpan-native-eq-20261012/bin/deadpan-app",
+    "--ui-check",
+    "--scenario",
+    "gain",
+    "--mode",
+    "visual",
+    "--hz",
+    "120",
+    "--output",
+    "/tmp/deadpan-native-eq-20261012/gain"
+  ],
+  "exit": 0,
+  "seconds": 16.626412832643837,
+  "log_sha256": "4f64fe496d2d32e5e8c730f3794f6a1d372404300c42c34278f28456795ed698"
+}
