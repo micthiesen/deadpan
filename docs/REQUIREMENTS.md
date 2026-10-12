@@ -4,6 +4,14 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 
 ## Resumed implementation, 2026-10-06
 
+[Owner input contexts](qualification/owner-input-2026-10-11.md) now retain
+hidden Sequence/Repeat input and preserve enclosing time/pitch processors.
+The shared PCM reader evaluates their output edges; separate checked reference
+maps expose resumed history before current delivery. Cold decoded PCM and a
+cropped-group EQ comparison verify this prerequisite. Ordered authored EQ,
+mixed-voice silence/tail policy, native controls and preview/export integration
+remain agent work; DP-09 and DP-16 remain partial.
+
 [Equalizer parameters and processing](qualification/eq-recipe-2026-10-11.md)
 add exact bounded three-band gains and low/high cuts through one compensated
 finite kernel. All 1,051 core and 523 audio tests pass, including response,

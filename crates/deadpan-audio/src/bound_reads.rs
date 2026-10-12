@@ -5,6 +5,9 @@ use deadpan_core::*;
 #[path = "bound_reads/source_origin.rs"]
 mod source_origin;
 
+#[path = "bound_reads/owner_input.rs"]
+mod owner_input;
+
 fn id(value: &str) -> NodeId {
     NodeId::new(value).unwrap()
 }

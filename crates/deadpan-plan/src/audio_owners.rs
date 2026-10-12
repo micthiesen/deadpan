@@ -62,6 +62,18 @@ pub struct AudioOwnerClock<'plan, S = AudioSample> {
 }
 
 impl<'plan> AudioOwnerClock<'plan> {
+    pub(super) fn same_at(&self, other: &AudioOwnerClock<'_>, at: AudioSample) -> bool {
+        self.belongs_to(other.plan)
+            && self.definition == other.definition
+            && self.instance == other.instance
+            && self.kind == other.kind
+            && self.gap_after == other.gap_after
+            && self.play == other.play
+            && self.origin == other.origin
+            && self.sampling.local_frames_per_sample() == other.sampling.local_frames_per_sample()
+            && matches!((self.sampling.local_at(at), other.sampling.local_at(at)), (Ok(a), Ok(b)) if a == b)
+    }
+
     /// Record the play this owner's span lies in, for a Repeat owner.
     pub(crate) fn with_play(mut self, play: Option<u32>) -> Self {
         self.play = play;

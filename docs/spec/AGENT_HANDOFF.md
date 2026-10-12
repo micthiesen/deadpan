@@ -4,6 +4,19 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Owner input contexts](../qualification/owner-input-2026-10-11.md) now provide
+`RenderPlan::audio_owner_input`, checked whole-group/Repeat domains, explicit
+enclosing-processor scope and `StageAudio::read_owner_input` through the shared
+time/pitch and creative-edge reader. `retained_at` separately exposes a resumed
+binding's full RootRoundEven/PointCeil operand and exact reference map. A current
+delivery domain alone still does not contain that full resumed history.
+Cold decoded PCM, a cropped-group EQ comparison and transferred hidden history
+pass. Continue with the actual ordered effect graph: transport reference output
+edges, evaluate gain/mute on the correct side of EQ, retain contribution identity
+through group sums and apply per-voice silence/tail permissions. These handles
+are prerequisites, not an isolated-owner mix or authored EQ implementation.
+Then add captured commands and real preview/export. No scope was removed.
+
 [Equalizer recipes and DSP](../qualification/eq-recipe-2026-10-11.md) now provide
 validated ±24 dB bass/middle/treble gains, 80–20,000 Hz low/high cuts and one
 4,097-tap compensated kernel. All 1,051 core and 523 audio tests pass; frequency

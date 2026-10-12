@@ -436,7 +436,7 @@ impl RenderPlan {
             seed,
             stop_at_preserve,
             stop_at_bindings,
-            (capture, None),
+            (capture, None, None),
         )
     }
 
@@ -454,8 +454,26 @@ impl RenderPlan {
             seed,
             stops.0,
             stops.1,
-            (None, Some(editorial)),
+            (None, Some(editorial), None),
         )
+    }
+
+    pub(super) fn audio_walk_owner_input(
+        &self,
+        sample: AudioSample,
+        budget: &mut Budget,
+        owner: &super::AudioOwnerClock<'_>,
+        capture: &mut Option<AudioDomainSeed>,
+    ) -> Result<(), PlanError> {
+        self.audio_walk_inner(
+            sample,
+            budget,
+            None,
+            true,
+            true,
+            (Some(capture), None, Some(owner)),
+        )?;
+        Ok(())
     }
 
     fn audio_walk_inner<'plan>(
@@ -468,9 +486,10 @@ impl RenderPlan {
         captures: (
             Option<&mut Option<AudioDomainSeed>>,
             Option<&mut EditorialCapture>,
+            Option<&super::AudioOwnerClock<'_>>,
         ),
     ) -> Result<AudioWalkSpan<'plan>, PlanError> {
-        let (capture, editorial_capture) = captures;
+        let (mut capture, editorial_capture, input_owner) = captures;
         let rate = self.metadata.presentation_basis.frame_rate;
         let mut transform = AudioTransform {
             project_origin: ExactRatio::ZERO,
@@ -595,6 +614,52 @@ impl RenderPlan {
             retain_incident_editorial(&mut editorial, &node_extent, grid, budget)?;
             inherited_editorial = editorial.len();
             extent = intersect(extent, node_extent.clone())?;
+            // Capture the whole owner before descending into its current
+            // child. Transparent crops restrict delivery, not this context.
+            // A Preserve or retained binding encountered earlier stops the
+            // walk and is captured below instead: its DSP must stay intact.
+            if let Some(owner) = input_owner
+                && owner.kind() == super::AudioOwnerKind::Node
+                && owner.definition() == definition
+                && owner.instance().node == node.inspection.id
+                && owner.instance().repeats == repeats
+                && let Some(capture) = capture.as_deref_mut()
+                && capture.is_none()
+            {
+                let support = match &inherited_envelope {
+                    Some(envelope) => intersect(node_extent.clone(), envelope.clone())?,
+                    None => node_extent.clone(),
+                };
+                budget.spend(
+                    inherited_constraints + inherited_editorial + repeats.len() + retimes.len() + 1,
+                )?;
+                let samples = grid.boundary(support.start)?..grid.boundary(support.end)?;
+                if !samples.contains(&sample) {
+                    return Err(PlanError::InvalidPlan(
+                        "owner input excludes its visible sample",
+                    ));
+                }
+                *capture = Some(AudioDomainSeed {
+                    walk: AudioWalkSeed {
+                        definition: definition.cloned(),
+                        bypass_binding,
+                        node: current,
+                        transform,
+                        grid,
+                        extent: support,
+                        envelope: inherited_envelope.clone(),
+                        constraints: constraints[..inherited_constraints].to_vec(),
+                        editorial: editorial[..inherited_editorial].to_vec(),
+                        suppress_entry_editorial,
+                        repeats: repeats.clone(),
+                        retimes: retimes.clone(),
+                        gap: None,
+                    },
+                    samples,
+                    visible: grid.boundary(extent.start)?..grid.boundary(extent.end)?,
+                    instance: owner.instance().clone(),
+                });
+            }
             let suppressed = std::mem::take(&mut suppress_entry_editorial);
             let own_editorial = deadpan_core::AudioEditorialEdges {
                 start: node.audio_editorial_edges.start && !suppressed.start,
@@ -886,7 +951,9 @@ impl RenderPlan {
         let mut envelope = AudioExtent::new(
             envelope.ok_or(PlanError::InvalidPlan("audio has no envelope domain"))?,
         );
-        if let Some(capture) = capture {
+        if let Some(capture) = capture
+            && capture.is_none()
+        {
             budget.spend(
                 inherited_constraints + inherited_editorial + repeats.len() + retimes.len() + 1,
             )?;

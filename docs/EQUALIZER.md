@@ -6,6 +6,37 @@ now implement the parameter and numerical parts. They are not yet connected to
 `AudioTreatments`, project commands, native controls or the shared authored bus.
 Editor playback and export therefore retain their existing treatment chain.
 
+## Owner input contexts
+
+`RenderPlan::audio_owner_input` now resolves an observed owner's raw processing
+context with one bounded query allowance. The handle belongs to that immutable
+plan and occurrence. It rejects foreign plans, absent owners, changed Repeat
+plays and incompatible clocks. A Sequence or whole Repeat keeps its complete
+subtree, including hidden siblings behind a transparent Partition, on the
+original absolute sample grid.
+
+The first enclosing Preserve or retained binding remains opaque. The handle
+reports `EnclosingProcessor` when its output also contains other descendant
+owners. Its output must not be mistaken for the requested owner's isolated
+contribution, and the effect must not move into that processor's input.
+`StageAudio::read_owner_input` evaluates this delivery context through the
+existing bounded time/pitch, policy and creative-edge path. It does not sum
+independent sounds or apply authored treatments.
+
+A resumed binding's current delivery interval can hide earlier reference
+history. `AudioOwnerInput::retained_at` separately exposes its checked full
+`AudioBoundDomain` and exact consumer-to-reference sample map. RootRoundEven
+and PointCeil labels remain distinct. The existing domain/point readers and
+domain transfer evaluate that history without looking up the same positions
+through an unrelated current-root sibling. This is raw retained PCM before
+creative output edges; the shared effect graph still needs to combine its
+history, transported fades and ordered treatments.
+
+[Owner-input qualification](qualification/owner-input-2026-10-11.md) compares
+cold reads against uncropped PCM, feeds a cropped group's complete history into
+the actual EQ processor, and verifies retained history before current delivery.
+It does not qualify authored EQ, mixed-voice permissions or the editor workflow.
+
 ## Recipe
 
 The bounded recipe has three complementary tone bands: bass below 250 Hz,
@@ -60,8 +91,9 @@ while still admitting both complete input channels and honoring cancellation.
 ## Integration still owed
 
 Add the ordered authored stage, typed command and captured editor controls.
-Resolve complete owner input before clipping current allocation, preserving
-historical clocks, copies, Repeats and nested time/pitch stages. Sum and process
+Use the checked contexts and reference maps to evaluate complete owner input
+before clipping current allocation, preserving historical clocks, copies,
+Repeats and nested time/pitch stages. Sum and process
 group-owned contributions once, with correct order relative to gain and
 saturation. Apply silence and incoming-tail permission per voice, including
 independently permitted sounds under a silent Hold. Admit aggregate graph work

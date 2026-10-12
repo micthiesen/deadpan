@@ -1,0 +1,109 @@
+[
+  {
+    "name": "fmt",
+    "argv": [
+      "cargo",
+      "fmt",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "started_utc": "2026-10-12T02:39:33.377171+00:00",
+    "seconds": 4.657407165970653,
+    "exit_code": 0
+  },
+  {
+    "name": "tests",
+    "argv": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-plan",
+      "-p",
+      "deadpan-audio"
+    ],
+    "started_utc": "2026-10-12T02:39:38.035074+00:00",
+    "seconds": 136.95315299974754,
+    "exit_code": 0
+  },
+  {
+    "name": "clippy",
+    "argv": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "--workspace",
+      "--all-targets",
+      "--features",
+      "ui-harness",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "started_utc": "2026-10-12T02:41:54.989201+00:00",
+    "seconds": 35.970660583116114,
+    "exit_code": 0
+  },
+  {
+    "name": "whitespace",
+    "argv": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "started_utc": "2026-10-12T02:42:30.960295+00:00",
+    "seconds": 0.03484783275052905,
+    "exit_code": 0
+  },
+  {
+    "name": "final-fmt",
+    "argv": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "started_utc": "2026-10-12T02:43:20.582322+00:00",
+    "seconds": 4.6829895419068635,
+    "exit_code": 0
+  },
+  {
+    "name": "final-owner-tests",
+    "argv": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-plan",
+      "--lib",
+      "audio_owners::tests::input"
+    ],
+    "started_utc": "2026-10-12T02:43:25.265662+00:00",
+    "seconds": 1.2397368331439793,
+    "exit_code": 0
+  },
+  {
+    "name": "final-fmt-check",
+    "argv": [
+      "cargo",
+      "fmt",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "started_utc": "2026-10-12T02:43:26.505638+00:00",
+    "seconds": 4.8400052092038095,
+    "exit_code": 0
+  },
+  {
+    "name": "final-whitespace",
+    "argv": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "started_utc": "2026-10-12T02:43:31.345974+00:00",
+    "seconds": 0.03282429091632366,
+    "exit_code": 0
+  }
+]

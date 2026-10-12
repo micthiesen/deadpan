@@ -1,0 +1,23 @@
+{
+  "base_revision": "ec9cde4ca2aaeea875ad31549aba3c9ae61439ea",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: aarch64-apple-darwin\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+  "macos": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84\n",
+  "ffmpeg_prefix": "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix",
+  "sources": {
+    "crates/deadpan-audio/src/bound_reads.rs": "6b5b36d67e558cfb9aceca901cc682566d38c6dd30f9a936a931f09414bdc38a",
+    "crates/deadpan-audio/src/bound_reads/owner_input.rs": "92d5e324dd1e52ae0d35d8a8296c8b9e43e59865d80a317a9e60fc20b43ab627",
+    "crates/deadpan-audio/src/stages.rs": "c81b0611fd2f1d5ec47bb101e1ae1071fd08673313590f634a6c6caf88cfc566",
+    "crates/deadpan-plan/src/audio.rs": "c831dc42ce66d391d563c911907bf5a4893aff8598fa0f88834a52d1bdc3f480",
+    "crates/deadpan-plan/src/audio_domain.rs": "5fec564aa53ca4b8aaae7b429cedfe339cc4cc279357d84ba31e1614bcce8cbd",
+    "crates/deadpan-plan/src/audio_owner_input.rs": "1f6b588838025cecc81006c704edf71f6ec4b9d976a482824c115e0aebeac855",
+    "crates/deadpan-plan/src/audio_owners.rs": "45d3d723c35ea47f2327b81c99d940db5aa3ec1911086856364c0dd047b984aa",
+    "crates/deadpan-plan/src/audio_owners/input_tests.rs": "01a79a41fac87037c0771bd7d342a984294748e8187147489248884a533d4a84",
+    "crates/deadpan-plan/src/audio_owners/tests.rs": "a52ead6cca62cbcb8b53c1b3cca583146b9fa1381222c1d7170aeb00d7123100",
+    "crates/deadpan-plan/src/lib.rs": "c4c8589965570d4d31c85279118f8857207c1e141efa752f6d480491f7dedee4",
+    "crates/deadpan-plan/src/plan.rs": "9dd6b9c1e9cd2e23c891960870b56d31fb3650b0dafc220ec0d1d09f67b8b050",
+    "Cargo.lock": "9d911d67520092b729ae0e5933a39fc57f0ab4933b7d94b2d72d55a125fca93e",
+    "rust-toolchain.toml": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc",
+    "native/deadpan-source/tests/audio-fixtures/pcm-stereo-48000.wav": "e79aba90eab42dc057171be52be9ecb794c3e2790c5731783270ece73c24d2ee"
+  },
+  "validation_note": "Full suites passed before adding the PointCeil regression and documentation/private-field refinements; the final six owner-input plan tests pass after those changes. Workspace Clippy included the added regression. Final formatting changes no behavior."
+}

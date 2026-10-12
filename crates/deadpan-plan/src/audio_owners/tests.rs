@@ -4,6 +4,9 @@ use deadpan_core::*;
 
 use super::*;
 
+#[path = "input_tests.rs"]
+mod input;
+
 fn id(value: &str) -> NodeId {
     NodeId::new(value).unwrap()
 }

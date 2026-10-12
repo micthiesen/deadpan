@@ -56,7 +56,10 @@ pub use plan::{
     AudioOwnerClock, AudioOwnerClockOrigin, AudioOwnerKind, AudioOwnerQuery, AudioOwnerSpan,
     AudioOwnerSupport,
 };
-pub use plan::{AudioOwnerOccurrence, AudioOwnerOccurrenceMap, AudioOwnerOccurrences};
+pub use plan::{
+    AudioOwnerInput, AudioOwnerInputScope, AudioOwnerOccurrence, AudioOwnerOccurrenceMap,
+    AudioOwnerOccurrences, AudioOwnerRetainedInput,
+};
 pub use plan::{
     AudioProcessingQuery, AudioProcessingSpan, AudioSignal, AudioSignalContent, AudioSignalQuery,
     AudioSignalSpan, AudioStage, AudioStageDescriptor, SignalSample, SignalTransform,

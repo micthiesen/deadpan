@@ -121,10 +121,11 @@ pub(super) struct AudioDomainSeed {
     pub(super) instance: InstancePath,
 }
 
-/// One physical leaf, Repeat gap or nonunity Preserve output, borrowed from
-/// the plan that resolved it. An optional definition scope distinguishes an
-/// explicitly placed owned recipe from a project occurrence. Transparent
-/// allocation may hide support; the absolute round-even root grid never changes.
+/// A physical leaf, Repeat gap, nonunity Preserve output or checked owner
+/// subtree, borrowed from the plan that resolved it. An optional definition
+/// scope distinguishes an explicitly placed owned recipe from a project
+/// occurrence. Transparent allocation may hide support; the absolute round-even
+/// root grid never changes.
 ///
 /// This handle is neither serialized admission nor an authored resume binding.
 #[derive(Debug, Clone)]

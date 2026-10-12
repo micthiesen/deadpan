@@ -1136,6 +1136,63 @@ impl StageAudio {
         control: WorkControl<'_>,
         depth: usize,
     ) -> Result<ReadBlock, StageAudioError> {
+        self.read_context_controlled(provider, domain, start, frames, control, (depth, false))
+    }
+
+    /// Read a checked owner's raw delivery context after time/pitch
+    /// and creative edges. The context can include an enclosing processor and
+    /// other descendant owners; consult `input.scope()` before planning effects.
+    /// This excludes authored treatments and independent sound contributions.
+    /// A resumed binding's reference history is separate; `input.retained_at()`
+    /// exposes that operand and its exact map beyond current delivery.
+    pub fn read_owner_input(
+        &mut self,
+        provider: &mut impl AudioSourceProvider,
+        input: &deadpan_plan::AudioOwnerInput<'_>,
+        start: AudioSample,
+        frames: u32,
+        timeout: Duration,
+        cancelled: &AtomicBool,
+    ) -> Result<DomainAudioBlock, StageAudioError> {
+        check_cancel(cancelled)?;
+        validate_timeout(timeout)?;
+        let work = RefCell::new(ReadWork::default());
+        let control = WorkControl {
+            cancelled,
+            deadline: Instant::now() + timeout,
+            work: &work,
+        };
+        control.spend_plan_work(input.work())?;
+        let domain = input.context();
+        let mut block =
+            self.read_context_controlled(provider, domain, start, frames, control, (0, true))?;
+        block.suppressed.append(&mut block.exhausted);
+        Ok(DomainAudioBlock {
+            schema_version: 1,
+            stage: "owner_input_after_time_pitch_and_edges",
+            project_id: self.plan.metadata().project_id.clone(),
+            revision_id: self.plan.metadata().revision_id.clone(),
+            definition: domain.definition().cloned(),
+            placement: domain.placement().cloned(),
+            instance: domain.instance().clone(),
+            gap_after: domain.gap_after().cloned(),
+            root_samples: domain.root_samples(),
+            visible_samples: domain.visible_samples(),
+            start: block.start,
+            samples: block.samples,
+            suppressed: merged_suppression(block.suppressed),
+        })
+    }
+
+    fn read_context_controlled(
+        &mut self,
+        provider: &mut impl AudioSourceProvider,
+        domain: &AudioDomain<'_>,
+        start: AudioSample,
+        frames: u32,
+        control: WorkControl<'_>,
+        (depth, edge_fades): (usize, bool),
+    ) -> Result<ReadBlock, StageAudioError> {
         control.check()?;
         if !domain.belongs_to(&self.plan) {
             return Err(StageAudioError::ForeignDomain);
@@ -1154,11 +1211,18 @@ impl StageAudio {
         control.spend_plan_work(processing.work)?;
         let policy = domain.policy(start..end, control.query_limits()?)?;
         control.spend_plan_work(policy.work)?;
+        let fades = if edge_fades {
+            let query = domain.fades(start..end, control.query_limits()?)?;
+            control.spend_plan_work(query.work)?;
+            Some(query)
+        } else {
+            None
+        };
         let queries = RootReadQueries {
             flattened,
             processing,
             policy,
-            fades: None,
+            fades,
         };
         self.read_queries(provider, start, frames, control, depth, queries)
     }

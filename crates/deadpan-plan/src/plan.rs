@@ -59,8 +59,11 @@ pub use audio_hold_policy::{AudioHoldIssuer, AudioHoldPolicyQuery, AudioHoldRule
 #[path = "audio_fades.rs"]
 mod audio_fades;
 pub use audio_fades::{AudioFadeEdge, AudioFadeQuery, AudioFadeSpan};
+#[path = "audio_owner_input.rs"]
+mod audio_owner_input;
 #[path = "audio_owners.rs"]
 mod audio_owners;
+pub use audio_owner_input::{AudioOwnerInput, AudioOwnerInputScope, AudioOwnerRetainedInput};
 pub use audio_owners::{
     AudioOwnerClock, AudioOwnerClockOrigin, AudioOwnerKind, AudioOwnerQuery, AudioOwnerSpan,
     AudioOwnerSupport,
