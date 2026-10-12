@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-11T23:54:10Z",
+  "updated_at": "2026-10-12T00:23:09Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Complete preparation during active playback and persistent cache lifecycle, independently timed group automation, EQ/filtering, arbitrary sends, oversampled shaping, full mastering and remaining format/color, workflow and release obligations. DP-09 and DP-16 remain partial.",
+  "focus": "Complete persistent PCM cache reuse and lifecycle, independently timed group automation, EQ/filtering, arbitrary sends, oversampled shaping, full mastering and remaining format/color, workflow and release obligations. DP-09 and DP-16 remain partial.",
   "features": [
     {
       "id": "editing",
@@ -44,7 +44,7 @@
       "requirements": [
         "DP-09"
       ],
-      "note": "Playback, gain, sounds and timing work. Idle preparation shares bounded canonical caches with Play; preparation during playback, persistent cache reuse and full voice processing remain."
+      "note": "Playback, gain, sounds and timing work. Idle and active preparation share bounded canonical caches and a PCM queue; persistent cache reuse and full voice processing remain."
     },
     {
       "id": "analysis",
@@ -589,6 +589,14 @@
       "revision": "61eba458",
       "retrospective": false,
       "summary": "Stopped-cursor audio now prepares a bounded horizon, including future Preserve stages, and shares its canonical cache with Play. Full playback, final warming and transport tests, 421 UI checks, strict Clippy and evidence audit pass. Preparation during active playback and persistent cache lifecycle remain open."
+    },
+    {
+      "date": "2026-10-12",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "fb296739",
+      "retrospective": false,
+      "summary": "Active playback now prepares up to 29.867 seconds of canonical PCM beyond the device queue. All 88 playback tests, diagnostics/doctor tests, 102 UI checks and strict checks pass. The one-slot control fails the future-stage regression; two real-device runs have no underruns or faults, including a full-bound 35-second loop."
     }
   ]
 }
