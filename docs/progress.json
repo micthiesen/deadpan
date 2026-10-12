@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-12T06:57:41Z",
+  "updated_at": "2026-10-12T08:23:20Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Complete independently timed automation after shared stages, sound sends and incoming-tail policy, broader binding/Repeat/Preserve qualification and persistent filtered caching. Finish remaining mastering, format/color, workflow, performance and release obligations.",
+  "focus": "Complete arbitrary sound sends and incoming-tail policy, partial attached-sound scope routes, broader binding/Repeat/Preserve qualification and persistent filtered caching. Finish remaining mastering, format/color, workflow, performance and release obligations.",
   "features": [
     {
       "id": "editing",
@@ -44,7 +44,7 @@
       "requirements": [
         "DP-09"
       ],
-      "note": "Playback, gain, sounds and native EQ work. Input gain/mute now keeps each contribution's clock before shared EQ or saturation. Automation after shared stages, sends, incoming tails and persistent filtered caching remain."
+      "note": "Playback, gain, sounds and native EQ work. Gain/mute now keeps each contribution's clock before and after shared EQ or saturation. Sends, incoming tails, partial sound-owner edits and persistent filtered caching remain."
     },
     {
       "id": "analysis",
@@ -677,6 +677,14 @@
       "revision": "f8356e37e8d41a71cadf58868709bb666f638033",
       "retrospective": false,
       "summary": "Input gain/mute now retains independent Original and sound clocks before shared saturation/EQ. All 973 plan/audio tests, seven final focused tests, strict workspace checks and release export pass. Three new positive regressions fail on archived code. Automation after shared stages and remaining send/tail/cache work stay open."
+    },
+    {
+      "date": "2026-10-12",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "1ff35a8593acf605c724444bf28eabf4b1506b73",
+      "retrospective": false,
+      "summary": "Independent gain/mute now survives shared saturation/EQ and parent treatments. All 1,069 audio/plan/playback tests, 15 focused tests, strict workspace checks and evidence audit pass; seven regressions fail on archived code. A new release fixture verifies 31 pictures, 36 audio blocks and one zero-offset window. Remaining send/tail/scope/cache work stays open."
     }
   ]
 }
