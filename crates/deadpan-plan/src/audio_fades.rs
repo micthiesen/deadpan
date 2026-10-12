@@ -184,10 +184,22 @@ fn bound_fade(
     outer: EditorialCapture,
     budget: &mut Budget,
 ) -> Result<AudioFadeSpan, PlanError> {
+    let end = end.min(processing.allocated_samples.end);
+    retained_bound_fade(processing, start, end, outer, budget)
+}
+
+/// Evaluate a checked binding's history beyond its current delivery allocation.
+/// The original allocated start remains the reference-map anchor.
+pub(super) fn retained_bound_fade(
+    processing: AudioProcessingSpan<'_>,
+    start: AudioSample,
+    end: AudioSample,
+    outer: EditorialCapture,
+    budget: &mut Budget,
+) -> Result<AudioFadeSpan, PlanError> {
     let AudioSignalContent::Bound(bound) = processing.content else {
         return Err(PlanError::InvalidPlan("fade has no bound output"));
     };
-    let end = end.min(processing.allocated_samples.end);
     let q = bound.reference_at_wide_offset(
         i128::from(start.0) - i128::from(processing.allocated_samples.start.0),
     )?;

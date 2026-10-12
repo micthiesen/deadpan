@@ -1,0 +1,109 @@
+[
+  {
+    "name": "fmt",
+    "argv": [
+      "cargo",
+      "fmt",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "started_utc": "2026-10-12T03:12:31.420236+00:00",
+    "seconds": 4.667493541259319,
+    "exit_code": 0
+  },
+  {
+    "name": "tests",
+    "argv": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-plan",
+      "-p",
+      "deadpan-audio"
+    ],
+    "started_utc": "2026-10-12T03:12:36.088069+00:00",
+    "seconds": 137.23843724979088,
+    "exit_code": 0
+  },
+  {
+    "name": "clippy",
+    "argv": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "--workspace",
+      "--all-targets",
+      "--features",
+      "ui-harness",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "started_utc": "2026-10-12T03:14:53.295456+00:00",
+    "seconds": 32.457184417173266,
+    "exit_code": 0
+  },
+  {
+    "name": "whitespace",
+    "argv": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "started_utc": "2026-10-12T03:15:25.752669+00:00",
+    "seconds": 0.024864125065505505,
+    "exit_code": 0
+  },
+  {
+    "name": "final-fmt",
+    "argv": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "started_utc": "2026-10-12T03:16:28.936459+00:00",
+    "seconds": 4.645509541966021,
+    "exit_code": 0
+  },
+  {
+    "name": "final-owner-tests",
+    "argv": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-audio",
+      "--lib",
+      "owner_input"
+    ],
+    "started_utc": "2026-10-12T03:16:33.582374+00:00",
+    "seconds": 1.1855503330007195,
+    "exit_code": 0
+  },
+  {
+    "name": "final-fmt-check",
+    "argv": [
+      "cargo",
+      "fmt",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "started_utc": "2026-10-12T03:16:34.768172+00:00",
+    "seconds": 4.6977496249601245,
+    "exit_code": 0
+  },
+  {
+    "name": "final-whitespace",
+    "argv": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "started_utc": "2026-10-12T03:16:39.466187+00:00",
+    "seconds": 0.030151832848787308,
+    "exit_code": 0
+  }
+]

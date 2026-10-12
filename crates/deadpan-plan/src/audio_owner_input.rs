@@ -2,10 +2,10 @@
 
 use deadpan_core::{AudioSample, ExactRatio, TimeError};
 
-use super::audio::Budget;
+use super::audio::{AudioWalkSpan, Budget, EditorialCapture};
 use super::{
-    AudioBound, AudioBoundDomain, AudioDomain, AudioOwnerClock, AudioOwnerKind, AudioQueryLimits,
-    AudioSignalContent, LookupStats, RenderPlan,
+    AudioBound, AudioBoundDomain, AudioDomain, AudioFadeQuery, AudioOwnerClock, AudioOwnerKind,
+    AudioProcessingSpan, AudioQueryLimits, AudioSignalContent, LookupStats, RenderPlan,
 };
 use crate::PlanError;
 
@@ -60,20 +60,34 @@ impl<'plan> AudioOwnerInput<'plan> {
         at: AudioSample,
         limits: AudioQueryLimits,
     ) -> Result<Option<AudioOwnerRetainedInput<'plan>>, PlanError> {
-        let end = AudioSample(at.0.checked_add(1).ok_or(TimeError::Overflow)?);
-        let mut query = self.context.processing(at..end, limits)?;
-        let span = query
-            .spans
-            .pop()
-            .ok_or(PlanError::InvalidPlan("owner input has no processing span"))?;
-        match span.content {
-            AudioSignalContent::Bound(bound) => {
+        limits.validate()?;
+        if !self.context.root_samples().contains(&at) {
+            return Err(PlanError::AudioRangeOutOfRange);
+        }
+        let mut budget = Budget {
+            remaining: limits.maximum_work,
+            lookup: LookupStats::default(),
+        };
+        let mut editorial = EditorialCapture::default();
+        let walked = self.context.plan.audio_walk_editorial(
+            at,
+            &mut budget,
+            Some(&self.context.seed),
+            (true, true),
+            &mut editorial,
+        )?;
+        match walked {
+            AudioWalkSpan::Stage(span) if matches!(span.content, AudioSignalContent::Bound(_)) => {
+                let AudioSignalContent::Bound(bound) = &span.content else {
+                    unreachable!()
+                };
                 let domain = bound.raw_domain()?;
                 Ok(Some(AudioOwnerRetainedInput {
-                    bound: *bound,
-                    anchor: span.allocated_samples.start,
+                    plan: self.context.plan,
+                    processing: span,
+                    editorial,
                     domain,
-                    work: query.work,
+                    work: limits.maximum_work - budget.remaining,
                 }))
             }
             _ => Ok(None),
@@ -86,28 +100,105 @@ impl<'plan> AudioOwnerInput<'plan> {
 /// grid; they are never fabricated by inverting a nominal automation clock.
 #[derive(Debug, Clone)]
 pub struct AudioOwnerRetainedInput<'plan> {
-    bound: AudioBound<'plan>,
-    anchor: AudioSample,
+    pub(super) plan: &'plan RenderPlan,
+    processing: AudioProcessingSpan<'plan>,
+    editorial: EditorialCapture,
     domain: AudioBoundDomain<'plan>,
     work: usize,
 }
 
 impl<'plan> AudioOwnerRetainedInput<'plan> {
+    pub(super) fn clock_origin(&self) -> super::AudioOwnerClockOrigin {
+        super::AudioOwnerClockOrigin::Retained {
+            definition: self.processing.definition.clone(),
+            instance: self.processing.instance.clone(),
+            kind: if self.processing.gap_after.is_some() {
+                AudioOwnerKind::DefaultGap
+            } else {
+                AudioOwnerKind::Node
+            },
+            gap_after: self.processing.gap_after.clone(),
+        }
+    }
+    /// Checked immutable operand. Its offset origin is the original allocated
+    /// start, retained by `reference_at`; serialized metadata cannot replace it.
+    pub fn bound(&self) -> &AudioBound<'plan> {
+        let AudioSignalContent::Bound(bound) = &self.processing.content else {
+            unreachable!()
+        };
+        bound
+    }
     pub fn domain(&self) -> &AudioBoundDomain<'plan> {
         &self.domain
     }
     pub fn belongs_to(&self, plan: &RenderPlan) -> bool {
-        self.bound.belongs_to(plan)
+        self.bound().belongs_to(plan)
     }
     pub fn reference_at(&self, sample: AudioSample) -> Result<ExactRatio, PlanError> {
-        self.bound
-            .reference_at_wide_offset(i128::from(sample.0) - i128::from(self.anchor.0))
+        self.bound().reference_at_wide_offset(
+            i128::from(sample.0) - i128::from(self.processing.allocated_samples.start.0),
+        )
     }
     pub fn reference_samples_per_output_sample(&self) -> ExactRatio {
-        self.bound.reference_samples_per_output_sample()
+        self.bound().reference_samples_per_output_sample()
     }
     pub fn work(&self) -> usize {
         self.work
+    }
+
+    /// Creative output fades on the original consumer grid, including retained
+    /// history outside current delivery. This does not grant output allocation
+    /// or a silence/tail permission. Empty history remains a raw-reader policy.
+    pub fn fades(
+        &self,
+        samples: std::ops::Range<AudioSample>,
+        limits: AudioQueryLimits,
+    ) -> Result<AudioFadeQuery, PlanError> {
+        limits.validate()?;
+        if samples.end < samples.start {
+            return Err(PlanError::AudioRangeOutOfRange);
+        }
+        let mut budget = Budget {
+            remaining: limits.maximum_work,
+            lookup: LookupStats::default(),
+        };
+        let mut spans = Vec::new();
+        let mut cursor = samples.start;
+        while cursor < samples.end {
+            if spans.len() == limits.maximum_spans {
+                return Err(PlanError::AudioQueryLimit("retained fade span count"));
+            }
+            budget.spend(
+                1 + self.bound().work()
+                    + self.processing.retimes.len()
+                    + self.processing.instance.repeats.len()
+                    + self.editorial.editorial.len()
+                    + self.editorial.constraints.len()
+                    + self.editorial.repeats.len(),
+            )?;
+            let span = super::audio_fades::retained_bound_fade(
+                self.processing.clone(),
+                cursor,
+                samples.end,
+                self.editorial.clone(),
+                &mut budget,
+            )?;
+            if span.samples.start != cursor
+                || span.samples.end <= cursor
+                || span.samples.end > samples.end
+            {
+                return Err(PlanError::InvalidPlan(
+                    "retained fade interval did not advance",
+                ));
+            }
+            cursor = span.samples.end;
+            spans.push(span);
+        }
+        Ok(AudioFadeQuery {
+            spans,
+            lookup: budget.lookup,
+            work: limits.maximum_work - budget.remaining,
+        })
     }
 }
 

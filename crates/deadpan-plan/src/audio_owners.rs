@@ -12,8 +12,8 @@ use super::audio::{Budget, intersect};
 use super::audio_bound::{BindingTarget, BoundPlacement};
 use super::audio_domain::{AudioWalkSeed, DomainGap};
 use super::{
-    AudioDefinition, AudioDefinitionSelector, AudioDomain, AudioQueryLimits, CompiledKind,
-    LookupStats, RenderPlan, SignalSample, SignalTransform,
+    AudioDefinition, AudioDefinitionSelector, AudioDomain, AudioOwnerRetainedInput,
+    AudioQueryLimits, CompiledKind, LookupStats, RenderPlan, SignalSample, SignalTransform,
 };
 use crate::{AudioBoundaryRule, AudioSampleGrid, AudioSampleMap, PlanError};
 
@@ -306,6 +306,60 @@ impl<'plan> AudioDefinition<'plan> {
     }
 }
 
+impl<'plan> AudioOwnerRetainedInput<'plan> {
+    /// Owner clocks on this retained processor's consumer grid, including
+    /// hidden history. Exterior ancestors are excluded; the processor and its
+    /// current descendants keep their recipes and exact reference timing.
+    pub fn owners(
+        &self,
+        samples: Range<AudioSample>,
+        limits: AudioQueryLimits,
+    ) -> Result<AudioOwnerQuery<'plan>, PlanError> {
+        limits.validate()?;
+        if samples.end < samples.start {
+            return Err(PlanError::AudioRangeOutOfRange);
+        }
+        let mut budget = Budget {
+            remaining: limits.maximum_work,
+            lookup: LookupStats::default(),
+        };
+        let Some(domain) = self.bound().envelope_domain(&mut budget)? else {
+            budget.spend(1)?;
+            return Ok(AudioOwnerQuery {
+                plan: self.plan,
+                spans: if samples.is_empty() {
+                    Vec::new()
+                } else {
+                    vec![AudioOwnerSpan {
+                        samples: samples.clone(),
+                        owners: Vec::new(),
+                        support: AudioOwnerSupport::Inactive,
+                        original_is_silent: false,
+                    }]
+                },
+                samples,
+                lookup: budget.lookup,
+                work: limits.maximum_work - budget.remaining,
+            });
+        };
+        let mut seed = Walk::from_seed(&domain.seed);
+        seed.allow_inactive = true;
+        let mut result = query_mapped(
+            self.plan,
+            samples.start.0..samples.end.0,
+            AudioQueryLimits {
+                maximum_work: budget.remaining,
+                ..limits
+            },
+            seed,
+            AudioSample,
+            Some(self),
+        )?;
+        result.work += limits.maximum_work - budget.remaining;
+        Ok(result)
+    }
+}
+
 #[derive(Clone, Copy)]
 struct Placement {
     origin: ExactRatio,
@@ -438,6 +492,17 @@ fn query<'plan, S: Copy>(
     seed: Walk,
     label: impl Fn(i64) -> S,
 ) -> Result<AudioOwnerQuery<'plan, S>, PlanError> {
+    query_mapped(plan, samples, limits, seed, label, None)
+}
+
+fn query_mapped<'plan, S: Copy>(
+    plan: &'plan RenderPlan,
+    samples: Range<i64>,
+    limits: AudioQueryLimits,
+    seed: Walk,
+    label: impl Fn(i64) -> S,
+    retained: Option<&AudioOwnerRetainedInput<'plan>>,
+) -> Result<AudioOwnerQuery<'plan, S>, PlanError> {
     limits.validate()?;
     if samples.end < samples.start {
         return Err(PlanError::AudioRangeOutOfRange);
@@ -463,12 +528,21 @@ fn query<'plan, S: Copy>(
         walk(
             plan,
             seed.clone(),
-            Position {
-                at: ExactRatio::integer(cursor),
-                step: ExactRatio::ONE,
+            match retained {
+                Some(input) => Position {
+                    at: input.reference_at(AudioSample(cursor))?,
+                    step: input.reference_samples_per_output_sample(),
+                },
+                None => Position {
+                    at: ExactRatio::integer(cursor),
+                    step: ExactRatio::ONE,
+                },
             },
             &mut output,
-            AudioOwnerClockOrigin::Current,
+            retained.map_or(
+                AudioOwnerClockOrigin::Current,
+                AudioOwnerRetainedInput::clock_origin,
+            ),
             &mut budget,
             0,
         )?;

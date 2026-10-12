@@ -4,6 +4,14 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 
 ## Resumed implementation, 2026-10-06
 
+[Retained fades and treatments](qualification/retained-treatments-2026-10-11.md)
+now evaluate creative edges and current gain/mute, saturation and balance on
+retained consumer clocks, including history before delivery. Exterior owners
+remain separate, and the internal reader carries source dependencies and its
+parent's work/deadline/depth limits. The full plan/audio suites pass 935 tests;
+ordered EQ stage inputs, the complete group/voice graph and native/preview/export
+integration remain owed. DP-09 and DP-16 remain partial.
+
 [Owner input contexts](qualification/owner-input-2026-10-11.md) now retain
 hidden Sequence/Repeat input and preserve enclosing time/pitch processors.
 The shared PCM reader evaluates their output edges; separate checked reference

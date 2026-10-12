@@ -1227,6 +1227,166 @@ impl StageAudio {
         self.read_queries(provider, start, frames, control, depth, queries)
     }
 
+    /// A retained processor's history on its consumer sample grid after its
+    /// creative output edges. Reads can precede current delivery; they never
+    /// authorize extending authored output or bypassing silence/tail policy.
+    pub fn read_retained_owner_input(
+        &mut self,
+        provider: &mut impl AudioSourceProvider,
+        input: &deadpan_plan::AudioOwnerRetainedInput<'_>,
+        start: AudioSample,
+        frames: u32,
+        timeout: Duration,
+        cancelled: &AtomicBool,
+    ) -> Result<EdgeFadedBlock, StageAudioError> {
+        self.read_retained_input(provider, input, start, frames, (timeout, cancelled, false))
+    }
+
+    /// Apply this retained Original operand's current authored treatments after
+    /// its time/pitch and edges, using reference-owner clocks. Exterior owners
+    /// and independent sounds are excluded; this is not a complete group mix.
+    pub fn read_retained_owner_treatments(
+        &mut self,
+        provider: &mut impl AudioSourceProvider,
+        input: &deadpan_plan::AudioOwnerRetainedInput<'_>,
+        start: AudioSample,
+        frames: u32,
+        timeout: Duration,
+        cancelled: &AtomicBool,
+    ) -> Result<EdgeFadedBlock, StageAudioError> {
+        self.read_retained_input(provider, input, start, frames, (timeout, cancelled, true))
+    }
+
+    fn read_retained_input(
+        &mut self,
+        provider: &mut impl AudioSourceProvider,
+        input: &deadpan_plan::AudioOwnerRetainedInput<'_>,
+        start: AudioSample,
+        frames: u32,
+        (timeout, cancelled, authored): (Duration, &AtomicBool, bool),
+    ) -> Result<EdgeFadedBlock, StageAudioError> {
+        check_cancel(cancelled)?;
+        validate_timeout(timeout)?;
+        let work = RefCell::new(ReadWork::default());
+        let control = WorkControl {
+            cancelled,
+            deadline: Instant::now() + timeout,
+            work: &work,
+        };
+        let block =
+            self.read_retained_controlled(provider, input, start, frames, control, (0, authored))?;
+        Ok(EdgeFadedBlock {
+            schema_version: 1,
+            stage: if authored {
+                "retained_original_owner_treatments"
+            } else {
+                "retained_owner_input_before_treatments"
+            },
+            engine: crate::edges::EDGE_FADE_ID,
+            processing_order: if authored {
+                ["time_pitch_mapping", "edge_fades_then_authored_treatments"]
+            } else {
+                ["time_pitch_mapping", "edge_fades"]
+            },
+            project_id: self.plan.metadata().project_id.clone(),
+            revision_id: self.plan.metadata().revision_id.clone(),
+            start,
+            samples: block.samples,
+            suppressed: merged_suppression(block.suppressed),
+        })
+    }
+
+    fn read_retained_controlled(
+        &mut self,
+        provider: &mut impl AudioSourceProvider,
+        input: &deadpan_plan::AudioOwnerRetainedInput<'_>,
+        start: AudioSample,
+        frames: u32,
+        control: WorkControl<'_>,
+        (depth, authored): (usize, bool),
+    ) -> Result<ReadBlock, StageAudioError> {
+        control.check()?;
+        if !input.belongs_to(&self.plan) {
+            return Err(StageAudioError::ForeignDomain);
+        }
+        if depth > self.limits.maximum_depth {
+            return Err(StageAudioError::Limit("nested stage depth"));
+        }
+        if frames == 0 || frames > MAX_OUTPUT_FRAMES {
+            return Err(StageAudioError::Range);
+        }
+        let end = AudioSample(
+            start
+                .0
+                .checked_add(i64::from(frames))
+                .ok_or(StageAudioError::Range)?,
+        );
+        control.spend_plan_work(input.work())?;
+        let fades = input.fades(start..end, control.query_limits()?)?;
+        control.spend_plan_work(fades.work)?;
+        crate::edges::validate_creative_fades(start, frames as usize, &fades.spans)?;
+        let owners = if authored {
+            let query = input.owners(start..end, control.query_limits()?)?;
+            control.spend_plan_work(query.work())?;
+            for span in query.spans() {
+                deadpan_core::validate_audio_treatment_layers(
+                    span.owners().iter().filter_map(|owner| owner.treatments()),
+                )?;
+            }
+            Some(query)
+        } else {
+            None
+        };
+        let reservation = if authored { u64::from(frames) * 2 } else { 0 };
+        self.make_room(reservation, false, control)?;
+        self.active_frames += reservation;
+        let result = (|| {
+            let raw = self.read_bound_at(
+                input.bound(),
+                provider,
+                input.reference_at(start)?,
+                (frames, depth),
+                control,
+            )?;
+            let suppressed = raw
+                .suppressed
+                .into_iter()
+                .map(|range| {
+                    Ok(AudioSample(
+                        start
+                            .0
+                            .checked_add(range.start.0)
+                            .ok_or(TimeError::Overflow)?,
+                    )
+                        ..AudioSample(
+                            start
+                                .0
+                                .checked_add(range.end.0)
+                                .ok_or(TimeError::Overflow)?,
+                        ))
+                })
+                .collect::<Result<Vec<_>, TimeError>>()?;
+            let mut block = ReadBlock {
+                start,
+                samples: raw.samples,
+                dependencies: raw.dependencies,
+                relative_depth: raw.relative_depth,
+                suppressed,
+                exhausted: Vec::new(),
+            };
+            crate::edges::apply_creative_fades(start, &mut block.samples, &fades.spans)?;
+            if let Some(owners) = &owners {
+                let gained =
+                    authored_gain::original_samples_with_owners(&block, owners, control, &[])?;
+                authored_gain::write_finite_samples(&mut block.samples, gained)?;
+            }
+            control.check()?;
+            Ok(block)
+        })();
+        self.active_frames -= reservation;
+        result
+    }
+
     /// Transfer hidden or visible domain PCM with one preparation allowance and
     /// deadline across all interpolation halo reads. The transfer retains the
     /// borrowed domain; foreign plans cannot supply a same-named replacement.
@@ -1356,6 +1516,21 @@ impl StageAudio {
             frames,
             depth,
         } = request;
+        if offset < 0 {
+            return Err(StageAudioError::Range);
+        }
+        let at = bound.reference_at_wide_offset(offset)?;
+        self.read_bound_at(bound, provider, at, (frames, depth), control)
+    }
+
+    fn read_bound_at(
+        &mut self,
+        bound: &AudioBound<'_>,
+        provider: &mut impl AudioSourceProvider,
+        at: ExactRatio,
+        (frames, depth): (u32, usize),
+        control: WorkControl<'_>,
+    ) -> Result<SignalBlock, StageAudioError> {
         control.check()?;
         if depth > self.limits.maximum_depth {
             return Err(StageAudioError::Limit("nested stage depth"));
@@ -1363,10 +1538,9 @@ impl StageAudio {
         if !bound.belongs_to(&self.plan) {
             return Err(StageAudioError::ForeignDomain);
         }
-        if offset < 0 || frames == 0 || frames > MAX_OUTPUT_FRAMES {
+        if frames == 0 || frames > MAX_OUTPUT_FRAMES {
             return Err(StageAudioError::Range);
         }
-        let at = bound.reference_at_wide_offset(offset)?;
         let step = bound.reference_samples_per_output_sample();
         let output = SignalSample(0)..SignalSample(i64::from(frames));
         match bound.raw_domain()? {

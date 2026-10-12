@@ -1,0 +1,20 @@
+{
+  "base_revision": "51a6c462747a99f772ddfeea52d1d6dc21a33ad0",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: aarch64-apple-darwin\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+  "macos": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84\n",
+  "ffmpeg_prefix": "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix",
+  "sources": {
+    "Cargo.lock": "9d911d67520092b729ae0e5933a39fc57f0ab4933b7d94b2d72d55a125fca93e",
+    "crates/deadpan-audio/src/authored_gain.rs": "aabd69822f280126f2fc9dabb61254bbf7f977b0392e64bb16580d2faf5c4590",
+    "crates/deadpan-audio/src/bound_reads/owner_input.rs": "0f361cc0978351d26591dcb0827c2d2b28ded74d6956d150b583332edd7ad4b8",
+    "crates/deadpan-audio/src/stages.rs": "cacaf51163e05a2c16639fc13ee3bd2c90e881c0c7d5c19c7bfe07518850d908",
+    "crates/deadpan-plan/src/audio.rs": "1d2d496ba861494493e9cfe665e671d3a393a8bb7877345b0bbe5de017c8c8ba",
+    "crates/deadpan-plan/src/audio_fades.rs": "a59a08eee74ed6e2f6f4d6afa1f5ffcff467ecb08278da71306461ed1e91e118",
+    "crates/deadpan-plan/src/audio_owner_input.rs": "468d0c3473770611498abf0d2a6ac25bd121bd8b32c065b3e2485c975f64f618",
+    "crates/deadpan-plan/src/audio_owners.rs": "83192ccbf934116294c491a09a6dc8af7bfde771cd33e4cc3c39f806f0159e01",
+    "crates/deadpan-plan/src/audio_owners/input_tests.rs": "f1824c4ddeb7133c47ada7cf35fbcb83c48ae5d7c568c920647c1125a884a4ac",
+    "native/deadpan-source/tests/audio-fixtures/pcm-stereo-48000.wav": "e79aba90eab42dc057171be52be9ecb794c3e2790c5731783270ece73c24d2ee",
+    "rust-toolchain.toml": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc"
+  },
+  "validation_note": "The complete plan/audio suites passed. The final seven owner-input audio tests also cover a subsequently added direct retained silent-Hold assertion; workspace Clippy included that assertion. Final formatting changes no behavior."
+}

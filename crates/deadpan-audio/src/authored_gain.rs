@@ -244,6 +244,26 @@ pub(super) fn original_samples_except(
     let query =
         plan.audio_gain_owners(original.start..AudioSample(end), control.query_limits()?)?;
     control.spend_plan_work(query.work())?;
+    original_samples_with_owners(original, &query, control, shared)
+}
+
+/// Reuse the same treatment evaluator on a checked context's consumer grid.
+/// A retained input excludes exterior ancestors; its query names only owners
+/// of that operand and can retain signed labels outside current delivery.
+pub(super) fn original_samples_with_owners(
+    original: &ReadBlock,
+    query: &deadpan_plan::AudioOwnerQuery<'_>,
+    control: WorkControl<'_>,
+    shared: &[OwnerIdentity],
+) -> Result<Vec<[f64; 2]>, StageAudioError> {
+    let end = original
+        .start
+        .0
+        .checked_add(i64::try_from(original.samples.len()).map_err(|_| StageAudioError::Range)?)
+        .ok_or(StageAudioError::Range)?;
+    if query.samples() != (original.start..AudioSample(end)) {
+        return Err(PlanError::InvalidPlan("authored gain query does not cover input").into());
+    }
     let mut result = Vec::with_capacity(original.samples.len());
     for span in query.spans() {
         control.check()?;

@@ -28,14 +28,21 @@ history. `AudioOwnerInput::retained_at` separately exposes its checked full
 `AudioBoundDomain` and exact consumer-to-reference sample map. RootRoundEven
 and PointCeil labels remain distinct. The existing domain/point readers and
 domain transfer evaluate that history without looking up the same positions
-through an unrelated current-root sibling. This is raw retained PCM before
-creative output edges; the shared effect graph still needs to combine its
-history, transported fades and ordered treatments.
+through an unrelated current-root sibling. The handle now also queries creative
+fades and owner clocks on the consumer grid, including positions before current
+delivery. `read_retained_owner_input` evaluates time/pitch and transported edges;
+`read_retained_owner_treatments` additionally applies the operand's current
+gain/mute, saturation and balance, excluding exterior owners and independent
+sounds. The latter evaluates the complete current treatment chain. A temporal
+graph must choose explicit stage boundaries before using it as filter input.
 
 [Owner-input qualification](qualification/owner-input-2026-10-11.md) compares
 cold reads against uncropped PCM, feeds a cropped group's complete history into
 the actual EQ processor, and verifies retained history before current delivery.
 It does not qualify authored EQ, mixed-voice permissions or the editor workflow.
+The subsequent [retained-treatment qualification](qualification/retained-treatments-2026-10-11.md)
+checks transported fades, reference-clock gain/mute and ordered memoryless
+treatments. EQ still needs the shared ordered graph and authored integration.
 
 ## Recipe
 

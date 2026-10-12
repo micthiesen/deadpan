@@ -320,7 +320,7 @@ pub(super) struct EditorialConstraint {
     pub(super) incident_samples: Option<(ExactRatio, ExactRatio)>,
 }
 
-#[derive(Default)]
+#[derive(Debug, Clone, Default)]
 pub(super) struct EditorialCapture {
     pub(super) editorial: Vec<EditorialConstraint>,
     pub(super) constraints: Vec<EnvelopeConstraint>,

@@ -4,6 +4,20 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Retained fades and treatments](../qualification/retained-treatments-2026-10-11.md)
+now expose `AudioOwnerRetainedInput::fades` and `owners` on the exact consumer
+grid outside current delivery. `read_retained_owner_input` adds transported
+edges; `read_retained_owner_treatments` also applies current gain/mute,
+saturation and balance while excluding exterior owners and independent sounds.
+The private `read_retained_controlled` preserves dependencies and inherits its
+parent's budget, deadline and depth. All 935 plan/audio tests pass. These full
+memoryless-chain reads are not automatically EQ inputs: first add explicit
+treatment-stage boundaries, then the recursive temporal graph, aggregate
+admission/cache identity and per-voice group/silence/tail routing. GainSum's
+global mute is valid only between temporal stages. Add the authored EQ stage
+and controls together with real shared preview/export support; do not add
+another unrelated numerical processor or silently ignore an authored effect.
+
 [Owner input contexts](../qualification/owner-input-2026-10-11.md) now provide
 `RenderPlan::audio_owner_input`, checked whole-group/Repeat domains, explicit
 enclosing-processor scope and `StageAudio::read_owner_input` through the shared

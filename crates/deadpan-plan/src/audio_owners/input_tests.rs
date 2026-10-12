@@ -218,6 +218,84 @@ fn retained_binding_is_not_reconstructed_from_its_nominal_descendant_clock() {
         input.context().root_samples(),
         AudioSample(1)..AudioSample(9)
     );
+    let whole = retained
+        .owners(AudioSample(-3)..AudioSample(7), Default::default())
+        .unwrap();
+    assert_eq!(
+        whole.spans().first().unwrap().support(),
+        AudioOwnerSupport::Inactive
+    );
+    assert_eq!(
+        whole.spans().last().unwrap().support(),
+        AudioOwnerSupport::Inactive
+    );
+    let values = observations(&whole);
+    assert_eq!(
+        values[&-2]
+            .iter()
+            .map(|owner| owner.instance.node.clone())
+            .collect::<Vec<_>>(),
+        vec![id("stage"), id("group"), id("a")]
+    );
+    assert_eq!(values[&-2][0].local, ExactRatio::ZERO);
+    assert_eq!(values[&1][0].local, ratio(3, 1));
+    assert_eq!(values[&1][1].local, ratio(3, 2));
+    assert_eq!(values[&2].last().unwrap().instance.node, id("b"));
+    for at in -3..7 {
+        let part = retained
+            .owners(AudioSample(at)..AudioSample(at + 1), Default::default())
+            .unwrap();
+        assert_eq!(observations(&part)[&at], values[&at]);
+    }
+    assert!(
+        retained
+            .owners(
+                AudioSample(-3)..AudioSample(7),
+                AudioQueryLimits {
+                    maximum_spans: 1,
+                    maximum_work: 10_000
+                }
+            )
+            .is_err()
+    );
+    assert!(
+        retained
+            .owners(
+                AudioSample(-3)..AudioSample(7),
+                AudioQueryLimits {
+                    maximum_spans: 100,
+                    maximum_work: whole.work() - 1
+                }
+            )
+            .is_err()
+    );
+    let fades = retained
+        .fades(AudioSample(-3)..AudioSample(7), Default::default())
+        .unwrap();
+    assert_eq!(fades.spans.first().unwrap().samples.start, AudioSample(-3));
+    assert_eq!(fades.spans.last().unwrap().samples.end, AudioSample(7));
+    assert!(
+        retained
+            .fades(
+                AudioSample(-3)..AudioSample(7),
+                AudioQueryLimits {
+                    maximum_spans: 1,
+                    maximum_work: 10_000
+                }
+            )
+            .is_err()
+    );
+    assert!(
+        retained
+            .fades(
+                AudioSample(-3)..AudioSample(7),
+                AudioQueryLimits {
+                    maximum_spans: 100,
+                    maximum_work: fades.work - 1
+                }
+            )
+            .is_err()
+    );
 }
 
 #[test]
@@ -371,6 +449,15 @@ fn moved_preserve_input_keeps_its_point_ceil_reference_labels() {
         retained.reference_samples_per_output_sample(),
         ExactRatio::ONE
     );
+    let owners = retained
+        .owners(AudioSample(0)..AudioSample(1), Default::default())
+        .unwrap();
+    let clock = &owners.spans()[0].owners()[0];
+    assert_eq!(
+        clock.sampling().local_at(AudioSample(0)).unwrap(),
+        ratio(1, 3)
+    );
+    assert_eq!(clock.sampling().local_frames_per_sample(), ratio(2, 3));
     assert!(
         input
             .retained_at(AudioSample(3), Default::default())
