@@ -1401,11 +1401,10 @@ impl FrozenAudioLayout {
         Ok((child == &current.root, work))
     }
 
-    /// Existing attachments cannot yet be divided between newly split owners.
-    /// Capture/import may introduce exterior selections around a fresh copy,
-    /// but a reducer transporting a surviving owner must preserve its complete
-    /// path through every existing crop. Ignore placement above the last crop
-    /// so moving the copied fragment as a whole remains supported.
+    /// A surviving owner without explicit Split provenance must preserve its
+    /// complete path through existing crops. Capture/import and recorded Split
+    /// aliases have their own exact delivery routes. Ignore placement above the
+    /// last crop so moving the copied fragment as a whole remains supported.
     pub(crate) fn sound_placement_crop_unchanged(
         &self,
         current: &Self,

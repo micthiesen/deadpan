@@ -312,6 +312,7 @@ pub(crate) fn apply(
                 crate::command::EditContext {
                     allocation: context.allocation,
                     allowances: context.allowances.as_deref_mut(),
+                    sound_clocks: context.sound_clocks.as_deref_mut(),
                 },
             )?;
             if matches!(destination, MoveRangeDestination::Interior { target, at, .. }

@@ -21,7 +21,7 @@ fn capture_range(
     CapturedEditSlice::from_json(&slice.to_json().unwrap()).unwrap()
 }
 
-fn render(document: &ProjectDocument, first: i64, last: i64) -> Vec<[f32; 2]> {
+pub(super) fn render(document: &ProjectDocument, first: i64, last: i64) -> Vec<[f32; 2]> {
     let mut reader = StageAudio::new(compile(document, false));
     let mut provider = ClockProvider::new(document);
     let rate = document.presentation_basis().frame_rate;
@@ -54,7 +54,12 @@ fn render(document: &ProjectDocument, first: i64, last: i64) -> Vec<[f32; 2]> {
     output
 }
 
-fn compare_copy(original: &[[f32; 2]], actual: &[[f32; 2]], treated: bool, context: &str) {
+pub(super) fn compare_copy(
+    original: &[[f32; 2]],
+    actual: &[[f32; 2]],
+    treated: bool,
+    context: &str,
+) {
     assert!(!actual.is_empty());
     assert!(actual.len().abs_diff(original.len()) <= 1);
     let mut worst = (0.0_f32, 0, 0, 0.0, 0.0);

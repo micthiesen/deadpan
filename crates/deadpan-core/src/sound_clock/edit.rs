@@ -43,6 +43,9 @@ pub(crate) struct SoundClockEditCapture {
     removed: BTreeSet<NodeId>,
     repeat_edit: bool,
     introduced: Option<NodeId>,
+    /// Exact Split provenance, independent of labels or equal-shaped nodes.
+    owners: BTreeMap<NodeId, NodeId>,
+    split_owners: BTreeSet<NodeId>,
 }
 
 impl SoundClockEditCapture {
@@ -96,7 +99,49 @@ impl SoundClockEditCapture {
                 Command::RepeatSelection { identities, .. } => Some(identities.repeat.clone()),
                 _ => None,
             },
+            owners: document
+                .beat_sounds
+                .keys()
+                .map(|id| (id.clone(), id.clone()))
+                .collect(),
+            split_owners: BTreeSet::new(),
         }))
+    }
+
+    /// Split retains complete contexts behind disjoint delivery Partitions.
+    /// Record both aliases while the structural reducer has sounds detached.
+    pub(crate) fn split(&mut self, mapping: &BTreeMap<NodeId, NodeId>) -> Result<(), EditError> {
+        let copies: Vec<_> = mapping
+            .iter()
+            .filter_map(|(old, new)| {
+                self.owners
+                    .get(old)
+                    .map(|original| (old.clone(), new.clone(), original.clone()))
+            })
+            .collect();
+        let count = self
+            .owners
+            .values()
+            .map(|owner| self.events[owner].len())
+            .sum::<usize>()
+            + copies
+                .iter()
+                .map(|(_, _, owner)| self.events[owner].len())
+                .sum::<usize>();
+        if count > crate::MAX_DOCUMENT_SOUNDS {
+            return Err(EditError::new(
+                EditErrorCode::LimitExceeded,
+                "split exceeds the attached sound limit",
+            ));
+        }
+        for (old, new, original) in copies {
+            if self.owners.insert(new.clone(), original).is_some() {
+                return Err(invalid("split sound owner alias already exists"));
+            }
+            self.split_owners.insert(old);
+            self.split_owners.insert(new);
+        }
+        Ok(())
     }
 
     pub(crate) fn detach(&self, document: &mut ProjectDocument) {
@@ -105,16 +150,18 @@ impl SoundClockEditCapture {
         crate::audio_binding_lifecycle::prune(document);
     }
 
-    pub(crate) fn restore(mut self, document: &mut ProjectDocument) -> Result<(), EditError> {
+    pub(crate) fn restore(self, document: &mut ProjectDocument) -> Result<(), EditError> {
         // Imported events already belong to the result. Never replace that map
         // with the entry snapshot, and never transport their newly born clocks.
         let current = FrozenAudioLayout::capture(document)?;
         let mut moved = BTreeMap::new();
         let mut historical = BTreeMap::new();
         let mut work = 0usize;
-        for (owner, events) in self.events {
+        for (owner, original) in self.owners {
+            let split = self.split_owners.contains(&owner);
+            let events = &self.events[&original];
             if !document.nodes.contains_key(&owner) {
-                if self.removed.contains(&owner) {
+                if self.removed.contains(&original) || split {
                     continue;
                 }
                 return Err(invalid(
@@ -123,7 +170,7 @@ impl SoundClockEditCapture {
             }
             let (top, used) =
                 self.before
-                    .branch_below(self.before.root(), &owner, budget(work)?)?;
+                    .branch_below(self.before.root(), &original, budget(work)?)?;
             work = work.checked_add(used).ok_or_else(exhausted)?;
             if document
                 .beat_sounds
@@ -134,10 +181,31 @@ impl SoundClockEditCapture {
                     "imported beat sound owner collides with a surviving owner",
                 ));
             }
-            let mut journals = self.journals.remove(&owner).unwrap_or_default();
             for id in events.keys() {
-                let previous = journals.remove(id);
-                let (old_scope, live_scope) = if self.repeat_edit {
+                let previous = self
+                    .journals
+                    .get(&original)
+                    .and_then(|events| events.get(id));
+                let (old_scope, live_scope) = if split {
+                    let (old, used) = self
+                        .before
+                        .sound_processing_scope(&original, budget(work)?)?;
+                    work = work.checked_add(used).ok_or_else(exhausted)?;
+                    let (live, used) = current.sound_processing_scope(&owner, budget(work)?)?;
+                    work = work.checked_add(used).ok_or_else(exhausted)?;
+                    let (old_repeats, used) =
+                        self.before.sound_placement_repeats(&old, budget(work)?)?;
+                    work = work.checked_add(used).ok_or_else(exhausted)?;
+                    let (live_repeats, used) =
+                        current.sound_placement_repeats(&live, budget(work)?)?;
+                    work = work.checked_add(used).ok_or_else(exhausted)?;
+                    if !old_repeats.is_empty() || !live_repeats.is_empty() {
+                        return Err(invalid(
+                            "split sound owners inside Repeat need an occurrence route",
+                        ));
+                    }
+                    (old, live)
+                } else if self.repeat_edit {
                     let (scope, used) =
                         self.before.sound_processing_scope(&owner, budget(work)?)?;
                     work = work.checked_add(used).ok_or_else(exhausted)?;
@@ -181,21 +249,23 @@ impl SoundClockEditCapture {
                         })
                         .collect(),
                 )?;
-                let key = (old_scope.clone(), live_scope.clone());
-                let (proof, changed_origin) = if let Some((proof, changed)) = moved.get(&key) {
+                let key = (old_scope.clone(), live_scope.clone(), split);
+                let (proof, changed_placement) = if let Some((proof, changed)) = moved.get(&key) {
                     (crate::SoundClockCorrespondence::clone(proof), *changed)
                 } else {
-                    let (same_crop, used) = self.before.sound_placement_crop_unchanged(
-                        &current,
-                        &old_scope,
-                        &live_scope,
-                        budget(work)?,
-                    )?;
-                    work = work.checked_add(used).ok_or_else(exhausted)?;
-                    if !same_crop {
-                        return Err(invalid(
-                            "sound owner interval changes require an attachment route",
-                        ));
+                    if !split {
+                        let (same_crop, used) = self.before.sound_placement_crop_unchanged(
+                            &current,
+                            &old_scope,
+                            &live_scope,
+                            budget(work)?,
+                        )?;
+                        work = work.checked_add(used).ok_or_else(exhausted)?;
+                        if !same_crop {
+                            return Err(invalid(
+                                "sound owner interval changes require an attachment route",
+                            ));
+                        }
                     }
                     let proof = self.before.sound_clock_correspondence_with_repeats(
                         &current,
@@ -205,7 +275,11 @@ impl SoundClockEditCapture {
                         budget(work)?,
                     )?;
                     work = work.checked_add(proof.work()).ok_or_else(exhausted)?;
-                    let changed = if !ancestors.is_empty() {
+                    let changed = if split {
+                        // Even an unmoved left fragment introduces a delivery
+                        // crop. Retain the old allocation for processing input.
+                        true
+                    } else if !ancestors.is_empty() {
                         let (same, used) = self.before.sound_placement_unchanged(
                             &current,
                             &old_scope,
@@ -223,10 +297,10 @@ impl SoundClockEditCapture {
                     moved.insert(key, (proof.clone(), changed));
                     (proof, changed)
                 };
-                // Each event owner must retain its own identity in the paired
-                // live subtree, even when another event already populated the
-                // scope-pair cache. A same-shaped sibling is not an alias.
-                if proof.historical_node(&owner) != Some(&owner) {
+                // Each live owner must pair with its recorded pre-edit owner,
+                // even when another event already populated the scope cache.
+                // A same-shaped sibling is not an alias.
+                if proof.historical_node(&owner) != Some(&original) {
                     return Err(invalid("sound owner moved outside its captured scope"));
                 }
                 let mut references = Vec::new();
@@ -255,7 +329,7 @@ impl SoundClockEditCapture {
                         let historical_proof = historical
                             .get(&key)
                             .expect("historical sound clock proof was inserted");
-                        if historical_proof.historical_node(&owner) != Some(reference.owner()) {
+                        if historical_proof.historical_node(&original) != Some(reference.owner()) {
                             return Err(invalid("sound owner processing subtree changed"));
                         }
                         let scope =
@@ -288,12 +362,12 @@ impl SoundClockEditCapture {
                         );
                     }
                 }
-                if changed_origin {
+                if changed_placement {
                     references.push(
                         SoundClockReference::new(
                             self.timing.clone(),
                             old_scope.clone(),
-                            owner.clone(),
+                            original.clone(),
                         )
                         .with_repeats(before_map),
                     );

@@ -37,6 +37,7 @@ pub(crate) fn apply(
         EditContext {
             allocation: context.allocation,
             allowances: context.allowances.as_deref_mut(),
+            sound_clocks: context.sound_clocks.as_deref_mut(),
         },
     )?;
     if used != resources.split.nodes.len() {

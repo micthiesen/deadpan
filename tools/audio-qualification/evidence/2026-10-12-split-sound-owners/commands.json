@@ -1,0 +1,755 @@
+[
+  {
+    "name": "audio-edits",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-audio",
+      "--test",
+      "audio_definition",
+      "split_owner",
+      "--",
+      "--nocapture"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T18:05:20.678820+00:00",
+    "head": "743b349d14c7a762057947ce63fbebf099d18356",
+    "diff_sha256": "c13ead0840c204bdf58e9905c21e21d21d0868f6cd164634bfd5fa567072a435",
+    "untracked_sha256": {
+      "crates/deadpan-audio/tests/audio_definition/sound_clocks/split_owner.rs": "f8990c19bcc337c76033003e133bbeb4265d0b068a0581bd22ca30bb035040b2"
+    },
+    "exit": 0,
+    "seconds": 12.088782500009984,
+    "log_sha256": "26881818312784b976e0460484e671436a99d98d03d4963f0442b18ee786d557",
+    "binaries": {
+      "target/debug/deps/audio_definition-3d3947b9399b2579": "198e37ed1021a76f6198d2ff0023e079560fe77644629ebb71359e663e1cb687"
+    }
+  },
+  {
+    "name": "audio-first",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-audio",
+      "--test",
+      "audio_definition",
+      "sound_clocks",
+      "--",
+      "--nocapture"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T18:01:27.057373+00:00",
+    "head": "743b349d14c7a762057947ce63fbebf099d18356",
+    "diff_sha256": "e3d4eca04a1f32cca8dc1bb56becc0c42d6eb8bf69dd02ec33f2ef9d7b82075d",
+    "untracked_sha256": {
+      "crates/deadpan-audio/tests/audio_definition/sound_clocks/split_owner.rs": "694a9c63507b98f580abf381b82f2011d5e5e097a731fa005b7530374d4aee01"
+    },
+    "exit": 101,
+    "seconds": 61.168291041161865,
+    "log_sha256": "190333c9a5b5b3e97495c9ca3cc90c45b2c5592e8d93f25e6fa5d94e30e12520",
+    "binaries": {
+      "target/debug/deps/audio_definition-3d3947b9399b2579": "f55167ae31d162f3bb2b359dec5ac3e44caf86701899da7940b2fe985e39722e"
+    }
+  },
+  {
+    "name": "audio-mixed",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-audio",
+      "--test",
+      "audio_definition",
+      "split_owner",
+      "--",
+      "--nocapture"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T18:06:22.019951+00:00",
+    "head": "743b349d14c7a762057947ce63fbebf099d18356",
+    "diff_sha256": "c13ead0840c204bdf58e9905c21e21d21d0868f6cd164634bfd5fa567072a435",
+    "untracked_sha256": {
+      "crates/deadpan-audio/tests/audio_definition/sound_clocks/split_owner.rs": "5ed2e8e98b1db9c2ae6f00466cacc19362a713e6ae8941ee259b3dce4488fc49"
+    },
+    "exit": 0,
+    "seconds": 5.408973792102188,
+    "log_sha256": "379c3c75b5b89258873a6d0b20b6f195a85d8329e71a77b5c73c2d750adbd374",
+    "binaries": {
+      "target/debug/deps/audio_definition-3d3947b9399b2579": "6ff689cd03ea108071d2ac9a327f1d3ec42661dbe32e764611ba9136c076c0ab"
+    }
+  },
+  {
+    "name": "audio-shifts",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-audio",
+      "--test",
+      "audio_definition",
+      "split_owner",
+      "--",
+      "--nocapture"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T18:03:21.574065+00:00",
+    "head": "743b349d14c7a762057947ce63fbebf099d18356",
+    "diff_sha256": "e3d4eca04a1f32cca8dc1bb56becc0c42d6eb8bf69dd02ec33f2ef9d7b82075d",
+    "untracked_sha256": {
+      "crates/deadpan-audio/tests/audio_definition/sound_clocks/split_owner.rs": "30915fcbb8209889cb19e458c09aded17fba3975a3a7a46494df18c31a4a3b05"
+    },
+    "exit": 0,
+    "seconds": 5.521635625045747,
+    "log_sha256": "0780092aa8bdccf716a3683bbc53d6e7efa53a303cd6ebdb179061c1133b7ebd",
+    "binaries": {
+      "target/debug/deps/audio_definition-3d3947b9399b2579": "7d977d484ea1b7b6cd4af085c917f2f474d7689d756256f67792fcc909d6491c"
+    }
+  },
+  {
+    "name": "baseline-final",
+    "command": [
+      "python3",
+      "/tmp/deadpan-split-sounds-20261012/baseline-final.py"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T18:38:42.414829+00:00",
+    "head": "743b349d14c7a762057947ce63fbebf099d18356",
+    "diff_sha256": "b4e6d5f83cd8374b2a39bb9d4a1b4d218c19dea2fb2095249dc2dcdcd2602ee8",
+    "untracked_sha256": {
+      "crates/deadpan-audio/tests/audio_definition/sound_clocks/split_owner.rs": "3a459834eeb8309d5db5e459a0a936ed7a73308b10555b706a9a174c0d7378e1",
+      "docs/qualification/split-sound-owners-2026-10-12.md": "914499045bf12bc92a93b43fa937f37eb42fae38e61eaa7abda0a9eba688793c"
+    },
+    "exit": 0,
+    "seconds": 0.3292772499844432,
+    "log_sha256": "956188a13a1894e64a775ecabb484dc791d53cfb44a22b4df0d48c1e05759779",
+    "binaries": {}
+  },
+  {
+    "name": "baseline",
+    "command": [
+      "python3",
+      "/tmp/deadpan-split-sounds-20261012/baseline.py"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T18:09:51.787381+00:00",
+    "head": "743b349d14c7a762057947ce63fbebf099d18356",
+    "diff_sha256": "73689e04f8333cbac872b50df6deee56afc2fbe3f51522020f5d90a4925c6793",
+    "untracked_sha256": {
+      "crates/deadpan-audio/tests/audio_definition/sound_clocks/split_owner.rs": "5ed2e8e98b1db9c2ae6f00466cacc19362a713e6ae8941ee259b3dce4488fc49"
+    },
+    "exit": 0,
+    "seconds": 0.6537851667962968,
+    "log_sha256": "956188a13a1894e64a775ecabb484dc791d53cfb44a22b4df0d48c1e05759779",
+    "binaries": {}
+  },
+  {
+    "name": "cli-first",
+    "command": [
+      "env",
+      "DEADPAN_PREVIEW_EXPORT_KEEP=1",
+      "DEADPAN_SPLIT_SOUND_RESULTS=/tmp/deadpan-split-sounds-20261012/debug-export.json",
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-cli",
+      "--test",
+      "preview_export",
+      "split_attached_sounds",
+      "--",
+      "--nocapture"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T18:06:27.476420+00:00",
+    "head": "743b349d14c7a762057947ce63fbebf099d18356",
+    "diff_sha256": "c13ead0840c204bdf58e9905c21e21d21d0868f6cd164634bfd5fa567072a435",
+    "untracked_sha256": {
+      "crates/deadpan-audio/tests/audio_definition/sound_clocks/split_owner.rs": "5ed2e8e98b1db9c2ae6f00466cacc19362a713e6ae8941ee259b3dce4488fc49"
+    },
+    "exit": 101,
+    "seconds": 33.78977279225364,
+    "log_sha256": "5062bdd07533446312be69caa939adebf868665197b636888306158f80e0a01d",
+    "binaries": {
+      "target/debug/deps/preview_export-72784a6fae9bfd9d": "aade2a850dd6c497c60f3027edaeac1c3ccfe4cf2ef5045a02c9eb200d6c91c1"
+    }
+  },
+  {
+    "name": "cli-second",
+    "command": [
+      "env",
+      "DEADPAN_PREVIEW_EXPORT_KEEP=1",
+      "DEADPAN_SPLIT_SOUND_RESULTS=/tmp/deadpan-split-sounds-20261012/debug-export.json",
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-cli",
+      "--test",
+      "preview_export",
+      "split_attached_sounds",
+      "--",
+      "--nocapture"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T18:08:16.959497+00:00",
+    "head": "743b349d14c7a762057947ce63fbebf099d18356",
+    "diff_sha256": "73689e04f8333cbac872b50df6deee56afc2fbe3f51522020f5d90a4925c6793",
+    "untracked_sha256": {
+      "crates/deadpan-audio/tests/audio_definition/sound_clocks/split_owner.rs": "5ed2e8e98b1db9c2ae6f00466cacc19362a713e6ae8941ee259b3dce4488fc49"
+    },
+    "exit": 0,
+    "seconds": 43.16872424958274,
+    "log_sha256": "aeaba1b8d9543cebc50d4d00a9be5afddd75e39391eacf3eaf0854ed2693d290",
+    "binaries": {
+      "target/debug/deps/preview_export-72784a6fae9bfd9d": "6fd76564a1bea6bb7b8047b97798fa8f517246f82dafe36036072c0bab6167db"
+    }
+  },
+  {
+    "name": "clippy",
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "--workspace",
+      "--all-targets",
+      "--features",
+      "ui-harness",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T18:25:02.536298+00:00",
+    "head": "743b349d14c7a762057947ce63fbebf099d18356",
+    "diff_sha256": "ac6a130cf13e8b099ee67ac95fbf0e70590f4b0d9df42c7f31d8aa54efb90686",
+    "untracked_sha256": {
+      "crates/deadpan-audio/tests/audio_definition/sound_clocks/split_owner.rs": "3a459834eeb8309d5db5e459a0a936ed7a73308b10555b706a9a174c0d7378e1",
+      "docs/qualification/split-sound-owners-2026-10-12.md": "7fb01eca4dd0c4683efdbb9e0d75b9348b30b9fb8190fabfcd151e206e7ba23c"
+    },
+    "exit": 0,
+    "seconds": 201.04504687525332,
+    "log_sha256": "fde9c517f20d90ac02029225df67becd2656395398d079d8eb52b47baf98ef67",
+    "binaries": {}
+  },
+  {
+    "name": "core-audio-store",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-core",
+      "-p",
+      "deadpan-plan",
+      "-p",
+      "deadpan-audio",
+      "-p",
+      "deadpan-playback",
+      "-p",
+      "deadpan-store"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T18:10:55.034710+00:00",
+    "head": "743b349d14c7a762057947ce63fbebf099d18356",
+    "diff_sha256": "ea69d462f086500706b845fdc2921b3dacd9d107d4b436dfdace60e5d1885ce0",
+    "untracked_sha256": {
+      "crates/deadpan-audio/tests/audio_definition/sound_clocks/split_owner.rs": "3a459834eeb8309d5db5e459a0a936ed7a73308b10555b706a9a174c0d7378e1"
+    },
+    "exit": 0,
+    "seconds": 845.017550624907,
+    "log_sha256": "1253197cdf04758e3568b9d90c3fba238a73fdd44e4c8427849f86f7fb3d4f1a",
+    "binaries": {
+      "target/debug/deps/sound_routes-bae518f473e6755a": "e2c6ee25a4dcc7e33b954ae974cfaeb910581ddbad9950ac0d47dce197e94036",
+      "target/debug/deps/split_edit-e1e74191c288b05f": "bab2cac0cbda6bd196171d97a097c1e1d23cca0fbd673fde21c1a5ef45f4feca",
+      "target/debug/deps/bookmarks-1ad911348a12f8fe": "c6fe00f3dba1a9cc53f8cae14e4c9434c2393f78b1275a9d1401388ed4627727",
+      "target/debug/deps/audio_policy-165f8c75f4dd6176": "650d09ecb830856bb45c7b098155bd92bf43c3ff3617c6cf7204500f5c328f54",
+      "target/debug/deps/single_source-efabca090ec1e4ef": "f408d74a918adc2b70b7314e0abc3148b7e7dbbdce33b17b7f6fc3f06d0e31fb",
+      "target/debug/deps/sound_routing-16b8da57d07a2440": "d2bc8afb5599b8788e9c9a39c9e5a3bd703193e4f3bf3d32f994f21a8269578a",
+      "target/debug/deps/source_trim_geometry-721e45448ccc8f6c": "a0de079c423fa4c18f4c0ad3ac0ca28dea170a393e49a1250d2ccf6975109888",
+      "target/debug/deps/framing-5139e922f3a17263": "2ebb1d3a0dc7bc2a1a024553d0b20b8176c49556dab7e8f3146c33f0f490a564",
+      "target/debug/deps/analysis_corrections-d506d725788892a7": "218719319aa5e048e7f607d201c272ec46dadf9668247dfd7d016675401df4e9",
+      "target/debug/deps/sound_events-ee79d708b11d8266": "511baddf49ada5ede859de51d7cc6c8760f9eb121b09041380a052164aa737fe",
+      "target/debug/deps/insert_time-9b8900ebd7d5cb47": "cbf7e695459132b07bd5cbd09773df0d32c8ce3dfbe1b72c4abe96891ca2acc5",
+      "target/debug/deps/occurrence_edits-f828399e4492ea00": "cd96e4adff857ad804b9f5026c91551218194a65af3359d8ccb5a492415dd3d2",
+      "target/debug/deps/adversarial-86cd3dece0805b87": "e723120ee27617167528724adf8af1ef5be8983580c422b3d722aae2b5600304",
+      "target/debug/deps/delete_range-bc3d94f85d4234c2": "26d1185cc383f04b4b90d8d2d6b9b4246593a7073fea52d38a3df952ca096d82",
+      "target/debug/deps/marks-ab9d4d4e80bf5266": "e243e5aed81d0106cd80a9345cb0289de62500cfcd9fef94e866b6073e68dfc3",
+      "target/debug/deps/source_voice-2a310cf94785259d": "fd5b8fc8d4f8f4d6f8d21c86a320762ccc806068fd1fc7850c2d4a0884bc0547",
+      "target/debug/deps/persistence-d29def16114911d9": "f3b70ca01e4da127b2dc07eb75a7fe9919cfff89a6a0adf32ec1f28da6f8686e",
+      "target/debug/deps/source_edit_window-8c265b91cb111bce": "ef1732d2b8f0c30621a02b00c5b50d6cd22d65604d07d851f23a47c50d2b2558",
+      "target/debug/deps/edited_slice-4cccc410888c344c": "0399086d1d83d30051d2fd764ab353c83a003213d1f2e7531d6464b404433a06",
+      "target/debug/deps/audio_reference-89cf9320712aa68f": "14f801dd8b5d71fec989a82e9ece5cfeb318cf085aeaef814cbd47f5f201fcc7",
+      "target/debug/deps/generated_media-922b30fbd0227158": "410b9c8290ee0998baab3904a9f08f0cd4c54cdc2370bdf0b54548a4a667b270",
+      "target/debug/deps/explode-f5a325891007aeea": "7d90a22185bc8ba1eca2a0d4fcc1af6294fcba2a7bf327494f542de765bb6096",
+      "target/debug/deps/move_range-abd01aa3ed0643ec": "f38aafa0ea497b0a2c1f189bc0ae2278641174b9d23df80939bd59808a296ee8",
+      "target/debug/deps/allocation_projection-31ede61ff19845f9": "f7f499d46d693e6f00da2463d0e96814e281c8a5ea4546a701544284588fa004",
+      "target/debug/deps/audio_context-57d0b94c53f239ae": "449656984bc568f609028e659c27737c086066808195c177752407a86a42b425",
+      "target/debug/deps/audio_signal-90166204d796ade1": "e1ca0220ffdb17b93db837093475c5a9cf269072d67f92c063a8dbbc1fbff047",
+      "target/debug/deps/gap_bindings-684fd9b0d7bde7e8": "ac797469e6f8e009a76f365c86aeb08894c0e74648bf8945b41761e11463e466",
+      "target/debug/deps/presentation_basis-0502f6ec9445fdd3": "86a804abe17fa21c63bc42b65066e6ce1c0b2c41b7a79972937350938e4e5519",
+      "target/debug/deps/sound_allowances-7ec24ce0065ef4ea": "4f31a1bafba40447e44d54e3c4522a481ddf5b84b5d98c3c83760de729dd3349",
+      "target/debug/deps/prepared_relink-93b8aae31556e454": "fe1d217fd78eeb8dfeb92358b26648d62657328fec68c479b9bd8792c4bbf629",
+      "target/debug/deps/sound_route_sampling-9bc7cb04615c46d9": "e0662c1b0ad0bbcd0c077f9c8cb0314b0b3edb8523d1a44ed8996e7267be7a7f",
+      "target/debug/deps/gap_definition-3968c5a9fdc9915a": "a2155540d22541addbb0e437fee4c5a436b427e67b3478de4b5aacd865ae52cf",
+      "target/debug/deps/audio_domain-639730e1f518284a": "0b17b7c9154eddfd8816403e53f13f6ef00d59b7ef76f2ff3381ff8c3daca312",
+      "target/debug/deps/audio_gain-e2db8ed0cdc99479": "41468d3c380c19771e468bab75ceed9675d8de03fd48c164394bdcb57f62f9ce",
+      "target/debug/deps/root_sound_routes-c7b8fc62b0867d37": "de68dcf23b10fd5333aecbc54991926870bd155513ef825a9440f60c3933e0fa",
+      "target/debug/deps/command_work-9a6b9c9044967d33": "c3c771252892bd0e5d22b3b79dd9cb145f72cb0d59070ae001a85c9aa9fd938b",
+      "target/debug/deps/storage_failures_media-d300b9e7915113a4": "8420f14c0320174b53be35ddd67b724ec4c22f76e071281879aa7630d967a409",
+      "target/debug/deps/source_interpretation-eec9a6d5b6e7911a": "200f879ff265c8fd8a5d66b16e835aab1c02ca8d63f953f159878200f9dec325",
+      "target/debug/deps/audio_definition-92d8933fc27a8adf": "296e704f6a82f1db2f9c62dda92efc76e7dec8450f38c95bebc1234622f913e4",
+      "target/debug/deps/source_slip-75c92397c766ad44": "cc451a77fddbe16765c74708c00f73364bbb0bdf3e2fe3ae77397650ba0c1f99",
+      "target/debug/deps/source_trim_edit-1d6f0e69e176c440": "4007f5657f2b33af36edd341369d5dc8b9173e192953a288f898097f8d20cd61",
+      "target/debug/deps/generated_admission-6ad725bd49ec6128": "f60afb33f3d387fd945c0b6e1aa460947a60d9b9f89c91bc81cb558c81ea934f",
+      "target/debug/deps/true_peak-60b4aeb33513ddfb": "cfe4f675793ff3aab71605313c142efdecfe02f2159c93c08a8bd8f71a9e8922",
+      "target/debug/deps/prepared_checkpoint-d8259218e6b46554": "e52180d6d7c4dbc00024da02741ba0325ef9b41cfccae12f7a4aa6fb35fc5340",
+      "target/debug/deps/audio_definition-597591745afd78e2": "fc8d8c0bddbef6cc52c0b8b77d033ae3ba0d0abf61e54d4e21fde35e0487ab8f",
+      "target/debug/deps/picture_plan-f9a17ea5bd9e9a55": "3c612660526a5965ebf54e355c668ecc08d846ea78bf8653e579d5f561410ae6",
+      "target/debug/deps/split-9951f895a464e501": "7e011c2b1194e3888eb138b8daee27cee5c73faa907df854caed0ff231c1e5d2",
+      "target/debug/deps/audio_gain_prefix-c4fc7061ab6a7097": "ea5a3c5118a5bba204f43569d0a981673709dc8dafcab03f3ef22a8888bc5381",
+      "target/debug/deps/source_origin-40b8498226e4168c": "db47fec6055be6a00d04fd4892618154d42b3db2c4207d58887503cea2d50653",
+      "target/debug/deps/prepared_source_registration-09bf0191c1d8ac21": "100b54478cbc3f63d1a6fc8c796db529c39b56a287934d2cc98cf8140b3fd7ce",
+      "target/debug/deps/mark_fragments-3a1c60a299291c98": "c78279bb250555417694af6d341ed6ac291d8ffd3a58fab3b3007bb4846875bd",
+      "target/debug/deps/retime_edits-2d69bb60355e2347": "345bc5bd82b8f76626a5e085da7620f0e2a74f02ff90364e026e476cb687f591",
+      "target/debug/deps/source_import-2854ec1b96870b24": "4d36280cb323a80ef9f4a9f82ca04b2ee14068c7dfcd57c4ecb553173afed9ad",
+      "target/debug/deps/selected_video_window-a974f0dc4d4dfd7f": "51a33dbe4d4abdea230cdda993fda4d9bfe56f1b65bacb98d6a7cad5cdfd1733",
+      "target/debug/deps/audio_fades-831d83cf73b59fcb": "61c86e070112245d041c546c4c9ff671fcb902e684ea5e738b7198e5fcf69836",
+      "target/debug/deps/session-8f09bd6a8ed3540d": "61e0c0b0d15b15371024e0e2be50911441fa2cfad25f92877976fd4f45a6b8eb",
+      "target/debug/deps/hold_audio-17fe1d9dc1c6aba2": "8b015bdad6ef7184b74619b719b1aecea867fc52c0f96ffe4c1082a2656d6092",
+      "target/debug/deps/root_sound_trim-4b0a2110afe09d59": "8afb7da3285f42e63791b62b96155e258e439e863d0229467803ad36ad5408a7",
+      "target/debug/deps/original_preparation-19b5945f7cddd76d": "c1591831ef8568b2e608700cb0040e83aed20f57227371706ad59c301c0c6809",
+      "target/debug/deps/play_overrides-1423dee4712ed52f": "165378b7ef9ed9d023b5c5b2364e235ccc0b45ee2fe6885f3b912656ca1d4d4d",
+      "target/debug/deps/adversarial-8af27471a6f94154": "fdb4013b838643fcada372fa7390d093876cead16ecb56bfe1ab23359c36af6f",
+      "target/debug/deps/source_effects-2af315ba16557733": "611ede14e0eadf9710fbe22c3c04350ec884b90a311dc8cfc1db1622241fb4cb",
+      "target/debug/deps/speech_activity-499f00878b14bfd6": "876c1e3553c781c914815d6dccd69747c0df0ff440224cd9db75573b9aff7a74",
+      "target/debug/deps/reanchors-b1399c309ee55dbf": "44096d90a1f1dac98c5c59a44ce78ebed39322fbbde559e2d83440641becac5a",
+      "target/debug/deps/generation_bundles-06bead358abee03d": "09dc1cc8ee959138befa57624bc84294de63a7634102bdb0f40736304a4ea256",
+      "target/debug/deps/edited_slice-10397325f8b0ca90": "fd235d81d2d4de63deb1ea6837d734b74c39acf0f27618249d8e0d6eec21b081",
+      "target/debug/deps/host_owner-139ffbdeefad3be9": "d4756f8f7b27060aa77a7a52489e586b22335a19f06023317fdf3a7749203f3e",
+      "target/debug/deps/audio_context-d10ce3339631fdc9": "d59c14fc7b6db7022d278a6e208d539ff794ad542954328da213cee11a16f7d7",
+      "target/debug/deps/occurrence_edits-02b934ee6db4cc5c": "86750326b88783a5a9fa212fd2e51d977fc52179da69a22f13266e9c78294228",
+      "target/debug/deps/generated_read_handle-c468b4b3cd3f550e": "1893399a04fcccd618b9f96ac414c7a7e4f0753c5bc1e818be32a9aa5e79691a",
+      "target/debug/deps/limiter-7722f3841ccc0953": "be36801afde54af0b05a2e3cc41e3ccac1a02f27c4b36922ba737095187c85aa",
+      "target/debug/deps/resample-6b0c45d8d2c1ea45": "02ac6a11b237caca5cb0fb1f2327b760d49cd58985ee042010a23984dd0cf81f",
+      "target/debug/deps/reference_policy-c13b9c5d8bed4057": "4c86b073025a26acf7370276bbe8dd84897724c578c11fb6dd62e58054457c24",
+      "target/debug/deps/storage_failures-991a5023e02d5133": "0f35d5de0a2168d524dfb97604844a85b32a531fb11f92d2fbc73916d9f27fe6",
+      "target/debug/deps/shot_analysis-8b8f9feb93cb0fe7": "7633941ae66098a98b29f772149bffb3d32898d820c8a920285e5fa058be22fe",
+      "target/debug/deps/document-6668c5288d367ff3": "ec261e15aa21a39cddca5275c2374130450b4ffd96d109f58d4827957d2717f9",
+      "target/debug/deps/node_gain-1cc8ff4e44da021b": "06bd031e93d5aeaf0af8ce418e98948296de6dc4e494cbbf2381bf9a2525f332",
+      "target/debug/deps/deadpan_plan-3493f6f452db8277": "cbaf084de4719ebebf68eaf1938f420fc139088cfed7f7e352a0ee1bb7205e55",
+      "target/debug/deps/edited_slice-e4d966f7c51a842d": "9127db00c8f97c75687fc1d9b4b45e37e49d393d50132287f1502d0c44b3be0b",
+      "target/debug/deps/delete_ripple-b0a0af1755a94916": "97671fcf44aed0d99f1b270e9e67924e8abb85f911bb21c6999e7714cbde45ed",
+      "target/debug/deps/anchors-0242ec5a7c424061": "2a8a2527b89cb4cb2a6cfb30e3f05d80be196d9e064ac8404538557034137f84",
+      "target/debug/deps/partitions-cd53ac3851a783a1": "874bed5fd38e7f28235300109c011aec54f3ce7b11c1bf15452c33a0da6ed2d7",
+      "target/debug/deps/deadpan_core-1a9b6647343f54bd": "414617de53aef479e156455dc046f7cf7bac9020f54cbb1884e8f1c72dd1af54",
+      "target/debug/deps/sequence-80ea83103136e3b8": "3a041d2c341027976b2f474e3585a1eb0d83a2ed4bd86fd753ab12b77633d5fd",
+      "target/debug/deps/source_roll-33bbeb94d7e1bf3d": "00a55c6f747e6df25459c207f092827196006275fc3bf5a729ea4a4cd2a3a5c0",
+      "target/debug/deps/scoped_many-76fb5f0c32893fea": "837b394d4144550b5143fd3842738100df864a51d204bc96f38940abea2103bb",
+      "target/debug/deps/source_view-7ea0f1fb3ab62a81": "f0ad27148332ce684918d4702e4f364cd1ce6e835e0f72813ecfd711a211e4c6",
+      "target/debug/deps/audio_lineage-60cb15512b0cb090": "d79f237f66a619068cd1b8b3579f9522217e8ce7a4940c4e1f657d0ad4df9afd",
+      "target/debug/deps/source_trim_resolution-2b3c438607946ebf": "39b7d6e89c6bfce3ac3c1c696f8bfda618337207391305fe331a94231ff8692f",
+      "target/debug/deps/chaos_kills-d52ae3f18c43c91f": "04762068cc0890a7f8017481b3965b0e14552652e2f3cbf1c30174332c0717b8",
+      "target/debug/deps/play_overrides-4dc2e787cd64e41f": "13e0f36464bca0c3d3ec9ed10d1c2d3bd357814b5dbb40edcdfd4a137930c6d5",
+      "target/debug/deps/timing_representation-f6ec7460384901fa": "639398bca5cb2fe5c9b44839495b9c863071057a2cc31fd1333ef66da46a45fb",
+      "target/debug/deps/generated_holds-511cf7681c32f19b": "fdd98753a1d61e7f50246ebc2ca85c47f15acc90e930de7c5f2913fb7b031d37",
+      "target/debug/deps/source_registration-04f3081689b03c81": "c1feda8b510fe4e9af3227ccfd0c9f040f369042796984ea20878cfc7d4b755b",
+      "target/debug/deps/source_voice_policy-579d9204acbcf6d7": "693077edc1cd8aa3d95fbb78a8afe11890fa2ff339342bad1e2db61dc2544349",
+      "target/debug/deps/gap_overrides-3fda631ce0ce9cde": "cacc13b7722749f3e15fa3b8a4f1288bd7f89f331cdc0f91628c015111c824ee",
+      "target/debug/deps/audio_context-d8ca6cfc0cd79ad8": "396cfdf156a99f0e06179912ae18a55fd5ab7402c15ef2a1001741a5e71d0261",
+      "target/debug/deps/audio_reference-9b73f96e602969cf": "df7000fedfbc459ad22632c04f1e30613c70319cb8dfa465548f6b632dd968f5",
+      "target/debug/deps/audio_tape-d7fc96ba98251930": "7893d2cdde4e6b07108f32821d16d0dc8699f5d8477bbf966cd8d33e43906e8d",
+      "target/debug/deps/transcripts-ecfaec6298dff761": "eae451c30f7dfa83101ba84b31c590ed9b9e210b9e99376c07fccdb7ccb06b23",
+      "target/debug/deps/dormant_source-abcfdc57855854dc": "d7eebb6e20caf3525f16bdfb2b54ee64db10a401143043b842313a91f52287a7",
+      "target/debug/deps/original_media-aba8b362b909735d": "9beedf6abec817f3f5d8bf22e9842ae6e9326e2dc295b6da1f85428f7bbee918",
+      "target/debug/deps/sound_events-b2e2b02c4bf5da55": "6e9fa2aa3d487f457a6ff6c442d8e24335a99934a9a1b9011ae8dba41512382e",
+      "target/debug/deps/backups-22bbe8a84021da85": "3367d25f728547289d62221e4ae97c7f9f00acbb44f281f25e7e11af8ad1d2df",
+      "target/debug/deps/presentation_basis-784a05404b6c1a0f": "a7a788514ee33a23608a11a68b512c44e7f34205a2fe21e9d9bde2ba90762e28",
+      "target/debug/deps/sound_processing_layout-fba52242899e0bf8": "184d167cb2f970416bff52a29f4bc68bd82f5c482de9d5d44aca7962d48051f8",
+      "target/debug/deps/deadpan_audio-8b41d98d090460e0": "3bc53c29e19fe8b007e25adf9a6fc6e6346d56463b1c22e5389a863a94b2fee5",
+      "target/debug/deps/revision_storage-9ccabe56b4ae58f7": "ca0270525d9083fbb0f966cb1cc1d719747dfca540918a3a7cdebcac15213bbc",
+      "target/debug/deps/deadpan_playback-465e45eac1c6167f": "fd6536aad5377d35b8b6df8dc4745760cb4549fa7177f8ac0c0c31ba527865c0",
+      "target/debug/deps/stages-629ec9c4134d4981": "f57f7ea5c280e396f69077c7d16b90507070651455b1ddfa1e44a696f5f2eccd",
+      "target/debug/deps/long_project_stress-a8c629c18e967432": "0beae46384ebe92e3a21e43ef6a3157c8a9c78ba867ee0c053fea7cec0156c29",
+      "target/debug/deps/recovery-ecd4c21832a0c389": "0eea5b501050cd1fcf44f6e7bee9349f818b6ec2f878d0e3773fbc82b8e22218",
+      "target/debug/deps/composite_insert-d30bd03b3953fe00": "c31a66c1f791e663b070fd9e3dfacd8fcd02f0cb1ae4c4b51b0343d68f0bacb9",
+      "target/debug/deps/migration-d35f63eaccb940e1": "7a448e366a5dba11278acf8c6ef36c6aafe2677da0358b1074fa384d31058f54",
+      "target/debug/deps/picture_context-d91cf12c62b08ac9": "a43277a92920e29d3ba4dfb2121f89fa98360e81dd9732f8fed4f81e63e3c5d3",
+      "target/debug/deps/repeat_gap_layout-7187ecd1d23dcfc8": "f3164d09332043095c83469e866c7304700e835324ea6725f60f03f6f10faea7",
+      "target/debug/deps/sound_events-ee0c9e9a228b58d9": "686fe41309c7583f309303033cc67a691461ef519910952caed0e690b08eda6b",
+      "target/debug/deps/original_provenance-0d34a885d87334ca": "73ab15809795c1181be21c825fcf1a6a681e1975633190cafbd51f1ff2d30dbd",
+      "target/debug/deps/deadpan_store-34e06d2d31b8d387": "8e244e9d69446f1c995c2fbb1e40f0001305042897081558cbb81efe9834443a",
+      "target/debug/deps/audio_plan-5f5ca863ceb60ad6": "3309af797b9e9d45694436f696bb1967406c7de8378df9f4e2525558def3c492",
+      "target/debug/deps/loudness-543442191caa412f": "c168d2f1f385a02682269f502be61d90e70691554544942997fd64a6cfcb99f5",
+      "target/debug/deps/audio_domain-5f20c2dcc9401c50": "23498d7f076fd7b398e9b4cf8d44c6495309866f04a6c1bd6cd04e5b8637f9b6",
+      "target/debug/deps/audio_binding_capture-7ea0875f00a342c6": "79204449743a34877ae20a943be482f0e7d99123bd558f84d4a9c60b16f453f3",
+      "target/debug/deps/occurrence_edits-f34f1d7876e27511": "91b51c63194f8ee26bef53b8d8b261637e9f8621f58d231ac3e06dcc9bb03249",
+      "target/debug/deps/hold_policy-f39159a16f644498": "0ea2e66a00a7ab91776de3cb48a650ae3a980cefa7f026ff29456a0e05930f69",
+      "target/debug/deps/generation_attempts-4bb776c25e2e8c27": "668d14225e110735654ab49d2a0cc5272bcbef91cd2726c43dbdbcebf1f81d6f",
+      "target/debug/deps/audio_bindings-d11aeb251e105001": "7b1686a84b4d7cca5698e143597c357175da5be57bfec6939b2f9e6aa7dd12b1",
+      "target/debug/deps/source_trim_command-d063d29dc8c3a1b4": "8e460d75f5dd5ed998e374cb7f18014a7c9e77340afd2d140624e474b9c3248b",
+      "target/debug/deps/gap_bindings-036829875a20d09d": "561ffbd7c0af255dbd09b06f5a1b12f6a1ebba1c3578d558b526a03544668bf9",
+      "target/debug/deps/structural_properties-9f3452aaa86c244c": "c9ff350c5e65bf942f816671935201673463868fe23ab0dd81f3babd63e9cbe0",
+      "target/debug/deps/audio_bindings-1487ab27f5fb098f": "03760cc734db6072f4d15c53b45c1208b224c60e75a07070b58b92ceabb6e5c2",
+      "target/debug/deps/routed_voice-ae26b67b793bcd27": "6d8deede2c6bb3310488a6aad2201949f2cbe01bd552af40afc428eb5fc2c91e",
+      "target/debug/deps/sound_event_fades-2837c0e80c69b38c": "499e88b6e594cc1992954d65b778ea2dcba2084a735ee1e3f5f46ee5343c44dd",
+      "target/debug/deps/render_jobs-030088b45a5c75b7": "00b8262e8d79199511cd35b3aa529f400fb2b22c00bd19e615c215769d4235fc",
+      "target/debug/deps/signal_transfer-f37f88388694624e": "cb0b907a8c0338ef22e682610121a6788ce3f50821f6be6948f960498f5f0d8f",
+      "target/debug/deps/generation-fd278e75b4fa2c4f": "3f1d2374e39e1e29cc7930f3285ae6f86494cec563d90871c273ed80bfa24c43",
+      "target/debug/deps/audio_edges-1e1811f720db7530": "4ba7ddbdb3302f78046d04d7d81d82ec1dd2ce94d1a0b70b87b56f0cfd6f16dd",
+      "target/debug/deps/gap_projection-f1e0e21bf11d9aea": "c212e64875817e08b79f5a4c3105efc8912792f94fd30ff0b88adb052b14302b",
+      "target/debug/deps/failpoints-9c61d0669fd11f20": "66e550b0e1bbdcce88fa04d5b08b5d028a7830754aac908112bd62e034036aca",
+      "target/debug/deps/mark_resolution-bf0ca6205997fb2e": "f724068b3f56fda150f3c879b5fdb26d3cd4d47572092464d519d0ad07a3f448",
+      "target/debug/deps/gap_branches-81d49b2875be421c": "658e938897a467b442d5d6c2a82c95e7b2c6354f2bc1fd6a317f6a1bc6a5060e"
+    }
+  },
+  {
+    "name": "core-first",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-core",
+      "sound_clock::tests::edits",
+      "--",
+      "--nocapture"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T17:59:21.402640+00:00",
+    "head": "743b349d14c7a762057947ce63fbebf099d18356",
+    "diff_sha256": "a4814ecbf12422b3efec5f9a3e02a0e7d3eac46635bd0319b9361b5ac6772638",
+    "untracked_sha256": {
+      "crates/deadpan-audio/tests/audio_definition/sound_clocks/split_owner.rs": "694a9c63507b98f580abf381b82f2011d5e5e097a731fa005b7530374d4aee01"
+    },
+    "exit": 101,
+    "seconds": 5.545096000190824,
+    "log_sha256": "898385525a7bc5090709d756a95acf340309efe35107e109820da07d9e8c44be",
+    "binaries": {}
+  },
+  {
+    "name": "core-second",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-core",
+      "sound_clock::tests::edits",
+      "--",
+      "--nocapture"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T17:59:40.006343+00:00",
+    "head": "743b349d14c7a762057947ce63fbebf099d18356",
+    "diff_sha256": "bd28ca5aaef3fc45411765a27c253148f6d6995433c694df8d0a135cddbd8223",
+    "untracked_sha256": {
+      "crates/deadpan-audio/tests/audio_definition/sound_clocks/split_owner.rs": "694a9c63507b98f580abf381b82f2011d5e5e097a731fa005b7530374d4aee01"
+    },
+    "exit": 0,
+    "seconds": 62.42520408285782,
+    "log_sha256": "13c90d2fe9749b1f8511f84e8cb27ce7efc5838857854ccaa40f208787fbaa31",
+    "binaries": {
+      "target/debug/deps/command_work-b65aa97a30f21fa9": "31e2cfc417ca88dba591a876c2d76d6966bac35ea858170aad6237877e8a4f92",
+      "target/debug/deps/source_trim_edit-17bcfaeeb5316e12": "357f1f5e825d7dda3ec2ac750fe3e4bb072f9485ce22ede48e4b375a15ffd25d",
+      "target/debug/deps/source_interpretation-07dd8d3a6b05fa84": "5d81bc07b72742000413b0ea5852c3fc01e382610cd9a61b1407ae9f0809da39",
+      "target/debug/deps/occurrence_edits-8fc186587372b2a7": "7edfba9bb18721ddea3050101f7cb96a6fec879c3a73dd8259307e750032e75a",
+      "target/debug/deps/structural_properties-cb32f804d96b1a78": "fe50962898177b1a2c25709efadde1106c4fb401c8dd93b4f568b980f9758a32",
+      "target/debug/deps/audio_gain_prefix-8f9a44b8379d8260": "a3c4c4b008b0eb0c53df58d400a1394ed04418430ad4dbe71fe400e6aa40bef2",
+      "target/debug/deps/scoped_many-48aa23bd5808642d": "6057175aa5457345e4b0ea5b3aea7f5beedaf230626bb272af73e4d1d50be565",
+      "target/debug/deps/retime_edits-08ff83204b6a6fc7": "214304cf56318bc852794b91ddab0bc353cfea55d65d76b817040347b9aff95c",
+      "target/debug/deps/move_range-54387e6255dfdee9": "180e445f2b7d411a9907a3c52292928caa6973254d6ecf0836ec466aa7eb8e02",
+      "target/debug/deps/source_trim_geometry-05c3bc1ab0c1279d": "6ad7a22a0a9f0ea940576c9771811561c38d478d537f8fa64b9fd04419d1d9e0",
+      "target/debug/deps/mark_resolution-ff140c09b9a3ffb6": "1c5babc930c40dadbf0e4e304fa313fce57ab5216a06f075f5f0d2384cfe8110",
+      "target/debug/deps/source_roll-9ba3d61676505a7f": "3f17a10e7991553bc6ed7c6996a4d8632737176bdfa27ac4912e396d53517a81",
+      "target/debug/deps/audio_bindings-625980aa19973c33": "00d04048be3e98224505dab22b21db05a13bbf7a4c7766d3fc654d6d8145b043",
+      "target/debug/deps/generated_holds-0f43edbdae7a701f": "b5a6d54c4d2e68541c8e61ad2140d825544bce02c674984250887e3673683ab1",
+      "target/debug/deps/sound_allowances-7999e77fce2946f0": "613aca3c08a2d2762212dbd26f49a0706f23b2ab45213a41609c7da348f5f052",
+      "target/debug/deps/source_import-e0654af2919b8cbf": "4298e1c1b3aec86bb9485d96e62729f1f295bc776ce33eb940107e2c8077431c",
+      "target/debug/deps/audio_context-f1fe6a72f8ea9574": "b081ed908e6b74aeb096726f80c2c31294f5bedb5f85b2befd5f645779b5f8ef",
+      "target/debug/deps/source_trim_resolution-8ec14f074a105749": "da6053bf07f98186b946a2a54b37572d0b7b08051ac851c57f4d632ee24e1101",
+      "target/debug/deps/source_view-d9e20131fd01abf6": "5bfe91129d3e9deb29f835b213c1051eaff8bd4cb0034c2d6b0e8a1cae7b4ac8",
+      "target/debug/deps/audio_gain-1635d0b8c553104a": "63b978c3a378a6646b978f4f6d707f8ec6ef00ceb4a8a71aae871d8748c1603b",
+      "target/debug/deps/document-fa93cf9be19dbacf": "1d95c78cb7a2a2405d8a38b2ab0822d36698658537b41909b23b1c876de72777",
+      "target/debug/deps/sound_events-e17d0344c3a0f232": "f434e2a5edd53e7aef6711decb21fddb7377b16f41fa5231bd2e0d2b23793a38",
+      "target/debug/deps/audio_binding_capture-928af37ee78052f2": "8ebe670aa06f5fe52f338a336aa9432277309920ad783433324dcc755908c90e",
+      "target/debug/deps/hold_audio-a8edd5f8cc5528f6": "cb443a3932e27babad179554513320bcf71b62e915db89ca13992c11b8988a40",
+      "target/debug/deps/insert_time-fae679e26e8ac990": "ae41ea3adbecf32746345991e01a03e84dd254dd6c0c290f5a5bafca56a5344b",
+      "target/debug/deps/gap_projection-def1c698df0cb8b4": "c8e18162c0bbde4d60974fa826289cbca44491ba5a954ceeaad7524c5c6e915d",
+      "target/debug/deps/adversarial-286e3d55b7cfa42d": "e72586d14dfcd913ac003ba90f610828783537db86f75abc6eeaec78b3877035",
+      "target/debug/deps/audio_edges-ec8f93ac7c21b955": "b16f97c4ad9a5b50d8594864d6e776093642732e75cb7c5947af04b4e9e2d335",
+      "target/debug/deps/audio_reference-5b6a51d2fae3dcd6": "5d60b70b9a7646c4c03931583a4e16f82cca0a3cb655cefa356adbb71e45c839",
+      "target/debug/deps/marks-52ebc1daa284e9ad": "0f3b5c4daccb50faba2f3c133eecec7e1e3cd0d661ec2ec883b83c645efa5203",
+      "target/debug/deps/audio_lineage-9e83675b7e0c7a36": "7e3efd27f1a521d1ebb020d05c5a26d1fd8a56c62f99ec5745bc516954ff6fd2",
+      "target/debug/deps/gap_overrides-06693dcb3692f512": "7a42b78e7b3663d757748ce5f17affe3ee3ead670edc70fcf450b6bd812202ea",
+      "target/debug/deps/picture_context-6d7792f1d08599a3": "09794ef611624829ae8884829a715a9fd9d2b73ab42e8f36b2594562026450fd",
+      "target/debug/deps/source_trim_command-d442064449ec23b5": "4db77d66baa6b66199cfb5405d27a9184e27bfc538026897abd0e8f1aad6597b",
+      "target/debug/deps/explode-5ed1dede25efdaf1": "79fa39a50d0226dc56e28ff6b83bcbb846fe9dd8821ebad8f0fd4fe0997df9b5",
+      "target/debug/deps/deadpan_core-367672cc8f9089ac": "033f9bb8a2eb046269f4765da7bd430d55bed2922f04b82436e3dcbfe837e53f",
+      "target/debug/deps/source_edit_window-2ceed867385a9edb": "57bec298944326b7da66768a146229ba9d34a0afc43f242a8e84865bf4160872",
+      "target/debug/deps/split_edit-5a97a4d36df9dafc": "02be18cfe113e7d2dd305c45f695a41ab230ada0476d7d7c2051ae1cbb718fc2",
+      "target/debug/deps/edited_slice-b67e6d193a97f105": "717a8e9a7e8e908633e391e2b7d73d329dfdf754ce0fec28d29453402b851f8e",
+      "target/debug/deps/source_slip-ce9ed9d2a53ea2b1": "26cc121ac745d900f1e24f8dde4e1ead3127a54f4355e99208a6c8de0be91e3c",
+      "target/debug/deps/split-752a7cedbf33f903": "351eaff81a83f663da0514baf9d7aead5de022f761469df915ab22d9fb6157fc",
+      "target/debug/deps/mark_fragments-54640c8b92903060": "a0095620b6fa9020c5bf371e193144cbe48699fc0afdd314ddb279ff2f9c0f21",
+      "target/debug/deps/framing-31db105bb83be945": "cca82d2c76931991b1f46c755214fb4bb8dc9d9428a64b80e6793bae9dadf5b6",
+      "target/debug/deps/sound_routes-c2e9cf03ae97c4f9": "44024c1402c64c964a06d21dc2d387a8c06533a0e2e9a096ffd26b638f773337",
+      "target/debug/deps/partitions-175430fb951c548a": "0bc5d26de14e74756cfc6f67db6d0926e86d97f019af0a5c8a9e8e31ddc5c87a",
+      "target/debug/deps/repeat_gap_layout-3b44d936d01499ef": "ecfb9f6ffb30b083fb587fe8188af055a3119ee73348c016b3ab1a1abf735ef3",
+      "target/debug/deps/allocation_projection-f278e86031123e8a": "7393de101c08a2f979da14bdd58252e7abf40d5e3ee62b2a5917e3777ef008e5",
+      "target/debug/deps/play_overrides-bd23597a3b9af437": "e04871fa9446c11bf19c8f7b31714ac592a4199f0ebeb32bee4b8e905ab0bfd3",
+      "target/debug/deps/presentation_basis-660aa54d3e2eff12": "304bf8fc3ad20f39b5679eb8fd665c1b231aa83a94c00edc1f359a459f5cc641",
+      "target/debug/deps/anchors-b659d3c56c8306b3": "a71e05976349092d12d4b21fd48ada192dbae7bd23a32117cddf71e99f29dc78",
+      "target/debug/deps/node_gain-cb5eed29d5e6fd3b": "430f63f2508547ed8ce785f48a086b344afb1ac07a0be879e90c6ec373c97fde",
+      "target/debug/deps/sound_routing-887820d5d1481082": "3e175bc3713569f1f7058a3987819dee3236f6aeac7e6c8eea0cbc6483d8b9e0"
+    }
+  },
+  {
+    "name": "fmt-audio",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T18:01:21.053155+00:00",
+    "head": "743b349d14c7a762057947ce63fbebf099d18356",
+    "diff_sha256": "e3d4eca04a1f32cca8dc1bb56becc0c42d6eb8bf69dd02ec33f2ef9d7b82075d",
+    "untracked_sha256": {
+      "crates/deadpan-audio/tests/audio_definition/sound_clocks/split_owner.rs": "694a9c63507b98f580abf381b82f2011d5e5e097a731fa005b7530374d4aee01"
+    },
+    "exit": 0,
+    "seconds": 5.980512166861445,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "binaries": {}
+  },
+  {
+    "name": "fmt-check",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all",
+      "--check"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T18:38:33.281307+00:00",
+    "head": "743b349d14c7a762057947ce63fbebf099d18356",
+    "diff_sha256": "b4e6d5f83cd8374b2a39bb9d4a1b4d218c19dea2fb2095249dc2dcdcd2602ee8",
+    "untracked_sha256": {
+      "crates/deadpan-audio/tests/audio_definition/sound_clocks/split_owner.rs": "3a459834eeb8309d5db5e459a0a936ed7a73308b10555b706a9a174c0d7378e1",
+      "docs/qualification/split-sound-owners-2026-10-12.md": "914499045bf12bc92a93b43fa937f37eb42fae38e61eaa7abda0a9eba688793c"
+    },
+    "exit": 0,
+    "seconds": 5.235236625187099,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "binaries": {}
+  },
+  {
+    "name": "fmt-expanded",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T18:05:15.610774+00:00",
+    "head": "743b349d14c7a762057947ce63fbebf099d18356",
+    "diff_sha256": "b967da5391a1d0b3b34cb37169e36d0b5277476e55e94c3d4e19178f51ad544b",
+    "untracked_sha256": {
+      "crates/deadpan-audio/tests/audio_definition/sound_clocks/split_owner.rs": "23e9487da55d9d42f5276bc678908283ad4dc42bc6c7ca5b6de8c7e09534d4cc"
+    },
+    "exit": 0,
+    "seconds": 5.044547874946147,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "binaries": {}
+  },
+  {
+    "name": "fmt-final",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T18:10:50.134936+00:00",
+    "head": "743b349d14c7a762057947ce63fbebf099d18356",
+    "diff_sha256": "a4210bac5a5e726e736cc60af23c5516a9e268eec1be6bfbf3799c0cf16794db",
+    "untracked_sha256": {
+      "crates/deadpan-audio/tests/audio_definition/sound_clocks/split_owner.rs": "5ed2e8e98b1db9c2ae6f00466cacc19362a713e6ae8941ee259b3dce4488fc49"
+    },
+    "exit": 0,
+    "seconds": 4.876019874587655,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "binaries": {}
+  },
+  {
+    "name": "fmt",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T17:59:16.022519+00:00",
+    "head": "743b349d14c7a762057947ce63fbebf099d18356",
+    "diff_sha256": "36d204107cbcc0b8747591407235fbb4b4bf91bae85b4c733a5d287b1af022b1",
+    "untracked_sha256": {
+      "crates/deadpan-audio/tests/audio_definition/sound_clocks/split_owner.rs": "ecc8de22fffeb285f5405fc490327653d96cd108bf8b1a7b91a2885c99412c1f"
+    },
+    "exit": 0,
+    "seconds": 5.355806999839842,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "binaries": {}
+  },
+  {
+    "name": "release-app",
+    "command": [
+      "cargo",
+      "build",
+      "--locked",
+      "--release",
+      "-p",
+      "deadpan-app",
+      "-p",
+      "deadpan-cli"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T18:35:07.044428+00:00",
+    "head": "743b349d14c7a762057947ce63fbebf099d18356",
+    "diff_sha256": "b4e6d5f83cd8374b2a39bb9d4a1b4d218c19dea2fb2095249dc2dcdcd2602ee8",
+    "untracked_sha256": {
+      "crates/deadpan-audio/tests/audio_definition/sound_clocks/split_owner.rs": "3a459834eeb8309d5db5e459a0a936ed7a73308b10555b706a9a174c0d7378e1",
+      "docs/qualification/split-sound-owners-2026-10-12.md": "2bbcda4bc5012bd49b0e09c0acc61eb04d4bbe466f46580c6523ee87a055cf27"
+    },
+    "exit": 0,
+    "seconds": 206.224300541915,
+    "log_sha256": "d77c58c8056d8ad2d4f61552019d7e43e9db6301dc4b2f6a5a934383fa83c468",
+    "binaries": {}
+  },
+  {
+    "name": "release-audio",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--release",
+      "-p",
+      "deadpan-audio",
+      "--test",
+      "audio_definition",
+      "split_owner",
+      "--",
+      "--nocapture"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T18:28:23.609510+00:00",
+    "head": "743b349d14c7a762057947ce63fbebf099d18356",
+    "diff_sha256": "b4e6d5f83cd8374b2a39bb9d4a1b4d218c19dea2fb2095249dc2dcdcd2602ee8",
+    "untracked_sha256": {
+      "crates/deadpan-audio/tests/audio_definition/sound_clocks/split_owner.rs": "3a459834eeb8309d5db5e459a0a936ed7a73308b10555b706a9a174c0d7378e1",
+      "docs/qualification/split-sound-owners-2026-10-12.md": "2bbcda4bc5012bd49b0e09c0acc61eb04d4bbe466f46580c6523ee87a055cf27"
+    },
+    "exit": 0,
+    "seconds": 108.08243412477896,
+    "log_sha256": "ac3e5b708fabcd484841285b96dcb4ecfdab1850d43f61ba16078ab5cf9e6fa3",
+    "binaries": {
+      "target/release/deps/audio_definition-49443387889b93df": "52e6ce418cc03177c8acae9219b070f8278648c834dfe4b52fe62e31c7394a96"
+    }
+  },
+  {
+    "name": "release-export",
+    "command": [
+      "env",
+      "DEADPAN_PREVIEW_EXPORT_KEEP=1",
+      "DEADPAN_SPLIT_SOUND_RESULTS=/private/tmp/deadpan-split-sounds-20261012/release-export.json",
+      "cargo",
+      "test",
+      "--locked",
+      "--release",
+      "-p",
+      "deadpan-cli",
+      "--test",
+      "preview_export",
+      "split_attached_sounds",
+      "--",
+      "--nocapture"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T18:32:26.529588+00:00",
+    "head": "743b349d14c7a762057947ce63fbebf099d18356",
+    "diff_sha256": "b4e6d5f83cd8374b2a39bb9d4a1b4d218c19dea2fb2095249dc2dcdcd2602ee8",
+    "untracked_sha256": {
+      "crates/deadpan-audio/tests/audio_definition/sound_clocks/split_owner.rs": "3a459834eeb8309d5db5e459a0a936ed7a73308b10555b706a9a174c0d7378e1",
+      "docs/qualification/split-sound-owners-2026-10-12.md": "2bbcda4bc5012bd49b0e09c0acc61eb04d4bbe466f46580c6523ee87a055cf27"
+    },
+    "exit": 0,
+    "seconds": 160.47816033288836,
+    "log_sha256": "497fd6807546888b616e2681fb1ecdd3e14e1df3b5a6f087b74ef0c57e7e0dd8",
+    "binaries": {
+      "target/release/deps/preview_export-13eb73279274fbb4": "17200976c6c8c161be0af3012a9c9e66d6ac69addeddfd6e74546e0f67af69a0"
+    }
+  },
+  {
+    "name": "release-store",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--release",
+      "-p",
+      "deadpan-store",
+      "--test",
+      "source_registration",
+      "split_sound_clocks",
+      "--",
+      "--nocapture"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T18:30:11.724026+00:00",
+    "head": "743b349d14c7a762057947ce63fbebf099d18356",
+    "diff_sha256": "b4e6d5f83cd8374b2a39bb9d4a1b4d218c19dea2fb2095249dc2dcdcd2602ee8",
+    "untracked_sha256": {
+      "crates/deadpan-audio/tests/audio_definition/sound_clocks/split_owner.rs": "3a459834eeb8309d5db5e459a0a936ed7a73308b10555b706a9a174c0d7378e1",
+      "docs/qualification/split-sound-owners-2026-10-12.md": "2bbcda4bc5012bd49b0e09c0acc61eb04d4bbe466f46580c6523ee87a055cf27"
+    },
+    "exit": 0,
+    "seconds": 134.7662027911283,
+    "log_sha256": "e6e2fa6b65f5ac87846a3d9d9fea7d3eb3e1c59f885eea1f80cd62b7efb8a860",
+    "binaries": {
+      "target/release/deps/source_registration-78736626abe376a0": "67d465882a2622477427893758a0d4aefa28f056f6faa8a0e5d0d16b374306c9"
+    }
+  },
+  {
+    "name": "store-first",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-store",
+      "--test",
+      "source_registration",
+      "split_sound_clocks",
+      "--",
+      "--nocapture"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T18:05:32.814737+00:00",
+    "head": "743b349d14c7a762057947ce63fbebf099d18356",
+    "diff_sha256": "c13ead0840c204bdf58e9905c21e21d21d0868f6cd164634bfd5fa567072a435",
+    "untracked_sha256": {
+      "crates/deadpan-audio/tests/audio_definition/sound_clocks/split_owner.rs": "f8990c19bcc337c76033003e133bbeb4265d0b068a0581bd22ca30bb035040b2"
+    },
+    "exit": 0,
+    "seconds": 8.479784166906029,
+    "log_sha256": "5868f8c8d563194e92a5eb56eb0c4538c1fdb7f5ca658469763260b9f9915851",
+    "binaries": {
+      "target/debug/deps/source_registration-2f81566d44c88851": "77acec4009315046a529e19b92c80b9bcf23ecaf254fbb80721eeb3e78f2c0ff"
+    }
+  }
+]

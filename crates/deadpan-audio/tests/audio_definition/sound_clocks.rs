@@ -13,6 +13,9 @@ mod owner_input;
 #[path = "sound_clocks/partial.rs"]
 mod partial;
 
+#[path = "sound_clocks/split_owner.rs"]
+mod split_owner;
+
 struct ClockProvider {
     fixture: FixtureProvider,
     revision: RevisionId,

@@ -186,7 +186,7 @@ fn blank(duration: i64) -> SourceNode {
 }
 
 #[test]
-fn changed_processing_subtree_and_partial_owner_deletion_refuse_atomically() {
+fn changed_processing_subtree_refuses_and_partial_deletion_keeps_the_sound_alias() {
     let before = fixture();
     let snapshot = before.to_json().unwrap();
     let command = Command::SpliceSource {
@@ -215,11 +215,85 @@ fn changed_processing_subtree_and_partial_owner_deletion_refuse_atomically() {
         },
         timing: timing("partial"),
     };
-    let error = apply(&before, &request(&before, "partial", command)).unwrap_err();
+    let after = edit(&before, "partial", command);
+    assert!(!after.nodes.contains_key(&node("owner")));
+    assert_eq!(after.beat_sounds.len(), 1);
+    let (copy, events) = after.beat_sounds.iter().next().unwrap();
+    assert_eq!(events, &before.beat_sounds[&node("owner")]);
+    assert_eq!(owner_journal(&after, copy), vec![timing("partial")]);
+    let saved = &after.audio_bindings.sound_clocks[copy][&sound("effect")];
+    assert_eq!(saved.clocks()[0].owner(), &node("owner"));
+    assert_eq!(before.to_json().unwrap(), snapshot);
+}
+
+#[test]
+fn successive_interior_pauses_restore_every_sound_copy_and_narrow_old_scopes() {
+    let before = edit(&fixture(), "prefix", insert("prefix", 0, 1));
+    let pause = |document: &ProjectDocument, name: &str, at: i64| {
+        let count = document
+            .insert_time_target(ProjectFrame(at))
+            .unwrap()
+            .split
+            .unwrap()
+            .required_ids;
+        let mut command = insert(name, at, 1);
+        let Command::InsertTime { identities, .. } = &mut command else {
+            unreachable!()
+        };
+        identities.nodes = (0..count)
+            .map(|i| node(&format!("{name}-split-{i}")))
+            .collect();
+        edit(document, name, command)
+    };
+    let once = pause(&before, "first-pause", 4);
+    assert_eq!(once.beat_sounds.len(), 2);
+    for (owner, events) in &once.beat_sounds {
+        assert_eq!(events, &before.beat_sounds[&node("owner")]);
+        let journal = &once.audio_bindings.sound_clocks[owner][&sound("effect")];
+        assert_eq!(journal.scope(), owner);
+        assert_eq!(
+            clock_ids(journal),
+            vec![timing("prefix"), timing("first-pause")]
+        );
+        assert!(
+            journal
+                .clocks()
+                .iter()
+                .all(|reference| reference.owner() == &node("owner"))
+        );
+    }
+    let twice = pause(&once, "second-pause", 6);
+    assert_eq!(twice.beat_sounds.len(), 3);
+    assert_eq!(twice.duration().unwrap().frames(), 12);
     assert!(
-        error.message.contains("sound owner disappeared") || error.message.contains("sound clock"),
-        "{error}"
+        twice
+            .beat_sounds
+            .values()
+            .all(|events| events == &before.beat_sounds[&node("owner")])
     );
+}
+
+#[test]
+fn split_sound_limit_failure_is_atomic() {
+    let mut before = fixture();
+    let event = before.beat_sounds[&node("owner")][&sound("effect")].clone();
+    for index in 1..crate::MAX_DOCUMENT_SOUNDS {
+        before
+            .beat_sounds
+            .get_mut(&node("owner"))
+            .unwrap()
+            .insert(sound(&format!("effect-{index}")), event.clone());
+    }
+    before.validate().unwrap();
+    let snapshot = before.to_json().unwrap();
+    let mut command = insert("full", 3, 1);
+    let Command::InsertTime { identities, .. } = &mut command else {
+        unreachable!()
+    };
+    identities.nodes = (0..3).map(|i| node(&format!("full-split-{i}"))).collect();
+    let error = apply(&before, &request(&before, "full", command)).unwrap_err();
+    assert_eq!(error.code, EditErrorCode::LimitExceeded);
+    assert!(error.message.contains("attached sound limit"), "{error}");
     assert_eq!(before.to_json().unwrap(), snapshot);
 }
 

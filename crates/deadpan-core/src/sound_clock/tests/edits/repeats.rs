@@ -20,6 +20,46 @@ fn wrap(document: &ProjectDocument, name: &str) -> ProjectDocument {
     )
 }
 
+#[test]
+fn partially_repeating_a_sound_owner_still_refuses_without_an_occurrence_route() {
+    let before = fixture();
+    let snapshot = before.to_json().unwrap();
+    let selection = SliceCaptureSelection::Range { range: range(2, 4) };
+    let plan = before
+        .repeat_selection(&node("top"), &selection, 2)
+        .unwrap();
+    let error = apply(
+        &before,
+        &request(
+            &before,
+            "partial-repeat",
+            Command::RepeatSelection {
+                parent: node("top"),
+                selection,
+                plays: 2,
+                identities: RepeatSelectionIdentities {
+                    repeat: node("repeat"),
+                    group: Some(node("group")),
+                    split: SplitIdentities {
+                        nodes: (0..plan.required_split_ids)
+                            .map(|i| node(&format!("part-{i}")))
+                            .collect(),
+                    },
+                },
+                timing: timing("partial-repeat"),
+            },
+        ),
+    )
+    .unwrap_err();
+    assert!(
+        error
+            .message
+            .contains("split sound owners inside Repeat need an occurrence route"),
+        "{error}"
+    );
+    assert_eq!(before.to_json().unwrap(), snapshot);
+}
+
 fn plays(document: &ProjectDocument, name: &str, count: u32) -> ProjectDocument {
     edit(
         document,

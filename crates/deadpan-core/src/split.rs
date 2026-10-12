@@ -163,6 +163,9 @@ pub(crate) fn apply_validated(
     if let Some(allowances) = edit_context.allowances {
         allowances.split(&copied)?;
     }
+    if let Some(sounds) = edit_context.sound_clocks {
+        sounds.split(&copied)?;
+    }
     if root {
         result.nodes.insert(left_context.clone(), original.clone());
         let lineage = result.audio_lineage[target].clone();

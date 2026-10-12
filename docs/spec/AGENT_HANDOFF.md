@@ -4,6 +4,18 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Split sound owners](../qualification/split-sound-owners-2026-10-12.md) now
+restore eligible surviving attachments through the structural reducer's exact
+Split aliases. Both retained and copied owners keep full recipes and narrowed,
+chronological processing clocks. Successive pauses, partial deletion, range
+move, Original/shared-EQ PCM and durable atomic Undo/Redo regressions pass.
+Debug/release real-media exports verify nine pictures, 21 audio blocks and zero
+offset. All 2,867 core/plan/audio/playback/store tests pass with none ignored;
+strict workspace Clippy, release PCM/store regressions, app/CLI release builds
+and formatting pass. Evidence and self-review are retained. External Repeat ancestry,
+root-owned sounds, enclosing processing-subtree changes and standalone clones
+outside their retained scope remain guarded. No requirement or gate is complete.
+
 [Copy mastering context](../qualification/copy-mastering-context-2026-10-12.md)
 resolves the mixed Original/attachment comparison below. The authored shared-EQ
 PCM matches exactly after partial copy; current master gain changes because the
@@ -33,8 +45,9 @@ successful runs, the implementation patch, fixture project/movie and self-review
 are retained with the qualification.
 
 Keep the remaining guards explicit: Source/Hold or supported-fragment endpoints
-are required, so partial composite Preserve ranges still refuse. Surviving-owner
-splits and attachment Repeat/root-owner transforms remain open. The mixed-bus
+are required, so partial composite Preserve ranges still refuse. Eligible splits
+now preserve surviving attachments, as qualified above. Attachment
+Repeat/root-owner transforms remain open. The mixed-bus
 pre-copy equality difference is resolved as current mastering context above.
 The primary works alone and
 self-reviews. No DP requirement or release gate is newly complete.

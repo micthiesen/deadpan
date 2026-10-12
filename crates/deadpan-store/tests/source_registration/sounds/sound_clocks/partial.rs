@@ -1,6 +1,97 @@
 use super::*;
 
 #[test]
+fn split_sound_clocks_commit_atomically_reopen_and_undo_with_fresh_revisions() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let (path, mut store) = project(scratch.path())?;
+    let original = retain(&mut store, "offset-bframes.mp4")?;
+    let decoded = decode(&store, &original)?;
+    store.register_source(
+        &request(&store, &original, "import", "camera", Some("clip"))?,
+        &decoded,
+        None,
+        limits(),
+        &active(),
+    )?;
+    let before = store.snapshot()?;
+    let owner = NodeId::new("clip")?;
+    let sound = SoundId::new("overlay")?;
+    let recipe = event(&before)?;
+    store.commit(&edit(
+        &before,
+        "sound",
+        Command::SetBeatSound {
+            owner: owner.clone(),
+            id: sound.clone(),
+            event: recipe.clone(),
+        },
+    ))?;
+    let before = store.snapshot()?;
+    let at = ProjectFrame(2);
+    let count = before
+        .insert_time_target(at)?
+        .split
+        .ok_or("expected interior")?
+        .required_ids;
+    let command = edit(
+        &before,
+        "split-sound",
+        Command::InsertTime {
+            at,
+            hold: HoldRecipe {
+                duration: FrameDuration::new(1)?,
+                video: HoldVideo::Background,
+                picture_context: None,
+                audio: HoldAudio::Silence,
+            },
+            id: NodeId::new("pause")?,
+            identities: SplitIdentities {
+                nodes: (0..count)
+                    .map(|i| NodeId::new(format!("split-{i}")))
+                    .collect::<std::result::Result<_, _>>()?,
+            },
+            timing: AudioTimingId {
+                allocation: revision("split-sound"),
+                ordinal: 0,
+            },
+        },
+    );
+    let preview = store.preview(&command)?;
+    let before_counts = counts(&path)?;
+    let database = Connection::open(path.join("project.sqlite"))?;
+    database.execute_batch("CREATE TRIGGER fail_split_sound BEFORE INSERT ON history BEGIN SELECT RAISE(FAIL,'forced split sound failure'); END;")?;
+    assert!(store.commit(&command).is_err());
+    assert_eq!(store.snapshot()?, before);
+    assert_eq!(counts(&path)?, before_counts);
+    database.execute_batch("DROP TRIGGER fail_split_sound")?;
+    assert_eq!(store.commit(&command)?.edit, preview);
+    let after = store.snapshot()?;
+    assert_eq!(after.duration()?.frames(), before.duration()?.frames() + 1);
+    assert_eq!(after.beat_sounds().len(), 2);
+    for (alias, events) in after.beat_sounds() {
+        assert_eq!(events[&sound], recipe);
+        let journal = &after.audio_bindings().sound_clocks()[alias][&sound];
+        assert_eq!(journal.scope(), alias);
+        assert_eq!(journal.clocks().len(), 1);
+        assert_eq!(journal.clocks()[0].owner(), &owner);
+    }
+    drop(store);
+    let mut store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+    assert_eq!(store.snapshot()?, after);
+    store.undo(after.revision_id(), revision("undo-split"))?;
+    assert_authored(&store.snapshot()?, &before)?;
+    store.redo(&revision("undo-split"), revision("redo-split"))?;
+    assert_authored(&store.snapshot()?, &after)?;
+    store.validate()?;
+    let final_snapshot = store.snapshot()?;
+    drop(store);
+    let store = ProjectStore::open(&path, AccessMode::ReadOnly)?;
+    assert_eq!(store.snapshot()?, final_snapshot);
+    store.validate()?;
+    Ok(())
+}
+
+#[test]
 fn partial_sound_register_reopens_after_owner_deletion_and_paste_is_atomic() -> Result {
     let scratch = tempfile::tempdir()?;
     let (path, mut store) = project(scratch.path())?;

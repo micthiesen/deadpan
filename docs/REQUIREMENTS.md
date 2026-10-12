@@ -4,6 +4,16 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 
 ## Resumed implementation, 2026-10-06
 
+[Split sound owners](qualification/split-sound-owners-2026-10-12.md) now retain
+attached recipes and chronological clocks on eligible surviving pause, deletion
+and move fragments. Exact Split provenance prevents suffix loss; unchanged full
+processing owners supply history behind delivery crops. PCM and durable-store
+regressions pass, and debug/release real-media exports verify nine pictures,
+21 audio blocks and zero offset. All 2,867 core/plan/audio/playback/store tests
+pass with none ignored. Strict workspace Clippy, release PCM/store regressions,
+app/CLI release builds and formatting pass; evidence and self-review are retained.
+External Repeat/root-owner and enclosing-subtree transforms remain guarded.
+
 [Copy mastering context](qualification/copy-mastering-context-2026-10-12.md)
 resolves the pending mixed-bus comparison: the copied shared-EQ authored PCM
 matches exactly, while a preceding Original transient changes master gain at

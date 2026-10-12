@@ -1,0 +1,31 @@
+{
+  "base_commit": "743b349d14c7a762057947ce63fbebf099d18356",
+  "sources": {
+    "Cargo.lock": "9d911d67520092b729ae0e5933a39fc57f0ab4933b7d94b2d72d55a125fca93e",
+    "crates/deadpan-audio/tests/audio_definition/sound_clocks.rs": "45145ac4b8454910dafe564b8c926fbde38794b29590e349618ab773178a9f64",
+    "crates/deadpan-audio/tests/audio_definition/sound_clocks/group_mix.rs": "1a53848d0c5b44da751ba09329349d913737381d90af18e1484f63c68a1dac7a",
+    "crates/deadpan-audio/tests/audio_definition/sound_clocks/partial.rs": "11e5bec3bebb7cfb0f265b4ba7833711fe0756d467b575d66558deb6e6377645",
+    "crates/deadpan-audio/tests/audio_definition/sound_clocks/split_owner.rs": "3a459834eeb8309d5db5e459a0a936ed7a73308b10555b706a9a174c0d7378e1",
+    "crates/deadpan-cli/tests/preview_export.rs": "92e71337df057d7af2aa7a9189ea3c339a55c2b446556a6ff9ac95d0d1fa83de",
+    "crates/deadpan-cli/tests/preview_export/partial_sounds.rs": "b768dbee5140acb568a97ff78a1782d370529fc8f95e2d3247d98b5dd26315e7",
+    "crates/deadpan-core/src/audio_reference.rs": "dcfb48bbd0e5dd4f3c32405378093d04b1dca45d0147dd2ad8e7ae7158a40982",
+    "crates/deadpan-core/src/command.rs": "ca9d99a003174425821bd12cfea6809a898b9509ad842f5629cb50126e6eda47",
+    "crates/deadpan-core/src/insert_time/sequence_range.rs": "cd4db4523351f22d930b016d5726d46db951841e91790c13379a44c072913183",
+    "crates/deadpan-core/src/move_range.rs": "46819884af081e3f1def026e726535966effa063ce840b7720bbee0c89386dc5",
+    "crates/deadpan-core/src/repeat_selection.rs": "c76da901f1ee6e44d5851e658b269947c5fdd6c3a1823b21123eced3f6c14a65",
+    "crates/deadpan-core/src/scoped_edit/isolation.rs": "b8efc86b4f6a48c431d052a3a9cf1b8b20f6208d6e65362f06826709f3d5a605",
+    "crates/deadpan-core/src/sound_clock/edit.rs": "e641861d0935a2e8e78a00f04ad517ac34c171eaa5a48aef89416071d08231c7",
+    "crates/deadpan-core/src/sound_clock/tests/edits.rs": "7c325104a9abbe6c0dacdef0f54c1617329e5df51f217fd2e5f392134b7e55d2",
+    "crates/deadpan-core/src/sound_clock/tests/edits/repeats.rs": "7dbc89d3a5c06cc3debaf6ef211965bdec1872d2399498ca9cb6445b69dc2b47",
+    "crates/deadpan-core/src/source_trim_edit/apply.rs": "d96faefea65effaf381aa9564d8fc0739a3b0d8660a954823e25c8ae3ce6ef21",
+    "crates/deadpan-core/src/split.rs": "c80cd7da57c3740985befec7e87834c547fa8626acead92ee6efb39126f02d97",
+    "crates/deadpan-store/tests/source_registration/sounds/sound_clocks/partial.rs": "bf342cd47372dc1ac4c27a711750694329ad44837036e9cf62401eec1ab4749a",
+    "native/deadpan-source/tests/audio-fixtures/pcm-stereo-48000.wav": "e79aba90eab42dc057171be52be9ecb794c3e2790c5731783270ece73c24d2ee",
+    "native/deadpan-source/tests/fixtures/cfr-bframes.mp4": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+    "rust-toolchain.toml": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc"
+  },
+  "final_release_binaries": {
+    "target/release/deadpan-cli": "421837222cbd95be0271c156e71943138e1050c632c9bbe482be9b2b09f87f17",
+    "target/release/deadpan-app": "3fa3c1d770bcea6f2dd737b353492500d4f727bc922655a836a3eceb28c13f97"
+  }
+}

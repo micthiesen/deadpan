@@ -420,39 +420,22 @@ fn independent_eq_automation_keeps_rebound_input_history_across_a_new_pause() {
             ordinal: 0,
         },
     };
-    // Attached sounds still require an owner-local interval route before their
-    // processing scope can be split. Preserve this existing atomic refusal;
-    // the root event above has that route and exercises the actual EQ boundary.
-    let snapshot = attached.to_json().unwrap();
-    let error = apply(
-        &attached,
-        &CommandRequest {
-            project_id: attached.project_id().clone(),
-            expected_revision: attached.revision_id().clone(),
-            new_revision: RevisionId::new("held-again").unwrap(),
-            command: command.clone(),
-        },
-    )
-    .unwrap_err();
-    assert!(
-        error
-            .message
-            .contains("sound owner interval changes require an attachment route"),
-        "{error}"
-    );
-    assert_eq!(attached.to_json().unwrap(), snapshot);
+    let split_attachment = edit(&attached, "held-again", command.clone());
+    assert_eq!(split_attachment.beat_sounds().len(), 2);
     let edited = edit(&source, "held-again", command);
-    let total = u32::try_from(compile(&edited, false).audio_duration().unwrap().0).unwrap();
-    let complete = read(&edited, 0, total);
-    for (start, count) in [(START - 17, 129), (6405, 129), (8007, 129), (11210, 129)] {
-        let actual = read(&edited, start, count);
-        for (offset, actual) in actual.iter().enumerate() {
-            assert_eq!(
-                *actual,
-                complete[start as usize + offset],
-                "sample={}",
-                start + offset as i64
-            );
+    for edited in [edited, split_attachment] {
+        let total = u32::try_from(compile(&edited, false).audio_duration().unwrap().0).unwrap();
+        let complete = read(&edited, 0, total);
+        for (start, count) in [(START - 17, 129), (6405, 129), (8007, 129), (11210, 129)] {
+            let actual = read(&edited, start, count);
+            for (offset, actual) in actual.iter().enumerate() {
+                assert_eq!(
+                    *actual,
+                    complete[start as usize + offset],
+                    "sample={}",
+                    start + offset as i64
+                );
+            }
         }
     }
 }

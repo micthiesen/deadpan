@@ -1207,7 +1207,7 @@ fn apply_with_durations_captured(
     crate::picture_context::validate_command(&request.command)?;
     crate::audio_gain::validate_command(&request.command)?;
     crate::sound_events::validate_command(document, &request.command)?;
-    let beat_sound_edit = crate::sound_clock::edit::SoundClockEditCapture::prepare(
+    let mut beat_sound_edit = crate::sound_clock::edit::SoundClockEditCapture::prepare(
         document,
         &request.command,
         &request.new_revision,
@@ -1233,6 +1233,7 @@ fn apply_with_durations_captured(
     let mut context = EditContext {
         allocation: &request.new_revision,
         allowances: allowance_edit.as_mut(),
+        sound_clocks: beat_sound_edit.as_mut(),
     };
     let mut known = KnownValidation::Nothing;
     let mut result = match &request.command {
@@ -1274,6 +1275,7 @@ fn apply_with_durations_captured(
                     EditContext {
                         allocation: &request.new_revision,
                         allowances: allowance_edit.as_mut(),
+                        sound_clocks: beat_sound_edit.as_mut(),
                     },
                 )
             })?;
@@ -1299,6 +1301,7 @@ fn apply_with_durations_captured(
                     EditContext {
                         allocation: &request.new_revision,
                         allowances: allowance_edit.as_mut(),
+                        sound_clocks: beat_sound_edit.as_mut(),
                     },
                 )?
             } else {
@@ -1789,10 +1792,12 @@ fn net_transaction_known(
 }
 
 /// Scoped identity transforms share the outer transaction's detached allowance
-/// relation. Nested Split helpers never capture or restore that relation twice.
+/// and sound-clock captures. Nested Split helpers report exact copies; only the
+/// outer reducer restores either relation into the completed structure.
 pub(crate) struct EditContext<'a> {
     pub(crate) allocation: &'a RevisionId,
     pub(crate) allowances: Option<&'a mut crate::sound_allowance::SoundAllowanceEdit>,
+    pub(crate) sound_clocks: Option<&'a mut crate::sound_clock::edit::SoundClockEditCapture>,
 }
 
 /// [`changed_audio_binding_owners`] from the exact binding patch between the

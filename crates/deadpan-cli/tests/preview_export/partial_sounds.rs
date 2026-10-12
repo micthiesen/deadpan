@@ -219,7 +219,7 @@ pub fn partial_copy_mastering_context(dir: &Path) -> Result<Value> {
     }))
 }
 
-pub fn partial_attached_sound_copies(dir: &Path) -> Result<Fixture> {
+fn copied_project(dir: &Path) -> Result<Project> {
     let mut project = Project::create(dir, "partial-attached-sound-copies")?;
     place_click_sound(&mut project)?;
     let owner = root_children(&project.document()?)?[0].clone();
@@ -306,6 +306,11 @@ pub fn partial_attached_sound_copies(dir: &Path) -> Result<Fixture> {
         "recopy after deletion",
     );
     assert_eq!(project.document()?.beat_sounds().len(), 2);
+    Ok(project)
+}
+
+pub fn partial_attached_sound_copies(dir: &Path) -> Result<Fixture> {
+    let project = copied_project(dir)?;
     project.finish(
         vec!["Partial attached-sound copy and recopy"],
         (0..4)
@@ -316,4 +321,58 @@ pub fn partial_attached_sound_copies(dir: &Path) -> Result<Fixture> {
             "Real registered stereo WAV with event and shared-owner EQ; partial copy 2..6, recopy 121..124, delete original owner. Independent pre-copy PCM windows match after both pastes and deletion within 1e-6.".into(),
         ],
     )
+}
+
+pub fn split_attached_sounds(dir: &Path) -> Result<Fixture> {
+    let mut project = copied_project(dir)?;
+    let expected = [0, 1, 2]
+        .map(|frame| pcm(&project, boundary(frame).unwrap() + 512))
+        .into_iter()
+        .collect::<Result<Vec<_>>>()?;
+    for at in [1, 3] {
+        project.apply(|project, document, revision| {
+            let count = document
+                .insert_time_target(ProjectFrame(at))?
+                .split
+                .ok_or("expected split")?
+                .required_ids;
+            Ok(Command::InsertTime {
+                at: ProjectFrame(at),
+                hold: HoldRecipe {
+                    duration: FrameDuration::new(1)?,
+                    video: HoldVideo::Background,
+                    picture_context: None,
+                    audio: HoldAudio::Silence,
+                },
+                id: project.fresh(1)?.remove(0),
+                identities: SplitIdentities {
+                    nodes: project.fresh(count)?,
+                },
+                timing: AudioTimingId {
+                    allocation: revision.clone(),
+                    ordinal: 0,
+                },
+            })
+        })?;
+    }
+    let first_shift = boundary(2)? - boundary(1)?;
+    let second_shift = boundary(4)? - boundary(3)?;
+    for ((frame, shift), expected) in [(0, 0), (1, first_shift), (2, first_shift + second_shift)]
+        .into_iter()
+        .zip(expected)
+    {
+        same_pcm(
+            &expected,
+            &pcm(&project, boundary(frame)? + 512 + shift)?,
+            "split attached sound",
+        );
+    }
+    assert_eq!(project.document()?.beat_sounds().len(), 4);
+    let mut fixture = project.finish(
+        vec!["Split copied attached sounds with silent pauses"],
+        vec![(0, original(2)), (1, Expected::Background), (2, original(3)), (3, Expected::Background), (4, original(4)), (5, original(5)), (6, original(3)), (7, original(4)), (8, original(5))],
+        vec!["Two silent one-frame pauses split a copied and shared-EQ sound owner. Three independently read pre-edit PCM windows retain their chronological integral sample shifts within 1e-6.".into()],
+    )?;
+    fixture.audio = vec![(boundary(1)? + 512, false), (boundary(3)? + 512, false)];
+    Ok(fixture)
 }

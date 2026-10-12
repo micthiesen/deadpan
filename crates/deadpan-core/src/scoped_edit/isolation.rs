@@ -348,6 +348,7 @@ pub(crate) fn apply_many_mapped(
             crate::command::EditContext {
                 allocation: context.allocation,
                 allowances: context.allowances.as_deref_mut(),
+                sound_clocks: context.sound_clocks.as_deref_mut(),
             },
         )?;
         for later in &mut pending[index + 1..] {
@@ -414,6 +415,7 @@ pub(crate) fn many_requirements(
             crate::command::EditContext {
                 allocation: &allocation,
                 allowances: None,
+                sound_clocks: None,
             },
         )?;
         for later in &mut pending[index + 1..] {
