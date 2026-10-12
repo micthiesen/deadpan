@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-12T09:59:57Z",
+  "updated_at": "2026-10-12T10:27:23Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Complete continuous wet returns and incoming-tail policy, partial attached-sound scope routes, broader retained/Repeat/Preserve qualification and persistent filtered caching. Finish remaining mastering, format/color, workflow, performance and release obligations.",
+  "focus": "Integrate the qualified finite reverb/delay processors into event and owner returns with complete incoming-tail permissions and retained clocks. Finish partial attached-sound scope routes, filtered caching, mastering, format/color, workflow, performance and release obligations.",
   "features": [
     {
       "id": "editing",
@@ -44,7 +44,7 @@
       "requirements": [
         "DP-09"
       ],
-      "note": "Playback, gain, sounds and native EQ work. Beats and sounds now send selected audio into allocated reverb/delay pauses. Continuous returns, incoming-tail policy, partial sound-owner edits and persistent filtered caching remain."
+      "note": "Playback, gain, sounds, native EQ and selected sends into allocated pauses work. Finite reverb/delay preparation now passes seek and memory qualification. Continuous returns, incoming-tail policy, partial sound-owner edits and filtered caching remain."
     },
     {
       "id": "analysis",
@@ -693,6 +693,14 @@
       "revision": "e27a5dfd02bd9d87487e15475bd27225b639560f",
       "retrospective": false,
       "summary": "Selected beat/group and sound sends now feed allocated reverb/delay pauses through captured native commands and the shared mixer. All 3,927 tests, strict workspace checks, 335 visual scenario checks and four shortcut audits pass. A real release export verifies 60 pictures, 78 audio blocks and two zero-offset windows. Continuous returns and remaining tail/scope/cache work stay open."
+    },
+    {
+      "date": "2026-10-12",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "24a30a822a578511ce97587f771d9137f76a7393",
+      "retrospective": false,
+      "summary": "Finite stereo reverb/delay preparation now declares complete history and reproduces cold/linear tiles. All 622 audio/DSP tests, final focused tests, strict workspace checks, fatal ASan/UBSan and 112 allocation-failure checks pass. Three release processes reproduce the same hashes. Continuous authored returns and their owner/policy integration remain open; no requirement or gate is newly complete."
     }
   ]
 }
