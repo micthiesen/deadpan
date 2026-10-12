@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-12T06:26:45Z",
+  "updated_at": "2026-10-12T06:57:41Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Complete independently timed automation, sound sends and incoming-tail policy, broader binding/Repeat/Preserve qualification and persistent filtered caching. Finish remaining mastering, format/color, workflow, performance and release obligations.",
+  "focus": "Complete independently timed automation after shared stages, sound sends and incoming-tail policy, broader binding/Repeat/Preserve qualification and persistent filtered caching. Finish remaining mastering, format/color, workflow, performance and release obligations.",
   "features": [
     {
       "id": "editing",
@@ -44,7 +44,7 @@
       "requirements": [
         "DP-09"
       ],
-      "note": "Playback, gain, sounds and timing work. Shared EQ now has captured native controls, typed recipes, dot/macros and one-play editing. Remaining automation/send/tail work and persistent filtered caching remain."
+      "note": "Playback, gain, sounds and native EQ work. Input gain/mute now keeps each contribution's clock before shared EQ or saturation. Automation after shared stages, sends, incoming tails and persistent filtered caching remain."
     },
     {
       "id": "analysis",
@@ -669,6 +669,14 @@
       "revision": "e80bdc7d",
       "retrospective": false,
       "summary": "Native EQ now uses captured buffered fields and complete typed recipes, preserving other treatments, clocks and Undo. The full app suite passes 1,120 tests with nine existing opt-in ignores; final focused tests, Clippy and 500 visual replay checks pass. A separate EQ performance replay passes. Remaining automation/send/tail/cache work stays open."
+    },
+    {
+      "date": "2026-10-12",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "f8356e37e8d41a71cadf58868709bb666f638033",
+      "retrospective": false,
+      "summary": "Input gain/mute now retains independent Original and sound clocks before shared saturation/EQ. All 973 plan/audio tests, seven final focused tests, strict workspace checks and release export pass. Three new positive regressions fail on archived code. Automation after shared stages and remaining send/tail/cache work stay open."
     }
   ]
 }
