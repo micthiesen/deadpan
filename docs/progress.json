@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-12T10:27:23Z",
+  "updated_at": "2026-10-12T11:38:28Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Integrate the qualified finite reverb/delay processors into event and owner returns with complete incoming-tail permissions and retained clocks. Finish partial attached-sound scope routes, filtered caching, mastering, format/color, workflow, performance and release obligations.",
+  "focus": "Complete independent sound-event continuous sends and broader retained/Preserve/incoming-tail qualification. Finish partial attached-sound scope routes, filtered caching, mastering, format/color, workflow, performance and release obligations.",
   "features": [
     {
       "id": "editing",
@@ -44,7 +44,7 @@
       "requirements": [
         "DP-09"
       ],
-      "note": "Playback, gain, sounds, native EQ and selected sends into allocated pauses work. Finite reverb/delay preparation now passes seek and memory qualification. Continuous returns, incoming-tail policy, partial sound-owner edits and filtered caching remain."
+      "note": "Playback, gain, sounds, native EQ, allocated Tail sends and continuous beat/group reverb and delay work. Owner returns preserve parent processing and pause permissions. Independent event sends, broader retained/Preserve qualification, partial sound-owner edits and filtered caching remain."
     },
     {
       "id": "analysis",
@@ -701,6 +701,14 @@
       "revision": "24a30a822a578511ce97587f771d9137f76a7393",
       "retrospective": false,
       "summary": "Finite stereo reverb/delay preparation now declares complete history and reproduces cold/linear tiles. All 622 audio/DSP tests, final focused tests, strict workspace checks, fatal ASan/UBSan and 112 allocation-failure checks pass. Three release processes reproduce the same hashes. Continuous authored returns and their owner/policy integration remain open; no requirement or gate is newly complete."
+    },
+    {
+      "date": "2026-10-12",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "1ea6b929e8ba74f69117e9edbc65406a81270644",
+      "retrospective": false,
+      "summary": "Continuous beat/group reverb and delay now use captured :wet-send commands and the shared owner graph, with explicit pause permissions and bounded complete history. All 3,950 tests, final 320 service checks, strict workspace checks, 350 offscreen scenario checks and real release export pass: 30 pictures, two audio blocks and one zero-offset window. Independent event sends and remaining scope/cache/mastering work stay open; no requirement or gate is newly complete."
     }
   ]
 }
