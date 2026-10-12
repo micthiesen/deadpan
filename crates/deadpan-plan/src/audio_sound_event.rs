@@ -391,28 +391,20 @@ pub(crate) fn routed_occurrence_gate_fades<'plan>(
     samples: Range<AudioSample>,
     limits: AudioQueryLimits,
 ) -> Result<AudioSoundGateQuery, PlanError> {
-    let RoutedOccurrenceEnvelope {
-        domain,
-        anchor,
-        original_allocation,
-        current_allocation,
-        original_audible,
-        grid,
-        inherited_hard_edges,
-    } = envelope;
     limits.validate()?;
     if placements.is_empty()
-        || placements.first() != Some(&original_allocation)
-        || placements.last() != Some(&current_allocation)
-        || !matches!(grid.boundary_rule(), AudioBoundaryRule::RoundEven)
+        || placements.first() != Some(&envelope.original_allocation)
+        || placements.last() != Some(&envelope.current_allocation)
+        || !matches!(envelope.grid.boundary_rule(), AudioBoundaryRule::RoundEven)
     {
         return Err(PlanError::InvalidAudioSourceOccurrence(
             "routed occurrence placements must preserve its exact extent",
         ));
     }
-    let original_duration = original_allocation
+    let original_duration = envelope
+        .original_allocation
         .end
-        .checked_sub(original_allocation.start)?;
+        .checked_sub(envelope.original_allocation.start)?;
     if original_duration.compare_integer(0).is_le() {
         return Err(PlanError::InvalidAudioSourceOccurrence(
             "routed occurrence placements must have positive duration",
@@ -425,6 +417,62 @@ pub(crate) fn routed_occurrence_gate_fades<'plan>(
             ));
         }
     }
+    let grid = envelope.grid;
+    let anchor = envelope.anchor;
+    let transitions = placements.windows(2).map(move |pair| {
+        let old_start = grid.boundary(pair[0].start.checked_add(anchor)?)?.0;
+        let new_start = grid.boundary(pair[1].start.checked_add(anchor)?)?.0;
+        Ok(crate::audio_sound_route::OccurrenceTransition {
+            allocation: grid.boundary(pair[1].start)?..grid.boundary(pair[1].end)?,
+            frame_shift: pair[1].start.checked_sub(pair[0].start)?,
+            sample_shift: i128::from(new_start) - i128::from(old_start),
+        })
+    });
+    routed_occurrence_envelope(
+        current,
+        envelope,
+        transitions,
+        (start_edge, end_edge),
+        samples,
+        limits,
+    )
+}
+
+pub(crate) fn windowed_occurrence_gate_fades<'plan>(
+    current: &'plan RenderPlan,
+    envelope: RoutedOccurrenceEnvelope<'_, 'plan>,
+    route: &crate::AudioSoundRoute<AudioSample>,
+    edges: (AudioEdgePolicy, AudioEdgePolicy),
+    samples: Range<AudioSample>,
+    limits: AudioQueryLimits,
+) -> Result<AudioSoundGateQuery, PlanError> {
+    routed_occurrence_envelope(
+        current,
+        envelope,
+        route.occurrence_transitions()?,
+        edges,
+        samples,
+        limits,
+    )
+}
+
+fn routed_occurrence_envelope<'plan>(
+    current: &'plan RenderPlan,
+    envelope: RoutedOccurrenceEnvelope<'_, 'plan>,
+    transitions: impl Iterator<Item = Result<crate::audio_sound_route::OccurrenceTransition, PlanError>>,
+    (start_edge, end_edge): (AudioEdgePolicy, AudioEdgePolicy),
+    samples: Range<AudioSample>,
+    limits: AudioQueryLimits,
+) -> Result<AudioSoundGateQuery, PlanError> {
+    limits.validate()?;
+    let RoutedOccurrenceEnvelope {
+        domain,
+        original_allocation,
+        original_audible,
+        grid,
+        inherited_hard_edges,
+        ..
+    } = envelope;
     let rate = current.metadata().presentation_basis.frame_rate;
     let current_step = ExactRatio::new(
         i128::from(rate.numerator()),
@@ -476,27 +524,26 @@ pub(crate) fn routed_occurrence_gate_fades<'plan>(
         grid.boundary(original_allocation.start)?..grid.boundary(original_allocation.end)?;
     support.start = support.start.max(original_allocation_samples.start);
     support.end = support.end.min(original_allocation_samples.end);
-    for pair in placements.windows(2) {
+    for transition in transitions {
         charge(&mut work, limits.maximum_work)?;
-        let old_start = grid.boundary(pair[0].start.checked_add(anchor)?)?.0;
-        let new_start = grid.boundary(pair[1].start.checked_add(anchor)?)?.0;
-        let sample_shift = i128::from(new_start) - i128::from(old_start);
-        let frame_shift = pair[1].start.checked_sub(pair[0].start)?;
+        let crate::audio_sound_route::OccurrenceTransition {
+            allocation,
+            frame_shift,
+            sample_shift,
+        } = transition?;
         start = move_boundary(start, frame_shift, sample_shift)?;
         end = move_boundary(end, frame_shift, sample_shift)?;
-        let allocation = grid.boundary(pair[1].start)?..grid.boundary(pair[1].end)?;
-        support = sample_label(
-            i128::from(support.start.0)
-                .checked_add(sample_shift)
-                .ok_or(TimeError::Overflow)?,
-        )?
-            ..sample_label(
-                i128::from(support.end.0)
-                    .checked_add(sample_shift)
-                    .ok_or(TimeError::Overflow)?,
-            )?;
-        support.start = support.start.max(allocation.start);
-        support.end = support.end.min(allocation.end);
+        let first = i128::from(support.start.0)
+            .checked_add(sample_shift)
+            .ok_or(TimeError::Overflow)?
+            .max(i128::from(allocation.start.0))
+            .min(i128::from(allocation.end.0));
+        let last = i128::from(support.end.0)
+            .checked_add(sample_shift)
+            .ok_or(TimeError::Overflow)?
+            .min(i128::from(allocation.end.0))
+            .max(first);
+        support = sample_label(first)?..sample_label(last)?;
     }
     if support.start >= support.end {
         charge(&mut work, limits.maximum_work)?;
@@ -531,6 +578,7 @@ pub(crate) fn routed_occurrence_gate_fades<'plan>(
         Some(domain) => domain.audio(context, query_limits)?,
         None => current.audio(context, query_limits)?,
     };
+    let policy_grid = domain.map_or(grid, crate::AudioDomain::sample_grid);
     work = work
         .checked_add(query.work)
         .filter(|value| *value <= limits.maximum_work)
@@ -548,7 +596,7 @@ pub(crate) fn routed_occurrence_gate_fades<'plan>(
         }
         let gate_start = RoutedBoundary {
             at: span.project_extent.start,
-            label: i128::from(grid.boundary(span.project_extent.start)?.0),
+            label: i128::from(policy_grid.boundary(span.project_extent.start)?.0),
             policy: if span.project_extent.start == span.envelope_extent.start
                 && span
                     .boundaries
@@ -563,7 +611,7 @@ pub(crate) fn routed_occurrence_gate_fades<'plan>(
         };
         let gate_end = RoutedBoundary {
             at: span.project_extent.end,
-            label: i128::from(grid.boundary(span.project_extent.end)?.0),
+            label: i128::from(policy_grid.boundary(span.project_extent.end)?.0),
             policy: if span.project_extent.end == span.envelope_extent.end
                 && span
                     .boundaries

@@ -21,11 +21,17 @@ pub enum AudioBoundaryRule {
 /// The origin, spacing and boundary rule of one sampling domain. The containing
 /// span/stage supplies its project, revision and occurrence identity. Equal grid
 /// values alone do not identify equivalent media or DSP preparation.
+/// Internally transported preparation grids also retain the original ownership
+/// of half-sample ties; translating labels must not round those edges again.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
 pub struct AudioSampleGrid<S> {
     frame_origin: ExactRatio,
     frames_per_sample: ExactRatio,
     boundary_rule: AudioBoundaryRule,
+    // Integral transport preserves the source's tie ownership. Re-rounding
+    // an odd translated half-sample would otherwise move the boundary again.
+    #[serde(skip_serializing_if = "is_false")]
+    rounding_parity: bool,
     #[serde(skip)]
     sample_domain: PhantomData<S>,
 }
@@ -45,6 +51,7 @@ impl<S> AudioSampleGrid<S> {
             frame_origin,
             frames_per_sample,
             boundary_rule,
+            rounding_parity: false,
             sample_domain: PhantomData,
         })
     }
@@ -66,8 +73,26 @@ impl<S> AudioSampleGrid<S> {
             frame_origin: self.frame_origin,
             frames_per_sample: self.frames_per_sample,
             boundary_rule: self.boundary_rule,
+            rounding_parity: self.rounding_parity,
             sample_domain: PhantomData,
         }
+    }
+
+    pub(crate) fn translated_samples(&self, shift: i128) -> Result<Self, PlanError> {
+        let mut translated = self.rebrand();
+        translated.frame_origin = self
+            .frame_origin
+            .checked_sub(ExactRatio::new(shift, 1)?.checked_mul(self.frames_per_sample)?)?;
+        if self.boundary_rule == AudioBoundaryRule::RoundEven {
+            translated.rounding_parity ^= shift.rem_euclid(2) != 0;
+        }
+        Ok(translated)
+    }
+
+    pub(crate) fn translated_frames(&self, shift: ExactRatio) -> Result<Self, PlanError> {
+        let mut translated = self.rebrand();
+        translated.frame_origin = self.frame_origin.checked_add(shift)?;
+        Ok(translated)
     }
 
     fn boundary_index(&self, frame: ExactRatio) -> Result<i64, TimeError> {
@@ -75,6 +100,11 @@ impl<S> AudioSampleGrid<S> {
             .checked_sub(self.frame_origin)?
             .checked_div(self.frames_per_sample)?;
         let rounded = match self.boundary_rule {
+            AudioBoundaryRule::RoundEven if self.rounding_parity => exact
+                .checked_sub(ExactRatio::ONE)?
+                .round_even()?
+                .checked_add(1)
+                .ok_or(TimeError::Overflow)?,
             AudioBoundaryRule::RoundEven => exact.round_even()?,
             AudioBoundaryRule::PointCeil => exact.ceil()?,
         };
@@ -91,7 +121,7 @@ impl<S> AudioSampleGrid<S> {
             AudioBoundaryRule::PointCeil => (ExactRatio::integer(sample), InsertionBias::Right),
             AudioBoundaryRule::RoundEven => (
                 ExactRatio::new(i128::from(sample) * 2 + 1, 2)?,
-                if sample % 2 == 0 {
+                if sample.rem_euclid(2) == i64::from(self.rounding_parity) {
                     InsertionBias::Right
                 } else {
                     InsertionBias::Left
@@ -100,6 +130,10 @@ impl<S> AudioSampleGrid<S> {
         };
         Ok((self.frame_at(position)?, bias))
     }
+}
+
+fn is_false(value: &bool) -> bool {
+    !value
 }
 
 /// Exact PCM lookup in the leaf's local frame clock, or in the full intrinsic
@@ -196,6 +230,44 @@ mod tests {
 
     fn ratio(n: i128, d: i128) -> ExactRatio {
         ExactRatio::new(n, d).unwrap()
+    }
+
+    #[test]
+    fn integral_grid_transport_preserves_ties_and_search_ownership() {
+        for rule in [AudioBoundaryRule::RoundEven, AudioBoundaryRule::PointCeil] {
+            for phase in -3..=3 {
+                let original =
+                    AudioSampleGrid::<AudioSample>::new(ratio(phase, 2), ratio(3, 2), rule)
+                        .unwrap();
+                for shift in -5..=5 {
+                    let moved = original.translated_samples(shift).unwrap();
+                    assert_eq!(moved.translated_samples(-shift).unwrap(), original);
+                    let rebranded: AudioSampleGrid<ReferenceSample> = moved.rebrand();
+                    for value in -8..=8 {
+                        let frame = ratio(value, 4);
+                        assert_eq!(
+                            moved.boundary(frame).unwrap().0,
+                            original.boundary(frame).unwrap().0 + shift as i64
+                        );
+                        assert_eq!(
+                            rebranded.boundary(frame).unwrap().0,
+                            moved.boundary(frame).unwrap().0
+                        );
+                        let old = AudioSample(value as i64);
+                        let new = AudioSample(old.0 + shift as i64);
+                        assert_eq!(moved.at(new).unwrap(), original.at(old).unwrap());
+                        assert_eq!(moved.probe(new).unwrap(), original.probe(old).unwrap());
+                        let translated = moved.translated_frames(ratio(7, 3)).unwrap();
+                        assert_eq!(
+                            translated
+                                .boundary(frame.checked_add(ratio(7, 3)).unwrap())
+                                .unwrap(),
+                            moved.boundary(frame).unwrap()
+                        );
+                    }
+                }
+            }
+        }
     }
 
     #[test]

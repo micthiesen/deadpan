@@ -80,6 +80,7 @@ impl StageAudio {
                     owner,
                     event,
                     samples.clone(),
+                    scopes.len(),
                     control,
                 )?;
                 let mut occurrences = Vec::with_capacity(batch.voices().len());
@@ -87,7 +88,7 @@ impl StageAudio {
                     control.check()?;
                     let extent = voice.samples();
                     let interval = samples.start.max(extent.start)..samples.end.min(extent.end);
-                    if interval.start >= interval.end {
+                    if interval.start >= interval.end && context.is_none() {
                         continue;
                     }
                     deadpan_core::validate_audio_treatment_layers(
@@ -108,7 +109,7 @@ impl StageAudio {
                             break;
                         }
                     }
-                    let (input, fades, post_fades) =
+                    let (input, fades, post_fades, interval) =
                         if let Some((index, first_scope, historical_instance)) = first {
                             let first_plan = retained.get(first_scope.timing()).ok_or(
                                 PlanError::InvalidPlan("sound processing layout was not prepared"),
@@ -138,34 +139,64 @@ impl StageAudio {
                             )?;
                             control.spend_plan_work(alias_work)?;
                             let placements = super::sound_clocks::placements(
-                                &original, voice, &scopes, control,
+                                &original, voice, &scopes, context, control,
                             )?;
-                            let fades = voice.routed_gate_fades_from(
-                                &original,
-                                &alias,
-                                &placements,
-                                (event.start_edge, event.end_edge),
-                                interval.clone(),
-                                control.query_limits()?,
-                            )?;
-                            control.spend_plan_work(fades.work)?;
-                            let post_fades = voice.routed_gate_fades_from(
-                                &original,
-                                &alias,
-                                &placements,
-                                (
-                                    deadpan_core::AudioEdgePolicy::Hard,
-                                    deadpan_core::AudioEdgePolicy::Hard,
-                                ),
-                                interval.clone(),
-                                control.query_limits()?,
-                            )?;
-                            control.spend_plan_work(post_fades.work)?;
-                            let routed = super::sound_clocks::route_occurrence(
-                                original,
+                            let mut routed = super::sound_clocks::route_occurrence(
+                                original.clone(),
                                 &placements,
                                 control,
                             )?;
+                            let history = if placements.iter().all(|p| p.expands_history) {
+                                control.spend_plan_work(placements.len())?;
+                                voice.complete_processing_history(
+                                    &original,
+                                    &alias,
+                                    routed.route(),
+                                )?
+                            } else {
+                                None
+                            };
+                            if let Some(history) = &history {
+                                routed = deadpan_plan::AudioRoutedRoot::occurrence(
+                                    original.clone(),
+                                    history.route().clone(),
+                                )?;
+                            }
+                            let support = routed.route().samples();
+                            let interval =
+                                samples.start.max(support.start)..samples.end.min(support.end);
+                            if interval.start >= interval.end {
+                                continue;
+                            }
+                            let gate_fades = |edges| {
+                                if let Some(history) = &history {
+                                    history
+                                        .gate_fades(
+                                            edges,
+                                            interval.clone(),
+                                            control.query_limits()?,
+                                        )
+                                        .map_err(StageAudioError::from)
+                                } else {
+                                    voice
+                                        .routed_window_gate_fades_from(
+                                            &original,
+                                            &alias,
+                                            routed.route(),
+                                            edges,
+                                            interval.clone(),
+                                            control.query_limits()?,
+                                        )
+                                        .map_err(StageAudioError::from)
+                                }
+                            };
+                            let fades = gate_fades((event.start_edge, event.end_edge))?;
+                            control.spend_plan_work(fades.work)?;
+                            let post_fades = gate_fades((
+                                deadpan_core::AudioEdgePolicy::Hard,
+                                deadpan_core::AudioEdgePolicy::Hard,
+                            ))?;
+                            control.spend_plan_work(post_fades.work)?;
                             let query = self.with_plan_scope(Arc::clone(first_plan), |reader| {
                                 reader.preflight_routed_root(
                                     &routed,
@@ -181,8 +212,12 @@ impl StageAudio {
                                 },
                                 fades,
                                 post_fades,
+                                interval,
                             )
                         } else {
+                            if interval.start >= interval.end {
+                                continue;
+                            }
                             let queries =
                                 self.source_occurrence_queries(voice, interval.clone(), control)?;
                             self.preflight_root_queries(
@@ -210,6 +245,7 @@ impl StageAudio {
                                 PreparedBeatInput::Current(Box::new(queries)),
                                 fades,
                                 post_fades,
+                                interval,
                             )
                         };
                     sound_events::validate_gate_envelopes(&fades.spans, interval.clone())?;

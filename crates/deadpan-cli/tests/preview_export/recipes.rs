@@ -7,7 +7,8 @@
 //! wire shape is the serde contract. The read-only store is used only to find
 //! current node, asset and revision identities between commands.
 //!
-//! Every recipe first shortens the Original (`cfr-bframes.mp4`, 120 frames at
+//! Unless its own description says otherwise, a recipe first shortens the
+//! Original (`cfr-bframes.mp4`, 120 frames at
 //! 30000/1001, burnt-in counter equal to the decoded ordinal) to Original
 //! frames [12, 42): Edit frame `f` shows Original ordinal `12 + f`. That range
 //! holds the click at Original sample 48000 (end of Original frame 29, Edit
@@ -40,6 +41,9 @@ pub mod vfr;
 
 #[path = "formats.rs"]
 pub mod formats;
+
+#[path = "partial_sounds.rs"]
+pub mod partial_sounds;
 
 #[cfg(feature = "synthetic-worker")]
 #[path = "generated.rs"]

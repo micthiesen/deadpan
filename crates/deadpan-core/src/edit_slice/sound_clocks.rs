@@ -17,13 +17,9 @@ pub(super) fn capture(
     for part in parts {
         for id in crate::occurrence_edit::subtree_order(document, &part.root)? {
             if document.beat_sounds.contains_key(&id) {
-                // A cropped sound owner needs its own interval lifecycle. Do not
-                // silently capture the full sound behind a new crop wrapper.
-                if part.mapping.start() != ProjectFrame(0)
-                    || part.mapping.duration() != live.nodes()[&part.root].duration
-                {
-                    return Err(invalid("partial sound-bearing slice is not supported"));
-                }
+                // Retain the complete processing owner. The pasted Partition
+                // selects delivery, with each historical allocation preserved
+                // by the sampled occurrence windows and envelope transport.
                 roots.insert(id, part.root.clone());
             }
         }

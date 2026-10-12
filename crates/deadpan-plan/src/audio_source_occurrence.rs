@@ -12,6 +12,10 @@ use crate::{
 mod owner_context;
 pub use owner_context::AudioSoundOwnerContext;
 
+#[path = "audio_sound_processing_history.rs"]
+mod processing_history;
+pub use processing_history::AudioSoundProcessingHistory;
+
 /// A borrowed preparation recipe for one concrete current occurrence.
 ///
 /// The constructor resolves structure and stable plays, never a cursor or a
@@ -866,14 +870,8 @@ impl<'plan> AudioSourceOccurrence<'plan> {
         samples: Range<AudioSample>,
         limits: AudioQueryLimits,
     ) -> Result<crate::AudioSoundGateQuery, PlanError> {
-        if !self.belongs_to(alias.live_plan)
-            || !original.belongs_to(alias.historical_plan)
-            || self.instance != alias.live_instance
-            || original.instance != alias.historical_instance
-            || original.recipe() != &alias.recipe
-            || self.recipe() != &alias.recipe
-            || self.routing_anchor()? != original.routing_anchor()?
-        {
+        self.validate_clock_alias(original, alias)?;
+        if self.routing_anchor()? != original.routing_anchor()? {
             return Err(PlanError::InvalidAudioSourceOccurrence(
                 "routed occurrences do not match their sound clock alias",
             ));
@@ -895,6 +893,87 @@ impl<'plan> AudioSourceOccurrence<'plan> {
             samples,
             limits,
         )
+    }
+
+    /// Transport original envelope labels through the same rounded windows as
+    /// its PCM. A crop narrows delivery without inventing a new sound onset or
+    /// fade. Current Hold gates apply afterward. The proven alias and complete
+    /// capture grid bind this route to both occurrences; its final allocation
+    /// and delivery anchor must describe this exact current occurrence.
+    pub fn routed_window_gate_fades_from(
+        &self,
+        original: &AudioSourceOccurrence<'_>,
+        alias: &crate::AudioOccurrenceAlias<'_>,
+        route: &crate::AudioSoundRoute<AudioSample>,
+        edges: (deadpan_core::AudioEdgePolicy, deadpan_core::AudioEdgePolicy),
+        samples: Range<AudioSample>,
+        limits: AudioQueryLimits,
+    ) -> Result<crate::AudioSoundGateQuery, PlanError> {
+        let (allocation, _) = self.validate_window_route(original, alias, route)?;
+        crate::audio_sound_event::windowed_occurrence_gate_fades(
+            self.plan,
+            crate::audio_sound_event::RoutedOccurrenceEnvelope {
+                domain: self.policy_domain.as_deref(),
+                anchor: original.routing_anchor()?,
+                original_allocation: original.extent(),
+                current_allocation: allocation,
+                original_audible: original.audible_extent(),
+                grid: original.grid,
+                inherited_hard_edges: self.inherited_hard_edges,
+            },
+            route,
+            edges,
+            samples,
+            limits,
+        )
+    }
+
+    fn validate_window_route(
+        &self,
+        original: &AudioSourceOccurrence<'_>,
+        alias: &crate::AudioOccurrenceAlias<'_>,
+        route: &crate::AudioSoundRoute<AudioSample>,
+    ) -> Result<(Range<ExactRatio>, ExactRatio), PlanError> {
+        self.validate_clock_alias(original, alias)?;
+        let original_extent = original.extent();
+        let grid = AudioSampleGrid::new(
+            ExactRatio::ZERO.checked_sub(original_extent.start)?,
+            original.grid.frames_per_sample(),
+            AudioBoundaryRule::RoundEven,
+        )?;
+        let (allocation, anchor) = route.occurrence_output()?;
+        if route.recipe_grid() != grid
+            || route.recipe_samples() != original.samples()
+            || route.route().recipe_extent()
+                != original_extent.end.checked_sub(original_extent.start)?
+            || route.identity_anchor() != original.routing_anchor()?
+            || allocation != self.extent()
+            || anchor != self.routing_origin
+        {
+            return Err(PlanError::InvalidAudioSourceOccurrence(
+                "sound envelope windows do not match their captured occurrences",
+            ));
+        }
+        Ok((allocation, anchor))
+    }
+
+    fn validate_clock_alias(
+        &self,
+        original: &AudioSourceOccurrence<'_>,
+        alias: &crate::AudioOccurrenceAlias<'_>,
+    ) -> Result<(), PlanError> {
+        if !self.belongs_to(alias.live_plan)
+            || !original.belongs_to(alias.historical_plan)
+            || self.instance != alias.live_instance
+            || original.instance != alias.historical_instance
+            || original.recipe() != &alias.recipe
+            || self.recipe() != &alias.recipe
+        {
+            return Err(PlanError::InvalidAudioSourceOccurrence(
+                "routed occurrences do not match their sound clock alias",
+            ));
+        }
+        Ok(())
     }
     pub fn samples(&self) -> Range<AudioSample> {
         self.samples.clone()

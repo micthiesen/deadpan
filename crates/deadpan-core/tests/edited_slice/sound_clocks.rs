@@ -227,7 +227,7 @@ fn first_sound_copy_retains_source_phase_and_can_move_after_paste() {
 }
 
 #[test]
-fn copied_sound_clocks_reject_capture_collisions_forged_aliases_and_partial_owners() {
+fn copied_sound_clocks_reject_capture_collisions_and_forged_aliases() {
     let before = shifted(&fixture(), "shifted");
     let snapshot = before.to_json().unwrap();
     let error = CapturedEditSlice::capture_selection(
@@ -238,9 +238,6 @@ fn copied_sound_clocks_reject_capture_collisions_forged_aliases_and_partial_owne
     )
     .unwrap_err();
     assert!(error.message.contains("capture timing identity"), "{error}");
-    assert!(
-        CapturedEditSlice::capture(&before, &id("group"), range(3, 5), timing("partial")).is_err()
-    );
     let slice = capture(&before, "group", &id("owner"), "capture");
     let mut forged = serde_json::to_value(&slice).unwrap();
     forged["audio_bindings"]["sound_clocks"]["owner"]["effect"]["clocks"][0]["owner"] =
@@ -265,6 +262,60 @@ fn copied_sound_clocks_reject_capture_collisions_forged_aliases_and_partial_owne
         assert!(apply(&before, &bad).is_err(), "variant {variant}");
     }
     assert_eq!(before.to_json().unwrap(), snapshot);
+}
+
+#[test]
+fn partial_sound_owner_copy_keeps_full_recipe_and_chronological_clocks() {
+    let before = shifted(&fixture(), "shifted");
+    let slice =
+        CapturedEditSlice::capture(&before, &id("group"), range(3, 5), timing("partial")).unwrap();
+    assert_eq!(slice.duration(), duration(2));
+    slice.validate_capture(&before).unwrap();
+    assert_eq!(
+        CapturedEditSlice::from_json(&slice.to_json().unwrap()).unwrap(),
+        slice
+    );
+    let pasted = edit(&before, &paste(&before, &slice, "partial-copy", 0));
+    let owner = copied_owner(&pasted, "partial-copy");
+    assert_eq!(
+        pasted.beat_sounds()[&owner][&sound()],
+        before.beat_sounds()[&id("owner")][&sound()]
+    );
+    assert_eq!(pasted.durations().unwrap()[&owner], duration(4));
+    assert_eq!(
+        pasted.audio_bindings().sound_clocks()[&owner][&sound()]
+            .clocks()
+            .len(),
+        2
+    );
+    let moved = shifted(&pasted, "move-partial-copy");
+    assert_eq!(moved.beat_sounds()[&owner], pasted.beat_sounds()[&owner]);
+    assert_eq!(
+        moved.audio_bindings().sound_clocks()[&owner][&sound()]
+            .clocks()
+            .len(),
+        3
+    );
+    let recopy = CapturedEditSlice::capture(
+        &pasted,
+        &id("partial-copy-node-0"),
+        range(1, 2),
+        timing("recapture"),
+    )
+    .unwrap();
+    let twice = edit(&pasted, &paste(&pasted, &recopy, "recopy", 0));
+    let second = copied_owner(&twice, "recopy");
+    assert_eq!(
+        twice.audio_bindings().sound_clocks()[&second][&sound()]
+            .clocks()
+            .len(),
+        3
+    );
+    assert_eq!(twice.durations().unwrap()[&second], duration(4));
+    assert_eq!(
+        before.beat_sounds()[&id("owner")][&sound()],
+        twice.beat_sounds()[&second][&sound()]
+    );
 }
 
 #[test]

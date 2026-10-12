@@ -20,8 +20,8 @@ Recipes require a qualified source, an exact natural-rate mapping and a
 selected interval that fits the owner's output clock. Store admission rechecks
 changed owner/ID pairs against the selected or validated captured revision,
 the source receipt and its retained original. Copies rename owner IDs while
-retaining local SoundIds. Whole-child capture carries recipes and their complete
-sample history into an eligible ordinary Sequence destination. Even a sound
+retaining local SoundIds. Whole-child and eligible partial-range captures carry
+recipes and their complete sample history into an ordinary Sequence destination. Even a sound
 without previous moves retains its source placement before the copy is pasted.
 
 Explicit-timing insertion, deletion, replacement, slice paste and MoveRange can
@@ -33,10 +33,13 @@ Identity-preserving metadata edits and sound Set/Delete remain available.
 Deleting an attachment before pasting a historical copy is an explicit change
 of authored intent. Existing root-only sound editing keeps its qualified routes.
 `ib` excludes these attachments and their clocks from its immutable copy; `ab`
-retains them. Both cut forms remove the owner and its sounds. Partial-copy
-timing qualification and sound-bearing Repeat still need their transforms.
+retains them. Both cut forms remove the owner and its sounds. Copying a partial
+range preserves its whole sound owner behind a transparent selection. Range
+endpoints must still resolve to a Source, ordinary Hold or supported fragment;
+partial composite Preserve ranges retain the existing explicit refusal. Splitting
+a surviving owner and sound-bearing Repeat edits still need attachment transforms.
 
-Database 58 stores core schema 46. Earlier unused development packages refuse
+Database 81 stores core schema 53. Earlier unused development packages refuse
 before writes; see [development formats](DEVELOPMENT_FORMATS.md).
 
 ## Saved independent clocks
@@ -61,7 +64,8 @@ and clears that sound's journal. Label, gain and edge changes retain it.
 
 ## Copying retained sound clocks
 
-Both live and historical scopes have only ordinary Sequence ancestors. A
+Live and historical scopes admit ordinary Sequences, stable Repeats and
+transparent Partition ancestors. A
 bounded paired traversal proves their complete processing structure matches
 while allowing fresh node IDs. It maps each live owner and concrete Repeat path
 to its historical counterpart; missing or ineligible override paths fail.
@@ -73,7 +77,10 @@ That placement was previously implicit and can contain clipped sample support.
 A previously unclocked sound starts with this capture-time placement. Selecting
 an inner ordinary Sequence child narrows an enclosing scope to the corresponding
 historical subtree; selecting an outer group preserves any smaller existing scope.
-Partial sound-bearing owners still refuse until their interval lifecycle exists.
+Partial capture retains the complete sound owner and selects its delivered output
+through an exterior Partition. A surviving owner's existing path through its
+outermost crop must remain unchanged; moving that whole fragment is supported,
+but splitting the owner still refuses atomically.
 
 Paste allocates fresh live nodes, historical aliases and timing IDs. Corresponding
 Repeat families are joined by the scope proof before renaming their stable plays;
@@ -88,13 +95,22 @@ qualified assets used by sounds sharing that clock. It preserves the complete
 processing graph without introducing primary Source audio, Hold carriers or
 historical gain. The audio bus retains the first complete occurrence and
 transports its old integral PCM labels through every placement. Intermediate
-layouts supply an exact translation of that processed extent; their nominal
-owner geometry never replaces the audio allocation.
+layouts supply the exact delivery window and rounding anchor at each placement.
+PCM and edge envelopes use the same chronological translations and intersections;
+cropping does not introduce a new event fade.
 At most 64 first plans are retained, and their combined selected asset count
 is bounded by the same 64-event limit. The bus then applies current Hold gates,
 edge choices and owner/event gain. The virtual edge envelope keeps its historical
 progress even when a later allocation clips physical samples. At an exact shared
 boundary, a current Hold owns its newly rounded endpoint.
+
+Paired temporal-owner preparation retains every sample of its complete input,
+including a terminal sample excluded by a newly rounded delivery allocation.
+That input may extend outside the nominal current owner range. Its transported
+grid preserves half-sample tie ownership through odd integral shifts. Ordinary
+delivery still applies every historical clip. A newly introduced outer treatment
+owner consumes only delivered sound; it cannot expose another owner's hidden
+history. See [partial-copy qualification](qualification/partial-sound-copies-2026-10-12.md).
 
 All plans share one preparation controller, deadline, work budget, source
 admission and PCM residency cap. Intrinsic prepared-stage cache entries include
@@ -103,7 +119,7 @@ and exact expected asset record; clock-only store changes recheck receipts and
 original ownership. A warm cache cannot conceal source revocation.
 
 Remaining work includes temporal edits inside the surviving processing branch,
-retained-clock copy/import aliases, occurrence isolation, root-owned attachment
+occurrence isolation, root-owned attachment
 transport, allowances, tails and native placement. Beat-object Repeat still
 requires its sound attachment lifecycle; copy, cut and paste preserve the
 explicit attachment choice.

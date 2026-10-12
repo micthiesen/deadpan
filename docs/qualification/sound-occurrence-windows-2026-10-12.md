@@ -52,14 +52,17 @@ hashes, failure evidence and the self-review.
 
 ## Remaining integration
 
-This implements the sampled transport needed by partial attached-sound edits.
-The editor still refuses those copies. `sound_clocks::placements` must derive
+This increment implemented the sampled transport needed by partial attached-sound
+edits. Its follow-up [partial-copy integration](partial-sound-copies-2026-10-12.md)
+now connects eligible captures to the behavior below, with separate evidence.
+At this increment the editor still refused those copies.
+`sound_clocks::placements` needed to derive
 every chronological visible interval and delivery anchor, including treatment
-input contexts. The gate path must transport the original envelope with the same
-sample shifts and apply current Hold policy afterward. Core correspondence must
-admit only proven transparent crop ancestors before capture can remove its
-guard. Recopy, repeated moves, store reopen and Undo/Redo need command-created
-regressions before that editing behavior can be claimed.
+input contexts. The gate path needed to transport the original envelope with
+the same sample shifts and apply current Hold policy afterward. Core correspondence needed to
+admit only proven transparent crop ancestors before removing the capture
+guard. Recopy, repeated moves, store reopen and Undo/Redo required command-created
+regressions before that editing behavior could be claimed.
 
 The primary agent implemented and self-reviewed this work alone. No independent
 review, live GUI, physical audio, listening check or new encoded-export evidence

@@ -205,6 +205,13 @@ impl<'plan> AudioSoundClockScope<'plan> {
         self.historical_layout
     }
 
+    pub fn live_layout(&self) -> &deadpan_core::FrozenAudioLayout {
+        self.live_plan
+            .sound_clock_layout
+            .as_deref()
+            .expect("clock scope has a live layout")
+    }
+
     pub fn historical_scope(&self) -> &NodeId {
         self.historical_scope
     }
@@ -246,6 +253,31 @@ impl<'plan> AudioSoundClockScope<'plan> {
         Ok(self
             .correspondence
             .try_remap_instance_with_work(live, maximum_work)?)
+    }
+
+    /// A treatment owner outside this paired processing subtree consumes its
+    /// delivered output. It cannot expose history through the copy's exterior
+    /// selection, and need not have existed in the historical layout at all.
+    /// Only a checked context from this exact live plan can request expansion.
+    pub fn try_remap_context_with_work(
+        &self,
+        context: &crate::AudioSoundOwnerContext<'_>,
+        maximum_work: usize,
+    ) -> Result<(Option<InstancePath>, usize), PlanError> {
+        if maximum_work == 0 || maximum_work > deadpan_core::MAX_DOCUMENT_NODES {
+            return Err(PlanError::AudioQueryLimit("sound context alias work"));
+        }
+        if !context.belongs_to(self.live_plan) {
+            return Err(PlanError::InvalidPlan("foreign sound clock context"));
+        }
+        if self
+            .correspondence
+            .historical_node(&context.owner().node)
+            .is_none()
+        {
+            return Ok((None, 1));
+        }
+        self.try_remap_instance_with_work(context.owner(), maximum_work)
     }
 
     /// Bind one compiled plan to this exact frozen layout and sound recipe.

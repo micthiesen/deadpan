@@ -382,6 +382,43 @@ fn sound_clock_scope_mints_only_recipe_matched_nested_occurrence_aliases() {
         instance
     );
 
+    let context = plan
+        .audio_sound_instance_context(&instance, Default::default())
+        .unwrap();
+    let (mapped, work) = scopes[0]
+        .try_remap_context_with_work(&context, deadpan_core::MAX_DOCUMENT_NODES)
+        .unwrap();
+    assert_eq!(mapped.as_ref(), Some(&instance));
+    assert!(work > 0);
+    let outer = plan
+        .audio_sound_instance_context(
+            &InstancePath {
+                node: plan.metadata().root.clone(),
+                repeats: vec![],
+            },
+            Default::default(),
+        )
+        .unwrap();
+    assert_eq!(
+        scopes[0].try_remap_context_with_work(&outer, 1).unwrap(),
+        (None, 1)
+    );
+    assert!(scopes[0].try_remap_context_with_work(&outer, 0).is_err());
+    assert!(
+        scopes[0]
+            .try_remap_context_with_work(&outer, deadpan_core::MAX_DOCUMENT_NODES + 1)
+            .is_err()
+    );
+    let foreign = plan.clone();
+    let foreign_context = foreign
+        .audio_sound_instance_context(outer.owner(), Default::default())
+        .unwrap();
+    assert!(
+        scopes[0]
+            .try_remap_context_with_work(&foreign_context, deadpan_core::MAX_DOCUMENT_NODES)
+            .is_err()
+    );
+
     let historical_plan = plan
         .compile_sound_processing_layout(&layout, &BTreeSet::from([event.source.asset.clone()]))
         .unwrap();

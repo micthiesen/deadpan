@@ -437,7 +437,7 @@ fn independent_eq_automation_keeps_rebound_input_history_across_a_new_pause() {
     assert!(
         error
             .message
-            .contains("sound clock scope omits an enclosing processor"),
+            .contains("sound owner interval changes require an attachment route"),
         "{error}"
     );
     assert_eq!(attached.to_json().unwrap(), snapshot);

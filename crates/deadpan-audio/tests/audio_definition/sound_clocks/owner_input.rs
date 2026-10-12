@@ -9,7 +9,12 @@ fn cropped() -> ProjectDocument {
     ProjectDocument::from_json(&wire.to_string()).unwrap()
 }
 
-fn read_input(document: &ProjectDocument, owner: &NodeId, start: i64, count: u32) -> Vec<[f64; 2]> {
+pub(super) fn read_input(
+    document: &ProjectDocument,
+    owner: &NodeId,
+    start: i64,
+    count: u32,
+) -> Vec<[f64; 2]> {
     let plan = compile(document, false);
     let context = plan
         .audio_sound_instance_context(
@@ -372,7 +377,6 @@ fn shared_eq_saved_copied_crop_filters_complete_history_and_rechecks_sources() {
             Default::default(),
         )
         .unwrap();
-    let support = context.samples();
     let mut input = StageAudio::new(plan.clone());
     let mut oracle_provider = ClockProvider::new(&copied);
     let mut filter = deadpan_audio::Equalizer::new(recipe, &AtomicBool::new(false)).unwrap();
@@ -382,8 +386,11 @@ fn shared_eq_saved_copied_crop_filters_complete_history_and_rechecks_sources() {
         let tile = at / 1024 * 1024;
         let mut left = vec![0.0; 5120];
         let mut right = vec![0.0; 5120];
-        let first = (tile - 2048).max(support.start.0);
-        let end = (tile + 3072).min(support.end.0);
+        // A nominal newly rounded extent is not the retained processor's
+        // physical support. Read its complete finite history window, including
+        // transported boundary samples outside that nominal allocation.
+        let first = tile - 2048;
+        let end = tile + 3072;
         for start in (first..end).step_by(256) {
             let count = (end - start).min(256) as u32;
             let raw = input

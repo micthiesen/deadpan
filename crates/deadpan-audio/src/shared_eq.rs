@@ -246,7 +246,10 @@ impl StageAudio {
         };
         let sound_support = match &program.context.sounds {
             Sounds::Root => AudioSample(0)..plan.audio_duration()?,
-            Sounds::Owner(context) => context.samples(),
+            // Retained temporal input can extend beyond the newly rounded
+            // nominal owner by its accumulated sample phase. Each checked
+            // occurrence route admits its own exact preparation support.
+            Sounds::Owner(_) => start..end,
             Sounds::None => start..start,
         };
         let sound_range = start.max(sound_support.start)..end.min(sound_support.end);

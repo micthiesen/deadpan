@@ -4,6 +4,31 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Partial attached-sound copies](../qualification/partial-sound-copies-2026-10-12.md)
+now preserve the full sound owner behind a delivery Partition. Frozen placement
+derives chronological windows and anchors; PCM and envelopes share their sample
+translations. Paired temporal-owner preparation retains complete input, including
+a terminal sample beyond new nominal support, while newly introduced outer
+owners consume delivered input. Transported grids preserve half-sample parity.
+
+All 2,859 core/plan/audio/playback/store tests pass, with none ignored. Core/store
+coverage includes copies, moves, recopy, original-owner deletion, atomic failure,
+reopen and Undo/Redo. Dry and treated PCM, an independent wrapper EQ oracle,
+terminal input/source revocation and odd half-sample shifts pass. The public CLI
+fixture verifies seven pictures, 19 audio blocks and zero sample offset after
+both copies and original-owner deletion in debug and release. All seven focused
+release audio regressions, the store persistence regression, strict workspace
+Clippy, formatting and the app/CLI release build pass. Source hashes, failed and
+successful runs, the implementation patch, fixture project/movie and self-review
+are retained with the qualification.
+
+Keep the remaining guards explicit: Source/Hold or supported-fragment endpoints
+are required, so partial composite Preserve ranges still refuse. Surviving-owner
+splits and attachment Repeat/root-owner transforms remain open. A mixed-bus
+pre-copy equality oracle differed before the Original's contribution was isolated;
+that broader cut-policy qualification is still owed. The primary works alone and
+self-reviews. No DP requirement or release gate is newly complete.
+
 [Occurrence delivery windows](../qualification/sound-occurrence-windows-2026-10-12.md)
 add physical interval clipping and per-placement rounding anchors to sampled
 sound routes, without trimming the complete processing recipe. The existing
@@ -12,11 +37,8 @@ Preserve regressions pass in debug and release. All 1,121 plan/audio/playback
 tests, strict workspace Clippy and the app/CLI release build pass. Evidence and
 self-review are retained with the qualification.
 
-Partial copies remain guarded. Next integration: derive chronological windows
-and delivery anchors in `sound_clocks::placements`, transport gate envelopes
-with identical sample shifts, and admit proven transparent crop ancestors in
-the core correspondence. Preserve hidden treatment input and old terminal sample
-loss. Then qualify command-created capture/paste/recopy, moves and durable history.
+That sampled foundation is now integrated for eligible partial captures as
+recorded above. Its older evidence remains separate from this integration.
 
 [Shared event prefixes](../qualification/event-prefix-cache-2026-10-12.md) fix
 plan-work exhaustion for a treated sound with EQ and both returns. Every required
@@ -27,10 +49,9 @@ release builds pass. A real export verifies 30 pictures, four audio blocks and
 zero sample offset. No persistent cache or
 realtime qualification is claimed; partial sound-owner interval routes remain open.
 
-Partial sound-bearing slices still need exact interval transport: the current
-`SoundClockJournal` proves complete processing subtrees, and
-`sound_clocks::route_occurrence` preserves a constant extent across placements.
-Removing the capture refusal alone would lose cropped sample history.
+The current `SoundClockJournal` still proves complete processing subtrees.
+Delivery windows can crop them; changing or dividing those surviving subtrees
+needs a distinct attachment transform and cannot be admitted by removing a guard.
 
 [Retained viewer verification](../qualification/retained-viewer-pixels-2026-10-12.md)
 resolves the previous black-viewer follow-up as an incorrect visual assessment.

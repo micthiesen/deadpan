@@ -10,6 +10,9 @@ mod group_mix;
 #[path = "sound_clocks/owner_input.rs"]
 mod owner_input;
 
+#[path = "sound_clocks/partial.rs"]
+mod partial;
+
 struct ClockProvider {
     fixture: FixtureProvider,
     revision: RevisionId,

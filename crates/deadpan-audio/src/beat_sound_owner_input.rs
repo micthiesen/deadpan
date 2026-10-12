@@ -29,9 +29,11 @@ struct OwnerRead {
 
 impl StageAudio {
     /// Read complete current and retained beat-sound input behind exterior
-    /// crops. Saved move/copy journals still transport old integral PCM labels
-    /// through every intermediate allocation. Root SoundEvents remain outside
-    /// this operand, including when the selected owner is the root.
+    /// crops. Saved move/copy journals transport complete processor input;
+    /// delivery masks apply after the temporal owner's output. Signed windows
+    /// may include history outside the nominal current allocation and return
+    /// zero beyond retained support. Root SoundEvents remain outside this
+    /// operand, including when the selected owner is the root.
     pub fn read_beat_sound_owner_input(
         &mut self,
         provider: &mut impl AudioSourceProvider,
@@ -81,8 +83,7 @@ impl StageAudio {
                 .checked_add(i64::from(frames))
                 .ok_or(TimeError::Overflow)?,
         );
-        let support = context.samples();
-        if frames == 0 || frames > MAX_OUTPUT_FRAMES || start < support.start || end > support.end {
+        if frames == 0 || frames > MAX_OUTPUT_FRAMES {
             return Err(StageAudioError::Range);
         }
         control.spend_plan_work(context.construction_work())?;

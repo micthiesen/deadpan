@@ -1,0 +1,2518 @@
+diff --git a/crates/deadpan-audio/src/beat_sound_owner_input.rs b/crates/deadpan-audio/src/beat_sound_owner_input.rs
+index c53ada62..684bb62a 100644
+--- a/crates/deadpan-audio/src/beat_sound_owner_input.rs
++++ b/crates/deadpan-audio/src/beat_sound_owner_input.rs
+@@ -29,9 +29,11 @@ struct OwnerRead {
+ 
+ impl StageAudio {
+     /// Read complete current and retained beat-sound input behind exterior
+-    /// crops. Saved move/copy journals still transport old integral PCM labels
+-    /// through every intermediate allocation. Root SoundEvents remain outside
+-    /// this operand, including when the selected owner is the root.
++    /// crops. Saved move/copy journals transport complete processor input;
++    /// delivery masks apply after the temporal owner's output. Signed windows
++    /// may include history outside the nominal current allocation and return
++    /// zero beyond retained support. Root SoundEvents remain outside this
++    /// operand, including when the selected owner is the root.
+     pub fn read_beat_sound_owner_input(
+         &mut self,
+         provider: &mut impl AudioSourceProvider,
+@@ -81,8 +83,7 @@ impl StageAudio {
+                 .checked_add(i64::from(frames))
+                 .ok_or(TimeError::Overflow)?,
+         );
+-        let support = context.samples();
+-        if frames == 0 || frames > MAX_OUTPUT_FRAMES || start < support.start || end > support.end {
++        if frames == 0 || frames > MAX_OUTPUT_FRAMES {
+             return Err(StageAudioError::Range);
+         }
+         control.spend_plan_work(context.construction_work())?;
+diff --git a/crates/deadpan-audio/src/beat_sounds.rs b/crates/deadpan-audio/src/beat_sounds.rs
+index 0e224416..21764ab4 100644
+--- a/crates/deadpan-audio/src/beat_sounds.rs
++++ b/crates/deadpan-audio/src/beat_sounds.rs
+@@ -80,6 +80,7 @@ impl StageAudio {
+                     owner,
+                     event,
+                     samples.clone(),
++                    scopes.len(),
+                     control,
+                 )?;
+                 let mut occurrences = Vec::with_capacity(batch.voices().len());
+@@ -87,7 +88,7 @@ impl StageAudio {
+                     control.check()?;
+                     let extent = voice.samples();
+                     let interval = samples.start.max(extent.start)..samples.end.min(extent.end);
+-                    if interval.start >= interval.end {
++                    if interval.start >= interval.end && context.is_none() {
+                         continue;
+                     }
+                     deadpan_core::validate_audio_treatment_layers(
+@@ -108,7 +109,7 @@ impl StageAudio {
+                             break;
+                         }
+                     }
+-                    let (input, fades, post_fades) =
++                    let (input, fades, post_fades, interval) =
+                         if let Some((index, first_scope, historical_instance)) = first {
+                             let first_plan = retained.get(first_scope.timing()).ok_or(
+                                 PlanError::InvalidPlan("sound processing layout was not prepared"),
+@@ -138,34 +139,64 @@ impl StageAudio {
+                             )?;
+                             control.spend_plan_work(alias_work)?;
+                             let placements = super::sound_clocks::placements(
+-                                &original, voice, &scopes, control,
++                                &original, voice, &scopes, context, control,
+                             )?;
+-                            let fades = voice.routed_gate_fades_from(
+-                                &original,
+-                                &alias,
++                            let mut routed = super::sound_clocks::route_occurrence(
++                                original.clone(),
+                                 &placements,
+-                                (event.start_edge, event.end_edge),
+-                                interval.clone(),
+-                                control.query_limits()?,
++                                control,
+                             )?;
++                            let history = if placements.iter().all(|p| p.expands_history) {
++                                control.spend_plan_work(placements.len())?;
++                                voice.complete_processing_history(
++                                    &original,
++                                    &alias,
++                                    routed.route(),
++                                )?
++                            } else {
++                                None
++                            };
++                            if let Some(history) = &history {
++                                routed = deadpan_plan::AudioRoutedRoot::occurrence(
++                                    original.clone(),
++                                    history.route().clone(),
++                                )?;
++                            }
++                            let support = routed.route().samples();
++                            let interval =
++                                samples.start.max(support.start)..samples.end.min(support.end);
++                            if interval.start >= interval.end {
++                                continue;
++                            }
++                            let gate_fades = |edges| {
++                                if let Some(history) = &history {
++                                    history
++                                        .gate_fades(
++                                            edges,
++                                            interval.clone(),
++                                            control.query_limits()?,
++                                        )
++                                        .map_err(StageAudioError::from)
++                                } else {
++                                    voice
++                                        .routed_window_gate_fades_from(
++                                            &original,
++                                            &alias,
++                                            routed.route(),
++                                            edges,
++                                            interval.clone(),
++                                            control.query_limits()?,
++                                        )
++                                        .map_err(StageAudioError::from)
++                                }
++                            };
++                            let fades = gate_fades((event.start_edge, event.end_edge))?;
+                             control.spend_plan_work(fades.work)?;
+-                            let post_fades = voice.routed_gate_fades_from(
+-                                &original,
+-                                &alias,
+-                                &placements,
+-                                (
+-                                    deadpan_core::AudioEdgePolicy::Hard,
+-                                    deadpan_core::AudioEdgePolicy::Hard,
+-                                ),
+-                                interval.clone(),
+-                                control.query_limits()?,
+-                            )?;
++                            let post_fades = gate_fades((
++                                deadpan_core::AudioEdgePolicy::Hard,
++                                deadpan_core::AudioEdgePolicy::Hard,
++                            ))?;
+                             control.spend_plan_work(post_fades.work)?;
+-                            let routed = super::sound_clocks::route_occurrence(
+-                                original,
+-                                &placements,
+-                                control,
+-                            )?;
+                             let query = self.with_plan_scope(Arc::clone(first_plan), |reader| {
+                                 reader.preflight_routed_root(
+                                     &routed,
+@@ -181,8 +212,12 @@ impl StageAudio {
+                                 },
+                                 fades,
+                                 post_fades,
++                                interval,
+                             )
+                         } else {
++                            if interval.start >= interval.end {
++                                continue;
++                            }
+                             let queries =
+                                 self.source_occurrence_queries(voice, interval.clone(), control)?;
+                             self.preflight_root_queries(
+@@ -210,6 +245,7 @@ impl StageAudio {
+                                 PreparedBeatInput::Current(Box::new(queries)),
+                                 fades,
+                                 post_fades,
++                                interval,
+                             )
+                         };
+                     sound_events::validate_gate_envelopes(&fades.spans, interval.clone())?;
+diff --git a/crates/deadpan-audio/src/shared_eq.rs b/crates/deadpan-audio/src/shared_eq.rs
+index 0c09ae37..36a91127 100644
+--- a/crates/deadpan-audio/src/shared_eq.rs
++++ b/crates/deadpan-audio/src/shared_eq.rs
+@@ -246,7 +246,10 @@ impl StageAudio {
+         };
+         let sound_support = match &program.context.sounds {
+             Sounds::Root => AudioSample(0)..plan.audio_duration()?,
+-            Sounds::Owner(context) => context.samples(),
++            // Retained temporal input can extend beyond the newly rounded
++            // nominal owner by its accumulated sample phase. Each checked
++            // occurrence route admits its own exact preparation support.
++            Sounds::Owner(_) => start..end,
+             Sounds::None => start..start,
+         };
+         let sound_range = start.max(sound_support.start)..end.min(sound_support.end);
+diff --git a/crates/deadpan-audio/src/sound_clocks.rs b/crates/deadpan-audio/src/sound_clocks.rs
+index f08192b8..8056225e 100644
+--- a/crates/deadpan-audio/src/sound_clocks.rs
++++ b/crates/deadpan-audio/src/sound_clocks.rs
+@@ -56,8 +56,15 @@ impl StageAudio {
+                 if scopes.is_empty() {
+                     continue;
+                 }
+-                let batch =
+-                    current_occurrences(plan, context, owner, event, samples.clone(), control)?;
++                let batch = current_occurrences(
++                    plan,
++                    context,
++                    owner,
++                    event,
++                    samples.clone(),
++                    scopes.len(),
++                    control,
++                )?;
+                 for voice in batch.voices() {
+                     for scope in &scopes {
+                         let (instance, work) = scope.try_remap_instance_with_work(
+@@ -110,13 +117,24 @@ impl StageAudio {
+ 
+ /// Every placement contributes one rounded allocation. Keeping the intermediate
+ /// grids prevents a later move from reviving samples clipped by an earlier move.
++pub(super) struct SoundPlacement {
++    complete_start: ExactRatio,
++    allocation: Range<ExactRatio>,
++    anchor: ExactRatio,
++    pub(super) expands_history: bool,
++}
++
+ pub(super) fn route_occurrence<'plan>(
+     original: AudioSourceOccurrence<'plan>,
+-    placements: &[Range<ExactRatio>],
++    placements: &[SoundPlacement],
+     control: WorkControl<'_>,
+ ) -> Result<AudioRoutedRoot<'plan>, StageAudioError> {
+     let extent = original.extent();
+-    if placements.len() < 2 || placements.first() != Some(&extent) {
++    if placements.len() < 2
++        || placements
++            .first()
++            .is_none_or(|first| first.allocation != extent || first.complete_start != extent.start)
++    {
+         return Err(PlanError::InvalidPlan("sound clock placements are incomplete").into());
+     }
+     let length = extent.end.checked_sub(extent.start)?;
+@@ -127,18 +145,27 @@ pub(super) fn route_occurrence<'plan>(
+         48_000 * i128::from(rate.denominator()),
+     )?;
+     let mut grids = Vec::with_capacity(placements.len());
++    let mut windows = Vec::with_capacity(placements.len());
+     for (index, placement) in placements.iter().enumerate() {
+         // Ripple admission examines its accumulated graph, so charge the
+         // retained prefix as well as the newly appended operation.
+         control.spend_plan_work(index + 1)?;
+-        if placement.end.checked_sub(placement.start)? != length {
+-            return Err(PlanError::InvalidPlan("sound clock changed processing extent").into());
+-        }
+         grids.push(AudioSampleGrid::new(
+-            ExactRatio::ZERO.checked_sub(placement.start)?,
++            ExactRatio::ZERO.checked_sub(placement.complete_start)?,
+             step,
+             AudioBoundaryRule::RoundEven,
+         )?);
++        windows.push(deadpan_plan::AudioOccurrenceWindow {
++            selection: placement
++                .allocation
++                .start
++                .checked_sub(placement.complete_start)?
++                ..placement
++                    .allocation
++                    .end
++                    .checked_sub(placement.complete_start)?,
++            anchor: placement.anchor,
++        });
+         if index != 0 {
+             let keep = SoundRippleMap::new(
+                 length,
+@@ -154,8 +181,8 @@ pub(super) fn route_occurrence<'plan>(
+             route = route.ripple(keep).map_err(PlanError::from)?;
+         }
+     }
+-    let anchor = original.routing_anchor()?;
+-    let route = AudioSoundRoute::<AudioSample>::new(route, grids)?.with_identity_anchor(anchor)?;
++    let route =
++        AudioSoundRoute::<AudioSample>::new(route, grids)?.with_occurrence_windows(windows)?;
+     Ok(AudioRoutedRoot::occurrence(original, route)?)
+ }
+ 
+@@ -163,8 +190,9 @@ pub(super) fn placements(
+     original: &AudioSourceOccurrence<'_>,
+     current: &AudioSourceOccurrence<'_>,
+     clocks: &[deadpan_plan::AudioSoundClockScope<'_>],
++    context: Option<&deadpan_plan::AudioSoundOwnerContext<'_>>,
+     control: WorkControl<'_>,
+-) -> Result<Vec<Range<ExactRatio>>, StageAudioError> {
++) -> Result<Vec<SoundPlacement>, StageAudioError> {
+     let extent = original.extent();
+     let mut placements = Vec::with_capacity(clocks.len() + 1);
+     let mut first_origin = None;
+@@ -177,26 +205,76 @@ pub(super) fn placements(
+         let Some(historical_instance) = historical_instance else {
+             continue;
+         };
+-        let projection = clock
++        let historical_context = context
++            .map(|context| {
++                let (mapped, work) = clock
++                    .try_remap_context_with_work(context, control.query_limits()?.maximum_work)?;
++                control.spend_plan_work(work)?;
++                Ok::<_, StageAudioError>(mapped)
++            })
++            .transpose()?
++            .flatten();
++        let placement = clock
+             .historical_layout()
+-            .project(
++            .sound_occurrence_placement(
+                 &historical_instance,
+-                ExactRatio::ZERO,
+-                None,
++                historical_context.as_ref(),
+                 control
+                     .query_limits()?
+                     .maximum_work
+                     .min(deadpan_core::MAX_DOCUMENT_NODES),
+             )
+             .map_err(PlanError::from)?;
+-        control.spend_plan_work(projection.work)?;
+-        let first = *first_origin.get_or_insert(projection.origin);
+-        let shift = projection.origin.checked_sub(first)?;
++        control.spend_plan_work(placement.work)?;
++        let first = *first_origin.get_or_insert(placement.owner_origin);
++        let shift = placement.owner_origin.checked_sub(first)?;
+         // Core's paired proof establishes that each frozen owner path has the
+         // same nested processing graph and stable Repeat labels.
+-        placements.push(extent.start.checked_add(shift)?..extent.end.checked_add(shift)?);
++        let complete_start = extent.start.checked_add(shift)?;
++        placements.push(SoundPlacement {
++            complete_start,
++            allocation: placement.allocation,
++            anchor: placement.delivery_start.checked_sub(complete_start)?,
++            expands_history: historical_context.is_some(),
++        });
++    }
++    let clock = clocks
++        .first()
++        .ok_or(PlanError::InvalidPlan("sound clock history is empty"))?;
++    let current_placement = clock
++        .live_layout()
++        .sound_occurrence_placement(
++            current.instance(),
++            context.map(|context| context.owner()),
++            control
++                .query_limits()?
++                .maximum_work
++                .min(deadpan_core::MAX_DOCUMENT_NODES),
++        )
++        .map_err(PlanError::from)?;
++    control.spend_plan_work(current_placement.work)?;
++    if current_placement.allocation != current.extent() {
++        return Err(
++            PlanError::InvalidPlan("sound placement differs from its current occurrence").into(),
++        );
+     }
+-    placements.push(current.extent());
++    let complete_start = extent
++        .start
++        .checked_add(
++            current_placement
++                .owner_origin
++                .checked_sub(first_origin.ok_or(PlanError::InvalidPlan(
++                    "sound has no applicable historical clock",
++                ))?)?,
++        )?;
++    placements.push(SoundPlacement {
++        complete_start,
++        allocation: current_placement.allocation,
++        anchor: current_placement
++            .delivery_start
++            .checked_sub(complete_start)?,
++        expands_history: context.is_some(),
++    });
+     Ok(placements)
+ }
+ 
+@@ -215,8 +293,8 @@ pub(super) fn historical_occurrence<'plan>(
+     )>,
+ ) -> Result<AudioSourceOccurrence<'plan>, StageAudioError> {
+     let historical = if let Some((context, scope)) = context {
+-        let (instance, work) = scope
+-            .try_remap_instance_with_work(context.owner(), control.query_limits()?.maximum_work)?;
++        let (instance, work) =
++            scope.try_remap_context_with_work(context, control.query_limits()?.maximum_work)?;
+         control.spend_plan_work(work)?;
+         let limits = control.query_limits()?;
+         instance
+@@ -247,6 +325,7 @@ pub(super) fn current_occurrences<'plan>(
+     owner: &deadpan_core::NodeId,
+     event: &deadpan_core::BeatSound,
+     samples: Range<AudioSample>,
++    clocks: usize,
+     control: WorkControl<'_>,
+ ) -> Result<deadpan_plan::AudioSourceOccurrences<'plan>, StageAudioError> {
+     let recipe = AudioSourceVoiceRecipe {
+@@ -259,7 +338,18 @@ pub(super) fn current_occurrences<'plan>(
+             if !context.belongs_to(plan) {
+                 return Err(StageAudioError::ForeignDomain);
+             }
+-            context.source_voice_occurrences(owner, recipe, samples, control.query_limits()?)?
++            // Each translated rounded boundary differs from its nominal affine
++            // displacement by less than one sample. Search that bounded halo;
++            // the retained route, not this conservative search, admits input.
++            let margin = i64::try_from(clocks).map_err(|_| StageAudioError::Range)?;
++            let support = context.samples();
++            let start = AudioSample(samples.start.0.saturating_sub(margin))
++                .max(support.start)
++                .min(support.end);
++            let end = AudioSample(samples.end.0.saturating_add(margin))
++                .min(support.end)
++                .max(start);
++            context.source_voice_occurrences(owner, recipe, start..end, control.query_limits()?)?
+         }
+         None => plan.source_voice_occurrences(owner, recipe, samples, control.query_limits()?)?,
+     };
+diff --git a/crates/deadpan-audio/tests/audio_definition/sound_clocks.rs b/crates/deadpan-audio/tests/audio_definition/sound_clocks.rs
+index 6fae0e6c..555ef046 100644
+--- a/crates/deadpan-audio/tests/audio_definition/sound_clocks.rs
++++ b/crates/deadpan-audio/tests/audio_definition/sound_clocks.rs
+@@ -10,6 +10,9 @@ mod group_mix;
+ #[path = "sound_clocks/owner_input.rs"]
+ mod owner_input;
+ 
++#[path = "sound_clocks/partial.rs"]
++mod partial;
++
+ struct ClockProvider {
+     fixture: FixtureProvider,
+     revision: RevisionId,
+diff --git a/crates/deadpan-audio/tests/audio_definition/sound_clocks/group_mix.rs b/crates/deadpan-audio/tests/audio_definition/sound_clocks/group_mix.rs
+index fa3beb8d..b96c94ee 100644
+--- a/crates/deadpan-audio/tests/audio_definition/sound_clocks/group_mix.rs
++++ b/crates/deadpan-audio/tests/audio_definition/sound_clocks/group_mix.rs
+@@ -437,7 +437,7 @@ fn independent_eq_automation_keeps_rebound_input_history_across_a_new_pause() {
+     assert!(
+         error
+             .message
+-            .contains("sound clock scope omits an enclosing processor"),
++            .contains("sound owner interval changes require an attachment route"),
+         "{error}"
+     );
+     assert_eq!(attached.to_json().unwrap(), snapshot);
+diff --git a/crates/deadpan-audio/tests/audio_definition/sound_clocks/owner_input.rs b/crates/deadpan-audio/tests/audio_definition/sound_clocks/owner_input.rs
+index 8703f19e..c882e4af 100644
+--- a/crates/deadpan-audio/tests/audio_definition/sound_clocks/owner_input.rs
++++ b/crates/deadpan-audio/tests/audio_definition/sound_clocks/owner_input.rs
+@@ -9,7 +9,12 @@ fn cropped() -> ProjectDocument {
+     ProjectDocument::from_json(&wire.to_string()).unwrap()
+ }
+ 
+-fn read_input(document: &ProjectDocument, owner: &NodeId, start: i64, count: u32) -> Vec<[f64; 2]> {
++pub(super) fn read_input(
++    document: &ProjectDocument,
++    owner: &NodeId,
++    start: i64,
++    count: u32,
++) -> Vec<[f64; 2]> {
+     let plan = compile(document, false);
+     let context = plan
+         .audio_sound_instance_context(
+@@ -372,7 +377,6 @@ fn shared_eq_saved_copied_crop_filters_complete_history_and_rechecks_sources() {
+             Default::default(),
+         )
+         .unwrap();
+-    let support = context.samples();
+     let mut input = StageAudio::new(plan.clone());
+     let mut oracle_provider = ClockProvider::new(&copied);
+     let mut filter = deadpan_audio::Equalizer::new(recipe, &AtomicBool::new(false)).unwrap();
+@@ -382,8 +386,11 @@ fn shared_eq_saved_copied_crop_filters_complete_history_and_rechecks_sources() {
+         let tile = at / 1024 * 1024;
+         let mut left = vec![0.0; 5120];
+         let mut right = vec![0.0; 5120];
+-        let first = (tile - 2048).max(support.start.0);
+-        let end = (tile + 3072).min(support.end.0);
++        // A nominal newly rounded extent is not the retained processor's
++        // physical support. Read its complete finite history window, including
++        // transported boundary samples outside that nominal allocation.
++        let first = tile - 2048;
++        let end = tile + 3072;
+         for start in (first..end).step_by(256) {
+             let count = (end - start).min(256) as u32;
+             let raw = input
+diff --git a/crates/deadpan-cli/tests/preview_export.rs b/crates/deadpan-cli/tests/preview_export.rs
+index 8e1db3d9..1ae16960 100644
+--- a/crates/deadpan-cli/tests/preview_export.rs
++++ b/crates/deadpan-cli/tests/preview_export.rs
+@@ -418,6 +418,28 @@ fn continuous_event_return_preserves_preview_and_verified_export() -> Result {
+     Ok(())
+ }
+ 
++#[test]
++fn partial_attached_sound_copies_preserve_preview_and_verified_export() -> Result {
++    let (root, _guard) = keep_or(tempfile::tempdir()?);
++    let fixture =
++        recipes::partial_sounds::partial_attached_sound_copies(&root.join("partial-sounds"))?;
++    check(&fixture)?;
++    let movie = render(&fixture, &root.join("exports"))?;
++    let (report, passed) = verify(&fixture, &movie, &fixture.revision, &[])?;
++    assert!(passed, "{report}");
++    check_provenance(&fixture, &report)?;
++    if let Some(path) = std::env::var_os("DEADPAN_PREVIEW_EXPORT_RESULTS") {
++        std::fs::write(
++            path,
++            serde_json::to_vec_pretty(
++                &json!({"package":fixture.package,"movie":movie,"report":report,"notes":fixture.notes}),
++            )?,
++        )?;
++    }
++    eprintln!("{}", summary_row(&fixture, &report));
++    Ok(())
++}
++
+ #[test]
+ fn treated_event_preserves_preview_and_verified_export() -> Result {
+     let (root, _guard) = keep_or(tempfile::tempdir()?);
+diff --git a/crates/deadpan-cli/tests/preview_export/recipes.rs b/crates/deadpan-cli/tests/preview_export/recipes.rs
+index 868d6563..03ed018d 100644
+--- a/crates/deadpan-cli/tests/preview_export/recipes.rs
++++ b/crates/deadpan-cli/tests/preview_export/recipes.rs
+@@ -7,7 +7,8 @@
+ //! wire shape is the serde contract. The read-only store is used only to find
+ //! current node, asset and revision identities between commands.
+ //!
+-//! Every recipe first shortens the Original (`cfr-bframes.mp4`, 120 frames at
++//! Unless its own description says otherwise, a recipe first shortens the
++//! Original (`cfr-bframes.mp4`, 120 frames at
+ //! 30000/1001, burnt-in counter equal to the decoded ordinal) to Original
+ //! frames [12, 42): Edit frame `f` shows Original ordinal `12 + f`. That range
+ //! holds the click at Original sample 48000 (end of Original frame 29, Edit
+@@ -41,6 +42,9 @@ pub mod vfr;
+ #[path = "formats.rs"]
+ pub mod formats;
+ 
++#[path = "partial_sounds.rs"]
++pub mod partial_sounds;
++
+ #[cfg(feature = "synthetic-worker")]
+ #[path = "generated.rs"]
+ pub mod generated;
+diff --git a/crates/deadpan-core/src/audio_reference.rs b/crates/deadpan-core/src/audio_reference.rs
+index 38af3f7e..5946845a 100644
+--- a/crates/deadpan-core/src/audio_reference.rs
++++ b/crates/deadpan-core/src/audio_reference.rs
+@@ -2,6 +2,8 @@
+ //! to a later live document; no media, marks or previous bindings are retained.
+ 
+ mod preflight;
++mod sound_placement;
++pub use sound_placement::FrozenSoundPlacement;
+ 
+ use std::collections::{BTreeMap, BTreeSet};
+ use std::io::Write;
+@@ -1085,7 +1087,7 @@ impl FrozenAudioLayout {
+     /// Prove that two complete processing subtrees correspond, allowing fresh
+     /// node IDs while preserving exact clocks, Repeat identities, and controls.
+     /// The scopes themselves cannot be project roots; only ordinary Sequence
+-    /// nodes may surround either scope.
++    /// nodes, Repeats and transparent Partitions may surround either scope.
+     pub fn sound_clock_correspondence(
+         &self,
+         current: &Self,
+@@ -1276,7 +1278,9 @@ impl FrozenAudioLayout {
+         while node != &self.root {
+             spend(&mut work, 1, maximum_work)?;
+             let (parent, _) = &self.index.parents[node];
+-            if matches!(self.nodes[parent].kind, FrozenAudioKind::Retime { .. }) {
++            if matches!(self.nodes[parent].kind, FrozenAudioKind::Retime { purpose, .. }
++                if purpose != RetimePurpose::Partition)
++            {
+                 scope = parent.clone();
+             }
+             node = parent;
+@@ -1325,6 +1329,20 @@ impl FrozenAudioLayout {
+             }
+             match (&self.nodes[parent].kind, &current.nodes[parent].kind) {
+                 (FrozenAudioKind::Sequence { .. }, FrozenAudioKind::Sequence { .. }) => {}
++                (
++                    FrozenAudioKind::Retime {
++                        purpose: RetimePurpose::Partition,
++                        ..
++                    },
++                    FrozenAudioKind::Retime {
++                        purpose: RetimePurpose::Partition,
++                        ..
++                    },
++                ) => {
++                    if self.nodes[parent] != current.nodes[parent] {
++                        return Ok((false, work));
++                    }
++                }
+                 (
+                     FrozenAudioKind::Repeat {
+                         child: body,
+@@ -1383,6 +1401,68 @@ impl FrozenAudioLayout {
+         Ok((child == &current.root, work))
+     }
+ 
++    /// Existing attachments cannot yet be divided between newly split owners.
++    /// Capture/import may introduce exterior selections around a fresh copy,
++    /// but a reducer transporting a surviving owner must preserve its complete
++    /// path through every existing crop. Ignore placement above the last crop
++    /// so moving the copied fragment as a whole remains supported.
++    pub(crate) fn sound_placement_crop_unchanged(
++        &self,
++        current: &Self,
++        old_scope: &NodeId,
++        live_scope: &NodeId,
++        maximum_work: usize,
++    ) -> Result<(bool, usize), DocumentError> {
++        fn path<'a>(
++            layout: &'a FrozenAudioLayout,
++            scope: &'a NodeId,
++            work: &mut usize,
++            maximum: usize,
++        ) -> Result<Vec<(&'a NodeId, i64, FrameDuration, &'a FrozenAudioKind)>, DocumentError>
++        {
++            let mut child = scope;
++            let mut path = Vec::new();
++            let mut retained = 0;
++            while child != layout.root() {
++                spend(work, 1, maximum)?;
++                let (parent, offset) = layout
++                    .index
++                    .parents
++                    .get(child)
++                    .ok_or_else(|| invalid("sound placement path is missing"))?;
++                let node = &layout.nodes[parent];
++                // Equality of compact kinds can examine children and Repeat
++                // segments. Charge that comparison before retaining the entry.
++                spend(
++                    work,
++                    match &node.kind {
++                        FrozenAudioKind::Sequence { children } => children.len(),
++                        FrozenAudioKind::Repeat { iterations, .. } => iterations.segment_count(),
++                        _ => 1,
++                    },
++                    maximum,
++                )?;
++                path.push((child, *offset, node.duration, &node.kind));
++                if matches!(
++                    node.kind,
++                    FrozenAudioKind::Retime {
++                        purpose: RetimePurpose::Partition,
++                        ..
++                    }
++                ) {
++                    retained = path.len();
++                }
++                child = parent;
++            }
++            path.truncate(retained);
++            Ok(path)
++        }
++        let mut work = 0;
++        let before = path(self, old_scope, &mut work, maximum_work)?;
++        let after = path(current, live_scope, &mut work, maximum_work)?;
++        Ok((before == after, work))
++    }
++
+     /// Compatibility helper for callers which have not yet named a narrower
+     /// scope. New code should retain the returned paired-scope proof.
+     pub fn validate_sound_clock_owner(
+@@ -1935,6 +2015,10 @@ fn placement_path(
+         spend(work, 1, maximum_work)?;
+         match &layout.nodes[parent].kind {
+             FrozenAudioKind::Sequence { .. } => {}
++            FrozenAudioKind::Retime {
++                purpose: RetimePurpose::Partition,
++                ..
++            } => {}
+             FrozenAudioKind::Repeat { iterations, .. } => {
+                 spend(
+                     work,
+diff --git a/crates/deadpan-core/src/edit_slice/sound_clocks.rs b/crates/deadpan-core/src/edit_slice/sound_clocks.rs
+index 5c3d30cb..0a62cd17 100644
+--- a/crates/deadpan-core/src/edit_slice/sound_clocks.rs
++++ b/crates/deadpan-core/src/edit_slice/sound_clocks.rs
+@@ -17,13 +17,9 @@ pub(super) fn capture(
+     for part in parts {
+         for id in crate::occurrence_edit::subtree_order(document, &part.root)? {
+             if document.beat_sounds.contains_key(&id) {
+-                // A cropped sound owner needs its own interval lifecycle. Do not
+-                // silently capture the full sound behind a new crop wrapper.
+-                if part.mapping.start() != ProjectFrame(0)
+-                    || part.mapping.duration() != live.nodes()[&part.root].duration
+-                {
+-                    return Err(invalid("partial sound-bearing slice is not supported"));
+-                }
++                // Retain the complete processing owner. The pasted Partition
++                // selects delivery, with each historical allocation preserved
++                // by the sampled occurrence windows and envelope transport.
+                 roots.insert(id, part.root.clone());
+             }
+         }
+diff --git a/crates/deadpan-core/src/sound_clock/edit.rs b/crates/deadpan-core/src/sound_clock/edit.rs
+index 07af045b..d5eff409 100644
+--- a/crates/deadpan-core/src/sound_clock/edit.rs
++++ b/crates/deadpan-core/src/sound_clock/edit.rs
+@@ -185,6 +185,18 @@ impl SoundClockEditCapture {
+                 let (proof, changed_origin) = if let Some((proof, changed)) = moved.get(&key) {
+                     (crate::SoundClockCorrespondence::clone(proof), *changed)
+                 } else {
++                    let (same_crop, used) = self.before.sound_placement_crop_unchanged(
++                        &current,
++                        &old_scope,
++                        &live_scope,
++                        budget(work)?,
++                    )?;
++                    work = work.checked_add(used).ok_or_else(exhausted)?;
++                    if !same_crop {
++                        return Err(invalid(
++                            "sound owner interval changes require an attachment route",
++                        ));
++                    }
+                     let proof = self.before.sound_clock_correspondence_with_repeats(
+                         &current,
+                         &old_scope,
+diff --git a/crates/deadpan-core/tests/edited_slice/sound_clocks.rs b/crates/deadpan-core/tests/edited_slice/sound_clocks.rs
+index 2ec02f35..1ff90b05 100644
+--- a/crates/deadpan-core/tests/edited_slice/sound_clocks.rs
++++ b/crates/deadpan-core/tests/edited_slice/sound_clocks.rs
+@@ -227,7 +227,7 @@ fn first_sound_copy_retains_source_phase_and_can_move_after_paste() {
+ }
+ 
+ #[test]
+-fn copied_sound_clocks_reject_capture_collisions_forged_aliases_and_partial_owners() {
++fn copied_sound_clocks_reject_capture_collisions_and_forged_aliases() {
+     let before = shifted(&fixture(), "shifted");
+     let snapshot = before.to_json().unwrap();
+     let error = CapturedEditSlice::capture_selection(
+@@ -238,9 +238,6 @@ fn copied_sound_clocks_reject_capture_collisions_forged_aliases_and_partial_owne
+     )
+     .unwrap_err();
+     assert!(error.message.contains("capture timing identity"), "{error}");
+-    assert!(
+-        CapturedEditSlice::capture(&before, &id("group"), range(3, 5), timing("partial")).is_err()
+-    );
+     let slice = capture(&before, "group", &id("owner"), "capture");
+     let mut forged = serde_json::to_value(&slice).unwrap();
+     forged["audio_bindings"]["sound_clocks"]["owner"]["effect"]["clocks"][0]["owner"] =
+@@ -267,6 +264,60 @@ fn copied_sound_clocks_reject_capture_collisions_forged_aliases_and_partial_owne
+     assert_eq!(before.to_json().unwrap(), snapshot);
+ }
+ 
++#[test]
++fn partial_sound_owner_copy_keeps_full_recipe_and_chronological_clocks() {
++    let before = shifted(&fixture(), "shifted");
++    let slice =
++        CapturedEditSlice::capture(&before, &id("group"), range(3, 5), timing("partial")).unwrap();
++    assert_eq!(slice.duration(), duration(2));
++    slice.validate_capture(&before).unwrap();
++    assert_eq!(
++        CapturedEditSlice::from_json(&slice.to_json().unwrap()).unwrap(),
++        slice
++    );
++    let pasted = edit(&before, &paste(&before, &slice, "partial-copy", 0));
++    let owner = copied_owner(&pasted, "partial-copy");
++    assert_eq!(
++        pasted.beat_sounds()[&owner][&sound()],
++        before.beat_sounds()[&id("owner")][&sound()]
++    );
++    assert_eq!(pasted.durations().unwrap()[&owner], duration(4));
++    assert_eq!(
++        pasted.audio_bindings().sound_clocks()[&owner][&sound()]
++            .clocks()
++            .len(),
++        2
++    );
++    let moved = shifted(&pasted, "move-partial-copy");
++    assert_eq!(moved.beat_sounds()[&owner], pasted.beat_sounds()[&owner]);
++    assert_eq!(
++        moved.audio_bindings().sound_clocks()[&owner][&sound()]
++            .clocks()
++            .len(),
++        3
++    );
++    let recopy = CapturedEditSlice::capture(
++        &pasted,
++        &id("partial-copy-node-0"),
++        range(1, 2),
++        timing("recapture"),
++    )
++    .unwrap();
++    let twice = edit(&pasted, &paste(&pasted, &recopy, "recopy", 0));
++    let second = copied_owner(&twice, "recopy");
++    assert_eq!(
++        twice.audio_bindings().sound_clocks()[&second][&sound()]
++            .clocks()
++            .len(),
++        3
++    );
++    assert_eq!(twice.durations().unwrap()[&second], duration(4));
++    assert_eq!(
++        before.beat_sounds()[&id("owner")][&sound()],
++        twice.beat_sounds()[&second][&sound()]
++    );
++}
++
+ #[test]
+ fn copied_sound_clocks_link_fresh_repeat_plays_to_every_historical_alias() {
+     let mut repeated = hold(1);
+diff --git a/crates/deadpan-plan/src/audio_domain.rs b/crates/deadpan-plan/src/audio_domain.rs
+index d713e24f..735f1745 100644
+--- a/crates/deadpan-plan/src/audio_domain.rs
++++ b/crates/deadpan-plan/src/audio_domain.rs
+@@ -169,6 +169,9 @@ impl RenderPlan {
+ }
+ 
+ impl<'plan> AudioDomain<'plan> {
++    pub(crate) fn sample_grid(&self) -> crate::AudioSampleGrid<AudioSample> {
++        self.seed.grid
++    }
+     /// Present only when this domain evaluates an explicitly selected definition.
+     /// Its occurrence path is then relative to that definition.
+     pub fn definition(&self) -> Option<&AudioDefinitionSelector> {
+diff --git a/crates/deadpan-plan/src/audio_sampling.rs b/crates/deadpan-plan/src/audio_sampling.rs
+index c2c15bd3..ecd2ce78 100644
+--- a/crates/deadpan-plan/src/audio_sampling.rs
++++ b/crates/deadpan-plan/src/audio_sampling.rs
+@@ -21,11 +21,17 @@ pub enum AudioBoundaryRule {
+ /// The origin, spacing and boundary rule of one sampling domain. The containing
+ /// span/stage supplies its project, revision and occurrence identity. Equal grid
+ /// values alone do not identify equivalent media or DSP preparation.
++/// Internally transported preparation grids also retain the original ownership
++/// of half-sample ties; translating labels must not round those edges again.
+ #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+ pub struct AudioSampleGrid<S> {
+     frame_origin: ExactRatio,
+     frames_per_sample: ExactRatio,
+     boundary_rule: AudioBoundaryRule,
++    // Integral transport preserves the source's tie ownership. Re-rounding
++    // an odd translated half-sample would otherwise move the boundary again.
++    #[serde(skip_serializing_if = "is_false")]
++    rounding_parity: bool,
+     #[serde(skip)]
+     sample_domain: PhantomData<S>,
+ }
+@@ -45,6 +51,7 @@ impl<S> AudioSampleGrid<S> {
+             frame_origin,
+             frames_per_sample,
+             boundary_rule,
++            rounding_parity: false,
+             sample_domain: PhantomData,
+         })
+     }
+@@ -66,15 +73,38 @@ impl<S> AudioSampleGrid<S> {
+             frame_origin: self.frame_origin,
+             frames_per_sample: self.frames_per_sample,
+             boundary_rule: self.boundary_rule,
++            rounding_parity: self.rounding_parity,
+             sample_domain: PhantomData,
+         }
+     }
+ 
++    pub(crate) fn translated_samples(&self, shift: i128) -> Result<Self, PlanError> {
++        let mut translated = self.rebrand();
++        translated.frame_origin = self
++            .frame_origin
++            .checked_sub(ExactRatio::new(shift, 1)?.checked_mul(self.frames_per_sample)?)?;
++        if self.boundary_rule == AudioBoundaryRule::RoundEven {
++            translated.rounding_parity ^= shift.rem_euclid(2) != 0;
++        }
++        Ok(translated)
++    }
++
++    pub(crate) fn translated_frames(&self, shift: ExactRatio) -> Result<Self, PlanError> {
++        let mut translated = self.rebrand();
++        translated.frame_origin = self.frame_origin.checked_add(shift)?;
++        Ok(translated)
++    }
++
+     fn boundary_index(&self, frame: ExactRatio) -> Result<i64, TimeError> {
+         let exact = frame
+             .checked_sub(self.frame_origin)?
+             .checked_div(self.frames_per_sample)?;
+         let rounded = match self.boundary_rule {
++            AudioBoundaryRule::RoundEven if self.rounding_parity => exact
++                .checked_sub(ExactRatio::ONE)?
++                .round_even()?
++                .checked_add(1)
++                .ok_or(TimeError::Overflow)?,
+             AudioBoundaryRule::RoundEven => exact.round_even()?,
+             AudioBoundaryRule::PointCeil => exact.ceil()?,
+         };
+@@ -91,7 +121,7 @@ impl<S> AudioSampleGrid<S> {
+             AudioBoundaryRule::PointCeil => (ExactRatio::integer(sample), InsertionBias::Right),
+             AudioBoundaryRule::RoundEven => (
+                 ExactRatio::new(i128::from(sample) * 2 + 1, 2)?,
+-                if sample % 2 == 0 {
++                if sample.rem_euclid(2) == i64::from(self.rounding_parity) {
+                     InsertionBias::Right
+                 } else {
+                     InsertionBias::Left
+@@ -102,6 +132,10 @@ impl<S> AudioSampleGrid<S> {
+     }
+ }
+ 
++fn is_false(value: &bool) -> bool {
++    !value
++}
++
+ /// Exact PCM lookup in the leaf's local frame clock, or in the full intrinsic
+ /// output clock when the span stops at a Preserve/RoomTone preparation domain.
+ /// This is independent of structural placement, filter support and envelopes.
+@@ -198,6 +232,44 @@ mod tests {
+         ExactRatio::new(n, d).unwrap()
+     }
+ 
++    #[test]
++    fn integral_grid_transport_preserves_ties_and_search_ownership() {
++        for rule in [AudioBoundaryRule::RoundEven, AudioBoundaryRule::PointCeil] {
++            for phase in -3..=3 {
++                let original =
++                    AudioSampleGrid::<AudioSample>::new(ratio(phase, 2), ratio(3, 2), rule)
++                        .unwrap();
++                for shift in -5..=5 {
++                    let moved = original.translated_samples(shift).unwrap();
++                    assert_eq!(moved.translated_samples(-shift).unwrap(), original);
++                    let rebranded: AudioSampleGrid<ReferenceSample> = moved.rebrand();
++                    for value in -8..=8 {
++                        let frame = ratio(value, 4);
++                        assert_eq!(
++                            moved.boundary(frame).unwrap().0,
++                            original.boundary(frame).unwrap().0 + shift as i64
++                        );
++                        assert_eq!(
++                            rebranded.boundary(frame).unwrap().0,
++                            moved.boundary(frame).unwrap().0
++                        );
++                        let old = AudioSample(value as i64);
++                        let new = AudioSample(old.0 + shift as i64);
++                        assert_eq!(moved.at(new).unwrap(), original.at(old).unwrap());
++                        assert_eq!(moved.probe(new).unwrap(), original.probe(old).unwrap());
++                        let translated = moved.translated_frames(ratio(7, 3)).unwrap();
++                        assert_eq!(
++                            translated
++                                .boundary(frame.checked_add(ratio(7, 3)).unwrap())
++                                .unwrap(),
++                            moved.boundary(frame).unwrap()
++                        );
++                    }
++                }
++            }
++        }
++    }
++
+     #[test]
+     fn resume_composes_current_ntsc_phase_without_rescaling_the_suffix() {
+         let grid = AudioSampleGrid::<AudioSample>::new(
+diff --git a/crates/deadpan-plan/src/audio_signal.rs b/crates/deadpan-plan/src/audio_signal.rs
+index eb734438..f5aaca32 100644
+--- a/crates/deadpan-plan/src/audio_signal.rs
++++ b/crates/deadpan-plan/src/audio_signal.rs
+@@ -26,7 +26,9 @@ pub use source_voice::{AudioSourceVoice, AudioSourceVoiceIdentity, AudioSourceVo
+ 
+ #[path = "audio_source_occurrence.rs"]
+ mod source_occurrence;
+-pub use source_occurrence::{AudioSoundOwnerContext, AudioSourceOccurrence};
++pub use source_occurrence::{
++    AudioSoundOwnerContext, AudioSoundProcessingHistory, AudioSourceOccurrence,
++};
+ 
+ #[path = "audio_source_occurrences.rs"]
+ mod source_occurrences;
+diff --git a/crates/deadpan-plan/src/audio_sound_event.rs b/crates/deadpan-plan/src/audio_sound_event.rs
+index 8b2a2e1f..00be879f 100644
+--- a/crates/deadpan-plan/src/audio_sound_event.rs
++++ b/crates/deadpan-plan/src/audio_sound_event.rs
+@@ -391,28 +391,20 @@ pub(crate) fn routed_occurrence_gate_fades<'plan>(
+     samples: Range<AudioSample>,
+     limits: AudioQueryLimits,
+ ) -> Result<AudioSoundGateQuery, PlanError> {
+-    let RoutedOccurrenceEnvelope {
+-        domain,
+-        anchor,
+-        original_allocation,
+-        current_allocation,
+-        original_audible,
+-        grid,
+-        inherited_hard_edges,
+-    } = envelope;
+     limits.validate()?;
+     if placements.is_empty()
+-        || placements.first() != Some(&original_allocation)
+-        || placements.last() != Some(&current_allocation)
+-        || !matches!(grid.boundary_rule(), AudioBoundaryRule::RoundEven)
++        || placements.first() != Some(&envelope.original_allocation)
++        || placements.last() != Some(&envelope.current_allocation)
++        || !matches!(envelope.grid.boundary_rule(), AudioBoundaryRule::RoundEven)
+     {
+         return Err(PlanError::InvalidAudioSourceOccurrence(
+             "routed occurrence placements must preserve its exact extent",
+         ));
+     }
+-    let original_duration = original_allocation
++    let original_duration = envelope
++        .original_allocation
+         .end
+-        .checked_sub(original_allocation.start)?;
++        .checked_sub(envelope.original_allocation.start)?;
+     if original_duration.compare_integer(0).is_le() {
+         return Err(PlanError::InvalidAudioSourceOccurrence(
+             "routed occurrence placements must have positive duration",
+@@ -425,6 +417,62 @@ pub(crate) fn routed_occurrence_gate_fades<'plan>(
+             ));
+         }
+     }
++    let grid = envelope.grid;
++    let anchor = envelope.anchor;
++    let transitions = placements.windows(2).map(move |pair| {
++        let old_start = grid.boundary(pair[0].start.checked_add(anchor)?)?.0;
++        let new_start = grid.boundary(pair[1].start.checked_add(anchor)?)?.0;
++        Ok(crate::audio_sound_route::OccurrenceTransition {
++            allocation: grid.boundary(pair[1].start)?..grid.boundary(pair[1].end)?,
++            frame_shift: pair[1].start.checked_sub(pair[0].start)?,
++            sample_shift: i128::from(new_start) - i128::from(old_start),
++        })
++    });
++    routed_occurrence_envelope(
++        current,
++        envelope,
++        transitions,
++        (start_edge, end_edge),
++        samples,
++        limits,
++    )
++}
++
++pub(crate) fn windowed_occurrence_gate_fades<'plan>(
++    current: &'plan RenderPlan,
++    envelope: RoutedOccurrenceEnvelope<'_, 'plan>,
++    route: &crate::AudioSoundRoute<AudioSample>,
++    edges: (AudioEdgePolicy, AudioEdgePolicy),
++    samples: Range<AudioSample>,
++    limits: AudioQueryLimits,
++) -> Result<AudioSoundGateQuery, PlanError> {
++    routed_occurrence_envelope(
++        current,
++        envelope,
++        route.occurrence_transitions()?,
++        edges,
++        samples,
++        limits,
++    )
++}
++
++fn routed_occurrence_envelope<'plan>(
++    current: &'plan RenderPlan,
++    envelope: RoutedOccurrenceEnvelope<'_, 'plan>,
++    transitions: impl Iterator<Item = Result<crate::audio_sound_route::OccurrenceTransition, PlanError>>,
++    (start_edge, end_edge): (AudioEdgePolicy, AudioEdgePolicy),
++    samples: Range<AudioSample>,
++    limits: AudioQueryLimits,
++) -> Result<AudioSoundGateQuery, PlanError> {
++    limits.validate()?;
++    let RoutedOccurrenceEnvelope {
++        domain,
++        original_allocation,
++        original_audible,
++        grid,
++        inherited_hard_edges,
++        ..
++    } = envelope;
+     let rate = current.metadata().presentation_basis.frame_rate;
+     let current_step = ExactRatio::new(
+         i128::from(rate.numerator()),
+@@ -476,27 +524,26 @@ pub(crate) fn routed_occurrence_gate_fades<'plan>(
+         grid.boundary(original_allocation.start)?..grid.boundary(original_allocation.end)?;
+     support.start = support.start.max(original_allocation_samples.start);
+     support.end = support.end.min(original_allocation_samples.end);
+-    for pair in placements.windows(2) {
++    for transition in transitions {
+         charge(&mut work, limits.maximum_work)?;
+-        let old_start = grid.boundary(pair[0].start.checked_add(anchor)?)?.0;
+-        let new_start = grid.boundary(pair[1].start.checked_add(anchor)?)?.0;
+-        let sample_shift = i128::from(new_start) - i128::from(old_start);
+-        let frame_shift = pair[1].start.checked_sub(pair[0].start)?;
++        let crate::audio_sound_route::OccurrenceTransition {
++            allocation,
++            frame_shift,
++            sample_shift,
++        } = transition?;
+         start = move_boundary(start, frame_shift, sample_shift)?;
+         end = move_boundary(end, frame_shift, sample_shift)?;
+-        let allocation = grid.boundary(pair[1].start)?..grid.boundary(pair[1].end)?;
+-        support = sample_label(
+-            i128::from(support.start.0)
+-                .checked_add(sample_shift)
+-                .ok_or(TimeError::Overflow)?,
+-        )?
+-            ..sample_label(
+-                i128::from(support.end.0)
+-                    .checked_add(sample_shift)
+-                    .ok_or(TimeError::Overflow)?,
+-            )?;
+-        support.start = support.start.max(allocation.start);
+-        support.end = support.end.min(allocation.end);
++        let first = i128::from(support.start.0)
++            .checked_add(sample_shift)
++            .ok_or(TimeError::Overflow)?
++            .max(i128::from(allocation.start.0))
++            .min(i128::from(allocation.end.0));
++        let last = i128::from(support.end.0)
++            .checked_add(sample_shift)
++            .ok_or(TimeError::Overflow)?
++            .min(i128::from(allocation.end.0))
++            .max(first);
++        support = sample_label(first)?..sample_label(last)?;
+     }
+     if support.start >= support.end {
+         charge(&mut work, limits.maximum_work)?;
+@@ -531,6 +578,7 @@ pub(crate) fn routed_occurrence_gate_fades<'plan>(
+         Some(domain) => domain.audio(context, query_limits)?,
+         None => current.audio(context, query_limits)?,
+     };
++    let policy_grid = domain.map_or(grid, crate::AudioDomain::sample_grid);
+     work = work
+         .checked_add(query.work)
+         .filter(|value| *value <= limits.maximum_work)
+@@ -548,7 +596,7 @@ pub(crate) fn routed_occurrence_gate_fades<'plan>(
+         }
+         let gate_start = RoutedBoundary {
+             at: span.project_extent.start,
+-            label: i128::from(grid.boundary(span.project_extent.start)?.0),
++            label: i128::from(policy_grid.boundary(span.project_extent.start)?.0),
+             policy: if span.project_extent.start == span.envelope_extent.start
+                 && span
+                     .boundaries
+@@ -563,7 +611,7 @@ pub(crate) fn routed_occurrence_gate_fades<'plan>(
+         };
+         let gate_end = RoutedBoundary {
+             at: span.project_extent.end,
+-            label: i128::from(grid.boundary(span.project_extent.end)?.0),
++            label: i128::from(policy_grid.boundary(span.project_extent.end)?.0),
+             policy: if span.project_extent.end == span.envelope_extent.end
+                 && span
+                     .boundaries
+diff --git a/crates/deadpan-plan/src/audio_sound_route.rs b/crates/deadpan-plan/src/audio_sound_route.rs
+index a029b617..0fdbf894 100644
+--- a/crates/deadpan-plan/src/audio_sound_route.rs
++++ b/crates/deadpan-plan/src/audio_sound_route.rs
+@@ -29,7 +29,7 @@ pub struct AudioSoundRoute<S> {
+     identity_anchor: ExactRatio,
+     // Explicit sample translations for a proved identity placement chain.
+     // The anchor may change when a new crop becomes the delivery boundary.
+-    occurrence_deltas: Option<Vec<i128>>,
++    occurrence: Option<OccurrenceChain>,
+     domain: PhantomData<S>,
+ }
+ 
+@@ -45,6 +45,18 @@ pub struct AudioOccurrenceWindow {
+     pub anchor: ExactRatio,
+ }
+ 
++#[derive(Debug, Clone)]
++struct OccurrenceChain {
++    windows: Vec<AudioOccurrenceWindow>,
++    deltas: Vec<i128>,
++}
++
++pub(crate) struct OccurrenceTransition {
++    pub allocation: Range<AudioSample>,
++    pub frame_shift: ExactRatio,
++    pub sample_shift: i128,
++}
++
+ #[derive(Debug, Clone, PartialEq, Eq)]
+ pub struct AudioSoundRouteSpan<S> {
+     pub samples: Range<S>,
+@@ -134,7 +146,7 @@ impl<S> AudioSoundRoute<S> {
+             grids,
+             allocations,
+             identity_anchor: ExactRatio::ZERO,
+-            occurrence_deltas: None,
++            occurrence: None,
+             domain: PhantomData,
+         })
+     }
+@@ -285,9 +297,9 @@ impl<S> AudioSoundRoute<S> {
+                     if let Some(recipe) = slice.recipe {
+                         let old_start = self.grids[input].boundary(recipe.start)?.0;
+                         let old_end = self.grids[input].boundary(recipe.end)?.0;
+-                        let delta = self.occurrence_deltas.as_ref().map_or_else(
++                        let delta = self.occurrence.as_ref().map_or_else(
+                             || i128::from(old_start) - i128::from(start),
+-                            |deltas| deltas[id],
++                            |chain| chain.deltas[id],
+                         );
+                         tasks.push(QueryTask::Walk {
+                             id: input,
+@@ -385,9 +397,80 @@ impl AudioSoundRoute<AudioSample> {
+             });
+         }
+         self.identity_anchor = windows[0].anchor;
+-        self.occurrence_deltas = Some(deltas);
++        self.occurrence = Some(OccurrenceChain { windows, deltas });
+         Ok(self)
+     }
++
++    pub(crate) fn occurrence_output(&self) -> Result<(Range<ExactRatio>, ExactRatio), PlanError> {
++        let chain = self.occurrence.as_ref().ok_or(PlanError::InvalidPlan(
++            "sound envelope requires occurrence windows",
++        ))?;
++        let index = self.grids.len() - 1;
++        let origin = self.grids[index].frame_origin();
++        let window = &chain.windows[index];
++        Ok((
++            window.selection.start.checked_sub(origin)?
++                ..window.selection.end.checked_sub(origin)?,
++            window.anchor.checked_sub(origin)?,
++        ))
++    }
++
++    /// Input of a retained temporal owner, before any exterior delivery mask.
++    /// Every expanded selection must still be the same complete operand. Its
++    /// physical labels translate by the proved chronological delivery anchors;
++    /// newly rounded output allocations cannot truncate filter history.
++    pub(crate) fn complete_processing_history(&self) -> Result<Option<Self>, PlanError> {
++        let Some(chain) = &self.occurrence else {
++            return Err(PlanError::InvalidPlan(
++                "sound history requires occurrence windows",
++            ));
++        };
++        let extent = self.route.recipe_extent();
++        if chain
++            .windows
++            .iter()
++            .any(|window| window.selection != (ExactRatio::ZERO..extent))
++        {
++            return Ok(None);
++        }
++        let shift = chain.deltas.iter().try_fold(0_i128, |shift, delta| {
++            shift.checked_sub(*delta).ok_or(TimeError::Overflow)
++        })?;
++        let first = self.recipe_grid();
++        let last = first.translated_samples(shift)?;
++        let keep = deadpan_core::SoundRippleMap::new(
++            extent,
++            0,
++            vec![deadpan_core::SoundRippleNode::Keep {
++                range: deadpan_core::ExactFrameRange::new(ExactRatio::ZERO, extent)?,
++            }],
++        )?;
++        let route = SoundRoute::identity(extent)?.ripple(keep)?;
++        Ok(Some(
++            Self::new(route, vec![first, last])?.with_identity_anchor(self.identity_anchor)?,
++        ))
++    }
++
++    pub(crate) fn occurrence_transitions(
++        &self,
++    ) -> Result<
++        impl ExactSizeIterator<Item = Result<OccurrenceTransition, PlanError>> + '_,
++        PlanError,
++    > {
++        let chain = self.occurrence.as_ref().ok_or(PlanError::InvalidPlan(
++            "sound envelope requires occurrence windows",
++        ))?;
++        Ok((1..self.grids.len()).map(|index| {
++            Ok(OccurrenceTransition {
++                allocation: AudioSample(self.allocations[index].start)
++                    ..AudioSample(self.allocations[index].end),
++                frame_shift: self.grids[index - 1]
++                    .frame_origin()
++                    .checked_sub(self.grids[index].frame_origin())?,
++                sample_shift: -chain.deltas[index],
++            })
++        }))
++    }
+ }
+ 
+ impl QueryWork {
+@@ -453,16 +536,7 @@ macro_rules! sample_domain {
+             ) -> Result<Self, PlanError> {
+                 Self::new_inner(
+                     route,
+-                    grids
+-                        .into_iter()
+-                        .map(|grid| {
+-                            AudioSampleGrid::new(
+-                                grid.frame_origin(),
+-                                grid.frames_per_sample(),
+-                                grid.boundary_rule(),
+-                            )
+-                        })
+-                        .collect::<Result<_, _>>()?,
++                    grids.into_iter().map(|grid| grid.rebrand()).collect(),
+                     AudioBoundaryRule::$rule,
+                 )
+             }
+@@ -525,3 +599,48 @@ macro_rules! sample_domain {
+ 
+ sample_domain!(AudioSample, RoundEven);
+ sample_domain!(SignalSample, PointCeil);
++
++#[cfg(test)]
++mod processing_history_tests {
++    use super::*;
++
++    #[test]
++    fn complete_history_keeps_half_sample_endpoints_after_an_odd_translation() {
++        let extent = ExactRatio::integer(3);
++        let keep = deadpan_core::SoundRippleMap::new(
++            extent,
++            0,
++            vec![deadpan_core::SoundRippleNode::Keep {
++                range: deadpan_core::ExactFrameRange::new(ExactRatio::ZERO, extent).unwrap(),
++            }],
++        )
++        .unwrap();
++        let route = SoundRoute::identity(extent).unwrap().ripple(keep).unwrap();
++        let grid = |origin| {
++            AudioSampleGrid::new(origin, ExactRatio::ONE, AudioBoundaryRule::RoundEven).unwrap()
++        };
++        let delivery = AudioSoundRoute::<AudioSample>::new(
++            route,
++            vec![
++                grid(ExactRatio::new(1, 2).unwrap()),
++                grid(ExactRatio::integer(-1)),
++            ],
++        )
++        .unwrap()
++        .with_identity_anchor(ExactRatio::ZERO)
++        .unwrap();
++        let input = delivery.complete_processing_history().unwrap().unwrap();
++        assert_eq!(delivery.recipe_samples(), AudioSample(0)..AudioSample(2));
++        assert_eq!(delivery.samples(), AudioSample(1)..AudioSample(4));
++        assert_eq!(input.samples(), AudioSample(1)..AudioSample(3));
++        let query = input.query(input.samples(), Default::default()).unwrap();
++        assert_eq!(query.spans.len(), 1);
++        let mapping = query.spans[0].sampling.unwrap();
++        for sample in 1..3 {
++            assert_eq!(
++                mapping.local_at(AudioSample(sample)).unwrap(),
++                delivery.recipe_grid().at(AudioSample(sample - 1)).unwrap()
++            );
++        }
++    }
++}
+diff --git a/crates/deadpan-plan/src/audio_source_occurrence.rs b/crates/deadpan-plan/src/audio_source_occurrence.rs
+index ee921b40..02b85370 100644
+--- a/crates/deadpan-plan/src/audio_source_occurrence.rs
++++ b/crates/deadpan-plan/src/audio_source_occurrence.rs
+@@ -12,6 +12,10 @@ use crate::{
+ mod owner_context;
+ pub use owner_context::AudioSoundOwnerContext;
+ 
++#[path = "audio_sound_processing_history.rs"]
++mod processing_history;
++pub use processing_history::AudioSoundProcessingHistory;
++
+ /// A borrowed preparation recipe for one concrete current occurrence.
+ ///
+ /// The constructor resolves structure and stable plays, never a cursor or a
+@@ -866,14 +870,8 @@ impl<'plan> AudioSourceOccurrence<'plan> {
+         samples: Range<AudioSample>,
+         limits: AudioQueryLimits,
+     ) -> Result<crate::AudioSoundGateQuery, PlanError> {
+-        if !self.belongs_to(alias.live_plan)
+-            || !original.belongs_to(alias.historical_plan)
+-            || self.instance != alias.live_instance
+-            || original.instance != alias.historical_instance
+-            || original.recipe() != &alias.recipe
+-            || self.recipe() != &alias.recipe
+-            || self.routing_anchor()? != original.routing_anchor()?
+-        {
++        self.validate_clock_alias(original, alias)?;
++        if self.routing_anchor()? != original.routing_anchor()? {
+             return Err(PlanError::InvalidAudioSourceOccurrence(
+                 "routed occurrences do not match their sound clock alias",
+             ));
+@@ -896,6 +894,87 @@ impl<'plan> AudioSourceOccurrence<'plan> {
+             limits,
+         )
+     }
++
++    /// Transport original envelope labels through the same rounded windows as
++    /// its PCM. A crop narrows delivery without inventing a new sound onset or
++    /// fade. Current Hold gates apply afterward. The proven alias and complete
++    /// capture grid bind this route to both occurrences; its final allocation
++    /// and delivery anchor must describe this exact current occurrence.
++    pub fn routed_window_gate_fades_from(
++        &self,
++        original: &AudioSourceOccurrence<'_>,
++        alias: &crate::AudioOccurrenceAlias<'_>,
++        route: &crate::AudioSoundRoute<AudioSample>,
++        edges: (deadpan_core::AudioEdgePolicy, deadpan_core::AudioEdgePolicy),
++        samples: Range<AudioSample>,
++        limits: AudioQueryLimits,
++    ) -> Result<crate::AudioSoundGateQuery, PlanError> {
++        let (allocation, _) = self.validate_window_route(original, alias, route)?;
++        crate::audio_sound_event::windowed_occurrence_gate_fades(
++            self.plan,
++            crate::audio_sound_event::RoutedOccurrenceEnvelope {
++                domain: self.policy_domain.as_deref(),
++                anchor: original.routing_anchor()?,
++                original_allocation: original.extent(),
++                current_allocation: allocation,
++                original_audible: original.audible_extent(),
++                grid: original.grid,
++                inherited_hard_edges: self.inherited_hard_edges,
++            },
++            route,
++            edges,
++            samples,
++            limits,
++        )
++    }
++
++    fn validate_window_route(
++        &self,
++        original: &AudioSourceOccurrence<'_>,
++        alias: &crate::AudioOccurrenceAlias<'_>,
++        route: &crate::AudioSoundRoute<AudioSample>,
++    ) -> Result<(Range<ExactRatio>, ExactRatio), PlanError> {
++        self.validate_clock_alias(original, alias)?;
++        let original_extent = original.extent();
++        let grid = AudioSampleGrid::new(
++            ExactRatio::ZERO.checked_sub(original_extent.start)?,
++            original.grid.frames_per_sample(),
++            AudioBoundaryRule::RoundEven,
++        )?;
++        let (allocation, anchor) = route.occurrence_output()?;
++        if route.recipe_grid() != grid
++            || route.recipe_samples() != original.samples()
++            || route.route().recipe_extent()
++                != original_extent.end.checked_sub(original_extent.start)?
++            || route.identity_anchor() != original.routing_anchor()?
++            || allocation != self.extent()
++            || anchor != self.routing_origin
++        {
++            return Err(PlanError::InvalidAudioSourceOccurrence(
++                "sound envelope windows do not match their captured occurrences",
++            ));
++        }
++        Ok((allocation, anchor))
++    }
++
++    fn validate_clock_alias(
++        &self,
++        original: &AudioSourceOccurrence<'_>,
++        alias: &crate::AudioOccurrenceAlias<'_>,
++    ) -> Result<(), PlanError> {
++        if !self.belongs_to(alias.live_plan)
++            || !original.belongs_to(alias.historical_plan)
++            || self.instance != alias.live_instance
++            || original.instance != alias.historical_instance
++            || original.recipe() != &alias.recipe
++            || self.recipe() != &alias.recipe
++        {
++            return Err(PlanError::InvalidAudioSourceOccurrence(
++                "routed occurrences do not match their sound clock alias",
++            ));
++        }
++        Ok(())
++    }
+     pub fn samples(&self) -> Range<AudioSample> {
+         self.samples.clone()
+     }
+diff --git a/crates/deadpan-plan/src/lib.rs b/crates/deadpan-plan/src/lib.rs
+index 3cca4142..493fe6db 100644
+--- a/crates/deadpan-plan/src/lib.rs
++++ b/crates/deadpan-plan/src/lib.rs
+@@ -67,8 +67,8 @@ pub use plan::{
+     AudioSignalSpan, AudioStage, AudioStageDescriptor, SignalSample, SignalTransform,
+ };
+ pub use plan::{
+-    AudioSoundOwnerContext, AudioSourceOccurrence, AudioSourceOccurrences, AudioSourceVoice,
+-    AudioSourceVoiceIdentity, AudioSourceVoiceRecipe,
++    AudioSoundOwnerContext, AudioSoundProcessingHistory, AudioSourceOccurrence,
++    AudioSourceOccurrences, AudioSourceVoice, AudioSourceVoiceIdentity, AudioSourceVoiceRecipe,
+ };
+ pub use plan::{
+     DefinitionPictureCoverage, DefinitionPictureSample, DefinitionPictureSpan,
+diff --git a/crates/deadpan-plan/src/plan.rs b/crates/deadpan-plan/src/plan.rs
+index 3875915f..809aedff 100644
+--- a/crates/deadpan-plan/src/plan.rs
++++ b/crates/deadpan-plan/src/plan.rs
+@@ -205,6 +205,13 @@ impl<'plan> AudioSoundClockScope<'plan> {
+         self.historical_layout
+     }
+ 
++    pub fn live_layout(&self) -> &deadpan_core::FrozenAudioLayout {
++        self.live_plan
++            .sound_clock_layout
++            .as_deref()
++            .expect("clock scope has a live layout")
++    }
++
+     pub fn historical_scope(&self) -> &NodeId {
+         self.historical_scope
+     }
+@@ -248,6 +255,31 @@ impl<'plan> AudioSoundClockScope<'plan> {
+             .try_remap_instance_with_work(live, maximum_work)?)
+     }
+ 
++    /// A treatment owner outside this paired processing subtree consumes its
++    /// delivered output. It cannot expose history through the copy's exterior
++    /// selection, and need not have existed in the historical layout at all.
++    /// Only a checked context from this exact live plan can request expansion.
++    pub fn try_remap_context_with_work(
++        &self,
++        context: &crate::AudioSoundOwnerContext<'_>,
++        maximum_work: usize,
++    ) -> Result<(Option<InstancePath>, usize), PlanError> {
++        if maximum_work == 0 || maximum_work > deadpan_core::MAX_DOCUMENT_NODES {
++            return Err(PlanError::AudioQueryLimit("sound context alias work"));
++        }
++        if !context.belongs_to(self.live_plan) {
++            return Err(PlanError::InvalidPlan("foreign sound clock context"));
++        }
++        if self
++            .correspondence
++            .historical_node(&context.owner().node)
++            .is_none()
++        {
++            return Ok((None, 1));
++        }
++        self.try_remap_instance_with_work(context.owner(), maximum_work)
++    }
++
+     /// Bind one compiled plan to this exact frozen layout and sound recipe.
+     /// The full layout and selected asset contract are compared once per read,
+     /// not once per concrete Repeat occurrence.
+diff --git a/crates/deadpan-plan/tests/sound_processing_layout.rs b/crates/deadpan-plan/tests/sound_processing_layout.rs
+index 7618f58e..3d64b69e 100644
+--- a/crates/deadpan-plan/tests/sound_processing_layout.rs
++++ b/crates/deadpan-plan/tests/sound_processing_layout.rs
+@@ -382,6 +382,43 @@ fn sound_clock_scope_mints_only_recipe_matched_nested_occurrence_aliases() {
+         instance
+     );
+ 
++    let context = plan
++        .audio_sound_instance_context(&instance, Default::default())
++        .unwrap();
++    let (mapped, work) = scopes[0]
++        .try_remap_context_with_work(&context, deadpan_core::MAX_DOCUMENT_NODES)
++        .unwrap();
++    assert_eq!(mapped.as_ref(), Some(&instance));
++    assert!(work > 0);
++    let outer = plan
++        .audio_sound_instance_context(
++            &InstancePath {
++                node: plan.metadata().root.clone(),
++                repeats: vec![],
++            },
++            Default::default(),
++        )
++        .unwrap();
++    assert_eq!(
++        scopes[0].try_remap_context_with_work(&outer, 1).unwrap(),
++        (None, 1)
++    );
++    assert!(scopes[0].try_remap_context_with_work(&outer, 0).is_err());
++    assert!(
++        scopes[0]
++            .try_remap_context_with_work(&outer, deadpan_core::MAX_DOCUMENT_NODES + 1)
++            .is_err()
++    );
++    let foreign = plan.clone();
++    let foreign_context = foreign
++        .audio_sound_instance_context(outer.owner(), Default::default())
++        .unwrap();
++    assert!(
++        scopes[0]
++            .try_remap_context_with_work(&foreign_context, deadpan_core::MAX_DOCUMENT_NODES)
++            .is_err()
++    );
++
+     let historical_plan = plan
+         .compile_sound_processing_layout(&layout, &BTreeSet::from([event.source.asset.clone()]))
+         .unwrap();
+diff --git a/crates/deadpan-store/tests/source_registration/sounds/sound_clocks.rs b/crates/deadpan-store/tests/source_registration/sounds/sound_clocks.rs
+index dbbc350a..bd00679b 100644
+--- a/crates/deadpan-store/tests/source_registration/sounds/sound_clocks.rs
++++ b/crates/deadpan-store/tests/source_registration/sounds/sound_clocks.rs
+@@ -6,6 +6,9 @@ use std::{collections::BTreeMap, sync::Arc};
+ #[path = "sound_clocks/repeats.rs"]
+ mod repeats;
+ 
++#[path = "sound_clocks/partial.rs"]
++mod partial;
++
+ fn capture_child(
+     document: &ProjectDocument,
+     parent: &NodeId,
+diff --git a/crates/deadpan-audio/tests/audio_definition/sound_clocks/partial.rs b/crates/deadpan-audio/tests/audio_definition/sound_clocks/partial.rs
+new file mode 100644
+index 00000000..4c058500
+--- /dev/null
++++ b/crates/deadpan-audio/tests/audio_definition/sound_clocks/partial.rs
+@@ -0,0 +1,340 @@
++use super::*;
++
++fn capture_range(
++    document: &ProjectDocument,
++    parent: &str,
++    first: i64,
++    last: i64,
++    name: &str,
++) -> CapturedEditSlice {
++    let slice = CapturedEditSlice::capture(
++        document,
++        &id(parent),
++        FrameRange::new(ProjectFrame(first), ProjectFrame(last)).unwrap(),
++        AudioTimingId {
++            allocation: RevisionId::new(name).unwrap(),
++            ordinal: 0,
++        },
++    )
++    .unwrap();
++    slice.validate_capture(document).unwrap();
++    CapturedEditSlice::from_json(&slice.to_json().unwrap()).unwrap()
++}
++
++fn render(document: &ProjectDocument, first: i64, last: i64) -> Vec<[f32; 2]> {
++    let mut reader = StageAudio::new(compile(document, false));
++    let mut provider = ClockProvider::new(document);
++    let rate = document.presentation_basis().frame_rate;
++    let boundary = |frame: i64| {
++        i64::try_from(
++            ExactRatio::new(
++                i128::from(frame) * 48_000 * i128::from(rate.denominator()),
++                i128::from(rate.numerator()),
++            )
++            .unwrap()
++            .round_even()
++            .unwrap(),
++        )
++        .unwrap()
++    };
++    let first = boundary(first);
++    let last = boundary(last);
++    let mut output = Vec::new();
++    for sample in (first..last).step_by(256) {
++        output.extend(
++            bus(
++                &mut reader,
++                &mut provider,
++                sample,
++                (last - sample).min(256) as u32,
++            )
++            .samples,
++        );
++    }
++    output
++}
++
++fn compare_copy(original: &[[f32; 2]], actual: &[[f32; 2]], treated: bool, context: &str) {
++    assert!(!actual.is_empty());
++    assert!(actual.len().abs_diff(original.len()) <= 1);
++    let mut worst = (0.0_f32, 0, 0, 0.0, 0.0);
++    for (index, actual) in actual.iter().enumerate() {
++        let expected = original.get(index).copied().unwrap_or([0.0; 2]);
++        for channel in 0..2 {
++            assert!(actual[channel].is_finite() && expected[channel].is_finite());
++            if treated {
++                let difference = (actual[channel] - expected[channel]).abs();
++                if difference > worst.0 {
++                    worst = (
++                        difference,
++                        index,
++                        channel,
++                        actual[channel],
++                        expected[channel],
++                    );
++                }
++            } else {
++                assert_eq!(
++                    actual[channel], expected[channel],
++                    "sample={index} channel={channel}"
++                );
++            }
++        }
++    }
++    assert!(
++        worst.0 < 1e-6,
++        "{context}: worst difference/sample/channel/actual/expected={worst:?}"
++    );
++}
++
++fn partial_copy(treated: bool, shared: bool) {
++    for edge in [AudioEdgePolicy::Hard, AudioEdgePolicy::Automatic] {
++        let mut wire = serde_json::to_value(ntsc(edge)).unwrap();
++        let rate = FrameRate::new(30_000, 1001).unwrap();
++        // No original Hold gate at either destination. This isolates the
++        // event's transported envelope from deliberately current policies.
++        wire["nodes"]["lead"] = serde_json::to_value(picture_only(rate, 2)).unwrap();
++        if treated {
++            let eq = EqualizerRecipe::new(
++                [6000, -6000, 3000].map(|db| GainDb::new(db).unwrap()),
++                None,
++                None,
++            )
++            .unwrap();
++            let treatment = AudioTreatments::default()
++                .with_equalizer(Some(eq))
++                .unwrap()
++                .with_wet_sends(
++                    TailSends::default()
++                        .with_level(TailEffect::Reverb, Some(GainDb::new(-6000).unwrap())),
++                );
++            wire["beat_sounds"]["owner"]["effect"]["treatments"] =
++                serde_json::to_value(treatment).unwrap();
++            if shared {
++                wire["nodes"]["owner"]["audio_treatments"] = serde_json::to_value(
++                    AudioTreatments::default().with_equalizer(Some(eq)).unwrap(),
++                )
++                .unwrap();
++            }
++        }
++        let before = ProjectDocument::from_json(&wire.to_string()).unwrap();
++        let expected = render(&before, 3, 6);
++        assert!(expected.iter().flatten().any(|value| value.abs() > 0.001));
++        let slice = capture_range(&before, "root", 3, 6, "capture-partial");
++        let once = paste_repeat_slice(&before, "root", 3, &slice, "partial-copy");
++        assert_eq!(once.duration().unwrap().frames(), 11);
++        let actual = render(&once, 8, 11);
++        compare_copy(&expected, &actual, treated, &format!("first {edge:?}"));
++
++        let recopy = capture_range(&once, "partial-copy-node-0", 9, 11, "recapture-partial");
++        let expected = render(&once, 9, 11);
++        let twice = paste_repeat_slice(&once, "root", 4, &recopy, "partial-recopy");
++        compare_copy(
++            &expected,
++            &render(&twice, 11, 13),
++            treated,
++            &format!("recopy {edge:?}"),
++        );
++        let expected = render(&twice, 11, 13);
++        let deleted = edit(
++            &twice,
++            "remove-original-owner",
++            Command::DeleteRipple {
++                node: id("owner"),
++                timing: AudioTimingId {
++                    allocation: RevisionId::new("remove-original-owner").unwrap(),
++                    ordinal: 0,
++                },
++            },
++        );
++        compare_copy(
++            &expected,
++            &render(&deleted, 7, 9),
++            treated,
++            &format!("delete {edge:?}"),
++        );
++        assert!(!deleted.beat_sounds().contains_key(&id("owner")));
++        assert_eq!(deleted.beat_sounds().len(), 2);
++    }
++}
++
++#[test]
++fn partial_sound_copy_and_recopy_keep_dry_samples_and_virtual_edges() {
++    partial_copy(false, false);
++}
++
++#[test]
++fn partial_sound_copy_and_recopy_keep_event_processing_history() {
++    partial_copy(true, false);
++}
++
++#[test]
++fn partial_sound_copy_and_recopy_keep_shared_processing_history() {
++    partial_copy(true, true);
++}
++
++#[test]
++fn partial_range_of_preserve_owner_still_rejects_before_sound_capture() {
++    let mut wire = serde_json::to_value(ntsc(AudioEdgePolicy::Hard)).unwrap();
++    let rate = FrameRate::new(30_000, 1001).unwrap();
++    wire["nodes"]["lead"] = serde_json::to_value(picture_only(rate, 2)).unwrap();
++    wire["nodes"]["inner"] =
++        serde_json::to_value(retime("owner", 6, 0..4, PitchPolicy::Preserve)).unwrap();
++    wire["nodes"]["outer"] =
++        serde_json::to_value(retime("inner", 4, 0..6, PitchPolicy::Preserve)).unwrap();
++    wire["nodes"]["root"]["kind"]["children"] = serde_json::json!(["lead", "outer", "tail"]);
++    let before = ProjectDocument::from_json(&wire.to_string()).unwrap();
++    let error = CapturedEditSlice::capture(
++        &before,
++        &id("root"),
++        FrameRange::new(ProjectFrame(3), ProjectFrame(6)).unwrap(),
++        AudioTimingId {
++            allocation: RevisionId::new("capture-nested-partial").unwrap(),
++            ordinal: 0,
++        },
++    )
++    .unwrap_err();
++    assert!(error.message.contains("Range endpoints require"), "{error}");
++}
++
++#[test]
++fn new_copy_wrapper_equalizer_uses_delivered_sound_as_its_input() {
++    let before = ntsc(AudioEdgePolicy::Hard);
++    let slice = capture_range(&before, "root", 3, 6, "capture-wrapper");
++    let copied = paste_repeat_slice(&before, "root", 3, &slice, "wrapper-copy");
++    let dry = render(&copied, 8, 11);
++    let eq = EqualizerRecipe::new(
++        [6000, -6000, 3000].map(|db| GainDb::new(db).unwrap()),
++        None,
++        None,
++    )
++    .unwrap();
++    let mut filter = deadpan_audio::Equalizer::new(eq, &AtomicBool::new(false)).unwrap();
++    let first = frame_sample_boundary(8);
++    let last = frame_sample_boundary(11);
++    let mut expected = Vec::new();
++    for tile in (first / 1024 * 1024..last).step_by(1024) {
++        let mut left = vec![0.0; 5120];
++        let mut right = vec![0.0; 5120];
++        for index in 0..5120 {
++            let at = tile - 2048 + index as i64;
++            if first <= at && at < last {
++                let frame = dry[(at - first) as usize];
++                left[index] = f64::from(frame[0]);
++                right[index] = f64::from(frame[1]);
++            }
++        }
++        let mut out_left = vec![0.0; 1024];
++        let mut out_right = vec![0.0; 1024];
++        filter
++            .process_tile(
++                &left,
++                &right,
++                &mut out_left,
++                &mut out_right,
++                &AtomicBool::new(false),
++            )
++            .unwrap();
++        for at in tile.max(first)..(tile + 1024).min(last) {
++            expected.push([
++                out_left[(at - tile) as usize] as f32,
++                out_right[(at - tile) as usize] as f32,
++            ]);
++        }
++    }
++    let treated = edit(
++        &copied,
++        "wrapper-eq",
++        Command::SetAudioTreatments {
++            node: id("wrapper-copy-node-0"),
++            treatments: AudioTreatments::default().with_equalizer(Some(eq)).unwrap(),
++        },
++    );
++    compare_copy(&expected, &render(&treated, 8, 11), true, "new wrapper EQ");
++}
++
++#[test]
++fn copied_owner_preparation_keeps_the_terminal_sample_hidden_by_new_rounding() {
++    let before = ntsc(AudioEdgePolicy::Hard);
++    let slice = capture_range(&before, "root", 3, 6, "terminal-capture");
++    let once = paste_repeat_slice(&before, "root", 3, &slice, "terminal-copy");
++    let recopy = capture_range(&once, "terminal-copy-node-0", 9, 11, "terminal-recapture");
++    let twice = paste_repeat_slice(&once, "root", 4, &recopy, "terminal-recopy");
++    let owner = twice
++        .beat_sounds()
++        .keys()
++        .find(|id| id.as_str().starts_with("terminal-recopy"))
++        .unwrap();
++    let expected = super::owner_input::read_input(&before, &id("owner"), 9608, 3);
++    assert_ne!(expected[1], [0.0; 2]);
++    assert_eq!(expected[2], [0.0; 2]);
++    let plan = compile(&twice, false);
++    let context = plan
++        .audio_sound_instance_context(
++            &InstancePath {
++                node: owner.clone(),
++                repeats: vec![],
++            },
++            Default::default(),
++        )
++        .unwrap();
++    assert_eq!(context.samples().end, AudioSample(20821));
++    let mut reader = StageAudio::new(plan.clone());
++    let mut provider = ClockProvider::new(&twice);
++    let read = |reader: &mut StageAudio, provider: &mut ClockProvider| {
++        reader.read_beat_sound_owner_input(
++            provider,
++            &context,
++            AudioSample(20820),
++            3,
++            TIMEOUT,
++            &AtomicBool::new(false),
++        )
++    };
++    assert_eq!(read(&mut reader, &mut provider).unwrap().samples, expected);
++    assert_eq!(read(&mut reader, &mut provider).unwrap().samples, expected);
++    provider.fixture.unavailable = true;
++    assert!(read(&mut reader, &mut provider).is_err());
++}
++
++#[test]
++fn shared_copy_history_preserves_half_sample_ties_after_an_odd_move() {
++    // Three samples per two frames deliberately puts both full-owner edges on
++    // half-sample ties. The selected output moves by minus three sample labels.
++    let rate = FrameRate::new(32_000, 1).unwrap();
++    let base = document(
++        rate,
++        &["lead", "owner", "tail"],
++        [
++            ("lead", picture_only(rate, 1)),
++            ("owner", picture_only(rate, 4)),
++            ("tail", picture_only(rate, 1)),
++        ],
++        BTreeMap::new(),
++    );
++    let mut wire = serde_json::to_value(base).unwrap();
++    wire["assets"]["media"]["source_qualification"] = serde_json::json!("c".repeat(64));
++    let voice = voice_recipe(rate, 6);
++    wire["beat_sounds"] = serde_json::json!({"owner": {"effect": BeatSound {
++        label: "Tiny sound".into(), source: voice.source, mapping: voice.mapping,
++        offset: voice.offset, treatments: AudioTreatments::default(),
++        start_edge: AudioEdgePolicy::Hard, end_edge: AudioEdgePolicy::Hard,
++        overflow: SoundOverflowPolicy::Reject,
++    }}});
++    let eq = EqualizerRecipe::new(
++        [6000, -6000, 3000].map(|v| GainDb::new(v).unwrap()),
++        None,
++        None,
++    )
++    .unwrap();
++    wire["nodes"]["owner"]["audio_treatments"] =
++        serde_json::to_value(AudioTreatments::default().with_equalizer(Some(eq)).unwrap()).unwrap();
++    let before = ProjectDocument::from_json(&wire.to_string()).unwrap();
++    let expected = render(&before, 2, 5);
++    let captured = capture_range(&before, "root", 2, 5, "half-capture");
++    let copied = paste_repeat_slice(&before, "root", 0, &captured, "half-copy");
++    let actual = render(&copied, 0, 3);
++    assert_eq!(expected.len(), 5);
++    assert_eq!(actual.len(), 4);
++    compare_copy(&expected, &actual, true, "half-sample copy");
++}
+diff --git a/crates/deadpan-cli/tests/preview_export/partial_sounds.rs b/crates/deadpan-cli/tests/preview_export/partial_sounds.rs
+new file mode 100644
+index 00000000..ed5d72a3
+--- /dev/null
++++ b/crates/deadpan-cli/tests/preview_export/partial_sounds.rs
+@@ -0,0 +1,183 @@
++//! Command-created partial attachment copies through the public Render path.
++//! Start from the full Original Source, with its audio moved outside the beat.
++
++use super::*;
++use deadpan_core::{
++    BeatSound, CapturedEditSlice, EqualizerRecipe, MarkId, OccurrenceIdentities,
++    SlicePasteIdentities,
++};
++
++fn boundary(frame: i64) -> Result<i64> {
++    Ok(i64::try_from(
++        ExactRatio::new(i128::from(frame) * 8008, 5)?.round_even()?,
++    )?)
++}
++
++fn pcm(project: &Project, start: i64) -> Result<Vec<[f64; 2]>> {
++    let result = success(&[
++        "inspect-audio",
++        project.path(),
++        "--samples",
++        &start.to_string(),
++        &(start + 256).to_string(),
++        "--limited",
++    ])?;
++    Ok(serde_json::from_value(result["audio"]["samples"].clone())?)
++}
++
++fn same_pcm(expected: &[[f64; 2]], actual: &[[f64; 2]], context: &str) {
++    assert_eq!(expected.len(), 256);
++    assert_eq!(actual.len(), expected.len());
++    assert!(expected.iter().flatten().any(|value| value.abs() > 0.001));
++    for (index, (expected, actual)) in expected.iter().zip(actual).enumerate() {
++        for channel in 0..2 {
++            assert!(actual[channel].is_finite());
++            assert!(
++                (expected[channel] - actual[channel]).abs() < 1e-6,
++                "{context} sample {index} channel {channel}: {} != {}",
++                expected[channel],
++                actual[channel]
++            );
++        }
++    }
++}
++
++fn copy(
++    project: &mut Project,
++    parent: Option<&NodeId>,
++    start: i64,
++    end: i64,
++    capture: &str,
++) -> Result {
++    project.apply(|project, document, revision| {
++        let slice = CapturedEditSlice::capture(
++            document,
++            parent.unwrap_or(document.root()),
++            FrameRange::new(ProjectFrame(start), ProjectFrame(end))?,
++            AudioTimingId {
++                allocation: RevisionId::new(capture)?,
++                ordinal: 0,
++            },
++        )
++        .map_err(|error| format!("capture {start}..{end} ({capture}): {error}"))?;
++        let required = slice.identity_requirements()?;
++        Ok(Command::SpliceSlice {
++            parent: document.root().clone(),
++            index: root_children(document)?.len(),
++            identities: SlicePasteIdentities {
++                authored: OccurrenceIdentities {
++                    nodes: project.fresh(required.nodes)?,
++                    marks: (0..required.marks)
++                        .map(|index| MarkId::new(format!("{revision}-mark-{index}")))
++                        .collect::<std::result::Result<_, _>>()?,
++                },
++                aliases: project.fresh(required.aliases)?,
++            },
++            slice,
++            timing: AudioTimingId {
++                allocation: revision.clone(),
++                ordinal: 0,
++            },
++        })
++    })?;
++    Ok(())
++}
++
++pub fn partial_attached_sound_copies(dir: &Path) -> Result<Fixture> {
++    let mut project = Project::create(dir, "partial-attached-sound-copies")?;
++    place_click_sound(&mut project)?;
++    let owner = root_children(&project.document()?)?[0].clone();
++    project.apply(|_, document, _| {
++        let NodeKind::Source { source } = &document.nodes()[&owner].kind else {
++            return Err("fixture owner is not a Source".into());
++        };
++        Ok(Command::SetSourceAudioMapping {
++            node: owner.clone(),
++            mapping: source.audio_mapping,
++            // Keep the Original's audio outside this allocation so its own
++            // timing and edge policies cannot supply the attachment oracle.
++            offset: AudioSample(480_000),
++        })
++    })?;
++    let eq = EqualizerRecipe::new(
++        [3000, -6000, 3000].map(|db| GainDb::new(db).unwrap()),
++        None,
++        None,
++    )?;
++    project.apply(|_, document, _| {
++        let source = document.sounds()[&SoundId::new("click")?].source.clone();
++        Ok(Command::SetBeatSound {
++            owner: owner.clone(),
++            id: SoundId::new("attached")?,
++            event: BeatSound {
++                label: "Partial copied sound".into(),
++                mapping: SourceAudioMapping::natural_rate(
++                    source.span,
++                    document.presentation_basis().frame_rate,
++                )?,
++                source,
++                offset: AudioSample(0),
++                treatments: AudioTreatments::default()
++                    .with_clip_gain(ClipGain::new(GainDb::new(-12000)?, false, vec![], vec![])?)?
++                    .with_equalizer(Some(eq))?,
++                start_edge: AudioEdgePolicy::Hard,
++                end_edge: AudioEdgePolicy::Hard,
++                overflow: SoundOverflowPolicy::Reject,
++            },
++        })
++    })?;
++    project.apply(|_, _, _| {
++        Ok(Command::DeleteSound {
++            id: SoundId::new("click")?,
++        })
++    })?;
++    project.apply(|_, _, _| {
++        Ok(Command::SetAudioTreatments {
++            node: owner.clone(),
++            treatments: AudioTreatments::default().with_equalizer(Some(eq))?,
++        })
++    })?;
++
++    let first = pcm(&project, boundary(2)? + 512)?;
++    copy(&mut project, None, 2, 6, "partial-export-capture")?;
++    same_pcm(&first, &pcm(&project, boundary(120)? + 512)?, "first paste");
++    let second = pcm(&project, boundary(121)? + 512)?;
++    let copied_group = root_children(&project.document()?)?
++        .last()
++        .ok_or("copied group")?
++        .clone();
++    copy(
++        &mut project,
++        Some(&copied_group),
++        121,
++        124,
++        "partial-export-recapture",
++    )?;
++    same_pcm(&second, &pcm(&project, boundary(124)? + 512)?, "recopy");
++    project.apply(|_, _, revision| {
++        Ok(Command::DeleteRipple {
++            node: owner.clone(),
++            timing: AudioTimingId {
++                allocation: revision.clone(),
++                ordinal: 0,
++            },
++        })
++    })?;
++    same_pcm(&first, &pcm(&project, 512)?, "first after deletion");
++    same_pcm(
++        &second,
++        &pcm(&project, boundary(4)? + 512)?,
++        "recopy after deletion",
++    );
++    assert_eq!(project.document()?.beat_sounds().len(), 2);
++    project.finish(
++        vec!["Partial attached-sound copy and recopy"],
++        (0..4)
++            .map(|frame| (frame, original(frame + 2)))
++            .chain((4..7).map(|frame| (frame, original(frame - 1))))
++            .collect(),
++        vec![
++            "Real registered stereo WAV with event and shared-owner EQ; partial copy 2..6, recopy 121..124, delete original owner. Independent pre-copy PCM windows match after both pastes and deletion within 1e-6.".into(),
++        ],
++    )
++}
+diff --git a/crates/deadpan-core/src/audio_reference/sound_placement.rs b/crates/deadpan-core/src/audio_reference/sound_placement.rs
+new file mode 100644
+index 00000000..e94aea9d
+--- /dev/null
++++ b/crates/deadpan-core/src/audio_reference/sound_placement.rs
+@@ -0,0 +1,125 @@
++//! Exact placement of an independent voice's complete processing allocation.
++
++use super::*;
++use std::ops::Range;
++
++#[derive(Debug, Clone, PartialEq, Eq)]
++pub struct FrozenSoundPlacement {
++    /// Affine project position of the event owner's local zero.
++    pub owner_origin: ExactRatio,
++    /// Visible output, or full treatment input within the requested context.
++    pub allocation: Range<ExactRatio>,
++    /// Ordinary delivery's entry boundary, even for expanded hidden input.
++    pub delivery_start: ExactRatio,
++    pub work: usize,
++}
++
++impl FrozenAudioLayout {
++    /// Resolve a concrete sound occurrence without reconstructing a media plan.
++    /// Opaque processing resets its allocation at the outermost Preserve/Shift;
++    /// affine ancestors select output afterward. A checked ancestor context
++    /// exposes history only through its own complete processing boundary.
++    pub fn sound_occurrence_placement(
++        &self,
++        instance: &InstancePath,
++        context: Option<&InstancePath>,
++        maximum_work: usize,
++    ) -> Result<FrozenSoundPlacement, DocumentError> {
++        let owner = self.project(instance, ExactRatio::ZERO, None, maximum_work)?;
++        let mut work = owner.work;
++        let mut chain = vec![(instance.node.clone(), instance.repeats.len())];
++        let mut provider = 0;
++        while chain.last().unwrap().0 != self.root {
++            spend(&mut work, 1, maximum_work)?;
++            let (child, depth) = chain.last().unwrap();
++            let parent = &self.index.parents[child].0;
++            let node = &self.nodes[parent];
++            let depth = if matches!(node.kind, FrozenAudioKind::Repeat { .. }) {
++                depth
++                    .checked_sub(1)
++                    .ok_or_else(|| invalid("sound placement omits a Repeat"))?
++            } else {
++                *depth
++            };
++            if matches!(node.kind, FrozenAudioKind::Retime { mapping, pitch, .. }
++                if pitch.processes(mapping.duration() == node.duration))
++            {
++                provider = chain.len();
++            }
++            chain.push((parent.clone(), depth));
++        }
++        let boundary = if let Some(context) = context {
++            spend(&mut work, context.repeats.len() + chain.len(), maximum_work)?;
++            chain
++                .iter()
++                .position(|(node, depth)| {
++                    node == &context.node
++                        && instance.repeats.get(..*depth) == Some(context.repeats.as_slice())
++                })
++                .ok_or_else(|| invalid("sound placement context is not its concrete ancestor"))?
++                .max(provider)
++        } else {
++            chain.len() - 1
++        };
++        let mut project = |index: usize| -> Result<FrozenAudioProjection, DocumentError> {
++            let (node, depth) = &chain[index];
++            spend(&mut work, 1 + depth, maximum_work)?;
++            let projection = self.project(
++                &InstancePath {
++                    node: node.clone(),
++                    repeats: instance.repeats[..*depth].to_vec(),
++                },
++                ExactRatio::ZERO,
++                None,
++                maximum_work
++                    .checked_sub(work)
++                    .filter(|left| *left > 0)
++                    .ok_or_else(|| limit("sound placement work exhausted"))?,
++            )?;
++            spend(&mut work, projection.work, maximum_work)?;
++            Ok(projection)
++        };
++        let provider_projection = if provider == 0 {
++            owner.clone()
++        } else {
++            project(provider)?
++        };
++        let extent =
++            |projection: &FrozenAudioProjection| -> Result<Range<ExactRatio>, DocumentError> {
++                Ok(projection.origin
++                    ..projection.origin.checked_add(
++                        ExactRatio::integer(projection.local_duration.frames())
++                            .checked_mul(projection.frames_per_local_frame)?,
++                    )?)
++            };
++        let mut allocation = extent(&provider_projection)?;
++        let mut delivery = allocation.clone();
++        for index in provider + 1..chain.len() {
++            let allowed = extent(&project(index)?)?;
++            // Keep even an empty delivery's affine entry. It is the rounding
++            // anchor for expanded history, not a clamped or restarted source.
++            intersect(&mut delivery, &allowed);
++            if index <= boundary {
++                intersect(&mut allocation, &allowed);
++            }
++        }
++        if !allocation.end.compare(allocation.start).is_gt() {
++            return Err(invalid("sound processing allocation is not visible"));
++        }
++        Ok(FrozenSoundPlacement {
++            owner_origin: owner.origin,
++            allocation,
++            delivery_start: delivery.start,
++            work,
++        })
++    }
++}
++
++fn intersect(value: &mut Range<ExactRatio>, allowed: &Range<ExactRatio>) {
++    if value.start.compare(allowed.start).is_lt() {
++        value.start = allowed.start;
++    }
++    if value.end.compare(allowed.end).is_gt() {
++        value.end = allowed.end;
++    }
++}
+diff --git a/crates/deadpan-plan/src/audio_sound_processing_history.rs b/crates/deadpan-plan/src/audio_sound_processing_history.rs
+new file mode 100644
+index 00000000..d6710b93
+--- /dev/null
++++ b/crates/deadpan-plan/src/audio_sound_processing_history.rs
+@@ -0,0 +1,114 @@
++//! Complete independent input for a copied temporal treatment owner.
++
++use super::*;
++
++/// Preparation support on transported physical labels, separate from current
++/// delivery. It cannot grant a current output interval or a Hold allowance.
++/// Current owner treatments still consume the complete shared input bus.
++#[derive(Debug, Clone)]
++pub struct AudioSoundProcessingHistory<'plan> {
++    plan: &'plan RenderPlan,
++    route: crate::AudioSoundRoute<AudioSample>,
++    policy: AudioDomain<'plan>,
++    original_allocation: Range<ExactRatio>,
++    original_audible: Range<ExactRatio>,
++    original_grid: AudioSampleGrid<AudioSample>,
++    inherited_hard_edges: (bool, bool),
++}
++
++impl<'plan> AudioSourceOccurrence<'plan> {
++    /// Expose complete retained input only when both occurrences were resolved
++    /// within checked temporal-owner contexts and every window still selects
++    /// the complete operand. Exterior/new owners consume delivered output.
++    pub fn complete_processing_history(
++        &self,
++        original: &AudioSourceOccurrence<'_>,
++        alias: &crate::AudioOccurrenceAlias<'_>,
++        delivery: &crate::AudioSoundRoute<AudioSample>,
++    ) -> Result<Option<AudioSoundProcessingHistory<'plan>>, PlanError> {
++        self.validate_window_route(original, alias, delivery)?;
++        let Some(policy) = self.policy_domain.as_deref() else {
++            return Ok(None);
++        };
++        if original.policy_domain.is_none() {
++            return Ok(None);
++        }
++        let Some(route) = delivery.complete_processing_history()? else {
++            return Ok(None);
++        };
++        let (extent, _) = route.occurrence_output()?;
++        let translation =
++            route
++                .occurrence_transitions()?
++                .next()
++                .ok_or(PlanError::InvalidPlan(
++                    "missing processing history translation",
++                ))??;
++        let shift = extent.start.checked_sub(self.extent.start)?;
++        let mut policy = policy.clone();
++        // Sound-owner policy seeds enter a complete structural domain without
++        // carried ancestors. Refuse a different seed shape rather than leaving
++        // an unshifted constraint behind in a newly phased preparation clock.
++        if policy.placement.is_some()
++            || policy.seed.envelope.is_some()
++            || !policy.seed.constraints.is_empty()
++            || !policy.seed.editorial.is_empty()
++            || !policy.seed.retimes.is_empty()
++            || policy.seed.gap.is_some()
++        {
++            return Err(PlanError::InvalidPlan(
++                "sound preparation policy carries an outer constraint",
++            ));
++        }
++        policy.seed.transform.project_origin =
++            policy.seed.transform.project_origin.checked_add(shift)?;
++        policy.seed.extent = policy.seed.extent.start.checked_add(shift)?
++            ..policy.seed.extent.end.checked_add(shift)?;
++        policy.seed.grid = original
++            .grid
++            .translated_samples(translation.sample_shift)?
++            .translated_frames(translation.frame_shift)?;
++        policy.samples = policy.seed.grid.boundary(policy.seed.extent.start)?
++            ..policy.seed.grid.boundary(policy.seed.extent.end)?;
++        policy.visible = policy.samples.clone();
++        Ok(Some(AudioSoundProcessingHistory {
++            plan: self.plan,
++            route,
++            policy,
++            original_allocation: original.extent(),
++            original_audible: original.audible_extent(),
++            original_grid: original.grid,
++            inherited_hard_edges: self.inherited_hard_edges,
++        }))
++    }
++}
++
++impl AudioSoundProcessingHistory<'_> {
++    pub fn route(&self) -> &crate::AudioSoundRoute<AudioSample> {
++        &self.route
++    }
++
++    pub fn gate_fades(
++        &self,
++        edges: (deadpan_core::AudioEdgePolicy, deadpan_core::AudioEdgePolicy),
++        samples: Range<AudioSample>,
++        limits: AudioQueryLimits,
++    ) -> Result<crate::AudioSoundGateQuery, PlanError> {
++        crate::audio_sound_event::windowed_occurrence_gate_fades(
++            self.plan,
++            crate::audio_sound_event::RoutedOccurrenceEnvelope {
++                domain: Some(&self.policy),
++                anchor: self.route.identity_anchor(),
++                original_allocation: self.original_allocation.clone(),
++                current_allocation: self.route.occurrence_output()?.0,
++                original_audible: self.original_audible.clone(),
++                grid: self.original_grid,
++                inherited_hard_edges: self.inherited_hard_edges,
++            },
++            &self.route,
++            edges,
++            samples,
++            limits,
++        )
++    }
++}
+diff --git a/crates/deadpan-store/tests/source_registration/sounds/sound_clocks/partial.rs b/crates/deadpan-store/tests/source_registration/sounds/sound_clocks/partial.rs
+new file mode 100644
+index 00000000..42f11d07
+--- /dev/null
++++ b/crates/deadpan-store/tests/source_registration/sounds/sound_clocks/partial.rs
+@@ -0,0 +1,143 @@
++use super::*;
++
++#[test]
++fn partial_sound_register_reopens_after_owner_deletion_and_paste_is_atomic() -> Result {
++    let scratch = tempfile::tempdir()?;
++    let (path, mut store) = project(scratch.path())?;
++    let original = retain(&mut store, "offset-bframes.mp4")?;
++    let decoded = decode(&store, &original)?;
++    store.register_source(
++        &request(&store, &original, "import", "camera", Some("clip"))?,
++        &decoded,
++        None,
++        limits(),
++        &active(),
++    )?;
++    let owner = NodeId::new("clip")?;
++    let sound = SoundId::new("overlay")?;
++    let before = store.snapshot()?;
++    let recipe = event(&before)?;
++    store.commit(&edit(
++        &before,
++        "sound",
++        Command::SetBeatSound {
++            owner: owner.clone(),
++            id: sound.clone(),
++            event: recipe.clone(),
++        },
++    ))?;
++    let sounded = store.snapshot()?;
++    let full_duration = sounded.duration()?;
++    assert!(full_duration.frames() > 4);
++    let slice = CapturedEditSlice::capture(
++        &sounded,
++        sounded.root(),
++        deadpan_core::FrameRange::new(ProjectFrame(1), ProjectFrame(4))?,
++        AudioTimingId {
++            allocation: revision("partial-capture"),
++            ordinal: 0,
++        },
++    )?;
++    assert_eq!(captured_journal(&slice, &owner, &sound)?.clocks().len(), 1);
++    let bank = store.save_register(
++        sounded.project_id(),
++        sounded.revision_id(),
++        RegisterName::new('a')?,
++        RegisterValue::Edited {
++            slice: Arc::new(slice),
++        },
++    )?;
++    let rows = register_rows(&path)?;
++    store.commit(&edit(
++        &sounded,
++        "remove-original-owner",
++        Command::DeleteRipple {
++            node: owner,
++            timing: AudioTimingId {
++                allocation: revision("remove-original-owner"),
++                ordinal: 0,
++            },
++        },
++    ))?;
++    let deleted = store.snapshot()?;
++    assert!(deleted.beat_sounds().is_empty());
++    drop(store);
++
++    let mut store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
++    assert_eq!(store.registers()?, bank);
++    let slice = register_slice(&bank, 'a');
++    let command = paste(&deleted, &slice, "partial-paste")?;
++    let preview = store.preview(&command)?;
++    assert_eq!(store.snapshot()?, deleted);
++    let before_counts = counts(&path)?;
++    let database = Connection::open(path.join("project.sqlite"))?;
++    database.execute_batch("CREATE TRIGGER fail_partial_sound BEFORE INSERT ON history BEGIN SELECT RAISE(FAIL,'forced partial sound failure'); END;")?;
++    assert!(store.commit(&command).is_err());
++    assert_eq!(store.snapshot()?, deleted);
++    assert_eq!(counts(&path)?, before_counts);
++    assert_eq!(register_rows(&path)?, rows);
++    database.execute_batch("DROP TRIGGER fail_partial_sound")?;
++    assert_eq!(store.commit(&command)?.edit, preview);
++    let pasted = store.snapshot()?;
++    assert_eq!(pasted.duration()?.frames(), 3);
++    let copied_owner = pasted.beat_sounds().keys().next().unwrap();
++    assert_eq!(pasted.beat_sounds()[copied_owner][&sound], recipe);
++    assert_eq!(pasted.node_duration(copied_owner)?, full_duration);
++    assert_eq!(
++        pasted.audio_bindings().sound_clocks()[copied_owner][&sound]
++            .clocks()
++            .len(),
++        1
++    );
++
++    let recopy = CapturedEditSlice::capture(
++        &pasted,
++        &NodeId::new("partial-paste-node-0")?,
++        deadpan_core::FrameRange::new(ProjectFrame(1), ProjectFrame(3))?,
++        AudioTimingId {
++            allocation: revision("partial-recapture"),
++            ordinal: 0,
++        },
++    )?;
++    assert_eq!(
++        captured_journal(&recopy, copied_owner, &sound)?
++            .clocks()
++            .len(),
++        2
++    );
++    let bank = store.save_register(
++        pasted.project_id(),
++        pasted.revision_id(),
++        RegisterName::new('b')?,
++        RegisterValue::Edited {
++            slice: Arc::new(recopy),
++        },
++    )?;
++    let recopy = register_slice(&bank, 'b');
++    store.commit(&paste(&pasted, &recopy, "partial-repaste")?)?;
++    let twice = store.snapshot()?;
++    assert_eq!(twice.duration()?.frames(), 5);
++    assert_eq!(twice.beat_sounds().len(), 2);
++    drop(store);
++
++    let mut store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
++    assert_eq!(store.snapshot()?, twice);
++    assert_eq!(store.registers()?, bank);
++    store.undo(twice.revision_id(), revision("undo-repaste"))?;
++    assert_authored(&store.snapshot()?, &pasted)?;
++    store.undo(&revision("undo-repaste"), revision("undo-paste"))?;
++    assert_authored(&store.snapshot()?, &deleted)?;
++    store.redo(&revision("undo-paste"), revision("redo-paste"))?;
++    assert_authored(&store.snapshot()?, &pasted)?;
++    store.redo(&revision("redo-paste"), revision("redo-repaste"))?;
++    assert_authored(&store.snapshot()?, &twice)?;
++    assert_eq!(store.registers()?, bank);
++    store.validate()?;
++    let final_snapshot = store.snapshot()?;
++    drop(store);
++    let store = ProjectStore::open(&path, AccessMode::ReadOnly)?;
++    assert_eq!(store.snapshot()?, final_snapshot);
++    assert_eq!(store.registers()?, bank);
++    store.validate()?;
++    Ok(())
++}

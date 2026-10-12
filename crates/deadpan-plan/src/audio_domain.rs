@@ -169,6 +169,9 @@ impl RenderPlan {
 }
 
 impl<'plan> AudioDomain<'plan> {
+    pub(crate) fn sample_grid(&self) -> crate::AudioSampleGrid<AudioSample> {
+        self.seed.grid
+    }
     /// Present only when this domain evaluates an explicitly selected definition.
     /// Its occurrence path is then relative to that definition.
     pub fn definition(&self) -> Option<&AudioDefinitionSelector> {

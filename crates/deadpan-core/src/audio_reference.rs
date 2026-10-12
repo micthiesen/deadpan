@@ -2,6 +2,8 @@
 //! to a later live document; no media, marks or previous bindings are retained.
 
 mod preflight;
+mod sound_placement;
+pub use sound_placement::FrozenSoundPlacement;
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::io::Write;
@@ -1085,7 +1087,7 @@ impl FrozenAudioLayout {
     /// Prove that two complete processing subtrees correspond, allowing fresh
     /// node IDs while preserving exact clocks, Repeat identities, and controls.
     /// The scopes themselves cannot be project roots; only ordinary Sequence
-    /// nodes may surround either scope.
+    /// nodes, Repeats and transparent Partitions may surround either scope.
     pub fn sound_clock_correspondence(
         &self,
         current: &Self,
@@ -1276,7 +1278,9 @@ impl FrozenAudioLayout {
         while node != &self.root {
             spend(&mut work, 1, maximum_work)?;
             let (parent, _) = &self.index.parents[node];
-            if matches!(self.nodes[parent].kind, FrozenAudioKind::Retime { .. }) {
+            if matches!(self.nodes[parent].kind, FrozenAudioKind::Retime { purpose, .. }
+                if purpose != RetimePurpose::Partition)
+            {
                 scope = parent.clone();
             }
             node = parent;
@@ -1325,6 +1329,20 @@ impl FrozenAudioLayout {
             }
             match (&self.nodes[parent].kind, &current.nodes[parent].kind) {
                 (FrozenAudioKind::Sequence { .. }, FrozenAudioKind::Sequence { .. }) => {}
+                (
+                    FrozenAudioKind::Retime {
+                        purpose: RetimePurpose::Partition,
+                        ..
+                    },
+                    FrozenAudioKind::Retime {
+                        purpose: RetimePurpose::Partition,
+                        ..
+                    },
+                ) => {
+                    if self.nodes[parent] != current.nodes[parent] {
+                        return Ok((false, work));
+                    }
+                }
                 (
                     FrozenAudioKind::Repeat {
                         child: body,
@@ -1381,6 +1399,68 @@ impl FrozenAudioLayout {
             child = parent;
         }
         Ok((child == &current.root, work))
+    }
+
+    /// Existing attachments cannot yet be divided between newly split owners.
+    /// Capture/import may introduce exterior selections around a fresh copy,
+    /// but a reducer transporting a surviving owner must preserve its complete
+    /// path through every existing crop. Ignore placement above the last crop
+    /// so moving the copied fragment as a whole remains supported.
+    pub(crate) fn sound_placement_crop_unchanged(
+        &self,
+        current: &Self,
+        old_scope: &NodeId,
+        live_scope: &NodeId,
+        maximum_work: usize,
+    ) -> Result<(bool, usize), DocumentError> {
+        fn path<'a>(
+            layout: &'a FrozenAudioLayout,
+            scope: &'a NodeId,
+            work: &mut usize,
+            maximum: usize,
+        ) -> Result<Vec<(&'a NodeId, i64, FrameDuration, &'a FrozenAudioKind)>, DocumentError>
+        {
+            let mut child = scope;
+            let mut path = Vec::new();
+            let mut retained = 0;
+            while child != layout.root() {
+                spend(work, 1, maximum)?;
+                let (parent, offset) = layout
+                    .index
+                    .parents
+                    .get(child)
+                    .ok_or_else(|| invalid("sound placement path is missing"))?;
+                let node = &layout.nodes[parent];
+                // Equality of compact kinds can examine children and Repeat
+                // segments. Charge that comparison before retaining the entry.
+                spend(
+                    work,
+                    match &node.kind {
+                        FrozenAudioKind::Sequence { children } => children.len(),
+                        FrozenAudioKind::Repeat { iterations, .. } => iterations.segment_count(),
+                        _ => 1,
+                    },
+                    maximum,
+                )?;
+                path.push((child, *offset, node.duration, &node.kind));
+                if matches!(
+                    node.kind,
+                    FrozenAudioKind::Retime {
+                        purpose: RetimePurpose::Partition,
+                        ..
+                    }
+                ) {
+                    retained = path.len();
+                }
+                child = parent;
+            }
+            path.truncate(retained);
+            Ok(path)
+        }
+        let mut work = 0;
+        let before = path(self, old_scope, &mut work, maximum_work)?;
+        let after = path(current, live_scope, &mut work, maximum_work)?;
+        Ok((before == after, work))
     }
 
     /// Compatibility helper for callers which have not yet named a narrower
@@ -1935,6 +2015,10 @@ fn placement_path(
         spend(work, 1, maximum_work)?;
         match &layout.nodes[parent].kind {
             FrozenAudioKind::Sequence { .. } => {}
+            FrozenAudioKind::Retime {
+                purpose: RetimePurpose::Partition,
+                ..
+            } => {}
             FrozenAudioKind::Repeat { iterations, .. } => {
                 spend(
                     work,

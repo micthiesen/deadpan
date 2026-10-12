@@ -185,6 +185,18 @@ impl SoundClockEditCapture {
                 let (proof, changed_origin) = if let Some((proof, changed)) = moved.get(&key) {
                     (crate::SoundClockCorrespondence::clone(proof), *changed)
                 } else {
+                    let (same_crop, used) = self.before.sound_placement_crop_unchanged(
+                        &current,
+                        &old_scope,
+                        &live_scope,
+                        budget(work)?,
+                    )?;
+                    work = work.checked_add(used).ok_or_else(exhausted)?;
+                    if !same_crop {
+                        return Err(invalid(
+                            "sound owner interval changes require an attachment route",
+                        ));
+                    }
                     let proof = self.before.sound_clock_correspondence_with_repeats(
                         &current,
                         &old_scope,

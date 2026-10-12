@@ -29,7 +29,7 @@ pub struct AudioSoundRoute<S> {
     identity_anchor: ExactRatio,
     // Explicit sample translations for a proved identity placement chain.
     // The anchor may change when a new crop becomes the delivery boundary.
-    occurrence_deltas: Option<Vec<i128>>,
+    occurrence: Option<OccurrenceChain>,
     domain: PhantomData<S>,
 }
 
@@ -43,6 +43,18 @@ pub struct AudioSoundRoute<S> {
 pub struct AudioOccurrenceWindow {
     pub selection: Range<ExactRatio>,
     pub anchor: ExactRatio,
+}
+
+#[derive(Debug, Clone)]
+struct OccurrenceChain {
+    windows: Vec<AudioOccurrenceWindow>,
+    deltas: Vec<i128>,
+}
+
+pub(crate) struct OccurrenceTransition {
+    pub allocation: Range<AudioSample>,
+    pub frame_shift: ExactRatio,
+    pub sample_shift: i128,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -134,7 +146,7 @@ impl<S> AudioSoundRoute<S> {
             grids,
             allocations,
             identity_anchor: ExactRatio::ZERO,
-            occurrence_deltas: None,
+            occurrence: None,
             domain: PhantomData,
         })
     }
@@ -285,9 +297,9 @@ impl<S> AudioSoundRoute<S> {
                     if let Some(recipe) = slice.recipe {
                         let old_start = self.grids[input].boundary(recipe.start)?.0;
                         let old_end = self.grids[input].boundary(recipe.end)?.0;
-                        let delta = self.occurrence_deltas.as_ref().map_or_else(
+                        let delta = self.occurrence.as_ref().map_or_else(
                             || i128::from(old_start) - i128::from(start),
-                            |deltas| deltas[id],
+                            |chain| chain.deltas[id],
                         );
                         tasks.push(QueryTask::Walk {
                             id: input,
@@ -385,8 +397,79 @@ impl AudioSoundRoute<AudioSample> {
             });
         }
         self.identity_anchor = windows[0].anchor;
-        self.occurrence_deltas = Some(deltas);
+        self.occurrence = Some(OccurrenceChain { windows, deltas });
         Ok(self)
+    }
+
+    pub(crate) fn occurrence_output(&self) -> Result<(Range<ExactRatio>, ExactRatio), PlanError> {
+        let chain = self.occurrence.as_ref().ok_or(PlanError::InvalidPlan(
+            "sound envelope requires occurrence windows",
+        ))?;
+        let index = self.grids.len() - 1;
+        let origin = self.grids[index].frame_origin();
+        let window = &chain.windows[index];
+        Ok((
+            window.selection.start.checked_sub(origin)?
+                ..window.selection.end.checked_sub(origin)?,
+            window.anchor.checked_sub(origin)?,
+        ))
+    }
+
+    /// Input of a retained temporal owner, before any exterior delivery mask.
+    /// Every expanded selection must still be the same complete operand. Its
+    /// physical labels translate by the proved chronological delivery anchors;
+    /// newly rounded output allocations cannot truncate filter history.
+    pub(crate) fn complete_processing_history(&self) -> Result<Option<Self>, PlanError> {
+        let Some(chain) = &self.occurrence else {
+            return Err(PlanError::InvalidPlan(
+                "sound history requires occurrence windows",
+            ));
+        };
+        let extent = self.route.recipe_extent();
+        if chain
+            .windows
+            .iter()
+            .any(|window| window.selection != (ExactRatio::ZERO..extent))
+        {
+            return Ok(None);
+        }
+        let shift = chain.deltas.iter().try_fold(0_i128, |shift, delta| {
+            shift.checked_sub(*delta).ok_or(TimeError::Overflow)
+        })?;
+        let first = self.recipe_grid();
+        let last = first.translated_samples(shift)?;
+        let keep = deadpan_core::SoundRippleMap::new(
+            extent,
+            0,
+            vec![deadpan_core::SoundRippleNode::Keep {
+                range: deadpan_core::ExactFrameRange::new(ExactRatio::ZERO, extent)?,
+            }],
+        )?;
+        let route = SoundRoute::identity(extent)?.ripple(keep)?;
+        Ok(Some(
+            Self::new(route, vec![first, last])?.with_identity_anchor(self.identity_anchor)?,
+        ))
+    }
+
+    pub(crate) fn occurrence_transitions(
+        &self,
+    ) -> Result<
+        impl ExactSizeIterator<Item = Result<OccurrenceTransition, PlanError>> + '_,
+        PlanError,
+    > {
+        let chain = self.occurrence.as_ref().ok_or(PlanError::InvalidPlan(
+            "sound envelope requires occurrence windows",
+        ))?;
+        Ok((1..self.grids.len()).map(|index| {
+            Ok(OccurrenceTransition {
+                allocation: AudioSample(self.allocations[index].start)
+                    ..AudioSample(self.allocations[index].end),
+                frame_shift: self.grids[index - 1]
+                    .frame_origin()
+                    .checked_sub(self.grids[index].frame_origin())?,
+                sample_shift: -chain.deltas[index],
+            })
+        }))
     }
 }
 
@@ -453,16 +536,7 @@ macro_rules! sample_domain {
             ) -> Result<Self, PlanError> {
                 Self::new_inner(
                     route,
-                    grids
-                        .into_iter()
-                        .map(|grid| {
-                            AudioSampleGrid::new(
-                                grid.frame_origin(),
-                                grid.frames_per_sample(),
-                                grid.boundary_rule(),
-                            )
-                        })
-                        .collect::<Result<_, _>>()?,
+                    grids.into_iter().map(|grid| grid.rebrand()).collect(),
                     AudioBoundaryRule::$rule,
                 )
             }
@@ -525,3 +599,48 @@ macro_rules! sample_domain {
 
 sample_domain!(AudioSample, RoundEven);
 sample_domain!(SignalSample, PointCeil);
+
+#[cfg(test)]
+mod processing_history_tests {
+    use super::*;
+
+    #[test]
+    fn complete_history_keeps_half_sample_endpoints_after_an_odd_translation() {
+        let extent = ExactRatio::integer(3);
+        let keep = deadpan_core::SoundRippleMap::new(
+            extent,
+            0,
+            vec![deadpan_core::SoundRippleNode::Keep {
+                range: deadpan_core::ExactFrameRange::new(ExactRatio::ZERO, extent).unwrap(),
+            }],
+        )
+        .unwrap();
+        let route = SoundRoute::identity(extent).unwrap().ripple(keep).unwrap();
+        let grid = |origin| {
+            AudioSampleGrid::new(origin, ExactRatio::ONE, AudioBoundaryRule::RoundEven).unwrap()
+        };
+        let delivery = AudioSoundRoute::<AudioSample>::new(
+            route,
+            vec![
+                grid(ExactRatio::new(1, 2).unwrap()),
+                grid(ExactRatio::integer(-1)),
+            ],
+        )
+        .unwrap()
+        .with_identity_anchor(ExactRatio::ZERO)
+        .unwrap();
+        let input = delivery.complete_processing_history().unwrap().unwrap();
+        assert_eq!(delivery.recipe_samples(), AudioSample(0)..AudioSample(2));
+        assert_eq!(delivery.samples(), AudioSample(1)..AudioSample(4));
+        assert_eq!(input.samples(), AudioSample(1)..AudioSample(3));
+        let query = input.query(input.samples(), Default::default()).unwrap();
+        assert_eq!(query.spans.len(), 1);
+        let mapping = query.spans[0].sampling.unwrap();
+        for sample in 1..3 {
+            assert_eq!(
+                mapping.local_at(AudioSample(sample)).unwrap(),
+                delivery.recipe_grid().at(AudioSample(sample - 1)).unwrap()
+            );
+        }
+    }
+}

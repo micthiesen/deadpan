@@ -6,6 +6,9 @@ use std::{collections::BTreeMap, sync::Arc};
 #[path = "sound_clocks/repeats.rs"]
 mod repeats;
 
+#[path = "sound_clocks/partial.rs"]
+mod partial;
+
 fn capture_child(
     document: &ProjectDocument,
     parent: &NodeId,

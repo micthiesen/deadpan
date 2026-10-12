@@ -4,11 +4,24 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 
 ## Resumed implementation, 2026-10-06
 
+[Partial attached-sound copies](qualification/partial-sound-copies-2026-10-12.md)
+now preserve complete recipes, chronological delivery clips and treatment input
+through eligible capture/paste/recopy and original-owner deletion. Shared EQ
+retains a terminal input sample outside the newly rounded nominal allocation;
+half-sample ties retain their original ownership after odd moves. All 2,859
+core/plan/audio/playback/store tests pass with none ignored. The real CLI fixture
+passes independent PCM checks and a seven-picture/19-audio-block export with
+zero sample offset in debug and release. Seven focused release regressions,
+store persistence, strict workspace Clippy, formatting and the app/CLI release
+build pass. Source/Hold and supported-fragment range rules still apply;
+partial composite Preserve ranges, surviving-owner splits and wider attachment
+transforms remain open. No requirement or gate is newly complete.
+
 [Sound occurrence windows](qualification/sound-occurrence-windows-2026-10-12.md)
 retain each crop and rounding anchor while preserving complete processing input.
 All 1,121 plan/audio/playback tests and strict workspace Clippy pass; the new
 fractional-route and decoded nested-Preserve regressions also pass in release.
-Partial attached-sound copies still need capture and envelope-gate integration.
+The partial-copy integration is recorded above.
 
 [Shared event treatment prefixes](qualification/event-prefix-cache-2026-10-12.md)
 fix a real canonical-playback work-budget failure with EQ and both event returns.
