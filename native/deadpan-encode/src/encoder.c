@@ -466,6 +466,11 @@ static int open_codec(dp_encode_session *s, int audio) {
         codec->time_base = (AVRational){1, 48000};
         codec->bit_rate = 384000;
         codec->profile = AV_PROFILE_AAC_LOW;
+        /* Noise substitution changes quiet authored filter tails into
+         * synthesized noise. At the fixed 384 kbit/s target, retain their
+         * spectral coefficients so decoded samples meet the same content
+         * fidelity gates as the rest of the canonical bus. */
+        if (!dict_option(s, &options, "aac_pns", "0")) goto done;
         if (!(implementation->capabilities & AV_CODEC_CAP_SMALL_LAST_FRAME)) {
             fail(s, "encoder_unsupported", "AAC encoder cannot accept an exact short final frame"); goto done;
         }
@@ -515,6 +520,10 @@ static int open_codec(dp_encode_session *s, int audio) {
         fail(s, "encoder_unsupported", "codec header exceeds admitted size"); goto done;
     }
     if (audio) {
+        int64_t pns = -1;
+        if (av_opt_get_int(codec->priv_data, "aac_pns", 0, &pns) < 0 || pns != 0) {
+            fail(s, "encoder_unsupported", "AAC encoder did not disable noise substitution"); goto done;
+        }
         if (codec->sample_rate != 48000 || codec->sample_fmt != AV_SAMPLE_FMT_FLTP ||
             codec->ch_layout.order != AV_CHANNEL_ORDER_NATIVE || codec->ch_layout.u.mask != AV_CH_LAYOUT_STEREO ||
             codec->ch_layout.nb_channels != 2 || codec->frame_size != (int)DP_ENCODE_AUDIO_BLOCK ||

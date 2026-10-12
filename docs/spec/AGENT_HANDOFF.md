@@ -4,6 +4,31 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[AAC noise substitution](../qualification/aac-noise-substitution-2026-10-12.md)
+resolves the remaining short partial-Repeat fidelity failure below. A pinned
+codec probe reproduced every presented sample of the old movie exactly;
+disabling only PNS resolves the failure at the unchanged 384 kbit/s target.
+Native ABI 4 records this behavior. CLI and shared job validators admit ABI 4
+with the existing timing/quality contract, retain prior observations and reject
+old versions for live encoding. No PCM, priming, packet, bitrate or threshold
+change was used to pass the comparison.
+
+All 65 native tests pass in debug and release; 150 CLI render tests and 16 job
+admission tests pass. Four ignored host video/color measurement harnesses were
+not run. All 31 release preview/export tests pass, including 42 constructed
+recipes; four optional synthetic-generation fixtures were not built. Strict
+workspace Clippy, app/CLI release builds and formatting pass. After the final
+build, all 20,821 original canonical sample pairs match exactly; the new export
+passes 13 pictures and 33 blocks with zero offset and 18.3043 dB minimum SNR.
+The retained 120-picture nested-EQ export also passes with zero offset.
+Source, failed/successful runs, old/new media and complete reports are retained.
+
+Both measured failures from partial Repeat are resolved. Preexisting external
+Repeat ancestry, root-owned sound transforms and remaining processing-scope
+guards still need exact correspondence and PCM qualification before removal.
+The primary continues alone and self-reviews; no requirement or gate is newly
+complete.
+
 [Independent source projection reuse](../qualification/source-projection-reuse-2026-10-12.md)
 fixes the nested EQ preparation failure below. The checked occurrence builder
 mints complete recipe/instance/clip-boundary/stage keys; request caches additionally

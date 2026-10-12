@@ -23,7 +23,8 @@ pub const SDR_POLICY_VERSION_V1: u32 = 1;
 /// SDR v1 starting targets with a measured VideoToolbox frame-QP ceiling and
 /// a one-second data-rate ceiling of three times the starting target.
 pub const SDR_POLICY_VERSION_V2: u32 = 2;
-pub const ENCODER_ABI_VERSION: u32 = 3;
+/// ABI 4 disables AAC noise substitution, preserving ABI 3's controls and clocks.
+pub const ENCODER_ABI_VERSION: u32 = 4;
 
 /// Automatic rate-control requests, separate from emitted-picture evidence.
 /// The OS may distribute quantizers within a picture; max_frame_qp is the

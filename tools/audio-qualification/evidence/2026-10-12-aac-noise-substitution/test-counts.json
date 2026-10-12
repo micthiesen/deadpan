@@ -1,0 +1,32 @@
+{
+  "native-tests2": {
+    "passed": 65,
+    "failed": 0,
+    "ignored": 0,
+    "result_groups": 12
+  },
+  "cli-encoded": {
+    "passed": 150,
+    "failed": 0,
+    "ignored": 4,
+    "result_groups": 1
+  },
+  "jobs-admission": {
+    "passed": 16,
+    "failed": 0,
+    "ignored": 0,
+    "result_groups": 8
+  },
+  "release-native": {
+    "passed": 65,
+    "failed": 0,
+    "ignored": 0,
+    "result_groups": 12
+  },
+  "release-preview2": {
+    "passed": 31,
+    "failed": 0,
+    "ignored": 0,
+    "result_groups": 1
+  }
+}

@@ -1,0 +1,1077 @@
+{
+  "frames": 20821,
+  "package": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+  "revision": "28c3c93b-22c7-4bc1-ae20-bb47a87d266a",
+  "movie": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/exports/partial-repeat-attached-sounds.mp4",
+  "binary_sha256": "89d9a758fab56524bdd9a0516b615c4b282d09bfff19ad51129118383691897e",
+  "pcm_sha256": "8288435f2075163e8b400b06e647911b8b82fc61d9937b9ad8a7bff64a5b03af",
+  "seconds": 29.510195707902312,
+  "calls": [
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "0",
+        "256",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "256",
+        "512",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "512",
+        "768",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "768",
+        "1024",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "1024",
+        "1280",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "1280",
+        "1536",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "1536",
+        "1792",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "1792",
+        "2048",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "2048",
+        "2304",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "2304",
+        "2560",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "2560",
+        "2816",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "2816",
+        "3072",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "3072",
+        "3328",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "3328",
+        "3584",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "3584",
+        "3840",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "3840",
+        "4096",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "4096",
+        "4352",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "4352",
+        "4608",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "4608",
+        "4864",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "4864",
+        "5120",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "5120",
+        "5376",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "5376",
+        "5632",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "5632",
+        "5888",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "5888",
+        "6144",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "6144",
+        "6400",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "6400",
+        "6656",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "6656",
+        "6912",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "6912",
+        "7168",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "7168",
+        "7424",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "7424",
+        "7680",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "7680",
+        "7936",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "7936",
+        "8192",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "8192",
+        "8448",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "8448",
+        "8704",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "8704",
+        "8960",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "8960",
+        "9216",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "9216",
+        "9472",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "9472",
+        "9728",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "9728",
+        "9984",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "9984",
+        "10240",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "10240",
+        "10496",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "10496",
+        "10752",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "10752",
+        "11008",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "11008",
+        "11264",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "11264",
+        "11520",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "11520",
+        "11776",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "11776",
+        "12032",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "12032",
+        "12288",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "12288",
+        "12544",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "12544",
+        "12800",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "12800",
+        "13056",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "13056",
+        "13312",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "13312",
+        "13568",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "13568",
+        "13824",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "13824",
+        "14080",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "14080",
+        "14336",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "14336",
+        "14592",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "14592",
+        "14848",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "14848",
+        "15104",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "15104",
+        "15360",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "15360",
+        "15616",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "15616",
+        "15872",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "15872",
+        "16128",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "16128",
+        "16384",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "16384",
+        "16640",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "16640",
+        "16896",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "16896",
+        "17152",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "17152",
+        "17408",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "17408",
+        "17664",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "17664",
+        "17920",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "17920",
+        "18176",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "18176",
+        "18432",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "18432",
+        "18688",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "18688",
+        "18944",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "18944",
+        "19200",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "19200",
+        "19456",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "19456",
+        "19712",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "19712",
+        "19968",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "19968",
+        "20224",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "20224",
+        "20480",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "20480",
+        "20736",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    },
+    {
+      "command": [
+        "/tmp/deadpan-nested-eq-stages-20261012/old-deadpan-cli",
+        "inspect-audio",
+        "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgJVird/partial-repeat-sounds/partial-attached-sound-copies.deadpan",
+        "--samples",
+        "20736",
+        "20821",
+        "--limited"
+      ],
+      "exit": 0,
+      "stderr": ""
+    }
+  ]
+}

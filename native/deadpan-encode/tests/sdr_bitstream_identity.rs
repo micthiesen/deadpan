@@ -1,6 +1,6 @@
-//! Pin repeatable SDR software output, including the ABI-2 AAC preroll.
-//! The earlier pre-HDR identity is retained below as historical evidence;
-//! the intentional AAC startup correction changes the emitted MP4 bytes.
+//! Pin repeatable SDR software output with AAC preroll and no noise substitution.
+//! Earlier codec identities remain below as historical evidence; intentional
+//! AAC changes alter the emitted MP4 bytes.
 
 use std::fs::OpenOptions;
 use std::io::Read;
@@ -70,13 +70,14 @@ fn encode(mode: EncoderMode) -> String {
     format!("{}:{hash:016x}", bytes.len())
 }
 
-/// ABI-2 OS software H.264/AAC output of this exact fixture on the measured
+/// ABI-4 OS software H.264/AAC output of this exact fixture on the measured
 /// M5 Max (macOS 26.5.2). Pre-HDR (`af4677a3`) was 12919:185b6115290d95f6.
+/// ABI-2/3 with noise substitution was 12385:52c7852828da596a.
 /// Hardware H.264 differs by one SEI byte
 /// between identical runs (measured at file offset 3520), so it cannot be
 /// pinned; software is repeatable. Another OS build may legitimately change
 /// the encoder's bytes; the repeatability assertion still runs everywhere.
-const PREROLL_SOFTWARE: &str = "12385:52c7852828da596a";
+const PREROLL_SOFTWARE: &str = "12398:e5d085f427d9a92a";
 
 #[test]
 fn sdr_software_output_with_aac_preroll_is_repeatable() {

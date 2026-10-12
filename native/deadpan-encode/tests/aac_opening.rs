@@ -240,6 +240,52 @@ fn energy(pcm: &[[f32; 2]]) -> f64 {
         .sum()
 }
 
+/// Canonical limited PCM from the real partial-Repeat/event-EQ export fixture.
+/// This captures the input before AAC, including quiet filter tails after clicks.
+#[test]
+fn equalized_repeat_tails_keep_sample_fidelity_at_the_authored_origin() {
+    let bytes = include_bytes!("fixtures/partial-repeat-eq.f32le");
+    assert_eq!(bytes.len(), 20_821 * 8);
+    let reference: Vec<[f32; 2]> = bytes
+        .chunks_exact(8)
+        .map(|pair| {
+            [
+                f32::from_le_bytes(pair[..4].try_into().unwrap()),
+                f32::from_le_bytes(pair[4..].try_into().unwrap()),
+            ]
+        })
+        .collect();
+    let (file, report, _directory) = encode(&reference, 13, [30_000, 1_001]);
+    let actual = decode(&file, &report, reference.len());
+    let mut minimum_snr = f64::INFINITY;
+    let mut maximum_level = 0.0_f64;
+    let mut compared = 0;
+    for (expected, decoded) in reference.chunks(480).zip(actual.chunks(480)) {
+        let sample_count = (expected.len() * 2) as f64;
+        let signal = energy(expected) / sample_count;
+        if 10.0 * signal.log10() < -60.0 {
+            continue;
+        }
+        let error = expected
+            .iter()
+            .flatten()
+            .zip(decoded.iter().flatten())
+            .map(|(a, b)| (f64::from(*a) - f64::from(*b)).powi(2))
+            .sum::<f64>()
+            / sample_count;
+        minimum_snr = minimum_snr.min(10.0 * (signal / error).log10());
+        maximum_level =
+            maximum_level.max((10.0 * (energy(decoded) / sample_count / signal).log10()).abs());
+        compared += 1;
+    }
+    eprintln!(
+        "partial Repeat: {compared} blocks, min SNR {minimum_snr:.9} dB, max level delta {maximum_level:.9} dB"
+    );
+    assert_eq!(compared, 33);
+    assert!(minimum_snr >= 1.5, "AAC block SNR {minimum_snr} dB");
+    assert!(maximum_level <= 3.0, "AAC block level {maximum_level} dB");
+}
+
 fn assert_opening(reference: &[[f32; 2]], actual: &[[f32; 2]], label: &str) {
     let signal = energy(&reference[..BLOCK]);
     assert!(

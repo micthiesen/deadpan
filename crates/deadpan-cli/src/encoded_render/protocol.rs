@@ -188,7 +188,7 @@ impl EncodedManifest {
     /// file verification authority. ABI 1 used codec delay without input preroll.
     pub(super) fn validate_retained(&self) -> Result<(), String> {
         match self.report.info.abi_version {
-            version @ 1..=3 => self.validate_abi(version),
+            version @ 1..=4 => self.validate_abi(version),
             _ => Err("unsupported retained encoder ABI".into()),
         }
     }

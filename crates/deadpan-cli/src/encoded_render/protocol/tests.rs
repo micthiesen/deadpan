@@ -780,6 +780,21 @@ fn quality_policy_requires_current_controls_without_changing_aac_preroll() {
 }
 
 #[test]
+fn noise_substitution_encoder_is_historical_without_live_admission() {
+    let mut old = manifest();
+    old.report.info.abi_version = 3;
+    old.validate_retained().unwrap();
+    assert!(old.validate().is_err());
+    assert!(old.validate_for(limits()).is_err());
+    assert!(
+        EncodedProtocol::from_request(&request())
+            .unwrap()
+            .classify(&completed(old))
+            .is_err()
+    );
+}
+
+#[test]
 fn completion_rejects_media_duration_correction_for_an_incompatible_clock() {
     let mut manifest = manifest();
     manifest.report.video_media_duration_correction =

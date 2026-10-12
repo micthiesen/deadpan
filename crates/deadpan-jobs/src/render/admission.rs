@@ -1237,9 +1237,9 @@ fn validate_encode_report(
     ensure(
         // Stored decisions retain their original encoding evidence. Current
         // live admission additionally checks the current native ABI.
-        matches!(info.abi_version, 1..=3)
+        matches!(info.abi_version, 1..=4)
             && info.video_rate_control
-                == if info.abi_version == 3 && color == ColorPolicy::SdrRec709 {
+                == if info.abi_version >= 3 && color == ColorPolicy::SdrRec709 {
                     Some(RenderVideoRateControl {
                         max_frame_qp: 24,
                         max_bitrate: settings.video_bitrate * 3,
@@ -1288,7 +1288,7 @@ fn validate_verification(
     settings: &RenderSdrSettings,
 ) -> Result<(), RenderError> {
     let ticks = i64::from(config.frame_rate[1]);
-    // The video quality change in ABI 3 does not add another AAC preroll block.
+    // ABI 3's video controls and ABI 4's PNS change add no AAC preroll block.
     let timing_policy = if encoded.info.abi_version == 1 { 1 } else { 2 };
     ensure(
         report.policy_version == timing_policy

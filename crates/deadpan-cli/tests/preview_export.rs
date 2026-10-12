@@ -441,7 +441,7 @@ fn nested_equalized_sound_prepares_cold_and_split_reads() -> Result {
 }
 
 #[test]
-fn partial_repeat_attached_sounds_preserve_preview_and_report_aac_fidelity_failure() -> Result {
+fn partial_repeat_attached_sounds_preserve_preview_and_encoded_fidelity() -> Result {
     let (root, _guard) = keep_or(tempfile::tempdir()?);
     let fixture = recipes::partial_sounds::partial_repeat_attached_sounds(
         &root.join("partial-repeat-sounds"),
@@ -449,15 +449,9 @@ fn partial_repeat_attached_sounds_preserve_preview_and_report_aac_fidelity_failu
     check(&fixture)?;
     let movie = render(&fixture, &root.join("exports"))?;
     let (report, passed) = verify(&fixture, &movie, &fixture.revision, &[])?;
-    // This short click/EQ passage currently fails one AAC block's existing
-    // fidelity bound. Preserve that negative evidence without weakening it or
-    // mistaking exact timing and picture agreement for full qualification.
-    assert!(
-        !passed,
-        "requalify this fixture if AAC fidelity improves: {report}"
-    );
-    assert_eq!(report["audio"][0]["flags"], json!(["audio_block_snr"]));
-    assert_eq!(report["audio"][0]["blocks"]["low_snr_blocks"], 1);
+    assert!(passed, "{report}");
+    assert_eq!(report["audio"][0]["flags"], json!([]));
+    assert_eq!(report["audio"][0]["blocks"]["low_snr_blocks"], 0);
     assert_eq!(report["audio"][0]["offset_status"], "verified_zero");
     assert_eq!(report["audio"][0]["measured_offset_samples"], 0);
     assert_eq!(report["summary"]["pictures_failed"], 0);

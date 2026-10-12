@@ -36,13 +36,15 @@ search. Diagnostic text never chooses a path. A later supervision fault
 invalidates a typed native claim. Unconfirmed cleanup takes precedence and
 cannot become a successful cancellation or an eligible rejection.
 
-Current SDR probes and project encodes use rate-control policy 2, native ABI 3:
+Current SDR probes and project encodes use rate-control policy 2, native ABI 4:
 frame-QP ceiling 24 and a one-second bitrate ceiling of three times the existing
 starting target. Native capability admission requires both VideoToolbox
 properties. The measured OS software H.264 encoder does not expose the QP
 property, so it fails preflight instead of accepting FFmpeg's ignored setter.
 The selection order above is unchanged; quality-control rejection does not
 authorize another attempt. See [quality qualification](qualification/encoder-quality-2026-10-10.md).
+ABI 4 additionally disables AAC noise substitution at the unchanged 384 kbit/s
+target; prior ABI observations remain historical and cannot grant live admission.
 
 ## HDR admission (AutomaticHdrV1)
 
@@ -77,7 +79,8 @@ The content oracle (schema 2) decodes with `next_yuv420p10` and compares every
 10-bit codes: maximum 192 (SDR 48 x 4), MAE 6.000 (1.500 x 4) and MSE 256.000
 (16.000 x 16) per plane and per frame. Schema 1 SDR limits are unchanged. The
 encode report must show `video_profile` 2 (HEVC Main10) instead of 100;
-`abi_version` is now 3 with no SDR quality controls. Settings resolve through `RenderSdrSettings::automatic`,
+`abi_version` is now 4 with no SDR quality controls and AAC noise substitution
+disabled. Settings resolve through `RenderSdrSettings::automatic`,
 where `automatic_hdr_v1` equals `automatic_sdr_v1` except video bitrate
 `(sdr * 5 + 2) / 4`. PQ probe verification reports carry the verifier's
 `content_light` evidence; SDR and HLG reports omit it.

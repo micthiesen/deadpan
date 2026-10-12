@@ -36,8 +36,12 @@ reports the codec's actual 1024-sample delay. Complete packet count is
 `ceil(authored_samples / 1024) + 2`. Finished-file verification policy 2 checks
 both manual priming frames, ordinary decode from zero, equal presented PCM,
 and the exact emitted edit and terminal duration. Historical stored decisions
-retain their ABI-1/2 evidence; current native admission requires ABI 3. ABI 3
-adds video rate-control fields without changing these AAC clocks or packet counts.
+retain their ABI-1/2/3 evidence; current native admission requires ABI 4. ABI 3
+adds video rate-control fields. ABI 4 disables AAC perceptual noise substitution,
+and checks that the codec accepted that setting, without changing these AAC
+clocks, packet counts or the 384 kbit/s target. The measured quiet EQ-tail
+failure and regression are retained in the
+[AAC fidelity qualification](qualification/aac-noise-substitution-2026-10-12.md).
 
 The engineering policy derives video bitrate from specification 22.4's pixel
 classes and frame-rate band, interpolating by actual pixel count. It requests
@@ -140,7 +144,7 @@ stream tag and metadata attachment flags), admitted against the contract. It
 is separate from `EncoderInfo`/`EncodeReport`; HDR `EncoderInfo.video_profile`
 is 2 (HEVC Main10) instead of 100. The optional media-duration correction is
 omitted when no correction was needed, preserving those report bytes.
-The base C structs use ABI version 3; HDR retains ABI 2's AAC preroll contract
+The base C structs use ABI version 4; HDR retains ABI 2's AAC preroll contract
 and has no SDR quality-control extension. HDR uses additive entry points
 (`dp_encode_open_hdr`, `dp_encode_finish_hdr`, `dp_encode_query_video`) with
 extension structs versioned by `DP_ENCODE_HDR_ABI_VERSION` 1.

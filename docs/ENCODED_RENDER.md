@@ -76,9 +76,10 @@ missing or altered values. `new`/`new_v1` remain frozen engineering constructors
 Probe protocol 2 and report schema 2 are separate from the project-encode
 protocol and native ABI.
 
-Current native ABI 3 adds quality controls; finished-file verification stays at
-policy 2 for [AAC preroll](NATIVE_ENCODING.md#exact-input-and-policy). ABI 3 does
-not add a third priming packet. Retained ABI-1/2 manifests and decisions remain
+Current native ABI 4 retains ABI 3's quality controls and disables AAC noise
+substitution. Finished-file verification stays at policy 2 for
+[AAC preroll](NATIVE_ENCODING.md#exact-input-and-policy). Neither change adds a
+third priming packet. Retained ABI-1/2/3 manifests and decisions remain
 historical evidence, without granting fresh encoding authority. A prior-ABI
 candidate needs a fresh render to meet the current output contract.
 

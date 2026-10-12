@@ -1,0 +1,506 @@
+[
+  {
+    "name": "cli-encoded",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-cli",
+      "--lib",
+      "encoded_render",
+      "--",
+      "--test-threads=1"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T19:47:46.759536+00:00",
+    "head": "83af17749ac9e0e6b5703b6dbe2b6b2b3165dcfa",
+    "diff_sha256": "9e8fa45018943c11a91973edb47712128e6737ca766dd173f46864ad7290383e",
+    "untracked_sha256": {
+      "native/deadpan-encode/tests/fixtures/README.md": "a14877210057078e55550245b55c05f804f44e73d3e5b7f445bd39442035ef58",
+      "native/deadpan-encode/tests/fixtures/partial-repeat-eq.f32le": "8288435f2075163e8b400b06e647911b8b82fc61d9937b9ad8a7bff64a5b03af"
+    },
+    "exit": 0,
+    "seconds": 71.0957294581458,
+    "log_sha256": "2fbf3757a04a06030a5f0e7bd111d889efd4c620f7998e475a806dcd9558e28a",
+    "binaries": {
+      "target/debug/deps/deadpan_cli-fae051f15604f00f": "91b1c853945807fb49870e721a99de174a67c79dd26f677337648b2b1c541ae7"
+    }
+  },
+  {
+    "name": "clippy-final",
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "--workspace",
+      "--all-targets",
+      "--features",
+      "ui-harness",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T19:55:32.711815+00:00",
+    "head": "83af17749ac9e0e6b5703b6dbe2b6b2b3165dcfa",
+    "diff_sha256": "41d4db4d01d2745a40fe3a0a32c06e5ae0248e57879943db17eb2c8d8e67b8e4",
+    "untracked_sha256": {
+      "docs/qualification/aac-noise-substitution-2026-10-12.md": "b9aa3e84be54560794ad57c554eea2d3a59398fabf9f69c39115a7326656924e",
+      "native/deadpan-encode/tests/fixtures/README.md": "a14877210057078e55550245b55c05f804f44e73d3e5b7f445bd39442035ef58",
+      "native/deadpan-encode/tests/fixtures/partial-repeat-eq.f32le": "8288435f2075163e8b400b06e647911b8b82fc61d9937b9ad8a7bff64a5b03af"
+    },
+    "exit": 0,
+    "seconds": 101.54927762504667,
+    "log_sha256": "e0fe6068612d72c043b9fa0ac1567af105cc247ec1e78f1aad08d699729570da",
+    "binaries": {}
+  },
+  {
+    "name": "clippy",
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "--workspace",
+      "--all-targets",
+      "--features",
+      "ui-harness",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T19:48:57.981892+00:00",
+    "head": "83af17749ac9e0e6b5703b6dbe2b6b2b3165dcfa",
+    "diff_sha256": "9e8fa45018943c11a91973edb47712128e6737ca766dd173f46864ad7290383e",
+    "untracked_sha256": {
+      "docs/qualification/aac-noise-substitution-2026-10-12.md": "b9aa3e84be54560794ad57c554eea2d3a59398fabf9f69c39115a7326656924e",
+      "native/deadpan-encode/tests/fixtures/README.md": "a14877210057078e55550245b55c05f804f44e73d3e5b7f445bd39442035ef58",
+      "native/deadpan-encode/tests/fixtures/partial-repeat-eq.f32le": "8288435f2075163e8b400b06e647911b8b82fc61d9937b9ad8a7bff64a5b03af"
+    },
+    "exit": 0,
+    "seconds": 70.27917866734788,
+    "log_sha256": "660a0de087b271a400f8d2b2b153e1742d8c5c9fe36d3dc4815e9c85fa0a52a4",
+    "binaries": {}
+  },
+  {
+    "name": "fmt-check",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all",
+      "--check"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T20:14:01.446216+00:00",
+    "head": "83af17749ac9e0e6b5703b6dbe2b6b2b3165dcfa",
+    "diff_sha256": "41d4db4d01d2745a40fe3a0a32c06e5ae0248e57879943db17eb2c8d8e67b8e4",
+    "untracked_sha256": {
+      "docs/qualification/aac-noise-substitution-2026-10-12.md": "9bd4eccf5f68018b4a8b5ec887f5a183e7809367bf26fa12995317315367f17b",
+      "native/deadpan-encode/tests/fixtures/README.md": "e16f423f0ceddbcce81c04726a8ce30a5357c4f53874b4fb5fb2293e2f77c54d",
+      "native/deadpan-encode/tests/fixtures/partial-repeat-eq.f32le": "8288435f2075163e8b400b06e647911b8b82fc61d9937b9ad8a7bff64a5b03af"
+    },
+    "exit": 0,
+    "seconds": 5.178189708851278,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "binaries": {}
+  },
+  {
+    "name": "fmt-final",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T19:47:16.082199+00:00",
+    "head": "83af17749ac9e0e6b5703b6dbe2b6b2b3165dcfa",
+    "diff_sha256": "9e8fa45018943c11a91973edb47712128e6737ca766dd173f46864ad7290383e",
+    "untracked_sha256": {
+      "native/deadpan-encode/tests/fixtures/README.md": "a14877210057078e55550245b55c05f804f44e73d3e5b7f445bd39442035ef58",
+      "native/deadpan-encode/tests/fixtures/partial-repeat-eq.f32le": "8288435f2075163e8b400b06e647911b8b82fc61d9937b9ad8a7bff64a5b03af"
+    },
+    "exit": 0,
+    "seconds": 5.063615834340453,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "binaries": {}
+  },
+  {
+    "name": "fmt-jobs",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T19:55:17.428663+00:00",
+    "head": "83af17749ac9e0e6b5703b6dbe2b6b2b3165dcfa",
+    "diff_sha256": "57cb55156f86fd9c2c7fef9b90a52da4f1563cd568d5a6e6b2a6024bf41f9c3a",
+    "untracked_sha256": {
+      "docs/qualification/aac-noise-substitution-2026-10-12.md": "b9aa3e84be54560794ad57c554eea2d3a59398fabf9f69c39115a7326656924e",
+      "native/deadpan-encode/tests/fixtures/README.md": "a14877210057078e55550245b55c05f804f44e73d3e5b7f445bd39442035ef58",
+      "native/deadpan-encode/tests/fixtures/partial-repeat-eq.f32le": "8288435f2075163e8b400b06e647911b8b82fc61d9937b9ad8a7bff64a5b03af"
+    },
+    "exit": 0,
+    "seconds": 4.92555195838213,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "binaries": {}
+  },
+  {
+    "name": "fmt",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T19:46:19.148173+00:00",
+    "head": "83af17749ac9e0e6b5703b6dbe2b6b2b3165dcfa",
+    "diff_sha256": "ab06e34f342b7e94a9184b161ea1ffe5f54c18d3b4283a875308041a34939903",
+    "untracked_sha256": {
+      "native/deadpan-encode/tests/fixtures/partial-repeat-eq.f32le": "8288435f2075163e8b400b06e647911b8b82fc61d9937b9ad8a7bff64a5b03af"
+    },
+    "exit": 0,
+    "seconds": 5.31297129066661,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "binaries": {}
+  },
+  {
+    "name": "jobs-admission",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-jobs",
+      "render::admission",
+      "--",
+      "--nocapture"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T19:55:22.378725+00:00",
+    "head": "83af17749ac9e0e6b5703b6dbe2b6b2b3165dcfa",
+    "diff_sha256": "41d4db4d01d2745a40fe3a0a32c06e5ae0248e57879943db17eb2c8d8e67b8e4",
+    "untracked_sha256": {
+      "docs/qualification/aac-noise-substitution-2026-10-12.md": "b9aa3e84be54560794ad57c554eea2d3a59398fabf9f69c39115a7326656924e",
+      "native/deadpan-encode/tests/fixtures/README.md": "a14877210057078e55550245b55c05f804f44e73d3e5b7f445bd39442035ef58",
+      "native/deadpan-encode/tests/fixtures/partial-repeat-eq.f32le": "8288435f2075163e8b400b06e647911b8b82fc61d9937b9ad8a7bff64a5b03af"
+    },
+    "exit": 0,
+    "seconds": 10.28651462495327,
+    "log_sha256": "d1dda076a60dafc467fcd0229e6d16428335907a662ded01931ef3bb2bb4dcea",
+    "binaries": {
+      "target/debug/deps/generation_plan-df8dbac383497b53": "7a56a94b20d5378483a4c68a5f6ec7c4a29b86d78f6371f4c363d46205df15da",
+      "target/debug/deps/artifact-1f075956a4523919": "8364d52c4191f1cd80f2dcc1f9a76ff8f64faa065b7b70c07815f2e3be690c00",
+      "target/debug/deps/extension_adversarial-73e647034cbee077": "39a5d3859292a7c13a17bd0a5503236cd2cfb186918b44e43c3aae87554a8aef",
+      "target/debug/deps/lifecycle-dcd87edcd1fbd748": "51d7831d63fb1149ff413f09f30b6a5e30d51f84e44fb6555094b21239e35ec0",
+      "target/debug/deps/supervisor-058101750b373b66": "414b81c58693c4638c9e4289ddc0640054c4ae19a3016614f63f5191176c6927",
+      "target/debug/deps/protocol-11e30fcc8e0bd015": "e1b1a9cb7e985f2a1ae079fca745719a915b45af1f282de13ee943c9d4e2c714",
+      "target/debug/examples/qualify_model_worker-466103515b560652": "4083807d5d2e6259ad904e4ed4df38e98c1cb3d8f055cfdc491159c86ad21880",
+      "target/debug/deps/deadpan_jobs-a0b8621ae8616a21": "609f2e881ada089319f6f23ce39e607332566ac2b8221f5462856ee845d378e0"
+    }
+  },
+  {
+    "name": "native-green",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-encode",
+      "--test",
+      "aac_opening",
+      "--",
+      "--nocapture"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T19:45:40.206051+00:00",
+    "head": "83af17749ac9e0e6b5703b6dbe2b6b2b3165dcfa",
+    "diff_sha256": "ab06e34f342b7e94a9184b161ea1ffe5f54c18d3b4283a875308041a34939903",
+    "untracked_sha256": {
+      "native/deadpan-encode/tests/fixtures/partial-repeat-eq.f32le": "8288435f2075163e8b400b06e647911b8b82fc61d9937b9ad8a7bff64a5b03af"
+    },
+    "exit": 0,
+    "seconds": 9.94014570908621,
+    "log_sha256": "bdca1bc162a4ea216c2e2b53c4e742402660c7932e7f4d4cd5bf5725218ba4bb",
+    "binaries": {
+      "target/debug/deps/aac_opening-5b373a33727bbc7b": "aadf81e2ec86877d4dd918009ff3bdab95fb9eef156d3bebcb16ce59bd8fe8a5"
+    }
+  },
+  {
+    "name": "native-red",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-encode",
+      "--test",
+      "aac_opening",
+      "equalized_repeat_tails",
+      "--",
+      "--nocapture"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T19:44:26.292509+00:00",
+    "head": "83af17749ac9e0e6b5703b6dbe2b6b2b3165dcfa",
+    "diff_sha256": "32d6492f936f01ab1926e3c33b3db7bb8400e57e29042cced3979caef9cc16d9",
+    "untracked_sha256": {
+      "native/deadpan-encode/tests/fixtures/partial-repeat-eq.f32le": "8288435f2075163e8b400b06e647911b8b82fc61d9937b9ad8a7bff64a5b03af"
+    },
+    "exit": 101,
+    "seconds": 9.113297834061086,
+    "log_sha256": "d5da14362191b933106f89906a9ddbcca7d802b21407f46e3858fc4cf3dbd604",
+    "binaries": {
+      "target/debug/deps/aac_opening-5b373a33727bbc7b": "90a56d14b2e595b1c67df06c5a45c9fed5d6452995779ef890f8ea5a9885ba27"
+    }
+  },
+  {
+    "name": "native-red2",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-encode",
+      "--test",
+      "aac_opening",
+      "equalized_repeat_tails",
+      "--",
+      "--nocapture"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T19:44:46.948961+00:00",
+    "head": "83af17749ac9e0e6b5703b6dbe2b6b2b3165dcfa",
+    "diff_sha256": "816869b84408bb74d6bd83e2c82f638f6bd0a386cede5afb50d619af28559b8e",
+    "untracked_sha256": {
+      "native/deadpan-encode/tests/fixtures/partial-repeat-eq.f32le": "8288435f2075163e8b400b06e647911b8b82fc61d9937b9ad8a7bff64a5b03af"
+    },
+    "exit": 101,
+    "seconds": 8.26132229110226,
+    "log_sha256": "2fcd90a64ae2ae1b5553d825e5dd933aaff32271c18a149bea5f792ae0c9dc3e",
+    "binaries": {
+      "target/debug/deps/aac_opening-5b373a33727bbc7b": "56b377f7cd2377d5ae8868dfa69b6c16292a544c61260c0e8392cecd504ef51f"
+    }
+  },
+  {
+    "name": "native-tests",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-encode",
+      "--",
+      "--test-threads=1"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T19:46:24.484580+00:00",
+    "head": "83af17749ac9e0e6b5703b6dbe2b6b2b3165dcfa",
+    "diff_sha256": "7dfe0432bea435c10c23efb1e8be7e7c93df0695d3227544fdb8301cad037527",
+    "untracked_sha256": {
+      "native/deadpan-encode/tests/fixtures/partial-repeat-eq.f32le": "8288435f2075163e8b400b06e647911b8b82fc61d9937b9ad8a7bff64a5b03af"
+    },
+    "exit": 101,
+    "seconds": 29.844976874999702,
+    "log_sha256": "be32704a82e509f47ea7565e33e36d5d8c0eac86d4afadeb9a725ca5b7ec7747",
+    "binaries": {
+      "target/debug/deps/failures-533f04642807fbaf": "7d7b4354c5d955c1a1810f147a0e0fea419336603cf9d9b36253328d1153b7aa",
+      "target/debug/deps/policy-cc833b9c86ca3a34": "ea8ec4e99951fba339c567f458fc6ce5e2a0889a9004c94b861dd7c60ad8fe6f",
+      "target/debug/deps/runtime-0f2959ba45f8c98c": "4718326368b0fdab075f4b8f83db9f2042c027d0d4b9a91608cf211a1c95cd40",
+      "target/debug/deps/deadpan_encode-a5d1de9d4d517759": "26c8c38ca126fa312ad4df8e22045df4601e4cf5b7d5b6ad3b0d4b3dd4927bbf",
+      "target/debug/deps/hdr_policy-9e1d8cade20f5450": "0abf111c9dbaffe509b1a7b30e54aa32d9e57790a20258363dae13073e0883db",
+      "target/debug/deps/sdr_bitstream_identity-047ec9c25490f02f": "255ea61900b80e2ec9c0880afbd6de8a535459d874296095e6df8d5a3459ecf5",
+      "target/debug/deps/aac_opening-5b373a33727bbc7b": "d220c69de1f242aefdc18aef2a364c07bb12ad3ec49131d9f50a3159ac2e396e",
+      "target/debug/deps/probe-a69fa66a972c088a": "3a57089639bcae632bfa65d0fdaddaf5998dde5b5e798f3a501918d0a61b36d8",
+      "target/debug/deps/hdr_probe-e75a4d10e44e5562": "37e5e4953685df97940d57c900db201594abbd096926e7393d1e6f939f7bcd20",
+      "target/debug/deps/hdr_encode-2293ecd42eda8169": "5ba31b7878efa33f7ebc279827947cf984818482405b58d87c37eae15888f078"
+    }
+  },
+  {
+    "name": "native-tests2",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-encode",
+      "--",
+      "--test-threads=1"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T19:47:21.169353+00:00",
+    "head": "83af17749ac9e0e6b5703b6dbe2b6b2b3165dcfa",
+    "diff_sha256": "9e8fa45018943c11a91973edb47712128e6737ca766dd173f46864ad7290383e",
+    "untracked_sha256": {
+      "native/deadpan-encode/tests/fixtures/README.md": "a14877210057078e55550245b55c05f804f44e73d3e5b7f445bd39442035ef58",
+      "native/deadpan-encode/tests/fixtures/partial-repeat-eq.f32le": "8288435f2075163e8b400b06e647911b8b82fc61d9937b9ad8a7bff64a5b03af"
+    },
+    "exit": 0,
+    "seconds": 25.557454249821603,
+    "log_sha256": "c1f425121868b31d411405da46d3d40da11d8c144756e19190b232372b53d40e",
+    "binaries": {
+      "target/debug/deps/failures-533f04642807fbaf": "7d7b4354c5d955c1a1810f147a0e0fea419336603cf9d9b36253328d1153b7aa",
+      "target/debug/deps/sdr_quality-95895636c67a9a41": "dd6b74c47ab82a8cc42853a55a7a6814313f9e696703a26d56124c15e9c6c664",
+      "target/debug/deps/hdr_probe-e75a4d10e44e5562": "37e5e4953685df97940d57c900db201594abbd096926e7393d1e6f939f7bcd20",
+      "target/debug/deps/hdr_encode-2293ecd42eda8169": "5ba31b7878efa33f7ebc279827947cf984818482405b58d87c37eae15888f078",
+      "target/debug/deps/sdr_bitstream_identity-047ec9c25490f02f": "4fb34d594058fdc1576f37ef51a859bf7195ec95069962b16698e7290ecd07ab",
+      "target/debug/deps/probe-a69fa66a972c088a": "3a57089639bcae632bfa65d0fdaddaf5998dde5b5e798f3a501918d0a61b36d8",
+      "target/debug/deps/aac_opening-5b373a33727bbc7b": "d220c69de1f242aefdc18aef2a364c07bb12ad3ec49131d9f50a3159ac2e396e",
+      "target/debug/deps/deadpan_encode-a5d1de9d4d517759": "26c8c38ca126fa312ad4df8e22045df4601e4cf5b7d5b6ad3b0d4b3dd4927bbf",
+      "target/debug/deps/policy-cc833b9c86ca3a34": "ea8ec4e99951fba339c567f458fc6ce5e2a0889a9004c94b861dd7c60ad8fe6f",
+      "target/debug/deps/hdr_policy-9e1d8cade20f5450": "0abf111c9dbaffe509b1a7b30e54aa32d9e57790a20258363dae13073e0883db",
+      "target/debug/deps/runtime-0f2959ba45f8c98c": "4718326368b0fdab075f4b8f83db9f2042c027d0d4b9a91608cf211a1c95cd40"
+    }
+  },
+  {
+    "name": "qualify-final",
+    "command": [
+      "python3",
+      "/tmp/deadpan-aac-fidelity-20261012/qualify-final.py"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T20:15:00.552921+00:00",
+    "head": "83af17749ac9e0e6b5703b6dbe2b6b2b3165dcfa",
+    "diff_sha256": "41d4db4d01d2745a40fe3a0a32c06e5ae0248e57879943db17eb2c8d8e67b8e4",
+    "untracked_sha256": {
+      "docs/qualification/aac-noise-substitution-2026-10-12.md": "9bd4eccf5f68018b4a8b5ec887f5a183e7809367bf26fa12995317315367f17b",
+      "native/deadpan-encode/tests/fixtures/README.md": "e16f423f0ceddbcce81c04726a8ce30a5357c4f53874b4fb5fb2293e2f77c54d",
+      "native/deadpan-encode/tests/fixtures/partial-repeat-eq.f32le": "8288435f2075163e8b400b06e647911b8b82fc61d9937b9ad8a7bff64a5b03af"
+    },
+    "exit": 0,
+    "seconds": 40.37239687470719,
+    "log_sha256": "0d7e0044b2192cde87efbc2b3dabdb39b1f7bd4ceae0087a8abb3d1ef324664c",
+    "binaries": {}
+  },
+  {
+    "name": "release-app",
+    "command": [
+      "cargo",
+      "build",
+      "--locked",
+      "--release",
+      "-p",
+      "deadpan-app",
+      "-p",
+      "deadpan-cli"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T20:10:48.825033+00:00",
+    "head": "83af17749ac9e0e6b5703b6dbe2b6b2b3165dcfa",
+    "diff_sha256": "41d4db4d01d2745a40fe3a0a32c06e5ae0248e57879943db17eb2c8d8e67b8e4",
+    "untracked_sha256": {
+      "docs/qualification/aac-noise-substitution-2026-10-12.md": "1051db114e8437537690802333ac24cb742157bbbc8793500075c56ddb49d278",
+      "native/deadpan-encode/tests/fixtures/README.md": "e16f423f0ceddbcce81c04726a8ce30a5357c4f53874b4fb5fb2293e2f77c54d",
+      "native/deadpan-encode/tests/fixtures/partial-repeat-eq.f32le": "8288435f2075163e8b400b06e647911b8b82fc61d9937b9ad8a7bff64a5b03af"
+    },
+    "exit": 0,
+    "seconds": 192.59694041637704,
+    "log_sha256": "72ea592850b52b4808ceabe1ae6e6c57736ace101572bf63a6c4b02ea8e8743e",
+    "binaries": {}
+  },
+  {
+    "name": "release-native",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--release",
+      "-p",
+      "deadpan-encode",
+      "--",
+      "--test-threads=1"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T19:50:08.285280+00:00",
+    "head": "83af17749ac9e0e6b5703b6dbe2b6b2b3165dcfa",
+    "diff_sha256": "9e8fa45018943c11a91973edb47712128e6737ca766dd173f46864ad7290383e",
+    "untracked_sha256": {
+      "docs/qualification/aac-noise-substitution-2026-10-12.md": "b9aa3e84be54560794ad57c554eea2d3a59398fabf9f69c39115a7326656924e",
+      "native/deadpan-encode/tests/fixtures/README.md": "a14877210057078e55550245b55c05f804f44e73d3e5b7f445bd39442035ef58",
+      "native/deadpan-encode/tests/fixtures/partial-repeat-eq.f32le": "8288435f2075163e8b400b06e647911b8b82fc61d9937b9ad8a7bff64a5b03af"
+    },
+    "exit": 0,
+    "seconds": 9.814982958137989,
+    "log_sha256": "a39f3174c99f1127b494eb74bb170acadb7b4a7867ff24c3838a76b5cbd85658",
+    "binaries": {
+      "target/release/deps/hdr_encode-60cbacbd219678b4": "f14a4b50787ba589fc45c8add09c5cfbb7fe77ee17163424169ba67aca11aab4",
+      "target/release/deps/aac_opening-10efedac423515c5": "ac48190f21ec6fa72027dc6d26afca049463ff3a1d38c9c7d8c2b8b5786fc0dc",
+      "target/release/deps/sdr_bitstream_identity-a3f961517030e017": "455c02ec881d49a30e17385a24dab2a2e2fa098c304c48681dec7ebc5cf51c33",
+      "target/release/deps/deadpan_encode-55fa5ab6bc30eeb8": "0834f742e9ca9010fc28bdcbc63f42475f56e613774a2f43bcd75731adc952eb",
+      "target/release/deps/sdr_quality-1d8726c82aabfd23": "71edeb12c30ea1a1ce24d98d1033ea42889ce86b01ab8bef6dd025cd3255ccba",
+      "target/release/deps/failures-e85651531c0c219b": "b6eb0c32c954e19925d369b17b9a75233bd2fff4c916ae8d576264ad06b627bb",
+      "target/release/deps/probe-11cf4db4a38c705f": "7e30b52e216c7b8c5f08aae0ce16604c1e8b7d0ccfedee550eb40911ded8d0fe",
+      "target/release/deps/hdr_probe-ed1dce7383e3a6b4": "9a18a9c95e399517e877374e6abf3c892eb0f156bc3f7bb8d7025c7fa6cce7cc",
+      "target/release/deps/hdr_policy-7a297f93b62d3e09": "7f208081966050d79976e8646588689799a09454a881d1b98f77a97f4728e1e4",
+      "target/release/deps/runtime-3446170a93b35ddd": "b604a53e30baade6e25fad7946c0d5f80f59b93be7592dc3f40d83209443eaa8",
+      "target/release/deps/policy-86f8215bca2d0a3d": "399f822afe15de31b32cb5a47fc24c5ea2ea1e8023c2c4eb6b832bd165a2734f"
+    }
+  },
+  {
+    "name": "release-preview",
+    "command": [
+      "env",
+      "DEADPAN_PREVIEW_EXPORT_KEEP=1",
+      "DEADPAN_PARTIAL_REPEAT_RESULTS=/private/tmp/deadpan-aac-fidelity-20261012/release-preview.json",
+      "cargo",
+      "test",
+      "--locked",
+      "--release",
+      "-p",
+      "deadpan-cli",
+      "--test",
+      "preview_export",
+      "--",
+      "--test-threads=1"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T19:50:18.131049+00:00",
+    "head": "83af17749ac9e0e6b5703b6dbe2b6b2b3165dcfa",
+    "diff_sha256": "9e8fa45018943c11a91973edb47712128e6737ca766dd173f46864ad7290383e",
+    "untracked_sha256": {
+      "docs/qualification/aac-noise-substitution-2026-10-12.md": "b9aa3e84be54560794ad57c554eea2d3a59398fabf9f69c39115a7326656924e",
+      "native/deadpan-encode/tests/fixtures/README.md": "a14877210057078e55550245b55c05f804f44e73d3e5b7f445bd39442035ef58",
+      "native/deadpan-encode/tests/fixtures/partial-repeat-eq.f32le": "8288435f2075163e8b400b06e647911b8b82fc61d9937b9ad8a7bff64a5b03af"
+    },
+    "exit": 101,
+    "seconds": 278.7878246670589,
+    "log_sha256": "b1045f6d642e9326f9433732fd7dd53a5b0fb6d9a6a2d5c14238c95b7b1e9141",
+    "binaries": {
+      "target/release/deps/preview_export-13eb73279274fbb4": "09983f4a8bb251642fe208f6796e25ba5710c294886e326543d370e09937813f"
+    }
+  },
+  {
+    "name": "release-preview2",
+    "command": [
+      "env",
+      "DEADPAN_PREVIEW_EXPORT_KEEP=1",
+      "DEADPAN_PARTIAL_REPEAT_RESULTS=/private/tmp/deadpan-aac-fidelity-20261012/release-preview2.json",
+      "cargo",
+      "test",
+      "--locked",
+      "--release",
+      "-p",
+      "deadpan-cli",
+      "--test",
+      "preview_export",
+      "--",
+      "--test-threads=1"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T19:57:14.287474+00:00",
+    "head": "83af17749ac9e0e6b5703b6dbe2b6b2b3165dcfa",
+    "diff_sha256": "41d4db4d01d2745a40fe3a0a32c06e5ae0248e57879943db17eb2c8d8e67b8e4",
+    "untracked_sha256": {
+      "docs/qualification/aac-noise-substitution-2026-10-12.md": "1051db114e8437537690802333ac24cb742157bbbc8793500075c56ddb49d278",
+      "native/deadpan-encode/tests/fixtures/README.md": "e16f423f0ceddbcce81c04726a8ce30a5357c4f53874b4fb5fb2293e2f77c54d",
+      "native/deadpan-encode/tests/fixtures/partial-repeat-eq.f32le": "8288435f2075163e8b400b06e647911b8b82fc61d9937b9ad8a7bff64a5b03af"
+    },
+    "exit": 0,
+    "seconds": 814.5031679160893,
+    "log_sha256": "8d703b89668f728945205bad7cdad02a1ec2845043999c1b50872a7bf5628cd3",
+    "binaries": {
+      "target/release/deps/preview_export-13eb73279274fbb4": "2b93b9897fa50ba23338270cd7043cbddde799ae08d0e1d9155bbfd2359e9268"
+    }
+  }
+]

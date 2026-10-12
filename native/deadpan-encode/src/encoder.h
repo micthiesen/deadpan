@@ -4,7 +4,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define DP_ENCODE_ABI_VERSION 3U
+#define DP_ENCODE_ABI_VERSION 4U
 #define DP_ENCODE_MAX_DIMENSION 8192U
 #define DP_ENCODE_MAX_PIXELS 33554432ULL
 #define DP_ENCODE_MAX_FRAMES 1000000ULL

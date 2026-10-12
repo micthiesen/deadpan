@@ -4,6 +4,17 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 
 ## Resumed implementation, 2026-10-06
 
+[AAC noise substitution](qualification/aac-noise-substitution-2026-10-12.md)
+resolves the short partial-Repeat export's fidelity failure at the unchanged
+384 kbit/s target and timing/content thresholds. Encoder ABI 4 disables PNS;
+both live and stored observation validators retain their version boundaries.
+All 20,821 canonical input pairs are unchanged. The final release movie passes
+13 pictures and 33 blocks with zero offset and 18.3043 dB minimum SNR; the
+120-picture nested-EQ export also passes. All 31 release export tests pass,
+including 42 constructed recipes; four optional synthetic-generation fixtures
+were not built. Native debug/release checks, protocol and job checks, strict
+workspace Clippy, app/CLI release builds and formatting pass. No gate is complete.
+
 [Independent source projection reuse](qualification/source-projection-reuse-2026-10-12.md)
 resolves nested Preserve plus event/owner EQ exhausting the 64-stage preparation
 budget. A checked recipe/instance/context/stage key, paired with immutable plan
