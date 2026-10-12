@@ -1,0 +1,26 @@
+{
+  "core-plan": {
+    "passed": 1481,
+    "failed": 0,
+    "ignored": 0,
+    "result_groups": 81
+  },
+  "audio-clocks": {
+    "passed": 48,
+    "failed": 0,
+    "ignored": 0,
+    "result_groups": 1
+  },
+  "store-clocks": {
+    "passed": 6,
+    "failed": 0,
+    "ignored": 0,
+    "result_groups": 1
+  },
+  "release-audio": {
+    "passed": 3,
+    "failed": 0,
+    "ignored": 0,
+    "result_groups": 1
+  }
+}

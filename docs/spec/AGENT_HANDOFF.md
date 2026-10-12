@@ -4,6 +4,26 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Partial Repeat sounds](../qualification/partial-repeat-sounds-2026-10-12.md)
+now permit only the newly introduced Repeat around proven Split aliases. Existing
+cohort maps retain initial PCM; later births and shrink/regrow stay independent.
+Repeat's auxiliary timing allocator reserves the base pre-edit identity even
+when physical capture omits it. Core/plan (1,481), attached audio (48) and store
+clock (six) tests pass, including dry nested Preserve and treated Source copies.
+The public CLI checks retained PCM, four owners and fresh-revision durable Undo/Redo.
+Strict workspace Clippy, three release PCM regressions, debug/release diagnostic
+checks, app/CLI release builds and formatting pass.
+
+Two measured failures remain: the 13-picture export has zero audio offset and all
+pictures correct but one AAC block at sample 11,520 has 1.0882855905 dB SNR below
+the unchanged 1.5 dB bound; adding EQ to nested Preserve fails the pre-Repeat
+reference render with `prepared stages per read`. Retained evidence includes both
+failures and an exact EQ reproduction patch. Fix request-local repeated independent
+voice preparation next, preserving distinct source/instance/context identities
+and the stage cap; then investigate emitted AAC fidelity without weakening the
+test. Preexisting external Repeat/root-owner and processing-scope guards remain.
+The primary continues alone; no requirement or gate is newly complete.
+
 [Split sound owners](../qualification/split-sound-owners-2026-10-12.md) now
 restore eligible surviving attachments through the structural reducer's exact
 Split aliases. Both retained and copied owners keep full recipes and narrowed,

@@ -800,15 +800,19 @@ fn next_timing(
     document: &ProjectDocument,
     base: &AudioTimingId,
 ) -> Result<AudioTimingId, EditError> {
-    // The first ordinal of this allocation that no retained layout uses yet.
+    // The command's base identity belongs to its pre-edit layout, including
+    // attached-sound clocks restored after the structural reducer. Reserve it
+    // even when every physical recipe was already bound and capture omitted it.
     let mut next = base.clone();
-    while document.audio_bindings().timings.contains_key(&next) {
+    loop {
         next.ordinal = next
             .ordinal
             .checked_add(1)
             .ok_or_else(|| limit("Repeat requires another timing identity"))?;
+        if !document.audio_bindings().timings.contains_key(&next) {
+            return Ok(next);
+        }
     }
-    Ok(next)
 }
 
 fn invalid(message: &str) -> EditError {

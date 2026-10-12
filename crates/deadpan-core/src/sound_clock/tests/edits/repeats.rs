@@ -21,43 +21,77 @@ fn wrap(document: &ProjectDocument, name: &str) -> ProjectDocument {
 }
 
 #[test]
-fn partially_repeating_a_sound_owner_still_refuses_without_an_occurrence_route() {
-    let before = fixture();
-    let snapshot = before.to_json().unwrap();
-    let selection = SliceCaptureSelection::Range { range: range(2, 4) };
+fn partially_repeating_a_sound_owner_keeps_fragments_and_exact_clock_births() {
+    let mut before = edit(&fixture(), "prefix", insert("prefix", 0, 1));
+    // With no unbound physical recipe, Repeat's structural capture omits its
+    // base timing. Its suffix capture must not claim the sound journal's ID.
+    before.audio_bindings = capture_unbound_audio_bindings(&before, timing("bind-all")).unwrap();
+    let selection = SliceCaptureSelection::Range { range: range(3, 5) };
     let plan = before
         .repeat_selection(&node("top"), &selection, 2)
         .unwrap();
-    let error = apply(
+    let after = edit(
         &before,
-        &request(
-            &before,
-            "partial-repeat",
-            Command::RepeatSelection {
-                parent: node("top"),
-                selection,
-                plays: 2,
-                identities: RepeatSelectionIdentities {
-                    repeat: node("repeat"),
-                    group: Some(node("group")),
-                    split: SplitIdentities {
-                        nodes: (0..plan.required_split_ids)
-                            .map(|i| node(&format!("part-{i}")))
-                            .collect(),
-                    },
+        "partial-repeat",
+        Command::RepeatSelection {
+            parent: node("top"),
+            selection,
+            plays: 2,
+            identities: RepeatSelectionIdentities {
+                repeat: node("repeat"),
+                group: Some(node("group")),
+                split: SplitIdentities {
+                    nodes: (0..plan.required_split_ids)
+                        .map(|i| node(&format!("part-{i}")))
+                        .collect(),
                 },
-                timing: timing("partial-repeat"),
             },
-        ),
-    )
-    .unwrap_err();
-    assert!(
-        error
-            .message
-            .contains("split sound owners inside Repeat need an occurrence route"),
-        "{error}"
+            timing: timing("partial-repeat"),
+        },
     );
-    assert_eq!(before.to_json().unwrap(), snapshot);
+    assert_eq!(after.beat_sounds.len(), 3);
+    assert_eq!(after.duration().unwrap().frames(), 12);
+    assert_eq!(
+        after.audio_bindings.timings[&timing("partial-repeat")],
+        FrozenAudioLayout::capture(&before).unwrap()
+    );
+    assert!(
+        after
+            .beat_sounds
+            .values()
+            .all(|events| events == &before.beat_sounds[&node("owner")])
+    );
+    let middle = crate::occurrence_edit::subtree_order(&after, &node("repeat"))
+        .unwrap()
+        .into_iter()
+        .find(|node| after.beat_sounds.contains_key(node))
+        .unwrap();
+    assert_eq!(
+        owner_journal(&after, &middle),
+        vec![timing("prefix"), timing("partial-repeat")]
+    );
+    for index in 0..2 {
+        assert_eq!(
+            applicability(&after, &occurrence(&after, middle.as_str(), index)),
+            vec![true, true]
+        );
+    }
+    let grown = plays(&after, "grown-partial", 3);
+    assert_eq!(
+        applicability(&grown, &occurrence(&grown, middle.as_str(), 2)),
+        vec![false; 3]
+    );
+    let shrunk = plays(&grown, "shrunk-partial", 2);
+    let regrown = plays(&shrunk, "regrown-partial", 3);
+    assert_ne!(
+        occurrence(&grown, middle.as_str(), 2),
+        occurrence(&regrown, middle.as_str(), 2)
+    );
+    assert!(
+        applicability(&regrown, &occurrence(&regrown, middle.as_str(), 2))
+            .into_iter()
+            .all(|present| !present)
+    );
 }
 
 fn plays(document: &ProjectDocument, name: &str, count: u32) -> ProjectDocument {
@@ -70,6 +104,46 @@ fn plays(document: &ProjectDocument, name: &str, count: u32) -> ProjectDocument 
             timing: timing(name),
         },
     )
+}
+
+#[test]
+fn split_owners_with_preexisting_external_repeat_ancestry_still_refuse_atomically() {
+    let before = wrap(&fixture(), "outer");
+    let snapshot = before.to_json().unwrap();
+    let selection = SliceCaptureSelection::Range { range: range(2, 4) };
+    let plan = before
+        .repeat_selection(&node("top"), &selection, 2)
+        .unwrap();
+    let error = apply(
+        &before,
+        &request(
+            &before,
+            "nested",
+            Command::RepeatSelection {
+                parent: node("top"),
+                selection,
+                plays: 2,
+                identities: RepeatSelectionIdentities {
+                    repeat: node("nested-repeat"),
+                    group: Some(node("nested-group")),
+                    split: SplitIdentities {
+                        nodes: (0..plan.required_split_ids)
+                            .map(|i| node(&format!("nested-split-{i}")))
+                            .collect(),
+                    },
+                },
+                timing: timing("nested"),
+            },
+        ),
+    )
+    .unwrap_err();
+    assert!(
+        error
+            .message
+            .contains("split sound owners inside Repeat need an occurrence route"),
+        "{error}"
+    );
+    assert_eq!(before.to_json().unwrap(), snapshot);
 }
 
 fn occurrence(document: &ProjectDocument, owner: &str, index: u32) -> InstancePath {

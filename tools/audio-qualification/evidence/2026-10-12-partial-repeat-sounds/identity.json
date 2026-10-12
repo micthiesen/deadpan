@@ -1,0 +1,19 @@
+{
+  "base_commit": "414b9d6b3ed400a718777f3c3e57bb28da0f3618",
+  "sources": {
+    "Cargo.lock": "9d911d67520092b729ae0e5933a39fc57f0ab4933b7d94b2d72d55a125fca93e",
+    "crates/deadpan-audio/tests/audio_definition/sound_clocks/repeats.rs": "7c026ba0b560c20eef103074051c3d998e2df9de2080b8fb37d98999af02699d",
+    "crates/deadpan-cli/tests/preview_export.rs": "770d9f1a35905e0d19e4ce636883feb4b9f790f7cb1749cbdf54815b20271e77",
+    "crates/deadpan-cli/tests/preview_export/partial_sounds.rs": "27da7bb6fd05e84c5bc2162066f0086c877e84140efb3994658a7f924f9463aa",
+    "crates/deadpan-core/src/repeat_selection.rs": "31b251bc9aa0d9291a63d52d0f7d078b6b9f3a1554a1b11de00f13dd5777b67f",
+    "crates/deadpan-core/src/sound_clock/edit.rs": "3ccfdbc53ed253f31cae81caa73fe2058f76ab7e3899f6025456d7791ef79d92",
+    "crates/deadpan-core/src/sound_clock/tests/edits/repeats.rs": "081b37ca42da71d280ec46556eec7cef083a0a284f09fc12ebfe3a76004d6a25",
+    "native/deadpan-source/tests/audio-fixtures/pcm-stereo-48000.wav": "e79aba90eab42dc057171be52be9ecb794c3e2790c5731783270ece73c24d2ee",
+    "native/deadpan-source/tests/fixtures/cfr-bframes.mp4": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+    "rust-toolchain.toml": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc"
+  },
+  "final_release_binaries": {
+    "target/release/deadpan-cli": "89d9a758fab56524bdd9a0516b615c4b282d09bfff19ad51129118383691897e",
+    "target/release/deadpan-app": "6ec408969632f4a34517084d85950599f0dbd31a35d1ca678b41b7879e84e2a4"
+  }
+}

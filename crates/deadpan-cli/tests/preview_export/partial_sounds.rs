@@ -376,3 +376,115 @@ pub fn split_attached_sounds(dir: &Path) -> Result<Fixture> {
     fixture.audio = vec![(boundary(1)? + 512, false), (boundary(3)? + 512, false)];
     Ok(fixture)
 }
+
+pub fn partial_repeat_attached_sounds(dir: &Path) -> Result<Fixture> {
+    let mut project = copied_project(dir)?;
+    let selected = pcm(&project, boundary(1)? + 512)?;
+    let repeat = NodeId::new("partial-repeat")?;
+    project.apply(|project, document, revision| {
+        let parent = root_children(document)?[0].clone();
+        let selection = deadpan_core::SliceCaptureSelection::Range {
+            range: FrameRange::new(ProjectFrame(1), ProjectFrame(3))?,
+        };
+        let plan = document.repeat_selection(&parent, &selection, 2)?;
+        Ok(Command::RepeatSelection {
+            parent,
+            selection,
+            plays: 2,
+            identities: deadpan_core::RepeatSelectionIdentities {
+                repeat: repeat.clone(),
+                group: Some(project.fresh(1)?.remove(0)),
+                split: SplitIdentities {
+                    nodes: project.fresh(plan.required_split_ids)?,
+                },
+            },
+            timing: AudioTimingId {
+                allocation: revision.clone(),
+                ordinal: 0,
+            },
+        })
+    })?;
+    same_pcm(
+        &selected,
+        &pcm(&project, boundary(1)? + 512)?,
+        "first partial play",
+    );
+    same_pcm(
+        &selected,
+        &pcm(&project, boundary(3)? + 512)?,
+        "second partial play",
+    );
+    project.apply(|_, _, revision| {
+        Ok(Command::SetRepeatPlays {
+            node: repeat.clone(),
+            plays: 3,
+            timing: AudioTimingId {
+                allocation: revision.clone(),
+                ordinal: 0,
+            },
+        })
+    })?;
+    let born = pcm(&project, boundary(5)? + 512)?;
+    project.apply(|_, _, revision| {
+        Ok(Command::SetRepeatGaps {
+            node: repeat.clone(),
+            gap: Some(HoldRecipe {
+                duration: FrameDuration::new(1)?,
+                video: HoldVideo::Background,
+                picture_context: None,
+                audio: HoldAudio::Silence,
+            }),
+            branches: vec![],
+            timing: AudioTimingId {
+                allocation: revision.clone(),
+                ordinal: 0,
+            },
+        })
+    })?;
+    same_pcm(
+        &selected,
+        &pcm(&project, boundary(4)? + 512)?,
+        "old play after gap",
+    );
+    same_pcm(
+        &born,
+        &pcm(&project, boundary(7)? + 512)?,
+        "new play after gap",
+    );
+    assert_eq!(project.document()?.beat_sounds().len(), 4);
+    let final_document = project.document()?;
+    success(&[
+        "project",
+        "undo",
+        project.path(),
+        "--expected",
+        final_document.revision_id().as_str(),
+    ])?;
+    let undone = project.document()?;
+    assert_eq!(undone.duration()?.frames(), 11);
+    success(&[
+        "project",
+        "redo",
+        project.path(),
+        "--expected",
+        undone.revision_id().as_str(),
+    ])?;
+    let restored = project.document()?;
+    assert_ne!(restored.revision_id(), final_document.revision_id());
+    let mut expected_restored = serde_json::to_value(&final_document)?;
+    expected_restored["revision_id"] = serde_json::to_value(restored.revision_id())?;
+    assert_eq!(serde_json::to_value(&restored)?, expected_restored);
+    same_pcm(
+        &born,
+        &pcm(&project, boundary(7)? + 512)?,
+        "new play after durable redo",
+    );
+    let mut fixture = project.finish(
+        vec!["Partial Repeat with attached sound"],
+        vec![(0, original(2)), (1, original(3)), (2, original(4)), (3, Expected::Background), (4, original(3)), (5, original(4)), (6, Expected::Background), (7, original(3)), (8, original(4)), (9, original(5)), (10, original(3)), (11, original(4)), (12, original(5))],
+        vec!["Repeat the middle two frames of a copied sound owner, add a new play and silent gaps, then durable Undo/Redo. Independent old/new-play PCM is retained through the gap edit.".into()],
+    )?;
+    fixture.name = "partial-repeat-attached-sounds";
+    fixture.audio = vec![(boundary(3)? + 512, false), (boundary(6)? + 512, false)];
+    Ok(fixture)
+}

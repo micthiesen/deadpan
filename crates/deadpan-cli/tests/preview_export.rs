@@ -430,6 +430,41 @@ fn partial_copy_preserves_authored_mix_and_uses_current_mastering_context() -> R
 }
 
 #[test]
+fn partial_repeat_attached_sounds_preserve_preview_and_report_aac_fidelity_failure() -> Result {
+    let (root, _guard) = keep_or(tempfile::tempdir()?);
+    let fixture = recipes::partial_sounds::partial_repeat_attached_sounds(
+        &root.join("partial-repeat-sounds"),
+    )?;
+    check(&fixture)?;
+    let movie = render(&fixture, &root.join("exports"))?;
+    let (report, passed) = verify(&fixture, &movie, &fixture.revision, &[])?;
+    // This short click/EQ passage currently fails one AAC block's existing
+    // fidelity bound. Preserve that negative evidence without weakening it or
+    // mistaking exact timing and picture agreement for full qualification.
+    assert!(
+        !passed,
+        "requalify this fixture if AAC fidelity improves: {report}"
+    );
+    assert_eq!(report["audio"][0]["flags"], json!(["audio_block_snr"]));
+    assert_eq!(report["audio"][0]["blocks"]["low_snr_blocks"], 1);
+    assert_eq!(report["audio"][0]["offset_status"], "verified_zero");
+    assert_eq!(report["audio"][0]["measured_offset_samples"], 0);
+    assert_eq!(report["summary"]["pictures_failed"], 0);
+    assert_eq!(report["summary"]["pictures_checked"], 13);
+    check_provenance(&fixture, &report)?;
+    if let Some(path) = std::env::var_os("DEADPAN_PARTIAL_REPEAT_RESULTS") {
+        std::fs::write(
+            path,
+            serde_json::to_vec_pretty(
+                &json!({"package":fixture.package,"movie":movie,"report":report,"notes":fixture.notes}),
+            )?,
+        )?;
+    }
+    eprintln!("{}", summary_row(&fixture, &report));
+    Ok(())
+}
+
+#[test]
 fn split_attached_sounds_preserve_preview_and_verified_export() -> Result {
     let (root, _guard) = keep_or(tempfile::tempdir()?);
     let fixture = recipes::partial_sounds::split_attached_sounds(&root.join("split-sounds"))?;

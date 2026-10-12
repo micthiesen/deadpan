@@ -1,0 +1,533 @@
+diff --git a/crates/deadpan-audio/tests/audio_definition/sound_clocks/repeats.rs b/crates/deadpan-audio/tests/audio_definition/sound_clocks/repeats.rs
+index d0770b0b..ed7f95a7 100644
+--- a/crates/deadpan-audio/tests/audio_definition/sound_clocks/repeats.rs
++++ b/crates/deadpan-audio/tests/audio_definition/sound_clocks/repeats.rs
+@@ -59,6 +59,167 @@ fn without_clocks(document: &ProjectDocument) -> ProjectDocument {
+     ProjectDocument::from_json(&wire.to_string()).unwrap()
+ }
+ 
++fn partial_repeat(treated: bool, nested: bool) {
++    let mut wire = serde_json::to_value(ntsc(AudioEdgePolicy::Hard)).unwrap();
++    if nested {
++        wire["nodes"]["inner"] =
++            serde_json::to_value(retime("owner", 6, 0..4, PitchPolicy::Preserve)).unwrap();
++        wire["nodes"]["outer"] =
++            serde_json::to_value(retime("inner", 4, 0..6, PitchPolicy::Preserve)).unwrap();
++        wire["nodes"]["root"]["kind"]["children"] = serde_json::json!(["lead", "outer", "tail"]);
++    }
++    if treated {
++        let eq = EqualizerRecipe::new(
++            [6000, -6000, 3000].map(|db| GainDb::new(db).unwrap()),
++            None,
++            None,
++        )
++        .unwrap();
++        let treatment =
++            serde_json::to_value(AudioTreatments::default().with_equalizer(Some(eq)).unwrap())
++                .unwrap();
++        wire["nodes"]["owner"]["audio_treatments"] = treatment.clone();
++        wire["beat_sounds"]["owner"]["effect"]["treatments"] = treatment;
++    }
++    let before = insert_prefix(&ProjectDocument::from_json(&wire.to_string()).unwrap());
++    let selection = SliceCaptureSelection::Range {
++        range: FrameRange::new(ProjectFrame(4), ProjectFrame(6)).unwrap(),
++    };
++    let plan = before.repeat_selection(&id("root"), &selection, 2).unwrap();
++    let repeated = edit(
++        &before,
++        "partial-repeat",
++        Command::RepeatSelection {
++            parent: id("root"),
++            selection,
++            plays: 2,
++            identities: deadpan_core::RepeatSelectionIdentities {
++                repeat: id("repeat"),
++                group: Some(id("partial-group")),
++                split: SplitIdentities {
++                    nodes: (0..plan.required_split_ids)
++                        .map(|n| id(&format!("partial-split-{n}")))
++                        .collect(),
++                },
++            },
++            timing: timing("partial-repeat"),
++        },
++    );
++    assert_eq!(repeated.beat_sounds().len(), 3);
++    let selected = render(&before, 4, 6);
++    assert!(selected.iter().flatten().any(|v| v.abs() > 0.001));
++    for (old_start, old_end, new_start, new_end) in
++        [(3, 4, 3, 4), (4, 6, 4, 6), (4, 6, 6, 8), (6, 7, 8, 9)]
++    {
++        super::partial::compare_copy(
++            &render(&before, old_start, old_end),
++            &render(&repeated, new_start, new_end),
++            treated,
++            "partial Repeat initial fragments",
++        );
++    }
++    let grown = count(&repeated, "grown-partial", 3);
++    super::partial::compare_copy(
++        &selected,
++        &render(&grown, 4, 6),
++        treated,
++        "first retained play",
++    );
++    super::partial::compare_copy(
++        &selected,
++        &render(&grown, 6, 8),
++        treated,
++        "second retained play",
++    );
++    let born = render(&grown, 8, 10);
++    super::partial::compare_copy(
++        &render(&without_clocks(&grown), 8, 10),
++        &born,
++        treated,
++        "new play clock",
++    );
++    if !treated {
++        assert_ne!(born, selected);
++    }
++    let NodeKind::Hold { recipe: gap } = hold(1, HoldAudio::Silence).kind else {
++        unreachable!()
++    };
++    let gapped = edit(
++        &grown,
++        "gapped-partial",
++        Command::SetRepeatGaps {
++            node: id("repeat"),
++            gap: Some(gap),
++            branches: vec![],
++            timing: timing("gapped-partial"),
++        },
++    );
++    for (start, end) in [(6, 7), (9, 10)] {
++        assert!(
++            render(&gapped, start, end)
++                .iter()
++                .all(|frame| *frame == [0.0; 2])
++        );
++    }
++    // Current silent-gap fades are intentional; compare interior saved input.
++    super::partial::compare_copy(
++        &selected[512..1024],
++        &render(&gapped, 7, 9)[512..1024],
++        treated,
++        "gapped saved play",
++    );
++    super::partial::compare_copy(
++        &born[512..1024],
++        &render(&gapped, 10, 12)[512..1024],
++        treated,
++        "gapped new play",
++    );
++    let read = |document: &ProjectDocument, frame: i64| {
++        bus(
++            &mut StageAudio::new(compile(document, false)),
++            &mut ClockProvider::new(document),
++            frame_sample_boundary(frame) + 512,
++            256,
++        )
++        .samples
++    };
++    let slice = capture_repeat_slice(&gapped, "root", &id("repeat"), "partial-capture");
++    let copied = paste_repeat_slice(&gapped, "root", 6, &slice, "partial-copy");
++    let copied_top = copied.children(&id("root")).last().unwrap().clone();
++    let slice = capture_repeat_slice(&copied, "root", &copied_top, "partial-recapture");
++    let twice = paste_repeat_slice(&copied, "root", 7, &slice, "partial-recopy");
++    for (old, new, again) in [(4, 15, 23), (7, 18, 26), (10, 21, 29)] {
++        let expected = read(&gapped, old);
++        super::partial::compare_copy(
++            &expected,
++            &read(&twice, new),
++            treated,
++            "partial Repeat copy",
++        );
++        super::partial::compare_copy(
++            &expected,
++            &read(&twice, again),
++            treated,
++            "partial Repeat recopy",
++        );
++    }
++}
++
++#[test]
++fn partial_repeat_keeps_dry_sound_fragments_and_new_play_phase() {
++    partial_repeat(false, false);
++}
++
++#[test]
++fn partial_repeat_keeps_event_and_shared_equalizer_history() {
++    partial_repeat(true, false);
++}
++
++#[test]
++fn partial_repeat_keeps_complete_nested_preserve_context() {
++    partial_repeat(false, true);
++}
++
+ #[test]
+ fn repeat_sound_pcm_copies_initial_plays_and_allocates_later_births_at_their_own_phase() {
+     let before = ntsc(AudioEdgePolicy::Hard);
+diff --git a/crates/deadpan-cli/tests/preview_export.rs b/crates/deadpan-cli/tests/preview_export.rs
+index f051d329..155cc88c 100644
+--- a/crates/deadpan-cli/tests/preview_export.rs
++++ b/crates/deadpan-cli/tests/preview_export.rs
+@@ -429,6 +429,41 @@ fn partial_copy_preserves_authored_mix_and_uses_current_mastering_context() -> R
+     Ok(())
+ }
+ 
++#[test]
++fn partial_repeat_attached_sounds_preserve_preview_and_report_aac_fidelity_failure() -> Result {
++    let (root, _guard) = keep_or(tempfile::tempdir()?);
++    let fixture = recipes::partial_sounds::partial_repeat_attached_sounds(
++        &root.join("partial-repeat-sounds"),
++    )?;
++    check(&fixture)?;
++    let movie = render(&fixture, &root.join("exports"))?;
++    let (report, passed) = verify(&fixture, &movie, &fixture.revision, &[])?;
++    // This short click/EQ passage currently fails one AAC block's existing
++    // fidelity bound. Preserve that negative evidence without weakening it or
++    // mistaking exact timing and picture agreement for full qualification.
++    assert!(
++        !passed,
++        "requalify this fixture if AAC fidelity improves: {report}"
++    );
++    assert_eq!(report["audio"][0]["flags"], json!(["audio_block_snr"]));
++    assert_eq!(report["audio"][0]["blocks"]["low_snr_blocks"], 1);
++    assert_eq!(report["audio"][0]["offset_status"], "verified_zero");
++    assert_eq!(report["audio"][0]["measured_offset_samples"], 0);
++    assert_eq!(report["summary"]["pictures_failed"], 0);
++    assert_eq!(report["summary"]["pictures_checked"], 13);
++    check_provenance(&fixture, &report)?;
++    if let Some(path) = std::env::var_os("DEADPAN_PARTIAL_REPEAT_RESULTS") {
++        std::fs::write(
++            path,
++            serde_json::to_vec_pretty(
++                &json!({"package":fixture.package,"movie":movie,"report":report,"notes":fixture.notes}),
++            )?,
++        )?;
++    }
++    eprintln!("{}", summary_row(&fixture, &report));
++    Ok(())
++}
++
+ #[test]
+ fn split_attached_sounds_preserve_preview_and_verified_export() -> Result {
+     let (root, _guard) = keep_or(tempfile::tempdir()?);
+diff --git a/crates/deadpan-cli/tests/preview_export/partial_sounds.rs b/crates/deadpan-cli/tests/preview_export/partial_sounds.rs
+index d2da2206..82a4de67 100644
+--- a/crates/deadpan-cli/tests/preview_export/partial_sounds.rs
++++ b/crates/deadpan-cli/tests/preview_export/partial_sounds.rs
+@@ -376,3 +376,115 @@ pub fn split_attached_sounds(dir: &Path) -> Result<Fixture> {
+     fixture.audio = vec![(boundary(1)? + 512, false), (boundary(3)? + 512, false)];
+     Ok(fixture)
+ }
++
++pub fn partial_repeat_attached_sounds(dir: &Path) -> Result<Fixture> {
++    let mut project = copied_project(dir)?;
++    let selected = pcm(&project, boundary(1)? + 512)?;
++    let repeat = NodeId::new("partial-repeat")?;
++    project.apply(|project, document, revision| {
++        let parent = root_children(document)?[0].clone();
++        let selection = deadpan_core::SliceCaptureSelection::Range {
++            range: FrameRange::new(ProjectFrame(1), ProjectFrame(3))?,
++        };
++        let plan = document.repeat_selection(&parent, &selection, 2)?;
++        Ok(Command::RepeatSelection {
++            parent,
++            selection,
++            plays: 2,
++            identities: deadpan_core::RepeatSelectionIdentities {
++                repeat: repeat.clone(),
++                group: Some(project.fresh(1)?.remove(0)),
++                split: SplitIdentities {
++                    nodes: project.fresh(plan.required_split_ids)?,
++                },
++            },
++            timing: AudioTimingId {
++                allocation: revision.clone(),
++                ordinal: 0,
++            },
++        })
++    })?;
++    same_pcm(
++        &selected,
++        &pcm(&project, boundary(1)? + 512)?,
++        "first partial play",
++    );
++    same_pcm(
++        &selected,
++        &pcm(&project, boundary(3)? + 512)?,
++        "second partial play",
++    );
++    project.apply(|_, _, revision| {
++        Ok(Command::SetRepeatPlays {
++            node: repeat.clone(),
++            plays: 3,
++            timing: AudioTimingId {
++                allocation: revision.clone(),
++                ordinal: 0,
++            },
++        })
++    })?;
++    let born = pcm(&project, boundary(5)? + 512)?;
++    project.apply(|_, _, revision| {
++        Ok(Command::SetRepeatGaps {
++            node: repeat.clone(),
++            gap: Some(HoldRecipe {
++                duration: FrameDuration::new(1)?,
++                video: HoldVideo::Background,
++                picture_context: None,
++                audio: HoldAudio::Silence,
++            }),
++            branches: vec![],
++            timing: AudioTimingId {
++                allocation: revision.clone(),
++                ordinal: 0,
++            },
++        })
++    })?;
++    same_pcm(
++        &selected,
++        &pcm(&project, boundary(4)? + 512)?,
++        "old play after gap",
++    );
++    same_pcm(
++        &born,
++        &pcm(&project, boundary(7)? + 512)?,
++        "new play after gap",
++    );
++    assert_eq!(project.document()?.beat_sounds().len(), 4);
++    let final_document = project.document()?;
++    success(&[
++        "project",
++        "undo",
++        project.path(),
++        "--expected",
++        final_document.revision_id().as_str(),
++    ])?;
++    let undone = project.document()?;
++    assert_eq!(undone.duration()?.frames(), 11);
++    success(&[
++        "project",
++        "redo",
++        project.path(),
++        "--expected",
++        undone.revision_id().as_str(),
++    ])?;
++    let restored = project.document()?;
++    assert_ne!(restored.revision_id(), final_document.revision_id());
++    let mut expected_restored = serde_json::to_value(&final_document)?;
++    expected_restored["revision_id"] = serde_json::to_value(restored.revision_id())?;
++    assert_eq!(serde_json::to_value(&restored)?, expected_restored);
++    same_pcm(
++        &born,
++        &pcm(&project, boundary(7)? + 512)?,
++        "new play after durable redo",
++    );
++    let mut fixture = project.finish(
++        vec!["Partial Repeat with attached sound"],
++        vec![(0, original(2)), (1, original(3)), (2, original(4)), (3, Expected::Background), (4, original(3)), (5, original(4)), (6, Expected::Background), (7, original(3)), (8, original(4)), (9, original(5)), (10, original(3)), (11, original(4)), (12, original(5))],
++        vec!["Repeat the middle two frames of a copied sound owner, add a new play and silent gaps, then durable Undo/Redo. Independent old/new-play PCM is retained through the gap edit.".into()],
++    )?;
++    fixture.name = "partial-repeat-attached-sounds";
++    fixture.audio = vec![(boundary(3)? + 512, false), (boundary(6)? + 512, false)];
++    Ok(fixture)
++}
+diff --git a/crates/deadpan-core/src/repeat_selection.rs b/crates/deadpan-core/src/repeat_selection.rs
+index 56c7938b..9fd84be7 100644
+--- a/crates/deadpan-core/src/repeat_selection.rs
++++ b/crates/deadpan-core/src/repeat_selection.rs
+@@ -800,15 +800,19 @@ fn next_timing(
+     document: &ProjectDocument,
+     base: &AudioTimingId,
+ ) -> Result<AudioTimingId, EditError> {
+-    // The first ordinal of this allocation that no retained layout uses yet.
++    // The command's base identity belongs to its pre-edit layout, including
++    // attached-sound clocks restored after the structural reducer. Reserve it
++    // even when every physical recipe was already bound and capture omitted it.
+     let mut next = base.clone();
+-    while document.audio_bindings().timings.contains_key(&next) {
++    loop {
+         next.ordinal = next
+             .ordinal
+             .checked_add(1)
+             .ok_or_else(|| limit("Repeat requires another timing identity"))?;
++        if !document.audio_bindings().timings.contains_key(&next) {
++            return Ok(next);
++        }
+     }
+-    Ok(next)
+ }
+ 
+ fn invalid(message: &str) -> EditError {
+diff --git a/crates/deadpan-core/src/sound_clock/edit.rs b/crates/deadpan-core/src/sound_clock/edit.rs
+index 0409ca2f..bf622775 100644
+--- a/crates/deadpan-core/src/sound_clock/edit.rs
++++ b/crates/deadpan-core/src/sound_clock/edit.rs
+@@ -199,7 +199,15 @@ impl SoundClockEditCapture {
+                     let (live_repeats, used) =
+                         current.sound_placement_repeats(&live, budget(work)?)?;
+                     work = work.checked_add(used).ok_or_else(exhausted)?;
+-                    if !old_repeats.is_empty() || !live_repeats.is_empty() {
++                    // A newly authored Repeat has an explicit initial cohort
++                    // below. It can repeat a proven Split alias just as it can
++                    // repeat a whole owner. Other external Repeat ancestry
++                    // still needs its own Split occurrence correspondence.
++                    if !old_repeats.is_empty()
++                        || live_repeats
++                            .iter()
++                            .any(|repeat| self.introduced.as_ref() != Some(repeat))
++                    {
+                         return Err(invalid(
+                             "split sound owners inside Repeat need an occurrence route",
+                         ));
+diff --git a/crates/deadpan-core/src/sound_clock/tests/edits/repeats.rs b/crates/deadpan-core/src/sound_clock/tests/edits/repeats.rs
+index 4fade931..adb7ae32 100644
+--- a/crates/deadpan-core/src/sound_clock/tests/edits/repeats.rs
++++ b/crates/deadpan-core/src/sound_clock/tests/edits/repeats.rs
+@@ -21,8 +21,94 @@ fn wrap(document: &ProjectDocument, name: &str) -> ProjectDocument {
+ }
+ 
+ #[test]
+-fn partially_repeating_a_sound_owner_still_refuses_without_an_occurrence_route() {
+-    let before = fixture();
++fn partially_repeating_a_sound_owner_keeps_fragments_and_exact_clock_births() {
++    let mut before = edit(&fixture(), "prefix", insert("prefix", 0, 1));
++    // With no unbound physical recipe, Repeat's structural capture omits its
++    // base timing. Its suffix capture must not claim the sound journal's ID.
++    before.audio_bindings = capture_unbound_audio_bindings(&before, timing("bind-all")).unwrap();
++    let selection = SliceCaptureSelection::Range { range: range(3, 5) };
++    let plan = before
++        .repeat_selection(&node("top"), &selection, 2)
++        .unwrap();
++    let after = edit(
++        &before,
++        "partial-repeat",
++        Command::RepeatSelection {
++            parent: node("top"),
++            selection,
++            plays: 2,
++            identities: RepeatSelectionIdentities {
++                repeat: node("repeat"),
++                group: Some(node("group")),
++                split: SplitIdentities {
++                    nodes: (0..plan.required_split_ids)
++                        .map(|i| node(&format!("part-{i}")))
++                        .collect(),
++                },
++            },
++            timing: timing("partial-repeat"),
++        },
++    );
++    assert_eq!(after.beat_sounds.len(), 3);
++    assert_eq!(after.duration().unwrap().frames(), 12);
++    assert_eq!(
++        after.audio_bindings.timings[&timing("partial-repeat")],
++        FrozenAudioLayout::capture(&before).unwrap()
++    );
++    assert!(
++        after
++            .beat_sounds
++            .values()
++            .all(|events| events == &before.beat_sounds[&node("owner")])
++    );
++    let middle = crate::occurrence_edit::subtree_order(&after, &node("repeat"))
++        .unwrap()
++        .into_iter()
++        .find(|node| after.beat_sounds.contains_key(node))
++        .unwrap();
++    assert_eq!(
++        owner_journal(&after, &middle),
++        vec![timing("prefix"), timing("partial-repeat")]
++    );
++    for index in 0..2 {
++        assert_eq!(
++            applicability(&after, &occurrence(&after, middle.as_str(), index)),
++            vec![true, true]
++        );
++    }
++    let grown = plays(&after, "grown-partial", 3);
++    assert_eq!(
++        applicability(&grown, &occurrence(&grown, middle.as_str(), 2)),
++        vec![false; 3]
++    );
++    let shrunk = plays(&grown, "shrunk-partial", 2);
++    let regrown = plays(&shrunk, "regrown-partial", 3);
++    assert_ne!(
++        occurrence(&grown, middle.as_str(), 2),
++        occurrence(&regrown, middle.as_str(), 2)
++    );
++    assert!(
++        applicability(&regrown, &occurrence(&regrown, middle.as_str(), 2))
++            .into_iter()
++            .all(|present| !present)
++    );
++}
++
++fn plays(document: &ProjectDocument, name: &str, count: u32) -> ProjectDocument {
++    edit(
++        document,
++        name,
++        Command::SetRepeatPlays {
++            node: node("repeat"),
++            plays: count,
++            timing: timing(name),
++        },
++    )
++}
++
++#[test]
++fn split_owners_with_preexisting_external_repeat_ancestry_still_refuse_atomically() {
++    let before = wrap(&fixture(), "outer");
+     let snapshot = before.to_json().unwrap();
+     let selection = SliceCaptureSelection::Range { range: range(2, 4) };
+     let plan = before
+@@ -32,21 +118,21 @@ fn partially_repeating_a_sound_owner_still_refuses_without_an_occurrence_route()
+         &before,
+         &request(
+             &before,
+-            "partial-repeat",
++            "nested",
+             Command::RepeatSelection {
+                 parent: node("top"),
+                 selection,
+                 plays: 2,
+                 identities: RepeatSelectionIdentities {
+-                    repeat: node("repeat"),
+-                    group: Some(node("group")),
++                    repeat: node("nested-repeat"),
++                    group: Some(node("nested-group")),
+                     split: SplitIdentities {
+                         nodes: (0..plan.required_split_ids)
+-                            .map(|i| node(&format!("part-{i}")))
++                            .map(|i| node(&format!("nested-split-{i}")))
+                             .collect(),
+                     },
+                 },
+-                timing: timing("partial-repeat"),
++                timing: timing("nested"),
+             },
+         ),
+     )
+@@ -60,18 +146,6 @@ fn partially_repeating_a_sound_owner_still_refuses_without_an_occurrence_route()
+     assert_eq!(before.to_json().unwrap(), snapshot);
+ }
+ 
+-fn plays(document: &ProjectDocument, name: &str, count: u32) -> ProjectDocument {
+-    edit(
+-        document,
+-        name,
+-        Command::SetRepeatPlays {
+-            node: node("repeat"),
+-            plays: count,
+-            timing: timing(name),
+-        },
+-    )
+-}
+-
+ fn occurrence(document: &ProjectDocument, owner: &str, index: u32) -> InstancePath {
+     let NodeKind::Repeat { iterations, .. } = &document.nodes[&node("repeat")].kind else {
+         panic!()

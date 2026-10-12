@@ -1,0 +1,11 @@
+--- a/crates/deadpan-audio/tests/audio_definition/sound_clocks/repeats.rs
++++ b/crates/deadpan-audio/tests/audio_definition/sound_clocks/repeats.rs
+@@ -217,7 +217,7 @@
+ 
+ #[test]
+ fn partial_repeat_keeps_complete_nested_preserve_context() {
+-    partial_repeat(false, true);
++    partial_repeat(true, true);
+ }
+ 
+ #[test]

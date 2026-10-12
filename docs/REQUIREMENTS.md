@@ -4,6 +4,18 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 
 ## Resumed implementation, 2026-10-06
 
+[Partial Repeat sounds](qualification/partial-repeat-sounds-2026-10-12.md) now
+retain split-owner recipes and initial-play clocks, with independent later births,
+gap edits, copy/recopy and durable Undo/Redo. Repeat also reserves its pre-edit
+timing identity when every source recipe was already bound. All 1,481 core/plan,
+48 attached-audio and six store clock tests pass. The real-media export has all
+13 pictures and zero audio offset correct, but one of 33 AAC blocks fails the
+existing fidelity threshold; the diagnostic failure is retained. Nested Preserve
+with EQ also exposes a pre-edit preparation-budget failure, retained for follow-up.
+Strict workspace Clippy, three release PCM regressions, debug/release diagnostic
+checks, app/CLI release builds and formatting pass. Neither failure is qualified
+away, and no requirement or gate is newly complete.
+
 [Split sound owners](qualification/split-sound-owners-2026-10-12.md) now retain
 attached recipes and chronological clocks on eligible surviving pause, deletion
 and move fragments. Exact Split provenance prevents suffix loss; unchanged full

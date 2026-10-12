@@ -199,7 +199,15 @@ impl SoundClockEditCapture {
                     let (live_repeats, used) =
                         current.sound_placement_repeats(&live, budget(work)?)?;
                     work = work.checked_add(used).ok_or_else(exhausted)?;
-                    if !old_repeats.is_empty() || !live_repeats.is_empty() {
+                    // A newly authored Repeat has an explicit initial cohort
+                    // below. It can repeat a proven Split alias just as it can
+                    // repeat a whole owner. Other external Repeat ancestry
+                    // still needs its own Split occurrence correspondence.
+                    if !old_repeats.is_empty()
+                        || live_repeats
+                            .iter()
+                            .any(|repeat| self.introduced.as_ref() != Some(repeat))
+                    {
                         return Err(invalid(
                             "split sound owners inside Repeat need an occurrence route",
                         ));

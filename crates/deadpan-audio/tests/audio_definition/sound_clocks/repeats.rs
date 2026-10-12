@@ -59,6 +59,167 @@ fn without_clocks(document: &ProjectDocument) -> ProjectDocument {
     ProjectDocument::from_json(&wire.to_string()).unwrap()
 }
 
+fn partial_repeat(treated: bool, nested: bool) {
+    let mut wire = serde_json::to_value(ntsc(AudioEdgePolicy::Hard)).unwrap();
+    if nested {
+        wire["nodes"]["inner"] =
+            serde_json::to_value(retime("owner", 6, 0..4, PitchPolicy::Preserve)).unwrap();
+        wire["nodes"]["outer"] =
+            serde_json::to_value(retime("inner", 4, 0..6, PitchPolicy::Preserve)).unwrap();
+        wire["nodes"]["root"]["kind"]["children"] = serde_json::json!(["lead", "outer", "tail"]);
+    }
+    if treated {
+        let eq = EqualizerRecipe::new(
+            [6000, -6000, 3000].map(|db| GainDb::new(db).unwrap()),
+            None,
+            None,
+        )
+        .unwrap();
+        let treatment =
+            serde_json::to_value(AudioTreatments::default().with_equalizer(Some(eq)).unwrap())
+                .unwrap();
+        wire["nodes"]["owner"]["audio_treatments"] = treatment.clone();
+        wire["beat_sounds"]["owner"]["effect"]["treatments"] = treatment;
+    }
+    let before = insert_prefix(&ProjectDocument::from_json(&wire.to_string()).unwrap());
+    let selection = SliceCaptureSelection::Range {
+        range: FrameRange::new(ProjectFrame(4), ProjectFrame(6)).unwrap(),
+    };
+    let plan = before.repeat_selection(&id("root"), &selection, 2).unwrap();
+    let repeated = edit(
+        &before,
+        "partial-repeat",
+        Command::RepeatSelection {
+            parent: id("root"),
+            selection,
+            plays: 2,
+            identities: deadpan_core::RepeatSelectionIdentities {
+                repeat: id("repeat"),
+                group: Some(id("partial-group")),
+                split: SplitIdentities {
+                    nodes: (0..plan.required_split_ids)
+                        .map(|n| id(&format!("partial-split-{n}")))
+                        .collect(),
+                },
+            },
+            timing: timing("partial-repeat"),
+        },
+    );
+    assert_eq!(repeated.beat_sounds().len(), 3);
+    let selected = render(&before, 4, 6);
+    assert!(selected.iter().flatten().any(|v| v.abs() > 0.001));
+    for (old_start, old_end, new_start, new_end) in
+        [(3, 4, 3, 4), (4, 6, 4, 6), (4, 6, 6, 8), (6, 7, 8, 9)]
+    {
+        super::partial::compare_copy(
+            &render(&before, old_start, old_end),
+            &render(&repeated, new_start, new_end),
+            treated,
+            "partial Repeat initial fragments",
+        );
+    }
+    let grown = count(&repeated, "grown-partial", 3);
+    super::partial::compare_copy(
+        &selected,
+        &render(&grown, 4, 6),
+        treated,
+        "first retained play",
+    );
+    super::partial::compare_copy(
+        &selected,
+        &render(&grown, 6, 8),
+        treated,
+        "second retained play",
+    );
+    let born = render(&grown, 8, 10);
+    super::partial::compare_copy(
+        &render(&without_clocks(&grown), 8, 10),
+        &born,
+        treated,
+        "new play clock",
+    );
+    if !treated {
+        assert_ne!(born, selected);
+    }
+    let NodeKind::Hold { recipe: gap } = hold(1, HoldAudio::Silence).kind else {
+        unreachable!()
+    };
+    let gapped = edit(
+        &grown,
+        "gapped-partial",
+        Command::SetRepeatGaps {
+            node: id("repeat"),
+            gap: Some(gap),
+            branches: vec![],
+            timing: timing("gapped-partial"),
+        },
+    );
+    for (start, end) in [(6, 7), (9, 10)] {
+        assert!(
+            render(&gapped, start, end)
+                .iter()
+                .all(|frame| *frame == [0.0; 2])
+        );
+    }
+    // Current silent-gap fades are intentional; compare interior saved input.
+    super::partial::compare_copy(
+        &selected[512..1024],
+        &render(&gapped, 7, 9)[512..1024],
+        treated,
+        "gapped saved play",
+    );
+    super::partial::compare_copy(
+        &born[512..1024],
+        &render(&gapped, 10, 12)[512..1024],
+        treated,
+        "gapped new play",
+    );
+    let read = |document: &ProjectDocument, frame: i64| {
+        bus(
+            &mut StageAudio::new(compile(document, false)),
+            &mut ClockProvider::new(document),
+            frame_sample_boundary(frame) + 512,
+            256,
+        )
+        .samples
+    };
+    let slice = capture_repeat_slice(&gapped, "root", &id("repeat"), "partial-capture");
+    let copied = paste_repeat_slice(&gapped, "root", 6, &slice, "partial-copy");
+    let copied_top = copied.children(&id("root")).last().unwrap().clone();
+    let slice = capture_repeat_slice(&copied, "root", &copied_top, "partial-recapture");
+    let twice = paste_repeat_slice(&copied, "root", 7, &slice, "partial-recopy");
+    for (old, new, again) in [(4, 15, 23), (7, 18, 26), (10, 21, 29)] {
+        let expected = read(&gapped, old);
+        super::partial::compare_copy(
+            &expected,
+            &read(&twice, new),
+            treated,
+            "partial Repeat copy",
+        );
+        super::partial::compare_copy(
+            &expected,
+            &read(&twice, again),
+            treated,
+            "partial Repeat recopy",
+        );
+    }
+}
+
+#[test]
+fn partial_repeat_keeps_dry_sound_fragments_and_new_play_phase() {
+    partial_repeat(false, false);
+}
+
+#[test]
+fn partial_repeat_keeps_event_and_shared_equalizer_history() {
+    partial_repeat(true, false);
+}
+
+#[test]
+fn partial_repeat_keeps_complete_nested_preserve_context() {
+    partial_repeat(false, true);
+}
+
 #[test]
 fn repeat_sound_pcm_copies_initial_plays_and_allocates_later_births_at_their_own_phase() {
     let before = ntsc(AudioEdgePolicy::Hard);
