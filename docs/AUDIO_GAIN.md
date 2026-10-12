@@ -141,10 +141,11 @@ hits; gain mute does not grant silence/tail policy.
 
 ## Saturation
 
-`AudioTreatmentStage` admits `ClipGain`, `Saturation` and `StereoBalance`. A
-recipe serializes their order: each present stage is listed exactly once, no
-absent stage is listed, and balance is last (`MAX_AUDIO_TREATMENT_STAGES` is 3). `Saturation {
-drive }` holds an exact `GainDb` drive from 0 through 24 dB. Its transfer is
+`AudioTreatmentStage` admits `ClipGain`, `Equalizer`, `Saturation` and
+`StereoBalance`. A recipe serializes their order: each present stage is listed
+exactly once, no absent stage is listed, and balance is last
+(`MAX_AUDIO_TREATMENT_STAGES` is 4). `Saturation { drive }` holds an exact
+`GainDb` drive from 0 through 24 dB. Its transfer is
 the memoryless soft clipper `tanh(drive · x)`: small signals gain the drive,
 peaks approach ±1, digital silence stays exact silence, and because it keeps no
 state it evaluates identically at any read or tile boundary in preview and
@@ -156,27 +157,31 @@ Owners are evaluated innermost first. Linear stretches accumulate gain factors
 stage or a nonlinear bus boundary closes that sum. Without saturation, the
 existing contribution order and exact gain accumulation are preserved.
 
-A saturation owner now sums all its incoming voices before running its declared
-treatments. Original sound and beat-owned sounds join their structural owner;
+A saturation owner evaluates its linear input prefix in each incoming voice's
+own clock, sums those contributions, then runs saturation and its suffix once.
+Original sound and beat-owned sounds join their structural owner;
 independent root sounds join only the root. Nested groups reduce from children
 to parents, so a child's balance precedes its parent's saturation. Repeat
 instances retain distinct buses and exact owner clocks, including escalation.
-Gain, saturation and balance retain their serialized order on the summed bus.
-Mute yields exact silence and grants no silence-policy exemption.
+Gain, saturation and balance retain their serialized order. An input mute zeros
+that contribution; a shared output mute zeros the bus. Neither grants a
+silence-policy exemption.
 
 The worker admits routing and each f64 stereo bus under the existing work and
 PCM residency limits before opening media. Overlapping contributions with
-different retained/current clocks may share a memoryless bus only when their
-evaluated treatment programs agree at every sample. Constant treatments
-therefore survive fractional-sample moves. A provably silent Original leaf
-contributes no clock constraint; stateful processing makes that proof
-inconclusive. Different automation on audible inputs to the same nonlinear
-owner still rejects explicitly. Stable occurrence order fixes sibling
+different retained/current clocks keep independently evaluated input prefixes;
+their shared suffixes must agree at every sample. Constant treatments and
+pre-saturation gain/mute therefore survive fractional-sample moves. A provably
+silent Original leaf contributes no clock constraint; stateful processing makes that proof
+inconclusive. Differing automation after a shared stage, including ancestor
+gain after a child's shared nonlinear stage, still rejects explicitly and
+remains unfinished. Stable occurrence order fixes sibling
 reduction order across partitions and cold reads. Nonfinite inputs, sums and
 results reject explicitly; only the final bus converts back to f32. Raw
 edge-faded inspection still excludes treatments. See the
 [group-mixing qualification](qualification/group-mix-2026-10-11.md) and
-[retained-clock regression](qualification/group-clocks-2026-10-11.md).
+[retained-clock regression](qualification/group-clocks-2026-10-11.md), followed
+by the [independent input-automation qualification](qualification/input-automation-2026-10-12.md).
 
 `:saturate 12dB` and `:saturate off` change the captured beat as one semantic
 `SetAudio { change: saturation }` instruction (recorded in macros and repeated

@@ -1,6 +1,7 @@
 //! Ordered shared owner buses with explicit per-contribution permissions.
 //! A temporal stage re-evaluates its complete prefix using the voices permitted
 //! at the consuming sample. Nonlinear stages still process one shared sum.
+//! Linear input prefixes retain each contribution's own automation clock.
 
 use deadpan_core::AudioTreatmentStage;
 use deadpan_plan::AudioOwnerClock;
@@ -66,7 +67,9 @@ pub(super) struct Boundary {
 #[derive(Clone)]
 struct Layer<'plan> {
     owner: AudioOwnerClock<'plan>,
+    from: usize,
     until: usize,
+    escalation: bool,
 }
 
 pub(super) struct Route<'plan> {
@@ -108,16 +111,17 @@ fn equalizer(layers: &[Layer<'_>]) -> Option<usize> {
     if last.owner.treatments()?.equalizer()?.is_unity() {
         return None;
     }
-    last.owner.treatments()?.order()[..last.until]
+    last.owner.treatments()?.order()[last.from..last.until]
         .iter()
         .position(|stage| *stage == AudioTreatmentStage::Equalizer)
+        .map(|stage| last.from + stage)
 }
 
-/// Build one memoryless side of a bus's temporal boundary. Mute cannot cross it.
+/// Build the delivered memoryless suffix. A temporal boundary evaluates its
+/// complete prefix recursively; mute and automation cannot cross that filter.
 fn transfer(
     layers: &[Layer<'_>],
     at: AudioSample,
-    before: bool,
     control: WorkControl<'_>,
 ) -> Result<authored_gain::GainSum, StageAudioError> {
     let eq = equalizer(layers);
@@ -125,12 +129,16 @@ fn transfer(
     for (index, layer) in layers.iter().enumerate().rev() {
         let last = index + 1 == layers.len();
         let (start, end) = match eq {
-            Some(_) if before && !last => continue,
-            Some(stage) if before => (0, stage),
             Some(stage) if last => (stage + 1, layer.until),
-            _ => (0, layer.until),
+            _ => (layer.from, layer.until),
         };
-        result.owner_slice(&layer.owner, at, start..end, start == 0, control)?;
+        result.owner_slice(
+            &layer.owner,
+            at,
+            start..end,
+            start == layer.from && layer.escalation,
+            control,
+        )?;
     }
     Ok(result)
 }
@@ -197,21 +205,23 @@ impl<'plan> SharedMix<'plan> {
                         "shared mix boundary exceeds its owner",
                     ))?
                     .iter()
-                    .any(|stage| {
+                    .position(|stage| {
                         *stage == AudioTreatmentStage::Saturation
                             || (*stage == AudioTreatmentStage::Equalizer
                                 && recipe.equalizer().is_some_and(|eq| !eq.is_unity()))
                     })
             } else {
-                false
+                None
             };
             layers.push(Layer {
                 owner: owner.clone(),
+                from: complex.unwrap_or(0),
                 until,
+                escalation: complex.is_none(),
             });
-            if !complex {
+            let Some(first_stage) = complex else {
                 continue;
-            }
+            };
             let key = OwnerKey::new(owner);
             let bus = if let Some(&id) = self.by_owner.get(&key) {
                 if self.buses[id].parent != parent {
@@ -233,6 +243,12 @@ impl<'plan> SharedMix<'plan> {
             self.register(bus, start..end, &layers, control)?;
             parent = Some(bus);
             layers.clear();
+            layers.push(Layer {
+                owner: owner.clone(),
+                from: 0,
+                until: first_stage,
+                escalation: true,
+            });
         }
         Ok(Route {
             target: parent,
@@ -262,7 +278,11 @@ impl<'plan> SharedMix<'plan> {
             let mut same = true;
             for (a, b) in run.layers.iter().zip(layers) {
                 control.spend_plan_work(1)?;
-                if a.until != b.until || OwnerKey::new(&a.owner) != OwnerKey::new(&b.owner) {
+                if a.from != b.from
+                    || a.until != b.until
+                    || a.escalation != b.escalation
+                    || OwnerKey::new(&a.owner) != OwnerKey::new(&b.owner)
+                {
                     return Err(PlanError::InvalidPlan("inconsistent shared mix programs").into());
                 }
                 if a.owner.treatments().and_then(|r| r.equalizer())
@@ -282,14 +302,16 @@ impl<'plan> SharedMix<'plan> {
                 for offset in overlap.clone() {
                     control.check()?;
                     let at = AudioSample(self.start.0 + offset as i64);
-                    for before in [true, false] {
-                        if !transfer(&run.layers, at, before, control)?
-                            .same_transfer(&transfer(layers, at, before, control)?)
-                        {
-                            return Err(StageAudioError::Unsupported(
-                                "different automation on independently timed shared inputs",
-                            ));
-                        }
+                    // A filter prepares its complete input prefix recursively
+                    // using each voice's own clock. Only its delivered suffix
+                    // must agree here; comparing pre-EQ gain rejects valid
+                    // independently timed input automation.
+                    if !transfer(&run.layers, at, control)?
+                        .same_transfer(&transfer(layers, at, control)?)
+                    {
+                        return Err(StageAudioError::Unsupported(
+                            "different automation on independently timed shared inputs",
+                        ));
                     }
                 }
             }
@@ -354,8 +376,8 @@ impl<'plan> SharedMix<'plan> {
             gain.owner_slice(
                 &layer.owner,
                 AudioSample(self.start.0 + offset as i64),
-                0..layer.until,
-                true,
+                layer.from..layer.until,
+                layer.escalation,
                 control,
             )?;
         }
@@ -421,7 +443,7 @@ impl<'plan> SharedMix<'plan> {
                     } else {
                         samples[at]
                     };
-                    let output = transfer(&run.layers, clock, false, control)?.apply_wide(input)?;
+                    let output = transfer(&run.layers, clock, control)?.apply_wide(input)?;
                     self.add_value(self.buses[id].parent, at, output, permissions[at])?;
                 }
             }

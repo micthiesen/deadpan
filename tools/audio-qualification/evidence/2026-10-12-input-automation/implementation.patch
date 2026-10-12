@@ -1,0 +1,706 @@
+diff --git a/crates/deadpan-audio/src/group_mix.rs b/crates/deadpan-audio/src/group_mix.rs
+index a4d9cba9..d968b806 100644
+--- a/crates/deadpan-audio/src/group_mix.rs
++++ b/crates/deadpan-audio/src/group_mix.rs
+@@ -1,21 +1,60 @@
+-//! Sum voices at each nonlinear owner before running its treatments. Linear
+-//! stretches retain the exact combined dB calculation of the single-voice path.
++//! Each voice evaluates the linear prefix in its own clock, then nonlinear
++//! owners process the shared sum. Linear stretches retain exact combined dB.
+ //! All routing and PCM residency is admitted before source media is opened.
+ 
+ use deadpan_plan::{AudioOwnerClock, AudioOwnerSupport};
+ 
+ use super::*;
+ 
++#[derive(Clone)]
++struct Layer<'plan> {
++    owner: AudioOwnerClock<'plan>,
++    stages: Range<usize>,
++    escalation: bool,
++}
++
++impl Layer<'_> {
++    fn apply(
++        &self,
++        gain: &mut authored_gain::GainSum,
++        at: AudioSample,
++        control: WorkControl<'_>,
++    ) -> Result<(), StageAudioError> {
++        gain.owner_slice(
++            &self.owner,
++            at,
++            self.stages.clone(),
++            self.escalation,
++            control,
++        )
++    }
++}
++
+ pub(super) struct Route<'plan> {
+     target: Option<usize>,
+-    /// Outer to inner, below the nearest nonlinear owner.
+-    owners: Vec<AudioOwnerClock<'plan>>,
++    /// Outer to inner, starting with the nearest nonlinear owner's prefix.
++    owners: Vec<Layer<'plan>>,
++}
++
++impl Route<'_> {
++    fn gain(
++        &self,
++        at: AudioSample,
++        event_gain: i32,
++        control: WorkControl<'_>,
++    ) -> Result<authored_gain::GainSum, StageAudioError> {
++        let mut gain = authored_gain::beat_sound_gain(&[], at, event_gain, control, false)?;
++        for layer in self.owners.iter().rev() {
++            layer.apply(&mut gain, at, control)?;
++        }
++        Ok(gain)
++    }
+ }
+ 
+ struct Run<'plan> {
+     samples: Range<usize>,
+-    /// The bus owner through the ancestors below its next nonlinear parent.
+-    owners: Vec<AudioOwnerClock<'plan>>,
++    /// The bus owner's suffix through its next nonlinear parent's prefix.
++    owners: Vec<Layer<'plan>>,
+ }
+ 
+ struct Bus<'plan> {
+@@ -139,16 +178,33 @@ impl<'plan> GroupMix<'plan> {
+         )?;
+         let samples = self.local(range)?;
+         let mut parent = None;
+-        let mut below = 0;
+-        for (index, owner) in owners.iter().enumerate() {
++        let mut chain = Vec::new();
++        for owner in owners {
+             control.spend_plan_work(1)?;
+-            if owner
+-                .treatments()
+-                .is_none_or(|recipe| recipe.saturation().is_none())
+-            {
++            let until = owner.treatments().map_or(0, |recipe| recipe.order().len());
++            let saturation = owner.treatments().and_then(|recipe| {
++                recipe
++                    .order()
++                    .iter()
++                    .position(|stage| *stage == deadpan_core::AudioTreatmentStage::Saturation)
++            });
++            let Some(stage) = saturation else {
++                chain.push(Layer {
++                    owner: owner.clone(),
++                    stages: 0..until,
++                    escalation: true,
++                });
+                 continue;
+-            }
+-            let chain = &owners[below..=index];
++            };
++            // Gain before a nonlinear stage belongs to each incoming voice's
++            // owner clock. Its suffix alone processes the shared sum. This
++            // preserves retained/current automation without shaping voices
++            // separately or choosing one voice's clock for all the others.
++            chain.push(Layer {
++                owner: owner.clone(),
++                stages: stage..until,
++                escalation: false,
++            });
+             let bus = if let Some(&bus) = self.by_owner.get(owner.instance()) {
+                 if self.buses[bus].parent != parent {
+                     return Err(
+@@ -167,13 +223,18 @@ impl<'plan> GroupMix<'plan> {
+                 });
+                 bus
+             };
+-            self.register_run(bus, samples.clone(), chain, control)?;
++            self.register_run(bus, samples.clone(), &chain, control)?;
+             parent = Some(bus);
+-            below = index + 1;
++            chain.clear();
++            chain.push(Layer {
++                owner: owner.clone(),
++                stages: 0..stage,
++                escalation: true,
++            });
+         }
+         Ok(Route {
+             target: parent,
+-            owners: owners[below..].to_vec(),
++            owners: chain,
+         })
+     }
+ 
+@@ -181,7 +242,7 @@ impl<'plan> GroupMix<'plan> {
+         &mut self,
+         bus: usize,
+         range: Range<usize>,
+-        owners: &[AudioOwnerClock<'plan>],
++        owners: &[Layer<'plan>],
+         control: WorkControl<'_>,
+     ) -> Result<(), StageAudioError> {
+         let mut cursor = range.start;
+@@ -202,6 +263,10 @@ impl<'plan> GroupMix<'plan> {
+             let mut same_clocks = true;
+             for (a, b) in run.owners.iter().zip(owners) {
+                 control.spend_plan_work(1)?;
++                if a.stages != b.stages || a.escalation != b.escalation {
++                    return Err(PlanError::InvalidPlan("inconsistent nonlinear mix stages").into());
++                }
++                let (a, b) = (&a.owner, &b.owner);
+                 let first = AudioSample(self.start.0 + overlap.start as i64);
+                 let last = AudioSample(self.start.0 + (overlap.end - 1) as i64);
+                 if a.instance() != b.instance()
+@@ -224,10 +289,10 @@ impl<'plan> GroupMix<'plan> {
+                     let mut left = authored_gain::GainSum::default();
+                     let mut right = authored_gain::GainSum::default();
+                     for owner in run.owners.iter().rev() {
+-                        left.owner(owner, at, control)?;
++                        owner.apply(&mut left, at, control)?;
+                     }
+                     for owner in owners.iter().rev() {
+-                        right.owner(owner, at, control)?;
++                        owner.apply(&mut right, at, control)?;
+                     }
+                     if !left.same_transfer(&right) {
+                         return Err(StageAudioError::Unsupported(
+@@ -295,13 +360,7 @@ impl<'plan> GroupMix<'plan> {
+                         "nonzero Original outside meaningful owner-clock support",
+                     ));
+                 }
+-                let gain = authored_gain::beat_sound_gain(
+-                    &route.owners,
+-                    AudioSample(self.start.0 + index as i64),
+-                    0,
+-                    control,
+-                    self.authored,
+-                )?;
++                let gain = route.gain(AudioSample(self.start.0 + index as i64), 0, control)?;
+                 let value = gain.apply(sample)?;
+                 // The Original is the first contribution and has one route at
+                 // each sample. Assignment also retains signed zero exactly.
+@@ -321,12 +380,10 @@ impl<'plan> GroupMix<'plan> {
+         event_gain: i32,
+         control: WorkControl<'_>,
+     ) -> Result<(), StageAudioError> {
+-        let gain = authored_gain::beat_sound_gain(
+-            &self.root.owners,
++        let gain = self.root.gain(
+             AudioSample(self.start.0 + index as i64),
+             event_gain,
+             control,
+-            self.authored,
+         )?;
+         self.add_value(self.root.target, index, gain.apply(sample)?)
+     }
+@@ -339,12 +396,10 @@ impl<'plan> GroupMix<'plan> {
+         event_gain: i32,
+         control: WorkControl<'_>,
+     ) -> Result<(), StageAudioError> {
+-        let gain = authored_gain::beat_sound_gain(
+-            &route.owners,
++        let gain = route.gain(
+             AudioSample(self.start.0 + index as i64),
+             event_gain,
+             control,
+-            self.authored,
+         )?;
+         self.add_value(route.target, index, gain.apply(sample)?)
+     }
+@@ -383,7 +438,11 @@ impl<'plan> GroupMix<'plan> {
+                     control.check()?;
+                     let mut gain = authored_gain::GainSum::default();
+                     for owner in run.owners.iter().rev() {
+-                        gain.owner(owner, AudioSample(self.start.0 + offset as i64), control)?;
++                        owner.apply(
++                            &mut gain,
++                            AudioSample(self.start.0 + offset as i64),
++                            control,
++                        )?;
+                     }
+                     self.add_value(
+                         self.buses[index].parent,
+diff --git a/crates/deadpan-audio/src/shared_mix.rs b/crates/deadpan-audio/src/shared_mix.rs
+index 1295b04d..c08fbcf6 100644
+--- a/crates/deadpan-audio/src/shared_mix.rs
++++ b/crates/deadpan-audio/src/shared_mix.rs
+@@ -1,6 +1,7 @@
+ //! Ordered shared owner buses with explicit per-contribution permissions.
+ //! A temporal stage re-evaluates its complete prefix using the voices permitted
+ //! at the consuming sample. Nonlinear stages still process one shared sum.
++//! Linear input prefixes retain each contribution's own automation clock.
+ 
+ use deadpan_core::AudioTreatmentStage;
+ use deadpan_plan::AudioOwnerClock;
+@@ -66,7 +67,9 @@ pub(super) struct Boundary {
+ #[derive(Clone)]
+ struct Layer<'plan> {
+     owner: AudioOwnerClock<'plan>,
++    from: usize,
+     until: usize,
++    escalation: bool,
+ }
+ 
+ pub(super) struct Route<'plan> {
+@@ -108,16 +111,17 @@ fn equalizer(layers: &[Layer<'_>]) -> Option<usize> {
+     if last.owner.treatments()?.equalizer()?.is_unity() {
+         return None;
+     }
+-    last.owner.treatments()?.order()[..last.until]
++    last.owner.treatments()?.order()[last.from..last.until]
+         .iter()
+         .position(|stage| *stage == AudioTreatmentStage::Equalizer)
++        .map(|stage| last.from + stage)
+ }
+ 
+-/// Build one memoryless side of a bus's temporal boundary. Mute cannot cross it.
++/// Build the delivered memoryless suffix. A temporal boundary evaluates its
++/// complete prefix recursively; mute and automation cannot cross that filter.
+ fn transfer(
+     layers: &[Layer<'_>],
+     at: AudioSample,
+-    before: bool,
+     control: WorkControl<'_>,
+ ) -> Result<authored_gain::GainSum, StageAudioError> {
+     let eq = equalizer(layers);
+@@ -125,12 +129,16 @@ fn transfer(
+     for (index, layer) in layers.iter().enumerate().rev() {
+         let last = index + 1 == layers.len();
+         let (start, end) = match eq {
+-            Some(_) if before && !last => continue,
+-            Some(stage) if before => (0, stage),
+             Some(stage) if last => (stage + 1, layer.until),
+-            _ => (0, layer.until),
++            _ => (layer.from, layer.until),
+         };
+-        result.owner_slice(&layer.owner, at, start..end, start == 0, control)?;
++        result.owner_slice(
++            &layer.owner,
++            at,
++            start..end,
++            start == layer.from && layer.escalation,
++            control,
++        )?;
+     }
+     Ok(result)
+ }
+@@ -197,21 +205,23 @@ impl<'plan> SharedMix<'plan> {
+                         "shared mix boundary exceeds its owner",
+                     ))?
+                     .iter()
+-                    .any(|stage| {
++                    .position(|stage| {
+                         *stage == AudioTreatmentStage::Saturation
+                             || (*stage == AudioTreatmentStage::Equalizer
+                                 && recipe.equalizer().is_some_and(|eq| !eq.is_unity()))
+                     })
+             } else {
+-                false
++                None
+             };
+             layers.push(Layer {
+                 owner: owner.clone(),
++                from: complex.unwrap_or(0),
+                 until,
++                escalation: complex.is_none(),
+             });
+-            if !complex {
++            let Some(first_stage) = complex else {
+                 continue;
+-            }
++            };
+             let key = OwnerKey::new(owner);
+             let bus = if let Some(&id) = self.by_owner.get(&key) {
+                 if self.buses[id].parent != parent {
+@@ -233,6 +243,12 @@ impl<'plan> SharedMix<'plan> {
+             self.register(bus, start..end, &layers, control)?;
+             parent = Some(bus);
+             layers.clear();
++            layers.push(Layer {
++                owner: owner.clone(),
++                from: 0,
++                until: first_stage,
++                escalation: true,
++            });
+         }
+         Ok(Route {
+             target: parent,
+@@ -262,7 +278,11 @@ impl<'plan> SharedMix<'plan> {
+             let mut same = true;
+             for (a, b) in run.layers.iter().zip(layers) {
+                 control.spend_plan_work(1)?;
+-                if a.until != b.until || OwnerKey::new(&a.owner) != OwnerKey::new(&b.owner) {
++                if a.from != b.from
++                    || a.until != b.until
++                    || a.escalation != b.escalation
++                    || OwnerKey::new(&a.owner) != OwnerKey::new(&b.owner)
++                {
+                     return Err(PlanError::InvalidPlan("inconsistent shared mix programs").into());
+                 }
+                 if a.owner.treatments().and_then(|r| r.equalizer())
+@@ -282,14 +302,16 @@ impl<'plan> SharedMix<'plan> {
+                 for offset in overlap.clone() {
+                     control.check()?;
+                     let at = AudioSample(self.start.0 + offset as i64);
+-                    for before in [true, false] {
+-                        if !transfer(&run.layers, at, before, control)?
+-                            .same_transfer(&transfer(layers, at, before, control)?)
+-                        {
+-                            return Err(StageAudioError::Unsupported(
+-                                "different automation on independently timed shared inputs",
+-                            ));
+-                        }
++                    // A filter prepares its complete input prefix recursively
++                    // using each voice's own clock. Only its delivered suffix
++                    // must agree here; comparing pre-EQ gain rejects valid
++                    // independently timed input automation.
++                    if !transfer(&run.layers, at, control)?
++                        .same_transfer(&transfer(layers, at, control)?)
++                    {
++                        return Err(StageAudioError::Unsupported(
++                            "different automation on independently timed shared inputs",
++                        ));
+                     }
+                 }
+             }
+@@ -354,8 +376,8 @@ impl<'plan> SharedMix<'plan> {
+             gain.owner_slice(
+                 &layer.owner,
+                 AudioSample(self.start.0 + offset as i64),
+-                0..layer.until,
+-                true,
++                layer.from..layer.until,
++                layer.escalation,
+                 control,
+             )?;
+         }
+@@ -421,7 +443,7 @@ impl<'plan> SharedMix<'plan> {
+                     } else {
+                         samples[at]
+                     };
+-                    let output = transfer(&run.layers, clock, false, control)?.apply_wide(input)?;
++                    let output = transfer(&run.layers, clock, control)?.apply_wide(input)?;
+                     self.add_value(self.buses[id].parent, at, output, permissions[at])?;
+                 }
+             }
+diff --git a/crates/deadpan-audio/tests/audio_definition/sound_clocks/group_mix.rs b/crates/deadpan-audio/tests/audio_definition/sound_clocks/group_mix.rs
+index 4c9aa967..1b40f2a2 100644
+--- a/crates/deadpan-audio/tests/audio_definition/sound_clocks/group_mix.rs
++++ b/crates/deadpan-audio/tests/audio_definition/sound_clocks/group_mix.rs
+@@ -40,6 +40,189 @@ fn read(document: &ProjectDocument, start: i64, count: u32) -> Vec<[f32; 2]> {
+     .samples
+ }
+ 
++fn original(document: &ProjectDocument, start: i64, count: u32) -> Vec<[f32; 2]> {
++    let mut renderer = StageAudio::new(compile(document, false));
++    let mut provider = ClockProvider::new(document);
++    (0..count)
++        .step_by(256)
++        .flat_map(|offset| {
++            renderer
++                .read_edge_faded(
++                    &mut provider,
++                    AudioSample(start + i64::from(offset)),
++                    256.min(count - offset),
++                    TIMEOUT,
++                    &AtomicBool::new(false),
++                )
++                .unwrap()
++                .samples
++        })
++        .collect()
++}
++
++fn ramp() -> ClipGain {
++    ClipGain::new(
++        GainDb::new(3000).unwrap(),
++        false,
++        vec![
++            GainEnvelope::new(
++                GainClock::OwnerOutput,
++                GainRange::new(ExactRatio::ZERO, ExactRatio::integer(4)).unwrap(),
++                GainDb::new(-12000).unwrap(),
++                vec![
++                    GainSegment::new(
++                        ExactRatio::integer(4),
++                        GainDb::new(6000).unwrap(),
++                        GainCurve::Linear,
++                    )
++                    .unwrap(),
++                ],
++            )
++            .unwrap(),
++        ],
++        vec![],
++    )
++    .unwrap()
++}
++
++fn amplitude(gain: &ClipGain, clock: ExactRatio) -> f64 {
++    let value = gain.evaluate(clock).unwrap();
++    if value.muted {
++        0.0
++    } else {
++        10.0_f64.powf(
++            value.millidecibels.numerator() as f64
++                / value.millidecibels.denominator() as f64
++                / 20000.0,
++        )
++    }
++}
++
++#[test]
++fn shared_eq_independent_input_automation_keeps_gain_filter_and_saturation_order() {
++    use deadpan_core::{AudioTreatmentStage as S, EqualizerRecipe};
++    let source = moved(true);
++    let gain = ramp();
++    let eq = EqualizerRecipe::new(
++        [6000, -3000, 1500].map(|db| GainDb::new(db).unwrap()),
++        None,
++        None,
++    )
++    .unwrap();
++    let kernel = deadpan_audio::equalizer_coefficients(eq, &AtomicBool::new(false)).unwrap();
++    let start = START + 2700;
++    let count = 128u32;
++    let halo_start = start - 2048;
++    let halo_count = count + 4096;
++    let original = original(&source, halo_start, halo_count);
++    let sound = read(&moved(false), halo_start, halo_count);
++    let input: Vec<[f64; 2]> = original
++        .iter()
++        .zip(&sound)
++        .enumerate()
++        .map(|(offset, (original, sound))| {
++            let sample = i128::from(halo_start + offset as i64);
++            let a = amplitude(&gain, ratio(sample * 5 - 24026, 8008));
++            let b = amplitude(&gain, ratio(sample * 5 - 24024, 8008));
++            std::array::from_fn(|ch| f64::from(original[ch]) * a + f64::from(sound[ch]) * b)
++        })
++        .collect();
++    let drive = Saturation::new(GainDb::new(12000).unwrap()).unwrap();
++    for saturation_first in [false, true] {
++        let treatments = AudioTreatments::from_clip_gain(gain.clone())
++            .with_equalizer(Some(eq))
++            .unwrap()
++            .with_saturation(Some(drive))
++            .unwrap();
++        let mut wire = serde_json::to_value(&source).unwrap();
++        wire["nodes"]["owner"]["audio_treatments"] = serde_json::to_value(treatments).unwrap();
++        if saturation_first {
++            wire["nodes"]["owner"]["audio_treatments"]["order"] =
++                serde_json::to_value([S::ClipGain, S::Saturation, S::Equalizer]).unwrap();
++        }
++        let treated = ProjectDocument::from_json(&wire.to_string()).unwrap();
++        let expected: Vec<[f32; 2]> = (0..count as usize)
++            .map(|offset| {
++                std::array::from_fn(|ch| {
++                    let filtered: f64 = kernel
++                        .iter()
++                        .enumerate()
++                        .map(|(k, weight)| {
++                            let input = input[offset + k][ch];
++                            weight
++                                * if saturation_first {
++                                    drive.shape(input)
++                                } else {
++                                    input
++                                }
++                        })
++                        .sum();
++                    (if saturation_first {
++                        filtered
++                    } else {
++                        drive.shape(filtered)
++                    }) as f32
++                })
++            })
++            .collect();
++        let actual = read(&treated, start, count);
++        let error = actual
++            .iter()
++            .zip(&expected)
++            .flat_map(|(a, b)| (0..2).map(move |ch| (a[ch] - b[ch]).abs()))
++            .fold(0.0_f32, f32::max);
++        // The oracle's raw inspection samples are f32; the temporal graph
++        // retains f64 intermediates. This covers four f32 ulps at unity.
++        assert!(
++            error <= 4.0 * f32::EPSILON,
++            "saturation_first={saturation_first}, error={error}"
++        );
++        assert!(actual.iter().flatten().any(|sample| sample.abs() > 0.01));
++        for (offset, frames) in [(73, 55), (0, 37), (37, 36)] {
++            assert_eq!(
++                read(&treated, start + offset, frames),
++                actual[offset as usize..offset as usize + frames as usize]
++            );
++        }
++    }
++}
++
++#[test]
++fn divergent_post_saturation_automation_still_refuses_before_source_access() {
++    let gain = ClipGain::new(
++        GainDb::UNITY,
++        false,
++        vec![],
++        vec![GainRange::new(ratio(975, 8008), ratio(977, 8008)).unwrap()],
++    )
++    .unwrap();
++    let mut wire = serde_json::to_value(treated(&moved(true), gain)).unwrap();
++    wire["nodes"]["owner"]["audio_treatments"]["order"] =
++        serde_json::json!(["saturation", "clip_gain"]);
++    let treated = ProjectDocument::from_json(&wire.to_string()).unwrap();
++    let mut provider = ClockProvider::new(&treated);
++    let error = StageAudio::new(compile(&treated, false))
++        .prepare_authored_bus(
++            &mut provider,
++            AudioSample(START),
++            256,
++            TIMEOUT,
++            &AtomicBool::new(false),
++        )
++        .unwrap_err();
++    assert!(
++        matches!(
++            error,
++            StageAudioError::Unsupported(
++                "different automation on independently timed inputs to one nonlinear owner"
++            )
++        ),
++        "{error:?}"
++    );
++    assert_eq!(provider.fixture.calls, 0);
++    assert_eq!(provider.fixture.context_calls, 0);
++}
++
+ #[test]
+ fn nonlinear_owner_mixes_ntsc_sound_after_retained_clock_move() {
+     let sound = read(&moved(false), START, FRAMES);
+@@ -129,7 +312,7 @@ fn absent_original_does_not_supply_a_nonlinear_automation_clock() {
+ }
+ 
+ #[test]
+-fn divergent_interior_automation_rejects_before_source_access() {
++fn independent_pre_saturation_mute_preserves_each_input_clock() {
+     // The two clocks agree outside this tiny mute range, including both ends
+     // of the read. At output sample 5000 only the current sound clock is muted.
+     let gain = ClipGain::new(
+@@ -139,28 +322,95 @@ fn divergent_interior_automation_rejects_before_source_access() {
+         vec![GainRange::new(ratio(975, 8008), ratio(977, 8008)).unwrap()],
+     )
+     .unwrap();
+-    let treated = treated(&moved(true), gain);
+-    let mut provider = ClockProvider::new(&treated);
+-    let error = StageAudio::new(compile(&treated, false))
+-        .prepare_authored_bus(
+-            &mut provider,
+-            AudioSample(START),
+-            256,
+-            TIMEOUT,
+-            &AtomicBool::new(false),
+-        )
+-        .unwrap_err();
+-    assert!(
+-        matches!(
+-            error,
+-            StageAudioError::Unsupported(
+-                "different automation on independently timed inputs to one nonlinear owner"
++    compare_independent_prefix(gain);
++}
++
++fn compare_independent_prefix(gain: ClipGain) {
++    let sound = read(&moved(false), START, FRAMES);
++    let moved = moved(true);
++    let mut renderer = StageAudio::new(compile(&moved, false));
++    let mut provider = ClockProvider::new(&moved);
++    let original: Vec<_> = (0..FRAMES)
++        .step_by(256)
++        .flat_map(|offset| {
++            renderer
++                .read_edge_faded(
++                    &mut provider,
++                    AudioSample(START + i64::from(offset)),
++                    256.min(FRAMES - offset),
++                    TIMEOUT,
++                    &AtomicBool::new(false),
++                )
++                .unwrap()
++                .samples
++        })
++        .collect();
++    let drive = Saturation::new(GainDb::new(12000).unwrap()).unwrap();
++    let factor = |clock| {
++        let value = gain.evaluate(clock).unwrap();
++        if value.muted {
++            0.0
++        } else {
++            10.0_f64.powf(
++                value.millidecibels.numerator() as f64
++                    / value.millidecibels.denominator() as f64
++                    / 20000.0,
+             )
+-        ),
+-        "{error:?}"
++        }
++    };
++    let expected: Vec<_> = original
++        .iter()
++        .zip(&sound)
++        .enumerate()
++        .map(|(offset, (original, sound))| {
++            let sample = i128::from(START + offset as i64);
++            // Inserting one NTSC frame translates Original's rounded origin by
++            // 1602 samples. The sound's owner stays on the exact current grid.
++            let original_gain = factor(ratio(sample * 5 - 24026, 8008));
++            let sound_gain = factor(ratio(sample * 5 - 24024, 8008));
++            std::array::from_fn(|ch| {
++                drive.shape(
++                    f64::from(original[ch]) * original_gain + f64::from(sound[ch]) * sound_gain,
++                ) as f32
++            })
++        })
++        .collect();
++    let treated = treated(&moved, gain);
++    assert_eq!(read(&treated, START, FRAMES), expected);
++    for (offset, count) in [(193, 7), (195, 61), (6011, 395), (131, 509)] {
++        assert_eq!(
++            read(&treated, START + offset, count),
++            expected[offset as usize..offset as usize + count as usize]
++        );
++    }
++}
++
++#[test]
++fn independent_pre_saturation_envelope_preserves_each_input_clock() {
++    compare_independent_prefix(
++        ClipGain::new(
++            GainDb::new(3000).unwrap(),
++            false,
++            vec![
++                GainEnvelope::new(
++                    GainClock::OwnerOutput,
++                    GainRange::new(ExactRatio::ZERO, ExactRatio::integer(4)).unwrap(),
++                    GainDb::new(-12000).unwrap(),
++                    vec![
++                        GainSegment::new(
++                            ExactRatio::integer(4),
++                            GainDb::new(6000).unwrap(),
++                            GainCurve::Linear,
++                        )
++                        .unwrap(),
++                    ],
++                )
++                .unwrap(),
++            ],
++            vec![],
++        )
++        .unwrap(),
+     );
+-    assert_eq!(provider.fixture.calls, 0);
+-    assert_eq!(provider.fixture.context_calls, 0);
+ }
+ 
+ #[test]

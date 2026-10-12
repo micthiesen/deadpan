@@ -1,0 +1,129 @@
+[
+  {
+    "name": "suites",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-audio",
+      "-p",
+      "deadpan-plan"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "exit": 0,
+    "log_sha256": "e4308adc547c6629d4f230a5254a884b352d00c3a29fef519dd7b3cacd219b7a",
+    "note": "Original harness exit 0; elapsed time not retained. Only production comments changed before the final focused run."
+  },
+  {
+    "name": "baseline",
+    "cwd": "/tmp/deadpan-independent-gain-20261012/baseline",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--message-format=json",
+      "-p",
+      "deadpan-audio",
+      "--test",
+      "audio_definition",
+      "sound_clocks::group_mix"
+    ],
+    "started_utc": "2026-10-12T06:43:28.408881+00:00",
+    "seconds": 13.22374941688031,
+    "exit": 101,
+    "log_sha256": "b61eecdca308ffb38093c259b9253619be902e387ba20ba9595d7d01e87340aa"
+  },
+  {
+    "name": "clippy",
+    "cwd": "/Users/michael/Code/deadpan",
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "--workspace",
+      "--all-targets",
+      "--features",
+      "ui-harness",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "started_utc": "2026-10-12T06:45:08.064714+00:00",
+    "seconds": 30.10977299977094,
+    "exit": 0,
+    "log_sha256": "93caf17aa76227734a3ee1b3079398ca562e792341a808cc79c03fee4b874c98"
+  },
+  {
+    "name": "export",
+    "cwd": "/Users/michael/Code/deadpan",
+    "command": [
+      "cargo",
+      "test",
+      "--release",
+      "--locked",
+      "--message-format=json",
+      "-p",
+      "deadpan-cli",
+      "--test",
+      "preview_export",
+      "shared_equalizer_preserves_mixed_preview_and_verified_export",
+      "--",
+      "--exact",
+      "--nocapture"
+    ],
+    "started_utc": "2026-10-12T06:45:51.015300+00:00",
+    "seconds": 149.70572320837528,
+    "exit": 0,
+    "log_sha256": "c2c22236da84834de0ac398b3aee3db47700c18047c5b5054ed753d0a602e1bb"
+  },
+  {
+    "name": "final-focus",
+    "cwd": "/Users/michael/Code/deadpan",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--message-format=json",
+      "-p",
+      "deadpan-audio",
+      "--test",
+      "audio_definition",
+      "sound_clocks::group_mix",
+      "--",
+      "--nocapture"
+    ],
+    "started_utc": "2026-10-12T06:50:58.322367+00:00",
+    "seconds": 4.082650459371507,
+    "exit": 0,
+    "log_sha256": "1010bf6c137a09b9b2c66480a8a8e9ed87ddf45c8126e7d8d816b09078e606d2"
+  },
+  {
+    "name": "fmt",
+    "cwd": "/Users/michael/Code/deadpan",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "started_utc": "2026-10-12T06:51:54.359847+00:00",
+    "seconds": 5.294695166870952,
+    "exit": 0,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "name": "whitespace",
+    "cwd": "/Users/michael/Code/deadpan",
+    "command": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "started_utc": "2026-10-12T06:55:10.043606+00:00",
+    "seconds": 0.026031041983515024,
+    "exit": 0,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+]

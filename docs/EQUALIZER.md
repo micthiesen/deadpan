@@ -8,7 +8,8 @@ sound owners, including nested groups and retained history, before mastering.
 Shared saturation processes the combined sum in its authored order. Preview
 and emitted-file verification pass for the real headless Render path. Native
 authoring uses a captured draft or complete typed recipe. Independently timed
-automation and remaining send/tail work remain open.
+input gain/mute is implemented; automation after a shared stage and remaining
+send/tail work remain open.
 
 ## Native authoring
 
@@ -85,6 +86,15 @@ allowed sound cannot release forbidden Original or peer history during a Hold.
 The permission set participates in tile identity; all intermediates remain f64.
 Neutral EQ executes as an identity on current delivery, preserving saved crop
 resampling exactly. See [shared EQ qualification](qualification/shared-eq-2026-10-12.md).
+
+Each contribution evaluates the linear prefix before its first shared stage in
+its own clock. A temporal stage recursively prepares its complete prefix, so a
+retained Original gain/mute does not replace the independent sound's current
+clock. Shared saturation still processes the sum, including when it precedes
+EQ. Shared suffixes must agree at every consuming sample; differing automation
+after a shared stage remains explicitly unsupported. Decoded PCM, direct
+convolution and cold reads are covered by the
+[input-automation qualification](qualification/input-automation-2026-10-12.md).
 
 ## Owner input contexts
 
@@ -224,7 +234,7 @@ while still admitting both complete input channels and honoring cancellation.
 
 ## Integration still owed
 
-Complete independently timed automation. Extend
+Complete independently timed automation after shared stages. Extend
 qualification across the remaining nested bindings, copies, Repeats and
 time/pitch interactions, and complete arbitrary sends with incoming-tail policy.
 Request-local filtering is implemented; persistent cache reuse across preview,

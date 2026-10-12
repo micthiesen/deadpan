@@ -4,6 +4,22 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Independent input automation](../qualification/input-automation-2026-10-12.md)
+now preserves each contribution's gain/mute clock before shared saturation or
+EQ. `group_mix` and `shared_mix` split owner programs at their first shared
+stage; recursive EQ prepares its complete prefix. Saturation still receives
+the combined sum. A one-sample mute disagreement, a changing envelope and both
+gain/EQ/saturation orders pass decoded-PCM and cold-read checks. All 973
+plan/audio tests, final focused tests, strict workspace Clippy and release
+preview/export pass; the three new positive regressions fail on archived
+`2d8c874c` with a separate target directory and recorded binary hash.
+
+The primary agent worked alone. Differing automation after a shared stage,
+including ancestor gain after a child's nonlinear stage, still rejects before
+media access and remains agent work. Continue that integration, arbitrary
+sends/incoming tails, broader binding/Repeat/Preserve coverage and persistent
+filtered caching. DP-09/DP-16 and the full product goal remain open.
+
 [Native EQ](../qualification/native-eq-2026-10-12.md) now uses `:eq` and an
 inspector action for a captured unsaved editor, or complete typed recipes for
 dot/macros. The existing Gain draft owns proposals, audition and Apply/Cancel;
@@ -15,8 +31,9 @@ The primary agent worked alone. The full app suite passes 1120 tests with nine
 existing opt-in ignores; final focused tests, workspace Clippy, normal build
 and release replays pass. EQ/Gain/audio visual checks total 500, and the separate
 EQ performance replay passes 81. Final captures and exact metrics are retained.
-Continue with independently timed automation, arbitrary sends/incoming tails,
-broader binding/Repeat/Preserve coverage and persistent filtered caching.
+Continue with the remaining independently timed automation, arbitrary
+sends/incoming tails, broader binding/Repeat/Preserve coverage and persistent
+filtered caching.
 DP-09/DP-16 and the full product goal remain open.
 
 [Shared EQ](../qualification/shared-eq-2026-10-12.md) now uses `shared_mix.rs`

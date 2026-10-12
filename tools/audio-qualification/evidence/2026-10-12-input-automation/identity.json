@@ -1,0 +1,27 @@
+{
+  "base_commit": "2d8c874cb1dcc2c0408a3fea71ac43907ee2df61",
+  "sources": {
+    "crates/deadpan-audio/src/group_mix.rs": "dfe9a2c157ab03b907f978ad33ab9b20503f1cd118d32e9a1d5d80920ec27995",
+    "crates/deadpan-audio/src/shared_mix.rs": "09b8a8545c461cb2c167c4a7c04ca49cc84281810be8f393ea50feb222d8b330",
+    "crates/deadpan-audio/tests/audio_definition/sound_clocks/group_mix.rs": "5066c2543f45f6eb8fdc5e3ab8fefcdb2fda15f4d475a8fb387f1f0e86e655da",
+    "Cargo.toml": "253245385ec9459408f5a61d968a05c37d4e7ac8cb7f8f8c4447583fed193985",
+    "Cargo.lock": "9d911d67520092b729ae0e5933a39fc57f0ab4933b7d94b2d72d55a125fca93e",
+    "rust-toolchain.toml": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc",
+    "crates/deadpan-audio/src/shared_eq.rs": "60a3c88e76fa36bea8ddf0cbd314bb96878b3d420fc3cba85c1bac7e967c880f",
+    "crates/deadpan-audio/src/authored_gain.rs": "5373776761ad5f1338d37fca54438cde2bd76e969c0c150f1fe45089bff1cceb",
+    "crates/deadpan-audio/tests/audio_definition.rs": "a715f4a9cf772ae921111573cda3657e3bc0de3c440bf9ef114398d385e0caab",
+    "crates/deadpan-audio/tests/audio_definition/sound_clocks.rs": "6a3087a999e2f8a6d0a4f5673e4e8c0a53aba8b325dc5b429519d46b5abbe695",
+    "native/deadpan-source/tests/audio-fixtures/pcm-stereo-48000.wav": "e79aba90eab42dc057171be52be9ecb794c3e2790c5731783270ece73c24d2ee",
+    "crates/deadpan-cli/tests/preview_export.rs": "8b871d5d9d49ba8e3478f338b27e8f853d814e58d6a12df89a022d4ad40fb895",
+    "crates/deadpan-cli/tests/preview_export/recipes.rs": "b3afed629447a05994bb25c2ad2371eb86cad6f7bcbbdcb1f94515edaac4076a"
+  },
+  "binaries": {
+    "final-focus": {
+      "/Users/michael/Code/deadpan/target/debug/deps/audio_definition-3d3947b9399b2579": "54e89a2f93a833583243d1970a4191b035c56ac84aff14a6ec2ab1e0e8abfb38"
+    },
+    "export": {
+      "/Users/michael/Code/deadpan/target/release/deps/preview_export-13eb73279274fbb4": "ffcc6723a021235c107713c2f489141958e8a8825fa28bab4d2537494b88c119",
+      "/Users/michael/Code/deadpan/target/release/deadpan-cli": "7fdb978589d86157229424e5e04587fc66cd8a4794dc7e637ab8ffad536128ab"
+    }
+  }
+}

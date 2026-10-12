@@ -1,21 +1,60 @@
-//! Sum voices at each nonlinear owner before running its treatments. Linear
-//! stretches retain the exact combined dB calculation of the single-voice path.
+//! Each voice evaluates the linear prefix in its own clock, then nonlinear
+//! owners process the shared sum. Linear stretches retain exact combined dB.
 //! All routing and PCM residency is admitted before source media is opened.
 
 use deadpan_plan::{AudioOwnerClock, AudioOwnerSupport};
 
 use super::*;
 
+#[derive(Clone)]
+struct Layer<'plan> {
+    owner: AudioOwnerClock<'plan>,
+    stages: Range<usize>,
+    escalation: bool,
+}
+
+impl Layer<'_> {
+    fn apply(
+        &self,
+        gain: &mut authored_gain::GainSum,
+        at: AudioSample,
+        control: WorkControl<'_>,
+    ) -> Result<(), StageAudioError> {
+        gain.owner_slice(
+            &self.owner,
+            at,
+            self.stages.clone(),
+            self.escalation,
+            control,
+        )
+    }
+}
+
 pub(super) struct Route<'plan> {
     target: Option<usize>,
-    /// Outer to inner, below the nearest nonlinear owner.
-    owners: Vec<AudioOwnerClock<'plan>>,
+    /// Outer to inner, starting with the nearest nonlinear owner's prefix.
+    owners: Vec<Layer<'plan>>,
+}
+
+impl Route<'_> {
+    fn gain(
+        &self,
+        at: AudioSample,
+        event_gain: i32,
+        control: WorkControl<'_>,
+    ) -> Result<authored_gain::GainSum, StageAudioError> {
+        let mut gain = authored_gain::beat_sound_gain(&[], at, event_gain, control, false)?;
+        for layer in self.owners.iter().rev() {
+            layer.apply(&mut gain, at, control)?;
+        }
+        Ok(gain)
+    }
 }
 
 struct Run<'plan> {
     samples: Range<usize>,
-    /// The bus owner through the ancestors below its next nonlinear parent.
-    owners: Vec<AudioOwnerClock<'plan>>,
+    /// The bus owner's suffix through its next nonlinear parent's prefix.
+    owners: Vec<Layer<'plan>>,
 }
 
 struct Bus<'plan> {
@@ -139,16 +178,33 @@ impl<'plan> GroupMix<'plan> {
         )?;
         let samples = self.local(range)?;
         let mut parent = None;
-        let mut below = 0;
-        for (index, owner) in owners.iter().enumerate() {
+        let mut chain = Vec::new();
+        for owner in owners {
             control.spend_plan_work(1)?;
-            if owner
-                .treatments()
-                .is_none_or(|recipe| recipe.saturation().is_none())
-            {
+            let until = owner.treatments().map_or(0, |recipe| recipe.order().len());
+            let saturation = owner.treatments().and_then(|recipe| {
+                recipe
+                    .order()
+                    .iter()
+                    .position(|stage| *stage == deadpan_core::AudioTreatmentStage::Saturation)
+            });
+            let Some(stage) = saturation else {
+                chain.push(Layer {
+                    owner: owner.clone(),
+                    stages: 0..until,
+                    escalation: true,
+                });
                 continue;
-            }
-            let chain = &owners[below..=index];
+            };
+            // Gain before a nonlinear stage belongs to each incoming voice's
+            // owner clock. Its suffix alone processes the shared sum. This
+            // preserves retained/current automation without shaping voices
+            // separately or choosing one voice's clock for all the others.
+            chain.push(Layer {
+                owner: owner.clone(),
+                stages: stage..until,
+                escalation: false,
+            });
             let bus = if let Some(&bus) = self.by_owner.get(owner.instance()) {
                 if self.buses[bus].parent != parent {
                     return Err(
@@ -167,13 +223,18 @@ impl<'plan> GroupMix<'plan> {
                 });
                 bus
             };
-            self.register_run(bus, samples.clone(), chain, control)?;
+            self.register_run(bus, samples.clone(), &chain, control)?;
             parent = Some(bus);
-            below = index + 1;
+            chain.clear();
+            chain.push(Layer {
+                owner: owner.clone(),
+                stages: 0..stage,
+                escalation: true,
+            });
         }
         Ok(Route {
             target: parent,
-            owners: owners[below..].to_vec(),
+            owners: chain,
         })
     }
 
@@ -181,7 +242,7 @@ impl<'plan> GroupMix<'plan> {
         &mut self,
         bus: usize,
         range: Range<usize>,
-        owners: &[AudioOwnerClock<'plan>],
+        owners: &[Layer<'plan>],
         control: WorkControl<'_>,
     ) -> Result<(), StageAudioError> {
         let mut cursor = range.start;
@@ -202,6 +263,10 @@ impl<'plan> GroupMix<'plan> {
             let mut same_clocks = true;
             for (a, b) in run.owners.iter().zip(owners) {
                 control.spend_plan_work(1)?;
+                if a.stages != b.stages || a.escalation != b.escalation {
+                    return Err(PlanError::InvalidPlan("inconsistent nonlinear mix stages").into());
+                }
+                let (a, b) = (&a.owner, &b.owner);
                 let first = AudioSample(self.start.0 + overlap.start as i64);
                 let last = AudioSample(self.start.0 + (overlap.end - 1) as i64);
                 if a.instance() != b.instance()
@@ -224,10 +289,10 @@ impl<'plan> GroupMix<'plan> {
                     let mut left = authored_gain::GainSum::default();
                     let mut right = authored_gain::GainSum::default();
                     for owner in run.owners.iter().rev() {
-                        left.owner(owner, at, control)?;
+                        owner.apply(&mut left, at, control)?;
                     }
                     for owner in owners.iter().rev() {
-                        right.owner(owner, at, control)?;
+                        owner.apply(&mut right, at, control)?;
                     }
                     if !left.same_transfer(&right) {
                         return Err(StageAudioError::Unsupported(
@@ -295,13 +360,7 @@ impl<'plan> GroupMix<'plan> {
                         "nonzero Original outside meaningful owner-clock support",
                     ));
                 }
-                let gain = authored_gain::beat_sound_gain(
-                    &route.owners,
-                    AudioSample(self.start.0 + index as i64),
-                    0,
-                    control,
-                    self.authored,
-                )?;
+                let gain = route.gain(AudioSample(self.start.0 + index as i64), 0, control)?;
                 let value = gain.apply(sample)?;
                 // The Original is the first contribution and has one route at
                 // each sample. Assignment also retains signed zero exactly.
@@ -321,12 +380,10 @@ impl<'plan> GroupMix<'plan> {
         event_gain: i32,
         control: WorkControl<'_>,
     ) -> Result<(), StageAudioError> {
-        let gain = authored_gain::beat_sound_gain(
-            &self.root.owners,
+        let gain = self.root.gain(
             AudioSample(self.start.0 + index as i64),
             event_gain,
             control,
-            self.authored,
         )?;
         self.add_value(self.root.target, index, gain.apply(sample)?)
     }
@@ -339,12 +396,10 @@ impl<'plan> GroupMix<'plan> {
         event_gain: i32,
         control: WorkControl<'_>,
     ) -> Result<(), StageAudioError> {
-        let gain = authored_gain::beat_sound_gain(
-            &route.owners,
+        let gain = route.gain(
             AudioSample(self.start.0 + index as i64),
             event_gain,
             control,
-            self.authored,
         )?;
         self.add_value(route.target, index, gain.apply(sample)?)
     }
@@ -383,7 +438,11 @@ impl<'plan> GroupMix<'plan> {
                     control.check()?;
                     let mut gain = authored_gain::GainSum::default();
                     for owner in run.owners.iter().rev() {
-                        gain.owner(owner, AudioSample(self.start.0 + offset as i64), control)?;
+                        owner.apply(
+                            &mut gain,
+                            AudioSample(self.start.0 + offset as i64),
+                            control,
+                        )?;
                     }
                     self.add_value(
                         self.buses[index].parent,
