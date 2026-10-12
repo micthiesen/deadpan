@@ -107,43 +107,121 @@ fn plays(document: &ProjectDocument, name: &str, count: u32) -> ProjectDocument 
 }
 
 #[test]
-fn split_owners_with_preexisting_external_repeat_ancestry_still_refuse_atomically() {
+fn split_owners_with_preexisting_external_repeat_ancestry_keep_sound_recipes() {
     let before = wrap(&fixture(), "outer");
-    let snapshot = before.to_json().unwrap();
-    let selection = SliceCaptureSelection::Range { range: range(2, 4) };
+    let after = repeat_range(&before, 2, 4);
+    assert_eq!(
+        after.duration().unwrap().frames(),
+        before.duration().unwrap().frames() + 2
+    );
+    assert!(after.beat_sounds.len() > 1);
+    assert!(
+        after
+            .beat_sounds
+            .values()
+            .all(|events| events == &before.beat_sounds[&node("owner")])
+    );
+}
+
+fn repeat_range(before: &ProjectDocument, start: i64, end: i64) -> ProjectDocument {
+    let selection = SliceCaptureSelection::Range {
+        range: range(start, end),
+    };
     let plan = before
         .repeat_selection(&node("top"), &selection, 2)
         .unwrap();
-    let error = apply(
-        &before,
-        &request(
-            &before,
-            "nested",
-            Command::RepeatSelection {
-                parent: node("top"),
-                selection,
-                plays: 2,
-                identities: RepeatSelectionIdentities {
-                    repeat: node("nested-repeat"),
-                    group: Some(node("nested-group")),
-                    split: SplitIdentities {
-                        nodes: (0..plan.required_split_ids)
-                            .map(|i| node(&format!("nested-split-{i}")))
-                            .collect(),
-                    },
+    edit(
+        before,
+        "nested",
+        Command::RepeatSelection {
+            parent: node("top"),
+            selection,
+            plays: 2,
+            identities: RepeatSelectionIdentities {
+                repeat: node("nested-repeat"),
+                group: Some(node("nested-group")),
+                split: SplitIdentities {
+                    nodes: (0..plan.required_split_ids)
+                        .map(|i| node(&format!("nested-split-{i}")))
+                        .collect(),
                 },
-                timing: timing("nested"),
             },
-        ),
+            timing: timing("nested"),
+        },
     )
-    .unwrap_err();
-    assert!(
-        error
-            .message
-            .contains("split sound owners inside Repeat need an occurrence route"),
-        "{error}"
+}
+
+#[test]
+fn split_repeat_aliases_preserve_historical_cohorts_and_later_births() {
+    let shifted = edit(&fixture(), "prefix", insert("prefix", 0, 1));
+    let wrapped = wrap(&shifted, "wrapped");
+    let before = plays(&wrapped, "grown", 3);
+    let after = repeat_range(&before, 11, 13);
+    let owner = crate::occurrence_edit::subtree_order(&after, &node("nested-repeat"))
+        .unwrap()
+        .into_iter()
+        .find(|id| after.beat_sounds.contains_key(id))
+        .unwrap();
+    let clock = &after.audio_bindings.sound_clocks[&owner][&sound("effect")];
+    assert_eq!(clock.clocks().len(), 4);
+    let ancestors = FrozenAudioLayout::capture(&after)
+        .unwrap()
+        .sound_placement_repeats(clock.scope(), MAX_DOCUMENT_NODES)
+        .unwrap()
+        .0;
+    assert_eq!(ancestors.len(), 2);
+    assert_eq!(ancestors[0], node("nested-repeat"));
+    assert_ne!(ancestors[1], node("repeat"));
+    let instance = |document: &ProjectDocument, outer: u32, inner: u32| InstancePath {
+        node: owner.clone(),
+        repeats: ancestors
+            .iter()
+            .zip([outer, inner])
+            .map(|(id, index)| {
+                let NodeKind::Repeat { iterations, .. } = &document.nodes[id].kind else {
+                    panic!()
+                };
+                RepeatInstance {
+                    node: id.clone(),
+                    iteration: iterations.at(index).unwrap(),
+                }
+            })
+            .collect(),
+    };
+    for outer in 0..2 {
+        assert_eq!(
+            applicability(&after, &instance(&after, outer, 0)),
+            vec![true; 4]
+        );
+        assert_eq!(
+            applicability(&after, &instance(&after, outer, 2)),
+            vec![false, false, false, true]
+        );
+    }
+    let resize = |document: &ProjectDocument, name: &str, plays| {
+        edit(
+            document,
+            name,
+            Command::SetRepeatPlays {
+                node: node("nested-repeat"),
+                plays,
+                timing: timing(name),
+            },
+        )
+    };
+    let grown = resize(&after, "grow-nested", 3);
+    assert_eq!(
+        applicability(&grown, &instance(&grown, 2, 2)),
+        vec![false; 5]
     );
-    assert_eq!(before.to_json().unwrap(), snapshot);
+    let shrunk = resize(&grown, "shrink-nested", 2);
+    let regrown = resize(&shrunk, "regrow-nested", 3);
+    assert_ne!(instance(&grown, 2, 2), instance(&regrown, 2, 2));
+    assert!(
+        applicability(&regrown, &instance(&regrown, 2, 2))
+            .into_iter()
+            .all(|present| !present)
+    );
 }
 
 fn occurrence(document: &ProjectDocument, owner: &str, index: u32) -> InstancePath {

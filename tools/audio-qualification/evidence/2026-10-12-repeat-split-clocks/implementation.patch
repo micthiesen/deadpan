@@ -1,0 +1,791 @@
+diff --git a/crates/deadpan-audio/tests/audio_definition/sound_clocks/repeats.rs b/crates/deadpan-audio/tests/audio_definition/sound_clocks/repeats.rs
+index b9c3196f..4ad8f2fe 100644
+--- a/crates/deadpan-audio/tests/audio_definition/sound_clocks/repeats.rs
++++ b/crates/deadpan-audio/tests/audio_definition/sound_clocks/repeats.rs
+@@ -1,5 +1,8 @@
+ use super::*;
+ 
++#[path = "repeat_splits.rs"]
++mod splits;
++
+ fn timing(name: &str) -> AudioTimingId {
+     AudioTimingId {
+         allocation: RevisionId::new(name).unwrap(),
+diff --git a/crates/deadpan-cli/tests/preview_export.rs b/crates/deadpan-cli/tests/preview_export.rs
+index bd459fb4..f5436d44 100644
+--- a/crates/deadpan-cli/tests/preview_export.rs
++++ b/crates/deadpan-cli/tests/preview_export.rs
+@@ -442,10 +442,22 @@ fn nested_equalized_sound_prepares_cold_and_split_reads() -> Result {
+ 
+ #[test]
+ fn partial_repeat_attached_sounds_preserve_preview_and_encoded_fidelity() -> Result {
++    partial_repeat_export(false)
++}
++
++#[test]
++fn partial_existing_repeat_attached_sounds_preserve_preview_and_encoded_fidelity() -> Result {
++    partial_repeat_export(true)
++}
++
++fn partial_repeat_export(existing: bool) -> Result {
+     let (root, _guard) = keep_or(tempfile::tempdir()?);
+-    let fixture = recipes::partial_sounds::partial_repeat_attached_sounds(
+-        &root.join("partial-repeat-sounds"),
+-    )?;
++    let factory = if existing {
++        recipes::partial_sounds::partial_existing_repeat_attached_sounds
++    } else {
++        recipes::partial_sounds::partial_repeat_attached_sounds
++    };
++    let fixture = factory(&root.join("partial-repeat-sounds"))?;
+     check(&fixture)?;
+     let movie = render(&fixture, &root.join("exports"))?;
+     let (report, passed) = verify(&fixture, &movie, &fixture.revision, &[])?;
+@@ -455,7 +467,10 @@ fn partial_repeat_attached_sounds_preserve_preview_and_encoded_fidelity() -> Res
+     assert_eq!(report["audio"][0]["offset_status"], "verified_zero");
+     assert_eq!(report["audio"][0]["measured_offset_samples"], 0);
+     assert_eq!(report["summary"]["pictures_failed"], 0);
+-    assert_eq!(report["summary"]["pictures_checked"], 13);
++    assert_eq!(
++        report["summary"]["pictures_checked"],
++        if existing { 17 } else { 13 }
++    );
+     check_provenance(&fixture, &report)?;
+     if let Some(path) = std::env::var_os("DEADPAN_PARTIAL_REPEAT_RESULTS") {
+         std::fs::write(
+diff --git a/crates/deadpan-cli/tests/preview_export/partial_sounds.rs b/crates/deadpan-cli/tests/preview_export/partial_sounds.rs
+index 82a4de67..f70b83d0 100644
+--- a/crates/deadpan-cli/tests/preview_export/partial_sounds.rs
++++ b/crates/deadpan-cli/tests/preview_export/partial_sounds.rs
+@@ -378,11 +378,43 @@ pub fn split_attached_sounds(dir: &Path) -> Result<Fixture> {
+ }
+ 
+ pub fn partial_repeat_attached_sounds(dir: &Path) -> Result<Fixture> {
++    partial_repeat_sound_fixture(dir, false)
++}
++
++pub fn partial_existing_repeat_attached_sounds(dir: &Path) -> Result<Fixture> {
++    partial_repeat_sound_fixture(dir, true)
++}
++
++fn partial_repeat_sound_fixture(dir: &Path, existing: bool) -> Result<Fixture> {
+     let mut project = copied_project(dir)?;
++    if existing {
++        project.apply(|_, document, revision| {
++            Ok(Command::RepeatSelection {
++                parent: document.root().clone(),
++                selection: deadpan_core::SliceCaptureSelection::Child {
++                    node: root_children(document)?[0].clone(),
++                },
++                plays: 2,
++                identities: deadpan_core::RepeatSelectionIdentities {
++                    repeat: NodeId::new("existing-repeat")?,
++                    group: None,
++                    split: SplitIdentities::default(),
++                },
++                timing: AudioTimingId {
++                    allocation: revision.clone(),
++                    ordinal: 0,
++                },
++            })
++        })?;
++    }
+     let selected = pcm(&project, boundary(1)? + 512)?;
+     let repeat = NodeId::new("partial-repeat")?;
+     project.apply(|project, document, revision| {
+-        let parent = root_children(document)?[0].clone();
++        let parent = if existing {
++            document.root().clone()
++        } else {
++            root_children(document)?[0].clone()
++        };
+         let selection = deadpan_core::SliceCaptureSelection::Range {
+             range: FrameRange::new(ProjectFrame(1), ProjectFrame(3))?,
+         };
+@@ -461,7 +493,7 @@ pub fn partial_repeat_attached_sounds(dir: &Path) -> Result<Fixture> {
+         final_document.revision_id().as_str(),
+     ])?;
+     let undone = project.document()?;
+-    assert_eq!(undone.duration()?.frames(), 11);
++    assert_eq!(undone.duration()?.frames(), if existing { 15 } else { 11 });
+     success(&[
+         "project",
+         "redo",
+@@ -479,12 +511,36 @@ pub fn partial_repeat_attached_sounds(dir: &Path) -> Result<Fixture> {
+         &pcm(&project, boundary(7)? + 512)?,
+         "new play after durable redo",
+     );
++    let mut expected = vec![
++        (0, original(2)),
++        (1, original(3)),
++        (2, original(4)),
++        (3, Expected::Background),
++        (4, original(3)),
++        (5, original(4)),
++        (6, Expected::Background),
++        (7, original(3)),
++        (8, original(4)),
++        (9, original(5)),
++    ];
++    if existing {
++        expected.extend((10..14).map(|frame| (frame, original(frame - 8))));
++    }
++    let tail = if existing { 14 } else { 10 };
++    expected.extend((tail..tail + 3).map(|frame| (frame, original(frame - tail + 3))));
+     let mut fixture = project.finish(
+         vec!["Partial Repeat with attached sound"],
+-        vec![(0, original(2)), (1, original(3)), (2, original(4)), (3, Expected::Background), (4, original(3)), (5, original(4)), (6, Expected::Background), (7, original(3)), (8, original(4)), (9, original(5)), (10, original(3)), (11, original(4)), (12, original(5))],
++        expected,
+         vec!["Repeat the middle two frames of a copied sound owner, add a new play and silent gaps, then durable Undo/Redo. Independent old/new-play PCM is retained through the gap edit.".into()],
+     )?;
+-    fixture.name = "partial-repeat-attached-sounds";
++    fixture.name = if existing {
++        "partial-existing-repeat-attached-sounds"
++    } else {
++        "partial-repeat-attached-sounds"
++    };
++    if existing {
++        fixture.notes.push("The selected range lies inside an existing two-play Repeat; exact Split aliases preserve that Repeat's concrete play clocks.".into());
++    }
+     fixture.audio = vec![(boundary(3)? + 512, false), (boundary(6)? + 512, false)];
+     Ok(fixture)
+ }
+diff --git a/crates/deadpan-core/src/sound_clock/edit.rs b/crates/deadpan-core/src/sound_clock/edit.rs
+index bf622775..bdb2050f 100644
+--- a/crates/deadpan-core/src/sound_clock/edit.rs
++++ b/crates/deadpan-core/src/sound_clock/edit.rs
+@@ -45,6 +45,9 @@ pub(crate) struct SoundClockEditCapture {
+     introduced: Option<NodeId>,
+     /// Exact Split provenance, independent of labels or equal-shaped nodes.
+     owners: BTreeMap<NodeId, NodeId>,
++    /// External Repeat placements also acquire aliases when their full input
++    /// is cloned behind a Split delivery Partition.
++    repeat_aliases: BTreeMap<NodeId, NodeId>,
+     split_owners: BTreeSet<NodeId>,
+ }
+ 
+@@ -104,6 +107,12 @@ impl SoundClockEditCapture {
+                 .keys()
+                 .map(|id| (id.clone(), id.clone()))
+                 .collect(),
++            repeat_aliases: document
++                .nodes
++                .iter()
++                .filter(|(_, node)| matches!(node.kind, NodeKind::Repeat { .. }))
++                .map(|(id, _)| (id.clone(), id.clone()))
++                .collect(),
+             split_owners: BTreeSet::new(),
+         }))
+     }
+@@ -111,6 +120,25 @@ impl SoundClockEditCapture {
+     /// Split retains complete contexts behind disjoint delivery Partitions.
+     /// Record both aliases while the structural reducer has sounds detached.
+     pub(crate) fn split(&mut self, mapping: &BTreeMap<NodeId, NodeId>) -> Result<(), EditError> {
++        let repeat_copies: Vec<_> = mapping
++            .iter()
++            .filter_map(|(old, new)| {
++                self.repeat_aliases
++                    .get(old)
++                    .map(|original| (new.clone(), original.clone()))
++            })
++            .collect();
++        if self
++            .repeat_aliases
++            .len()
++            .checked_add(repeat_copies.len())
++            .is_none_or(|count| count > MAX_DOCUMENT_NODES)
++        {
++            return Err(EditError::new(
++                EditErrorCode::LimitExceeded,
++                "split exceeds the sound Repeat alias limit",
++            ));
++        }
+         let copies: Vec<_> = mapping
+             .iter()
+             .filter_map(|(old, new)| {
+@@ -134,6 +162,11 @@ impl SoundClockEditCapture {
+                 "split exceeds the attached sound limit",
+             ));
+         }
++        for (new, original) in repeat_copies {
++            if self.repeat_aliases.insert(new, original).is_some() {
++                return Err(invalid("split sound Repeat alias already exists"));
++            }
++        }
+         for (old, new, original) in copies {
+             if self.owners.insert(new.clone(), original).is_some() {
+                 return Err(invalid("split sound owner alias already exists"));
+@@ -199,17 +232,16 @@ impl SoundClockEditCapture {
+                     let (live_repeats, used) =
+                         current.sound_placement_repeats(&live, budget(work)?)?;
+                     work = work.checked_add(used).ok_or_else(exhausted)?;
+-                    // A newly authored Repeat has an explicit initial cohort
+-                    // below. It can repeat a proven Split alias just as it can
+-                    // repeat a whole owner. Other external Repeat ancestry
+-                    // still needs its own Split occurrence correspondence.
+-                    if !old_repeats.is_empty()
+-                        || live_repeats
+-                            .iter()
+-                            .any(|repeat| self.introduced.as_ref() != Some(repeat))
+-                    {
++                    // Keep the complete ancestor order, using only exact Split
++                    // provenance. A newly authored wrapper has its own initial
++                    // cohort below and is absent from the prior placement.
++                    let mapped_repeats = live_repeats
++                        .iter()
++                        .filter(|repeat| self.introduced.as_ref() != Some(*repeat))
++                        .map(|repeat| self.repeat_aliases.get(repeat));
++                    if !mapped_repeats.eq(old_repeats.iter().map(Some)) {
+                         return Err(invalid(
+-                            "split sound owners inside Repeat need an occurrence route",
++                            "split sound owner Repeat ancestry has no complete occurrence route",
+                         ));
+                     }
+                     (old, live)
+@@ -244,18 +276,24 @@ impl SoundClockEditCapture {
+                         .iter()
+                         .map(|repeat| {
+                             if self.introduced.as_ref() == Some(repeat) {
+-                                crate::SoundClockRepeatStep::Introduced {
++                                Ok(crate::SoundClockRepeatStep::Introduced {
+                                     live_repeat: repeat.clone(),
+                                     plays: introduced_plays(&current, repeat).clone(),
+-                                }
++                                })
+                             } else {
+-                                crate::SoundClockRepeatStep::Shared {
++                                Ok(crate::SoundClockRepeatStep::Shared {
+                                     live_repeat: repeat.clone(),
+-                                    historical_repeat: repeat.clone(),
+-                                }
++                                    historical_repeat: self
++                                        .repeat_aliases
++                                        .get(repeat)
++                                        .ok_or_else(|| {
++                                            invalid("sound Repeat has no structural alias")
++                                        })?
++                                        .clone(),
++                                })
+                             }
+                         })
+-                        .collect(),
++                        .collect::<Result<Vec<_>, EditError>>()?,
+                 )?;
+                 let key = (old_scope.clone(), live_scope.clone(), split);
+                 let (proof, changed_placement) = if let Some((proof, changed)) = moved.get(&key) {
+@@ -346,20 +384,36 @@ impl SoundClockEditCapture {
+                                 .ok_or_else(|| {
+                                     invalid("sound clock cannot narrow outside its captured scope")
+                                 })?;
+-                        let repeats = crate::SoundClockRepeatMap::new(ancestors.iter().map(|repeat| {
+-                            if self.introduced.as_ref() == Some(repeat) {
+-                                Ok(crate::SoundClockRepeatStep::Introduced { live_repeat: repeat.clone(), plays: introduced_plays(&current, repeat).clone() })
+-                            } else if let Some(step) = reference.repeats().steps().iter().find(|step| matches!(step,
+-                                crate::SoundClockRepeatStep::Introduced { live_repeat, .. } if live_repeat == repeat)) {
+-                                Ok(step.clone())
+-                            } else {
+-                                Ok(crate::SoundClockRepeatStep::Shared {
+-                                    live_repeat: repeat.clone(),
+-                                    historical_repeat: historical_proof.historical_node(repeat)
+-                                        .ok_or_else(|| invalid("sound Repeat has no proven historical alias"))?.clone(),
+-                                })
+-                            }
+-                        }).collect::<Result<Vec<_>, EditError>>()?)?;
++                        let repeats = crate::SoundClockRepeatMap::new(
++                            ancestors.iter().map(|repeat| {
++                                if self.introduced.as_ref() == Some(repeat) {
++                                    return Ok(crate::SoundClockRepeatStep::Introduced {
++                                        live_repeat: repeat.clone(),
++                                        plays: introduced_plays(&current, repeat).clone(),
++                                    });
++                                }
++                                let prior_repeat = self.repeat_aliases.get(repeat)
++                                    .ok_or_else(|| invalid("sound Repeat has no structural alias"))?;
++                                let introduced = reference.repeats().steps().iter().find_map(|step| {
++                                    match step {
++                                        crate::SoundClockRepeatStep::Introduced { live_repeat, plays }
++                                            if live_repeat == prior_repeat => Some(plays),
++                                        _ => None,
++                                    }
++                                });
++                                if let Some(plays) = introduced {
++                                    Ok(crate::SoundClockRepeatStep::Introduced {
++                                        live_repeat: repeat.clone(), plays: plays.clone(),
++                                    })
++                                } else {
++                                    Ok(crate::SoundClockRepeatStep::Shared {
++                                        live_repeat: repeat.clone(),
++                                        historical_repeat: historical_proof.historical_node(prior_repeat)
++                                            .ok_or_else(|| invalid("sound Repeat has no proven historical alias"))?.clone(),
++                                    })
++                                }
++                            }).collect::<Result<Vec<_>, EditError>>()?,
++                        )?;
+                         references.push(
+                             SoundClockReference::new(
+                                 reference.timing().clone(),
+diff --git a/crates/deadpan-core/src/sound_clock/tests/edits/repeats.rs b/crates/deadpan-core/src/sound_clock/tests/edits/repeats.rs
+index adb7ae32..f88849be 100644
+--- a/crates/deadpan-core/src/sound_clock/tests/edits/repeats.rs
++++ b/crates/deadpan-core/src/sound_clock/tests/edits/repeats.rs
+@@ -107,43 +107,121 @@ fn plays(document: &ProjectDocument, name: &str, count: u32) -> ProjectDocument
+ }
+ 
+ #[test]
+-fn split_owners_with_preexisting_external_repeat_ancestry_still_refuse_atomically() {
++fn split_owners_with_preexisting_external_repeat_ancestry_keep_sound_recipes() {
+     let before = wrap(&fixture(), "outer");
+-    let snapshot = before.to_json().unwrap();
+-    let selection = SliceCaptureSelection::Range { range: range(2, 4) };
++    let after = repeat_range(&before, 2, 4);
++    assert_eq!(
++        after.duration().unwrap().frames(),
++        before.duration().unwrap().frames() + 2
++    );
++    assert!(after.beat_sounds.len() > 1);
++    assert!(
++        after
++            .beat_sounds
++            .values()
++            .all(|events| events == &before.beat_sounds[&node("owner")])
++    );
++}
++
++fn repeat_range(before: &ProjectDocument, start: i64, end: i64) -> ProjectDocument {
++    let selection = SliceCaptureSelection::Range {
++        range: range(start, end),
++    };
+     let plan = before
+         .repeat_selection(&node("top"), &selection, 2)
+         .unwrap();
+-    let error = apply(
+-        &before,
+-        &request(
+-            &before,
+-            "nested",
+-            Command::RepeatSelection {
+-                parent: node("top"),
+-                selection,
+-                plays: 2,
+-                identities: RepeatSelectionIdentities {
+-                    repeat: node("nested-repeat"),
+-                    group: Some(node("nested-group")),
+-                    split: SplitIdentities {
+-                        nodes: (0..plan.required_split_ids)
+-                            .map(|i| node(&format!("nested-split-{i}")))
+-                            .collect(),
+-                    },
++    edit(
++        before,
++        "nested",
++        Command::RepeatSelection {
++            parent: node("top"),
++            selection,
++            plays: 2,
++            identities: RepeatSelectionIdentities {
++                repeat: node("nested-repeat"),
++                group: Some(node("nested-group")),
++                split: SplitIdentities {
++                    nodes: (0..plan.required_split_ids)
++                        .map(|i| node(&format!("nested-split-{i}")))
++                        .collect(),
+                 },
+-                timing: timing("nested"),
+             },
+-        ),
++            timing: timing("nested"),
++        },
+     )
+-    .unwrap_err();
++}
++
++#[test]
++fn split_repeat_aliases_preserve_historical_cohorts_and_later_births() {
++    let shifted = edit(&fixture(), "prefix", insert("prefix", 0, 1));
++    let wrapped = wrap(&shifted, "wrapped");
++    let before = plays(&wrapped, "grown", 3);
++    let after = repeat_range(&before, 11, 13);
++    let owner = crate::occurrence_edit::subtree_order(&after, &node("nested-repeat"))
++        .unwrap()
++        .into_iter()
++        .find(|id| after.beat_sounds.contains_key(id))
++        .unwrap();
++    let clock = &after.audio_bindings.sound_clocks[&owner][&sound("effect")];
++    assert_eq!(clock.clocks().len(), 4);
++    let ancestors = FrozenAudioLayout::capture(&after)
++        .unwrap()
++        .sound_placement_repeats(clock.scope(), MAX_DOCUMENT_NODES)
++        .unwrap()
++        .0;
++    assert_eq!(ancestors.len(), 2);
++    assert_eq!(ancestors[0], node("nested-repeat"));
++    assert_ne!(ancestors[1], node("repeat"));
++    let instance = |document: &ProjectDocument, outer: u32, inner: u32| InstancePath {
++        node: owner.clone(),
++        repeats: ancestors
++            .iter()
++            .zip([outer, inner])
++            .map(|(id, index)| {
++                let NodeKind::Repeat { iterations, .. } = &document.nodes[id].kind else {
++                    panic!()
++                };
++                RepeatInstance {
++                    node: id.clone(),
++                    iteration: iterations.at(index).unwrap(),
++                }
++            })
++            .collect(),
++    };
++    for outer in 0..2 {
++        assert_eq!(
++            applicability(&after, &instance(&after, outer, 0)),
++            vec![true; 4]
++        );
++        assert_eq!(
++            applicability(&after, &instance(&after, outer, 2)),
++            vec![false, false, false, true]
++        );
++    }
++    let resize = |document: &ProjectDocument, name: &str, plays| {
++        edit(
++            document,
++            name,
++            Command::SetRepeatPlays {
++                node: node("nested-repeat"),
++                plays,
++                timing: timing(name),
++            },
++        )
++    };
++    let grown = resize(&after, "grow-nested", 3);
++    assert_eq!(
++        applicability(&grown, &instance(&grown, 2, 2)),
++        vec![false; 5]
++    );
++    let shrunk = resize(&grown, "shrink-nested", 2);
++    let regrown = resize(&shrunk, "regrow-nested", 3);
++    assert_ne!(instance(&grown, 2, 2), instance(&regrown, 2, 2));
+     assert!(
+-        error
+-            .message
+-            .contains("split sound owners inside Repeat need an occurrence route"),
+-        "{error}"
++        applicability(&regrown, &instance(&regrown, 2, 2))
++            .into_iter()
++            .all(|present| !present)
+     );
+-    assert_eq!(before.to_json().unwrap(), snapshot);
+ }
+ 
+ fn occurrence(document: &ProjectDocument, owner: &str, index: u32) -> InstancePath {
+diff --git a/crates/deadpan-store/tests/source_registration/sounds/sound_clocks/partial.rs b/crates/deadpan-store/tests/source_registration/sounds/sound_clocks/partial.rs
+index 927078e4..adffc77e 100644
+--- a/crates/deadpan-store/tests/source_registration/sounds/sound_clocks/partial.rs
++++ b/crates/deadpan-store/tests/source_registration/sounds/sound_clocks/partial.rs
+@@ -2,6 +2,15 @@ use super::*;
+ 
+ #[test]
+ fn split_sound_clocks_commit_atomically_reopen_and_undo_with_fresh_revisions() -> Result {
++    split_sound_clocks(false)
++}
++
++#[test]
++fn split_sound_clocks_inside_repeat_commit_atomically_reopen_and_undo() -> Result {
++    split_sound_clocks(true)
++}
++
++fn split_sound_clocks(inside_repeat: bool) -> Result {
+     let scratch = tempfile::tempdir()?;
+     let (path, mut store) = project(scratch.path())?;
+     let original = retain(&mut store, "offset-bframes.mp4")?;
+@@ -13,6 +22,29 @@ fn split_sound_clocks_commit_atomically_reopen_and_undo_with_fresh_revisions() -
+         limits(),
+         &active(),
+     )?;
++    if inside_repeat {
++        let before = store.snapshot()?;
++        store.commit(&edit(
++            &before,
++            "wrapped",
++            Command::RepeatSelection {
++                parent: before.root().clone(),
++                selection: SliceCaptureSelection::Child {
++                    node: NodeId::new("clip")?,
++                },
++                plays: 2,
++                identities: deadpan_core::RepeatSelectionIdentities {
++                    repeat: NodeId::new("repeat")?,
++                    group: None,
++                    split: SplitIdentities::default(),
++                },
++                timing: AudioTimingId {
++                    allocation: revision("wrapped"),
++                    ordinal: 0,
++                },
++            },
++        ))?;
++    }
+     let before = store.snapshot()?;
+     let owner = NodeId::new("clip")?;
+     let sound = SoundId::new("overlay")?;
+@@ -27,15 +59,36 @@ fn split_sound_clocks_commit_atomically_reopen_and_undo_with_fresh_revisions() -
+         },
+     ))?;
+     let before = store.snapshot()?;
+-    let at = ProjectFrame(2);
+-    let count = before
+-        .insert_time_target(at)?
+-        .split
+-        .ok_or("expected interior")?
+-        .required_ids;
+-    let command = edit(
+-        &before,
+-        "split-sound",
++    let command = if inside_repeat {
++        let selection = SliceCaptureSelection::Range {
++            range: deadpan_core::FrameRange::new(ProjectFrame(2), ProjectFrame(3))?,
++        };
++        let plan = before.repeat_selection(before.root(), &selection, 2)?;
++        Command::RepeatSelection {
++            parent: before.root().clone(),
++            selection,
++            plays: 2,
++            identities: deadpan_core::RepeatSelectionIdentities {
++                repeat: NodeId::new("nested-repeat")?,
++                group: Some(NodeId::new("group")?),
++                split: SplitIdentities {
++                    nodes: (0..plan.required_split_ids)
++                        .map(|i| NodeId::new(format!("split-{i}")))
++                        .collect::<std::result::Result<_, _>>()?,
++                },
++            },
++            timing: AudioTimingId {
++                allocation: revision("split-sound"),
++                ordinal: 0,
++            },
++        }
++    } else {
++        let at = ProjectFrame(2);
++        let count = before
++            .insert_time_target(at)?
++            .split
++            .ok_or("expected interior")?
++            .required_ids;
+         Command::InsertTime {
+             at,
+             hold: HoldRecipe {
+@@ -54,8 +107,9 @@ fn split_sound_clocks_commit_atomically_reopen_and_undo_with_fresh_revisions() -
+                 allocation: revision("split-sound"),
+                 ordinal: 0,
+             },
+-        },
+-    );
++        }
++    };
++    let command = edit(&before, "split-sound", command);
+     let preview = store.preview(&command)?;
+     let before_counts = counts(&path)?;
+     let database = Connection::open(path.join("project.sqlite"))?;
+@@ -67,7 +121,7 @@ fn split_sound_clocks_commit_atomically_reopen_and_undo_with_fresh_revisions() -
+     assert_eq!(store.commit(&command)?.edit, preview);
+     let after = store.snapshot()?;
+     assert_eq!(after.duration()?.frames(), before.duration()?.frames() + 1);
+-    assert_eq!(after.beat_sounds().len(), 2);
++    assert_eq!(after.beat_sounds().len(), if inside_repeat { 3 } else { 2 });
+     for (alias, events) in after.beat_sounds() {
+         assert_eq!(events[&sound], recipe);
+         let journal = &after.audio_bindings().sound_clocks()[alias][&sound];
+diff --git a/crates/deadpan-audio/tests/audio_definition/sound_clocks/repeat_splits.rs b/crates/deadpan-audio/tests/audio_definition/sound_clocks/repeat_splits.rs
+new file mode 100644
+index 00000000..1bc887a9
+--- /dev/null
++++ b/crates/deadpan-audio/tests/audio_definition/sound_clocks/repeat_splits.rs
+@@ -0,0 +1,188 @@
++//! Split whole retained Repeat inputs while keeping their concrete play clocks.
++use super::*;
++
++fn partial_inside_repeat(treated: bool, nested: bool) {
++    let mut wire = serde_json::to_value(ntsc(AudioEdgePolicy::Hard)).unwrap();
++    if nested {
++        wire["nodes"]["inner"] =
++            serde_json::to_value(retime("owner", 6, 0..4, PitchPolicy::Preserve)).unwrap();
++        wire["nodes"]["outer"] =
++            serde_json::to_value(retime("inner", 4, 0..6, PitchPolicy::Preserve)).unwrap();
++        wire["nodes"]["root"]["kind"]["children"] = serde_json::json!(["lead", "outer", "tail"]);
++    }
++    if treated {
++        let eq = EqualizerRecipe::new(
++            [6000, -6000, 3000].map(|db| GainDb::new(db).unwrap()),
++            None,
++            None,
++        )
++        .unwrap();
++        let treatment =
++            serde_json::to_value(AudioTreatments::default().with_equalizer(Some(eq)).unwrap())
++                .unwrap();
++        wire["nodes"]["owner"]["audio_treatments"] = treatment.clone();
++        wire["beat_sounds"]["owner"]["effect"]["treatments"] = treatment;
++    }
++    let moved = insert_prefix(&ProjectDocument::from_json(&wire.to_string()).unwrap());
++    let before = wrap(&moved, if nested { "outer" } else { "owner" }, "wrapped");
++    assert_eq!(before.duration().unwrap().frames(), 13);
++    let selection = SliceCaptureSelection::Range {
++        range: FrameRange::new(ProjectFrame(4), ProjectFrame(6)).unwrap(),
++    };
++    let plan = before.repeat_selection(&id("root"), &selection, 2).unwrap();
++    let repeated = edit(
++        &before,
++        "split-existing-repeat",
++        Command::RepeatSelection {
++            parent: id("root"),
++            selection,
++            plays: 2,
++            identities: deadpan_core::RepeatSelectionIdentities {
++                repeat: id("inner-repeat"),
++                group: Some(id("partial-group")),
++                split: SplitIdentities {
++                    nodes: (0..plan.required_split_ids)
++                        .map(|n| id(&format!("repeat-split-{n}")))
++                        .collect(),
++                },
++            },
++            timing: timing("split-existing-repeat"),
++        },
++    );
++    assert_eq!(repeated.duration().unwrap().frames(), 15);
++    let compare = |a: &[[f32; 2]], b: &[[f32; 2]], context: &str| {
++        super::super::partial::compare_copy(a, b, treated, context)
++    };
++    for (old_start, old_end, new_start, new_end) in
++        [(0, 4, 0, 4), (4, 6, 4, 6), (4, 6, 6, 8), (6, 13, 8, 15)]
++    {
++        compare(
++            &render(&before, old_start, old_end),
++            &render(&repeated, new_start, new_end),
++            "partial selection inside existing Repeat",
++        );
++    }
++    let selected = render(&before, 4, 6);
++    assert!(selected.iter().flatten().any(|v| v.abs() > 0.001));
++    let grown = edit(
++        &repeated,
++        "grown-inner",
++        Command::SetRepeatPlays {
++            node: id("inner-repeat"),
++            plays: 3,
++            timing: timing("grown-inner"),
++        },
++    );
++    compare(
++        &selected,
++        &render(&grown, 4, 6),
++        "retained first inner play",
++    );
++    compare(
++        &selected,
++        &render(&grown, 6, 8),
++        "retained second inner play",
++    );
++    compare(
++        &render(&without_clocks(&grown), 8, 10),
++        &render(&grown, 8, 10),
++        "later-born inner play",
++    );
++    let slice = capture_repeat_slice(&grown, "root", &id("inner-repeat"), "nested-capture");
++    let end = grown.duration().unwrap().frames();
++    let copied = paste_repeat_slice(
++        &grown,
++        "root",
++        grown.children(&id("root")).count(),
++        &slice,
++        "nested-copy",
++    );
++    let copied_top = copied.children(&id("root")).last().unwrap().clone();
++    let slice = capture_repeat_slice(&copied, "root", &copied_top, "nested-recapture");
++    let twice = paste_repeat_slice(
++        &copied,
++        "root",
++        copied.children(&id("root")).count(),
++        &slice,
++        "nested-recopy",
++    );
++    // Each play owns its origin-based sample rounding. Moving the complete
++    // Repeat can change a play's allocation by one sample, not its input phase.
++    for offset in [0, 2, 4] {
++        let expected = render(&grown, 4 + offset, 6 + offset);
++        compare(
++            &expected,
++            &render(&twice, end + offset, end + offset + 2),
++            "copied split Repeat play",
++        );
++        compare(
++            &expected,
++            &render(&twice, end + 6 + offset, end + 8 + offset),
++            "recopied split Repeat play",
++        );
++    }
++    let deleted = edit(
++        &twice,
++        "delete-initial-repeat",
++        Command::DeleteRipple {
++            node: id("inner-repeat"),
++            timing: timing("delete-initial-repeat"),
++        },
++    );
++    for offset in [0, 2, 4] {
++        compare(
++            &render(&grown, 4 + offset, 6 + offset),
++            &render(&deleted, end + offset, end + offset + 2),
++            "recopy after original Repeat deletion",
++        );
++    }
++    let NodeKind::Hold { recipe } = hold(1, HoldAudio::Silence).kind else {
++        unreachable!()
++    };
++    let gapped = edit(
++        &grown,
++        "gap-inner",
++        Command::SetRepeatGaps {
++            node: id("inner-repeat"),
++            gap: Some(recipe),
++            branches: vec![],
++            timing: timing("gap-inner"),
++        },
++    );
++    for (old, new) in [(4, 4), (6, 7), (8, 10)] {
++        // Current silent-gap envelopes are deliberate. Verify retained input
++        // away from those edges, including the later-born play.
++        compare(
++            &render(&grown, old, old + 2)[512..1024],
++            &render(&gapped, new, new + 2)[512..1024],
++            "split Repeat gap input",
++        );
++    }
++    for start in [6, 9] {
++        assert!(
++            render(&gapped, start, start + 1)
++                .iter()
++                .all(|frame| *frame == [0.0; 2])
++        );
++    }
++}
++
++#[test]
++fn partial_existing_repeat_keeps_dry_sound_clocks() {
++    partial_inside_repeat(false, false);
++}
++
++#[test]
++fn partial_existing_repeat_keeps_equalized_sound_clocks() {
++    partial_inside_repeat(true, false);
++}
++
++#[test]
++fn partial_existing_repeat_keeps_nested_preserve_clocks() {
++    partial_inside_repeat(false, true);
++}
++
++#[test]
++fn partial_existing_repeat_keeps_equalized_nested_preserve_clocks() {
++    partial_inside_repeat(true, true);
++}

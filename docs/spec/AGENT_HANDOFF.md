@@ -4,6 +4,30 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Existing Repeat Split clocks](../qualification/repeat-split-clocks-2026-10-12.md)
+now allow eligible partial RepeatSelection inside an existing sound-bearing
+Repeat. The transport records exact external Repeat aliases alongside owner
+aliases, validates the complete ordered ancestry, and composes old references
+through those aliases. Introduced cohorts retain their saved stable play IDs
+when retargeted to cloned Repeats. No schema or resource-limit change is involved.
+
+All 2,880 core/plan/audio/playback/store tests pass, none failed or ignored.
+Four new dry/treated Source/nested-Preserve PCM cases cover new plays, gaps,
+copy/recopy and original-Repeat deletion. Core covers preexisting later births
+and shrink/regrow; store covers forced rollback, reopen and fresh-revision
+Undo/Redo. Those PCM/store cases and both the new 17-picture and prior 13-picture
+exports pass in release. Strict workspace Clippy, app/CLI release builds and
+formatting pass. After all Cargo work ended, the final executable matched five
+authored PCM windows bit for bit against the saved debug executable and verified
+17 pictures and 44 audio blocks with zero offset and 18.3043 dB minimum SNR.
+
+The old release's historical-replay refusal, failed test setup/oracle attempts,
+source/binary identities, projects, movies and complete reports are retained.
+The primary implemented and self-reviewed alone; no live GUI or device output
+ran. Root-owned sounds, changed complete processing scopes, unsupported partial
+composite captures and pause insertion inside Repeat remain guarded. No DP
+requirement or release gate is newly complete.
+
 [AAC noise substitution](../qualification/aac-noise-substitution-2026-10-12.md)
 resolves the remaining short partial-Repeat fidelity failure below. A pinned
 codec probe reproduced every presented sample of the old movie exactly;
@@ -23,9 +47,10 @@ passes 13 pictures and 33 blocks with zero offset and 18.3043 dB minimum SNR.
 The retained 120-picture nested-EQ export also passes with zero offset.
 Source, failed/successful runs, old/new media and complete reports are retained.
 
-Both measured failures from partial Repeat are resolved. Preexisting external
-Repeat ancestry, root-owned sound transforms and remaining processing-scope
-guards still need exact correspondence and PCM qualification before removal.
+Both measured failures from partial Repeat are resolved. The increment above
+handles preexisting external Repeat ancestry. Root-owned sound transforms and
+remaining processing-scope guards still need exact correspondence and PCM
+qualification before removal.
 The primary continues alone and self-reviews; no requirement or gate is newly
 complete.
 

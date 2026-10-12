@@ -378,11 +378,43 @@ pub fn split_attached_sounds(dir: &Path) -> Result<Fixture> {
 }
 
 pub fn partial_repeat_attached_sounds(dir: &Path) -> Result<Fixture> {
+    partial_repeat_sound_fixture(dir, false)
+}
+
+pub fn partial_existing_repeat_attached_sounds(dir: &Path) -> Result<Fixture> {
+    partial_repeat_sound_fixture(dir, true)
+}
+
+fn partial_repeat_sound_fixture(dir: &Path, existing: bool) -> Result<Fixture> {
     let mut project = copied_project(dir)?;
+    if existing {
+        project.apply(|_, document, revision| {
+            Ok(Command::RepeatSelection {
+                parent: document.root().clone(),
+                selection: deadpan_core::SliceCaptureSelection::Child {
+                    node: root_children(document)?[0].clone(),
+                },
+                plays: 2,
+                identities: deadpan_core::RepeatSelectionIdentities {
+                    repeat: NodeId::new("existing-repeat")?,
+                    group: None,
+                    split: SplitIdentities::default(),
+                },
+                timing: AudioTimingId {
+                    allocation: revision.clone(),
+                    ordinal: 0,
+                },
+            })
+        })?;
+    }
     let selected = pcm(&project, boundary(1)? + 512)?;
     let repeat = NodeId::new("partial-repeat")?;
     project.apply(|project, document, revision| {
-        let parent = root_children(document)?[0].clone();
+        let parent = if existing {
+            document.root().clone()
+        } else {
+            root_children(document)?[0].clone()
+        };
         let selection = deadpan_core::SliceCaptureSelection::Range {
             range: FrameRange::new(ProjectFrame(1), ProjectFrame(3))?,
         };
@@ -461,7 +493,7 @@ pub fn partial_repeat_attached_sounds(dir: &Path) -> Result<Fixture> {
         final_document.revision_id().as_str(),
     ])?;
     let undone = project.document()?;
-    assert_eq!(undone.duration()?.frames(), 11);
+    assert_eq!(undone.duration()?.frames(), if existing { 15 } else { 11 });
     success(&[
         "project",
         "redo",
@@ -479,12 +511,36 @@ pub fn partial_repeat_attached_sounds(dir: &Path) -> Result<Fixture> {
         &pcm(&project, boundary(7)? + 512)?,
         "new play after durable redo",
     );
+    let mut expected = vec![
+        (0, original(2)),
+        (1, original(3)),
+        (2, original(4)),
+        (3, Expected::Background),
+        (4, original(3)),
+        (5, original(4)),
+        (6, Expected::Background),
+        (7, original(3)),
+        (8, original(4)),
+        (9, original(5)),
+    ];
+    if existing {
+        expected.extend((10..14).map(|frame| (frame, original(frame - 8))));
+    }
+    let tail = if existing { 14 } else { 10 };
+    expected.extend((tail..tail + 3).map(|frame| (frame, original(frame - tail + 3))));
     let mut fixture = project.finish(
         vec!["Partial Repeat with attached sound"],
-        vec![(0, original(2)), (1, original(3)), (2, original(4)), (3, Expected::Background), (4, original(3)), (5, original(4)), (6, Expected::Background), (7, original(3)), (8, original(4)), (9, original(5)), (10, original(3)), (11, original(4)), (12, original(5))],
+        expected,
         vec!["Repeat the middle two frames of a copied sound owner, add a new play and silent gaps, then durable Undo/Redo. Independent old/new-play PCM is retained through the gap edit.".into()],
     )?;
-    fixture.name = "partial-repeat-attached-sounds";
+    fixture.name = if existing {
+        "partial-existing-repeat-attached-sounds"
+    } else {
+        "partial-repeat-attached-sounds"
+    };
+    if existing {
+        fixture.notes.push("The selected range lies inside an existing two-play Repeat; exact Split aliases preserve that Repeat's concrete play clocks.".into());
+    }
     fixture.audio = vec![(boundary(3)? + 512, false), (boundary(6)? + 512, false)];
     Ok(fixture)
 }

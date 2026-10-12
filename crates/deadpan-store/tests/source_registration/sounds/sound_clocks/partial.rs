@@ -2,6 +2,15 @@ use super::*;
 
 #[test]
 fn split_sound_clocks_commit_atomically_reopen_and_undo_with_fresh_revisions() -> Result {
+    split_sound_clocks(false)
+}
+
+#[test]
+fn split_sound_clocks_inside_repeat_commit_atomically_reopen_and_undo() -> Result {
+    split_sound_clocks(true)
+}
+
+fn split_sound_clocks(inside_repeat: bool) -> Result {
     let scratch = tempfile::tempdir()?;
     let (path, mut store) = project(scratch.path())?;
     let original = retain(&mut store, "offset-bframes.mp4")?;
@@ -13,6 +22,29 @@ fn split_sound_clocks_commit_atomically_reopen_and_undo_with_fresh_revisions() -
         limits(),
         &active(),
     )?;
+    if inside_repeat {
+        let before = store.snapshot()?;
+        store.commit(&edit(
+            &before,
+            "wrapped",
+            Command::RepeatSelection {
+                parent: before.root().clone(),
+                selection: SliceCaptureSelection::Child {
+                    node: NodeId::new("clip")?,
+                },
+                plays: 2,
+                identities: deadpan_core::RepeatSelectionIdentities {
+                    repeat: NodeId::new("repeat")?,
+                    group: None,
+                    split: SplitIdentities::default(),
+                },
+                timing: AudioTimingId {
+                    allocation: revision("wrapped"),
+                    ordinal: 0,
+                },
+            },
+        ))?;
+    }
     let before = store.snapshot()?;
     let owner = NodeId::new("clip")?;
     let sound = SoundId::new("overlay")?;
@@ -27,15 +59,36 @@ fn split_sound_clocks_commit_atomically_reopen_and_undo_with_fresh_revisions() -
         },
     ))?;
     let before = store.snapshot()?;
-    let at = ProjectFrame(2);
-    let count = before
-        .insert_time_target(at)?
-        .split
-        .ok_or("expected interior")?
-        .required_ids;
-    let command = edit(
-        &before,
-        "split-sound",
+    let command = if inside_repeat {
+        let selection = SliceCaptureSelection::Range {
+            range: deadpan_core::FrameRange::new(ProjectFrame(2), ProjectFrame(3))?,
+        };
+        let plan = before.repeat_selection(before.root(), &selection, 2)?;
+        Command::RepeatSelection {
+            parent: before.root().clone(),
+            selection,
+            plays: 2,
+            identities: deadpan_core::RepeatSelectionIdentities {
+                repeat: NodeId::new("nested-repeat")?,
+                group: Some(NodeId::new("group")?),
+                split: SplitIdentities {
+                    nodes: (0..plan.required_split_ids)
+                        .map(|i| NodeId::new(format!("split-{i}")))
+                        .collect::<std::result::Result<_, _>>()?,
+                },
+            },
+            timing: AudioTimingId {
+                allocation: revision("split-sound"),
+                ordinal: 0,
+            },
+        }
+    } else {
+        let at = ProjectFrame(2);
+        let count = before
+            .insert_time_target(at)?
+            .split
+            .ok_or("expected interior")?
+            .required_ids;
         Command::InsertTime {
             at,
             hold: HoldRecipe {
@@ -54,8 +107,9 @@ fn split_sound_clocks_commit_atomically_reopen_and_undo_with_fresh_revisions() -
                 allocation: revision("split-sound"),
                 ordinal: 0,
             },
-        },
-    );
+        }
+    };
+    let command = edit(&before, "split-sound", command);
     let preview = store.preview(&command)?;
     let before_counts = counts(&path)?;
     let database = Connection::open(path.join("project.sqlite"))?;
@@ -67,7 +121,7 @@ fn split_sound_clocks_commit_atomically_reopen_and_undo_with_fresh_revisions() -
     assert_eq!(store.commit(&command)?.edit, preview);
     let after = store.snapshot()?;
     assert_eq!(after.duration()?.frames(), before.duration()?.frames() + 1);
-    assert_eq!(after.beat_sounds().len(), 2);
+    assert_eq!(after.beat_sounds().len(), if inside_repeat { 3 } else { 2 });
     for (alias, events) in after.beat_sounds() {
         assert_eq!(events[&sound], recipe);
         let journal = &after.audio_bindings().sound_clocks()[alias][&sound];

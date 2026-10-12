@@ -1,0 +1,56 @@
+{
+  "core-expanded": {
+    "passed": 34,
+    "failed": 0,
+    "ignored": 0,
+    "result_groups": 52
+  },
+  "audio-expanded": {
+    "passed": 4,
+    "failed": 0,
+    "ignored": 0,
+    "result_groups": 1
+  },
+  "store-second": {
+    "passed": 2,
+    "failed": 0,
+    "ignored": 0,
+    "result_groups": 1
+  },
+  "cli-debug": {
+    "passed": 1,
+    "failed": 0,
+    "ignored": 0,
+    "result_groups": 1
+  },
+  "core-plan-audio-playback-store": {
+    "passed": 2880,
+    "failed": 0,
+    "ignored": 0,
+    "result_groups": 146
+  },
+  "release-audio": {
+    "passed": 4,
+    "failed": 0,
+    "ignored": 0,
+    "result_groups": 1
+  },
+  "release-store": {
+    "passed": 2,
+    "failed": 0,
+    "ignored": 0,
+    "result_groups": 1
+  },
+  "release-export": {
+    "passed": 1,
+    "failed": 0,
+    "ignored": 0,
+    "result_groups": 1
+  },
+  "release-prior-export": {
+    "passed": 1,
+    "failed": 0,
+    "ignored": 0,
+    "result_groups": 1
+  }
+}

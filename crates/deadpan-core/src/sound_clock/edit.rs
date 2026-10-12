@@ -45,6 +45,9 @@ pub(crate) struct SoundClockEditCapture {
     introduced: Option<NodeId>,
     /// Exact Split provenance, independent of labels or equal-shaped nodes.
     owners: BTreeMap<NodeId, NodeId>,
+    /// External Repeat placements also acquire aliases when their full input
+    /// is cloned behind a Split delivery Partition.
+    repeat_aliases: BTreeMap<NodeId, NodeId>,
     split_owners: BTreeSet<NodeId>,
 }
 
@@ -104,6 +107,12 @@ impl SoundClockEditCapture {
                 .keys()
                 .map(|id| (id.clone(), id.clone()))
                 .collect(),
+            repeat_aliases: document
+                .nodes
+                .iter()
+                .filter(|(_, node)| matches!(node.kind, NodeKind::Repeat { .. }))
+                .map(|(id, _)| (id.clone(), id.clone()))
+                .collect(),
             split_owners: BTreeSet::new(),
         }))
     }
@@ -111,6 +120,25 @@ impl SoundClockEditCapture {
     /// Split retains complete contexts behind disjoint delivery Partitions.
     /// Record both aliases while the structural reducer has sounds detached.
     pub(crate) fn split(&mut self, mapping: &BTreeMap<NodeId, NodeId>) -> Result<(), EditError> {
+        let repeat_copies: Vec<_> = mapping
+            .iter()
+            .filter_map(|(old, new)| {
+                self.repeat_aliases
+                    .get(old)
+                    .map(|original| (new.clone(), original.clone()))
+            })
+            .collect();
+        if self
+            .repeat_aliases
+            .len()
+            .checked_add(repeat_copies.len())
+            .is_none_or(|count| count > MAX_DOCUMENT_NODES)
+        {
+            return Err(EditError::new(
+                EditErrorCode::LimitExceeded,
+                "split exceeds the sound Repeat alias limit",
+            ));
+        }
         let copies: Vec<_> = mapping
             .iter()
             .filter_map(|(old, new)| {
@@ -133,6 +161,11 @@ impl SoundClockEditCapture {
                 EditErrorCode::LimitExceeded,
                 "split exceeds the attached sound limit",
             ));
+        }
+        for (new, original) in repeat_copies {
+            if self.repeat_aliases.insert(new, original).is_some() {
+                return Err(invalid("split sound Repeat alias already exists"));
+            }
         }
         for (old, new, original) in copies {
             if self.owners.insert(new.clone(), original).is_some() {
@@ -199,17 +232,16 @@ impl SoundClockEditCapture {
                     let (live_repeats, used) =
                         current.sound_placement_repeats(&live, budget(work)?)?;
                     work = work.checked_add(used).ok_or_else(exhausted)?;
-                    // A newly authored Repeat has an explicit initial cohort
-                    // below. It can repeat a proven Split alias just as it can
-                    // repeat a whole owner. Other external Repeat ancestry
-                    // still needs its own Split occurrence correspondence.
-                    if !old_repeats.is_empty()
-                        || live_repeats
-                            .iter()
-                            .any(|repeat| self.introduced.as_ref() != Some(repeat))
-                    {
+                    // Keep the complete ancestor order, using only exact Split
+                    // provenance. A newly authored wrapper has its own initial
+                    // cohort below and is absent from the prior placement.
+                    let mapped_repeats = live_repeats
+                        .iter()
+                        .filter(|repeat| self.introduced.as_ref() != Some(*repeat))
+                        .map(|repeat| self.repeat_aliases.get(repeat));
+                    if !mapped_repeats.eq(old_repeats.iter().map(Some)) {
                         return Err(invalid(
-                            "split sound owners inside Repeat need an occurrence route",
+                            "split sound owner Repeat ancestry has no complete occurrence route",
                         ));
                     }
                     (old, live)
@@ -244,18 +276,24 @@ impl SoundClockEditCapture {
                         .iter()
                         .map(|repeat| {
                             if self.introduced.as_ref() == Some(repeat) {
-                                crate::SoundClockRepeatStep::Introduced {
+                                Ok(crate::SoundClockRepeatStep::Introduced {
                                     live_repeat: repeat.clone(),
                                     plays: introduced_plays(&current, repeat).clone(),
-                                }
+                                })
                             } else {
-                                crate::SoundClockRepeatStep::Shared {
+                                Ok(crate::SoundClockRepeatStep::Shared {
                                     live_repeat: repeat.clone(),
-                                    historical_repeat: repeat.clone(),
-                                }
+                                    historical_repeat: self
+                                        .repeat_aliases
+                                        .get(repeat)
+                                        .ok_or_else(|| {
+                                            invalid("sound Repeat has no structural alias")
+                                        })?
+                                        .clone(),
+                                })
                             }
                         })
-                        .collect(),
+                        .collect::<Result<Vec<_>, EditError>>()?,
                 )?;
                 let key = (old_scope.clone(), live_scope.clone(), split);
                 let (proof, changed_placement) = if let Some((proof, changed)) = moved.get(&key) {
@@ -346,20 +384,36 @@ impl SoundClockEditCapture {
                                 .ok_or_else(|| {
                                     invalid("sound clock cannot narrow outside its captured scope")
                                 })?;
-                        let repeats = crate::SoundClockRepeatMap::new(ancestors.iter().map(|repeat| {
-                            if self.introduced.as_ref() == Some(repeat) {
-                                Ok(crate::SoundClockRepeatStep::Introduced { live_repeat: repeat.clone(), plays: introduced_plays(&current, repeat).clone() })
-                            } else if let Some(step) = reference.repeats().steps().iter().find(|step| matches!(step,
-                                crate::SoundClockRepeatStep::Introduced { live_repeat, .. } if live_repeat == repeat)) {
-                                Ok(step.clone())
-                            } else {
-                                Ok(crate::SoundClockRepeatStep::Shared {
-                                    live_repeat: repeat.clone(),
-                                    historical_repeat: historical_proof.historical_node(repeat)
-                                        .ok_or_else(|| invalid("sound Repeat has no proven historical alias"))?.clone(),
-                                })
-                            }
-                        }).collect::<Result<Vec<_>, EditError>>()?)?;
+                        let repeats = crate::SoundClockRepeatMap::new(
+                            ancestors.iter().map(|repeat| {
+                                if self.introduced.as_ref() == Some(repeat) {
+                                    return Ok(crate::SoundClockRepeatStep::Introduced {
+                                        live_repeat: repeat.clone(),
+                                        plays: introduced_plays(&current, repeat).clone(),
+                                    });
+                                }
+                                let prior_repeat = self.repeat_aliases.get(repeat)
+                                    .ok_or_else(|| invalid("sound Repeat has no structural alias"))?;
+                                let introduced = reference.repeats().steps().iter().find_map(|step| {
+                                    match step {
+                                        crate::SoundClockRepeatStep::Introduced { live_repeat, plays }
+                                            if live_repeat == prior_repeat => Some(plays),
+                                        _ => None,
+                                    }
+                                });
+                                if let Some(plays) = introduced {
+                                    Ok(crate::SoundClockRepeatStep::Introduced {
+                                        live_repeat: repeat.clone(), plays: plays.clone(),
+                                    })
+                                } else {
+                                    Ok(crate::SoundClockRepeatStep::Shared {
+                                        live_repeat: repeat.clone(),
+                                        historical_repeat: historical_proof.historical_node(prior_repeat)
+                                            .ok_or_else(|| invalid("sound Repeat has no proven historical alias"))?.clone(),
+                                    })
+                                }
+                            }).collect::<Result<Vec<_>, EditError>>()?,
+                        )?;
                         references.push(
                             SoundClockReference::new(
                                 reference.timing().clone(),

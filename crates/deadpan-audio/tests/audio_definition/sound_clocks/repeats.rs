@@ -1,5 +1,8 @@
 use super::*;
 
+#[path = "repeat_splits.rs"]
+mod splits;
+
 fn timing(name: &str) -> AudioTimingId {
     AudioTimingId {
         allocation: RevisionId::new(name).unwrap(),

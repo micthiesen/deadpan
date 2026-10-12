@@ -1,0 +1,72 @@
+diff --git a/crates/deadpan-core/src/sound_clock/edit.rs b/crates/deadpan-core/src/sound_clock/edit.rs
+index bf622775..e5e80710 100644
+--- a/crates/deadpan-core/src/sound_clock/edit.rs
++++ b/crates/deadpan-core/src/sound_clock/edit.rs
+@@ -111,6 +111,8 @@ impl SoundClockEditCapture {
+     /// Split retains complete contexts behind disjoint delivery Partitions.
+     /// Record both aliases while the structural reducer has sounds detached.
+     pub(crate) fn split(&mut self, mapping: &BTreeMap<NodeId, NodeId>) -> Result<(), EditError> {
++        #[cfg(test)]
++        eprintln!("sound Split aliases: {mapping:?}");
+         let copies: Vec<_> = mapping
+             .iter()
+             .filter_map(|(old, new)| {
+@@ -199,6 +201,8 @@ impl SoundClockEditCapture {
+                     let (live_repeats, used) =
+                         current.sound_placement_repeats(&live, budget(work)?)?;
+                     work = work.checked_add(used).ok_or_else(exhausted)?;
++                    #[cfg(test)]
++                    eprintln!("sound Split scopes {old:?} -> {live:?}, Repeat ancestry {old_repeats:?} -> {live_repeats:?}");
+                     // A newly authored Repeat has an explicit initial cohort
+                     // below. It can repeat a proven Split alias just as it can
+                     // repeat a whole owner. Other external Repeat ancestry
+diff --git a/crates/deadpan-core/src/sound_clock/tests/edits/repeats.rs b/crates/deadpan-core/src/sound_clock/tests/edits/repeats.rs
+index adb7ae32..a3436191 100644
+--- a/crates/deadpan-core/src/sound_clock/tests/edits/repeats.rs
++++ b/crates/deadpan-core/src/sound_clock/tests/edits/repeats.rs
+@@ -107,19 +107,16 @@ fn plays(document: &ProjectDocument, name: &str, count: u32) -> ProjectDocument
+ }
+ 
+ #[test]
+-fn split_owners_with_preexisting_external_repeat_ancestry_still_refuse_atomically() {
++fn split_owners_with_preexisting_external_repeat_ancestry_keep_sound_recipes() {
+     let before = wrap(&fixture(), "outer");
+-    let snapshot = before.to_json().unwrap();
+     let selection = SliceCaptureSelection::Range { range: range(2, 4) };
+     let plan = before
+         .repeat_selection(&node("top"), &selection, 2)
+         .unwrap();
+-    let error = apply(
++    let after = edit(
+         &before,
+-        &request(
+-            &before,
+-            "nested",
+-            Command::RepeatSelection {
++        "nested",
++        Command::RepeatSelection {
+                 parent: node("top"),
+                 selection,
+                 plays: 2,
+@@ -133,17 +130,11 @@ fn split_owners_with_preexisting_external_repeat_ancestry_still_refuse_atomicall
+                     },
+                 },
+                 timing: timing("nested"),
+-            },
+-        ),
+-    )
+-    .unwrap_err();
+-    assert!(
+-        error
+-            .message
+-            .contains("split sound owners inside Repeat need an occurrence route"),
+-        "{error}"
++        },
+     );
+-    assert_eq!(before.to_json().unwrap(), snapshot);
++    assert_eq!(after.duration().unwrap().frames(), before.duration().unwrap().frames() + 2);
++    assert!(after.beat_sounds.len() > 1);
++    assert!(after.beat_sounds.values().all(|events| events == &before.beat_sounds[&node("owner")]));
+ }
+ 
+ fn occurrence(document: &ProjectDocument, owner: &str, index: u32) -> InstancePath {

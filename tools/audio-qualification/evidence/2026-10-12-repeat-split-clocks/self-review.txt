@@ -1,0 +1,17 @@
+Self-review, primary agent only
+
+The Split reducer clones a complete retained input behind disjoint delivery Partitions. Owner aliases alone cannot reconstruct external Repeat placement, because the cloned owner is below cloned Repeat IDs. Track Repeat aliases from the same exact reducer mapping, including aliases of previous clones. Preserve full ancestor order, excluding only the one newly introduced Repeat.
+
+Compose every old clock through pre-edit aliases. Retarget Introduced cohort maps to cloned live Repeat IDs without extending their saved IterationIds. Existing proof machinery checks complete ancestry, unchanged processing scopes, owner provenance, stable branch membership, work bounds and chronological timing. Neither serialized state nor caps change. Root-owned and changed processing-subtree refusals remain.
+
+First PCM copy oracle concatenated a multi-play interval. At NTSC, moving a two-frame play can change its sample allocation by one, so later play indices then compared unrelated sample coordinates. Per-play comparisons use exact origin boundaries and retain the preexisting bitwise dry / 1e-6 processed thresholds; all four initial variants pass. Expanded gap, original-deletion and stable-cohort checks pass. Core covers third-play births before the Split and shrink/regrow after it. All four decoded variants cover copy, recopy, original-Repeat deletion, new plays and silent gaps.
+
+The first store fixture requested InsertTime inside Repeat, which the structural command still refuses before sound transport. Corrected this fixture to RepeatSelection, the newly supported command, and kept the old refusal unchanged. A forced history-insert failure leaves snapshot and row counts unchanged; successful preview/commit, writable/read-only reopen and fresh-revision Undo/Redo pass for both ordinary and existing-Repeat Split routes.
+
+The old binary cannot open this new project history: history replay reaches the same exact former sound-ancestry guard. The first baseline incorrectly expected it to read the project before Undo. The retained old-history-replay result now records that explicit historical replay refusal and uses the new binary before and after to prove the authored document remains unchanged. Final rendered PCM comparison therefore uses the saved qualified debug executable and the final release executable.
+
+The saved old CLI hash matches the final release executable in the preceding AAC qualification. Complete diff review found no schema, command-wire, limiter, encoder or renderer changes. The only runtime change is transient Split/Repeat alias bookkeeping and proof composition in sound_clock/edit.rs.
+
+Full core/plan/audio/playback/store verification passed: 2,880 tests, zero failures and zero ignored, including storage compile-fail documentation. Root/process-scope, same-shaped owner reordering, source revocation, allocation/work limits, staged preparation, copying, randomized structural commands and storage failures are covered by this run.
+
+Final checks passed: strict workspace Clippy; four release PCM cases; both release atomic store cases; new 17-picture and prior 13-picture release exports; final app/CLI release build and formatting. Post-build qualification matches five nonzero 256-pair debug/release authored windows exactly, preserves the committed document, and verifies all 17 pictures and 44 audio blocks with zero signal offset using unchanged thresholds. No live GUI, device output or listening was performed.

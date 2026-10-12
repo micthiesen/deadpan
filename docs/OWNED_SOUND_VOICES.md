@@ -27,8 +27,9 @@ without previous moves retains its source placement before the copy is pasted.
 Explicit-timing insertion, deletion, replacement, slice paste and MoveRange can
 transport surviving attachments when their complete scoped processing
 subtree is unchanged. Whole-owner deletion removes its events and clocks.
-Changing that subtree, partially splitting an owner, or transporting root-owned
-attachments fails explicitly.
+Changing that processing subtree or transporting root-owned attachments fails
+explicitly. Eligible endpoint Splits retain the complete owner behind disjoint
+delivery Partitions and transport its exact recipe and chronological clocks.
 Identity-preserving metadata edits and sound Set/Delete remain available.
 Deleting an attachment before pasting a historical copy is an explicit change
 of authored intent. Existing root-only sound editing keeps its qualified routes.
@@ -36,8 +37,13 @@ of authored intent. Existing root-only sound editing keeps its qualified routes.
 retains them. Both cut forms remove the owner and its sounds. Copying a partial
 range preserves its whole sound owner behind a transparent selection. Range
 endpoints must still resolve to a Source, ordinary Hold or supported fragment;
-partial composite Preserve ranges retain the existing explicit refusal. Splitting
-a surviving owner and sound-bearing Repeat edits still need attachment transforms.
+partial composite Preserve captures retain the existing explicit refusal.
+RepeatSelection can split a complete sound-bearing input, including existing
+external Repeat ancestors. The reducer supplies exact owner and Repeat aliases;
+saved play cohorts follow those aliases without acquiring later-born plays.
+New Repeat plays start on their own clock. Changes to the owner's complete
+processing extent, including Repeat-owned sounds during count changes, still
+fail explicitly.
 
 Database 81 stores core schema 53. Earlier unused development packages refuse
 before writes; see [development formats](DEVELOPMENT_FORMATS.md).
@@ -78,9 +84,10 @@ A previously unclocked sound starts with this capture-time placement. Selecting
 an inner ordinary Sequence child narrows an enclosing scope to the corresponding
 historical subtree; selecting an outer group preserves any smaller existing scope.
 Partial capture retains the complete sound owner and selects its delivered output
-through an exterior Partition. A surviving owner's existing path through its
-outermost crop must remain unchanged; moving that whole fragment is supported,
-but splitting the owner still refuses atomically.
+through an exterior Partition. Moving that whole fragment preserves its existing
+crop. An eligible structural Split can add delivery crops while retaining full
+processing input; its exact owner and external Repeat aliases prove each route.
+Other changes to that crop or processing subtree still refuse atomically.
 
 Paste allocates fresh live nodes, historical aliases and timing IDs. Corresponding
 Repeat families are joined by the scope proof before renaming their stable plays;

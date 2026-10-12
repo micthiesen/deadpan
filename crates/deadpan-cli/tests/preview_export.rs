@@ -442,10 +442,22 @@ fn nested_equalized_sound_prepares_cold_and_split_reads() -> Result {
 
 #[test]
 fn partial_repeat_attached_sounds_preserve_preview_and_encoded_fidelity() -> Result {
+    partial_repeat_export(false)
+}
+
+#[test]
+fn partial_existing_repeat_attached_sounds_preserve_preview_and_encoded_fidelity() -> Result {
+    partial_repeat_export(true)
+}
+
+fn partial_repeat_export(existing: bool) -> Result {
     let (root, _guard) = keep_or(tempfile::tempdir()?);
-    let fixture = recipes::partial_sounds::partial_repeat_attached_sounds(
-        &root.join("partial-repeat-sounds"),
-    )?;
+    let factory = if existing {
+        recipes::partial_sounds::partial_existing_repeat_attached_sounds
+    } else {
+        recipes::partial_sounds::partial_repeat_attached_sounds
+    };
+    let fixture = factory(&root.join("partial-repeat-sounds"))?;
     check(&fixture)?;
     let movie = render(&fixture, &root.join("exports"))?;
     let (report, passed) = verify(&fixture, &movie, &fixture.revision, &[])?;
@@ -455,7 +467,10 @@ fn partial_repeat_attached_sounds_preserve_preview_and_encoded_fidelity() -> Res
     assert_eq!(report["audio"][0]["offset_status"], "verified_zero");
     assert_eq!(report["audio"][0]["measured_offset_samples"], 0);
     assert_eq!(report["summary"]["pictures_failed"], 0);
-    assert_eq!(report["summary"]["pictures_checked"], 13);
+    assert_eq!(
+        report["summary"]["pictures_checked"],
+        if existing { 17 } else { 13 }
+    );
     check_provenance(&fixture, &report)?;
     if let Some(path) = std::env::var_os("DEADPAN_PARTIAL_REPEAT_RESULTS") {
         std::fs::write(

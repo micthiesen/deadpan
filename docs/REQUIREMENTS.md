@@ -4,6 +4,19 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 
 ## Resumed implementation, 2026-10-06
 
+[Existing Repeat Split clocks](qualification/repeat-split-clocks-2026-10-12.md)
+now preserve attached sound recipes and concrete play histories when repeating
+a partial range inside an existing Repeat. Exact reducer aliases retain ordered
+Repeat ancestry and original play cohorts; later births and shrink/regrow stay
+independent. Dry/treated Source and nested Preserve, copy/recopy, original-Repeat
+deletion, gaps and atomic durable history are covered. All 2,880 core/plan/audio/
+playback/store tests pass with none failed or ignored, along with strict workspace
+Clippy and focused release checks. Debug and final release exports verify all
+17 pictures and 44 audio blocks with zero offset. Five authored PCM windows match
+bit for bit across debug/release; app/CLI release builds and formatting pass.
+Evidence and self-review are retained. Root-owned and changed processing-scope
+transforms remain guarded; no requirement or gate is newly complete.
+
 [AAC noise substitution](qualification/aac-noise-substitution-2026-10-12.md)
 resolves the short partial-Repeat export's fidelity failure at the unchanged
 384 kbit/s target and timing/content thresholds. Encoder ABI 4 disables PNS;
