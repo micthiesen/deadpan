@@ -1,0 +1,17 @@
+{
+  "reviewer": "primary agent, solo as instructed",
+  "checked": [
+    "typed and JSON bounds, fixed-width recipe, exact values and neutral identity",
+    "at most six consolidated endpoints, symmetric bounded FIR and fixed context",
+    "gain order independence of coefficient compilation, no signal normalization",
+    "complete input validation and transactional outputs in active/bypass paths",
+    "independent response/PCM tests, cold equality and whole-workspace compilation",
+    "full staged source, examples, docs and retained evidence"
+  ],
+  "limitations": [
+    "No AudioTreatments stage, authored commands or GUI controls yet",
+    "No retained-owner, group or per-voice filter-tail integration",
+    "No full real-media preview/export EQ or listening claim"
+  ],
+  "observed_setup_failure": "An initial cargo fmt ran before equalizer/tests.rs was written and could not resolve the module; corrected before retained format and test runs. The initial diagnostic remains in the tool transcript."
+}

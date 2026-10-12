@@ -4,6 +4,21 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Equalizer recipes and DSP](../qualification/eq-recipe-2026-10-11.md) now provide
+validated ±24 dB bass/middle/treble gains, 80–20,000 Hz low/high cuts and one
+4,097-tap compensated kernel. All 1,051 core and 523 audio tests pass; frequency
+response, PCM phase, cold reads and exact bypass have direct checks. The typed
+recipe is deliberately not yet stored in `AudioTreatments`, so no authored
+effect is silently ignored. Continue with full retained owner input and group/
+silence/tail integration, then captured commands and actual preview/export.
+The default stage must follow complete time/pitch and edges; adding it inside
+the raw signal tree before ancestor time/pitch would change that order.
+`GainSum` currently collapses mute across memoryless stages; temporal processing
+must instead apply each mute/envelope at its serialized position. GroupMix's
+common suppression intersection cannot by itself gate Original filter tails
+beside an independently permitted sound.
+See [Equalizer processing](../EQUALIZER.md); DP-09/DP-16 stay partial.
+
 [The finite filter processor](../qualification/finite-filter-2026-10-11.md)
 adds the bounded signed f64 stereo FIR adapter required for EQ/filtering.
 It owns a 4,097-tap kernel and evaluates 1,024-frame cores with 2,048-frame

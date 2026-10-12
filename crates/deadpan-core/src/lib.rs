@@ -26,6 +26,7 @@ mod boundary_replacement;
 mod caption;
 mod command;
 mod command_work;
+mod equalizer;
 #[cfg(any(test, feature = "test-support"))]
 pub use command_work::{
     binding_wire_check_for_tests, diff_for_tests, provisional_captures_for_tests,
@@ -108,6 +109,7 @@ pub use edit_slice::{
     CapturedEditSlice, SequenceChildrenPlan, SliceAttachments, SliceCaptureSelection,
     SliceIdentityRequirements, SlicePasteIdentities,
 };
+pub use equalizer::*;
 pub use exact::ExactRatio;
 pub use explode::ExplodeRequirements;
 pub use framing::*;

@@ -1,0 +1,21 @@
+{
+  "base_revision": "1d5392495de48e2fdc2249805a5e07f06d453992",
+  "binary": "target/release/examples/equalizer_probe",
+  "binary_sha256": "1e93f8bac26553c3f2ed5b614d8a2f1963abe6c3958093cd9b544c9d48da18b3",
+  "source_sha256": {
+    "crates/deadpan-audio/examples/equalizer_probe.rs": "a6daa83141762f611b7fe43ead0eb1c73ce56947c77be57ad6191ebd51eaa79e",
+    "crates/deadpan-audio/src/equalizer.rs": "c42230e9cd5ac9104a3c378f95390feb8f9584431b7e7baae5146a82279ac599",
+    "crates/deadpan-audio/src/equalizer/tests.rs": "ec58013b7eabd374ef341a37b608eec9ce4b3a949b7d9e499d71cbdfca3846ed",
+    "crates/deadpan-audio/src/lib.rs": "b1d91bc3f2a0035860b45c9504468c759c369e4f0627c4a3fe31b55a459d71ec",
+    "crates/deadpan-core/src/equalizer.rs": "18bfbd3a389e7fb22c85a9ae65044ca203e27fe841231a1eb4521cf9a7ee7a71",
+    "crates/deadpan-core/src/lib.rs": "9b972941250444383237fca52d214f67fe01efae12410e1e56ec6242665d7442",
+    "Cargo.lock": "9d911d67520092b729ae0e5933a39fc57f0ab4933b7d94b2d72d55a125fca93e",
+    "rust-toolchain.toml": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc",
+    "native/deadpan-dsp/src/finite_filter.cpp": "97ffa7684c11174757c47b9c27ba5643121f801b3a60c24d999f13ebc25863da",
+    "native/deadpan-dsp/src/finite_filter.rs": "5ce90756aa91a2aebebb5857bb9ae07276851a669bdc6afddd4f4ee00596ee8e",
+    "native/deadpan-dsp/vendor/pins.json": "906805a9f29a50e07361d5138f4d68713eeaafb2a00593bb52cd6c551f325593"
+  },
+  "os": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84\n",
+  "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)\n",
+  "hardware": "hw.model: Mac17,7\nmachdep.cpu.brand_string: Apple M5 Max\nhw.physicalcpu: 18\nhw.memsize: 137438953472\n"
+}

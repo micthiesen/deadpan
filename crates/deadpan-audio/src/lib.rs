@@ -7,6 +7,8 @@
 mod domain_transfer;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 mod edges;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+mod equalizer;
 mod hold_effects;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 mod limited;
@@ -34,6 +36,8 @@ mod waveform;
 pub use domain_transfer::{DomainSignalTransfer, DomainTransferDescriptor};
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub use edges::EDGE_FADE_ID;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+pub use equalizer::{EQ_FILTER_ID, Equalizer, equalizer_coefficients};
 pub use hold_effects::{
     REVERSE_ID, TAIL_DELAY_ID, TAIL_REVERB_ID, TONE_ID, TailRecipe, render_tail, reverse,
     tail_effect_id, tone,

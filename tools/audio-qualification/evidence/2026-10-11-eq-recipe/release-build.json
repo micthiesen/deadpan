@@ -1,0 +1,15 @@
+{
+  "command": [
+    "cargo",
+    "build",
+    "--locked",
+    "--release",
+    "-p",
+    "deadpan-audio",
+    "--example",
+    "equalizer_probe"
+  ],
+  "exit": 0,
+  "seconds": 56.81562825012952,
+  "log_sha256": "636d24b1ccef39dea7d0bae9d4e5ef843209fbbb150387f5c2717571cfc032c8"
+}

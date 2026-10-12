@@ -1,0 +1,8 @@
+{
+  "command": [
+    "target/release/examples/equalizer_probe"
+  ],
+  "exit": 0,
+  "seconds": 0.03187424968928099,
+  "log_sha256": "117f4aea2e1ff70aa82d55866b5efb8e532c6686af9091b5857a78a5898d1960"
+}

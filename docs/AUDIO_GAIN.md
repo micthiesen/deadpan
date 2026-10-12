@@ -34,6 +34,10 @@ persisted treatment and PCM increment's review, verification and remaining limit
 
 ## Recipe and numerical contract
 
+The separate [equalizer processor](EQUALIZER.md) has a validated static recipe
+and measured FIR implementation. It is not yet an `AudioTreatments` stage;
+complete owner context and policy integration must precede authored exposure.
+
 `AudioTreatments` has an explicitly serialized closed stage order. Its current
 vocabulary is only `ClipGain`; a configured unity recipe remains authored intent,
 distinct from an absent stage. This does not introduce a plugin host.

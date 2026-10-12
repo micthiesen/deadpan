@@ -4,6 +4,14 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 
 ## Resumed implementation, 2026-10-06
 
+[Equalizer parameters and processing](qualification/eq-recipe-2026-10-11.md)
+add exact bounded three-band gains and low/high cuts through one compensated
+finite kernel. All 1,051 core and 523 audio tests pass, including response,
+phase, cold reads and exact neutral bypass. Release response evidence uses the
+actual coefficients. This is not yet an authored node treatment: retained-owner
+input, group/tail policy, native controls and preview/export integration remain
+owed. DP-09 and DP-16 remain partial.
+
 [The finite stereo filter processor](qualification/finite-filter-2026-10-11.md)
 adds a bounded 4,097-tap f64 FIR adapter with exact context extents, signed
 channel output, atomic failure handling and allocation-free native reads.

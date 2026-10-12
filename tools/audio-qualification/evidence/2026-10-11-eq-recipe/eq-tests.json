@@ -1,0 +1,14 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-audio",
+    "equalizer",
+    "--lib"
+  ],
+  "exit": 0,
+  "seconds": 9.079713374841958,
+  "log_sha256": "85fffa3efdacfaa72667f0f7af63bff122309a54a5820f92d84a327945f69fa5"
+}
