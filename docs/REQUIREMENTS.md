@@ -4,6 +4,14 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 
 ## Resumed implementation, 2026-10-06
 
+[The finite stereo filter processor](qualification/finite-filter-2026-10-11.md)
+adds a bounded 4,097-tap f64 FIR adapter with exact context extents, signed
+channel output, atomic failure handling and allocation-free native reads.
+Direct-convolution, cold-seek and sanitizer checks pass. Three release runs
+measure 52.0–52.2 µs p95 per 1,024 stereo frames on this Mac. This is numerical
+infrastructure only: authored EQ, retained-owner routing, silence/tail integration
+and actual preview/export qualification remain owed. DP-09/DP-16 stay partial.
+
 [Saved stretched audio](qualification/persistent-audio-2026-10-11.md) adds
 cross-restart reuse with fresh input/source admission, BLAKE3 keys and complete
 payload verification. Atomic publication, a shared 4 GiB budget, reader-safe

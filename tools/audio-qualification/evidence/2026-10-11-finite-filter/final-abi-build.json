@@ -1,0 +1,27 @@
+{
+  "command": [
+    "clang++",
+    "-std=c++17",
+    "-O2",
+    "-g",
+    "-Wall",
+    "-Wextra",
+    "-Werror",
+    "-arch",
+    "arm64",
+    "-mmacosx-version-min=15.0",
+    "-fsanitize=address,undefined",
+    "-fno-omit-frame-pointer",
+    "-fno-sanitize-recover=all",
+    "-Inative/deadpan-dsp/src",
+    "-isystem",
+    "native/deadpan-dsp/vendor/signalsmith-linear/include",
+    "native/deadpan-dsp/src/finite_filter.cpp",
+    "native/deadpan-dsp/tests/finite_filter_abi_probe.cpp",
+    "-o",
+    "/tmp/deadpan-finite-filter-20261011/abi-probe"
+  ],
+  "exit": 0,
+  "seconds": 0.7959652501158416,
+  "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+}

@@ -38,6 +38,27 @@ call leaves its output unchanged. Each call is bounded but is not a realtime or
 wall-time guarantee. The native plan is worker-owned, retains no caller buffers,
 and performs no heap allocation while processing a tile.
 
+`FiniteStereoFilter` evaluates signed stereo through a copied 4,097-tap f64
+kernel using the same pinned portable FFT. One call takes 5,120 frames per
+channel: 2,048 preceding samples, a 1,024-sample core, and 2,048 following
+samples. It returns the two signed core channels without limiting or crossfeed.
+Coefficients run from offset -2,048 through +2,048 and have magnitude at most
+16; input is finite with magnitude at most 1e100, leaving bounded FFT headroom.
+Both native and safe Rust boundaries preserve both outputs on failure. Native
+processing retains no caller arrays or signal history and allocates no heap
+memory. Cancellation is checked before and after one tile.
+
+Callers must use a fixed grid in the effect's retained clock, supply qualified
+adjacent context and enforce each voice's silence/tail policy. For a symmetric
+kernel the 2,048-frame group delay is compensated by the supplied look-ahead;
+no output timestamp is shifted. At 48 kHz this requires 42⅔ ms of past and
+future context. The adapter deliberately neither fabricates missing samples
+nor determines owner routing. `FINITE_FILTER_ENGINE_ID` versions its numerical
+shape; cache identity must also retain coefficients, source and clock provenance.
+The [finite-filter qualification](../../docs/qualification/finite-filter-2026-10-11.md)
+covers this processor. Authored EQ/filter controls and voice/group integration
+remain unimplemented, so this is not completion of specification §10.2.
+
 Cancellation is cooperative between reads. The first read also runs the fixed
 negative-context priming schedule, up to 203 discarded quanta at the slowest
 admitted rate, and is not interrupted mid-native-call. Later reads may span an
@@ -116,6 +137,14 @@ Compile `tests/finite_peak_abi_probe.cpp` with `src/finite_peak.cpp` and the sam
 flags and include paths to exercise the detector's fixed ABI lengths, coefficient
 and sample admission, direct impulse response, output guards and independent
 plans.
+
+Compile `tests/finite_filter_abi_probe.cpp` with `src/finite_filter.cpp` and the
+same sanitizer flags to exercise signed output guards, all creation allocation
+failure sites, rejected lengths/pointers/samples and allocation-free reads.
+`cargo build --locked --release -p deadpan-dsp --example finite_filter_probe`
+builds a standalone numerical/performance fixture. Run its binary only after
+compilation finishes; its measurements exclude source preparation, group mixing,
+device output and editor latency. See the qualification record for actual runs.
 
 Compile `tests/streaming_probe.cpp` with `src/streaming.cpp` and the same
 sanitizer flags to compare bounded input against the original complete-source

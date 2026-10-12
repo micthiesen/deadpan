@@ -1,0 +1,8 @@
+{
+  "command": [
+    "/tmp/deadpan-finite-filter-20261011/abi-probe"
+  ],
+  "exit": 0,
+  "seconds": 0.06996245821937919,
+  "log_sha256": "8864177a57a088616e1ae662556bf14bcea363fd8dac64c506ca5547bd61adcc"
+}

@@ -4,6 +4,17 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[The finite filter processor](../qualification/finite-filter-2026-10-11.md)
+adds the bounded signed f64 stereo FIR adapter required for EQ/filtering.
+It owns a 4,097-tap kernel and evaluates 1,024-frame cores with 2,048-frame
+context on both sides using the pinned portable FFT. Direct-convolution,
+shuffled cold-tile and sanitizer/allocation-failure tests pass. Release p95 is
+52.0–52.2 µs per tile, excluding media and graph work. This does not expose
+authored EQ or change editor audio. The next integration must preserve full
+effect context across retained owners, copies and repeats and apply per-voice
+silence/tail permissions; a physical-timeline halo alone is insufficient.
+DP-09 and DP-16 remain partial under the unchanged full-product goal.
+
 [Saved stretched audio](../qualification/persistent-audio-2026-10-11.md)
 reuses verified Preserve/integer-pitch output after restart in the native and
 headless paths. Keys retain fresh PCM, exact mappings, source provenance and
@@ -31,16 +42,16 @@ The existing worker shares canonical caches with Play, preserves source admissio
 and cancels on navigation, waveform priority and lifecycle changes. Matching Play
 finishes the current read; Stop still cancels it. Native status never moves the
 heard clock or activates output. Future-stage PCM, cancellation and native
-layout evidence are retained. Active preparation is recorded above; persistent cache
-lifecycle remains open and DP-09/DP-16 stay partial.
+layout evidence are retained. Active preparation and persistent cache lifecycle
+are recorded above; the remaining audio pipeline keeps DP-09/DP-16 partial.
 
 [Audio preparation activity](../qualification/audio-progress-2026-10-11.md)
 now reaches Original/Edit transport and catalog Sound from the existing worker.
 Actual stage-frame counters and request elapsed time preserve both editor clocks,
 cancel/supersession handling and warm PCM reuse. Full audio/playback suites,
 focused native transport tests and offscreen layout replays cover the path.
-Idle and active preparation are recorded above; persistent cache lifecycle
-remains open. DP-09/DP-16 stay partial.
+Idle, active preparation and persistent cache lifecycle are recorded above.
+The remaining audio pipeline keeps DP-09/DP-16 partial.
 
 [Private disk-backed Preserve output](../qualification/disk-pcm-2026-10-11.md)
 removes the full-output RAM allocation for long stages. One continuous processor
@@ -48,8 +59,8 @@ writes exact PCM into an unlinked file, with shared RAM/disk admission and
 pin-aware eviction for ordinary and projected stages. The four-minute decoded-WAV
 oracle and real export pass, including 7,200 picture comparisons and 240 audio
 windows with 120 zero-offset signal windows. Full audio/core/playback tests and
-strict checks pass. Idle and active preparation follow above; persistent cache
-lifecycle remains open. DP-09/DP-16 stay partial.
+strict checks pass. Idle, active preparation and persistent cache lifecycle
+follow above. The remaining audio pipeline keeps DP-09/DP-16 partial.
 
 [Streamed Preserve input](../qualification/streamed-input-2026-10-11.md)
 removes the complete-input allocation and 21.8-second authoring cap while

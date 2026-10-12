@@ -5,6 +5,8 @@ fn main() {
     println!("cargo:rerun-if-changed=src/canonical.hpp");
     println!("cargo:rerun-if-changed=src/finite_peak.cpp");
     println!("cargo:rerun-if-changed=src/finite_peak.h");
+    println!("cargo:rerun-if-changed=src/finite_filter.cpp");
+    println!("cargo:rerun-if-changed=src/finite_filter.h");
     println!("cargo:rerun-if-changed=vendor");
 
     // Match the qualified portable FFT build in debug and release profiles.
@@ -16,6 +18,7 @@ fn main() {
         .file("src/adapter.cpp")
         .file("src/streaming.cpp")
         .file("src/finite_peak.cpp")
+        .file("src/finite_filter.cpp")
         .include("vendor/signalsmith-stretch/include")
         .include("vendor/signalsmith-linear/include")
         .flag("-Wall")

@@ -1,0 +1,15 @@
+{
+  "command": [
+    "cargo",
+    "build",
+    "--locked",
+    "--release",
+    "-p",
+    "deadpan-dsp",
+    "--example",
+    "finite_filter_probe"
+  ],
+  "exit": 0,
+  "seconds": 3.914327417034656,
+  "log_sha256": "2169a7a32ad237dd6d3c70896418f7dd480c3c231979b916c3b01aee238e08a3"
+}

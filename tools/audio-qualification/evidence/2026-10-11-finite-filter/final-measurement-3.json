@@ -1,0 +1,10 @@
+{
+  "command": [
+    "time",
+    "-l",
+    "/Users/michael/Code/deadpan/target/release/examples/finite_filter_probe"
+  ],
+  "exit": 0,
+  "seconds": 0.2572987908497453,
+  "log_sha256": "60ffd13db57fd476a49b8c9217b4382b3c7e469955c5bb2836758c15f2a3c773"
+}

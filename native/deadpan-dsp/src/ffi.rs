@@ -8,6 +8,8 @@ use crate::{CanonicalRecipe, DspError, PeakBankError, Schedule, StereoPcm};
 
 mod streaming;
 pub(super) use streaming::StreamEngine;
+mod finite_filter;
+pub(super) use finite_filter::FilterEngine;
 
 unsafe extern "C" {
     fn dp_dsp_create(

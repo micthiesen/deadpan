@@ -1,0 +1,10 @@
+{
+  "command": [
+    "time",
+    "-l",
+    "target/release/examples/finite_filter_probe"
+  ],
+  "exit": 0,
+  "seconds": 0.25540816597640514,
+  "log_sha256": "c373408383917fd96ba4c2429db05fee6c8116ba7009cfc42f498cd4772caaf3"
+}

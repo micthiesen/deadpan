@@ -1,0 +1,21 @@
+{
+  "reviewer": "primary agent, solo as instructed",
+  "inspected": [
+    "complete staged source, tests, example and documentation",
+    "signed overlap-save orientation, DC/Nyquist bins, finite bounds",
+    "fixed-size FFI borrows, exception boundaries, failed output publication",
+    "allocation-failure cleanup, tile reuse and independent plan ownership",
+    "no new authored state or control; full EQ integration remains owed"
+  ],
+  "corrections": [
+    "typed arrays at private FFI boundary",
+    "header explicitly permits aliased immutable input arrays",
+    "SHA-256 digest byte formatting and three Clippy test-loop errors"
+  ],
+  "limitations": [
+    "no authored EQ recipe, voice/group routing, media context or filter-tail integration",
+    "no EQ editor, real-media preview/export or listening qualification",
+    "bounded kernel measurements exclude the complete application graph"
+  ],
+  "initial_unlogged_failure": "The first cargo test -p deadpan-dsp run failed to compile the probe because the SHA-256 digest type does not implement LowerHex; fixed before the retained dsp-tests run. Its diagnostic was observed in the tool transcript, not a retained command log."
+}

@@ -1,0 +1,18 @@
+{
+  "command": [
+    "cargo",
+    "clippy",
+    "--locked",
+    "-p",
+    "deadpan-dsp",
+    "-p",
+    "deadpan-audio",
+    "--all-targets",
+    "--",
+    "-D",
+    "warnings"
+  ],
+  "exit": 0,
+  "seconds": 3.695631458889693,
+  "log_sha256": "48dda9d0c6434a9d5c55d1382e0605210e81fa214004ea86e42620d13dc31739"
+}
