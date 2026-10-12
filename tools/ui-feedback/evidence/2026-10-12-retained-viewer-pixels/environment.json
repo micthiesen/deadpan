@@ -1,0 +1,9 @@
+{
+  "machine": "Apple M5 Max",
+  "memory_bytes": 137438953472,
+  "macos": "26.5.2 (25F84)",
+  "rust": "1.97.1",
+  "agents": "primary only",
+  "live_gui": false,
+  "audio_device": false
+}

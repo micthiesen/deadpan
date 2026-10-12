@@ -4,6 +4,14 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 
 ## Resumed implementation, 2026-10-06
 
+[Retained viewer pixel verification](qualification/retained-viewer-pixels-2026-10-12.md)
+corrects the previous visual assessment of a black placement-replay viewer.
+Both saved images contain the picture. The replay now checks composed fixture
+pixels and caption visibility after inspector scrolling at both window sizes.
+Debug and release each pass 273 scenario checks plus the shortcut audit; the
+release build, strict workspace Clippy and formatting pass. No requirement or
+gate is newly complete.
+
 [Independent sound treatments](qualification/event-treatments-2026-10-12.md)
 now give root and attached sounds gain envelopes/mutes, EQ, saturation and
 balance before their sends and group processing. Native captured commands
@@ -11,9 +19,8 @@ author placed sounds and preserve complete recipes through Undo/reopen.
 The event-local clock follows retained input through moves and delivery cuts.
 All 3,969 tests, strict workspace checks, 663 final offscreen scenario checks
 and a real 30-picture/four-audio-block export pass; its audio window verifies
-zero offset. Test-fixture and replay-helper failures remain in evidence. A
-pre-existing black-viewer placement checkpoint needs harness/presentation
-diagnosis, as recorded in the qualification. Partial attached-sound scope routes, wider
+zero offset. Test-fixture and replay-helper failures remain in evidence. The
+initial black-viewer visual assessment is corrected above. Partial attached-sound scope routes, wider
 incoming-tail/loop qualification, persistent filtered caching, mastering and
 performance keep DP-09 and DP-16 partial. No requirement or gate is newly complete.
 

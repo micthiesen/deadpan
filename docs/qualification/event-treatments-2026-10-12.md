@@ -94,13 +94,12 @@ picture remains visible, selection/focus stays distinct and the footer remains
 anchored. The inspector scrolls at minimum size. Final treatment PNGs are
 byte-identical to the inspected initial release captures.
 
-Separate existing observation: the sound-placement scenario's `Sound removal is
-reachable at 960x640` checkpoint has a black viewer while its semantic state
-reports displayed frame 3. The previous event-return increment's same checkpoint
-also has that appearance. Both images are retained as `placement-viewer-current.png`
-and `placement-viewer-base.png`; this is not picture-presentation evidence.
-Diagnose the harness/presentation discrepancy in a follow-up using the retained
-reports and that exact checkpoint. This does not occur in the treatment captures.
+Correction: the initial visual assessment of a black viewer at `Sound removal
+is reachable at 960x640` was incorrect. Both retained images contain frame 3
+and its color bars. Original-resolution inspection and direct pixel measurement
+confirm identical primary-color counts inside both viewers. The archived
+inspection note remains historical; see the [correction and stronger composed-pixel
+checks](retained-viewer-pixels-2026-10-12.md). No renderer defect was reproduced.
 
 The primary agent is implementing and reviewing this work alone. No independent
 review, live GUI, physical keyboard, device output or listening check is claimed.

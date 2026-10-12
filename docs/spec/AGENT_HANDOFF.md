@@ -4,6 +4,14 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Retained viewer verification](../qualification/retained-viewer-pixels-2026-10-12.md)
+resolves the previous black-viewer follow-up as an incorrect visual assessment.
+Both archived PNGs contain sequence frame 3 and identical primary-color counts
+inside the viewer. The placement replay now checks actual composed pixels,
+caption paint and picture geometry after scrolling at minimum/default sizes.
+Debug and release each pass 273 scenario checks plus the shortcut audit; release,
+strict workspace Clippy and formatting pass. No production renderer fix was needed.
+
 [Independent sound treatments](../qualification/event-treatments-2026-10-12.md)
 replace the separate gain/send fields with complete `AudioTreatments` on both
 event types (core 53/store 81, frozen context 12). Exact onset-local envelopes,
@@ -20,12 +28,8 @@ byte-identical across the final rebuild. A real release export verifies 30
 pictures, four audio blocks and one zero-offset window. Failed fixture,
 command and replay-helper attempts remain in the evidence.
 
-Follow up the existing black viewer at sound-placement's `Sound removal is
-reachable at 960x640` checkpoint. Its semantic state reports displayed frame 3;
-both the prior event-return capture and this increment's capture look black.
-The qualification retains both images and the final report. Diagnose whether
-the discrepancy is in offscreen rendering or application presentation; the
-new treatment captures show the picture correctly.
+The suspected black-viewer checkpoint was an incorrect visual assessment;
+the follow-up above verifies the actual saved pixels and strengthens the replay.
 
 The primary agent works alone, including self-review. Continue partial attached-sound scope routes, broader
 incoming-tail/loop qualification, persistent filtered caching and remaining

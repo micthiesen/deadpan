@@ -423,6 +423,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         reveal(d, "Remove sound  dd", -240.0)?;
         visible(d, "Remove sound  dd")?;
         d.capture(&format!("Sound removal is reachable at {width}x{height}"))?;
+        retained_fixture_picture(d)?;
         d.check(
             "Placed sounds keep a distinct pane focus at both window sizes",
             d.app().pane == Pane::Sounds,
@@ -710,6 +711,43 @@ pub(super) fn control_hits(d: &Driver<'_>, labels: &[&str]) -> Vec<Value> {
         let enabled = match controls.as_slice() { [(_, enabled)] => Some(*enabled), _ => None };
         json!({"label":label,"complete_hit":visible,"enabled":enabled,"rects":format!("{controls:?}")})
     }).collect()
+}
+
+fn retained_fixture_picture(d: &mut Driver<'_>) -> Result<(), String> {
+    scenarios::viewer_visible(d)?;
+    let label = d
+        .app()
+        .presentation
+        .displayed_label()
+        .ok_or("Missing picture label")?;
+    visible(d, &label)?;
+    if d.options.mode == RunMode::Visual {
+        let viewer = d.rect(&label)?;
+        let scale = d.harness.ctx.pixels_per_point();
+        let image = d.harness.render()?;
+        let mut colors = [0usize; 3];
+        for (x, y, pixel) in image.enumerate_pixels() {
+            if !viewer.contains(egui::pos2(x as f32 / scale, y as f32 / scale)) {
+                continue;
+            }
+            for channel in 0..3 {
+                if pixel[3] >= 250
+                    && pixel[channel] > 200
+                    && pixel[(channel + 1) % 3] < 80
+                    && pixel[(channel + 2) % 3] < 80
+                {
+                    colors[channel] += 1;
+                }
+            }
+        }
+        d.check(
+            "The retained fixture's red, green and blue bars survive inspector scrolling",
+            colors.iter().all(|count| *count > 10),
+            json!("More than ten composed pixels of each primary color inside the viewer"),
+            json!({"primary_pixels":colors,"picture":d.app().presentation.diagnostic_snapshot()}),
+        )?;
+    }
+    Ok(())
 }
 
 fn compact_playback(d: &mut Driver<'_>) -> Result<(), String> {

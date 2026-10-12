@@ -1,0 +1,143 @@
+[
+  {
+    "name": "clippy",
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "--workspace",
+      "--all-targets",
+      "--features",
+      "ui-harness",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T14:45:57.211697+00:00",
+    "head": "9b7df2d547375c8997ca72a214fe29150311dffc",
+    "diff_sha256": "b8de6e91692a8bdfdda8ff71921d8c2da18e2223716807aef8960f1b7aaeb7a8",
+    "untracked_sha256": {
+      "docs/qualification/retained-viewer-pixels-2026-10-12.md": "22b1052638160cebd0b414450e9bd980198ca9652331923fe89381d9b29eb37e"
+    },
+    "exit": 0,
+    "seconds": 6.544793500099331,
+    "log_sha256": "05e25446fc2aa70a24451db5ddc4206278f879f0f9dacccdea5060f446dcdfd2",
+    "binaries": {}
+  },
+  {
+    "name": "debug-pixel-replay",
+    "command": [
+      "target/debug/deadpan-app",
+      "--ui-check",
+      "--scenario",
+      "sound-placement",
+      "--mode",
+      "visual",
+      "--output",
+      "/tmp/deadpan-viewer-capture-20261012/debug-pixel-replay",
+      "--retain-projects"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T14:41:30.591629+00:00",
+    "head": "9b7df2d547375c8997ca72a214fe29150311dffc",
+    "diff_sha256": "ee8c6c42e753c95a8f6ae3bc9185c6b9709b80f7e336b88c992b4b318a4b5e5d",
+    "untracked_sha256": {},
+    "exit": 0,
+    "seconds": 100.05175691610202,
+    "log_sha256": "626d83cad54ae055f9037b335ba1e970c70471a4e5e118589eacbab81f5afcc8",
+    "binaries": {
+      "target/debug/deadpan-app": "4770043a65b7eef0ecb01170fac59a50d6a106dea19d58e15258a2c9b66dc7e1"
+    }
+  },
+  {
+    "name": "debug-regression-build",
+    "command": [
+      "cargo",
+      "build",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T14:40:55.749094+00:00",
+    "head": "9b7df2d547375c8997ca72a214fe29150311dffc",
+    "diff_sha256": "ee8c6c42e753c95a8f6ae3bc9185c6b9709b80f7e336b88c992b4b318a4b5e5d",
+    "untracked_sha256": {},
+    "exit": 0,
+    "seconds": 11.062152124941349,
+    "log_sha256": "bf14ae2d668b9f7ac6455962716e4b018c0feb8f60638d5789ba25aaf60a18ab",
+    "binaries": {}
+  },
+  {
+    "name": "fmt",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all",
+      "--check"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T14:46:03.780977+00:00",
+    "head": "9b7df2d547375c8997ca72a214fe29150311dffc",
+    "diff_sha256": "b8de6e91692a8bdfdda8ff71921d8c2da18e2223716807aef8960f1b7aaeb7a8",
+    "untracked_sha256": {
+      "docs/qualification/retained-viewer-pixels-2026-10-12.md": "22b1052638160cebd0b414450e9bd980198ca9652331923fe89381d9b29eb37e"
+    },
+    "exit": 0,
+    "seconds": 5.160893708933145,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "binaries": {}
+  },
+  {
+    "name": "release",
+    "command": [
+      "cargo",
+      "build",
+      "--locked",
+      "--release",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T14:43:54.666010+00:00",
+    "head": "9b7df2d547375c8997ca72a214fe29150311dffc",
+    "diff_sha256": "c7d7f46e277c4330894d2b4519f9b8c253bb3f7a353311f27a03a0082c03ded8",
+    "untracked_sha256": {},
+    "exit": 0,
+    "seconds": 122.51964724995196,
+    "log_sha256": "2ed93879c14b23a6acaecd21ee69dad541b710d9cb1b47e3e23c86ded99f788e",
+    "binaries": {}
+  },
+  {
+    "name": "replay",
+    "command": [
+      "target/release/deadpan-app",
+      "--ui-check",
+      "--scenario",
+      "sound-placement",
+      "--mode",
+      "visual",
+      "--output",
+      "/private/tmp/deadpan-viewer-capture-20261012/replay",
+      "--retain-projects"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T14:46:08.966646+00:00",
+    "head": "9b7df2d547375c8997ca72a214fe29150311dffc",
+    "diff_sha256": "b8de6e91692a8bdfdda8ff71921d8c2da18e2223716807aef8960f1b7aaeb7a8",
+    "untracked_sha256": {
+      "docs/qualification/retained-viewer-pixels-2026-10-12.md": "22b1052638160cebd0b414450e9bd980198ca9652331923fe89381d9b29eb37e"
+    },
+    "exit": 0,
+    "seconds": 14.591320041101426,
+    "log_sha256": "2809eb4949c2a9201ab7227df29c936def67cdac945efe7c98e039d8e2bc1d73",
+    "binaries": {
+      "target/release/deadpan-app": "69ee47f65b7b7ec0e992f88416d95712268ad7e5aa2e15014ce7b49958d198d6"
+    }
+  }
+]

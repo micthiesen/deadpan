@@ -1,0 +1,15 @@
+{
+  "base_commit": "9b7df2d547375c8997ca72a214fe29150311dffc",
+  "sources": {
+    "crates/deadpan-app/src/preview/harness/sound_placement.rs": "641347d2e80ba20e125c67f6f0545e686af00a5bae159f36162a8303ef432fa8",
+    "crates/deadpan-app/src/preview/harness.rs": "a422c5b9172dc866f13367ccb31db24f44693fe285a0b555087c10ff003132c9",
+    "crates/deadpan-app/src/ui_harness/gpu.rs": "99966bed3934e71c5604ded4c4ae11dd83450259e79bbd9ab531d4fdf3672387",
+    "crates/deadpan-app/src/preview.rs": "bbc5ed8e17b5effba802e0f11369cb66f972e6f8bf8d92146266171ea278ecb0",
+    "Cargo.toml": "253245385ec9459408f5a61d968a05c37d4e7ac8cb7f8f8c4447583fed193985",
+    "Cargo.lock": "9d911d67520092b729ae0e5933a39fc57f0ab4933b7d94b2d72d55a125fca93e",
+    "rust-toolchain.toml": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc"
+  },
+  "binaries": {
+    "target/release/deadpan-app": "69ee47f65b7b7ec0e992f88416d95712268ad7e5aa2e15014ce7b49958d198d6"
+  }
+}

@@ -1,0 +1,40 @@
+[
+  {
+    "name": "previous",
+    "png": "tools/audio-qualification/evidence/2026-10-12-event-treatments/placement-viewer-base.png",
+    "sha256": "55f9a6b925ebd8c2bbe93f9a162faa175c7806cb7cf0ed86d1a9aadf20966fed",
+    "report_sha256": "ea19c809f7512723466d893a66e9226240e3ededb693af852c3be332ce27a376",
+    "viewer": [
+      156.0,
+      93.0,
+      756.0,
+      252.0
+    ],
+    "pixels_per_point": 1.0,
+    "primary_pixels": [
+      2860,
+      2860,
+      2912
+    ],
+    "displayed": "Showing sequence frame 3"
+  },
+  {
+    "name": "current",
+    "png": "tools/audio-qualification/evidence/2026-10-12-event-treatments/placement-viewer-current.png",
+    "sha256": "deae8f1261da4ef96939efe44c68b0351d064a272a973562d7f323bbe8cff6fa",
+    "report_sha256": "3b6986b28af1ff520d6b1df03410a521f6e52749780413e4892626b0ffde81ff",
+    "viewer": [
+      156.0,
+      93.0,
+      756.0,
+      252.0
+    ],
+    "pixels_per_point": 1.0,
+    "primary_pixels": [
+      2860,
+      2860,
+      2912
+    ],
+    "displayed": "Showing sequence frame 3"
+  }
+]
