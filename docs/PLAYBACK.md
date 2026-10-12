@@ -188,7 +188,16 @@ arbitrary chunk resets do not substitute for continuous history. Cold
 qualification may read the whole source, but cancellation and editing remain
 available.
 
-Prepared PCM uses at most two 8192-frame batches plus the native queue. A shared
+During playback the worker can prepare ahead into a FIFO of 175 complete
+8192-frame stereo batches, at most 1,433,600 frames (29.867 seconds, 10.9375 MiB).
+One producer batch, one controller batch, the native queue and canonical caches
+have separate bounds. A reserved terminal failure follows any valid prefix in
+order. Stop, supersession and automatic teardown discard queued PCM; an edited
+proposal's store revocation is checked through atomics on every controller tick.
+This FIFO has no clock authority and does not change authored state. See
+[active preparation](qualification/audio-ahead-2026-10-11.md).
+
+A shared
 limited reader retains at most four verified 8192-frame tiles and twelve exact
 input bus ranges of at most 8192 frames. Overlapping input is reused without
 expanding the requested support. Cold preparation
@@ -199,8 +208,9 @@ seek boundaries do not reset gain history. Monitoring gain is applied only after
 the canonical limited samples. The device queue reserves
 `AUDITION_QUEUE_PACKETS` PCM packet slots (four seconds) and one separate
 terminal slot so a full valid final prefix can carry EOS without racing its
-consumer. Activation still waits only for the first 8192-frame batch, so start
-latency is unchanged; the controller keeps filling the deeper queue afterward. Loop reads end at the content seam and
+consumer. Activation still waits only for the first 8192-frame batch; it does
+not wait for the preparation horizon. The controller keeps filling the native
+queue afterward. Loop reads end at the content seam and
 reuse the same full canonical plan, so reads and laps do not reset DSP context.
 One verified lap can be reused within the bounded batch for tiny loops. The
 device coordinate increases monotonically while the content coordinate wraps

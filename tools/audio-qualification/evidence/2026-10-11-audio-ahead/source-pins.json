@@ -1,0 +1,19 @@
+{
+  "base_revision": "a05cbe1aff247e0d9c1967f03ba880ac25a986d6",
+  "files": {
+    "Cargo.lock": "0d9e391de5dd635f2d9046c221ad4c88a7041c96e22d5d7a17dd0a33d26280c5",
+    "rust-toolchain.toml": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc",
+    "crates/deadpan-app/src/preview/diagnostics.rs": "febfb13411192955f4c8f70bf7d57e1d293f0845e75dddfa1ef80b557264691d",
+    "crates/deadpan-app/src/preview/harness/diagnostics.rs": "02a2ab1c25849cf1bdc91189fa2474ed99ebe0d4b293cec86d48985ef2648f18",
+    "crates/deadpan-cli/examples/perf/playback.rs": "df0c790839259ea3c6faf01832f3f174eae4524c5c85ce1620e9724a33958a6c",
+    "crates/deadpan-cli/tests/doctor.rs": "7c2c339b924d5b53180d61aaa4bb4d519ae9fb7dde9b6fef3a1ea61879cfbd27",
+    "crates/deadpan-diagnostics/src/lib.rs": "b3871e12444ad9f0c3b67ca23a34fbce53aad1eccc8827db0bd4c54ade3e79f9",
+    "crates/deadpan-playback/src/controller.rs": "6365ca66ca4f91ff2c51c39e566e7fe5d6fc347c214b982c2b27b04b29f2a537",
+    "crates/deadpan-playback/src/preparation.rs": "73b7465f8b406452f6d55afb487a13d3a3aa1c001f2c77954c75b17daab3edbd",
+    "crates/deadpan-playback/src/preparation/queue.rs": "636bb69219a0d12ff65be7651f76b38aaee80786f4ae21683a51ff70cdf0571f",
+    "crates/deadpan-playback/src/sources.rs": "2e81b328180633327e24abffb4598b6d9ed80a0de7f5d0d773e58f247d7ad792",
+    "crates/deadpan-playback/src/tests.rs": "bd5038685c9822956c9abc8e2f8934d833d2e755134b8e6d8f8a87a2450d62dd",
+    "crates/deadpan-playback/src/tests/ahead.rs": "27150672098b3c82c1dbc01134e9799cb9695096e35f2d40a8c90cf80e522e08",
+    "crates/deadpan-playback/src/tests/proposed/edited_slice.rs": "6805ccd574dbf2ce0b2a74c2839e8d2bf89abcc7d8fd42d6025f2d1f2ade186a"
+  }
+}

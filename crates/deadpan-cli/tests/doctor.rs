@@ -175,6 +175,7 @@ fn project_doctor_names_real_sources_and_times_revision_stages_read_only() {
         "picture_preview",
         "thumbnails",
         "playback_prepared",
+        "playback_prepared_frames",
         "playback_device_packets",
     ] {
         assert_eq!(diagnostics["queue_depths"][queue]["current"], 0, "{queue}");

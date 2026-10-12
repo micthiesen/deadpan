@@ -337,6 +337,8 @@ impl Snapshot {
     }
 
     pub(crate) fn check_media_live(&self, cancelled: &AtomicBool) -> Result<(), SnapshotError> {
+        // Atomic capability checks only, also used by the device controller
+        // before delivering queued PCM. No filesystem or database admission.
         // Committed and base-only proposals retain the established warm private
         // PCM behavior. Historical edited views carry an explicitly revocable
         // store admission, including when preparation reuses cached samples.

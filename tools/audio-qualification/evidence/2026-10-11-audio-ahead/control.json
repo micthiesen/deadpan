@@ -1,0 +1,16 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-playback",
+    "tests::ahead::a_future_preserve_finishes_before_its_audio_is_heard_and_delivery_is_canonical",
+    "--",
+    "--exact",
+    "--nocapture"
+  ],
+  "exit": 101,
+  "seconds": 35.93219820782542,
+  "log_sha256": "9a78c3bc2bf0b9caa935834a2b464777df45514c3ba516c78a425755849ef7c3"
+}

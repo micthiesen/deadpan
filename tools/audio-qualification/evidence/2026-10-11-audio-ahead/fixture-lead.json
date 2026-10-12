@@ -1,0 +1,12 @@
+{
+  "command": [
+    "target/release/deadpan-cli",
+    "command",
+    "/tmp/deadpan-audio-ahead-20261011/future.deadpan",
+    "--json",
+    "/tmp/deadpan-audio-ahead-20261011/fixture-lead.json"
+  ],
+  "exit": 0,
+  "seconds": 0.033171874936670065,
+  "log_sha256": "aabb6ed84d18d1faeb076cde5f5e1cf77efa016fd960e8d3f133a362e93e480d"
+}

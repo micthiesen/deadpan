@@ -207,6 +207,11 @@ pub(super) fn rows(
         ),
         (
             "DECODE QUEUES",
+            "Prepared audio frames",
+            level(counters.queues.playback_prepared_frames),
+        ),
+        (
+            "DECODE QUEUES",
             "Device packets",
             level(counters.queues.playback_device_packets),
         ),

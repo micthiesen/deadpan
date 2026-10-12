@@ -1,0 +1,21 @@
+{
+  "reviewer": "Primary agent, self-review; no subagents used at the owner's instruction",
+  "scope": "Complete implementation diff, new FIFO and regression files, performance observations, diagnostics consumers, tests and documentation",
+  "reviewed": [
+    "One producer publishes under the shared state lock; cancellation and supersession clear under that same lock. The old generation cannot refill the new queue.",
+    "Queue capacity bounds actual Vec capacity, terminal failure has one separate slot, and per-engine diagnostic shares clear on Stop, automatic teardown and Drop.",
+    "A popped batch still follows existing epoch/start/end validation and bounded native packet submission. Callback code, prefill threshold, monitor gain order and delivery clock are unchanged.",
+    "Buffered edited proposals check only store/generated-admission revocation atomics on each control tick. Full-queue store closure has an explicit regression.",
+    "FIFO preparation uses the existing qualified source, continuous DSP and limited bus. The future-stage regression compares all delivered PCM exactly against an independent canonical read.",
+    "The one-slot control is a copied current-source variant with its own Cargo target, not mislabeled as the historical implementation.",
+    "The measured queue excludes producer/controller batches, native packets and DSP caches; documentation states their separate bounds.",
+    "Native diagnostics expose the new gauge; playback and sound control replays exercise existing keyboard paths without new shortcuts. Offscreen evidence does not claim a live window or physical listening."
+  ],
+  "fixes_during_review": [
+    "Clear queued PCM after automatic controller termination as well as explicit Stop/supersession.",
+    "Check edited-proposal revocation on the control worker so a full FIFO cannot postpone store closure by its entire horizon.",
+    "Use additive diagnostic shares instead of resetting a process-global queue gauge from each engine."
+  ],
+  "remaining_scope": "Persistent cross-restart PCM reuse, complete cache lifecycle and remaining voice/group/mastering work. DP-09/DP-16 remain partial.",
+  "visual_review": "Inspected diagnostics-012.png and diagnostics-032.png from the offscreen Metal replay. The new Prepared audio frames label/value is visible and aligned; the scrolling counter area preserves the report/Close controls. The first capture retains the reported input-driven egui discard warning; the later capture is clear. No live-window or physical display claim."
+}

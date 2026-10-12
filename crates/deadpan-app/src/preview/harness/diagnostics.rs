@@ -40,9 +40,10 @@ fn row(d: &Driver<'_>, prefix: &str) -> Option<String> {
     })
 }
 
-const ROWS: [&str; 8] = [
+const ROWS: [&str; 9] = [
     "Underruns: ",
     "Picture preview: ",
+    "Prepared audio frames: ",
     "Device packets: ",
     "Submissions: ",
     "Decoded sources: ",

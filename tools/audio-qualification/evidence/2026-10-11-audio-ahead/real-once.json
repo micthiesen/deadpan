@@ -1,0 +1,17 @@
+{
+  "command": [
+    "/usr/bin/time",
+    "-l",
+    "/Users/michael/Code/deadpan/target/release/examples/perf",
+    "playback",
+    "/tmp/deadpan-audio-ahead-20261011/future.deadpan",
+    "--pictures",
+    "original",
+    "--seconds",
+    "20"
+  ],
+  "exit": 0,
+  "seconds": 16.493582541123033,
+  "stdout_sha256": "6be810498141080ca46a7aeb052001e68249b4ed67116f49ac4af38fc821f3f1",
+  "stderr_sha256": "6e530c522545cd464bdb7eb030602fe64b2044daef0f3ccab6c748ae83c15065"
+}

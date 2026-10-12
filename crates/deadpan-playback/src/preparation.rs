@@ -1,6 +1,9 @@
 //! All plan compilation, original verification, decoding and canonical DSP are
-//! owned here. One completed mailbox batch and one controller/producer batch
-//! bound the handoff to at most 16,384 stereo frames, plus the native queue.
+//! owned here. A bounded FIFO lets future canonical work continue while the
+//! native device queue is full. Neither that FIFO nor DSP progress is a clock.
+
+mod queue;
+pub(crate) use queue::Queue;
 
 use std::sync::Arc;
 use std::sync::atomic::Ordering;
@@ -85,15 +88,17 @@ pub(crate) fn run(shared: Arc<Shared>) {
             Task::Playback(job) => {
                 if let Err(error) = prepare(&shared, &job, &mut retained)
                     && !job.cancelled.load(Ordering::Acquire)
-                {
-                    publish(
+                    && publish(
                         &shared,
                         &job,
                         Reply::Failed {
                             epoch: job.epoch,
                             error,
                         },
-                    );
+                    )
+                    .is_err()
+                {
+                    shared.worker_failed("audio preparation handoff");
                 }
             }
             Task::Waveform(job, memory) => {
@@ -110,7 +115,7 @@ pub(crate) fn run(shared: Arc<Shared>) {
 
 fn wait_slot(shared: &Shared, job: &Job) -> bool {
     let mut state = shared.lock();
-    while state.reply.is_some() && !job.cancelled.load(Ordering::Acquire) && !state.shutdown() {
+    while state.reply.is_full() && !job.cancelled.load(Ordering::Acquire) && !state.shutdown() {
         state = shared
             .wake
             .wait(state)
@@ -119,14 +124,14 @@ fn wait_slot(shared: &Shared, job: &Job) -> bool {
     !job.cancelled.load(Ordering::Acquire) && !state.shutdown()
 }
 
-fn publish(shared: &Shared, job: &Job, reply: Reply) {
+fn publish(shared: &Shared, job: &Job, reply: Reply) -> Result<(), String> {
     let mut state = shared.lock();
     if !job.cancelled.load(Ordering::Acquire) && !state.shutdown() {
-        state.reply = Some(reply);
-        deadpan_diagnostics::QUEUES.playback_prepared.set(1);
+        state.reply.push(reply)?;
     }
     drop(state);
     shared.wake.notify_all();
+    Ok(())
 }
 
 struct Prepared {
@@ -306,7 +311,7 @@ fn prepare(shared: &Shared, job: &Job, retained: &mut Option<Retained>) -> Resul
                 samples,
                 eos,
             }),
-        );
+        )?;
         if eos {
             return Ok(());
         }

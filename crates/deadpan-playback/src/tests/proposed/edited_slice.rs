@@ -323,3 +323,43 @@ fn closed_original_revokes_reused_loop_batches() {
             .all(|device| !device.started.load(Ordering::Acquire))
     );
 }
+
+#[test]
+fn closing_the_store_revokes_a_full_prepared_fifo_before_more_delivery() {
+    let permit = resources::pcm();
+    let directory = tempfile::tempdir().unwrap();
+    let store = ProjectStore::create(&directory.path().join("queued.deadpan"), &hold(4)).unwrap();
+    let base = snapshot(&store, 185);
+    let slice = capture(&base.document);
+    let view = Arc::new(
+        store
+            .preview_edit_slice(&request(&base, &slice, "queued-proposal"))
+            .unwrap(),
+    );
+    let proposal = Arc::new(Snapshot::proposed_edit_slice(&base, view, 4, 1).unwrap());
+    let (engine, devices) = engine(&permit);
+    engine
+        .play_window(
+            1,
+            proposal,
+            Target::Sequence,
+            Window::new(AudioSample(0), AudioSample(8), true).unwrap(),
+            AudioSample(0),
+            0.25,
+        )
+        .unwrap();
+    let device = playing_device(&engine, &devices, 0);
+    let parked = super::super::ahead::Park::new(&engine);
+    assert!(wait(|| engine.shared.lock().reply.is_full()));
+    assert!(engine.shared.lock().reply.frames() > 29 * 48_000);
+    drop(store);
+    drop(parked);
+    assert!(
+        update(&engine, Phase::Failed)
+            .error
+            .unwrap()
+            .contains("closed")
+    );
+    assert_eq!(engine.shared.lock().reply.frames(), 0);
+    assert!(!device.started.load(Ordering::Acquire));
+}

@@ -147,6 +147,11 @@ pub fn run(options: &Options) -> Result<Value> {
     // An update polled after a picture, handled at the top of the loop so
     // no phase change or terminal state is lost.
     let mut pending = None;
+    // At most one milestone per second of increasing queued PCM, bounded by
+    // the engine's preparation horizon. This records the actual heard clock
+    // beside prepared work rather than inferring lead from producer progress.
+    let mut preparation_lead = Vec::new();
+    let mut recorded_prepared = 0;
     let limit = Duration::from_secs(seconds);
     let frame_of = |sample: AudioSample| -> Result<i64> {
         let mut frame = i64::try_from(
@@ -235,6 +240,18 @@ pub fn run(options: &Options) -> Result<Value> {
         if first_sound_ms.is_none() && requested.elapsed() > Duration::from_secs(20) {
             failure = Some("no delivered audio within 20 s".into());
             break;
+        }
+        let prepared = deadpan_diagnostics::snapshot()
+            .queues
+            .playback_prepared_frames
+            .current;
+        if prepared >= recorded_prepared + u64::from(MIX_SAMPLE_RATE) {
+            preparation_lead.push(json!({
+                "at_ms": round(ms(requested)),
+                "heard_sample": heard.map(|sample| sample.0),
+                "queued_frames": prepared,
+            }));
+            recorded_prepared = prepared;
         }
         let Some(sample) = heard else { continue };
         // Desired picture: the frame containing the latest heard sample.
@@ -358,6 +375,7 @@ pub fn run(options: &Options) -> Result<Value> {
             "silent_padding_frames": diagnostics.silent_frames,
             "max_callback_render_cost_us": round(diagnostics.max_render_cost_ns as f64 / 1000.0),
             "queue_depths": queues,
+            "preparation_lead": preparation_lead,
         },
         "pictures": {
             "presented": presented,

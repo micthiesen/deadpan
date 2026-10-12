@@ -206,8 +206,12 @@ pub struct Queues {
     pub picture_preview: Gauge,
     /// Card thumbnail service requests, counted the same way.
     pub thumbnails: Gauge,
-    /// Prepared PCM batches waiting for the playback control worker (0 or 1).
+    /// Prepared replies waiting for playback control workers, including a
+    /// reserved terminal failure. Each engine bounds its own FIFO.
     pub playback_prepared: Gauge,
+    /// Stereo PCM frames held in those FIFOs, excluding controller/producer
+    /// batches, the native device queue and canonical DSP caches.
+    pub playback_prepared_frames: Gauge,
     /// Packets queued for the audio device, observed by the producer.
     pub playback_device_packets: Gauge,
     /// Frames queued before the most recent playback activation.
@@ -218,6 +222,7 @@ pub static QUEUES: Queues = Queues {
     picture_preview: Gauge::new(),
     thumbnails: Gauge::new(),
     playback_prepared: Gauge::new(),
+    playback_prepared_frames: Gauge::new(),
     playback_device_packets: Gauge::new(),
     playback_prefill_frames: Gauge::new(),
 };
@@ -559,6 +564,7 @@ pub struct QueueLevels {
     pub picture_preview: Level,
     pub thumbnails: Level,
     pub playback_prepared: Level,
+    pub playback_prepared_frames: Level,
     pub playback_device_packets: Level,
     pub playback_prefill_frames: Level,
 }
@@ -597,6 +603,7 @@ pub fn snapshot() -> Snapshot {
             picture_preview: QUEUES.picture_preview.level(),
             thumbnails: QUEUES.thumbnails.level(),
             playback_prepared: QUEUES.playback_prepared.level(),
+            playback_prepared_frames: QUEUES.playback_prepared_frames.level(),
             playback_device_packets: QUEUES.playback_device_packets.level(),
             playback_prefill_frames: QUEUES.playback_prefill_frames.level(),
         },
@@ -627,11 +634,12 @@ impl IoTotals {
 }
 
 impl QueueLevels {
-    pub fn named(&self) -> [(&'static str, Level); 5] {
+    pub fn named(&self) -> [(&'static str, Level); 6] {
         [
             ("picture_preview", self.picture_preview),
             ("thumbnails", self.thumbnails),
             ("playback_prepared", self.playback_prepared),
+            ("playback_prepared_frames", self.playback_prepared_frames),
             ("playback_device_packets", self.playback_device_packets),
             ("playback_prefill_frames", self.playback_prefill_frames),
         ]

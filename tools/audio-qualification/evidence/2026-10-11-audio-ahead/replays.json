@@ -1,0 +1,16 @@
+{
+  "command": [
+    "cargo",
+    "xtask",
+    "replays",
+    "--scenario",
+    "diagnostics,original-playback,sound-playback",
+    "--output",
+    "/tmp/deadpan-audio-ahead-20261011/replays",
+    "--jobs",
+    "1"
+  ],
+  "exit": 0,
+  "seconds": 295.6147833331488,
+  "log_sha256": "47152c8522120c8cef5c51df66c924f2a4bc145281a6bb5ea9d8c57a4a6332c8"
+}

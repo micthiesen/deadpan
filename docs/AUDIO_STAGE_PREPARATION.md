@@ -163,9 +163,13 @@ also reports retained memory frames and disk bytes.
 [Idle preparation](qualification/audio-warming-2026-10-11.md) now examines a
 bounded horizon ahead of the stopped native cursor, including future Preserve
 stages, on the existing PCM worker. It shares canonical caches, source admission
-and request-bound progress with Play. It does not prepare concurrently with
-active playback or guarantee that every examined tile remains cached.
-Preparation during playback, persistent reuse after restart and the remaining
+and request-bound progress with Play. Idle work yields to explicit playback
+and does not guarantee that every examined tile remains cached.
+[Active playback preparation](qualification/audio-ahead-2026-10-11.md) uses
+the same worker with a separately bounded canonical PCM FIFO, allowing future
+stages to prepare while the device queue is full. It does not guarantee that
+an arbitrarily expensive stage finishes before its audible deadline.
+Persistent reuse after restart and the remaining
 cache lifecycle stay open. Fractional pitch, variable rates, remaining voice/group effects,
 full mastering, listening and the complete device/preview/export corpus remain
 open; this qualification does not close DP-09 or DP-16.

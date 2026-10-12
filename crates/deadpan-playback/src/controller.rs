@@ -121,7 +121,7 @@ pub(crate) struct State {
     current: Option<Arc<Job>>,
     token: Option<StopToken>,
     pub prep: Option<Arc<Job>>,
-    pub reply: Option<Reply>,
+    pub reply: preparation::Queue,
     update: Option<Update>,
     output_quiescent: bool,
     pub waveform: crate::waveform::State,
@@ -284,15 +284,14 @@ impl Shared {
         state.output_quiescent = false;
         state.intent = Some(Intent::Stop);
         state.prep = None;
-        state.reply = None;
-        deadpan_diagnostics::QUEUES.playback_prepared.set(0);
+        state.reply.clear();
         drop(state);
         self.wake.notify_all();
         if analysis_changed {
             self.repaint();
         }
     }
-    fn worker_failed(&self, worker: &str) {
+    pub(crate) fn worker_failed(&self, worker: &str) {
         let mut state = self.lock();
         state
             .warming
@@ -316,8 +315,7 @@ impl Shared {
         state.output_quiescent = false;
         state.intent = Some(Intent::Stop);
         state.prep = None;
-        state.reply = None;
-        deadpan_diagnostics::QUEUES.playback_prepared.set(0);
+        state.reply.clear();
         drop(state);
         self.wake.notify_all();
         (self.repaint)();
@@ -378,7 +376,7 @@ impl Engine {
                 current: None,
                 token: None,
                 prep: None,
-                reply: None,
+                reply: Default::default(),
                 update: None,
                 output_quiescent: true,
                 waveform: Default::default(),
@@ -519,8 +517,7 @@ impl Engine {
         state.current = Some(job.clone());
         state.intent = Some(Intent::Play(job.clone()));
         state.prep = None;
-        state.reply = None;
-        deadpan_diagnostics::QUEUES.playback_prepared.set(0);
+        state.reply.clear();
         state.update = Some(job.update(Phase::Preparing, None, None, None));
         drop(state);
         self.shared.wake.notify_all();
@@ -705,6 +702,12 @@ impl Active {
         if self.token.is_stopped() {
             return Ok(Some(Phase::Stopped));
         }
+        // This capability check reads only revocation atomics. Queued private
+        // PCM cannot extend an edited proposal's owning store session.
+        self.job
+            .snapshot
+            .check_media_live(&self.job.cancelled)
+            .map_err(|error| error.to_string())?;
         if self.device.error_flags() != 0 {
             shared.counters.faults.fetch_add(1, Ordering::Relaxed);
             return Err("audio device faulted".into());
@@ -859,15 +862,11 @@ impl Active {
 
     fn supply(&mut self, shared: &Shared) -> Result<(), String> {
         if self.batch.is_none() && !self.finished {
-            // The gauge follows the slot under its lock, so a reply published
-            // between the take and the update cannot be reported as absent.
+            // Pop in order, updating this engine's diagnostic shares under the
+            // same lock. The native callback never touches this FIFO.
             let reply = {
                 let mut state = shared.lock();
-                let reply = state.reply.take();
-                if reply.is_some() {
-                    deadpan_diagnostics::QUEUES.playback_prepared.set(0);
-                }
-                reply
+                state.reply.pop()
             };
             if let Some(reply) = reply {
                 shared.wake.notify_all();
@@ -1001,6 +1000,7 @@ fn run(shared: Arc<Shared>, mut factory: Factory) {
                 Ok(None) => {}
                 result => {
                     current.stop();
+                    shared.lock().reply.discard(current.job.epoch);
                     let pause_error = current.device.pause().err();
                     let (phase, error) = match result {
                         Ok(Some(phase)) if pause_error.is_none() => (phase, None),

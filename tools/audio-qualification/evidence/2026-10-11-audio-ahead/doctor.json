@@ -1,0 +1,14 @@
+{
+  "command": [
+    "cargo",
+    "test",
+    "--locked",
+    "-p",
+    "deadpan-cli",
+    "--test",
+    "doctor"
+  ],
+  "exit": 0,
+  "seconds": 14.144393208436668,
+  "log_sha256": "fe18633f3a6753cf5d1a13f76f55f7698a05658df87f24fa5ce4f7758e6d92d6"
+}

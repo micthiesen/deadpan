@@ -1,0 +1,30 @@
+{
+  "protocol": 1,
+  "project_id": "4fb48db6-f81a-446a-85cf-5749167151da",
+  "expected_revision": "dd85d473-9aec-4364-88d9-a6cd864e2c06",
+  "command": {
+    "command": "insert",
+    "parent": "1e725ea8-ffd3-48d8-a0dc-11e1f4cf94d6",
+    "index": 0,
+    "subtree": {
+      "root": "lead",
+      "nodes": {
+        "lead": {
+          "label": "Silent lead",
+          "kind": {
+            "type": "hold",
+            "recipe": {
+              "duration": 240,
+              "video": {
+                "type": "background"
+              },
+              "audio": {
+                "type": "silence"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

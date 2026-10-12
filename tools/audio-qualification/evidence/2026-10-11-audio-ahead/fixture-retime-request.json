@@ -1,0 +1,12 @@
+{
+  "protocol": 1,
+  "project_id": "4fb48db6-f81a-446a-85cf-5749167151da",
+  "expected_revision": "12583502-1c66-4e0d-8f6e-1b3d73642b6e",
+  "command": {
+    "command": "wrap_retime",
+    "node": "e1650686-c7f9-4864-9daf-87336edd27d0",
+    "id": "future-stretch",
+    "duration": 240,
+    "pitch": "preserve"
+  }
+}

@@ -1,0 +1,215 @@
+{
+  "schema_version": 1,
+  "versions": {
+    "application": "0.1.0",
+    "operating_system": "macos",
+    "architecture": "aarch64",
+    "sqlite": "3.53.2",
+    "document_schema": 49,
+    "database_schema": 77,
+    "compiled_helpers": [
+      {
+        "name": "yt-dlp",
+        "version": "2026.08.19"
+      },
+      {
+        "name": "deno",
+        "version": "2.9.7"
+      }
+    ],
+    "compiled_model_packs": [
+      {
+        "name": "whisper-base-en",
+        "version": "2"
+      },
+      {
+        "name": "ltx-2.3-q4-bridge",
+        "version": "1"
+      },
+      {
+        "name": "ltx-2.3-q4-extension",
+        "version": "1"
+      }
+    ]
+  },
+  "project": {
+    "status": "available",
+    "structure": {
+      "document_schema": 49,
+      "nodes": {
+        "source": 1,
+        "sequence": 1,
+        "hold": 0,
+        "repeat": 0,
+        "retime": 0
+      },
+      "assets": 1,
+      "qualified_assets": 1,
+      "marks": 0,
+      "root_sounds": 0,
+      "beat_sounds": 0,
+      "targets": 0,
+      "repeat_override_owners": 0,
+      "repeat_gap_override_owners": 0,
+      "raster": [
+        320,
+        180
+      ],
+      "frame_rate": [
+        30000,
+        1001
+      ],
+      "duration_frames": 120,
+      "plan_error_code": null
+    }
+  },
+  "context": null,
+  "counters": {
+    "file_io": {
+      "decoder_input": {
+        "read_bytes": 271316,
+        "read_ops": 10,
+        "write_bytes": 0,
+        "write_ops": 0
+      },
+      "media_snapshots": {
+        "read_bytes": 78314,
+        "read_ops": 2,
+        "write_bytes": 78314,
+        "write_ops": 2
+      },
+      "objects": {
+        "read_bytes": 313256,
+        "read_ops": 10,
+        "write_bytes": 39157,
+        "write_ops": 1
+      },
+      "pcm_cache_file": {
+        "read_bytes": 0,
+        "read_ops": 0,
+        "write_bytes": 1548288,
+        "write_ops": 189
+      },
+      "proxy": {
+        "read_bytes": 0,
+        "read_ops": 0,
+        "write_bytes": 0,
+        "write_ops": 0
+      },
+      "store_revisions": {
+        "read_bytes": 57766,
+        "read_ops": 82,
+        "write_bytes": 5243,
+        "write_ops": 3
+      }
+    },
+    "file_io_note": "the store's revision rows (logical payload bytes, not SQLite pages), object-store copies and snapshots, media snapshots, decoder descriptor reads, the private PCM cache file and proxy reads; one operation is one buffered call",
+    "gpu_submissions": {
+      "completions": 7,
+      "last_us": 5147,
+      "max_us": 5819,
+      "note": "shared picture pipeline only; doctor submits no GPU work",
+      "recent_p50_us": 1901,
+      "recent_p95_us": 5147,
+      "submissions": 7
+    },
+    "model_workers": {
+      "failed_samples": 0,
+      "live": {
+        "current": 0,
+        "high": 0
+      },
+      "phys_footprint_bytes": {
+        "current": 0,
+        "high": 0
+      },
+      "samples": 0
+    },
+    "other_workers": {
+      "failed_samples": 0,
+      "live": {
+        "current": 0,
+        "high": 0
+      },
+      "phys_footprint_bytes": {
+        "current": 0,
+        "high": 0
+      },
+      "samples": 0
+    },
+    "pcm_caches": {
+      "decoded_pcm": {
+        "bytes": {
+          "current": 0,
+          "high": 0
+        },
+        "entries": {
+          "current": 0,
+          "high": 0
+        },
+        "evictions": 0,
+        "hit_rate": null,
+        "hits": 0,
+        "misses": 0
+      },
+      "limiter_inputs": {
+        "bytes": {
+          "current": 0,
+          "high": 0
+        },
+        "entries": {
+          "current": 0,
+          "high": 0
+        },
+        "evictions": 0,
+        "hit_rate": null,
+        "hits": 0,
+        "misses": 0
+      },
+      "limiter_tiles": {
+        "bytes": {
+          "current": 0,
+          "high": 0
+        },
+        "entries": {
+          "current": 0,
+          "high": 0
+        },
+        "evictions": 0,
+        "hit_rate": null,
+        "hits": 0,
+        "misses": 0
+      }
+    },
+    "queue_depths": {
+      "picture_preview": {
+        "current": 0,
+        "high": 1
+      },
+      "playback_device_packets": {
+        "current": 0,
+        "high": 0
+      },
+      "playback_prefill_frames": {
+        "current": 0,
+        "high": 0
+      },
+      "playback_prepared": {
+        "current": 0,
+        "high": 0
+      },
+      "playback_prepared_frames": {
+        "current": 0,
+        "high": 0
+      },
+      "thumbnails": {
+        "current": 0,
+        "high": 1
+      }
+    },
+    "scope": "process-local counters for this deadpan-cli process only; a running app's sessions, GPU work and workers are not visible here",
+    "workers_note": "physical footprint of live supervised workers sampled every 500 ms by their supervisor; doctor starts none"
+  },
+  "counter_scope": "current process only; independent atomic samples; no other app session",
+  "privacy": "structural counts and fixed categories only; no user content, identifiers, paths, URLs, credentials, logs or media attached"
+}

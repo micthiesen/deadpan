@@ -178,6 +178,7 @@ mod source_voice;
 #[path = "tests/waveform.rs"]
 mod waveform;
 
+mod ahead;
 mod preparation_progress;
 mod warming;
 
