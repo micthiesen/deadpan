@@ -152,6 +152,7 @@ impl<'plan> AudioRoutedRoot<'plan> {
         if route.recipe_grid() != grid
             || route.route().recipe_extent() != length
             || route.recipe_samples() != occurrence.samples()
+            || route.identity_anchor() != occurrence.routing_anchor()?
         {
             return Err(PlanError::InvalidPlan(
                 "sound route does not match its complete owner occurrence capture",
@@ -172,6 +173,7 @@ impl<'plan> AudioRoutedRoot<'plan> {
         if route.recipe_grid() != grid
             || route.route().recipe_extent() != extent.end.checked_sub(extent.start)?
             || route.recipe_samples() != root.samples()
+            || route.identity_anchor() != ExactRatio::ZERO
         {
             return Err(PlanError::InvalidPlan(
                 "sound route does not match its complete projected root capture",
@@ -197,6 +199,7 @@ impl<'plan> AudioRoutedRoot<'plan> {
         if route.recipe_grid() != root.grid()
             || route.route().recipe_extent() != root.extent()
             || route.recipe_samples() != root.samples()?
+            || route.identity_anchor() != ExactRatio::ZERO
         {
             return Err(PlanError::InvalidPlan(
                 "sound route does not match its complete raw root capture",

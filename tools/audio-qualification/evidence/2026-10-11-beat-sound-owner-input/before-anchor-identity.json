@@ -1,0 +1,21 @@
+{
+  "base_revision": "003ad962cbda320ec3f9212b0176c4b760168c93",
+  "sources": {
+    "crates/deadpan-audio/src/beat_sound_owner_input.rs": "4535bef4aaa5dbe40e05c10a7e940fd4d7603f76fc3e7d44bcc3739ede2c9290",
+    "crates/deadpan-audio/src/beat_sounds.rs": "ecdf6d963aee8b1d867ae8cd8e50b5bddebc985474c716ec7b76c70174f0ed21",
+    "crates/deadpan-audio/src/lib.rs": "3fd481e8ac56d4ac86e2db67d12e97ace48e36a9f57d6255c48d57b583419f93",
+    "crates/deadpan-audio/src/sound_clocks.rs": "2129717af5254d31f87df7040e2eb95e07f929d5b332ebfdc9fbe806684537b2",
+    "crates/deadpan-audio/src/sound_events.rs": "ac46b741c05ae652aaa7ebdbea1e869f4a34365bef5ac1b945ef93b0bf4b350a",
+    "crates/deadpan-audio/src/stages.rs": "0c544ef55411d9693ffbb65c66f3260f7fc54ee326569928472251384381ccc2",
+    "crates/deadpan-audio/tests/audio_definition/sound_clocks.rs": "6a3087a999e2f8a6d0a4f5673e4e8c0a53aba8b325dc5b429519d46b5abbe695",
+    "crates/deadpan-audio/tests/audio_definition/sound_clocks/owner_input.rs": "6731845e01a9f85c93649675435b2150bb762c1e196f069eeda230f924d5223f",
+    "crates/deadpan-audio/tests/audio_definition/sound_owner_context.rs": "3d801372bc0994927571fa9ce25b422f6cc929994f14b0985f17cb350f4b5b4f",
+    "crates/deadpan-plan/src/audio_sound_event.rs": "b44e2eb44f79fb0e37cb70d5d720781e63188330b57e7c8d5f4c388fa7f456c0",
+    "crates/deadpan-plan/src/audio_sound_owner_context.rs": "d76ec7d62134d4449ce7a938ecf5c61ca0d70fa1e673ea49c86d6fc0f0378bd1",
+    "crates/deadpan-plan/src/audio_source_occurrence.rs": "a55246022e8214ee8d2f405586202e56e0653d069c3d0c28f1249999de8c1f60",
+    "crates/deadpan-plan/src/audio_source_occurrences.rs": "951f908996cdbd6b379291e36b28708e5525c0929ce4f9b4f8b99384a867fc87"
+  },
+  "binaries": {
+    "target/debug/deps/audio_definition-3d3947b9399b2579": "d2a7256685f6cec2b3b94d3ba014453aa00396d467f15bd10f93d58cb7be221f"
+  }
+}

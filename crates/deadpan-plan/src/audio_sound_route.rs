@@ -26,6 +26,7 @@ pub struct AudioSoundRoute<S> {
     route: SoundRoute,
     grids: Vec<AudioSampleGrid<ReferenceSample>>,
     allocations: Vec<Range<i64>>,
+    identity_anchor: ExactRatio,
     domain: PhantomData<S>,
 }
 
@@ -80,6 +81,10 @@ impl<S> AudioSoundRoute<S> {
         &self.route
     }
 
+    pub(crate) fn identity_anchor(&self) -> ExactRatio {
+        self.identity_anchor
+    }
+
     fn new_inner(
         route: SoundRoute,
         grids: Vec<AudioSampleGrid<ReferenceSample>>,
@@ -113,6 +118,7 @@ impl<S> AudioSoundRoute<S> {
             route,
             grids,
             allocations,
+            identity_anchor: ExactRatio::ZERO,
             domain: PhantomData,
         })
     }
@@ -261,7 +267,14 @@ impl<S> AudioSoundRoute<S> {
                     if let Some(recipe) = slice.recipe {
                         let old_start = self.grids[input].boundary(recipe.start)?.0;
                         let old_end = self.grids[input].boundary(recipe.end)?.0;
-                        let delta = i128::from(old_start) - i128::from(start);
+                        let delta = if self.identity_anchor == ExactRatio::ZERO {
+                            i128::from(old_start) - i128::from(start)
+                        } else {
+                            // Only a proved full identity chain may use a
+                            // delivery anchor separate from its input extent.
+                            i128::from(self.grids[input].boundary(self.identity_anchor)?.0)
+                                - i128::from(grid.boundary(self.identity_anchor)?.0)
+                        };
                         tasks.push(QueryTask::Walk {
                             id: input,
                             samples: shifted(piece, delta)?,
@@ -278,6 +291,46 @@ impl<S> AudioSoundRoute<S> {
             }
         }
         Ok(())
+    }
+}
+
+impl AudioSoundRoute<AudioSample> {
+    /// Keep the rounded placement anchor when an occurrence's complete input
+    /// extends behind an exterior crop. Every route operation must be a full
+    /// identity Keep; this cannot change the seams of a Window or edited map.
+    /// The checked occurrence constructor verifies this against its own anchor.
+    pub fn with_identity_anchor(mut self, anchor: ExactRatio) -> Result<Self, PlanError> {
+        let extent = self.route.recipe_extent();
+        if self.route.root() as usize != self.route.nodes().len() - 1 {
+            return Err(PlanError::InvalidPlan(
+                "sound history anchor requires an identity chain",
+            ));
+        }
+        for (index, node) in self.route.nodes().iter().enumerate() {
+            let valid = match node {
+                SoundRouteNode::Recipe {} => index == 0,
+                SoundRouteNode::Ripple { input, map } => {
+                    index > 0
+                        && *input as usize == index - 1
+                        && map.input_extent() == extent
+                        && map.output_extent() == extent
+                        && map.root() == 0
+                        && matches!(map.nodes(), [deadpan_core::SoundRippleNode::Keep { range }]
+                            if range.start == ExactRatio::ZERO && range.end == extent)
+                }
+                SoundRouteNode::Window { .. } => false,
+            };
+            if !valid {
+                return Err(PlanError::InvalidPlan(
+                    "sound history anchor requires an identity chain",
+                ));
+            }
+        }
+        for grid in &self.grids {
+            grid.boundary(anchor)?;
+        }
+        self.identity_anchor = anchor;
+        Ok(self)
     }
 }
 

@@ -4,6 +4,13 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 
 ## Resumed implementation, 2026-10-06
 
+[Saved sound input](qualification/beat-sound-owner-input-2026-10-11.md) now reads
+full attachment history through move/copy clocks, current Hold gates and event
+edges/gain. A separate rounded delivery anchor fixes a one-sample shift exposed
+when copying cropped NTSC input. This prepares the independent input path;
+shared group EQ, final per-voice policy and native authoring remain unfinished.
+DP-09/DP-16 stay partial.
+
 [Independent sound history](qualification/sound-owner-context-2026-10-11.md)
 now retains full current owner input behind crops while preserving nested
 Preserve, inner selections, stable Repeat scope and current Hold policy.

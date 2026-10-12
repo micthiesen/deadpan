@@ -4,6 +4,23 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Saved sound input](../qualification/beat-sound-owner-input-2026-10-11.md)
+connects full sound contexts to `prepare_sound_processing_plans_in_context`
+and `prepare_beat_sounds`, including historical aliases and routed Hold gates.
+`read_beat_sound_owner_input` returns f64 attachment input after event edges/gain,
+without Original audio, root SoundEvents or any owner treatment. A separate
+delivery anchor preserves saved sample-label shifts when history expands;
+identity routes and envelopes use it together. The NTSC cropped-copy check
+caught a one-sample shift before this correction.
+
+Continue directly with the recursive shared group graph. Use the individual
+prepared occurrences for treatment ordering and per-voice delivery permission;
+the already summed raw inspection result cannot stand in for treated children.
+Sum before shared saturation, keep gain/mute on its declared side of EQ, and
+retain independent policy when a permitted sound overlaps a silent Original.
+The mixed-EQ guards remain, and no native or export integration is claimed by
+this input reader. Do not add another unrelated processor or preparation API.
+
 [Independent sound history](../qualification/sound-owner-context-2026-10-11.md)
 adds `AudioSoundOwnerContext` and its checked `source_voice_occurrences` query.
 It uses current structural clocks, full input behind exterior crops, enclosing

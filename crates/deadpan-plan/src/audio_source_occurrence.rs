@@ -30,6 +30,9 @@ pub struct AudioSourceOccurrence<'plan> {
     instance: InstancePath,
     voice: AudioSourceVoice<'plan>,
     extent: Range<ExactRatio>,
+    // Ordinary delivery's rounded start remains the clock anchor even when
+    // a treatment-input context exposes an earlier processing allocation.
+    routing_origin: ExactRatio,
     audible_extent: Range<ExactRatio>,
     gain_owners: Vec<crate::AudioOwnerClock<'plan>>,
     processing_projection: Option<Arc<AudioStageProjection<'plan>>>,
@@ -254,7 +257,8 @@ impl RenderPlan {
         let mut audible = selected.start..selected.end;
         let voice = checked_voice(owner, recipe)?;
         let mut provider = Provider::Source(Box::new(voice.input_signal()));
-        let mut support = host_support;
+        let mut support = host_support.clone();
+        let mut delivery_support = host_support;
         let mut placement = Placement::IDENTITY;
         let mut stages = 0usize;
         for (index, edge) in edges.iter().enumerate().rev() {
@@ -286,12 +290,18 @@ impl RenderPlan {
                     Provider::Projected(AudioStageProjection::new(stage, input, policy, duration)?);
                 placement = Placement::IDENTITY;
                 support = node_support(self, edge.parent);
+                delivery_support = support.clone();
                 // A processor may retain output throughout its full allocation,
                 // including decay outside the raw selected input interval.
                 audible = support.clone();
             } else {
                 budget.spend(1)?;
                 placement = edge.map.compose(placement)?;
+                let allowed = node_support(self, edge.parent);
+                delivery_support = intersect(
+                    delivery_support,
+                    placement.local(allowed.start)?..placement.local(allowed.end)?,
+                )?;
                 if index >= unclipped_before {
                     let allowed = node_support(self, edge.parent);
                     support = intersect(
@@ -307,6 +317,7 @@ impl RenderPlan {
             }
         }
         let extent = placement.range(support.clone())?;
+        let routing_origin = placement.range(delivery_support)?.start;
         let audible_extent = placement.range(intersect(audible, support.clone())?)?;
         let inherited_hard_edges = (
             owner_edges.iter().any(|(range, policy)| {
@@ -346,6 +357,7 @@ impl RenderPlan {
             instance,
             voice,
             extent,
+            routing_origin,
             audible_extent,
             gain_owners,
             processing_projection,
@@ -701,6 +713,13 @@ impl<'plan> AudioSourceOccurrence<'plan> {
     pub fn extent(&self) -> Range<ExactRatio> {
         self.extent.clone()
     }
+
+    /// Relative frame anchor used by saved identity moves. Expanding hidden
+    /// history must not replace the ordinary delivery boundary used when each
+    /// chronological move rounded its old and new sample labels.
+    pub fn routing_anchor(&self) -> Result<ExactRatio, PlanError> {
+        Ok(self.routing_origin.checked_sub(self.extent.start)?)
+    }
     /// Final raw selection, or the complete enclosing processed allocation.
     /// Current Hold gates and event edges are evaluated separately.
     pub fn audible_extent(&self) -> Range<ExactRatio> {
@@ -765,14 +784,18 @@ impl<'plan> AudioSourceOccurrence<'plan> {
         samples: Range<AudioSample>,
         limits: AudioQueryLimits,
     ) -> Result<crate::AudioSoundGateQuery, PlanError> {
-        if self.instance != original.instance {
+        if self.instance != original.instance
+            || self.routing_anchor()? != original.routing_anchor()?
+        {
             return Err(PlanError::InvalidAudioSourceOccurrence(
-                "routed occurrence owner differs from its original",
+                "routed occurrence owner or delivery anchor differs from its original",
             ));
         }
         crate::audio_sound_event::routed_occurrence_gate_fades(
             self.plan,
             crate::audio_sound_event::RoutedOccurrenceEnvelope {
+                domain: self.policy_domain.as_deref(),
+                anchor: original.routing_anchor()?,
                 original_allocation: original.extent(),
                 current_allocation: self.extent(),
                 original_audible: original.audible_extent(),
@@ -806,6 +829,7 @@ impl<'plan> AudioSourceOccurrence<'plan> {
             || original.instance != alias.historical_instance
             || original.recipe() != &alias.recipe
             || self.recipe() != &alias.recipe
+            || self.routing_anchor()? != original.routing_anchor()?
         {
             return Err(PlanError::InvalidAudioSourceOccurrence(
                 "routed occurrences do not match their sound clock alias",
@@ -814,6 +838,8 @@ impl<'plan> AudioSourceOccurrence<'plan> {
         crate::audio_sound_event::routed_occurrence_gate_fades(
             self.plan,
             crate::audio_sound_event::RoutedOccurrenceEnvelope {
+                domain: self.policy_domain.as_deref(),
+                anchor: original.routing_anchor()?,
                 original_allocation: original.extent(),
                 current_allocation: self.extent(),
                 original_audible: original.audible_extent(),

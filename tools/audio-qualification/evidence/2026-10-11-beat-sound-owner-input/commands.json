@@ -1,0 +1,59 @@
+[
+  {
+    "name": "fmt",
+    "argv": [
+      "cargo",
+      "fmt",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "started_utc": "2026-10-12T05:20:25.393928+00:00",
+    "seconds": 4.6597219170071185,
+    "exit_code": 0
+  },
+  {
+    "name": "tests",
+    "argv": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-plan",
+      "-p",
+      "deadpan-audio"
+    ],
+    "started_utc": "2026-10-12T05:20:30.054029+00:00",
+    "seconds": 147.24214758258313,
+    "exit_code": 0
+  },
+  {
+    "name": "clippy",
+    "argv": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "--workspace",
+      "--all-targets",
+      "--features",
+      "ui-harness",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "started_utc": "2026-10-12T05:22:57.259006+00:00",
+    "seconds": 46.968096249736845,
+    "exit_code": 0
+  },
+  {
+    "name": "whitespace",
+    "argv": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "started_utc": "2026-10-12T05:23:44.227477+00:00",
+    "seconds": 0.03753937501460314,
+    "exit_code": 0
+  }
+]

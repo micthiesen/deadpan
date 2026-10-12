@@ -459,6 +459,9 @@ fn root_capture_rejects_crops_resumes_and_equal_count_grid_substitutions() {
         root_route(q(6, 1), q(0, 1), q(1, 1)),
         root_route(q(6, 1), q(-1, 4), q(1001, 1000)),
         root_route(q(23, 4), q(-1, 4), q(1, 1)),
+        root_route(q(6, 1), q(-1, 4), q(1, 1))
+            .with_identity_anchor(q(1, 1))
+            .unwrap(),
     ] {
         assert_eq!(route.recipe_samples(), root.samples());
         assert!(AudioRoutedRoot::new(root.clone(), route).is_err());

@@ -71,11 +71,11 @@ pub use signal_transfer::{
 };
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub use stages::{
-    DefinitionAudioBlock, DomainAudioBlock, EdgeFadedBlock, MAX_EDGE_PREPARATION_FRAMES,
-    OwnerEqualizedBlock, PointDomainAudioBlock, PreparedOwnerEqualizer, ProjectedRootBlock,
-    RoutedRootBlock, RoutedSignalBlock, SourceOccurrenceBlock, SourceOccurrencesBlock, StageAudio,
-    StageAudioError, StageLimits, TapeAudioBlock, TimeMappedBlock, TransferredDomainBlock,
-    TransferredRootBlock,
+    BeatSoundOwnerInputBlock, DefinitionAudioBlock, DomainAudioBlock, EdgeFadedBlock,
+    MAX_EDGE_PREPARATION_FRAMES, OwnerEqualizedBlock, PointDomainAudioBlock,
+    PreparedOwnerEqualizer, ProjectedRootBlock, RoutedRootBlock, RoutedSignalBlock,
+    SourceOccurrenceBlock, SourceOccurrencesBlock, StageAudio, StageAudioError, StageLimits,
+    TapeAudioBlock, TimeMappedBlock, TransferredDomainBlock, TransferredRootBlock,
 };
 pub use sting::{
     STING_FILE_NAME, STING_FRAMES, STING_LABEL, STING_SAMPLE_RATE, STING_VERSION, triumphant_sting,

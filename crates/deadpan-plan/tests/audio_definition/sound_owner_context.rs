@@ -296,6 +296,19 @@ fn sound_owner_context_rejects_foreign_owner_and_bounds_work_and_support() {
     assert!(outside.voices().is_empty());
     assert!(
         input
+            .source_voice_occurrence(
+                occurrence("b", &[]),
+                recipe(&plan, q(0, 1), 4),
+                Default::default(),
+            )
+            .is_err()
+    );
+    assert!(
+        plan.audio_sound_instance_context(&occurrence("absent", &[]), Default::default(),)
+            .is_err()
+    );
+    assert!(
+        input
             .source_voice_occurrences(
                 &id("b"),
                 recipe(&plan, q(7, 1), 4),
@@ -304,4 +317,93 @@ fn sound_owner_context_rejects_foreign_owner_and_bounds_work_and_support() {
             )
             .is_err()
     );
+}
+
+#[test]
+fn sound_owner_context_identity_route_preserves_delivery_anchor_and_rejects_windows() {
+    use deadpan_core::{SoundRippleMap, SoundRippleNode, SoundRoute};
+    use deadpan_plan::{AudioBoundaryRule, AudioRoutedRoot, AudioSampleGrid, AudioSoundRoute};
+    let plan = RenderPlan::compile(&catalog(document(
+        FrameRate::new(30000, 1001).unwrap(),
+        &["crop"],
+        [
+            ("owner", source(3)),
+            (
+                "crop",
+                retime(
+                    "owner",
+                    2,
+                    1,
+                    3,
+                    PitchPolicy::FollowSpeed,
+                    RetimePurpose::Partition,
+                ),
+            ),
+        ],
+        BTreeMap::new(),
+    )))
+    .unwrap();
+    let context = context(&plan, "owner", 0);
+    let voice = context
+        .source_voice_occurrence(
+            occurrence("owner", &[]),
+            recipe(&plan, q(0, 1), 4804),
+            Default::default(),
+        )
+        .unwrap();
+    assert_eq!(voice.routing_anchor().unwrap(), q(1, 1));
+    let initial = SoundRoute::identity(q(3, 1)).unwrap();
+    let route = initial
+        .ripple(
+            SoundRippleMap::new(
+                q(3, 1),
+                0,
+                vec![SoundRippleNode::Keep {
+                    range: ExactFrameRange::new(q(0, 1), q(3, 1)).unwrap(),
+                }],
+            )
+            .unwrap(),
+        )
+        .unwrap();
+    let grid = |origin| {
+        AudioSampleGrid::<AudioSample>::new(origin, q(5, 8008), AudioBoundaryRule::RoundEven)
+            .unwrap()
+    };
+    let clocks = vec![grid(q(1, 1)), grid(q(-1, 1))];
+    let unanchored = AudioSoundRoute::<AudioSample>::new(route.clone(), clocks.clone()).unwrap();
+    let wrong = unanchored
+        .query(AudioSample(2000)..AudioSample(2001), Default::default())
+        .unwrap();
+    assert_eq!(
+        wrong.spans[0]
+            .sampling
+            .unwrap()
+            .local_at(AudioSample(2000))
+            .unwrap(),
+        grid(q(1, 1)).at(AudioSample(2000 - 3204)).unwrap()
+    );
+    assert!(AudioRoutedRoot::occurrence(voice.clone(), unanchored).is_err());
+    let anchored = AudioSoundRoute::<AudioSample>::new(route, clocks)
+        .unwrap()
+        .with_identity_anchor(voice.routing_anchor().unwrap())
+        .unwrap();
+    let query = anchored
+        .query(AudioSample(2000)..AudioSample(2001), Default::default())
+        .unwrap();
+    assert_eq!(query.spans.len(), 1);
+    assert_eq!(
+        query.spans[0]
+            .sampling
+            .unwrap()
+            .local_at(AudioSample(2000))
+            .unwrap(),
+        grid(q(1, 1)).at(AudioSample(2000 - 3203)).unwrap()
+    );
+    assert!(AudioRoutedRoot::occurrence(voice, anchored).is_ok());
+    let window = initial
+        .window(ExactFrameRange::new(q(1, 1), q(2, 1)).unwrap())
+        .unwrap();
+    let window =
+        AudioSoundRoute::<AudioSample>::new(window, vec![grid(q(1, 1)), grid(q(0, 1))]).unwrap();
+    assert!(window.with_identity_anchor(q(1, 1)).is_err());
 }

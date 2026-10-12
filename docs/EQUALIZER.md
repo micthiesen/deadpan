@@ -56,8 +56,15 @@ without adopting an Original's retained clock. Enclosing Preserve input and
 inner selections remain intact, and Hold policy follows the current structure.
 Cold decoded PCM matches uncropped references across split reads and nested
 Preserve. See [sound history qualification](qualification/sound-owner-context-2026-10-11.md).
-The group mixer does not consume this handle yet; the explicit mixed-EQ
-restriction remains until shared stage ordering and per-voice policy are wired.
+The beat-sound preparer now consumes this handle with saved move/copy clocks.
+`read_beat_sound_owner_input` reads their full input with current Hold gates,
+event edges and gain, retaining f64 sums. Expanded history keeps the original
+rounded delivery anchor instead of rounding a new crop boundary; a fractional
+copy regression caught a one-sample shift in the first implementation.
+See [saved sound input qualification](qualification/beat-sound-owner-input-2026-10-11.md).
+The authored group EQ graph still needs to consume these per-voice preparations;
+the explicit mixed-EQ restriction remains until stage ordering and final
+per-voice policy are wired.
 
 `RenderPlan::audio_owner_input` now resolves an observed owner's raw processing
 context with one bounded query allowance. The handle belongs to that immutable

@@ -96,7 +96,7 @@ impl StageAudio {
         let retained =
             self.prepare_sound_processing_plans(&plan, start..AudioSample(end), control)?;
         let mut beat_voices =
-            self.prepare_beat_sounds(&plan, &retained, start..AudioSample(end), control)?;
+            self.prepare_beat_sounds(&plan, &retained, start..AudioSample(end), control, None)?;
         let mut mix = group_mix::GroupMix::plan(&plan, start, frames, authored_gain, control)?;
         for voice in &mut beat_voices {
             voice.route_mix(&mut mix, control)?;

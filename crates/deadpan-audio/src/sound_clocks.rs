@@ -18,6 +18,16 @@ impl StageAudio {
         samples: Range<AudioSample>,
         control: WorkControl<'_>,
     ) -> Result<SoundProcessingPlans, StageAudioError> {
+        self.prepare_sound_processing_plans_in_context(plan, samples, control, None)
+    }
+
+    pub(super) fn prepare_sound_processing_plans_in_context(
+        &mut self,
+        plan: &RenderPlan,
+        samples: Range<AudioSample>,
+        control: WorkControl<'_>,
+        context: Option<&deadpan_plan::AudioSoundOwnerContext<'_>>,
+    ) -> Result<SoundProcessingPlans, StageAudioError> {
         // Births can make a different reference first for different occurrences.
         // Compile only first clocks needed by this bounded query. Asset sets are
         // complete across the event inventory so a cached plan remains valid on
@@ -46,17 +56,8 @@ impl StageAudio {
                 if scopes.is_empty() {
                     continue;
                 }
-                let batch = plan.source_voice_occurrences(
-                    owner,
-                    AudioSourceVoiceRecipe {
-                        source: event.source.clone(),
-                        mapping: event.mapping,
-                        offset: event.offset,
-                    },
-                    samples.clone(),
-                    control.query_limits()?,
-                )?;
-                control.spend_plan_work(batch.construction_work())?;
+                let batch =
+                    current_occurrences(plan, context, owner, event, samples.clone(), control)?;
                 for voice in batch.voices() {
                     for scope in &scopes {
                         let (instance, work) = scope.try_remap_instance_with_work(
@@ -153,10 +154,9 @@ pub(super) fn route_occurrence<'plan>(
             route = route.ripple(keep).map_err(PlanError::from)?;
         }
     }
-    Ok(AudioRoutedRoot::occurrence(
-        original,
-        AudioSoundRoute::<AudioSample>::new(route, grids)?,
-    )?)
+    let anchor = original.routing_anchor()?;
+    let route = AudioSoundRoute::<AudioSample>::new(route, grids)?.with_identity_anchor(anchor)?;
+    Ok(AudioRoutedRoot::occurrence(original, route)?)
 }
 
 pub(super) fn placements(
@@ -209,16 +209,60 @@ pub(super) fn historical_occurrence<'plan>(
     event: &deadpan_core::BeatSound,
     instance: deadpan_core::InstancePath,
     control: WorkControl<'_>,
+    context: Option<(
+        &deadpan_plan::AudioSoundOwnerContext<'_>,
+        &deadpan_plan::AudioSoundClockScope<'_>,
+    )>,
 ) -> Result<AudioSourceOccurrence<'plan>, StageAudioError> {
-    let voice = plan.source_voice_occurrence(
-        instance,
-        AudioSourceVoiceRecipe {
-            source: event.source.clone(),
-            mapping: event.mapping,
-            offset: event.offset,
-        },
-        control.query_limits()?,
-    )?;
+    let historical = if let Some((context, scope)) = context {
+        let (instance, work) = scope
+            .try_remap_instance_with_work(context.owner(), control.query_limits()?.maximum_work)?;
+        control.spend_plan_work(work)?;
+        let limits = control.query_limits()?;
+        instance
+            .map(|instance| plan.audio_sound_instance_context(&instance, limits))
+            .transpose()?
+    } else {
+        None
+    };
+    let recipe = AudioSourceVoiceRecipe {
+        source: event.source.clone(),
+        mapping: event.mapping,
+        offset: event.offset,
+    };
+    let voice = match historical {
+        Some(context) => {
+            control.spend_plan_work(context.construction_work())?;
+            context.source_voice_occurrence(instance, recipe, control.query_limits()?)?
+        }
+        None => plan.source_voice_occurrence(instance, recipe, control.query_limits()?)?,
+    };
     control.spend_plan_work(voice.construction_work())?;
     Ok(voice)
+}
+
+pub(super) fn current_occurrences<'plan>(
+    plan: &'plan RenderPlan,
+    context: Option<&deadpan_plan::AudioSoundOwnerContext<'plan>>,
+    owner: &deadpan_core::NodeId,
+    event: &deadpan_core::BeatSound,
+    samples: Range<AudioSample>,
+    control: WorkControl<'_>,
+) -> Result<deadpan_plan::AudioSourceOccurrences<'plan>, StageAudioError> {
+    let recipe = AudioSourceVoiceRecipe {
+        source: event.source.clone(),
+        mapping: event.mapping,
+        offset: event.offset,
+    };
+    let batch = match context {
+        Some(context) => {
+            if !context.belongs_to(plan) {
+                return Err(StageAudioError::ForeignDomain);
+            }
+            context.source_voice_occurrences(owner, recipe, samples, control.query_limits()?)?
+        }
+        None => plan.source_voice_occurrences(owner, recipe, samples, control.query_limits()?)?,
+    };
+    control.spend_plan_work(batch.construction_work())?;
+    Ok(batch)
 }

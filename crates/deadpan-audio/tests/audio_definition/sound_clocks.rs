@@ -7,6 +7,9 @@ mod repeats;
 #[path = "sound_clocks/group_mix.rs"]
 mod group_mix;
 
+#[path = "sound_clocks/owner_input.rs"]
+mod owner_input;
+
 struct ClockProvider {
     fixture: FixtureProvider,
     revision: RevisionId,

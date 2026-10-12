@@ -37,7 +37,22 @@ impl RenderPlan {
                 "sound context requires a current concrete owner",
             ));
         }
-        let instance = owner.instance();
+        self.audio_sound_instance_context(owner.instance(), limits)
+    }
+
+    /// Resolve current sound history from an explicit structural occurrence.
+    /// This is also used after a saved sound-clock scope has proved a historical
+    /// alias. The complete path and stable plays are checked by this plan;
+    /// neither nominal placement nor a matching node name grants membership.
+    pub fn audio_sound_instance_context(
+        &self,
+        instance: &InstancePath,
+        limits: AudioQueryLimits,
+    ) -> Result<AudioSoundOwnerContext<'_>, PlanError> {
+        limits.validate()?;
+        if instance.repeats.len() > MAX_DOCUMENT_DEPTH {
+            return Err(PlanError::AudioQueryLimit("sound context depth"));
+        }
         let node =
             *self
                 .by_id
@@ -78,11 +93,11 @@ impl RenderPlan {
             AudioBoundaryRule::RoundEven,
         )?;
         let samples = grid.boundary(extent.start)?..grid.boundary(extent.end)?;
+        budget.spend(1 + repeats + instance.repeats.len())?;
         let processing_instance = InstancePath {
             node: self.nodes[processing_node].inspection.id.clone(),
             repeats: instance.repeats[..repeats].to_vec(),
         };
-        budget.spend(1 + repeats + instance.repeats.len())?;
         let policy = AudioDomain {
             plan: self,
             seed: AudioWalkSeed {

@@ -35,6 +35,18 @@ impl RenderPlan {
 }
 
 impl<'plan> AudioSoundOwnerContext<'plan> {
+    /// One checked occurrence within this owner, without enumerating its
+    /// siblings. Used when a saved sound clock has already proved its alias.
+    pub fn source_voice_occurrence(
+        &self,
+        instance: InstancePath,
+        recipe: AudioSourceVoiceRecipe,
+        limits: AudioQueryLimits,
+    ) -> Result<AudioSourceOccurrence<'plan>, PlanError> {
+        self.plan
+            .source_voice_occurrence_in_context(instance, recipe, limits, Some(self))
+    }
+
     /// Independent current occurrences feeding this checked owner, including
     /// history hidden by exterior crops. Missing/out-of-scope voices still
     /// validate their source recipe; no dependency or permission is waived.

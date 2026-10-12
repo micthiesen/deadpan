@@ -2,7 +2,7 @@
 
 use super::*;
 use deadpan_core::{AudioEdgePolicy, BeatSound};
-use deadpan_plan::{AudioSourceOccurrence, AudioSourceVoiceRecipe};
+use deadpan_plan::AudioSourceOccurrence;
 
 pub(super) struct PreparedBeatSound<'plan> {
     event: &'plan BeatSound,
@@ -55,6 +55,7 @@ impl StageAudio {
         retained: &'plan super::sound_clocks::SoundProcessingPlans,
         samples: Range<AudioSample>,
         control: WorkControl<'_>,
+        context: Option<&deadpan_plan::AudioSoundOwnerContext<'plan>>,
     ) -> Result<Vec<PreparedBeatSound<'plan>>, StageAudioError> {
         let mut prepared = Vec::new();
         for (owner, events) in plan.beat_sounds() {
@@ -70,17 +71,14 @@ impl StageAudio {
                     control.spend_plan_work(scope.proof_work())?;
                 }
                 let mut bindings = BTreeMap::new();
-                let batch = plan.source_voice_occurrences(
+                let batch = super::sound_clocks::current_occurrences(
+                    plan,
+                    context,
                     owner,
-                    AudioSourceVoiceRecipe {
-                        source: event.source.clone(),
-                        mapping: event.mapping,
-                        offset: event.offset,
-                    },
+                    event,
                     samples.clone(),
-                    control.query_limits()?,
+                    control,
                 )?;
-                control.spend_plan_work(batch.construction_work())?;
                 let mut occurrences = Vec::with_capacity(batch.voices().len());
                 for voice in batch.voices() {
                     control.check()?;
@@ -132,6 +130,7 @@ impl StageAudio {
                             event,
                             historical_instance,
                             control,
+                            context.map(|context| (context, first_scope)),
                         )?;
                         let (alias, alias_work) = binding.alias_occurrence(
                             &original,

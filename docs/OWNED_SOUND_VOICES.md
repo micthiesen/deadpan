@@ -198,8 +198,21 @@ The existing PCM readers consume these checked handles, including negative
 history positions. Cold, split and nested-Preserve reads match uncropped
 references; fractional phase and exact sound endpoints have planner checks.
 See [sound history qualification](qualification/sound-owner-context-2026-10-11.md).
-This supplies input history only. Shared group EQ, saved-journal integration
-into that graph and final per-voice delivery policy remain required.
+`StageAudio::read_beat_sound_owner_input` now applies saved sound journals,
+current Hold gates, event edges and event gain to this full history. It retains
+the attachment sum as f64 and excludes Original audio, root SoundEvents and all
+owner treatments. The same scoped preparation path remains available per voice
+for ordered group processing. A copied context is remapped through its checked
+historical scope before constructing the old complete processor.
+
+Expanded input retains the ordinary delivery start as a separate routing anchor.
+Each identity move rounds that anchor on its old and new grids, independently
+of the larger processing extent. `AudioSoundRoute::with_identity_anchor` accepts
+only a complete identity chain; it cannot change a Window or edited map. The
+occurrence capture and routed gate envelope check the same anchor. This avoids
+the one-sample shift exposed by an NTSC cropped-copy regression.
+See [saved sound input qualification](qualification/beat-sound-owner-input-2026-10-11.md).
+The full group EQ graph and final per-voice delivery policy remain required.
 
 `AudioRoutedRoot::occurrence` captures a complete checked independent occurrence,
 including its nested Preserve graph. Its route recipe uses frames relative to

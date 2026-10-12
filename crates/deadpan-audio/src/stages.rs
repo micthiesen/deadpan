@@ -87,6 +87,10 @@ pub use voice_occurrences::SourceOccurrencesBlock;
 #[path = "beat_sounds.rs"]
 mod beat_sounds;
 
+#[path = "beat_sound_owner_input.rs"]
+mod beat_sound_owner_input;
+pub use beat_sound_owner_input::BeatSoundOwnerInputBlock;
+
 #[path = "sound_clocks.rs"]
 mod sound_clocks;
 

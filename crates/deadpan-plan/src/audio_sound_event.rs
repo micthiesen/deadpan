@@ -329,7 +329,9 @@ pub(crate) fn occurrence_gate_fades<'plan>(
 /// Transport one occurrence's virtual edge envelope through exact root moves.
 /// Sample labels follow the canonical old integral-label delta at each move;
 /// exact frame positions move independently and retain boundary provenance.
-pub(crate) struct RoutedOccurrenceEnvelope {
+pub(crate) struct RoutedOccurrenceEnvelope<'context, 'plan> {
+    pub domain: Option<&'context crate::AudioDomain<'plan>>,
+    pub anchor: ExactRatio,
     pub original_allocation: Range<ExactRatio>,
     pub current_allocation: Range<ExactRatio>,
     pub original_audible: Range<ExactRatio>,
@@ -337,9 +339,9 @@ pub(crate) struct RoutedOccurrenceEnvelope {
     pub inherited_hard_edges: (bool, bool),
 }
 
-pub(crate) fn routed_occurrence_gate_fades(
-    current: &RenderPlan,
-    envelope: RoutedOccurrenceEnvelope,
+pub(crate) fn routed_occurrence_gate_fades<'plan>(
+    current: &'plan RenderPlan,
+    envelope: RoutedOccurrenceEnvelope<'_, 'plan>,
     placements: &[Range<ExactRatio>],
     start_edge: AudioEdgePolicy,
     end_edge: AudioEdgePolicy,
@@ -347,6 +349,8 @@ pub(crate) fn routed_occurrence_gate_fades(
     limits: AudioQueryLimits,
 ) -> Result<AudioSoundGateQuery, PlanError> {
     let RoutedOccurrenceEnvelope {
+        domain,
+        anchor,
         original_allocation,
         current_allocation,
         original_audible,
@@ -388,8 +392,14 @@ pub(crate) fn routed_occurrence_gate_fades(
             "routed occurrence sample grid differs from the current project rate",
         ));
     }
-    let root_end = current.audio_duration()?;
-    if samples.start.0 < 0 || samples.end < samples.start || samples.end > root_end {
+    let policy_support = match domain {
+        Some(domain) => domain.root_samples(),
+        None => AudioSample(0)..current.audio_duration()?,
+    };
+    if samples.start < policy_support.start
+        || samples.end < samples.start
+        || samples.end > policy_support.end
+    {
         return Err(PlanError::AudioRangeOutOfRange);
     }
     if samples.is_empty() {
@@ -425,8 +435,8 @@ pub(crate) fn routed_occurrence_gate_fades(
     support.end = support.end.min(original_allocation_samples.end);
     for pair in placements.windows(2) {
         charge(&mut work, limits.maximum_work)?;
-        let old_start = grid.boundary(pair[0].start)?.0;
-        let new_start = grid.boundary(pair[1].start)?.0;
+        let old_start = grid.boundary(pair[0].start.checked_add(anchor)?)?.0;
+        let new_start = grid.boundary(pair[1].start.checked_add(anchor)?)?.0;
         let sample_shift = i128::from(new_start) - i128::from(old_start);
         let frame_shift = pair[1].start.checked_sub(pair[0].start)?;
         start = move_boundary(start, frame_shift, sample_shift)?;
@@ -452,25 +462,32 @@ pub(crate) fn routed_occurrence_gate_fades(
             work,
         });
     }
-    let context = AudioSample(samples.start.0.saturating_sub(GATE_CONTEXT_SAMPLES).max(0))
+    let context = AudioSample(
+        samples
+            .start
+            .0
+            .saturating_sub(GATE_CONTEXT_SAMPLES)
+            .max(policy_support.start.0),
+    )
         ..AudioSample(
             samples
                 .end
                 .0
                 .saturating_add(GATE_CONTEXT_SAMPLES)
-                .min(root_end.0),
+                .min(policy_support.end.0),
         );
-    let query = current.audio(
-        context,
-        AudioQueryLimits {
-            maximum_spans: limits.maximum_spans.saturating_add(384).min(4096),
-            maximum_work: limits
-                .maximum_work
-                .checked_sub(work)
-                .filter(|remaining| *remaining > 0)
-                .ok_or(PlanError::AudioQueryLimit("sound gate work"))?,
-        },
-    )?;
+    let query_limits = AudioQueryLimits {
+        maximum_spans: limits.maximum_spans.saturating_add(384).min(4096),
+        maximum_work: limits
+            .maximum_work
+            .checked_sub(work)
+            .filter(|remaining| *remaining > 0)
+            .ok_or(PlanError::AudioQueryLimit("sound gate work"))?,
+    };
+    let query = match domain {
+        Some(domain) => domain.audio(context, query_limits)?,
+        None => current.audio(context, query_limits)?,
+    };
     work = work
         .checked_add(query.work)
         .filter(|value| *value <= limits.maximum_work)
