@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-12T04:53:27Z",
-  "estimate_note": "Engineering estimate of implemented and verified spec coverage, about \u00b15 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
+  "updated_at": "2026-10-12T05:24:46Z",
+  "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
   "focus": "Complete independent sound/group EQ with per-voice silence and tail permission, independently timed automation, captured native controls, broader retained-binding qualification and persistent filtered caching. Finish remaining mastering, sends, format/color, workflow, performance and release obligations.",
   "features": [
     {
@@ -476,7 +476,7 @@
       "complete_sections": 8,
       "revision": "2ff2273374bfc13c0401c5aa22b6bd7c66aa0622",
       "retrospective": false,
-      "summary": "Prepared upcoming accepted Generated Holds on one cancellable background job. Four real-media tests, 44 worker tests, 60 media unit tests and strict Clippy pass. Small-fixture prepared entry takes 0.17\u20130.22 ms; full-resolution device qualification remains open."
+      "summary": "Prepared upcoming accepted Generated Holds on one cancellable background job. Four real-media tests, 44 worker tests, 60 media unit tests and strict Clippy pass. Small-fixture prepared entry takes 0.17–0.22 ms; full-resolution device qualification remains open."
     },
     {
       "date": "2026-10-11",
@@ -645,6 +645,14 @@
       "revision": "b75c3e33",
       "retrospective": false,
       "summary": "Independent sound contexts now retain complete hidden input behind crops, current Hold policy, nested Preserve and stable Repeat scope. All 958 plan/audio tests, strict workspace Clippy and evidence checks pass. Shared group EQ and native controls remain open."
+    },
+    {
+      "date": "2026-10-12",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "94d5be89",
+      "retrospective": false,
+      "summary": "Full beat-sound input now preserves saved move/copy clocks, current Hold gates and event edges/gain. Fixed a one-sample NTSC copy shift by retaining the original routing boundary. All 963 plan/audio tests, strict workspace Clippy and evidence checks pass. Shared group EQ remains unfinished."
     }
   ]
 }
