@@ -1,0 +1,24 @@
+--- a/crates/deadpan-audio/src/stage_projection.rs
++++ b/crates/deadpan-audio/src/stage_projection.rs
+@@ -53,6 +53,7 @@
+             )?,
+             i32::from(projection.stage().descriptor().pitch.semitones()),
+         )?;
++        eprintln!("projection preparation {} {:?}", control.work.borrow().prepared_stages, projection.stage().descriptor());
+         let reservation = self.reserve_stream(input_frames, output_frames, control)?;
+         control
+             .work
+--- a/crates/deadpan-audio/tests/audio_definition/sound_clocks/repeats.rs
++++ b/crates/deadpan-audio/tests/audio_definition/sound_clocks/repeats.rs
+@@ -221,6 +221,11 @@
+ }
+ 
+ #[test]
++fn partial_repeat_keeps_equalized_nested_preserve_context() {
++    partial_repeat(true, true);
++}
++
++#[test]
+ fn repeat_sound_pcm_copies_initial_plays_and_allocates_later_births_at_their_own_phase() {
+     let before = ntsc(AudioEdgePolicy::Hard);
+     let original = render(&before, 2, 6);

@@ -1,0 +1,27 @@
+{
+  "base_commit": "0c445fc3d2c2d39ff8deec83d0db015a37592068",
+  "sources": {
+    "Cargo.lock": "9d911d67520092b729ae0e5933a39fc57f0ab4933b7d94b2d72d55a125fca93e",
+    "crates/deadpan-audio/src/stage_projection.rs": "e23e6d80211a78e0f24fe8c61f73c02b4218be5adf05a002d95c902685928d99",
+    "crates/deadpan-audio/src/stage_projection/tests.rs": "9bb7c1d6cca0d439aba4129b779261681b69e8dd72b991dd4f260632c4011584",
+    "crates/deadpan-audio/src/stages.rs": "f4740b1aca0aad2f4a57b5e083b8d62521276c544bcf6a339227c08c4cd38c5f",
+    "crates/deadpan-audio/tests/audio_definition/sound_clocks/repeats.rs": "e2f61c6a2291a994e04f7a4f5b555432ff59ca642ddffa8394e3db9a062f2b93",
+    "crates/deadpan-cli/tests/preview_export.rs": "9845a088b7155235570fda26840c8af4c9dba87eb918bdb6cf366e3c10e7823a",
+    "crates/deadpan-cli/tests/preview_export/nested_sounds.rs": "f0d428bdcde162955f32ef1d9aeea58c3bf679097c453dc1eb0f0ebf2d82cec5",
+    "crates/deadpan-cli/tests/preview_export/recipes.rs": "facc03e88ca307dbdd41d34096530da8b56fe1fbd8fc8a03f9437750a897ca58",
+    "crates/deadpan-plan/src/audio_projection.rs": "9b162c203c89c8bd023d5bae43e8c61b080922f238802adeb0d67534ba9b36ed",
+    "crates/deadpan-plan/src/audio_source_occurrence.rs": "5e692295f94eeedf7fa0b88268bd89b4287da3d0218f2319d3ceede238ace53b",
+    "crates/deadpan-plan/src/lib.rs": "49ec47b5d79e40ab297cb46dcf48672dc0a57136cb25b86531b2c4d5045e3be4",
+    "crates/deadpan-plan/tests/audio_definition/projection.rs": "2630b7b0fd63850e40a759fddc4df978a839d772f41a57553f724d250f130c0f",
+    "crates/deadpan-plan/tests/audio_definition/sound_owner_context.rs": "b0cdad0d53f9d3b041fb577cb449ef2c42ec5132848ac7685b26a24569d19afe",
+    "crates/deadpan-plan/tests/audio_definition/source_occurrence.rs": "88a0891bb67eaf1c11acdc85c09d0cf4c2bf6342d548052547474886ac20cc96",
+    "native/deadpan-source/tests/audio-fixtures/pcm-stereo-48000.wav": "e79aba90eab42dc057171be52be9ecb794c3e2790c5731783270ece73c24d2ee",
+    "native/deadpan-source/tests/fixtures/cfr-bframes.mp4": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+    "rust-toolchain.toml": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc"
+  },
+  "old_binary_sha256": "89d9a758fab56524bdd9a0516b615c4b282d09bfff19ad51129118383691897e",
+  "final_release_binaries": {
+    "target/release/deadpan-cli": "fd6b57ebae706509a021311f9077de570adaf0c05ae64cda667c98ddb24b4af2",
+    "target/release/deadpan-app": "689f33022596007c6300f9941469e167a8f0de2f50a6e6ff16c1ee25a71e3f04"
+  }
+}

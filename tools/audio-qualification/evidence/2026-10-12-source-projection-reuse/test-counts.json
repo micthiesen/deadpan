@@ -1,0 +1,20 @@
+{
+  "plan-audio-playback": {
+    "passed": 1139,
+    "failed": 0,
+    "ignored": 0,
+    "result_groups": 52
+  },
+  "release-cache": {
+    "passed": 2,
+    "failed": 0,
+    "ignored": 0,
+    "result_groups": 1
+  },
+  "release-nested": {
+    "passed": 1,
+    "failed": 0,
+    "ignored": 0,
+    "result_groups": 1
+  }
+}

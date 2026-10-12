@@ -438,9 +438,9 @@ struct ReadWork {
     cache_key_scopes: usize,
     // Projection identity retains its allocation for this complete request.
     // Different routes through the same authored stage must never alias PCM.
-    projected: Vec<(AudioProjectionIdentity, Arc<PreparedBlock>)>,
-    projected_active: Vec<AudioProjectionIdentity>,
-    projected_preflight: Vec<(AudioProjectionIdentity, usize)>,
+    projected: Vec<(stage_projection::ProjectionCacheKey, Arc<PreparedBlock>)>,
+    projected_active: Vec<stage_projection::ProjectionCacheKey>,
+    projected_preflight: Vec<(stage_projection::ProjectionCacheKey, usize)>,
     intrinsic_preflight: Vec<(Arc<RenderPlan>, AudioStageDescriptor, usize)>,
     projected_resident_frames: u64,
     projected_disk_bytes: u64,

@@ -430,6 +430,17 @@ fn partial_copy_preserves_authored_mix_and_uses_current_mastering_context() -> R
 }
 
 #[test]
+fn nested_equalized_sound_prepares_cold_and_split_reads() -> Result {
+    let (root, _guard) = keep_or(tempfile::tempdir()?);
+    let report = recipes::nested_sounds::prepare(&root.join("nested-eq"))?;
+    if let Some(path) = std::env::var_os("DEADPAN_NESTED_EQ_RESULTS") {
+        std::fs::write(path, serde_json::to_vec_pretty(&report)?)?;
+    }
+    eprintln!("{report}");
+    Ok(())
+}
+
+#[test]
 fn partial_repeat_attached_sounds_preserve_preview_and_report_aac_fidelity_failure() -> Result {
     let (root, _guard) = keep_or(tempfile::tempdir()?);
     let fixture = recipes::partial_sounds::partial_repeat_attached_sounds(

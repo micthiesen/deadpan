@@ -42,6 +42,8 @@ pub mod vfr;
 #[path = "formats.rs"]
 pub mod formats;
 
+#[path = "nested_sounds.rs"]
+pub mod nested_sounds;
 #[path = "partial_sounds.rs"]
 pub mod partial_sounds;
 

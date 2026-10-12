@@ -1,0 +1,15 @@
+{
+  "command": [
+    "/Users/michael/Code/deadpan/target/release/deadpan-cli",
+    "render",
+    "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpDNVeVh/nested-eq/nested-equalized-sound.deadpan",
+    "--output",
+    "/private/tmp/deadpan-nested-eq-stages-20261012/new-release-render",
+    "--name",
+    "nested-eq.mp4",
+    "--expected",
+    "nested-equalized-sound-r08"
+  ],
+  "exit": 0,
+  "binary_sha256": "fd6b57ebae706509a021311f9077de570adaf0c05ae64cda667c98ddb24b4af2"
+}

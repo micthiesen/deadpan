@@ -1,0 +1,14 @@
+{
+  "command": [
+    "/Users/michael/Code/deadpan/target/release/deadpan-cli",
+    "verify-export",
+    "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpDNVeVh/nested-eq/nested-equalized-sound.deadpan",
+    "--movie",
+    "/private/tmp/deadpan-nested-eq-stages-20261012/new-release-render/nested-eq.mp4",
+    "--revision",
+    "nested-equalized-sound-r08",
+    "--every",
+    "1"
+  ],
+  "exit": 0
+}

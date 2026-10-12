@@ -180,6 +180,14 @@ fn sound_owner_context_keeps_enclosing_preserve_and_scopes_repeat_input() {
     assert!(voice.samples().start.0 < 0 && voice.samples().end.0 > 4);
     let projection = projected(voice);
     assert_eq!(projection.stage().descriptor().instance.node, id("stage"));
+    let delivered = plan
+        .source_voice_occurrence(
+            voice.instance().clone(),
+            recipe(&plan, q(0, 1), 4),
+            Default::default(),
+        )
+        .unwrap();
+    assert_ne!(projected(&delivered).source_key(), projection.source_key());
     assert_eq!(
         projection.input_sample_count().unwrap(),
         SignalSample(8 * i64::from(count))

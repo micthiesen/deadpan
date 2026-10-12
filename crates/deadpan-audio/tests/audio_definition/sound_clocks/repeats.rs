@@ -221,6 +221,11 @@ fn partial_repeat_keeps_complete_nested_preserve_context() {
 }
 
 #[test]
+fn partial_repeat_keeps_equalized_nested_preserve_context() {
+    partial_repeat(true, true);
+}
+
+#[test]
 fn repeat_sound_pcm_copies_initial_plays_and_allocates_later_births_at_their_own_phase() {
     let before = ntsc(AudioEdgePolicy::Hard);
     let original = render(&before, 2, 6);

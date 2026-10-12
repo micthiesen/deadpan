@@ -3,7 +3,53 @@
 
 use super::*;
 
+#[cfg(all(test, any(target_os = "macos", target_os = "linux")))]
+#[path = "stage_projection/tests.rs"]
+mod tests;
+
+#[derive(Clone)]
+pub(super) enum ProjectionCacheKey {
+    Opaque(AudioProjectionIdentity),
+    Source(Arc<RenderPlan>, Arc<deadpan_plan::AudioSourceProjectionKey>),
+}
+
+impl PartialEq for ProjectionCacheKey {
+    fn eq(&self, other: &Self) -> bool {
+        match (self, other) {
+            (Self::Opaque(a), Self::Opaque(b)) => a == b,
+            (Self::Source(a_plan, a), Self::Source(b_plan, b)) => {
+                Arc::ptr_eq(a_plan, b_plan) && a == b
+            }
+            _ => false,
+        }
+    }
+}
+impl Eq for ProjectionCacheKey {}
+
 impl StageAudio {
+    fn projection_cache_key(
+        &self,
+        projection: &AudioStageProjection<'_>,
+        control: WorkControl<'_>,
+    ) -> Result<ProjectionCacheKey, StageAudioError> {
+        if !projection.belongs_to(&self.plan) {
+            return Err(StageAudioError::ForeignDomain);
+        }
+        let (key, comparison) = match projection.source_key() {
+            Some(key) => (
+                ProjectionCacheKey::Source(Arc::clone(&self.plan), Arc::clone(key)),
+                key.comparison_work(),
+            ),
+            None => (ProjectionCacheKey::Opaque(projection.identity()), 1),
+        };
+        let count = {
+            let work = control.work.borrow();
+            work.projected.len() + work.projected_preflight.len() + work.projected_active.len() + 1
+        };
+        control.spend_plan_work(count * comparison)?;
+        Ok(key)
+    }
+
     pub(super) fn prepare_projected(
         &mut self,
         projection: &AudioStageProjection<'_>,
@@ -12,7 +58,7 @@ impl StageAudio {
         depth: usize,
     ) -> Result<Arc<PreparedBlock>, StageAudioError> {
         control.check()?;
-        let identity = projection.identity();
+        let identity = self.projection_cache_key(projection, control)?;
         let cached = control
             .work
             .borrow()
@@ -101,7 +147,7 @@ impl StageAudio {
     ) -> Result<usize, StageAudioError> {
         control.check()?;
         self.check_projected_depth(depth, 0)?;
-        let identity = projection.identity();
+        let identity = self.projection_cache_key(projection, control)?;
         if let Some((_, relative)) = control
             .work
             .borrow()

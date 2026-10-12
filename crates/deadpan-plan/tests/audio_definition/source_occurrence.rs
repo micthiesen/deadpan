@@ -283,6 +283,17 @@ fn nested_preserve_retains_full_history_identity_and_exact_independent_source() 
         panic!("stage lost");
     };
     assert_eq!(same.identity(), outer.identity());
+    let rebuilt = projected(&voice(&plan, "child"));
+    assert_ne!(rebuilt.identity(), outer.identity());
+    assert!(outer.source_key().is_some());
+    assert_eq!(rebuilt.source_key(), outer.source_key());
+    let mut shifted = recipe(&plan, q(1, 1), 4);
+    shifted.offset = AudioSample(1);
+    let shifted = plan
+        .source_voice_occurrence(occurrence("child", &[]), shifted, Default::default())
+        .unwrap();
+    assert_ne!(projected(&shifted).source_key(), outer.source_key());
+    assert_ne!(inner.source_key(), outer.source_key());
     assert_eq!(child.source_identity(), child.clone().source_identity());
     assert_ne!(
         child.source_identity(),

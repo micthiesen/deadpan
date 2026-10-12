@@ -4,6 +4,24 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Independent source projection reuse](../qualification/source-projection-reuse-2026-10-12.md)
+fixes the nested EQ preparation failure below. The checked occurrence builder
+mints complete recipe/instance/clip-boundary/stage keys; request caches additionally
+retain and compare the owning immutable plan identity. Arbitrary tape/mix
+projections remain opaque. Reuse rechecks depth and live dependencies, charges
+bounded key work and leaves resource caps unchanged. Tests cover 80 reconstructions
+with one preparation, changed offset PCM, foreign plans, source revocation,
+depth/low-budget refusal and the full equalized partial-Repeat lifecycle.
+
+The real WAV/MP4 fixture's small cold windows match exactly, including old/new
+binary comparison. The old release fails full Render with the 64-stage limit;
+the new debug and release Renders pass 120 pictures and four audio windows, zero signal
+offset and 10.4371 dB minimum block SNR. All 1,139 plan/audio/playback tests pass
+with none failed or ignored; strict workspace Clippy and focused release checks
+pass. The earlier 13-picture AAC fidelity
+failure remains the next independent investigation. No requirement or gate is
+newly complete; the primary still works alone.
+
 [Partial Repeat sounds](../qualification/partial-repeat-sounds-2026-10-12.md)
 now permit only the newly introduced Repeat around proven Split aliases. Existing
 cohort maps retain initial PCM; later births and shrink/regrow stay independent.

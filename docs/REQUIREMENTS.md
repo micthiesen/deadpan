@@ -4,6 +4,17 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 
 ## Resumed implementation, 2026-10-06
 
+[Independent source projection reuse](qualification/source-projection-reuse-2026-10-12.md)
+resolves nested Preserve plus event/owner EQ exhausting the 64-stage preparation
+budget. A checked recipe/instance/context/stage key, paired with immutable plan
+identity, reuses complete input while preserving source, depth and resource checks.
+The previous release fails full Render on the real-media fixture; the new debug
+and release renders verify all 120 pictures and four audio windows with zero signal offset.
+Cold PCM and old/new inspection windows match exactly. The separate short
+partial-Repeat AAC fidelity failure remains open. All 1,139 plan/audio/playback
+tests pass with none failed or ignored; strict workspace Clippy and focused
+release checks pass.
+
 [Partial Repeat sounds](qualification/partial-repeat-sounds-2026-10-12.md) now
 retain split-owner recipes and initial-play clocks, with independent later births,
 gap edits, copy/recopy and durable Undo/Redo. Repeat also reserves its pre-edit

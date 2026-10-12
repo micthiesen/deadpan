@@ -10,6 +10,24 @@ use serde::{Serialize, Serializer, ser::SerializeStruct};
 
 use crate::{AudioSignalMix, AudioSignalTape, AudioStage, PlanError, RenderPlan, SignalSample};
 
+/// Complete inputs to the checked independent-occurrence projection builder.
+/// Only comparable within the same immutable RenderPlan. An authored stage
+/// alone is insufficient: independent recipes and context clips change PCM.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AudioSourceProjectionKey {
+    pub(crate) recipe: crate::AudioSourceVoiceRecipe,
+    pub(crate) instance: deadpan_core::InstancePath,
+    pub(crate) unclipped_before: usize,
+    pub(crate) stage: deadpan_core::NodeId,
+}
+
+impl AudioSourceProjectionKey {
+    /// Conservative node/path work for one bounded key comparison.
+    pub fn comparison_work(&self) -> usize {
+        1 + self.instance.repeats.len()
+    }
+}
+
 /// Opaque call-local identity for memoizing one immutable projection.
 #[derive(Debug, Clone)]
 pub struct AudioProjectionIdentity(Arc<ProjectionIdentityToken>);
@@ -45,6 +63,7 @@ pub struct AudioStageProjection<'plan> {
     output_policy: AudioSignalTape<'plan>,
     duration: FrameDuration,
     identity: AudioProjectionIdentity,
+    source_key: Option<Arc<AudioSourceProjectionKey>>,
 }
 
 enum ProjectionInput<'plan> {
@@ -117,6 +136,7 @@ impl<'plan> AudioStageProjection<'plan> {
             ProjectionInput::Tape(input_tape),
             output_policy,
             duration,
+            None,
         )
     }
 
@@ -131,6 +151,25 @@ impl<'plan> AudioStageProjection<'plan> {
             ProjectionInput::Mix(input_mix),
             output_policy,
             duration,
+            None,
+        )
+    }
+
+    /// The occurrence builder supplies every independent input and clip choice.
+    /// General tape/mix constructors deliberately have no semantic cache key.
+    pub(crate) fn new_source_occurrence(
+        stage: AudioStage<'plan>,
+        input_tape: AudioSignalTape<'plan>,
+        output_policy: AudioSignalTape<'plan>,
+        duration: FrameDuration,
+        key: AudioSourceProjectionKey,
+    ) -> Result<Arc<Self>, PlanError> {
+        Self::build(
+            stage,
+            ProjectionInput::Tape(input_tape),
+            output_policy,
+            duration,
+            Some(Arc::new(key)),
         )
     }
 
@@ -139,6 +178,7 @@ impl<'plan> AudioStageProjection<'plan> {
         input: ProjectionInput<'plan>,
         output_policy: AudioSignalTape<'plan>,
         duration: FrameDuration,
+        source_key: Option<Arc<AudioSourceProjectionKey>>,
     ) -> Result<Arc<Self>, PlanError> {
         if duration == FrameDuration::ZERO {
             return Err(PlanError::InvalidPlan(
@@ -176,6 +216,7 @@ impl<'plan> AudioStageProjection<'plan> {
             output_policy,
             duration,
             identity: AudioProjectionIdentity(Arc::new(ProjectionIdentityToken { _private: 0 })),
+            source_key,
         });
         let mut budget = ProjectionValidationBudget::default();
         projection.validate_graph(&mut budget, 0)?;
@@ -222,6 +263,12 @@ impl<'plan> AudioStageProjection<'plan> {
 
     pub fn identity(&self) -> AudioProjectionIdentity {
         self.identity.clone()
+    }
+
+    /// Optional exact reuse key minted only for a checked source occurrence.
+    /// Hosts must also retain and compare the owning immutable plan identity.
+    pub fn source_key(&self) -> Option<&Arc<AudioSourceProjectionKey>> {
+        self.source_key.as_ref()
     }
 
     pub fn belongs_to(&self, plan: &RenderPlan) -> bool {

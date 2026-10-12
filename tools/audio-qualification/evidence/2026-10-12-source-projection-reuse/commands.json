@@ -1,0 +1,999 @@
+[
+  {
+    "name": "baseline-debug",
+    "command": [
+      "python3",
+      "/tmp/deadpan-nested-eq-stages-20261012/baseline.py",
+      "--debug"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T19:25:07.291151+00:00",
+    "head": "0c445fc3d2c2d39ff8deec83d0db015a37592068",
+    "diff_sha256": "6ba7c8a09b6cbd8a42807bc310e7b9695ea220465ec91317996b08a89acc1960",
+    "untracked_sha256": {
+      "crates/deadpan-audio/src/stage_projection/tests.rs": "9bb7c1d6cca0d439aba4129b779261681b69e8dd72b991dd4f260632c4011584",
+      "crates/deadpan-cli/tests/preview_export/nested_sounds.rs": "f0d428bdcde162955f32ef1d9aeea58c3bf679097c453dc1eb0f0ebf2d82cec5"
+    },
+    "exit": 1,
+    "seconds": 1.3965475000441074,
+    "log_sha256": "7887b90c85e2b49af062681a7c45cb135b8cc3dfbcd5307b33fcb27d5a3d7e71",
+    "binaries": {}
+  },
+  {
+    "name": "baseline-debug2",
+    "command": [
+      "python3",
+      "/tmp/deadpan-nested-eq-stages-20261012/baseline.py",
+      "--debug"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T19:28:55.970057+00:00",
+    "head": "0c445fc3d2c2d39ff8deec83d0db015a37592068",
+    "diff_sha256": "6ba7c8a09b6cbd8a42807bc310e7b9695ea220465ec91317996b08a89acc1960",
+    "untracked_sha256": {
+      "crates/deadpan-audio/src/stage_projection/tests.rs": "9bb7c1d6cca0d439aba4129b779261681b69e8dd72b991dd4f260632c4011584",
+      "crates/deadpan-cli/tests/preview_export/nested_sounds.rs": "f0d428bdcde162955f32ef1d9aeea58c3bf679097c453dc1eb0f0ebf2d82cec5"
+    },
+    "exit": 0,
+    "seconds": 2.4307214999571443,
+    "log_sha256": "24c0b457e9fbd9175de7b99057333f3c47fea2e167d621cb4f31d9c6cfc2ed15",
+    "binaries": {}
+  },
+  {
+    "name": "baseline-final-before-app",
+    "command": [
+      "python3",
+      "/tmp/deadpan-nested-eq-stages-20261012/baseline.py"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T19:41:42.150333+00:00",
+    "head": "0c445fc3d2c2d39ff8deec83d0db015a37592068",
+    "diff_sha256": "b3c1fa83ea234d8377479462a58c78ccddcdcc26b63233381c0a26994bdfe37a",
+    "untracked_sha256": {
+      "crates/deadpan-audio/src/stage_projection/tests.rs": "9bb7c1d6cca0d439aba4129b779261681b69e8dd72b991dd4f260632c4011584",
+      "crates/deadpan-cli/tests/preview_export/nested_sounds.rs": "f0d428bdcde162955f32ef1d9aeea58c3bf679097c453dc1eb0f0ebf2d82cec5",
+      "docs/qualification/source-projection-reuse-2026-10-12.md": "c55cf856914687083604a0555a6f06b83bc055f8b368bc7c96688e5342aca506"
+    },
+    "exit": 0,
+    "seconds": 1.0632909168489277,
+    "log_sha256": "24c0b457e9fbd9175de7b99057333f3c47fea2e167d621cb4f31d9c6cfc2ed15",
+    "binaries": {}
+  },
+  {
+    "name": "baseline-final",
+    "command": [
+      "python3",
+      "/tmp/deadpan-nested-eq-stages-20261012/baseline.py"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T19:43:24.953072+00:00",
+    "head": "0c445fc3d2c2d39ff8deec83d0db015a37592068",
+    "diff_sha256": "e14a7d58ab3e97414a4056580e1f126c3b766c429f6d8f8e9f48eb3e3eed721d",
+    "untracked_sha256": {
+      "crates/deadpan-audio/src/stage_projection/tests.rs": "9bb7c1d6cca0d439aba4129b779261681b69e8dd72b991dd4f260632c4011584",
+      "crates/deadpan-cli/tests/preview_export/nested_sounds.rs": "f0d428bdcde162955f32ef1d9aeea58c3bf679097c453dc1eb0f0ebf2d82cec5",
+      "docs/qualification/source-projection-reuse-2026-10-12.md": "037c6d3ab03beb2004d838f9462de8c5ba1f3181b0c7942e492dbf6a90d7fcfe",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/README.md": "f0fb297d165e727debbd141b6f176fabc501debec35a507eab921dc6db7a7165",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/baseline-debug-result.json.gz": "c3ee5be47671d98590234cc3dc930f27f6d981b16e6abe0d902295508bf9a8f3",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/baseline-debug.log.gz": "3f1108b077521cf667326b654c0c8de04ed2e8995065cb7ff2af7dcc9fca11bd",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/baseline-debug2.log.gz": "02b0423adcf26ea90775cd2df984b70f5393b5fc2176ebcd4b02074307ed4df4",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/baseline-final.log.gz": "02b0423adcf26ea90775cd2df984b70f5393b5fc2176ebcd4b02074307ed4df4",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/baseline-result.json.gz": "4f5ac0343e93dd3cb25f947a3cb551d84784dda7ffc8ace1589f0eb83297ee28",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/baseline.py": "4636ce94f72a8c771f9be72de9040f860d0f5b400c3eb83ad06c8bb424608fa0",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/cache-tests.log.gz": "e32597a54cc42279f51df57dfe50016a7a215ff54d51c090bc4e561663c8b970",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/cache-tests2.log.gz": "e60ef8fe1fc40c8c4298d824f242cbefaa6b9cb685c48bdcacf5ac54755e361f",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/cache-tests3.log.gz": "b97000b9a75b67ccb26973f23aa2e0595428f4dc5ba65137ab74e6c7f75cb3bc",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/cache-tests4.log.gz": "ddc5cfed3e7d6616f53532ddeb556b4c16b960cfba6e3bcb029cc119bff95ff4",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/cache-tests5.log.gz": "ef2e7008591cabe3fe0944e7a811e97fb5bfe0f6e966658cb51fc620899495ac",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/check-evidence.py": "8fcf1df31285e6e9a4c7bf374c221353a5b166e51704d885ba307b324bb074cc",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/checks.py": "34177d1944ac99318b0d2c179a93c1fc3f695e806a692c18cc6ab395e551c787",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/cli-first.log.gz": "8f4bf84c54f7e9d75171c175fdef35044387e0cc9087a2af07f6a184aecd2056",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/cli-second.log.gz": "9e8d4f191e35cee46f349ed24aea3244c310abc6970100dfbc15bde4df575c82",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/cli-third.log.gz": "6ed4fa17e1e370c276f80425dd8a1f3d8517b78f9aed97bd84d96c5fff18604c",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/clippy.log.gz": "5a8ca9272fa7588417d3d9c5ee110d3006e7d9dbf3d67492d3f6813905cc6d44",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/commands.json": "2e6eb1491c9ea73561222cad84a87483fec7d26c0c60699aa9cbf565094be227",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/debug-verify-command.json": "5e1d859fe4971d6d5a774d2ba19a7a442d680c047ecd0439e009807c5da6eff5",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/debug-verify-report.json.gz": "eabc4abb8f073092ddd034f17f746d37d26835f383925e2362331c8662a78901",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/debug-verify.stderr.gz": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/environment.json": "ff8fbad112b94593a7e354960505cd9a7d05dd838ca9246f6359bdd3db81e2f9",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/first-witness.log.gz": "8e52041c67e41be48a50a11d7f167fc4fa800ae26f21d9a9befc086bff9ae33d",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/first-witness.patch": "e2e3ea138b847746ebc22874e50527c66fd5c59d2ed1b04596461fc9406da1cd",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/fmt-check.log.gz": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/fmt-cli.log.gz": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/fmt-cli2.log.gz": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/fmt-cli3.log.gz": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/fmt-final.log.gz": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/fmt-key.log.gz": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/fmt-keys.log.gz": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/fmt-tests.log.gz": "6171802899fcf7230d340a030a41251960cfffa7f83576063789561f08f53326",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/fmt-tests2.log.gz": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/identity.json": "29451d551a3548fcea9d4a4ba28248fffbb019c422c7413c67eda71257cbbd89",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/implementation.patch": "0f59bf7fc0d3b5be13f56683d6aa3b831f266453ebb4df701673e54e34ab7311",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/keyed-first.log.gz": "8f204478b025123e8043093fdf89e4642e39e3f54d519ccf5cb56f21918815be",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/manifest.json": "1b5109e41e72b3b2c3797b6073ad2748439f4188767a0b9c7b90a45b26625077",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/nested-eq.mp4": "a2bf6064cf4098275259b26a6f67890948ffcbdb7339236040f7229e1d9454c7",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/new-debug-render.json": "db2a639c9e9d141f1c36e3f90d697514413d1cfa11cfd3b6f3054241128631b7",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/new-debug-render.stderr.gz": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/new-debug-render.stdout.gz": "c8dbf23338849a622e8e7c81a43b9dc268bee7aed173ccc10485215fba756f9b",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/old-render.json": "15911e56ba435b381ded13e1912fcb708d973c323e16fccf20ade55d2cf98509",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/old-render.stderr.gz": "6518f2bd0d786631b285a0793cc32fe59140aaea8f3386096631e0e3918d5756",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/old-render.stdout.gz": "01ebac0799e746c1f38e21e6191f495706cea4b06e64f506290ff0afe94dc011",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/plan-audio-playback.log.gz": "cba93503b26598af744783deefc0f34a97a46f30affc72324c3feaea2396a31a",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/plan-keys.log.gz": "2468796bcbf134908b17987ee0353f78abe24073c5cd948c2d8c9612de550de1",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/project.zip": "dd3f6a09de01aa10af5740da9a15de616071bd5a95e595452c9792adcd61ee47",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/qualify-release.log.gz": "e711256e0c22f10964de45911fa3e2efbbed7cbfc9b2c362b7c0dbc483e0d596",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/qualify-release.py": "ee4dddabdd6c72e48a67c5224207a1a2f6419405b04505a70a835fcd121f54df",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/real-media.json": "cbcb07892d5a6e80eea6e831665373b3ff265ba698b7f216d4d8118d8ac0571d",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/release-app.log.gz": "1b242008a786953993e27d276f0196364fb5109d255e9e923a9bbf18c0185ec0",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/release-cache.log.gz": "29758694ea1a4479c5be595c0472b7239bb5e607b14560579c54ae0fe69bdadd",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/release-export-result.json.gz": "2e9981a42b21b508955522203105ace0e5cbe17604efb550e0b545ec8eb86798",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/release-export.log.gz": "79b733f6780c26bcdf604aaa6955b69999a614ac53cac4f3fd4a79b2d6272891",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/release-nested.log.gz": "0fe3d89d48ba057466c7f5697fda2de9b8ca32a1f46fd31f9701a1c84bcf1131",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/release-real-result.json": "5ef03d8792161e9c6bf9622ca12eb0ec4605b3eda3be405148add558a0f6fc25",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/release-real.log.gz": "edada9b880bfb67c1e5f6d76b66f34a7de4a0f019d4c91b5f3ffda42d71f946c",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/release-render.json": "7f3a99962ce88b5f17afedc89397feecee9bbf20a30f45837d0a05ae558ad3fb",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/release-render.stderr.gz": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/release-render.stdout.gz": "b2f0e71b148ca0fc2a6571f4e177064a8680ed693330165a6ccaecc907b50035",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/release-verify-command.json": "057643f84facc4b86592b93d3905e7875a3475a4f97408a33599c8b8929c36d7",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/release-verify-report.json.gz": "c7dccac6cce93853b8ee332ff11d968edf0ea2a439c367f9761535a2bb8a91ed",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/release-verify.stderr.gz": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/retain.py": "64b211e70263e0cc159c296209a151363d3cad1be1a3c2b7ee27ec055a7268a1",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/review.md": "33c39fdec8fb1b5f378d72fbfffb72ab56098418b105c887a58332f745c253fd",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/run.py": "49139fd59f897f0623fd45f2f87f0e60972a7182d0a49107638a018b14a75207",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/test-counts.json": "6557b261be91c84216a5d3eb962ac609f4ff682e41d16ce4d7cc4dd755983360"
+    },
+    "exit": 0,
+    "seconds": 1.2854644577018917,
+    "log_sha256": "24c0b457e9fbd9175de7b99057333f3c47fea2e167d621cb4f31d9c6cfc2ed15",
+    "binaries": {}
+  },
+  {
+    "name": "cache-tests",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-audio",
+      "--lib",
+      "source_projection",
+      "--",
+      "--nocapture"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T19:18:16.601050+00:00",
+    "head": "0c445fc3d2c2d39ff8deec83d0db015a37592068",
+    "diff_sha256": "2c9ce0da6dfecb6df671a21ffc6a5e53a4f29a67eaf0001cca13e39e1c67538e",
+    "untracked_sha256": {
+      "crates/deadpan-audio/src/stage_projection/tests.rs": "ec4a6bca99377e803616be144b802e2467b544dbe347f0e120a1c561c84db553"
+    },
+    "exit": 101,
+    "seconds": 4.8457622500136495,
+    "log_sha256": "d264a7ee88a941d4bc4bc0288508a33b3b44b8d4df8f4970736db5a537334d87",
+    "binaries": {}
+  },
+  {
+    "name": "cache-tests2",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-audio",
+      "--lib",
+      "source_projection",
+      "--",
+      "--nocapture"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T19:18:40.871478+00:00",
+    "head": "0c445fc3d2c2d39ff8deec83d0db015a37592068",
+    "diff_sha256": "3a895d2fb0ba9cccc544755ae03f1e87243791cd5f2e9053c5020e08cf9e638a",
+    "untracked_sha256": {
+      "crates/deadpan-audio/src/stage_projection/tests.rs": "c24a2f3b07f98fb497fc402c16d7dc261589d929d6ced11d6df971d9ad1f420a"
+    },
+    "exit": 101,
+    "seconds": 4.661880208179355,
+    "log_sha256": "84b06b3ba9757ce9a1646c46ee2fe2199c928d19e6721da139e833e0508041f3",
+    "binaries": {}
+  },
+  {
+    "name": "cache-tests3",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-audio",
+      "--lib",
+      "source_projection",
+      "--",
+      "--nocapture"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T19:18:50.870633+00:00",
+    "head": "0c445fc3d2c2d39ff8deec83d0db015a37592068",
+    "diff_sha256": "3a895d2fb0ba9cccc544755ae03f1e87243791cd5f2e9053c5020e08cf9e638a",
+    "untracked_sha256": {
+      "crates/deadpan-audio/src/stage_projection/tests.rs": "90de8c3a70d6e6aba5c32b5879e3d67cbc30ca0d4c675920b3e984e168a6c8da"
+    },
+    "exit": 101,
+    "seconds": 6.186962875071913,
+    "log_sha256": "abef0a9675e15062b85b8a7be7eb7da17f7b236ded207b41e2f74e3d8a09cba6",
+    "binaries": {
+      "target/debug/deps/deadpan_audio-3b7b674540dbcea4": "457523c6cb865731ac965fd4cef5fc3fcb945036c828eec32c2c296611a7d90c"
+    }
+  },
+  {
+    "name": "cache-tests4",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-audio",
+      "--lib",
+      "source_projection",
+      "--",
+      "--nocapture"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T19:19:30.647630+00:00",
+    "head": "0c445fc3d2c2d39ff8deec83d0db015a37592068",
+    "diff_sha256": "3a895d2fb0ba9cccc544755ae03f1e87243791cd5f2e9053c5020e08cf9e638a",
+    "untracked_sha256": {
+      "crates/deadpan-audio/src/stage_projection/tests.rs": "d13e789efe01a5b13dd9a013467551dfff7c0ff84db4d95cd6edbdc9164c6b3d"
+    },
+    "exit": 101,
+    "seconds": 4.670762457884848,
+    "log_sha256": "1dd2ec2be234f5f9c3e22b44a222bacc9730ed0572f60cf389b0b5ecbdb5de04",
+    "binaries": {
+      "target/debug/deps/deadpan_audio-3b7b674540dbcea4": "2d0d95ab2e16504d7b5ace73b5c5074b6b21e3df8ae5806f77a4c23edb05c38c"
+    }
+  },
+  {
+    "name": "cache-tests5",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-audio",
+      "--lib",
+      "source_projection",
+      "--",
+      "--nocapture"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T19:20:22.346526+00:00",
+    "head": "0c445fc3d2c2d39ff8deec83d0db015a37592068",
+    "diff_sha256": "4c7b8a672a57dd6169b10490294441926125934d0d7afc1ef6209327093b9721",
+    "untracked_sha256": {
+      "crates/deadpan-audio/src/stage_projection/tests.rs": "9bb7c1d6cca0d439aba4129b779261681b69e8dd72b991dd4f260632c4011584"
+    },
+    "exit": 0,
+    "seconds": 4.745468458160758,
+    "log_sha256": "a6be8c0439f0cd0ee2defe29adad9e4ae49e9d8927d7f473c6eaae35398fc49b",
+    "binaries": {
+      "target/debug/deps/deadpan_audio-3b7b674540dbcea4": "ab931b6bab6ae683d173ddc2f977f81c8773141d43c59d974acda7b88ebbd160"
+    }
+  },
+  {
+    "name": "cli-first",
+    "command": [
+      "env",
+      "DEADPAN_PREVIEW_EXPORT_KEEP=1",
+      "DEADPAN_NESTED_EQ_RESULTS=/tmp/deadpan-nested-eq-stages-20261012/real-media.json",
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-cli",
+      "--test",
+      "preview_export",
+      "nested_equalized_sound",
+      "--",
+      "--nocapture"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T19:23:05.989612+00:00",
+    "head": "0c445fc3d2c2d39ff8deec83d0db015a37592068",
+    "diff_sha256": "6ba7c8a09b6cbd8a42807bc310e7b9695ea220465ec91317996b08a89acc1960",
+    "untracked_sha256": {
+      "crates/deadpan-audio/src/stage_projection/tests.rs": "9bb7c1d6cca0d439aba4129b779261681b69e8dd72b991dd4f260632c4011584",
+      "crates/deadpan-cli/tests/preview_export/nested_sounds.rs": "efe8473a0d03fc39cb2eb4606a9077e1836d7371b0fe6d55bb288efb8e60fc74"
+    },
+    "exit": 101,
+    "seconds": 14.897993333172053,
+    "log_sha256": "8536405a954e143837d0a407e70ed10962a656f098235d2b6375dfa6e53b2f22",
+    "binaries": {
+      "target/debug/deps/preview_export-72784a6fae9bfd9d": "e2ccd3333238df3eaec815ae77be4a102d73f62d471d11bbd878f671d5c7974b"
+    }
+  },
+  {
+    "name": "cli-second",
+    "command": [
+      "env",
+      "DEADPAN_PREVIEW_EXPORT_KEEP=1",
+      "DEADPAN_NESTED_EQ_RESULTS=/tmp/deadpan-nested-eq-stages-20261012/real-media.json",
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-cli",
+      "--test",
+      "preview_export",
+      "nested_equalized_sound",
+      "--",
+      "--nocapture"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T19:23:49.660271+00:00",
+    "head": "0c445fc3d2c2d39ff8deec83d0db015a37592068",
+    "diff_sha256": "6ba7c8a09b6cbd8a42807bc310e7b9695ea220465ec91317996b08a89acc1960",
+    "untracked_sha256": {
+      "crates/deadpan-audio/src/stage_projection/tests.rs": "9bb7c1d6cca0d439aba4129b779261681b69e8dd72b991dd4f260632c4011584",
+      "crates/deadpan-cli/tests/preview_export/nested_sounds.rs": "f7114e1436f4f4151c33532d7a84e5908ddc497b43df17ea3c775b822c7ca441"
+    },
+    "exit": 101,
+    "seconds": 5.257718791719526,
+    "log_sha256": "b19f29d2c2dea9f15f640f707167dd6262f719ce71ed79d9cee6ad505361b2c1",
+    "binaries": {
+      "target/debug/deps/preview_export-72784a6fae9bfd9d": "c97a2717d8dafa81eaf4a9ef4138161fc88c26ca579e7a36ace5968512fd0bd5"
+    }
+  },
+  {
+    "name": "cli-third",
+    "command": [
+      "env",
+      "DEADPAN_PREVIEW_EXPORT_KEEP=1",
+      "DEADPAN_NESTED_EQ_RESULTS=/tmp/deadpan-nested-eq-stages-20261012/real-media.json",
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-cli",
+      "--test",
+      "preview_export",
+      "nested_equalized_sound",
+      "--",
+      "--nocapture"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T19:24:43.213875+00:00",
+    "head": "0c445fc3d2c2d39ff8deec83d0db015a37592068",
+    "diff_sha256": "6ba7c8a09b6cbd8a42807bc310e7b9695ea220465ec91317996b08a89acc1960",
+    "untracked_sha256": {
+      "crates/deadpan-audio/src/stage_projection/tests.rs": "9bb7c1d6cca0d439aba4129b779261681b69e8dd72b991dd4f260632c4011584",
+      "crates/deadpan-cli/tests/preview_export/nested_sounds.rs": "f0d428bdcde162955f32ef1d9aeea58c3bf679097c453dc1eb0f0ebf2d82cec5"
+    },
+    "exit": 0,
+    "seconds": 9.987475874833763,
+    "log_sha256": "927bda1e7f643e4fc57a6f4eac5d02fddaeec2b595da24d4ac3c778f58a79996",
+    "binaries": {
+      "target/debug/deps/preview_export-72784a6fae9bfd9d": "17ce01022f8dcc04b910bd8c9e6fd04f4dc3f2c97a87c96f2405dd49c0883bbf"
+    }
+  },
+  {
+    "name": "clippy",
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "--workspace",
+      "--all-targets",
+      "--features",
+      "ui-harness",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T19:32:58.921507+00:00",
+    "head": "0c445fc3d2c2d39ff8deec83d0db015a37592068",
+    "diff_sha256": "2728d84210dd53cf1b5b502cdce904a1cf3d3b1a4e6edd8e823f2674010e3f0f",
+    "untracked_sha256": {
+      "crates/deadpan-audio/src/stage_projection/tests.rs": "9bb7c1d6cca0d439aba4129b779261681b69e8dd72b991dd4f260632c4011584",
+      "crates/deadpan-cli/tests/preview_export/nested_sounds.rs": "f0d428bdcde162955f32ef1d9aeea58c3bf679097c453dc1eb0f0ebf2d82cec5",
+      "docs/qualification/source-projection-reuse-2026-10-12.md": "22bad30937ccdd954936a2a49ea1ec458c21700b28f5acacc97e15dcd7764d0f"
+    },
+    "exit": 0,
+    "seconds": 134.93150387471542,
+    "log_sha256": "a2514d3b8133e0cbc69cd1ee6a9a5b642def5f71aefa1a06e4cd66424cc57f43",
+    "binaries": {}
+  },
+  {
+    "name": "first-witness",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-audio",
+      "--test",
+      "audio_definition",
+      "partial_repeat_keeps_equalized_nested_preserve_context",
+      "--",
+      "--nocapture"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T19:14:41.317180+00:00",
+    "head": "0c445fc3d2c2d39ff8deec83d0db015a37592068",
+    "diff_sha256": "848ed1555bf5a8e63a8a371c475d903a7122e5030015cff4d348b4cf59425c7f",
+    "untracked_sha256": {},
+    "exit": 101,
+    "seconds": 6.931653624866158,
+    "log_sha256": "06a9f7b8cf9d34028b2cb2b06a1236ed4fe665c09f4416923a355dc9337af5f5",
+    "binaries": {
+      "target/debug/deps/audio_definition-3d3947b9399b2579": "7f8df47ceb409c9506da1a8aa950bf544b470a60878718a4c55010a144341f2b"
+    }
+  },
+  {
+    "name": "fmt-check",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all",
+      "--check"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T19:42:47.473560+00:00",
+    "head": "0c445fc3d2c2d39ff8deec83d0db015a37592068",
+    "diff_sha256": "e14a7d58ab3e97414a4056580e1f126c3b766c429f6d8f8e9f48eb3e3eed721d",
+    "untracked_sha256": {
+      "crates/deadpan-audio/src/stage_projection/tests.rs": "9bb7c1d6cca0d439aba4129b779261681b69e8dd72b991dd4f260632c4011584",
+      "crates/deadpan-cli/tests/preview_export/nested_sounds.rs": "f0d428bdcde162955f32ef1d9aeea58c3bf679097c453dc1eb0f0ebf2d82cec5",
+      "docs/qualification/source-projection-reuse-2026-10-12.md": "d98a54bc51e779ab896bc5daa07ada64a91b32fec4fa917f50984893f4ab5765"
+    },
+    "exit": 0,
+    "seconds": 5.162972125224769,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "binaries": {}
+  },
+  {
+    "name": "fmt-cli",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T19:23:00.936558+00:00",
+    "head": "0c445fc3d2c2d39ff8deec83d0db015a37592068",
+    "diff_sha256": "bf49c6d542f07f067ca86cd665e52e274758683a2dd4f318fc65df51945f99e0",
+    "untracked_sha256": {
+      "crates/deadpan-audio/src/stage_projection/tests.rs": "9bb7c1d6cca0d439aba4129b779261681b69e8dd72b991dd4f260632c4011584",
+      "crates/deadpan-cli/tests/preview_export/nested_sounds.rs": "c6c205236740e925bff8f92d13beebb9461ad6f3e34224b6e37510b0de9493d2"
+    },
+    "exit": 0,
+    "seconds": 5.029235667083412,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "binaries": {}
+  },
+  {
+    "name": "fmt-cli2",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T19:23:44.621049+00:00",
+    "head": "0c445fc3d2c2d39ff8deec83d0db015a37592068",
+    "diff_sha256": "6ba7c8a09b6cbd8a42807bc310e7b9695ea220465ec91317996b08a89acc1960",
+    "untracked_sha256": {
+      "crates/deadpan-audio/src/stage_projection/tests.rs": "9bb7c1d6cca0d439aba4129b779261681b69e8dd72b991dd4f260632c4011584",
+      "crates/deadpan-cli/tests/preview_export/nested_sounds.rs": "2224d82829c1015591c5ee68e46badfe85c23c6b94b45e479fb00d2d4f2e273f"
+    },
+    "exit": 0,
+    "seconds": 5.015794124919921,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "binaries": {}
+  },
+  {
+    "name": "fmt-cli3",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T19:24:38.101691+00:00",
+    "head": "0c445fc3d2c2d39ff8deec83d0db015a37592068",
+    "diff_sha256": "6ba7c8a09b6cbd8a42807bc310e7b9695ea220465ec91317996b08a89acc1960",
+    "untracked_sha256": {
+      "crates/deadpan-audio/src/stage_projection/tests.rs": "9bb7c1d6cca0d439aba4129b779261681b69e8dd72b991dd4f260632c4011584",
+      "crates/deadpan-cli/tests/preview_export/nested_sounds.rs": "1328181ed0e1b17d9092e41fd78d7414ac21fdd4cb74f71aacea8192c8b31d2a"
+    },
+    "exit": 0,
+    "seconds": 5.088405750226229,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "binaries": {}
+  },
+  {
+    "name": "fmt-final",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T19:25:08.727087+00:00",
+    "head": "0c445fc3d2c2d39ff8deec83d0db015a37592068",
+    "diff_sha256": "6ba7c8a09b6cbd8a42807bc310e7b9695ea220465ec91317996b08a89acc1960",
+    "untracked_sha256": {
+      "crates/deadpan-audio/src/stage_projection/tests.rs": "9bb7c1d6cca0d439aba4129b779261681b69e8dd72b991dd4f260632c4011584",
+      "crates/deadpan-cli/tests/preview_export/nested_sounds.rs": "f0d428bdcde162955f32ef1d9aeea58c3bf679097c453dc1eb0f0ebf2d82cec5"
+    },
+    "exit": 0,
+    "seconds": 4.983998666051775,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "binaries": {}
+  },
+  {
+    "name": "fmt-key",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T19:16:13.939505+00:00",
+    "head": "0c445fc3d2c2d39ff8deec83d0db015a37592068",
+    "diff_sha256": "bb7b8865dd4917f0c66564ab86535adbbfe15fd9bded0e0e06b249fe6f2a7bb1",
+    "untracked_sha256": {},
+    "exit": 0,
+    "seconds": 5.036772707942873,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "binaries": {}
+  },
+  {
+    "name": "fmt-keys",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T19:20:17.307539+00:00",
+    "head": "0c445fc3d2c2d39ff8deec83d0db015a37592068",
+    "diff_sha256": "4c7b8a672a57dd6169b10490294441926125934d0d7afc1ef6209327093b9721",
+    "untracked_sha256": {
+      "crates/deadpan-audio/src/stage_projection/tests.rs": "9bb7c1d6cca0d439aba4129b779261681b69e8dd72b991dd4f260632c4011584"
+    },
+    "exit": 0,
+    "seconds": 5.0159430000931025,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "binaries": {}
+  },
+  {
+    "name": "fmt-tests",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T19:18:11.608986+00:00",
+    "head": "0c445fc3d2c2d39ff8deec83d0db015a37592068",
+    "diff_sha256": "2c9ce0da6dfecb6df671a21ffc6a5e53a4f29a67eaf0001cca13e39e1c67538e",
+    "untracked_sha256": {
+      "crates/deadpan-audio/src/stage_projection/tests.rs": "ec4a6bca99377e803616be144b802e2467b544dbe347f0e120a1c561c84db553"
+    },
+    "exit": 1,
+    "seconds": 4.969095458742231,
+    "log_sha256": "3b3f38670c9b3f97420066c129234dece1384043ab4c1b4175e095cd24b72932",
+    "binaries": {}
+  },
+  {
+    "name": "fmt-tests2",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T19:18:35.849011+00:00",
+    "head": "0c445fc3d2c2d39ff8deec83d0db015a37592068",
+    "diff_sha256": "3a895d2fb0ba9cccc544755ae03f1e87243791cd5f2e9053c5020e08cf9e638a",
+    "untracked_sha256": {
+      "crates/deadpan-audio/src/stage_projection/tests.rs": "ee6f2f1a6e3912547b78a79d312aa8bc41dd2c6360373f2c31aeeefaae7b0757"
+    },
+    "exit": 0,
+    "seconds": 4.999285374768078,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "binaries": {}
+  },
+  {
+    "name": "keyed-first",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-audio",
+      "--test",
+      "audio_definition",
+      "partial_repeat_keeps_equalized_nested_preserve_context",
+      "--",
+      "--nocapture"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T19:16:18.999462+00:00",
+    "head": "0c445fc3d2c2d39ff8deec83d0db015a37592068",
+    "diff_sha256": "3d423c4b944d26c24bc7676be83af870bc030b226656b91bea7b1bf8e46649b3",
+    "untracked_sha256": {},
+    "exit": 0,
+    "seconds": 28.457141666673124,
+    "log_sha256": "7d5cd8992ece37eec9eb458cbb5e3bdadd762591b52c4f53363e00be667058dc",
+    "binaries": {
+      "target/debug/deps/audio_definition-3d3947b9399b2579": "4e3f4a76a06710a0a42aebef8e651943a853fe319fe4dd727264e543629fee22"
+    }
+  },
+  {
+    "name": "plan-audio-playback",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-plan",
+      "-p",
+      "deadpan-audio",
+      "-p",
+      "deadpan-playback"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T19:25:13.735183+00:00",
+    "head": "0c445fc3d2c2d39ff8deec83d0db015a37592068",
+    "diff_sha256": "6ba7c8a09b6cbd8a42807bc310e7b9695ea220465ec91317996b08a89acc1960",
+    "untracked_sha256": {
+      "crates/deadpan-audio/src/stage_projection/tests.rs": "9bb7c1d6cca0d439aba4129b779261681b69e8dd72b991dd4f260632c4011584",
+      "crates/deadpan-cli/tests/preview_export/nested_sounds.rs": "f0d428bdcde162955f32ef1d9aeea58c3bf679097c453dc1eb0f0ebf2d82cec5"
+    },
+    "exit": 0,
+    "seconds": 464.6802574591711,
+    "log_sha256": "531bb93a1d2eac0089d83ef02bb3a80d0b8e4c45f2c20c7c8aa9a941c343c3a1",
+    "binaries": {
+      "target/debug/deps/audio_context-5d020e816632d1c3": "b469bfaf475486319216282f7ca406f8a9f7eb923216f85a53cb41563fa07184",
+      "target/debug/deps/limiter-6bdaa165df68ce14": "3222275bc8c21eefc9c6fe1109e23e9db55a373fc2761e707e96cd1bdf46099e",
+      "target/debug/deps/timing_representation-5fae6a57c7abd7ed": "326e0ba2c06dbc82828ff07e87dcf7f0146baa65e62a5aef1eee2464a7e89a9c",
+      "target/debug/deps/root_sound_routes-6f8208c883230712": "b3e980d3906652e317369895b441fa5a6608e70cbea67884c42d428c8cf6bc33",
+      "target/debug/deps/sound_route_sampling-055b34f3f4220ae3": "b4503bfcb1829827113fdf4064c65526c78d5720fc998f339b666ee996f22223",
+      "target/debug/deps/sequence-12fb61af8c478980": "8ad074d65fec9d11036287817e1caf727d31bca9b7ed8f38cfd35252d2be7f04",
+      "target/debug/deps/occurrence_edits-974aaeb0239b4b72": "a04fbd1684e4f0317bc1405e3bc03a263bf2667e202312dbf40bd376c196313d",
+      "target/debug/deps/sound_event_fades-920771e18d2f92b7": "8327013dc30a5be0bbebcadca45b55810203cc93bc56dd63b44ccf011178f6e9",
+      "target/debug/deps/source_voice-d4bfd57e0e25d362": "b51e7cd0e79cdda402b1f658f9c56250fde9c97d4f49ecd925bdd7d8bc523cf8",
+      "target/debug/deps/sound_events-8a41c93915f90dfd": "1724345fdc136580ea07443234359ca7ad144816d121d941e11b416dba5e79d3",
+      "target/debug/deps/audio_definition-2c5d8db0688c6400": "a88adf510540db369fe0b77f5a7008152ef05149a776b10c1fcc46a4a9e9fdc6",
+      "target/debug/deps/audio_bindings-73525713484d3a93": "d8eec02a1d5226080e3d4b9609ce55d505a476f2c281588fd81b88c15658f2ac",
+      "target/debug/deps/gap_bindings-5ea3051df89b220e": "b5e91000d66b7fc37f7d6310f08a0ceea6e344cbde6b33f9bfdae220219d5e24",
+      "target/debug/deps/reference_policy-bc9a430f5c9c2600": "74f58366d6b01e9b54697972432fc04decb1e799b56e38fd8a3001f0699277f7",
+      "target/debug/deps/audio_signal-a506c3ff2ff8bad5": "421a229fd27ef378011a307023e83f7e5c0bd30ef932943efe1cf60134449e18",
+      "target/debug/deps/audio_domain-a26776a625947a83": "0abc570b25168930a9c88b48587ddadd6fb648e94710b788ee474c1f0dcca6dd",
+      "target/debug/deps/edited_slice-d8921769e97927ee": "ce280ce771f25b93ff64c4dca53737e2b761dd24ccdbcd2bf13957bbd6f65a19",
+      "target/debug/deps/audio_reference-c144e6479d6ea87b": "8fed0b5ddd7ae5e8d6a5b0e5b0704514d6b3327ef389dadd4221c7f8efc6818a",
+      "target/debug/deps/stages-429c1ebb1a965c8d": "20089c0dabcb2905b97186136d795b37b104ffef7ebca54bb8689937d03ce7f3",
+      "target/debug/deps/audio_definition-3d3947b9399b2579": "a52bbac160883c9bd2b2a118f73fe0004fb27f620cfcc700eb15226548f9d2ee",
+      "target/debug/deps/hold_policy-76822b52b7c3896a": "2700e5c2b6ccb2fce375d83b10f18ef436c30a7b1ea8311db028ad4ef37524cc",
+      "target/debug/deps/source_voice_policy-658656c4462503ea": "5eedc097a1b0a89a65f6a985b47583cf62bff3d141a6167ab50d47955cf6ca1f",
+      "target/debug/deps/reanchors-44a7a0b5b08e9577": "57d0a72b1bfa96d8b8a55d4652dca670c4575bd943482d218fa15c687dc40856",
+      "target/debug/deps/audio_domain-9a833e93e494b4bf": "3bf1c3fc9aab65bb96617f9fe20b5e34036aedc3a58aa3904a79ebf24a705757",
+      "target/debug/deps/audio_policy-0edc4b9c80238f2e": "9b7d0e29472ebb9398435a4476589d3a9e9f7d3941292924fd28cfb08b4de309",
+      "target/debug/deps/play_overrides-e591b64b677b1c0e": "e292926675b13c4b961a3b5b8c7b16d8a839afb6dd88fe8bac7a2aa3f5127f5c",
+      "target/debug/deps/deadpan_playback-93ebd547c811bd51": "35ceab4e9cba2206ae18154baf18ed94dfdd1ce96b4d81ab63e6a03f7fa0466c",
+      "target/debug/deps/sound_processing_layout-f3140fc8a5ade5c9": "0c66beae39e752e240f65b3e56b242f0effc5a4e2d202b74d89cc94863f434e4",
+      "target/debug/deps/audio_fades-bafd76ade31ebec0": "978fe5a9d6a008f41de1e5acfacc472dc2f054204f13dd5d57ae413388932f01",
+      "target/debug/deps/composite_insert-c3acd41a12e0b1d6": "ad12400b81dd69890855df9d3bfcce7fbae3d9cc3e4a4b3937154d2dc6323b17",
+      "target/debug/deps/deadpan_plan-c3c18bc14d984dd6": "5e88bf3ee6a5190e07a54b9ab954546a7734235057a9b6c66aebcd15cb0da52c",
+      "target/debug/deps/session-a30b0e2ac2f2b414": "4afaea618d55fce92bb4c6a0246b125e942c6574ef9dabf709cecd9a39731b7f",
+      "target/debug/deps/signal_transfer-59064ef2f71d37fb": "95e1b68b1180290ed52afbded3d1a07c62951e2762fc6f96f7e67e17c38143ea",
+      "target/debug/deps/gap_bindings-9e880a6c1cd126ab": "d7acd085e003546260a6f72c3abcb569a50254249116e23c1ce86e4edaa05fd6",
+      "target/debug/deps/dormant_source-8d2c80c92a364ca4": "19fdae918dd3e8208191358e775b94675737debe58bb3d445e033da6f80a209c",
+      "target/debug/deps/loudness-b75b99cefdaeb46b": "c0a657f26db448482a66bc9701a6db665feb23fb85b21ca42083ac20a2e46afb",
+      "target/debug/deps/audio_context-9855ed3286239240": "3d33c8854a6f10e1866bf382ed62201e22eb8b52aaa88199fb3b0d18a7b5bc75",
+      "target/debug/deps/root_sound_trim-4514bec3ce23a1cb": "af80b2414a0ee7627154f2e86ab52ae2f224ce3abd1c75b8567bbec469239cad",
+      "target/debug/deps/gap_definition-0553c4eb23bf4bd4": "681aef3bbb77f19cdcd3cc8a881934c01d408b18ab2a43e6093cec90048e51f4",
+      "target/debug/deps/audio_plan-e5bd72882b1976f5": "f13b7a6b01ba564d57876ba6e84dcaa4c092ca2f4e62ed65842ea4cc5efd8258",
+      "target/debug/deps/sound_events-436c6c1815c5fe37": "8ebbbd8acb078be4330c07842100d0fed9d9ab7fce77c64aa2c13403f96f41d1",
+      "target/debug/deps/routed_voice-282fc49dcd87c5d1": "bb9b35b5b26de5d3b4cf89cdc89784cef9bee1d5e181051d58dd1d4036eed5fa",
+      "target/debug/deps/resample-817e9bc48158ada6": "b3cd8de928f004abec7cd5e5cf9928c57dcd0b2c81c6289106c5609b7555be29",
+      "target/debug/deps/selected_video_window-370ab7b9e1e70a50": "9e7bf8afeedb0158bf252c1a12966463d8d39e8642ee201d4d44f360755d29ad",
+      "target/debug/deps/deadpan_audio-3b7b674540dbcea4": "ab931b6bab6ae683d173ddc2f977f81c8773141d43c59d974acda7b88ebbd160",
+      "target/debug/deps/gap_branches-8ab6cbde31526f93": "220fad273668af9787c9a1597ee6627a07d39e52769609f4acbca93b03439b02",
+      "target/debug/deps/picture_plan-b9c3ea24dde8b2aa": "503d245dfdb88c7e80c328f675d4df1ddadff55e6ae1d046b9227dce4bee1e84",
+      "target/debug/deps/true_peak-1b0d1ea73159198a": "d18e57348b652163632bd798a4cb6f045488094d58c92033384333f46d623140",
+      "target/debug/deps/audio_tape-673fa7b9f217ec48": "beb3094645da8c2462a3258d10400d74b0487eb2777aa107df6e4bc0a0ee02a8"
+    }
+  },
+  {
+    "name": "plan-keys",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-plan",
+      "--test",
+      "audio_definition",
+      "--",
+      "--nocapture"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T19:20:27.139880+00:00",
+    "head": "0c445fc3d2c2d39ff8deec83d0db015a37592068",
+    "diff_sha256": "4c7b8a672a57dd6169b10490294441926125934d0d7afc1ef6209327093b9721",
+    "untracked_sha256": {
+      "crates/deadpan-audio/src/stage_projection/tests.rs": "9bb7c1d6cca0d439aba4129b779261681b69e8dd72b991dd4f260632c4011584"
+    },
+    "exit": 0,
+    "seconds": 4.886848084162921,
+    "log_sha256": "7402e4719f1ea5ce8bfcd65345761f5c577f660def5411cbe25d5f677aa22894",
+    "binaries": {
+      "target/debug/deps/audio_definition-b834c7b1478bf870": "7c5407e884fbac4722fbb8cdc2cb92ca17152ed504de8974c4c8e359dcbd575e"
+    }
+  },
+  {
+    "name": "qualify-release-before-app",
+    "command": [
+      "python3",
+      "/tmp/deadpan-nested-eq-stages-20261012/qualify-release.py"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T19:41:43.240623+00:00",
+    "head": "0c445fc3d2c2d39ff8deec83d0db015a37592068",
+    "diff_sha256": "b3c1fa83ea234d8377479462a58c78ccddcdcc26b63233381c0a26994bdfe37a",
+    "untracked_sha256": {
+      "crates/deadpan-audio/src/stage_projection/tests.rs": "9bb7c1d6cca0d439aba4129b779261681b69e8dd72b991dd4f260632c4011584",
+      "crates/deadpan-cli/tests/preview_export/nested_sounds.rs": "f0d428bdcde162955f32ef1d9aeea58c3bf679097c453dc1eb0f0ebf2d82cec5",
+      "docs/qualification/source-projection-reuse-2026-10-12.md": "c55cf856914687083604a0555a6f06b83bc055f8b368bc7c96688e5342aca506"
+    },
+    "exit": 0,
+    "seconds": 11.12579679209739,
+    "log_sha256": "174d774524cc35d21edee076a3676ab3a067f9a861439c21201a67814470492a",
+    "binaries": {}
+  },
+  {
+    "name": "qualify-release",
+    "command": [
+      "python3",
+      "/tmp/deadpan-nested-eq-stages-20261012/qualify-release.py"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T19:43:26.261983+00:00",
+    "head": "0c445fc3d2c2d39ff8deec83d0db015a37592068",
+    "diff_sha256": "e14a7d58ab3e97414a4056580e1f126c3b766c429f6d8f8e9f48eb3e3eed721d",
+    "untracked_sha256": {
+      "crates/deadpan-audio/src/stage_projection/tests.rs": "9bb7c1d6cca0d439aba4129b779261681b69e8dd72b991dd4f260632c4011584",
+      "crates/deadpan-cli/tests/preview_export/nested_sounds.rs": "f0d428bdcde162955f32ef1d9aeea58c3bf679097c453dc1eb0f0ebf2d82cec5",
+      "docs/qualification/source-projection-reuse-2026-10-12.md": "037c6d3ab03beb2004d838f9462de8c5ba1f3181b0c7942e492dbf6a90d7fcfe",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/README.md": "f0fb297d165e727debbd141b6f176fabc501debec35a507eab921dc6db7a7165",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/baseline-debug-result.json.gz": "c3ee5be47671d98590234cc3dc930f27f6d981b16e6abe0d902295508bf9a8f3",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/baseline-debug.log.gz": "3f1108b077521cf667326b654c0c8de04ed2e8995065cb7ff2af7dcc9fca11bd",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/baseline-debug2.log.gz": "02b0423adcf26ea90775cd2df984b70f5393b5fc2176ebcd4b02074307ed4df4",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/baseline-final.log.gz": "02b0423adcf26ea90775cd2df984b70f5393b5fc2176ebcd4b02074307ed4df4",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/baseline-result.json.gz": "4f5ac0343e93dd3cb25f947a3cb551d84784dda7ffc8ace1589f0eb83297ee28",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/baseline.py": "4636ce94f72a8c771f9be72de9040f860d0f5b400c3eb83ad06c8bb424608fa0",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/cache-tests.log.gz": "e32597a54cc42279f51df57dfe50016a7a215ff54d51c090bc4e561663c8b970",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/cache-tests2.log.gz": "e60ef8fe1fc40c8c4298d824f242cbefaa6b9cb685c48bdcacf5ac54755e361f",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/cache-tests3.log.gz": "b97000b9a75b67ccb26973f23aa2e0595428f4dc5ba65137ab74e6c7f75cb3bc",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/cache-tests4.log.gz": "ddc5cfed3e7d6616f53532ddeb556b4c16b960cfba6e3bcb029cc119bff95ff4",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/cache-tests5.log.gz": "ef2e7008591cabe3fe0944e7a811e97fb5bfe0f6e966658cb51fc620899495ac",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/check-evidence.py": "8fcf1df31285e6e9a4c7bf374c221353a5b166e51704d885ba307b324bb074cc",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/checks.py": "34177d1944ac99318b0d2c179a93c1fc3f695e806a692c18cc6ab395e551c787",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/cli-first.log.gz": "8f4bf84c54f7e9d75171c175fdef35044387e0cc9087a2af07f6a184aecd2056",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/cli-second.log.gz": "9e8d4f191e35cee46f349ed24aea3244c310abc6970100dfbc15bde4df575c82",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/cli-third.log.gz": "6ed4fa17e1e370c276f80425dd8a1f3d8517b78f9aed97bd84d96c5fff18604c",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/clippy.log.gz": "5a8ca9272fa7588417d3d9c5ee110d3006e7d9dbf3d67492d3f6813905cc6d44",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/commands.json": "2e6eb1491c9ea73561222cad84a87483fec7d26c0c60699aa9cbf565094be227",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/debug-verify-command.json": "5e1d859fe4971d6d5a774d2ba19a7a442d680c047ecd0439e009807c5da6eff5",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/debug-verify-report.json.gz": "eabc4abb8f073092ddd034f17f746d37d26835f383925e2362331c8662a78901",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/debug-verify.stderr.gz": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/environment.json": "ff8fbad112b94593a7e354960505cd9a7d05dd838ca9246f6359bdd3db81e2f9",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/first-witness.log.gz": "8e52041c67e41be48a50a11d7f167fc4fa800ae26f21d9a9befc086bff9ae33d",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/first-witness.patch": "e2e3ea138b847746ebc22874e50527c66fd5c59d2ed1b04596461fc9406da1cd",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/fmt-check.log.gz": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/fmt-cli.log.gz": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/fmt-cli2.log.gz": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/fmt-cli3.log.gz": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/fmt-final.log.gz": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/fmt-key.log.gz": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/fmt-keys.log.gz": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/fmt-tests.log.gz": "6171802899fcf7230d340a030a41251960cfffa7f83576063789561f08f53326",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/fmt-tests2.log.gz": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/identity.json": "29451d551a3548fcea9d4a4ba28248fffbb019c422c7413c67eda71257cbbd89",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/implementation.patch": "0f59bf7fc0d3b5be13f56683d6aa3b831f266453ebb4df701673e54e34ab7311",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/keyed-first.log.gz": "8f204478b025123e8043093fdf89e4642e39e3f54d519ccf5cb56f21918815be",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/manifest.json": "1b5109e41e72b3b2c3797b6073ad2748439f4188767a0b9c7b90a45b26625077",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/nested-eq.mp4": "a2bf6064cf4098275259b26a6f67890948ffcbdb7339236040f7229e1d9454c7",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/new-debug-render.json": "db2a639c9e9d141f1c36e3f90d697514413d1cfa11cfd3b6f3054241128631b7",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/new-debug-render.stderr.gz": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/new-debug-render.stdout.gz": "c8dbf23338849a622e8e7c81a43b9dc268bee7aed173ccc10485215fba756f9b",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/old-render.json": "15911e56ba435b381ded13e1912fcb708d973c323e16fccf20ade55d2cf98509",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/old-render.stderr.gz": "6518f2bd0d786631b285a0793cc32fe59140aaea8f3386096631e0e3918d5756",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/old-render.stdout.gz": "01ebac0799e746c1f38e21e6191f495706cea4b06e64f506290ff0afe94dc011",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/plan-audio-playback.log.gz": "cba93503b26598af744783deefc0f34a97a46f30affc72324c3feaea2396a31a",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/plan-keys.log.gz": "2468796bcbf134908b17987ee0353f78abe24073c5cd948c2d8c9612de550de1",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/project.zip": "dd3f6a09de01aa10af5740da9a15de616071bd5a95e595452c9792adcd61ee47",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/qualify-release.log.gz": "e711256e0c22f10964de45911fa3e2efbbed7cbfc9b2c362b7c0dbc483e0d596",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/qualify-release.py": "ee4dddabdd6c72e48a67c5224207a1a2f6419405b04505a70a835fcd121f54df",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/real-media.json": "cbcb07892d5a6e80eea6e831665373b3ff265ba698b7f216d4d8118d8ac0571d",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/release-app.log.gz": "1b242008a786953993e27d276f0196364fb5109d255e9e923a9bbf18c0185ec0",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/release-cache.log.gz": "29758694ea1a4479c5be595c0472b7239bb5e607b14560579c54ae0fe69bdadd",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/release-export-result.json.gz": "2e9981a42b21b508955522203105ace0e5cbe17604efb550e0b545ec8eb86798",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/release-export.log.gz": "79b733f6780c26bcdf604aaa6955b69999a614ac53cac4f3fd4a79b2d6272891",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/release-nested.log.gz": "0fe3d89d48ba057466c7f5697fda2de9b8ca32a1f46fd31f9701a1c84bcf1131",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/release-real-result.json": "5ef03d8792161e9c6bf9622ca12eb0ec4605b3eda3be405148add558a0f6fc25",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/release-real.log.gz": "edada9b880bfb67c1e5f6d76b66f34a7de4a0f019d4c91b5f3ffda42d71f946c",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/release-render.json": "7f3a99962ce88b5f17afedc89397feecee9bbf20a30f45837d0a05ae558ad3fb",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/release-render.stderr.gz": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/release-render.stdout.gz": "b2f0e71b148ca0fc2a6571f4e177064a8680ed693330165a6ccaecc907b50035",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/release-verify-command.json": "057643f84facc4b86592b93d3905e7875a3475a4f97408a33599c8b8929c36d7",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/release-verify-report.json.gz": "c7dccac6cce93853b8ee332ff11d968edf0ea2a439c367f9761535a2bb8a91ed",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/release-verify.stderr.gz": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/retain.py": "64b211e70263e0cc159c296209a151363d3cad1be1a3c2b7ee27ec055a7268a1",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/review.md": "33c39fdec8fb1b5f378d72fbfffb72ab56098418b105c887a58332f745c253fd",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/run.py": "49139fd59f897f0623fd45f2f87f0e60972a7182d0a49107638a018b14a75207",
+      "tools/audio-qualification/evidence/2026-10-12-source-projection-reuse/test-counts.json": "6557b261be91c84216a5d3eb962ac609f4ff682e41d16ce4d7cc4dd755983360"
+    },
+    "exit": 0,
+    "seconds": 9.400850208941847,
+    "log_sha256": "174d774524cc35d21edee076a3676ab3a067f9a861439c21201a67814470492a",
+    "binaries": {}
+  },
+  {
+    "name": "release-app",
+    "command": [
+      "cargo",
+      "build",
+      "--locked",
+      "--release",
+      "-p",
+      "deadpan-app",
+      "-p",
+      "deadpan-cli"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T19:39:35.482470+00:00",
+    "head": "0c445fc3d2c2d39ff8deec83d0db015a37592068",
+    "diff_sha256": "b3c1fa83ea234d8377479462a58c78ccddcdcc26b63233381c0a26994bdfe37a",
+    "untracked_sha256": {
+      "crates/deadpan-audio/src/stage_projection/tests.rs": "9bb7c1d6cca0d439aba4129b779261681b69e8dd72b991dd4f260632c4011584",
+      "crates/deadpan-cli/tests/preview_export/nested_sounds.rs": "f0d428bdcde162955f32ef1d9aeea58c3bf679097c453dc1eb0f0ebf2d82cec5",
+      "docs/qualification/source-projection-reuse-2026-10-12.md": "c55cf856914687083604a0555a6f06b83bc055f8b368bc7c96688e5342aca506"
+    },
+    "exit": 0,
+    "seconds": 191.96903799986467,
+    "log_sha256": "dea36fca0c4f1ac58d16ddd88f01a6cd52333ee3832887cdfe4fc945ac29ddb1",
+    "binaries": {}
+  },
+  {
+    "name": "release-cache",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--release",
+      "-p",
+      "deadpan-audio",
+      "--lib",
+      "source_projection",
+      "--",
+      "--nocapture"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T19:35:13.877425+00:00",
+    "head": "0c445fc3d2c2d39ff8deec83d0db015a37592068",
+    "diff_sha256": "b3c1fa83ea234d8377479462a58c78ccddcdcc26b63233381c0a26994bdfe37a",
+    "untracked_sha256": {
+      "crates/deadpan-audio/src/stage_projection/tests.rs": "9bb7c1d6cca0d439aba4129b779261681b69e8dd72b991dd4f260632c4011584",
+      "crates/deadpan-cli/tests/preview_export/nested_sounds.rs": "f0d428bdcde162955f32ef1d9aeea58c3bf679097c453dc1eb0f0ebf2d82cec5",
+      "docs/qualification/source-projection-reuse-2026-10-12.md": "c55cf856914687083604a0555a6f06b83bc055f8b368bc7c96688e5342aca506"
+    },
+    "exit": 0,
+    "seconds": 47.14101133402437,
+    "log_sha256": "6607772816de07983d640581c61addfb207dbf045d41c6cedc861da5d122fde0",
+    "binaries": {
+      "target/release/deps/deadpan_audio-49f173b966f703b0": "75df981db25454266c2ac6854a2038774cceec7682290e62420ed3437389aa31"
+    }
+  },
+  {
+    "name": "release-export",
+    "command": [
+      "env",
+      "DEADPAN_PREVIEW_EXPORT_KEEP=1",
+      "DEADPAN_PARTIAL_REPEAT_RESULTS=/private/tmp/deadpan-nested-eq-stages-20261012/release-export.json",
+      "cargo",
+      "test",
+      "--locked",
+      "--release",
+      "-p",
+      "deadpan-cli",
+      "--test",
+      "preview_export",
+      "partial_repeat_attached",
+      "--",
+      "--nocapture"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T19:39:28.624308+00:00",
+    "head": "0c445fc3d2c2d39ff8deec83d0db015a37592068",
+    "diff_sha256": "b3c1fa83ea234d8377479462a58c78ccddcdcc26b63233381c0a26994bdfe37a",
+    "untracked_sha256": {
+      "crates/deadpan-audio/src/stage_projection/tests.rs": "9bb7c1d6cca0d439aba4129b779261681b69e8dd72b991dd4f260632c4011584",
+      "crates/deadpan-cli/tests/preview_export/nested_sounds.rs": "f0d428bdcde162955f32ef1d9aeea58c3bf679097c453dc1eb0f0ebf2d82cec5",
+      "docs/qualification/source-projection-reuse-2026-10-12.md": "c55cf856914687083604a0555a6f06b83bc055f8b368bc7c96688e5342aca506"
+    },
+    "exit": 0,
+    "seconds": 6.825178375001997,
+    "log_sha256": "2a66a3ec2f858916b7001b5e9f7ff6425f49fc8a25dbfa68718d00505391ea6c",
+    "binaries": {
+      "target/release/deps/preview_export-13eb73279274fbb4": "e7bc94774cd4239d44e3fa408617c11e7ef0b00ff99aca2637e8d4cd45214dfd"
+    }
+  },
+  {
+    "name": "release-nested",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--release",
+      "-p",
+      "deadpan-audio",
+      "--test",
+      "audio_definition",
+      "partial_repeat_keeps_equalized_nested_preserve_context",
+      "--",
+      "--nocapture"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T19:36:01.047017+00:00",
+    "head": "0c445fc3d2c2d39ff8deec83d0db015a37592068",
+    "diff_sha256": "b3c1fa83ea234d8377479462a58c78ccddcdcc26b63233381c0a26994bdfe37a",
+    "untracked_sha256": {
+      "crates/deadpan-audio/src/stage_projection/tests.rs": "9bb7c1d6cca0d439aba4129b779261681b69e8dd72b991dd4f260632c4011584",
+      "crates/deadpan-cli/tests/preview_export/nested_sounds.rs": "f0d428bdcde162955f32ef1d9aeea58c3bf679097c453dc1eb0f0ebf2d82cec5",
+      "docs/qualification/source-projection-reuse-2026-10-12.md": "c55cf856914687083604a0555a6f06b83bc055f8b368bc7c96688e5342aca506"
+    },
+    "exit": 0,
+    "seconds": 60.614927917253226,
+    "log_sha256": "8261a549e5f4859e42b8e82117aa2c4b20c8cead3570f4bc14a2cc2ee9fb884f",
+    "binaries": {
+      "target/release/deps/audio_definition-49443387889b93df": "837f8868055fc0771892b04f2fcdf7d0dd405e600d2724ee3aa1d20c7649a0ad"
+    }
+  },
+  {
+    "name": "release-real",
+    "command": [
+      "env",
+      "DEADPAN_PREVIEW_EXPORT_KEEP=1",
+      "DEADPAN_NESTED_EQ_RESULTS=/private/tmp/deadpan-nested-eq-stages-20261012/release-real.json",
+      "cargo",
+      "test",
+      "--locked",
+      "--release",
+      "-p",
+      "deadpan-cli",
+      "--test",
+      "preview_export",
+      "nested_equalized_sound",
+      "--",
+      "--nocapture"
+    ],
+    "cwd": "/Users/michael/Code/deadpan",
+    "started_utc": "2026-10-12T19:37:01.692285+00:00",
+    "head": "0c445fc3d2c2d39ff8deec83d0db015a37592068",
+    "diff_sha256": "b3c1fa83ea234d8377479462a58c78ccddcdcc26b63233381c0a26994bdfe37a",
+    "untracked_sha256": {
+      "crates/deadpan-audio/src/stage_projection/tests.rs": "9bb7c1d6cca0d439aba4129b779261681b69e8dd72b991dd4f260632c4011584",
+      "crates/deadpan-cli/tests/preview_export/nested_sounds.rs": "f0d428bdcde162955f32ef1d9aeea58c3bf679097c453dc1eb0f0ebf2d82cec5",
+      "docs/qualification/source-projection-reuse-2026-10-12.md": "c55cf856914687083604a0555a6f06b83bc055f8b368bc7c96688e5342aca506"
+    },
+    "exit": 0,
+    "seconds": 146.89939679158852,
+    "log_sha256": "94aafe77d83bb0d05dd3713ce8a981ef1a3030ae6ccf817011235488721e9be8",
+    "binaries": {
+      "target/release/deps/preview_export-13eb73279274fbb4": "e7bc94774cd4239d44e3fa408617c11e7ef0b00ff99aca2637e8d4cd45214dfd"
+    }
+  }
+]

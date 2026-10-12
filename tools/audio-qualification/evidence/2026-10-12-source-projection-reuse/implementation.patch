@@ -1,0 +1,616 @@
+diff --git a/crates/deadpan-audio/src/stage_projection.rs b/crates/deadpan-audio/src/stage_projection.rs
+index 63326663..3251c196 100644
+--- a/crates/deadpan-audio/src/stage_projection.rs
++++ b/crates/deadpan-audio/src/stage_projection.rs
+@@ -3,7 +3,53 @@
+ 
+ use super::*;
+ 
++#[cfg(all(test, any(target_os = "macos", target_os = "linux")))]
++#[path = "stage_projection/tests.rs"]
++mod tests;
++
++#[derive(Clone)]
++pub(super) enum ProjectionCacheKey {
++    Opaque(AudioProjectionIdentity),
++    Source(Arc<RenderPlan>, Arc<deadpan_plan::AudioSourceProjectionKey>),
++}
++
++impl PartialEq for ProjectionCacheKey {
++    fn eq(&self, other: &Self) -> bool {
++        match (self, other) {
++            (Self::Opaque(a), Self::Opaque(b)) => a == b,
++            (Self::Source(a_plan, a), Self::Source(b_plan, b)) => {
++                Arc::ptr_eq(a_plan, b_plan) && a == b
++            }
++            _ => false,
++        }
++    }
++}
++impl Eq for ProjectionCacheKey {}
++
+ impl StageAudio {
++    fn projection_cache_key(
++        &self,
++        projection: &AudioStageProjection<'_>,
++        control: WorkControl<'_>,
++    ) -> Result<ProjectionCacheKey, StageAudioError> {
++        if !projection.belongs_to(&self.plan) {
++            return Err(StageAudioError::ForeignDomain);
++        }
++        let (key, comparison) = match projection.source_key() {
++            Some(key) => (
++                ProjectionCacheKey::Source(Arc::clone(&self.plan), Arc::clone(key)),
++                key.comparison_work(),
++            ),
++            None => (ProjectionCacheKey::Opaque(projection.identity()), 1),
++        };
++        let count = {
++            let work = control.work.borrow();
++            work.projected.len() + work.projected_preflight.len() + work.projected_active.len() + 1
++        };
++        control.spend_plan_work(count * comparison)?;
++        Ok(key)
++    }
++
+     pub(super) fn prepare_projected(
+         &mut self,
+         projection: &AudioStageProjection<'_>,
+@@ -12,7 +58,7 @@ impl StageAudio {
+         depth: usize,
+     ) -> Result<Arc<PreparedBlock>, StageAudioError> {
+         control.check()?;
+-        let identity = projection.identity();
++        let identity = self.projection_cache_key(projection, control)?;
+         let cached = control
+             .work
+             .borrow()
+@@ -101,7 +147,7 @@ impl StageAudio {
+     ) -> Result<usize, StageAudioError> {
+         control.check()?;
+         self.check_projected_depth(depth, 0)?;
+-        let identity = projection.identity();
++        let identity = self.projection_cache_key(projection, control)?;
+         if let Some((_, relative)) = control
+             .work
+             .borrow()
+diff --git a/crates/deadpan-audio/src/stages.rs b/crates/deadpan-audio/src/stages.rs
+index 8a712c95..4f29d3c6 100644
+--- a/crates/deadpan-audio/src/stages.rs
++++ b/crates/deadpan-audio/src/stages.rs
+@@ -438,9 +438,9 @@ struct ReadWork {
+     cache_key_scopes: usize,
+     // Projection identity retains its allocation for this complete request.
+     // Different routes through the same authored stage must never alias PCM.
+-    projected: Vec<(AudioProjectionIdentity, Arc<PreparedBlock>)>,
+-    projected_active: Vec<AudioProjectionIdentity>,
+-    projected_preflight: Vec<(AudioProjectionIdentity, usize)>,
++    projected: Vec<(stage_projection::ProjectionCacheKey, Arc<PreparedBlock>)>,
++    projected_active: Vec<stage_projection::ProjectionCacheKey>,
++    projected_preflight: Vec<(stage_projection::ProjectionCacheKey, usize)>,
+     intrinsic_preflight: Vec<(Arc<RenderPlan>, AudioStageDescriptor, usize)>,
+     projected_resident_frames: u64,
+     projected_disk_bytes: u64,
+diff --git a/crates/deadpan-audio/tests/audio_definition/sound_clocks/repeats.rs b/crates/deadpan-audio/tests/audio_definition/sound_clocks/repeats.rs
+index ed7f95a7..b9c3196f 100644
+--- a/crates/deadpan-audio/tests/audio_definition/sound_clocks/repeats.rs
++++ b/crates/deadpan-audio/tests/audio_definition/sound_clocks/repeats.rs
+@@ -220,6 +220,11 @@ fn partial_repeat_keeps_complete_nested_preserve_context() {
+     partial_repeat(false, true);
+ }
+ 
++#[test]
++fn partial_repeat_keeps_equalized_nested_preserve_context() {
++    partial_repeat(true, true);
++}
++
+ #[test]
+ fn repeat_sound_pcm_copies_initial_plays_and_allocates_later_births_at_their_own_phase() {
+     let before = ntsc(AudioEdgePolicy::Hard);
+diff --git a/crates/deadpan-cli/tests/preview_export.rs b/crates/deadpan-cli/tests/preview_export.rs
+index 155cc88c..2536c751 100644
+--- a/crates/deadpan-cli/tests/preview_export.rs
++++ b/crates/deadpan-cli/tests/preview_export.rs
+@@ -429,6 +429,17 @@ fn partial_copy_preserves_authored_mix_and_uses_current_mastering_context() -> R
+     Ok(())
+ }
+ 
++#[test]
++fn nested_equalized_sound_prepares_cold_and_split_reads() -> Result {
++    let (root, _guard) = keep_or(tempfile::tempdir()?);
++    let report = recipes::nested_sounds::prepare(&root.join("nested-eq"))?;
++    if let Some(path) = std::env::var_os("DEADPAN_NESTED_EQ_RESULTS") {
++        std::fs::write(path, serde_json::to_vec_pretty(&report)?)?;
++    }
++    eprintln!("{report}");
++    Ok(())
++}
++
+ #[test]
+ fn partial_repeat_attached_sounds_preserve_preview_and_report_aac_fidelity_failure() -> Result {
+     let (root, _guard) = keep_or(tempfile::tempdir()?);
+diff --git a/crates/deadpan-cli/tests/preview_export/recipes.rs b/crates/deadpan-cli/tests/preview_export/recipes.rs
+index 03ed018d..ae2d37cd 100644
+--- a/crates/deadpan-cli/tests/preview_export/recipes.rs
++++ b/crates/deadpan-cli/tests/preview_export/recipes.rs
+@@ -42,6 +42,8 @@ pub mod vfr;
+ #[path = "formats.rs"]
+ pub mod formats;
+ 
++#[path = "nested_sounds.rs"]
++pub mod nested_sounds;
+ #[path = "partial_sounds.rs"]
+ pub mod partial_sounds;
+ 
+diff --git a/crates/deadpan-plan/src/audio_projection.rs b/crates/deadpan-plan/src/audio_projection.rs
+index ab5e9aa8..75b9588f 100644
+--- a/crates/deadpan-plan/src/audio_projection.rs
++++ b/crates/deadpan-plan/src/audio_projection.rs
+@@ -10,6 +10,24 @@ use serde::{Serialize, Serializer, ser::SerializeStruct};
+ 
+ use crate::{AudioSignalMix, AudioSignalTape, AudioStage, PlanError, RenderPlan, SignalSample};
+ 
++/// Complete inputs to the checked independent-occurrence projection builder.
++/// Only comparable within the same immutable RenderPlan. An authored stage
++/// alone is insufficient: independent recipes and context clips change PCM.
++#[derive(Debug, Clone, PartialEq, Eq)]
++pub struct AudioSourceProjectionKey {
++    pub(crate) recipe: crate::AudioSourceVoiceRecipe,
++    pub(crate) instance: deadpan_core::InstancePath,
++    pub(crate) unclipped_before: usize,
++    pub(crate) stage: deadpan_core::NodeId,
++}
++
++impl AudioSourceProjectionKey {
++    /// Conservative node/path work for one bounded key comparison.
++    pub fn comparison_work(&self) -> usize {
++        1 + self.instance.repeats.len()
++    }
++}
++
+ /// Opaque call-local identity for memoizing one immutable projection.
+ #[derive(Debug, Clone)]
+ pub struct AudioProjectionIdentity(Arc<ProjectionIdentityToken>);
+@@ -45,6 +63,7 @@ pub struct AudioStageProjection<'plan> {
+     output_policy: AudioSignalTape<'plan>,
+     duration: FrameDuration,
+     identity: AudioProjectionIdentity,
++    source_key: Option<Arc<AudioSourceProjectionKey>>,
+ }
+ 
+ enum ProjectionInput<'plan> {
+@@ -117,6 +136,7 @@ impl<'plan> AudioStageProjection<'plan> {
+             ProjectionInput::Tape(input_tape),
+             output_policy,
+             duration,
++            None,
+         )
+     }
+ 
+@@ -131,6 +151,25 @@ impl<'plan> AudioStageProjection<'plan> {
+             ProjectionInput::Mix(input_mix),
+             output_policy,
+             duration,
++            None,
++        )
++    }
++
++    /// The occurrence builder supplies every independent input and clip choice.
++    /// General tape/mix constructors deliberately have no semantic cache key.
++    pub(crate) fn new_source_occurrence(
++        stage: AudioStage<'plan>,
++        input_tape: AudioSignalTape<'plan>,
++        output_policy: AudioSignalTape<'plan>,
++        duration: FrameDuration,
++        key: AudioSourceProjectionKey,
++    ) -> Result<Arc<Self>, PlanError> {
++        Self::build(
++            stage,
++            ProjectionInput::Tape(input_tape),
++            output_policy,
++            duration,
++            Some(Arc::new(key)),
+         )
+     }
+ 
+@@ -139,6 +178,7 @@ impl<'plan> AudioStageProjection<'plan> {
+         input: ProjectionInput<'plan>,
+         output_policy: AudioSignalTape<'plan>,
+         duration: FrameDuration,
++        source_key: Option<Arc<AudioSourceProjectionKey>>,
+     ) -> Result<Arc<Self>, PlanError> {
+         if duration == FrameDuration::ZERO {
+             return Err(PlanError::InvalidPlan(
+@@ -176,6 +216,7 @@ impl<'plan> AudioStageProjection<'plan> {
+             output_policy,
+             duration,
+             identity: AudioProjectionIdentity(Arc::new(ProjectionIdentityToken { _private: 0 })),
++            source_key,
+         });
+         let mut budget = ProjectionValidationBudget::default();
+         projection.validate_graph(&mut budget, 0)?;
+@@ -224,6 +265,12 @@ impl<'plan> AudioStageProjection<'plan> {
+         self.identity.clone()
+     }
+ 
++    /// Optional exact reuse key minted only for a checked source occurrence.
++    /// Hosts must also retain and compare the owning immutable plan identity.
++    pub fn source_key(&self) -> Option<&Arc<AudioSourceProjectionKey>> {
++        self.source_key.as_ref()
++    }
++
+     pub fn belongs_to(&self, plan: &RenderPlan) -> bool {
+         self.stage.belongs_to(plan)
+     }
+diff --git a/crates/deadpan-plan/src/audio_source_occurrence.rs b/crates/deadpan-plan/src/audio_source_occurrence.rs
+index 02b85370..8d76e80f 100644
+--- a/crates/deadpan-plan/src/audio_source_occurrence.rs
++++ b/crates/deadpan-plan/src/audio_source_occurrence.rs
+@@ -290,8 +290,16 @@ impl RenderPlan {
+                 // policy is separately evaluated on the final consuming grid.
+                 let policy = neutral_policy(self, &stage, &mut budget)?;
+                 let duration = parent.inspection.duration;
+-                provider =
+-                    Provider::Projected(AudioStageProjection::new(stage, input, policy, duration)?);
++                budget.spend(1 + instance.repeats.len())?;
++                let key = crate::AudioSourceProjectionKey {
++                    recipe: voice.recipe().clone(),
++                    instance: instance.clone(),
++                    unclipped_before,
++                    stage: parent.inspection.id.clone(),
++                };
++                provider = Provider::Projected(AudioStageProjection::new_source_occurrence(
++                    stage, input, policy, duration, key,
++                )?);
+                 placement = Placement::IDENTITY;
+                 support = node_support(self, edge.parent);
+                 delivery_support = support.clone();
+diff --git a/crates/deadpan-plan/src/lib.rs b/crates/deadpan-plan/src/lib.rs
+index 493fe6db..39649637 100644
+--- a/crates/deadpan-plan/src/lib.rs
++++ b/crates/deadpan-plan/src/lib.rs
+@@ -23,7 +23,9 @@ mod plan;
+ pub use audio_envelope::{AudioEnvelope, AudioEnvelopeEndpoint};
+ pub use audio_mix::{AudioMixGate, AudioMixQuery, AudioMixVoiceQuery, AudioSignalMix};
+ pub use audio_projected_root::AudioProjectedRoot;
+-pub use audio_projection::{AudioProjectionIdentity, AudioStageProjection};
++pub use audio_projection::{
++    AudioProjectionIdentity, AudioSourceProjectionKey, AudioStageProjection,
++};
+ pub use audio_reference::{
+     AudioReferencePlan, ReferenceAudioClock, ReferenceAudioContent, ReferenceAudioQuery,
+     ReferenceAudioSpan, ReferenceClockOwner, ReferenceProcessingDomain, ReferenceProcessingKind,
+diff --git a/crates/deadpan-plan/tests/audio_definition/projection.rs b/crates/deadpan-plan/tests/audio_definition/projection.rs
+index d8829aa9..19f7af56 100644
+--- a/crates/deadpan-plan/tests/audio_definition/projection.rs
++++ b/crates/deadpan-plan/tests/audio_definition/projection.rs
+@@ -67,6 +67,7 @@ fn mixed_projection_checks_every_voice_scope_even_when_fully_gated() {
+         AudioStageProjection::new_mixed_input(scoped[0].clone(), mixed(), policy(), frames(2))
+             .unwrap();
+     assert_ne!(projection.identity(), other.identity());
++    assert!(projection.source_key().is_none() && other.source_key().is_none());
+ 
+     let wrong_play = AudioSignalMix::new(
+         &plan,
+diff --git a/crates/deadpan-plan/tests/audio_definition/sound_owner_context.rs b/crates/deadpan-plan/tests/audio_definition/sound_owner_context.rs
+index d02effc2..94dfd297 100644
+--- a/crates/deadpan-plan/tests/audio_definition/sound_owner_context.rs
++++ b/crates/deadpan-plan/tests/audio_definition/sound_owner_context.rs
+@@ -180,6 +180,14 @@ fn sound_owner_context_keeps_enclosing_preserve_and_scopes_repeat_input() {
+     assert!(voice.samples().start.0 < 0 && voice.samples().end.0 > 4);
+     let projection = projected(voice);
+     assert_eq!(projection.stage().descriptor().instance.node, id("stage"));
++    let delivered = plan
++        .source_voice_occurrence(
++            voice.instance().clone(),
++            recipe(&plan, q(0, 1), 4),
++            Default::default(),
++        )
++        .unwrap();
++    assert_ne!(projected(&delivered).source_key(), projection.source_key());
+     assert_eq!(
+         projection.input_sample_count().unwrap(),
+         SignalSample(8 * i64::from(count))
+diff --git a/crates/deadpan-plan/tests/audio_definition/source_occurrence.rs b/crates/deadpan-plan/tests/audio_definition/source_occurrence.rs
+index 849609a4..c27c5f1e 100644
+--- a/crates/deadpan-plan/tests/audio_definition/source_occurrence.rs
++++ b/crates/deadpan-plan/tests/audio_definition/source_occurrence.rs
+@@ -283,6 +283,17 @@ fn nested_preserve_retains_full_history_identity_and_exact_independent_source()
+         panic!("stage lost");
+     };
+     assert_eq!(same.identity(), outer.identity());
++    let rebuilt = projected(&voice(&plan, "child"));
++    assert_ne!(rebuilt.identity(), outer.identity());
++    assert!(outer.source_key().is_some());
++    assert_eq!(rebuilt.source_key(), outer.source_key());
++    let mut shifted = recipe(&plan, q(1, 1), 4);
++    shifted.offset = AudioSample(1);
++    let shifted = plan
++        .source_voice_occurrence(occurrence("child", &[]), shifted, Default::default())
++        .unwrap();
++    assert_ne!(projected(&shifted).source_key(), outer.source_key());
++    assert_ne!(inner.source_key(), outer.source_key());
+     assert_eq!(child.source_identity(), child.clone().source_identity());
+     assert_ne!(
+         child.source_identity(),
+diff --git a/crates/deadpan-audio/src/stage_projection/tests.rs b/crates/deadpan-audio/src/stage_projection/tests.rs
+new file mode 100644
+index 00000000..a6dcbf86
+--- /dev/null
++++ b/crates/deadpan-audio/src/stage_projection/tests.rs
+@@ -0,0 +1,162 @@
++use super::*;
++use deadpan_core::{FrameRate, NodeId, NodeKind, SourceAudioMapping, SourceSpan};
++use deadpan_plan::AudioSourceVoiceRecipe;
++
++fn fixture() -> (
++    Arc<RenderPlan>,
++    super::super::controlled_reads::Provider,
++    AudioSourceVoiceRecipe,
++) {
++    let (document, provider) = super::super::controlled_reads::fixture_document_at_rate(
++        FrameRate::new(48_000, 1).unwrap(),
++    );
++    let mut wire = serde_json::to_value(document).unwrap();
++    wire["assets"]["media"]["source_qualification"] = serde_json::json!("d".repeat(64));
++    wire["assets"]["media"]["still_image"] = serde_json::json!(false);
++    let document = deadpan_core::ProjectDocument::from_json(&wire.to_string()).unwrap();
++    let NodeKind::Source { source } = &document.nodes()[&NodeId::new("a").unwrap()].kind else {
++        panic!()
++    };
++    let mut source = source.audio.clone().unwrap();
++    let mut end = source.span.end();
++    end.ticks = 128;
++    source.span = SourceSpan::new(source.span.start(), end).unwrap();
++    let recipe = AudioSourceVoiceRecipe {
++        mapping: SourceAudioMapping::natural_rate(source.span, FrameRate::new(48_000, 1).unwrap())
++            .unwrap(),
++        source,
++        offset: AudioSample(0),
++    };
++    (
++        Arc::new(RenderPlan::compile(&document).unwrap()),
++        provider,
++        recipe,
++    )
++}
++
++fn projection(plan: &RenderPlan, recipe: AudioSourceVoiceRecipe) -> Arc<AudioStageProjection<'_>> {
++    plan.source_voice_occurrence(
++        InstancePath {
++            node: NodeId::new("b").unwrap(),
++            repeats: vec![],
++        },
++        recipe,
++        Default::default(),
++    )
++    .unwrap()
++    .processing_projection()
++    .unwrap()
++    .clone()
++}
++
++#[test]
++fn source_projection_reconstruction_reuses_pcm_without_aliasing_recipes_or_plans() {
++    let (plan, mut provider, recipe) = fixture();
++    let mut reader = StageAudio::new(Arc::clone(&plan));
++    let cancelled = AtomicBool::new(false);
++    let budget = PreparationBudget::new(Duration::from_secs(10), &cancelled).unwrap();
++    let control = budget.control();
++    let first_projection = projection(&plan, recipe.clone());
++    let first = reader
++        .prepare_projected(&first_projection, &mut provider, control, 1)
++        .unwrap();
++    for _ in 0..80 {
++        let rebuilt = projection(&plan, recipe.clone());
++        assert_ne!(rebuilt.identity(), first_projection.identity());
++        assert_eq!(rebuilt.source_key(), first_projection.source_key());
++        let block = reader
++            .prepare_projected(&rebuilt, &mut provider, control, 1)
++            .unwrap();
++        assert!(Arc::ptr_eq(&first, &block));
++    }
++    assert_eq!(control.work.borrow().prepared_stages, 1);
++    assert!(provider.calls >= 81, "every reuse re-admits its dependency");
++    let mut shifted = recipe.clone();
++    shifted.offset = AudioSample(11);
++    let shifted = reader
++        .prepare_projected(&projection(&plan, shifted), &mut provider, control, 1)
++        .unwrap();
++    assert!(!Arc::ptr_eq(&first, &shifted));
++    assert_ne!(
++        first
++            .samples
++            .read_window(0..256, control.cancelled)
++            .unwrap(),
++        shifted
++            .samples
++            .read_window(0..256, control.cancelled)
++            .unwrap()
++    );
++    assert_eq!(control.work.borrow().prepared_stages, 2);
++
++    let other = Arc::new((*plan).clone());
++    let foreign = projection(&other, recipe);
++    assert!(matches!(
++        reader.prepare_projected(&foreign, &mut provider, control, 1),
++        Err(StageAudioError::ForeignDomain)
++    ));
++    let independent = reader
++        .with_plan_scope(Arc::clone(&other), |reader| {
++            reader.prepare_projected(&foreign, &mut provider, control, 1)
++        })
++        .unwrap();
++    assert!(!Arc::ptr_eq(&first, &independent));
++    assert_eq!(control.work.borrow().prepared_stages, 3);
++}
++
++#[test]
++fn source_projection_reuse_rechecks_depth_source_and_preparation_limits() {
++    let (plan, mut provider, recipe) = fixture();
++    let mut reader = StageAudio::with_limits(
++        Arc::clone(&plan),
++        StageLimits {
++            maximum_prepared_stages: 1,
++            ..Default::default()
++        },
++    )
++    .unwrap();
++    let cancelled = AtomicBool::new(false);
++    let budget = PreparationBudget::new(Duration::from_secs(10), &cancelled).unwrap();
++    let control = budget.control();
++    reader
++        .prepare_projected(
++            &projection(&plan, recipe.clone()),
++            &mut provider,
++            control,
++            1,
++        )
++        .unwrap();
++    assert!(matches!(
++        reader.prepare_projected(
++            &projection(&plan, recipe.clone()),
++            &mut provider,
++            control,
++            reader.limits.maximum_depth + 1
++        ),
++        Err(StageAudioError::Limit("nested stage depth"))
++    ));
++    struct Missing;
++    impl AudioSourceProvider for Missing {
++        fn source(
++            &mut self,
++            _: &ProjectId,
++            _: &RevisionId,
++            _: &AssetId,
++            _: &AtomicBool,
++        ) -> Result<&crate::PreparedSource, PreparationError> {
++            Err(PreparationError::SourceUnavailable("revoked".into()))
++        }
++    }
++    assert!(matches!(
++        reader.prepare_projected(&projection(&plan, recipe.clone()), &mut Missing, control, 1),
++        Err(StageAudioError::Preparation(
++            PreparationError::SourceUnavailable(_)
++        ))
++    ));
++    let mut shifted = recipe;
++    shifted.offset = AudioSample(11);
++    assert!(matches!(
++        reader.prepare_projected(&projection(&plan, shifted), &mut provider, control, 1),
++        Err(StageAudioError::Limit("preflight stages per read"))
++    ));
++}
+diff --git a/crates/deadpan-cli/tests/preview_export/nested_sounds.rs b/crates/deadpan-cli/tests/preview_export/nested_sounds.rs
+new file mode 100644
+index 00000000..464f1c67
+--- /dev/null
++++ b/crates/deadpan-cli/tests/preview_export/nested_sounds.rs
+@@ -0,0 +1,107 @@
++//! Real decoded attachment through nested Preserve, event EQ and owner EQ.
++use super::*;
++use deadpan_core::{BeatSound, EqualizerRecipe};
++
++pub fn prepare(dir: &Path) -> Result<Value> {
++    let mut project = Project::create(dir, "nested-equalized-sound")?;
++    place_click_sound(&mut project)?;
++    let sound_source = project.document()?.sounds()[&SoundId::new("click")?]
++        .source
++        .clone();
++    project.apply(|_, _, _| {
++        Ok(Command::DeleteSound {
++            id: SoundId::new("click")?,
++        })
++    })?;
++    let owner = root_children(&project.document()?)?[0].clone();
++    project.apply(|_, document, _| {
++        let NodeKind::Source { source } = &document.nodes()[&owner].kind else {
++            unreachable!()
++        };
++        Ok(Command::SetSourceAudioMapping {
++            node: owner.clone(),
++            mapping: source.audio_mapping,
++            offset: AudioSample(480_000),
++        })
++    })?;
++    let inner = NodeId::new("inner")?;
++    for (target, id, duration) in [
++        (owner.clone(), inner.clone(), 180),
++        (inner, NodeId::new("outer")?, 120),
++    ] {
++        project.apply(|_, _, _| {
++            Ok(Command::WrapRetime {
++                node: target,
++                id,
++                duration: FrameDuration::new(duration)?,
++                pitch: PitchPolicy::Preserve,
++            })
++        })?;
++    }
++    let eq = EqualizerRecipe::new(
++        [3000, -6000, 3000].map(|db| GainDb::new(db).unwrap()),
++        None,
++        None,
++    )?;
++    project.apply(|_, document, _| {
++        let source = sound_source;
++        Ok(Command::SetBeatSound {
++            owner: owner.clone(),
++            id: SoundId::new("attached")?,
++            event: BeatSound {
++                label: "Nested equalized attachment".into(),
++                mapping: SourceAudioMapping::natural_rate(
++                    source.span,
++                    document.presentation_basis().frame_rate,
++                )?,
++                source,
++                offset: AudioSample(0),
++                treatments: AudioTreatments::default()
++                    .with_clip_gain(ClipGain::new(GainDb::new(-12000)?, false, vec![], vec![])?)?
++                    .with_equalizer(Some(eq))?,
++                start_edge: AudioEdgePolicy::Hard,
++                end_edge: AudioEdgePolicy::Hard,
++                overflow: SoundOverflowPolicy::Reject,
++            },
++        })
++    })?;
++    project.apply(|_, _, _| {
++        Ok(Command::SetAudioTreatments {
++            node: owner,
++            treatments: AudioTreatments::default().with_equalizer(Some(eq))?,
++        })
++    })?;
++    let read = |start: i64, end: i64| -> Result<Vec<[f32; 2]>> {
++        Ok(serde_json::from_value(
++            success(&[
++                "inspect-audio",
++                project.path(),
++                "--samples",
++                &start.to_string(),
++                &end.to_string(),
++                "--authored-bus",
++            ])?["audio"]["samples"]
++                .clone(),
++        )?)
++    };
++    let full = read(512, 768)?;
++    assert_eq!(full.len(), 256);
++    assert!(full.iter().flatten().any(|value| value.abs() > 0.001));
++    let mut maximum = 0.0_f32;
++    for start in [512, 640, 576] {
++        let partial = read(start, start + 64)?;
++        assert_eq!(partial.len(), 64);
++        for (actual, expected) in partial.iter().flatten().zip(
++            full[(start - 512) as usize..(start - 512) as usize + 64]
++                .iter()
++                .flatten(),
++        ) {
++            assert!(actual.is_finite());
++            maximum = maximum.max((actual - expected).abs());
++        }
++    }
++    assert!(maximum < 1e-6, "cold read difference {maximum}");
++    Ok(
++        json!({"package":project.package, "revision":project.document()?.revision_id(), "samples":256, "start":512, "cold_windows":3, "max_difference":maximum}),
++    )
++}

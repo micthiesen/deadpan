@@ -290,8 +290,16 @@ impl RenderPlan {
                 // policy is separately evaluated on the final consuming grid.
                 let policy = neutral_policy(self, &stage, &mut budget)?;
                 let duration = parent.inspection.duration;
-                provider =
-                    Provider::Projected(AudioStageProjection::new(stage, input, policy, duration)?);
+                budget.spend(1 + instance.repeats.len())?;
+                let key = crate::AudioSourceProjectionKey {
+                    recipe: voice.recipe().clone(),
+                    instance: instance.clone(),
+                    unclipped_before,
+                    stage: parent.inspection.id.clone(),
+                };
+                provider = Provider::Projected(AudioStageProjection::new_source_occurrence(
+                    stage, input, policy, duration, key,
+                )?);
                 placement = Placement::IDENTITY;
                 support = node_support(self, edge.parent);
                 delivery_support = support.clone();

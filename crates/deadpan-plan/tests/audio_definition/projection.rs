@@ -67,6 +67,7 @@ fn mixed_projection_checks_every_voice_scope_even_when_fully_gated() {
         AudioStageProjection::new_mixed_input(scoped[0].clone(), mixed(), policy(), frames(2))
             .unwrap();
     assert_ne!(projection.identity(), other.identity());
+    assert!(projection.source_key().is_none() && other.source_key().is_none());
 
     let wrong_play = AudioSignalMix::new(
         &plan,
