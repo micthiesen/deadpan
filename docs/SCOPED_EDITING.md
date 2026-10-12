@@ -75,6 +75,14 @@ audio, rename and `AcceptGeneratedHold` edits. Preparation returns the remapped 
 and can map an independently captured presentation. The host allocates
 identities, validates media and commits through the same store command path.
 
+`scoped_many_requirements` stages the selected edits in order so later targets
+see earlier isolation and unchanged values need no new identities. Its private
+temporary names avoid existing nodes, marks, retained audio aliases and every
+pending target name. A missing target cannot become valid by naming a temporary
+clone; no legal authored name is reserved for the query. Only the caller's real identity
+pools enter the committed edit. The [preflight regression record](qualification/scoped-preflight-2026-10-12.md)
+covers name collisions, nested remapping and native durable Undo/Redo.
+
 Selective isolation preserves sparse overrides, retained clocks, concrete and
 definition marks, and per-play sound permissions. Default ancestors are
 wildcards only for actual uses of their shared definition. Duration and source

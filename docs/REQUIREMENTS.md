@@ -4,6 +4,16 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 
 ## Resumed implementation, 2026-10-06
 
+[Selected-play preflight](qualification/scoped-preflight-2026-10-12.md) now
+avoids collisions between private temporary names and legal node, mark or
+retained audio identities. Missing targets also remain invalid when they name
+private temporary clones. All 1,073 core tests passed; after the two review
+corrections, 80 focused core/native tests pass, including selective nested gain,
+one Undo, Redo and SQLite reopen. Both sets of failing regressions are retained.
+Strict workspace Clippy and focused final core Clippy pass.
+Pause insertion inside Repeat remains unimplemented;
+no requirement or gate is newly complete.
+
 [Existing Repeat Split clocks](qualification/repeat-split-clocks-2026-10-12.md)
 now preserve attached sound recipes and concrete play histories when repeating
 a partial range inside an existing Repeat. Exact reducer aliases retain ordered

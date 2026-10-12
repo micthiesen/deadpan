@@ -233,22 +233,7 @@ impl IsolationPlan {
                 "scoped edit requires its exact node and mark identity pools",
             ));
         }
-        let mut occupied: BTreeSet<_> = document.nodes().keys().collect();
-        occupied.extend(
-            document
-                .audio_lineage()
-                .values()
-                .map(|lineage| &lineage.origin),
-        );
-        for layout in document.audio_bindings().timings.values() {
-            occupied.extend(layout.nodes().keys());
-            occupied.extend(
-                layout
-                    .audio_lineage()
-                    .values()
-                    .map(|lineage| &lineage.origin),
-            );
-        }
+        let mut occupied = occupied_node_ids(document);
         if identities.nodes.iter().any(|node| !occupied.insert(node)) {
             return Err(EditError::new(
                 EditErrorCode::IdentityConflict,
@@ -399,14 +384,7 @@ pub(crate) fn many_requirements(
         if requirements.unchanged {
             continue;
         }
-        let placeholders = OccurrenceIdentities {
-            nodes: (0..requirements.nodes)
-                .map(|n| NodeId::new(format!("scoped-preflight-{index}-{n}")))
-                .collect::<Result<_, _>>()?,
-            marks: (0..requirements.marks)
-                .map(|n| crate::MarkId::new(format!("scoped-preflight-{index}-{n}")))
-                .collect::<Result<_, _>>()?,
-        };
+        let placeholders = preflight_identities(&staged, &pending, index, requirements)?;
         let (next, mappings) = apply_mapped(
             &staged,
             &target,
@@ -424,6 +402,73 @@ pub(crate) fn many_requirements(
         staged = next;
     }
     Ok(output)
+}
+
+/// Freshness includes historical audio aliases even when their authored node
+/// has disappeared. Share this inventory with admission of real host pools.
+fn occupied_node_ids(document: &ProjectDocument) -> BTreeSet<&NodeId> {
+    let mut occupied: BTreeSet<_> = document.nodes().keys().collect();
+    occupied.extend(
+        document
+            .audio_lineage()
+            .values()
+            .map(|lineage| &lineage.origin),
+    );
+    for layout in document.audio_bindings().timings.values() {
+        occupied.extend(layout.nodes().keys());
+        occupied.extend(
+            layout
+                .audio_lineage()
+                .values()
+                .map(|lineage| &lineage.origin),
+        );
+    }
+    occupied
+}
+
+/// These names exist only in the query's private staged copy and never leave
+/// it. Avoid pending targets too: an absent node or Repeat must not become
+/// valid by accidentally naming a temporary clone. No legal project name is
+/// reserved for preflight. A monotonic search skips at most one candidate per
+/// occupied or targeted name, then one per requested ID.
+fn preflight_identities(
+    document: &ProjectDocument,
+    targets: &[ScopedNodeTarget],
+    index: usize,
+    requirements: ScopedEditRequirements,
+) -> Result<OccurrenceIdentities, EditError> {
+    if requirements.nodes == 0 && requirements.marks == 0 {
+        return Ok(OccurrenceIdentities::default());
+    }
+    let occupied: BTreeSet<_> = occupied_node_ids(document)
+        .into_iter()
+        .map(NodeId::as_str)
+        .chain(document.marks().keys().map(crate::MarkId::as_str))
+        .chain(targets.iter().flat_map(|target| {
+            std::iter::once(target.node.as_str())
+                .chain(target.repeats.iter().map(|step| step.repeat.as_str()))
+        }))
+        .collect();
+    let mut ordinal = 0_usize;
+    let mut next = || -> Result<String, EditError> {
+        loop {
+            let candidate = format!("scoped-preflight-{index}-{ordinal}");
+            ordinal = ordinal
+                .checked_add(1)
+                .ok_or_else(|| limit("preflight identity search"))?;
+            if !occupied.contains(candidate.as_str()) {
+                return Ok(candidate);
+            }
+        }
+    };
+    Ok(OccurrenceIdentities {
+        nodes: (0..requirements.nodes)
+            .map(|_| Ok(NodeId::new(next()?)?))
+            .collect::<Result<_, EditError>>()?,
+        marks: (0..requirements.marks)
+            .map(|_| Ok(crate::MarkId::new(next()?)?))
+            .collect::<Result<_, EditError>>()?,
+    })
 }
 
 pub(crate) fn apply_mapped(

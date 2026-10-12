@@ -6,7 +6,11 @@ use deadpan_core::{
 };
 
 fn seed(path: &Path) {
-    let mut store = seed_holds(path, &["a", "b"]);
+    seed_named(path, &["a", "b"]);
+}
+
+fn seed_named(path: &Path, names: &[&str]) {
+    let mut store = seed_holds(path, names);
     seed_command(
         &mut store,
         Command::WrapRepeat {
@@ -582,6 +586,80 @@ fn multi_play_scope_commits_one_edit_in_every_selected_play_and_carries_steps() 
     let again = again.workspace.unwrap();
     assert_eq!(inner_treatments(&again, 0, 0), gain(-3000));
     assert_eq!(inner_treatments(&again, 0, 1), gain(-3000));
+}
+
+#[test]
+fn multi_play_scope_accepts_existing_preflight_names_and_reopens_undo_redo() {
+    let scratch = tempfile::tempdir().unwrap();
+    let path = scratch.path().join("preflight-names.deadpan");
+    seed_named(
+        &path,
+        &["a", "b", "scoped-preflight-0-0", "scoped-preflight-1-0"],
+    );
+    let service = ProjectService::new(Arc::new(|| {})).unwrap();
+    let before = command(&service, ProjectRequest::Open(path.clone()))
+        .workspace
+        .unwrap();
+    let mut target = capture(&before, play("outer-plays", 1), play("inner-plays", 0));
+    target.also = vec![
+        crate::project::scoped::retarget(
+            &before.document,
+            &target.target,
+            1,
+            &iteration("inner-plays", 1),
+        )
+        .unwrap(),
+    ];
+    let rows = counts(&path);
+    let updated = command(
+        &service,
+        request(
+            &target,
+            ScopedNodeEdit::SetAudioTreatments {
+                treatments: gain(-6000),
+            },
+        ),
+    );
+    assert!(updated.error.is_none(), "{:?}", updated.error);
+    assert_eq!(counts(&path), (rows.0 + 1, rows.1 + 1));
+    let after = updated.workspace.unwrap();
+    for inner in 0..2 {
+        assert_eq!(
+            inner_treatments(&after, 0, inner),
+            AudioTreatments::default()
+        );
+        assert_eq!(inner_treatments(&after, 1, inner), gain(-6000));
+    }
+    for name in ["scoped-preflight-0-0", "scoped-preflight-1-0"] {
+        assert_eq!(
+            after.document.nodes()[&node(name)],
+            before.document.nodes()[&node(name)]
+        );
+    }
+    assert_eq!(after.plan.duration(), before.plan.duration());
+    let undone = command(
+        &service,
+        ProjectRequest::Undo {
+            expected_revision: after.document.revision_id().clone(),
+        },
+    )
+    .workspace
+    .unwrap();
+    assert_same_content(&undone.document, &before.document);
+    let redone = command(
+        &service,
+        ProjectRequest::Redo {
+            expected_revision: undone.document.revision_id().clone(),
+        },
+    )
+    .workspace
+    .unwrap();
+    assert_same_content(&redone.document, &after.document);
+    command(&service, ProjectRequest::Close);
+    let reopened = command(&service, ProjectRequest::Open(path))
+        .workspace
+        .unwrap();
+    assert_eq!(reopened.document, redone.document);
 }
 
 #[test]

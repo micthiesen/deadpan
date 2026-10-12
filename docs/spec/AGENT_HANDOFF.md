@@ -4,6 +4,28 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Selected-play preflight](../qualification/scoped-preflight-2026-10-12.md)
+fixes legal names colliding with the query's private temporary IDs. The query
+and real admission share the live/retained node inventory; temporary names also
+avoid marks and all pending target names, and stages needing no identities skip
+that inventory. Missing targets cannot become valid by naming a private clone. Caller IDs,
+command grammar and saved formats are unchanged. Five regressions failed only
+the query after successfully applying the real command. Seven positive cases cover
+all identity namespaces, dense collisions, staged no-ops and compact maximum
+Repeat counts; two more reproduced false admission of missing targets. All
+1,073 core tests pass; the final review changes are covered by 80 focused
+core/native tests, including selective nested gain and durable Undo/Redo
+and reopen. Strict workspace Clippy and focused final core Clippy pass.
+The primary implemented and self-reviewed alone.
+
+Repeat-interior pause work remains research only. Do not remove `physical`'s
+guard or split the whole Repeat at the root: the inserted Hold must inherit live
+enclosing operations and affect its selected occurrence. Extend outside-in
+isolation with exact identity preflight, preserve later occurrence/gap sampling
+entries and attached/root sound routes, and make freeze capture use the concrete
+insertion-parent instance. Ordinary Sequence insertion and the current Repeat /
+Retime refusal remain unchanged. No requirement or gate is newly complete.
+
 [Existing Repeat Split clocks](../qualification/repeat-split-clocks-2026-10-12.md)
 now allow eligible partial RepeatSelection inside an existing sound-bearing
 Repeat. The transport records exact external Repeat aliases alongside owner
