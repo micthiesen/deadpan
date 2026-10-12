@@ -116,7 +116,7 @@ fn document(
     }
     wire["nodes"]["root"] = json!(BeatNode::sequence("root", children));
     let selection = selection.unwrap_or(ExactRatio::ZERO..ExactRatio::integer(recipe_extent));
-    wire["sounds"] = json!({"sound": SoundEvent {
+    wire["sounds"] = json!({"sound": SoundEvent { tail_sends: Default::default(),
         owner: node("root"), label: "event".into(), source: SourceAudio { asset: AssetId::new("sound").unwrap(), span },
         mapping: SourceAudioMapping::SelectedPlacement { start: ExactRatio::ZERO, frames: SourceAudioMapping::natural_rate(span, rate).unwrap().duration_frames(FrameDuration::ZERO).unwrap(), selection: ExactFrameRange { start: selection.start, end: selection.end } },
         offset: AudioSample(0), gain_millidecibels: 0, start_edge: AudioEdgePolicy::Automatic, end_edge: AudioEdgePolicy::Automatic, overflow: SoundOverflowPolicy::Reject,

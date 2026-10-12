@@ -3484,7 +3484,7 @@ verb "splice" usage ":splice  place a copy"
 verb "split" usage ":split"
 verb "sting" usage ":sting  add a sting sound"
 verb "storage" usage ":storage  project storage and cleanup"
-verb "tail" usage ":tail [1s] [effect=reverb]"
+verb "tail" usage ":tail [1s] [effect=reverb] [input=original|sends]"
 verb "track" usage ":track [TARGET] [through-shots]"
 verb "track-cancel" usage ":track-cancel"
 verb "trim" usage ":trim"
@@ -3908,10 +3908,10 @@ parse ":storage" = Ok(Storage)
 parse ":STORAGE" = Ok(Storage)
 parse ":storage x y z" = Err("Extra arguments are not supported by this command.")
 parse ":storage" = Ok(Storage)
-parse ":tail" = Ok(Action(Tail { length: None, effect: Reverb }))
-parse ":TAIL" = Ok(Action(Tail { length: None, effect: Reverb }))
-parse ":tail x y z" = Err("Use a duration with units: 12f, 250ms, 1.5s, or 01:02.500. Use :tail 400ms effect=reverb|delay: a pause whose sound is the effect ringing on after what is heard just before it. On a selected pause the length is how long the tail rings.")
-parse ":tail 1s effect=reverb" = Ok(Action(Tail { length: Some(Seconds(ExactRatio { numerator: 1, denominator: 1 })), effect: Reverb }))
+parse ":tail" = Ok(Action(Tail { length: None, effect: Reverb, input: Original }))
+parse ":TAIL" = Ok(Action(Tail { length: None, effect: Reverb, input: Original }))
+parse ":tail x y z" = Err("Use a duration with units: 12f, 250ms, 1.5s, or 01:02.500. Use :tail 400ms effect=reverb|delay input=original|sends: a pause whose sound is the effect ringing on after what is heard just before it. On a selected pause the length is how long the tail rings.")
+parse ":tail 1s effect=reverb input=original" = Ok(Action(Tail { length: Some(Seconds(ExactRatio { numerator: 1, denominator: 1 })), effect: Reverb, input: Original }))
 parse ":track" = Ok(Track { target: None, through_shots: false })
 parse ":TRACK" = Ok(Track { target: None, through_shots: false })
 parse ":track x y z" = Ok(Track { target: Some("x y z"), through_shots: false })
@@ -3987,8 +3987,8 @@ parse ":pitch 0" = Ok(Action(Edit(Pitch(0))))
 parse ":cutaway register=r audio=keep" = Ok(Action(Edit(Cutaway(Place { register: Some('r'), fit: Hold }))))
 parse ":cutaway register=r fit=bounce" = Ok(Action(Edit(Cutaway(Place { register: Some('r'), fit: Bounce }))))
 parse ":cutaway clear" = Ok(Action(Edit(Cutaway(Clear))))
-parse ":tail 400ms effect=reverb" = Ok(Action(Tail { length: Some(Seconds(ExactRatio { numerator: 2, denominator: 5 })), effect: Reverb }))
-parse ":tail 1s effect=delay" = Ok(Action(Tail { length: Some(Seconds(ExactRatio { numerator: 1, denominator: 1 })), effect: Delay }))
+parse ":tail 400ms effect=reverb" = Ok(Action(Tail { length: Some(Seconds(ExactRatio { numerator: 2, denominator: 5 })), effect: Reverb, input: Original }))
+parse ":tail 1s effect=delay" = Ok(Action(Tail { length: Some(Seconds(ExactRatio { numerator: 1, denominator: 1 })), effect: Delay, input: Original }))
 parse ":trim edge=out delta=-3f mode=ripple" = Ok(Trim(TrimInput { control: Out, intent: SourceTrimIntent { in_frames: 0, out_frames: -3, slip_frames: 0, roll_frames: 0, policy: Ripple } }))
 parse ":trim edge=in" = Err("Use :trim or :trim edge=out delta=-3f mode=ripple. Supply edge, delta and mode exactly once; edges are in/out/slip/roll and modes are ripple/overwrite.")
 parse ":slip +5f" = Ok(Slip(5))
@@ -4030,6 +4030,9 @@ parse ":proxies retry" = Ok(Proxies(Retry))
 parse ":sound-channels stereo_left_right" = Ok(SoundChannels(Some(StereoLeftRight)))
 parse ":sound-at 137" = Ok(Action(Sound(Move(AudioSample(137)))))
 parse ":sound-gain -96" = Ok(Action(Sound(Gain(-96000))))
+parse ":sound-tail-send delay -6dB" = Ok(Action(Sound(TailSend { effect: Delay, level: Some(GainDb(-6000)) })))
+parse ":tail-send reverb off" = Ok(TailSend { effect: Reverb, level: None })
+parse ":tail 1s input=sends" = Ok(Action(Tail { length: Some(Seconds(ExactRatio { numerator: 1, denominator: 1 })), effect: Reverb, input: Sends }))
 parse ":sound-edges hard" = Ok(Action(Sound(Edges(Hard))))
 parse ":saturate off" = Ok(Saturate(None))
 parse ":balance -50%" = Ok(Balance(Some(StereoBalance(-50))))

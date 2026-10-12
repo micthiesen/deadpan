@@ -114,6 +114,10 @@ pub enum Entry {
     Saturate(Option<deadpan_core::Saturation>),
     /// Signed whole-percent stereo balance; None restores center.
     Balance(Option<deadpan_core::StereoBalance>),
+    TailSend {
+        effect: deadpan_core::TailEffect,
+        level: Option<deadpan_core::GainDb>,
+    },
     EqualizerEdit,
     Equalizer(Option<deadpan_core::EqualizerRecipe>),
     Scope(ScopeChoice),
@@ -509,10 +513,27 @@ pub fn parse(input: &str) -> Result<Entry, String> {
             },
         );
     }
+    if verb == "tail-send" || verb == "sound-tail-send" {
+        let arguments: Vec<&str> = words.collect();
+        let (effect, level) = super::hold_effects::parse_send(&arguments)?;
+        return Ok(if verb == "tail-send" {
+            Entry::TailSend { effect, level }
+        } else {
+            Entry::Action(Action::Sound(super::SoundAction::TailSend {
+                effect,
+                level,
+            }))
+        });
+    }
     if verb == "tail" {
         let arguments: Vec<&str> = words.collect();
-        return super::hold_effects::parse_tail(&arguments)
-            .map(|(length, effect)| Entry::Action(Action::Tail { length, effect }));
+        return super::hold_effects::parse_tail(&arguments).map(|(length, effect, input)| {
+            Entry::Action(Action::Tail {
+                length,
+                effect,
+                input,
+            })
+        });
     }
     if verb == "repeat" && words.clone().any(|word| word.starts_with("role=")) {
         return role_repeat(words);

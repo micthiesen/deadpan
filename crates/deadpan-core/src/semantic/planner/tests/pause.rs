@@ -919,6 +919,7 @@ fn a_tail_sets_the_selected_hold_from_its_start_or_inserts_a_tail_pause() {
         &document,
         selected,
         vec![SemanticInstruction::Tail {
+            input: Default::default(),
             length: Some(frames_length(9)),
             effect: crate::TailEffect::Delay,
         }],
@@ -937,6 +938,7 @@ fn a_tail_sets_the_selected_hold_from_its_start_or_inserts_a_tail_pause() {
     assert_eq!(
         recipe.audio,
         crate::HoldAudio::Tail {
+            input: Default::default(),
             maximum: FrameDuration::new(4).unwrap(),
             effect: crate::TailEffect::Delay
         }
@@ -946,6 +948,7 @@ fn a_tail_sets_the_selected_hold_from_its_start_or_inserts_a_tail_pause() {
         &document,
         context("root", 6),
         vec![SemanticInstruction::Tail {
+            input: Default::default(),
             length: Some(frames_length(5)),
             effect: crate::TailEffect::Reverb,
         }],
@@ -965,6 +968,7 @@ fn a_tail_sets_the_selected_hold_from_its_start_or_inserts_a_tail_pause() {
     assert_eq!(
         recipe.audio,
         crate::HoldAudio::Tail {
+            input: Default::default(),
             maximum: FrameDuration::new(5).unwrap(),
             effect: crate::TailEffect::Reverb
         }
@@ -973,6 +977,7 @@ fn a_tail_sets_the_selected_hold_from_its_start_or_inserts_a_tail_pause() {
         &document,
         context("root", 6),
         vec![SemanticInstruction::Tail {
+            input: Default::default(),
             length: None,
             effect: crate::TailEffect::Reverb,
         }],
@@ -1083,6 +1088,7 @@ fn are_we_done_hangs_a_reverb_tail_under_a_reaction_cutaway_in_one_group() {
     assert_eq!(
         recipe.audio,
         crate::HoldAudio::Tail {
+            input: Default::default(),
             maximum: FrameDuration::new(5).unwrap(),
             effect: crate::TailEffect::Reverb,
         }
@@ -1145,7 +1151,7 @@ fn are_we_done_hangs_a_reverb_tail_under_a_reaction_cutaway_in_one_group() {
     assert!(matches!(
         &node.kind,
         NodeKind::Hold { recipe } if recipe.duration.frames() == 8
-            && recipe.audio == crate::HoldAudio::Tail {
+            && recipe.audio == crate::HoldAudio::Tail { input: Default::default(),
                 maximum: FrameDuration::new(8).unwrap(),
                 effect: crate::TailEffect::Reverb,
             }
@@ -1215,6 +1221,7 @@ fn a_tail_on_a_pause_whose_picture_cannot_be_resolved_still_applies() {
         &document,
         &selected,
         &program(vec![SemanticInstruction::Tail {
+            input: Default::default(),
             length: None,
             effect: crate::TailEffect::Reverb,
         }]),

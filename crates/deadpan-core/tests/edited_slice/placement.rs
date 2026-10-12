@@ -416,6 +416,7 @@ pub(super) fn with_sound(document: &ProjectDocument) -> ProjectDocument {
             Command::SetSound {
                 id: SoundId::new("sound").unwrap(),
                 event: SoundEvent {
+                    tail_sends: Default::default(),
                     owner: id("root"),
                     label: "Sound".into(),
                     source: SourceAudio { asset, span },

@@ -534,6 +534,7 @@ fn fixed_clocks_effects_bindings_and_root_sounds_survive_slip() {
         // Full context stays at its natural rate: (176400 - 4410) / 44100 * 30
         // is 117 frames. Only the selected [1, 2) interval is audible in root.
         let sound = SoundEvent {
+            tail_sends: Default::default(),
             owner: id("root"),
             label: "Sound".into(),
             source: source(&base).audio.clone().unwrap(),

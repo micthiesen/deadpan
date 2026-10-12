@@ -2120,7 +2120,11 @@ impl DeadpanApp {
             Action::RoleRepeat { role, plays, trim } => {
                 self.role_repeat(role, plays, trim, self.capture_macro_target())
             }
-            Action::Tail { length, effect } => self.apply_tail(length, effect),
+            Action::Tail {
+                length,
+                effect,
+                input,
+            } => self.apply_tail(self.capture_macro_target(), length, effect, input),
             Action::SaveFraming(name) => self.save_framing_preset(name),
             Action::Framing(action) => self.framing_action(action, context),
             Action::New => self.begin_dialog(DialogKind::CreateProject, context, false),
@@ -3015,6 +3019,20 @@ impl DeadpanApp {
             }
         }
         match command {
+            Ok(navigation::command::Entry::Action(Action::Tail {
+                length,
+                effect,
+                input,
+            })) => {
+                self.apply_tail(
+                    macro_target.unwrap_or_else(|| {
+                        Err("No tail target was captured on command entry.".into())
+                    }),
+                    length,
+                    effect,
+                    input,
+                );
+            }
             Ok(navigation::command::Entry::Group { label }) => {
                 self.group_command(macro_target, Some(label));
             }
@@ -3126,6 +3144,9 @@ impl DeadpanApp {
             }
             Ok(navigation::command::Entry::Balance(balance)) => {
                 self.balance_command(gain_target, macro_target, balance)
+            }
+            Ok(navigation::command::Entry::TailSend { effect, level }) => {
+                self.tail_send_command(gain_target, macro_target, effect, level)
             }
             Ok(navigation::command::Entry::Equalizer(recipe)) => {
                 self.equalizer_command(gain_target, macro_target, recipe)

@@ -58,10 +58,14 @@ impl Inspector {
                         ),
                     },
                 ));
-                if matches!(recipe.audio, HoldAudio::Tail { .. }) {
-                    // The tail is fed live by what is heard before it, so
-                    // edits there change it.
-                    fields.push(("Tail of", "Live 2 s before".into()));
+                if let HoldAudio::Tail { input, .. } = recipe.audio {
+                    fields.push((
+                        "Tail of",
+                        match input {
+                            deadpan_core::TailInput::Original => "Live 2 s before".into(),
+                            deadpan_core::TailInput::Sends => "Selected sends · 2 s before".into(),
+                        },
+                    ));
                 }
                 if recipe.picture_context.is_some() {
                     fields.push(("Captured view", "Framing preserved".into()));

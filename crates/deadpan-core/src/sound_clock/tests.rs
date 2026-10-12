@@ -88,6 +88,7 @@ fn fixture() -> ProjectDocument {
         BTreeMap::from([(
             sound("effect"),
             BeatSound {
+                tail_sends: Default::default(),
                 label: "Effect".into(),
                 source: SourceAudio { asset, span },
                 mapping: SourceAudioMapping::natural_rate(span, doc.presentation_basis.frame_rate)

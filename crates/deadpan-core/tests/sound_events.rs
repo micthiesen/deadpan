@@ -127,6 +127,7 @@ fn event(document: &ProjectDocument) -> SoundEvent {
         SourceAudioMapping::natural_rate(source.span, document.presentation_basis().frame_rate)
             .unwrap();
     SoundEvent {
+        tail_sends: Default::default(),
         owner: node("root"),
         label: "Clang".into(),
         source,

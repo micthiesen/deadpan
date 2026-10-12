@@ -1,5 +1,13 @@
 # Sound events and scoped audio mixing
 
+Selected root and attached sounds carry independent reverb/delay `tail_sends`.
+Native `:sound-tail-send reverb|delay -6dB|off` edits the captured placed sound
+through `SetSound`, retaining routes, placement, gain, edges and Hold allowances.
+The tap follows event gain and edges; a later `:tail input=sends` pause admits
+only matching sends. This does not grant direct audio under silent Holds or
+create an ordinary continuous wet return. See
+[selected tails](REVERSE_AND_TAILS.md#selected-sends).
+
 External sound effects must become editable sound events over the existing edit.
 Catalog import retains and qualifies audio-only sources. Catalog audition uses
 the shared playback engine; it does not place an event. The complete requirement remains in specification Sections 4.2,

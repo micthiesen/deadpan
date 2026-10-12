@@ -861,6 +861,7 @@ fn missing_and_zero_gaps_are_rejected_and_a_tail_gap_definition_is_silent() {
             Some(gap(
                 3,
                 HoldAudio::Tail {
+                    input: Default::default(),
                     maximum: FrameDuration::new(2).unwrap(),
                     effect: Default::default(),
                 },

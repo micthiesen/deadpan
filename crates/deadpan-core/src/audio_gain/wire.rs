@@ -242,6 +242,8 @@ pub(super) struct Treatments {
     balance: Option<StereoBalance>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     equalizer: Option<crate::EqualizerRecipe>,
+    #[serde(default, skip_serializing_if = "crate::TailSends::is_empty")]
+    tail_sends: crate::TailSends,
 }
 impl TryFrom<Treatments> for AudioTreatments {
     type Error = GainError;
@@ -253,6 +255,7 @@ impl TryFrom<Treatments> for AudioTreatments {
             value.balance,
             value.equalizer,
         )
+        .map(|recipe| recipe.with_tail_sends(value.tail_sends))
     }
 }
 impl From<AudioTreatments> for Treatments {
@@ -263,6 +266,7 @@ impl From<AudioTreatments> for Treatments {
             saturation: value.saturation,
             balance: value.balance,
             equalizer: value.equalizer,
+            tail_sends: value.tail_sends,
         }
     }
 }

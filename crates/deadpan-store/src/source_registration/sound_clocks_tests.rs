@@ -162,6 +162,7 @@ fn fixture() -> (Connection, ProjectDocument, SourceQualificationReceipt) {
             BTreeMap::from([(
                 sound(),
                 BeatSound {
+                    tail_sends: Default::default(),
                     label: owner.into(),
                     source: SourceAudio {
                         asset: asset.clone(),

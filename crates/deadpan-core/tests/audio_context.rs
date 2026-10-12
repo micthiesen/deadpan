@@ -4,6 +4,61 @@ use deadpan_core::*;
 use serde_json::{Value, json};
 
 #[test]
+fn tail_sends_are_authenticated_and_require_context_schema_11() {
+    let base = fixture(AudioSample(0), SourceAudioMapping::FitBeat);
+    let treated = edit(
+        &base,
+        Command::SetAudioTreatments {
+            node: node("source"),
+            treatments: AudioTreatments::default().with_tail_sends(
+                TailSends::default()
+                    .with_level(TailEffect::Delay, Some(GainDb::new(-6000).unwrap())),
+            ),
+        },
+    );
+    let context = FrozenAudioContext::capture(&treated).unwrap();
+    assert!(context.matches_document(&treated).unwrap());
+    assert!(!context.matches_document(&base).unwrap());
+    assert_eq!(
+        FrozenAudioContext::from_json(&context.to_json().unwrap()).unwrap(),
+        context
+    );
+    let mut old = serde_json::to_value(context).unwrap();
+    old["schema_version"] = json!(10);
+    assert!(
+        FrozenAudioContext::from_json(&old.to_string())
+            .unwrap_err()
+            .to_string()
+            .contains("selected tail sends")
+    );
+
+    let mut wire = serde_json::to_value(&base).unwrap();
+    wire["nodes"]["source"] = serde_json::to_value(BeatNode::hold(
+        "Tail",
+        HoldRecipe {
+            duration: frames(10),
+            video: HoldVideo::Background,
+            picture_context: None,
+            audio: HoldAudio::Tail {
+                maximum: frames(10),
+                effect: TailEffect::Reverb,
+                input: TailInput::Sends,
+            },
+        },
+    ))
+    .unwrap();
+    let tail = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    let context = FrozenAudioContext::capture(&tail).unwrap();
+    assert_eq!(
+        FrozenAudioContext::from_json(&context.to_json().unwrap()).unwrap(),
+        context
+    );
+    let mut old = serde_json::to_value(context).unwrap();
+    old["schema_version"] = json!(10);
+    assert!(FrozenAudioContext::from_json(&old.to_string()).is_err());
+}
+
+#[test]
 fn editorial_edges_survive_context_capture_with_closed_historical_vocabulary() {
     let before = fixture(AudioSample(0), SourceAudioMapping::FitBeat);
     let original = FrozenAudioContext::capture(&before).unwrap();
@@ -365,7 +420,7 @@ fn selected_context_keeps_full_phase_mapping_and_captures_only_its_audible_exten
         context
     );
     let mut wire = serde_json::to_value(context).unwrap();
-    assert_eq!(wire["schema_version"], json!(10));
+    assert_eq!(wire["schema_version"], json!(11));
     wire["schema_version"] = json!(1);
     assert!(FrozenAudioContext::from_json(&wire.to_string()).is_err());
     let escaped = wire
@@ -398,7 +453,7 @@ fn ingress_rejects_open_or_inconsistent_inventory() {
         FrozenAudioContext::capture(&fixture(AudioSample(0), SourceAudioMapping::FitBeat)).unwrap();
     let mut value: Value = serde_json::from_str(&context.to_json().unwrap()).unwrap();
     let baseline = value.clone();
-    value["schema_version"] = json!(11);
+    value["schema_version"] = json!(baseline["schema_version"].as_u64().unwrap() + 1);
     assert_eq!(
         FrozenAudioContext::from_json(&value.to_string())
             .unwrap_err()
@@ -447,8 +502,8 @@ fn ingress_rejects_open_or_inconsistent_inventory() {
         DocumentErrorCode::LimitExceeded
     );
     let duplicate = context.to_json().unwrap().replacen(
-        "\"schema_version\":10",
-        "\"schema_version\":10,\"schema_version\":10",
+        "\"schema_version\":11",
+        "\"schema_version\":11,\"schema_version\":11",
         1,
     );
     assert!(FrozenAudioContext::from_json(&duplicate).is_err());
@@ -749,7 +804,7 @@ fn dormant_context_keeps_input_asset_offset_and_distinguishes_absent_audio() {
         context
     );
     let wire = serde_json::to_value(&context).unwrap();
-    assert_eq!(wire["schema_version"], json!(10));
+    assert_eq!(wire["schema_version"], json!(11));
     for version in 1..=4 {
         let mut forged = wire.clone();
         forged["schema_version"] = json!(version);
@@ -805,10 +860,12 @@ fn reverse_tone_and_live_tail_need_context_schema_seven() {
             level: GainDb::new(-10_000).unwrap(),
         },
         HoldAudio::Tail {
+            input: Default::default(),
             maximum: frames(2),
             effect: TailEffect::Reverb,
         },
         HoldAudio::Tail {
+            input: Default::default(),
             maximum: frames(2),
             effect: TailEffect::Delay,
         },
@@ -863,7 +920,7 @@ fn equalizer_is_authenticated_and_requires_context_schema_10() {
         context
     );
     let mut wire = serde_json::to_value(&context).unwrap();
-    assert_eq!(wire["schema_version"], json!(10));
+    assert_eq!(wire["schema_version"], json!(11));
     wire["schema_version"] = json!(9);
     let error = FrozenAudioContext::from_json(&wire.to_string()).unwrap_err();
     assert!(error.to_string().contains("cannot contain EQ"), "{error}");
@@ -929,7 +986,7 @@ fn pitch_shifts_and_saturation_need_context_schema_8_and_validate_their_shape() 
         context
     );
     let wire = serde_json::to_value(&context).unwrap();
-    assert_eq!(wire["schema_version"], json!(10));
+    assert_eq!(wire["schema_version"], json!(11));
     let mut old = wire.clone();
     old["schema_version"] = json!(7);
     assert!(FrozenAudioContext::from_json(&old.to_string()).is_err());

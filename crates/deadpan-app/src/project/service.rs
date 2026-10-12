@@ -887,6 +887,23 @@ impl Service {
                     "Sound placed and saved",
                 )
             }
+            ProjectSoundEdit::TailSend { id, effect, level } => {
+                let mut event = workspace
+                    .document
+                    .sounds()
+                    .get(&id)
+                    .cloned()
+                    .ok_or("The selected sound no longer exists.")?;
+                event.tail_sends = event.tail_sends.with_level(effect, level);
+                (
+                    Command::SetSound {
+                        id: id.clone(),
+                        event,
+                    },
+                    Some(id),
+                    "Sound tail send saved",
+                )
+            }
             ProjectSoundEdit::Update {
                 id,
                 gain_millidecibels,

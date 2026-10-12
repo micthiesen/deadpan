@@ -987,6 +987,7 @@ fn hold_policies_and_repeat_gap_metadata_remain_explicit_in_signal_queries() {
                     hold_recipe(
                         4,
                         HoldAudio::Tail {
+                            input: Default::default(),
                             maximum: duration(2),
                             effect: Default::default(),
                         },
@@ -1026,6 +1027,7 @@ fn hold_policies_and_repeat_gap_metadata_remain_explicit_in_signal_queries() {
     assert_eq!(
         query.spans[3].content,
         AudioSignalContent::Leaf(AudioContent::Tail {
+            input: Default::default(),
             maximum: duration(2),
             effect: Default::default(),
             duration: duration(4),

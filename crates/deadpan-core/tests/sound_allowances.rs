@@ -158,6 +158,7 @@ fn fixture(repeated: bool) -> ProjectDocument {
         Command::SetSound {
             id: sound(),
             event: SoundEvent {
+                tail_sends: Default::default(),
                 owner: node("root"),
                 label: "Effect".into(),
                 source: SourceAudio {

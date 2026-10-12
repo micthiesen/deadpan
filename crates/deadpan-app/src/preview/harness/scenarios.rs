@@ -28,6 +28,7 @@ pub(super) fn run(name: &str, d: &mut Driver<'_>) -> Result<(), String> {
         "gags" => super::gags::run(d),
         "recipes" => super::recipes::run(d),
         "hold-effects" => super::hold_effects::run(d),
+        "tail-sends" => super::tail_sends::run(d),
         "audio-treatments" => super::audio_treatments::run(d),
         "equalizer" => super::equalizer::run(d),
         "split-edits" => super::split_edits::run(d),

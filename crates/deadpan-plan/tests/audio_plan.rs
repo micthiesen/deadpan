@@ -998,6 +998,7 @@ fn hold_policies_and_absent_source_audio_remain_distinct() {
                     hold_recipe(
                         4,
                         HoldAudio::Tail {
+                            input: Default::default(),
                             maximum: duration(3),
                             effect: Default::default(),
                         },
@@ -1025,6 +1026,7 @@ fn hold_policies_and_absent_source_audio_remain_distinct() {
                 duration: duration(5)
             },
             AudioContent::Tail {
+                input: Default::default(),
                 maximum: duration(3),
                 effect: Default::default(),
                 duration: duration(4),

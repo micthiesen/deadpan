@@ -154,6 +154,8 @@ impl<'plan> SharedMix<'plan> {
         stop: Option<Boundary>,
         output_voice: Option<usize>,
         separate: bool,
+        sends: Option<deadpan_core::TailEffect>,
+        skip: &[authored_gain::OwnerIdentity],
     ) -> Self {
         Self {
             start,
@@ -163,8 +165,8 @@ impl<'plan> SharedMix<'plan> {
             buses: Vec::new(),
             sum: Vec::new(),
             permissions: Vec::new(),
-            components: shared_components::Components::new(start, frames),
-            separate: separate || output_voice.is_some(),
+            components: shared_components::Components::new(start, frames, sends, skip),
+            separate: separate || output_voice.is_some() || sends.is_some(),
             output_voice,
         }
     }
@@ -173,7 +175,7 @@ impl<'plan> SharedMix<'plan> {
         &mut self,
         owners: &[AudioOwnerClock<'plan>],
         range: Range<AudioSample>,
-        voice: usize,
+        voice: (usize, deadpan_core::TailSends),
         control: WorkControl<'_>,
     ) -> Result<Route<'plan>, StageAudioError> {
         deadpan_core::validate_audio_treatment_layers(

@@ -46,6 +46,7 @@ fn fixture() -> ProjectDocument {
         Command::SetSound {
             id: SoundId::new("effect").unwrap(),
             event: SoundEvent {
+                tail_sends: Default::default(),
                 owner: id("root"),
                 label: "Retained root effect".into(),
                 source: audio(100..20_100),

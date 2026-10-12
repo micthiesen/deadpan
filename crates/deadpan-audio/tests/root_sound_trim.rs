@@ -167,6 +167,7 @@ impl AudioSourceProvider for Provider {
 fn event(fixture: Fixture, selection: ExactFrameRange, offset: i64) -> SoundEvent {
     let source = fixture.source();
     SoundEvent {
+        tail_sends: Default::default(),
         owner: node("root"),
         label: "Retained sound".into(),
         mapping: SourceAudioMapping::SelectedPlacement {

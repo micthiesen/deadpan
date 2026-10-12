@@ -316,6 +316,9 @@ impl DeadpanApp {
                 crate::project::sound::cut(workspace, &id, at)?;
                 return Ok(Some(ProjectSoundEdit::Cut { id, at }));
             }
+            SoundAction::TailSend { effect, level } => {
+                return Ok(Some(ProjectSoundEdit::TailSend { id, effect, level }));
+            }
             SoundAction::Gain(value) => (value, event.start_edge, event.end_edge),
             SoundAction::GainStep(delta) => (
                 event
@@ -557,6 +560,17 @@ impl DeadpanApp {
                         self.pane = Pane::Inspector;
                         self.open_command(format!("sound-gain {}", gain_label(event.gain_millidecibels)), ui.ctx());
                     }
+                    ui.label("Tail sends");
+                    for effect in [deadpan_core::TailEffect::Reverb, deadpan_core::TailEffect::Delay] {
+                        let level = event.tail_sends.level(effect).map_or_else(|| "off".into(), |gain| format!("{}dB", crate::gain::format_db(gain)));
+                        let response = ui.add_enabled(ready, style::row_action(ui, format!("{} send: {level}", effect.name()), ":sound-tail-send"));
+                        if response.gained_focus() { response.scroll_to_me_animation(None, egui::style::ScrollAnimation::none()); }
+                        if response.clicked() {
+                            self.pane = Pane::Inspector;
+                            self.open_command(format!("sound-tail-send {} {level}", effect.name()), ui.ctx());
+                        }
+                    }
+                    ui.weak("Rings only in a later :tail input=sends pause.");
                     ui.label("Edges");
                     ui.horizontal(|ui| {
                         for (label, edge) in [("Soft", AudioEdgePolicy::Automatic), ("Hard", AudioEdgePolicy::Hard)] {
@@ -607,6 +621,9 @@ pub(super) fn command_hint(command: &str) -> Option<&'static str> {
     match verb.to_ascii_lowercase().as_str() {
         "sound-at" => Some("Position: whole 48 kHz samples · 48,000 = 1 second"),
         "sound-gain" => Some("Gain: −96 to +24 dB · up to 3 decimal places"),
+        "tail-send" | "sound-tail-send" => {
+            Some("reverb|delay −96 to +24 dB or off · heard only in :tail input=sends pauses")
+        }
         "sound-edges" => Some("Edges: soft or hard · retained timing stays intact"),
         "sound-delete" => Some("Remove selected sound · picture time stays intact"),
         "sound-cut" => {

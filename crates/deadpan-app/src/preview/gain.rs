@@ -696,6 +696,45 @@ impl DeadpanApp {
         self.audio_draft_command(target, None, true, context);
     }
 
+    pub(super) fn tail_send_command(
+        &mut self,
+        target: Option<Result<Target, String>>,
+        macro_target: Option<Result<super::macros::Capture, String>>,
+        effect: deadpan_core::TailEffect,
+        level: Option<deadpan_core::GainDb>,
+    ) {
+        if let Some(Ok(captured)) = &target
+            && captured.scoped.is_none()
+        {
+            self.record_audio_change(
+                target,
+                macro_target,
+                deadpan_core::AudioChange::TailSend { effect, level },
+            );
+            return;
+        }
+        if self.macros.recording() {
+            self.error = Some(
+                "Recording changes a whole beat's send; leave the play scope with :scope all."
+                    .into(),
+            );
+            return;
+        }
+        let result = target
+            .unwrap_or_else(|| Err("No beat was captured on command entry.".into()))
+            .map(|target| {
+                let treatments = target
+                    .entry
+                    .clone()
+                    .with_tail_sends(target.entry.tail_sends().with_level(effect, level));
+                (target, treatments)
+            });
+        match result {
+            Ok((target, treatments)) => self.commit_gain(target, treatments),
+            Err(error) => self.error = Some(error),
+        }
+    }
+
     pub(super) fn equalizer_command(
         &mut self,
         target: Option<Result<Target, String>>,
@@ -1332,6 +1371,28 @@ impl DeadpanApp {
         {
             self.open_equalizer(Some(Ok(target)), ui.ctx());
         }
+        ui.label("Tail sends");
+        for effect in [
+            deadpan_core::TailEffect::Reverb,
+            deadpan_core::TailEffect::Delay,
+        ] {
+            let level = edit.recipe().tail_sends().level(effect).map_or_else(
+                || "off".into(),
+                |gain| format!("{}dB", crate::gain::format_db(gain)),
+            );
+            let command = format!("tail-send {} {level}", effect.name());
+            if ui
+                .add_enabled(
+                    ready && self.gain.is_none(),
+                    style::row_action(ui, format!("{}: {level}", effect.name()), ":tail-send"),
+                )
+                .reveal_on_focus()
+                .clicked()
+            {
+                self.open_command(command, ui.ctx());
+            }
+        }
+        ui.weak("Rings only in a later :tail input=sends pause.");
     }
 }
 

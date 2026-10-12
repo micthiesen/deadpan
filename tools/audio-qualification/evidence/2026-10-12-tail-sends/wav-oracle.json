@@ -1,0 +1,16 @@
+{
+  "source": "native/deadpan-source/tests/audio-fixtures/pcm-stereo-48000.wav",
+  "sha256": "e79aba90eab42dc057171be52be9ecb794c3e2790c5731783270ece73c24d2ee",
+  "sample_rate": 48000,
+  "source_window": [
+    1584,
+    2096
+  ],
+  "source_peak": 0.75,
+  "send_db": -6,
+  "expected_first_echo_peak_before_reconstruction_filter": 0.3758904252204542,
+  "fixture_bounds": [
+    0.37,
+    0.39
+  ]
+}

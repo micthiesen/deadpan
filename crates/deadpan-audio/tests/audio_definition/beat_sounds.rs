@@ -9,6 +9,7 @@ mod sound_clocks;
 fn saved(document: &ProjectDocument, owner: &str, length: i64) -> ProjectDocument {
     let recipe = voice_recipe(document.presentation_basis().frame_rate, length);
     let event = BeatSound {
+        tail_sends: Default::default(),
         label: "Owned effect".into(),
         source: recipe.source,
         mapping: recipe.mapping,

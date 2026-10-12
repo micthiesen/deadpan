@@ -88,6 +88,7 @@ fn planned(
         span: span(sound_samples),
     };
     let sound = SoundEvent {
+        tail_sends: Default::default(),
         owner: node("root"),
         label: "Authored effect".into(),
         mapping: SourceAudioMapping::natural_rate(source.span, rate).unwrap(),

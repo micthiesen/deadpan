@@ -2244,6 +2244,7 @@ impl StageAudio {
             maximum,
             effect,
             duration,
+            input: tail_input,
         } = content
         {
             let origin = origin.ok_or(PlanError::InvalidPlan("tail origin"))?;
@@ -2281,14 +2282,34 @@ impl StageAudio {
                 while cursor.0 < origin.0 {
                     // The root reader, resampler, edge and bound readers all
                     // work in blocks of at most MAX_OUTPUT_FRAMES.
-                    let maximum = if plan.has_audio_equalizers() {
+                    let maximum = if plan.has_audio_equalizers()
+                        || *tail_input == deadpan_core::TailInput::Sends
+                    {
                         i64::from(MAX_EDGE_PREPARATION_FRAMES)
                     } else {
                         i64::from(MAX_OUTPUT_FRAMES)
                     };
                     let count = u32::try_from((origin.0 - cursor.0).min(maximum))
                         .map_err(|_| StageAudioError::Range)?;
-                    let (block, heard) = if plan.has_audio_equalizers() {
+                    let (block, heard) = if *tail_input == deadpan_core::TailInput::Sends {
+                        let block = self.read_shared_input(
+                            provider,
+                            cursor,
+                            count,
+                            control,
+                            shared_eq::InputSelection {
+                                depth: depth + 1,
+                                sends: Some(effect),
+                                skip: &shared,
+                            },
+                        )?;
+                        let heard = block
+                            .samples
+                            .iter()
+                            .map(|frame| frame.map(f64::from))
+                            .collect();
+                        (block, heard)
+                    } else if plan.has_audio_equalizers() {
                         let block = self.read_authored_equalizers(
                             provider,
                             cursor,

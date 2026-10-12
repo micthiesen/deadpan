@@ -949,7 +949,7 @@ fn split_occurrence_fragments_receive_loss_only_after_the_final_survivor_exists(
 fn with_sound(d: &ProjectDocument, issuer: Option<SoundHoldIssuer>) -> ProjectDocument {
     let sound = SoundId::new("sound").unwrap();
     modify(d, |v| {
-        v["sounds"] = json!({"sound":SoundEvent{owner:id("root"),label:"Root bus".into(),source:source(d,"left").audio.clone().unwrap(),mapping:SourceAudioMapping::SelectedPlacement{start:ratio(0,1),frames:ratio(100,1),selection:ExactFrameRange::new(ratio(0,1),ExactRatio::integer(d.duration().unwrap().frames())).unwrap()},offset:AudioSample(0),gain_millidecibels:0,start_edge:AudioEdgePolicy::Automatic,end_edge:AudioEdgePolicy::Hard,overflow:SoundOverflowPolicy::Reject}});
+        v["sounds"] = json!({"sound":SoundEvent{ tail_sends: Default::default(), owner:id("root"),label:"Root bus".into(),source:source(d,"left").audio.clone().unwrap(),mapping:SourceAudioMapping::SelectedPlacement{start:ratio(0,1),frames:ratio(100,1),selection:ExactFrameRange::new(ratio(0,1),ExactRatio::integer(d.duration().unwrap().frames())).unwrap()},offset:AudioSample(0),gain_millidecibels:0,start_edge:AudioEdgePolicy::Automatic,end_edge:AudioEdgePolicy::Hard,overflow:SoundOverflowPolicy::Reject}});
         v["sound_routes"] = serde_json::to_value(std::collections::BTreeMap::from([(
             sound.clone(),
             RootSoundRoute::identity(d.duration().unwrap(), d.presentation_basis().frame_rate),

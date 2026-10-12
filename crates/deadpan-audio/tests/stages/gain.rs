@@ -568,6 +568,7 @@ fn with_sound(document: &ProjectDocument) -> ProjectDocument {
     wire["assets"]["media"] = serde_json::to_value(asset).unwrap();
     let source = audio(0, 256);
     let event = SoundEvent {
+        tail_sends: Default::default(),
         owner: id("root"),
         label: "Independent sound".into(),
         mapping: SourceAudioMapping::natural_rate(
@@ -596,6 +597,7 @@ fn with_owned_sound(
     let mut wire = serde_json::to_value(document).unwrap();
     let source = audio(0, frames);
     let event = BeatSound {
+        tail_sends: Default::default(),
         label: "Group contribution".into(),
         mapping: SourceAudioMapping::natural_rate(
             source.span,

@@ -45,6 +45,8 @@ pub enum ReferenceAudibility {
         maximum: FrameDuration,
         #[serde(skip_serializing_if = "crate::TailEffect::is_reverb")]
         effect: crate::TailEffect,
+        #[serde(skip_serializing_if = "crate::TailInput::is_original")]
+        input: crate::TailInput,
     },
     /// Source audio played backwards from the Hold's start.
     Reverse,
@@ -64,6 +66,8 @@ enum AudibilityWire {
         maximum: FrameDuration,
         #[serde(default)]
         effect: crate::TailEffect,
+        #[serde(default)]
+        input: crate::TailInput,
     },
     Reverse {},
     Tone {
@@ -77,7 +81,15 @@ impl<'de> Deserialize<'de> for ReferenceAudibility {
         let audio = match AudibilityWire::deserialize(deserializer)? {
             AudibilityWire::Silence {} => Self::Silence,
             AudibilityWire::RoomTone {} => Self::RoomTone,
-            AudibilityWire::Tail { maximum, effect } => Self::Tail { maximum, effect },
+            AudibilityWire::Tail {
+                maximum,
+                effect,
+                input,
+            } => Self::Tail {
+                maximum,
+                effect,
+                input,
+            },
             AudibilityWire::Reverse {} => Self::Reverse,
             AudibilityWire::Tone {
                 frequency_hz,
@@ -125,10 +137,13 @@ impl From<&HoldAudio> for ReferenceAudibility {
             HoldAudio::Silence => Self::Silence,
             HoldAudio::RoomTone { .. } => Self::RoomTone,
             HoldAudio::Tail {
-                maximum, effect, ..
+                maximum,
+                effect,
+                input,
             } => Self::Tail {
                 maximum: *maximum,
                 effect: *effect,
+                input: *input,
             },
             HoldAudio::Reverse { .. } => Self::Reverse,
             HoldAudio::Tone {
@@ -2559,6 +2574,7 @@ mod scoped_capture_tests {
             },
             FrozenAudioKind::Hold {
                 audio: ReferenceAudibility::Tail {
+                    input: Default::default(),
                     maximum: FrameDuration::new(i64::MAX).unwrap(),
                     effect: crate::TailEffect::Delay,
                 },
@@ -2587,6 +2603,7 @@ mod scoped_capture_tests {
                 iterations: iterations.clone(),
                 gap_duration: FrameDuration::new(i64::MAX).unwrap(),
                 gap_audio: ReferenceAudibility::Tail {
+                    input: Default::default(),
                     maximum: FrameDuration::new(i64::MAX).unwrap(),
                     effect: crate::TailEffect::Delay,
                 },

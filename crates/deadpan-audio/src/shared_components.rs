@@ -16,6 +16,7 @@ struct Sample {
 
 struct Route<'plan> {
     voice: usize,
+    sends: deadpan_core::TailSends,
     layers: Vec<(AudioOwnerClock<'plan>, usize)>,
     samples: Range<usize>,
     pcm: Vec<Sample>,
@@ -28,6 +29,7 @@ struct Owner<'plan> {
     members: Vec<(usize, usize)>,
     clock: AudioOwnerClock<'plan>,
     until: usize,
+    skipped: bool,
 }
 
 pub(super) struct Components<'plan> {
@@ -35,21 +37,30 @@ pub(super) struct Components<'plan> {
     frames: usize,
     routes: Vec<Route<'plan>>,
     owners: BTreeMap<OwnerKey, Owner<'plan>>,
+    send: Option<deadpan_core::TailEffect>,
+    skip: Vec<authored_gain::OwnerIdentity>,
 }
 
 impl<'plan> Components<'plan> {
-    pub(super) fn new(start: AudioSample, frames: u32) -> Self {
+    pub(super) fn new(
+        start: AudioSample,
+        frames: u32,
+        send: Option<deadpan_core::TailEffect>,
+        skip: &[authored_gain::OwnerIdentity],
+    ) -> Self {
         Self {
             start,
             frames: frames as usize,
             routes: Vec::new(),
             owners: BTreeMap::new(),
+            send,
+            skip: skip.to_vec(),
         }
     }
 
     pub(super) fn route(
         &mut self,
-        voice: usize,
+        voice: (usize, deadpan_core::TailSends),
         layers: Vec<(AudioOwnerClock<'plan>, usize)>,
         samples: Range<usize>,
         control: WorkControl<'_>,
@@ -58,6 +69,8 @@ impl<'plan> Components<'plan> {
         let mut parent = None;
         for (depth, (clock, until)) in layers.iter().enumerate() {
             control.spend_plan_work(1)?;
+            let skipped = self.skip.contains(&authored_gain::identity(clock));
+            let until = if skipped { 0 } else { *until };
             let key = OwnerKey::new(clock);
             if let Some(owner) = self.owners.get_mut(&key) {
                 if owner.parent != parent || owner.depth != depth {
@@ -67,7 +80,8 @@ impl<'plan> Components<'plan> {
                 let old = owner.clock.treatments();
                 // Only gain clocks may differ. Common stages need one recipe
                 // and stage position, even when no delivery ranges overlap.
-                if owner.until != *until
+                if owner.until != until
+                    || owner.skipped != skipped
                     || old.map(|r| r.order()) != recipe.map(|r| r.order())
                     || old.and_then(|r| r.saturation()) != recipe.and_then(|r| r.saturation())
                     || old.and_then(|r| r.equalizer()) != recipe.and_then(|r| r.equalizer())
@@ -83,14 +97,16 @@ impl<'plan> Components<'plan> {
                         depth,
                         members: vec![(id, depth)],
                         clock: clock.clone(),
-                        until: *until,
+                        until,
+                        skipped,
                     },
                 );
             }
             parent = Some(key);
         }
         self.routes.push(Route {
-            voice,
+            voice: voice.0,
+            sends: voice.1,
             layers,
             samples,
             pcm: Vec::new(),
@@ -110,6 +126,13 @@ impl<'plan> Components<'plan> {
             .len()
             .checked_mul(per_route)
             .and_then(|n| n.checked_add(self.frames * std::mem::size_of::<[f64; 2]>()))
+            .and_then(|n| {
+                n.checked_add(if self.send.is_some() {
+                    authored_gain::GainSum::maximum_bytes()
+                } else {
+                    0
+                })
+            })
             .ok_or(StageAudioError::Limit("contribution mix residency"))?;
         Ok((bytes as u64).div_ceil(std::mem::size_of::<[f32; 2]>() as u64))
     }
@@ -168,6 +191,7 @@ impl<'plan> Components<'plan> {
         for (at, result) in output.iter_mut().enumerate() {
             control.check()?;
             let sample = AudioSample(self.start.0 + at as i64);
+            let mut sent = [0.0; 2];
             for (id, route) in self.routes.iter().enumerate() {
                 gains[id] = authored_gain::beat_sound_gain(
                     &[],
@@ -176,6 +200,15 @@ impl<'plan> Components<'plan> {
                     control,
                     false,
                 )?;
+                if route.pcm[at].permitted
+                    && let Some(level) = self.send.and_then(|effect| route.sends.level(effect))
+                {
+                    control.spend_plan_work(1)?;
+                    let value = gains[id].send_sample(route.pcm[at].value, level)?;
+                    for ch in 0..2 {
+                        sent[ch] += value[ch];
+                    }
+                }
             }
             for owner in &owners {
                 let active = |id: usize| self.routes[id].pcm[at].permitted;
@@ -189,7 +222,7 @@ impl<'plan> Components<'plan> {
                     continue;
                 }
                 for &(id, layer) in &owner.members {
-                    if active(id) {
+                    if active(id) && !owner.skipped {
                         gains[id].owner_slice(
                             &self.routes[id].layers[layer].0,
                             sample,
@@ -293,6 +326,23 @@ impl<'plan> Components<'plan> {
                         }
                     }
                 }
+                if let Some(effect) = self.send {
+                    for &(id, layer) in &owner.members {
+                        let route = &self.routes[id];
+                        if route.pcm[at].permitted
+                            && let Some(level) = route.layers[layer]
+                                .0
+                                .treatments()
+                                .and_then(|recipe| recipe.tail_sends().level(effect))
+                        {
+                            control.spend_plan_work(1)?;
+                            let value = gains[id].send_sample(route.pcm[at].value, level)?;
+                            for ch in 0..2 {
+                                sent[ch] += value[ch];
+                            }
+                        }
+                    }
+                }
             }
             let mut permitted = false;
             for (id, route) in self.routes.iter().enumerate() {
@@ -308,6 +358,12 @@ impl<'plan> Components<'plan> {
             }
             if result.iter().any(|value| !value.is_finite()) {
                 return Err(PreparationError::InvalidSamples.into());
+            }
+            if self.send.is_some() {
+                if sent.iter().any(|value| !value.is_finite()) {
+                    return Err(PreparationError::InvalidSamples.into());
+                }
+                *result = sent;
             }
             if !permitted {
                 suppressed.push(sample..AudioSample(sample.0 + 1));

@@ -35,6 +35,7 @@ fn event(document: &ProjectDocument) -> Result<BeatSound> {
         },
     )?;
     Ok(BeatSound {
+        tail_sends: Default::default(),
         label: "Owned overlay".into(),
         source: SourceAudio { asset, span },
         mapping: SourceAudioMapping::natural_rate(span, document.presentation_basis().frame_rate)?,

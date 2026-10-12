@@ -184,6 +184,7 @@ fn input_retains_sound_while_output_applies_only_current_silent_holds() {
                 hold(
                     2,
                     HoldAudio::Tail {
+                        input: Default::default(),
                         maximum: frames(2),
                         effect: Default::default(),
                     },

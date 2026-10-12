@@ -302,6 +302,7 @@ fn combined_ripple_appends_one_root_map_after_a_prior_route_with_exact_44100_pha
     let full = audio(0..44117);
     let sound = SoundId::new("effect").unwrap();
     wire["sounds"]["effect"] = serde_json::to_value(SoundEvent {
+        tail_sends: Default::default(),
         owner: id("root"),
         label: "Prior routed sound".into(),
         source: full.clone(),

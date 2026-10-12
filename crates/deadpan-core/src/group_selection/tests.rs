@@ -428,6 +428,7 @@ fn with_sound(mut document: ProjectDocument) -> ProjectDocument {
     document.sounds.insert(
         sound.clone(),
         SoundEvent {
+            tail_sends: Default::default(),
             owner: node("root"),
             label: "Effect".into(),
             source: SourceAudio {

@@ -3,6 +3,9 @@
 
 use super::*;
 
+#[path = "tail_sends.rs"]
+mod tail_sends;
+
 fn effect_hold(frames: i64, audio: HoldAudio) -> BeatNode {
     BeatNode::hold(
         "Effect pause",
@@ -65,6 +68,7 @@ fn tail_plan(effect: TailEffect, treatments: AudioTreatments) -> Arc<RenderPlan>
                 effect_hold(
                     20_000,
                     HoldAudio::Tail {
+                        input: Default::default(),
                         maximum: duration(16_000),
                         effect,
                     },
@@ -148,6 +152,7 @@ fn a_tail_follows_later_edits_to_the_sound_before_it() {
                 effect_hold(
                     1_000,
                     HoldAudio::Tail {
+                        input: Default::default(),
                         maximum: duration(1_000),
                         effect: TailEffect::Reverb,
                     },
@@ -169,6 +174,7 @@ fn a_tail_does_not_feed_the_next_tail() {
         effect_hold(
             frames,
             HoldAudio::Tail {
+                input: Default::default(),
                 maximum: duration(ring),
                 effect: TailEffect::Delay,
             },
@@ -290,6 +296,7 @@ fn grouped_tail(group: AudioTreatments) -> Vec<[f32; 2]> {
                 effect_hold(
                     20_000,
                     HoldAudio::Tail {
+                        input: Default::default(),
                         maximum: duration(16_000),
                         effect: TailEffect::Delay,
                     },
@@ -350,6 +357,7 @@ fn gain_shared_by_the_tail_and_the_sound_before_it_applies_once() {
 fn repeated_tail_document() -> ProjectDocument {
     let rate = FrameRate::new(48_000, 1).unwrap();
     let tail = |frames| HoldAudio::Tail {
+        input: Default::default(),
         maximum: duration(frames),
         effect: TailEffect::Reverb,
     };

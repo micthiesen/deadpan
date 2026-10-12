@@ -120,6 +120,7 @@ fn fixture() -> ProjectDocument {
         Command::SetSound {
             id: sound(),
             event: SoundEvent {
+                tail_sends: Default::default(),
                 owner: node("root"),
                 label: "Sound".into(),
                 source,
@@ -137,6 +138,34 @@ fn fixture() -> ProjectDocument {
         },
     )
     .0
+}
+
+#[test]
+fn send_edits_preserve_routed_timing_and_are_exactly_reversible() {
+    let original = fixture();
+    let (routed, _) = edit(&original, insert(&original, 30, "send-pause"));
+    assert!(!routed.sound_routes().is_empty());
+    let mut event = routed.sounds()[&sound()].clone();
+    event.tail_sends =
+        TailSends::default().with_level(TailEffect::Delay, Some(GainDb::new(-6000).unwrap()));
+    let (sent, transaction) = edit(
+        &routed,
+        Command::SetSound {
+            id: sound(),
+            event: event.clone(),
+        },
+    );
+    assert_eq!(sent.sound_routes(), routed.sound_routes());
+    assert_eq!(sent.sound_allowances(), routed.sound_allowances());
+    assert_eq!(sent.sounds()[&sound()], event);
+    assert_eq!(transaction.inverse.apply(&sent).unwrap(), routed);
+    event.gain_millidecibels = -3000;
+    let (gained, _) = edit(&sent, Command::SetSound { id: sound(), event });
+    assert_eq!(
+        gained.sounds()[&sound()].tail_sends,
+        sent.sounds()[&sound()].tail_sends
+    );
+    assert_eq!(gained.sound_routes(), routed.sound_routes());
 }
 fn insert(doc: &ProjectDocument, at: i64, name: &str) -> Command {
     Command::InsertTime {

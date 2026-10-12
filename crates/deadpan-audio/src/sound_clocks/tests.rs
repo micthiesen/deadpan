@@ -56,6 +56,7 @@ fn beat_sound(label: &str, asset: &str) -> BeatSound {
         span: source_span(),
     };
     BeatSound {
+        tail_sends: Default::default(),
         label: label.into(),
         mapping: SourceAudioMapping::natural_rate(
             source.span,

@@ -20,6 +20,7 @@ fn sound(document: &ProjectDocument) -> Result<SoundEvent> {
         },
     )?;
     Ok(SoundEvent {
+        tail_sends: Default::default(),
         owner: document.root().clone(),
         label: "Measured overlay".into(),
         source: SourceAudio {

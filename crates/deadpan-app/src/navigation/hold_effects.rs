@@ -1,7 +1,7 @@
 //! `:reverse`, `:ping-pong` and `:tail`: pauses that replay the moment before
 //! the cursor backwards, or let its sound ring on through an effect.
 
-use deadpan_core::TailEffect;
+use deadpan_core::{TailEffect, TailInput};
 
 use super::duration::DurationInput;
 
@@ -12,7 +12,7 @@ pub const DEFAULT_PING_PONG: &str = "12f";
 pub const DEFAULT_TAIL: &str = "1s";
 
 const REVERSE_USAGE: &str = "Use :reverse 8f (play the 8 frames before the cursor backwards) or :ping-pong 12f (bounce back over them without repeating the last picture).";
-const TAIL_USAGE: &str = "Use :tail 400ms effect=reverb|delay: a pause whose sound is the effect ringing on after what is heard just before it. On a selected pause the length is how long the tail rings.";
+const TAIL_USAGE: &str = "Use :tail 400ms effect=reverb|delay input=original|sends: a pause whose sound is the effect ringing on after what is heard just before it. On a selected pause the length is how long the tail rings.";
 
 /// `:reverse [D]` or `:ping-pong [D]`.
 pub fn parse_reverse(words: &[&str], bounce: bool) -> Result<DurationInput, String> {
@@ -104,9 +104,12 @@ fn hertz(value: &str) -> Result<u32, String> {
 }
 
 /// `:tail [D] [effect=reverb|delay]`.
-pub fn parse_tail(words: &[&str]) -> Result<(Option<DurationInput>, TailEffect), String> {
+pub fn parse_tail(
+    words: &[&str],
+) -> Result<(Option<DurationInput>, TailEffect, TailInput), String> {
     let mut length = None;
     let mut effect = None;
+    let mut input = None;
     for word in words {
         match word.split_once('=') {
             Some(("effect", value)) if effect.is_none() => {
@@ -117,6 +120,14 @@ pub fn parse_tail(words: &[&str]) -> Result<(Option<DurationInput>, TailEffect),
                 });
             }
             Some(("effect", _)) => return Err("Give effect= once.".into()),
+            Some(("input", value)) if input.is_none() => {
+                input = Some(match value {
+                    "original" => TailInput::Original,
+                    "sends" => TailInput::Sends,
+                    _ => return Err("input is original or sends.".into()),
+                });
+            }
+            Some(("input", _)) => return Err("Give input= once.".into()),
             Some(_) => return Err(TAIL_USAGE.into()),
             None if length.is_none() => {
                 length = Some(
@@ -126,12 +137,82 @@ pub fn parse_tail(words: &[&str]) -> Result<(Option<DurationInput>, TailEffect),
             None => return Err(TAIL_USAGE.into()),
         }
     }
-    Ok((length, effect.unwrap_or_default()))
+    Ok((
+        length,
+        effect.unwrap_or_default(),
+        input.unwrap_or_default(),
+    ))
+}
+
+/// A send only changes the selected contribution to a later explicit tail.
+pub fn parse_send(words: &[&str]) -> Result<(TailEffect, Option<deadpan_core::GainDb>), String> {
+    const USAGE: &str =
+        "Use :tail-send reverb|delay -6dB|off (or :sound-tail-send for a placed sound).";
+    let [effect, level] = words else {
+        return Err(USAGE.into());
+    };
+    let effect = match *effect {
+        "reverb" => TailEffect::Reverb,
+        "delay" => TailEffect::Delay,
+        _ => return Err(USAGE.into()),
+    };
+    let level = if *level == "off" {
+        None
+    } else {
+        Some(
+            crate::gain::parse_db(level.strip_suffix("dB").unwrap_or(level))
+                .map_err(|error| format!("{error} {USAGE}"))?,
+        )
+    };
+    Ok((effect, level))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn selected_tail_inputs_and_exact_sends_parse_without_ambiguity() {
+        use crate::navigation::{
+            Action, SoundAction,
+            command::{Entry, parse},
+        };
+        assert_eq!(
+            parse_tail(&["effect=delay", "input=sends", "1s"]),
+            Ok((
+                Some(DurationInput::parse("1s").unwrap()),
+                TailEffect::Delay,
+                TailInput::Sends
+            ))
+        );
+        for bad in [&["input=all"][..], &["input=sends", "input=original"]] {
+            assert!(parse_tail(bad).is_err());
+        }
+        let level = Some(deadpan_core::GainDb::new(-6001).unwrap());
+        assert_eq!(
+            parse("tail-send delay -6.001dB"),
+            Ok(Entry::TailSend {
+                effect: TailEffect::Delay,
+                level
+            })
+        );
+        assert_eq!(
+            parse("sound-tail-send reverb off"),
+            Ok(Entry::Action(Action::Sound(SoundAction::TailSend {
+                effect: TailEffect::Reverb,
+                level: None
+            })))
+        );
+        for bad in [
+            "tail-send",
+            "tail-send reverb",
+            "tail-send chorus 0dB",
+            "tail-send delay 24.001dB",
+            "tail-send reverb off extra",
+        ] {
+            assert!(parse(bad).is_err(), "{bad}");
+        }
+    }
 
     #[test]
     fn reverse_lengths_default_and_parse_exact_units() {
@@ -172,7 +253,8 @@ mod tests {
             parse("tail effect=delay"),
             Ok(Entry::Action(Action::Tail {
                 length: None,
-                effect: TailEffect::Delay
+                effect: TailEffect::Delay,
+                input: TailInput::Original
             }))
         );
         assert_eq!(
@@ -205,19 +287,24 @@ mod tests {
 
     #[test]
     fn tail_takes_an_optional_length_and_effect_in_any_order() {
-        assert_eq!(parse_tail(&[]), Ok((None, TailEffect::Reverb)));
+        assert_eq!(
+            parse_tail(&[]),
+            Ok((None, TailEffect::Reverb, TailInput::Original))
+        );
         assert_eq!(
             parse_tail(&["400ms", "effect=reverb"]),
             Ok((
                 Some(DurationInput::parse("400ms").unwrap()),
-                TailEffect::Reverb
+                TailEffect::Reverb,
+                TailInput::Original
             ))
         );
         assert_eq!(
             parse_tail(&["effect=delay", "12f"]),
             Ok((
                 Some(DurationInput::parse("12f").unwrap()),
-                TailEffect::Delay
+                TailEffect::Delay,
+                TailInput::Original
             ))
         );
         for bad in [

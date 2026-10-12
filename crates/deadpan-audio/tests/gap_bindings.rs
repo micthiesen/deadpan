@@ -744,6 +744,7 @@ fn moved_gap_uses_current_duration_media_and_policy_without_recapturing_phase() 
         gap(
             3,
             HoldAudio::Tail {
+                input: Default::default(),
                 maximum: frames(2),
                 effect: Default::default(),
             },

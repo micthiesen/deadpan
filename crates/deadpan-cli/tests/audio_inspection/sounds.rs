@@ -18,6 +18,7 @@ fn json_sound_command_reaches_shared_limited_bus_without_changing_picture_time()
         span: before.assets()[&asset()].audio.unwrap(),
     };
     let event = SoundEvent {
+        tail_sends: Default::default(),
         owner: before.root().clone(),
         label: "Original echo".into(),
         mapping: SourceAudioMapping::natural_rate(

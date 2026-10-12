@@ -380,6 +380,7 @@ fn with_sound(mut document: ProjectDocument) -> ProjectDocument {
     document.sounds.insert(
         SoundId::new("effect").unwrap(),
         SoundEvent {
+            tail_sends: Default::default(),
             owner: node("root"),
             label: "Effect".into(),
             source: SourceAudio { asset, span },

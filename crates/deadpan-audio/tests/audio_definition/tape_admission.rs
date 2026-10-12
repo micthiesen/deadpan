@@ -162,6 +162,7 @@ fn tape_preflights_all_runs_and_shares_preparation_limits_between_them() {
                 hold(
                     2,
                     HoldAudio::Tail {
+                        input: Default::default(),
                         maximum: frames(2),
                         effect: Default::default(),
                     },

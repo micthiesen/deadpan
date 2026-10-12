@@ -807,6 +807,11 @@ pub struct SoundCommit {
 
 #[derive(Clone, Debug)]
 pub enum ProjectSoundEdit {
+    TailSend {
+        id: SoundId,
+        effect: deadpan_core::TailEffect,
+        level: Option<deadpan_core::GainDb>,
+    },
     Place {
         asset: AssetId,
         at: AudioSample,

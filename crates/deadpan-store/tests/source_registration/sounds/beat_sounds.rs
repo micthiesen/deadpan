@@ -13,6 +13,7 @@ mod sound_clocks;
 fn event(document: &ProjectDocument) -> Result<BeatSound> {
     let root = sound(document)?;
     Ok(BeatSound {
+        tail_sends: Default::default(),
         label: root.label,
         source: root.source,
         mapping: root.mapping,

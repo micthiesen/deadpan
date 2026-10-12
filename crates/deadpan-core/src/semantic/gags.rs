@@ -636,6 +636,7 @@ impl GagRecipe {
                     black: false,
                 },
                 SemanticInstruction::Tail {
+                    input: crate::TailInput::Original,
                     length: None,
                     effect: crate::TailEffect::Reverb,
                 },

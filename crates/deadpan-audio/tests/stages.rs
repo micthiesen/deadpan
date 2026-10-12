@@ -1542,6 +1542,7 @@ fn nested_depth_and_configured_input_limits_fail_without_decoding_originals() {
 fn a_tail_inside_preserve_stages_is_an_invalid_document() {
     let rate = FrameRate::new(192_000, 1).unwrap();
     let policy = HoldAudio::Tail {
+        input: Default::default(),
         maximum: duration(1),
         effect: Default::default(),
     };

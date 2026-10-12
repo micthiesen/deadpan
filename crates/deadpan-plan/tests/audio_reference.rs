@@ -155,8 +155,12 @@ fn policy(content: &AudioContent) -> ReferenceAudioContent {
         AudioContent::Source { .. } => ReferenceAudioContent::Source,
         AudioContent::RoomTone { .. } => ReferenceAudioContent::RoomTone,
         AudioContent::Tail {
-            maximum, effect, ..
+            maximum,
+            effect,
+            input,
+            ..
         } => ReferenceAudioContent::Tail {
+            input: *input,
             maximum: *maximum,
             effect: *effect,
         },
@@ -378,6 +382,7 @@ fn tiny_zero_allocated_leaves_and_source_placement_remain_explicit() {
                 hold(
                     2,
                     HoldAudio::Tail {
+                        input: Default::default(),
                         maximum: duration(2),
                         effect: Default::default(),
                     },
@@ -413,6 +418,7 @@ fn tiny_zero_allocated_leaves_and_source_placement_remain_explicit() {
             (
                 samples(10, 12),
                 ReferenceAudioContent::Tail {
+                    input: Default::default(),
                     maximum: duration(2),
                     effect: Default::default(),
                 }
@@ -1082,6 +1088,7 @@ fn copied_preserve_lineage_does_not_merge_distinct_preparation_clocks() {
 #[test]
 fn a_tail_hold_or_gap_under_a_speed_change_is_an_invalid_document() {
     let tail = HoldAudio::Tail {
+        input: Default::default(),
         maximum: duration(2),
         effect: Default::default(),
     };

@@ -27,6 +27,7 @@ mod caption;
 mod command;
 mod command_work;
 mod equalizer;
+mod tail_sends;
 #[cfg(any(test, feature = "test-support"))]
 pub use command_work::{
     binding_wire_check_for_tests, diff_for_tests, provisional_captures_for_tests,
@@ -161,6 +162,7 @@ pub use source_trim_edit::{
 };
 pub use source_trim_geometry::*;
 pub use split::SplitIdentities;
+pub use tail_sends::{TailInput, TailSends};
 pub use target::*;
 pub use video_mapping::SourceVideoMapping;
 

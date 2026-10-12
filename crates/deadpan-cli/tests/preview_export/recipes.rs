@@ -1595,6 +1595,7 @@ fn place_catalog_sound(project: &mut Project, wav: &Path, label: &str) -> Result
         Ok(Command::SetSound {
             id: SoundId::new("click")?,
             event: SoundEvent {
+                tail_sends: Default::default(),
                 owner: document.root().clone(),
                 label: "Click".into(),
                 mapping: SourceAudioMapping::natural_rate(source.span, rate)?,
@@ -2122,6 +2123,52 @@ pub fn tail_echo(dir: &Path) -> Result<Fixture> {
     Ok(fixture)
 }
 
+/// Select only the catalog WAV for a delay tail. The Original's click remains
+/// dry before the pause, but must not echo at sample 43181 inside it.
+pub fn selected_tail_send(dir: &Path) -> Result<Fixture> {
+    use deadpan_core::{TailEffect, TailSends};
+    let mut project = Project::create(dir, "selected-tail-send")?;
+    project.shorten()?;
+    place_click_sound(&mut project)?;
+    project.apply(|_, document, _| {
+        let id = SoundId::new("click")?;
+        let mut event = document.sounds()[&id].clone();
+        event.tail_sends =
+            TailSends::default().with_level(TailEffect::Delay, Some(GainDb::new(-6000)?));
+        Ok(Command::SetSound { id, event })
+    })?;
+    project.run_semantic(json!([{"type":"tail","length":{"unit":"frames","frames":30},"effect":"delay","input":"sends"}]), 18, None)?;
+    let mut expectations = Vec::new();
+    for frame in 0..60 {
+        expectations.push((
+            frame,
+            if frame < 18 {
+                base(frame)
+            } else if frame < 48 {
+                original(29)
+            } else {
+                base(frame - 30)
+            },
+        ));
+    }
+    let mut fixture = project.finish(vec!["Tails"], expectations, vec![
+        "Only the catalog WAV sends at -6 dB to a 30-frame delay tail; dry Original click remains at 28781 but its 43181 echo is absent".into(),
+        "Source sound at 16016..24213; first delay return 30416..38613, second 44816..53013; no added sound time".into(),
+    ])?;
+    fixture.audio = vec![(28672, true), (43008, false), (71000, false)];
+    fixture.signals.push(Signal {
+        start: 32000,
+        count: 512,
+        crossings_per_second: None,
+        crest: None,
+        // The decoded WAV peaks at 0.75 in this window: -6 dB gives
+        // 0.37589, with a small reconstruction-filter overshoot. The first
+        // 300 ms return is unity wet; later echoes halve in amplitude.
+        peak: Some((0.37, 0.39)),
+    });
+    Ok(fixture)
+}
+
 /// `:hold 12f video=black` at Edit 15 captioned `:caption Hello? at=center`,
 /// then `:caption Are we done? at=top delay=4f` on the base beat before it,
 /// both through the headless semantic path: captions over Original and black
@@ -2464,6 +2511,7 @@ pub fn post_shared_automation(dir: &Path) -> Result<Fixture> {
             owner: owner.clone(),
             id: SoundId::new("owner-click")?,
             event: deadpan_core::BeatSound {
+                tail_sends: Default::default(),
                 label: "Attached sound".into(),
                 source: event.source.clone(),
                 mapping: SourceAudioMapping::Placement {
@@ -2593,6 +2641,7 @@ fn shared_processing(dir: &Path, equalizer: bool) -> Result<Fixture> {
             owner: node("tone-group")?,
             id: SoundId::new("group-click")?,
             event: deadpan_core::BeatSound {
+                tail_sends: Default::default(),
                 label: "Group sound".into(),
                 source: sound.source.clone(),
                 mapping: sound.mapping,

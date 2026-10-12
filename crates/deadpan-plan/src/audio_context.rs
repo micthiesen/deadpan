@@ -482,7 +482,15 @@ fn retained_hold_audio(
     Ok(match audio {
         ReferenceAudibility::Silence => HoldAudio::Silence,
         ReferenceAudibility::RoomTone => HoldAudio::RoomTone { source: source()? },
-        ReferenceAudibility::Tail { maximum, effect } => HoldAudio::Tail { maximum, effect },
+        ReferenceAudibility::Tail {
+            maximum,
+            effect,
+            input,
+        } => HoldAudio::Tail {
+            maximum,
+            effect,
+            input,
+        },
         ReferenceAudibility::Reverse => HoldAudio::Reverse { source: source()? },
         ReferenceAudibility::Tone {
             frequency_hz,

@@ -546,6 +546,7 @@ fn source_absence_exhaustion_room_tone_and_tail_do_not_issue_silent_hold_rules()
                     recipe(
                         2,
                         HoldAudio::Tail {
+                            input: Default::default(),
                             maximum: frames(2),
                             effect: Default::default(),
                         },

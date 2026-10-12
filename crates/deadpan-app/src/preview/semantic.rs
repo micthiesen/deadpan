@@ -480,6 +480,14 @@ pub(super) fn audio_change_text(change: deadpan_core::AudioChange) -> String {
         AudioChange::Mute { muted: false } => "Beat unmuted".into(),
         AudioChange::Equalizer { recipe: Some(_) } => "EQ updated".into(),
         AudioChange::Equalizer { recipe: None } => "EQ removed".into(),
+        AudioChange::TailSend { effect, level } => format!(
+            "{} tail send {}",
+            effect.name(),
+            level.map_or_else(
+                || "off".into(),
+                |gain| format!("{} dB", crate::gain::format_db(gain))
+            )
+        ),
     }
 }
 

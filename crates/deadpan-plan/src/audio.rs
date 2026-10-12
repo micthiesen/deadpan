@@ -124,6 +124,7 @@ pub enum AudioContent {
     Tail {
         maximum: FrameDuration,
         effect: TailEffect,
+        input: deadpan_core::TailInput,
         /// Full intrinsic Hold duration in its local clock, before any crop.
         duration: FrameDuration,
     },
@@ -151,9 +152,14 @@ impl AudioContent {
                 source: source.clone(),
                 duration,
             },
-            HoldAudio::Tail { maximum, effect } => Self::Tail {
+            HoldAudio::Tail {
+                maximum,
+                effect,
+                input,
+            } => Self::Tail {
                 maximum: *maximum,
                 effect: *effect,
+                input: *input,
                 duration,
             },
             HoldAudio::Reverse { source } => Self::Reverse {

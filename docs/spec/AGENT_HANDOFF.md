@@ -4,6 +4,24 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Selected tail sends](../qualification/tail-sends-2026-10-12.md) now store
+independent reverb/delay levels on beat treatments and sound events. Explicit
+`input=sends` tails read the shared contribution graph with the same clocks,
+permissions and nonlinear drive. Shared destination ancestors apply once on
+output; other tail returns stay silent during input preparation. Core 50,
+store 78 and frozen context 11 carry the recipes. Native `:tail-send` and
+`:sound-tail-send` preserve captured targets and history; whole-beat sends
+support dot/macros and a scoped play isolates its recipe.
+
+The primary agent worked alone. All 3,927 tests, strict workspace checks,
+335 final visual scenario checks and four shortcut audits pass. A real release
+H.264/AAC export verifies 60 pictures, 78 audio blocks and two zero-offset
+windows. The final PNGs were inspected. No live GUI or audio device was opened.
+Continue continuous wet returns and complete incoming-tail policy, partial
+attached-sound scope routes, broader retained/Preserve coverage, persistent
+filtered caching and remaining mastering/performance work. DP-09/DP-16 and
+the full product goal remain open; preserve existing atomic scope refusals.
+
 [Automation through shared stages](../qualification/shared-automation-2026-10-12.md)
 now preserves each contribution's gain/mute clock before and after saturation/EQ.
 `shared_components` retains f64 inputs through deepest-to-root owner programs.
@@ -19,7 +37,7 @@ hashes. A new real CLI fixture proves distinct post-EQ gains, then checks previe
 and emitted H.264/AAC output. The primary agent implemented, reviewed and
 verified this increment alone; no live GUI or device run was used.
 
-Continue arbitrary sends/incoming tails, broader binding/Repeat/Preserve
+Continue continuous wet returns/incoming tails, broader binding/Repeat/Preserve
 qualification and persistent filtered caching. Partial attached-sound scope
 edits still need owner-local routes: inserting inside that owner refuses
 atomically, while the supported root-event pause case passes cold PCM checks.

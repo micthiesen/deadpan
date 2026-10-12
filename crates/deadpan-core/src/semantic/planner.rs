@@ -688,8 +688,12 @@ where
                 SemanticInstruction::InsertReverse { length, bounce } => {
                     self.insert_reverse(index, *length, *bounce)?;
                 }
-                SemanticInstruction::Tail { length, effect } => {
-                    self.tail(index, *length, *effect)?;
+                SemanticInstruction::Tail {
+                    length,
+                    effect,
+                    input,
+                } => {
+                    self.tail(index, *length, *effect, *input)?;
                 }
                 SemanticInstruction::Gag { recipe } => {
                     // The expansion runs as ordinary instructions on the

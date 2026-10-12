@@ -260,6 +260,7 @@ where
                         && held.duration == length
                         && held.audio
                             == (HoldAudio::Tail {
+                                input: Default::default(),
                                 maximum: length,
                                 effect: TailEffect::Reverb,
                             })
@@ -438,7 +439,12 @@ where
                 self.clear_cutaways(&hold)?;
                 if pause != old_pause {
                     self.set_hold_duration(trace_index, *pause)?;
-                    self.tail(trace_index, None, TailEffect::Reverb)?;
+                    self.tail(
+                        trace_index,
+                        None,
+                        TailEffect::Reverb,
+                        crate::TailInput::Original,
+                    )?;
                 }
                 self.set_cutaway(trace_index, *register, CutawayFit::Hold)?;
             }

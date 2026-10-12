@@ -392,6 +392,7 @@ fn sounded(document: &ProjectDocument, start: i64, length: i64) -> ProjectDocume
         Command::SetSound {
             id: SoundId::new("effect").unwrap(),
             event: SoundEvent {
+                tail_sends: Default::default(),
                 owner: id("root"),
                 label: "Root clock".into(),
                 source: audio(100..20_100),

@@ -461,6 +461,7 @@ fn nested_endpoint_cut_transforms_the_independent_root_bus_once() {
     wire["sounds"] = json!(BTreeMap::from([(
         sound.clone(),
         SoundEvent {
+            tail_sends: Default::default(),
             owner: id("root"),
             label: "Independent root bus".into(),
             source: SourceAudio {

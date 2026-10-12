@@ -13,6 +13,10 @@ pub enum SoundAction {
     Move(AudioSample),
     /// Absolute authored millidecibels, independent of monitoring volume.
     Gain(i32),
+    TailSend {
+        effect: deadpan_core::TailEffect,
+        level: Option<deadpan_core::GainDb>,
+    },
     /// Relative authored millidecibels for the focused placed sound.
     GainStep(i32),
     /// Apply the same policy to both event endpoints.

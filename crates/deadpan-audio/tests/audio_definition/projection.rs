@@ -420,6 +420,7 @@ fn a_tail_inside_a_projected_preserve_stage_is_an_invalid_document() {
                 hold(
                     1024,
                     HoldAudio::Tail {
+                        input: Default::default(),
                         maximum: frames(1024),
                         effect: Default::default(),
                     },
@@ -937,6 +938,7 @@ fn a_tail_hidden_in_nested_preserve_stages_is_an_invalid_document() {
                 hold(
                     1024,
                     HoldAudio::Tail {
+                        input: Default::default(),
                         maximum: frames(1024),
                         effect: Default::default(),
                     },

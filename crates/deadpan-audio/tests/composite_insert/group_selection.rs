@@ -361,6 +361,7 @@ fn composite_fixture() -> ProjectDocument {
         Command::SetSound {
             id: SoundId::new("effect").unwrap(),
             event: SoundEvent {
+                tail_sends: Default::default(),
                 owner: id("root"),
                 label: "Routed effect".into(),
                 source: full,

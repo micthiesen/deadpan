@@ -731,6 +731,7 @@ fn reference_audibility_has_closed_tagged_grammar_and_checked_tail_limits() {
         ReferenceAudibility::Silence,
         ReferenceAudibility::RoomTone,
         ReferenceAudibility::Tail {
+            input: Default::default(),
             maximum: duration(1),
             effect: Default::default(),
         },

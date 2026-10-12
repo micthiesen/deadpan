@@ -70,6 +70,7 @@ mod splice;
 mod split_edits;
 mod storage;
 mod structure_copies;
+mod tail_sends;
 mod takes;
 mod targets;
 mod telemetry;

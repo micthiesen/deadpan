@@ -299,7 +299,7 @@ impl<'de> Visitor<'de> for Scan<'_> {
                     (Role::Scalar, Charge::None)
                 }
                 (Role::Mapping, "start" | "end") => (Role::Scalar, Charge::None),
-                (Role::Audibility, "type" | "effect") => (Role::String, Charge::None),
+                (Role::Audibility, "type" | "effect" | "input") => (Role::String, Charge::None),
                 (Role::Audibility, "maximum" | "frequency_hz" | "level") => {
                     (Role::Scalar, Charge::None)
                 }
@@ -402,6 +402,7 @@ fn record_field_bit(key: &str) -> u64 {
         "level" => 41,
         "shift" => 42,
         "semitones" => 43,
+        "input" => 44,
         _ => return 0,
     };
     1 << ordinal

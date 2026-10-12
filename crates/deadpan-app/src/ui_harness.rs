@@ -36,6 +36,7 @@ pub(crate) const SCENARIOS: &[&str] = &[
     "gags",
     "recipes",
     "hold-effects",
+    "tail-sends",
     "audio-treatments",
     "equalizer",
     "split-edits",

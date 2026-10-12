@@ -95,6 +95,8 @@ pub struct SoundEvent {
     pub mapping: SourceAudioMapping,
     pub offset: AudioSample,
     pub gain_millidecibels: i32,
+    #[serde(default, skip_serializing_if = "crate::TailSends::is_empty")]
+    pub tail_sends: crate::TailSends,
     pub start_edge: AudioEdgePolicy,
     pub end_edge: AudioEdgePolicy,
     pub overflow: SoundOverflowPolicy,
@@ -111,6 +113,8 @@ pub struct BeatSound {
     pub mapping: SourceAudioMapping,
     pub offset: AudioSample,
     pub gain_millidecibels: i32,
+    #[serde(default, skip_serializing_if = "crate::TailSends::is_empty")]
+    pub tail_sends: crate::TailSends,
     pub start_edge: AudioEdgePolicy,
     pub end_edge: AudioEdgePolicy,
     pub overflow: SoundOverflowPolicy,
@@ -609,6 +613,7 @@ mod beat_sound_tests {
             },
         );
         let event = BeatSound {
+            tail_sends: Default::default(),
             label: "Beat effect".into(),
             source: SourceAudio {
                 asset: AssetId::new("sound").unwrap(),
@@ -749,6 +754,7 @@ mod beat_sound_tests {
         doc.sounds.insert(
             SoundId::new("root-effect").unwrap(),
             SoundEvent {
+                tail_sends: Default::default(),
                 owner: root.clone(),
                 label: event.label,
                 source: event.source,
@@ -811,6 +817,7 @@ mod cut_tests {
         )
         .unwrap();
         let event = SoundEvent {
+            tail_sends: Default::default(),
             owner: NodeId::new("root").unwrap(),
             label: "Bed".into(),
             source: SourceAudio {

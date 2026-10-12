@@ -276,6 +276,7 @@ fn invalid_audio_and_targets_fail_without_mutating_the_document() {
 fn existing_tail_validation_and_revision_guards_still_apply() {
     let before = fixture();
     let audio = HoldAudio::Tail {
+        input: Default::default(),
         maximum: frames(60),
         effect: Default::default(),
     };
@@ -295,6 +296,7 @@ fn existing_tail_validation_and_revision_guards_still_apply() {
                 Command::SetHoldAudio {
                     node: node("hold"),
                     audio: HoldAudio::Tail {
+                        input: Default::default(),
                         maximum: frames(61),
                         effect: Default::default(),
                     },
@@ -324,6 +326,7 @@ fn shortening_a_tail_hold_shortens_its_ring_and_new_providers_validate() {
         Command::SetHoldAudio {
             node: node("hold"),
             audio: HoldAudio::Tail {
+                input: Default::default(),
                 maximum: frames(60),
                 effect: TailEffect::Delay,
             },
@@ -342,6 +345,7 @@ fn shortening_a_tail_hold_shortens_its_ring_and_new_providers_validate() {
     assert_eq!(
         recipe.audio,
         HoldAudio::Tail {
+            input: Default::default(),
             maximum: frames(20),
             effect: TailEffect::Delay,
         }
@@ -420,6 +424,7 @@ fn a_tail_cannot_be_wrapped_in_or_moved_into_a_speed_change() {
         Command::SetHoldAudio {
             node: node("hold"),
             audio: HoldAudio::Tail {
+                input: Default::default(),
                 maximum: frames(30),
                 effect: TailEffect::Reverb,
             },
@@ -473,6 +478,7 @@ fn a_tail_cannot_be_wrapped_in_or_moved_into_a_speed_change() {
         Command::SetHoldAudio {
             node: node("hold"),
             audio: HoldAudio::Tail {
+                input: Default::default(),
                 maximum: frames(30),
                 effect: TailEffect::Reverb,
             },

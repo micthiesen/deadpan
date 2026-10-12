@@ -217,7 +217,8 @@ balance also reaches independent root sounds. Balancing one beat does not
 change an independent sound. Balance adds no state, read halo or cache. Its
 recipe participates in ordinary immutable plan and dependency identity, and
 frozen audio contexts require schema 9 or later for balance. Current captures
-use schema 10, which also admits ordered EQ; earlier versions reject EQ.
+use schema 11, which also admits ordered EQ and selected tail sends; versions
+before 10 reject EQ and versions before 11 reject sends.
 
 The command captures the beat, scope and revision at entry and commits through
 the project service. Whole-beat balance is a `set_audio` semantic instruction
@@ -229,7 +230,10 @@ The inspector and its Gain section show the direction; command help explains the
 Ranged gain and ordinary gain edits preserve balance.
 
 The treatment is shared by limited audition and Render. Stored shared EQ now
-uses the same bus; arbitrary sends and complete group automation remain open; this stage does not qualify
+uses the same bus. [Selected tail sends](REVERSE_AND_TAILS.md#selected-sends)
+tap beat/group output after its ordered treatments and balance, or sound-event
+output after its gain and edges. These feed explicit later tail pauses; ordinary
+continuous wet returns and complete group automation remain open. This stage does not qualify
 the complete master. See [balance qualification](qualification/stereo-balance-2026-10-11.md).
 
 ## Range steps

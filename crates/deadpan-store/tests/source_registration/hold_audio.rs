@@ -128,6 +128,7 @@ fn hold_audio_policy_history_is_atomic_durable_and_timing_neutral() -> Result {
         "tail",
         setter(
             HoldAudio::Tail {
+                input: Default::default(),
                 maximum: FrameDuration::new(1)?,
                 effect: Default::default(),
             },
@@ -454,6 +455,7 @@ fn pauses_inserted_with_reversed_audio_need_admitted_source_samples() -> Result 
     store.preview(&insert(
         &baseline,
         HoldAudio::Tail {
+            input: Default::default(),
             maximum: FrameDuration::new(3)?,
             effect: deadpan_core::TailEffect::Delay,
         },

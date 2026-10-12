@@ -232,6 +232,7 @@ pub enum Action {
     Tail {
         length: Option<duration::DurationInput>,
         effect: deadpan_core::TailEffect,
+        input: deadpan_core::TailInput,
     },
     /// `:framing-save a`: keep the selected beat's framing as a reusable
     /// preset, a one-instruction macro applied with `@a`.

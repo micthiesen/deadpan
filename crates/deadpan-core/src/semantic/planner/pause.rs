@@ -184,6 +184,7 @@ where
         trace_index: usize,
         length: Option<crate::PauseLength>,
         effect: crate::TailEffect,
+        input: crate::TailInput,
     ) -> Result<(), EditError> {
         let rate = self.current.presentation_basis().frame_rate;
         let length = length.map(|length| length.resolve(rate)).transpose()?;
@@ -217,6 +218,7 @@ where
                 let mut provider =
                     (planner.resolve_pause)(&planner.current, super::PauseSite::Boundary { at })?;
                 provider.audio = HoldAudio::Tail {
+                    input,
                     maximum: duration,
                     effect,
                 };
@@ -245,7 +247,11 @@ where
             new_revision,
             Command::SetHoldAudio {
                 node: hold.clone(),
-                audio: HoldAudio::Tail { maximum, effect },
+                audio: HoldAudio::Tail {
+                    input,
+                    maximum,
+                    effect,
+                },
             },
         )?;
         self.commit_leaf(edit)?;

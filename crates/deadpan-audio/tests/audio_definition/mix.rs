@@ -560,6 +560,7 @@ fn a_tail_hidden_inside_a_preserve_voice_is_an_invalid_document() {
                 hold(
                     1024,
                     HoldAudio::Tail {
+                        input: Default::default(),
                         maximum: frames(1024),
                         effect: Default::default(),
                     },

@@ -734,6 +734,7 @@ fn unsupported_audio_policies_fail_before_any_source_is_requested() {
                 hold_recipe(
                     8,
                     HoldAudio::Tail {
+                        input: Default::default(),
                         maximum: duration(4),
                         effect: Default::default(),
                     },

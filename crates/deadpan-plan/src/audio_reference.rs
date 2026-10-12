@@ -29,6 +29,7 @@ pub enum ReferenceAudioContent {
     Tail {
         maximum: FrameDuration,
         effect: deadpan_core::TailEffect,
+        input: deadpan_core::TailInput,
     },
     Reverse,
     Tone {
@@ -817,9 +818,15 @@ fn content(audio: ReferenceAudibility) -> ReferenceAudioContent {
             reason: SilenceReason::SilentHold,
         },
         ReferenceAudibility::RoomTone => ReferenceAudioContent::RoomTone,
-        ReferenceAudibility::Tail { maximum, effect } => {
-            ReferenceAudioContent::Tail { maximum, effect }
-        }
+        ReferenceAudibility::Tail {
+            maximum,
+            effect,
+            input,
+        } => ReferenceAudioContent::Tail {
+            maximum,
+            effect,
+            input,
+        },
         ReferenceAudibility::Reverse => ReferenceAudioContent::Reverse,
         ReferenceAudibility::Tone {
             frequency_hz,

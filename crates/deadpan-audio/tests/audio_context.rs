@@ -579,6 +579,7 @@ fn tail_context_retains_its_effect_and_renders_the_live_tail() {
         hold(
             2048,
             HoldAudio::Tail {
+                input: Default::default(),
                 maximum: frames(2000),
                 effect: TailEffect::Reverb,
             },

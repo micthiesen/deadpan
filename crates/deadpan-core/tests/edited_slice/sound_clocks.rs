@@ -51,6 +51,7 @@ fn attached(document: &ProjectDocument, owner: &str) -> ProjectDocument {
                 owner: id(owner),
                 id: sound(),
                 event: BeatSound {
+                    tail_sends: Default::default(),
                     label: "Effect".into(),
                     source: SourceAudio { asset, span },
                     mapping: SourceAudioMapping::natural_rate(

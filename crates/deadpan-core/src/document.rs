@@ -10,7 +10,7 @@ use crate::{
     SourceVideoMapping, TimeError,
 };
 
-pub const DOCUMENT_SCHEMA_VERSION: u32 = 49;
+pub const DOCUMENT_SCHEMA_VERSION: u32 = 50;
 /// Bounds apply before traversal. Structure is walked iteratively, never recursively.
 pub const MAX_DOCUMENT_NODES: usize = 100_000;
 pub const MAX_DOCUMENT_ASSETS: usize = 100_000;
@@ -315,9 +315,9 @@ pub enum HoldAudio {
         source: SourceAudio,
     },
     /// A hanging effect tail: the wet output of `effect` fed with the two
-    /// seconds of processed Original sound heard just before this Hold
-    /// occurrence in the current edit (after time mapping, edges, gain and
-    /// mute), heard from the moment that sound ends. A live reference, not a
+    /// seconds of the selected `input` just before this Hold occurrence in
+    /// the current edit: processed Original or explicitly selected sends.
+    /// Shared ancestors apply once, on the tail output. A live reference, not a
     /// captured recording: edits before the pause change what rings. It rings
     /// for `maximum` frames, fades to exact digital silence and stays silent
     /// for the rest of the Hold; the dry sound itself is never repeated.
@@ -325,6 +325,8 @@ pub enum HoldAudio {
         maximum: FrameDuration,
         #[serde(default, skip_serializing_if = "TailEffect::is_reverb")]
         effect: TailEffect,
+        #[serde(default, skip_serializing_if = "crate::TailInput::is_original")]
+        input: crate::TailInput,
     },
     /// Plays the source audio backwards at its natural rate from the Hold's
     /// start: Hold-local sample `n` hears the source sample `n` before its

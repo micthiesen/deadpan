@@ -24,15 +24,29 @@ impl DeadpanApp {
             .zip(self.selected_beat.as_ref())
             .and_then(
                 |(workspace, node)| match &workspace.document.nodes().get(node)?.kind {
-                    NodeKind::Hold { recipe } => Some(recipe.duration.frames()),
+                    NodeKind::Hold { recipe } => {
+                        Some((recipe.duration.frames(), recipe.audio.clone()))
+                    }
                     _ => None,
                 },
             );
-        let length = selected_hold.map_or_else(
+        let length = selected_hold.as_ref().map_or_else(
             || crate::navigation::hold_effects::DEFAULT_TAIL.to_owned(),
-            |frames| format!("{frames}f"),
+            |(frames, _)| format!("{frames}f"),
         );
-        self.open_command(format!("tail {length} effect=reverb"), context);
+        let (effect, input) = match selected_hold {
+            Some((_, deadpan_core::HoldAudio::Tail { effect, input, .. })) => (effect, input),
+            _ => (TailEffect::Reverb, deadpan_core::TailInput::Original),
+        };
+        let input = if input == deadpan_core::TailInput::Sends {
+            " input=sends"
+        } else {
+            ""
+        };
+        self.open_command(
+            format!("tail {length}{input} effect={}", effect.name()),
+            context,
+        );
     }
 
     pub(super) fn apply_reverse(&mut self, length: DurationInput, bounce: bool) {
@@ -156,42 +170,32 @@ impl DeadpanApp {
         );
     }
 
-    pub(super) fn apply_tail(&mut self, length: Option<DurationInput>, effect: TailEffect) {
+    pub(super) fn apply_tail(
+        &mut self,
+        target: Result<macros::Capture, String>,
+        length: Option<DurationInput>,
+        effect: TailEffect,
+        input: deadpan_core::TailInput,
+    ) {
         self.cancel_repeats("a tail was requested");
-        let target = self.capture_macro_target();
-        let on_hold = self
-            .workspace
-            .as_ref()
-            .zip(self.selected_beat.as_ref())
-            .is_some_and(|(workspace, node)| {
-                matches!(
-                    workspace.document.nodes().get(node).map(|node| &node.kind),
-                    Some(NodeKind::Hold { .. })
-                )
-            });
-        let instruction = if on_hold {
-            self.workspace
-                .as_ref()
-                .ok_or_else(|| "Open a project first.".to_owned())
-                .and_then(|workspace| {
-                    let rate = workspace.document.presentation_basis().frame_rate;
-                    Ok(SemanticInstruction::Tail {
-                        length: length.map(|length| length.pause_length(rate)).transpose()?,
-                        effect,
-                    })
-                })
-        } else {
-            self.pause_instruction(|rate| {
-                Ok(SemanticInstruction::Tail {
-                    length: Some(
-                        length
-                            .ok_or("Give the new tail pause a length, for example :tail 400ms.")?
-                            .pause_length(rate)?,
-                    ),
-                    effect,
-                })
+        let instruction = target.as_ref().map_err(Clone::clone).and_then(|captured| {
+            let on_hold = captured
+                .selected_node()
+                .is_some_and(|node| matches!(node.kind, NodeKind::Hold { .. }));
+            if !on_hold {
+                captured.check_pause()?;
+                if length.is_none() {
+                    return Err("Give the new tail pause a length, for example :tail 400ms.".into());
+                }
+            }
+            Ok(SemanticInstruction::Tail {
+                input,
+                effect,
+                length: length
+                    .map(|length| length.pause_length(captured.frame_rate()))
+                    .transpose()?,
             })
-        };
+        });
         self.apply_recorded_instruction(target, instruction);
     }
 

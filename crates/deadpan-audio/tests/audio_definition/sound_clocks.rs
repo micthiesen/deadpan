@@ -135,7 +135,7 @@ fn ntsc(edge: AudioEdgePolicy) -> ProjectDocument {
             end: ExactRatio::integer(4),
         },
     };
-    wire["beat_sounds"] = serde_json::json!({"owner": {"effect": BeatSound {
+    wire["beat_sounds"] = serde_json::json!({"owner": {"effect": BeatSound { tail_sends: Default::default(),
         label: "Effect".into(), source: recipe.source, mapping: recipe.mapping, offset: recipe.offset,
         gain_millidecibels: 0, start_edge: edge, end_edge: edge, overflow: SoundOverflowPolicy::Reject,
     }}});

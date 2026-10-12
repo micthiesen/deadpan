@@ -3,7 +3,7 @@
 Specification §8.1 "Ping-pong hold" and "Reverse hiccup", §8.3 "Hanging
 tail" and "Bleep", §8.4 "Are We Done?", §6.3 "Lift", §10.4 tails and §10.5
 reverse. All are Hold providers: inserted time with independent picture and sound policies
-(§3). Neither adds a node kind, a send bus or a separate preview algorithm.
+(§3). Selected effect sends feed these allocated pauses through the shared mixer.
 
 ## Model
 
@@ -12,7 +12,36 @@ reverse. All are Hold providers: inserted time with independent picture and soun
 | `HoldVideo::Reverse { asset, span, origin }` | Plays a measured Original picture span backwards at the project rate from an exact source-clock origin. Hold-local frame `k` samples `origin - (k + 1/2) × ticks_per_project_frame`. An omitted origin defaults to `span.end`; outside the selected span, its adjacent endpoint picture holds. |
 | `HoldVideo::Play { asset, span, origin }` | Plays forward with the same endpoint policy, sampling `origin + (k + 1/2) × ticks_per_project_frame`. An omitted origin defaults to `span.start`. |
 | `HoldAudio::Reverse { source }` | Plays the source span backwards from the Hold's start at its natural rate, then digital silence. The span is at most 1,048,576 samples at 48 kHz (about 21.8 s), the one-block limit, checked at document validation. |
-| `HoldAudio::Tail { maximum, effect }` | A live reference: the wet output of `effect` fed with the processed Original sound heard over the two seconds before this occurrence, ringing from the Hold's start for `maximum` frames, then exact silence. `effect` is `reverb` (default, omitted on the wire) or `delay`. It stores no source. |
+| `HoldAudio::Tail { maximum, effect, input }` | A live reference: the wet output of `effect` fed over the two seconds before this occurrence, ringing from the Hold's start for `maximum` frames, then exact silence. `effect` is `reverb` (default) or `delay`; `input` is `original` (default) or `sends`. It stores no source. |
+
+## Selected sends
+
+`:tail-send reverb -6dB` or `:tail-send delay -6dB` sends the selected beat's
+processed output into later matching `:tail ... input=sends` pauses. `off`
+removes one send. `:sound-tail-send` applies to the selected placed sound.
+The two levels are independent, exact millidecibels within -96 to +24 dB.
+They do not change the dry signal, add time or create a continuous wet return.
+The inspector shows current levels; command entry captures the target and revision.
+Whole-beat sends support dot and macros, and a selected Repeat play is isolated.
+
+`TailSends` belongs to `AudioTreatments`, `SoundEvent` or `BeatSound`. A beat
+tap follows its own ordered treatments and balance, before its parent; a group
+tap includes its processed children and attachments. An event tap follows its
+gain and edges, before owner treatments. Explicit sends at multiple levels add.
+Owners shared with the destination pause apply their treatments once on the
+tail output, at its clock. Their send levels still select the input contribution.
+
+The contribution mixer evaluates the complete permitted input graph. Selecting
+a send cannot remove a peer that drives shared saturation or change EQ history.
+Input Hold permissions, exact sound clocks and source admission remain active.
+Other tail returns are silent while preparing any tail, preventing feedback.
+Sends and input choices survive ordinary recipe copies, saved contexts and Undo.
+Core schema 50, store schema 78 and frozen audio context schema 11 carry them;
+obsolete development packages are refused without writes. The
+[qualification](qualification/tail-sends-2026-10-12.md) retains decoded PCM,
+native replay and real emitted-file evidence.
+
+## Provider constraints
 
 Why a Hold provider rather than a Retime direction: reversing a Retime would
 make every audio binding, reanchor, frozen-context and Split rule that stops at
@@ -47,7 +76,7 @@ media and need none.
 ## Rendering
 
 The audio plan carries `AudioContent::Reverse { source, duration }` and
-`AudioContent::Tail { maximum, effect, duration }` with the full intrinsic
+`AudioContent::Tail { maximum, effect, input, duration }` with the full intrinsic
 Hold duration. `StageAudio` prepares each as one canonical cached block keyed
 by definition, occurrence path, preceding play and content
 (`PreparedKey::Hold`). The cache belongs to one immutable plan, so any edit
@@ -61,13 +90,15 @@ by definition, occurrence path, preceding play and content
   retained) sampling map is at local zero, so a Split fragment or a moved
   Repeat gap keeps its ring's phase; a start at or before root zero hears
   nothing. The tail reads the root window `[max(0, start - 96000), start)`
-  through the ordinary root reader (time mapping, edge fades, Hold gates) in
-  256-sample blocks, the block size every root, resampling, edge and bound
-  reader is built for. The window is reserved against the request's
+  through the root readers (time mapping, edge fades, Hold gates). Original
+  input without EQ uses 256-sample blocks; EQ and selected sends use the
+  bounded shared graph, whose media readers still request bounded blocks.
+  The window is reserved against the request's
   prepared-frame and residency budgets, and every nested block spends the same
   plan-work, source-check, depth, deadline and cancellation budgets; source
-  dependencies are retained with the cached block for revalidation. Placed
-  sounds are not fed in, and another tail inside that window counts as silent,
+  dependencies are retained with the cached block for revalidation. `original`
+  excludes placed sounds; `sends` includes only explicitly sent contributions.
+  Another tail inside that window counts as silent,
   so tails never chain or feed back. Changing, re-gaining, muting or replacing
   what comes before a tail changes the tail. Consequently audio blocks over a
   tail depend on the sources heard up to two seconds before it, and the tail is

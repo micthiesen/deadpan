@@ -15,8 +15,8 @@ use crate::{
     RevisionId, SourceAudio, SourceAudioMapping,
 };
 
-/// Schema 10 adds ordered EQ. Earlier schemas retain their treatment semantics.
-const AUDIO_CONTEXT_SCHEMA: u32 = 10;
+/// Schema 11 adds selected effect sends and explicit tail inputs.
+const AUDIO_CONTEXT_SCHEMA: u32 = 11;
 
 /// Full authored audio input. Source mapping and signed mix offset are retained
 /// because their effective placement need not fit SourceAudioMapping::Placement.
@@ -384,6 +384,33 @@ impl FrozenAudioContext {
         {
             return Err(invalid(
                 "a schema-9 or older audio context cannot contain EQ",
+            ));
+        }
+        if self.schema_version < 11
+            && (self
+                .audio_treatments
+                .values()
+                .any(|recipe| !recipe.tail_sends().is_empty())
+                || self.layout.nodes().values().any(|node| {
+                    matches!(
+                        &node.kind,
+                        FrozenAudioKind::Hold {
+                            audio: ReferenceAudibility::Tail {
+                                input: crate::TailInput::Sends,
+                                ..
+                            }
+                        } | FrozenAudioKind::Repeat {
+                            gap_audio: ReferenceAudibility::Tail {
+                                input: crate::TailInput::Sends,
+                                ..
+                            },
+                            ..
+                        }
+                    )
+                }))
+        {
+            return Err(invalid(
+                "a schema-10 or older audio context cannot contain selected tail sends",
             ));
         }
         self.validate_treatments()?;

@@ -28,6 +28,21 @@ pub(super) struct GainSum {
 }
 
 impl GainSum {
+    /// Apply an independent wet-send level without consuming or rounding the
+    /// pending dry gain program. Linear gains still add on the exact dB grid.
+    pub(super) fn send_sample(
+        &self,
+        value: [f64; 2],
+        level: deadpan_core::GainDb,
+    ) -> Result<[f64; 2], StageAudioError> {
+        let mut gain = self.clone();
+        gain.add(EvaluatedGain {
+            millidecibels: ExactRatio::integer(i64::from(level.millidecibels())),
+            muted: false,
+        })?;
+        gain.apply_wide(value)
+    }
+
     pub(super) const fn maximum_bytes() -> usize {
         std::mem::size_of::<Self>()
             + MAX_CHANNEL_STAGES * std::mem::size_of::<(i128, ChannelStage)>()

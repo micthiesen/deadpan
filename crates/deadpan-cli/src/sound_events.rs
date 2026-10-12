@@ -189,6 +189,7 @@ pub fn placement(
         return Err("The catalog sound differs from its measured source qualification.".into());
     }
     let event = SoundEvent {
+        tail_sends: Default::default(),
         owner: document.root().clone(),
         label: metadata.label.clone(),
         source: SourceAudio {

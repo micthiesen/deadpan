@@ -360,6 +360,7 @@ fn authored_eq_tail_uses_processed_input_and_shared_parent_once() {
         unreachable!()
     };
     recipe.audio = HoldAudio::Tail {
+        input: Default::default(),
         maximum: frames(18000),
         effect: TailEffect::Delay,
     };
@@ -416,6 +417,7 @@ fn authored_eq_independent_root_sound_bypasses_child_equalizer() {
     wire["sounds"] = serde_json::to_value(BTreeMap::from([(
         SoundId::new("sound").unwrap(),
         SoundEvent {
+            tail_sends: Default::default(),
             owner: id("root"),
             label: "Independent".into(),
             mapping: SourceAudioMapping::natural_rate(audio.span, rate).unwrap(),
@@ -470,6 +472,7 @@ fn shared_fixture(treatments: AudioTreatments, cropped: bool) -> (ProjectDocumen
     wire["assets"]["media"]["source_qualification"] = serde_json::json!("b".repeat(64));
     wire["assets"]["media"]["still_image"] = serde_json::json!(false);
     let sound = BeatSound {
+        tail_sends: Default::default(),
         label: "Shared sound".into(),
         source: audio.clone(),
         mapping: SourceAudioMapping::natural_rate(audio.span, rate).unwrap(),
@@ -684,6 +687,7 @@ fn allowed_sound_history(components: bool) {
     wire["assets"]["media"]["source_qualification"] = serde_json::json!("b".repeat(64));
     wire["assets"]["media"]["still_image"] = serde_json::json!(false);
     let event = SoundEvent {
+        tail_sends: Default::default(),
         owner: id("root"),
         label: "Independent".into(),
         mapping: SourceAudioMapping::natural_rate(audio.span, rate).unwrap(),

@@ -53,6 +53,15 @@ struct Graph<'plan> {
     nodes: Vec<Node<'plan>>,
     resident: u64,
     voices: BTreeMap<Voice, usize>,
+    sends: Option<deadpan_core::TailEffect>,
+    skip: Vec<authored_gain::OwnerIdentity>,
+}
+
+#[derive(Default)]
+pub(super) struct InputSelection<'a> {
+    pub(super) depth: usize,
+    pub(super) sends: Option<deadpan_core::TailEffect>,
+    pub(super) skip: &'a [authored_gain::OwnerIdentity],
 }
 impl Graph<'_> {
     fn voice(&mut self, voice: Voice) -> Result<usize, StageAudioError> {
@@ -100,6 +109,17 @@ impl StageAudio {
         frames: u32,
         control: WorkControl<'_>,
     ) -> Result<ReadBlock, StageAudioError> {
+        self.read_shared_input(provider, start, frames, control, InputSelection::default())
+    }
+
+    pub(super) fn read_shared_input(
+        &mut self,
+        provider: &mut impl AudioSourceProvider,
+        start: AudioSample,
+        frames: u32,
+        control: WorkControl<'_>,
+        selection: InputSelection<'_>,
+    ) -> Result<ReadBlock, StageAudioError> {
         control.check()?;
         if frames == 0 || frames > MAX_EDGE_PREPARATION_FRAMES {
             return Err(StageAudioError::PreparationRange);
@@ -114,6 +134,8 @@ impl StageAudio {
             nodes: Vec::new(),
             resident: 0,
             voices: BTreeMap::new(),
+            sends: selection.sends,
+            skip: selection.skip.to_vec(),
         };
         let reservation = u64::from(frames) * 3;
         self.make_room(reservation, false, control)?;
@@ -129,7 +151,7 @@ impl StageAudio {
                 allowed: None,
                 output_voice: None,
                 parent: usize::MAX,
-                depth: 0,
+                depth: selection.depth,
             };
             let mut result = ReadBlock {
                 start,
@@ -243,6 +265,8 @@ impl StageAudio {
             program.stop.cloned(),
             program.output_voice,
             plan.has_audio_component_automation(),
+            program.stop.is_none().then_some(graph.sends).flatten(),
+            &graph.skip,
         );
         let original_id = graph.voice(Voice::Original)?;
         let original_routes = owners
@@ -255,8 +279,13 @@ impl StageAudio {
                         if span.original_is_silent() {
                             Ok(None)
                         } else {
-                            mix.route(span.owners(), span.samples(), original_id, control)
-                                .map(Some)
+                            mix.route(
+                                span.owners(),
+                                span.samples(),
+                                (original_id, Default::default()),
+                                control,
+                            )
+                            .map(Some)
                         }
                     })
                     .collect::<Result<Vec<_>, StageAudioError>>()
@@ -281,7 +310,15 @@ impl StageAudio {
             }
             root_ids
                 .iter()
-                .map(|&id| mix.route(std::slice::from_ref(root), root_range.clone(), id, control))
+                .zip(&roots)
+                .map(|(&id, sound)| {
+                    mix.route(
+                        std::slice::from_ref(root),
+                        root_range.clone(),
+                        (id, sound.voice.event().tail_sends),
+                        control,
+                    )
+                })
                 .collect::<Result<Vec<_>, _>>()?
         } else {
             Vec::new()
@@ -299,7 +336,7 @@ impl StageAudio {
                     mix.route(
                         occurrence.voice.gain_owners(),
                         occurrence.samples.clone(),
-                        id,
+                        (id, beat.event.tail_sends),
                         control,
                     )?,
                 ));

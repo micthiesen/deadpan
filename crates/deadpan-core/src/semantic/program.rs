@@ -278,6 +278,8 @@ pub enum SemanticInstruction {
         length: Option<PauseLength>,
         #[serde(default, skip_serializing_if = "crate::TailEffect::is_reverb")]
         effect: crate::TailEffect,
+        #[serde(default, skip_serializing_if = "crate::TailInput::is_original")]
+        input: crate::TailInput,
     },
     /// Replace the selected direct child's framing (`,c`, `,z`).
     SetFraming {
@@ -513,6 +515,11 @@ impl SplitEditKind {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
 pub enum AudioChange {
+    /// Send this beat's processed output into explicitly allocated tail pauses.
+    TailSend {
+        effect: crate::TailEffect,
+        level: Option<crate::GainDb>,
+    },
     /// Set the clip-gain trim (`:gain 6dB`).
     Trim { gain: crate::GainDb },
     /// Change the clip-gain trim by a signed amount (`+`, `-`, `:gain +=3dB`).
@@ -549,6 +556,9 @@ impl AudioChange {
         let clip = || current.clip_gain().cloned().unwrap_or_default();
         match self {
             Self::Trim { gain } => current.with_clip_gain_or_none(clip().with_trim(gain)),
+            Self::TailSend { effect, level } => Ok(current
+                .clone()
+                .with_tail_sends(current.tail_sends().with_level(effect, level))),
             Self::Step { millidecibels } => {
                 current.with_clip_gain_or_none(clip().adjust_trim(millidecibels)?)
             }
