@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-12T00:23:09Z",
+  "updated_at": "2026-10-12T02:20:44Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Complete persistent PCM cache reuse and lifecycle, independently timed group automation, EQ/filtering, arbitrary sends, oversampled shaping, full mastering and remaining format/color, workflow and release obligations. DP-09 and DP-16 remain partial.",
+  "focus": "Integrate EQ with retained owner input, ordered gain/mute and group/tail policy, then captured native commands and real preview/export. Complete remaining sends, mastering, independently timed group automation, format/color, workflow and release obligations.",
   "features": [
     {
       "id": "editing",
@@ -44,7 +44,7 @@
       "requirements": [
         "DP-09"
       ],
-      "note": "Playback, gain, sounds and timing work. Idle and active preparation share bounded canonical caches and a PCM queue; persistent cache reuse and full voice processing remain."
+      "note": "Playback, gain, sounds and timing work. Verified stretched audio survives restart in a bounded cache. EQ parameters and DSP are qualified; authored EQ, group/tail integration and full voice processing remain."
     },
     {
       "id": "analysis",
@@ -597,6 +597,14 @@
       "revision": "fb296739",
       "retrospective": false,
       "summary": "Active playback now prepares up to 29.867 seconds of canonical PCM beyond the device queue. All 88 playback tests, diagnostics/doctor tests, 102 UI checks and strict checks pass. The one-slot control fails the future-stage regression; two real-device runs have no underruns or faults, including a full-bound 35-second loop."
+    },
+    {
+      "date": "2026-10-12",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "27a361e8",
+      "retrospective": false,
+      "summary": "Saved stretched audio now survives restart with full integrity and lifecycle checks. Bounded FIR and three-band EQ/cut processing pass numerical, cold-read and response qualification; all 1,051 core and 523 audio tests and workspace checks pass. Authored EQ and retained owner/group/tail integration remain unfinished."
     }
   ]
 }
