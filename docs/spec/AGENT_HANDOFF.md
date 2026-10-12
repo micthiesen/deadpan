@@ -4,6 +4,14 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Retained sound input](../qualification/retained-sound-input-2026-10-12.md)
+now has a checked preparation API on the old recipe clock. Raw root sources,
+projected inputs and complete occurrences share it with ordinary routed reads.
+It preserves history removed by a later trim or masked by a route gap and keeps
+current consuming Hold gates separate. Continue event creative envelopes and
+continuous sends before routing; this boundary alone does not implement them.
+The primary agent continues alone. DP-09/DP-16 and the full goal remain open.
+
 [Continuous owner returns](../qualification/wet-owners-2026-10-12.md) now store
 `wet_sends` separately from allocated-Tail sends. `:wet-send` uses captured
 targets, durable Undo, whole-beat dot/macros and isolated Repeat plays. The shared

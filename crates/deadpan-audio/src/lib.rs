@@ -80,9 +80,9 @@ pub use signal_transfer::{
 pub use stages::{
     BeatSoundOwnerInputBlock, DefinitionAudioBlock, DomainAudioBlock, EdgeFadedBlock,
     MAX_EDGE_PREPARATION_FRAMES, OwnerEqualizedBlock, PointDomainAudioBlock,
-    PreparedOwnerEqualizer, ProjectedRootBlock, RoutedRootBlock, RoutedSignalBlock,
-    SourceOccurrenceBlock, SourceOccurrencesBlock, StageAudio, StageAudioError, StageLimits,
-    TapeAudioBlock, TimeMappedBlock, TransferredDomainBlock, TransferredRootBlock,
+    PreparedOwnerEqualizer, ProjectedRootBlock, RetainedSoundInputBlock, RoutedRootBlock,
+    RoutedSignalBlock, SourceOccurrenceBlock, SourceOccurrencesBlock, StageAudio, StageAudioError,
+    StageLimits, TapeAudioBlock, TimeMappedBlock, TransferredDomainBlock, TransferredRootBlock,
 };
 pub use sting::{
     STING_FILE_NAME, STING_FRAMES, STING_LABEL, STING_SAMPLE_RATE, STING_VERSION, triumphant_sting,

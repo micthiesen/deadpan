@@ -1,0 +1,13 @@
+{
+  "base_commit": "169aa428c49163df4a3e4cd1f031c0c1f28b4a30",
+  "sources": {
+    "crates/deadpan-audio/src/lib.rs": "26599be42aa0172e50c46ed21f43f9218c3e126c2787f6d45ab403cf472610b4",
+    "crates/deadpan-audio/src/routed.rs": "33621111872028e1bdec9d3353ef3c5901dff883893a8bbb9ee70cc5f7c1b8d8",
+    "crates/deadpan-audio/src/stages.rs": "654c58bfe79495efe10544c58d690e16d5ca73f44c951f5d0b626eb8673c1582",
+    "crates/deadpan-audio/tests/audio_definition/projection_routed.rs": "a48112f969ac18e37f029d6a8b9360aa8e8c431e95754646d00fef3dfb88082c",
+    "crates/deadpan-audio/tests/audio_definition/routed_occurrence.rs": "55151f4f2b66269a623c6d9ed506ea28a9042ca3aa12d8121a74391ab270431a",
+    "crates/deadpan-audio/tests/root_sound_trim.rs": "32e9b7c16f9cf570ac4704ac36d02bc71569a17c2a6e74ea7c5e218ff2e55737",
+    "crates/deadpan-audio/src/retained_sound_input.rs": "59c207d455e3e4fd8c252ebb45859bfebceb5adda8966c65ba185d4384de4074"
+  },
+  "ffmpeg_prefix": "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix"
+}

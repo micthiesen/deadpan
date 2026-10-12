@@ -1,5 +1,14 @@
 # Sound events and scoped audio mixing
 
+`StageAudio::read_retained_sound_input` reads a checked sound route's complete
+input on its original sample clock, before saved cuts/moves and current Hold
+gates. Its explicit allocation can extend beyond the shortened live project;
+source selection, resampling phase and nested Preserve history remain intact.
+Ordinary routed reads share this preparation boundary. This supplies input for
+independent event effects; it does not grant extra audible time or implement
+event continuous sends. See the
+[retained-input qualification](qualification/retained-sound-input-2026-10-12.md).
+
 Selected root and attached sounds carry independent reverb/delay `tail_sends`.
 Native `:sound-tail-send reverb|delay -6dB|off` edits the captured placed sound
 through `SetSound`, retaining routes, placement, gain, edges and Hold allowances.

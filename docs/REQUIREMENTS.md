@@ -4,6 +4,12 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 
 ## Resumed implementation, 2026-10-06
 
+[Retained sound input](qualification/retained-sound-input-2026-10-12.md) adds a
+checked old-clock read shared by routed sound preparation. It preserves trimmed
+history, exact source phase and nested Preserve context independently of current
+delivery gates. Independent event continuous sends remain open; DP-09 and DP-16
+remain partial.
+
 [Continuous owner returns](qualification/wet-owners-2026-10-12.md) now use stored
 beat/group levels, captured `:wet-send` authoring and the canonical shared bus.
 Returns enter before parent treatments, keep per-contribution clocks and obey

@@ -81,6 +81,49 @@ impl AudioSourceProvider for RevokedProvider {
 }
 
 #[test]
+fn retained_projection_input_survives_fully_deleted_delivery() {
+    let plan = compile(&fixture(), false);
+    let root = routed_root(nested(&plan), gap_route());
+    let expected = stretch(&original_inner(false), 1024, 2, 1);
+    for start in [700, 0, 1000, 341] {
+        let mut reader = StageAudio::new(Arc::clone(&plan));
+        let mut provider = FixtureProvider::new();
+        let block = reader
+            .read_retained_sound_input(
+                &mut provider,
+                &root,
+                AudioSample(start),
+                24,
+                TIMEOUT,
+                &AtomicBool::new(false),
+            )
+            .unwrap();
+        assert_eq!(block.allocation, AudioSample(0)..AudioSample(1024));
+        assert_eq!(block.start, AudioSample(start));
+        assert_eq!(
+            &block.samples,
+            &expected[start as usize..start as usize + 24]
+        );
+        assert!(block.suppressed.is_empty());
+        let routed = reader
+            .read_routed_root(
+                &mut provider,
+                &root,
+                AudioSample(start),
+                24,
+                TIMEOUT,
+                &AtomicBool::new(false),
+            )
+            .unwrap();
+        assert_eq!(routed.samples, vec![[0.0; 2]; 24]);
+        assert_eq!(
+            routed.suppressed,
+            vec![AudioSample(start)..AudioSample(start + 24)]
+        );
+    }
+}
+
+#[test]
 fn fully_masked_routes_admit_hidden_depth_before_source_io() {
     let plan = compile(&fixture(), false);
     let projection = nested(&plan);

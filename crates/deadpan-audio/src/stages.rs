@@ -103,6 +103,9 @@ mod sound_clocks;
 #[path = "routed.rs"]
 mod routed;
 pub use routed::{RoutedRootBlock, RoutedSignalBlock};
+#[path = "retained_sound_input.rs"]
+mod retained_sound_input;
+pub use retained_sound_input::RetainedSoundInputBlock;
 
 /// Worker-owned bus preparation, including downstream finite DSP context.
 /// Small inspection and source reads retain their separate 256-frame limit.

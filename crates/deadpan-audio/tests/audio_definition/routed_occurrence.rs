@@ -90,6 +90,55 @@ fn insert(extent: i64, at: i64, duration: i64) -> SoundRippleMap {
 }
 
 #[test]
+fn retained_input_reads_nested_preserve_before_route_gaps_and_moves() {
+    let document = occurrence_document();
+    let plan = compile(&document, false);
+    let expected = stretch(&stretch(&raw_voice(3840), 2560, 3, 2), 1280, 2, 1);
+    for play in [0, 1] {
+        let voice = plan
+            .source_voice_occurrence(
+                occurrence("owner", play),
+                voice_recipe(document.presentation_basis().frame_rate, 3840),
+                Default::default(),
+            )
+            .unwrap();
+        let start = voice.samples().start.0;
+        let origin = ExactRatio::integer(-start);
+        let route = routed(
+            voice,
+            SoundRoute::identity(ExactRatio::integer(1280))
+                .unwrap()
+                .ripple(insert(1280, 31, 7))
+                .unwrap()
+                .ripple(insert(1287, 113, 5))
+                .unwrap(),
+            &[origin; 3],
+        );
+        for (offset, frames) in [(1040, 240), (20, 127), (0, 32)] {
+            let actual = StageAudio::new(Arc::clone(&plan))
+                .read_retained_sound_input(
+                    &mut FixtureProvider::new(),
+                    &route,
+                    AudioSample(start + offset),
+                    frames,
+                    TIMEOUT,
+                    &AtomicBool::new(false),
+                )
+                .unwrap();
+            assert_eq!(
+                actual.allocation,
+                AudioSample(start)..AudioSample(start + 1280)
+            );
+            assert_eq!(actual.start, AudioSample(start + offset));
+            assert_eq!(
+                &actual.samples,
+                &expected[offset as usize..offset as usize + frames as usize]
+            );
+        }
+    }
+}
+
+#[test]
 fn routed_occurrence_keeps_nested_preserve_history_across_edits_and_shuffled_reads() {
     let document = occurrence_document();
     let plan = compile(&document, false);
@@ -304,6 +353,18 @@ fn routed_occurrence_retains_raw_sound_before_consuming_hold_gates_and_gain() {
     );
     assert_eq!(actual.samples, raw_voice(256));
     assert!(actual.suppressed.is_empty());
+    let retained = StageAudio::new(plan.clone())
+        .read_retained_sound_input(
+            &mut provider,
+            &route,
+            AudioSample(0),
+            256,
+            TIMEOUT,
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+    assert_eq!(retained.samples, raw_voice(256));
+    assert!(retained.suppressed.is_empty());
 }
 
 #[test]
@@ -364,6 +425,19 @@ fn routed_occurrence_gap_admits_complete_processing_and_live_source() {
         ));
         assert_eq!(provider.calls, 0);
         assert_eq!(renderer.cached_stage_count(), 0);
+        assert!(matches!(
+            renderer.read_retained_sound_input(
+                &mut provider,
+                &route,
+                AudioSample(20),
+                32,
+                TIMEOUT,
+                &AtomicBool::new(false),
+            ),
+            Err(StageAudioError::Limit(_))
+        ));
+        assert_eq!(provider.calls, 0);
+        assert_eq!(renderer.cached_stage_count(), 0);
     }
     let mut renderer = StageAudio::new(plan.clone());
     let mut provider = FixtureProvider::new();
@@ -383,6 +457,20 @@ fn routed_occurrence_gap_admits_complete_processing_and_live_source() {
             let result = result.unwrap();
             assert_eq!(result.samples, vec![[0.0; 2]; 32]);
             assert_eq!(result.suppressed, vec![AudioSample(20)..AudioSample(52)]);
+        }
+        let input = renderer.read_retained_sound_input(
+            &mut provider,
+            &route,
+            AudioSample(20),
+            32,
+            TIMEOUT,
+            &AtomicBool::new(false),
+        );
+        if unavailable {
+            assert!(input.is_err());
+        } else {
+            let expected = stretch(&stretch(&raw_voice(3840), 2560, 3, 2), 1280, 2, 1);
+            assert_eq!(&input.unwrap().samples, &expected[3..35]);
         }
     }
 }

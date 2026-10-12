@@ -433,6 +433,123 @@ fn ramp(distance: i64) -> f32 {
 }
 
 #[test]
+fn retained_input_keeps_removed_history_and_old_extent_at_both_source_rates() {
+    for fixture in [Fixture::Stereo48, Fixture::Mono441] {
+        let doc = document(
+            5,
+            fixture,
+            full_event(fixture),
+            Some(route(6, vec![trim(1, 0, 3, true)])),
+        )
+        .unwrap();
+        let plan = Arc::new(RenderPlan::compile(&doc).unwrap());
+        let voice = plan.root_sound(&sound_id()).unwrap();
+        let route = voice.routed_input().unwrap();
+        assert_eq!(route.samples(), AudioSample(0)..AudioSample(8008));
+        let support = match fixture {
+            Fixture::Stereo48 => 0..8197,
+            Fixture::Mono441 => 0..8823,
+        };
+        // The late read is outside the current five-frame output. The early
+        // read was removed by the saved trim. Both remain effect input history.
+        for start in [8100, 50, 4799] {
+            let mut provider = Provider::new(fixture);
+            let expected = oracle(
+                &provider,
+                fixture,
+                support.clone(),
+                ExactRatio::integer(start - 7)
+                    .checked_mul(fixture.step())
+                    .unwrap(),
+                64,
+            );
+            let actual = StageAudio::new(Arc::clone(&plan))
+                .read_retained_sound_input(
+                    &mut provider,
+                    route,
+                    AudioSample(start),
+                    64,
+                    TIMEOUT,
+                    &AtomicBool::new(false),
+                )
+                .unwrap();
+            assert_eq!(actual.allocation, AudioSample(0)..AudioSample(9610));
+            assert_eq!(actual.start, AudioSample(start));
+            assert!(actual.suppressed.is_empty());
+            exact(&actual.samples, &expected, "unmoved retained source phase");
+        }
+    }
+}
+
+#[test]
+fn retained_input_rejects_foreign_ranges_and_cancellation_before_source_io() {
+    let doc = document(
+        5,
+        Fixture::Stereo48,
+        full_event(Fixture::Stereo48),
+        Some(route(6, vec![trim(1, 0, 3, true)])),
+    )
+    .unwrap();
+    let plan = Arc::new(RenderPlan::compile(&doc).unwrap());
+    let other = Arc::new(RenderPlan::compile(&doc).unwrap());
+    let voice = plan.root_sound(&sound_id()).unwrap();
+    let route = voice.routed_input().unwrap();
+    let mut provider = Provider::new(Fixture::Stereo48);
+    assert!(matches!(
+        StageAudio::new(other).read_retained_sound_input(
+            &mut provider,
+            route,
+            AudioSample(50),
+            64,
+            TIMEOUT,
+            &AtomicBool::new(false),
+        ),
+        Err(deadpan_audio::StageAudioError::ForeignDomain)
+    ));
+    let mut reader = StageAudio::new(Arc::clone(&plan));
+    for (start, frames) in [(-1, 1), (9609, 2), (0, 0), (0, u32::MAX)] {
+        assert!(
+            reader
+                .read_retained_sound_input(
+                    &mut provider,
+                    route,
+                    AudioSample(start),
+                    frames,
+                    TIMEOUT,
+                    &AtomicBool::new(false),
+                )
+                .is_err()
+        );
+    }
+    assert!(
+        reader
+            .read_retained_sound_input(
+                &mut provider,
+                route,
+                AudioSample(50),
+                64,
+                TIMEOUT,
+                &AtomicBool::new(true),
+            )
+            .unwrap_err()
+            .is_cancelled()
+    );
+    assert_eq!(provider.calls, 0);
+    assert!(
+        reader
+            .read_retained_sound_input(
+                &mut provider,
+                route,
+                AudioSample(50),
+                64,
+                TIMEOUT,
+                &AtomicBool::new(false),
+            )
+            .is_ok()
+    );
+}
+
+#[test]
 fn in_only_merges_nonzero_translation_before_phase_and_fades_at_both_source_rates() {
     for fixture in [Fixture::Stereo48, Fixture::Mono441] {
         let doc = document(
