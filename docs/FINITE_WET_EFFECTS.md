@@ -94,19 +94,20 @@ playback performance or persistent cache reuse.
 
 ## Independent sound returns
 
-`SoundEvent` and `BeatSound` store separate `wet_sends` for reverb and delay.
+`SoundEvent` and `BeatSound` store separate reverb and delay levels in
+`treatments.wet_sends`, beside the complete ordered per-event recipe.
 The placed-sound inspector teaches `:sound-wet-send reverb|delay -6dB|off`;
 the captured target, typed writer transaction and durable Undo preserve the
 complete source recipe, route, placement, gain, edges and permissions.
 
-Each event filters its complete retained input after time/pitch mapping and
-authored input edges. Constant event gain applies to both dry and wet, which
-is equivalent to applying that gain before these linear kernels. Saved delivery
+Each event filters its complete retained input after time/pitch mapping,
+authored input edges, gain envelopes, EQ, saturation and balance in their stored
+order. Automation uses local frames from the complete sound onset. Saved delivery
 routes move the processed samples afterward. Inserted route gaps do not advance
 the retained effect clock. Current consuming gates and their edge fades bound
 the returned signal without adding audible time. An explicit Tail pause remains
 the way to allocate additional time. The event's allocated-Tail send taps dry
-input after event gain, excluding its own continuous return. Parent treatments
+input after the event's complete treatments, excluding its own continuous return. Parent treatments
 and sends receive the dry sound plus its return.
 
 Event tiles share the owner graph's native workspaces and aggregate node,
@@ -115,11 +116,11 @@ preparation request: graph prefix plus voice identifies the checked input, with
 effect, absolute tile, allocation and input envelope in the key. No event tile
 is reused across revisions or independent preparation requests.
 
-Core 52, store 80 and frozen audio context 12 retain these recipes.
+Core 53, store 81 and frozen audio context 12 retain these recipes.
 Older unused development packages are refused without modification under the
 owner's format-breaking authorization. Event copy/recopy through nested Preserve
-stages is checked; broader retained/loop and incoming-tail qualification, creative
-event envelopes and treatments, partial attached sound-owner processing scope,
+stages is checked; broader retained/loop and incoming-tail qualification,
+partial attached sound-owner processing scope,
 persistent filtered caching and the rest of the
 voice/mastering graph remain agent work. DP-09 and DP-16 remain partial.
 

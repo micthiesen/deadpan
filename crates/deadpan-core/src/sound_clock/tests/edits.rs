@@ -288,7 +288,10 @@ fn metadata_and_rename_preserve_journals_recipe_replacement_retires_only_one() {
     let shifted = edit(&before, "shifted", insert("shifted", 0, 2));
     let mut metadata = event.clone();
     metadata.label = "Renamed sound".into();
-    metadata.gain_millidecibels = -6000;
+    metadata.treatments = metadata
+        .treatments
+        .with_trim(crate::GainDb::new(-6000).unwrap())
+        .unwrap();
     metadata.end_edge = AudioEdgePolicy::Hard;
     let changed = edit(
         &shifted,

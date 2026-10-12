@@ -162,8 +162,6 @@ fn fixture() -> (Connection, ProjectDocument, SourceQualificationReceipt) {
             BTreeMap::from([(
                 sound(),
                 BeatSound {
-                    tail_sends: Default::default(),
-                    wet_sends: Default::default(),
                     label: owner.into(),
                     source: SourceAudio {
                         asset: asset.clone(),
@@ -175,7 +173,9 @@ fn fixture() -> (Connection, ProjectDocument, SourceQualificationReceipt) {
                     )
                     .unwrap(),
                     offset: AudioSample(7),
-                    gain_millidecibels: -3000,
+                    treatments: deadpan_core::AudioTreatments::default()
+                        .with_trim(deadpan_core::GainDb::new(-3000).unwrap())
+                        .unwrap(),
                     start_edge: AudioEdgePolicy::Automatic,
                     end_edge: AudioEdgePolicy::Hard,
                     overflow: SoundOverflowPolicy::Reject,

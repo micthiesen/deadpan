@@ -380,14 +380,14 @@ fn with_sound(mut document: ProjectDocument) -> ProjectDocument {
     document.sounds.insert(
         SoundId::new("effect").unwrap(),
         SoundEvent {
-            tail_sends: Default::default(),
-            wet_sends: Default::default(),
             owner: node("root"),
             label: "Effect".into(),
             source: SourceAudio { asset, span },
             mapping,
             offset: AudioSample(137),
-            gain_millidecibels: -3000,
+            treatments: crate::AudioTreatments::default()
+                .with_trim(crate::GainDb::new(-3000).unwrap())
+                .unwrap(),
             start_edge: AudioEdgePolicy::Automatic,
             end_edge: AudioEdgePolicy::Hard,
             overflow: SoundOverflowPolicy::Reject,

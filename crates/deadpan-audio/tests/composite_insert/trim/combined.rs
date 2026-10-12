@@ -302,8 +302,6 @@ fn combined_ripple_appends_one_root_map_after_a_prior_route_with_exact_44100_pha
     let full = audio(0..44117);
     let sound = SoundId::new("effect").unwrap();
     wire["sounds"]["effect"] = serde_json::to_value(SoundEvent {
-        tail_sends: Default::default(),
-        wet_sends: Default::default(),
         owner: id("root"),
         label: "Prior routed sound".into(),
         source: full.clone(),
@@ -316,7 +314,7 @@ fn combined_ripple_appends_one_root_map_after_a_prior_route_with_exact_44100_pha
             selection: ExactFrameRange::new(ExactRatio::ZERO, ratio(40005, 8008)).unwrap(),
         },
         offset: AudioSample(7),
-        gain_millidecibels: 0,
+        treatments: deadpan_core::AudioTreatments::default(),
         start_edge: AudioEdgePolicy::Hard,
         end_edge: AudioEdgePolicy::Hard,
         overflow: SoundOverflowPolicy::Reject,

@@ -75,8 +75,6 @@ fn with_controls(document: &ProjectDocument, start: i64) -> ProjectDocument {
     wire["sounds"] = serde_json::to_value(BTreeMap::from([(
         SoundId::new("independent").unwrap(),
         SoundEvent {
-            tail_sends: Default::default(),
-            wet_sends: Default::default(),
             owner: id("root"),
             label: "Independent root sound".into(),
             mapping: SourceAudioMapping::natural_rate(
@@ -86,7 +84,9 @@ fn with_controls(document: &ProjectDocument, start: i64) -> ProjectDocument {
             .unwrap(),
             source: sound,
             offset: AudioSample(start),
-            gain_millidecibels: -6000,
+            treatments: deadpan_core::AudioTreatments::default()
+                .with_trim(deadpan_core::GainDb::new(-6000).unwrap())
+                .unwrap(),
             start_edge: AudioEdgePolicy::Hard,
             end_edge: AudioEdgePolicy::Hard,
             overflow: SoundOverflowPolicy::Reject,

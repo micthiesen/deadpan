@@ -67,8 +67,6 @@ fn document() -> ProjectDocument {
     })
     .unwrap();
     let event = SoundEvent {
-        tail_sends: Default::default(),
-        wet_sends: Default::default(),
         owner: NodeId::new("root").unwrap(),
         label: "fractional sound".into(),
         source: SourceAudio {
@@ -90,7 +88,7 @@ fn document() -> ProjectDocument {
             frames: ExactRatio::integer(32),
         },
         offset: AudioSample(0),
-        gain_millidecibels: 0,
+        treatments: deadpan_core::AudioTreatments::default(),
         start_edge: AudioEdgePolicy::Hard,
         end_edge: AudioEdgePolicy::Hard,
         overflow: SoundOverflowPolicy::Reject,

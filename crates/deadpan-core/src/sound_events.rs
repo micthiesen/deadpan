@@ -94,11 +94,10 @@ pub struct SoundEvent {
     #[serde(deserialize_with = "crate::legacy_audio_mapping_v35::sound_mapping")]
     pub mapping: SourceAudioMapping,
     pub offset: AudioSample,
-    pub gain_millidecibels: i32,
-    #[serde(default, skip_serializing_if = "crate::TailSends::is_empty")]
-    pub tail_sends: crate::TailSends,
-    #[serde(default, skip_serializing_if = "crate::TailSends::is_empty")]
-    pub wet_sends: crate::TailSends,
+    /// Ordered voice processing. Envelope coordinates begin at the complete
+    /// natural-rate recipe's onset, before selection and saved delivery routes.
+    #[serde(default, skip_serializing_if = "crate::AudioTreatments::is_empty")]
+    pub treatments: crate::AudioTreatments,
     pub start_edge: AudioEdgePolicy,
     pub end_edge: AudioEdgePolicy,
     pub overflow: SoundOverflowPolicy,
@@ -114,11 +113,9 @@ pub struct BeatSound {
     #[serde(deserialize_with = "crate::legacy_audio_mapping_v35::sound_mapping")]
     pub mapping: SourceAudioMapping,
     pub offset: AudioSample,
-    pub gain_millidecibels: i32,
-    #[serde(default, skip_serializing_if = "crate::TailSends::is_empty")]
-    pub tail_sends: crate::TailSends,
-    #[serde(default, skip_serializing_if = "crate::TailSends::is_empty")]
-    pub wet_sends: crate::TailSends,
+    /// Same event-local recipe clock as `SoundEvent`, carried by this occurrence.
+    #[serde(default, skip_serializing_if = "crate::AudioTreatments::is_empty")]
+    pub treatments: crate::AudioTreatments,
     pub start_edge: AudioEdgePolicy,
     pub end_edge: AudioEdgePolicy,
     pub overflow: SoundOverflowPolicy,
@@ -195,13 +192,10 @@ pub(crate) fn validate(
             ));
         }
         crate::document::validate_label(&event.label)?;
-        if !(MIN_SOUND_GAIN_MILLIDECIBELS..=MAX_SOUND_GAIN_MILLIDECIBELS)
-            .contains(&event.gain_millidecibels)
-        {
-            return Err(invalid(
-                "sound gain must be between -96000 and 24000 milli dB",
-            ));
-        }
+        event
+            .treatments
+            .validate()
+            .map_err(crate::audio_gain::invalid)?;
         let asset = document.assets.get(&event.source.asset).ok_or_else(|| {
             DocumentError::new(
                 DocumentErrorCode::MissingAsset,
@@ -260,15 +254,11 @@ fn validate_recipe(
         source,
         mapping,
         offset,
-        gain_millidecibels,
+        treatments,
         ..
     } = event;
     crate::document::validate_label(label)?;
-    if !(MIN_SOUND_GAIN_MILLIDECIBELS..=MAX_SOUND_GAIN_MILLIDECIBELS).contains(gain_millidecibels) {
-        return Err(invalid(
-            "sound gain must be between -96000 and 24000 milli dB",
-        ));
-    }
+    treatments.validate().map_err(crate::audio_gain::invalid)?;
     let asset = document.assets.get(&source.asset).ok_or_else(|| {
         DocumentError::new(
             DocumentErrorCode::MissingAsset,
@@ -617,8 +607,6 @@ mod beat_sound_tests {
             },
         );
         let event = BeatSound {
-            tail_sends: Default::default(),
-            wet_sends: Default::default(),
             label: "Beat effect".into(),
             source: SourceAudio {
                 asset: AssetId::new("sound").unwrap(),
@@ -626,7 +614,9 @@ mod beat_sound_tests {
             },
             mapping: SourceAudioMapping::natural_rate(span, rate).unwrap(),
             offset: AudioSample(0),
-            gain_millidecibels: -1200,
+            treatments: crate::AudioTreatments::default()
+                .with_trim(crate::GainDb::new(-1200).unwrap())
+                .unwrap(),
             start_edge: AudioEdgePolicy::Hard,
             end_edge: AudioEdgePolicy::Automatic,
             overflow: SoundOverflowPolicy::Reject,
@@ -759,14 +749,14 @@ mod beat_sound_tests {
         doc.sounds.insert(
             SoundId::new("root-effect").unwrap(),
             SoundEvent {
-                tail_sends: Default::default(),
-                wet_sends: Default::default(),
                 owner: root.clone(),
                 label: event.label,
                 source: event.source,
                 mapping: event.mapping,
                 offset: event.offset,
-                gain_millidecibels: event.gain_millidecibels,
+                treatments: crate::AudioTreatments::default()
+                    .with_trim(crate::GainDb::new(event.treatments.trim().millidecibels()).unwrap())
+                    .unwrap(),
                 start_edge: event.start_edge,
                 end_edge: event.end_edge,
                 overflow: event.overflow,
@@ -823,8 +813,6 @@ mod cut_tests {
         )
         .unwrap();
         let event = SoundEvent {
-            tail_sends: Default::default(),
-            wet_sends: Default::default(),
             owner: NodeId::new("root").unwrap(),
             label: "Bed".into(),
             source: SourceAudio {
@@ -834,7 +822,9 @@ mod cut_tests {
             mapping: SourceAudioMapping::natural_rate(span, rate).unwrap(),
             // Frame 2's sample boundary, 0.2 samples before the exact frame.
             offset: AudioSample(3_203),
-            gain_millidecibels: -3_000,
+            treatments: crate::AudioTreatments::default()
+                .with_trim(crate::GainDb::new(-3_000).unwrap())
+                .unwrap(),
             start_edge: AudioEdgePolicy::Automatic,
             end_edge: AudioEdgePolicy::Automatic,
             overflow: SoundOverflowPolicy::Reject,
@@ -847,8 +837,16 @@ mod cut_tests {
         assert_eq!(selected.end, ExactRatio::integer(4));
         assert_eq!(cut.end_edge, AudioEdgePolicy::Hard);
         assert_eq!(
-            (cut.offset, cut.gain_millidecibels, cut.start_edge),
-            (event.offset, event.gain_millidecibels, event.start_edge)
+            (
+                cut.offset,
+                cut.treatments.trim().millidecibels(),
+                cut.start_edge
+            ),
+            (
+                event.offset,
+                event.treatments.trim().millidecibels(),
+                event.start_edge
+            )
         );
         // Cutting again inside the shorter sound keeps the same onset.
         let shorter = cut.cut_at(ProjectFrame(3), rate).unwrap();

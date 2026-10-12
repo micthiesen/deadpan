@@ -243,8 +243,6 @@ fn repeated_nested_deletions_transform_the_existing_root_sound_route_exactly_onc
         Command::SetSound {
             id: SoundId::new("effect").unwrap(),
             event: SoundEvent {
-                tail_sends: Default::default(),
-                wet_sends: Default::default(),
                 owner: id("root"),
                 label: "Independent root bus".into(),
                 source: audio(100..20_100),
@@ -255,7 +253,7 @@ fn repeated_nested_deletions_transform_the_existing_root_sound_route_exactly_onc
                         .unwrap(),
                 },
                 offset: AudioSample(0),
-                gain_millidecibels: 0,
+                treatments: deadpan_core::AudioTreatments::default(),
                 start_edge: AudioEdgePolicy::Hard,
                 end_edge: AudioEdgePolicy::Hard,
                 overflow: SoundOverflowPolicy::Reject,

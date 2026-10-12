@@ -201,8 +201,6 @@ fn initial(random: &mut Lcg) -> ProjectDocument {
         // Inside the project even after the sub-frame sample offset.
         let selection_end = random.range(3..total.min(12));
         wire["sounds"]["effect"] = serde_json::to_value(SoundEvent {
-            tail_sends: Default::default(),
-            wet_sends: Default::default(),
             owner: id("root"),
             label: "Root sound".into(),
             mapping: SourceAudioMapping::SelectedPlacement {
@@ -219,7 +217,7 @@ fn initial(random: &mut Lcg) -> ProjectDocument {
             },
             source,
             offset: AudioSample(random.range(0..800)),
-            gain_millidecibels: 0,
+            treatments: deadpan_core::AudioTreatments::default(),
             start_edge: AudioEdgePolicy::Hard,
             end_edge: AudioEdgePolicy::Hard,
             overflow: SoundOverflowPolicy::Reject,

@@ -121,6 +121,12 @@ pub struct Equalizer {
 }
 
 impl Equalizer {
+    /// Conservative bound for the pinned portable FFT, native arrays and the
+    /// retained coefficients. Input/output PCM is admitted separately.
+    pub const fn preparation_bytes_bound() -> usize {
+        INPUT.next_power_of_two() * 128 + 1_048_576 + TAPS * 8
+    }
+
     pub fn new(recipe: EqualizerRecipe, cancelled: &AtomicBool) -> Result<Self, FilterError> {
         let coefficients = Box::new(equalizer_coefficients(recipe, cancelled)?);
         let filter = if recipe.is_unity() {

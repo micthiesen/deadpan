@@ -461,8 +461,6 @@ fn nested_endpoint_cut_transforms_the_independent_root_bus_once() {
     wire["sounds"] = json!(BTreeMap::from([(
         sound.clone(),
         SoundEvent {
-            tail_sends: Default::default(),
-            wet_sends: Default::default(),
             owner: id("root"),
             label: "Independent root bus".into(),
             source: SourceAudio {
@@ -475,7 +473,7 @@ fn nested_endpoint_cut_transforms_the_independent_root_bus_once() {
                 selection: ExactFrameRange::new(ExactRatio::ZERO, ExactRatio::integer(8)).unwrap(),
             },
             offset: AudioSample(0),
-            gain_millidecibels: 0,
+            treatments: deadpan_core::AudioTreatments::default(),
             start_edge: AudioEdgePolicy::Hard,
             end_edge: AudioEdgePolicy::Hard,
             overflow: SoundOverflowPolicy::Reject,

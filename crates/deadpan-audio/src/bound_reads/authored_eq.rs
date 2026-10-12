@@ -417,14 +417,12 @@ fn authored_eq_independent_root_sound_bypasses_child_equalizer() {
     wire["sounds"] = serde_json::to_value(BTreeMap::from([(
         SoundId::new("sound").unwrap(),
         SoundEvent {
-            tail_sends: Default::default(),
-            wet_sends: Default::default(),
             owner: id("root"),
             label: "Independent".into(),
             mapping: SourceAudioMapping::natural_rate(audio.span, rate).unwrap(),
             source: audio,
             offset: AudioSample(0),
-            gain_millidecibels: 0,
+            treatments: deadpan_core::AudioTreatments::default(),
             start_edge: AudioEdgePolicy::Hard,
             end_edge: AudioEdgePolicy::Hard,
             overflow: SoundOverflowPolicy::Reject,
@@ -473,13 +471,13 @@ fn shared_fixture(treatments: AudioTreatments, cropped: bool) -> (ProjectDocumen
     wire["assets"]["media"]["source_qualification"] = serde_json::json!("b".repeat(64));
     wire["assets"]["media"]["still_image"] = serde_json::json!(false);
     let sound = BeatSound {
-        tail_sends: Default::default(),
-        wet_sends: Default::default(),
         label: "Shared sound".into(),
         source: audio.clone(),
         mapping: SourceAudioMapping::natural_rate(audio.span, rate).unwrap(),
         offset: AudioSample(0),
-        gain_millidecibels: -3000,
+        treatments: deadpan_core::AudioTreatments::default()
+            .with_trim(deadpan_core::GainDb::new(-3000).unwrap())
+            .unwrap(),
         start_edge: AudioEdgePolicy::Hard,
         end_edge: AudioEdgePolicy::Hard,
         overflow: SoundOverflowPolicy::Reject,
@@ -689,14 +687,12 @@ fn allowed_sound_history(components: bool) {
     wire["assets"]["media"]["source_qualification"] = serde_json::json!("b".repeat(64));
     wire["assets"]["media"]["still_image"] = serde_json::json!(false);
     let event = SoundEvent {
-        tail_sends: Default::default(),
-        wet_sends: Default::default(),
         owner: id("root"),
         label: "Independent".into(),
         mapping: SourceAudioMapping::natural_rate(audio.span, rate).unwrap(),
         source: audio,
         offset: AudioSample(0),
-        gain_millidecibels: 0,
+        treatments: deadpan_core::AudioTreatments::default(),
         start_edge: AudioEdgePolicy::Hard,
         end_edge: AudioEdgePolicy::Hard,
         overflow: SoundOverflowPolicy::Reject,

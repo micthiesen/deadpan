@@ -8,22 +8,44 @@ Ordinary routed reads share this preparation boundary. Independent event
 returns now consume it without granting extra audible time. See the
 [retained-input qualification](qualification/retained-sound-input-2026-10-12.md).
 
-Root and attached sounds also carry independent `wet_sends`. Native
+Root and attached sounds carry one `AudioTreatments` recipe in `treatments`,
+including trim, gain/mute envelopes, EQ, saturation, balance and independent
+wet/Tail sends. Core 53 and store 81 replace the former separate event gain and
+send fields. Existing development packages are refused unchanged.
+
+Envelope frames start at the complete natural-rate source recipe's exact onset,
+before its selected interval. Root and occurrence handles expose that checked
+clock; enclosing time maps transport it and saved delivery routes retain it.
+Moving a sound carries its envelopes. Cutting its beginning does not restart
+them. The default order is input edges, gain, EQ, saturation and balance, then
+sends and the group bus. The serialized recipe preserves explicit reordering.
+Neutral EQ preserves ordinary delivery exactly.
+
+The sound inspector exposes `:sound-eq`, `:sound-saturate`, `:sound-balance`,
+`:sound-mute on|off` and `:sound-envelope 0f 30f -12dB 0dB smoothstep`.
+An envelope with the same exact range is replaced; other overlapping curves add
+their dB values. `sound-envelope clear` removes curves while preserving trim,
+mute and other stages. Headless `SetSound`/`SetBeatSound` accepts the complete
+bounded recipe, including cubic curves, mute ranges and explicit effect order.
+All native commands capture the selected event, session and revision and commit
+one reversible transaction. See [qualification](qualification/event-treatments-2026-10-12.md).
+
+Root and attached sounds carry independent `treatments.wet_sends`. Native
 `:sound-wet-send reverb|delay -6dB|off` changes the captured placed sound through
 `SetSound`; attached recipes use `SetBeatSound`. Complete time/pitch-mapped
-input and its edge fades feed the finite effect on the retained recipe clock.
+input, its edge fades and its complete treatments feed the finite effect on the retained recipe clock.
 Saved delivery routes then transport the processed samples, preserving history
 through cuts, inserted gaps and repeated copies. The dry sound and its return
-share event gain, current selection/cut fades and silence permissions before
+obey current selection/cut fades and silence permissions before
 entering group treatments. Returns stop at the existing audible allocation.
 The event's own allocated-Tail tap excludes its continuous return; parent sends
 can include it. See [finite effects](FINITE_WET_EFFECTS.md#independent-sound-returns)
 and the [event-return qualification](qualification/event-returns-2026-10-12.md).
 
-Selected root and attached sounds carry independent reverb/delay `tail_sends`.
+Selected root and attached sounds carry independent reverb/delay `treatments.tail_sends`.
 Native `:sound-tail-send reverb|delay -6dB|off` edits the captured placed sound
 through `SetSound`, retaining routes, placement, gain, edges and Hold allowances.
-The tap follows event gain and edges; a later `:tail input=sends` pause admits
+The tap follows the complete event treatment chain; a later `:tail input=sends` pause admits
 only matching sends. This does not grant direct audio under silent Holds or
 create an ordinary continuous wet return. See
 [selected tails](REVERSE_AND_TAILS.md#selected-sends).
@@ -151,17 +173,18 @@ the identical original file. Its registered identity, placements and history
 stay intact. See [media recovery](RECOVERY.md#moved-linked-files).
 
 Core schema 29 and database 35 introduced `SoundEvent` recipes keyed by `SoundId`.
-The current schemas are core 34 and database 43. `SetSound` creates an event or
+The current schemas are core 53 and database 81. `SetSound` creates an event or
 updates it under the retained-route rules below; `DeleteSound` removes it. The
 shared headless command entrypoint supports preview and atomic commit, followed
-by ordinary durable undo/redo. Migration replays old chronology through closed
-adapters and adds no sounds to historical projects. The actual database-34
-fixture includes ordinary and occurrence Retime edits, an abandoned branch and
-pending redo.
+by ordinary durable undo/redo. Obsolete unused development packages are refused
+without writes under the owner's format-breaking authorization. Frozen test
+fixtures retain their original schema and measured source receipts; test-only
+adapters preserve their old trims in the complete treatment recipe.
 
 This increment admits at most 64 root-owned events. Each retains a qualified
 source span, explicit natural-rate mapping and optional exact audible selection,
-a signed 48 kHz offset, milli-decibel gain from -96 dB through +24 dB, independent
+a signed 48 kHz offset, the complete bounded treatment recipe (trim from -96 dB
+through +24 dB), independent
 Automatic/Hard edge choices and an explicit `Reject` overflow policy. The whole
 selected interval must fit inside the root. Sound placement never changes
 picture duration. A qualification ID alone is insufficient: storage rechecks
@@ -171,7 +194,7 @@ provider.
 
 The root reader evaluates source phase, allocation and current silent-Hold
 policy directly on the absolute RoundEven grid. It does not relabel PointCeil
-PCM. Each sound receives its own edges and gain before f64 summation in SoundId order
+PCM. Each sound receives its own edges and treatments before f64 summation in SoundId order
 with the existing continuous Original voice. The bus converts once to finite
 f32, then enters the existing single canonical limiter. Exhaustion applies to
 one contribution; bus suppression is an intersection. Even a wholly suppressed

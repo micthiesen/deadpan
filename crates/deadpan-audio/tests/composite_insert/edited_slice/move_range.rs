@@ -392,8 +392,6 @@ fn sounded(document: &ProjectDocument, start: i64, length: i64) -> ProjectDocume
         Command::SetSound {
             id: SoundId::new("effect").unwrap(),
             event: SoundEvent {
-                tail_sends: Default::default(),
-                wet_sends: Default::default(),
                 owner: id("root"),
                 label: "Root clock".into(),
                 source: audio(100..20_100),
@@ -407,7 +405,7 @@ fn sounded(document: &ProjectDocument, start: i64, length: i64) -> ProjectDocume
                     .unwrap(),
                 },
                 offset: AudioSample(0),
-                gain_millidecibels: 0,
+                treatments: deadpan_core::AudioTreatments::default(),
                 start_edge: AudioEdgePolicy::Hard,
                 end_edge: AudioEdgePolicy::Hard,
                 overflow: SoundOverflowPolicy::Reject,

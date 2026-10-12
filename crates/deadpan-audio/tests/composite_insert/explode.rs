@@ -287,13 +287,13 @@ fn exploded_beat_sounds_and_root_sounds_keep_every_ntsc_sample() {
             owner: id("a"),
             id: SoundId::new("blip").unwrap(),
             event: BeatSound {
-                tail_sends: Default::default(),
-                wet_sends: Default::default(),
                 label: "Blip".into(),
                 source: audio(1000..2000),
                 mapping,
                 offset: AudioSample(311),
-                gain_millidecibels: -3000,
+                treatments: deadpan_core::AudioTreatments::default()
+                    .with_trim(deadpan_core::GainDb::new(-3000).unwrap())
+                    .unwrap(),
                 start_edge: AudioEdgePolicy::Automatic,
                 end_edge: AudioEdgePolicy::Automatic,
                 overflow: SoundOverflowPolicy::Reject,
@@ -306,14 +306,12 @@ fn exploded_beat_sounds_and_root_sounds_keep_every_ntsc_sample() {
         Command::SetSound {
             id: SoundId::new("over").unwrap(),
             event: SoundEvent {
-                tail_sends: Default::default(),
-                wet_sends: Default::default(),
                 owner: id("root"),
                 label: "Over the gaps".into(),
                 source: audio(3000..9000),
                 mapping: SourceAudioMapping::natural_rate(audio(3000..9000).span, ntsc()).unwrap(),
                 offset: AudioSample(4000),
-                gain_millidecibels: 0,
+                treatments: deadpan_core::AudioTreatments::default(),
                 start_edge: AudioEdgePolicy::Automatic,
                 end_edge: AudioEdgePolicy::Hard,
                 overflow: SoundOverflowPolicy::Reject,

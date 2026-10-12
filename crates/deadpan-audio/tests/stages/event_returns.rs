@@ -11,7 +11,7 @@ fn provider() -> FixtureProvider {
     )
 }
 
-fn fixture(beat: bool, effect: Option<TailEffect>, saturation: bool) -> ProjectDocument {
+pub(super) fn fixture(beat: bool, effect: Option<TailEffect>, saturation: bool) -> ProjectDocument {
     let rate = FrameRate::new(48_000, 1).unwrap();
     let mut picture = source(rate, 48_000, 0..8197);
     picture.audio_treatments = AudioTreatments::from_clip_gain(
@@ -43,11 +43,13 @@ fn fixture(beat: bool, effect: Option<TailEffect>, saturation: bool) -> ProjectD
         mapping: SourceAudioMapping::natural_rate(source.span, rate).unwrap(),
         source,
         offset: AudioSample(37),
-        gain_millidecibels: -6000,
-        tail_sends: Default::default(),
-        wet_sends: effect.map_or_else(TailSends::default, |effect| {
-            TailSends::default().with_level(effect, Some(GainDb::new(-3000).unwrap()))
-        }),
+        treatments: deadpan_core::AudioTreatments::default()
+            .with_trim(deadpan_core::GainDb::new(-6000).unwrap())
+            .unwrap()
+            .with_wet_sends(effect.map_or_else(TailSends::default, |effect| {
+                TailSends::default().with_level(effect, Some(GainDb::new(-3000).unwrap()))
+            })),
+
         start_edge: AudioEdgePolicy::Hard,
         end_edge: AudioEdgePolicy::Hard,
         overflow: SoundOverflowPolicy::Reject,
@@ -72,7 +74,7 @@ fn fixture(beat: bool, effect: Option<TailEffect>, saturation: bool) -> ProjectD
     ProjectDocument::from_json(&wire.to_string()).unwrap()
 }
 
-fn read(document: &ProjectDocument, start: i64, frames: u32) -> Vec<[f32; 2]> {
+pub(super) fn read(document: &ProjectDocument, start: i64, frames: u32) -> Vec<[f32; 2]> {
     let plan = Arc::new(RenderPlan::compile(document).unwrap());
     StageAudio::new(plan)
         .prepare_authored_bus(
@@ -178,7 +180,7 @@ fn automatic_event_edges_feed_the_effect_and_fade_the_bounded_return() {
         48_000,
     );
     let wet = super::wet_owners::wet(TailEffect::Reverb, &dry);
-    wire["sounds"]["effect"]["wet_sends"] = serde_json::json!({"reverb": -3000});
+    wire["sounds"]["effect"]["treatments"]["wet_sends"] = serde_json::json!({"reverb": -3000});
     let document = ProjectDocument::from_json(&wire.to_string()).unwrap();
     let expected: Vec<_> = dry
         .iter()
@@ -239,7 +241,7 @@ fn current_hold_blocks_event_return_until_that_sound_is_explicitly_allowed() {
 #[test]
 fn event_return_limits_and_cancellation_preserve_reusability() {
     let mut wire = serde_json::to_value(fixture(false, Some(TailEffect::Delay), false)).unwrap();
-    wire["sounds"]["effect"]["wet_sends"]["reverb"] = serde_json::json!(-6000);
+    wire["sounds"]["effect"]["treatments"]["wet_sends"]["reverb"] = serde_json::json!(-6000);
     let document = ProjectDocument::from_json(&wire.to_string()).unwrap();
     let plan = Arc::new(RenderPlan::compile(&document).unwrap());
     for limits in [

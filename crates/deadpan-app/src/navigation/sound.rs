@@ -7,6 +7,14 @@ use deadpan_core::{
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum SoundAction {
+    Treatment(deadpan_core::AudioChange),
+    Envelope {
+        range: deadpan_core::GainRange,
+        initial: deadpan_core::GainDb,
+        end: deadpan_core::GainDb,
+        curve: deadpan_core::GainCurve,
+    },
+    ClearEnvelopes,
     Place,
     Focus,
     /// Absolute onset on the project-origin 48 kHz sample clock.
@@ -30,6 +38,85 @@ pub enum SoundAction {
     /// End the sound abruptly at the Edit cursor (a bed drop).
     Cut,
     Delete,
+}
+
+impl SoundAction {
+    pub(crate) fn treatments(
+        self,
+        current: &deadpan_core::AudioTreatments,
+    ) -> Result<Option<deadpan_core::AudioTreatments>, String> {
+        use deadpan_core::{ClipGain, GainClock, GainEnvelope, GainSegment};
+        let error = |error: deadpan_core::GainError| error.to_string();
+        if let Self::Treatment(change) = self {
+            return change.apply(current).map(Some).map_err(error);
+        }
+        let gain = current.clip_gain().cloned().unwrap_or_default();
+        let envelopes = match self {
+            Self::ClearEnvelopes => Vec::new(),
+            Self::Envelope {
+                range,
+                initial,
+                end,
+                curve,
+            } => {
+                let mut envelopes = gain.envelopes().to_vec();
+                let replacement = GainEnvelope::new(
+                    GainClock::OwnerOutput,
+                    range,
+                    initial,
+                    vec![GainSegment::new(range.end(), end, curve).map_err(error)?],
+                )
+                .map_err(error)?;
+                if let Some(existing) = envelopes
+                    .iter_mut()
+                    .find(|envelope| envelope.range() == range)
+                {
+                    *existing = replacement;
+                } else {
+                    envelopes.push(replacement);
+                }
+                envelopes
+            }
+            _ => return Ok(None),
+        };
+        let gain = ClipGain::new(
+            gain.trim(),
+            gain.muted(),
+            envelopes,
+            gain.mute_ranges().to_vec(),
+        )
+        .map_err(error)?;
+        current
+            .with_clip_gain_or_none(gain)
+            .map(Some)
+            .map_err(error)
+    }
+}
+
+pub(super) fn envelope(arguments: &[&str]) -> Result<SoundAction, String> {
+    use deadpan_core::{GainCurve, GainRange};
+    const USAGE: &str = "Use :sound-envelope 0f 30f -12dB 0dB step|linear|smoothstep, or :sound-envelope clear. Times are local project frames from the sound's complete onset; a matching range is replaced.";
+    if arguments == ["clear"] {
+        return Ok(SoundAction::ClearEnvelopes);
+    }
+    let [start, finish, initial, end, curve] = arguments else {
+        return Err(USAGE.into());
+    };
+    let frame = |value: &str| crate::gain::parse_frames(value.strip_suffix('f').ok_or(USAGE)?);
+    let gain = |value: &str| crate::gain::parse_db(value.strip_suffix("dB").ok_or(USAGE)?);
+    let range = GainRange::new(frame(start)?, frame(finish)?).map_err(|e| e.to_string())?;
+    let curve = match *curve {
+        "step" => GainCurve::Step,
+        "linear" => GainCurve::Linear,
+        "smoothstep" => GainCurve::Smoothstep,
+        _ => return Err(USAGE.into()),
+    };
+    Ok(SoundAction::Envelope {
+        range,
+        initial: gain(initial)?,
+        end: gain(end)?,
+        curve,
+    })
 }
 
 pub(super) fn parse(verb: &str, argument: Option<&str>) -> Result<SoundAction, String> {
@@ -130,6 +217,60 @@ mod tests {
         command::{self, Entry},
     };
     use super::*;
+
+    #[test]
+    fn sound_treatments_preserve_other_stages_and_replace_exact_envelope_ranges() {
+        use deadpan_core::*;
+        let current = AudioTreatments::default()
+            .with_trim(GainDb::new(-3000).unwrap())
+            .unwrap()
+            .with_wet_sends(
+                TailSends::default().with_level(TailEffect::Delay, Some(GainDb::UNITY)),
+            );
+        let first = envelope(&["0f", "30f", "-12dB", "0dB", "smoothstep"])
+            .unwrap()
+            .treatments(&current)
+            .unwrap()
+            .unwrap();
+        let second = envelope(&["0f", "30f", "-6dB", "3dB", "linear"])
+            .unwrap()
+            .treatments(&first)
+            .unwrap()
+            .unwrap();
+        assert_eq!(second.clip_gain().unwrap().envelopes().len(), 1);
+        assert_eq!(second.trim(), current.trim());
+        assert_eq!(second.wet_sends(), current.wet_sends());
+        assert_eq!(
+            SoundAction::ClearEnvelopes
+                .treatments(&second)
+                .unwrap()
+                .unwrap(),
+            current
+        );
+        for invalid in [
+            vec!["0", "30f", "-12dB", "0dB", "linear"],
+            vec!["30f", "0f", "-12dB", "0dB", "linear"],
+            vec!["0f", "30f", "25dB", "0dB", "step"],
+        ] {
+            assert!(envelope(&invalid).is_err());
+        }
+        for command in [
+            "sound-eq bass=3dB middle=0dB treble=-6dB",
+            "sound-saturate 12dB",
+            "sound-balance left",
+            "sound-mute on",
+            "sound-envelope clear",
+        ] {
+            assert!(matches!(
+                super::super::command::parse(command),
+                Ok(super::super::command::Entry::Action(
+                    super::super::Action::Sound(_)
+                ))
+            ));
+        }
+        assert!(super::super::command::parse("sound-eq").is_err());
+        assert!(super::super::command::parse("sound-mute maybe").is_err());
+    }
 
     fn action(input: &str, expected: SoundAction) {
         assert_eq!(

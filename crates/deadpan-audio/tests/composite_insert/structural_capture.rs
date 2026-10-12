@@ -46,8 +46,6 @@ fn fixture() -> ProjectDocument {
         Command::SetSound {
             id: SoundId::new("effect").unwrap(),
             event: SoundEvent {
-                tail_sends: Default::default(),
-                wet_sends: Default::default(),
                 owner: id("root"),
                 label: "Retained root effect".into(),
                 source: audio(100..20_100),
@@ -58,7 +56,9 @@ fn fixture() -> ProjectDocument {
                         .unwrap(),
                 },
                 offset: AudioSample(7),
-                gain_millidecibels: -3000,
+                treatments: deadpan_core::AudioTreatments::default()
+                    .with_trim(deadpan_core::GainDb::new(-3000).unwrap())
+                    .unwrap(),
                 start_edge: AudioEdgePolicy::Hard,
                 end_edge: AudioEdgePolicy::Hard,
                 overflow: SoundOverflowPolicy::Reject,

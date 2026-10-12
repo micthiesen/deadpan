@@ -11,6 +11,46 @@ fn sound() -> SoundId {
     SoundId::new("effect").unwrap()
 }
 
+#[test]
+fn independent_treatments_share_the_document_record_budget() {
+    let document = fixture();
+    let range = GainRange::new(ExactRatio::ZERO, ExactRatio::integer(64)).unwrap();
+    let curve = GainEnvelope::new(
+        GainClock::OwnerOutput,
+        range,
+        GainDb::UNITY,
+        (1..=64)
+            .map(|at| {
+                GainSegment::new(
+                    ExactRatio::integer(at),
+                    GainDb::new(-3000).unwrap(),
+                    GainCurve::Cubic {
+                        control1: GainDb::UNITY,
+                        control2: GainDb::new(-3000).unwrap(),
+                    },
+                )
+                .unwrap()
+            })
+            .collect(),
+    )
+    .unwrap();
+    let recipe = AudioTreatments::from_clip_gain(
+        ClipGain::new(GainDb::UNITY, false, vec![curve; 16], vec![]).unwrap(),
+    );
+    assert!(recipe.record_count() * 64 > MAX_GAIN_RECORDS);
+    let mut event = event(&document);
+    event.treatments = recipe;
+    let mut wire = serde_json::to_value(&document).unwrap();
+    wire["sounds"] = serde_json::to_value(
+        (0..64)
+            .map(|i| (SoundId::new(format!("sound{i}")).unwrap(), event.clone()))
+            .collect::<BTreeMap<_, _>>(),
+    )
+    .unwrap();
+    let error = ProjectDocument::from_json(&wire.to_string()).unwrap_err();
+    assert_eq!(error.code, DocumentErrorCode::LimitExceeded);
+}
+
 fn span(start: i64, end: i64) -> SourceSpan {
     let time_base = SourceTimeBase::new(1, 44_100).unwrap();
     SourceSpan::new(
@@ -127,8 +167,6 @@ fn event(document: &ProjectDocument) -> SoundEvent {
         SourceAudioMapping::natural_rate(source.span, document.presentation_basis().frame_rate)
             .unwrap();
     SoundEvent {
-        tail_sends: Default::default(),
-        wet_sends: Default::default(),
         owner: node("root"),
         label: "Clang".into(),
         source,
@@ -139,7 +177,9 @@ fn event(document: &ProjectDocument) -> SoundEvent {
                 .unwrap(),
         },
         offset: AudioSample(13),
-        gain_millidecibels: -6000,
+        treatments: deadpan_core::AudioTreatments::default()
+            .with_trim(deadpan_core::GainDb::new(-6000).unwrap())
+            .unwrap(),
         start_edge: AudioEdgePolicy::Automatic,
         end_edge: AudioEdgePolicy::Hard,
         overflow: SoundOverflowPolicy::Reject,
@@ -166,7 +206,10 @@ fn upsert_and_delete_are_guarded_reversible_nonstructural_edits() {
     assert_eq!(transaction.forward.sounds[&sound()].before, None);
     let mut updated = original.clone();
     updated.offset = AudioSample(48_013);
-    updated.gain_millidecibels = 24_000;
+    updated.treatments = updated
+        .treatments
+        .with_trim(deadpan_core::GainDb::new(24_000).unwrap())
+        .unwrap();
     let (changed, update) = place(&placed, updated.clone());
     assert_eq!(update.forward.sounds[&sound()].before, Some(original));
     assert_eq!(update.forward.sounds[&sound()].after, Some(updated));
@@ -278,12 +321,11 @@ fn invalid_source_rate_owner_extent_and_gain_are_rejected_atomically() {
     let mut event = original.clone();
     event.offset = AudioSample(i64::MAX);
     invalid.push(event);
-    let mut event = original.clone();
-    event.gain_millidecibels = -96_001;
-    invalid.push(event);
-    let mut event = original.clone();
-    event.gain_millidecibels = 24_001;
-    invalid.push(event);
+    for invalid_gain in [-96_001, 24_001] {
+        let mut wire = serde_json::to_value(&original).unwrap();
+        wire["treatments"]["clip_gain"]["trim"] = serde_json::json!(invalid_gain);
+        assert!(serde_json::from_value::<SoundEvent>(wire).is_err());
+    }
     let mut event = original.clone();
     event.mapping = SourceAudioMapping::SelectedPlacement {
         start: ExactRatio::ZERO,
@@ -476,7 +518,10 @@ fn bounded_live_inventory_allows_replacement_and_rejects_unknown_wire_fields() {
     .unwrap_err();
     assert_eq!(failure.code, EditErrorCode::LimitExceeded);
     let mut replacement = event.clone();
-    replacement.gain_millidecibels = -96_000;
+    replacement.treatments = replacement
+        .treatments
+        .with_trim(deadpan_core::GainDb::new(-96_000).unwrap())
+        .unwrap();
     document = edit(
         &document,
         Command::SetSound {
@@ -493,7 +538,6 @@ fn bounded_live_inventory_allows_replacement_and_rejects_unknown_wire_fields() {
         "source",
         "mapping",
         "offset",
-        "gain_millidecibels",
         "start_edge",
         "end_edge",
         "overflow",

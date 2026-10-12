@@ -93,8 +93,6 @@ fn audio(document: &ProjectDocument, asset: &str, short: bool) -> Option<SourceA
 fn sound(document: &ProjectDocument, gain: i32) -> Option<SoundEvent> {
     let source = audio(document, "right", true)?;
     Some(SoundEvent {
-        tail_sends: Default::default(),
-        wet_sends: Default::default(),
         owner: document.root().clone(),
         label: "Overlay".into(),
         mapping: SourceAudioMapping::natural_rate(
@@ -104,7 +102,9 @@ fn sound(document: &ProjectDocument, gain: i32) -> Option<SoundEvent> {
         .ok()?,
         source,
         offset: AudioSample(0),
-        gain_millidecibels: gain,
+        treatments: deadpan_core::AudioTreatments::default()
+            .with_trim(deadpan_core::GainDb::new(gain).unwrap())
+            .unwrap(),
         start_edge: AudioEdgePolicy::Automatic,
         end_edge: AudioEdgePolicy::Hard,
         overflow: SoundOverflowPolicy::Reject,

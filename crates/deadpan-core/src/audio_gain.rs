@@ -520,6 +520,17 @@ pub struct AudioTreatments {
 }
 
 impl AudioTreatments {
+    /// Constant voice trim, preserving any independently authored envelopes.
+    pub fn trim(&self) -> GainDb {
+        self.clip_gain
+            .as_ref()
+            .map_or(GainDb::UNITY, ClipGain::trim)
+    }
+
+    pub fn with_trim(&self, trim: GainDb) -> Result<Self, GainError> {
+        self.with_clip_gain_or_none(self.clip_gain.clone().unwrap_or_default().with_trim(trim))
+    }
+
     pub fn new(
         order: Vec<AudioTreatmentStage>,
         clip_gain: Option<ClipGain>,

@@ -50,6 +50,9 @@ mod wet_owners;
 #[path = "stages/event_returns.rs"]
 mod event_returns;
 
+#[path = "stages/event_treatments.rs"]
+mod event_treatments;
+
 #[path = "stages/streaming.rs"]
 mod streaming;
 

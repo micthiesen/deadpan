@@ -47,14 +47,34 @@ pub(crate) fn validate_document(
     document: &ProjectDocument,
     limit: usize,
 ) -> Result<(), DocumentError> {
-    if validate_nodes_with_limit(document.nodes().values(), limit)? == 0 {
+    let recipes = document
+        .nodes()
+        .values()
+        .map(|node| &node.audio_treatments)
+        .chain(document.sounds().values().map(|event| &event.treatments))
+        .chain(
+            document
+                .beat_sounds()
+                .values()
+                .flat_map(|sounds| sounds.values().map(|event| &event.treatments)),
+        );
+    if validate_audio_treatments_with_limit(recipes, limit).map_err(invalid)? == 0 {
         return Ok(());
     }
     // Structural validation already established a bounded, uniquely owned tree.
     let mut pending = vec![(document.root(), 0usize)];
     while let Some((id, layers)) = pending.pop() {
         let layers = layers + usize::from(!document.nodes()[id].audio_treatments.is_empty());
-        if layers > MAX_GAIN_LAYERS {
+        let event_layer = document
+            .beat_sounds()
+            .get(id)
+            .is_some_and(|sounds| sounds.values().any(|event| !event.treatments.is_empty()))
+            || (id == document.root()
+                && document
+                    .sounds()
+                    .values()
+                    .any(|event| !event.treatments.is_empty()));
+        if layers + usize::from(event_layer) > MAX_GAIN_LAYERS {
             return Err(invalid(GainError::Limit));
         }
         pending.extend(document.children(id).map(|child| (child, layers)));

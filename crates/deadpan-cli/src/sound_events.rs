@@ -189,8 +189,6 @@ pub fn placement(
         return Err("The catalog sound differs from its measured source qualification.".into());
     }
     let event = SoundEvent {
-        tail_sends: Default::default(),
-        wet_sends: Default::default(),
         owner: document.root().clone(),
         label: metadata.label.clone(),
         source: SourceAudio {
@@ -199,7 +197,7 @@ pub fn placement(
         },
         mapping: SourceAudioMapping::natural_rate(span, rate).map_err(|error| error.to_string())?,
         offset: at,
-        gain_millidecibels: 0,
+        treatments: deadpan_core::AudioTreatments::default(),
         start_edge: AudioEdgePolicy::Automatic,
         end_edge: AudioEdgePolicy::Automatic,
         overflow: SoundOverflowPolicy::Reject,
@@ -480,12 +478,13 @@ pub fn command(
                 (Some(_), Some(_)) => {
                     return Err(refused("Give either a gain or a gain step, not both."));
                 }
-                (Some(gain), None) => event.gain_millidecibels = *gain,
+                (Some(gain), None) => {
+                    let gain = deadpan_core::GainDb::new(*gain).map_err(refused)?;
+                    event.treatments = event.treatments.with_trim(gain).map_err(refused)?;
+                }
                 (None, Some(step)) => {
-                    event.gain_millidecibels = event
-                        .gain_millidecibels
-                        .checked_add(*step)
-                        .ok_or_else(|| refused("Sound gain exceeds the supported range."))?;
+                    let gain = event.treatments.trim().adjusted(*step).map_err(refused)?;
+                    event.treatments = event.treatments.with_trim(gain).map_err(refused)?;
                 }
                 (None, None) if edges.is_none() => {
                     return Err(refused("Give a gain, a gain step or edges to change."));

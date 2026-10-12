@@ -135,9 +135,9 @@ fn ntsc(edge: AudioEdgePolicy) -> ProjectDocument {
             end: ExactRatio::integer(4),
         },
     };
-    wire["beat_sounds"] = serde_json::json!({"owner": {"effect": BeatSound { tail_sends: Default::default(), wet_sends: Default::default(),
+    wire["beat_sounds"] = serde_json::json!({"owner": {"effect": BeatSound {
         label: "Effect".into(), source: recipe.source, mapping: recipe.mapping, offset: recipe.offset,
-        gain_millidecibels: 0, start_edge: edge, end_edge: edge, overflow: SoundOverflowPolicy::Reject,
+        treatments: deadpan_core::AudioTreatments::default(), start_edge: edge, end_edge: edge, overflow: SoundOverflowPolicy::Reject,
     }}});
     ProjectDocument::from_json(&wire.to_string()).unwrap()
 }
@@ -620,7 +620,9 @@ fn copied_nested_sound(wet: bool) {
     let mut before = nested_ntsc_copy_document();
     if wet {
         let mut event = before.beat_sounds()[&id("owner")][&sound_id("effect")].clone();
-        event.wet_sends = TailSends::default().with_level(TailEffect::Reverb, Some(GainDb::UNITY));
+        event.treatments = event.treatments.clone().with_wet_sends(
+            TailSends::default().with_level(TailEffect::Reverb, Some(GainDb::UNITY)),
+        );
         before = edit(
             &before,
             "event-return",
@@ -667,7 +669,10 @@ fn copied_nested_sound(wet: bool) {
     // A returned-document reference uses the copy's gain so the f32 oracle
     // observes the same per-contribution multiply and f64 accumulation order.
     let mut source_event = returned.beat_sounds()[&id("owner")][&sound_id("effect")].clone();
-    source_event.gain_millidecibels = -6000;
+    source_event.treatments = source_event
+        .treatments
+        .with_trim(deadpan_core::GainDb::new(-6000).unwrap())
+        .unwrap();
     let gained_reference = edit(
         &returned,
         "reference-gain",
@@ -704,7 +709,10 @@ fn copied_nested_sound(wet: bool) {
         .unwrap()
         .clone();
     let mut copied_event = first_copy.beat_sounds()[&first_copy_owner][&sound_id("effect")].clone();
-    copied_event.gain_millidecibels = -6000;
+    copied_event.treatments = copied_event
+        .treatments
+        .with_trim(deadpan_core::GainDb::new(-6000).unwrap())
+        .unwrap();
     let first_copy = edit(
         &first_copy,
         "first-copy-gain",

@@ -419,6 +419,27 @@ fn continuous_event_return_preserves_preview_and_verified_export() -> Result {
 }
 
 #[test]
+fn treated_event_preserves_preview_and_verified_export() -> Result {
+    let (root, _guard) = keep_or(tempfile::tempdir()?);
+    let fixture = recipes::treated_event(&root.join("treated-event"))?;
+    check(&fixture)?;
+    let movie = render(&fixture, &root.join("exports"))?;
+    let (report, passed) = verify(&fixture, &movie, &fixture.revision, &[])?;
+    assert!(passed, "{report}");
+    check_provenance(&fixture, &report)?;
+    if let Some(path) = std::env::var_os("DEADPAN_PREVIEW_EXPORT_RESULTS") {
+        std::fs::write(
+            path,
+            serde_json::to_vec_pretty(
+                &json!({"package":fixture.package,"movie":movie,"report":report,"notes":fixture.notes}),
+            )?,
+        )?;
+    }
+    eprintln!("{}", summary_row(&fixture, &report));
+    Ok(())
+}
+
+#[test]
 fn continuous_owner_return_preserves_preview_and_verified_export() -> Result {
     let (root, _guard) = keep_or(tempfile::tempdir()?);
     let fixture = recipes::continuous_owner_return(&root.join("continuous-owner-return"))?;

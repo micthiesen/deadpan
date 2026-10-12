@@ -120,8 +120,6 @@ fn fixture() -> ProjectDocument {
         Command::SetSound {
             id: sound(),
             event: SoundEvent {
-                tail_sends: Default::default(),
-                wet_sends: Default::default(),
                 owner: node("root"),
                 label: "Sound".into(),
                 source,
@@ -131,7 +129,7 @@ fn fixture() -> ProjectDocument {
                     selection: range(0, 80),
                 },
                 offset: AudioSample(0),
-                gain_millidecibels: 0,
+                treatments: deadpan_core::AudioTreatments::default(),
                 start_edge: AudioEdgePolicy::Automatic,
                 end_edge: AudioEdgePolicy::Hard,
                 overflow: SoundOverflowPolicy::Reject,
@@ -147,8 +145,9 @@ fn send_edits_preserve_routed_timing_and_are_exactly_reversible() {
     let (routed, _) = edit(&original, insert(&original, 30, "send-pause"));
     assert!(!routed.sound_routes().is_empty());
     let mut event = routed.sounds()[&sound()].clone();
-    event.tail_sends =
-        TailSends::default().with_level(TailEffect::Delay, Some(GainDb::new(-6000).unwrap()));
+    event.treatments = event.treatments.clone().with_tail_sends(
+        TailSends::default().with_level(TailEffect::Delay, Some(GainDb::new(-6000).unwrap())),
+    );
     let (sent, transaction) = edit(
         &routed,
         Command::SetSound {
@@ -160,11 +159,14 @@ fn send_edits_preserve_routed_timing_and_are_exactly_reversible() {
     assert_eq!(sent.sound_allowances(), routed.sound_allowances());
     assert_eq!(sent.sounds()[&sound()], event);
     assert_eq!(transaction.inverse.apply(&sent).unwrap(), routed);
-    event.gain_millidecibels = -3000;
+    event.treatments = event
+        .treatments
+        .with_trim(deadpan_core::GainDb::new(-3000).unwrap())
+        .unwrap();
     let (gained, _) = edit(&sent, Command::SetSound { id: sound(), event });
     assert_eq!(
-        gained.sounds()[&sound()].tail_sends,
-        sent.sounds()[&sound()].tail_sends
+        gained.sounds()[&sound()].treatments.tail_sends(),
+        sent.sounds()[&sound()].treatments.tail_sends()
     );
     assert_eq!(gained.sound_routes(), routed.sound_routes());
 }
@@ -865,7 +867,10 @@ fn parameters_preserve_history_replacement_is_explicit_and_route_patches_are_gua
     let (doc, _) = edit(&original, insert(&original, 1, "pause"));
     let mut event = doc.sounds()[&sound()].clone();
     event.label = "Gain edit".into();
-    event.gain_millidecibels = -3000;
+    event.treatments = event
+        .treatments
+        .with_trim(deadpan_core::GainDb::new(-3000).unwrap())
+        .unwrap();
     event.start_edge = AudioEdgePolicy::Hard;
     let (changed, _) = edit(
         &doc,

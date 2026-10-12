@@ -158,8 +158,6 @@ fn fixture(repeated: bool) -> ProjectDocument {
         Command::SetSound {
             id: sound(),
             event: SoundEvent {
-                tail_sends: Default::default(),
-                wet_sends: Default::default(),
                 owner: node("root"),
                 label: "Effect".into(),
                 source: SourceAudio {
@@ -172,7 +170,7 @@ fn fixture(repeated: bool) -> ProjectDocument {
                 )
                 .unwrap(),
                 offset: AudioSample(137),
-                gain_millidecibels: 0,
+                treatments: deadpan_core::AudioTreatments::default(),
                 start_edge: AudioEdgePolicy::Automatic,
                 end_edge: AudioEdgePolicy::Automatic,
                 overflow: SoundOverflowPolicy::Reject,
@@ -224,7 +222,10 @@ fn allowance_is_reversible_guarded_and_independent_of_recipe_parameters() {
         EditErrorCode::PatchConflict
     );
     let mut event = allowed.sounds()[&sound()].clone();
-    event.gain_millidecibels = -3000;
+    event.treatments = event
+        .treatments
+        .with_trim(deadpan_core::GainDb::new(-3000).unwrap())
+        .unwrap();
     event.start_edge = AudioEdgePolicy::Hard;
     let parameters = edit(
         &allowed,

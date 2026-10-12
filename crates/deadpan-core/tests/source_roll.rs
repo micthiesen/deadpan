@@ -664,8 +664,6 @@ fn roll_preserves_existing_clocks_effects_root_routes_and_hold_allowances() {
         v["sounds"] = serde_json::to_value(BTreeMap::from([(
             sound_id.clone(),
             SoundEvent {
-                tail_sends: Default::default(),
-                wet_sends: Default::default(),
                 owner: id("root"),
                 label: "Crossing root sound".into(),
                 source: source(&base, "left").audio.clone().unwrap(),
@@ -679,7 +677,7 @@ fn roll_preserves_existing_clocks_effects_root_routes_and_hold_allowances() {
                     .unwrap(),
                 },
                 offset: AudioSample(0),
-                gain_millidecibels: 0,
+                treatments: deadpan_core::AudioTreatments::default(),
                 start_edge: AudioEdgePolicy::Hard,
                 end_edge: AudioEdgePolicy::Automatic,
                 overflow: SoundOverflowPolicy::Reject,

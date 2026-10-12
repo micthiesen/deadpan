@@ -90,7 +90,7 @@ impl GainSum {
 
     /// One owner's treatments in their authored order. Callers visit owners
     /// from the innermost outward so each owner processes its own output.
-    fn treatment(
+    pub(super) fn treatment(
         &mut self,
         treatment: &AudioTreatments,
         local: ExactRatio,

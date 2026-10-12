@@ -88,14 +88,14 @@ fn fixture() -> ProjectDocument {
         BTreeMap::from([(
             sound("effect"),
             BeatSound {
-                tail_sends: Default::default(),
-                wet_sends: Default::default(),
                 label: "Effect".into(),
                 source: SourceAudio { asset, span },
                 mapping: SourceAudioMapping::natural_rate(span, doc.presentation_basis.frame_rate)
                     .unwrap(),
                 offset: AudioSample(37),
-                gain_millidecibels: -1500,
+                treatments: crate::AudioTreatments::default()
+                    .with_trim(crate::GainDb::new(-1500).unwrap())
+                    .unwrap(),
                 start_edge: AudioEdgePolicy::Hard,
                 end_edge: AudioEdgePolicy::Automatic,
                 overflow: SoundOverflowPolicy::Reject,

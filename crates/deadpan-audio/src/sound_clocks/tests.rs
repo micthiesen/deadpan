@@ -56,8 +56,6 @@ fn beat_sound(label: &str, asset: &str) -> BeatSound {
         span: source_span(),
     };
     BeatSound {
-        tail_sends: Default::default(),
-        wet_sends: Default::default(),
         label: label.into(),
         mapping: SourceAudioMapping::natural_rate(
             source.span,
@@ -66,7 +64,7 @@ fn beat_sound(label: &str, asset: &str) -> BeatSound {
         .unwrap(),
         source,
         offset: AudioSample(0),
-        gain_millidecibels: 0,
+        treatments: deadpan_core::AudioTreatments::default(),
         start_edge: AudioEdgePolicy::Automatic,
         end_edge: AudioEdgePolicy::Automatic,
         overflow: SoundOverflowPolicy::Reject,

@@ -167,8 +167,6 @@ impl AudioSourceProvider for Provider {
 fn event(fixture: Fixture, selection: ExactFrameRange, offset: i64) -> SoundEvent {
     let source = fixture.source();
     SoundEvent {
-        tail_sends: Default::default(),
-        wet_sends: Default::default(),
         owner: node("root"),
         label: "Retained sound".into(),
         mapping: SourceAudioMapping::SelectedPlacement {
@@ -181,7 +179,7 @@ fn event(fixture: Fixture, selection: ExactFrameRange, offset: i64) -> SoundEven
         },
         source,
         offset: AudioSample(offset),
-        gain_millidecibels: 0,
+        treatments: deadpan_core::AudioTreatments::default(),
         start_edge: AudioEdgePolicy::Hard,
         end_edge: AudioEdgePolicy::Hard,
         overflow: SoundOverflowPolicy::Reject,

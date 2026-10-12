@@ -29,6 +29,125 @@ pub(super) struct CommandTarget {
 }
 
 impl DeadpanApp {
+    fn sound_treatment_controls(
+        &mut self,
+        ui: &mut egui::Ui,
+        event: &deadpan_core::SoundEvent,
+        ready: bool,
+    ) {
+        use deadpan_core::{AudioChange, AudioTreatmentStage};
+        let recipe = &event.treatments;
+        ui.label("Sound treatments");
+        let order = recipe
+            .order()
+            .iter()
+            .map(|stage| match stage {
+                AudioTreatmentStage::ClipGain => "Gain",
+                AudioTreatmentStage::Equalizer => "EQ",
+                AudioTreatmentStage::Saturation => "Saturation",
+                AudioTreatmentStage::StereoBalance => "Balance",
+            })
+            .collect::<Vec<_>>()
+            .join(" → ");
+        if !order.is_empty() {
+            ui.small(order);
+        }
+        let muted = recipe.clip_gain().is_some_and(|gain| gain.muted());
+        if ui
+            .add_enabled(
+                ready,
+                style::action(
+                    if muted { "Unmute sound" } else { "Mute sound" },
+                    ":sound-mute",
+                )
+                .wrap(),
+            )
+            .clicked()
+        {
+            self.sound_action(
+                SoundAction::Treatment(AudioChange::Mute { muted: !muted }),
+                ui.ctx(),
+            );
+        }
+        let eq = recipe.equalizer().unwrap_or_default();
+        let bands = eq.gains().map(crate::gain::format_db);
+        let cutoff = |value: Option<deadpan_core::EqCutoffHz>| {
+            value.map_or_else(|| "off".to_owned(), |cut| format!("{}Hz", cut.hz()))
+        };
+        let eq_command = format!(
+            "sound-eq bass={}dB middle={}dB treble={}dB low-cut={} high-cut={}",
+            bands[0],
+            bands[1],
+            bands[2],
+            cutoff(eq.low_cut()),
+            cutoff(eq.high_cut())
+        );
+        for (label, command, hint) in [
+            (
+                format!(
+                    "Sound EQ · {}",
+                    if recipe.equalizer().is_some() {
+                        "on"
+                    } else {
+                        "off"
+                    }
+                ),
+                eq_command,
+                ":sound-eq",
+            ),
+            (
+                format!(
+                    "Sound saturation · {}",
+                    recipe.saturation().map_or_else(
+                        || "off".into(),
+                        |s| format!("{} dB", crate::gain::format_db(s.drive()))
+                    )
+                ),
+                format!(
+                    "sound-saturate {}",
+                    recipe.saturation().map_or_else(
+                        || "6dB".into(),
+                        |s| format!("{}dB", crate::gain::format_db(s.drive()))
+                    )
+                ),
+                ":sound-saturate",
+            ),
+            (
+                format!(
+                    "Sound balance · {}%",
+                    recipe.balance().map_or(0, |b| b.percent())
+                ),
+                format!(
+                    "sound-balance {}%",
+                    recipe.balance().map_or(0, |b| b.percent())
+                ),
+                ":sound-balance",
+            ),
+            (
+                format!(
+                    "Sound envelopes · {}",
+                    recipe.clip_gain().map_or(0, |g| g.envelopes().len())
+                ),
+                "sound-envelope 0f 30f -12dB 0dB smoothstep".into(),
+                ":sound-envelope",
+            ),
+        ] {
+            if ui
+                .add_enabled(
+                    ready,
+                    style::action(&label, hint)
+                        .wrap()
+                        .min_size(egui::vec2(ui.available_width(), 28.0)),
+                )
+                .clicked()
+            {
+                self.pane = Pane::Inspector;
+                self.open_command(command, ui.ctx());
+            }
+        }
+        ui.small("Envelope frames start at the complete sound onset. Moving or cutting keeps their progress. Use off to remove EQ, saturation or balance; sound-envelope clear removes curves.");
+    }
+
     /// `:sting`: write the bundled synthesized sting (deterministic, original)
     /// to its versioned file and import it like any user sound, so the
     /// catalog, placement, gain, edges and export treat it identically.
@@ -322,16 +441,29 @@ impl DeadpanApp {
             SoundAction::WetSend { effect, level } => {
                 return Ok(Some(ProjectSoundEdit::WetSend { id, effect, level }));
             }
+            SoundAction::Treatment(_)
+            | SoundAction::Envelope { .. }
+            | SoundAction::ClearEnvelopes => {
+                let treatments = action
+                    .treatments(&event.treatments)?
+                    .ok_or("Sound treatment is absent.")?;
+                return Ok(Some(ProjectSoundEdit::Treatments {
+                    id,
+                    treatments: Box::new(treatments),
+                }));
+            }
             SoundAction::Gain(value) => (value, event.start_edge, event.end_edge),
             SoundAction::GainStep(delta) => (
                 event
-                    .gain_millidecibels
+                    .treatments
+                    .trim()
+                    .millidecibels()
                     .checked_add(delta)
                     .ok_or("Sound gain exceeds the supported range.")?,
                 event.start_edge,
                 event.end_edge,
             ),
-            SoundAction::Edges(edge) => (event.gain_millidecibels, edge, edge),
+            SoundAction::Edges(edge) => (event.treatments.trim().millidecibels(), edge, edge),
             SoundAction::Place | SoundAction::Focus => unreachable!("handled above"),
         };
         Ok(Some(ProjectSoundEdit::Update {
@@ -454,7 +586,10 @@ impl DeadpanApp {
                         (
                             id.clone(),
                             event.label.clone(),
-                            format!("{position} · {} dB", gain_label(event.gain_millidecibels)),
+                            format!(
+                                "{position} · {} dB",
+                                gain_label(event.treatments.trim().millidecibels())
+                            ),
                         )
                     })
                     .collect::<Vec<_>>()
@@ -550,7 +685,7 @@ impl DeadpanApp {
                     ui.add_space(8.0);
                     inspector_value(ui, "Start", &position);
                     inspector_value(ui, "Duration", &duration);
-                    inspector_value(ui, "Gain", &format!("{} dB", gain_label(event.gain_millidecibels)));
+                    inspector_value(ui, "Gain", &format!("{} dB", gain_label(event.treatments.trim().millidecibels())));
                     let ready = !self.service.is_busy() && !self.dialogs.is_open() && !self.command_open;
                     ui.add_space(8.0);
                     ui.label("Fine position · 48 kHz samples");
@@ -561,11 +696,12 @@ impl DeadpanApp {
                     if routed { ui.small("Placement follows timeline cuts. Gain and edges retain those cuts; moving this sound is not available yet."); }
                     if ui.add_enabled(ready, style::action("Change gain", self.editor_pair(EditorKey::GainUp, EditorKey::GainDown, " / ")).wrap().min_size(egui::vec2(ui.available_width(), 28.0))).clicked() {
                         self.pane = Pane::Inspector;
-                        self.open_command(format!("sound-gain {}", gain_label(event.gain_millidecibels)), ui.ctx());
+                        self.open_command(format!("sound-gain {}", gain_label(event.treatments.trim().millidecibels())), ui.ctx());
                     }
+                    self.sound_treatment_controls(ui, &event, ready);
                     ui.label("Continuous returns");
                     for effect in [deadpan_core::TailEffect::Reverb, deadpan_core::TailEffect::Delay] {
-                        let level = event.wet_sends.level(effect).map_or_else(|| "off".into(), |gain| format!("{}dB", crate::gain::format_db(gain)));
+                        let level = event.treatments.wet_sends().level(effect).map_or_else(|| "off".into(), |gain| format!("{}dB", crate::gain::format_db(gain)));
                         let response = ui.add_enabled(ready, style::row_action(ui, format!("{} return: {level}", effect.name()), ":sound-wet-send"));
                         if response.gained_focus() { response.scroll_to_me_animation(None, egui::style::ScrollAnimation::none()); }
                         if response.clicked() {
@@ -576,7 +712,7 @@ impl DeadpanApp {
                     ui.small("Returns follow this sound's cuts and silence permissions. No added time.");
                     ui.label("Tail sends");
                     for effect in [deadpan_core::TailEffect::Reverb, deadpan_core::TailEffect::Delay] {
-                        let level = event.tail_sends.level(effect).map_or_else(|| "off".into(), |gain| format!("{}dB", crate::gain::format_db(gain)));
+                        let level = event.treatments.tail_sends().level(effect).map_or_else(|| "off".into(), |gain| format!("{}dB", crate::gain::format_db(gain)));
                         let response = ui.add_enabled(ready, style::row_action(ui, format!("{} send: {level}", effect.name()), ":sound-tail-send"));
                         if response.gained_focus() { response.scroll_to_me_animation(None, egui::style::ScrollAnimation::none()); }
                         if response.clicked() {

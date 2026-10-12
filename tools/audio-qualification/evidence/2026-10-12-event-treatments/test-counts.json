@@ -1,0 +1,1038 @@
+{
+  "initial_completed": [
+    {
+      "target": "unittests src/main.rs (target/debug/deps/deadpan_app-1ce616f62928067a)",
+      "result": "ok",
+      "passed": 1123,
+      "failed": 0,
+      "ignored": 9
+    },
+    {
+      "target": "tests/headless.rs (target/debug/deps/headless-fee7c1fbbc154663)",
+      "result": "ok",
+      "passed": 4,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "unittests src/lib.rs (target/debug/deps/deadpan_audio-e6d613e57999a0ed)",
+      "result": "ok",
+      "passed": 163,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/audio_context.rs (target/debug/deps/audio_context-dea90ccfc3c8aed5)",
+      "result": "ok",
+      "passed": 5,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/audio_definition.rs (target/debug/deps/audio_definition-714d7088b3dcbfb4)",
+      "result": "ok",
+      "passed": 118,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/audio_domain.rs (target/debug/deps/audio_domain-a78f0103c1d14978)",
+      "result": "ok",
+      "passed": 12,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/composite_insert.rs (target/debug/deps/composite_insert-cb855d0cd6a37447)",
+      "result": "ok",
+      "passed": 82,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/dormant_source.rs (target/debug/deps/dormant_source-2e61a038c96ec7dd)",
+      "result": "ok",
+      "passed": 4,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/gap_bindings.rs (target/debug/deps/gap_bindings-dd5682a5158182a2)",
+      "result": "ok",
+      "passed": 10,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/gap_definition.rs (target/debug/deps/gap_definition-52b682ee9a649d4c)",
+      "result": "ok",
+      "passed": 6,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/limiter.rs (target/debug/deps/limiter-f12b673b470038a9)",
+      "result": "ok",
+      "passed": 9,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/loudness.rs (target/debug/deps/loudness-f567d33b18b87142)",
+      "result": "ok",
+      "passed": 9,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/reanchors.rs (target/debug/deps/reanchors-02b30b49c628723b)",
+      "result": "ok",
+      "passed": 6,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/reference_policy.rs (target/debug/deps/reference_policy-cde7b91cb3455f2a)",
+      "result": "ok",
+      "passed": 4,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/resample.rs (target/debug/deps/resample-a668ce1711f5e36c)",
+      "result": "ok",
+      "passed": 7,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/root_sound_trim.rs (target/debug/deps/root_sound_trim-efeecebf2830511e)",
+      "result": "ok",
+      "passed": 10,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/sequence.rs (target/debug/deps/sequence-124a26d24fdab528)",
+      "result": "ok",
+      "passed": 12,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/session.rs (target/debug/deps/session-7f62b950fce39efb)",
+      "result": "ok",
+      "passed": 8,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/signal_transfer.rs (target/debug/deps/signal_transfer-af3a55accee75ab8)",
+      "result": "ok",
+      "passed": 7,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/sound_events.rs (target/debug/deps/sound_events-5a9a331f5e7313fe)",
+      "result": "ok",
+      "passed": 6,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/stages.rs (target/debug/deps/stages-d935a0b6041f2a75)",
+      "result": "ok",
+      "passed": 130,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/timing_representation.rs (target/debug/deps/timing_representation-954596c933b08b1e)",
+      "result": "ok",
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/true_peak.rs (target/debug/deps/true_peak-9a9844f3220aca05)",
+      "result": "ok",
+      "passed": 7,
+      "failed": 0,
+      "ignored": 0
+    }
+  ],
+  "remaining": [
+    {
+      "target": "unittests src/lib.rs (target/debug/deps/deadpan_core-1a9b6647343f54bd)",
+      "result": "ok",
+      "passed": 390,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/adversarial.rs (target/debug/deps/adversarial-86cd3dece0805b87)",
+      "result": "ok",
+      "passed": 6,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/allocation_projection.rs (target/debug/deps/allocation_projection-31ede61ff19845f9)",
+      "result": "ok",
+      "passed": 8,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/anchors.rs (target/debug/deps/anchors-0242ec5a7c424061)",
+      "result": "ok",
+      "passed": 36,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/audio_binding_capture.rs (target/debug/deps/audio_binding_capture-7ea0875f00a342c6)",
+      "result": "ok",
+      "passed": 6,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/audio_bindings.rs (target/debug/deps/audio_bindings-d11aeb251e105001)",
+      "result": "ok",
+      "passed": 50,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/audio_context.rs (target/debug/deps/audio_context-d10ce3339631fdc9)",
+      "result": "ok",
+      "passed": 21,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/audio_edges.rs (target/debug/deps/audio_edges-1e1811f720db7530)",
+      "result": "ok",
+      "passed": 6,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/audio_gain.rs (target/debug/deps/audio_gain-e2db8ed0cdc99479)",
+      "result": "ok",
+      "passed": 17,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/audio_gain_prefix.rs (target/debug/deps/audio_gain_prefix-c4fc7061ab6a7097)",
+      "result": "ok",
+      "passed": 3,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/audio_lineage.rs (target/debug/deps/audio_lineage-60cb15512b0cb090)",
+      "result": "ok",
+      "passed": 10,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/audio_reference.rs (target/debug/deps/audio_reference-9b73f96e602969cf)",
+      "result": "ok",
+      "passed": 15,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/command_work.rs (target/debug/deps/command_work-9a6b9c9044967d33)",
+      "result": "ok",
+      "passed": 3,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/document.rs (target/debug/deps/document-6668c5288d367ff3)",
+      "result": "ok",
+      "passed": 18,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/edited_slice.rs (target/debug/deps/edited_slice-4cccc410888c344c)",
+      "result": "ok",
+      "passed": 53,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/explode.rs (target/debug/deps/explode-f5a325891007aeea)",
+      "result": "ok",
+      "passed": 7,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/framing.rs (target/debug/deps/framing-5139e922f3a17263)",
+      "result": "ok",
+      "passed": 18,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/gap_overrides.rs (target/debug/deps/gap_overrides-3fda631ce0ce9cde)",
+      "result": "ok",
+      "passed": 9,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/gap_projection.rs (target/debug/deps/gap_projection-f1e0e21bf11d9aea)",
+      "result": "ok",
+      "passed": 7,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/generated_holds.rs (target/debug/deps/generated_holds-511cf7681c32f19b)",
+      "result": "ok",
+      "passed": 8,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/hold_audio.rs (target/debug/deps/hold_audio-17fe1d9dc1c6aba2)",
+      "result": "ok",
+      "passed": 7,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/insert_time.rs (target/debug/deps/insert_time-9b8900ebd7d5cb47)",
+      "result": "ok",
+      "passed": 72,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/mark_fragments.rs (target/debug/deps/mark_fragments-3a1c60a299291c98)",
+      "result": "ok",
+      "passed": 9,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/mark_resolution.rs (target/debug/deps/mark_resolution-bf0ca6205997fb2e)",
+      "result": "ok",
+      "passed": 9,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/marks.rs (target/debug/deps/marks-ab9d4d4e80bf5266)",
+      "result": "ok",
+      "passed": 18,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/move_range.rs (target/debug/deps/move_range-abd01aa3ed0643ec)",
+      "result": "ok",
+      "passed": 8,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/node_gain.rs (target/debug/deps/node_gain-1cc8ff4e44da021b)",
+      "result": "ok",
+      "passed": 9,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/occurrence_edits.rs (target/debug/deps/occurrence_edits-f34f1d7876e27511)",
+      "result": "ok",
+      "passed": 8,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/partitions.rs (target/debug/deps/partitions-cd53ac3851a783a1)",
+      "result": "ok",
+      "passed": 2,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/picture_context.rs (target/debug/deps/picture_context-d91cf12c62b08ac9)",
+      "result": "ok",
+      "passed": 6,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/play_overrides.rs (target/debug/deps/play_overrides-1423dee4712ed52f)",
+      "result": "ok",
+      "passed": 8,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/presentation_basis.rs (target/debug/deps/presentation_basis-784a05404b6c1a0f)",
+      "result": "ok",
+      "passed": 12,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/repeat_gap_layout.rs (target/debug/deps/repeat_gap_layout-7187ecd1d23dcfc8)",
+      "result": "ok",
+      "passed": 6,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/retime_edits.rs (target/debug/deps/retime_edits-2d69bb60355e2347)",
+      "result": "ok",
+      "passed": 9,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/scoped_many.rs (target/debug/deps/scoped_many-76fb5f0c32893fea)",
+      "result": "ok",
+      "passed": 4,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/sound_allowances.rs (target/debug/deps/sound_allowances-7ec24ce0065ef4ea)",
+      "result": "ok",
+      "passed": 13,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/sound_events.rs (target/debug/deps/sound_events-b2e2b02c4bf5da55)",
+      "result": "ok",
+      "passed": 7,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/sound_routes.rs (target/debug/deps/sound_routes-bae518f473e6755a)",
+      "result": "ok",
+      "passed": 19,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/sound_routing.rs (target/debug/deps/sound_routing-16b8da57d07a2440)",
+      "result": "ok",
+      "passed": 23,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/source_edit_window.rs (target/debug/deps/source_edit_window-8c265b91cb111bce)",
+      "result": "ok",
+      "passed": 5,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/source_import.rs (target/debug/deps/source_import-2854ec1b96870b24)",
+      "result": "ok",
+      "passed": 7,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/source_interpretation.rs (target/debug/deps/source_interpretation-eec9a6d5b6e7911a)",
+      "result": "ok",
+      "passed": 5,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/source_roll.rs (target/debug/deps/source_roll-33bbeb94d7e1bf3d)",
+      "result": "ok",
+      "passed": 11,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/source_slip.rs (target/debug/deps/source_slip-75c92397c766ad44)",
+      "result": "ok",
+      "passed": 10,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/source_trim_command.rs (target/debug/deps/source_trim_command-d063d29dc8c3a1b4)",
+      "result": "ok",
+      "passed": 13,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/source_trim_edit.rs (target/debug/deps/source_trim_edit-1d6f0e69e176c440)",
+      "result": "ok",
+      "passed": 19,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/source_trim_geometry.rs (target/debug/deps/source_trim_geometry-721e45448ccc8f6c)",
+      "result": "ok",
+      "passed": 13,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/source_trim_resolution.rs (target/debug/deps/source_trim_resolution-2b3c438607946ebf)",
+      "result": "ok",
+      "passed": 10,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/source_view.rs (target/debug/deps/source_view-7ea0f1fb3ab62a81)",
+      "result": "ok",
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/split.rs (target/debug/deps/split-9951f895a464e501)",
+      "result": "ok",
+      "passed": 18,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/split_edit.rs (target/debug/deps/split_edit-e1e74191c288b05f)",
+      "result": "ok",
+      "passed": 6,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/structural_properties.rs (target/debug/deps/structural_properties-9f3452aaa86c244c)",
+      "result": "ok",
+      "passed": 2,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "unittests src/lib.rs (target/debug/deps/deadpan_plan-3493f6f452db8277)",
+      "result": "ok",
+      "passed": 44,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/audio_bindings.rs (target/debug/deps/audio_bindings-1487ab27f5fb098f)",
+      "result": "ok",
+      "passed": 2,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/audio_context.rs (target/debug/deps/audio_context-d8ca6cfc0cd79ad8)",
+      "result": "ok",
+      "passed": 3,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/audio_definition.rs (target/debug/deps/audio_definition-92d8933fc27a8adf)",
+      "result": "ok",
+      "passed": 44,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/audio_domain.rs (target/debug/deps/audio_domain-5f20c2dcc9401c50)",
+      "result": "ok",
+      "passed": 8,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/audio_fades.rs (target/debug/deps/audio_fades-831d83cf73b59fcb)",
+      "result": "ok",
+      "passed": 17,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/audio_plan.rs (target/debug/deps/audio_plan-5f5ca863ceb60ad6)",
+      "result": "ok",
+      "passed": 22,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/audio_policy.rs (target/debug/deps/audio_policy-165f8c75f4dd6176)",
+      "result": "ok",
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/audio_reference.rs (target/debug/deps/audio_reference-89cf9320712aa68f)",
+      "result": "ok",
+      "passed": 18,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/audio_signal.rs (target/debug/deps/audio_signal-90166204d796ade1)",
+      "result": "ok",
+      "passed": 17,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/audio_tape.rs (target/debug/deps/audio_tape-d7fc96ba98251930)",
+      "result": "ok",
+      "passed": 12,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/edited_slice.rs (target/debug/deps/edited_slice-10397325f8b0ca90)",
+      "result": "ok",
+      "passed": 14,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/gap_bindings.rs (target/debug/deps/gap_bindings-036829875a20d09d)",
+      "result": "ok",
+      "passed": 3,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/gap_branches.rs (target/debug/deps/gap_branches-81d49b2875be421c)",
+      "result": "ok",
+      "passed": 4,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/hold_policy.rs (target/debug/deps/hold_policy-f39159a16f644498)",
+      "result": "ok",
+      "passed": 10,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/occurrence_edits.rs (target/debug/deps/occurrence_edits-02b934ee6db4cc5c)",
+      "result": "ok",
+      "passed": 4,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/picture_plan.rs (target/debug/deps/picture_plan-f9a17ea5bd9e9a55)",
+      "result": "ok",
+      "passed": 96,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/play_overrides.rs (target/debug/deps/play_overrides-4dc2e787cd64e41f)",
+      "result": "ok",
+      "passed": 5,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/root_sound_routes.rs (target/debug/deps/root_sound_routes-c7b8fc62b0867d37)",
+      "result": "ok",
+      "passed": 18,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/routed_voice.rs (target/debug/deps/routed_voice-ae26b67b793bcd27)",
+      "result": "ok",
+      "passed": 11,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/selected_video_window.rs (target/debug/deps/selected_video_window-a974f0dc4d4dfd7f)",
+      "result": "ok",
+      "passed": 17,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/sound_event_fades.rs (target/debug/deps/sound_event_fades-2837c0e80c69b38c)",
+      "result": "ok",
+      "passed": 9,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/sound_events.rs (target/debug/deps/sound_events-ee0c9e9a228b58d9)",
+      "result": "ok",
+      "passed": 2,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/sound_processing_layout.rs (target/debug/deps/sound_processing_layout-fba52242899e0bf8)",
+      "result": "ok",
+      "passed": 5,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/sound_route_sampling.rs (target/debug/deps/sound_route_sampling-9bc7cb04615c46d9)",
+      "result": "ok",
+      "passed": 14,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/source_voice.rs (target/debug/deps/source_voice-2a310cf94785259d)",
+      "result": "ok",
+      "passed": 4,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/source_voice_policy.rs (target/debug/deps/source_voice_policy-579d9204acbcf6d7)",
+      "result": "ok",
+      "passed": 6,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "unittests src/lib.rs (target/debug/deps/deadpan_playback-465e45eac1c6167f)",
+      "result": "ok",
+      "passed": 88,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "unittests src/lib.rs (target/debug/deps/deadpan_store-34e06d2d31b8d387)",
+      "result": "ok",
+      "passed": 249,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/adversarial.rs (target/debug/deps/adversarial-8af27471a6f94154)",
+      "result": "ok",
+      "passed": 3,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/analysis_corrections.rs (target/debug/deps/analysis_corrections-d506d725788892a7)",
+      "result": "ok",
+      "passed": 3,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/backups.rs (target/debug/deps/backups-22bbe8a84021da85)",
+      "result": "ok",
+      "passed": 16,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/bookmarks.rs (target/debug/deps/bookmarks-1ad911348a12f8fe)",
+      "result": "ok",
+      "passed": 3,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/chaos_kills.rs (target/debug/deps/chaos_kills-d52ae3f18c43c91f)",
+      "result": "ok",
+      "passed": 4,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/delete_range.rs (target/debug/deps/delete_range-bc3d94f85d4234c2)",
+      "result": "ok",
+      "passed": 2,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/delete_ripple.rs (target/debug/deps/delete_ripple-b0a0af1755a94916)",
+      "result": "ok",
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/edited_slice.rs (target/debug/deps/edited_slice-e4d966f7c51a842d)",
+      "result": "ok",
+      "passed": 17,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/failpoints.rs (target/debug/deps/failpoints-9c61d0669fd11f20)",
+      "result": "ok",
+      "passed": 7,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/generated_admission.rs (target/debug/deps/generated_admission-6ad725bd49ec6128)",
+      "result": "ok",
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/generated_media.rs (target/debug/deps/generated_media-922b30fbd0227158)",
+      "result": "ok",
+      "passed": 8,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/generated_read_handle.rs (target/debug/deps/generated_read_handle-c468b4b3cd3f550e)",
+      "result": "ok",
+      "passed": 5,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/generation.rs (target/debug/deps/generation-fd278e75b4fa2c4f)",
+      "result": "ok",
+      "passed": 16,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/generation_attempts.rs (target/debug/deps/generation_attempts-4bb776c25e2e8c27)",
+      "result": "ok",
+      "passed": 10,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/generation_bundles.rs (target/debug/deps/generation_bundles-06bead358abee03d)",
+      "result": "ok",
+      "passed": 72,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/host_owner.rs (target/debug/deps/host_owner-139ffbdeefad3be9)",
+      "result": "ok",
+      "passed": 11,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/long_project_stress.rs (target/debug/deps/long_project_stress-a8c629c18e967432)",
+      "result": "ok",
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/migration.rs (target/debug/deps/migration-d35f63eaccb940e1)",
+      "result": "ok",
+      "passed": 25,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/occurrence_edits.rs (target/debug/deps/occurrence_edits-f828399e4492ea00)",
+      "result": "ok",
+      "passed": 3,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/original_media.rs (target/debug/deps/original_media-aba8b362b909735d)",
+      "result": "ok",
+      "passed": 6,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/original_preparation.rs (target/debug/deps/original_preparation-19b5945f7cddd76d)",
+      "result": "ok",
+      "passed": 9,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/original_provenance.rs (target/debug/deps/original_provenance-0d34a885d87334ca)",
+      "result": "ok",
+      "passed": 3,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/persistence.rs (target/debug/deps/persistence-d29def16114911d9)",
+      "result": "ok",
+      "passed": 20,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/prepared_checkpoint.rs (target/debug/deps/prepared_checkpoint-d8259218e6b46554)",
+      "result": "ok",
+      "passed": 10,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/prepared_relink.rs (target/debug/deps/prepared_relink-93b8aae31556e454)",
+      "result": "ok",
+      "passed": 7,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/prepared_source_registration.rs (target/debug/deps/prepared_source_registration-09bf0191c1d8ac21)",
+      "result": "ok",
+      "passed": 23,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/presentation_basis.rs (target/debug/deps/presentation_basis-0502f6ec9445fdd3)",
+      "result": "ok",
+      "passed": 6,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/recovery.rs (target/debug/deps/recovery-ecd4c21832a0c389)",
+      "result": "ok",
+      "passed": 6,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/render_jobs.rs (target/debug/deps/render_jobs-030088b45a5c75b7)",
+      "result": "ok",
+      "passed": 28,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/revision_storage.rs (target/debug/deps/revision_storage-9ccabe56b4ae58f7)",
+      "result": "ok",
+      "passed": 7,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/shot_analysis.rs (target/debug/deps/shot_analysis-8b8f9feb93cb0fe7)",
+      "result": "ok",
+      "passed": 7,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/single_source.rs (target/debug/deps/single_source-efabca090ec1e4ef)",
+      "result": "ok",
+      "passed": 11,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/source_effects.rs (target/debug/deps/source_effects-2af315ba16557733)",
+      "result": "ok",
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/source_origin.rs (target/debug/deps/source_origin-40b8498226e4168c)",
+      "result": "ok",
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/source_registration.rs (target/debug/deps/source_registration-04f3081689b03c81)",
+      "result": "ok",
+      "passed": 52,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/speech_activity.rs (target/debug/deps/speech_activity-499f00878b14bfd6)",
+      "result": "ok",
+      "passed": 4,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/storage_failures.rs (target/debug/deps/storage_failures-991a5023e02d5133)",
+      "result": "ok",
+      "passed": 4,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/storage_failures_media.rs (target/debug/deps/storage_failures_media-d300b9e7915113a4)",
+      "result": "ok",
+      "passed": 2,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "tests/transcripts.rs (target/debug/deps/transcripts-ecfaec6298dff761)",
+      "result": "ok",
+      "passed": 3,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "deadpan_core",
+      "result": "ok",
+      "passed": 0,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "deadpan_plan",
+      "result": "ok",
+      "passed": 0,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "deadpan_playback",
+      "result": "ok",
+      "passed": 0,
+      "failed": 0,
+      "ignored": 0
+    },
+    {
+      "target": "deadpan_store",
+      "result": "ok",
+      "passed": 1,
+      "failed": 0,
+      "ignored": 0
+    }
+  ],
+  "passed": 3969,
+  "failed": 0,
+  "ignored": 9
+}

@@ -60,6 +60,7 @@ struct Graph<'plan> {
     wet_filters: [Option<crate::FiniteWetEffect>; 2],
     event_tiles: BTreeMap<EventKey, Arc<WideBlock>>,
     event_nodes: std::collections::BTreeSet<EventKey>,
+    event_filters: BTreeMap<EventKey, crate::Equalizer>,
     voices: BTreeMap<Voice, usize>,
     sends: Option<deadpan_core::TailEffect>,
     skip: Vec<authored_gain::OwnerIdentity>,
@@ -146,6 +147,7 @@ impl StageAudio {
             wet_filters: std::array::from_fn(|_| None),
             event_tiles: BTreeMap::new(),
             event_nodes: Default::default(),
+            event_filters: BTreeMap::new(),
             voices: BTreeMap::new(),
             sends: selection.sends,
             skip: selection.skip.to_vec(),
@@ -333,7 +335,10 @@ impl StageAudio {
                     mix.route(
                         std::slice::from_ref(root),
                         root_range.clone(),
-                        (id, Contribution::Sound(sound.voice.event().tail_sends)),
+                        (
+                            id,
+                            Contribution::Sound(sound.voice.event().treatments.tail_sends()),
+                        ),
                         control,
                     )
                 })
@@ -354,14 +359,14 @@ impl StageAudio {
                     mix.route(
                         occurrence.voice.gain_owners(),
                         occurrence.samples.clone(),
-                        (id, Contribution::Sound(beat.event.tail_sends)),
+                        (id, Contribution::Sound(beat.event.treatments.tail_sends())),
                         control,
                     )?,
                 ));
             }
         }
         let reservation = u64::from(frames)
-            .checked_mul(8)
+            .checked_mul(12)
             .and_then(|n| n.checked_add(mix.resident_frames().ok()?))
             .ok_or(StageAudioError::Limit("shared EQ mix PCM"))?;
         self.make_room(reservation, false, control)?;
@@ -432,7 +437,7 @@ impl StageAudio {
                     event.source.asset.clone(),
                     control.observe(&event.source.asset, source)?,
                 );
-                let returned = if event.wet_sends.is_empty() {
+                let returned = if !event_returns::needs_processing(&event.treatments) {
                     None
                 } else {
                     let input = deadpan_plan::AudioRoutedRootInput::Source(Box::new(
@@ -450,7 +455,7 @@ impl StageAudio {
                             voice: id,
                             start: root_range.start,
                             frames: count(&root_range)?,
-                            sends: event.wet_sends,
+                            treatments: &event.treatments,
                             edges: root.voice.event_edges(),
                             depth: program.depth,
                         },
@@ -458,8 +463,8 @@ impl StageAudio {
                     )?)
                 };
                 if let Some(returned) = &returned {
-                    dependencies.extend(returned.dependencies.clone());
-                    relative_depth = relative_depth.max(returned.relative_depth);
+                    dependencies.extend(returned.returned.dependencies.clone());
+                    relative_depth = relative_depth.max(returned.returned.relative_depth);
                 }
                 let raw =
                     self.read_prepared_root_sound(provider, root.input, root_range.start, control)?;
@@ -467,8 +472,8 @@ impl StageAudio {
                     &mut mix,
                     &route,
                     (&raw, returned.as_ref()),
-                    &root.fades,
-                    event.gain_millidecibels,
+                    (&root.fades, &root.post_fades),
+                    event.treatments.trim().millidecibels(),
                     admitted(id).then_some(id),
                     control,
                 )?;
@@ -481,7 +486,7 @@ impl StageAudio {
                     let (id, route) = routes
                         .next()
                         .ok_or(PlanError::InvalidPlan("missing beat sound route"))?;
-                    let returned = if beat.event.wet_sends.is_empty() {
+                    let returned = if !event_returns::needs_processing(&beat.event.treatments) {
                         None
                     } else {
                         let request = EventRead {
@@ -489,7 +494,7 @@ impl StageAudio {
                             voice: id,
                             start: occurrence.samples.start,
                             frames: count(&occurrence.samples)?,
-                            sends: beat.event.wet_sends,
+                            treatments: &beat.event.treatments,
                             edges: occurrence
                                 .voice
                                 .event_edges((beat.event.start_edge, beat.event.end_edge)),
@@ -527,8 +532,8 @@ impl StageAudio {
                         })
                     };
                     if let Some(returned) = &returned {
-                        dependencies.extend(returned.dependencies.clone());
-                        relative_depth = relative_depth.max(returned.relative_depth);
+                        dependencies.extend(returned.returned.dependencies.clone());
+                        relative_depth = relative_depth.max(returned.returned.relative_depth);
                     }
                     let raw = self.read_prepared_beat_sound(
                         provider,
@@ -540,8 +545,8 @@ impl StageAudio {
                         &mut mix,
                         &route,
                         (&raw, returned.as_ref()),
-                        &occurrence.fades,
-                        beat.event.gain_millidecibels,
+                        (&occurrence.fades, &occurrence.post_fades),
+                        beat.event.treatments.trim().millidecibels(),
                         admitted(id).then_some(id),
                         control,
                     )?;
@@ -831,8 +836,11 @@ impl StageAudio {
 fn add_sound(
     mix: &mut SharedMix<'_>,
     route: &shared_mix::Route<'_>,
-    (raw, returned): (&ReadBlock, Option<&WideBlock>),
-    fades: &[deadpan_plan::AudioSoundGateSpan],
+    (raw, returned): (&ReadBlock, Option<&event_returns::EventOutput>),
+    (fades, post_fades): (
+        &[deadpan_plan::AudioSoundGateSpan],
+        &[deadpan_plan::AudioSoundGateSpan],
+    ),
     gain: i32,
     id: Option<usize>,
     control: WorkControl<'_>,
@@ -845,6 +853,9 @@ fn add_sound(
             .ok_or(TimeError::Overflow)?,
     );
     sound_events::validate_gate_envelopes(fades, raw.start..end)?;
+    if returned.is_some() {
+        sound_events::validate_gate_envelopes(post_fades, raw.start..end)?;
+    }
     for span in fades {
         for at in span.samples.start.0..span.samples.end.0 {
             control.check()?;
@@ -860,15 +871,31 @@ fn add_sound(
             } else {
                 None
             };
-            let value = sample.map(|value| f64::from(value * edge));
+            let value = if let Some(processed) = returned {
+                let index = post_fades.partition_point(|span| span.samples.end.0 <= at);
+                let span = post_fades
+                    .get(index)
+                    .filter(|span| span.samples.contains(&AudioSample(at)))
+                    .ok_or(PlanError::InvalidPlan("event output gate absent"))?;
+                let gate = crate::edges::edge_gain(
+                    span.length,
+                    i128::from(span.progress_at_start) + i128::from(at - span.samples.start.0),
+                    span.start_edge == deadpan_core::AudioEdgePolicy::Automatic,
+                    span.end_edge == deadpan_core::AudioEdgePolicy::Automatic,
+                );
+                processed.dry[(at - raw.start.0) as usize].map(|value| value * f64::from(gate))
+            } else {
+                sample.map(|value| f64::from(value * edge))
+            };
             let wet = returned.map_or([0.0; 2], |returned| {
-                returned.samples[(at - raw.start.0) as usize].map(|value| value * f64::from(edge))
+                returned.returned.samples[(at - raw.start.0) as usize]
+                    .map(|value| value * f64::from(edge))
             });
             mix.add_wide(
                 route,
                 (at - start.0) as usize,
                 (value, wet),
-                gain,
+                if returned.is_some() { 0 } else { gain },
                 allowed,
                 control,
             )?;

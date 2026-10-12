@@ -335,7 +335,7 @@ fn placed_sound_edits_derive_the_native_events() -> Result {
     assert_eq!(nudged["committed"], true, "{nudged}");
     let document = ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?;
     let event = &document.sounds()[&id];
-    assert_eq!(event.gain_millidecibels, -3000);
+    assert_eq!(event.treatments.trim().millidecibels(), -3000);
     assert_eq!(event.start_edge, deadpan_core::AudioEdgePolicy::Hard);
     assert_eq!(event.end_edge, deadpan_core::AudioEdgePolicy::Hard);
 

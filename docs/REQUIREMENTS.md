@@ -4,6 +4,19 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 
 ## Resumed implementation, 2026-10-06
 
+[Independent sound treatments](qualification/event-treatments-2026-10-12.md)
+now give root and attached sounds gain envelopes/mutes, EQ, saturation and
+balance before their sends and group processing. Native captured commands
+author placed sounds and preserve complete recipes through Undo/reopen.
+The event-local clock follows retained input through moves and delivery cuts.
+All 3,969 tests, strict workspace checks, 663 final offscreen scenario checks
+and a real 30-picture/four-audio-block export pass; its audio window verifies
+zero offset. Test-fixture and replay-helper failures remain in evidence. A
+pre-existing black-viewer placement checkpoint needs harness/presentation
+diagnosis, as recorded in the qualification. Partial attached-sound scope routes, wider
+incoming-tail/loop qualification, persistent filtered caching, mastering and
+performance keep DP-09 and DP-16 partial. No requirement or gate is newly complete.
+
 [Independent sound returns](qualification/event-returns-2026-10-12.md) now
 process root and attached sound recipes before saved delivery routes and group
 treatments. Native `:sound-wet-send` authors captured placed-sound levels.
@@ -12,8 +25,9 @@ remain explicit; copies through nested Preserve retain their effect history.
 All 3,962 tests, strict workspace checks, 603 final offscreen scenario checks
 and a real 30-picture/four-audio-block export pass; its signal window verifies
 zero offset. Replay setup failures and their fixes remain in the evidence.
-Creative event envelopes/treatments, partial scope edits, wider incoming-tail/loop
-qualification and cache/mastering/performance work keep DP-09 and DP-16 partial.
+That increment left creative event treatments to the implementation above;
+partial scope edits, wider incoming-tail/loop qualification and
+cache/mastering/performance work keep DP-09 and DP-16 partial.
 No requirement or gate is newly complete.
 
 [Retained sound input](qualification/retained-sound-input-2026-10-12.md) adds a

@@ -20,6 +20,7 @@ pub struct AudioRootSource<'plan> {
     audible: Range<AudioSample>,
     extent: ExactRatio,
     grid: AudioSampleGrid<AudioSample>,
+    treatment_clock: AudioSampleMap<AudioSample>,
     input: AudioSignalTape<'plan>,
 }
 
@@ -61,6 +62,11 @@ impl<'plan> AudioRootSource<'plan> {
             ));
         }
         let source = recipe.source.clone();
+        let onset = recipe
+            .mapping
+            .start_frames_with_offset(recipe.offset, rate)?;
+        let treatment_clock =
+            AudioSampleMap::new(AudioSample(0), ExactRatio::ZERO.checked_sub(onset)?, step)?;
         let voice = AudioSignal::source_voice_capture(plan, recipe, extent)?;
         let full = ExactRatio::ZERO..extent;
         let input = AudioSignalTape::new(
@@ -87,6 +93,7 @@ impl<'plan> AudioRootSource<'plan> {
             audible: grid.boundary(selected.start)?..grid.boundary(selected.end)?,
             extent,
             grid,
+            treatment_clock,
             input,
         })
     }
@@ -106,6 +113,11 @@ impl<'plan> AudioRootSource<'plan> {
     }
     pub fn grid(&self) -> AudioSampleGrid<AudioSample> {
         self.grid
+    }
+    /// Event-local frame clock, independent of the selected interval and later
+    /// delivery edits. Zero is the complete source recipe's exact onset.
+    pub fn treatment_clock(&self) -> AudioSampleMap<AudioSample> {
+        self.treatment_clock
     }
     pub fn plan(&self) -> &'plan RenderPlan {
         self.plan

@@ -106,6 +106,76 @@ fn assert_failed(
 }
 
 #[test]
+fn complete_sound_treatments_survive_reopen_undo_and_stale_requests() {
+    use deadpan_core::{AudioTreatments, EqualizerRecipe, GainDb, Saturation, StereoBalance};
+    let scratch = tempfile::tempdir().unwrap();
+    let harness = Harness::with_library(Some(
+        ProjectLibrary::from_documents(scratch.path().join("Documents")).unwrap(),
+    ));
+    let before = catalog(&harness);
+    let (placed, id) = changed(
+        &harness.service,
+        &before,
+        ProjectSoundEdit::Place {
+            asset: catalog_asset(&before),
+            at: AudioSample(137),
+        },
+    );
+    let id = id.unwrap();
+    let recipe = AudioTreatments::default()
+        .with_trim(GainDb::new(-6000).unwrap())
+        .unwrap()
+        .with_equalizer(Some(
+            EqualizerRecipe::new(
+                [GainDb::new(3000).unwrap(), GainDb::UNITY, GainDb::UNITY],
+                None,
+                None,
+            )
+            .unwrap(),
+        ))
+        .unwrap()
+        .with_saturation(Some(Saturation::new(GainDb::new(9000).unwrap()).unwrap()))
+        .unwrap()
+        .with_balance(Some(StereoBalance::new(35).unwrap()))
+        .unwrap();
+    let edit = ProjectSoundEdit::Treatments {
+        id: id.clone(),
+        treatments: Box::new(recipe.clone()),
+    };
+    let (saved, selected) = changed(&harness.service, &placed, edit.clone());
+    assert_eq!(selected, Some(id.clone()));
+    assert_eq!(saved.document.sounds()[&id].treatments, recipe);
+    same_picture(&placed, &saved);
+    let stale = command(&harness.service, request(&placed, edit));
+    assert!(stale.error.is_some());
+    assert_eq!(*stale.workspace.unwrap().document, *saved.document);
+    command(&harness.service, ProjectRequest::Close);
+    let reopened = command(&harness.service, ProjectRequest::Open(saved.path.clone()))
+        .workspace
+        .unwrap();
+    assert_eq!(reopened.document.sounds()[&id].treatments, recipe);
+    let undone = command(
+        &harness.service,
+        ProjectRequest::Undo {
+            expected_revision: reopened.document.revision_id().clone(),
+        },
+    )
+    .workspace
+    .unwrap();
+    assert_eq!(undone.document.sounds(), placed.document.sounds());
+    let redone = command(
+        &harness.service,
+        ProjectRequest::Redo {
+            expected_revision: undone.document.revision_id().clone(),
+        },
+    )
+    .workspace
+    .unwrap();
+    assert_eq!(redone.document.sounds(), saved.document.sounds());
+    command(&harness.service, ProjectRequest::Close);
+}
+
+#[test]
 fn arbitrary_sample_sound_parameters_move_and_removal_survive_durable_history() {
     let scratch = tempfile::tempdir().unwrap();
     let harness = Harness::with_library(Some(
@@ -129,7 +199,7 @@ fn arbitrary_sample_sound_parameters_move_and_removal_survive_durable_history() 
         before.document.assets()[&asset].audio.unwrap()
     );
     assert_eq!(original.offset, AudioSample(137));
-    assert_eq!(original.gain_millidecibels, 0);
+    assert_eq!(original.treatments.trim().millidecibels(), 0);
     assert_eq!(
         original.mapping,
         SourceAudioMapping::natural_rate(
@@ -157,7 +227,7 @@ fn arbitrary_sample_sound_parameters_move_and_removal_survive_durable_history() 
     let adjusted = updated.document.sounds()[&id].clone();
     assert_eq!(adjusted.source, original.source);
     assert_eq!(adjusted.mapping, original.mapping);
-    assert_eq!(adjusted.gain_millidecibels, -3250);
+    assert_eq!(adjusted.treatments.trim().millidecibels(), -3250);
     let (moved, _) = changed(
         &harness.service,
         &updated,

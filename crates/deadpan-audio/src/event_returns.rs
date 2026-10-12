@@ -2,7 +2,7 @@
 //! then transported by saved delivery routes. Current output gates stay outside.
 
 use super::*;
-use deadpan_core::{AudioEdgePolicy, TailEffect, TailSends};
+use deadpan_core::{AudioEdgePolicy, AudioTreatmentStage, AudioTreatments, TailEffect};
 use deadpan_plan::{AudioRoutedRootInput, AudioSoundRoute};
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Ord)]
@@ -18,19 +18,42 @@ pub(super) struct EventKey {
     edges: (bool, bool),
 }
 
-pub(super) struct EventRead {
+pub(super) struct EventRead<'a> {
     pub parent: usize,
     pub voice: usize,
     pub start: AudioSample,
     pub frames: u32,
-    pub sends: TailSends,
+    pub treatments: &'a AudioTreatments,
     pub edges: (AudioEdgePolicy, AudioEdgePolicy),
     pub depth: usize,
+}
+
+pub(super) struct EventOutput {
+    pub dry: Vec<[f64; 2]>,
+    pub returned: WideBlock,
+}
+
+pub(super) fn needs_processing(recipe: &AudioTreatments) -> bool {
+    !recipe.wet_sends().is_empty()
+        || recipe.equalizer().is_some_and(|eq| !eq.is_unity())
+        || recipe.saturation().is_some()
+        || recipe
+            .balance()
+            .is_some_and(|balance| balance.percent() != 0)
+        || recipe.clip_gain().is_some_and(|gain| {
+            gain.muted() || !gain.envelopes().is_empty() || !gain.mute_ranges().is_empty()
+        })
 }
 
 pub(super) struct EventSource<'a, 'plan> {
     pub input: &'a AudioRoutedRootInput<'plan>,
     pub route: Option<&'a AudioSoundRoute<AudioSample>>,
+}
+
+struct EventProgram<'a, 'plan> {
+    input: &'a AudioRoutedRootInput<'plan>,
+    key: &'a EventKey,
+    recipe: &'a AudioTreatments,
 }
 
 impl StageAudio {
@@ -39,9 +62,9 @@ impl StageAudio {
         provider: &mut impl AudioSourceProvider,
         graph: &mut Graph<'_>,
         source: EventSource<'_, '_>,
-        request: EventRead,
+        request: EventRead<'_>,
         control: WorkControl<'_>,
-    ) -> Result<WideBlock, StageAudioError> {
+    ) -> Result<EventOutput, StageAudioError> {
         let (allocation, audible) = match source.input {
             AudioRoutedRootInput::Source(input) => (input.samples()?, input.audible_samples()),
             AudioRoutedRootInput::Occurrence(input) => (input.samples(), input.audible_samples()?),
@@ -65,9 +88,7 @@ impl StageAudio {
             dependencies: Dependencies::new(),
             relative_depth: 0,
         };
-        if request.sends.is_empty() {
-            return Ok(output);
-        }
+        let mut dry = vec![[0.0; 2]; request.frames as usize];
         self.preflight_retained_sound_input(source.input, control)?;
         let (dependencies, depth) =
             self.admit_retained_sound_input(provider, source.input, control)?;
@@ -101,11 +122,39 @@ impl StageAudio {
         };
         for (destination, old) in spans {
             let Some(old) = old else { continue };
+            let template = EventKey {
+                parent: request.parent,
+                voice: request.voice,
+                effect: 2,
+                tile: 0,
+                allocation: (allocation.start.0, allocation.end.0),
+                audible: (audible.start.0, audible.end.0),
+                edges: (
+                    request.edges.0 == AudioEdgePolicy::Automatic,
+                    request.edges.1 == AudioEdgePolicy::Automatic,
+                ),
+            };
+            let block = self.event_prefix(
+                provider,
+                graph,
+                EventProgram {
+                    input: source.input,
+                    key: &template,
+                    recipe: request.treatments,
+                },
+                AudioSample(old.start)..AudioSample(old.end),
+                request.treatments.order().len(),
+                control,
+            )?;
+            let offset = (destination.start.0 - request.start.0) as usize;
+            dry[offset..offset + block.samples.len()].copy_from_slice(&block.samples);
+            output.dependencies.extend(block.dependencies);
+            output.relative_depth = output.relative_depth.max(block.relative_depth);
             for (effect_id, effect) in [TailEffect::Reverb, TailEffect::Delay]
                 .into_iter()
                 .enumerate()
             {
-                let Some(level) = request.sends.level(effect) else {
+                let Some(level) = request.treatments.wet_sends().level(effect) else {
                     continue;
                 };
                 let gain = 10f64.powf(f64::from(level.millidecibels()) / 20_000.0);
@@ -129,8 +178,14 @@ impl StageAudio {
                             request.edges.1 == AudioEdgePolicy::Automatic,
                         ),
                     };
-                    let block =
-                        self.event_return_tile(provider, graph, source.input, key, control)?;
+                    let block = self.event_return_tile(
+                        provider,
+                        graph,
+                        source.input,
+                        key,
+                        request.treatments,
+                        control,
+                    )?;
                     if request
                         .depth
                         .checked_add(block.relative_depth)
@@ -162,7 +217,17 @@ impl StageAudio {
                 }
             }
         }
-        Ok(output)
+        if request
+            .depth
+            .checked_add(output.relative_depth)
+            .is_none_or(|depth| depth > self.limits.maximum_depth)
+        {
+            return Err(StageAudioError::Limit("nested stage depth"));
+        }
+        Ok(EventOutput {
+            dry,
+            returned: output,
+        })
     }
 
     fn event_return_tile(
@@ -171,6 +236,7 @@ impl StageAudio {
         graph: &mut Graph<'_>,
         input: &AudioRoutedRootInput<'_>,
         key: EventKey,
+        recipe: &AudioTreatments,
         control: WorkControl<'_>,
     ) -> Result<Arc<WideBlock>, StageAudioError> {
         control.check()?;
@@ -187,14 +253,27 @@ impl StageAudio {
             }
             graph.event_nodes.insert(node);
         }
-        let effect = if key.effect == 0 {
-            TailEffect::Reverb
+        let (history, frames, width, until_stage) = if key.effect == 2 {
+            let stage = recipe
+                .order()
+                .iter()
+                .position(|stage| *stage == AudioTreatmentStage::Equalizer)
+                .ok_or(PlanError::InvalidPlan("event EQ absent"))?;
+            (RADIUS, INPUT, OUTPUT, stage)
         } else {
-            TailEffect::Delay
+            let effect = if key.effect == 0 {
+                TailEffect::Reverb
+            } else {
+                TailEffect::Delay
+            };
+            let shape = crate::wet_effect_descriptor(effect);
+            (
+                shape.history_frames,
+                shape.history_frames + shape.output_frames,
+                shape.output_frames,
+                recipe.order().len(),
+            )
         };
-        let shape = crate::wet_effect_descriptor(effect);
-        let frames = shape.history_frames + shape.output_frames;
-        let width = shape.output_frames;
         if frames as u32 > self.limits.maximum_input_frames
             || width as u32 > self.limits.maximum_output_frames
         {
@@ -212,13 +291,12 @@ impl StageAudio {
         }
         let begin = key
             .tile
-            .checked_sub(shape.history_frames as i64)
+            .checked_sub(history as i64)
             .ok_or(TimeError::Overflow)?;
-        let end = key
-            .tile
-            .checked_add(width as i64)
+        let end = begin
+            .checked_add(frames as i64)
             .ok_or(TimeError::Overflow)?;
-        let reservation = ((frames + width * 2) * 2) as u64;
+        let reservation = ((frames + width * 2) * 2) as u64 + u64::from(MAX_OUTPUT_FRAMES) * 8;
         self.make_room(reservation, false, control)?;
         self.active_frames += reservation;
         let result = (|| {
@@ -228,26 +306,25 @@ impl StageAudio {
             let mut relative_depth = 1;
             let mut at = begin.max(key.allocation.0).max(key.audible.0);
             let until = end.min(key.allocation.1).min(key.audible.1);
-            let length = u64::try_from(i128::from(key.audible.1) - i128::from(key.audible.0))
-                .map_err(|_| StageAudioError::Range)?;
             while at < until {
                 let count = u32::try_from((until - at).min(i64::from(MAX_OUTPUT_FRAMES)))
                     .map_err(|_| StageAudioError::Range)?;
-                let query =
-                    self.prepare_retained_sound_query(input, AudioSample(at), count, control)?;
-                let raw = self.read_retained_sound_query(provider, input, query, control)?;
+                let raw = self.event_prefix(
+                    provider,
+                    graph,
+                    EventProgram {
+                        input,
+                        key: &key,
+                        recipe,
+                    },
+                    AudioSample(at)..AudioSample(at + i64::from(count)),
+                    until_stage,
+                    control,
+                )?;
                 for (index, sample) in raw.samples.iter().enumerate() {
                     let at = at.checked_add(index as i64).ok_or(TimeError::Overflow)?;
-                    if permitted(&raw, AudioSample(at)) {
-                        let gain = crate::edges::edge_gain(
-                            length,
-                            i128::from(at) - i128::from(key.audible.0),
-                            key.edges.0,
-                            key.edges.1,
-                        );
-                        left[(at - begin) as usize] = f64::from(sample[0]) * f64::from(gain);
-                        right[(at - begin) as usize] = f64::from(sample[1]) * f64::from(gain);
-                    }
+                    left[(at - begin) as usize] = sample[0];
+                    right[(at - begin) as usize] = sample[1];
                 }
                 dependencies.extend(raw.dependencies);
                 relative_depth = relative_depth.max(raw.relative_depth + 1);
@@ -255,13 +332,47 @@ impl StageAudio {
             }
             let mut out_left = vec![0.0; width];
             let mut out_right = vec![0.0; width];
-            self.process_shared_wet(
-                graph,
-                effect,
-                (&left, &right),
-                (&mut out_left, &mut out_right),
-                control,
-            )?;
+            if key.effect == 2 {
+                let mut node = key.clone();
+                node.tile = 0;
+                if !graph.event_filters.contains_key(&node) {
+                    control.spend_plan_work(deadpan_dsp::FINITE_FILTER_TAPS)?;
+                    let resident = (crate::Equalizer::preparation_bytes_bound() as u64).div_ceil(8);
+                    self.make_room(resident, false, control)?;
+                    let filter = crate::Equalizer::new(
+                        recipe
+                            .equalizer()
+                            .ok_or(PlanError::InvalidPlan("event EQ absent"))?,
+                        control.cancelled,
+                    )?;
+                    self.active_frames += resident;
+                    graph.resident += resident;
+                    graph.event_filters.insert(node.clone(), filter);
+                }
+                graph
+                    .event_filters
+                    .get_mut(&node)
+                    .ok_or(PlanError::InvalidPlan("event EQ absent"))?
+                    .process_tile(
+                        &left,
+                        &right,
+                        &mut out_left,
+                        &mut out_right,
+                        control.cancelled,
+                    )?;
+            } else {
+                self.process_shared_wet(
+                    graph,
+                    if key.effect == 0 {
+                        TailEffect::Reverb
+                    } else {
+                        TailEffect::Delay
+                    },
+                    (&left, &right),
+                    (&mut out_left, &mut out_right),
+                    control,
+                )?;
+            }
             control.check()?;
             let resident = (width * 2) as u64;
             self.make_room(resident, false, control)?;
@@ -282,6 +393,114 @@ impl StageAudio {
         })();
         self.active_frames -= reservation;
         result
+    }
+
+    /// Evaluate a strict prefix in the complete retained event clock. Temporal
+    /// tiles recurse only to earlier stages; delivery cuts never become history.
+    fn event_prefix(
+        &mut self,
+        provider: &mut impl AudioSourceProvider,
+        graph: &mut Graph<'_>,
+        program: EventProgram<'_, '_>,
+        samples: Range<AudioSample>,
+        until: usize,
+        control: WorkControl<'_>,
+    ) -> Result<WideBlock, StageAudioError> {
+        control.check()?;
+        let EventProgram {
+            input,
+            key: template,
+            recipe,
+        } = program;
+        let start = samples.start;
+        let end = samples.end.0;
+        let frames = u32::try_from(end.checked_sub(start.0).ok_or(TimeError::Overflow)?)
+            .map_err(|_| StageAudioError::Range)?;
+        if frames > MAX_OUTPUT_FRAMES {
+            return Err(StageAudioError::Range);
+        }
+        let clock = match input {
+            AudioRoutedRootInput::Source(source) => source.treatment_clock(),
+            AudioRoutedRootInput::Occurrence(source) => source.treatment_clock()?,
+            AudioRoutedRootInput::Projected(_) => {
+                return Err(PlanError::InvalidPlan("event clock absent").into());
+            }
+        };
+        let eq = recipe.order()[..until]
+            .iter()
+            .position(|stage| *stage == AudioTreatmentStage::Equalizer)
+            .filter(|_| recipe.equalizer().is_some_and(|eq| !eq.is_unity()));
+        let mut output = WideBlock {
+            samples: vec![[0.0; 2]; frames as usize],
+            suppressed: Vec::new(),
+            dependencies: Dependencies::new(),
+            relative_depth: 0,
+        };
+        let mut at = start.0.max(template.allocation.0).max(template.audible.0);
+        let stop = end.min(template.allocation.1).min(template.audible.1);
+        let length = u64::try_from(i128::from(template.audible.1) - i128::from(template.audible.0))
+            .map_err(|_| StageAudioError::Range)?;
+        while at < stop {
+            let count = (stop - at).min(i64::from(MAX_OUTPUT_FRAMES)) as u32;
+            if eq.is_some() {
+                let tile = at
+                    .div_euclid(OUTPUT as i64)
+                    .checked_mul(OUTPUT as i64)
+                    .ok_or(TimeError::Overflow)?;
+                let count = count.min((tile + OUTPUT as i64 - at) as u32);
+                let mut key = template.clone();
+                key.effect = 2;
+                key.tile = tile;
+                let block = self.event_return_tile(provider, graph, input, key, recipe, control)?;
+                for offset in 0..count as usize {
+                    output.samples[(at - start.0) as usize + offset] =
+                        block.samples[(at - tile) as usize + offset];
+                }
+                output.dependencies.extend(block.dependencies.clone());
+                output.relative_depth = output.relative_depth.max(block.relative_depth);
+                at += i64::from(count);
+            } else {
+                let query =
+                    self.prepare_retained_sound_query(input, AudioSample(at), count, control)?;
+                let block = self.read_retained_sound_query(provider, input, query, control)?;
+                for (offset, sample) in block.samples.iter().enumerate() {
+                    let label = at + offset as i64;
+                    if permitted(&block, AudioSample(label)) {
+                        let edge = crate::edges::edge_gain(
+                            length,
+                            i128::from(label) - i128::from(template.audible.0),
+                            template.edges.0,
+                            template.edges.1,
+                        );
+                        output.samples[(label - start.0) as usize] =
+                            sample.map(|v| f64::from(v * edge));
+                    }
+                }
+                output.dependencies.extend(block.dependencies);
+                output.relative_depth = output.relative_depth.max(block.relative_depth);
+                at += i64::from(count);
+            }
+        }
+        let from = eq.map_or(0, |index| index + 1);
+        for (offset, value) in output.samples.iter_mut().enumerate() {
+            let at = start.0 + offset as i64;
+            if at < template.audible.0
+                || at >= template.audible.1
+                || at < template.allocation.0
+                || at >= template.allocation.1
+            {
+                continue;
+            }
+            let mut gain = authored_gain::GainSum::default();
+            gain.treatment(
+                recipe,
+                clock.local_at(AudioSample(at))?,
+                control,
+                from..until,
+            )?;
+            *value = gain.apply_wide(*value)?;
+        }
+        Ok(output)
     }
 
     pub(super) fn process_shared_wet(

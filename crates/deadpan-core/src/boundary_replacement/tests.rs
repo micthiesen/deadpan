@@ -185,8 +185,6 @@ fn fixture() -> ProjectDocument {
     document.sounds.insert(
         SoundId::new("sound-event").unwrap(),
         SoundEvent {
-            tail_sends: Default::default(),
-            wet_sends: Default::default(),
             owner: node("root"),
             label: "Independent sound".into(),
             source: SourceAudio {
@@ -195,7 +193,7 @@ fn fixture() -> ProjectDocument {
             },
             mapping: SourceAudioMapping::natural_rate(span(1000), rate()).unwrap(),
             offset: AudioSample(10_000),
-            gain_millidecibels: 0,
+            treatments: crate::AudioTreatments::default(),
             start_edge: AudioEdgePolicy::Hard,
             end_edge: AudioEdgePolicy::Hard,
             overflow: SoundOverflowPolicy::Reject,

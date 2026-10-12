@@ -962,6 +962,11 @@ fn command_targets(d: &mut Driver<'_>, id: &SoundId, baseline: &Value) -> Result
         (true, "sound-gain -9"),
         (false, "sound-wet-send delay -6dB"),
         (true, "sound-wet-send delay -6dB"),
+        (false, "sound-eq bass=3dB middle=0dB treble=0dB"),
+        (true, "sound-saturate 9dB"),
+        (false, "sound-envelope 0f 30f -12dB 0dB linear"),
+        (true, "sound-balance left"),
+        (false, "sound-mute on"),
     ] {
         choose(d, id)?;
         let before = d.revision();
@@ -1131,7 +1136,7 @@ fn check_gain(d: &mut Driver<'_>, id: &SoundId, gain: i32) -> Result<(), String>
     let recipe = event(d, id)?;
     d.check(
         "Authored sound gain is exact in millidecibels",
-        recipe.gain_millidecibels == gain,
+        recipe.treatments.trim().millidecibels() == gain,
         json!(gain),
         json!(recipe),
     )
@@ -1230,12 +1235,14 @@ fn browse_original(d: &mut Driver<'_>) -> Result<(), String> {
 }
 
 fn reveal(d: &mut Driver<'_>, label: &str, direction: f32) -> Result<(), String> {
-    for attempt in 0..=3 {
+    // Complete event treatments make the minimum-size inspector taller. Keep
+    // real wheel input and paint checks, but allow enough travel for its ends.
+    for attempt in 0..=8 {
         let paint = scenarios::text_paint_visibility(d, label);
         if !paint.is_empty() && paint.iter().all(|item| item["fully_visible"] == true) {
             return Ok(());
         }
-        if attempt == 3 {
+        if attempt == 8 {
             break;
         }
         let heading = d.rect("Selected sound inspector pane")?;

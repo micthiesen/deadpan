@@ -145,8 +145,6 @@ fn sound_source() -> SourceAudio {
 
 fn root_sound(document: &ProjectDocument, offset: i64, gain: i32) -> SoundEvent {
     SoundEvent {
-        tail_sends: Default::default(),
-        wet_sends: Default::default(),
         owner: document.root().clone(),
         label: "Effect".into(),
         source: sound_source(),
@@ -156,7 +154,9 @@ fn root_sound(document: &ProjectDocument, offset: i64, gain: i32) -> SoundEvent 
         )
         .unwrap(),
         offset: AudioSample(offset),
-        gain_millidecibels: gain,
+        treatments: deadpan_core::AudioTreatments::default()
+            .with_trim(deadpan_core::GainDb::new(gain).unwrap())
+            .unwrap(),
         start_edge: AudioEdgePolicy::Automatic,
         end_edge: AudioEdgePolicy::Automatic,
         overflow: SoundOverflowPolicy::Reject,
@@ -167,8 +167,6 @@ fn beat_sound(document: &ProjectDocument, offset: i64) -> BeatSound {
     // One frame of the catalog sound fits every beat of two or more frames.
     let selected = span(0, 2000, 48_000);
     BeatSound {
-        tail_sends: Default::default(),
-        wet_sends: Default::default(),
         label: "Beat effect".into(),
         source: SourceAudio {
             asset: AssetId::new("catalog").unwrap(),
@@ -180,7 +178,7 @@ fn beat_sound(document: &ProjectDocument, offset: i64) -> BeatSound {
         )
         .unwrap(),
         offset: AudioSample(offset),
-        gain_millidecibels: 0,
+        treatments: deadpan_core::AudioTreatments::default(),
         start_edge: AudioEdgePolicy::Automatic,
         end_edge: AudioEdgePolicy::Automatic,
         overflow: SoundOverflowPolicy::Reject,

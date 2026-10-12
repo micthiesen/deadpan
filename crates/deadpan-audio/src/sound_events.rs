@@ -10,6 +10,7 @@ pub(super) struct PreparedSoundQuery<'plan> {
     pub(super) voice: deadpan_plan::AudioRootSound<'plan>,
     pub(super) input: PreparedSoundInput<'plan>,
     pub(super) fades: Vec<deadpan_plan::AudioSoundGateSpan>,
+    pub(super) post_fades: Vec<deadpan_plan::AudioSoundGateSpan>,
 }
 
 pub(super) enum PreparedSoundInput<'plan> {
@@ -29,7 +30,7 @@ impl StageAudio {
         control: WorkControl<'_>,
         authored_gain: bool,
     ) -> Result<ReadBlock, StageAudioError> {
-        if authored_gain && self.plan.has_audio_wet_sends() {
+        if authored_gain && (self.plan.has_audio_wet_sends() || self.plan.has_sound_treatments()) {
             return self.read_shared_equalizers(provider, start, frames, control);
         }
         if authored_gain
@@ -142,11 +143,15 @@ impl StageAudio {
             let fades = voice.gate_fades(start..AudioSample(end), control.query_limits()?)?;
             control.spend_plan_work(fades.work)?;
             validate_gate_envelopes(&fades.spans, start..AudioSample(end))?;
+            let post_fades =
+                voice.post_treatment_gates(start..AudioSample(end), control.query_limits()?)?;
+            control.spend_plan_work(post_fades.work)?;
             voices.push(PreparedSoundQuery {
                 id,
                 voice,
                 input,
                 fades: fades.spans,
+                post_fades: post_fades.spans,
             });
         }
         Ok(voices)
@@ -196,6 +201,7 @@ impl StageAudio {
             voice,
             input,
             fades,
+            post_fades: _,
         } in voices
         {
             control.check()?;
@@ -234,7 +240,7 @@ impl StageAudio {
                 mix.add_root(
                     offset,
                     sample.map(|value| value * edge),
-                    event.gain_millidecibels,
+                    event.treatments.trim().millidecibels(),
                     control,
                 )?;
             }

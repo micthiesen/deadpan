@@ -13,13 +13,13 @@ mod sound_clocks;
 fn event(document: &ProjectDocument) -> Result<BeatSound> {
     let root = sound(document)?;
     Ok(BeatSound {
-        tail_sends: Default::default(),
-        wet_sends: Default::default(),
         label: root.label,
         source: root.source,
         mapping: root.mapping,
         offset: root.offset,
-        gain_millidecibels: root.gain_millidecibels,
+        treatments: deadpan_core::AudioTreatments::default()
+            .with_trim(deadpan_core::GainDb::new(root.treatments.trim().millidecibels()).unwrap())
+            .unwrap(),
         start_edge: root.start_edge,
         end_edge: root.end_edge,
         overflow: root.overflow,
@@ -243,7 +243,12 @@ fn copied_beat_sound_checks_missing_and_changed_receipts_in_each_compound_leaf()
     assert!(saved.beat_sounds().is_empty());
     let copy = paste(&saved, &slice, "copied")?;
     let mut changed = event(&saved)?;
-    changed.gain_millidecibels -= 1000;
+    changed.treatments = changed
+        .treatments
+        .with_trim(
+            deadpan_core::GainDb::new(changed.treatments.trim().millidecibels() - (1000)).unwrap(),
+        )
+        .unwrap();
     let update = edit(
         &saved,
         "changed",
@@ -331,7 +336,9 @@ fn copied_beat_sound_checks_missing_and_changed_receipts_in_each_compound_leaf()
     );
     // A valid-looking copied recipe still must agree with the historical owner.
     let mut forged = serde_json::to_value(&slice)?;
-    forged["beat_sounds"]["clip"]["overlay"]["gain_millidecibels"] = (-5000).into();
+    forged["beat_sounds"]["clip"]["overlay"]["treatments"] = serde_json::to_value(
+        deadpan_core::AudioTreatments::default().with_trim(deadpan_core::GainDb::new(-5000)?)?,
+    )?;
     let forged: CapturedEditSlice = serde_json::from_value(forged)?;
     let forged_copy = paste(&saved, &forged, "forged-copy")?;
     deadpan_core::apply(&saved, &forged_copy)?;

@@ -252,8 +252,6 @@ fn setter_matches_ordinary_retained_clock_edit_in_nested_scope_with_root_sound()
         document.sounds.insert(
             sound.clone(),
             crate::SoundEvent {
-                tail_sends: Default::default(),
-                wet_sends: Default::default(),
                 owner: node("root"),
                 label: "Sound".into(),
                 source: crate::SourceAudio { asset, span },
@@ -263,7 +261,7 @@ fn setter_matches_ordinary_retained_clock_edit_in_nested_scope_with_root_sound()
                 )
                 .unwrap(),
                 offset: crate::AudioSample(137),
-                gain_millidecibels: 0,
+                treatments: crate::AudioTreatments::default(),
                 start_edge: crate::AudioEdgePolicy::Automatic,
                 end_edge: crate::AudioEdgePolicy::Automatic,
                 overflow: crate::SoundOverflowPolicy::Reject,

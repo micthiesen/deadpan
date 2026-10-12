@@ -38,6 +38,18 @@ fn documents() -> Vec<ProjectDocument> {
             let mut wire: Value =
                 serde_json::from_str(&std::fs::read_to_string(path).unwrap()).unwrap();
             wire["schema_version"] = DOCUMENT_SCHEMA_VERSION.into();
+            if let Some(sounds) = wire.get_mut("sounds").and_then(Value::as_object_mut) {
+                for sound in sounds.values_mut() {
+                    let fields = sound.as_object_mut().unwrap();
+                    let trim = serde_json::from_value(fields.remove("gain_millidecibels").unwrap())
+                        .unwrap();
+                    fields.insert(
+                        "treatments".into(),
+                        serde_json::to_value(AudioTreatments::default().with_trim(trim).unwrap())
+                            .unwrap(),
+                    );
+                }
+            }
             ProjectDocument::from_json(&wire.to_string()).unwrap()
         })
         .collect();

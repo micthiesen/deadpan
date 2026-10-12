@@ -20,8 +20,6 @@ fn sound(document: &ProjectDocument) -> Result<SoundEvent> {
         },
     )?;
     Ok(SoundEvent {
-        tail_sends: Default::default(),
-        wet_sends: Default::default(),
         owner: document.root().clone(),
         label: "Measured overlay".into(),
         source: SourceAudio {
@@ -30,7 +28,9 @@ fn sound(document: &ProjectDocument) -> Result<SoundEvent> {
         },
         mapping: SourceAudioMapping::natural_rate(span, document.presentation_basis().frame_rate)?,
         offset: AudioSample(7),
-        gain_millidecibels: -3000,
+        treatments: deadpan_core::AudioTreatments::default()
+            .with_trim(deadpan_core::GainDb::new(-3000).unwrap())
+            .unwrap(),
         start_edge: AudioEdgePolicy::Automatic,
         end_edge: AudioEdgePolicy::Hard,
         overflow: SoundOverflowPolicy::Reject,
@@ -87,7 +87,10 @@ fn qualified_sound_edits_are_atomic_durable_and_keep_picture_time() -> Result {
     assert_eq!(store.snapshot()?, added);
     let mut changed = event;
     changed.offset = AudioSample(19);
-    changed.gain_millidecibels = -6000;
+    changed.treatments = changed
+        .treatments
+        .with_trim(deadpan_core::GainDb::new(-6000).unwrap())
+        .unwrap();
     store.commit(&edit(
         &added,
         "sound-update",

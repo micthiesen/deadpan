@@ -568,8 +568,6 @@ fn with_sound(document: &ProjectDocument) -> ProjectDocument {
     wire["assets"]["media"] = serde_json::to_value(asset).unwrap();
     let source = audio(0, 256);
     let event = SoundEvent {
-        tail_sends: Default::default(),
-        wet_sends: Default::default(),
         owner: id("root"),
         label: "Independent sound".into(),
         mapping: SourceAudioMapping::natural_rate(
@@ -579,7 +577,9 @@ fn with_sound(document: &ProjectDocument) -> ProjectDocument {
         .unwrap(),
         source,
         offset: AudioSample(0),
-        gain_millidecibels: 3000,
+        treatments: deadpan_core::AudioTreatments::default()
+            .with_trim(deadpan_core::GainDb::new(3000).unwrap())
+            .unwrap(),
         start_edge: AudioEdgePolicy::Hard,
         end_edge: AudioEdgePolicy::Hard,
         overflow: SoundOverflowPolicy::Reject,
@@ -598,8 +598,6 @@ fn with_owned_sound(
     let mut wire = serde_json::to_value(document).unwrap();
     let source = audio(0, frames);
     let event = BeatSound {
-        tail_sends: Default::default(),
-        wet_sends: Default::default(),
         label: "Group contribution".into(),
         mapping: SourceAudioMapping::natural_rate(
             source.span,
@@ -608,7 +606,9 @@ fn with_owned_sound(
         .unwrap(),
         source,
         offset: AudioSample(0),
-        gain_millidecibels: gain,
+        treatments: deadpan_core::AudioTreatments::default()
+            .with_trim(deadpan_core::GainDb::new(gain).unwrap())
+            .unwrap(),
         start_edge: AudioEdgePolicy::Hard,
         end_edge: AudioEdgePolicy::Hard,
         overflow: SoundOverflowPolicy::Reject,

@@ -288,10 +288,10 @@ fn trim_capture_precedes_growth_and_retains_effect_clocks_and_root_sound_once() 
                     .unwrap(),
                 ))
                 .unwrap();
-            v["sounds"] = json!({"sound":SoundEvent { tail_sends: Default::default(), wet_sends: Default::default(),
+            v["sounds"] = json!({"sound":SoundEvent {
                 owner:id("root"),label:"Independent sound".into(),source:source(&base).audio.clone().unwrap(),
                 mapping:SourceAudioMapping::SelectedPlacement{start:ExactRatio::ZERO,frames:ExactRatio::integer(100),selection:ExactFrameRange::new(ExactRatio::integer(1),ExactRatio::integer(2)).unwrap()},
-                offset:AudioSample(0),gain_millidecibels:0,start_edge:AudioEdgePolicy::Hard,end_edge:AudioEdgePolicy::Hard,overflow:SoundOverflowPolicy::Reject,
+                offset:AudioSample(0),treatments: deadpan_core::AudioTreatments::default(),start_edge:AudioEdgePolicy::Hard,end_edge:AudioEdgePolicy::Hard,overflow:SoundOverflowPolicy::Reject,
             }});
         });
         let after = edit(&before, trim(&before, "source", SourceTrimEdge::In, -3));

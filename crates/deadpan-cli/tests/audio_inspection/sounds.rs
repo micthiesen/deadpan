@@ -18,8 +18,6 @@ fn json_sound_command_reaches_shared_limited_bus_without_changing_picture_time()
         span: before.assets()[&asset()].audio.unwrap(),
     };
     let event = SoundEvent {
-        tail_sends: Default::default(),
-        wet_sends: Default::default(),
         owner: before.root().clone(),
         label: "Original echo".into(),
         mapping: SourceAudioMapping::natural_rate(
@@ -28,7 +26,7 @@ fn json_sound_command_reaches_shared_limited_bus_without_changing_picture_time()
         )?,
         source,
         offset: AudioSample(0),
-        gain_millidecibels: 0,
+        treatments: deadpan_core::AudioTreatments::default(),
         start_edge: AudioEdgePolicy::Automatic,
         end_edge: AudioEdgePolicy::Automatic,
         overflow: SoundOverflowPolicy::Reject,

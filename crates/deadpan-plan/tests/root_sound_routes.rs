@@ -116,10 +116,10 @@ fn document(
     }
     wire["nodes"]["root"] = json!(BeatNode::sequence("root", children));
     let selection = selection.unwrap_or(ExactRatio::ZERO..ExactRatio::integer(recipe_extent));
-    wire["sounds"] = json!({"sound": SoundEvent { tail_sends: Default::default(), wet_sends: Default::default(),
+    wire["sounds"] = json!({"sound": SoundEvent {
         owner: node("root"), label: "event".into(), source: SourceAudio { asset: AssetId::new("sound").unwrap(), span },
         mapping: SourceAudioMapping::SelectedPlacement { start: ExactRatio::ZERO, frames: SourceAudioMapping::natural_rate(span, rate).unwrap().duration_frames(FrameDuration::ZERO).unwrap(), selection: ExactFrameRange { start: selection.start, end: selection.end } },
-        offset: AudioSample(0), gain_millidecibels: 0, start_edge: AudioEdgePolicy::Automatic, end_edge: AudioEdgePolicy::Automatic, overflow: SoundOverflowPolicy::Reject,
+        offset: AudioSample(0), treatments: deadpan_core::AudioTreatments::default(), start_edge: AudioEdgePolicy::Automatic, end_edge: AudioEdgePolicy::Automatic, overflow: SoundOverflowPolicy::Reject,
     }});
     if let Some(edits) = edits {
         wire["sound_routes"] = json!({"sound": RootSoundRoute { recipe_extent: duration(recipe_extent), recipe_grid: RootSoundGrid::root(rate), edits }});

@@ -9,13 +9,13 @@ fn qualified(document: ProjectDocument) -> ProjectDocument {
 fn attached(document: ProjectDocument, owner: &str) -> ProjectDocument {
     let recipe = voice_recipe(document.presentation_basis().frame_rate, 6144);
     let event = BeatSound {
-        tail_sends: Default::default(),
-        wet_sends: Default::default(),
         label: "Full history".into(),
         source: recipe.source,
         mapping: recipe.mapping,
         offset: recipe.offset,
-        gain_millidecibels: -3000,
+        treatments: deadpan_core::AudioTreatments::default()
+            .with_trim(deadpan_core::GainDb::new(-3000).unwrap())
+            .unwrap(),
         start_edge: AudioEdgePolicy::Hard,
         end_edge: AudioEdgePolicy::Hard,
         overflow: SoundOverflowPolicy::Reject,

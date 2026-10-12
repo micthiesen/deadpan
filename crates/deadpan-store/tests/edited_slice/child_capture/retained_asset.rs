@@ -94,8 +94,6 @@ fn zero_paste_preserves_routed_root_bus_and_restores_only_mark_owned_historical_
         Command::SetSound {
             id: SoundId::new("effect")?,
             event: SoundEvent {
-                tail_sends: Default::default(),
-                wet_sends: Default::default(),
                 owner: node("root"),
                 label: "Root sound".into(),
                 source: SourceAudio {
@@ -108,7 +106,9 @@ fn zero_paste_preserves_routed_root_bus_and_restores_only_mark_owned_historical_
                     selection: ExactFrameRange::new(ExactRatio::ZERO, ExactRatio::integer(20))?,
                 },
                 offset: AudioSample(0),
-                gain_millidecibels: -3000,
+                treatments: deadpan_core::AudioTreatments::default()
+                    .with_trim(deadpan_core::GainDb::new(-3000).unwrap())
+                    .unwrap(),
                 start_edge: AudioEdgePolicy::Hard,
                 end_edge: AudioEdgePolicy::Hard,
                 overflow: SoundOverflowPolicy::Reject,

@@ -204,8 +204,6 @@ where
                             .map_err(|error| EditError::from(crate::DocumentError::from(error)))
                     };
                     let event = crate::SoundEvent {
-                        tail_sends: Default::default(),
-                        wet_sends: Default::default(),
                         owner: self.current.root().clone(),
                         label: format!("Repeat {} of {plays} · {label}", play + 1),
                         source: audio.clone(),
@@ -215,7 +213,7 @@ where
                             selection: ExactFrameRange::new(moved(low)?, moved(high)?)?,
                         },
                         offset: source.audio_offset,
-                        gain_millidecibels: 0,
+                        treatments: crate::AudioTreatments::default(),
                         start_edge: crate::AudioEdgePolicy::Automatic,
                         end_edge: crate::AudioEdgePolicy::Automatic,
                         overflow: crate::SoundOverflowPolicy::Reject,

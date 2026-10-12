@@ -887,12 +887,12 @@ impl RenderPlan {
                 || document
                     .sounds()
                     .values()
-                    .any(|event| !event.wet_sends.is_empty())
+                    .any(|event| !event.treatments.wet_sends().is_empty())
                 || document
                     .beat_sounds()
                     .values()
                     .flat_map(|sounds| sounds.values())
-                    .any(|event| !event.wet_sends.is_empty()),
+                    .any(|event| !event.treatments.wet_sends().is_empty()),
             has_audio_equalizers: document
                 .nodes()
                 .values()

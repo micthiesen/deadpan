@@ -428,8 +428,6 @@ fn with_sound(mut document: ProjectDocument) -> ProjectDocument {
     document.sounds.insert(
         sound.clone(),
         SoundEvent {
-            tail_sends: Default::default(),
-            wet_sends: Default::default(),
             owner: node("root"),
             label: "Effect".into(),
             source: SourceAudio {
@@ -442,7 +440,9 @@ fn with_sound(mut document: ProjectDocument) -> ProjectDocument {
             )
             .unwrap(),
             offset: AudioSample(137),
-            gain_millidecibels: -3000,
+            treatments: crate::AudioTreatments::default()
+                .with_trim(crate::GainDb::new(-3000).unwrap())
+                .unwrap(),
             start_edge: AudioEdgePolicy::Automatic,
             end_edge: AudioEdgePolicy::Hard,
             overflow: SoundOverflowPolicy::Reject,

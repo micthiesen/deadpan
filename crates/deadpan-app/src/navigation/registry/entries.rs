@@ -1136,8 +1136,8 @@ pub static SPECS: &[Spec] = &[
         )],
         contexts: C::PLACED,
         replay: Replay::NotRecorded,
-        headless: eq("SetSound tail_sends", AUDIO),
-        help: "Send the selected placed sound, after its gain and edges, to a later :tail input=sends pause. Reverb and delay have separate levels. Keeps its dry signal, exact placement, cuts and Hold allowances. Select a sound before opening the command. One Undo.",
+        headless: eq("SetSound treatments.tail_sends", AUDIO),
+        help: "Send the selected placed sound after its complete treatment chain to a later :tail input=sends pause. Reverb and delay have separate levels. Keeps its dry signal, exact placement, cuts and Hold allowances. Select a sound before opening the command. One Undo.",
     },
     Spec {
         id: "sound-wet-send",
@@ -1150,8 +1150,34 @@ pub static SPECS: &[Spec] = &[
         )],
         contexts: C::PLACED,
         replay: Replay::NotRecorded,
-        headless: eq("SetSound wet_sends", AUDIO),
+        headless: eq("SetSound treatments.wet_sends", AUDIO),
         help: "Add reverb or a 300 ms echo to the selected placed sound before group treatments. Reverb and delay have independent levels; off removes one return. Keeps the sound's selected time, cuts and Hold permissions. Select a sound before opening the command. One Undo.",
+    },
+    Spec {
+        id: "sound-treatments",
+        name: "Placed sound treatments",
+        section: Section::Sounds,
+        keys: &[],
+        commands: &[
+            verb(
+                "sound-eq",
+                ":sound-eq bass=3dB middle=0dB treble=0dB [low-cut=80Hz] [high-cut=12000Hz] | off",
+            ),
+            verb("sound-saturate", ":sound-saturate 6dB|off"),
+            verb("sound-balance", ":sound-balance -50%|center"),
+            verb("sound-mute", ":sound-mute on|off"),
+            verb(
+                "sound-envelope",
+                ":sound-envelope 0f 30f -12dB 0dB step|linear|smoothstep | clear",
+            ),
+        ],
+        contexts: C::PLACED,
+        replay: Replay::NotRecorded,
+        headless: eq(
+            "SetSound treatments (SetBeatSound for attached voices)",
+            AUDIO,
+        ),
+        help: "Process the captured placed sound after its time mapping and input edges, before its sends and group. EQ uses the three named bands and optional cuts. Saturation uses 0..24 dB drive; balance attenuates the opposite channel. Envelopes use exact local project frames from the complete sound onset and survive cuts and moves; a matching range replaces its curve. Clear removes all gain curves while retaining trim and mute. Select a sound before command entry. One Undo.",
     },
     Spec {
         id: "audio-lag",

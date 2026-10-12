@@ -35,13 +35,13 @@ fn event(document: &ProjectDocument) -> Result<BeatSound> {
         },
     )?;
     Ok(BeatSound {
-        tail_sends: Default::default(),
-        wet_sends: Default::default(),
         label: "Owned overlay".into(),
         source: SourceAudio { asset, span },
         mapping: SourceAudioMapping::natural_rate(span, document.presentation_basis().frame_rate)?,
         offset: AudioSample(7),
-        gain_millidecibels: -3000,
+        treatments: deadpan_core::AudioTreatments::default()
+            .with_trim(deadpan_core::GainDb::new(-3000).unwrap())
+            .unwrap(),
         start_edge: AudioEdgePolicy::Automatic,
         end_edge: AudioEdgePolicy::Hard,
         overflow: SoundOverflowPolicy::Reject,

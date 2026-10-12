@@ -282,12 +282,22 @@ pub(super) fn placed_sound(d: &mut Driver<'_>, wet: bool) -> Result<(), String> 
     edit(d, &format!("{command} reverb -6dB"))?;
     let actual = d.app().workspace.as_ref().unwrap().document.sounds()[&sound].clone();
     let mut expected = base.clone();
-    let sends = if wet {
-        &mut expected.wet_sends
+    let level = Some(GainDb::new(-6000).unwrap());
+    expected.treatments = if wet {
+        expected.treatments.clone().with_wet_sends(
+            expected
+                .treatments
+                .wet_sends()
+                .with_level(TailEffect::Reverb, level),
+        )
     } else {
-        &mut expected.tail_sends
+        expected.treatments.clone().with_tail_sends(
+            expected
+                .treatments
+                .tail_sends()
+                .with_level(TailEffect::Reverb, level),
+        )
     };
-    *sends = sends.with_level(TailEffect::Reverb, Some(GainDb::new(-6000).unwrap()));
     d.check(
         "A placed sound send preserves its complete placement and gain",
         actual == expected,
@@ -345,9 +355,10 @@ pub(super) fn placed_sound(d: &mut Driver<'_>, wet: bool) -> Result<(), String> 
         "Sound gain edits retain sends",
         {
             let event = &d.app().workspace.as_ref().unwrap().document.sounds()[&sound];
-            event.tail_sends == expected.tail_sends && event.wet_sends == expected.wet_sends
+            event.treatments.tail_sends() == expected.treatments.tail_sends()
+                && event.treatments.wet_sends() == expected.treatments.wet_sends()
         },
-        json!({"tail": expected.tail_sends, "wet":expected.wet_sends}),
+        json!({"tail": expected.treatments.tail_sends(), "wet":expected.treatments.wet_sends()}),
         d.snapshot(),
     )?;
     undo(d)?;
@@ -358,5 +369,70 @@ pub(super) fn placed_sound(d: &mut Driver<'_>, wet: bool) -> Result<(), String> 
         json!(base),
         d.snapshot(),
     )?;
+    if wet {
+        placed_treatments(d, &sound)?;
+    }
+    Ok(())
+}
+
+fn placed_treatments(d: &mut Driver<'_>, sound: &deadpan_core::SoundId) -> Result<(), String> {
+    let mut history = Vec::new();
+    for command in [
+        "sound-envelope 0f 30f -12dB 0dB smoothstep",
+        "sound-eq bass=3dB middle=-6dB treble=0dB",
+        "sound-saturate 9dB",
+        "sound-balance -35%",
+        "sound-mute on",
+        "sound-mute off",
+    ] {
+        history.push(d.app().workspace.as_ref().unwrap().document.sounds()[sound].clone());
+        edit(d, command)?;
+    }
+    let event = d.app().workspace.as_ref().unwrap().document.sounds()[sound].clone();
+    let recipe = &event.treatments;
+    d.check(
+        "Captured sound commands save the complete ordered recipe",
+        recipe
+            .clip_gain()
+            .is_some_and(|g| g.envelopes().len() == 1 && !g.muted())
+            && recipe
+                .equalizer()
+                .is_some_and(|eq| eq.gains()[1].millidecibels() == -6000)
+            && recipe
+                .saturation()
+                .is_some_and(|s| s.drive().millidecibels() == 9000)
+            && recipe.balance().is_some_and(|b| b.percent() == -35),
+        json!("Envelope, EQ, saturation and balance; unmuted"),
+        json!(recipe),
+    )?;
+    for (width, height) in [(960.0, 640.0), (1280.0, 820.0)] {
+        let viewport = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(width, height));
+        let input = d.harness.input_mut();
+        input.screen_rect = Some(viewport);
+        input
+            .viewports
+            .get_mut(&egui::ViewportId::ROOT)
+            .ok_or("Missing sound treatment viewport")?
+            .inner_rect = Some(viewport);
+        d.step("Resize sound treatments", true)?;
+        inspector_top(d, "Selected sound inspector pane")?;
+        scenarios::reveal_inspector_button(d, "Sound balance · -35%  :sound-balance")?;
+        d.check(
+            "Sound treatment controls remain readable",
+            visible(d, "Sound saturation · 9 dB") && visible(d, "Sound balance · -35%"),
+            json!("Saturation and balance"),
+            d.widgets(),
+        )?;
+        d.capture("Placed sound treatments")?;
+    }
+    for expected in history.into_iter().rev() {
+        undo(d)?;
+        d.check(
+            "Undo restores the previous complete sound recipe",
+            d.app().workspace.as_ref().unwrap().document.sounds()[sound] == expected,
+            json!(expected),
+            d.snapshot(),
+        )?;
+    }
     Ok(())
 }

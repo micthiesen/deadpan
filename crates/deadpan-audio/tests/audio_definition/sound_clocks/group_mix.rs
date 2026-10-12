@@ -4,6 +4,67 @@ use super::*;
 const START: i64 = 4805;
 const FRAMES: u32 = 6406;
 
+#[test]
+fn independent_envelope_keeps_fractional_onset_clock_through_a_root_move() {
+    let base = ntsc(AudioEdgePolicy::Hard);
+    let clip = ClipGain::new(
+        GainDb::new(-6000).unwrap(),
+        false,
+        vec![
+            GainEnvelope::new(
+                GainClock::OwnerOutput,
+                GainRange::new(ExactRatio::ZERO, ExactRatio::integer(4)).unwrap(),
+                GainDb::new(-12000).unwrap(),
+                vec![
+                    GainSegment::new(
+                        ExactRatio::integer(4),
+                        GainDb::new(9000).unwrap(),
+                        GainCurve::Linear,
+                    )
+                    .unwrap(),
+                ],
+            )
+            .unwrap(),
+        ],
+        vec![],
+    )
+    .unwrap();
+    let mut wire = serde_json::to_value(&base).unwrap();
+    wire["beat_sounds"]["owner"]["effect"]["treatments"] =
+        serde_json::to_value(AudioTreatments::from_clip_gain(clip.clone())).unwrap();
+    let document = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    let raw = read(&base, 3203, 6407);
+    let expected: Vec<_> = raw
+        .iter()
+        .enumerate()
+        .map(|(index, value)| {
+            let local = ExactRatio::new((3203 + index as i128) * 5, 8008)
+                .unwrap()
+                .checked_sub(ExactRatio::integer(2))
+                .unwrap();
+            let gain = clip.evaluate(local).unwrap().millidecibels;
+            let factor = 10f64.powf(gain.numerator() as f64 / gain.denominator() as f64 / 20_000.0);
+            value.map(|v| (f64::from(v) * factor) as f32)
+        })
+        .collect();
+    let actual = read(&document, 3203, 6407);
+    assert!(
+        actual
+            .iter()
+            .zip(&expected)
+            .all(|(a, b)| a.iter().zip(b).all(|(a, b)| (a - b).abs() < 2e-6))
+    );
+    let moved = insert_prefix(&document);
+    let after = read(&moved, START, FRAMES);
+    assert_eq!(after, actual[..FRAMES as usize]);
+    for (offset, count) in [(0, 127), (1599, 257), (3200, 256), (6000, 400)] {
+        assert_eq!(
+            read(&moved, START + offset, count),
+            after[offset as usize..offset as usize + count as usize]
+        );
+    }
+}
+
 fn moved(with_original: bool) -> ProjectDocument {
     let mut wire = serde_json::to_value(ntsc(AudioEdgePolicy::Hard)).unwrap();
     if with_original {
@@ -323,9 +384,9 @@ fn independent_eq_automation_keeps_rebound_input_history_across_a_new_pause() {
     let attached = ProjectDocument::from_json(&wire.to_string()).unwrap();
     let sound: BeatSound =
         serde_json::from_value(wire["beat_sounds"]["owner"]["effect"].clone()).unwrap();
-    wire["sounds"] = serde_json::json!({"effect": SoundEvent { tail_sends: Default::default(), wet_sends: Default::default(),
+    wire["sounds"] = serde_json::json!({"effect": SoundEvent {
         owner: id("root"), label: sound.label, source: sound.source, mapping: sound.mapping,
-        offset: AudioSample(START), gain_millidecibels: sound.gain_millidecibels,
+        offset: AudioSample(START), treatments: deadpan_core::AudioTreatments::default().with_trim(deadpan_core::GainDb::new(sound.treatments.trim().millidecibels()).unwrap()).unwrap(),
         start_edge: sound.start_edge, end_edge: sound.end_edge, overflow: sound.overflow,
     }});
     wire["beat_sounds"] = serde_json::json!({});

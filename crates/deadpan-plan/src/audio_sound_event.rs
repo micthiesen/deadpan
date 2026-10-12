@@ -322,6 +322,19 @@ impl<'plan> AudioRootSound<'plan> {
             self.allows_hold(span, work, maximum)
         })
     }
+
+    /// Current cuts and Hold policy after the event's input edges were already
+    /// processed. Preserve the original event envelope for continuous returns.
+    pub fn post_treatment_gates(
+        &self,
+        samples: Range<AudioSample>,
+        limits: AudioQueryLimits,
+    ) -> Result<AudioSoundGateQuery, PlanError> {
+        let mut voice = self.clone();
+        voice.start_edge = AudioEdgePolicy::Hard;
+        voice.end_edge = AudioEdgePolicy::Hard;
+        voice.gate_fades(samples, limits)
+    }
 }
 
 /// Shared current-clock envelope for an independently prepared occurrence.

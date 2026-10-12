@@ -7,14 +7,14 @@ use deadpan_audio::{LimitedTile, LimiterContext};
 fn event(document: &ProjectDocument, asset: &AssetId, offset: i64, gain: i32) -> SoundEvent {
     let recipe = recipe(document, asset, 1000, offset);
     SoundEvent {
-        tail_sends: Default::default(),
-        wet_sends: Default::default(),
         owner: document.root().clone(),
         label: "Placed effect".into(),
         source: recipe.source,
         mapping: recipe.mapping,
         offset: recipe.offset,
-        gain_millidecibels: gain,
+        treatments: deadpan_core::AudioTreatments::default()
+            .with_trim(deadpan_core::GainDb::new(gain).unwrap())
+            .unwrap(),
         start_edge: AudioEdgePolicy::Automatic,
         end_edge: AudioEdgePolicy::Automatic,
         overflow: SoundOverflowPolicy::Reject,

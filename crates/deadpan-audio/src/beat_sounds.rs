@@ -16,6 +16,7 @@ pub(super) struct PreparedOccurrence<'plan, 'history> {
     pub(super) samples: Range<AudioSample>,
     pub(super) input: PreparedBeatInput<'plan, 'history>,
     pub(super) fades: Vec<deadpan_plan::AudioSoundGateSpan>,
+    pub(super) post_fades: Vec<deadpan_plan::AudioSoundGateSpan>,
     mix_route: Option<super::group_mix::Route<'plan>>,
 }
 
@@ -107,92 +108,117 @@ impl StageAudio {
                             break;
                         }
                     }
-                    let (input, fades) = if let Some((index, first_scope, historical_instance)) =
-                        first
-                    {
-                        let first_plan =
-                            retained
-                                .get(first_scope.timing())
-                                .ok_or(PlanError::InvalidPlan(
-                                    "sound processing layout was not prepared",
-                                ))?;
-                        if let std::collections::btree_map::Entry::Vacant(entry) =
-                            bindings.entry(index)
-                        {
-                            let (binding, work) = first_scope.bind_historical_plan(
+                    let (input, fades, post_fades) =
+                        if let Some((index, first_scope, historical_instance)) = first {
+                            let first_plan = retained.get(first_scope.timing()).ok_or(
+                                PlanError::InvalidPlan("sound processing layout was not prepared"),
+                            )?;
+                            if let std::collections::btree_map::Entry::Vacant(entry) =
+                                bindings.entry(index)
+                            {
+                                let (binding, work) = first_scope.bind_historical_plan(
+                                    first_plan,
+                                    control.query_limits()?.maximum_work,
+                                )?;
+                                control.spend_plan_work(work)?;
+                                entry.insert(binding);
+                            }
+                            let binding = &bindings[&index];
+                            let original = super::sound_clocks::historical_occurrence(
                                 first_plan,
+                                event,
+                                historical_instance,
+                                control,
+                                context.map(|context| (context, first_scope)),
+                            )?;
+                            let (alias, alias_work) = binding.alias_occurrence(
+                                &original,
+                                voice,
                                 control.query_limits()?.maximum_work,
                             )?;
-                            control.spend_plan_work(work)?;
-                            entry.insert(binding);
-                        }
-                        let binding = &bindings[&index];
-                        let original = super::sound_clocks::historical_occurrence(
-                            first_plan,
-                            event,
-                            historical_instance,
-                            control,
-                            context.map(|context| (context, first_scope)),
-                        )?;
-                        let (alias, alias_work) = binding.alias_occurrence(
-                            &original,
-                            voice,
-                            control.query_limits()?.maximum_work,
-                        )?;
-                        control.spend_plan_work(alias_work)?;
-                        let placements =
-                            super::sound_clocks::placements(&original, voice, &scopes, control)?;
-                        let fades = voice.routed_gate_fades_from(
-                            &original,
-                            &alias,
-                            &placements,
-                            (event.start_edge, event.end_edge),
-                            interval.clone(),
-                            control.query_limits()?,
-                        )?;
-                        control.spend_plan_work(fades.work)?;
-                        let routed =
-                            super::sound_clocks::route_occurrence(original, &placements, control)?;
-                        let query = self.with_plan_scope(Arc::clone(first_plan), |reader| {
-                            reader.preflight_routed_root(
-                                &routed,
+                            control.spend_plan_work(alias_work)?;
+                            let placements = super::sound_clocks::placements(
+                                &original, voice, &scopes, control,
+                            )?;
+                            let fades = voice.routed_gate_fades_from(
+                                &original,
+                                &alias,
+                                &placements,
+                                (event.start_edge, event.end_edge),
+                                interval.clone(),
+                                control.query_limits()?,
+                            )?;
+                            control.spend_plan_work(fades.work)?;
+                            let post_fades = voice.routed_gate_fades_from(
+                                &original,
+                                &alias,
+                                &placements,
+                                (
+                                    deadpan_core::AudioEdgePolicy::Hard,
+                                    deadpan_core::AudioEdgePolicy::Hard,
+                                ),
+                                interval.clone(),
+                                control.query_limits()?,
+                            )?;
+                            control.spend_plan_work(post_fades.work)?;
+                            let routed = super::sound_clocks::route_occurrence(
+                                original,
+                                &placements,
+                                control,
+                            )?;
+                            let query = self.with_plan_scope(Arc::clone(first_plan), |reader| {
+                                reader.preflight_routed_root(
+                                    &routed,
+                                    interval.start,
+                                    count(&interval)?,
+                                    control,
+                                )
+                            })?;
+                            (
+                                PreparedBeatInput::Routed {
+                                    plan: Arc::clone(first_plan),
+                                    query,
+                                },
+                                fades,
+                                post_fades,
+                            )
+                        } else {
+                            let queries =
+                                self.source_occurrence_queries(voice, interval.clone(), control)?;
+                            self.preflight_root_queries(
+                                &queries,
                                 interval.start,
                                 count(&interval)?,
                                 control,
+                                0,
+                            )?;
+                            let fades = voice.gate_fades(
+                                event.start_edge,
+                                event.end_edge,
+                                interval.clone(),
+                                control.query_limits()?,
+                            )?;
+                            control.spend_plan_work(fades.work)?;
+                            let post_fades = voice.gate_fades(
+                                deadpan_core::AudioEdgePolicy::Hard,
+                                deadpan_core::AudioEdgePolicy::Hard,
+                                interval.clone(),
+                                control.query_limits()?,
+                            )?;
+                            control.spend_plan_work(post_fades.work)?;
+                            (
+                                PreparedBeatInput::Current(Box::new(queries)),
+                                fades,
+                                post_fades,
                             )
-                        })?;
-                        (
-                            PreparedBeatInput::Routed {
-                                plan: Arc::clone(first_plan),
-                                query,
-                            },
-                            fades,
-                        )
-                    } else {
-                        let queries =
-                            self.source_occurrence_queries(voice, interval.clone(), control)?;
-                        self.preflight_root_queries(
-                            &queries,
-                            interval.start,
-                            count(&interval)?,
-                            control,
-                            0,
-                        )?;
-                        let fades = voice.gate_fades(
-                            event.start_edge,
-                            event.end_edge,
-                            interval.clone(),
-                            control.query_limits()?,
-                        )?;
-                        control.spend_plan_work(fades.work)?;
-                        (PreparedBeatInput::Current(Box::new(queries)), fades)
-                    };
+                        };
                     sound_events::validate_gate_envelopes(&fades.spans, interval.clone())?;
                     occurrences.push(PreparedOccurrence {
                         voice: voice.clone(),
                         samples: interval,
                         input,
                         fades: fades.spans,
+                        post_fades: post_fades.spans,
                         mix_route: None,
                     });
                 }
@@ -296,7 +322,7 @@ impl StageAudio {
                         &route,
                         offset + index,
                         sample.map(|value| value * edge),
-                        sound.event.gain_millidecibels,
+                        sound.event.treatments.trim().millidecibels(),
                         control,
                     )?;
                 }

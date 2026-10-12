@@ -86,14 +86,14 @@ fn decoded_sound_allowance_preserves_other_silence_and_ripple_sample_history() -
             Command::SetSound {
                 id: SoundId::new(name)?,
                 event: SoundEvent {
-                    tail_sends: Default::default(),
-                    wet_sends: Default::default(),
                     owner: node("root"),
                     label: name.into(),
                     source: source.clone(),
                     mapping: SourceAudioMapping::natural_rate(source.span, rate)?,
                     offset: onset,
-                    gain_millidecibels: gain,
+                    treatments: deadpan_core::AudioTreatments::default()
+                        .with_trim(deadpan_core::GainDb::new(gain).unwrap())
+                        .unwrap(),
                     start_edge: AudioEdgePolicy::Hard,
                     end_edge: AudioEdgePolicy::Hard,
                     overflow: SoundOverflowPolicy::Reject,

@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-12T13:18:59Z",
+  "updated_at": "2026-10-12T14:33:28Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Complete creative sound-event envelopes/treatments and wider loop/incoming-tail qualification. Finish partial attached-sound scope routes, filtered caching, mastering, format/color, workflow, performance and release obligations.",
+  "focus": "Diagnose the existing black-viewer placement replay checkpoint. Finish partial attached-sound scope routes and wider loop/incoming-tail qualification, persistent filtered caching, mastering, format/color, workflow, performance and release obligations.",
   "features": [
     {
       "id": "editing",
@@ -44,7 +44,7 @@
       "requirements": [
         "DP-09"
       ],
-      "note": "Playback, gain, sounds, native EQ, allocated Tail sends and continuous beat/group/event reverb and delay work. Event returns retain history through routing and nested Preserve copies. Creative event treatments, partial sound-owner edits, wider loop/tail qualification and filtered caching remain."
+      "note": "Playback, gain, sounds, native EQ, Tail sends, continuous returns and independent sound envelopes/EQ/saturation/balance work. Event processing retains its onset clock and history through routing. Partial sound-owner edits, wider loop/tail qualification and persistent filtered caching remain."
     },
     {
       "id": "analysis",

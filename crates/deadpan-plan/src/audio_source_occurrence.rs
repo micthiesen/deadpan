@@ -754,6 +754,26 @@ impl<'plan> AudioSourceOccurrence<'plan> {
         &self.gain_owners
     }
 
+    /// Sound-local automation after time mapping, before saved delivery routes.
+    /// Selection never restarts it. The host clock carries enclosing retimes.
+    pub fn treatment_clock(&self) -> Result<AudioSampleMap<AudioSample>, PlanError> {
+        let host = self
+            .gain_owners
+            .last()
+            .ok_or(PlanError::InvalidPlan("sound owner clock absent"))?
+            .sampling();
+        let recipe = self.recipe();
+        let onset = recipe.mapping.start_frames_with_offset(
+            recipe.offset,
+            self.plan.metadata().presentation_basis.frame_rate,
+        )?;
+        AudioSampleMap::new(
+            host.anchor(),
+            host.local_at_anchor().checked_sub(onset)?,
+            host.local_frames_per_sample(),
+        )
+    }
+
     /// The outermost retained Preserve projection, including its complete
     /// nested input graph, when this occurrence has any Preserve processing.
     /// Hosts can preflight this history even when a later route has no audible

@@ -56,8 +56,6 @@ fn exact_forest_delete_keeps_ntsc_preserve_pcm_and_transforms_root_sound_once() 
         Command::SetSound {
             id: SoundId::new("effect").unwrap(),
             event: SoundEvent {
-                tail_sends: Default::default(),
-                wet_sends: Default::default(),
                 owner: id("root"),
                 label: "Separate bus".into(),
                 source: full,
@@ -68,7 +66,9 @@ fn exact_forest_delete_keeps_ntsc_preserve_pcm_and_transforms_root_sound_once() 
                         .unwrap(),
                 },
                 offset: AudioSample(7),
-                gain_millidecibels: -6000,
+                treatments: deadpan_core::AudioTreatments::default()
+                    .with_trim(deadpan_core::GainDb::new(-6000).unwrap())
+                    .unwrap(),
                 start_edge: AudioEdgePolicy::Hard,
                 end_edge: AudioEdgePolicy::Hard,
                 overflow: SoundOverflowPolicy::Reject,

@@ -9,13 +9,11 @@ mod sound_clocks;
 fn saved(document: &ProjectDocument, owner: &str, length: i64) -> ProjectDocument {
     let recipe = voice_recipe(document.presentation_basis().frame_rate, length);
     let event = BeatSound {
-        tail_sends: Default::default(),
-        wet_sends: Default::default(),
         label: "Owned effect".into(),
         source: recipe.source,
         mapping: recipe.mapping,
         offset: recipe.offset,
-        gain_millidecibels: 0,
+        treatments: deadpan_core::AudioTreatments::default(),
         start_edge: AudioEdgePolicy::Hard,
         end_edge: AudioEdgePolicy::Hard,
         overflow: SoundOverflowPolicy::Reject,
@@ -72,7 +70,12 @@ fn saved_beat_sound_renders_nested_preserve_and_restarts_owner_gain_each_play() 
     ))
     .unwrap();
     wire["nodes"]["root"]["audio_treatments"] = serde_json::to_value(trim(-3000, vec![])).unwrap();
-    wire["beat_sounds"]["owner"]["effect"]["gain_millidecibels"] = serde_json::json!(-3000);
+    wire["beat_sounds"]["owner"]["effect"]["treatments"] = serde_json::to_value(
+        AudioTreatments::default()
+            .with_trim(GainDb::new(-3000).unwrap())
+            .unwrap(),
+    )
+    .unwrap();
     let document = ProjectDocument::from_json(&wire.to_string()).unwrap();
     let plan = compile(&document, false);
     let mut passage = stretch(&stretch(&raw_voice(3840), 2560, 3, 2), 1280, 2, 1);

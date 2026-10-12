@@ -73,9 +73,11 @@ fn sound(send: TailSends) -> SoundEvent {
         )
         .unwrap(),
         offset: AudioSample(0),
-        gain_millidecibels: -3_000,
-        tail_sends: send,
-        wet_sends: Default::default(),
+        treatments: deadpan_core::AudioTreatments::default()
+            .with_trim(deadpan_core::GainDb::new(-3_000).unwrap())
+            .unwrap()
+            .with_tail_sends(send),
+
         start_edge: AudioEdgePolicy::Hard,
         end_edge: AudioEdgePolicy::Hard,
         overflow: SoundOverflowPolicy::Reject,
@@ -104,7 +106,10 @@ fn event_return_is_excluded_from_its_own_allocated_tail_tap() {
             let dry_event = sound(sends(effect, -6000));
             let dry = with_sound(&base, dry_event.clone(), attached);
             let mut wet_event = dry_event;
-            wet_event.wet_sends = sends(TailEffect::Reverb, 0);
+            wet_event.treatments = wet_event
+                .treatments
+                .clone()
+                .with_wet_sends(sends(TailEffect::Reverb, 0));
             let wet = with_sound(&base, wet_event, attached);
             let prepare = |document: &ProjectDocument| {
                 StageAudio::new(planned(document))

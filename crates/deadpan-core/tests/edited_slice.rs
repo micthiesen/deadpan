@@ -271,8 +271,6 @@ fn pasted_contents_exclude_root_sound_bus_and_append_one_exact_route_edit() {
             Command::SetSound {
                 id: sound.clone(),
                 event: SoundEvent {
-                    tail_sends: Default::default(),
-                    wet_sends: Default::default(),
                     owner: id("root"),
                     label: "Effect".into(),
                     source: SourceAudio {
@@ -286,7 +284,9 @@ fn pasted_contents_exclude_root_sound_bus_and_append_one_exact_route_edit() {
                             .unwrap(),
                     },
                     offset: AudioSample(0),
-                    gain_millidecibels: -1200,
+                    treatments: deadpan_core::AudioTreatments::default()
+                        .with_trim(deadpan_core::GainDb::new(-1200).unwrap())
+                        .unwrap(),
                     start_edge: AudioEdgePolicy::Hard,
                     end_edge: AudioEdgePolicy::Hard,
                     overflow: SoundOverflowPolicy::Reject,

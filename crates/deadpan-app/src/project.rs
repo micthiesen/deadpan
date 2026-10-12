@@ -807,6 +807,10 @@ pub struct SoundCommit {
 
 #[derive(Clone, Debug)]
 pub enum ProjectSoundEdit {
+    Treatments {
+        id: SoundId,
+        treatments: Box<deadpan_core::AudioTreatments>,
+    },
     WetSend {
         id: SoundId,
         effect: deadpan_core::TailEffect,

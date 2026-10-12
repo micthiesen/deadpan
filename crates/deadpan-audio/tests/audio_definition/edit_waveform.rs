@@ -154,8 +154,6 @@ fn root_routes_and_silent_hold_permissions_change_actual_window_peaks() {
     pause.audio_edges.node_end = AudioEdgePolicy::Hard;
     let doc = document(rate, &["pause"], [("pause", pause)], BTreeMap::new());
     let event = SoundEvent {
-        tail_sends: Default::default(),
-        wet_sends: Default::default(),
         owner: id("root"),
         label: "Routed sound".into(),
         source: audio(0..8197),
@@ -165,7 +163,7 @@ fn root_routes_and_silent_hold_permissions_change_actual_window_peaks() {
             selection: ExactFrameRange::new(ExactRatio::ZERO, ratio(1000, 1)).unwrap(),
         },
         offset: AudioSample(0),
-        gain_millidecibels: 0,
+        treatments: deadpan_core::AudioTreatments::default(),
         start_edge: AudioEdgePolicy::Hard,
         end_edge: AudioEdgePolicy::Hard,
         overflow: SoundOverflowPolicy::Reject,

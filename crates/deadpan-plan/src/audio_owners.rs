@@ -286,6 +286,16 @@ impl RenderPlan {
     pub fn has_audio_wet_sends(&self) -> bool {
         self.has_audio_wet_sends
     }
+    pub fn has_sound_treatments(&self) -> bool {
+        self.sounds()
+            .values()
+            .any(|event| !event.treatments.is_empty())
+            || self
+                .beat_sounds()
+                .values()
+                .flat_map(|sounds| sounds.values())
+                .any(|event| !event.treatments.is_empty())
+    }
     pub fn has_audio_equalizers(&self) -> bool {
         self.has_audio_equalizers
     }

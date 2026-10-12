@@ -4,6 +4,34 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Independent sound treatments](../qualification/event-treatments-2026-10-12.md)
+replace the separate gain/send fields with complete `AudioTreatments` on both
+event types (core 53/store 81, frozen context 12). Exact onset-local envelopes,
+EQ, saturation and balance process retained event input before sends and parent
+stages. Current cut/Hold gates remain separate; input edges apply once.
+Native `:sound-eq`, `:sound-saturate`, `:sound-balance`, `:sound-mute` and
+`:sound-envelope` capture the placed sound/session/revision. Typed
+`SetBeatSound` carries the same recipe for attachments.
+
+All 3,969 tests pass (nine existing opt-in ignores), as do strict workspace
+checks and release builds. Five final offscreen replays pass 663 scenario checks
+plus shortcut audits. The inspected minimum/default treatment captures are
+byte-identical across the final rebuild. A real release export verifies 30
+pictures, four audio blocks and one zero-offset window. Failed fixture,
+command and replay-helper attempts remain in the evidence.
+
+Follow up the existing black viewer at sound-placement's `Sound removal is
+reachable at 960x640` checkpoint. Its semantic state reports displayed frame 3;
+both the prior event-return capture and this increment's capture look black.
+The qualification retains both images and the final report. Diagnose whether
+the discrepancy is in offscreen rendering or application presentation; the
+new treatment captures show the picture correctly.
+
+The primary agent works alone, including self-review. Continue partial attached-sound scope routes, broader
+incoming-tail/loop qualification, persistent filtered caching and remaining
+mastering/performance work. Existing scope refusals remain. DP-09/DP-16 and the
+full goal are still open.
+
 [Independent sound returns](../qualification/event-returns-2026-10-12.md) now
 store `wet_sends` on root and attached events (core 52/store 80, frozen context
 12 unchanged). Native `:sound-wet-send` edits a captured placed sound. Event
@@ -19,17 +47,16 @@ viewport captures are byte-identical across debug/release. A real release export
 verifies 30 pictures, four audio blocks and one zero-offset window. Initial
 fixture, parser and replay-helper failures are retained. No live GUI/device ran.
 
-Continue creative event envelopes/treatments, partial attached-sound scope
+Creative event treatments are implemented above. Partial attached-sound scope
 routes, broader incoming-tail/loop qualification, persistent filtered caching
-and remaining mastering/performance work. Existing scope refusals remain.
-DP-09/DP-16 and the full goal are still open.
+and remaining mastering/performance work remain open.
 
 [Retained sound input](../qualification/retained-sound-input-2026-10-12.md)
 now has a checked preparation API on the old recipe clock. Raw root sources,
 projected inputs and complete occurrences share it with ordinary routed reads.
 It preserves history removed by a later trim or masked by a route gap and keeps
 current consuming Hold gates separate. Event sends now use this boundary;
-creative event envelopes and the remaining per-event treatments stay open.
+creative event envelopes and per-event treatments are implemented above.
 The primary agent continues alone. DP-09/DP-16 and the full goal remain open.
 
 [Continuous owner returns](../qualification/wet-owners-2026-10-12.md) now store

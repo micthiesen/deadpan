@@ -560,8 +560,6 @@ fn seed_cross_parent(harness: &Harness, initial: &Workspace) -> Arc<Workspace> {
         Command::SetSound {
             id: SoundId::new("root-sound").unwrap(),
             event: SoundEvent {
-                tail_sends: Default::default(),
-                wet_sends: Default::default(),
                 owner: initial.document.root().clone(),
                 label: "Fixed root impulse".into(),
                 source: SourceAudio {
@@ -588,7 +586,9 @@ fn seed_cross_parent(harness: &Harness, initial: &Workspace) -> Arc<Workspace> {
                     .unwrap(),
                 },
                 offset: AudioSample(0),
-                gain_millidecibels: -6000,
+                treatments: deadpan_core::AudioTreatments::default()
+                    .with_trim(deadpan_core::GainDb::new(-6000).unwrap())
+                    .unwrap(),
                 start_edge: AudioEdgePolicy::Hard,
                 end_edge: AudioEdgePolicy::Hard,
                 overflow: SoundOverflowPolicy::Reject,

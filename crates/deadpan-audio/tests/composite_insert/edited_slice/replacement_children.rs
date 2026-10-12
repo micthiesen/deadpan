@@ -50,8 +50,6 @@ fn sounded(document: &ProjectDocument, start: i64, name: &str) -> ProjectDocumen
         Command::SetSound {
             id: SoundId::new("effect").unwrap(),
             event: SoundEvent {
-                tail_sends: Default::default(),
-                wet_sends: Default::default(),
                 owner: id("root"),
                 label: "Root sound across replacement".into(),
                 source: audio(100..20_100),
@@ -65,7 +63,9 @@ fn sounded(document: &ProjectDocument, start: i64, name: &str) -> ProjectDocumen
                     .unwrap(),
                 },
                 offset: AudioSample(7),
-                gain_millidecibels: -6000,
+                treatments: deadpan_core::AudioTreatments::default()
+                    .with_trim(deadpan_core::GainDb::new(-6000).unwrap())
+                    .unwrap(),
                 start_edge: AudioEdgePolicy::Hard,
                 end_edge: AudioEdgePolicy::Hard,
                 overflow: SoundOverflowPolicy::Reject,

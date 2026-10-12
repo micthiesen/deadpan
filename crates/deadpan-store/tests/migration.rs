@@ -95,11 +95,31 @@ fn contents(connection: &Connection) -> Result<String> {
 /// independently of obsolete history parsers. Qualified fixtures retain their
 /// measured receipt and original bytes; no qualification is invented here.
 fn current_fixture(root: &Path, json: &str, media_sql: Option<&str>) -> Result<PathBuf> {
-    // These frozen fixtures predate beat-owned sounds. Adapt only this private
+    // These frozen fixtures predate beat-owned sounds and complete event
+    // treatments. Preserve their scalar trims while adapting only this private
     // test input; production readers reject the obsolete document schema.
     let mut wire: serde_json::Value = serde_json::from_str(json)?;
     assert_eq!(wire["schema_version"], 43);
     wire["schema_version"] = deadpan_core::DOCUMENT_SCHEMA_VERSION.into();
+    if let Some(sounds) = wire
+        .get_mut("sounds")
+        .and_then(serde_json::Value::as_object_mut)
+    {
+        for sound in sounds.values_mut() {
+            let fields = sound
+                .as_object_mut()
+                .ok_or("fixture sound is not an object")?;
+            let trim = serde_json::from_value(
+                fields
+                    .remove("gain_millidecibels")
+                    .ok_or("fixture sound has no trim")?,
+            )?;
+            fields.insert(
+                "treatments".into(),
+                serde_json::to_value(deadpan_core::AudioTreatments::default().with_trim(trim)?)?,
+            );
+        }
+    }
     let document = ProjectDocument::from_json(&wire.to_string())?;
     let package = root.join("current.deadpan");
     if let Some(media_sql) = media_sql {

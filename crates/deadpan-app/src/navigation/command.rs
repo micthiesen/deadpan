@@ -536,6 +536,42 @@ pub fn parse(input: &str) -> Result<Entry, String> {
             }))
         });
     }
+    if verb == "sound-envelope" {
+        return super::sound::envelope(&words.collect::<Vec<_>>())
+            .map(|action| Entry::Action(Action::Sound(action)));
+    }
+    if matches!(
+        verb.as_str(),
+        "sound-saturate" | "sound-balance" | "sound-eq" | "sound-mute"
+    ) {
+        use deadpan_core::AudioChange;
+        let rest = words.collect::<Vec<_>>().join(" ");
+        let change = if verb == "sound-mute" {
+            AudioChange::Mute {
+                muted: match rest.as_str() {
+                    "on" => true,
+                    "off" => false,
+                    _ => return Err("Use :sound-mute on or :sound-mute off.".into()),
+                },
+            }
+        } else {
+            let entry = parse(&format!("{} {rest}", &verb[6..])).map_err(|error| {
+                error
+                    .replace(":eq", ":sound-eq")
+                    .replace(":saturate", ":sound-saturate")
+                    .replace(":balance", ":sound-balance")
+            })?;
+            match entry {
+                Entry::Saturate(stage) => AudioChange::Saturation { drive: stage.map(|stage| stage.drive()) },
+                Entry::Balance(balance) => AudioChange::Balance { balance },
+                Entry::Equalizer(recipe) => AudioChange::Equalizer { recipe },
+                _ => return Err("Use :sound-eq bass=0dB middle=0dB treble=0dB [low-cut=80Hz] [high-cut=12000Hz], or :sound-eq off.".into()),
+            }
+        };
+        return Ok(Entry::Action(Action::Sound(super::SoundAction::Treatment(
+            change,
+        ))));
+    }
     if verb == "tail" {
         let arguments: Vec<&str> = words.collect();
         return super::hold_effects::parse_tail(&arguments).map(|(length, effect, input)| {

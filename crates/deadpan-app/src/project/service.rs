@@ -894,7 +894,10 @@ impl Service {
                     .get(&id)
                     .cloned()
                     .ok_or("The selected sound no longer exists.")?;
-                event.tail_sends = event.tail_sends.with_level(effect, level);
+                event.treatments = event
+                    .treatments
+                    .clone()
+                    .with_tail_sends(event.treatments.tail_sends().with_level(effect, level));
                 (
                     Command::SetSound {
                         id: id.clone(),
@@ -904,6 +907,24 @@ impl Service {
                     "Sound tail send saved",
                 )
             }
+            ProjectSoundEdit::Treatments { id, treatments } => {
+                let mut event = workspace
+                    .document
+                    .sounds()
+                    .get(&id)
+                    .cloned()
+                    .ok_or("The selected sound no longer exists.")?;
+                treatments.validate().map_err(display)?;
+                event.treatments = *treatments;
+                (
+                    Command::SetSound {
+                        id: id.clone(),
+                        event,
+                    },
+                    Some(id),
+                    "Sound treatments saved",
+                )
+            }
             ProjectSoundEdit::WetSend { id, effect, level } => {
                 let mut event = workspace
                     .document
@@ -911,7 +932,10 @@ impl Service {
                     .get(&id)
                     .cloned()
                     .ok_or("The selected sound no longer exists.")?;
-                event.wet_sends = event.wet_sends.with_level(effect, level);
+                event.treatments = event
+                    .treatments
+                    .clone()
+                    .with_wet_sends(event.treatments.wet_sends().with_level(effect, level));
                 (
                     Command::SetSound {
                         id: id.clone(),
@@ -933,7 +957,10 @@ impl Service {
                     .get(&id)
                     .cloned()
                     .ok_or("The selected sound no longer exists.")?;
-                event.gain_millidecibels = gain_millidecibels;
+                event.treatments = event
+                    .treatments
+                    .with_trim(deadpan_core::GainDb::new(gain_millidecibels).map_err(display)?)
+                    .map_err(display)?;
                 event.start_edge = start_edge;
                 event.end_edge = end_edge;
                 (

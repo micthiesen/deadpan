@@ -155,7 +155,8 @@ and write nothing. Headless requests carry an explicit `parent`, `cursor`,
 | Gain/EQ sheet Apply, scoped audio treatment | `command` `set_audio_treatments` / `edit_scoped` | R, D | Equivalent |
 | `:wet-send reverb\|delay LEVEL\|off` | `set_audio` instruction with `{"type":"wet_send","effect":"delay","level":-6000}` for the captured beat or group (millidecibels; null turns off) | R, D | Equivalent |
 | `:tail-send reverb\|delay LEVEL\|off` | `set_audio` instruction with `{"type":"tail_send","effect":"delay","level":-6000}` (millidecibels; null turns off) | R, D | Equivalent |
-| `:sound-tail-send reverb\|delay LEVEL\|off` | `command` `set_sound` with the complete current event and updated `tail_sends` | R, D | Equivalent |
+| `:sound-tail-send reverb\|delay LEVEL\|off`, `:sound-wet-send` | `command` `set_sound` with the complete current event and updated `treatments.tail_sends` or `treatments.wet_sends` | R, D | Equivalent |
+| `:sound-eq`, `:sound-saturate`, `:sound-balance`, `:sound-mute`, `:sound-envelope` | `command` `set_sound` with the complete updated `treatments`; `set_beat_sound` for attached voices | R, D | Equivalent |
 | `:edge hard|auto …` | `set_audio_edges` instruction; `set_audio_edge` command | R, D | Equivalent |
 | `:audio-lag` | `set_audio_lag` instruction | R, D | Equivalent |
 | `:proxies on|off|retry` | none (personal app setting, not project state) | - | GUI-only |

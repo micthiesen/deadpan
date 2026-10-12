@@ -1595,14 +1595,12 @@ fn place_catalog_sound(project: &mut Project, wav: &Path, label: &str) -> Result
         Ok(Command::SetSound {
             id: SoundId::new("click")?,
             event: SoundEvent {
-                tail_sends: Default::default(),
-                wet_sends: Default::default(),
                 owner: document.root().clone(),
                 label: "Click".into(),
                 mapping: SourceAudioMapping::natural_rate(source.span, rate)?,
                 source,
                 offset: AudioSample(numerator / denominator),
-                gain_millidecibels: 0,
+                treatments: deadpan_core::AudioTreatments::default(),
                 start_edge: AudioEdgePolicy::Automatic,
                 end_edge: AudioEdgePolicy::Automatic,
                 overflow: SoundOverflowPolicy::Reject,
@@ -2134,8 +2132,9 @@ pub fn selected_tail_send(dir: &Path) -> Result<Fixture> {
     project.apply(|_, document, _| {
         let id = SoundId::new("click")?;
         let mut event = document.sounds()[&id].clone();
-        event.tail_sends =
-            TailSends::default().with_level(TailEffect::Delay, Some(GainDb::new(-6000)?));
+        event.treatments = event.treatments.clone().with_tail_sends(
+            TailSends::default().with_level(TailEffect::Delay, Some(GainDb::new(-6000)?)),
+        );
         Ok(Command::SetSound { id, event })
     })?;
     project.run_semantic(json!([{"type":"tail","length":{"unit":"frames","frames":30},"effect":"delay","input":"sends"}]), 18, None)?;
@@ -2512,8 +2511,6 @@ pub fn post_shared_automation(dir: &Path) -> Result<Fixture> {
             owner: owner.clone(),
             id: SoundId::new("owner-click")?,
             event: deadpan_core::BeatSound {
-                tail_sends: Default::default(),
-                wet_sends: Default::default(),
                 label: "Attached sound".into(),
                 source: event.source.clone(),
                 mapping: SourceAudioMapping::Placement {
@@ -2521,7 +2518,7 @@ pub fn post_shared_automation(dir: &Path) -> Result<Fixture> {
                     frames: event.mapping.duration_frames(FrameDuration::ZERO)?,
                 },
                 offset: AudioSample(0),
-                gain_millidecibels: 0,
+                treatments: deadpan_core::AudioTreatments::default(),
                 start_edge: AudioEdgePolicy::Hard,
                 end_edge: AudioEdgePolicy::Hard,
                 overflow: SoundOverflowPolicy::Reject,
@@ -2643,13 +2640,11 @@ fn shared_processing(dir: &Path, equalizer: bool) -> Result<Fixture> {
             owner: node("tone-group")?,
             id: SoundId::new("group-click")?,
             event: deadpan_core::BeatSound {
-                tail_sends: Default::default(),
-                wet_sends: Default::default(),
                 label: "Group sound".into(),
                 source: sound.source.clone(),
                 mapping: sound.mapping,
                 offset: sound.offset,
-                gain_millidecibels: 0,
+                treatments: deadpan_core::AudioTreatments::default(),
                 start_edge: sound.start_edge,
                 end_edge: sound.end_edge,
                 overflow: sound.overflow,
@@ -2659,7 +2654,10 @@ fn shared_processing(dir: &Path, equalizer: bool) -> Result<Fixture> {
     project.apply(|_, document, _| {
         let id = SoundId::new("click")?;
         let mut event = document.sounds()[&id].clone();
-        event.gain_millidecibels = -12000;
+        event.treatments = event
+            .treatments
+            .with_trim(deadpan_core::GainDb::new(-12000).unwrap())
+            .unwrap();
         Ok(Command::SetSound { id, event })
     })?;
     for (group, drive, trim) in [(true, 12000, -12000), (false, 6000, -6000)] {
@@ -3595,7 +3593,22 @@ pub fn continuous_owner_return(dir: &Path) -> Result<Fixture> {
 }
 
 pub fn continuous_event_return(dir: &Path) -> Result<Fixture> {
-    let mut project = Project::create(dir, "continuous-event-return")?;
+    event_fixture(dir, false)
+}
+
+pub fn treated_event(dir: &Path) -> Result<Fixture> {
+    event_fixture(dir, true)
+}
+
+fn event_fixture(dir: &Path, treatments: bool) -> Result<Fixture> {
+    let mut project = Project::create(
+        dir,
+        if treatments {
+            "treated-event"
+        } else {
+            "continuous-event-return"
+        },
+    )?;
     project.shorten()?;
     // Original deterministic stereo PCM, including enough selected silence for
     // two 300 ms echoes. The sound still ends before the unchanged picture.
@@ -3631,8 +3644,41 @@ pub fn continuous_event_return(dir: &Path) -> Result<Fixture> {
     project.apply(|_, document, _| {
         let id = SoundId::new("click")?;
         let mut event = document.sounds()[&id].clone();
-        event.wet_sends = deadpan_core::TailSends::default()
-            .with_level(deadpan_core::TailEffect::Delay, Some(GainDb::new(-6000)?));
+        event.treatments = event.treatments.clone().with_wet_sends(
+            deadpan_core::TailSends::default()
+                .with_level(deadpan_core::TailEffect::Delay, Some(GainDb::new(-6000)?)),
+        );
+        if treatments {
+            use deadpan_core::{
+                ClipGain, EqualizerRecipe, GainClock, GainCurve, GainEnvelope, GainRange,
+                GainSegment, Saturation, StereoBalance,
+            };
+            let range = GainRange::new(ExactRatio::ZERO, ExactRatio::integer(20))?;
+            event.treatments = event
+                .treatments
+                .with_clip_gain(ClipGain::new(
+                    GainDb::UNITY,
+                    false,
+                    vec![GainEnvelope::new(
+                        GainClock::OwnerOutput,
+                        range,
+                        GainDb::new(-6000)?,
+                        vec![GainSegment::new(
+                            range.end(),
+                            GainDb::UNITY,
+                            GainCurve::Linear,
+                        )?],
+                    )?],
+                    vec![],
+                )?)?
+                .with_equalizer(Some(EqualizerRecipe::new(
+                    [GainDb::UNITY, GainDb::new(3000)?, GainDb::UNITY],
+                    None,
+                    None,
+                )?))?
+                .with_saturation(Some(Saturation::new(GainDb::new(6000)?)?))?
+                .with_balance(Some(StereoBalance::new(50)?))?;
+        }
         Ok(Command::SetSound { id, event })
     })?;
     let mut fixture = project.finish(vec!["Continuous delay"],
@@ -3645,8 +3691,21 @@ pub fn continuous_event_return(dir: &Path) -> Result<Fixture> {
             count: 512,
             crossings_per_second: None,
             crest: None,
-            peak: Some(peak),
+            peak: Some(if treatments {
+                // Signal checks measure the left channel. The recipe's 50%
+                // right balance halves that channel before the delay send.
+                if start == 31_400 {
+                    (0.185, 0.215)
+                } else {
+                    (0.09, 0.11)
+                }
+            } else {
+                peak
+            }),
         });
+    }
+    if treatments {
+        fixture.notes.push("The event's onset-local gain ramp feeds +3 dB middle EQ, 6 dB saturation and 50% right balance before its delay. Export uses that same immutable recipe.".into());
     }
     Ok(fixture)
 }

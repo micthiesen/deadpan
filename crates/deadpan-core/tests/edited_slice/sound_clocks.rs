@@ -51,8 +51,6 @@ fn attached(document: &ProjectDocument, owner: &str) -> ProjectDocument {
                 owner: id(owner),
                 id: sound(),
                 event: BeatSound {
-                    tail_sends: Default::default(),
-                    wet_sends: Default::default(),
                     label: "Effect".into(),
                     source: SourceAudio { asset, span },
                     mapping: SourceAudioMapping::natural_rate(
@@ -61,7 +59,9 @@ fn attached(document: &ProjectDocument, owner: &str) -> ProjectDocument {
                     )
                     .unwrap(),
                     offset: AudioSample(37),
-                    gain_millidecibels: -1500,
+                    treatments: deadpan_core::AudioTreatments::default()
+                        .with_trim(deadpan_core::GainDb::new(-1500).unwrap())
+                        .unwrap(),
                     start_edge: AudioEdgePolicy::Hard,
                     end_edge: AudioEdgePolicy::Automatic,
                     overflow: SoundOverflowPolicy::Reject,

@@ -855,6 +855,7 @@ impl StageAudio {
         if authored_gain
             && (self.plan.has_audio_equalizers()
                 || self.plan.has_audio_wet_sends()
+                || self.plan.has_sound_treatments()
                 || (independent && self.plan.has_audio_component_automation()))
         {
             let block = if independent || self.plan.has_audio_wet_sends() {
@@ -2292,6 +2293,7 @@ impl StageAudio {
                     // work in blocks of at most MAX_OUTPUT_FRAMES.
                     let maximum = if plan.has_audio_equalizers()
                         || plan.has_audio_wet_sends()
+                        || plan.has_sound_treatments()
                         || *tail_input == deadpan_core::TailInput::Sends
                     {
                         i64::from(MAX_EDGE_PREPARATION_FRAMES)
