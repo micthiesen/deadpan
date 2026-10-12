@@ -65,8 +65,8 @@ pub use plan::{
     AudioSignalSpan, AudioStage, AudioStageDescriptor, SignalSample, SignalTransform,
 };
 pub use plan::{
-    AudioSourceOccurrence, AudioSourceOccurrences, AudioSourceVoice, AudioSourceVoiceIdentity,
-    AudioSourceVoiceRecipe,
+    AudioSoundOwnerContext, AudioSourceOccurrence, AudioSourceOccurrences, AudioSourceVoice,
+    AudioSourceVoiceIdentity, AudioSourceVoiceRecipe,
 };
 pub use plan::{
     DefinitionPictureCoverage, DefinitionPictureSample, DefinitionPictureSpan,

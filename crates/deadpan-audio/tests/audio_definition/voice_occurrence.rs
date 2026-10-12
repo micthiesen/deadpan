@@ -8,6 +8,9 @@ mod beat_sounds;
 #[path = "routed_occurrence.rs"]
 mod routed_occurrence;
 
+#[path = "sound_owner_context.rs"]
+mod sound_owner_context;
+
 fn occurrence_document() -> ProjectDocument {
     let rate = FrameRate::new(48_000, 1).unwrap();
     let plays = IterationOrder::new(RevisionId::new("voice-plays").unwrap(), 2).unwrap();

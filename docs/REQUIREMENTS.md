@@ -4,6 +4,14 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 
 ## Resumed implementation, 2026-10-06
 
+[Independent sound history](qualification/sound-owner-context-2026-10-11.md)
+now retains full current owner input behind crops while preserving nested
+Preserve, inner selections, stable Repeat scope and current Hold policy.
+Cold decoded PCM and fractional-phase checks pass, with all 958 plan/audio
+tests and strict workspace Clippy. The group mixer has not yet adopted this
+history path; EQ with independent sounds still rejects explicitly. Complete
+shared processing and per-voice policy remain agent work; DP-09/DP-16 stay partial.
+
 [Stored and recursive EQ](qualification/authored-eq-2026-10-11.md) now uses typed
 semantic edits, preserves order through other treatments, and evaluates nested
 Original owners through the shared authored bus. Crops, resumed Preserve,

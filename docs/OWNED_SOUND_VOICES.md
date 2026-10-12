@@ -185,6 +185,22 @@ See the [batch qualification record](qualification/occurrence-batches-2026-10-03
 
 ## Retained occurrence sample routing
 
+For temporal group treatments, `AudioSoundOwnerContext` resolves a concrete
+current owner and its full processing allocation. Its occurrence query keeps
+sound history hidden by exterior crops, on the absolute sample grid. An
+enclosing Preserve keeps its complete selected input, including selections
+inside that processor. Stable Repeat scope excludes other plays without
+expanding them. Current Hold gates come from that full structural context,
+separately from the Original's retained clock. Source admission and aggregate
+query limits still apply to silent or absent contributions.
+
+The existing PCM readers consume these checked handles, including negative
+history positions. Cold, split and nested-Preserve reads match uncropped
+references; fractional phase and exact sound endpoints have planner checks.
+See [sound history qualification](qualification/sound-owner-context-2026-10-11.md).
+This supplies input history only. Shared group EQ, saved-journal integration
+into that graph and final per-voice delivery policy remain required.
+
 `AudioRoutedRoot::occurrence` captures a complete checked independent occurrence,
 including its nested Preserve graph. Its route recipe uses frames relative to
 the occurrence's extent start, with a RoundEven grid origin at the negative of

@@ -1,0 +1,13 @@
+{
+  "check-evidence.py": "39e3d600c329e61c0b49fee13c68b7c0a96b1c1c878f1e095a6a0db3ae90ffbf",
+  "clippy.log.gz": "6fafe3badc2dd2cee58fc46bd8f53fc557f3b200b194fad5977f5867e9d66dbb",
+  "commands.json": "cd6bfe2d02bdd8d625b034afd921092597f1e0fc360e2ad5246612d33b509f00",
+  "fmt.log.gz": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64",
+  "identity.json": "8c25fa9275769dfe9694d014778eafbee09af9278b863e665f53e2ed45837ac4",
+  "initial-context-tests.log.gz": "c21343d74ca8f536987f234ceaaefdfc662eb5d58ef6a2ce462b11058bad05fa",
+  "retain.py": "09db73ffc9f63b76dcc8745347f6bc8382238b1c88074f7290cfc4e8e02068c7",
+  "review.md": "e8ea1a9b290ab662379dabe5ef1a41c3058d7c73379a59ff1a61cf5cf6bc34c5",
+  "run.py": "934ad48b26c975e21a08ea774c4189a1d019e124ea1166fc449731587f43566b",
+  "tests.log.gz": "26a14ff15a5ed3a1fdab021d738b0c34b86a5ecd8bb520e676eb9614becc9703",
+  "whitespace.log.gz": "9ceffb7310338057cfe71a4ae1e2c98d2c485d81cdef906532a801f457a38d64"
+}

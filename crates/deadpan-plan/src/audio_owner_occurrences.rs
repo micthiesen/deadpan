@@ -77,6 +77,7 @@ struct Query<'plan> {
     limits: AudioQueryLimits,
     work: usize,
     results: Vec<AudioOwnerOccurrence>,
+    scope: Option<InstancePath>,
 }
 
 impl RenderPlan {
@@ -90,10 +91,27 @@ impl RenderPlan {
         samples: Range<AudioSample>,
         limits: AudioQueryLimits,
     ) -> Result<AudioOwnerOccurrences, PlanError> {
+        self.audio_owner_occurrences_in_context(owner, samples, limits, None)
+    }
+
+    pub(in crate::plan) fn audio_owner_occurrences_in_context(
+        &self,
+        owner: &NodeId,
+        samples: Range<AudioSample>,
+        limits: AudioQueryLimits,
+        context: Option<&crate::AudioSoundOwnerContext<'_>>,
+    ) -> Result<AudioOwnerOccurrences, PlanError> {
         limits.validate()?;
-        if samples.start.0 < 0
-            || samples.end < samples.start
-            || samples.end > self.audio_duration()?
+        if context.is_some_and(|context| !context.belongs_to(self)) {
+            return Err(PlanError::InvalidAudioSourceOccurrence(
+                "foreign sound owner context",
+            ));
+        }
+        let support = match context {
+            Some(context) => context.samples(),
+            None => AudioSample(0)..self.audio_duration()?,
+        };
+        if samples.start < support.start || samples.end < samples.start || samples.end > support.end
         {
             return Err(PlanError::AudioRangeOutOfRange);
         }
@@ -133,6 +151,13 @@ impl RenderPlan {
             current = self.parents[index];
         }
         let work = ancestry.len();
+        if context.is_some_and(|context| !ancestry.contains(&context.owner_node)) {
+            return Ok(AudioOwnerOccurrences {
+                samples,
+                occurrences: Vec::new(),
+                work,
+            });
+        }
         let mut query = Query {
             plan: self,
             target: owner,
@@ -143,17 +168,32 @@ impl RenderPlan {
             limits,
             work,
             results: Vec::new(),
+            scope: context.map(|context| context.owner.clone()),
         };
-        query.visit(
-            self.root,
-            ExactRatio::ZERO,
-            ExactRatio::ONE,
-            ExactRatio::ZERO..ExactRatio::integer(self.duration().frames()),
-            requested_frames,
-            Vec::new(),
-            None,
-            0,
-        )?;
+        if let Some(context) = context {
+            let transform = context.policy.seed.transform;
+            query.visit(
+                context.processing_node,
+                transform.project_origin,
+                transform.project_frames_per_local_frame,
+                context.policy.root_extent(),
+                requested_frames,
+                context.processing_instance.repeats.clone(),
+                None,
+                0,
+            )?;
+        } else {
+            query.visit(
+                self.root,
+                ExactRatio::ZERO,
+                ExactRatio::ONE,
+                ExactRatio::ZERO..ExactRatio::integer(self.duration().frames()),
+                requested_frames,
+                Vec::new(),
+                None,
+                0,
+            )?;
+        }
         Ok(AudioOwnerOccurrences {
             samples,
             occurrences: query.results,
@@ -181,6 +221,14 @@ impl Query<'_> {
         }
         if !self.ancestry.contains(&node_index) {
             return Ok(());
+        }
+        if let Some(scope) = &self.scope {
+            let common = repeats.len().min(scope.repeats.len());
+            let matches = repeats[..common] == scope.repeats[..common];
+            self.spend(common)?;
+            if !matches {
+                return Ok(());
+            }
         }
         let node = &self.plan.nodes[node_index];
         let extent = ExactRatio::ZERO..ExactRatio::integer(node.inspection.duration.frames());
@@ -355,6 +403,29 @@ impl Query<'_> {
                 }
             }
             CompiledKind::Repeat { layout, .. } => {
+                let local_window = if let Some(required) = self
+                    .scope
+                    .as_ref()
+                    .and_then(|scope| scope.repeats.get(repeats.len()))
+                    .filter(|required| required.node == node.inspection.id)
+                    .cloned()
+                {
+                    self.spend(layout.segment_count())?;
+                    let play = layout.play(&required.iteration).ok_or(
+                        PlanError::InvalidAudioSourceOccurrence("sound context play is absent"),
+                    )?;
+                    let end = play
+                        .start
+                        .checked_add(play.duration.frames())
+                        .and_then(|end| end.checked_add(play.gap_after.frames()))
+                        .ok_or(TimeError::Overflow)?;
+                    intersect(
+                        local_window,
+                        ExactRatio::integer(play.start)..ExactRatio::integer(end),
+                    )?
+                } else {
+                    local_window
+                };
                 // local_window is already intersected with the node extent.
                 let mut cursor = local_window.start;
                 let end = local_window.end;

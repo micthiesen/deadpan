@@ -26,7 +26,7 @@ pub use source_voice::{AudioSourceVoice, AudioSourceVoiceIdentity, AudioSourceVo
 
 #[path = "audio_source_occurrence.rs"]
 mod source_occurrence;
-pub use source_occurrence::AudioSourceOccurrence;
+pub use source_occurrence::{AudioSoundOwnerContext, AudioSourceOccurrence};
 
 #[path = "audio_source_occurrences.rs"]
 mod source_occurrences;

@@ -4,6 +4,17 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Independent sound history](../qualification/sound-owner-context-2026-10-11.md)
+adds `AudioSoundOwnerContext` and its checked `source_voice_occurrences` query.
+It uses current structural clocks, full input behind exterior crops, enclosing
+Preserve and stable Repeat scope. Inner selections and current Hold gates stay
+in force. Existing PCM readers match uncropped references, including negative,
+cold and split reads; all 958 plan/audio tests and strict workspace Clippy pass.
+The shared group graph must now consume this input alongside Original contexts,
+preserving saved sound journals and applying final delivery policy separately.
+Do not remove the mixed-EQ guard until shared stage ordering and per-voice
+silence/tail behavior are implemented and tested.
+
 [Stored and recursive EQ](../qualification/authored-eq-2026-10-11.md) now adds
 `AudioTreatmentStage::Equalizer`, preserved `AudioTreatments.equalizer`, and
 `AudioChange::Equalizer` through the ordinary semantic replay/undo path.

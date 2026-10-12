@@ -49,6 +49,16 @@ See [authored EQ qualification](qualification/authored-eq-2026-10-11.md).
 
 ## Owner input contexts
 
+Independent sounds now have a separate checked
+`RenderPlan::audio_sound_owner_context`. It exposes their complete current
+structural input behind exterior crops, including negative sample positions,
+without adopting an Original's retained clock. Enclosing Preserve input and
+inner selections remain intact, and Hold policy follows the current structure.
+Cold decoded PCM matches uncropped references across split reads and nested
+Preserve. See [sound history qualification](qualification/sound-owner-context-2026-10-11.md).
+The group mixer does not consume this handle yet; the explicit mixed-EQ
+restriction remains until shared stage ordering and per-voice policy are wired.
+
 `RenderPlan::audio_owner_input` now resolves an observed owner's raw processing
 context with one bounded query allowance. The handle belongs to that immutable
 plan and occurrence. It rejects foreign plans, absent owners, changed Repeat

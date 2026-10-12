@@ -4,9 +4,13 @@ use deadpan_core::{MAX_DOCUMENT_DEPTH, SourceAudio};
 
 use super::*;
 use crate::{
-    AudioHoldPolicyQuery, AudioPolicyQuery, AudioSignalTape, AudioSignalTapeRun,
+    AudioDomain, AudioHoldPolicyQuery, AudioPolicyQuery, AudioSignalTape, AudioSignalTapeRun,
     AudioStageProjection,
 };
+
+#[path = "audio_sound_owner_context.rs"]
+mod owner_context;
+pub use owner_context::AudioSoundOwnerContext;
 
 /// A borrowed preparation recipe for one concrete current occurrence.
 ///
@@ -37,6 +41,9 @@ pub struct AudioSourceOccurrence<'plan> {
     input: AudioSignalTape<'plan>,
     construction_work: usize,
     retained_runs: usize,
+    // Full current structural policy for a checked treatment-input context.
+    // This never substitutes the Original's retained sampling clock.
+    policy_domain: Option<Arc<AudioDomain<'plan>>>,
 }
 
 #[derive(Clone, Copy)]
@@ -134,6 +141,16 @@ impl RenderPlan {
         recipe: AudioSourceVoiceRecipe,
         limits: AudioQueryLimits,
     ) -> Result<AudioSourceOccurrence<'_>, PlanError> {
+        self.source_voice_occurrence_in_context(instance, recipe, limits, None)
+    }
+
+    pub(super) fn source_voice_occurrence_in_context<'plan>(
+        &'plan self,
+        instance: InstancePath,
+        recipe: AudioSourceVoiceRecipe,
+        limits: AudioQueryLimits,
+        context: Option<&AudioSoundOwnerContext<'plan>>,
+    ) -> Result<AudioSourceOccurrence<'plan>, PlanError> {
         limits.validate()?;
         if instance.repeats.len() > MAX_DOCUMENT_DEPTH {
             return Err(PlanError::AudioQueryLimit("source occurrence depth"));
@@ -152,6 +169,18 @@ impl RenderPlan {
                     "source occurrence owner is absent",
                 ))?;
         let (edges, depth) = resolve_edges(self, host, &instance, &mut budget)?;
+        let unclipped_before = match context {
+            Some(context) => {
+                // Scope membership and the processing boundary each compare
+                // stable Repeat prefixes. Charge both walks before cloning.
+                budget.spend(1 + instance.repeats.len())?;
+                for edge in &edges {
+                    budget.spend(2 * (1 + edge.repeats))?;
+                }
+                context.clip_boundary(self, host, &instance, &edges)?
+            }
+            None => 0,
+        };
         let host_support = node_support(self, host);
         if !positive_range(&host_support)? {
             return Err(PlanError::InvalidAudioSourceOccurrence(
@@ -169,13 +198,17 @@ impl RenderPlan {
         let mut gain_owners = Vec::with_capacity(edges.len() + 1);
         let mut owner_edges = Vec::with_capacity(edges.len() + 1);
         let mut current_map = Placement::IDENTITY;
-        for edge in &edges {
+        for (index, edge) in edges.iter().enumerate() {
             budget.spend(1 + edge.repeats)?;
-            owner_edges.push((
-                current_map.range(node_support(self, edge.parent))?,
-                self.nodes[edge.parent].audio_edges,
-            ));
-            if let Some(gap) = &edge.gap {
+            if index >= unclipped_before {
+                owner_edges.push((
+                    current_map.range(node_support(self, edge.parent))?,
+                    self.nodes[edge.parent].audio_edges,
+                ));
+            }
+            if let Some(gap) = &edge.gap
+                && index >= unclipped_before
+            {
                 budget.spend(1)?;
                 let policies = self.nodes[edge.parent].audio_edges;
                 owner_edges.push((
@@ -224,7 +257,7 @@ impl RenderPlan {
         let mut support = host_support;
         let mut placement = Placement::IDENTITY;
         let mut stages = 0usize;
-        for edge in edges.iter().rev() {
+        for (index, edge) in edges.iter().enumerate().rev() {
             let parent = &self.nodes[edge.parent];
             if matches!(parent.kind, CompiledKind::Retime { pitch, scale, .. } if pitch.processes(scale == ExactRatio::ONE))
             {
@@ -259,11 +292,13 @@ impl RenderPlan {
             } else {
                 budget.spend(1)?;
                 placement = edge.map.compose(placement)?;
-                let allowed = node_support(self, edge.parent);
-                support = intersect(
-                    support,
-                    placement.local(allowed.start)?..placement.local(allowed.end)?,
-                )?;
+                if index >= unclipped_before {
+                    let allowed = node_support(self, edge.parent);
+                    support = intersect(
+                        support,
+                        placement.local(allowed.start)?..placement.local(allowed.end)?,
+                    )?;
+                }
                 if !positive_range(&support)? {
                     return Err(PlanError::InvalidAudioSourceOccurrence(
                         "source occurrence output is not visible",
@@ -320,6 +355,7 @@ impl RenderPlan {
             input,
             construction_work: budget.maximum - budget.remaining,
             retained_runs: budget.runs,
+            policy_domain: context.map(|context| Arc::clone(&context.policy)),
         })
     }
 }
@@ -698,6 +734,7 @@ impl<'plan> AudioSourceOccurrence<'plan> {
     ) -> Result<crate::AudioSoundGateQuery, PlanError> {
         crate::audio_sound_event::occurrence_gate_fades(
             self.plan,
+            self.policy_domain.as_deref(),
             self.audible_extent(),
             if self.inherited_hard_edges.0 {
                 deadpan_core::AudioEdgePolicy::Hard
@@ -874,7 +911,10 @@ impl<'plan> AudioSourceOccurrence<'plan> {
         limits: AudioQueryLimits,
     ) -> Result<AudioHoldPolicyQuery<AudioSample>, PlanError> {
         self.check_range(&samples)?;
-        self.plan.audio_hold_policy(samples, limits)
+        match &self.policy_domain {
+            Some(domain) => domain.hold_policy(samples, limits),
+            None => self.plan.audio_hold_policy(samples, limits),
+        }
     }
 
     pub fn policy(

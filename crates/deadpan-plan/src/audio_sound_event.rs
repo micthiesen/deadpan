@@ -281,6 +281,7 @@ impl<'plan> AudioRootSound<'plan> {
         }
         CurrentEnvelope {
             plan: self.plan,
+            domain: None,
             audible: self.audible.clone(),
             selection: self.selection.clone(),
             grid: self.grid,
@@ -295,8 +296,9 @@ impl<'plan> AudioRootSound<'plan> {
 
 /// Shared current-clock envelope for an independently prepared occurrence.
 /// It has no persisted Hold allowance. Original source cuts do not create edges.
-pub(crate) fn occurrence_gate_fades(
-    plan: &RenderPlan,
+pub(crate) fn occurrence_gate_fades<'plan>(
+    plan: &'plan RenderPlan,
+    domain: Option<&crate::AudioDomain<'plan>>,
     selection: Range<ExactRatio>,
     start_edge: AudioEdgePolicy,
     end_edge: AudioEdgePolicy,
@@ -314,6 +316,7 @@ pub(crate) fn occurrence_gate_fades(
     )?;
     CurrentEnvelope {
         plan,
+        domain,
         audible: grid.boundary(selection.start)?..grid.boundary(selection.end)?,
         selection,
         grid,
@@ -549,8 +552,9 @@ pub(crate) fn routed_occurrence_gate_fades(
     Ok(AudioSoundGateQuery { spans, work })
 }
 
-struct CurrentEnvelope<'plan> {
+struct CurrentEnvelope<'context, 'plan> {
     plan: &'plan RenderPlan,
+    domain: Option<&'context crate::AudioDomain<'plan>>,
     audible: Range<AudioSample>,
     selection: Range<ExactRatio>,
     grid: AudioSampleGrid<AudioSample>,
@@ -558,7 +562,7 @@ struct CurrentEnvelope<'plan> {
     end_edge: AudioEdgePolicy,
 }
 
-impl CurrentEnvelope<'_> {
+impl CurrentEnvelope<'_, '_> {
     fn query(
         &self,
         samples: Range<AudioSample>,
@@ -566,8 +570,12 @@ impl CurrentEnvelope<'_> {
         mut allows_hold: impl FnMut(&AudioSpan, &mut usize, usize) -> Result<bool, PlanError>,
     ) -> Result<AudioSoundGateQuery, PlanError> {
         limits.validate()?;
-        let root_end = self.plan.audio_duration()?;
-        if samples.start.0 < 0 || samples.end < samples.start || samples.end > root_end {
+        let support = match self.domain {
+            Some(domain) => domain.root_samples(),
+            None => AudioSample(0)..self.plan.audio_duration()?,
+        };
+        if samples.start < support.start || samples.end < samples.start || samples.end > support.end
+        {
             return Err(PlanError::AudioRangeOutOfRange);
         }
         if samples.is_empty() {
@@ -585,13 +593,19 @@ impl CurrentEnvelope<'_> {
                 work: 1,
             });
         }
-        let context = AudioSample(samples.start.0.saturating_sub(GATE_CONTEXT_SAMPLES).max(0))
+        let context = AudioSample(
+            samples
+                .start
+                .0
+                .saturating_sub(GATE_CONTEXT_SAMPLES)
+                .max(support.start.0),
+        )
             ..AudioSample(
                 samples
                     .end
                     .0
                     .saturating_add(GATE_CONTEXT_SAMPLES)
-                    .min(root_end.0),
+                    .min(support.end.0),
             );
         let context_start = self.grid.at(context.start)?;
         let context_end = self.grid.at(context.end)?;
@@ -615,15 +629,16 @@ impl CurrentEnvelope<'_> {
                 policy: AudioEdgePolicy::Hard,
             };
         }
-        let query = self.plan.audio(
-            context,
-            AudioQueryLimits {
-                // Halo spans own at least one sample. They share the work limit,
-                // without consuming the caller's returned-span allowance.
-                maximum_spans: limits.maximum_spans.saturating_add(384).min(4096),
-                maximum_work: limits.maximum_work,
-            },
-        )?;
+        let query_limits = AudioQueryLimits {
+            // Halo spans own at least one sample. They share the work limit,
+            // without consuming the caller's returned-span allowance.
+            maximum_spans: limits.maximum_spans.saturating_add(384).min(4096),
+            maximum_work: limits.maximum_work,
+        };
+        let query = match self.domain {
+            Some(domain) => domain.audio(context, query_limits)?,
+            None => self.plan.audio(context, query_limits)?,
+        };
         let mut work = query.work;
         let mut gates: Vec<Gate> = Vec::new();
         for span in query.spans {

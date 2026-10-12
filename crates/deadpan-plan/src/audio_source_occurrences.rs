@@ -30,51 +30,78 @@ impl RenderPlan {
         samples: Range<AudioSample>,
         limits: AudioQueryLimits,
     ) -> Result<AudioSourceOccurrences<'_>, PlanError> {
-        limits.validate()?;
-        let checked = source_occurrence::checked_owner_voice(self, owner, recipe.clone())?;
-        let query = self.audio_owner_occurrences(owner, samples.clone(), limits)?;
-        let mut work = query.work();
-        let mut runs = query.occurrences().len();
-        let mut voices = Vec::with_capacity(runs);
-        for occurrence in query.occurrences() {
-            let remaining_work = limits
-                .maximum_work
-                .checked_sub(work)
-                .filter(|remaining| *remaining > 0)
-                .ok_or(PlanError::AudioQueryLimit("source occurrence batch work"))?;
-            let remaining_runs = limits
-                .maximum_spans
-                .checked_sub(runs)
-                .filter(|remaining| *remaining > 0)
-                .ok_or(PlanError::AudioQueryLimit("source occurrence batch runs"))?;
-            let voice = self.source_voice_occurrence(
-                occurrence.instance().clone(),
-                recipe.clone(),
-                AudioQueryLimits {
-                    maximum_work: remaining_work,
-                    maximum_spans: remaining_runs,
-                },
-            )?;
-            work = work
-                .checked_add(voice.construction_work())
-                .ok_or(PlanError::AudioQueryLimit("source occurrence batch work"))?;
-            runs = runs
-                .checked_add(voice.retained_runs())
-                .ok_or(PlanError::AudioQueryLimit("source occurrence batch runs"))?;
-            let extent = voice.samples();
-            if extent.start < samples.end && samples.start < extent.end {
-                voices.push(voice);
-            }
-        }
-        Ok(AudioSourceOccurrences {
-            plan: self,
-            owner: owner.clone(),
-            source: checked.source().clone(),
-            samples,
-            voices,
-            work,
-        })
+        collect(self, owner, recipe, samples, limits, None)
     }
+}
+
+impl<'plan> AudioSoundOwnerContext<'plan> {
+    /// Independent current occurrences feeding this checked owner, including
+    /// history hidden by exterior crops. Missing/out-of-scope voices still
+    /// validate their source recipe; no dependency or permission is waived.
+    pub fn source_voice_occurrences(
+        &self,
+        owner: &NodeId,
+        recipe: AudioSourceVoiceRecipe,
+        samples: Range<AudioSample>,
+        limits: AudioQueryLimits,
+    ) -> Result<AudioSourceOccurrences<'plan>, PlanError> {
+        collect(self.plan, owner, recipe, samples, limits, Some(self))
+    }
+}
+
+fn collect<'plan>(
+    plan: &'plan RenderPlan,
+    owner: &NodeId,
+    recipe: AudioSourceVoiceRecipe,
+    samples: Range<AudioSample>,
+    limits: AudioQueryLimits,
+    context: Option<&AudioSoundOwnerContext<'plan>>,
+) -> Result<AudioSourceOccurrences<'plan>, PlanError> {
+    limits.validate()?;
+    let checked = source_occurrence::checked_owner_voice(plan, owner, recipe.clone())?;
+    let query = plan.audio_owner_occurrences_in_context(owner, samples.clone(), limits, context)?;
+    let mut work = query.work();
+    let mut runs = query.occurrences().len();
+    let mut voices = Vec::with_capacity(runs);
+    for occurrence in query.occurrences() {
+        let remaining_work = limits
+            .maximum_work
+            .checked_sub(work)
+            .filter(|remaining| *remaining > 0)
+            .ok_or(PlanError::AudioQueryLimit("source occurrence batch work"))?;
+        let remaining_runs = limits
+            .maximum_spans
+            .checked_sub(runs)
+            .filter(|remaining| *remaining > 0)
+            .ok_or(PlanError::AudioQueryLimit("source occurrence batch runs"))?;
+        let voice = plan.source_voice_occurrence_in_context(
+            occurrence.instance().clone(),
+            recipe.clone(),
+            AudioQueryLimits {
+                maximum_work: remaining_work,
+                maximum_spans: remaining_runs,
+            },
+            context,
+        )?;
+        work = work
+            .checked_add(voice.construction_work())
+            .ok_or(PlanError::AudioQueryLimit("source occurrence batch work"))?;
+        runs = runs
+            .checked_add(voice.retained_runs())
+            .ok_or(PlanError::AudioQueryLimit("source occurrence batch runs"))?;
+        let extent = voice.samples();
+        if extent.start < samples.end && samples.start < extent.end {
+            voices.push(voice);
+        }
+    }
+    Ok(AudioSourceOccurrences {
+        plan,
+        owner: owner.clone(),
+        source: checked.source().clone(),
+        samples,
+        voices,
+        work,
+    })
 }
 
 impl<'plan> AudioSourceOccurrences<'plan> {

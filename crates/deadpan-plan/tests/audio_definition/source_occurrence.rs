@@ -2,6 +2,9 @@ use super::*;
 use deadpan_plan::{AudioSourceOccurrence, AudioSourceVoiceRecipe};
 use std::sync::Arc;
 
+#[path = "sound_owner_context.rs"]
+mod sound_owner_context;
+
 fn q(n: i128, d: i128) -> ExactRatio {
     ExactRatio::new(n, d).unwrap()
 }
