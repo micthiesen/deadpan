@@ -2,6 +2,9 @@
 use super::*;
 use deadpan_plan::{AudioBoundaryRule, AudioRoutedRoot, AudioSampleGrid, AudioSoundRoute};
 
+#[path = "routed_occurrence/windows.rs"]
+mod windows;
+
 fn routed<'plan>(
     voice: deadpan_plan::AudioSourceOccurrence<'plan>,
     route: SoundRoute,

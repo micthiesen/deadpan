@@ -1,0 +1,23 @@
+{
+  "base_commit": "35f526b71c1aa6fd59c3c05be435280a87af93db",
+  "sources": {
+    "Cargo.lock": "9d911d67520092b729ae0e5933a39fc57f0ab4933b7d94b2d72d55a125fca93e",
+    "Cargo.toml": "253245385ec9459408f5a61d968a05c37d4e7ac8cb7f8f8c4447583fed193985",
+    "crates/deadpan-audio/src/retained_sound_input.rs": "59c207d455e3e4fd8c252ebb45859bfebceb5adda8966c65ba185d4384de4074",
+    "crates/deadpan-audio/src/routed.rs": "53e8664ecefbe1a18c80f32d3ace919e70ce7d2199a3a086bde2f19affdf139c",
+    "crates/deadpan-audio/tests/audio_definition.rs": "a715f4a9cf772ae921111573cda3657e3bc0de3c440bf9ef114398d385e0caab",
+    "crates/deadpan-audio/tests/audio_definition/routed_occurrence.rs": "923b13001ec1f44c9221a78ef4408e60bad9f0b385e398b7fef4e98b4ffa5cce",
+    "crates/deadpan-audio/tests/audio_definition/routed_occurrence/windows.rs": "6df3288b2b2ac6db2f9bcc7cd8cf935ce18b39e7b2668690dcd5bbf0292935be",
+    "crates/deadpan-audio/tests/audio_definition/voice_occurrence.rs": "ba7d3a5f12c93af222b1e1cf84eedad3ee1a0f4dbc3dafa49e26b933b6152f74",
+    "crates/deadpan-plan/src/audio_sound_route.rs": "441179706691727e3cf21c752b90761938de57d4dce29d0eae35d5ffe8c923ff",
+    "crates/deadpan-plan/src/lib.rs": "e89fb21f2983b6b14df6663b8bbcbbf7d2cac76bd3c8bf753b5f2a1a55ff00b3",
+    "crates/deadpan-plan/tests/sound_route_sampling.rs": "fe3a193da378a84ca7d95914f136ece8f3344e946dd6f979bb36ddc2ffddfe59",
+    "crates/deadpan-plan/tests/sound_route_sampling/occurrence_windows.rs": "484ad5933e08be8df22bb2fecd6f29ff0bef2013ef8e692b99f0ae730a04e8e4",
+    "native/deadpan-source/tests/audio-fixtures/pcm-stereo-48000.wav": "e79aba90eab42dc057171be52be9ecb794c3e2790c5731783270ece73c24d2ee",
+    "rust-toolchain.toml": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc"
+  },
+  "binaries": {
+    "target/release/deadpan-app": "63188517f203f105a6572202c907a4d64bad26e2afd67f8a312c2f0b89135e4a",
+    "target/release/deadpan-cli": "ed247d1c6151b4d20b5387c580b9f1202dc51e68ca764e95ba0ef012b57fad77"
+  }
+}

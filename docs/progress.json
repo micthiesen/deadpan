@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-12T15:28:05Z",
+  "updated_at": "2026-10-12T15:58:17Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Finish partial attached-sound interval routes and broader nested loop/incoming-tail qualification, persistent filtered caching, mastering, format/color, workflow, performance and release obligations.",
+  "focus": "Integrate partial attached-sound occurrence windows with capture and gate envelopes; finish broader nested loop/incoming-tail qualification, persistent filtered caching, mastering, format/color, workflow, performance and release obligations.",
   "features": [
     {
       "id": "editing",

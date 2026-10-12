@@ -1,5 +1,11 @@
 # Sound events and scoped audio mixing
 
+The sampled route supports chronological occurrence windows with independent
+rounding anchors while retaining complete processing input. Intermediate crops
+cannot be undone by a later move or wider output allocation. See the
+[transport qualification](qualification/sound-occurrence-windows-2026-10-12.md).
+Partial attached-sound capture and matching gate transport remain to be integrated.
+
 Independent event EQ and returns share bounded ordered-prefix tiles within each
 preparation request. This prevents overlapping histories from repeatedly
 evaluating the same input and exhausting plan work. Source admission, exact

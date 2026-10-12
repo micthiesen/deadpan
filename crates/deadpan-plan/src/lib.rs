@@ -34,7 +34,9 @@ pub use audio_routed::{
 };
 pub use audio_sampling::{AudioBoundaryRule, AudioSampleGrid, AudioSampleMap};
 pub use audio_sound_event::{AudioRootSound, AudioSoundGateQuery, AudioSoundGateSpan};
-pub use audio_sound_route::{AudioSoundRoute, AudioSoundRouteQuery, AudioSoundRouteSpan};
+pub use audio_sound_route::{
+    AudioOccurrenceWindow, AudioSoundRoute, AudioSoundRouteQuery, AudioSoundRouteSpan,
+};
 pub use audio_source_root::AudioRootSource;
 pub use audio_tape::{AudioSignalTape, AudioSignalTapeRun};
 

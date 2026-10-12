@@ -4,6 +4,12 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 
 ## Resumed implementation, 2026-10-06
 
+[Sound occurrence windows](qualification/sound-occurrence-windows-2026-10-12.md)
+retain each crop and rounding anchor while preserving complete processing input.
+All 1,121 plan/audio/playback tests and strict workspace Clippy pass; the new
+fractional-route and decoded nested-Preserve regressions also pass in release.
+Partial attached-sound copies still need capture and envelope-gate integration.
+
 [Shared event treatment prefixes](qualification/event-prefix-cache-2026-10-12.md)
 fix a real canonical-playback work-budget failure with EQ and both event returns.
 Per-request tiles reuse the input before EQ and each return without raising

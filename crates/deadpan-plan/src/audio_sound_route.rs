@@ -27,7 +27,22 @@ pub struct AudioSoundRoute<S> {
     grids: Vec<AudioSampleGrid<ReferenceSample>>,
     allocations: Vec<Range<i64>>,
     identity_anchor: ExactRatio,
+    // Explicit sample translations for a proved identity placement chain.
+    // The anchor may change when a new crop becomes the delivery boundary.
+    occurrence_deltas: Option<Vec<i128>>,
     domain: PhantomData<S>,
+}
+
+/// One chronological delivery window in a complete occurrence's unchanged
+/// recipe coordinates. `selection` clips delivered samples, never source or DSP
+/// history. `anchor` names the boundary used to copy old integral sample labels
+/// into this placement, independently of the selected processing allocation.
+/// The first entry must select the full recipe; later entries cannot revive
+/// samples discarded by an earlier window, even when their selection grows.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AudioOccurrenceWindow {
+    pub selection: Range<ExactRatio>,
+    pub anchor: ExactRatio,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -119,6 +134,7 @@ impl<S> AudioSoundRoute<S> {
             grids,
             allocations,
             identity_anchor: ExactRatio::ZERO,
+            occurrence_deltas: None,
             domain: PhantomData,
         })
     }
@@ -178,6 +194,8 @@ impl<S> AudioSoundRoute<S> {
                     }
                     work.spend(1)?;
                     work.stats.node_visits += 1;
+                    let first = allocation.start.max(self.allocations[id].start);
+                    let allocation = first..allocation.end.min(self.allocations[id].end).max(first);
                     // Allocation masks do not narrow the complete recipe/DSP
                     // support. Never expose a rounded sample past an old cut.
                     if samples.start < allocation.start {
@@ -267,14 +285,10 @@ impl<S> AudioSoundRoute<S> {
                     if let Some(recipe) = slice.recipe {
                         let old_start = self.grids[input].boundary(recipe.start)?.0;
                         let old_end = self.grids[input].boundary(recipe.end)?.0;
-                        let delta = if self.identity_anchor == ExactRatio::ZERO {
-                            i128::from(old_start) - i128::from(start)
-                        } else {
-                            // Only a proved full identity chain may use a
-                            // delivery anchor separate from its input extent.
-                            i128::from(self.grids[input].boundary(self.identity_anchor)?.0)
-                                - i128::from(grid.boundary(self.identity_anchor)?.0)
-                        };
+                        let delta = self.occurrence_deltas.as_ref().map_or_else(
+                            || i128::from(old_start) - i128::from(start),
+                            |deltas| deltas[id],
+                        );
                         tasks.push(QueryTask::Walk {
                             id: input,
                             samples: shifted(piece, delta)?,
@@ -299,11 +313,35 @@ impl AudioSoundRoute<AudioSample> {
     /// extends behind an exterior crop. Every route operation must be a full
     /// identity Keep; this cannot change the seams of a Window or edited map.
     /// The checked occurrence constructor verifies this against its own anchor.
-    pub fn with_identity_anchor(mut self, anchor: ExactRatio) -> Result<Self, PlanError> {
+    pub fn with_identity_anchor(self, anchor: ExactRatio) -> Result<Self, PlanError> {
+        let windows = vec![
+            AudioOccurrenceWindow {
+                selection: ExactRatio::ZERO..self.route.recipe_extent(),
+                anchor,
+            };
+            self.grids.len()
+        ];
+        self.with_occurrence_windows(windows)
+    }
+
+    /// Retain each move/crop's physical selection and rounding boundary while
+    /// keeping the complete occurrence recipe available for preparation. The
+    /// route must be a linear chain of full identity Keeps; its grids place that
+    /// same virtual allocation at every step. Windows select only delivery.
+    /// The first anchor remains checked by `AudioRoutedRoot::occurrence`.
+    pub fn with_occurrence_windows(
+        mut self,
+        windows: Vec<AudioOccurrenceWindow>,
+    ) -> Result<Self, PlanError> {
         let extent = self.route.recipe_extent();
-        if self.route.root() as usize != self.route.nodes().len() - 1 {
+        if windows.len() != self.grids.len()
+            || windows
+                .first()
+                .is_none_or(|window| window.selection != (ExactRatio::ZERO..extent))
+            || self.route.root() as usize != self.route.nodes().len() - 1
+        {
             return Err(PlanError::InvalidPlan(
-                "sound history anchor requires an identity chain",
+                "sound occurrence windows require a complete identity chain",
             ));
         }
         for (index, node) in self.route.nodes().iter().enumerate() {
@@ -322,14 +360,32 @@ impl AudioSoundRoute<AudioSample> {
             };
             if !valid {
                 return Err(PlanError::InvalidPlan(
-                    "sound history anchor requires an identity chain",
+                    "sound occurrence windows require a complete identity chain",
                 ));
             }
         }
-        for grid in &self.grids {
-            grid.boundary(anchor)?;
+        let mut deltas = Vec::with_capacity(windows.len());
+        for (index, window) in windows.iter().enumerate() {
+            if window.selection.start.compare(ExactRatio::ZERO).is_lt()
+                || !window.selection.end.compare(window.selection.start).is_gt()
+                || window.selection.end.compare(extent).is_gt()
+            {
+                return Err(PlanError::InvalidPlan(
+                    "sound occurrence window exceeds its complete recipe",
+                ));
+            }
+            let grid = &self.grids[index];
+            self.allocations[index] =
+                grid.boundary(window.selection.start)?.0..grid.boundary(window.selection.end)?.0;
+            let current = grid.boundary(window.anchor)?.0;
+            deltas.push(if index == 0 {
+                0
+            } else {
+                i128::from(self.grids[index - 1].boundary(window.anchor)?.0) - i128::from(current)
+            });
         }
-        self.identity_anchor = anchor;
+        self.identity_anchor = windows[0].anchor;
+        self.occurrence_deltas = Some(deltas);
         Ok(self)
     }
 }

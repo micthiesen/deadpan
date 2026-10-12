@@ -4,6 +4,20 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Occurrence delivery windows](../qualification/sound-occurrence-windows-2026-10-12.md)
+add physical interval clipping and per-placement rounding anchors to sampled
+sound routes, without trimming the complete processing recipe. The existing
+identity-move path delegates to it. Dense fractional-grid and real decoded nested
+Preserve regressions pass in debug and release. All 1,121 plan/audio/playback
+tests, strict workspace Clippy and the app/CLI release build pass. Evidence and
+self-review are retained with the qualification.
+
+Partial copies remain guarded. Next integration: derive chronological windows
+and delivery anchors in `sound_clocks::placements`, transport gate envelopes
+with identical sample shifts, and admit proven transparent crop ancestors in
+the core correspondence. Preserve hidden treatment input and old terminal sample
+loss. Then qualify command-created capture/paste/recopy, moves and durable history.
+
 [Shared event prefixes](../qualification/event-prefix-cache-2026-10-12.md) fix
 plan-work exhaustion for a treated sound with EQ and both returns. Every required
 ordered prefix now has bounded per-request tiles; limits remain unchanged.

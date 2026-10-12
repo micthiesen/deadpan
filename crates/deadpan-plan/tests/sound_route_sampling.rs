@@ -6,6 +6,9 @@ use deadpan_plan::{
     PlanError, SignalSample,
 };
 
+#[path = "sound_route_sampling/occurrence_windows.rs"]
+mod occurrence_windows;
+
 fn q(n: i128, d: i128) -> ExactRatio {
     ExactRatio::new(n, d).unwrap()
 }
