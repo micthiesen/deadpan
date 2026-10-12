@@ -1,6 +1,9 @@
 use super::*;
 use deadpan_plan::{AudioOwnerClock, AudioOwnerInputScope};
 
+#[path = "owner_equalizer.rs"]
+mod equalizer_tests;
+
 fn owner<'a>(plan: &'a RenderPlan, name: &str, at: i64) -> AudioOwnerClock<'a> {
     plan.audio_gain_owners(AudioSample(at)..AudioSample(at + 1), Default::default())
         .unwrap()

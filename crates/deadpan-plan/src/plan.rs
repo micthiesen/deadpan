@@ -66,7 +66,7 @@ mod audio_owners;
 pub use audio_owner_input::{AudioOwnerInput, AudioOwnerInputScope, AudioOwnerRetainedInput};
 pub use audio_owners::{
     AudioOwnerClock, AudioOwnerClockOrigin, AudioOwnerKind, AudioOwnerQuery, AudioOwnerSpan,
-    AudioOwnerSupport,
+    AudioOwnerSupport, AudioTreatmentBoundary,
 };
 
 #[path = "audio_owner_occurrences.rs"]

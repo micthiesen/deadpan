@@ -56,6 +56,10 @@ mod sound_events;
 #[path = "authored_gain.rs"]
 mod authored_gain;
 
+#[path = "owner_equalizer.rs"]
+mod owner_equalizer;
+pub use owner_equalizer::{OwnerEqualizedBlock, PreparedOwnerEqualizer};
+
 #[path = "group_mix.rs"]
 mod group_mix;
 
@@ -153,6 +157,8 @@ pub enum StageAudioError {
     #[error(transparent)]
     Dsp(#[from] deadpan_dsp::DspError),
     #[error(transparent)]
+    Filter(#[from] deadpan_dsp::FilterError),
+    #[error(transparent)]
     Transfer(#[from] SignalTransferError),
     #[error("prepared audio cache I/O failed: {0}")]
     Cache(#[from] std::io::Error),
@@ -164,6 +170,7 @@ impl StageAudioError {
             self,
             Self::Preparation(PreparationError::Cancelled)
                 | Self::Dsp(deadpan_dsp::DspError::Cancelled)
+                | Self::Filter(deadpan_dsp::FilterError::Cancelled)
                 | Self::Transfer(SignalTransferError::Preparation(
                     PreparationError::Cancelled
                 ))

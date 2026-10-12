@@ -62,6 +62,25 @@ pub struct AudioOwnerClock<'plan, S = AudioSample> {
 }
 
 impl<'plan> AudioOwnerClock<'plan> {
+    /// A position between explicitly ordered treatments on this immutable
+    /// owner. Zero is after Repeat escalation and before its first treatment;
+    /// `order().len()` is after its last treatment. This is an evaluation
+    /// boundary, not a new authored effect or a permission to extend allocation.
+    pub fn treatment_boundary(
+        &self,
+        before_stage: usize,
+    ) -> Result<AudioTreatmentBoundary<'plan>, PlanError> {
+        if before_stage > self.treatments().map_or(0, |value| value.order().len()) {
+            return Err(PlanError::InvalidPlan(
+                "audio treatment boundary out of range",
+            ));
+        }
+        Ok(AudioTreatmentBoundary {
+            owner: self.clone(),
+            before_stage,
+        })
+    }
+
     pub(super) fn same_at(&self, other: &AudioOwnerClock<'_>, at: AudioSample) -> bool {
         self.belongs_to(other.plan)
             && self.definition == other.definition
@@ -95,6 +114,32 @@ impl<'plan> AudioOwnerClock<'plan> {
             sampling,
             origin: AudioOwnerClockOrigin::Current,
         }
+    }
+}
+
+/// A checked cut in one owner's serialized treatment program. Matching keeps
+/// definition and retained provenance as well as the occurrence. A Repeat's
+/// current play and affine clock may change while traversing its whole input.
+#[derive(Debug, Clone)]
+pub struct AudioTreatmentBoundary<'plan> {
+    owner: AudioOwnerClock<'plan>,
+    before_stage: usize,
+}
+
+impl<'plan> AudioTreatmentBoundary<'plan> {
+    pub fn owner(&self) -> &AudioOwnerClock<'plan> {
+        &self.owner
+    }
+    pub fn before_stage(&self) -> usize {
+        self.before_stage
+    }
+    pub fn matches(&self, candidate: &AudioOwnerClock<'_>) -> bool {
+        self.owner.belongs_to(candidate.plan)
+            && self.owner.definition == candidate.definition
+            && self.owner.instance == candidate.instance
+            && self.owner.kind == candidate.kind
+            && self.owner.gap_after == candidate.gap_after
+            && self.owner.origin == candidate.origin
     }
 }
 
@@ -253,6 +298,27 @@ impl RenderPlan {
 }
 
 impl<'plan> AudioDomain<'plan> {
+    /// Treatment evaluation on a captured context, retaining explicit inactive
+    /// spans for exhausted bindings instead of fabricating descendant clocks.
+    pub fn gain_owners(
+        &self,
+        samples: Range<AudioSample>,
+        limits: AudioQueryLimits,
+    ) -> Result<AudioOwnerQuery<'plan>, PlanError> {
+        if samples.start < self.samples.start || samples.end > self.samples.end {
+            return Err(PlanError::AudioRangeOutOfRange);
+        }
+        let mut seed = Walk::from_seed(&self.seed);
+        seed.allow_inactive = true;
+        query(
+            self.plan,
+            samples.start.0..samples.end.0,
+            limits,
+            seed,
+            AudioSample,
+        )
+    }
+
     /// Only this checked physical domain's owners are returned. Captured
     /// exterior ancestors are not silently invented as definition owners.
     pub fn owners(

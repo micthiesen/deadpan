@@ -54,7 +54,7 @@ pub use plan::{AudioHoldIssuer, AudioHoldPolicyQuery, AudioHoldRule};
 pub use plan::{AudioOccurrenceAlias, AudioSoundClockBinding, AudioSoundClockScope};
 pub use plan::{
     AudioOwnerClock, AudioOwnerClockOrigin, AudioOwnerKind, AudioOwnerQuery, AudioOwnerSpan,
-    AudioOwnerSupport,
+    AudioOwnerSupport, AudioTreatmentBoundary,
 };
 pub use plan::{
     AudioOwnerInput, AudioOwnerInputScope, AudioOwnerOccurrence, AudioOwnerOccurrenceMap,

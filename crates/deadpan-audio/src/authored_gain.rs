@@ -75,12 +75,17 @@ impl GainSum {
         treatment: &AudioTreatments,
         local: ExactRatio,
         control: WorkControl<'_>,
+        stages: Range<usize>,
     ) -> Result<(), StageAudioError> {
         if treatment.is_empty() {
             return Ok(());
         }
         control.spend_plan_work(treatment.record_count())?;
-        for stage in treatment.order() {
+        let order = treatment
+            .order()
+            .get(stages)
+            .ok_or(PlanError::InvalidPlan("audio treatment slice out of range"))?;
+        for stage in order {
             match stage {
                 deadpan_core::AudioTreatmentStage::ClipGain => {
                     self.add(treatment.evaluate(local)?)?;
@@ -128,7 +133,40 @@ impl GainSum {
         if let Some(treatment) = owner.treatments()
             && !treatment.is_empty()
         {
-            self.treatment(treatment, owner.sampling().local_at(at)?, control)?;
+            self.treatment(
+                treatment,
+                owner.sampling().local_at(at)?,
+                control,
+                0..treatment.order().len(),
+            )?;
+        }
+        Ok(())
+    }
+
+    /// One side of a temporal stage. Never combine these two programs: mute
+    /// and automation before a filter affect its input history; those after it
+    /// affect the output sample. Repeat escalation belongs only to the input.
+    pub(super) fn owner_boundary(
+        &mut self,
+        owner: &deadpan_plan::AudioOwnerClock<'_>,
+        at: AudioSample,
+        boundary: &deadpan_plan::AudioTreatmentBoundary<'_>,
+        before: bool,
+        control: WorkControl<'_>,
+    ) -> Result<(), StageAudioError> {
+        if !boundary.matches(owner) {
+            return Err(PlanError::InvalidPlan("foreign audio treatment boundary").into());
+        }
+        if before {
+            self.escalation(owner)?;
+        }
+        if let Some(treatment) = owner.treatments() {
+            let stages = if before {
+                0..boundary.before_stage()
+            } else {
+                boundary.before_stage()..treatment.order().len()
+            };
+            self.treatment(treatment, owner.sampling().local_at(at)?, control, stages)?;
         }
         Ok(())
     }

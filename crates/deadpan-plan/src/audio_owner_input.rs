@@ -28,6 +28,7 @@ pub enum AudioOwnerInputScope {
 #[derive(Debug, Clone)]
 pub struct AudioOwnerInput<'plan> {
     owner: AudioOwnerClock<'plan>,
+    observed_at: AudioSample,
     context: AudioDomain<'plan>,
     scope: AudioOwnerInputScope,
     work: usize,
@@ -36,6 +37,12 @@ pub struct AudioOwnerInput<'plan> {
 impl<'plan> AudioOwnerInput<'plan> {
     pub fn owner(&self) -> &AudioOwnerClock<'plan> {
         &self.owner
+    }
+    /// The root sample at which this owner and its processing context were
+    /// checked together. In particular, retained lookup must use this sample,
+    /// not an arbitrary extrapolation of the owner's nominal clock.
+    pub fn observed_at(&self) -> AudioSample {
+        self.observed_at
     }
     /// Signed root-grid delivery context. It may span a whole Sequence or
     /// Repeat, and may include hidden samples outside current root allocation.
@@ -252,6 +259,7 @@ impl RenderPlan {
         };
         Ok(AudioOwnerInput {
             owner: observed.clone(),
+            observed_at: at,
             context: AudioDomain {
                 plan: self,
                 seed: seed.walk,

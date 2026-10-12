@@ -1,8 +1,9 @@
 # Equalizer processing
 
 Specification §§10.2 and 17 require shared EQ/filter processing with explicit
-history, latency and tails. `EqualizerRecipe` and `deadpan_audio::Equalizer`
-now implement the parameter and numerical parts. They are not yet connected to
+history, latency and tails. `EqualizerRecipe`, `deadpan_audio::Equalizer` and
+`PreparedOwnerEqualizer` implement parameters, numerical processing and ordered
+evaluation of one checked Original owner. They are not yet connected to
 `AudioTreatments`, project commands, native controls or the shared authored bus.
 Editor playback and export therefore retain their existing treatment chain.
 
@@ -43,6 +44,36 @@ It does not qualify authored EQ, mixed-voice permissions or the editor workflow.
 The subsequent [retained-treatment qualification](qualification/retained-treatments-2026-10-11.md)
 checks transported fades, reference-clock gain/mute and ordered memoryless
 treatments. EQ still needs the shared ordered graph and authored integration.
+
+## Ordered owner evaluation
+
+`AudioOwnerClock::treatment_boundary` checks a position in an immutable owner's
+explicit treatment order. Matching retains the plan, definition, occurrence,
+gap and retained provenance, while permitting a whole Repeat's play clock to
+advance. `AudioOwnerInput::observed_at` retains the checked resolving sample.
+
+`PreparedOwnerEqualizer` compiles a recipe at that boundary.
+`StageAudio::read_owner_equalized` reads up to 256 signed consumer samples.
+It evaluates complete time/pitch and creative edges, all descendant treatments,
+then the selected owner's treatment prefix, EQ and treatment suffix. Repeat
+escalation belongs to the prefix. Exterior owners and independent sounds remain
+outside this Original-only operand. The result stays signed stereo f64.
+
+Each 1,024-sample tile reads its 2,048-sample past and future context. A checked
+retained operand supplies history before current delivery; an unbound domain
+supplies its full support, including hidden group children. Only positions
+outside meaningful support are zero padded. Silent-Hold and exhausted-support
+masks apply after filtering. An authored mute instead applies at its explicit
+position: pre-EQ mute shapes history, while post-EQ mute zeros output.
+
+The private controller inherits work, deadline and depth, charges tile PCM to
+the shared residency limit, and returns dependencies covering every halo.
+Construction opens no media. Every read admits its sources, including muted
+input and warm Preserve caches. EQ tiles are currently recomputed; no filtered
+tile cache or realtime latency claim exists. The
+[ordered-owner qualification](qualification/owner-eq-2026-10-11.md) records
+direct-convolution, cold partition, retained-clock and policy checks on decoded
+fixture audio. This is one owner evaluation, not the recursive authored graph.
 
 ## Recipe
 

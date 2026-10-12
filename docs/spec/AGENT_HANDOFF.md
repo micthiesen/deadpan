@@ -4,6 +4,25 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Ordered owner EQ](../qualification/owner-eq-2026-10-11.md) now provides checked
+`AudioTreatmentBoundary`, an observed input sample and
+`PreparedOwnerEqualizer`/`StageAudio::read_owner_equalized`. The reader applies
+descendant treatments and the selected owner's prefix, actual finite EQ, then
+its suffix. Mute remains on its authored side. It handles current and retained
+Original contexts, masks explicit silence after filtering and preserves signed
+f64 output, all halo dependencies and shared budgets. The filter remains an
+explicit preparation parameter; `AudioTreatments` still cannot store EQ.
+
+Continue with the actual recursive authored voice/group graph and its stored
+EQ stage, then captured semantic/native authoring and shared preview/export.
+The one-owner reader is usable logic, not feature completion: it does not
+recursively evaluate EQ on descendant owners, include independent sounds,
+resolve independently timed group automation or cache filtered tiles. Complete
+per-voice incoming-tail policy and aggregate admission before wiring authored
+EQ into the bus. Retain the existing controlled reader for raw history, and
+use a stage prefix rather than `read_retained_owner_treatments` as EQ input.
+Do not spend another increment implementing unrelated DSP numerics.
+
 [Retained fades and treatments](../qualification/retained-treatments-2026-10-11.md)
 now expose `AudioOwnerRetainedInput::fades` and `owners` on the exact consumer
 grid outside current delivery. `read_retained_owner_input` adds transported
@@ -11,8 +30,8 @@ edges; `read_retained_owner_treatments` also applies current gain/mute,
 saturation and balance while excluding exterior owners and independent sounds.
 The private `read_retained_controlled` preserves dependencies and inherits its
 parent's budget, deadline and depth. All 935 plan/audio tests pass. These full
-memoryless-chain reads are not automatically EQ inputs: first add explicit
-treatment-stage boundaries, then the recursive temporal graph, aggregate
+memoryless-chain reads are not automatically EQ inputs: use the explicit
+treatment boundaries above in the recursive temporal graph, aggregate
 admission/cache identity and per-voice group/silence/tail routing. GainSum's
 global mute is valid only between temporal stages. Add the authored EQ stage
 and controls together with real shared preview/export support; do not add

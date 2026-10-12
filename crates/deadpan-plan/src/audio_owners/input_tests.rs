@@ -307,11 +307,18 @@ fn repeat_play_gap_and_whole_repeat_have_distinct_contexts() {
     );
     let plan = RenderPlan::compile(&doc).unwrap();
     let first = owner(&plan, "voice", 0);
+    let boundary = first.treatment_boundary(0).unwrap();
+    assert_eq!(boundary.before_stage(), 0);
+    assert!(boundary.matches(&first));
+    assert!(first.treatment_boundary(1).is_err());
     assert!(
         plan.audio_owner_input(&first, AudioSample(6), Default::default())
             .is_err()
     );
     let second = owner(&plan, "voice", 6);
+    assert!(!boundary.matches(&second), "different Repeat occurrence");
+    let other_plan = RenderPlan::compile(&doc).unwrap();
+    assert!(!boundary.matches(&owner(&other_plan, "voice", 0)));
     let input = plan
         .audio_owner_input(&second, AudioSample(6), Default::default())
         .unwrap();
@@ -321,6 +328,13 @@ fn repeat_play_gap_and_whole_repeat_have_distinct_contexts() {
     );
     assert_eq!(input.context().instance(), second.instance());
     let whole = owner(&plan, "repeat", 6);
+    assert!(
+        whole
+            .treatment_boundary(0)
+            .unwrap()
+            .matches(&owner(&plan, "repeat", 0)),
+        "one whole-Repeat boundary spans its changing play clock"
+    );
     let input = plan
         .audio_owner_input(&whole, AudioSample(6), Default::default())
         .unwrap();
@@ -341,6 +355,7 @@ fn repeat_play_gap_and_whole_repeat_have_distinct_contexts() {
         .audio_owners(AudioSample(10)..AudioSample(11), Default::default())
         .unwrap();
     let gap = query.spans()[0].owners().last().unwrap();
+    assert!(!whole.treatment_boundary(0).unwrap().matches(gap));
     let input = plan
         .audio_owner_input(gap, AudioSample(10), Default::default())
         .unwrap();
