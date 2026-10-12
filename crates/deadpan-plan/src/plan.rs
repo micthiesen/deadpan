@@ -150,6 +150,7 @@ pub struct RenderPlan {
     audio_context: bool,
     has_audio_treatments: bool,
     has_audio_equalizers: bool,
+    has_audio_component_automation: bool,
     has_audio_editorial_edges: bool,
     audio_bindings: deadpan_core::AudioBindingState,
     // A checked structural snapshot used as the live side of sound-clock
@@ -882,6 +883,15 @@ impl RenderPlan {
                 .nodes()
                 .values()
                 .any(|node| node.audio_treatments.equalizer().is_some()),
+            has_audio_component_automation: crate::plan::audio_owners::component_automation(
+                document.nodes().values().map(|node| &node.audio_treatments),
+                document.nodes().values().any(|node| {
+                    matches!(
+                        &node.kind, NodeKind::Repeat { escalation: Some(escalation), .. }
+                        if escalation.gain_step != deadpan_core::GainDb::UNITY
+                    )
+                }),
+            ),
             has_audio_editorial_edges: document
                 .nodes()
                 .values()

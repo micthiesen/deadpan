@@ -1,0 +1,456 @@
+[
+  {
+    "name": "baseline-final",
+    "cwd": "/private/tmp/deadpan-shared-components-20261012/baseline",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--message-format=json",
+      "-p",
+      "deadpan-audio",
+      "--test",
+      "audio_definition",
+      "sound_clocks::group_mix"
+    ],
+    "started_utc": "2026-10-12T08:13:52.284725+00:00",
+    "seconds": 3.3460537921637297,
+    "exit": 101,
+    "log_sha256": "786e18356dc11b363ca386c6a8261a6a1965f88f0586e2e8c7486c7bbe2f7d18"
+  },
+  {
+    "name": "baseline",
+    "cwd": "/tmp/deadpan-shared-components-20261012/baseline",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--message-format=json",
+      "-p",
+      "deadpan-audio",
+      "--test",
+      "audio_definition",
+      "sound_clocks::group_mix"
+    ],
+    "started_utc": "2026-10-12T07:32:54.241373+00:00",
+    "seconds": 14.120192166883498,
+    "exit": 101,
+    "log_sha256": "d8dac0d398bf4d39f4717cc04bab46d16660ec905678acdbc290c12e20f7a7cd"
+  },
+  {
+    "name": "clippy-final",
+    "cwd": "/Users/michael/Code/deadpan",
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "--workspace",
+      "--all-targets",
+      "--features",
+      "ui-harness",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "started_utc": "2026-10-12T08:12:49.776850+00:00",
+    "seconds": 56.839898583013564,
+    "exit": 0,
+    "log_sha256": "9a6d9426ac8f024032fe7434dc1192aa62fa62c34d276d4ec6224f7f8c6cc447"
+  },
+  {
+    "name": "clippy-verified",
+    "cwd": "/Users/michael/Code/deadpan",
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "--workspace",
+      "--all-targets",
+      "--features",
+      "ui-harness",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "started_utc": "2026-10-12T08:20:23.492615+00:00",
+    "seconds": 2.2175407498143613,
+    "exit": 0,
+    "log_sha256": "9bee150a8888c361a927151e05d86e8cfab523bb75f6c43a32ec427e62220958"
+  },
+  {
+    "name": "clippy1",
+    "cwd": "/Users/michael/Code/deadpan",
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "--workspace",
+      "--all-targets",
+      "--features",
+      "ui-harness",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "started_utc": "2026-10-12T07:29:58.060272+00:00",
+    "seconds": 13.217189792077988,
+    "exit": 101,
+    "log_sha256": "d6671f3448f8bc42f0b11a54d1f6d6e7d9f4b16d0d29c1fc05a2fa76297fa24a"
+  },
+  {
+    "name": "clippy2",
+    "cwd": "/Users/michael/Code/deadpan",
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "--workspace",
+      "--all-targets",
+      "--features",
+      "ui-harness",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "started_utc": "2026-10-12T07:31:29.658062+00:00",
+    "seconds": 31.674554041586816,
+    "exit": 0,
+    "log_sha256": "0196e91c4f8d620c7d46bac8cfba24a779728073ce484063f75a668b918e8e44"
+  },
+  {
+    "name": "context-limit-before",
+    "cwd": "/Users/michael/Code/deadpan",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--message-format=json",
+      "-p",
+      "deadpan-audio",
+      "--test",
+      "audio_definition",
+      "independent_clocks_share_one_eq_processing_context",
+      "--",
+      "--nocapture"
+    ],
+    "started_utc": "2026-10-12T08:06:47.121374+00:00",
+    "seconds": 1.2571456250734627,
+    "exit": 101,
+    "log_sha256": "3d18472efcacae5f5eeb3491695e917c7911f0f0550b9df05a90150ba76cdc78"
+  },
+  {
+    "name": "context-limit-before2",
+    "cwd": "/Users/michael/Code/deadpan",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--message-format=json",
+      "-p",
+      "deadpan-audio",
+      "--test",
+      "audio_definition",
+      "independent_clocks_share_one_eq_processing_context",
+      "--",
+      "--nocapture"
+    ],
+    "started_utc": "2026-10-12T08:06:56.925915+00:00",
+    "seconds": 2.2728867498226464,
+    "exit": 101,
+    "log_sha256": "3197110c6168ae3403a93d37621d98acd1933b0dc74280bb5c8693f83f2480ab"
+  },
+  {
+    "name": "definitions",
+    "cwd": "/Users/michael/Code/deadpan",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-audio",
+      "--test",
+      "audio_definition"
+    ],
+    "started_utc": "2026-10-12T07:47:49.768057+00:00",
+    "seconds": 16.53551558405161,
+    "exit": 0,
+    "log_sha256": "c322b58d096579ccd335a8ef2085ef0cb5f71f85d8ad189b846fc6f7b013254d"
+  },
+  {
+    "name": "export-source",
+    "cwd": "/Users/michael/Code/deadpan",
+    "command": [
+      "cargo",
+      "test",
+      "--release",
+      "--locked",
+      "--message-format=json",
+      "-p",
+      "deadpan-cli",
+      "--test",
+      "preview_export",
+      "post_shared_automation_preserves_preview_and_verified_export",
+      "--",
+      "--exact",
+      "--nocapture"
+    ],
+    "started_utc": "2026-10-12T08:19:15.106133+00:00",
+    "seconds": 40.256000958848745,
+    "exit": 0,
+    "log_sha256": "4ad161fc6b4448635b83eca7e6d4b157c4a904e30df1361c150b54ffb02f5efc"
+  },
+  {
+    "name": "export",
+    "cwd": "/Users/michael/Code/deadpan",
+    "command": [
+      "cargo",
+      "test",
+      "--release",
+      "--locked",
+      "--message-format=json",
+      "-p",
+      "deadpan-cli",
+      "--test",
+      "preview_export",
+      "post_shared_automation_preserves_preview_and_verified_export",
+      "--",
+      "--exact",
+      "--nocapture"
+    ],
+    "started_utc": "2026-10-12T08:13:55.656055+00:00",
+    "seconds": 145.07231737487018,
+    "exit": 101,
+    "log_sha256": "15fbc6083c1ca3180ed0f4c76542f5ba9ebc85dea5ea6cc2992580be33a39370"
+  },
+  {
+    "name": "fmt-verified",
+    "cwd": "/Users/michael/Code/deadpan",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all",
+      "--check"
+    ],
+    "started_utc": "2026-10-12T08:21:28.471983+00:00",
+    "seconds": 4.723252334166318,
+    "exit": 0,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "name": "fmt",
+    "cwd": "/Users/michael/Code/deadpan",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all",
+      "--check"
+    ],
+    "started_utc": "2026-10-12T08:13:46.642212+00:00",
+    "seconds": 5.072333749849349,
+    "exit": 0,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "name": "focus-final",
+    "cwd": "/Users/michael/Code/deadpan",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--message-format=json",
+      "-p",
+      "deadpan-audio",
+      "--test",
+      "audio_definition",
+      "sound_clocks::group_mix",
+      "--",
+      "--nocapture"
+    ],
+    "started_utc": "2026-10-12T08:07:17.734083+00:00",
+    "seconds": 6.647742041852325,
+    "exit": 0,
+    "log_sha256": "a0ce3c843095595aef78568d666e6d3b48bbb0b20982b43e163327bd0767687f"
+  },
+  {
+    "name": "focus-global",
+    "cwd": "/Users/michael/Code/deadpan",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-audio",
+      "--test",
+      "audio_definition",
+      "sound_clocks::group_mix"
+    ],
+    "started_utc": "2026-10-12T07:40:35.571518+00:00",
+    "seconds": 0.878771083895117,
+    "exit": 101,
+    "log_sha256": "377635f43b16776ad5a43c7d736cfbbea8f0d3d08c028effd05239a2390b4b38"
+  },
+  {
+    "name": "focus-global2",
+    "cwd": "/Users/michael/Code/deadpan",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-audio",
+      "--test",
+      "audio_definition",
+      "sound_clocks::group_mix"
+    ],
+    "started_utc": "2026-10-12T07:41:03.403202+00:00",
+    "seconds": 8.403590959031135,
+    "exit": 0,
+    "log_sha256": "ed6806037eea45212220b3bac184ebdfafc7ed3fd763ee255966658c209272c9"
+  },
+  {
+    "name": "rebound-root",
+    "cwd": "/Users/michael/Code/deadpan",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--message-format=json",
+      "-p",
+      "deadpan-audio",
+      "--test",
+      "audio_definition",
+      "independent_eq_automation_keeps_rebound_input_history_across_a_new_pause",
+      "--",
+      "--nocapture"
+    ],
+    "started_utc": "2026-10-12T08:05:57.217141+00:00",
+    "seconds": 3.2502707918174565,
+    "exit": 0,
+    "log_sha256": "f0b34a9edbfffebe526ab025630a0cd43c64bf21ddecf329ce0d3f450dda1ee0"
+  },
+  {
+    "name": "rebound",
+    "cwd": "/Users/michael/Code/deadpan",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-audio",
+      "--test",
+      "audio_definition",
+      "independent_eq_automation_keeps_rebound_input_history_across_a_new_pause",
+      "--",
+      "--nocapture"
+    ],
+    "started_utc": "2026-10-12T07:58:46.401362+00:00",
+    "seconds": 1.7897314168512821,
+    "exit": 101,
+    "log_sha256": "510ba5d9b0e260442354f5bf7708856e6aea5ecfc41847369fead937fe7ff55e"
+  },
+  {
+    "name": "suites-final",
+    "cwd": "/Users/michael/Code/deadpan",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--message-format=json",
+      "-p",
+      "deadpan-audio",
+      "-p",
+      "deadpan-plan",
+      "-p",
+      "deadpan-playback"
+    ],
+    "started_utc": "2026-10-12T07:44:31.052320+00:00",
+    "seconds": 36.261993624735624,
+    "exit": 101,
+    "log_sha256": "d8571c1af205240431ddff7118f658e9739255f5234b7b3a7e4bf42a5da9d8d6"
+  },
+  {
+    "name": "suites-final2",
+    "cwd": "/Users/michael/Code/deadpan",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--message-format=json",
+      "-p",
+      "deadpan-audio",
+      "-p",
+      "deadpan-plan",
+      "-p",
+      "deadpan-playback"
+    ],
+    "started_utc": "2026-10-12T08:08:07.497954+00:00",
+    "seconds": 259.9578755409457,
+    "exit": 0,
+    "log_sha256": "42d1fc7aaa56504cd65ea4df0b33ec0d4719ce85c6f1fb456a078e1744f3a35c"
+  },
+  {
+    "name": "suites-verified",
+    "cwd": "/Users/michael/Code/deadpan",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--message-format=json",
+      "-p",
+      "deadpan-audio",
+      "-p",
+      "deadpan-plan",
+      "-p",
+      "deadpan-playback"
+    ],
+    "started_utc": "2026-10-12T07:50:21.424977+00:00",
+    "seconds": 262.3280111248605,
+    "exit": 0,
+    "log_sha256": "ba36c67978c836d56fa109ebec95baaa6a482e175dbc888a60889f944bcaa7e1"
+  },
+  {
+    "name": "suites",
+    "cwd": "/Users/michael/Code/deadpan",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-audio",
+      "-p",
+      "deadpan-plan",
+      "-p",
+      "deadpan-playback"
+    ],
+    "started_utc": "2026-10-12T07:21:18.487861+00:00",
+    "seconds": 271.927867999766,
+    "exit": 0,
+    "log_sha256": "5d9271240637a1461bbca07eea212f53a55ef9b3e369c1adf4733c9ac05a8f00"
+  },
+  {
+    "name": "whitespace-verified",
+    "cwd": "/Users/michael/Code/deadpan",
+    "command": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "started_utc": "2026-10-12T08:21:33.218482+00:00",
+    "seconds": 0.03440104192122817,
+    "exit": 0,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  {
+    "name": "whitespace",
+    "cwd": "/Users/michael/Code/deadpan",
+    "command": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "started_utc": "2026-10-12T08:13:51.738900+00:00",
+    "seconds": 0.030442667193710804,
+    "exit": 0,
+    "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  }
+]

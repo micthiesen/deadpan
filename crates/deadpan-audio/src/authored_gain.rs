@@ -28,6 +28,11 @@ pub(super) struct GainSum {
 }
 
 impl GainSum {
+    pub(super) const fn maximum_bytes() -> usize {
+        std::mem::size_of::<Self>()
+            + MAX_CHANNEL_STAGES * std::mem::size_of::<(i128, ChannelStage)>()
+    }
+
     /// These memoryless programs are interchangeable at one output sample.
     /// Clock identity is not required when the evaluated treatments agree.
     pub(super) fn same_transfer(&self, other: &Self) -> bool {

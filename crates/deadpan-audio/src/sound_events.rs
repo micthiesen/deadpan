@@ -29,6 +29,12 @@ impl StageAudio {
         control: WorkControl<'_>,
         authored_gain: bool,
     ) -> Result<ReadBlock, StageAudioError> {
+        if authored_gain
+            && self.plan.has_audio_component_automation()
+            && (!self.plan.sounds().is_empty() || !self.plan.beat_sounds().is_empty())
+        {
+            return self.read_shared_equalizers(provider, start, frames, control);
+        }
         if authored_gain && self.plan.has_audio_equalizers() {
             if !self.plan.sounds().is_empty() || !self.plan.beat_sounds().is_empty() {
                 return self.read_shared_equalizers(provider, start, frames, control);
@@ -67,6 +73,11 @@ impl StageAudio {
         let mut mix = group_mix::GroupMix::plan(&plan, start, frames, authored_gain, control)?;
         for voice in &mut beat_voices {
             voice.route_mix(&mut mix, control)?;
+        }
+        if mix.needs_components() {
+            // Planning has not opened media. Keep contributions through shared
+            // stages when their downstream treatment clocks differ.
+            return self.read_shared_equalizers(provider, start, frames, control);
         }
         // Reserve the retained Original, the f64 sum and the source reader's
         // two transient PCM buffers under the existing shared residency limit.

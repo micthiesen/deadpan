@@ -157,31 +157,33 @@ Owners are evaluated innermost first. Linear stretches accumulate gain factors
 stage or a nonlinear bus boundary closes that sum. Without saturation, the
 existing contribution order and exact gain accumulation are preserved.
 
-A saturation owner evaluates its linear input prefix in each incoming voice's
-own clock, sums those contributions, then runs saturation and its suffix once.
+A saturation owner evaluates incoming gains in each voice's own clock and
+drives saturation with their combined sum. When later automation differs,
+it retains contributions through the shared effect: each channel receives
+the common factor `tanh(drive * sum) / sum`, with `drive` at exact zero.
+Later gains/mutes use each contribution's own clock before final summation.
 Original sound and beat-owned sounds join their structural owner;
 independent root sounds join only the root. Nested groups reduce from children
 to parents, so a child's balance precedes its parent's saturation. Repeat
 instances retain distinct buses and exact owner clocks, including escalation.
-Gain, saturation and balance retain their serialized order. An input mute zeros
-that contribution; a shared output mute zeros the bus. Neither grants a
-silence-policy exemption.
+Gain, saturation and balance retain their serialized order. A mute zeros each
+contribution where its own stage clock is muted; muting every contribution
+zeros the bus. Mute never grants a silence-policy exemption.
 
 The worker admits routing and each f64 stereo bus under the existing work and
-PCM residency limits before opening media. Overlapping contributions with
-different retained/current clocks keep independently evaluated input prefixes;
-their shared suffixes must agree at every sample. Constant treatments and
-pre-saturation gain/mute therefore survive fractional-sample moves. A provably
-silent Original leaf contributes no clock constraint; stateful processing makes that proof
-inconclusive. Differing automation after a shared stage, including ancestor
-gain after a child's shared nonlinear stage, still rejects explicitly and
-remains unfinished. Stable occurrence order fixes sibling
+PCM residency limits before opening media. Overlapping contributions retain
+their own current or historical gain/mute clocks before and after shared
+saturation/EQ, including ancestor treatments after a child's shared effect.
+An immutable plan-wide flag selects contribution processing, so changing a
+read window cannot change the arithmetic path. A provably silent Original
+leaf supplies no input. Stable occurrence order fixes sibling
 reduction order across partitions and cold reads. Nonfinite inputs, sums and
 results reject explicitly; only the final bus converts back to f32. Raw
 edge-faded inspection still excludes treatments. See the
 [group-mixing qualification](qualification/group-mix-2026-10-11.md) and
 [retained-clock regression](qualification/group-clocks-2026-10-11.md), followed
-by the [independent input-automation qualification](qualification/input-automation-2026-10-12.md).
+by the [independent input-automation qualification](qualification/input-automation-2026-10-12.md)
+and [automation through shared stages](qualification/shared-automation-2026-10-12.md).
 
 `:saturate 12dB` and `:saturate off` change the captured beat as one semantic
 `SetAudio { change: saturation }` instruction (recorded in macros and repeated

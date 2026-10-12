@@ -24,7 +24,7 @@ impl Permissions {
     pub(super) fn contains(&self, voice: usize) -> bool {
         voice < MAX_VOICES && self.0[voice / 64] & (1 << (voice % 64)) != 0
     }
-    fn insert(&mut self, voice: usize) -> Result<(), StageAudioError> {
+    pub(super) fn insert(&mut self, voice: usize) -> Result<(), StageAudioError> {
         if voice >= MAX_VOICES {
             return Err(StageAudioError::Limit("shared EQ voice count"));
         }
@@ -36,7 +36,7 @@ impl Permissions {
             *target |= value;
         }
     }
-    fn is_empty(&self) -> bool {
+    pub(super) fn is_empty(&self) -> bool {
         self.0.iter().all(|word| *word == 0)
     }
 }
@@ -76,6 +76,7 @@ pub(super) struct Route<'plan> {
     target: Option<usize>,
     layers: Vec<Layer<'plan>>,
     ignored: bool,
+    component: Option<usize>,
 }
 
 struct Run<'plan> {
@@ -99,6 +100,9 @@ pub(super) struct SharedMix<'plan> {
     buses: Vec<Bus<'plan>>,
     sum: Vec<[f64; 2]>,
     permissions: Vec<Permissions>,
+    components: shared_components::Components<'plan>,
+    separate: bool,
+    output_voice: Option<usize>,
 }
 
 pub(super) struct MixedBlock {
@@ -144,7 +148,13 @@ fn transfer(
 }
 
 impl<'plan> SharedMix<'plan> {
-    pub(super) fn new(start: AudioSample, frames: u32, stop: Option<Boundary>) -> Self {
+    pub(super) fn new(
+        start: AudioSample,
+        frames: u32,
+        stop: Option<Boundary>,
+        output_voice: Option<usize>,
+        separate: bool,
+    ) -> Self {
         Self {
             start,
             frames: frames as usize,
@@ -153,6 +163,9 @@ impl<'plan> SharedMix<'plan> {
             buses: Vec::new(),
             sum: Vec::new(),
             permissions: Vec::new(),
+            components: shared_components::Components::new(start, frames),
+            separate: separate || output_voice.is_some(),
+            output_voice,
         }
     }
 
@@ -160,6 +173,7 @@ impl<'plan> SharedMix<'plan> {
         &mut self,
         owners: &[AudioOwnerClock<'plan>],
         range: Range<AudioSample>,
+        voice: usize,
         control: WorkControl<'_>,
     ) -> Result<Route<'plan>, StageAudioError> {
         deadpan_core::validate_audio_treatment_layers(
@@ -174,6 +188,7 @@ impl<'plan> SharedMix<'plan> {
                     target: None,
                     layers: Vec::new(),
                     ignored: true,
+                    component: None,
                 });
             };
             index
@@ -189,6 +204,7 @@ impl<'plan> SharedMix<'plan> {
         }
         let mut layers = Vec::new();
         let mut parent = None;
+        let mut component_layers = Vec::new();
         for (index, owner) in owners.iter().enumerate().skip(first) {
             control.spend_plan_work(1)?;
             let until = if index == first {
@@ -197,6 +213,7 @@ impl<'plan> SharedMix<'plan> {
                 None
             }
             .unwrap_or_else(|| owner.treatments().map_or(0, |recipe| recipe.order().len()));
+            component_layers.push((owner.clone(), until));
             let complex = if let Some(recipe) = owner.treatments() {
                 recipe
                     .order()
@@ -254,6 +271,10 @@ impl<'plan> SharedMix<'plan> {
             target: parent,
             layers,
             ignored: false,
+            component: Some(
+                self.components
+                    .route(voice, component_layers, start..end, control)?,
+            ),
         })
     }
 
@@ -295,10 +316,12 @@ impl<'plan> SharedMix<'plan> {
                 let first = AudioSample(self.start.0 + overlap.start as i64);
                 let last = AudioSample(self.start.0 + overlap.end as i64 - 1);
                 same &= a.owner.escalation_millidecibels() == b.owner.escalation_millidecibels()
+                    && a.owner.sampling().local_frames_per_sample()
+                        == b.owner.sampling().local_frames_per_sample()
                     && a.owner.sampling().local_at(first)? == b.owner.sampling().local_at(first)?
                     && a.owner.sampling().local_at(last)? == b.owner.sampling().local_at(last)?;
             }
-            if !same {
+            if !same && !self.separate {
                 for offset in overlap.clone() {
                     control.check()?;
                     let at = AudioSample(self.start.0 + offset as i64);
@@ -309,9 +332,10 @@ impl<'plan> SharedMix<'plan> {
                     if !transfer(&run.layers, at, control)?
                         .same_transfer(&transfer(layers, at, control)?)
                     {
-                        return Err(StageAudioError::Unsupported(
-                            "different automation on independently timed shared inputs",
-                        ));
+                        return Err(PlanError::InvalidPlan(
+                            "shared automation missing contribution plan",
+                        )
+                        .into());
                     }
                 }
             }
@@ -336,12 +360,19 @@ impl<'plan> SharedMix<'plan> {
     /// f32 stereo frame equivalents, including fixed-size permission bitsets.
     /// The caller separately reserves its raw/transient reader buffers.
     pub(super) fn resident_frames(&self) -> Result<u64, StageAudioError> {
+        if self.separate {
+            return self.components.resident_frames();
+        }
         (self.buses.len() as u64 + 1)
             .checked_mul(self.frames as u64)
             .and_then(|n| n.checked_mul(2 + WORDS as u64))
             .ok_or(StageAudioError::Limit("shared mix residency"))
     }
     pub(super) fn allocate(&mut self) {
+        if self.separate {
+            self.components.allocate();
+            return;
+        }
         self.sum = vec![[0.0; 2]; self.frames];
         self.permissions = vec![Permissions::default(); self.frames];
         for bus in &mut self.buses {
@@ -365,6 +396,17 @@ impl<'plan> SharedMix<'plan> {
         let Some(voice) = voice else {
             return Ok(());
         };
+        if self.separate {
+            return self.components.add(
+                route
+                    .component
+                    .ok_or(PlanError::InvalidPlan("missing contribution route"))?,
+                offset,
+                sample,
+                event_gain,
+                control,
+            );
+        }
         let mut gain = authored_gain::beat_sound_gain(
             &[],
             AudioSample(self.start.0 + offset as i64),
@@ -418,8 +460,12 @@ impl<'plan> SharedMix<'plan> {
             usize,
             AudioSample,
             Permissions,
+            Option<usize>,
         ) -> Result<[f64; 2], StageAudioError>,
     ) -> Result<MixedBlock, StageAudioError> {
+        if self.separate {
+            return self.components.finish(self.output_voice, control, equalize);
+        }
         let mut order: Vec<_> = self.by_owner.values().copied().collect();
         order.sort_by_key(|&id| std::cmp::Reverse(self.buses[id].depth));
         for id in order {
@@ -439,7 +485,7 @@ impl<'plan> SharedMix<'plan> {
                             .last()
                             .ok_or(PlanError::InvalidPlan("shared EQ owner absent"))?
                             .owner;
-                        equalize(owner, stage, clock, permissions[at])?
+                        equalize(owner, stage, clock, permissions[at], None)?
                     } else {
                         samples[at]
                     };

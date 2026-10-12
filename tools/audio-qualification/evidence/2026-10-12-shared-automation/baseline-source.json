@@ -1,0 +1,8 @@
+{
+  "revision": "90910379d4e0dc35372083ce1acbaf3bcecf2880",
+  "archive_sha256": "934582e2aab39c48e6aa5c37b9bee1fa676eda8834cd4dce7a5d1d4883e7045b",
+  "overlay": {
+    "crates/deadpan-audio/tests/audio_definition/sound_clocks/group_mix.rs": "b455f6bf31475fa750556b42f138089caf8ca7b5c1b417dcc6b56b41fce32dd6"
+  },
+  "target": "/private/tmp/deadpan-shared-components-20261012/baseline-target"
+}

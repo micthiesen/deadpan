@@ -1,6 +1,7 @@
 //! Recursive shared temporal processing. An EQ tile evaluates the complete
 //! ordered bus prefix with the consuming sample's allowed contribution set.
-//! This keeps silence permissions distinct without distributing saturation.
+//! This keeps silence permissions distinct. Selected contribution reads retain
+//! the common saturation drive from all permitted inputs.
 
 use super::authored_eq::Context;
 use super::shared_mix::{Boundary, OwnerKey, Permissions, SharedMix};
@@ -45,7 +46,7 @@ struct Node<'plan> {
     boundary: AudioTreatmentBoundary<'plan>,
     stop: Boundary,
     filter: Option<crate::Equalizer>,
-    tiles: BTreeMap<(i64, Permissions), Arc<WideBlock>>,
+    tiles: BTreeMap<(i64, Permissions, Option<usize>), Arc<WideBlock>>,
 }
 struct Graph<'plan> {
     plan: &'plan RenderPlan,
@@ -71,6 +72,7 @@ struct Program<'a, 'plan> {
     context: &'a Contexts<'plan>,
     stop: Option<&'a Boundary>,
     allowed: Option<Permissions>,
+    output_voice: Option<usize>,
     parent: usize,
     depth: usize,
 }
@@ -125,6 +127,7 @@ impl StageAudio {
                 context: &context,
                 stop: None,
                 allowed: None,
+                output_voice: None,
                 parent: usize::MAX,
                 depth: 0,
             };
@@ -234,7 +237,13 @@ impl StageAudio {
         } else {
             Vec::new()
         };
-        let mut mix = SharedMix::new(start, frames, program.stop.cloned());
+        let mut mix = SharedMix::new(
+            start,
+            frames,
+            program.stop.cloned(),
+            program.output_voice,
+            plan.has_audio_component_automation(),
+        );
         let original_id = graph.voice(Voice::Original)?;
         let original_routes = owners
             .as_ref()
@@ -246,14 +255,19 @@ impl StageAudio {
                         if span.original_is_silent() {
                             Ok(None)
                         } else {
-                            mix.route(span.owners(), span.samples(), control).map(Some)
+                            mix.route(span.owners(), span.samples(), original_id, control)
+                                .map(Some)
                         }
                     })
                     .collect::<Result<Vec<_>, StageAudioError>>()
             })
             .transpose()?
             .unwrap_or_default();
-        let root_route = if !roots.is_empty() {
+        let root_ids = roots
+            .iter()
+            .map(|root| graph.voice(Voice::Root(root.id.clone())))
+            .collect::<Result<Vec<_>, _>>()?;
+        let root_routes = if !roots.is_empty() {
             let root_owners =
                 plan.audio_gain_owners(root_range.clone(), control.query_limits()?)?;
             control.spend_plan_work(root_owners.work())?;
@@ -265,9 +279,12 @@ impl StageAudio {
             if root.instance().node != plan.metadata().root {
                 return Err(PlanError::InvalidPlan("invalid root mix clock").into());
             }
-            Some(mix.route(std::slice::from_ref(root), root_range.clone(), control)?)
+            root_ids
+                .iter()
+                .map(|&id| mix.route(std::slice::from_ref(root), root_range.clone(), id, control))
+                .collect::<Result<Vec<_>, _>>()?
         } else {
-            None
+            Vec::new()
         };
         let mut beat_routes = Vec::new();
         for beat in &beats {
@@ -282,15 +299,12 @@ impl StageAudio {
                     mix.route(
                         occurrence.voice.gain_owners(),
                         occurrence.samples.clone(),
+                        id,
                         control,
                     )?,
                 ));
             }
         }
-        let root_ids = roots
-            .iter()
-            .map(|root| graph.voice(Voice::Root(root.id.clone())))
-            .collect::<Result<Vec<_>, _>>()?;
         let reservation = u64::from(frames)
             .checked_mul(6)
             .and_then(|n| n.checked_add(mix.resident_frames().ok()?))
@@ -355,7 +369,7 @@ impl StageAudio {
                 relative_depth = raw.relative_depth;
                 dependencies.extend(raw.dependencies);
             }
-            for (root, id) in roots.into_iter().zip(root_ids) {
+            for ((root, id), route) in roots.into_iter().zip(root_ids).zip(root_routes) {
                 let event = root.voice.event();
                 let source =
                     resolve_source(provider, plan, &event.source.asset, control.cancelled)?;
@@ -365,12 +379,9 @@ impl StageAudio {
                 );
                 let raw =
                     self.read_prepared_root_sound(provider, root.input, root_range.start, control)?;
-                let route = root_route
-                    .as_ref()
-                    .ok_or(PlanError::InvalidPlan("missing root sound route"))?;
                 add_sound(
                     &mut mix,
-                    route,
+                    &route,
                     &raw,
                     &root.fades,
                     event.gain_millidecibels,
@@ -408,7 +419,7 @@ impl StageAudio {
                 let source = resolve_source(provider, plan, asset, control.cancelled)?;
                 dependencies.insert(asset.clone(), control.observe(asset, source)?);
             }
-            let mixed = mix.finish(control, |owner, stage, at, permissions| {
+            let mixed = mix.finish(control, |owner, stage, at, permissions, voice| {
                 let id = self.shared_eq_node(graph, program, owner, at, stage, control)?;
                 let tile =
                     at.0.div_euclid(OUTPUT as i64)
@@ -418,7 +429,7 @@ impl StageAudio {
                     provider,
                     graph,
                     id,
-                    (tile, permissions),
+                    (tile, permissions, voice),
                     control,
                     program.depth + 1,
                 )?;
@@ -527,7 +538,7 @@ impl StageAudio {
         provider: &mut impl AudioSourceProvider,
         graph: &mut Graph<'_>,
         id: usize,
-        key: (i64, Permissions),
+        key: (i64, Permissions, Option<usize>),
         control: WorkControl<'_>,
         depth: usize,
     ) -> Result<Arc<WideBlock>, StageAudioError> {
@@ -575,6 +586,7 @@ impl StageAudio {
                             context: &context,
                             stop: Some(&boundary),
                             allowed: Some(key.1),
+                            output_voice: key.2,
                             parent: id,
                             depth,
                         },

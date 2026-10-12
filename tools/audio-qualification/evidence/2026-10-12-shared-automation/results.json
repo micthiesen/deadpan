@@ -1,0 +1,28 @@
+{
+  "suite_passed": 1069,
+  "focused_passed": 15,
+  "baseline_passed": 8,
+  "baseline_expected_failures": 7,
+  "export_tests": 1,
+  "summary": {
+    "audio_windows_checked": 1,
+    "audio_windows_failed": 0,
+    "blocks_compared": 36,
+    "index_observable_comparisons": 48,
+    "index_unobservable_comparisons": 12,
+    "max_block_level_db": 0.6367388991245662,
+    "max_local_luma_error": 1.75,
+    "max_thumbnail_mad": 0.04451426630434783,
+    "min_block_snr_db": 6.381142788382078,
+    "min_chroma_psnr_db": 52.15567997290669,
+    "min_luma_psnr_db": 55.4140813123822,
+    "min_neighbor_margin_db": 31.297616108120263,
+    "nonzero_offsets": 0,
+    "offset_unobservable_windows": 0,
+    "offset_verified_windows": 1,
+    "pictures_checked": 31,
+    "pictures_failed": 0,
+    "pictures_without_index_neighbors": 0,
+    "signal_windows": 1
+  }
+}

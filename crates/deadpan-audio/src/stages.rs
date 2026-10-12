@@ -58,6 +58,8 @@ mod authored_gain;
 
 #[path = "authored_eq.rs"]
 mod authored_eq;
+#[path = "shared_components.rs"]
+mod shared_components;
 #[path = "shared_eq.rs"]
 mod shared_eq;
 #[path = "shared_mix.rs"]
@@ -842,8 +844,12 @@ impl StageAudio {
         let mut suppressed = Vec::new();
         let mut dependencies = Dependencies::new();
         let mut cursor = start;
-        if authored_gain && self.plan.has_audio_equalizers() {
-            let block = if !self.plan.sounds().is_empty() || !self.plan.beat_sounds().is_empty() {
+        let independent = !self.plan.sounds().is_empty() || !self.plan.beat_sounds().is_empty();
+        if authored_gain
+            && (self.plan.has_audio_equalizers()
+                || (independent && self.plan.has_audio_component_automation()))
+        {
+            let block = if independent {
                 self.read_shared_equalizers(provider, start, frames, control)?
             } else {
                 self.read_authored_equalizers(provider, start, frames, control, 0, &[])?

@@ -263,6 +263,12 @@ impl RenderPlan {
         self.has_audio_equalizers
     }
 
+    /// Conservative plan-wide need for contributions through shared effects.
+    /// Never select floating-point evaluation order from the requested window.
+    pub fn has_audio_component_automation(&self) -> bool {
+        self.has_audio_component_automation
+    }
+
     /// Gain evaluation may encounter an absent Original contribution beside
     /// independent sounds. Report known empty/exhausted retained support rather
     /// than inventing descendant clocks; other clock failures still reject.
@@ -308,6 +314,24 @@ impl RenderPlan {
             AudioSample,
         )
     }
+}
+
+pub(crate) fn component_automation<'a>(
+    recipes: impl Iterator<Item = &'a deadpan_core::AudioTreatments>,
+    escalation: bool,
+) -> bool {
+    let mut varying = escalation;
+    let mut shared = false;
+    for recipe in recipes {
+        shared |= recipe.saturation().is_some()
+            || recipe
+                .equalizer()
+                .is_some_and(|equalizer| !equalizer.is_unity());
+        varying |= recipe.clip_gain().is_some_and(|gain| {
+            !gain.muted() && (!gain.envelopes().is_empty() || !gain.mute_ranges().is_empty())
+        });
+    }
+    shared && varying
 }
 
 impl<'plan> AudioDomain<'plan> {

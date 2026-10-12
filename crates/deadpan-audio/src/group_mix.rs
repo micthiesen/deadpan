@@ -68,6 +68,7 @@ pub(super) struct GroupMix<'plan> {
     start: AudioSample,
     frames: usize,
     authored: bool,
+    separate: bool,
     original: Vec<(Range<usize>, AudioOwnerSupport, Option<Route<'plan>>)>,
     root: Route<'plan>,
     by_owner: BTreeMap<InstancePath, usize>,
@@ -89,6 +90,7 @@ impl<'plan> GroupMix<'plan> {
             start,
             frames: frames as usize,
             authored,
+            separate: authored && plan.has_audio_component_automation(),
             original: Vec::new(),
             root: Route {
                 target: None,
@@ -276,10 +278,12 @@ impl<'plan> GroupMix<'plan> {
                     return Err(PlanError::InvalidPlan("inconsistent nonlinear mix owners").into());
                 }
                 same_clocks &= a.escalation_millidecibels() == b.escalation_millidecibels()
+                    && a.sampling().local_frames_per_sample()
+                        == b.sampling().local_frames_per_sample()
                     && a.sampling().local_at(first)? == b.sampling().local_at(first)?
                     && a.sampling().local_at(last)? == b.sampling().local_at(last)?;
             }
-            if !same_clocks {
+            if !same_clocks && !self.separate {
                 // Endpoint gain equality cannot prove the interior of a
                 // curve or a mute range. Check every allocated sample, under
                 // the same work/deadline budget and before media admission.
@@ -295,9 +299,10 @@ impl<'plan> GroupMix<'plan> {
                         owner.apply(&mut right, at, control)?;
                     }
                     if !left.same_transfer(&right) {
-                        return Err(StageAudioError::Unsupported(
-                            "different automation on independently timed inputs to one nonlinear owner",
-                        ));
+                        return Err(PlanError::InvalidPlan(
+                            "shared automation missing contribution plan",
+                        )
+                        .into());
                     }
                 }
             }
@@ -317,6 +322,11 @@ impl<'plan> GroupMix<'plan> {
             }));
         self.buses[bus].runs.sort_by_key(|run| run.samples.start);
         Ok(())
+    }
+
+    /// A downstream program differs across inputs and needs retained voices.
+    pub(super) fn needs_components(&self) -> bool {
+        self.separate
     }
 
     /// Extra f32 stereo frame equivalents beyond the caller's f64 final sum.

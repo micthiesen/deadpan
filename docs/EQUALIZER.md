@@ -8,8 +8,8 @@ sound owners, including nested groups and retained history, before mastering.
 Shared saturation processes the combined sum in its authored order. Preview
 and emitted-file verification pass for the real headless Render path. Native
 authoring uses a captured draft or complete typed recipe. Independently timed
-input gain/mute is implemented; automation after a shared stage and remaining
-send/tail work remain open.
+gain/mute is implemented before and after shared stages. Remaining send/tail
+work, broader binding qualification and persistent filtered caching stay open.
 
 ## Native authoring
 
@@ -91,10 +91,13 @@ Each contribution evaluates the linear prefix before its first shared stage in
 its own clock. A temporal stage recursively prepares its complete prefix, so a
 retained Original gain/mute does not replace the independent sound's current
 clock. Shared saturation still processes the sum, including when it precedes
-EQ. Shared suffixes must agree at every consuming sample; differing automation
-after a shared stage remains explicitly unsupported. Decoded PCM, direct
-convolution and cold reads are covered by the
-[input-automation qualification](qualification/input-automation-2026-10-12.md).
+EQ. Contributions remain separate when later automation differs. Linear EQ
+reads a selected contribution through the complete jointly driven prefix;
+selection never changes the inputs driving saturation. Tiles retain both the
+selected output and full permission set. All outputs share one active EQ input
+context while their gain clocks stay independent. Decoded PCM, all six orders
+of gain/EQ/saturation, cold reads and exact cancellation are covered by the
+[shared-automation qualification](qualification/shared-automation-2026-10-12.md).
 
 ## Owner input contexts
 
@@ -234,8 +237,7 @@ while still admitting both complete input channels and honoring cancellation.
 
 ## Integration still owed
 
-Complete independently timed automation after shared stages. Extend
-qualification across the remaining nested bindings, copies, Repeats and
+Extend qualification across the remaining nested bindings, copies, Repeats and
 time/pitch interactions, and complete arbitrary sends with incoming-tail policy.
 Request-local filtering is implemented; persistent cache reuse across preview,
 cold seeks, loops and export, and measured interactive latency remain required.

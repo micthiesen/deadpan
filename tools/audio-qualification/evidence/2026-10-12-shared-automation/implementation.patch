@@ -1,0 +1,1742 @@
+diff --git a/crates/deadpan-audio/src/authored_gain.rs b/crates/deadpan-audio/src/authored_gain.rs
+index 636b4c26..a5e50a55 100644
+--- a/crates/deadpan-audio/src/authored_gain.rs
++++ b/crates/deadpan-audio/src/authored_gain.rs
+@@ -28,6 +28,11 @@ pub(super) struct GainSum {
+ }
+ 
+ impl GainSum {
++    pub(super) const fn maximum_bytes() -> usize {
++        std::mem::size_of::<Self>()
++            + MAX_CHANNEL_STAGES * std::mem::size_of::<(i128, ChannelStage)>()
++    }
++
+     /// These memoryless programs are interchangeable at one output sample.
+     /// Clock identity is not required when the evaluated treatments agree.
+     pub(super) fn same_transfer(&self, other: &Self) -> bool {
+diff --git a/crates/deadpan-audio/src/bound_reads/authored_eq.rs b/crates/deadpan-audio/src/bound_reads/authored_eq.rs
+index 2cdb4784..8ad1648a 100644
+--- a/crates/deadpan-audio/src/bound_reads/authored_eq.rs
++++ b/crates/deadpan-audio/src/bound_reads/authored_eq.rs
+@@ -664,6 +664,12 @@ fn shared_eq_limit_and_cancellation_release_residency() {
+ 
+ #[test]
+ fn shared_eq_allowed_sound_cannot_release_forbidden_original_or_peer_history() {
++    for components in [false, true] {
++        allowed_sound_history(components);
++    }
++}
++
++fn allowed_sound_history(components: bool) {
+     let rate = FrameRate::new(48000, 1).unwrap();
+     let recipe = eq([6000, -6000, 3000]);
+     let saturation = Saturation::new(GainDb::new(9000).unwrap()).unwrap();
+@@ -693,18 +699,43 @@ fn shared_eq_allowed_sound_cannot_release_forbidden_original_or_peer_history() {
+     let prefix = AudioTreatments::default()
+         .with_saturation(Some(saturation))
+         .unwrap();
+-    wire["nodes"]["root"]["audio_treatments"] = serde_json::to_value(
+-        AudioTreatments::with_equalizer_stages(
++    let gain = components.then(|| {
++        ClipGain::new(
++            GainDb::UNITY,
++            false,
+             vec![
+-                AudioTreatmentStage::Saturation,
+-                AudioTreatmentStage::Equalizer,
++                deadpan_core::GainEnvelope::new(
++                    deadpan_core::GainClock::OwnerOutput,
++                    deadpan_core::GainRange::new(ExactRatio::ZERO, ExactRatio::integer(8192))
++                        .unwrap(),
++                    GainDb::UNITY,
++                    vec![
++                        deadpan_core::GainSegment::new(
++                            ExactRatio::integer(8192),
++                            GainDb::UNITY,
++                            deadpan_core::GainCurve::Linear,
++                        )
++                        .unwrap(),
++                    ],
++                )
++                .unwrap(),
+             ],
+-            None,
+-            Some(saturation),
+-            None,
+-            Some(recipe),
++            vec![],
+         )
+-        .unwrap(),
++        .unwrap()
++    });
++    let mut order = vec![
++        AudioTreatmentStage::Saturation,
++        AudioTreatmentStage::Equalizer,
++    ];
++    if components {
++        // An authored unity envelope exercises contribution tracking without
++        // changing the independently filtered allowed-only oracle.
++        order.push(AudioTreatmentStage::ClipGain);
++    }
++    wire["nodes"]["root"]["audio_treatments"] = serde_json::to_value(
++        AudioTreatments::with_equalizer_stages(order, gain, Some(saturation), None, Some(recipe))
++            .unwrap(),
+     )
+     .unwrap();
+     let mixed = ProjectDocument::from_json(&wire.to_string()).unwrap();
+@@ -722,7 +753,9 @@ fn shared_eq_allowed_sound_cannot_release_forbidden_original_or_peer_history() {
+         .map(|frame| frame.map(f64::from))
+         .collect();
+     let expected = filtered(&raw, recipe);
+-    let mut renderer = StageAudio::new(Arc::new(RenderPlan::compile(&mixed).unwrap()));
++    let plan = Arc::new(RenderPlan::compile(&mixed).unwrap());
++    assert_eq!(plan.has_audio_component_automation(), components);
++    let mut renderer = StageAudio::new(plan);
+     close(
+         &authored(&mut renderer, &mut provider, 4096, 128),
+         &expected[4096..4224],
+diff --git a/crates/deadpan-audio/src/group_mix.rs b/crates/deadpan-audio/src/group_mix.rs
+index d968b806..0972ec15 100644
+--- a/crates/deadpan-audio/src/group_mix.rs
++++ b/crates/deadpan-audio/src/group_mix.rs
+@@ -68,6 +68,7 @@ pub(super) struct GroupMix<'plan> {
+     start: AudioSample,
+     frames: usize,
+     authored: bool,
++    separate: bool,
+     original: Vec<(Range<usize>, AudioOwnerSupport, Option<Route<'plan>>)>,
+     root: Route<'plan>,
+     by_owner: BTreeMap<InstancePath, usize>,
+@@ -89,6 +90,7 @@ impl<'plan> GroupMix<'plan> {
+             start,
+             frames: frames as usize,
+             authored,
++            separate: authored && plan.has_audio_component_automation(),
+             original: Vec::new(),
+             root: Route {
+                 target: None,
+@@ -276,10 +278,12 @@ impl<'plan> GroupMix<'plan> {
+                     return Err(PlanError::InvalidPlan("inconsistent nonlinear mix owners").into());
+                 }
+                 same_clocks &= a.escalation_millidecibels() == b.escalation_millidecibels()
++                    && a.sampling().local_frames_per_sample()
++                        == b.sampling().local_frames_per_sample()
+                     && a.sampling().local_at(first)? == b.sampling().local_at(first)?
+                     && a.sampling().local_at(last)? == b.sampling().local_at(last)?;
+             }
+-            if !same_clocks {
++            if !same_clocks && !self.separate {
+                 // Endpoint gain equality cannot prove the interior of a
+                 // curve or a mute range. Check every allocated sample, under
+                 // the same work/deadline budget and before media admission.
+@@ -295,9 +299,10 @@ impl<'plan> GroupMix<'plan> {
+                         owner.apply(&mut right, at, control)?;
+                     }
+                     if !left.same_transfer(&right) {
+-                        return Err(StageAudioError::Unsupported(
+-                            "different automation on independently timed inputs to one nonlinear owner",
+-                        ));
++                        return Err(PlanError::InvalidPlan(
++                            "shared automation missing contribution plan",
++                        )
++                        .into());
+                     }
+                 }
+             }
+@@ -319,6 +324,11 @@ impl<'plan> GroupMix<'plan> {
+         Ok(())
+     }
+ 
++    /// A downstream program differs across inputs and needs retained voices.
++    pub(super) fn needs_components(&self) -> bool {
++        self.separate
++    }
++
+     /// Extra f32 stereo frame equivalents beyond the caller's f64 final sum.
+     pub(super) fn resident_frames(&self) -> Result<u64, StageAudioError> {
+         u64::try_from(self.buses.len())
+diff --git a/crates/deadpan-audio/src/shared_eq.rs b/crates/deadpan-audio/src/shared_eq.rs
+index 7a7c85e5..82257c21 100644
+--- a/crates/deadpan-audio/src/shared_eq.rs
++++ b/crates/deadpan-audio/src/shared_eq.rs
+@@ -1,6 +1,7 @@
+ //! Recursive shared temporal processing. An EQ tile evaluates the complete
+ //! ordered bus prefix with the consuming sample's allowed contribution set.
+-//! This keeps silence permissions distinct without distributing saturation.
++//! This keeps silence permissions distinct. Selected contribution reads retain
++//! the common saturation drive from all permitted inputs.
+ 
+ use super::authored_eq::Context;
+ use super::shared_mix::{Boundary, OwnerKey, Permissions, SharedMix};
+@@ -45,7 +46,7 @@ struct Node<'plan> {
+     boundary: AudioTreatmentBoundary<'plan>,
+     stop: Boundary,
+     filter: Option<crate::Equalizer>,
+-    tiles: BTreeMap<(i64, Permissions), Arc<WideBlock>>,
++    tiles: BTreeMap<(i64, Permissions, Option<usize>), Arc<WideBlock>>,
+ }
+ struct Graph<'plan> {
+     plan: &'plan RenderPlan,
+@@ -71,6 +72,7 @@ struct Program<'a, 'plan> {
+     context: &'a Contexts<'plan>,
+     stop: Option<&'a Boundary>,
+     allowed: Option<Permissions>,
++    output_voice: Option<usize>,
+     parent: usize,
+     depth: usize,
+ }
+@@ -125,6 +127,7 @@ impl StageAudio {
+                 context: &context,
+                 stop: None,
+                 allowed: None,
++                output_voice: None,
+                 parent: usize::MAX,
+                 depth: 0,
+             };
+@@ -234,7 +237,13 @@ impl StageAudio {
+         } else {
+             Vec::new()
+         };
+-        let mut mix = SharedMix::new(start, frames, program.stop.cloned());
++        let mut mix = SharedMix::new(
++            start,
++            frames,
++            program.stop.cloned(),
++            program.output_voice,
++            plan.has_audio_component_automation(),
++        );
+         let original_id = graph.voice(Voice::Original)?;
+         let original_routes = owners
+             .as_ref()
+@@ -246,14 +255,19 @@ impl StageAudio {
+                         if span.original_is_silent() {
+                             Ok(None)
+                         } else {
+-                            mix.route(span.owners(), span.samples(), control).map(Some)
++                            mix.route(span.owners(), span.samples(), original_id, control)
++                                .map(Some)
+                         }
+                     })
+                     .collect::<Result<Vec<_>, StageAudioError>>()
+             })
+             .transpose()?
+             .unwrap_or_default();
+-        let root_route = if !roots.is_empty() {
++        let root_ids = roots
++            .iter()
++            .map(|root| graph.voice(Voice::Root(root.id.clone())))
++            .collect::<Result<Vec<_>, _>>()?;
++        let root_routes = if !roots.is_empty() {
+             let root_owners =
+                 plan.audio_gain_owners(root_range.clone(), control.query_limits()?)?;
+             control.spend_plan_work(root_owners.work())?;
+@@ -265,9 +279,12 @@ impl StageAudio {
+             if root.instance().node != plan.metadata().root {
+                 return Err(PlanError::InvalidPlan("invalid root mix clock").into());
+             }
+-            Some(mix.route(std::slice::from_ref(root), root_range.clone(), control)?)
++            root_ids
++                .iter()
++                .map(|&id| mix.route(std::slice::from_ref(root), root_range.clone(), id, control))
++                .collect::<Result<Vec<_>, _>>()?
+         } else {
+-            None
++            Vec::new()
+         };
+         let mut beat_routes = Vec::new();
+         for beat in &beats {
+@@ -282,15 +299,12 @@ impl StageAudio {
+                     mix.route(
+                         occurrence.voice.gain_owners(),
+                         occurrence.samples.clone(),
++                        id,
+                         control,
+                     )?,
+                 ));
+             }
+         }
+-        let root_ids = roots
+-            .iter()
+-            .map(|root| graph.voice(Voice::Root(root.id.clone())))
+-            .collect::<Result<Vec<_>, _>>()?;
+         let reservation = u64::from(frames)
+             .checked_mul(6)
+             .and_then(|n| n.checked_add(mix.resident_frames().ok()?))
+@@ -355,7 +369,7 @@ impl StageAudio {
+                 relative_depth = raw.relative_depth;
+                 dependencies.extend(raw.dependencies);
+             }
+-            for (root, id) in roots.into_iter().zip(root_ids) {
++            for ((root, id), route) in roots.into_iter().zip(root_ids).zip(root_routes) {
+                 let event = root.voice.event();
+                 let source =
+                     resolve_source(provider, plan, &event.source.asset, control.cancelled)?;
+@@ -365,12 +379,9 @@ impl StageAudio {
+                 );
+                 let raw =
+                     self.read_prepared_root_sound(provider, root.input, root_range.start, control)?;
+-                let route = root_route
+-                    .as_ref()
+-                    .ok_or(PlanError::InvalidPlan("missing root sound route"))?;
+                 add_sound(
+                     &mut mix,
+-                    route,
++                    &route,
+                     &raw,
+                     &root.fades,
+                     event.gain_millidecibels,
+@@ -408,7 +419,7 @@ impl StageAudio {
+                 let source = resolve_source(provider, plan, asset, control.cancelled)?;
+                 dependencies.insert(asset.clone(), control.observe(asset, source)?);
+             }
+-            let mixed = mix.finish(control, |owner, stage, at, permissions| {
++            let mixed = mix.finish(control, |owner, stage, at, permissions, voice| {
+                 let id = self.shared_eq_node(graph, program, owner, at, stage, control)?;
+                 let tile =
+                     at.0.div_euclid(OUTPUT as i64)
+@@ -418,7 +429,7 @@ impl StageAudio {
+                     provider,
+                     graph,
+                     id,
+-                    (tile, permissions),
++                    (tile, permissions, voice),
+                     control,
+                     program.depth + 1,
+                 )?;
+@@ -527,7 +538,7 @@ impl StageAudio {
+         provider: &mut impl AudioSourceProvider,
+         graph: &mut Graph<'_>,
+         id: usize,
+-        key: (i64, Permissions),
++        key: (i64, Permissions, Option<usize>),
+         control: WorkControl<'_>,
+         depth: usize,
+     ) -> Result<Arc<WideBlock>, StageAudioError> {
+@@ -575,6 +586,7 @@ impl StageAudio {
+                             context: &context,
+                             stop: Some(&boundary),
+                             allowed: Some(key.1),
++                            output_voice: key.2,
+                             parent: id,
+                             depth,
+                         },
+diff --git a/crates/deadpan-audio/src/shared_mix.rs b/crates/deadpan-audio/src/shared_mix.rs
+index c08fbcf6..1eeb402e 100644
+--- a/crates/deadpan-audio/src/shared_mix.rs
++++ b/crates/deadpan-audio/src/shared_mix.rs
+@@ -24,7 +24,7 @@ impl Permissions {
+     pub(super) fn contains(&self, voice: usize) -> bool {
+         voice < MAX_VOICES && self.0[voice / 64] & (1 << (voice % 64)) != 0
+     }
+-    fn insert(&mut self, voice: usize) -> Result<(), StageAudioError> {
++    pub(super) fn insert(&mut self, voice: usize) -> Result<(), StageAudioError> {
+         if voice >= MAX_VOICES {
+             return Err(StageAudioError::Limit("shared EQ voice count"));
+         }
+@@ -36,7 +36,7 @@ impl Permissions {
+             *target |= value;
+         }
+     }
+-    fn is_empty(&self) -> bool {
++    pub(super) fn is_empty(&self) -> bool {
+         self.0.iter().all(|word| *word == 0)
+     }
+ }
+@@ -76,6 +76,7 @@ pub(super) struct Route<'plan> {
+     target: Option<usize>,
+     layers: Vec<Layer<'plan>>,
+     ignored: bool,
++    component: Option<usize>,
+ }
+ 
+ struct Run<'plan> {
+@@ -99,6 +100,9 @@ pub(super) struct SharedMix<'plan> {
+     buses: Vec<Bus<'plan>>,
+     sum: Vec<[f64; 2]>,
+     permissions: Vec<Permissions>,
++    components: shared_components::Components<'plan>,
++    separate: bool,
++    output_voice: Option<usize>,
+ }
+ 
+ pub(super) struct MixedBlock {
+@@ -144,7 +148,13 @@ fn transfer(
+ }
+ 
+ impl<'plan> SharedMix<'plan> {
+-    pub(super) fn new(start: AudioSample, frames: u32, stop: Option<Boundary>) -> Self {
++    pub(super) fn new(
++        start: AudioSample,
++        frames: u32,
++        stop: Option<Boundary>,
++        output_voice: Option<usize>,
++        separate: bool,
++    ) -> Self {
+         Self {
+             start,
+             frames: frames as usize,
+@@ -153,6 +163,9 @@ impl<'plan> SharedMix<'plan> {
+             buses: Vec::new(),
+             sum: Vec::new(),
+             permissions: Vec::new(),
++            components: shared_components::Components::new(start, frames),
++            separate: separate || output_voice.is_some(),
++            output_voice,
+         }
+     }
+ 
+@@ -160,6 +173,7 @@ impl<'plan> SharedMix<'plan> {
+         &mut self,
+         owners: &[AudioOwnerClock<'plan>],
+         range: Range<AudioSample>,
++        voice: usize,
+         control: WorkControl<'_>,
+     ) -> Result<Route<'plan>, StageAudioError> {
+         deadpan_core::validate_audio_treatment_layers(
+@@ -174,6 +188,7 @@ impl<'plan> SharedMix<'plan> {
+                     target: None,
+                     layers: Vec::new(),
+                     ignored: true,
++                    component: None,
+                 });
+             };
+             index
+@@ -189,6 +204,7 @@ impl<'plan> SharedMix<'plan> {
+         }
+         let mut layers = Vec::new();
+         let mut parent = None;
++        let mut component_layers = Vec::new();
+         for (index, owner) in owners.iter().enumerate().skip(first) {
+             control.spend_plan_work(1)?;
+             let until = if index == first {
+@@ -197,6 +213,7 @@ impl<'plan> SharedMix<'plan> {
+                 None
+             }
+             .unwrap_or_else(|| owner.treatments().map_or(0, |recipe| recipe.order().len()));
++            component_layers.push((owner.clone(), until));
+             let complex = if let Some(recipe) = owner.treatments() {
+                 recipe
+                     .order()
+@@ -254,6 +271,10 @@ impl<'plan> SharedMix<'plan> {
+             target: parent,
+             layers,
+             ignored: false,
++            component: Some(
++                self.components
++                    .route(voice, component_layers, start..end, control)?,
++            ),
+         })
+     }
+ 
+@@ -295,10 +316,12 @@ impl<'plan> SharedMix<'plan> {
+                 let first = AudioSample(self.start.0 + overlap.start as i64);
+                 let last = AudioSample(self.start.0 + overlap.end as i64 - 1);
+                 same &= a.owner.escalation_millidecibels() == b.owner.escalation_millidecibels()
++                    && a.owner.sampling().local_frames_per_sample()
++                        == b.owner.sampling().local_frames_per_sample()
+                     && a.owner.sampling().local_at(first)? == b.owner.sampling().local_at(first)?
+                     && a.owner.sampling().local_at(last)? == b.owner.sampling().local_at(last)?;
+             }
+-            if !same {
++            if !same && !self.separate {
+                 for offset in overlap.clone() {
+                     control.check()?;
+                     let at = AudioSample(self.start.0 + offset as i64);
+@@ -309,9 +332,10 @@ impl<'plan> SharedMix<'plan> {
+                     if !transfer(&run.layers, at, control)?
+                         .same_transfer(&transfer(layers, at, control)?)
+                     {
+-                        return Err(StageAudioError::Unsupported(
+-                            "different automation on independently timed shared inputs",
+-                        ));
++                        return Err(PlanError::InvalidPlan(
++                            "shared automation missing contribution plan",
++                        )
++                        .into());
+                     }
+                 }
+             }
+@@ -336,12 +360,19 @@ impl<'plan> SharedMix<'plan> {
+     /// f32 stereo frame equivalents, including fixed-size permission bitsets.
+     /// The caller separately reserves its raw/transient reader buffers.
+     pub(super) fn resident_frames(&self) -> Result<u64, StageAudioError> {
++        if self.separate {
++            return self.components.resident_frames();
++        }
+         (self.buses.len() as u64 + 1)
+             .checked_mul(self.frames as u64)
+             .and_then(|n| n.checked_mul(2 + WORDS as u64))
+             .ok_or(StageAudioError::Limit("shared mix residency"))
+     }
+     pub(super) fn allocate(&mut self) {
++        if self.separate {
++            self.components.allocate();
++            return;
++        }
+         self.sum = vec![[0.0; 2]; self.frames];
+         self.permissions = vec![Permissions::default(); self.frames];
+         for bus in &mut self.buses {
+@@ -365,6 +396,17 @@ impl<'plan> SharedMix<'plan> {
+         let Some(voice) = voice else {
+             return Ok(());
+         };
++        if self.separate {
++            return self.components.add(
++                route
++                    .component
++                    .ok_or(PlanError::InvalidPlan("missing contribution route"))?,
++                offset,
++                sample,
++                event_gain,
++                control,
++            );
++        }
+         let mut gain = authored_gain::beat_sound_gain(
+             &[],
+             AudioSample(self.start.0 + offset as i64),
+@@ -418,8 +460,12 @@ impl<'plan> SharedMix<'plan> {
+             usize,
+             AudioSample,
+             Permissions,
++            Option<usize>,
+         ) -> Result<[f64; 2], StageAudioError>,
+     ) -> Result<MixedBlock, StageAudioError> {
++        if self.separate {
++            return self.components.finish(self.output_voice, control, equalize);
++        }
+         let mut order: Vec<_> = self.by_owner.values().copied().collect();
+         order.sort_by_key(|&id| std::cmp::Reverse(self.buses[id].depth));
+         for id in order {
+@@ -439,7 +485,7 @@ impl<'plan> SharedMix<'plan> {
+                             .last()
+                             .ok_or(PlanError::InvalidPlan("shared EQ owner absent"))?
+                             .owner;
+-                        equalize(owner, stage, clock, permissions[at])?
++                        equalize(owner, stage, clock, permissions[at], None)?
+                     } else {
+                         samples[at]
+                     };
+diff --git a/crates/deadpan-audio/src/sound_events.rs b/crates/deadpan-audio/src/sound_events.rs
+index eec04ba7..b233126c 100644
+--- a/crates/deadpan-audio/src/sound_events.rs
++++ b/crates/deadpan-audio/src/sound_events.rs
+@@ -29,6 +29,12 @@ impl StageAudio {
+         control: WorkControl<'_>,
+         authored_gain: bool,
+     ) -> Result<ReadBlock, StageAudioError> {
++        if authored_gain
++            && self.plan.has_audio_component_automation()
++            && (!self.plan.sounds().is_empty() || !self.plan.beat_sounds().is_empty())
++        {
++            return self.read_shared_equalizers(provider, start, frames, control);
++        }
+         if authored_gain && self.plan.has_audio_equalizers() {
+             if !self.plan.sounds().is_empty() || !self.plan.beat_sounds().is_empty() {
+                 return self.read_shared_equalizers(provider, start, frames, control);
+@@ -68,6 +74,11 @@ impl StageAudio {
+         for voice in &mut beat_voices {
+             voice.route_mix(&mut mix, control)?;
+         }
++        if mix.needs_components() {
++            // Planning has not opened media. Keep contributions through shared
++            // stages when their downstream treatment clocks differ.
++            return self.read_shared_equalizers(provider, start, frames, control);
++        }
+         // Reserve the retained Original, the f64 sum and the source reader's
+         // two transient PCM buffers under the existing shared residency limit.
+         let routed = voices
+diff --git a/crates/deadpan-audio/src/stages.rs b/crates/deadpan-audio/src/stages.rs
+index f0535cb7..1cb506f9 100644
+--- a/crates/deadpan-audio/src/stages.rs
++++ b/crates/deadpan-audio/src/stages.rs
+@@ -58,6 +58,8 @@ mod authored_gain;
+ 
+ #[path = "authored_eq.rs"]
+ mod authored_eq;
++#[path = "shared_components.rs"]
++mod shared_components;
+ #[path = "shared_eq.rs"]
+ mod shared_eq;
+ #[path = "shared_mix.rs"]
+@@ -842,8 +844,12 @@ impl StageAudio {
+         let mut suppressed = Vec::new();
+         let mut dependencies = Dependencies::new();
+         let mut cursor = start;
+-        if authored_gain && self.plan.has_audio_equalizers() {
+-            let block = if !self.plan.sounds().is_empty() || !self.plan.beat_sounds().is_empty() {
++        let independent = !self.plan.sounds().is_empty() || !self.plan.beat_sounds().is_empty();
++        if authored_gain
++            && (self.plan.has_audio_equalizers()
++                || (independent && self.plan.has_audio_component_automation()))
++        {
++            let block = if independent {
+                 self.read_shared_equalizers(provider, start, frames, control)?
+             } else {
+                 self.read_authored_equalizers(provider, start, frames, control, 0, &[])?
+diff --git a/crates/deadpan-audio/tests/audio_definition/sound_clocks/group_mix.rs b/crates/deadpan-audio/tests/audio_definition/sound_clocks/group_mix.rs
+index 1b40f2a2..1cfd0c0d 100644
+--- a/crates/deadpan-audio/tests/audio_definition/sound_clocks/group_mix.rs
++++ b/crates/deadpan-audio/tests/audio_definition/sound_clocks/group_mix.rs
+@@ -188,7 +188,7 @@ fn shared_eq_independent_input_automation_keeps_gain_filter_and_saturation_order
+ }
+ 
+ #[test]
+-fn divergent_post_saturation_automation_still_refuses_before_source_access() {
++fn independent_post_saturation_mute_preserves_the_shared_drive() {
+     let gain = ClipGain::new(
+         GainDb::UNITY,
+         false,
+@@ -196,31 +196,547 @@ fn divergent_post_saturation_automation_still_refuses_before_source_access() {
+         vec![GainRange::new(ratio(975, 8008), ratio(977, 8008)).unwrap()],
+     )
+     .unwrap();
+-    let mut wire = serde_json::to_value(treated(&moved(true), gain)).unwrap();
++    compare_independent_suffix(gain);
++}
++
++fn compare_independent_suffix(gain: ClipGain) {
++    let source = moved(true);
++    let original = original(&source, START, FRAMES);
++    let sound = read(&moved(false), START, FRAMES);
++    let drive = Saturation::new(GainDb::new(12000).unwrap()).unwrap();
++    let expected: Vec<[f32; 2]> = original
++        .iter()
++        .zip(&sound)
++        .enumerate()
++        .map(|(offset, (a, b))| {
++            let sample = i128::from(START + offset as i64);
++            let ga = amplitude(&gain, ratio(sample * 5 - 24026, 8008));
++            let gb = amplitude(&gain, ratio(sample * 5 - 24024, 8008));
++            std::array::from_fn(|ch| {
++                let sum = f64::from(a[ch]) + f64::from(b[ch]);
++                let factor = if sum == 0.0 {
++                    drive.drive_factor()
++                } else {
++                    drive.shape(sum) / sum
++                };
++                (f64::from(a[ch]) * factor * ga + f64::from(b[ch]) * factor * gb) as f32
++            })
++        })
++        .collect();
++    let mut wire = serde_json::to_value(treated(&source, gain)).unwrap();
+     wire["nodes"]["owner"]["audio_treatments"]["order"] =
+         serde_json::json!(["saturation", "clip_gain"]);
+     let treated = ProjectDocument::from_json(&wire.to_string()).unwrap();
++    let actual = read(&treated, START, FRAMES);
++    assert_eq!(actual, expected);
++    for (offset, count) in [(193, 7), (195, 61), (6011, 395), (131, 509)] {
++        assert_eq!(
++            read(&treated, START + offset, count),
++            actual[offset as usize..offset as usize + count as usize]
++        );
++    }
++}
++
++#[test]
++fn independent_post_saturation_envelope_preserves_the_shared_drive() {
++    compare_independent_suffix(ramp());
++}
++
++#[test]
++fn independent_clocks_share_one_eq_processing_context() {
++    let mut wire = serde_json::to_value(post_treated(ramp())).unwrap();
++    wire["nodes"]["owner"]["audio_treatments"] = serde_json::to_value(
++        AudioTreatments::from_clip_gain(ramp())
++            .with_equalizer(Some(
++                deadpan_core::EqualizerRecipe::new(
++                    [6000, -3000, 1500].map(|db| GainDb::new(db).unwrap()),
++                    None,
++                    None,
++                )
++                .unwrap(),
++            ))
++            .unwrap(),
++    )
++    .unwrap();
++    let document = ProjectDocument::from_json(&wire.to_string()).unwrap();
++    let expected = read(&document, START + 2700, 128);
++    let mut renderer = StageAudio::with_limits(
++        compile(&document, false),
++        StageLimits {
++            maximum_prepared_stages: 1,
++            ..StageLimits::default()
++        },
++    )
++    .unwrap();
++    assert_eq!(
++        bus(
++            &mut renderer,
++            &mut ClockProvider::new(&document),
++            START + 2700,
++            128
++        )
++        .samples,
++        expected
++    );
++}
++
++#[test]
++fn independent_automation_is_invariant_across_owner_activation_boundaries() {
++    let document = post_treated(ramp());
++    let total = u32::try_from(compile(&document, false).audio_duration().unwrap().0).unwrap();
++    let complete = read(&document, 0, total);
++    for (start, count) in [
++        (0, 1),
++        (START - 257, 513),
++        (START - 1, 2),
++        (START, 1),
++        (START + FRAMES as i64 - 257, 513),
++        (START + FRAMES as i64 - 1, 2),
++    ] {
++        assert_eq!(
++            read(&document, start, count),
++            complete[start as usize..start as usize + count as usize]
++        );
++    }
++}
++
++#[test]
++fn independent_eq_automation_keeps_rebound_input_history_across_a_new_pause() {
++    use deadpan_core::{AudioTreatmentStage as S, EqualizerRecipe};
++    let mut wire = serde_json::to_value(post_treated(ramp())).unwrap();
++    let recipe = AudioTreatments::with_equalizer_stages(
++        vec![S::Saturation, S::Equalizer, S::ClipGain],
++        Some(ramp()),
++        Some(Saturation::new(GainDb::new(12000).unwrap()).unwrap()),
++        None,
++        Some(
++            EqualizerRecipe::new(
++                [6000, -3000, 1500].map(|db| GainDb::new(db).unwrap()),
++                None,
++                None,
++            )
++            .unwrap(),
++        ),
++    )
++    .unwrap();
++    wire["nodes"]["owner"]["audio_treatments"] = serde_json::to_value(recipe).unwrap();
++    let attached = ProjectDocument::from_json(&wire.to_string()).unwrap();
++    let sound: BeatSound =
++        serde_json::from_value(wire["beat_sounds"]["owner"]["effect"].clone()).unwrap();
++    wire["sounds"] = serde_json::json!({"effect": SoundEvent {
++        owner: id("root"), label: sound.label, source: sound.source, mapping: sound.mapping,
++        offset: AudioSample(START), gain_millidecibels: sound.gain_millidecibels,
++        start_edge: sound.start_edge, end_edge: sound.end_edge, overflow: sound.overflow,
++    }});
++    wire["beat_sounds"] = serde_json::json!({});
++    wire["audio_bindings"]["sound_clocks"] = serde_json::json!({});
++    wire["nodes"]["root"]["audio_treatments"] = wire["nodes"]["owner"]["audio_treatments"].take();
++    wire["nodes"]["owner"]
++        .as_object_mut()
++        .unwrap()
++        .remove("audio_treatments");
++    let source = ProjectDocument::from_json(&wire.to_string()).unwrap();
++    let at = ProjectFrame(4);
++    let count = source
++        .insert_time_target(at)
++        .unwrap()
++        .split
++        .map_or(0, |split| split.required_ids);
++    let NodeKind::Hold { recipe } = hold(1, HoldAudio::Silence).kind else {
++        unreachable!()
++    };
++    let command = Command::InsertTime {
++        at,
++        hold: recipe,
++        id: id("inner-pause"),
++        identities: SplitIdentities {
++            nodes: (0..count)
++                .map(|n| NodeId::new(format!("inner-split-{n}")).unwrap())
++                .collect(),
++        },
++        timing: AudioTimingId {
++            allocation: RevisionId::new("held-again").unwrap(),
++            ordinal: 0,
++        },
++    };
++    // Attached sounds still require an owner-local interval route before their
++    // processing scope can be split. Preserve this existing atomic refusal;
++    // the root event above has that route and exercises the actual EQ boundary.
++    let snapshot = attached.to_json().unwrap();
++    let error = apply(
++        &attached,
++        &CommandRequest {
++            project_id: attached.project_id().clone(),
++            expected_revision: attached.revision_id().clone(),
++            new_revision: RevisionId::new("held-again").unwrap(),
++            command: command.clone(),
++        },
++    )
++    .unwrap_err();
++    assert!(
++        error
++            .message
++            .contains("sound clock scope omits an enclosing processor"),
++        "{error}"
++    );
++    assert_eq!(attached.to_json().unwrap(), snapshot);
++    let edited = edit(&source, "held-again", command);
++    let total = u32::try_from(compile(&edited, false).audio_duration().unwrap().0).unwrap();
++    let complete = read(&edited, 0, total);
++    for (start, count) in [(START - 17, 129), (6405, 129), (8007, 129), (11210, 129)] {
++        let actual = read(&edited, start, count);
++        for (offset, actual) in actual.iter().enumerate() {
++            assert_eq!(
++                *actual,
++                complete[start as usize + offset],
++                "sample={}",
++                start + offset as i64
++            );
++        }
++    }
++}
++
++fn post_treated(gain: ClipGain) -> ProjectDocument {
++    let mut wire = serde_json::to_value(treated(&moved(true), gain)).unwrap();
++    wire["nodes"]["owner"]["audio_treatments"]["order"] =
++        serde_json::json!(["saturation", "clip_gain"]);
++    ProjectDocument::from_json(&wire.to_string()).unwrap()
++}
++
++#[test]
++fn independent_post_saturation_inputs_rejoin_the_parent_bus() {
++    let child = post_treated(ramp());
++    let reference = read(&child, START, FRAMES);
++    let drive = Saturation::new(GainDb::new(9000).unwrap()).unwrap();
++    let mut wire = serde_json::to_value(&child).unwrap();
++    wire["nodes"]["root"]["audio_treatments"] = serde_json::to_value(
++        AudioTreatments::from_clip_gain(
++            ClipGain::new(GainDb::new(-3000).unwrap(), false, vec![], vec![]).unwrap(),
++        )
++        .with_saturation(Some(drive))
++        .unwrap(),
++    )
++    .unwrap();
++    let nested = ProjectDocument::from_json(&wire.to_string()).unwrap();
++    let actual = read(&nested, START, FRAMES);
++    let factor = 10_f64.powf(-3.0 / 20.0);
++    for (actual, reference) in actual.iter().zip(reference) {
++        for ch in 0..2 {
++            assert!(
++                (f64::from(actual[ch]) - drive.shape(f64::from(reference[ch]) * factor)).abs()
++                    <= 4.0 * f64::from(f32::EPSILON)
++            );
++        }
++    }
++    for (offset, count) in [(193, 7), (195, 61), (6011, 395), (131, 509)] {
++        assert_eq!(
++            read(&nested, START + offset, count),
++            actual[offset as usize..offset as usize + count as usize]
++        );
++    }
++}
++
++#[test]
++fn contribution_pcm_is_admitted_before_media_and_cancellation_recovers() {
++    let treated = post_treated(ramp());
++    let plan = compile(&treated, false);
+     let mut provider = ClockProvider::new(&treated);
+-    let error = StageAudio::new(compile(&treated, false))
+-        .prepare_authored_bus(
++    let mut small = StageAudio::with_limits(
++        Arc::clone(&plan),
++        StageLimits {
++            maximum_resident_frames: 1024,
++            ..Default::default()
++        },
++    )
++    .unwrap();
++    assert!(matches!(
++        small.prepare_authored_bus(
+             &mut provider,
+-            AudioSample(START),
+-            256,
++            AudioSample(START + 193),
++            64,
+             TIMEOUT,
+             &AtomicBool::new(false),
+-        )
+-        .unwrap_err();
++        ),
++        Err(StageAudioError::Limit(_))
++    ));
++    assert_eq!(provider.fixture.calls, 0);
++    assert_eq!(provider.fixture.context_calls, 0);
++    let mut renderer = StageAudio::new(plan);
+     assert!(
+-        matches!(
+-            error,
+-            StageAudioError::Unsupported(
+-                "different automation on independently timed inputs to one nonlinear owner"
++        renderer
++            .prepare_authored_bus(
++                &mut provider,
++                AudioSample(START + 193),
++                64,
++                TIMEOUT,
++                &AtomicBool::new(true),
+             )
+-        ),
+-        "{error:?}"
++            .is_err()
+     );
+     assert_eq!(provider.fixture.calls, 0);
+-    assert_eq!(provider.fixture.context_calls, 0);
++    let expected = read(&treated, START + 193, 64);
++    assert_eq!(
++        bus(&mut renderer, &mut provider, START + 193, 64).samples,
++        expected
++    );
++    provider.fixture.unavailable = true;
++    assert!(
++        renderer
++            .prepare_authored_bus(
++                &mut provider,
++                AudioSample(START + 193),
++                64,
++                TIMEOUT,
++                &AtomicBool::new(false),
++            )
++            .is_err()
++    );
++    provider.fixture.unavailable = false;
++    assert_eq!(
++        bus(&mut renderer, &mut provider, START + 193, 64).samples,
++        expected
++    );
++}
++
++fn constant_source(value: [i16; 2]) -> PreparedSource {
++    let mut bytes = std::fs::read(
++        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
++            .join("../../native/deadpan-source/tests/audio-fixtures/pcm-stereo-48000.wav"),
++    )
++    .unwrap();
++    let mut at = 12;
++    while &bytes[at..at + 4] != b"data" {
++        let length = u32::from_le_bytes(bytes[at + 4..at + 8].try_into().unwrap()) as usize;
++        at += 8 + length + length % 2;
++    }
++    let length = u32::from_le_bytes(bytes[at + 4..at + 8].try_into().unwrap()) as usize;
++    for frame in bytes[at + 8..at + 8 + length].chunks_exact_mut(4) {
++        frame[..2].copy_from_slice(&value[0].to_le_bytes());
++        frame[2..].copy_from_slice(&value[1].to_le_bytes());
++    }
++    let cancelled = AtomicBool::new(false);
++    let session = AudioSession::open_verified(
++        &mut Cursor::new(&bytes),
++        SourceContentIdentity::new(Sha256::digest(&bytes).into(), bytes.len() as u64).unwrap(),
++        0,
++        AudioSessionLimits::default(),
++        &cancelled,
++    )
++    .unwrap();
++    let index = session.index().clone();
++    PreparedSource::with_layout(session, &index, layout(), &cancelled).unwrap()
++}
++
++#[test]
++fn cancelling_inputs_keep_the_shared_saturation_zero_limit_before_mute() {
++    struct Opposing {
++        positive: ClockProvider,
++        negative: ClockProvider,
++    }
++    impl AudioSourceProvider for Opposing {
++        fn source(
++            &mut self,
++            project: &ProjectId,
++            revision: &RevisionId,
++            asset: &AssetId,
++            cancelled: &AtomicBool,
++        ) -> Result<&PreparedSource, PreparationError> {
++            let provider = if asset.as_str() == "negative" {
++                &mut self.negative
++            } else {
++                &mut self.positive
++            };
++            provider.source(
++                project,
++                revision,
++                &AssetId::new("media").unwrap(),
++                cancelled,
++            )
++        }
++        fn source_for_context(
++            &mut self,
++            project: &ProjectId,
++            revision: &RevisionId,
++            asset: &AssetId,
++            expected: &AssetRecord,
++            cancelled: &AtomicBool,
++        ) -> Result<&PreparedSource, PreparationError> {
++            let provider = if asset.as_str() == "negative" {
++                &mut self.negative
++            } else {
++                &mut self.positive
++            };
++            provider.source_for_context(
++                project,
++                revision,
++                &AssetId::new("media").unwrap(),
++                expected,
++                cancelled,
++            )
++        }
++    }
++    let gain = ClipGain::new(
++        GainDb::UNITY,
++        false,
++        vec![],
++        vec![GainRange::new(ratio(975, 8008), ratio(977, 8008)).unwrap()],
++    )
++    .unwrap();
++    let mut wire = serde_json::to_value(post_treated(gain)).unwrap();
++    wire["assets"]["negative"] = wire["assets"]["media"].clone();
++    wire["beat_sounds"]["owner"]["effect"]["source"]["asset"] = serde_json::json!("negative");
++    let treated = ProjectDocument::from_json(&wire.to_string()).unwrap();
++    let mut provider = Opposing {
++        positive: ClockProvider::new(&treated),
++        negative: ClockProvider::new(&treated),
++    };
++    provider.positive.fixture.prepared = constant_source([4096, -2048]);
++    provider.negative.fixture.prepared = constant_source([-4096, 2048]);
++    let actual = bus(
++        &mut StageAudio::new(compile(&treated, false)),
++        &mut provider,
++        4936,
++        128,
++    )
++    .samples;
++    let drive = Saturation::new(GainDb::new(12000).unwrap())
++        .unwrap()
++        .drive_factor();
++    for (offset, frame) in actual.iter().enumerate() {
++        let expected = if offset == 64 {
++            [(0.125 * drive) as f32, (-0.0625 * drive) as f32]
++        } else {
++            [0.0; 2]
++        };
++        assert_eq!(*frame, expected, "sample={}", 4936 + offset);
++    }
++}
++
++#[test]
++fn independent_post_shared_automation_preserves_every_eq_order() {
++    use deadpan_core::{AudioTreatmentStage as S, EqualizerRecipe};
++    let source = moved(true);
++    let gain = ramp();
++    let eq = EqualizerRecipe::new(
++        [6000, -3000, 1500].map(|db| GainDb::new(db).unwrap()),
++        None,
++        None,
++    )
++    .unwrap();
++    let kernel = deadpan_audio::equalizer_coefficients(eq, &AtomicBool::new(false)).unwrap();
++    let drive = Saturation::new(GainDb::new(12000).unwrap()).unwrap();
++    let start = START + 2700;
++    let count = 96u32;
++    let begin = start - 2048;
++    let a = original(&source, begin, count + 4096);
++    let b = read(&moved(false), begin, count + 4096);
++    let common = |a: f64, b: f64| {
++        let sum = a + b;
++        if sum == 0.0 {
++            drive.drive_factor()
++        } else {
++            drive.shape(sum) / sum
++        }
++    };
++    let factors = |at: i64| {
++        let sample = i128::from(at);
++        [
++            amplitude(&gain, ratio(sample * 5 - 24026, 8008)),
++            amplitude(&gain, ratio(sample * 5 - 24024, 8008)),
++        ]
++    };
++    for order in [
++        [S::Equalizer, S::ClipGain, S::Saturation],
++        [S::Saturation, S::Equalizer, S::ClipGain],
++        [S::Saturation, S::ClipGain, S::Equalizer],
++        [S::Equalizer, S::Saturation, S::ClipGain],
++    ] {
++        let mut input = [Vec::new(), Vec::new()];
++        for (offset, (a, b)) in a.iter().zip(&b).enumerate() {
++            let factor = factors(begin + offset as i64);
++            let mut values = [a.map(f64::from), b.map(f64::from)];
++            if order[0] == S::Saturation {
++                let [a, b] = &mut values;
++                for (a, b) in a.iter_mut().zip(b) {
++                    let c = common(*a, *b);
++                    *a *= c;
++                    *b *= c;
++                }
++            }
++            if order[2] == S::Equalizer {
++                for voice in 0..2 {
++                    values[voice] = values[voice].map(|v| v * factor[voice]);
++                }
++            }
++            for voice in 0..2 {
++                input[voice].push(values[voice]);
++            }
++        }
++        let expected: Vec<[f32; 2]> = (0..count as usize)
++            .map(|offset| {
++                let factor = factors(start + offset as i64);
++                let mut value: [[f64; 2]; 2] = std::array::from_fn(|voice| {
++                    std::array::from_fn(|ch| {
++                        kernel
++                            .iter()
++                            .enumerate()
++                            .map(|(k, weight)| weight * input[voice][offset + k][ch])
++                            .sum()
++                    })
++                });
++                if order[1] == S::Saturation {
++                    let [a, b] = &mut value;
++                    for (a, b) in a.iter_mut().zip(b) {
++                        let c = common(*a, *b);
++                        *a *= c;
++                        *b *= c;
++                    }
++                }
++                if order[2] != S::Equalizer {
++                    for voice in 0..2 {
++                        value[voice] = value[voice].map(|v| v * factor[voice]);
++                    }
++                }
++                std::array::from_fn(|ch| {
++                    let sum = value[0][ch] + value[1][ch];
++                    (if order[2] == S::Saturation {
++                        drive.shape(sum)
++                    } else {
++                        sum
++                    }) as f32
++                })
++            })
++            .collect();
++        let treatments = AudioTreatments::with_equalizer_stages(
++            order.to_vec(),
++            Some(gain.clone()),
++            Some(drive),
++            None,
++            Some(eq),
++        )
++        .unwrap();
++        let mut wire = serde_json::to_value(&source).unwrap();
++        wire["nodes"]["owner"]["audio_treatments"] = serde_json::to_value(treatments).unwrap();
++        let treated = ProjectDocument::from_json(&wire.to_string()).unwrap();
++        let actual = read(&treated, start, count);
++        let error = actual
++            .iter()
++            .zip(&expected)
++            .flat_map(|(a, b)| (0..2).map(move |ch| (a[ch] - b[ch]).abs()))
++            .fold(0.0_f32, f32::max);
++        assert!(
++            error <= 4.0 * f32::EPSILON,
++            "order={order:?}, error={error}"
++        );
++        assert!(actual.iter().flatten().any(|v| v.abs() > 0.01));
++        for (offset, frames) in [(73, 23), (0, 37), (37, 36)] {
++            assert_eq!(
++                read(&treated, start + offset, frames),
++                actual[offset as usize..offset as usize + frames as usize],
++                "order={order:?}"
++            );
++        }
++    }
+ }
+ 
+ #[test]
+diff --git a/crates/deadpan-cli/tests/preview_export.rs b/crates/deadpan-cli/tests/preview_export.rs
+index 9fcfa863..6f65b3a3 100644
+--- a/crates/deadpan-cli/tests/preview_export.rs
++++ b/crates/deadpan-cli/tests/preview_export.rs
+@@ -355,6 +355,27 @@ fn shared_equalizer_preserves_mixed_preview_and_verified_export() -> Result {
+     Ok(())
+ }
+ 
++#[test]
++fn post_shared_automation_preserves_preview_and_verified_export() -> Result {
++    let (root, _guard) = keep_or(tempfile::tempdir()?);
++    let fixture = recipes::post_shared_automation(&root.join("post-shared-automation"))?;
++    check(&fixture)?;
++    let movie = render(&fixture, &root.join("exports"))?;
++    let (report, passed) = verify(&fixture, &movie, &fixture.revision, &[])?;
++    assert!(passed, "{report}");
++    check_provenance(&fixture, &report)?;
++    if let Some(path) = std::env::var_os("DEADPAN_PREVIEW_EXPORT_RESULTS") {
++        std::fs::write(
++            path,
++            serde_json::to_vec_pretty(&json!({
++                "package":fixture.package,"movie":movie,"report":report,"notes":fixture.notes,
++            }))?,
++        )?;
++    }
++    eprintln!("{}", summary_row(&fixture, &report));
++    Ok(())
++}
++
+ #[test]
+ fn every_recipe_builds_a_valid_package_whose_plan_matches_its_expectations() -> Result {
+     let scratch = tempfile::tempdir()?;
+diff --git a/crates/deadpan-cli/tests/preview_export/recipes.rs b/crates/deadpan-cli/tests/preview_export/recipes.rs
+index a66e2ebf..44d230de 100644
+--- a/crates/deadpan-cli/tests/preview_export/recipes.rs
++++ b/crates/deadpan-cli/tests/preview_export/recipes.rs
+@@ -2438,6 +2438,135 @@ pub fn shared_equalizer(dir: &Path) -> Result<Fixture> {
+     shared_processing(dir, true)
+ }
+ 
++/// A moved Original and attached WAV retain different owner clocks after a
++/// common saturation/EQ prefix. Every authored change uses the real CLI.
++pub fn post_shared_automation(dir: &Path) -> Result<Fixture> {
++    use deadpan_core::{
++        AudioTreatmentStage as S, GainClock, GainCurve, GainEnvelope, GainRange, GainSegment,
++    };
++    use deadpan_plan::{AudioQueryLimits, AudioSourceVoiceRecipe, RenderPlan};
++    let mut project = Project::create(dir, "post-shared-automation")?;
++    project.shorten()?;
++    place_click_sound(&mut project)?;
++    // Shortening retains the full Source behind a neutral crop. The wrapper's
++    // clock is current for both inputs; the Source has the retained clock this
++    // fixture must exercise. Place the sound inside the visible Source range.
++    let owner = project
++        .document()?
++        .nodes()
++        .iter()
++        .find(|(_, node)| matches!(node.kind, NodeKind::Source { .. }))
++        .map(|(id, _)| id.clone())
++        .ok_or("underlying Source absent")?;
++    project.apply(|_, document, _| {
++        let event = &document.sounds()[&SoundId::new("click")?];
++        Ok(Command::SetBeatSound {
++            owner: owner.clone(),
++            id: SoundId::new("owner-click")?,
++            event: deadpan_core::BeatSound {
++                label: "Attached sound".into(),
++                source: event.source.clone(),
++                mapping: SourceAudioMapping::Placement {
++                    start: ExactRatio::integer(BASE_START as i64),
++                    frames: event.mapping.duration_frames(FrameDuration::ZERO)?,
++                },
++                offset: AudioSample(0),
++                gain_millidecibels: 0,
++                start_edge: AudioEdgePolicy::Hard,
++                end_edge: AudioEdgePolicy::Hard,
++                overflow: SoundOverflowPolicy::Reject,
++            },
++        })
++    })?;
++    project.apply(|_, _, _| {
++        Ok(Command::SetAudioTreatments {
++            node: owner.clone(),
++            treatments: AudioTreatments::with_equalizer_stages(
++                vec![S::Saturation, S::Equalizer, S::ClipGain],
++                Some(ClipGain::new(
++                    GainDb::new(-12000)?,
++                    false,
++                    vec![GainEnvelope::new(
++                        GainClock::OwnerOutput,
++                        GainRange::new(
++                            ExactRatio::integer(BASE_START as i64),
++                            ExactRatio::integer(BASE_END as i64),
++                        )?,
++                        GainDb::new(-6000)?,
++                        vec![GainSegment::new(
++                            ExactRatio::integer(BASE_END as i64),
++                            GainDb::new(6000)?,
++                            GainCurve::Linear,
++                        )?],
++                    )?],
++                    vec![],
++                )?),
++                Some(deadpan_core::Saturation::new(GainDb::new(12000)?)?),
++                None,
++                Some(deadpan_core::EqualizerRecipe::new(
++                    [3000, 0, -3000].map(|v| GainDb::new(v).unwrap()),
++                    None,
++                    None,
++                )?),
++            )?,
++        })
++    })?;
++    project.apply(|_, _, revision| {
++        Ok(Command::InsertTime {
++            at: ProjectFrame(0),
++            hold: silent(1, HoldVideo::Background)?,
++            id: node("leading-silence")?,
++            identities: SplitIdentities::default(),
++            timing: AudioTimingId {
++                allocation: revision.clone(),
++                ordinal: 0,
++            },
++        })
++    })?;
++    let document = project.document()?;
++    let plan = RenderPlan::compile(&document)?;
++    let at = AudioSample(3000);
++    let range = at..AudioSample(at.0 + 1);
++    let clocks = plan.audio_gain_owners(range.clone(), AudioQueryLimits::default())?;
++    let original = clocks
++        .spans()
++        .iter()
++        .flat_map(|s| s.owners())
++        .find(|clock| clock.instance().node == owner)
++        .ok_or("Original owner clock absent")?;
++    let event = &document.beat_sounds()[&owner][&SoundId::new("owner-click")?];
++    let sounds = plan.source_voice_occurrences(
++        &owner,
++        AudioSourceVoiceRecipe {
++            source: event.source.clone(),
++            mapping: event.mapping,
++            offset: event.offset,
++        },
++        range,
++        AudioQueryLimits::default(),
++    )?;
++    let sound = sounds
++        .voices()
++        .iter()
++        .flat_map(|v| v.gain_owners())
++        .find(|clock| clock.instance().node == owner)
++        .ok_or("independent owner clock absent")?;
++    let a = original.sampling().local_at(at)?;
++    let b = sound.sampling().local_at(at)?;
++    let recipe = &document.nodes()[&owner].audio_treatments;
++    if a == b || recipe.evaluate(a)? == recipe.evaluate(b)? {
++        return Err(format!(
++            "fixture must exercise different post-shared automation: Original {a:?}, sound {b:?}"
++        )
++        .into());
++    }
++    let mut expectations = vec![(0, Expected::Background)];
++    expectations.extend((0..BASE_FRAMES).map(|frame| (frame + 1, base(frame))));
++    project.finish(vec!["Saturation","Group mixing","EQ / filtering"], expectations,
++        vec![format!("At sample 3000, Original owner clock {a:?}; attached sound clock {b:?}; post-EQ gain differs"),
++        "One inserted NTSC frame, shared saturation then EQ then independent gain; 31 pictures".into()])
++}
++
+ fn shared_processing(dir: &Path, equalizer: bool) -> Result<Fixture> {
+     let mut project = Project::create(
+         dir,
+diff --git a/crates/deadpan-plan/src/audio_context.rs b/crates/deadpan-plan/src/audio_context.rs
+index d979199f..67f67392 100644
+--- a/crates/deadpan-plan/src/audio_context.rs
++++ b/crates/deadpan-plan/src/audio_context.rs
+@@ -247,6 +247,7 @@ impl RenderPlan {
+             audio_context: true,
+             has_audio_treatments: false,
+             has_audio_equalizers: false,
++            has_audio_component_automation: false,
+             has_audio_editorial_edges: false,
+             audio_bindings: Default::default(),
+             sound_clock_layout: Some(std::sync::Arc::new(layout.clone())),
+@@ -447,6 +448,10 @@ impl RenderPlan {
+                 .audio_treatments()
+                 .values()
+                 .any(|recipe| recipe.equalizer().is_some()),
++            has_audio_component_automation: crate::plan::audio_owners::component_automation(
++                context.audio_treatments().values(),
++                false,
++            ),
+             has_audio_editorial_edges: layout
+                 .nodes()
+                 .values()
+diff --git a/crates/deadpan-plan/src/audio_owners.rs b/crates/deadpan-plan/src/audio_owners.rs
+index 07c2c526..43f7700a 100644
+--- a/crates/deadpan-plan/src/audio_owners.rs
++++ b/crates/deadpan-plan/src/audio_owners.rs
+@@ -263,6 +263,12 @@ impl RenderPlan {
+         self.has_audio_equalizers
+     }
+ 
++    /// Conservative plan-wide need for contributions through shared effects.
++    /// Never select floating-point evaluation order from the requested window.
++    pub fn has_audio_component_automation(&self) -> bool {
++        self.has_audio_component_automation
++    }
++
+     /// Gain evaluation may encounter an absent Original contribution beside
+     /// independent sounds. Report known empty/exhausted retained support rather
+     /// than inventing descendant clocks; other clock failures still reject.
+@@ -310,6 +316,24 @@ impl RenderPlan {
+     }
+ }
+ 
++pub(crate) fn component_automation<'a>(
++    recipes: impl Iterator<Item = &'a deadpan_core::AudioTreatments>,
++    escalation: bool,
++) -> bool {
++    let mut varying = escalation;
++    let mut shared = false;
++    for recipe in recipes {
++        shared |= recipe.saturation().is_some()
++            || recipe
++                .equalizer()
++                .is_some_and(|equalizer| !equalizer.is_unity());
++        varying |= recipe.clip_gain().is_some_and(|gain| {
++            !gain.muted() && (!gain.envelopes().is_empty() || !gain.mute_ranges().is_empty())
++        });
++    }
++    shared && varying
++}
++
+ impl<'plan> AudioDomain<'plan> {
+     /// Treatment evaluation on a captured context, retaining explicit inactive
+     /// spans for exhausted bindings instead of fabricating descendant clocks.
+diff --git a/crates/deadpan-plan/src/plan.rs b/crates/deadpan-plan/src/plan.rs
+index f97dbe12..b77adbe3 100644
+--- a/crates/deadpan-plan/src/plan.rs
++++ b/crates/deadpan-plan/src/plan.rs
+@@ -150,6 +150,7 @@ pub struct RenderPlan {
+     audio_context: bool,
+     has_audio_treatments: bool,
+     has_audio_equalizers: bool,
++    has_audio_component_automation: bool,
+     has_audio_editorial_edges: bool,
+     audio_bindings: deadpan_core::AudioBindingState,
+     // A checked structural snapshot used as the live side of sound-clock
+@@ -882,6 +883,15 @@ impl RenderPlan {
+                 .nodes()
+                 .values()
+                 .any(|node| node.audio_treatments.equalizer().is_some()),
++            has_audio_component_automation: crate::plan::audio_owners::component_automation(
++                document.nodes().values().map(|node| &node.audio_treatments),
++                document.nodes().values().any(|node| {
++                    matches!(
++                        &node.kind, NodeKind::Repeat { escalation: Some(escalation), .. }
++                        if escalation.gain_step != deadpan_core::GainDb::UNITY
++                    )
++                }),
++            ),
+             has_audio_editorial_edges: document
+                 .nodes()
+                 .values()
+diff --git a/crates/deadpan-audio/src/shared_components.rs b/crates/deadpan-audio/src/shared_components.rs
+new file mode 100644
+index 00000000..23172548
+--- /dev/null
++++ b/crates/deadpan-audio/src/shared_components.rs
+@@ -0,0 +1,321 @@
++//! Contributions retained through shared stages when their later clocks differ.
++//! A shared saturator supplies one channel gain, tanh(drive * sum) / sum, to
++//! every input. Its continuous limit at zero is the drive. EQ is linear and
++//! reads each contribution through the complete, jointly driven input prefix.
++
++use super::shared_mix::{MixedBlock, OwnerKey, Permissions};
++use super::*;
++use deadpan_core::AudioTreatmentStage;
++use deadpan_plan::AudioOwnerClock;
++
++#[derive(Clone, Copy, Default)]
++struct Sample {
++    value: [f64; 2],
++    permitted: bool,
++}
++
++struct Route<'plan> {
++    voice: usize,
++    layers: Vec<(AudioOwnerClock<'plan>, usize)>,
++    samples: Range<usize>,
++    pcm: Vec<Sample>,
++    event_gain: Option<i32>,
++}
++
++struct Owner<'plan> {
++    parent: Option<OwnerKey>,
++    depth: usize,
++    members: Vec<(usize, usize)>,
++    clock: AudioOwnerClock<'plan>,
++    until: usize,
++}
++
++pub(super) struct Components<'plan> {
++    start: AudioSample,
++    frames: usize,
++    routes: Vec<Route<'plan>>,
++    owners: BTreeMap<OwnerKey, Owner<'plan>>,
++}
++
++impl<'plan> Components<'plan> {
++    pub(super) fn new(start: AudioSample, frames: u32) -> Self {
++        Self {
++            start,
++            frames: frames as usize,
++            routes: Vec::new(),
++            owners: BTreeMap::new(),
++        }
++    }
++
++    pub(super) fn route(
++        &mut self,
++        voice: usize,
++        layers: Vec<(AudioOwnerClock<'plan>, usize)>,
++        samples: Range<usize>,
++        control: WorkControl<'_>,
++    ) -> Result<usize, StageAudioError> {
++        let id = self.routes.len();
++        let mut parent = None;
++        for (depth, (clock, until)) in layers.iter().enumerate() {
++            control.spend_plan_work(1)?;
++            let key = OwnerKey::new(clock);
++            if let Some(owner) = self.owners.get_mut(&key) {
++                if owner.parent != parent || owner.depth != depth {
++                    return Err(PlanError::InvalidPlan("inconsistent contribution ancestry").into());
++                }
++                let recipe = clock.treatments();
++                let old = owner.clock.treatments();
++                // Only gain clocks may differ. Common stages need one recipe
++                // and stage position, even when no delivery ranges overlap.
++                if owner.until != *until
++                    || old.map(|r| r.order()) != recipe.map(|r| r.order())
++                    || old.and_then(|r| r.saturation()) != recipe.and_then(|r| r.saturation())
++                    || old.and_then(|r| r.equalizer()) != recipe.and_then(|r| r.equalizer())
++                {
++                    return Err(PlanError::InvalidPlan("inconsistent contribution stages").into());
++                }
++                owner.members.push((id, depth));
++            } else {
++                self.owners.insert(
++                    key.clone(),
++                    Owner {
++                        parent,
++                        depth,
++                        members: vec![(id, depth)],
++                        clock: clock.clone(),
++                        until: *until,
++                    },
++                );
++            }
++            parent = Some(key);
++        }
++        self.routes.push(Route {
++            voice,
++            layers,
++            samples,
++            pcm: Vec::new(),
++            event_gain: None,
++        });
++        Ok(id)
++    }
++
++    pub(super) fn resident_frames(&self) -> Result<u64, StageAudioError> {
++        let per_route = self
++            .frames
++            .checked_mul(std::mem::size_of::<Sample>())
++            .and_then(|n| n.checked_add(authored_gain::GainSum::maximum_bytes()))
++            .ok_or(StageAudioError::Limit("contribution mix residency"))?;
++        let bytes = self
++            .routes
++            .len()
++            .checked_mul(per_route)
++            .and_then(|n| n.checked_add(self.frames * std::mem::size_of::<[f64; 2]>()))
++            .ok_or(StageAudioError::Limit("contribution mix residency"))?;
++        Ok((bytes as u64).div_ceil(std::mem::size_of::<[f32; 2]>() as u64))
++    }
++
++    pub(super) fn allocate(&mut self) {
++        for route in &mut self.routes {
++            route.pcm = vec![Sample::default(); self.frames];
++        }
++    }
++
++    pub(super) fn add(
++        &mut self,
++        route: usize,
++        at: usize,
++        value: [f32; 2],
++        event_gain: i32,
++        control: WorkControl<'_>,
++    ) -> Result<(), StageAudioError> {
++        let route = &mut self.routes[route];
++        if !route.samples.contains(&at) {
++            return Err(PlanError::InvalidPlan("contribution outside its route").into());
++        }
++        control.check()?;
++        if route.event_gain.is_some_and(|gain| gain != event_gain) {
++            return Err(PlanError::InvalidPlan("inconsistent contribution event gain").into());
++        }
++        route.event_gain = Some(event_gain);
++        let output = &mut route.pcm[at];
++        for (out, value) in output.value.iter_mut().zip(value) {
++            *out += f64::from(value);
++            if !out.is_finite() {
++                return Err(PreparationError::InvalidSamples.into());
++            }
++        }
++        output.permitted = true;
++        Ok(())
++    }
++
++    pub(super) fn finish(
++        mut self,
++        output_voice: Option<usize>,
++        control: WorkControl<'_>,
++        mut equalize: impl FnMut(
++            &AudioOwnerClock<'plan>,
++            usize,
++            AudioSample,
++            Permissions,
++            Option<usize>,
++        ) -> Result<[f64; 2], StageAudioError>,
++    ) -> Result<MixedBlock, StageAudioError> {
++        let mut owners: Vec<_> = self.owners.values().collect();
++        owners.sort_by_key(|owner| std::cmp::Reverse(owner.depth));
++        let mut gains = vec![authored_gain::GainSum::default(); self.routes.len()];
++        let mut output = vec![[0.0; 2]; self.frames];
++        let mut suppressed = Vec::new();
++        for (at, result) in output.iter_mut().enumerate() {
++            control.check()?;
++            let sample = AudioSample(self.start.0 + at as i64);
++            for (id, route) in self.routes.iter().enumerate() {
++                gains[id] = authored_gain::beat_sound_gain(
++                    &[],
++                    sample,
++                    route.event_gain.unwrap_or(0),
++                    control,
++                    false,
++                )?;
++            }
++            for owner in &owners {
++                let active = |id: usize| self.routes[id].pcm[at].permitted;
++                let mut permissions = Permissions::default();
++                for &(id, _) in &owner.members {
++                    if active(id) {
++                        permissions.insert(self.routes[id].voice)?;
++                    }
++                }
++                if permissions.is_empty() {
++                    continue;
++                }
++                for &(id, layer) in &owner.members {
++                    if active(id) {
++                        gains[id].owner_slice(
++                            &self.routes[id].layers[layer].0,
++                            sample,
++                            0..0,
++                            true,
++                            control,
++                        )?;
++                    }
++                }
++                let recipe = owner.clock.treatments();
++                for stage in 0..owner.until {
++                    let kind = recipe
++                        .and_then(|r| r.order().get(stage))
++                        .copied()
++                        .ok_or(PlanError::InvalidPlan("contribution stage absent"))?;
++                    let eq = kind == AudioTreatmentStage::Equalizer
++                        && recipe
++                            .and_then(|r| r.equalizer())
++                            .is_some_and(|r| !r.is_unity());
++                    if kind == AudioTreatmentStage::Saturation || eq {
++                        let mut sum = [0.0; 2];
++                        let mut count = 0;
++                        for &(id, _) in &owner.members {
++                            if self.routes[id].pcm[at].permitted {
++                                count += 1;
++                                let frame = &mut self.routes[id].pcm[at].value;
++                                *frame = std::mem::take(&mut gains[id]).apply_wide(*frame)?;
++                                for channel in 0..2 {
++                                    sum[channel] += frame[channel];
++                                }
++                            }
++                        }
++                        if sum.iter().any(|value| !value.is_finite()) {
++                            return Err(PreparationError::InvalidSamples.into());
++                        }
++                        let saturation = recipe.and_then(|r| r.saturation());
++                        let factor = if kind == AudioTreatmentStage::Saturation {
++                            let saturation = saturation
++                                .ok_or(PlanError::InvalidPlan("contribution saturation absent"))?;
++                            sum.map(|value| {
++                                if value == 0.0 {
++                                    saturation.drive_factor()
++                                } else {
++                                    saturation.shape(value) / value
++                                }
++                            })
++                        } else {
++                            [1.0; 2]
++                        };
++                        // All selected outputs read one shared input context.
++                        // Original routes are registered first; use its active
++                        // clock when present, then an admitted sound's clock.
++                        // Per-contribution gain clocks remain independent.
++                        let eq_clock = if eq {
++                            owner.members.iter().find_map(|&(id, layer)| {
++                                self.routes[id].pcm[at]
++                                    .permitted
++                                    .then(|| self.routes[id].layers[layer].0.clone())
++                            })
++                        } else {
++                            None
++                        };
++                        for &(id, _) in &owner.members {
++                            let route = &mut self.routes[id];
++                            let frame = &mut route.pcm[at];
++                            if frame.permitted {
++                                frame.value = if eq {
++                                    equalize(
++                                        eq_clock.as_ref().ok_or(PlanError::InvalidPlan(
++                                            "shared EQ has no admitted clock",
++                                        ))?,
++                                        stage,
++                                        sample,
++                                        permissions,
++                                        Some(route.voice),
++                                    )?
++                                } else if count == 1 {
++                                    let saturation = saturation.ok_or(PlanError::InvalidPlan(
++                                        "contribution saturation absent",
++                                    ))?;
++                                    sum.map(|value| saturation.shape(value))
++                                } else {
++                                    std::array::from_fn(|ch| frame.value[ch] * factor[ch])
++                                };
++                                if frame.value.iter().any(|value| !value.is_finite()) {
++                                    return Err(PreparationError::InvalidSamples.into());
++                                }
++                            }
++                        }
++                    } else {
++                        for &(id, layer) in &owner.members {
++                            if self.routes[id].pcm[at].permitted {
++                                gains[id].owner_slice(
++                                    &self.routes[id].layers[layer].0,
++                                    sample,
++                                    stage..stage + 1,
++                                    false,
++                                    control,
++                                )?;
++                            }
++                        }
++                    }
++                }
++            }
++            let mut permitted = false;
++            for (id, route) in self.routes.iter().enumerate() {
++                let gain = std::mem::take(&mut gains[id]);
++                if route.pcm[at].permitted && output_voice.is_none_or(|voice| voice == route.voice)
++                {
++                    permitted = true;
++                    let value = gain.apply_wide(route.pcm[at].value)?;
++                    for channel in 0..2 {
++                        result[channel] += value[channel];
++                    }
++                }
++            }
++            if result.iter().any(|value| !value.is_finite()) {
++                return Err(PreparationError::InvalidSamples.into());
++            }
++            if !permitted {
++                suppressed.push(sample..AudioSample(sample.0 + 1));
++            }
++        }
++        Ok(MixedBlock {
++            samples: output,
++            suppressed: merged_suppression(suppressed),
++        })
++    }
++}

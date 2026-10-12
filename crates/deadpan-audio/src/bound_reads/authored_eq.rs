@@ -664,6 +664,12 @@ fn shared_eq_limit_and_cancellation_release_residency() {
 
 #[test]
 fn shared_eq_allowed_sound_cannot_release_forbidden_original_or_peer_history() {
+    for components in [false, true] {
+        allowed_sound_history(components);
+    }
+}
+
+fn allowed_sound_history(components: bool) {
     let rate = FrameRate::new(48000, 1).unwrap();
     let recipe = eq([6000, -6000, 3000]);
     let saturation = Saturation::new(GainDb::new(9000).unwrap()).unwrap();
@@ -693,18 +699,43 @@ fn shared_eq_allowed_sound_cannot_release_forbidden_original_or_peer_history() {
     let prefix = AudioTreatments::default()
         .with_saturation(Some(saturation))
         .unwrap();
-    wire["nodes"]["root"]["audio_treatments"] = serde_json::to_value(
-        AudioTreatments::with_equalizer_stages(
+    let gain = components.then(|| {
+        ClipGain::new(
+            GainDb::UNITY,
+            false,
             vec![
-                AudioTreatmentStage::Saturation,
-                AudioTreatmentStage::Equalizer,
+                deadpan_core::GainEnvelope::new(
+                    deadpan_core::GainClock::OwnerOutput,
+                    deadpan_core::GainRange::new(ExactRatio::ZERO, ExactRatio::integer(8192))
+                        .unwrap(),
+                    GainDb::UNITY,
+                    vec![
+                        deadpan_core::GainSegment::new(
+                            ExactRatio::integer(8192),
+                            GainDb::UNITY,
+                            deadpan_core::GainCurve::Linear,
+                        )
+                        .unwrap(),
+                    ],
+                )
+                .unwrap(),
             ],
-            None,
-            Some(saturation),
-            None,
-            Some(recipe),
+            vec![],
         )
-        .unwrap(),
+        .unwrap()
+    });
+    let mut order = vec![
+        AudioTreatmentStage::Saturation,
+        AudioTreatmentStage::Equalizer,
+    ];
+    if components {
+        // An authored unity envelope exercises contribution tracking without
+        // changing the independently filtered allowed-only oracle.
+        order.push(AudioTreatmentStage::ClipGain);
+    }
+    wire["nodes"]["root"]["audio_treatments"] = serde_json::to_value(
+        AudioTreatments::with_equalizer_stages(order, gain, Some(saturation), None, Some(recipe))
+            .unwrap(),
     )
     .unwrap();
     let mixed = ProjectDocument::from_json(&wire.to_string()).unwrap();
@@ -722,7 +753,9 @@ fn shared_eq_allowed_sound_cannot_release_forbidden_original_or_peer_history() {
         .map(|frame| frame.map(f64::from))
         .collect();
     let expected = filtered(&raw, recipe);
-    let mut renderer = StageAudio::new(Arc::new(RenderPlan::compile(&mixed).unwrap()));
+    let plan = Arc::new(RenderPlan::compile(&mixed).unwrap());
+    assert_eq!(plan.has_audio_component_automation(), components);
+    let mut renderer = StageAudio::new(plan);
     close(
         &authored(&mut renderer, &mut provider, 4096, 128),
         &expected[4096..4224],

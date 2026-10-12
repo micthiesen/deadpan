@@ -4,21 +4,26 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
-[Independent input automation](../qualification/input-automation-2026-10-12.md)
-now preserves each contribution's gain/mute clock before shared saturation or
-EQ. `group_mix` and `shared_mix` split owner programs at their first shared
-stage; recursive EQ prepares its complete prefix. Saturation still receives
-the combined sum. A one-sample mute disagreement, a changing envelope and both
-gain/EQ/saturation orders pass decoded-PCM and cold-read checks. All 973
-plan/audio tests, final focused tests, strict workspace Clippy and release
-preview/export pass; the three new positive regressions fail on archived
-`2d8c874c` with a separate target directory and recorded binary hash.
+[Automation through shared stages](../qualification/shared-automation-2026-10-12.md)
+now preserves each contribution's gain/mute clock before and after saturation/EQ.
+`shared_components` retains f64 inputs through deepest-to-root owner programs.
+Saturation supplies one common channel factor from their sum, including its
+continuous zero limit; linear EQ reads selected outputs through the complete
+jointly driven prefix. Selection does not change saturation inputs. Immutable
+plan-wide admission keeps arithmetic independent of query windows, and all
+selected outputs share one active EQ context while retaining their own gains.
 
-The primary agent worked alone. Differing automation after a shared stage,
-including ancestor gain after a child's nonlinear stage, still rejects before
-media access and remains agent work. Continue that integration, arbitrary
-sends/incoming tails, broader binding/Repeat/Preserve coverage and persistent
-filtered caching. DP-09/DP-16 and the full product goal remain open.
+All 1,069 audio/plan/playback tests, 15 focused tests and strict workspace checks
+pass. Archived regressions use a separate target directory and actual binary
+hashes. A new real CLI fixture proves distinct post-EQ gains, then checks preview
+and emitted H.264/AAC output. The primary agent implemented, reviewed and
+verified this increment alone; no live GUI or device run was used.
+
+Continue arbitrary sends/incoming tails, broader binding/Repeat/Preserve
+qualification and persistent filtered caching. Partial attached-sound scope
+edits still need owner-local routes: inserting inside that owner refuses
+atomically, while the supported root-event pause case passes cold PCM checks.
+Do not weaken enclosing-processor guards. DP-09/DP-16 and the full goal remain open.
 
 [Native EQ](../qualification/native-eq-2026-10-12.md) now uses `:eq` and an
 inspector action for a captured unsaved editor, or complete typed recipes for
@@ -215,8 +220,9 @@ above; the remaining audio pipeline keeps DP-09/DP-16 partial.
 saturation after fractional-sample timeline moves. Shared memoryless treatments
 may use different clocks when their evaluated programs agree at every sample;
 a provably silent Original supplies no clock constraint. Stateful history stays
-conservative, dependencies remain admitted, and genuinely different automation
-on audible inputs still rejects explicitly. Full group automation remains open.
+conservative and dependencies remain admitted. The shared-automation work above
+now handles differing gain/mute clocks; remaining send/tail and binding cases
+keep full group qualification open.
 
 [Shared nonlinear group mixing](../qualification/group-mix-2026-10-11.md)
 sums Original and owned sound contributions before each owner's saturation,

@@ -2438,6 +2438,135 @@ pub fn shared_equalizer(dir: &Path) -> Result<Fixture> {
     shared_processing(dir, true)
 }
 
+/// A moved Original and attached WAV retain different owner clocks after a
+/// common saturation/EQ prefix. Every authored change uses the real CLI.
+pub fn post_shared_automation(dir: &Path) -> Result<Fixture> {
+    use deadpan_core::{
+        AudioTreatmentStage as S, GainClock, GainCurve, GainEnvelope, GainRange, GainSegment,
+    };
+    use deadpan_plan::{AudioQueryLimits, AudioSourceVoiceRecipe, RenderPlan};
+    let mut project = Project::create(dir, "post-shared-automation")?;
+    project.shorten()?;
+    place_click_sound(&mut project)?;
+    // Shortening retains the full Source behind a neutral crop. The wrapper's
+    // clock is current for both inputs; the Source has the retained clock this
+    // fixture must exercise. Place the sound inside the visible Source range.
+    let owner = project
+        .document()?
+        .nodes()
+        .iter()
+        .find(|(_, node)| matches!(node.kind, NodeKind::Source { .. }))
+        .map(|(id, _)| id.clone())
+        .ok_or("underlying Source absent")?;
+    project.apply(|_, document, _| {
+        let event = &document.sounds()[&SoundId::new("click")?];
+        Ok(Command::SetBeatSound {
+            owner: owner.clone(),
+            id: SoundId::new("owner-click")?,
+            event: deadpan_core::BeatSound {
+                label: "Attached sound".into(),
+                source: event.source.clone(),
+                mapping: SourceAudioMapping::Placement {
+                    start: ExactRatio::integer(BASE_START as i64),
+                    frames: event.mapping.duration_frames(FrameDuration::ZERO)?,
+                },
+                offset: AudioSample(0),
+                gain_millidecibels: 0,
+                start_edge: AudioEdgePolicy::Hard,
+                end_edge: AudioEdgePolicy::Hard,
+                overflow: SoundOverflowPolicy::Reject,
+            },
+        })
+    })?;
+    project.apply(|_, _, _| {
+        Ok(Command::SetAudioTreatments {
+            node: owner.clone(),
+            treatments: AudioTreatments::with_equalizer_stages(
+                vec![S::Saturation, S::Equalizer, S::ClipGain],
+                Some(ClipGain::new(
+                    GainDb::new(-12000)?,
+                    false,
+                    vec![GainEnvelope::new(
+                        GainClock::OwnerOutput,
+                        GainRange::new(
+                            ExactRatio::integer(BASE_START as i64),
+                            ExactRatio::integer(BASE_END as i64),
+                        )?,
+                        GainDb::new(-6000)?,
+                        vec![GainSegment::new(
+                            ExactRatio::integer(BASE_END as i64),
+                            GainDb::new(6000)?,
+                            GainCurve::Linear,
+                        )?],
+                    )?],
+                    vec![],
+                )?),
+                Some(deadpan_core::Saturation::new(GainDb::new(12000)?)?),
+                None,
+                Some(deadpan_core::EqualizerRecipe::new(
+                    [3000, 0, -3000].map(|v| GainDb::new(v).unwrap()),
+                    None,
+                    None,
+                )?),
+            )?,
+        })
+    })?;
+    project.apply(|_, _, revision| {
+        Ok(Command::InsertTime {
+            at: ProjectFrame(0),
+            hold: silent(1, HoldVideo::Background)?,
+            id: node("leading-silence")?,
+            identities: SplitIdentities::default(),
+            timing: AudioTimingId {
+                allocation: revision.clone(),
+                ordinal: 0,
+            },
+        })
+    })?;
+    let document = project.document()?;
+    let plan = RenderPlan::compile(&document)?;
+    let at = AudioSample(3000);
+    let range = at..AudioSample(at.0 + 1);
+    let clocks = plan.audio_gain_owners(range.clone(), AudioQueryLimits::default())?;
+    let original = clocks
+        .spans()
+        .iter()
+        .flat_map(|s| s.owners())
+        .find(|clock| clock.instance().node == owner)
+        .ok_or("Original owner clock absent")?;
+    let event = &document.beat_sounds()[&owner][&SoundId::new("owner-click")?];
+    let sounds = plan.source_voice_occurrences(
+        &owner,
+        AudioSourceVoiceRecipe {
+            source: event.source.clone(),
+            mapping: event.mapping,
+            offset: event.offset,
+        },
+        range,
+        AudioQueryLimits::default(),
+    )?;
+    let sound = sounds
+        .voices()
+        .iter()
+        .flat_map(|v| v.gain_owners())
+        .find(|clock| clock.instance().node == owner)
+        .ok_or("independent owner clock absent")?;
+    let a = original.sampling().local_at(at)?;
+    let b = sound.sampling().local_at(at)?;
+    let recipe = &document.nodes()[&owner].audio_treatments;
+    if a == b || recipe.evaluate(a)? == recipe.evaluate(b)? {
+        return Err(format!(
+            "fixture must exercise different post-shared automation: Original {a:?}, sound {b:?}"
+        )
+        .into());
+    }
+    let mut expectations = vec![(0, Expected::Background)];
+    expectations.extend((0..BASE_FRAMES).map(|frame| (frame + 1, base(frame))));
+    project.finish(vec!["Saturation","Group mixing","EQ / filtering"], expectations,
+        vec![format!("At sample 3000, Original owner clock {a:?}; attached sound clock {b:?}; post-EQ gain differs"),
+        "One inserted NTSC frame, shared saturation then EQ then independent gain; 31 pictures".into()])
+}
+
 fn shared_processing(dir: &Path, equalizer: bool) -> Result<Fixture> {
     let mut project = Project::create(
         dir,

@@ -247,6 +247,7 @@ impl RenderPlan {
             audio_context: true,
             has_audio_treatments: false,
             has_audio_equalizers: false,
+            has_audio_component_automation: false,
             has_audio_editorial_edges: false,
             audio_bindings: Default::default(),
             sound_clock_layout: Some(std::sync::Arc::new(layout.clone())),
@@ -447,6 +448,10 @@ impl RenderPlan {
                 .audio_treatments()
                 .values()
                 .any(|recipe| recipe.equalizer().is_some()),
+            has_audio_component_automation: crate::plan::audio_owners::component_automation(
+                context.audio_treatments().values(),
+                false,
+            ),
             has_audio_editorial_edges: layout
                 .nodes()
                 .values()
