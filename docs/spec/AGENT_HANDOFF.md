@@ -4,6 +4,36 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Owned Preserve inputs](../qualification/owned-preserve-inputs-2026-10-12.md)
+now live in core 55/store 83 as `DerivedRetimeClock::preserve_input`.
+Read [the contract](../OWNED_PRESERVE_INPUTS.md) before extending them.
+`Current` selects current owned descendants; `Intrinsic` selects a nested
+projected stage before its splice allocation. Exact bounded runs retain the
+original complete operand, rate and processing duration. The plan compiler
+resolves saved paths into checked tapes and nested projections; request-local
+cache keys include immutable plan identity, definition and occurrence scope.
+Reconstruction rechecks sources and cannot alias a new plan's changed recipes.
+Core payload-only forward/inverse patches and public SQLite take restore/history
+are covered. Decoded WAV comparisons cover canonical nested processing, current
+Source edits, fractional frame/sample phase, Repeat paths and output-grid silence
+with no input-grid point. All 2,941 core/plan/audio/playback/store tests pass, none
+failed or ignored. Strict all-target Clippy for those crates, CLI and app, plus
+workspace formatting, pass. The primary implemented and self-reviewed alone.
+
+Ordinary root/definition/flattened audio walks and independent occurrence voices
+through projected owners refuse owned output until retained placement exists.
+A projected stage's old child-input handle also refuses reads;
+use its input tape. Native editing, marks, sound metadata, retained bindings and
+Shift remain guarded. This is not the complete splice route. Next persist exact
+physical output grids and chronological resume maps, integrate aggregate output
+placement/policy, then implement atomic insertion and lifecycle transforms.
+Root RoundEven and intrinsic PointCeil require separate retained sample indices;
+an affine old-frame offset is insufficient after a pause. Keep the Retime
+insertion guard until those pieces are implemented and verified together.
+Reuse the existing binding placement/phase and routed-output consumers where
+they fit. `FrozenAudioLayout` still stores integral extents and Retime windows;
+it cannot yet capture the exact effective clocks needed by later insertions.
+
 [Persisted effective clocks](../qualification/derived-clocks-2026-10-12.md) now
 connect exact Retime extents and child windows to core 54, store 82 and production
 plan compilation. `derived_clocks` is a separate owner-keyed table; keep authored
@@ -12,8 +42,8 @@ extents and validates an integral root. Legacy duration maps and ordinary
 reducers refuse clocked documents, including inside cached validation scopes.
 Snapshot restore and reversible patches preserve the complete clocks and use
 actual root deltas. SQLite reopen/takes/undo/redo and decoded raw PCM are covered.
-Current admission refuses marks, sounds, retained lineage/bindings and any
-Preserve or Shift Retime when derived clocks exist. This is a temporary boundary,
+At that increment admission refused marks, sounds, retained lineage/bindings and
+any Preserve or Shift Retime when derived clocks existed. This is a temporary boundary,
 not the final feature. No ordinary insertion constructs these clocks yet.
 The native snapshot builder explicitly refuses a clocked workspace until its
 controls use exact clocks. All 2,927 core/plan/audio/playback/store tests pass,

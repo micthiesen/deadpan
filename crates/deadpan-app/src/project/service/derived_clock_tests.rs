@@ -34,7 +34,7 @@ fn derived_clocks_refuse_native_workspace_without_authored_changes() {
         "hold": BeatNode::hold("Hold", HoldRecipe { duration: frames(2), video: HoldVideo::Background, audio: HoldAudio::Silence, picture_context: None }),
     });
     wire["derived_clocks"] = serde_json::json!({
-        "retime": DerivedRetimeClock { extent: ExactRatio::integer(2), child_start: ExactRatio::new(1, 2).unwrap(), child_end: ExactRatio::new(3, 2).unwrap() }
+        "retime": DerivedRetimeClock { extent: ExactRatio::integer(2), child_start: ExactRatio::new(1, 2).unwrap(), child_end: ExactRatio::new(3, 2).unwrap(), preserve_input: None }
     });
     let document = ProjectDocument::from_json(&wire.to_string()).unwrap();
     let scratch = tempfile::tempdir().unwrap();

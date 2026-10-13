@@ -64,6 +64,7 @@ mod occurrence;
 mod occurrence_edit;
 mod output_color;
 mod picture_context;
+mod preserve_input;
 mod register;
 mod repeat_escalation;
 mod repeat_layout;
@@ -129,6 +130,10 @@ pub use occurrence::*;
 pub use occurrence_edit::{OccurrenceEdit, OccurrenceIdentities};
 pub use output_color::*;
 pub use picture_context::*;
+pub use preserve_input::{
+    MAX_DOCUMENT_PRESERVE_INPUT_RUNS, MAX_PRESERVE_INPUT_RUNS, PreserveInputProjection,
+    PreserveInputProvider, PreserveInputRun,
+};
 pub use register::{RegisterName, RegisterValue};
 pub use repeat_escalation::*;
 pub use repeat_layout::*;

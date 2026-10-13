@@ -175,6 +175,11 @@ impl RenderPlan {
                 .ok_or(PlanError::InvalidAudioSourceOccurrence(
                     "source occurrence owner is absent",
                 ))?;
+        if self.nodes[host].preserve_input.is_some() {
+            return Err(PlanError::InvalidAudioSourceOccurrence(
+                "owned Preserve occurrence requires its retained output placement",
+            ));
+        }
         let (edges, depth) = resolve_edges(self, host, &instance, &mut budget)?;
         let unclipped_before = match context {
             Some(context) => {
@@ -207,6 +212,11 @@ impl RenderPlan {
         let mut current_map = Placement::IDENTITY;
         for (index, edge) in edges.iter().enumerate() {
             budget.spend(1 + edge.repeats)?;
+            if self.nodes[edge.parent].preserve_input.is_some() {
+                return Err(PlanError::InvalidAudioSourceOccurrence(
+                    "owned Preserve occurrence requires its retained output placement",
+                ));
+            }
             if index >= unclipped_before {
                 owner_edges.push((
                     current_map.range(node_support(self, edge.parent))?,

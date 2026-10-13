@@ -160,3 +160,92 @@ fn source_projection_reuse_rechecks_depth_source_and_preparation_limits() {
         Err(StageAudioError::Limit("preflight stages per read"))
     ));
 }
+
+#[test]
+fn owned_preserve_reconstruction_reuses_checked_pcm_and_never_aliases_another_plan() {
+    use deadpan_core::{
+        DerivedRetimeClock, ExactFrameRange, PreserveInputProjection, PreserveInputProvider,
+        PreserveInputRun,
+    };
+    use deadpan_plan::AudioDefinitionSelector;
+    let (document, mut provider) = super::super::controlled_reads::fixture_document_at_rate(
+        FrameRate::new(48_000, 1).unwrap(),
+    );
+    let mut wire = serde_json::to_value(document).unwrap();
+    wire["derived_clocks"] = serde_json::to_value(std::collections::BTreeMap::from([(
+        NodeId::new("stage").unwrap(),
+        DerivedRetimeClock {
+            extent: ExactRatio::integer(800),
+            child_start: ExactRatio::ZERO,
+            child_end: ExactRatio::integer(512),
+            preserve_input: Some(
+                PreserveInputProjection::new(vec![PreserveInputRun {
+                    destination: ExactFrameRange::new(ExactRatio::ZERO, ExactRatio::integer(512))
+                        .unwrap(),
+                    source: ExactFrameRange::new(ExactRatio::ZERO, ExactRatio::integer(512))
+                        .unwrap(),
+                    provider: PreserveInputProvider::Current {
+                        target: InstancePath {
+                            node: NodeId::new("b").unwrap(),
+                            repeats: vec![],
+                        },
+                    },
+                }])
+                .unwrap(),
+            ),
+        },
+    )]))
+    .unwrap();
+    let document = deadpan_core::ProjectDocument::from_json(&wire.to_string()).unwrap();
+    let plan = Arc::new(RenderPlan::compile(&document).unwrap());
+    let selector = || AudioDefinitionSelector::Node {
+        node: NodeId::new("stage").unwrap(),
+    };
+    let mut reader = StageAudio::new(Arc::clone(&plan));
+    let cancelled = AtomicBool::new(false);
+    let budget = PreparationBudget::new(Duration::from_secs(10), &cancelled).unwrap();
+    let control = budget.control();
+    let first_projection = plan.owned_preserve_projection(selector()).unwrap();
+    let first = reader
+        .prepare_projected(&first_projection, &mut provider, control, 1)
+        .unwrap();
+    for _ in 0..80 {
+        let rebuilt = plan.owned_preserve_projection(selector()).unwrap();
+        assert_ne!(rebuilt.identity(), first_projection.identity());
+        assert_eq!(rebuilt.owned_key(), first_projection.owned_key());
+        let block = reader
+            .prepare_projected(&rebuilt, &mut provider, control, 1)
+            .unwrap();
+        assert!(Arc::ptr_eq(&first, &block));
+    }
+    assert_eq!(control.work.borrow().prepared_stages, 1);
+    assert!(
+        provider.calls >= 81,
+        "cached reads recheck current source admission"
+    );
+    wire["nodes"]["b"]["kind"]["source"]["audio"]["span"]["start"]["ticks"] = 256.into();
+    wire["nodes"]["b"]["kind"]["source"]["audio"]["span"]["end"]["ticks"] = 768.into();
+    let changed = deadpan_core::ProjectDocument::from_json(&wire.to_string()).unwrap();
+    let changed = Arc::new(RenderPlan::compile(&changed).unwrap());
+    let next = changed.owned_preserve_projection(selector()).unwrap();
+    assert_eq!(
+        next.stage().descriptor(),
+        first_projection.stage().descriptor(),
+        "recipe descriptor alone is insufficient"
+    );
+    assert!(matches!(
+        reader.prepare_projected(&next, &mut provider, control, 1),
+        Err(StageAudioError::ForeignDomain)
+    ));
+    let second = reader
+        .with_plan_scope(Arc::clone(&changed), |reader| {
+            reader.prepare_projected(&next, &mut provider, control, 1)
+        })
+        .unwrap();
+    assert!(!Arc::ptr_eq(&first, &second));
+    assert_ne!(
+        first.samples.read_window(0..256, &cancelled).unwrap(),
+        second.samples.read_window(0..256, &cancelled).unwrap()
+    );
+    assert_eq!(control.work.borrow().prepared_stages, 2);
+}

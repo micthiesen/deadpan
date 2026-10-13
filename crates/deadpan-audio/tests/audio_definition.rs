@@ -1513,6 +1513,9 @@ mod mix;
 mod mix_limits;
 #[path = "audio_definition/projection.rs"]
 mod projection;
+
+#[path = "audio_definition/owned_preserve.rs"]
+mod owned_preserve;
 #[path = "audio_definition/tape.rs"]
 mod tape;
 #[path = "audio_definition/tape_admission.rs"]

@@ -100,9 +100,10 @@ history patch remain part of the required splice implementation.
 
 The representation keeps authored `FrameDuration` counts integral and introduces
 separate exact effective extents and owned clock maps for splice-produced
-structure. Core 54 now persists a bounded `derived_clocks` table for FollowSpeed
+structure. Core 54 introduced a bounded `derived_clocks` table for FollowSpeed
 Retime allocations and exact child windows; production plans consume it.
-This does not yet provide authored splice construction or Preserve routes.
+Core 55 also persists the owned Preserve input described below. Authored splice
+construction and retained output routes remain open.
 Source, Hold and authored Retime counts, the insertion boundary and
 requested duration, and the final project extent retain their integer contracts.
 Every internal effective clock must compose without rounding. A transparent
@@ -179,9 +180,8 @@ Changing prefixes alone does not admit a fractional project or a Preserve splice
 exact output allocation from integral recipe counts throughout the compiled
 picture/audio walkers. Normalized framing and Camera's temporary preview use
 the sampled effective extent. Definition point grids, owner windows and natural
-voice admission use exact output bounds. Compilers still embed integral document
-durations; effective-clock persistence, marks and owned Preserve routes remain
-required. Ordinary Preserve refuses differing allocation and intrinsic counts
+voice admission use exact output bounds. At that milestone, compilers embedded
+integral document durations. Ordinary Preserve refuses differing allocation and intrinsic counts
 until a route can express that relationship without resizing its input.
 
 [Persisted effective clocks](qualification/derived-clocks-2026-10-12.md) now
@@ -189,13 +189,14 @@ connect that representation to strict document admission, reversible patches,
 SQLite snapshots/history and production picture/audio compilation. Sequence
 and compact Repeat totals use exact child extents; the root must be integral.
 Legacy duration maps and ordinary reducers refuse these documents. Current
-admission also refuses marks, sounds, retained audio bindings/lineage and any
-Preserve or Shift Retime when derived clocks are present. Exact snapshot restore
+admission still refuses marks, sounds and retained audio bindings/lineage.
+Shift is refused, and core 55 admits Preserve only with an owned input projection.
+Exact snapshot restore
 and guarded patches preserve the complete composition. These explicit temporary
 boundaries must be replaced by real lifecycle transforms as splice authoring
 is integrated; they are not completion of the insertion requirement.
 
-### Preserve input projection (design)
+### Preserve input projection
 
 Retaining a timing layout is not enough to retain a processing operand.
 `AudioBindingState` stores old topology/clocks and resume terms, but the current
@@ -205,8 +206,8 @@ history. `FrozenAudioContext` is a detached revision snapshot, not a live body;
 audio lineage is not a pointer to equivalent current PCM. Neither supplies this
 missing projection.
 
-The next candidate is an explicit owned `PreserveSpliceRoute`, with two exact
-maps. An input map projects the full intrinsic input range onto current owned
+The full splice needs an owned route with separate input and output maps.
+An input map projects the full intrinsic input range onto current owned
 descendant paths and local ranges, excluding the splice-born Hold. An output map
 places intrinsic Preserve output ranges around the inserted policy interval.
 The captured timing layout supplies coordinates, not old raw recipes. Every
@@ -227,15 +228,17 @@ as an inner boundary. Apply the inserted silence on every relevant output grid,
 including the outermost output, so processing tails cannot fill the pause. Root
 RoundEven allocation and intrinsic PointCeil sampling remain distinct.
 
-This route is a proposal, not current binding vocabulary. Its targets must stay
-inside the stage's owned subtree and be validated under bounded work; it must
-not introduce cycles or implicit links between ordinary copies. Split, isolation,
+Core 55 now persists the [owned input](OWNED_PRESERVE_INPUTS.md) in each derived
+Preserve clock and compiles it into the checked preparation consumer below.
+Targets stay inside the stage's owned subtree and are validated under bounded
+work; strict descendant ownership prevents cycles. The output route remains
+open. Split, isolation,
 deletion, trimming and movement need atomic route transforms or explicit refusal.
 Cache identity must include the resolved projection and all current recipe
 dependencies. Complete retained input support, envelope ownership, repeated
 occurrences, non-silent inserted policies and later stage edits still require
-explicit rules and actual PCM qualification. The borrowed consumer below
-qualifies a preparation prerequisite for that authoring boundary.
+explicit rules and end-to-end PCM qualification. Intrinsic preparation alone
+does not establish the complete authoring boundary.
 
 The borrowed [audio input tape](AUDIO_INPUT_TAPES.md) now supplies the current-tree
 input view and an actual PCM reader through `StageAudio`. Exact runs share one
@@ -243,13 +246,15 @@ PointCeil grid and preserve full sampling support across allocation seams.
 `AudioStageProjection` now supplies checked full intrinsic operands and an
 independent exact output-policy view. Nested inputs refer to child intrinsic
 output; a separate PointCeil tape places pauses around it. Request-local identity
-memoization preserves canonical history across chunked reads. This does not
-admit an authored route or change ordinary root-plan evaluation.
+memoization preserves canonical history across chunked reads. The owned input
+compiler now supplies these projections from saved current-tree selectors.
+Ordinary root-plan evaluation refuses a projected owner until its output
+placement is integrated.
 [Projected root placement](AUDIO_PROJECTED_ROOT.md) now supplies separate
 absolute RoundEven allocation for one physical projection, preserving its
 exact PCM phase and root-policy clock through crops and repeated resumes.
-Persistent lifecycle, fractional effective clocks, aggregate output scheduling
-and authored compiler integration remain necessary for the nested splice.
+Persistent output clocks/lifecycle, aggregate output scheduling and atomic
+splice construction remain necessary for the nested splice.
 
 ## Separate allocation, sampling and envelopes
 

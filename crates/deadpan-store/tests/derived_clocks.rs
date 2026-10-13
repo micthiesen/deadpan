@@ -64,6 +64,7 @@ fn document() -> ProjectDocument {
                         extent: ExactRatio::new(numerator, 2).unwrap(),
                         child_start: ExactRatio::ZERO,
                         child_end: ExactRatio::integer(2),
+                        preserve_input: None,
                     },
                 )
             })
@@ -146,4 +147,70 @@ fn clocks_survive_sqlite_reopen_takes_and_durable_navigation() {
     assert_eq!(restored.derived_clocks(), initial.derived_clocks());
     assert_eq!(restored.duration().unwrap(), duration(3));
     assert_eq!(store.snapshot_at(&revision("initial")).unwrap(), initial);
+}
+
+#[test]
+fn owned_preserve_input_survives_sqlite_reopen_take_restore_and_undo_redo() {
+    let mut wire = serde_json::to_value(document()).unwrap();
+    for (owner, child) in [("first", "left"), ("last", "right")] {
+        wire["nodes"][owner]["kind"]["pitch"] =
+            serde_json::to_value(PitchPolicy::Preserve).unwrap();
+        let input = PreserveInputProjection::new(vec![PreserveInputRun {
+            destination: ExactFrameRange::new(ExactRatio::ZERO, ExactRatio::integer(2)).unwrap(),
+            source: ExactFrameRange::new(ExactRatio::ZERO, ExactRatio::integer(2)).unwrap(),
+            provider: PreserveInputProvider::Current {
+                target: InstancePath {
+                    node: id(child),
+                    repeats: vec![],
+                },
+            },
+        }])
+        .unwrap();
+        wire["derived_clocks"][owner]["preserve_input"] = serde_json::to_value(input).unwrap();
+    }
+    let initial = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    let scratch = tempfile::tempdir().unwrap();
+    let path = scratch.path().join("owned.deadpan");
+    drop(ProjectStore::create(&path, &initial).unwrap());
+    let mut store = ProjectStore::open(&path, AccessMode::ReadWrite).unwrap();
+    assert_eq!(store.snapshot().unwrap(), initial);
+    let saved = takes::TakeId::new("owned").unwrap();
+    take(
+        &mut store,
+        takes::Action::Create {
+            id: saved.clone(),
+            name: takes::TakeName::new("Owned input").unwrap(),
+        },
+    );
+    let restored = take(
+        &mut store,
+        takes::Action::Restore {
+            id: saved,
+            expected_snapshot: revision("initial"),
+            new_revision: revision("restored"),
+        },
+    );
+    assert_eq!(restored.commit.unwrap().edit.duration_delta, 0);
+    let changed = store.snapshot().unwrap();
+    assert_eq!(changed.derived_clocks(), initial.derived_clocks());
+    assert_eq!(changed.revision_id(), &revision("restored"));
+    drop(store);
+    let mut store = ProjectStore::open(&path, AccessMode::ReadWrite).unwrap();
+    assert_eq!(store.snapshot().unwrap(), changed);
+    store
+        .undo(&revision("restored"), revision("undone"))
+        .unwrap();
+    assert_eq!(
+        store.snapshot().unwrap().derived_clocks(),
+        initial.derived_clocks()
+    );
+    drop(store);
+    let mut store = ProjectStore::open(&path, AccessMode::ReadWrite).unwrap();
+    store.redo(&revision("undone"), revision("redone")).unwrap();
+    assert_eq!(
+        store.snapshot().unwrap().derived_clocks(),
+        changed.derived_clocks()
+    );
+    assert_eq!(store.snapshot_at(&revision("initial")).unwrap(), initial);
+    assert_eq!(store.snapshot_at(&revision("restored")).unwrap(), changed);
 }

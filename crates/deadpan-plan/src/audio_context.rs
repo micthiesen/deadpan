@@ -189,6 +189,7 @@ impl RenderPlan {
             };
             nodes.push(PlanNode {
                 extent: ExactRatio::integer(node.duration.frames()),
+                preserve_input: None,
                 inspection: NodeInspection {
                     id: id.clone(),
                     label: String::new(),
@@ -401,6 +402,7 @@ impl RenderPlan {
             };
             nodes.push(PlanNode {
                 extent: ExactRatio::integer(node.duration.frames()),
+                preserve_input: None,
                 inspection: NodeInspection {
                     id: id.clone(),
                     label: String::new(),

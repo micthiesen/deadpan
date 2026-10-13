@@ -63,6 +63,7 @@ fn extent_document() -> ProjectDocument {
                 extent: ratio(1, 2),
                 child_start: ExactRatio::ZERO,
                 child_end: ratio(2, 1),
+                preserve_input: None,
             },
         ),
         (
@@ -71,6 +72,7 @@ fn extent_document() -> ProjectDocument {
                 extent: ratio(3, 2),
                 child_start: ExactRatio::ZERO,
                 child_end: ratio(2, 1),
+                preserve_input: None,
             },
         ),
     ]))

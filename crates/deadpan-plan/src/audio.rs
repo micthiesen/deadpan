@@ -859,6 +859,11 @@ impl RenderPlan {
                     pitch,
                     purpose,
                 } => {
+                    if node.preserve_input.is_some() {
+                        return Err(PlanError::InvalidPlan(
+                            "owned Preserve output requires its splice placement; use the intrinsic projection for preparation",
+                        ));
+                    }
                     if stop_at_preserve && pitch.processes(*scale == ExactRatio::ONE) {
                         budget.spend(repeats.len() + 1)?;
                         break (

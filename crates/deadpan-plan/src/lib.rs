@@ -24,7 +24,8 @@ pub use audio_envelope::{AudioEnvelope, AudioEnvelopeEndpoint};
 pub use audio_mix::{AudioMixGate, AudioMixQuery, AudioMixVoiceQuery, AudioSignalMix};
 pub use audio_projected_root::AudioProjectedRoot;
 pub use audio_projection::{
-    AudioProjectionIdentity, AudioSourceProjectionKey, AudioStageProjection,
+    AudioOwnedProjectionKey, AudioProjectionIdentity, AudioSourceProjectionKey,
+    AudioStageProjection,
 };
 pub use audio_reference::{
     AudioReferencePlan, ReferenceAudioClock, ReferenceAudioContent, ReferenceAudioQuery,

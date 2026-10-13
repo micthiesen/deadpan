@@ -53,6 +53,8 @@ pub use audio_signal::*;
 mod audio_bound;
 #[path = "audio_context.rs"]
 mod audio_context;
+#[path = "audio_preserve_input.rs"]
+mod audio_preserve_input;
 pub use audio_bound::{AudioBound, AudioBoundDomain};
 #[path = "audio_policy.rs"]
 mod audio_policy;
@@ -382,6 +384,7 @@ struct PlanNode {
     // Output allocation is separate from the integral recipe/processing count.
     // Ordinary compilation embeds the authored duration without rounding.
     extent: ExactRatio,
+    preserve_input: Option<Arc<CompiledPreserveInput>>,
     kind: CompiledKind,
     audio_edges: deadpan_core::AudioEdgePolicies,
     audio_editorial_edges: deadpan_core::AudioEditorialEdges,
@@ -390,6 +393,13 @@ struct PlanNode {
     /// Picture-only cutaways, each with its asset's full video context.
     cutaways: Vec<(deadpan_core::Cutaway, deadpan_core::SourceSpan)>,
     captions: Vec<deadpan_core::Caption>,
+}
+
+#[derive(Debug, Clone)]
+struct CompiledPreserveInput {
+    input: deadpan_core::PreserveInputProjection,
+    selection: std::ops::Range<ExactRatio>,
+    rate: ExactRatio,
 }
 
 #[derive(Debug, Clone)]
@@ -715,6 +725,30 @@ impl RenderPlan {
         let mut nodes = Vec::with_capacity(by_id.len());
         for (id, node) in document.nodes() {
             let duration = index[id].1;
+            let preserve_input = document
+                .derived_clocks()
+                .get(id)
+                .and_then(|clock| clock.preserve_input.as_ref())
+                .map(|input| {
+                    let NodeKind::Retime {
+                        duration, mapping, ..
+                    } = &node.kind
+                    else {
+                        return Err(PlanError::InvalidPlan(
+                            "owned Preserve input is not on a Retime",
+                        ));
+                    };
+                    Ok(Arc::new(CompiledPreserveInput {
+                        input: input.clone(),
+                        selection: ExactRatio::integer(mapping.start().0)
+                            ..ExactRatio::integer(mapping.end().0),
+                        rate: ExactRatio::new(
+                            i128::from(mapping.duration().frames()),
+                            i128::from(duration.frames()),
+                        )?,
+                    }))
+                })
+                .transpose()?;
             let (kind, node_type) = match &node.kind {
                 NodeKind::Source { source } => (
                     CompiledKind::Source {
@@ -846,13 +880,13 @@ impl RenderPlan {
                     pitch,
                     purpose,
                 } => {
-                    let clock = document.derived_clocks().get(id).copied().unwrap_or(
-                        deadpan_core::DerivedRetimeClock {
-                            extent: ExactRatio::integer(duration.frames()),
-                            child_start: ExactRatio::integer(mapping.start().0),
-                            child_end: ExactRatio::integer(mapping.end().0),
-                        },
-                    );
+                    let ordinary = deadpan_core::DerivedRetimeClock {
+                        extent: ExactRatio::integer(duration.frames()),
+                        child_start: ExactRatio::integer(mapping.start().0),
+                        child_end: ExactRatio::integer(mapping.end().0),
+                        preserve_input: None,
+                    };
+                    let clock = document.derived_clocks().get(id).unwrap_or(&ordinary);
                     (
                         CompiledKind::Retime {
                             child: position(child),
@@ -870,6 +904,7 @@ impl RenderPlan {
             };
             nodes.push(PlanNode {
                 extent: extent(id),
+                preserve_input,
                 inspection: NodeInspection {
                     id: id.clone(),
                     label: node.label.clone(),

@@ -1,0 +1,56 @@
+import gzip, hashlib, json, pathlib, re, subprocess
+
+root = pathlib.Path('/Users/michael/Code/deadpan')
+scratch = pathlib.Path(__file__).resolve().parent
+dest = root / 'tools/media-qualification/evidence/2026-10-12-owned-preserve-inputs'
+dest.mkdir(parents=True, exist_ok=True)
+
+def sha(path):
+    with path.open('rb') as source:
+        return hashlib.file_digest(source, 'sha256').hexdigest()
+
+checks, binaries = {}, {}
+for receipt in sorted(scratch.glob('*.json')):
+    name = receipt.stem
+    checks[name] = json.loads(receipt.read_text())
+    data = (scratch / (name + '.log')).read_bytes()
+    assert hashlib.sha256(data).hexdigest() == checks[name]['log_sha256']
+    (dest / (name + '.log.gz')).write_bytes(gzip.compress(data, mtime=0))
+    rows = [tuple(map(int, row)) for row in re.findall(r'test result: (?:ok|FAILED)\. (\d+) passed; (\d+) failed; (\d+) ignored;', data.decode())]
+    if rows:
+        checks[name]['tests'] = dict(zip(['passed', 'failed', 'ignored'], map(sum, zip(*rows))))
+    if name == 'regressions':
+        binaries[name] = {binary: sha(root / binary) for binary in re.findall(r'Running .*?\((target/[^ )]+)\)', data.decode())}
+
+sources = json.loads((scratch / 'verified-sources.txt').read_text())
+for path, identity in sources.items():
+    assert sha(root / path) == identity, path
+metadata = {
+    'base_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=root, text=True).strip(),
+    'sources_sha256': sources,
+    'cargo_lock_sha256': sha(root / 'Cargo.lock'),
+    'fixture_sha256': sha(root / 'native/deadpan-source/tests/audio-fixtures/pcm-stereo-48000.wav'),
+    'checks': checks, 'test_binaries_by_check_sha256': binaries,
+    'binary_hash_scope': 'Final core/plan/audio/playback/store regression executables. Earlier focused binaries are not independently identified.',
+    'rustc': subprocess.check_output(['rustc', '--version'], cwd=root, text=True).strip(),
+    'macos': subprocess.check_output(['sw_vers'], text=True).strip(),
+    'hardware': subprocess.check_output(['sysctl', '-n', 'machdep.cpu.brand_string', 'hw.ncpu', 'hw.memsize'], text=True).strip(),
+    'review': [
+        'Primary implemented and self-reviewed alone; no subagents.',
+        'Reviewed the complete diff and added files, strict wire parsing, bounded partitions and aggregate work, descendant ownership, exact Repeat branches, intrinsic bounds and acyclic nested references.',
+        'Reviewed intrinsic authored rate/duration independence, current-source resolution, nested projected inputs, per-plan cache identity and source readmission.',
+        'Closed legacy input and ordinary/flattened signal fallback paths, including effective unity scales, pending retained output placement.',
+        'Independent voice construction refuses a projected host or ancestor before effective unity can bypass the original nonunity processing recipe.',
+        'Verified payload-only forward/inverse core patches and stale conflict refusal; SQLite creates/reopens owned inputs and retains them through the public named-take restore and durable undo/redo.',
+        'Real WAV PCM covers nested canonical processing, changed current source recipes, fractional frame/sample phase, repeated intrinsic occurrence scope and output-grid silence without an input-grid point.',
+    ],
+    'setup_failures': [
+        'focused attempted a direct store RestoreSnapshot commit, which correctly refused with Takes("use the revision-bound named take entrypoint to restore"). The store test now uses the public named-take path. Payload-only changes are separately verified through core patches.',
+        'regressions-interrupted was stopped with SIGINT during compilation after self-review found an independent-voice unity-scale bypass. No assertions had run. The final regression uses the corrected source.',
+    ],
+    'limits': 'Owned intrinsic Preserve inputs and decoded PCM before effects. No output splice placement or ordinary authoring command yet. Native editing, exact metadata/lifecycle and effects integration remain open; admission guards remain. No live GUI, physical output, encoded-media qualification, performance measurement or full gate run.'
+}
+(dest / 'metadata.json').write_text(json.dumps(metadata, indent=2) + '\n')
+for name in ['run.py', 'collect.py', 'snapshot.py', 'verify.py']:
+    (dest / (name + '.txt')).write_bytes((scratch / name).read_bytes())
+print(json.dumps({'checks': {k: v.get('tests', v['exit_code']) for k, v in checks.items()}, 'binaries': len(binaries.get('regressions', {})), 'evidence': str(dest)}, indent=2))

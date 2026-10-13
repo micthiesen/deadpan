@@ -228,6 +228,7 @@ fn persisted_fractional_clocks_render_decoded_pcm_with_exact_seam_phase() {
                 extent: ratio(1, 2),
                 child_start: ExactRatio::ZERO,
                 child_end: ratio(2, 1),
+                preserve_input: None,
             },
         ),
         (
@@ -236,6 +237,7 @@ fn persisted_fractional_clocks_render_decoded_pcm_with_exact_seam_phase() {
                 extent: ratio(3, 2),
                 child_start: ExactRatio::ZERO,
                 child_end: ratio(2, 1),
+                preserve_input: None,
             },
         ),
     ]))

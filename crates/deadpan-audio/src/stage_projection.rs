@@ -11,6 +11,7 @@ mod tests;
 pub(super) enum ProjectionCacheKey {
     Opaque(AudioProjectionIdentity),
     Source(Arc<RenderPlan>, Arc<deadpan_plan::AudioSourceProjectionKey>),
+    Owned(Arc<RenderPlan>, Arc<deadpan_plan::AudioOwnedProjectionKey>),
 }
 
 impl PartialEq for ProjectionCacheKey {
@@ -18,6 +19,9 @@ impl PartialEq for ProjectionCacheKey {
         match (self, other) {
             (Self::Opaque(a), Self::Opaque(b)) => a == b,
             (Self::Source(a_plan, a), Self::Source(b_plan, b)) => {
+                Arc::ptr_eq(a_plan, b_plan) && a == b
+            }
+            (Self::Owned(a_plan, a), Self::Owned(b_plan, b)) => {
                 Arc::ptr_eq(a_plan, b_plan) && a == b
             }
             _ => false,
@@ -35,12 +39,16 @@ impl StageAudio {
         if !projection.belongs_to(&self.plan) {
             return Err(StageAudioError::ForeignDomain);
         }
-        let (key, comparison) = match projection.source_key() {
-            Some(key) => (
+        let (key, comparison) = match (projection.owned_key(), projection.source_key()) {
+            (Some(key), _) => (
+                ProjectionCacheKey::Owned(Arc::clone(&self.plan), Arc::clone(key)),
+                key.comparison_work(),
+            ),
+            (None, Some(key)) => (
                 ProjectionCacheKey::Source(Arc::clone(&self.plan), Arc::clone(key)),
                 key.comparison_work(),
             ),
-            None => (ProjectionCacheKey::Opaque(projection.identity()), 1),
+            (None, None) => (ProjectionCacheKey::Opaque(projection.identity()), 1),
         };
         let count = {
             let work = control.work.borrow();

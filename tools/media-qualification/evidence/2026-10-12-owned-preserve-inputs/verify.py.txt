@@ -1,0 +1,14 @@
+import pathlib, subprocess, sys
+
+scratch = pathlib.Path(__file__).resolve().parent
+crates = ['deadpan-core', 'deadpan-plan', 'deadpan-audio', 'deadpan-playback', 'deadpan-store']
+selection = [part for name in crates for part in ['-p', name]]
+checks = [
+    ('clippy', ['cargo', 'clippy', '--locked', '--all-targets', *selection, '-p', 'deadpan-cli', '-p', 'deadpan-app', '--', '-D', 'warnings']),
+    ('regressions', ['cargo', 'test', '--locked', *selection]),
+    ('format', ['cargo', 'fmt', '--all', '--', '--check']),
+]
+for name, command in checks:
+    result = subprocess.run(['python3', str(scratch / 'run.py'), name, *command])
+    if result.returncode:
+        sys.exit(result.returncode)

@@ -37,6 +37,8 @@ pub use source_occurrences::AudioSourceOccurrences;
 #[derive(Debug, Clone)]
 enum SignalProvider<'plan> {
     Structural,
+    /// An owned stage's input is a tape, not its old structural child window.
+    RequiresOwnedInput,
     /// Raw padding for an independent occurrence voice, with no Original input.
     Silence,
     Projected(Arc<crate::AudioStageProjection<'plan>>),
@@ -148,6 +150,11 @@ impl<'plan> AudioStage<'plan> {
         bypass_binding: Option<BindingTarget>,
     ) -> Result<Self, PlanError> {
         let compiled = &plan.nodes[node];
+        if compiled.preserve_input.is_some() {
+            return Err(PlanError::InvalidPlan(
+                "owned Preserve input requires its compiled projection",
+            ));
+        }
         let CompiledKind::Retime {
             child,
             start,
@@ -195,6 +202,75 @@ impl<'plan> AudioStage<'plan> {
 
     pub fn descriptor(&self) -> &AudioStageDescriptor {
         &self.descriptor
+    }
+
+    pub(super) fn for_owned_input(
+        plan: &'plan RenderPlan,
+        node: usize,
+        repeats: Vec<RepeatInstance>,
+        definition: AudioDefinitionSelector,
+    ) -> Result<Self, PlanError> {
+        let compiled = &plan.nodes[node];
+        let input = compiled
+            .preserve_input
+            .as_ref()
+            .ok_or(PlanError::InvalidPlan("stage has no owned Preserve input"))?;
+        let CompiledKind::Retime { child, pitch, .. } = &compiled.kind else {
+            return Err(PlanError::InvalidPlan(
+                "owned Preserve stage is not a Retime",
+            ));
+        };
+        Ok(Self {
+            plan,
+            node,
+            child: *child,
+            descriptor: AudioStageDescriptor {
+                project_id: plan.metadata.project_id.clone(),
+                revision_id: plan.metadata.revision_id.clone(),
+                definition: Some(definition),
+                instance: InstancePath {
+                    node: compiled.inspection.id.clone(),
+                    repeats,
+                },
+                child: plan.nodes[*child].inspection.id.clone(),
+                selection: input.selection.clone(),
+                duration: compiled.inspection.duration,
+                rate: input.rate,
+                pitch: *pitch,
+                bypass_binding: false,
+            },
+        })
+    }
+
+    pub(super) fn owned_descendant_signal(
+        &self,
+        target: &InstancePath,
+    ) -> Result<AudioSignal<'plan>, PlanError> {
+        let root = *self
+            .plan
+            .by_id
+            .get(&target.node)
+            .ok_or(PlanError::InvalidPlan("owned input provider is missing"))?;
+        if !self.owns_descendant(root) {
+            return Err(PlanError::InvalidPlan(
+                "owned input provider is outside the stage",
+            ));
+        }
+        let mut repeats = self.descriptor.instance.repeats.clone();
+        repeats.extend_from_slice(&target.repeats);
+        Ok(AudioSignal {
+            plan: self.plan,
+            root,
+            support: ExactRatio::ZERO..self.plan.nodes[root].extent,
+            sampling_support: None,
+            constrain_support: false,
+            repeats,
+            definition: self.descriptor.definition.clone(),
+            placed_transform: None,
+            bypass_binding: None,
+            gap: None,
+            provider: SignalProvider::Structural,
+        })
     }
 
     pub fn belongs_to(&self, plan: &RenderPlan) -> bool {
@@ -249,6 +325,8 @@ impl<'plan> AudioStage<'plan> {
         false
     }
 
+    /// Ordinary structural operand. For an owned input this handle refuses
+    /// queries; read the compiled projection's input tape instead.
     pub fn input_signal(&self) -> AudioSignal<'plan> {
         AudioSignal {
             plan: self.plan,
@@ -261,7 +339,11 @@ impl<'plan> AudioStage<'plan> {
             placed_transform: None,
             bypass_binding: None,
             gap: None,
-            provider: SignalProvider::Structural,
+            provider: if self.plan.nodes[self.node].preserve_input.is_some() {
+                SignalProvider::RequiresOwnedInput
+            } else {
+                SignalProvider::Structural
+            },
         }
     }
 
@@ -777,6 +859,11 @@ impl<'plan> AudioSignal<'plan> {
         stop_at_bindings: bool,
     ) -> Result<AudioSignalQuery<'plan>, PlanError> {
         limits.validate()?;
+        if matches!(self.provider, SignalProvider::RequiresOwnedInput) {
+            return Err(PlanError::InvalidPlan(
+                "owned Preserve input requires its compiled projection",
+            ));
+        }
         let grid = self.transform()?.grid(rule)?;
         let first = grid.boundary(self.support.start)?;
         let count = grid.boundary(self.support.end)?;
@@ -944,6 +1031,11 @@ impl<'plan> AudioSignal<'plan> {
                     AudioSignalContent::Leaf(AudioContent::from_hold(audio, gap.duration)),
                     gap.after.clone(),
                 );
+            }
+            if node.preserve_input.is_some() {
+                return Err(PlanError::InvalidPlan(
+                    "owned Preserve output requires its splice placement; use the intrinsic projection for preparation",
+                ));
             }
             let node_extent = transform.signal_origin..transform.signal_from_local(node.extent)?;
             extent = intersect(extent, node_extent.clone())?;

@@ -15,12 +15,16 @@ mod tests;
 /// An exact allocation and child window of a structurally derived Retime.
 /// The ordinary Retime fields retain its integral recipe, independently of
 /// this effective clock. Neither count may be inferred by rounding the other.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct DerivedRetimeClock {
     pub extent: ExactRatio,
     pub child_start: ExactRatio,
     pub child_end: ExactRatio,
+    /// Complete current-tree input to the unchanged intrinsic Preserve recipe.
+    /// Output splice placement is independent of this processing operand.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub preserve_input: Option<crate::PreserveInputProjection>,
 }
 
 fn unsupported() -> DocumentError {
@@ -82,8 +86,9 @@ impl ProjectDocument {
             || !self.sound_allowances.is_empty()
             || !self.audio_lineage.is_empty()
             || !self.audio_bindings.is_empty()
-            || self.nodes.values().any(|node| {
-                matches!(node.kind, NodeKind::Retime { pitch, .. } if pitch != PitchPolicy::FollowSpeed)
+            || self.nodes.iter().any(|(id, node)| {
+                matches!(node.kind, NodeKind::Retime { pitch, .. } if pitch != PitchPolicy::FollowSpeed &&
+                    (pitch != PitchPolicy::Preserve || !self.derived_clocks.get(id).is_some_and(|clock| clock.preserve_input.is_some())))
             })
         {
             return Err(unsupported());
@@ -139,15 +144,13 @@ impl ProjectDocument {
                     purpose,
                     ..
                 } => {
-                    let clock =
-                        self.derived_clocks
-                            .get(id)
-                            .copied()
-                            .unwrap_or(DerivedRetimeClock {
-                                extent: ExactRatio::integer(duration.frames()),
-                                child_start: ExactRatio::integer(mapping.start().0),
-                                child_end: ExactRatio::integer(mapping.end().0),
-                            });
+                    let ordinary = DerivedRetimeClock {
+                        extent: ExactRatio::integer(duration.frames()),
+                        child_start: ExactRatio::integer(mapping.start().0),
+                        child_end: ExactRatio::integer(mapping.end().0),
+                        preserve_input: None,
+                    };
+                    let clock = self.derived_clocks.get(id).unwrap_or(&ordinary);
                     if !clock.extent.compare_integer(0).is_gt()
                         || clock.child_start.compare_integer(0).is_lt()
                         || !clock.child_end.compare(clock.child_start).is_gt()
@@ -178,6 +181,7 @@ impl ProjectDocument {
             extents.insert(id.clone(), extent);
         }
         integral(extents[&self.root])?;
+        crate::preserve_input::validate(self, &extents)?;
         Ok(extents)
     }
 }

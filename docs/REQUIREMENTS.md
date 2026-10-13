@@ -4,6 +4,20 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 
 ## Resumed implementation, 2026-10-06
 
+[Owned Preserve inputs](qualification/owned-preserve-inputs-2026-10-12.md) now
+persist complete current-tree operands in core 55/store 83 and compile them into
+intrinsic preparation projections. Nested stages consume inner intrinsic output
+before splice allocation; Source recipes remain live. Decoded PCM verifies
+canonical nested history, fractional input phase, Repeat scope, source changes
+and output silence with no input-grid point. Core patches and SQLite named-take
+restore/undo/redo preserve the payload. Ordinary and flattened audio paths refuse
+unplaced output, including effective unity mappings. Metadata/lifecycle,
+retained output clocks, atomic Retime insertion and native editing remain open.
+All 2,941 core/plan/audio/playback/store tests pass, none failed or ignored.
+Strict all-target Clippy across those crates, CLI and app, plus formatting, pass.
+The primary implemented and self-reviewed alone. No requirement or gate is newly
+complete; source/binary identities and logs are retained with the qualification.
+
 [Persisted effective clocks](qualification/derived-clocks-2026-10-12.md) add a
 separate exact Retime extent/window table in core 54 and SQLite schema 82.
 Document validation, reversible patches, snapshot restore, saved history and
@@ -11,8 +25,8 @@ production picture/audio plans retain those clocks without changing intrinsic
 recipe counts. Exact Sequence/Repeat allocation and actual root duration are
 compiled from persisted documents. Decoded raw PCM retains exact fractional
 seam phase across bounded reads. Legacy edits and integral duration maps refuse
-derived-clock documents; marks, sounds, retained bindings/lineage and Preserve/
-Shift remain explicitly outside current derived-clock admission. Owned routes,
+derived-clock documents; at that increment marks, sounds, retained bindings/lineage
+and Preserve/Shift were outside derived-clock admission. Owned routes,
 atomic Retime insertion and temporal/native lifecycle integration remain open.
 The native workspace refuses these documents before exposing integral controls.
 All 2,927 core/plan/audio/playback/store tests pass, none failed or ignored.

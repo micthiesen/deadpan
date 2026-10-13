@@ -21,6 +21,20 @@ pub struct AudioSourceProjectionKey {
     pub(crate) stage: deadpan_core::NodeId,
 }
 
+/// A compiler-resolved owned input in one immutable plan and definition scope.
+/// The plan owns every selector and current recipe dependency in its identity.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct AudioOwnedProjectionKey {
+    definition: Option<crate::AudioDefinitionSelector>,
+    instance: deadpan_core::InstancePath,
+}
+
+impl AudioOwnedProjectionKey {
+    pub fn comparison_work(&self) -> usize {
+        1 + self.instance.repeats.len()
+    }
+}
+
 impl AudioSourceProjectionKey {
     /// Conservative node/path work for one bounded key comparison.
     pub fn comparison_work(&self) -> usize {
@@ -64,6 +78,7 @@ pub struct AudioStageProjection<'plan> {
     duration: FrameDuration,
     identity: AudioProjectionIdentity,
     source_key: Option<Arc<AudioSourceProjectionKey>>,
+    owned_key: Option<Arc<AudioOwnedProjectionKey>>,
 }
 
 enum ProjectionInput<'plan> {
@@ -137,6 +152,7 @@ impl<'plan> AudioStageProjection<'plan> {
             output_policy,
             duration,
             None,
+            None,
         )
     }
 
@@ -151,6 +167,7 @@ impl<'plan> AudioStageProjection<'plan> {
             ProjectionInput::Mix(input_mix),
             output_policy,
             duration,
+            None,
             None,
         )
     }
@@ -170,6 +187,28 @@ impl<'plan> AudioStageProjection<'plan> {
             output_policy,
             duration,
             Some(Arc::new(key)),
+            None,
+        )
+    }
+
+    pub(crate) fn new_owned(
+        stage: AudioStage<'plan>,
+        input_tape: AudioSignalTape<'plan>,
+        output_policy: AudioSignalTape<'plan>,
+    ) -> Result<Arc<Self>, PlanError> {
+        let descriptor = stage.descriptor();
+        let duration = descriptor.duration;
+        let key = AudioOwnedProjectionKey {
+            definition: descriptor.definition.clone(),
+            instance: descriptor.instance.clone(),
+        };
+        Self::build(
+            stage,
+            ProjectionInput::Tape(input_tape),
+            output_policy,
+            duration,
+            None,
+            Some(Arc::new(key)),
         )
     }
 
@@ -179,6 +218,7 @@ impl<'plan> AudioStageProjection<'plan> {
         output_policy: AudioSignalTape<'plan>,
         duration: FrameDuration,
         source_key: Option<Arc<AudioSourceProjectionKey>>,
+        owned_key: Option<Arc<AudioOwnedProjectionKey>>,
     ) -> Result<Arc<Self>, PlanError> {
         if duration == FrameDuration::ZERO {
             return Err(PlanError::InvalidPlan(
@@ -217,6 +257,7 @@ impl<'plan> AudioStageProjection<'plan> {
             duration,
             identity: AudioProjectionIdentity(Arc::new(ProjectionIdentityToken { _private: 0 })),
             source_key,
+            owned_key,
         });
         let mut budget = ProjectionValidationBudget::default();
         projection.validate_graph(&mut budget, 0)?;
@@ -269,6 +310,12 @@ impl<'plan> AudioStageProjection<'plan> {
     /// Hosts must also retain and compare the owning immutable plan identity.
     pub fn source_key(&self) -> Option<&Arc<AudioSourceProjectionKey>> {
         self.source_key.as_ref()
+    }
+
+    /// Optional exact reuse key minted by the persisted-input compiler. Hosts
+    /// must also retain and compare the owning immutable plan identity.
+    pub fn owned_key(&self) -> Option<&Arc<AudioOwnedProjectionKey>> {
+        self.owned_key.as_ref()
     }
 
     pub fn belongs_to(&self, plan: &RenderPlan) -> bool {
@@ -327,9 +374,9 @@ impl<'plan> AudioStageProjection<'plan> {
     }
 }
 
-const MAX_PROJECTED_STAGES: usize = 64;
+pub(crate) const MAX_PROJECTED_STAGES: usize = 64;
 const MAX_PROJECTION_EDGES: usize = 65_536;
-const MAX_PROJECTION_DEPTH: usize = 64;
+pub(crate) const MAX_PROJECTION_DEPTH: usize = 64;
 
 #[derive(Debug, Default)]
 pub(crate) struct ProjectionValidationBudget {

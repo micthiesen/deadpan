@@ -19,6 +19,7 @@ fn clock(n: i128, d: i128) -> DerivedRetimeClock {
         extent: ratio(n, d),
         child_start: ExactRatio::ZERO,
         child_end: ratio(2, 1),
+        preserve_input: None,
     }
 }
 fn document(derived: bool) -> ProjectDocument {
@@ -237,6 +238,7 @@ fn exact_mapping_checks_unchanged_ancestors_and_nested_clocks() {
             extent: ratio(3, 1),
             child_start: ratio(1, 2),
             child_end: ratio(5, 2),
+            preserve_input: None,
         },
     );
     assert_eq!(doc.duration().unwrap(), frames(3));
