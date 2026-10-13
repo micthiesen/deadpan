@@ -4,6 +4,17 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Exact Repeat prefixes](../qualification/exact-repeat-2026-10-12.md) add
+`ExactRepeatLayout` through the shared production Repeat index. The existing
+integer API/storage keeps its checked i128 arithmetic. The exact API never
+rounds, keeps dormant final gaps separate and returns arithmetic failure
+distinctly from retired IDs. All 2,908 core/plan/audio/playback/store tests,
+strict all-target Clippy for those crates and formatting pass. The primary
+implemented and self-reviewed alone. Persisted effective clocks,
+Sequence/Retime and mark consumers, owned Preserve routes and their compiler
+integration remain open. Keep the Retime insertion guard until those paths are
+implemented and verified together.
+
 [This play pauses](../qualification/scoped-pauses-2026-10-12.md) add the optional
 `InsertOccurrenceTime.within` address and `pause_insertion_within`. Start and end
 belong to the explicitly inspected occurrence; isolation remaps it before the

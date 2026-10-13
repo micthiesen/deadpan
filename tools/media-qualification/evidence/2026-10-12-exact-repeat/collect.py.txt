@@ -1,0 +1,49 @@
+import gzip, hashlib, json, pathlib, re, subprocess
+
+root = pathlib.Path('/Users/michael/Code/deadpan')
+scratch = pathlib.Path(__file__).resolve().parent
+dest = root / 'tools/media-qualification/evidence/2026-10-12-exact-repeat'
+dest.mkdir(parents=True, exist_ok=True)
+
+def sha(path):
+    with path.open('rb') as source:
+        return hashlib.file_digest(source, 'sha256').hexdigest()
+
+checks = {}
+binaries = {}
+for receipt in sorted(scratch.glob('*.json')):
+    name = receipt.stem
+    checks[name] = json.loads(receipt.read_text())
+    log = scratch / (name + '.log')
+    if not log.exists():
+        continue
+    data = log.read_bytes()
+    (dest / (name + '.log.gz')).write_bytes(gzip.compress(data, mtime=0))
+    rows = [tuple(map(int, row)) for row in re.findall(r'test result: (?:ok|FAILED)\. (\d+) passed; (\d+) failed; (\d+) ignored;', data.decode())]
+    if rows:
+        checks[name]['tests'] = dict(zip(['passed', 'failed', 'ignored'], map(sum, zip(*rows))))
+    # Retain identity of the new exact-index suite under each tested graph/profile.
+    for binary in re.findall(r'Running tests/repeat_exact_layout\.rs \(([^)]+)\)', data.decode()):
+        binaries[binary] = sha(root / binary)
+
+paths = ['crates/deadpan-core/src/repeat_layout.rs', 'crates/deadpan-core/src/repeat_layout/api.rs',
+         'crates/deadpan-core/src/repeat_layout/clock.rs', 'crates/deadpan-core/tests/repeat_exact_layout.rs']
+metadata = {
+    'base_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=root, text=True).strip(),
+    'sources_sha256': {path: sha(root / path) for path in paths},
+    'cargo_lock_sha256': sha(root / 'Cargo.lock'),
+    'checks': checks, 'exact_test_binaries_sha256': binaries,
+    'rustc': subprocess.check_output(['rustc', '--version'], cwd=root, text=True).strip(),
+    'macos': subprocess.check_output(['sw_vers'], text=True).strip(),
+    'hardware': subprocess.check_output(['sysctl', '-n', 'machdep.cpu.brand_string', 'hw.ncpu', 'hw.memsize'], text=True).strip(),
+    'review': ['Primary implemented and self-reviewed alone.',
+               'Read the complete engine diff, both concrete arithmetic implementations, public facades and independent expanded oracle.',
+               'Integer prefixes remain i128 intermediates checked against i64; no exact-duration map is allocated for ordinary documents.',
+               'Checked final-gap suppression, stable IDs, sparse lookup budgets, retired branches, negative extents and fallible exact prefixes.',
+               'No document schema, render/audio recipe, authored duration, native control or external service change.'],
+    'limits': 'Numerical Repeat prerequisite only. Effective document clocks and Preserve splice route are still open; no new GUI, physical audio or performance qualification.'
+}
+(dest / 'metadata.json').write_text(json.dumps(metadata, indent=2) + '\n')
+for name in ['run.py', 'collect.py']:
+    (dest / (name + '.txt')).write_bytes((scratch / name).read_bytes())
+print(json.dumps({'checks': {k: v.get('tests', v['exit_code']) for k, v in checks.items()}, 'evidence': str(dest)}, indent=2))

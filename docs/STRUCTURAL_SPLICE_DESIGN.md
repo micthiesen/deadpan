@@ -152,6 +152,18 @@ endpoint. The existing integer evaluator delegates to it. No document fields,
 clock adapters, duration maps or command admission change in this increment;
 the structural and audio work above remains open.
 
+The [exact Repeat index](qualification/exact-repeat-2026-10-12.md) supplies
+compact rational prefixes, play/gap boundary lookup and stable-identity lookup
+for those effective clocks. It shares the existing Repeat compiler and lookup
+algorithm, with separate closed integer
+and exact arithmetic implementations. Ordinary documents keep the integer
+`RepeatLayout` API and storage. Exact lookup reports arithmetic exhaustion
+explicitly, including when a reduced total fits but an interior prefix does
+not. A dormant final gap is validated and retained without entering that
+play's output arithmetic. This completes the numerical Repeat-index prerequisite;
+persisted effective extents, Sequence/Retime clock consumers, marks and Preserve
+routes still need integration before fractional insertion can be admitted.
+
 ### Preserve input projection (design)
 
 Retaining a timing layout is not enough to retain a processing operand.

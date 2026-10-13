@@ -6,8 +6,8 @@ use std::collections::BTreeMap;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    DocumentError, DocumentErrorCode, ExactRatio, FrameDuration, InsertionBias, IterationId,
-    IterationOrder, MAX_DOCUMENT_NODES, NodeId, RevisionId, TimeError,
+    DocumentError, DocumentErrorCode, ExactRatio, InsertionBias, IterationId, IterationOrder,
+    MAX_DOCUMENT_NODES, NodeId, RevisionId, TimeError,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -70,96 +70,74 @@ impl PlayOverrides {
     }
 }
 
+mod clock;
+use clock::Clock;
+mod api;
+pub use api::{
+    ExactRepeatLayout, ExactRepeatLocation, ExactRepeatPlay, RepeatLayout, RepeatLocation,
+    RepeatPlay,
+};
+
 #[derive(Debug, Clone)]
-struct Segment {
-    start: i64,
-    end: i64,
+struct Segment<C: Clock> {
+    start: C::Position,
+    end: C::Position,
     first_play: u32,
     count: u32,
     allocation: RevisionId,
     first: u32,
     child: NodeId,
-    child_duration: FrameDuration,
+    child_duration: C::Duration,
     gap_child: Option<NodeId>,
-    gap_duration: FrameDuration,
+    gap_duration: C::Duration,
 }
 
 #[derive(Debug, Clone)]
-pub struct RepeatLayout {
-    segments: Vec<Segment>,
+struct Layout<C: Clock> {
+    segments: Vec<Segment<C>>,
     plays: u32,
-    duration: FrameDuration,
+    duration: C::Duration,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct RepeatPlay {
-    pub index: u32,
-    pub iteration: IterationId,
-    pub child: NodeId,
-    pub start: i64,
-    pub duration: FrameDuration,
-    pub gap_after: FrameDuration,
-    /// An explicit gap branch belongs to this stable play. It remains present
-    /// when this is the final play, although that final gap renders no time.
-    pub gap_child: Option<NodeId>,
+#[derive(Debug, Clone)]
+struct Play<C: Clock> {
+    index: u32,
+    iteration: IterationId,
+    child: NodeId,
+    start: C::Position,
+    duration: C::Duration,
+    gap_after: C::Duration,
+    gap_child: Option<NodeId>,
 }
 
-impl RepeatPlay {
-    /// The project-facing start of an active owned branch in this play.
-    /// A final or zero-length gap still owns its `gap_child`, but has no
-    /// project-resolvable occurrence.
-    pub fn branch_offset(&self, child: &NodeId) -> Option<i64> {
-        if &self.child == child {
-            return Some(self.start);
-        }
-        if self.gap_after != FrameDuration::ZERO && self.gap_child.as_ref() == Some(child) {
-            return self.start.checked_add(self.duration.frames());
-        }
-        None
-    }
+#[derive(Debug, Clone)]
+struct Location<C: Clock> {
+    play: Play<C>,
+    segment_end: C::Position,
+    position: ExactRatio,
+    in_gap: bool,
+    comparisons: usize,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct RepeatLocation {
-    pub play: RepeatPlay,
-    /// Exclusive end of the compact run containing this play. The run keeps
-    /// the same child and explicit gap branch, so bounded callers may skip it
-    /// when neither branch is relevant without expanding its remaining plays.
-    pub segment_end: i64,
-    /// Child-local coordinate, or gap-local coordinate when `in_gap` is true.
-    pub position: ExactRatio,
-    pub in_gap: bool,
-    pub comparisons: usize,
-}
-
-impl RepeatLayout {
-    pub fn compile(
-        iterations: &IterationOrder,
-        child: &NodeId,
-        overrides: Option<&PlayOverrides>,
-        gap: FrameDuration,
-        durations: &BTreeMap<NodeId, FrameDuration>,
-    ) -> Result<Self, DocumentError> {
-        Self::compile_with_gap_overrides(iterations, child, overrides, gap, None, durations)
-    }
-
+impl<C: Clock> Layout<C> {
     /// Compile sparse play and gap branches together. A gap override is keyed
     /// by its preceding stable play, including when that play is currently last.
     /// Only the final gap's output is suppressed; its owned branch is validated.
-    pub fn compile_with_gap_overrides(
+    fn compile(
         iterations: &IterationOrder,
         child: &NodeId,
         overrides: Option<&PlayOverrides>,
-        gap: FrameDuration,
+        gap: C::Duration,
         gap_overrides: Option<&PlayOverrides>,
-        durations: &BTreeMap<NodeId, FrameDuration>,
+        durations: &BTreeMap<NodeId, C::Duration>,
     ) -> Result<Self, DocumentError> {
         iterations.validate()?;
-        let child_duration = duration(durations, child)?;
+        validate_duration::<C>(gap, false)?;
+        let child_duration = duration::<C>(durations, child)?;
         let mut layout = Self {
             segments: Vec::new(),
             plays: iterations.len(),
-            duration: FrameDuration::ZERO,
+            duration: C::ZERO,
         };
         let mut play = 0u32;
         let mut found_plays = 0usize;
@@ -223,7 +201,7 @@ impl RepeatLayout {
                     (
                         effective_child,
                         if play_root.is_some() {
-                            duration(durations, effective_child)?
+                            duration::<C>(durations, effective_child)?
                         } else {
                             child_duration
                         },
@@ -231,7 +209,7 @@ impl RepeatLayout {
                     (
                         gap_root,
                         if let Some(root) = gap_root {
-                            gap_duration(durations, root)?
+                            gap_duration::<C>(durations, root)?
                         } else {
                             gap
                         },
@@ -258,23 +236,17 @@ impl RepeatLayout {
         first: u32,
         count: u32,
         first_play: u32,
-        play: (&NodeId, FrameDuration),
-        gap: (Option<&NodeId>, FrameDuration),
+        play: (&NodeId, C::Duration),
+        gap: (Option<&NodeId>, C::Duration),
     ) -> Result<(), DocumentError> {
         if count == 0 {
             return Ok(());
         }
         let (child, child_duration) = play;
         let (gap_child, gap_duration) = gap;
-        let start = self.duration.frames();
-        let period = i128::from(child_duration.frames()) + i128::from(gap_duration.frames());
-        let trailing_gap = if first_play + count == self.plays {
-            gap_duration.frames()
-        } else {
-            0
-        };
-        let end = i128::from(start) + period * i128::from(count) - i128::from(trailing_gap);
-        let end = i64::try_from(end).map_err(|_| TimeError::Overflow)?;
+        let start = C::start(self.duration);
+        let gaps = count - u32::from(first_play + count == self.plays);
+        let end = C::prefix(start, child_duration, gap_duration, count, gaps)?;
         self.segments.push(Segment {
             start,
             end,
@@ -287,11 +259,11 @@ impl RepeatLayout {
             gap_child: gap_child.cloned(),
             gap_duration,
         });
-        self.duration = FrameDuration::new(end)?;
+        self.duration = C::duration(end)?;
         Ok(())
     }
 
-    pub fn duration(&self) -> FrameDuration {
+    pub fn duration(&self) -> C::Duration {
         self.duration
     }
     pub fn segment_count(&self) -> usize {
@@ -299,27 +271,32 @@ impl RepeatLayout {
     }
 
     /// Identity lookup scans compact segments, never individual plays.
-    pub fn play(&self, identity: &IterationId) -> Option<RepeatPlay> {
-        self.segments.iter().find_map(|segment| {
-            if segment.allocation != identity.allocation
-                || identity.ordinal < segment.first
-                || u64::from(identity.ordinal)
-                    >= u64::from(segment.first) + u64::from(segment.count)
-            {
-                return None;
-            }
-            Some(self.in_segment(segment, identity.ordinal - segment.first))
-        })
+    fn play(&self, identity: &IterationId) -> Result<Option<Play<C>>, DocumentError> {
+        self.segments
+            .iter()
+            .find_map(|segment| {
+                if segment.allocation != identity.allocation
+                    || identity.ordinal < segment.first
+                    || u64::from(identity.ordinal)
+                        >= u64::from(segment.first) + u64::from(segment.count)
+                {
+                    return None;
+                }
+                Some(self.in_segment(segment, identity.ordinal - segment.first))
+            })
+            .transpose()
     }
 
-    fn in_segment(&self, segment: &Segment, offset: u32) -> RepeatPlay {
+    fn in_segment(&self, segment: &Segment<C>, offset: u32) -> Result<Play<C>, DocumentError> {
         let index = segment.first_play + offset;
-        let period =
-            i128::from(segment.child_duration.frames()) + i128::from(segment.gap_duration.frames());
-        // Compilation checked every nonnegative prefix against i64.
-        let start = i64::try_from(i128::from(segment.start) + i128::from(offset) * period)
-            .expect("compiled Repeat prefixes fit i64");
-        RepeatPlay {
+        let start = C::prefix(
+            segment.start,
+            segment.child_duration,
+            segment.gap_duration,
+            offset,
+            offset,
+        )?;
+        Ok(Play {
             index,
             iteration: IterationId {
                 allocation: segment.allocation.clone(),
@@ -329,22 +306,12 @@ impl RepeatLayout {
             start,
             duration: segment.child_duration,
             gap_after: if index + 1 == self.plays {
-                FrameDuration::ZERO
+                C::ZERO
             } else {
                 segment.gap_duration
             },
             gap_child: segment.gap_child.clone(),
-        }
-    }
-
-    /// Boundary bias selects the preceding/following content at an exact edge.
-    /// The outside end with right bias has no content and is rejected.
-    pub fn locate(
-        &self,
-        position: ExactRatio,
-        bias: InsertionBias,
-    ) -> Result<RepeatLocation, DocumentError> {
-        self.locate_bounded(position, bias, usize::MAX)
+        })
     }
 
     /// Stop before exceeding the permitted number of segment comparisons.
@@ -355,9 +322,9 @@ impl RepeatLayout {
         position: ExactRatio,
         bias: InsertionBias,
         maximum_comparisons: usize,
-    ) -> Result<RepeatLocation, DocumentError> {
+    ) -> Result<Location<C>, DocumentError> {
         if position.compare_integer(0).is_lt()
-            || position.compare_integer(self.duration.frames()).is_gt()
+            || C::compare(position, C::start(self.duration)).is_gt()
         {
             return Err(invalid("position is outside Repeat duration"));
         }
@@ -373,7 +340,7 @@ impl RepeatLayout {
             }
             let middle = index + (end - index) / 2;
             comparisons += 1;
-            let comparison = position.compare_integer(self.segments[middle].end);
+            let comparison = C::compare(position, self.segments[middle].end);
             let preceding = match bias {
                 InsertionBias::Left => comparison.is_gt(),
                 InsertionBias::Right => !comparison.is_lt(),
@@ -388,28 +355,33 @@ impl RepeatLayout {
             .segments
             .get(index)
             .ok_or_else(|| invalid("Repeat boundary has no following content"))?;
-        let relative = position.checked_sub(ExactRatio::integer(segment.start))?;
-        let period =
-            i128::from(segment.child_duration.frames()) + i128::from(segment.gap_duration.frames());
-        let quotient = relative.checked_div(ExactRatio::new(period, 1)?)?;
-        let mut ordinal = quotient.floor();
-        if bias == InsertionBias::Left && ordinal > 0 && quotient.denominator() == 1 {
-            ordinal -= 1;
-        }
-        let ordinal = u32::try_from(ordinal).map_err(|_| TimeError::Overflow)?;
+        // A single play needs no period. In particular, a dormant final gap
+        // must not overflow arithmetic for content that never renders it.
+        let ordinal = if segment.count == 1 {
+            0
+        } else {
+            let relative = position.checked_sub(C::coordinate(segment.start))?;
+            let period = C::period(segment.child_duration, segment.gap_duration)?;
+            let quotient = relative.checked_div(period)?;
+            let mut ordinal = quotient.floor();
+            if bias == InsertionBias::Left && ordinal > 0 && quotient.denominator() == 1 {
+                ordinal -= 1;
+            }
+            u32::try_from(ordinal).map_err(|_| TimeError::Overflow)?
+        };
         if ordinal >= segment.count {
             return Err(invalid("Repeat boundary has no play"));
         }
-        let play = self.in_segment(segment, ordinal);
-        let mut position = position.checked_sub(ExactRatio::integer(play.start))?;
-        let in_gap = position.compare_integer(play.duration.frames()).is_gt()
-            || (position.compare_integer(play.duration.frames()).is_eq()
+        let play = self.in_segment(segment, ordinal)?;
+        let mut position = position.checked_sub(C::coordinate(play.start))?;
+        let in_gap = C::compare(position, C::start(play.duration)).is_gt()
+            || (C::compare(position, C::start(play.duration)).is_eq()
                 && bias == InsertionBias::Right
-                && play.gap_after != FrameDuration::ZERO);
+                && C::length(play.gap_after) != ExactRatio::ZERO);
         if in_gap {
-            position = position.checked_sub(ExactRatio::integer(play.duration.frames()))?;
+            position = position.checked_sub(C::length(play.duration))?;
         }
-        Ok(RepeatLocation {
+        Ok(Location {
             play,
             segment_end: segment.end,
             position,
@@ -419,27 +391,39 @@ impl RepeatLayout {
     }
 }
 
-fn duration(
-    durations: &BTreeMap<NodeId, FrameDuration>,
+fn duration<C: Clock>(
+    durations: &BTreeMap<NodeId, C::Duration>,
     node: &NodeId,
-) -> Result<FrameDuration, DocumentError> {
+) -> Result<C::Duration, DocumentError> {
     let duration = *durations
         .get(node)
         .ok_or_else(|| invalid("override child has no evaluated duration"))?;
-    if duration == FrameDuration::ZERO {
-        return Err(TimeError::EmptyRepeatChild.into());
-    }
+    validate_duration::<C>(duration, true)?;
     Ok(duration)
 }
-fn gap_duration(
-    durations: &BTreeMap<NodeId, FrameDuration>,
+fn gap_duration<C: Clock>(
+    durations: &BTreeMap<NodeId, C::Duration>,
     node: &NodeId,
-) -> Result<FrameDuration, DocumentError> {
-    durations
+) -> Result<C::Duration, DocumentError> {
+    let duration = durations
         .get(node)
         .copied()
-        .ok_or_else(|| invalid("gap override root has no evaluated duration"))
+        .ok_or_else(|| invalid("gap override root has no evaluated duration"))?;
+    validate_duration::<C>(duration, false)?;
+    Ok(duration)
 }
+
+fn validate_duration<C: Clock>(duration: C::Duration, positive: bool) -> Result<(), DocumentError> {
+    let length = C::length(duration);
+    if length.compare_integer(0).is_lt() {
+        return Err(TimeError::NegativeDuration.into());
+    }
+    if positive && length == ExactRatio::ZERO {
+        return Err(TimeError::EmptyRepeatChild.into());
+    }
+    Ok(())
+}
+
 fn invalid(message: &str) -> DocumentError {
     DocumentError::new(DocumentErrorCode::InvalidIdentity, message)
 }
@@ -447,6 +431,7 @@ fn invalid(message: &str) -> DocumentError {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::FrameDuration;
 
     #[test]
     fn bounded_lookup_enforces_exact_comparison_allowance_on_sparse_runs() {

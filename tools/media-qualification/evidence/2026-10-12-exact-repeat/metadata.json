@@ -1,0 +1,109 @@
+{
+  "base_commit": "b4a47e72472b0c913efcc767bfb6140995e670a9",
+  "sources_sha256": {
+    "crates/deadpan-core/src/repeat_layout.rs": "30e4350dc9eeb65212624dd576089f06b009c29b782836c04ddcf45176d69510",
+    "crates/deadpan-core/src/repeat_layout/api.rs": "3ed00f4c3c4d0fdf2b97af50ab5b37226d06e825321fa65902a04159ee73e1a1",
+    "crates/deadpan-core/src/repeat_layout/clock.rs": "2bac8b192bd322e74c01ab767e6642371308cc005d9078559ce288e63007eebe",
+    "crates/deadpan-core/tests/repeat_exact_layout.rs": "c10cfb241be5055f2cbe42c00b9bbba45f56488b7acbd9207e9d20dcbdc1e504"
+  },
+  "cargo_lock_sha256": "9d911d67520092b729ae0e5933a39fc57f0ab4933b7d94b2d72d55a125fca93e",
+  "checks": {
+    "clippy": {
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "-p",
+        "deadpan-core",
+        "-p",
+        "deadpan-plan",
+        "-p",
+        "deadpan-audio",
+        "-p",
+        "deadpan-playback",
+        "-p",
+        "deadpan-store",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 240.54232470784336,
+      "log_sha256": "fe321d261deb586555e0e0bd66cde6f5c1dd2f58e268fff14cbf26fed6948dc0"
+    },
+    "exact-layout": {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-core",
+        "--test",
+        "repeat_exact_layout",
+        "--test",
+        "repeat_gap_layout"
+      ],
+      "exit_code": 0,
+      "seconds": 18.300559209194034,
+      "log_sha256": "34a80e182c8b98bc18b22d187f63bf53c10176b97746d925937b1bd1500e63ce",
+      "tests": {
+        "passed": 12,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    "formatting": {
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 5.344238167162985,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "regressions": {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-core",
+        "-p",
+        "deadpan-plan",
+        "-p",
+        "deadpan-audio",
+        "-p",
+        "deadpan-playback",
+        "-p",
+        "deadpan-store"
+      ],
+      "exit_code": 0,
+      "seconds": 1090.4346671667881,
+      "log_sha256": "5e8875c3e459c8f13e00b5565b47d5ed2196dc93f7d08fb83f93d0facac1e034",
+      "tests": {
+        "passed": 2908,
+        "failed": 0,
+        "ignored": 0
+      }
+    }
+  },
+  "exact_test_binaries_sha256": {
+    "target/debug/deps/repeat_exact_layout-fd24be091c7845e5": "15300d8e3de47375f82276c9f0622027f507c526930c8956f624c28e8a2ead25",
+    "target/debug/deps/repeat_exact_layout-a970101d0039d85f": "eaa69666c7844bc43a544f4502ad8f4d1abb7755c24431e9ae376f86885dd6f8"
+  },
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "macos": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84",
+  "hardware": "Apple M5 Max\n18\n137438953472",
+  "review": [
+    "Primary implemented and self-reviewed alone.",
+    "Read the complete engine diff, both concrete arithmetic implementations, public facades and independent expanded oracle.",
+    "Integer prefixes remain i128 intermediates checked against i64; no exact-duration map is allocated for ordinary documents.",
+    "Checked final-gap suppression, stable IDs, sparse lookup budgets, retired branches, negative extents and fallible exact prefixes.",
+    "No document schema, render/audio recipe, authored duration, native control or external service change."
+  ],
+  "limits": "Numerical Repeat prerequisite only. Effective document clocks and Preserve splice route are still open; no new GUI, physical audio or performance qualification."
+}

@@ -4,6 +4,16 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 
 ## Resumed implementation, 2026-10-06
 
+[Exact Repeat prefixes](qualification/exact-repeat-2026-10-12.md) supply compact
+fractional play/gap clocks through the existing Repeat indexing algorithm.
+Ordinary documents retain their integer API and arithmetic. Independent expanded
+oracles cover fractional seams, stable IDs, bounded lookup and arithmetic
+exhaustion; all 2,908 core/plan/audio/playback/store tests pass, none failed or
+ignored. Strict all-target Clippy for those crates and formatting pass.
+This advances the Retime insertion prerequisite. Persisted effective
+clocks, mark transforms and owned Preserve routes remain required before
+insertion can be enabled. No requirement or gate is newly complete.
+
 [Pauses in This play](qualification/scoped-pauses-2026-10-12.md) now carry an
 explicit occurrence address from the scoped inspector through insertion and
 the saved selection receipt. Both edges belong to the selected play; stale
