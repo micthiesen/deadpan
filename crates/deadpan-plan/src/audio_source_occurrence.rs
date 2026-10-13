@@ -465,7 +465,7 @@ fn resolve_edges(
                     ),
                 )?;
                 Placement {
-                    origin: ExactRatio::integer(entry.start),
+                    origin: entry.start,
                     scale: ExactRatio::ONE,
                 }
             }
@@ -475,29 +475,24 @@ fn resolve_edges(
                     .repeats
                     .get(repeats)
                     .filter(|play| play.node == plan.nodes[parent].inspection.id)
-                    .and_then(|play| layout.play(&play.iteration))
+                    .map(|play| layout.play(&play.iteration))
+                    .transpose()?
+                    .flatten()
                     .ok_or(PlanError::InvalidAudioSourceOccurrence(
                         "source occurrence Repeat identity is missing or invalid",
                     ))?;
-                let offset = play.branch_offset(&plan.nodes[child].inspection.id).ok_or(
-                    PlanError::InvalidAudioSourceOccurrence(
+                let offset = play
+                    .branch_offset(&plan.nodes[child].inspection.id)?
+                    .ok_or(PlanError::InvalidAudioSourceOccurrence(
                         "source occurrence is not the selected Repeat branch",
-                    ),
-                )?;
+                    ))?;
                 if play.gap_child.as_ref() == Some(&plan.nodes[child].inspection.id) {
-                    gap = Some(
-                        ExactRatio::integer(offset)
-                            ..ExactRatio::integer(
-                                offset
-                                    .checked_add(play.gap_after.frames())
-                                    .ok_or(PlanError::InvalidPlan("gap boundary overflow"))?,
-                            ),
-                    );
+                    gap = Some(offset..offset.checked_add(play.gap_after)?);
                 }
                 repeats += 1;
                 position = Some(play.index);
                 Placement {
-                    origin: ExactRatio::integer(offset),
+                    origin: offset,
                     scale: ExactRatio::ONE,
                 }
             }

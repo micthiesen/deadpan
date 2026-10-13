@@ -330,7 +330,7 @@ impl RenderPlan {
         let before = budget.lookup;
         let mut current = hold;
         let mut definition = hold;
-        let mut start = 0_i64;
+        let mut start = ExactRatio::ZERO;
         let mut in_definition = true;
         let mut step = target.repeats.len();
         loop {
@@ -368,7 +368,7 @@ impl RenderPlan {
                             // Reserve that bounded worst case before doing the work.
                             budget.repeat_comparisons(layout.segment_count())?;
                             let play =
-                                layout.play(iteration).ok_or(PlanError::InvalidScopedHold(
+                                layout.play(iteration)?.ok_or(PlanError::InvalidScopedHold(
                                     "the selected Repeat play is absent or retired",
                                 ))?;
                             let child = &self.nodes[current].inspection.id;
@@ -389,12 +389,10 @@ impl RenderPlan {
                             break;
                         }
                     }
-                    start =
-                        start
-                            .checked_add(offset.ok_or(PlanError::InvalidPlan(
-                                "Sequence parent omitted its child",
-                            ))?)
-                            .ok_or(deadpan_core::TimeError::Overflow)?;
+                    start = start
+                        .checked_add(offset.ok_or(PlanError::InvalidPlan(
+                            "Sequence parent omitted its child",
+                        ))?)?;
                     definition = parent;
                 }
                 _ => {}
@@ -417,29 +415,30 @@ impl RenderPlan {
         target: &ScopedNodeTarget,
         hold: usize,
         definition: usize,
-        start: i64,
+        start: ExactRatio,
         before: LookupStats,
         budget: &mut PictureBudget,
     ) -> Result<ScopedHoldBoundaries, PlanError> {
         let duration = self.nodes[hold].inspection.duration;
-        let end = start
-            .checked_add(duration.frames())
-            .ok_or(deadpan_core::TimeError::Overflow)?;
+        let end = start.checked_add(ExactRatio::integer(duration.frames()))?;
         let half = ExactRatio::new(1, 2)?;
-        let left = if start > 0 {
+        let left = if start.compare_integer(0).is_gt() {
             Some(self.sample_definition_picture(
                 definition,
-                ExactRatio::integer(start).checked_sub(half)?,
+                start.checked_sub(half)?,
                 true,
                 budget,
             )?)
         } else {
             None
         };
-        let right = if end < self.nodes[definition].inspection.duration.frames() {
+        let right = if end
+            .compare_integer(self.nodes[definition].inspection.duration.frames())
+            .is_lt()
+        {
             Some(self.sample_definition_picture(
                 definition,
-                ExactRatio::integer(end).checked_add(half)?,
+                end.checked_add(half)?,
                 true,
                 budget,
             )?)
@@ -451,7 +450,7 @@ impl RenderPlan {
             revision_id: self.metadata.revision_id.clone(),
             target: target.clone(),
             definition: self.nodes[definition].inspection.id.clone(),
-            range: ExactFrameRange::new(ExactRatio::integer(start), ExactRatio::integer(end))?,
+            range: ExactFrameRange::new(start, end)?,
             duration,
             left,
             right,

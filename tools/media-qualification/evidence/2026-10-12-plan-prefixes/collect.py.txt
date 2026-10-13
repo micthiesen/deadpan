@@ -1,0 +1,57 @@
+import gzip, hashlib, json, pathlib, re, subprocess
+
+root = pathlib.Path('/Users/michael/Code/deadpan')
+scratch = pathlib.Path(__file__).resolve().parent
+dest = root / 'tools/media-qualification/evidence/2026-10-12-plan-prefixes'
+dest.mkdir(parents=True, exist_ok=True)
+
+def sha(path):
+    with path.open('rb') as source:
+        return hashlib.file_digest(source, 'sha256').hexdigest()
+
+checks, binaries = {}, {}
+for receipt in sorted(scratch.glob('*.json')):
+    name = receipt.stem
+    checks[name] = json.loads(receipt.read_text())
+    log = scratch / (name + '.log')
+    if not log.exists():
+        continue
+    data = log.read_bytes()
+    assert hashlib.sha256(data).hexdigest() == checks[name]['log_sha256']
+    (dest / (name + '.log.gz')).write_bytes(gzip.compress(data, mtime=0))
+    rows = [tuple(map(int, row)) for row in re.findall(r'test result: (?:ok|FAILED)\. (\d+) passed; (\d+) failed; (\d+) ignored;', data.decode())]
+    if rows:
+        checks[name]['tests'] = dict(zip(['passed', 'failed', 'ignored'], map(sum, zip(*rows))))
+    if name in ['regressions', 'prefix-tests-final']:
+        binaries[name] = {binary: sha(root / binary)
+                          for binary in re.findall(r'Running .*?\((target/[^ )]+/(?:deadpan_plan|repeat_exact_layout)-[^ )]+)\)', data.decode())}
+
+paths = subprocess.check_output(['git', 'diff', '--name-only', '--', 'crates'], cwd=root, text=True).splitlines()
+paths += subprocess.check_output(['git', 'ls-files', '--others', '--exclude-standard', '--', 'crates'], cwd=root, text=True).splitlines()
+sources = {path: sha(root / path) for path in sorted(paths)}
+regression_sources = json.loads((scratch / 'regressions-source.txt').read_text())
+changed_since_regressions = sorted(path for path in sources.keys() | regression_sources.keys()
+                                   if sources.get(path) != regression_sources.get(path))
+assert changed_since_regressions == ['crates/deadpan-plan/src/prefixes/tests.rs']
+metadata = {
+    'base_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=root, text=True).strip(),
+    'sources_sha256': sources,
+    'regression_sources_sha256': regression_sources,
+    'after_regressions': 'Only the parity test was extended to query definition-local PointCeil spans; production Rust is unchanged. Final focused tests and Clippy cover that extension.',
+    'cargo_lock_sha256': sha(root / 'Cargo.lock'),
+    'checks': checks, 'test_binaries_by_check_sha256': binaries,
+    'binary_hash_scope': 'The broad regression run and final focused run used distinct plan executables because of feature unification; both are retained and hashed. The initial focused prefix-tests binary was replaced by prefix-tests-final and was not separately hashed. repeat_exact_layout is unchanged since regressions.',
+    'rustc': subprocess.check_output(['rustc', '--version'], cwd=root, text=True).strip(),
+    'macos': subprocess.check_output(['sw_vers'], text=True).strip(),
+    'hardware': subprocess.check_output(['sysctl', '-n', 'machdep.cpu.brand_string', 'hw.ncpu', 'hw.memsize'], text=True).strip(),
+    'review': ['Primary implemented and self-reviewed alone.',
+               'Reviewed every modified walker, integer/exact Repeat embedding, exact occurrence query and new tests.',
+               'Integer Repeat runs are retained, not rebuilt as a second duration map.',
+               'Implicit gap recipes keep authored duration independently of allocation; explicit gap branches use exact allocation.',
+               'No saved format, authored duration, Retime intrinsic operand, native control or external service changes.'],
+    'limits': 'Production prefix integration only. Effective document/node clocks and Preserve splice routing remain open. The injected fractional-offset test proves only the coordinate query. No new GUI, physical audio or performance qualification.'
+}
+(dest / 'metadata.json').write_text(json.dumps(metadata, indent=2) + '\n')
+for name in ['run.py', 'collect.py', 'snapshot.py']:
+    (dest / (name + '.txt')).write_bytes((scratch / name).read_bytes())
+print(json.dumps({'checks': {k: v.get('tests', v['exit_code']) for k, v in checks.items()}, 'evidence': str(dest)}, indent=2))

@@ -1,0 +1,171 @@
+{
+  "base_commit": "c99fd890b99138b52f0ae7af87c442b64a39a06f",
+  "sources_sha256": {
+    "crates/deadpan-core/src/repeat_layout/api.rs": "6276fdeeeeb87ef58929e15115493ab95fea68cd79146cd46d2fade09baefbcb",
+    "crates/deadpan-core/tests/repeat_exact_layout.rs": "9faa3c730606a304954c235bc050dae3b8c84d75336f35159f992cf433c3c859",
+    "crates/deadpan-plan/src/audio.rs": "a9c66355e6184e7385888de6b1b5d3144f49a5be6a609f5c26870ff80402fcf6",
+    "crates/deadpan-plan/src/audio_context.rs": "036df2f2e6f7c29637bbfc8aeec738d38f5950217816d41406f514f66a9a4b34",
+    "crates/deadpan-plan/src/audio_owner_occurrences.rs": "0953541c0b596a51c7d13596385e642985f46897474d48fd4a62543caad5115c",
+    "crates/deadpan-plan/src/audio_owners.rs": "b266b461eda38c2ee6fcecc9b5d1530e0d0a2b71494452fc034b6e764de23bc8",
+    "crates/deadpan-plan/src/audio_reference.rs": "2f22d3545abe0d88111418608d6be03d3345efb1353d8683758aacdcef70da3a",
+    "crates/deadpan-plan/src/audio_signal.rs": "65be7786988ae8d8477c2796dae335e956d4133a968ceadb483551f56953806d",
+    "crates/deadpan-plan/src/audio_source_occurrence.rs": "36357ece06617246b3ee15145c5c2745575e7b6e7445748165afd6682fba431d",
+    "crates/deadpan-plan/src/picture_definition.rs": "3841d3b8e678d119842b4718eca75a0f8ddda7c0c49e84f8cb3c555e6aa2a5d8",
+    "crates/deadpan-plan/src/picture_definition_index.rs": "7eeed2b98e41ca32ed7875bb45947a1bcec609e9f10eb9beb0e433066489e7bf",
+    "crates/deadpan-plan/src/plan.rs": "4a202da0c9084c2fc00ba1b4cf0207f1dd1dcef6876319cf32f435eac3599fd5",
+    "crates/deadpan-plan/src/prefixes/tests.rs": "514fb82211cfa0dbe275001bd0045ff8254b5eab422ad4ca38be23e8467b5699"
+  },
+  "regression_sources_sha256": {
+    "crates/deadpan-core/src/repeat_layout/api.rs": "6276fdeeeeb87ef58929e15115493ab95fea68cd79146cd46d2fade09baefbcb",
+    "crates/deadpan-core/tests/repeat_exact_layout.rs": "9faa3c730606a304954c235bc050dae3b8c84d75336f35159f992cf433c3c859",
+    "crates/deadpan-plan/src/audio.rs": "a9c66355e6184e7385888de6b1b5d3144f49a5be6a609f5c26870ff80402fcf6",
+    "crates/deadpan-plan/src/audio_context.rs": "036df2f2e6f7c29637bbfc8aeec738d38f5950217816d41406f514f66a9a4b34",
+    "crates/deadpan-plan/src/audio_owner_occurrences.rs": "0953541c0b596a51c7d13596385e642985f46897474d48fd4a62543caad5115c",
+    "crates/deadpan-plan/src/audio_owners.rs": "b266b461eda38c2ee6fcecc9b5d1530e0d0a2b71494452fc034b6e764de23bc8",
+    "crates/deadpan-plan/src/audio_reference.rs": "2f22d3545abe0d88111418608d6be03d3345efb1353d8683758aacdcef70da3a",
+    "crates/deadpan-plan/src/audio_signal.rs": "65be7786988ae8d8477c2796dae335e956d4133a968ceadb483551f56953806d",
+    "crates/deadpan-plan/src/audio_source_occurrence.rs": "36357ece06617246b3ee15145c5c2745575e7b6e7445748165afd6682fba431d",
+    "crates/deadpan-plan/src/picture_definition.rs": "3841d3b8e678d119842b4718eca75a0f8ddda7c0c49e84f8cb3c555e6aa2a5d8",
+    "crates/deadpan-plan/src/picture_definition_index.rs": "7eeed2b98e41ca32ed7875bb45947a1bcec609e9f10eb9beb0e433066489e7bf",
+    "crates/deadpan-plan/src/plan.rs": "4a202da0c9084c2fc00ba1b4cf0207f1dd1dcef6876319cf32f435eac3599fd5",
+    "crates/deadpan-plan/src/prefixes/tests.rs": "fff7c9443234ce9c369dfa1f51389e7aaaf98bc21c1d2f73883cc399bdc4791d"
+  },
+  "after_regressions": "Only the parity test was extended to query definition-local PointCeil spans; production Rust is unchanged. Final focused tests and Clippy cover that extension.",
+  "cargo_lock_sha256": "9d911d67520092b729ae0e5933a39fc57f0ab4933b7d94b2d72d55a125fca93e",
+  "checks": {
+    "clippy": {
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "-p",
+        "deadpan-core",
+        "-p",
+        "deadpan-plan",
+        "-p",
+        "deadpan-audio",
+        "-p",
+        "deadpan-playback",
+        "-p",
+        "deadpan-store",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 221.5552432499826,
+      "log_sha256": "c201554ae9dc755829f5691c023e4fbf28eb74938f1f1f17adf6c0ee1dab5fdf"
+    },
+    "format": {
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 5.14394549978897,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "plan-check": {
+      "command": [
+        "cargo",
+        "check",
+        "--locked",
+        "-p",
+        "deadpan-plan",
+        "--all-targets"
+      ],
+      "exit_code": 101,
+      "seconds": 16.80419720802456,
+      "log_sha256": "d732dc2655d5cdd88da1979686b50a93073cfcab4f0621c5919c4f8a56be2cdd"
+    },
+    "prefix-tests-final": {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-plan",
+        "--lib",
+        "prefix_tests"
+      ],
+      "exit_code": 0,
+      "seconds": 13.616862291935831,
+      "log_sha256": "3056e5034175d2856563e58d3fe458466c9c11d5fe2c74dc7c082c1d32fbab8a",
+      "tests": {
+        "passed": 2,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    "prefix-tests": {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-plan",
+        "--lib",
+        "prefix_tests"
+      ],
+      "exit_code": 0,
+      "seconds": 21.28009537514299,
+      "log_sha256": "6c1afa462cbffa8e97a2afcbe4a979c63e77d7191a48243033b4f4106a84b8d4",
+      "tests": {
+        "passed": 2,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    "regressions": {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--no-fail-fast",
+        "-p",
+        "deadpan-core",
+        "-p",
+        "deadpan-plan",
+        "-p",
+        "deadpan-audio",
+        "-p",
+        "deadpan-playback",
+        "-p",
+        "deadpan-store"
+      ],
+      "exit_code": 0,
+      "seconds": 1052.8652796666138,
+      "log_sha256": "516ea63edd43c2ba4cb78ba99552c06d5132128df6cd8b8a58b537dfc9db92cf",
+      "tests": {
+        "passed": 2910,
+        "failed": 0,
+        "ignored": 0
+      }
+    }
+  },
+  "test_binaries_by_check_sha256": {
+    "prefix-tests-final": {
+      "target/debug/deps/deadpan_plan-d3e76791b183dcdc": "eef79cdaf48700b070979279b797e4a8fe1deade3f0c93815954a0d343c2492c"
+    },
+    "regressions": {
+      "target/debug/deps/repeat_exact_layout-a970101d0039d85f": "354243d5b2044079b0c4186d4baa9f4cdb47d41e2ada4cd0fec97055ba46fb5c",
+      "target/debug/deps/deadpan_plan-3493f6f452db8277": "68fbbd4c33b72e89d131395a207e880f48d1aec723dc33bc4d36bedd6916a8aa"
+    }
+  },
+  "binary_hash_scope": "The broad regression run and final focused run used distinct plan executables because of feature unification; both are retained and hashed. The initial focused prefix-tests binary was replaced by prefix-tests-final and was not separately hashed. repeat_exact_layout is unchanged since regressions.",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "macos": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84",
+  "hardware": "Apple M5 Max\n18\n137438953472",
+  "review": [
+    "Primary implemented and self-reviewed alone.",
+    "Reviewed every modified walker, integer/exact Repeat embedding, exact occurrence query and new tests.",
+    "Integer Repeat runs are retained, not rebuilt as a second duration map.",
+    "Implicit gap recipes keep authored duration independently of allocation; explicit gap branches use exact allocation.",
+    "No saved format, authored duration, Retime intrinsic operand, native control or external service changes."
+  ],
+  "limits": "Production prefix integration only. Effective document/node clocks and Preserve splice routing remain open. The injected fractional-offset test proves only the coordinate query. No new GUI, physical audio or performance qualification."
+}

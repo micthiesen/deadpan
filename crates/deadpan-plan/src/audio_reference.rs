@@ -259,15 +259,15 @@ impl<'plan> RetainedRootMap<'plan> {
 #[derive(Debug, Clone)]
 struct SequenceEntry {
     child: NodeId,
-    start: i64,
-    end: i64,
+    start: ExactRatio,
+    end: ExactRatio,
 }
 
 #[derive(Debug, Clone)]
 pub struct AudioReferencePlan {
     layout: FrozenAudioLayout,
     sequences: BTreeMap<NodeId, Vec<SequenceEntry>>,
-    repeats: BTreeMap<NodeId, RepeatLayout>,
+    repeats: BTreeMap<NodeId, deadpan_core::ExactRepeatLayout>,
     frames_per_sample: ExactRatio,
 }
 
@@ -284,14 +284,14 @@ impl AudioReferencePlan {
         for (id, node) in layout.nodes() {
             match &node.kind {
                 FrozenAudioKind::Sequence { children } => {
-                    let mut end = 0i64;
+                    let mut end = ExactRatio::ZERO;
                     let mut entries = Vec::with_capacity(children.len());
                     for child in children {
                         let start = end;
-                        end = end
-                            .checked_add(layout.nodes()[child].duration.frames())
-                            .ok_or(TimeError::Overflow)?;
-                        if end > start {
+                        end = end.checked_add(ExactRatio::integer(
+                            layout.nodes()[child].duration.frames(),
+                        ))?;
+                        if end.compare(start).is_gt() {
                             entries.push(SequenceEntry {
                                 child: child.clone(),
                                 start,
@@ -316,7 +316,8 @@ impl AudioReferencePlan {
                             *gap_duration,
                             layout.gap_overrides().get(id),
                             &durations,
-                        )?,
+                        )?
+                        .into(),
                     );
                 }
                 _ => {}
@@ -667,7 +668,7 @@ impl<'plan> ReferenceAudioClock<'plan> {
                         work.spend(1)?;
                         work.lookup.sequence_comparisons += 1;
                         let middle = left + (right - left) / 2;
-                        let comparison = local.compare_integer(entries[middle].end);
+                        let comparison = local.compare(entries[middle].end);
                         if comparison.is_gt()
                             || (comparison.is_eq() && bias == InsertionBias::Right)
                         {
@@ -679,8 +680,7 @@ impl<'plan> ReferenceAudioClock<'plan> {
                     let entry = entries.get(left).ok_or(PlanError::InvalidPlan(
                         "reference sequence has no allocated child",
                     ))?;
-                    transform =
-                        transform.child(ExactRatio::integer(entry.start), ExactRatio::ONE)?;
+                    transform = transform.child(entry.start, ExactRatio::ONE)?;
                     current = &entry.child;
                 }
                 FrozenAudioKind::Retime { mapping, pitch, .. }
@@ -726,12 +726,8 @@ impl<'plan> ReferenceAudioClock<'plan> {
                     work.spend(location.comparisons)?;
                     work.lookup.iteration_run_comparisons += location.comparisons;
                     if location.in_gap {
-                        let start = location
-                            .play
-                            .start
-                            .checked_add(location.play.duration.frames())
-                            .ok_or(TimeError::Overflow)?;
-                        transform = transform.child(ExactRatio::integer(start), ExactRatio::ONE)?;
+                        let start = location.play.start.checked_add(location.play.duration)?;
+                        transform = transform.child(start, ExactRatio::ONE)?;
                         if let Some(child) = &location.play.gap_child {
                             work.spend(1)?;
                             repeats.push(RepeatInstance {
@@ -749,9 +745,7 @@ impl<'plan> ReferenceAudioClock<'plan> {
                                 .0;
                             continue;
                         }
-                        let gap_extent = transform.origin
-                            ..transform
-                                .at(ExactRatio::integer(location.play.gap_after.frames()))?;
+                        let gap_extent = transform.origin..transform.at(location.play.gap_after)?;
                         extent = intersect(extent, gap_extent.clone())?;
                         if stop_at_preserve {
                             meaningful_extent = Some(match meaningful_extent {
@@ -761,8 +755,7 @@ impl<'plan> ReferenceAudioClock<'plan> {
                         }
                         break (leaf(content(*gap_audio)), Some(location.play.iteration));
                     }
-                    transform = transform
-                        .child(ExactRatio::integer(location.play.start), ExactRatio::ONE)?;
+                    transform = transform.child(location.play.start, ExactRatio::ONE)?;
                     work.spend(1)?;
                     repeats.push(RepeatInstance {
                         node: current.clone(),

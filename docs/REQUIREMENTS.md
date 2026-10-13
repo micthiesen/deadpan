@@ -4,6 +4,18 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 
 ## Resumed implementation, 2026-10-06
 
+[Production plan prefixes](qualification/plan-prefixes-2026-10-12.md) connect
+the exact Repeat index and exact Sequence offsets to picture/audio walkers,
+owner queries, Hold context and retained processing plans. Existing integer
+Repeat storage embeds without reconstruction, and the integer occurrence-range
+API refuses fractional endpoints instead of rounding. All 2,910 core, plan,
+audio, playback and store tests pass, none failed or ignored. Both new plan
+tests pass again after adding direct PointCeil coverage below Preserve;
+production Rust is unchanged since the broad run.
+Final strict all-target Clippy for those crates and formatting pass.
+Node extents, persisted Retime clocks, marks and the owned Preserve splice route
+remain open. No requirement or gate is newly complete.
+
 [Exact Repeat prefixes](qualification/exact-repeat-2026-10-12.md) supply compact
 fractional play/gap clocks through the existing Repeat indexing algorithm.
 Ordinary documents retain their integer API and arithmetic. Independent expanded

@@ -276,17 +276,32 @@ fn integer_and_exact_facades_keep_identical_stable_identities_and_edges() {
         ExactRatio::integer(ordinary.duration().frames())
     );
     assert_eq!(exact.segment_count(), ordinary.segment_count());
+    let embedded = ExactRepeatLayout::from(ordinary.clone());
+    assert_eq!(embedded.duration(), exact.duration());
+    assert_eq!(embedded.segment_count(), exact.segment_count());
+    for index in 0..order.len() {
+        let iteration = order.at(index).unwrap();
+        assert_eq!(embedded.play(&iteration), exact.play(&iteration));
+    }
     for tick in 0..=ordinary.duration().frames() * 2 {
         for bias in [InsertionBias::Left, InsertionBias::Right] {
             let position = ratio(i128::from(tick), 2);
             let a = ordinary.locate(position, bias);
             let b = exact.locate(position, bias);
+            assert_eq!(embedded.locate(position, bias), b);
             if tick == ordinary.duration().frames() * 2 && bias == InsertionBias::Right {
                 assert_eq!(a.unwrap_err(), b.unwrap_err());
                 continue;
             }
             let a = a.unwrap();
             let b = b.unwrap();
+            assert_eq!(
+                embedded
+                    .locate_bounded(position, bias, b.comparisons - 1)
+                    .unwrap_err()
+                    .code,
+                DocumentErrorCode::LimitExceeded
+            );
             assert_eq!(a.play.iteration, b.play.iteration);
             assert_eq!(a.play.index, b.play.index);
             assert_eq!(a.play.child, b.play.child);

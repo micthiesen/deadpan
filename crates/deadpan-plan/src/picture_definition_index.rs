@@ -13,7 +13,7 @@ use crate::PlanError;
 #[derive(Debug, Clone, Copy)]
 pub(super) struct DefinitionAddress {
     pub(super) definition: usize,
-    pub(super) start: i64,
+    pub(super) start: ExactRatio,
     pub(super) scope: Option<usize>,
 }
 
@@ -42,7 +42,7 @@ impl DefinitionIndex {
         parents: &[Option<usize>],
         root: usize,
     ) -> Result<Self, PlanError> {
-        let mut offsets = vec![0_i64; nodes.len()];
+        let mut offsets = vec![ExactRatio::ZERO; nodes.len()];
         let mut branches = vec![None; nodes.len()];
         let mut holds = Vec::new();
         let mut fallbacks = BTreeMap::new();
@@ -117,7 +117,7 @@ impl DefinitionIndex {
             while let Some(current) = pending.pop() {
                 let mut address = DefinitionAddress {
                     definition: current,
-                    start: 0,
+                    start: ExactRatio::ZERO,
                     scope: None,
                 };
                 if let Some(parent) = parents[current] {
@@ -126,10 +126,7 @@ impl DefinitionIndex {
                     address.scope = inherited.scope;
                     if matches!(&nodes[parent].kind, CompiledKind::Sequence { .. }) {
                         address.definition = inherited.definition;
-                        address.start = inherited
-                            .start
-                            .checked_add(offsets[current])
-                            .ok_or(deadpan_core::TimeError::Overflow)?;
+                        address.start = inherited.start.checked_add(offsets[current])?;
                     }
                 } else if current != root {
                     return Err(PlanError::InvalidPlan("definition node is unreachable"));

@@ -941,7 +941,7 @@ fn walk(
                     budget.spend(1)?;
                     budget.lookup.sequence_comparisons += 1;
                     let middle = left + (right - left) / 2;
-                    let comparison = local_probe.compare_integer(entries[middle].end);
+                    let comparison = local_probe.compare(entries[middle].end);
                     if comparison.is_gt() || (comparison.is_eq() && bias == InsertionBias::Right) {
                         left = middle + 1;
                     } else {
@@ -951,7 +951,7 @@ fn walk(
                 let entry = entries
                     .get(left)
                     .ok_or(PlanError::InvalidPlan("owner Sequence has no child"))?;
-                state.child(ExactRatio::integer(entry.start), ExactRatio::ONE)?;
+                state.child(entry.start, ExactRatio::ONE)?;
                 state.node = entry.child;
             }
             CompiledKind::Retime {
@@ -993,7 +993,11 @@ fn walk(
                 }
                 state.node = *child;
             }
-            CompiledKind::Repeat { layout, .. } => {
+            CompiledKind::Repeat {
+                layout,
+                gap_duration,
+                ..
+            } => {
                 let location = layout
                     .locate_bounded(local_probe, bias, budget.remaining)
                     .map_err(|error| {
@@ -1011,12 +1015,8 @@ fn walk(
                 }
                 let repeat = node.inspection.id.clone();
                 if location.in_gap {
-                    let begin = location
-                        .play
-                        .start
-                        .checked_add(location.play.duration.frames())
-                        .ok_or(TimeError::Overflow)?;
-                    state.child(ExactRatio::integer(begin), ExactRatio::ONE)?;
+                    let begin = location.play.start.checked_add(location.play.duration)?;
+                    state.child(begin, ExactRatio::ONE)?;
                     if let Some(child) = location.play.gap_child {
                         state.repeats.push(RepeatInstance {
                             node: repeat,
@@ -1026,11 +1026,11 @@ fn walk(
                     } else {
                         state.gap = Some(DomainGap {
                             after: Some(location.play.iteration),
-                            duration: location.play.gap_after,
+                            duration: *gap_duration,
                         });
                     }
                 } else {
-                    state.child(ExactRatio::integer(location.play.start), ExactRatio::ONE)?;
+                    state.child(location.play.start, ExactRatio::ONE)?;
                     state.repeats.push(RepeatInstance {
                         node: repeat,
                         iteration: location.play.iteration,

@@ -146,7 +146,22 @@ impl From<Location<IntegerClock>> for RepeatLocation {
 /// select neighboring content. Storage depends on runs and sparse overrides,
 /// never on the number of rendered plays.
 #[derive(Debug, Clone)]
-pub struct ExactRepeatLayout(Layout<ExactClock>);
+pub struct ExactRepeatLayout(ExactStorage);
+
+#[derive(Debug, Clone)]
+enum ExactStorage {
+    Integer(RepeatLayout),
+    Fractional(Layout<ExactClock>),
+}
+
+/// Embed an already checked integer index without rebuilding its prefixes or
+/// allocating a second duration map. Consumers receive the same exact interface
+/// while ordinary documents retain compact integer storage and arithmetic.
+impl From<RepeatLayout> for ExactRepeatLayout {
+    fn from(layout: RepeatLayout) -> Self {
+        Self(ExactStorage::Integer(layout))
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExactRepeatPlay {
@@ -201,18 +216,30 @@ impl ExactRepeatLayout {
         gap_overrides: Option<&PlayOverrides>,
         durations: &BTreeMap<NodeId, ExactRatio>,
     ) -> Result<Self, DocumentError> {
-        Layout::compile(iterations, child, overrides, gap, gap_overrides, durations).map(Self)
+        Layout::compile(iterations, child, overrides, gap, gap_overrides, durations)
+            .map(|layout| Self(ExactStorage::Fractional(layout)))
     }
 
     pub fn duration(&self) -> ExactRatio {
-        self.0.duration()
+        match &self.0 {
+            ExactStorage::Integer(layout) => ExactRatio::integer(layout.duration().frames()),
+            ExactStorage::Fractional(layout) => layout.duration(),
+        }
     }
     pub fn segment_count(&self) -> usize {
-        self.0.segment_count()
+        match &self.0 {
+            ExactStorage::Integer(layout) => layout.segment_count(),
+            ExactStorage::Fractional(layout) => layout.segment_count(),
+        }
     }
     /// Lookup distinguishes a retired identity from arithmetic failure.
     pub fn play(&self, identity: &IterationId) -> Result<Option<ExactRepeatPlay>, DocumentError> {
-        self.0.play(identity).map(|play| play.map(Into::into))
+        match &self.0 {
+            ExactStorage::Integer(layout) => Ok(layout.play(identity).map(Into::into)),
+            ExactStorage::Fractional(layout) => {
+                layout.play(identity).map(|play| play.map(Into::into))
+            }
+        }
     }
     pub fn locate(
         &self,
@@ -227,9 +254,14 @@ impl ExactRepeatLayout {
         bias: InsertionBias,
         maximum_comparisons: usize,
     ) -> Result<ExactRepeatLocation, DocumentError> {
-        self.0
-            .locate_bounded(position, bias, maximum_comparisons)
-            .map(Into::into)
+        match &self.0 {
+            ExactStorage::Integer(layout) => layout
+                .locate_bounded(position, bias, maximum_comparisons)
+                .map(Into::into),
+            ExactStorage::Fractional(layout) => layout
+                .locate_bounded(position, bias, maximum_comparisons)
+                .map(Into::into),
+        }
     }
 }
 
@@ -251,6 +283,32 @@ impl From<Location<ExactClock>> for ExactRepeatLocation {
         Self {
             play: location.play.into(),
             segment_end: location.segment_end,
+            position: location.position,
+            in_gap: location.in_gap,
+            comparisons: location.comparisons,
+        }
+    }
+}
+
+impl From<RepeatPlay> for ExactRepeatPlay {
+    fn from(play: RepeatPlay) -> Self {
+        Self {
+            index: play.index,
+            iteration: play.iteration,
+            child: play.child,
+            start: ExactRatio::integer(play.start),
+            duration: ExactRatio::integer(play.duration.frames()),
+            gap_after: ExactRatio::integer(play.gap_after.frames()),
+            gap_child: play.gap_child,
+        }
+    }
+}
+
+impl From<RepeatLocation> for ExactRepeatLocation {
+    fn from(location: RepeatLocation) -> Self {
+        Self {
+            play: location.play.into(),
+            segment_end: ExactRatio::integer(location.segment_end),
             position: location.position,
             in_gap: location.in_gap,
             comparisons: location.comparisons,

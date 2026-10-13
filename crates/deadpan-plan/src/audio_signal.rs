@@ -1050,7 +1050,7 @@ impl<'plan> AudioSignal<'plan> {
                         budget.spend(1)?;
                         budget.lookup.sequence_comparisons += 1;
                         let middle = left + (right - left) / 2;
-                        let comparison = local.compare_integer(entries[middle].end);
+                        let comparison = local.compare(entries[middle].end);
                         let preceding = comparison.is_gt()
                             || (comparison.is_eq() && bias == InsertionBias::Right);
                         if preceding {
@@ -1062,8 +1062,7 @@ impl<'plan> AudioSignal<'plan> {
                     let entry = entries
                         .get(left)
                         .ok_or(PlanError::InvalidPlan("audio signal sequence has no child"))?;
-                    transform =
-                        transform.child(ExactRatio::integer(entry.start), ExactRatio::ONE)?;
+                    transform = transform.child(entry.start, ExactRatio::ONE)?;
                     current = entry.child;
                 }
                 CompiledKind::Retime {
@@ -1100,7 +1099,11 @@ impl<'plan> AudioSignal<'plan> {
                     )?;
                     current = *child;
                 }
-                CompiledKind::Repeat { layout, .. } => {
+                CompiledKind::Repeat {
+                    layout,
+                    gap_duration,
+                    ..
+                } => {
                     let location = layout
                         .locate_bounded(local, bias, budget.remaining)
                         .map_err(|error| {
@@ -1113,12 +1116,8 @@ impl<'plan> AudioSignal<'plan> {
                     budget.spend(location.comparisons)?;
                     budget.lookup.iteration_run_comparisons += location.comparisons;
                     if location.in_gap {
-                        let start = location
-                            .play
-                            .start
-                            .checked_add(location.play.duration.frames())
-                            .ok_or(TimeError::Overflow)?;
-                        transform = transform.child(ExactRatio::integer(start), ExactRatio::ONE)?;
+                        let start = location.play.start.checked_add(location.play.duration)?;
+                        transform = transform.child(start, ExactRatio::ONE)?;
                         if let Some(child) = location.play.gap_child {
                             repeats.push(RepeatInstance {
                                 node: node.inspection.id.clone(),
@@ -1129,12 +1128,11 @@ impl<'plan> AudioSignal<'plan> {
                         }
                         gap = Some(DomainGap {
                             after: Some(location.play.iteration),
-                            duration: location.play.gap_after,
+                            duration: *gap_duration,
                         });
                         continue;
                     }
-                    transform = transform
-                        .child(ExactRatio::integer(location.play.start), ExactRatio::ONE)?;
+                    transform = transform.child(location.play.start, ExactRatio::ONE)?;
                     repeats.push(RepeatInstance {
                         node: node.inspection.id.clone(),
                         iteration: location.play.iteration,

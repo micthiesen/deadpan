@@ -4,6 +4,21 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Production plan prefixes](../qualification/plan-prefixes-2026-10-12.md) now carry
+exact Sequence offsets and Repeat allocations through picture, audio, owner,
+definition and retained-context walkers. `ExactRepeatLayout::from(RepeatLayout)`
+keeps ordinary integer storage. Gap recipes retain authored durations separately
+from allocation; Preserve operands are unchanged. `single_occurrence_exact_range`
+reports exact offsets and arithmetic failure, and its integer wrapper refuses
+fractional endpoints. Node extents and stored Retime maps are still integral;
+effective-clock persistence, duration consumers, marks and owned Preserve splice
+routes remain required. The injected fractional-offset test qualifies only its
+coordinate query, not a persisted fractional document or render. All 2,910
+core/plan/audio/playback/store tests pass, none failed or ignored. The two new
+plan tests pass again after test-only PointCeil coverage was added below Preserve.
+Final strict all-target Clippy for those crates and formatting pass.
+The primary implemented and self-reviewed alone.
+
 [Exact Repeat prefixes](../qualification/exact-repeat-2026-10-12.md) add
 `ExactRepeatLayout` through the shared production Repeat index. The existing
 integer API/storage keeps its checked i128 arithmetic. The exact API never

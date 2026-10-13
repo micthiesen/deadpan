@@ -4,7 +4,7 @@
 use std::{collections::BTreeSet, ops::Range};
 
 use deadpan_core::{
-    AudioSample, ExactRatio, InstancePath, MIX_SAMPLE_RATE, NodeId, RepeatInstance, TimeError,
+    AudioSample, ExactRatio, InstancePath, MIX_SAMPLE_RATE, NodeId, RepeatInstance,
 };
 
 use super::{AudioQueryLimits, CompiledKind, RenderPlan};
@@ -281,7 +281,8 @@ impl Query<'_> {
                 while low < high {
                     self.spend(1)?;
                     let middle = low + (high - low) / 2;
-                    if ExactRatio::integer(entries[middle].end)
+                    if entries[middle]
+                        .end
                         .checked_sub(local_window.start)?
                         .compare_integer(0)
                         .is_le()
@@ -292,15 +293,15 @@ impl Query<'_> {
                     }
                 }
                 for entry in &entries[low..] {
-                    if !less(ExactRatio::integer(entry.start), local_window.end)? {
+                    if !less(entry.start, local_window.end)? {
                         break;
                     }
                     self.spend(1)?;
-                    let child_extent =
-                        ExactRatio::integer(entry.start)..ExactRatio::integer(entry.end);
+                    let child_extent = entry.start..entry.end;
                     let overlap = intersect(local_window.clone(), child_extent)?;
                     if !positive(&overlap)? {
-                        if ExactRatio::integer(entry.start)
+                        if entry
+                            .start
                             .checked_sub(local_window.end)?
                             .compare_integer(0)
                             .is_ge()
@@ -311,17 +312,11 @@ impl Query<'_> {
                     }
                     self.visit(
                         entry.child,
-                        root_zero.checked_add(
-                            ExactRatio::integer(entry.start).checked_mul(root_per_local)?,
-                        )?,
+                        root_zero.checked_add(entry.start.checked_mul(root_per_local)?)?,
                         root_per_local,
                         intersect(
                             visible_allocation.clone(),
-                            map_range(
-                                root_zero,
-                                root_per_local,
-                                ExactRatio::integer(entry.start)..ExactRatio::integer(entry.end),
-                            )?,
+                            map_range(root_zero, root_per_local, entry.start..entry.end)?,
                         )?,
                         map_range(root_zero, root_per_local, overlap)?,
                         repeats.clone(),
@@ -411,18 +406,14 @@ impl Query<'_> {
                     .cloned()
                 {
                     self.spend(layout.segment_count())?;
-                    let play = layout.play(&required.iteration).ok_or(
+                    let play = layout.play(&required.iteration)?.ok_or(
                         PlanError::InvalidAudioSourceOccurrence("sound context play is absent"),
                     )?;
                     let end = play
                         .start
-                        .checked_add(play.duration.frames())
-                        .and_then(|end| end.checked_add(play.gap_after.frames()))
-                        .ok_or(TimeError::Overflow)?;
-                    intersect(
-                        local_window,
-                        ExactRatio::integer(play.start)..ExactRatio::integer(end),
-                    )?
+                        .checked_add(play.duration)
+                        .and_then(|end| end.checked_add(play.gap_after))?;
+                    intersect(local_window, play.start..end)?
                 } else {
                     local_window
                 };
@@ -452,7 +443,7 @@ impl Query<'_> {
                             .is_some_and(|index| self.ancestry.contains(index))
                     };
                     if !relevant(&play.child) && !play.gap_child.as_ref().is_some_and(relevant) {
-                        let next = ExactRatio::integer(location.segment_end);
+                        let next = location.segment_end;
                         if !less(cursor, next)? {
                             return Err(PlanError::InvalidPlan(
                                 "owner occurrence compact run did not advance",
@@ -461,12 +452,8 @@ impl Query<'_> {
                         cursor = next;
                         continue;
                     }
-                    let child_end = ExactRatio::integer(
-                        play.start
-                            .checked_add(play.duration.frames())
-                            .ok_or(TimeError::Overflow)?,
-                    );
-                    let child_start = ExactRatio::integer(play.start);
+                    let child_end = play.start.checked_add(play.duration)?;
+                    let child_start = play.start;
                     let child_overlap = intersect(local_window.clone(), child_start..child_end)?;
                     if let Some(child) = self.plan.by_id.get(&play.child).copied()
                         && positive(&child_overlap)?
@@ -490,10 +477,9 @@ impl Query<'_> {
                             depth + 1,
                         )?;
                     }
-                    let gap_end =
-                        child_end.checked_add(ExactRatio::integer(play.gap_after.frames()))?;
+                    let gap_end = child_end.checked_add(play.gap_after)?;
                     if let Some(gap_child) = play.gap_child
-                        && play.gap_after.frames() > 0
+                        && play.gap_after.compare_integer(0).is_gt()
                     {
                         let gap_start = child_end;
                         let gap_overlap = intersect(local_window.clone(), gap_start..gap_end)?;

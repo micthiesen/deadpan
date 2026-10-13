@@ -838,7 +838,7 @@ impl RenderPlan {
                         budget.spend(1)?;
                         budget.lookup.sequence_comparisons += 1;
                         let middle = left + (right - left) / 2;
-                        let comparison = local.compare_integer(entries[middle].end);
+                        let comparison = local.compare(entries[middle].end);
                         let preceding = comparison.is_gt()
                             || (comparison.is_eq() && bias == InsertionBias::Right);
                         if preceding {
@@ -850,8 +850,7 @@ impl RenderPlan {
                     let entry = entries
                         .get(left)
                         .ok_or(PlanError::InvalidPlan("audio sequence has no child"))?;
-                    transform = transform
-                        .child(ExactRatio::integer(entry.start), ExactRatio::integer(1))?;
+                    transform = transform.child(entry.start, ExactRatio::integer(1))?;
                     current = entry.child;
                 }
                 CompiledKind::Retime {
@@ -889,7 +888,11 @@ impl RenderPlan {
                     )?;
                     current = *child;
                 }
-                CompiledKind::Repeat { layout, .. } => {
+                CompiledKind::Repeat {
+                    layout,
+                    gap_duration,
+                    ..
+                } => {
                     let location = layout
                         .locate_bounded(local, bias, budget.remaining)
                         .map_err(|error| {
@@ -902,18 +905,11 @@ impl RenderPlan {
                     budget.spend(location.comparisons)?;
                     budget.lookup.iteration_run_comparisons += location.comparisons;
                     if location.in_gap {
-                        let start = location
-                            .play
-                            .start
-                            .checked_add(location.play.duration.frames())
-                            .ok_or(TimeError::Overflow)?;
-                        transform =
-                            transform.child(ExactRatio::integer(start), ExactRatio::integer(1))?;
+                        let start = location.play.start.checked_add(location.play.duration)?;
+                        transform = transform.child(start, ExactRatio::integer(1))?;
                         if let Some(child) = location.play.gap_child {
                             let gap_extent = transform.project_origin
-                                ..transform.project_at(ExactRatio::integer(
-                                    location.play.gap_after.frames(),
-                                ))?;
+                                ..transform.project_at(location.play.gap_after)?;
                             retain_incident_editorial(&mut editorial, &gap_extent, grid, budget)?;
                             constraints.push(EnvelopeConstraint {
                                 placement_support: false,
@@ -935,14 +931,11 @@ impl RenderPlan {
                         }
                         seeded_gap = Some(DomainGap {
                             after: Some(location.play.iteration),
-                            duration: location.play.gap_after,
+                            duration: *gap_duration,
                         });
                         continue;
                     }
-                    transform = transform.child(
-                        ExactRatio::integer(location.play.start),
-                        ExactRatio::integer(1),
-                    )?;
+                    transform = transform.child(location.play.start, ExactRatio::integer(1))?;
                     repeats.push(RepeatInstance {
                         node: node.inspection.id.clone(),
                         iteration: location.play.iteration,

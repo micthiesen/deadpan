@@ -111,15 +111,15 @@ impl RenderPlan {
                     NodeType::Source,
                 ),
                 FrozenAudioKind::Sequence { children } => {
-                    let mut end = FrameDuration::ZERO;
+                    let mut end = ExactRatio::ZERO;
                     let mut entries = Vec::with_capacity(children.len());
                     for child in children {
-                        let start = end.frames();
-                        end = end.checked_add(durations[child])?;
+                        let start = end;
+                        end = end.checked_add(ExactRatio::integer(durations[child].frames()))?;
                         entries.push(SequenceEntry {
                             child: by_id[child],
                             start,
-                            end: end.frames(),
+                            end,
                         });
                     }
                     storage.sequence_prefix_entries += entries.len();
@@ -158,7 +158,7 @@ impl RenderPlan {
                     (
                         CompiledKind::Repeat {
                             default_child: by_id[child],
-                            layout: repeat,
+                            layout: repeat.into(),
                             gap: gap.then_some(CompiledHold::Background),
                             gap_picture_context: None,
                             gap_duration: *gap_duration,
@@ -320,15 +320,15 @@ impl RenderPlan {
                     )
                 }
                 FrozenAudioKind::Sequence { children } => {
-                    let mut end = FrameDuration::ZERO;
+                    let mut end = ExactRatio::ZERO;
                     let mut entries = Vec::with_capacity(children.len());
                     for child in children {
-                        let start = end.frames();
-                        end = end.checked_add(durations[child])?;
+                        let start = end;
+                        end = end.checked_add(ExactRatio::integer(durations[child].frames()))?;
                         entries.push(SequenceEntry {
                             child: by_id[child],
                             start,
-                            end: end.frames(),
+                            end,
                         });
                     }
                     storage.sequence_prefix_entries += entries.len();
@@ -367,7 +367,7 @@ impl RenderPlan {
                     (
                         CompiledKind::Repeat {
                             default_child: by_id[child],
-                            layout: repeat,
+                            layout: repeat.into(),
                             gap: gap.then_some(CompiledHold::Background),
                             gap_picture_context: None,
                             gap_duration: *gap_duration,

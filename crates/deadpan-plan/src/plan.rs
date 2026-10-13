@@ -14,6 +14,10 @@ use serde::Serialize;
 
 use crate::{Picture, PictureFraming, PictureSample, PlanError};
 
+#[cfg(test)]
+#[path = "prefixes/tests.rs"]
+mod prefix_tests;
+
 #[path = "picture_definition.rs"]
 mod picture_definition;
 pub use picture_definition::{
@@ -404,7 +408,7 @@ enum CompiledKind {
     },
     Repeat {
         default_child: usize,
-        layout: RepeatLayout,
+        layout: deadpan_core::ExactRepeatLayout,
         gap: Option<CompiledHold>,
         gap_picture_context: Option<Arc<CapturedFraming>>,
         gap_audio: Option<HoldAudio>,
@@ -442,8 +446,8 @@ impl CompiledSourceAudio {
 #[derive(Debug, Clone)]
 struct SequenceEntry {
     child: usize,
-    start: i64,
-    end: i64,
+    start: ExactRatio,
+    end: ExactRatio,
 }
 
 #[derive(Debug, Clone)]
@@ -740,17 +744,13 @@ impl RenderPlan {
                     NodeType::Source,
                 ),
                 NodeKind::Sequence { children } => {
-                    let mut end = FrameDuration::ZERO;
+                    let mut end = ExactRatio::ZERO;
                     let mut entries = Vec::with_capacity(children.len());
                     for child in children {
-                        let start = end.frames();
+                        let start = end;
                         let (child, duration) = index[child];
-                        end = end.checked_add(duration)?;
-                        entries.push(SequenceEntry {
-                            child,
-                            start,
-                            end: end.frames(),
-                        });
+                        end = end.checked_add(ExactRatio::integer(duration.frames()))?;
+                        entries.push(SequenceEntry { child, start, end });
                     }
                     storage.sequence_prefix_entries += entries.len();
                     (CompiledKind::Sequence { entries }, NodeType::Sequence)
@@ -791,7 +791,7 @@ impl RenderPlan {
                     (
                         CompiledKind::Repeat {
                             default_child: position(child),
-                            layout,
+                            layout: layout.into(),
                             gap_audio: gap.as_ref().map(|recipe| recipe.audio.clone()),
                             gap_duration: gap
                                 .as_ref()
@@ -1107,28 +1107,51 @@ impl RenderPlan {
 
     /// The project frames of a node that appears exactly once, reached only
     /// through ordinary Sequences; `None` under a Repeat, a Retime or an
-    /// override, where a node has several or remapped occurrences.
+    /// override, where a node has several or remapped occurrences, or when an
+    /// exact boundary cannot be represented as an integer project frame.
     pub fn single_occurrence_range(&self, id: &NodeId) -> Option<deadpan_core::FrameRange> {
-        let mut current = *self.by_id.get(id)?;
-        let mut start = 0_i64;
+        let range = self.single_occurrence_exact_range(id).ok()??;
+        if range.start.denominator() != 1 || range.end.denominator() != 1 {
+            return None;
+        }
+        deadpan_core::FrameRange::new(
+            ProjectFrame(i64::try_from(range.start.numerator()).ok()?),
+            ProjectFrame(i64::try_from(range.end.numerator()).ok()?),
+        )
+        .ok()
+    }
+
+    /// Exact counterpart of [`Self::single_occurrence_range`]. Accumulated
+    /// Sequence offsets never round; repeated or remapped occurrences still
+    /// require an explicit occurrence address. Arithmetic exhaustion is
+    /// distinct from an absent or non-unique occurrence.
+    pub fn single_occurrence_exact_range(
+        &self,
+        id: &NodeId,
+    ) -> Result<Option<deadpan_core::ExactFrameRange>, PlanError> {
+        let Some(&node) = self.by_id.get(id) else {
+            return Ok(None);
+        };
+        let mut current = node;
+        let mut start = ExactRatio::ZERO;
         while let Some(parent) = self.parents[current] {
             let CompiledKind::Sequence { entries } = &self.nodes[parent].kind else {
-                return None;
+                return Ok(None);
             };
-            let entry = entries.iter().find(|entry| entry.child == current)?;
+            let entry = entries
+                .iter()
+                .find(|entry| entry.child == current)
+                .ok_or(PlanError::InvalidPlan("Sequence parent omitted its child"))?;
             start = start.checked_add(entry.start)?;
             current = parent;
         }
         if current != self.root {
-            return None;
+            return Ok(None);
         }
-        let end = start.checked_add(
-            self.nodes[*self.by_id.get(id)?]
-                .inspection
-                .duration
-                .frames(),
-        )?;
-        deadpan_core::FrameRange::new(ProjectFrame(start), ProjectFrame(end)).ok()
+        let end = start.checked_add(ExactRatio::integer(
+            self.nodes[node].inspection.duration.frames(),
+        ))?;
+        Ok(Some(deadpan_core::ExactFrameRange::new(start, end)?))
     }
 
     pub(crate) fn root_audio_edges(&self) -> deadpan_core::AudioEdgePolicies {
@@ -1466,16 +1489,16 @@ impl RenderPlan {
                 CompiledKind::Sequence { entries } => {
                     let index = upper_bound(
                         entries.len(),
-                        |index| !local.compare_integer(entries[index].end).is_lt(),
+                        |index| !local.compare(entries[index].end).is_lt(),
                         budget,
                     )?;
                     let entry = entries
                         .get(index)
                         .ok_or(PlanError::InvalidPlan("sequence prefix index has no child"))?;
                     if let Some(continuity) = continuity.as_deref_mut() {
-                        continuity.limit(local, ExactRatio::integer(entry.end))?;
+                        continuity.limit(local, entry.end)?;
                     }
-                    local = local.checked_sub(ExactRatio::integer(entry.start))?;
+                    local = local.checked_sub(entry.start)?;
                     current = entry.child;
                 }
                 CompiledKind::Retime {
@@ -1511,16 +1534,15 @@ impl RenderPlan {
                         let end = location
                             .play
                             .start
-                            .checked_add(location.play.duration.frames())
+                            .checked_add(location.play.duration)
                             .and_then(|end| {
                                 if location.in_gap {
-                                    end.checked_add(location.play.gap_after.frames())
+                                    end.checked_add(location.play.gap_after)
                                 } else {
-                                    Some(end)
+                                    Ok(end)
                                 }
-                            })
-                            .ok_or(TimeError::Overflow)?;
-                        continuity.limit(local, ExactRatio::integer(end))?;
+                            })?;
+                        continuity.limit(local, end)?;
                     }
                     local = location.position;
                     play = Some(location.play.index);

@@ -164,6 +164,16 @@ play's output arithmetic. This completes the numerical Repeat-index prerequisite
 persisted effective extents, Sequence/Retime clock consumers, marks and Preserve
 routes still need integration before fractional insertion can be admitted.
 
+[Production plan prefixes](qualification/plan-prefixes-2026-10-12.md) now use
+that exact interface in picture, audio, owner and retained-context walkers.
+Sequence entries and compiled definition offsets also carry exact ratios.
+Integer Repeat storage embeds directly behind the interface; implicit gap
+recipes retain their separate authored duration. `single_occurrence_exact_range`
+preserves exact offsets, while the integer wrapper refuses fractional endpoints.
+Node extents and stored Retime mappings are still integral. Persisting effective
+clocks must update those duration consumers and validation; changing prefixes
+alone does not admit a fractional project or a Preserve splice.
+
 ### Preserve input projection (design)
 
 Retaining a timing layout is not enough to retain a processing operand.

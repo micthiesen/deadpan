@@ -1,0 +1,7 @@
+import hashlib, json, pathlib, subprocess
+
+root = pathlib.Path('/Users/michael/Code/deadpan')
+paths = subprocess.check_output(['git', 'diff', '--name-only', '--', 'crates'], cwd=root, text=True).splitlines()
+paths += subprocess.check_output(['git', 'ls-files', '--others', '--exclude-standard', '--', 'crates'], cwd=root, text=True).splitlines()
+data = {path: hashlib.sha256((root / path).read_bytes()).hexdigest() for path in sorted(paths)}
+pathlib.Path('/tmp/deadpan-plan-prefixes-20261012/regressions-source.txt').write_text(json.dumps(data, indent=2) + '\n')
