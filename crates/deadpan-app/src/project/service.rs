@@ -2177,6 +2177,10 @@ impl Service {
     }
 }
 
+#[cfg(test)]
+#[path = "service/derived_clock_tests.rs"]
+mod derived_clock_tests;
+
 fn snapshot(
     store: &ProjectStore,
     session: u64,
@@ -2186,6 +2190,9 @@ fn snapshot(
     // The store retains the head's validation, so compiling inside its scope
     // does not validate the whole document again after every commit.
     let validated = store.snapshot_validated().map_err(display)?;
+    if !validated.derived_clocks().is_empty() {
+        return Err("This project uses derived Retime clocks; native editing of these clocks is not yet supported".into());
+    }
     let plan = validated
         .scope(|| RenderPlan::compile(&validated))
         .map_err(display)?;

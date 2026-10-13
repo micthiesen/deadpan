@@ -676,7 +676,18 @@ impl CompiledHold {
 
 impl RenderPlan {
     pub fn compile(document: &ProjectDocument) -> Result<Self, PlanError> {
-        let durations = document.durations_shared()?;
+        let durations = document.recipe_durations_shared()?;
+        let extents = if document.derived_clocks().is_empty() {
+            None
+        } else {
+            Some(document.exact_durations()?)
+        };
+        let extent = |id: &NodeId| {
+            extents.as_ref().map_or_else(
+                || ExactRatio::integer(durations[id].frames()),
+                |extents| extents[id],
+            )
+        };
         let by_id: BTreeMap<_, _> = document
             .nodes()
             .keys()
@@ -753,8 +764,8 @@ impl RenderPlan {
                     let mut entries = Vec::with_capacity(children.len());
                     for child in children {
                         let start = end;
-                        let (child, duration) = index[child];
-                        end = end.checked_add(ExactRatio::integer(duration.frames()))?;
+                        end = end.checked_add(extent(child))?;
+                        let child = position(child);
                         entries.push(SequenceEntry { child, start, end });
                     }
                     storage.sequence_prefix_entries += entries.len();
@@ -779,15 +790,29 @@ impl RenderPlan {
                 } => {
                     let overrides = document.overrides().get(id);
                     let gap_overrides = document.gap_overrides().get(id);
-                    let layout = RepeatLayout::compile_with_gap_overrides(
-                        iterations,
-                        child,
-                        overrides,
-                        gap.as_ref()
-                            .map_or(FrameDuration::ZERO, |recipe| recipe.duration),
-                        gap_overrides,
-                        &durations,
-                    )?;
+                    let layout: deadpan_core::ExactRepeatLayout = if let Some(extents) = &extents {
+                        deadpan_core::ExactRepeatLayout::compile_with_gap_overrides(
+                            iterations,
+                            child,
+                            overrides,
+                            gap.as_ref().map_or(ExactRatio::ZERO, |recipe| {
+                                ExactRatio::integer(recipe.duration.frames())
+                            }),
+                            gap_overrides,
+                            extents,
+                        )?
+                    } else {
+                        RepeatLayout::compile_with_gap_overrides(
+                            iterations,
+                            child,
+                            overrides,
+                            gap.as_ref()
+                                .map_or(FrameDuration::ZERO, |recipe| recipe.duration),
+                            gap_overrides,
+                            &durations,
+                        )?
+                        .into()
+                    };
                     storage.iteration_run_entries += iterations.segment_count();
                     storage.repeat_segment_entries += layout.segment_count();
                     storage.sparse_override_entries += overrides.map_or(0, |entries| entries.len())
@@ -796,7 +821,7 @@ impl RenderPlan {
                     (
                         CompiledKind::Repeat {
                             default_child: position(child),
-                            layout: layout.into(),
+                            layout,
                             gap_audio: gap.as_ref().map(|recipe| recipe.audio.clone()),
                             gap_duration: gap
                                 .as_ref()
@@ -820,22 +845,31 @@ impl RenderPlan {
                     mapping,
                     pitch,
                     purpose,
-                } => (
-                    CompiledKind::Retime {
-                        child: position(child),
-                        pitch: *pitch,
-                        purpose: *purpose,
-                        start: ExactRatio::integer(mapping.start().0),
-                        scale: ExactRatio::new(
-                            i128::from(mapping.duration().frames()),
-                            i128::from(duration.frames()),
-                        )?,
-                    },
-                    NodeType::Retime,
-                ),
+                } => {
+                    let clock = document.derived_clocks().get(id).copied().unwrap_or(
+                        deadpan_core::DerivedRetimeClock {
+                            extent: ExactRatio::integer(duration.frames()),
+                            child_start: ExactRatio::integer(mapping.start().0),
+                            child_end: ExactRatio::integer(mapping.end().0),
+                        },
+                    );
+                    (
+                        CompiledKind::Retime {
+                            child: position(child),
+                            pitch: *pitch,
+                            purpose: *purpose,
+                            start: clock.child_start,
+                            scale: clock
+                                .child_end
+                                .checked_sub(clock.child_start)?
+                                .checked_div(clock.extent)?,
+                        },
+                        NodeType::Retime,
+                    )
+                }
             };
             nodes.push(PlanNode {
-                extent: ExactRatio::integer(duration.frames()),
+                extent: extent(id),
                 inspection: NodeInspection {
                     id: id.clone(),
                     label: node.label.clone(),
@@ -884,7 +918,14 @@ impl RenderPlan {
                 revision_id: document.revision_id().clone(),
                 root: document.root().clone(),
                 presentation_basis: document.presentation_basis().clone(),
-                duration: index[document.root()].1,
+                duration: if extents.is_some() {
+                    FrameDuration::new(
+                        i64::try_from(extent(document.root()).numerator())
+                            .map_err(|_| TimeError::Overflow)?,
+                    )?
+                } else {
+                    index[document.root()].1
+                },
                 storage,
             },
             nodes,

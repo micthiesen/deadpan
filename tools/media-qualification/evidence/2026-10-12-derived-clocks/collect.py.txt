@@ -1,0 +1,61 @@
+import gzip, hashlib, json, pathlib, re, subprocess
+
+root = pathlib.Path('/Users/michael/Code/deadpan')
+scratch = pathlib.Path(__file__).resolve().parent
+dest = root / 'tools/media-qualification/evidence/2026-10-12-derived-clocks'
+dest.mkdir(parents=True, exist_ok=True)
+
+def sha(path):
+    with path.open('rb') as source:
+        return hashlib.file_digest(source, 'sha256').hexdigest()
+
+checks, binaries = {}, {}
+for receipt in sorted(scratch.glob('*.json')):
+    name = receipt.stem
+    checks[name] = json.loads(receipt.read_text())
+    log = scratch / (name + '.log')
+    data = log.read_bytes()
+    assert hashlib.sha256(data).hexdigest() == checks[name]['log_sha256']
+    (dest / (name + '.log.gz')).write_bytes(gzip.compress(data, mtime=0))
+    rows = [tuple(map(int, row)) for row in re.findall(r'test result: (?:ok|FAILED)\. (\d+) passed; (\d+) failed; (\d+) ignored;', data.decode())]
+    if rows:
+        checks[name]['tests'] = dict(zip(['passed', 'failed', 'ignored'], map(sum, zip(*rows))))
+    if name in ['regressions', 'native-clock']:
+        binaries[name] = {binary: sha(root / binary) for binary in re.findall(
+            r'Running .*?\((target/[^ )]+)\)', data.decode())}
+
+sources = json.loads((scratch / 'verified-sources.txt').read_text())
+for path, identity in sources.items():
+    assert sha(root / path) == identity, path
+metadata = {
+    'base_commit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=root, text=True).strip(),
+    'sources_sha256': sources,
+    'cargo_lock_sha256': sha(root / 'Cargo.lock'),
+    'fixture_sha256': sha(root / 'native/deadpan-source/tests/audio-fixtures/pcm-stereo-48000.wav'),
+    'checks': checks, 'test_binaries_by_check_sha256': binaries,
+    'binary_hash_scope': 'Final five-crate regression and headless native-admission executables. Earlier focused/setup binaries are not independently identified.',
+    'rustc': subprocess.check_output(['rustc', '--version'], cwd=root, text=True).strip(),
+    'macos': subprocess.check_output(['sw_vers'], text=True).strip(),
+    'hardware': subprocess.check_output(['sysctl', '-n', 'machdep.cpu.brand_string', 'hw.ncpu', 'hw.memsize'], text=True).strip(),
+    'review': [
+        'Primary implemented and self-reviewed alone; no subagents.',
+        'Reviewed every changed production field, validator, cached-duration boundary, patch guard/inverse/diff and plan constructor.',
+        'Legacy allocation maps and ordinary reducers refuse derived clocks before temporal mutation.',
+        'Admission refuses marks, sounds, retained bindings/lineage and Preserve/Shift in clocked documents pending exact lifecycle and owned routes.',
+        'Effective root durations, exact windows, unity partitions and effective-speed tail admission are checked separately from unchanged integral recipes.',
+        'Core patch changes, SQLite reopen/history, exact picture/source coordinates, compact Repeat allocation and actual decoded raw PCM are covered.',
+        'Native snapshot admission now refuses derived clocks before controls can interpret recipe counts as effective durations; the five-crate regression sources were hash-checked unchanged before adding this separately tested boundary.',
+    ],
+    'setup_failures': [
+        'regressions-build found two command_work test callers still treating ValidatedDocument::durations as infallible; the tests now unwrap only their ordinary integral fixtures.',
+        'pcm-focused requested reference output larger than the resampler 256-sample block limit.',
+        'pcm-focused-fixed requested production output larger than the same reader block limit.',
+        'pcm-final used a 256-input-sample fixture decoder bound insufficient for a 256-output-sample four-times-speed block plus filter support.',
+        'pcm-bounded uses valid 1/31/256 output chunks and a 4096-input-sample fixture bound. No production limits were changed.',
+    ],
+    'limits': 'Persisted FollowSpeed clocks and production compilation, raw decoded PCM before effects. No ordinary splice constructs clocks yet. Preserve routes, temporal lifecycle, native/generation admission and actual encoded qualification remain open. No live GUI, physical output, performance measurement or full gate run.'
+}
+(dest / 'metadata.json').write_text(json.dumps(metadata, indent=2) + '\n')
+for name in ['run.py', 'collect.py', 'snapshot.py']:
+    (dest / (name + '.txt')).write_bytes((scratch / name).read_bytes())
+print(json.dumps({'checks': {k: v.get('tests', v['exit_code']) for k, v in checks.items()}, 'binaries': len(binaries.get('regressions', {})), 'evidence': str(dest)}, indent=2))

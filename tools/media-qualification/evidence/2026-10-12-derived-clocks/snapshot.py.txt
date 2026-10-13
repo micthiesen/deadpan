@@ -1,0 +1,8 @@
+import hashlib, json, pathlib, subprocess
+
+root = pathlib.Path('/Users/michael/Code/deadpan')
+paths = subprocess.check_output(['git', 'diff', '--name-only', '--', 'crates'], cwd=root, text=True).splitlines()
+paths += subprocess.check_output(['git', 'ls-files', '--others', '--exclude-standard', '--', 'crates'], cwd=root, text=True).splitlines()
+snapshot = {path: hashlib.sha256((root / path).read_bytes()).hexdigest() for path in sorted(paths)}
+(pathlib.Path(__file__).resolve().parent / 'verified-sources.txt').write_text(json.dumps(snapshot, indent=2) + '\n')
+print(f'Recorded {len(snapshot)} source hashes')

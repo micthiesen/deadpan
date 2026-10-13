@@ -10,7 +10,7 @@ use crate::{
     SourceVideoMapping, TimeError,
 };
 
-pub const DOCUMENT_SCHEMA_VERSION: u32 = 53;
+pub const DOCUMENT_SCHEMA_VERSION: u32 = 54;
 /// Bounds apply before traversal. Structure is walked iteratively, never recursively.
 pub const MAX_DOCUMENT_NODES: usize = 100_000;
 pub const MAX_DOCUMENT_ASSETS: usize = 100_000;
@@ -561,6 +561,8 @@ pub struct ProjectDocument {
     pub(crate) basis_state: BasisState,
     pub(crate) root: NodeId,
     pub(crate) nodes: BTreeMap<NodeId, BeatNode>,
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub(crate) derived_clocks: BTreeMap<NodeId, crate::DerivedRetimeClock>,
     pub(crate) assets: BTreeMap<AssetId, AssetRecord>,
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub(crate) source_interpretations: BTreeMap<AssetId, crate::SourceInterpretation>,
@@ -598,6 +600,8 @@ struct DocumentWire {
     root: NodeId,
     #[serde(deserialize_with = "crate::audio_gain::node_map")]
     nodes: BTreeMap<NodeId, BeatNode>,
+    #[serde(default, deserialize_with = "unique_map")]
+    derived_clocks: BTreeMap<NodeId, crate::DerivedRetimeClock>,
     #[serde(deserialize_with = "unique_map")]
     assets: BTreeMap<AssetId, AssetRecord>,
     #[serde(default, deserialize_with = "unique_map")]
@@ -666,6 +670,7 @@ impl ProjectDocument {
             basis_state: value.basis_state,
             root: value.root,
             nodes: value.nodes,
+            derived_clocks: value.derived_clocks,
             assets: value.assets,
             source_interpretations: value.source_interpretations,
             marks: value.marks,
@@ -696,6 +701,7 @@ impl ProjectDocument {
             presentation_basis,
             basis_state: BasisState::explicit(),
             nodes: BTreeMap::from([(root.clone(), BeatNode::sequence("Sequence", vec![]))]),
+            derived_clocks: BTreeMap::new(),
             root,
             assets: BTreeMap::new(),
             source_interpretations: BTreeMap::new(),
@@ -910,7 +916,7 @@ impl ProjectDocument {
         if validated::durations(self).is_some() {
             return Ok(());
         }
-        self.durations().map(|_| ())
+        self.recipe_durations_shared().map(|_| ())
     }
     pub fn duration(&self) -> Result<FrameDuration, DocumentError> {
         self.node_duration(&self.root)
@@ -919,6 +925,10 @@ impl ProjectDocument {
     /// document this equals [`Self::duration`] without repeating the
     /// document-wide binding, mark and effect checks.
     pub fn structural_duration(&self) -> Result<FrameDuration, DocumentError> {
+        if !self.derived_clocks.is_empty() {
+            let recipes = self.recipe_structural_durations()?;
+            return crate::derived_clock::integral(self.effective_durations(&recipes)?[&self.root]);
+        }
         self.structural_durations()?
             .get(&self.root)
             .copied()
@@ -927,6 +937,19 @@ impl ProjectDocument {
             })
     }
     pub fn node_duration(&self, id: &NodeId) -> Result<FrameDuration, DocumentError> {
+        if !self.derived_clocks.is_empty() {
+            let exact = self.exact_durations()?;
+            return exact
+                .get(id)
+                .copied()
+                .ok_or_else(|| {
+                    DocumentError::new(
+                        DocumentErrorCode::MissingNode,
+                        format!("node {id} does not exist"),
+                    )
+                })
+                .and_then(crate::derived_clock::integral);
+        }
         self.durations()?.get(id).copied().ok_or_else(|| {
             DocumentError::new(
                 DocumentErrorCode::MissingNode,
@@ -958,14 +981,30 @@ impl ProjectDocument {
     /// [`Self::durations`], shared without copying when an enclosing
     /// validation scope retains them for this exact document.
     pub fn durations_shared(&self) -> Result<Arc<BTreeMap<NodeId, FrameDuration>>, DocumentError> {
+        self.require_integral_clocks()?;
+        self.recipe_durations_shared()
+    }
+
+    /// Integral recipe counts, never effective allocations. Consumers must
+    /// obtain `exact_durations` separately to place or sample the structure.
+    pub fn recipe_durations_shared(
+        &self,
+    ) -> Result<Arc<BTreeMap<NodeId, FrameDuration>>, DocumentError> {
         match validated::durations(self) {
             Some(durations) => Ok(durations),
-            None => self.durations().map(Arc::new),
+            None => self
+                .durations_with_context_limits(
+                    crate::MAX_CAPTURED_FRAMING_RECORDS,
+                    crate::MAX_GAIN_RECORDS,
+                )
+                .map(Arc::new),
         }
     }
 
-    /// Validate once and return every authored duration for plan compilation.
+    /// Legacy integral allocation query. Refuses derived clocks, even when
+    /// the root is integral; use `exact_durations` for the effective graph.
     pub fn durations(&self) -> Result<BTreeMap<NodeId, FrameDuration>, DocumentError> {
+        self.require_integral_clocks()?;
         if let Some(durations) = validated::durations(self) {
             return Ok(durations.as_ref().clone());
         }
@@ -1091,13 +1130,16 @@ impl ProjectDocument {
             Some(structure) => {
                 #[cfg(debug_assertions)]
                 assert!(
-                    self.structural_durations().as_ref() == Ok(&*structure),
+                    self.recipe_structural_durations().as_ref() == Ok(&*structure),
                     "given structural durations describe another structure"
                 );
                 Arc::try_unwrap(structure).unwrap_or_else(|shared| (*shared).clone())
             }
-            None => self.structural_durations()?,
+            None => self.recipe_structural_durations()?,
         };
+        if !self.derived_clocks.is_empty() {
+            self.effective_durations(&durations)?;
+        }
         crate::sound_events::validate(self, &durations)?;
         crate::sound_allowance::validate(self)?;
         crate::framing::validate_document(self)?;
@@ -1131,7 +1173,10 @@ impl ProjectDocument {
     /// so a tail Hold or Repeat gap there is invalid. Transparent Partitions
     /// and unity Retimes keep the edit clock.
     fn validate_tails_outside_speed_stages(&self) -> Result<(), DocumentError> {
-        let speed_stage = |kind: &NodeKind| {
+        let speed_stage = |id: &NodeId, kind: &NodeKind| {
+            if let Some(clock) = self.derived_clocks.get(id) {
+                return clock.child_end.checked_sub(clock.child_start) != Ok(clock.extent);
+            }
             matches!(
                 kind,
                 NodeKind::Retime { duration, mapping, purpose, pitch, .. }
@@ -1140,7 +1185,11 @@ impl ProjectDocument {
             )
         };
         // Only a node below a speed stage can carry a tail into it.
-        if !self.nodes.values().any(|node| speed_stage(&node.kind)) {
+        if !self
+            .nodes
+            .iter()
+            .any(|(id, node)| speed_stage(id, &node.kind))
+        {
             return Ok(());
         }
         let tail = |audio: &HoldAudio| matches!(audio, HoldAudio::Tail { .. });
@@ -1164,7 +1213,7 @@ impl ProjectDocument {
                     ),
                 ));
             }
-            let speed = speed_stage(&node.kind);
+            let speed = speed_stage(id, &node.kind);
             for child in self.children(id) {
                 stack.push((child, inside || speed));
             }
@@ -1177,7 +1226,15 @@ impl ProjectDocument {
     pub(crate) fn structural_durations(
         &self,
     ) -> Result<BTreeMap<NodeId, FrameDuration>, DocumentError> {
-        // Complete validation returns exactly the structural durations.
+        self.require_integral_clocks()?;
+        self.recipe_structural_durations()
+    }
+
+    fn recipe_structural_durations(
+        &self,
+    ) -> Result<BTreeMap<NodeId, FrameDuration>, DocumentError> {
+        // Complete validation retains the integral recipe graph separately
+        // from its effective clock validation.
         if let Some(durations) = validated::durations(self) {
             return Ok(durations.as_ref().clone());
         }
@@ -2153,7 +2210,12 @@ impl ValidatedDocument {
         self.document
     }
 
-    pub fn durations(&self) -> &BTreeMap<NodeId, FrameDuration> {
+    pub fn durations(&self) -> Result<&BTreeMap<NodeId, FrameDuration>, DocumentError> {
+        self.document.require_integral_clocks()?;
+        Ok(&self.durations)
+    }
+
+    pub(crate) fn recipe_durations(&self) -> &BTreeMap<NodeId, FrameDuration> {
         &self.durations
     }
 

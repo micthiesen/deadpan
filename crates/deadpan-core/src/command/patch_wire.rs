@@ -251,6 +251,7 @@ fn is_reverse(inverse: &DocumentPatch, forward: &DocumentPatch) -> bool {
         overrides,
         gap_overrides,
         audio_lineage,
+        derived_clocks,
         audio_bindings,
     } = inverse;
     let same = *project_id == forward.project_id
@@ -275,6 +276,7 @@ fn is_reverse(inverse: &DocumentPatch, forward: &DocumentPatch) -> bool {
         && swapped(overrides, &forward.overrides)
         && swapped(gap_overrides, &forward.gap_overrides)
         && swapped(audio_lineage, &forward.audio_lineage)
+        && swapped(derived_clocks, &forward.derived_clocks)
         && match (audio_bindings, &forward.audio_bindings) {
             (None, None) => true,
             (Some(back), Some(change)) => back.is_reverse_of(change),

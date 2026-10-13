@@ -98,10 +98,12 @@ history patch remain part of the required splice implementation.
 
 ### Derived owner clocks
 
-The current preferred representation keeps authored `FrameDuration` counts
-integral and introduces separate exact effective extents and owned clock maps
-for splice-produced structure. This is a design decision, not a persisted
-capability. Source, Hold and authored Retime counts, the insertion boundary and
+The representation keeps authored `FrameDuration` counts integral and introduces
+separate exact effective extents and owned clock maps for splice-produced
+structure. Core 54 now persists a bounded `derived_clocks` table for FollowSpeed
+Retime allocations and exact child windows; production plans consume it.
+This does not yet provide authored splice construction or Preserve routes.
+Source, Hold and authored Retime counts, the insertion boundary and
 requested duration, and the final project extent retain their integer contracts.
 Every internal effective clock must compose without rounding. A transparent
 adapter must not introduce a DSP stage, sampling-support boundary or fade.
@@ -181,6 +183,17 @@ voice admission use exact output bounds. Compilers still embed integral document
 durations; effective-clock persistence, marks and owned Preserve routes remain
 required. Ordinary Preserve refuses differing allocation and intrinsic counts
 until a route can express that relationship without resizing its input.
+
+[Persisted effective clocks](qualification/derived-clocks-2026-10-12.md) now
+connect that representation to strict document admission, reversible patches,
+SQLite snapshots/history and production picture/audio compilation. Sequence
+and compact Repeat totals use exact child extents; the root must be integral.
+Legacy duration maps and ordinary reducers refuse these documents. Current
+admission also refuses marks, sounds, retained audio bindings/lineage and any
+Preserve or Shift Retime when derived clocks are present. Exact snapshot restore
+and guarded patches preserve the complete composition. These explicit temporary
+boundaries must be replaced by real lifecycle transforms as splice authoring
+is integrated; they are not completion of the insertion requirement.
 
 ### Preserve input projection (design)
 

@@ -326,7 +326,7 @@ fn random_command(
     revision: &str,
     fresh: &mut usize,
 ) -> Command {
-    let durations = document.durations();
+    let durations = document.durations().unwrap();
     let nodes: Vec<NodeId> = document.nodes().keys().cloned().collect();
     let pick = |random: &mut Lcg| nodes[random.below(nodes.len())].clone();
     let new_id = |fresh: &mut usize| {
@@ -561,7 +561,7 @@ fn outcome(head: &ValidatedDocument, request: &CommandRequest) -> Outcome {
         (
             edit,
             ProjectDocument::clone(&result),
-            result.durations().clone(),
+            result.durations().unwrap().clone(),
         )
     })
 }

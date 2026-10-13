@@ -35,6 +35,7 @@ pub use command_work::{
 };
 mod compound;
 mod cutaway;
+mod derived_clock;
 mod document;
 mod duplicate;
 mod edit_slice;
@@ -104,6 +105,7 @@ pub use caption::*;
 pub use command::*;
 pub use compound::*;
 pub use cutaway::*;
+pub use derived_clock::DerivedRetimeClock;
 pub use document::*;
 pub use duplicate::DuplicateRequirements;
 pub use edit_slice::{

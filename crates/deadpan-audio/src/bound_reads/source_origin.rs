@@ -136,6 +136,7 @@ fn prefix_patch(
         overrides: BTreeMap::new(),
         gap_overrides: BTreeMap::new(),
         audio_lineage: BTreeMap::new(),
+        derived_clocks: BTreeMap::new(),
         audio_bindings: AudioBindingPatch::between(document.audio_bindings(), &bindings),
     }
 }

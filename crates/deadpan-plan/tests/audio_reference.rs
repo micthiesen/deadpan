@@ -1912,6 +1912,7 @@ fn source_prefix_behind_partition_keeps_unbound_and_retained_source_phase() {
                 overrides: BTreeMap::new(),
                 gap_overrides: BTreeMap::new(),
                 audio_lineage: BTreeMap::new(),
+                derived_clocks: BTreeMap::new(),
                 audio_bindings: AudioBindingPatch::between(&state, &translated),
             };
             let applied = patch.apply(&before).unwrap();

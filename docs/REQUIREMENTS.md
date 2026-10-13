@@ -4,12 +4,30 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 
 ## Resumed implementation, 2026-10-06
 
+[Persisted effective clocks](qualification/derived-clocks-2026-10-12.md) add a
+separate exact Retime extent/window table in core 54 and SQLite schema 82.
+Document validation, reversible patches, snapshot restore, saved history and
+production picture/audio plans retain those clocks without changing intrinsic
+recipe counts. Exact Sequence/Repeat allocation and actual root duration are
+compiled from persisted documents. Decoded raw PCM retains exact fractional
+seam phase across bounded reads. Legacy edits and integral duration maps refuse
+derived-clock documents; marks, sounds, retained bindings/lineage and Preserve/
+Shift remain explicitly outside current derived-clock admission. Owned routes,
+atomic Retime insertion and temporal/native lifecycle integration remain open.
+The native workspace refuses these documents before exposing integral controls.
+All 2,927 core/plan/audio/playback/store tests pass, none failed or ignored.
+The separate headless native admission test, strict all-target Clippy for the
+seven affected crates and workspace formatting also pass. Work was implemented
+and self-reviewed by the primary alone.
+No requirement or gate is newly complete.
+
 [Effective plan extents](qualification/plan-extents-2026-10-12.md) separate exact
 output allocation from integral recipe counts in picture/audio walkers,
 definition grids, owner windows and independent voice admission. Committed
-framing and Camera preview use the same exact owner extent. Compiler-boundary
-fixtures exercise fractional allocations; persisted effective clocks and owned
-Preserve routes remain open, so Retime insertion is still guarded. All 1,153
+framing and Camera preview use the same exact owner extent. That increment's
+compiler-boundary fixtures exercise fractional allocations; the later persisted
+clocks above replace those injected allocations. Retime insertion remains guarded
+until owned routes and lifecycle transforms are implemented. All 1,153
 plan/audio/playback tests, six focused plan tests and 32 native Camera/presentation
 tests pass, none failed or ignored. Strict all-target Clippy for plan, audio,
 playback, CLI and app, plus formatting, pass. No requirement or gate is newly complete.

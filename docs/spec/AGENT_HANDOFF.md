@@ -4,15 +4,37 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Persisted effective clocks](../qualification/derived-clocks-2026-10-12.md) now
+connect exact Retime extents and child windows to core 54, store 82 and production
+plan compilation. `derived_clocks` is a separate owner-keyed table; keep authored
+recipe counts unchanged. `exact_durations` composes actual Sequence/Repeat
+extents and validates an integral root. Legacy duration maps and ordinary
+reducers refuse clocked documents, including inside cached validation scopes.
+Snapshot restore and reversible patches preserve the complete clocks and use
+actual root deltas. SQLite reopen/takes/undo/redo and decoded raw PCM are covered.
+Current admission refuses marks, sounds, retained lineage/bindings and any
+Preserve or Shift Retime when derived clocks exist. This is a temporary boundary,
+not the final feature. No ordinary insertion constructs these clocks yet.
+The native snapshot builder explicitly refuses a clocked workspace until its
+controls use exact clocks. All 2,927 core/plan/audio/playback/store tests pass,
+none failed or ignored; their sources stayed unchanged for the native addition.
+The headless native admission test passes, as do strict all-target Clippy for
+core, plan, audio, playback, store, CLI and app and workspace formatting.
+The primary implemented and self-reviewed alone; continue without subagents.
+Next integrate owned Preserve routes, exact metadata/lifecycle transforms and
+atomic splice construction. Keep the Retime insertion guard until those are
+implemented and tested together; native/generation admission is still owed.
+
 [Effective plan extents](../qualification/plan-extents-2026-10-12.md) now live in
 `PlanNode::extent`, separate from its integral recipe inspection duration.
 Bounds, framing progress, definition signals, audio owner windows, binding
 support and independent voice admission use that exact value. Picture framing
 carries `effective_duration`; Camera preview evaluates against the sampled value.
-All ordinary/context constructors still embed integral document durations.
+At that increment, all ordinary/context constructors embedded integral durations.
 `node_duration` refuses fractional output; `node_exact_duration` preserves it.
 An ordinary Preserve stage refuses a differing allocation until its owned route
-exists. This is compiler-boundary work, not persisted fractional insertion.
+exists. The later persisted clocks above supersede its compiler-only boundary;
+fractional insertion itself is still open.
 Keep the intrinsic Hold/Preserve operands separate when adding document clocks.
 Retained timing layouts still persist integral extents. Qualify scoped Hold
 neighbors within half a definition frame of an endpoint before fractional

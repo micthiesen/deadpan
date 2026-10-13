@@ -158,6 +158,16 @@ fn renderer_with_asset(
     nodes: impl IntoIterator<Item = (&'static str, BeatNode)>,
     asset_span: SourceSpan,
 ) -> SequenceAudio {
+    let document = document_with_asset(rate, children, nodes, asset_span);
+    SequenceAudio::new(Arc::new(RenderPlan::compile(&document).unwrap()))
+}
+
+fn document_with_asset(
+    rate: FrameRate,
+    children: &[&str],
+    nodes: impl IntoIterator<Item = (&'static str, BeatNode)>,
+    asset_span: SourceSpan,
+) -> ProjectDocument {
     let empty = ProjectDocument::new(
         ProjectId::new("sequence-project").unwrap(),
         RevisionId::new("immutable-revision").unwrap(),
@@ -193,8 +203,98 @@ fn renderer_with_asset(
         },
     )]))
     .unwrap();
-    let document = ProjectDocument::from_json(&wire.to_string()).unwrap();
-    SequenceAudio::new(Arc::new(RenderPlan::compile(&document).unwrap()))
+    ProjectDocument::from_json(&wire.to_string()).unwrap()
+}
+
+#[test]
+fn persisted_fractional_clocks_render_decoded_pcm_with_exact_seam_phase() {
+    let rate = FrameRate::new(30_000, 1001).unwrap();
+    let doc = document_with_asset(
+        rate,
+        &["first", "last"],
+        [
+            ("first", retime("left", 1, 0..2, PitchPolicy::FollowSpeed)),
+            ("last", retime("right", 1, 0..2, PitchPolicy::FollowSpeed)),
+            ("left", source(rate, 2, 0..3203, 0)),
+            ("right", source(rate, 2, 0..3203, 0)),
+        ],
+        audio(0, 8197).span,
+    );
+    let mut wire = serde_json::to_value(doc).unwrap();
+    wire["derived_clocks"] = serde_json::to_value(BTreeMap::from([
+        (
+            id("first"),
+            DerivedRetimeClock {
+                extent: ratio(1, 2),
+                child_start: ExactRatio::ZERO,
+                child_end: ratio(2, 1),
+            },
+        ),
+        (
+            id("last"),
+            DerivedRetimeClock {
+                extent: ratio(3, 2),
+                child_start: ExactRatio::ZERO,
+                child_end: ratio(2, 1),
+            },
+        ),
+    ]))
+    .unwrap();
+    let doc = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    let reopened = ProjectDocument::from_json(&doc.to_compact_json().unwrap()).unwrap();
+    let renderer = SequenceAudio::new(Arc::new(RenderPlan::compile(&reopened).unwrap()));
+    let reference_blocks = |recipe: ResampleRecipe, start: i64, count: u32| {
+        (0..count)
+            .step_by(256)
+            .flat_map(|offset| {
+                reference(
+                    recipe.clone(),
+                    start + i64::from(offset),
+                    256.min(count - offset),
+                )
+            })
+            .collect::<Vec<_>>()
+    };
+    let mut expected = reference_blocks(
+        ResampleRecipe::new(
+            0..3203,
+            ExactRatio::ZERO,
+            AudioSample(0),
+            ratio(4, 1),
+            samples(0, 801),
+        )
+        .unwrap(),
+        0,
+        801,
+    );
+    // The second allocation starts at RoundEven(800.8) = 801, but its
+    // source phase is still (801 - 800.8) * 4/3 = 4/15 samples.
+    expected.extend(reference_blocks(
+        ResampleRecipe::new(
+            0..3203,
+            ratio(4, 15),
+            AudioSample(801),
+            ratio(4, 3),
+            samples(801, 3203),
+        )
+        .unwrap(),
+        801,
+        2402,
+    ));
+    // A 256-output-sample block at four-times speed needs more than 1,024
+    // decoded input samples including the filter support.
+    let mut provider = FixtureProvider::new(4096);
+    assert_eq!(read(&renderer, &mut provider, 800, 3), expected[800..803]);
+    for width in [1u32, 31, 256] {
+        let mut actual = Vec::new();
+        let mut start = 0;
+        while start < 3203 {
+            let count = width.min(3203 - start);
+            actual.extend(read(&renderer, &mut provider, i64::from(start), count));
+            start += count;
+        }
+        assert_eq!(actual, expected, "chunk width {width}");
+    }
 }
 
 struct FixtureProvider {

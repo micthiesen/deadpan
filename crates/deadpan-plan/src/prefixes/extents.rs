@@ -5,7 +5,7 @@ fn ratio(n: i128, d: i128) -> ExactRatio {
     ExactRatio::new(n, d).unwrap()
 }
 
-fn extent_plan() -> RenderPlan {
+fn extent_document() -> ProjectDocument {
     let original = document();
     let mut left = original.nodes()[&id("source")].clone();
     let mut right = original.nodes()[&id("alternate")].clone();
@@ -56,38 +56,93 @@ fn extent_plan() -> RenderPlan {
     wire["nodes"] = serde_json::to_value(nodes).unwrap();
     wire["overrides"] = serde_json::json!({});
     wire["gap_overrides"] = serde_json::json!({});
+    wire["derived_clocks"] = serde_json::to_value(BTreeMap::from([
+        (
+            id("first"),
+            DerivedRetimeClock {
+                extent: ratio(1, 2),
+                child_start: ExactRatio::ZERO,
+                child_end: ratio(2, 1),
+            },
+        ),
+        (
+            id("last"),
+            DerivedRetimeClock {
+                extent: ratio(3, 2),
+                child_start: ExactRatio::ZERO,
+                child_end: ratio(2, 1),
+            },
+        ),
+    ]))
+    .unwrap();
     let authored = ProjectDocument::from_json(&wire.to_string()).unwrap();
-    let mut plan = RenderPlan::compile(&authored).unwrap();
-    // Install a coherent derived allocation at the compiler boundary. Recipes
-    // stay integral, each Retime still selects its complete two-frame child,
-    // and the project stays two frames long. Persistence/authoring is separate.
-    for (name, extent, scale) in [
-        ("first", ratio(1, 2), ratio(4, 1)),
-        ("last", ratio(3, 2), ratio(4, 3)),
-    ] {
-        let node = &mut plan.nodes[plan.by_id[&id(name)]];
-        node.extent = extent;
-        let CompiledKind::Retime { scale: current, .. } = &mut node.kind else {
-            unreachable!()
-        };
-        *current = scale;
-    }
-    let CompiledKind::Sequence { entries } = &mut plan.nodes[plan.root].kind else {
-        unreachable!()
+    let reopened = ProjectDocument::from_json(&authored.to_compact_json().unwrap()).unwrap();
+    assert_eq!(reopened, authored);
+    reopened
+}
+
+fn extent_plan() -> RenderPlan {
+    RenderPlan::compile(&extent_document()).unwrap()
+}
+
+#[test]
+fn persisted_repeat_uses_exact_prefixes_and_actual_project_duration() {
+    let mut wire = serde_json::to_value(extent_document()).unwrap();
+    let mut repeated = hold(1);
+    let iterations = IterationOrder::new(RevisionId::new("plays").unwrap(), 3).unwrap();
+    repeated.kind = NodeKind::Repeat {
+        child: id("first"),
+        iterations: iterations.clone(),
+        gap: None,
+        escalation: None,
     };
-    entries[0].end = ratio(1, 2);
-    entries[1].start = ratio(1, 2);
-    plan.definition_index = Some(Arc::new(
-        DefinitionIndex::compile(
-            &authored,
-            &plan.nodes,
-            &plan.by_id,
-            &plan.parents,
-            plan.root,
+    wire["nodes"]["repeat"] = serde_json::to_value(repeated).unwrap();
+    wire["nodes"]["root"] =
+        serde_json::to_value(BeatNode::sequence("Root", vec![id("repeat"), id("last")])).unwrap();
+    let doc = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    let plan = RenderPlan::compile(&doc).unwrap();
+    assert_eq!(
+        doc.recipe_durations_shared().unwrap()[doc.root()],
+        frames(4)
+    );
+    assert_eq!(plan.metadata().duration, frames(3));
+    assert_eq!(plan.node_exact_duration(&id("repeat")), Some(ratio(3, 2)));
+    for play in 0..3 {
+        let picture = plan
+            .definition_picture(
+                &id("root"),
+                ratio(1 + 2 * i128::from(play), 4),
+                Default::default(),
+            )
+            .unwrap();
+        let Picture::Source { point, .. } = picture.picture else {
+            panic!("source")
+        };
+        assert_eq!(point.ticks, ratio(3200, 1));
+        assert_eq!(
+            picture.instance.repeats[0].iteration,
+            iterations.at(play).unwrap()
+        );
+    }
+    let spans = plan
+        .audio(
+            AudioSample(0)..plan.audio_duration().unwrap(),
+            Default::default(),
         )
-        .unwrap(),
-    ));
-    plan
+        .unwrap()
+        .spans;
+    assert_eq!(
+        spans
+            .iter()
+            .map(|span| span.allocated_samples.clone())
+            .collect::<Vec<_>>(),
+        [
+            AudioSample(0)..AudioSample(801),
+            AudioSample(801)..AudioSample(1602),
+            AudioSample(1602)..AudioSample(2402),
+            AudioSample(2402)..AudioSample(4805)
+        ]
+    );
 }
 
 #[test]

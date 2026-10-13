@@ -303,7 +303,7 @@ pub(crate) fn build_navigation(
         forward,
         inverse,
         changed_ids: original.changed_ids,
-        duration_delta: next.durations()[next.root()].frames()
+        duration_delta: next.structural_duration()?.frames()
             - current.structural_duration()?.frames(),
         description: format!(
             "{} {}",

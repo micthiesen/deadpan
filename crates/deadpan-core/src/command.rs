@@ -729,6 +729,12 @@ pub struct DocumentPatch {
         deserialize_with = "unique_map"
     )]
     pub audio_lineage: BTreeMap<NodeId, ValueChange<crate::AudioLineageId>>,
+    #[serde(
+        default,
+        skip_serializing_if = "BTreeMap::is_empty",
+        deserialize_with = "unique_map"
+    )]
+    pub derived_clocks: BTreeMap<NodeId, ValueChange<crate::DerivedRetimeClock>>,
     /// Guarded changed timing tables and owner bindings, applied atomically
     /// with the rest of the patch; the complete result is validated together.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -765,6 +771,7 @@ impl DocumentPatch {
             || self.overrides.len() > MAX_DOCUMENT_NODES
             || self.gap_overrides.len() > MAX_DOCUMENT_NODES
             || self.audio_lineage.len() > MAX_DOCUMENT_NODES
+            || self.derived_clocks.len() > MAX_DOCUMENT_NODES
         {
             return Err(EditError::new(
                 EditErrorCode::InvalidCommand,
@@ -875,6 +882,7 @@ impl DocumentPatch {
         apply_changes(&mut result.overrides, &self.overrides)?;
         apply_changes(&mut result.gap_overrides, &self.gap_overrides)?;
         apply_changes(&mut result.audio_lineage, &self.audio_lineage)?;
+        apply_changes(&mut result.derived_clocks, &self.derived_clocks)?;
         if let Some(change) = &self.audio_bindings {
             result.audio_bindings = change.apply(&result.audio_bindings)?;
         }
@@ -924,6 +932,7 @@ impl DocumentPatch {
         check_changes(&from.overrides, &self.overrides)?;
         check_changes(&from.gap_overrides, &self.gap_overrides)?;
         check_changes(&from.audio_lineage, &self.audio_lineage)?;
+        check_changes(&from.derived_clocks, &self.derived_clocks)?;
         let bindings_equal = match &self.audio_bindings {
             Some(change) => change.restores(&from.audio_bindings, &to.audio_bindings)?,
             None => from.audio_bindings == to.audio_bindings,
@@ -947,6 +956,7 @@ impl DocumentPatch {
             overrides,
             gap_overrides,
             audio_lineage,
+            derived_clocks,
             audio_bindings: _,
             targets,
         } = to;
@@ -980,6 +990,7 @@ impl DocumentPatch {
             && patched_equals(&from.overrides, &self.overrides, overrides)
             && patched_equals(&from.gap_overrides, &self.gap_overrides, gap_overrides)
             && patched_equals(&from.audio_lineage, &self.audio_lineage, audio_lineage)
+            && patched_equals(&from.derived_clocks, &self.derived_clocks, derived_clocks)
             && patched_equals(&from.targets, &self.targets, targets))
     }
 
@@ -1004,6 +1015,7 @@ impl DocumentPatch {
             overrides: inverse_changes(&self.overrides),
             gap_overrides: inverse_changes(&self.gap_overrides),
             audio_lineage: inverse_changes(&self.audio_lineage),
+            derived_clocks: inverse_changes(&self.derived_clocks),
             audio_bindings: self
                 .audio_bindings
                 .as_ref()
@@ -1156,6 +1168,10 @@ fn apply_with_durations_captured(
         )?;
         return Ok((edit, result, validation));
     }
+    // Until their temporal transforms consume exact clocks, ordinary reducers
+    // must not operate on a shadow integral timeline. Exact snapshot restore
+    // and guarded reversible patches retain the complete clocks above.
+    document.require_integral_clocks()?;
     if let Command::WithBoundaryReplacements { edit } = &request.command {
         let base = CommandRequest {
             project_id: request.project_id.clone(),
@@ -1210,7 +1226,7 @@ fn apply_with_durations_captured(
         )?;
         let validated = crate::ValidatedDocument::new(std::sync::Arc::new(outcome.document))?;
         let validation = (
-            validated.durations().clone(),
+            validated.recipe_durations().clone(),
             validated.binding_proof().clone(),
         );
         let document = std::sync::Arc::unwrap_or_clone(validated.into_document());
@@ -1705,11 +1721,13 @@ fn net_transaction_known(
     // The entry revision was admitted and validated already; only the result
     // needs the complete (binding-inclusive) validation here.
     let before_duration = match document.retained_durations() {
-        Some(durations) if crate::command_work::local() => durations
-            .get(document.root())
-            .copied()
-            .ok_or_else(|| EditError::new(EditErrorCode::InvalidCommand, "root is missing"))?,
-        _ => document.structural_durations()?[document.root()],
+        Some(durations) if crate::command_work::local() && document.derived_clocks.is_empty() => {
+            durations
+                .get(document.root())
+                .copied()
+                .ok_or_else(|| EditError::new(EditErrorCode::InvalidCommand, "root is missing"))?
+        }
+        _ => document.structural_duration()?,
     }
     .frames();
     let forward = DocumentPatch {
@@ -1737,6 +1755,7 @@ fn net_transaction_known(
         overrides: diff(&document.overrides, &result.overrides),
         gap_overrides: diff(&document.gap_overrides, &result.gap_overrides),
         audio_lineage: diff(&document.audio_lineage, &result.audio_lineage),
+        derived_clocks: diff(&document.derived_clocks, &result.derived_clocks),
         audio_bindings: crate::AudioBindingPatch::between(
             &document.audio_bindings,
             &result.audio_bindings,
@@ -1764,12 +1783,16 @@ fn net_transaction_known(
         )?,
         (structure, None) => result.validated_with_structure(structure.and_then(Result::ok))?,
     };
-    let after_duration = validation
-        .0
-        .get(result.root())
-        .copied()
-        .ok_or_else(|| EditError::new(EditErrorCode::InvalidCommand, "result root is missing"))?
-        .frames();
+    let after_duration = if result.derived_clocks.is_empty() {
+        validation
+            .0
+            .get(result.root())
+            .copied()
+            .ok_or_else(|| EditError::new(EditErrorCode::InvalidCommand, "result root is missing"))?
+            .frames()
+    } else {
+        result.structural_duration()?.frames()
+    };
     let binding_changed_ids =
         changed_audio_binding_owners_in(&document.audio_bindings, forward.audio_bindings.as_ref());
     debug_assert_eq!(
@@ -1783,6 +1806,7 @@ fn net_transaction_known(
             .chain(forward.overrides.keys())
             .chain(forward.gap_overrides.keys())
             .chain(forward.audio_lineage.keys())
+            .chain(forward.derived_clocks.keys())
             .chain(forward.beat_sounds.keys())
             .chain(binding_changed_ids.iter())
             .chain(
@@ -3775,6 +3799,7 @@ mod binding_patch_tests {
             overrides: BTreeMap::new(),
             gap_overrides: BTreeMap::new(),
             audio_lineage: BTreeMap::new(),
+            derived_clocks: BTreeMap::new(),
             audio_bindings: Some(crate::AudioBindingPatch::default()),
         };
         assert_eq!(
