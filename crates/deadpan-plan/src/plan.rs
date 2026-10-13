@@ -122,6 +122,8 @@ pub struct NodeInspection {
     pub id: NodeId,
     pub label: String,
     pub kind: NodeType,
+    /// Integral duration in the authored recipe graph. Output allocation is
+    /// available through [`RenderPlan::node_exact_duration`].
     pub duration: FrameDuration,
 }
 
@@ -377,6 +379,9 @@ impl AudioSoundClockBinding<'_, '_> {
 #[derive(Debug, Clone)]
 struct PlanNode {
     inspection: NodeInspection,
+    // Output allocation is separate from the integral recipe/processing count.
+    // Ordinary compilation embeds the authored duration without rounding.
+    extent: ExactRatio,
     kind: CompiledKind,
     audio_edges: deadpan_core::AudioEdgePolicies,
     audio_editorial_edges: deadpan_core::AudioEditorialEdges,
@@ -830,6 +835,7 @@ impl RenderPlan {
                 ),
             };
             nodes.push(PlanNode {
+                extent: ExactRatio::integer(duration.frames()),
                 inspection: NodeInspection {
                     id: id.clone(),
                     label: node.label.clone(),
@@ -1099,10 +1105,20 @@ impl RenderPlan {
         self.metadata.duration
     }
 
+    /// Integral output extent, or `None` for absent nodes, fractional extents
+    /// and extents outside the authored frame-count range. Never rounds.
     pub fn node_duration(&self, id: &NodeId) -> Option<FrameDuration> {
-        self.by_id
-            .get(id)
-            .map(|index| self.nodes[*index].inspection.duration)
+        let duration = self.node_exact_duration(id)?;
+        if duration.denominator() != 1 {
+            return None;
+        }
+        FrameDuration::new(i64::try_from(duration.numerator()).ok()?).ok()
+    }
+
+    /// Exact allocated output extent, distinct from an authored recipe's count
+    /// or a Preserve stage's intrinsic processing duration.
+    pub fn node_exact_duration(&self, id: &NodeId) -> Option<ExactRatio> {
+        self.by_id.get(id).map(|index| self.nodes[*index].extent)
     }
 
     /// The project frames of a node that appears exactly once, reached only
@@ -1148,9 +1164,7 @@ impl RenderPlan {
         if current != self.root {
             return Ok(None);
         }
-        let end = start.checked_add(ExactRatio::integer(
-            self.nodes[node].inspection.duration.frames(),
-        ))?;
+        let end = start.checked_add(self.nodes[node].extent)?;
         Ok(Some(deadpan_core::ExactFrameRange::new(start, end)?))
     }
 
@@ -1304,14 +1318,12 @@ impl RenderPlan {
         if self.audio_context {
             return Err(PlanError::AudioOnlyContext);
         }
-        let root = &self.nodes[definition].inspection;
-        if position.compare_integer(0).is_lt()
-            || !position.compare_integer(root.duration.frames()).is_lt()
-        {
+        let root = &self.nodes[definition];
+        if position.compare_integer(0).is_lt() || !position.compare(root.extent).is_lt() {
             return Err(PlanError::DefinitionPictureOutOfRange {
-                definition: root.id.clone(),
+                definition: root.inspection.id.clone(),
                 position: Box::new(position),
-                duration: root.duration,
+                duration: Box::new(root.extent),
             });
         }
         let previous_lookup = budget.lookup;
@@ -1327,20 +1339,13 @@ impl RenderPlan {
         let (picture, picture_context, gap_after) = loop {
             let node = &self.nodes[current];
             budget.visit()?;
-            if local.compare_integer(0).is_lt()
-                || !local
-                    .compare_integer(node.inspection.duration.frames())
-                    .is_lt()
-            {
+            if local.compare_integer(0).is_lt() || !local.compare(node.extent).is_lt() {
                 return Err(PlanError::InvalidPlan(
                     "local picture coordinate exceeds node duration",
                 ));
             }
             if let Some(continuity) = continuity.as_deref_mut() {
-                continuity.limit(
-                    local,
-                    ExactRatio::integer(node.inspection.duration.frames()),
-                )?;
+                continuity.limit(local, node.extent)?;
             }
             if let Some(deadpan_core::Framing {
                 value: deadpan_core::FramingValue::Follow { target, scale, .. },
@@ -1356,10 +1361,11 @@ impl RenderPlan {
                 },
                 local_position: local,
                 duration: node.inspection.duration,
+                effective_duration: node.extent,
                 pose: node
                     .framing
                     .as_ref()
-                    .map(|framing| framing.evaluate(local, node.inspection.duration))
+                    .map(|framing| framing.evaluate_exact(local, node.extent))
                     .transpose()?,
                 escalation: false,
             });
@@ -1561,6 +1567,7 @@ impl RenderPlan {
                             },
                             local_position: local,
                             duration: node.inspection.duration,
+                            effective_duration: node.extent,
                             pose: Some(pose),
                             escalation: true,
                         });

@@ -4,6 +4,24 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Effective plan extents](../qualification/plan-extents-2026-10-12.md) now live in
+`PlanNode::extent`, separate from its integral recipe inspection duration.
+Bounds, framing progress, definition signals, audio owner windows, binding
+support and independent voice admission use that exact value. Picture framing
+carries `effective_duration`; Camera preview evaluates against the sampled value.
+All ordinary/context constructors still embed integral document durations.
+`node_duration` refuses fractional output; `node_exact_duration` preserves it.
+An ordinary Preserve stage refuses a differing allocation until its owned route
+exists. This is compiler-boundary work, not persisted fractional insertion.
+Keep the intrinsic Hold/Preserve operands separate when adding document clocks.
+Retained timing layouts still persist integral extents. Qualify scoped Hold
+neighbors within half a definition frame of an endpoint before fractional
+generation admission; its existing neighbor convention remains unchanged here.
+All 1,153 plan/audio/playback tests, six focused plan tests and 32 native
+Camera/presentation tests pass, none failed or ignored. The primary implemented
+and self-reviewed alone. Strict all-target Clippy for plan, audio, playback,
+CLI and app, plus formatting, pass.
+
 [Production plan prefixes](../qualification/plan-prefixes-2026-10-12.md) now carry
 exact Sequence offsets and Repeat allocations through picture, audio, owner,
 definition and retained-context walkers. `ExactRepeatLayout::from(RepeatLayout)`

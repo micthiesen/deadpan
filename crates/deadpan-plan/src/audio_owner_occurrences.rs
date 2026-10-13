@@ -231,7 +231,7 @@ impl Query<'_> {
             }
         }
         let node = &self.plan.nodes[node_index];
-        let extent = ExactRatio::ZERO..ExactRatio::integer(node.inspection.duration.frames());
+        let extent = ExactRatio::ZERO..node.extent;
         let root_extent = map_range(root_zero, root_per_local, extent.clone())?;
         let visible_allocation = intersect(root_clip.clone(), root_extent.clone())?;
         let visible = intersect(root_window.clone(), visible_allocation.clone())?;
@@ -344,15 +344,10 @@ impl Query<'_> {
                 {
                     influence = Some(visible_allocation.clone());
                 }
-                let selected = *start
-                    ..start
-                        .checked_add(scale.checked_mul(ExactRatio::integer(
-                            node.inspection.duration.frames(),
-                        ))?)?;
+                let selected = *start..start.checked_add(scale.checked_mul(node.extent)?)?;
                 let child_local_window =
                     inverse_range(child_root_zero, child_root_per, root_window.clone())?;
-                let child_extent = ExactRatio::ZERO
-                    ..ExactRatio::integer(self.plan.nodes[*child].inspection.duration.frames());
+                let child_extent = ExactRatio::ZERO..self.plan.nodes[*child].extent;
                 let child_visible = intersect(
                     intersect(child_local_window, selected.clone())?,
                     child_extent,
@@ -362,10 +357,7 @@ impl Query<'_> {
                 let child_visible = if preserve_active {
                     intersect(
                         selected.clone(),
-                        ExactRatio::ZERO
-                            ..ExactRatio::integer(
-                                self.plan.nodes[*child].inspection.duration.frames(),
-                            ),
+                        ExactRatio::ZERO..self.plan.nodes[*child].extent,
                     )?
                 } else {
                     child_visible
@@ -383,10 +375,7 @@ impl Query<'_> {
                                 child_root_per,
                                 intersect(
                                     selected.clone(),
-                                    ExactRatio::ZERO
-                                        ..ExactRatio::integer(
-                                            self.plan.nodes[*child].inspection.duration.frames(),
-                                        ),
+                                    ExactRatio::ZERO..self.plan.nodes[*child].extent,
                                 )?,
                             )?,
                         )?,

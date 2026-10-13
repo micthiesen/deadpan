@@ -163,6 +163,11 @@ impl<'plan> AudioStage<'plan> {
                 "audio stage is not nonunity Preserve",
             ));
         }
+        if compiled.extent != ExactRatio::integer(compiled.inspection.duration.frames()) {
+            return Err(PlanError::InvalidPlan(
+                "derived Preserve allocation requires an owned processing route",
+            ));
+        }
         Ok(Self {
             plan,
             child: *child,
@@ -292,9 +297,7 @@ impl<'plan> AudioStage<'plan> {
             || support.start.compare_integer(0).is_lt()
             || support
                 .end
-                .checked_sub(ExactRatio::integer(
-                    self.plan.nodes[self.child].inspection.duration.frames(),
-                ))?
+                .checked_sub(self.plan.nodes[self.child].extent)?
                 .compare_integer(0)
                 .is_gt()
         {
@@ -552,7 +555,7 @@ impl<'plan> AudioSignal<'plan> {
         Self {
             plan: definition.plan,
             root: definition.root,
-            support: ExactRatio::ZERO..ExactRatio::integer(definition.duration().frames()),
+            support: ExactRatio::ZERO..definition.exact_duration(),
             sampling_support: None,
             constrain_support: false,
             repeats: Vec::new(),
@@ -942,9 +945,7 @@ impl<'plan> AudioSignal<'plan> {
                     gap.after.clone(),
                 );
             }
-            let node_extent = transform.signal_origin
-                ..transform
-                    .signal_from_local(ExactRatio::integer(node.inspection.duration.frames()))?;
+            let node_extent = transform.signal_origin..transform.signal_from_local(node.extent)?;
             extent = intersect(extent, node_extent.clone())?;
             if !matches!(
                 node.kind,

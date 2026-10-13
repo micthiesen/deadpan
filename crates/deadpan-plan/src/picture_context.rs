@@ -222,11 +222,7 @@ impl RenderPlan {
             ExtensionDirection::FromLeft => anchor.position.checked_sub(extent)?,
             ExtensionDirection::FromRight => anchor.position.checked_add(extent)?,
         };
-        if far.compare_integer(0).is_lt()
-            || !far
-                .compare_integer(self.nodes[definition].inspection.duration.frames())
-                .is_lt()
-        {
+        if far.compare_integer(0).is_lt() || !far.compare(self.nodes[definition].extent).is_lt() {
             return Ok(ScopedHoldContextObservation::Unavailable {
                 boundaries: Box::new(boundaries),
                 reason: HoldContextUnavailable::InsufficientContext,

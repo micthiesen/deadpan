@@ -445,7 +445,6 @@ fn layer_poses(
     layer: usize,
     framing: Option<&Framing>,
     local_position: ExactRatio,
-    duration: deadpan_core::FrameDuration,
 ) -> Result<Vec<(InstancePath, Option<FramingPose>)>, String> {
     let mut poses: Vec<Option<FramingPose>> =
         picture.framing.iter().map(|layer| layer.pose).collect();
@@ -486,7 +485,7 @@ fn layer_poses(
         }) => Some(resolve(target, *scale, *fallback, &poses[..layer])),
         Some(framing) => Some(
             framing
-                .evaluate(local_position, duration)
+                .evaluate_exact(local_position, picture.framing[layer].effective_duration)
                 .map_err(|error| error.to_string())?,
         ),
         None => None,
@@ -1559,7 +1558,6 @@ impl DeadpanApp {
                 session.layer,
                 framing.as_ref(),
                 session.local_position,
-                session.duration,
             )
             .ok()
         });
@@ -1777,7 +1775,6 @@ impl DeadpanApp {
             camera.layer,
             framing.as_ref(),
             camera.local_position,
-            camera.duration,
         )?;
         self.presentation.set_framing_poses(camera.ticket, &poses)
     }
@@ -2859,6 +2856,74 @@ pub(super) fn render_layers(picture: &crate::worker::Picture) -> Result<Vec<Fram
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn camera_path_preview_uses_the_exact_sampled_owner_extent() {
+        let document = deadpan_core::ProjectDocument::new(
+            deadpan_core::ProjectId::new("camera-extent").unwrap(),
+            RevisionId::new("initial").unwrap(),
+            deadpan_core::PresentationBasis {
+                width: 16,
+                height: 16,
+                frame_rate: deadpan_core::FrameRate::new(30, 1).unwrap(),
+                color_policy: deadpan_core::ColorPolicy::SdrRec709,
+            },
+            NodeId::new("root").unwrap(),
+        )
+        .unwrap();
+        let local = ExactRatio::new(3, 4).unwrap();
+        let extent = ExactRatio::new(3, 2).unwrap();
+        let scope = InstancePath {
+            node: document.root().clone(),
+            repeats: Vec::new(),
+        };
+        let picture = crate::worker::Picture {
+            summary: None,
+            id: deadpan_core::SourceFrameId(0),
+            frame: None,
+            canvas: Some((16, 16)),
+            framing: vec![deadpan_plan::PictureFraming {
+                instance: scope.clone(),
+                local_position: local,
+                duration: deadpan_core::FrameDuration::new(1).unwrap(),
+                effective_duration: extent,
+                pose: None,
+                escalation: false,
+            }],
+            framing_gap: false,
+            follow_point: None,
+            picture_context: None,
+            captions: Vec::new(),
+            tier: crate::worker::PictureTier::Original,
+        };
+        let framing = Framing {
+            clock: FramingClock::OwnerOutput,
+            value: FramingValue::Envelope {
+                envelope: deadpan_core::FramingEnvelope {
+                    initial: FramingPose::identity(),
+                    segments: vec![deadpan_core::FramingSegment {
+                        end: ExactRatio::ONE,
+                        pose: FramingPose {
+                            scale: ExactRatio::integer(2),
+                            ..FramingPose::identity()
+                        },
+                        curve: FramingCurve::Linear,
+                    }],
+                },
+            },
+        };
+        let poses = layer_poses(&document, &picture, 0, Some(&framing), local).unwrap();
+        assert_eq!(
+            poses,
+            vec![(
+                scope,
+                Some(FramingPose {
+                    scale: extent,
+                    ..FramingPose::identity()
+                })
+            )]
+        );
+    }
 
     #[test]
     fn zoom_commands_act_only_on_the_context_captured_at_entry() {

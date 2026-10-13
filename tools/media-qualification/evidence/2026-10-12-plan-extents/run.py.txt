@@ -1,0 +1,16 @@
+import hashlib, json, os, pathlib, subprocess, sys, time
+
+scratch = pathlib.Path(__file__).resolve().parent
+root = pathlib.Path('/Users/michael/Code/deadpan')
+name, *command = sys.argv[1:]
+env = os.environ.copy()
+env['DEADPAN_FFMPEG_PREFIX'] = '/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix'
+start = time.monotonic()
+with (scratch / (name + '.log')).open('w') as log:
+    result = subprocess.run(command, cwd=root, env=env, stdout=log, stderr=subprocess.STDOUT)
+receipt = {'command': command, 'exit_code': result.returncode, 'seconds': time.monotonic() - start,
+           'log_sha256': hashlib.sha256((scratch / (name + '.log')).read_bytes()).hexdigest()}
+(scratch / (name + '.json')).write_text(json.dumps(receipt, indent=2) + '\n')
+print(json.dumps(receipt), flush=True)
+print((scratch / (name + '.log')).read_text()[-5000:], flush=True)
+sys.exit(result.returncode)

@@ -253,11 +253,7 @@ impl RenderPlan {
         )?);
         budget.spend(1 + instance.repeats.len())?;
         let owner = scoped_signal(self, host, instance.repeats.clone(), host_support.clone());
-        let selected = recipe.mapping.selection_frames_with_offset(
-            self.nodes[host].inspection.duration,
-            recipe.offset,
-            rate,
-        )?;
+        let selected = voice_selection(&recipe, rate)?;
         let mut audible = selected.start..selected.end;
         let voice = checked_voice(owner, recipe)?;
         let mut provider = Provider::Source(Box::new(voice.input_signal()));
@@ -407,25 +403,39 @@ fn checked_voice(
     owner: AudioSignal<'_>,
     recipe: AudioSourceVoiceRecipe,
 ) -> Result<AudioSourceVoice<'_>, PlanError> {
-    let duration = owner.plan.nodes[owner.root].inspection.duration;
-    let selected = recipe.mapping.selection_frames_with_offset(
-        duration,
-        recipe.offset,
-        owner.plan.metadata.presentation_basis.frame_rate,
-    )?;
+    let duration = owner.plan.nodes[owner.root].extent;
+    let selected = voice_selection(&recipe, owner.plan.metadata.presentation_basis.frame_rate)?;
     if selected.start.compare_integer(0).is_lt()
         || !selected
             .end
             .checked_sub(selected.start)?
             .compare_integer(0)
             .is_gt()
-        || selected.end.compare_integer(duration.frames()).is_gt()
+        || selected.end.compare(duration).is_gt()
     {
         return Err(PlanError::InvalidAudioSourceOccurrence(
             "source occurrence selection exceeds its owner",
         ));
     }
     owner.source_voice(recipe)
+}
+
+fn voice_selection(
+    recipe: &AudioSourceVoiceRecipe,
+    rate: deadpan_core::FrameRate,
+) -> Result<deadpan_core::ExactFrameRange, PlanError> {
+    if recipe.mapping == deadpan_core::SourceAudioMapping::FitBeat {
+        return Err(PlanError::InvalidPlan(
+            "source voice requires an explicit natural-rate mapping",
+        ));
+    }
+    // Independent voices have an explicit mapping, so host allocation never
+    // supplies an integral processing count, even when the owner is fractional.
+    Ok(recipe.mapping.selection_frames_with_offset(
+        deadpan_core::FrameDuration::ZERO,
+        recipe.offset,
+        rate,
+    )?)
 }
 
 fn resolve_edges(
@@ -531,7 +541,7 @@ fn resolve_edges(
 }
 
 fn node_support(plan: &RenderPlan, node: usize) -> Range<ExactRatio> {
-    ExactRatio::ZERO..ExactRatio::integer(plan.nodes[node].inspection.duration.frames())
+    ExactRatio::ZERO..plan.nodes[node].extent
 }
 
 fn gain_owner<'plan>(

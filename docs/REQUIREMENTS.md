@@ -4,6 +4,16 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 
 ## Resumed implementation, 2026-10-06
 
+[Effective plan extents](qualification/plan-extents-2026-10-12.md) separate exact
+output allocation from integral recipe counts in picture/audio walkers,
+definition grids, owner windows and independent voice admission. Committed
+framing and Camera preview use the same exact owner extent. Compiler-boundary
+fixtures exercise fractional allocations; persisted effective clocks and owned
+Preserve routes remain open, so Retime insertion is still guarded. All 1,153
+plan/audio/playback tests, six focused plan tests and 32 native Camera/presentation
+tests pass, none failed or ignored. Strict all-target Clippy for plan, audio,
+playback, CLI and app, plus formatting, pass. No requirement or gate is newly complete.
+
 [Production plan prefixes](qualification/plan-prefixes-2026-10-12.md) connect
 the exact Repeat index and exact Sequence offsets to picture/audio walkers,
 owner queries, Hold context and retained processing plans. Existing integer

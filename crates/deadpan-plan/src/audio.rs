@@ -616,8 +616,7 @@ impl RenderPlan {
                 domain_gap = Some(gap);
                 break (content, after);
             }
-            let node_extent = transform.project_origin
-                ..transform.project_at(ExactRatio::integer(node.inspection.duration.frames()))?;
+            let node_extent = transform.project_origin..transform.project_at(node.extent)?;
             retain_incident_editorial(&mut editorial, &node_extent, grid, budget)?;
             inherited_editorial = editorial.len();
             extent = intersect(extent, node_extent.clone())?;

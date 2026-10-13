@@ -170,9 +170,17 @@ Sequence entries and compiled definition offsets also carry exact ratios.
 Integer Repeat storage embeds directly behind the interface; implicit gap
 recipes retain their separate authored duration. `single_occurrence_exact_range`
 preserves exact offsets, while the integer wrapper refuses fractional endpoints.
-Node extents and stored Retime mappings are still integral. Persisting effective
-clocks must update those duration consumers and validation; changing prefixes
-alone does not admit a fractional project or a Preserve splice.
+That prefix increment left node extents and stored Retime mappings integral.
+Changing prefixes alone does not admit a fractional project or a Preserve splice.
+
+[Effective plan extents](qualification/plan-extents-2026-10-12.md) now separate
+exact output allocation from integral recipe counts throughout the compiled
+picture/audio walkers. Normalized framing and Camera's temporary preview use
+the sampled effective extent. Definition point grids, owner windows and natural
+voice admission use exact output bounds. Compilers still embed integral document
+durations; effective-clock persistence, marks and owned Preserve routes remain
+required. Ordinary Preserve refuses differing allocation and intrinsic counts
+until a route can express that relationship without resizing its input.
 
 ### Preserve input projection (design)
 

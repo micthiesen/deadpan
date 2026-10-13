@@ -110,7 +110,7 @@ pub enum PlanError {
         // Keep the i128-based coordinate's size and alignment out of every
         // plan error and the host error types that contain one.
         position: Box<ExactRatio>,
-        duration: FrameDuration,
+        duration: Box<ExactRatio>,
     },
     #[error("invalid scoped Hold: {0}")]
     InvalidScopedHold(&'static str),

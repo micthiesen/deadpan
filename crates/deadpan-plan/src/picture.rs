@@ -164,7 +164,11 @@ pub struct PictureFraming {
     /// can replace an operation at its original position in the composition.
     pub instance: InstancePath,
     pub local_position: ExactRatio,
+    /// Integral count retained by the authored recipe graph.
     pub duration: FrameDuration,
+    /// Actual owner extent used for normalized framing evaluation. Derived
+    /// structure must not round this back to the recipe's integer count.
+    pub effective_duration: ExactRatio,
     pub pose: Option<FramingPose>,
     /// A Repeat play's escalation scale rather than authored framing. Its
     /// instance is the Repeat's own; Camera never edits it.

@@ -4,6 +4,8 @@ use deadpan_core::*;
 
 use super::*;
 
+mod extents;
+
 fn id(name: &str) -> NodeId {
     NodeId::new(name).unwrap()
 }

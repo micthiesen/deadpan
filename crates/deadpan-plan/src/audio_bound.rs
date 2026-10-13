@@ -205,8 +205,10 @@ impl RenderPlan {
         // its new tail without resetting the loop phase or other Repeat plays'
         // historical origins. The raw Source walker separately applies current
         // source placement; current meaningful ancestors constrain this extent.
-        let duration = gap.map_or(self.nodes[node].inspection.duration, |gap| gap.duration);
-        let intrinsic = ExactRatio::ZERO..ExactRatio::integer(duration.frames());
+        let duration = gap.map_or(self.nodes[node].extent, |gap| {
+            ExactRatio::integer(gap.duration.frames())
+        });
+        let intrinsic = ExactRatio::ZERO..duration;
         let mut support = match support {
             Some(current) => intersect(intrinsic, local(current.start)?..local(current.end)?)?,
             None => intrinsic,

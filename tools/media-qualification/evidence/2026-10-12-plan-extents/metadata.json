@@ -1,0 +1,258 @@
+{
+  "base_commit": "6cb83e040a1759874d0be077c1f45e851ec1458c",
+  "sources_sha256": {
+    "crates/deadpan-app/src/presentation/tests.rs": "25463cb8812b8080c3eea4bf1e58caf6e4fac16db31a5f95e6af227ac95636f5",
+    "crates/deadpan-app/src/preview/camera.rs": "25fedf34d60f0d28bb6646acc6cd5bf94fc5daf7c7c216568557b2a4bf6487a4",
+    "crates/deadpan-plan/src/audio.rs": "813579d17622013201cb1e7ff844e8ed0ed1e5564366ff34cc6618af103893e1",
+    "crates/deadpan-plan/src/audio_bound.rs": "42f35d755f28f8bb9308e8a9979394036a80f50acaa4996a93e5b449c05c3c60",
+    "crates/deadpan-plan/src/audio_context.rs": "229166dc8766da0289e45203617b3e598bea2b2b8b88ef12f349650ef7b2d0fe",
+    "crates/deadpan-plan/src/audio_definition.rs": "d78ca2b2655a074761902832da058aa836f8376720767be3e604a594819f4791",
+    "crates/deadpan-plan/src/audio_owner_occurrences.rs": "b5959cc74130580c80e3d5a25889b864d15e817839fec8f89aeacbcb67abd26a",
+    "crates/deadpan-plan/src/audio_owners.rs": "5e5bcab29554852bbaeed6324a9dfd62a63aee476cc9171b448427fb2245f7f4",
+    "crates/deadpan-plan/src/audio_signal.rs": "c939ac94379dfec06f9b6637ccd75c4bcf84a898984a13b2c8888ba8145517ca",
+    "crates/deadpan-plan/src/audio_source_occurrence.rs": "9131b5cba60e83593850c97c7e4b792e1c16e677ca577a3a0e25052ce2520a3f",
+    "crates/deadpan-plan/src/lib.rs": "0bb8864c16f4826a37a4d6f03bdaa66f1bd446c094337f39ec6b31d4511e9efa",
+    "crates/deadpan-plan/src/picture.rs": "139f6a82e42e2711017d7b3fb8afd7633bd37c0823cf8700ad9aeedae0d17a0d",
+    "crates/deadpan-plan/src/picture_context.rs": "35defc242d0118acadf05333e2657d63c9331d1ff5ff897d4fb095437212d7c1",
+    "crates/deadpan-plan/src/picture_definition.rs": "cf656a88526bd69ef18f6200b6d6c21e9484dce497393593476dc2618ec8ae1b",
+    "crates/deadpan-plan/src/plan.rs": "2918b30b7eb1e0e73533935d468be88ead720c33e47bea698f9aeb5b6845cb13",
+    "crates/deadpan-plan/src/prefixes/extents.rs": "6fa59873b119748c48c4c21a964f147e72dc981b8344103009f6fbb05f570198",
+    "crates/deadpan-plan/src/prefixes/tests.rs": "8016f94cdbdd9631c2e4d0e28f6b64b896d22a4f1eb3c8fcab02aec95a6e2044"
+  },
+  "cargo_lock_sha256": "9d911d67520092b729ae0e5933a39fc57f0ab4933b7d94b2d72d55a125fca93e",
+  "checks": {
+    "app-camera-bin": {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-app",
+        "--bin",
+        "deadpan-app",
+        "preview::camera::tests"
+      ],
+      "exit_code": 0,
+      "seconds": 34.470978249795735,
+      "log_sha256": "e7f0955237917a8fd71fef603d3d4775165b6602b3d7bd1d1bdd484a1b48b37d",
+      "tests": {
+        "passed": 10,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    "app-camera": {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-app",
+        "--lib",
+        "preview::camera::tests"
+      ],
+      "exit_code": 0,
+      "seconds": 57.123838332947344,
+      "log_sha256": "3e5bed9501dcfc0e5a6dea78a4397bd9df5ee7648ff3a5e35f952c9a9ed1408c",
+      "tests": {
+        "passed": 0,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    "app-presentation": {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-app",
+        "--bin",
+        "deadpan-app",
+        "presentation::tests"
+      ],
+      "exit_code": 0,
+      "seconds": 0.22970445826649666,
+      "log_sha256": "83a1e1e242070077f74aa5a7c329498793340a0f2a5ad9dd1ec6dd5e8c13f4d7",
+      "tests": {
+        "passed": 22,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    "clippy": {
+      "command": [
+        "cargo",
+        "clippy",
+        "--locked",
+        "-p",
+        "deadpan-plan",
+        "-p",
+        "deadpan-audio",
+        "-p",
+        "deadpan-playback",
+        "-p",
+        "deadpan-cli",
+        "-p",
+        "deadpan-app",
+        "--all-targets",
+        "--",
+        "-D",
+        "warnings"
+      ],
+      "exit_code": 0,
+      "seconds": 240.0055449581705,
+      "log_sha256": "6016dc458034ccc9d0209bdd73a6700d26430e836426e9492ad6828d58682501"
+    },
+    "focused-plan-final": {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-plan",
+        "--lib",
+        "prefix_tests"
+      ],
+      "exit_code": 101,
+      "seconds": 5.142679875250906,
+      "log_sha256": "d82720b3d274299e1cf143054328d1a18ef692c0ad66809a6b1461a20a366e10"
+    },
+    "focused-plan-final2": {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-plan",
+        "--lib",
+        "prefix_tests"
+      ],
+      "exit_code": 0,
+      "seconds": 13.668931667227298,
+      "log_sha256": "2e74724e091706ae71ae5bb8c4100d271ab89fbc927ed52d4dd0d1520c71fdaa",
+      "tests": {
+        "passed": 6,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    "focused-plan-retry": {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-plan",
+        "--lib",
+        "prefix_tests"
+      ],
+      "exit_code": 0,
+      "seconds": 13.694229499902576,
+      "log_sha256": "6e932a3b5baabd54bc29df6be38edbcccb3b005ad4b9a3f2f2c8aba9382568bb",
+      "tests": {
+        "passed": 5,
+        "failed": 0,
+        "ignored": 0
+      }
+    },
+    "focused-plan": {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-plan",
+        "--lib",
+        "prefix_tests"
+      ],
+      "exit_code": 101,
+      "seconds": 6.036378874909133,
+      "log_sha256": "57e18425e86309055f7fbe30da40724130e36492a35658ae711131f91f92af3a"
+    },
+    "format-final-sources": {
+      "command": [
+        "cargo",
+        "fmt",
+        "--all"
+      ],
+      "exit_code": 0,
+      "seconds": 4.757203207816929,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "format-initial": {
+      "command": [
+        "cargo",
+        "fmt",
+        "--all"
+      ],
+      "exit_code": 0,
+      "seconds": 4.834970458876342,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "format": {
+      "command": [
+        "cargo",
+        "fmt",
+        "--all",
+        "--",
+        "--check"
+      ],
+      "exit_code": 0,
+      "seconds": 5.243979665916413,
+      "log_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "regressions": {
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "--no-fail-fast",
+        "-p",
+        "deadpan-plan",
+        "-p",
+        "deadpan-audio",
+        "-p",
+        "deadpan-playback"
+      ],
+      "exit_code": 0,
+      "seconds": 561.8568545836024,
+      "log_sha256": "a636635940219e52e1dc2cfc14d058b996349e739ff7eb748bcc11e7dbe1b286",
+      "tests": {
+        "passed": 1153,
+        "failed": 0,
+        "ignored": 0
+      }
+    }
+  },
+  "test_binaries_by_check_sha256": {
+    "app-camera-bin": {
+      "target/debug/deps/deadpan_app-d5519c626e999a69": "a9b072ad2db5ebcbaa03b3f29020787252ac7139ed4ae80425bde97f9320ade2"
+    },
+    "app-presentation": {
+      "target/debug/deps/deadpan_app-d5519c626e999a69": "a9b072ad2db5ebcbaa03b3f29020787252ac7139ed4ae80425bde97f9320ade2"
+    },
+    "regressions": {
+      "target/debug/deps/deadpan_audio-3b7b674540dbcea4": "1bb783b4b699f5da372e9d3fef02614bec3d540448ea255838a3a528404520d2",
+      "target/debug/deps/deadpan_plan-c3c18bc14d984dd6": "b362674604080ad0d0936fabacc0ff4c73041b13c41de0be4bf888d9247cc465",
+      "target/debug/deps/deadpan_playback-93ebd547c811bd51": "943487f10b9f50be67ad5af0b3cf1846fd65affa50f98da490e30e6dc3cae466"
+    }
+  },
+  "binary_hash_scope": "Final regression library tests and both native test filters. Earlier focused binaries are not independently identified.",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "macos": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84",
+  "hardware": "Apple M5 Max\n18\n137438953472",
+  "review": [
+    "Primary implemented and self-reviewed alone.",
+    "Reviewed every modified allocation consumer, remaining intrinsic-duration read and the Camera preview path.",
+    "Ordinary and retained-context constructors embed the validated integer graph.",
+    "Preserve preparation refuses derived allocation until an owned processing route can preserve its intrinsic operand.",
+    "Source/Hold mappings and intrinsic counts are not rescaled; independent voices retain explicit natural-rate mappings."
+  ],
+  "setup_failures": [
+    "The first direct cargo fmt failed because the new test module was in prefixes/tests/extents.rs; it was moved to prefixes/extents.rs.",
+    "Two focused builds caught fixture errors: missing DefinitionIndex arguments and a qualification identity requiring a 64-digit hexadecimal String.",
+    "app-camera selected the empty library and ran zero tests; app-camera-bin targets the actual binary and runs ten tests."
+  ],
+  "limits": "Compiler-boundary exact allocation and Camera evaluation only. No persisted effective clocks, authored fractional project, new decoded-PCM path, live GUI, physical audio or performance qualification. Retime insertion remains guarded; owned Preserve routes and their lifecycle remain required."
+}

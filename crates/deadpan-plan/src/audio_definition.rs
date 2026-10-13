@@ -96,11 +96,23 @@ impl<'plan> AudioDefinition<'plan> {
         &self.plan.nodes[self.root].inspection.id
     }
 
+    /// Integral count in the authored recipe graph. Use [`Self::exact_duration`]
+    /// for output allocation rather than an intrinsic processing operand.
     pub fn duration(&self) -> FrameDuration {
         self.gap
             .as_ref()
             .map_or(self.plan.nodes[self.root].inspection.duration, |gap| {
                 gap.duration
+            })
+    }
+
+    /// Current output extent. The integral recipe duration remains separate
+    /// so a derived allocation cannot resize an intrinsic DSP operand.
+    pub fn exact_duration(&self) -> ExactRatio {
+        self.gap
+            .as_ref()
+            .map_or(self.plan.nodes[self.root].extent, |gap| {
+                ExactRatio::integer(gap.duration.frames())
             })
     }
 
@@ -149,11 +161,7 @@ impl<'plan> AudioDefinition<'plan> {
             }
         }
         let support = placement.local_support();
-        if support
-            .end
-            .compare_integer(self.duration().frames())
-            .is_gt()
-        {
+        if support.end.compare(self.exact_duration()).is_gt() {
             return Err(PlanError::InvalidAudioRootPlacement(
                 "support is outside the definition output",
             ));

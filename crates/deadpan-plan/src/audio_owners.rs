@@ -425,7 +425,7 @@ impl<'plan> AudioDefinition<'plan> {
         seed.node = self.root;
         seed.definition = Some(self.selector.clone());
         seed.gap = self.gap.clone();
-        seed.extent = ExactRatio::ZERO..ExactRatio::integer(self.duration().frames());
+        seed.extent = ExactRatio::ZERO..self.exact_duration();
         seed.grid = AudioSampleGrid::new(
             ExactRatio::ZERO,
             seed.grid.frames_per_sample(),
@@ -757,14 +757,10 @@ fn walk(
         } else {
             BindingTarget::Node(state.node)
         };
-        let duration = state
-            .gap
-            .as_ref()
-            .map_or(node.inspection.duration, |gap| gap.duration);
-        let extent = state.placement.origin
-            ..state
-                .placement
-                .frame(ExactRatio::integer(duration.frames()))?;
+        let duration = state.gap.as_ref().map_or(node.extent, |gap| {
+            ExactRatio::integer(gap.duration.frames())
+        });
+        let extent = state.placement.origin..state.placement.frame(duration)?;
         state.extent = intersect(state.extent, extent.clone())?;
         if state.gap.is_some()
             || !matches!(

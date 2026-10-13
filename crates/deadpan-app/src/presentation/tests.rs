@@ -242,6 +242,7 @@ fn camera_picture() -> (Picture, deadpan_core::InstancePath) {
         instance: scope.clone(),
         local_position: deadpan_core::ExactRatio::new(1, 2).unwrap(),
         duration: deadpan_core::FrameDuration::new(11).unwrap(),
+        effective_duration: deadpan_core::ExactRatio::integer(11),
         pose: None,
         escalation: false,
     });

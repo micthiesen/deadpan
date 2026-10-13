@@ -420,7 +420,7 @@ impl RenderPlan {
         budget: &mut PictureBudget,
     ) -> Result<ScopedHoldBoundaries, PlanError> {
         let duration = self.nodes[hold].inspection.duration;
-        let end = start.checked_add(ExactRatio::integer(duration.frames()))?;
+        let end = start.checked_add(self.nodes[hold].extent)?;
         let half = ExactRatio::new(1, 2)?;
         let left = if start.compare_integer(0).is_gt() {
             Some(self.sample_definition_picture(
@@ -432,10 +432,7 @@ impl RenderPlan {
         } else {
             None
         };
-        let right = if end
-            .compare_integer(self.nodes[definition].inspection.duration.frames())
-            .is_lt()
-        {
+        let right = if end.compare(self.nodes[definition].extent).is_lt() {
             Some(self.sample_definition_picture(
                 definition,
                 end.checked_add(half)?,
