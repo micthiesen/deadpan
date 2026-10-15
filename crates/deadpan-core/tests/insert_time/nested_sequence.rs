@@ -208,6 +208,14 @@ fn nested_insertion_failures_do_not_publish_intermediate_copies_or_clocks() {
             ("a", source(3)),
         ],
     );
-    assert!(retimed.insert_time_target(ProjectFrame(1)).is_err());
-    assert!(apply(&retimed, &insertion(&retimed, "unsupported", 1, 1)).is_err());
+    // A pitch-preserving speed change now splits into two full processing
+    // contexts; an identity pool that cannot cover its copy still fails.
+    let target = retimed.insert_time_target(ProjectFrame(1)).unwrap();
+    assert_eq!(target.split.unwrap().target, id("retime"));
+    let mut short = insertion(&retimed, "short-pool", 1, 1);
+    let Command::InsertTime { identities, .. } = &mut short.command else {
+        panic!()
+    };
+    identities.nodes.truncate(2);
+    assert!(apply(&retimed, &short).is_err());
 }

@@ -12,9 +12,15 @@ processes pitch, judged on recipe and effective clock (`retime_processes`).
 Ordinary commands now run on clocked documents inside
 `derived_clock::with_sealed` and each leaf must pass `sealed_preserved`
 ([record](../qualification/clocked-editing-2026-10-15.md)); the native
-workspace opens them. Next: edits inside a clocked speed change (hold duration,
-provider, Split inside), the app's remaining integral consumers (scoped
-inspector, Trim inspection), Preserve output routes, then marks/sounds.
+workspace opens them. Hold durations inside a clocked speed change now change exactly.
+[Preserve/Shift pauses](../qualification/preserve-pauses-2026-10-15.md) do not
+need an owned output route: they split the stage into full processing contexts
+(`insert_time::processing_stage`, `InsertTimeTarget::lift`). An owned route
+would still avoid one processing copy per pause and keep inner animated group
+framing live. Next on this thread: other edits inside clocked speed changes
+(provider, Split inside), the app's remaining integral consumers (scoped
+inspector, Trim inspection), marks/sounds on clocked documents, Repeat
+ancestors.
 
 [Historical exact audio geometry](../qualification/frozen-audio-clocks-2026-10-12.md)
 now lives in `FrozenAudioLayout::derived_clocks` as timing-only

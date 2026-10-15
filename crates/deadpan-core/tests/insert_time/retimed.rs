@@ -238,14 +238,13 @@ fn only_silent_freeze_or_black_pauses_and_unmarked_projects_are_admitted() {
 }
 
 #[test]
-fn preserve_speed_changes_and_attached_marks_still_refuse() {
+fn pitch_preserving_speed_changes_use_the_ordinary_split_path() {
     let mut wire = serde_json::to_value(fixture()).unwrap();
     wire["nodes"]["slow"]["kind"]["pitch"] = json!("preserve");
     let preserve = ProjectDocument::from_json(&wire.to_string()).unwrap();
-    assert!(apply(&preserve, &pause(&preserve, "p", 6, 2, 5)).is_err());
-    assert!(!matches!(
+    assert!(matches!(
         preserve.pause_insertion_target(ProjectFrame(6)),
-        Ok(PauseInsertionTarget::Retimed(_))
+        Ok(PauseInsertionTarget::Ordinary(_))
     ));
 }
 
@@ -389,4 +388,111 @@ fn grouping_and_deleting_a_clocked_speed_change_keep_or_drop_its_clocks() {
     );
     assert!(deleted.derived_clocks().is_empty());
     assert_eq!(deleted.duration().unwrap(), duration(4));
+}
+
+fn preserve_fixture(framed: bool) -> ProjectDocument {
+    let mut wire = serde_json::to_value(fixture()).unwrap();
+    wire["nodes"]["slow"]["kind"]["pitch"] = json!("preserve");
+    if framed {
+        wire["nodes"]["slow"]["framing"] = serde_json::to_value(Framing {
+            clock: Default::default(),
+            value: FramingValue::Static {
+                pose: FramingPose::new(ratio(1, 2), ratio(1, 2), ratio(3, 2)).unwrap(),
+            },
+        })
+        .unwrap();
+    }
+    ProjectDocument::from_json(&wire.to_string()).unwrap()
+}
+
+#[test]
+fn pitch_preserving_speed_changes_split_into_full_contexts_around_the_pause() {
+    let before = preserve_fixture(false);
+    let target = before.insert_time_target(ProjectFrame(5)).unwrap();
+    assert_eq!(target.parent, id("root"));
+    assert_eq!(target.lift, None);
+    let split = target.split.clone().unwrap();
+    assert_eq!((split.target, split.at), (id("slow"), duration(3)));
+    let after = edit(&before, pause(&before, "p", 5, 3, split.required_ids));
+    assert!(after.derived_clocks().is_empty());
+    assert_eq!(after.duration().unwrap(), duration(31));
+    let NodeKind::Sequence { children } = &after.nodes()[after.root()].kind else {
+        panic!("root")
+    };
+    assert_eq!(children[2], id("pause-p"));
+    // Both halves window a complete copy of the processing stage.
+    let (_, left, inner) = retime(&after, &children[1].to_string());
+    assert_eq!((left.start().0, left.end().0, inner), (0, 3, id("slow")));
+    let (_, right, copy) = retime(&after, &children[3].to_string());
+    assert_eq!((right.start().0, right.end().0), (3, 24));
+    let speed = |document: &ProjectDocument, node: &NodeId| {
+        let NodeKind::Retime {
+            duration,
+            mapping,
+            pitch,
+            ..
+        } = &document.nodes()[node].kind
+        else {
+            panic!("speed change")
+        };
+        (*duration, *mapping, *pitch)
+    };
+    assert_eq!(speed(&after, &copy), speed(&before, &id("slow")));
+}
+
+#[test]
+fn a_framed_pitch_preserving_speed_change_lifts_its_framing_over_the_pause() {
+    let before = preserve_fixture(true);
+    let target = before.insert_time_target(ProjectFrame(5)).unwrap();
+    assert_eq!(target.lift, Some(id("slow")));
+    // Picture capture stops below the lifted speed change.
+    assert_eq!(
+        before
+            .pause_insertion_target(ProjectFrame(5))
+            .unwrap()
+            .picture_parent()
+            .node,
+        id("slow")
+    );
+    let required = target.split.unwrap().required_ids;
+    let after = edit(&before, pause(&before, "p", 5, 3, required));
+    let group = id(&format!("p-{}", required - 1));
+    let NodeKind::Sequence { children } = &after.nodes()[&group].kind else {
+        panic!("lifted group")
+    };
+    assert_eq!(children.len(), 3);
+    assert_eq!(children[1], id("pause-p"));
+    assert_eq!(
+        after.nodes()[&group].framing,
+        before.nodes()[&id("slow")].framing
+    );
+    assert!(after.nodes()[&id("slow")].framing.is_none());
+    assert_eq!(after.duration().unwrap(), duration(31));
+}
+
+#[test]
+fn moving_framing_on_a_group_inside_a_pitch_preserving_speed_change_refuses() {
+    let mut wire = serde_json::to_value(preserve_fixture(false)).unwrap();
+    wire["nodes"]["slow"]["kind"]["child"] = json!("group");
+    let mut group = BeatNode::sequence("Group", vec![id("inner")]);
+    group.framing = Some(Framing {
+        clock: Default::default(),
+        value: FramingValue::Envelope {
+            envelope: FramingEnvelope {
+                initial: FramingPose::identity(),
+                segments: vec![FramingSegment {
+                    end: ratio(1, 1),
+                    pose: FramingPose::new(ratio(1, 2), ratio(1, 2), ratio(2, 1)).unwrap(),
+                    curve: FramingCurve::Linear,
+                }],
+            },
+        },
+    });
+    wire["nodes"]["group"] = serde_json::to_value(group).unwrap();
+    let document = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    let message = document
+        .insert_time_target(ProjectFrame(5))
+        .unwrap_err()
+        .message;
+    assert!(message.contains("moving framing"), "{message}");
 }

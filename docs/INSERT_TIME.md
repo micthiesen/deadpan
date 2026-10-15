@@ -181,10 +181,28 @@ at whole and fractional child cuts and after a second pause.
 picture parent, the identity count and `needs_exact_clocks(frames)`. The
 semantic planner, CLI and native `,h`/black pauses use it. Transparent windows
 above the speed change (a split slowed beat) pass their unity selection through
-and grow with the pause. Preserve and Shift speed changes, Repeat ancestors,
-nested Retimes inside the speed change, AI pauses, pauses other than a silent
-freeze or black picture, marks and placed sounds still refuse, the latter two
-already in the target query.
+and grow with the pause. Repeat ancestors, nested Retimes inside the speed
+change, AI pauses, pauses other than a silent freeze or black picture, marks and
+placed sounds still refuse, the latter two already in the target query.
+
+## Pauses inside pitch-preserving speed changes
+
+A Preserve or Shift speed change processes its whole input as one DSP history,
+so the pause cannot enter its child. Instead the ordinary path splits the stage
+at the pause's output frame: `Split` keeps the left half on the original stage
+and windows a complete copy for the right half, each with its full processing
+context, and the Hold goes between them
+([qualification](qualification/preserve-pauses-2026-10-15.md)). Every value is
+an integral output frame, so no derived clocks appear, and marks, sounds and
+ordinary commands keep their usual transforms. The right copy's retained clock
+resumes its processed output at the old cut, exactly as a split Source does.
+When the stage has framing, gain or edges, a new group takes them around both
+halves and the pause, so they apply once and stay live over it; the stage and
+its copy lose them, and picture capture stops below the stage
+(`InsertTimeTarget::lift`). A treated stage below a transparent window and a
+group inside the stage with moving framing refuse: the pause sits beside the
+stage's copies, so neither could stay live over it. Each pause adds one more
+full processing copy, and a later speed change applies to each half separately.
 
 ## Editing documents with exact clocks
 

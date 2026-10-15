@@ -139,13 +139,27 @@ pub(crate) fn apply_known(
                 working = split_captured(document, &working, |working| {
                     crate::split::apply(working, &split.target, split.at, identities, context)
                 })?;
+                let (parent, slot) = match &target.lift {
+                    Some(retime) => {
+                        let group =
+                            identities
+                                .nodes
+                                .get(split.required_ids - 1)
+                                .ok_or_else(|| {
+                                    invalid("pause insertion needs more Split node identities")
+                                })?;
+                        lift_stage(&mut working, &target.parent, target.index, retime, group)?;
+                        (group.clone(), 1)
+                    }
+                    None => (target.parent.clone(), target.index + 1),
+                };
                 // The post-Split placement graph has new physical aliases.
                 // Give it a distinct immutable identity rather than overwriting
                 // the pre-Split graph still referenced by inherited lattices.
                 return composite::apply_at(
                     &working,
-                    &target.parent,
-                    target.index + 1,
+                    &parent,
+                    slot,
                     composite::Insertion {
                         at,
                         total,
@@ -662,6 +676,143 @@ fn physical_context<'a>(
             "pause insertion cannot yet shift nested, repeated, retimed, or generated beats; use a Source or ordinary Hold boundary",
         )),
     }
+}
+
+/// A pitch-processing speed change that a pause may split at an output frame.
+pub(crate) struct ProcessingStage {
+    pub retime: NodeId,
+    /// Whether its framing, gain or edges must move to an enclosing group.
+    pub lift: bool,
+}
+
+/// `node` when it is, or transparently windows, an authored pitch-processing
+/// Retime without exact clocks. Each split half keeps the complete processing
+/// context, so its output resumes on the retained clock like a Source.
+/// A treated stage below a window refuses: lifting its effects would change
+/// their clock.
+pub(crate) fn processing_stage(
+    document: &ProjectDocument,
+    node: &NodeId,
+) -> Result<Option<ProcessingStage>, EditError> {
+    let mut current = node;
+    let mut windows = 0usize;
+    loop {
+        let beat = &document.nodes()[current];
+        match &beat.kind {
+            NodeKind::Retime {
+                child,
+                purpose: RetimePurpose::Partition,
+                ..
+            } if beat.framing.is_none()
+                && beat.audio_treatments.is_empty()
+                && beat.audio_editorial_edges.is_empty() =>
+            {
+                windows += 1;
+                if windows > crate::MAX_DOCUMENT_DEPTH {
+                    return Err(limit("pause partition depth"));
+                }
+                current = child;
+            }
+            NodeKind::Retime {
+                duration,
+                mapping,
+                pitch,
+                purpose: RetimePurpose::Edit,
+                ..
+            } if pitch.processes(mapping.duration() == *duration)
+                && !document.derived_clocks().contains_key(current) =>
+            {
+                let lift = beat.framing.is_some()
+                    || !beat.audio_treatments.is_empty()
+                    || beat.audio_edges != Default::default()
+                    || beat.audio_editorial_edges != Default::default();
+                if lift && windows > 0 {
+                    return Err(invalid(
+                        "a pause inside a split speed change with its own framing, gain or edges is not supported yet",
+                    ));
+                }
+                // The pause sits beside the stage's copies, so a group inside
+                // it cannot keep animated framing live over the pause.
+                let mut pending = vec![current];
+                let mut visited = 0usize;
+                while let Some(id) = pending.pop() {
+                    visited += 1;
+                    if visited > crate::MAX_DOCUMENT_NODES {
+                        return Err(limit("pause speed change traversal"));
+                    }
+                    let node = &document.nodes()[id];
+                    if id != current
+                        && matches!(node.kind, NodeKind::Sequence { .. })
+                        && node.framing.as_ref().is_some_and(|framing| {
+                            !matches!(framing.value, crate::FramingValue::Static { .. })
+                        })
+                    {
+                        return Err(invalid(
+                            "a pause inside a pitch-preserving speed change cannot keep an inner group's moving framing live yet",
+                        ));
+                    }
+                    pending.extend(document.children(id));
+                }
+                return Ok(Some(ProcessingStage {
+                    retime: current.clone(),
+                    lift,
+                }));
+            }
+            _ => return Ok(None),
+        }
+    }
+}
+
+/// Move a split speed change's framing, gain and edges to a new group around
+/// both halves, so they apply once and stay live over the pause between them.
+fn lift_stage(
+    document: &mut ProjectDocument,
+    parent: &NodeId,
+    index: usize,
+    retime: &NodeId,
+    group: &NodeId,
+) -> Result<(), EditError> {
+    let NodeKind::Sequence { children } = &document.nodes()[parent].kind else {
+        return Err(invalid("pause insertion parent is not a Sequence"));
+    };
+    let halves = children
+        .get(index..index + 2)
+        .ok_or_else(|| invalid("split speed change halves are missing"))?
+        .to_vec();
+    let mut stages = Vec::with_capacity(2);
+    for half in &halves {
+        let NodeKind::Retime { child, .. } = &document.nodes()[half].kind else {
+            return Err(invalid("split speed change half is not a window"));
+        };
+        stages.push(child.clone());
+    }
+    if stages.first() != Some(retime) {
+        return Err(invalid("split speed change lost its left context"));
+    }
+    let source = document.nodes()[retime].clone();
+    let mut wrapper = BeatNode::sequence(&source.label, halves);
+    wrapper.framing = source.framing.clone();
+    wrapper.audio_treatments = source.audio_treatments.clone();
+    wrapper.audio_edges = source.audio_edges;
+    wrapper.audio_editorial_edges = source.audio_editorial_edges;
+    for stage in &stages {
+        let node = document
+            .nodes
+            .get_mut(stage)
+            .ok_or_else(|| invalid("split speed change context is missing"))?;
+        node.framing = None;
+        node.audio_treatments = Default::default();
+        node.audio_edges = Default::default();
+        node.audio_editorial_edges = Default::default();
+    }
+    document.nodes.insert(group.clone(), wrapper);
+    let NodeKind::Sequence { children } =
+        &mut document.nodes.get_mut(parent).expect("checked parent").kind
+    else {
+        unreachable!("checked Sequence")
+    };
+    children.splice(index..index + 2, [group.clone()]);
+    Ok(())
 }
 
 pub(crate) fn validate_identities(

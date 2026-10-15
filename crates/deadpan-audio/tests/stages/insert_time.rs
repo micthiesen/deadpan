@@ -645,3 +645,40 @@ fn lengthening_a_pause_inside_a_slowed_beat_resumes_the_same_later_samples() {
         ntsc_boundary(4),
     );
 }
+
+#[test]
+fn a_pause_inside_a_pitch_preserving_speed_change_resumes_its_processed_output() {
+    let (original, mut provider) = mono_original(4);
+    let mut wire = serde_json::to_value(&original).unwrap();
+    wire["nodes"]["slow"] =
+        serde_json::to_value(retime("source", 8, 0..4, PitchPolicy::Preserve)).unwrap();
+    wire["nodes"]["root"]["kind"]["children"] = serde_json::json!(["slow"]);
+    let original = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    // With gain on the speed change, the pause lifts it to a group so it
+    // applies once over both halves and the pause.
+    let mut treated = wire.clone();
+    treated["nodes"]["slow"]["audio_treatments"] =
+        serde_json::to_value(AudioTreatments::from_clip_gain(
+            ClipGain::new(GainDb::new(-6_000).unwrap(), false, vec![], vec![]).unwrap(),
+        ))
+        .unwrap();
+    let treated = ProjectDocument::from_json(&treated.to_string()).unwrap();
+    for (document, name) in [(original, "preserve-pause"), (treated, "treated-pause")] {
+        let inserted = insert_pause(&document, 3, 2, name);
+        assert!(inserted.derived_clocks().is_empty());
+        for faded in [false, true] {
+            let old = record(&document, &mut provider, faded, &[256]);
+            assert!(old.samples[ntsc_boundary(3)..].iter().any(|v| v[0] != 0.));
+            let actual = record(&inserted, &mut provider, faded, &[97, 256]);
+            assert_eq!(actual.samples.len(), ntsc_boundary(10));
+            assert_resumed(&actual, &old, 0..ntsc_boundary(3), 0);
+            assert_pause(&actual, ntsc_boundary(3)..ntsc_boundary(5));
+            assert_resumed(
+                &actual,
+                &old,
+                ntsc_boundary(5)..actual.samples.len(),
+                ntsc_boundary(3),
+            );
+        }
+    }
+}

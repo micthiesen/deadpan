@@ -15,6 +15,10 @@ pub struct InsertTimeTarget {
     /// Child slot before the optional Split. A split inserts the Hold at index+1.
     pub index: usize,
     pub split: Option<InsertTimeSplit>,
+    /// A pitch-processing speed change whose framing, gain and edges move to
+    /// a new group around both split halves and the pause, so they stay live
+    /// over it. Picture capture stops below this node.
+    pub lift: Option<NodeId>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -42,6 +46,7 @@ pub(super) fn resolve(
 ) -> Result<InsertTimeTarget, EditError> {
     let mut parent = document.root();
     let mut position = at;
+    let mut lift = None;
     loop {
         let NodeKind::Sequence { children } = &document.nodes()[parent].kind else {
             return Err(super::invalid("pause insertion requires a Sequence owner"));
@@ -57,9 +62,15 @@ pub(super) fn resolve(
                 position = ProjectFrame(cut);
                 continue;
             }
-            super::physical(document, &child)?;
+            if let Err(error) = super::physical(document, &child) {
+                // A pitch-processing speed change splits at an output frame
+                // into two full processing contexts, like a Source.
+                let stage = super::processing_stage(document, &child)?.ok_or(error)?;
+                lift = stage.lift.then_some(stage.retime);
+            }
             Some(InsertTimeSplit {
-                required_ids: super::split_node_count(document, &child)?,
+                required_ids: super::split_node_count(document, &child)?
+                    + usize::from(lift.is_some()),
                 target: child,
                 at: FrameDuration::new(cut).map_err(crate::DocumentError::from)?,
             })
@@ -81,6 +92,7 @@ pub(super) fn resolve(
             parent: parent.clone(),
             index: boundary.slot,
             split,
+            lift,
         });
     }
 }

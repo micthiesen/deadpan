@@ -52,7 +52,7 @@ impl PauseInsertionTarget {
     pub fn picture_parent(&self) -> InstancePath {
         match self {
             Self::Ordinary(target) => InstancePath {
-                node: target.parent.clone(),
+                node: target.lift.clone().unwrap_or_else(|| target.parent.clone()),
                 repeats: Vec::new(),
             },
             Self::Occurrence(target) => target.picture_parent.clone(),
@@ -276,7 +276,16 @@ fn resolve(
                 }
             }
             _ => {
-                super::super::physical(document, &instance.node)?;
+                if let Err(error) = super::super::physical(document, &instance.node) {
+                    // Outside Repeats a pitch-processing speed change splits
+                    // through the ordinary path; inside one it still refuses.
+                    let ordinary = instance.repeats.is_empty() && within.is_none();
+                    if !ordinary
+                        || super::super::processing_stage(document, &instance.node)?.is_none()
+                    {
+                        return Err(error);
+                    }
+                }
                 let interior = position > 0 && position < durations[&instance.node].frames();
                 if !interior && let Some((owner, index)) = &sequence {
                     let site = Site::Sequence {
