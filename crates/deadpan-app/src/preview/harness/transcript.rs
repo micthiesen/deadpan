@@ -165,6 +165,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     )?;
     words_in_your_edit(d, &expected)?;
     pauses_in_your_edit(d)?;
+    repetition_loop_warning(d)?;
     d.report.skipped.push("Replay saves a synthetic transcript; real recognition is covered by the worker tests and transcription qualification. No model is downloaded.".into());
     Ok(())
 }
@@ -562,6 +563,96 @@ fn pauses_in_your_edit(d: &mut Driver<'_>) -> Result<(), String> {
                 .is_some_and(|message| message.contains("no later pause")),
         json!({"cursor":end,"message":"no later pause"}),
         json!({"cursor":d.app().sequence_cursor,"message":d.app().message}),
+    )?;
+    Ok(())
+}
+
+/// A transcript whose words fall into a repetition loop shows the recognizer
+/// failure warning with a link to the passage and an explicit offer to
+/// recognize it again. The words themselves are kept as recognized.
+fn repetition_loop_warning(d: &mut Driver<'_>) -> Result<(), String> {
+    let (key, plain, index) = synthetic(d)?;
+    let audio = plain.audio();
+    let mut words = vec![Word {
+        text: "Hello.".into(),
+        start_cs: 10,
+        end_cs: 40,
+        probability: 0.95,
+        segment: 0,
+    }];
+    // "I was here." eight times: a 24-word loop of a 3-word phrase.
+    for copy in 0..8_u32 {
+        for (offset, text) in ["I", "was", "here."].into_iter().enumerate() {
+            let start = 50 + copy * 36 + offset as u32 * 12;
+            words.push(Word {
+                text: text.into(),
+                start_cs: start,
+                end_cs: start + 10,
+                probability: 0.97,
+                segment: 1 + copy,
+            });
+        }
+    }
+    let looped = Transcript::new(audio, words).map_err(|e| e.to_string())?;
+    let session = d.app().workspace.as_ref().ok_or("No project")?.session;
+    let revision = d.revision();
+    d.app_mut().submit(ProjectRequest::SaveTranscript {
+        expected_session: session,
+        attempt: 0,
+        key,
+        transcript: Arc::new(looped.clone()),
+    });
+    d.wait_for("Looping transcript published", |app| {
+        app.workspace
+            .as_ref()
+            .and_then(|workspace| workspace.transcript.as_ref())
+            .is_some_and(|transcript| transcript.proposal.words().len() == 25)
+    })?;
+    d.command("source")?;
+    d.settled()?;
+    scenarios::reveal_original_rail(d, "Recognize again", false)?;
+    let warning = scenarios::text_paint_visibility(d, "Recognition may have failed in 1 passage");
+    let passage = scenarios::text_paint_visibility(d, "“I was here.” repeats 8×");
+    let offer = scenarios::text_paint_visibility(d, "Recognize again");
+    let kept = d
+        .app()
+        .workspace
+        .as_ref()
+        .and_then(|workspace| workspace.transcript.as_ref())
+        .is_some_and(|transcript| transcript.transcript == looped);
+    d.check(
+        "A repetition loop is flagged with its passage and an explicit offer, and no word changes",
+        kept && d.revision() == revision
+            && [&warning, &passage, &offer]
+                .iter()
+                .all(|paints| !paints.is_empty() && paints.iter().all(|paint| paint["fully_visible"] == true)),
+        json!({"warning":"Recognition may have failed in 1 passage","passage":"“I was here.” repeats 8×","offer":"Recognize again","words_kept":true}),
+        json!({"warning":warning,"passage":passage,"offer":offer,"words_kept":kept,"revision":d.revision()}),
+    )?;
+    d.capture("Repetition loop flagged in the transcript rail")?;
+    let link = d
+        .harness
+        .output()
+        .shapes
+        .iter()
+        .find_map(|clipped| match &clipped.shape {
+            egui::Shape::Text(text) if text.galley.text().starts_with("“I was here.”") => {
+                Some(text.visual_bounding_rect())
+            }
+            _ => None,
+        })
+        .ok_or("Missing passage link")?;
+    d.click_at("Flagged passage", link.center())?;
+    d.settled()?;
+    let seconds = looped
+        .seconds(looped.words()[1].start_cs)
+        .map_err(|e| e.to_string())?;
+    let first = picture_at(&index, seconds).ok_or("loop outside the picture")? as u64;
+    d.check(
+        "Clicking a flagged passage moves the Original cursor to where it begins",
+        d.app().source_cursor == first,
+        json!({"source_cursor":first}),
+        json!({"source_cursor":d.app().source_cursor}),
     )?;
     Ok(())
 }

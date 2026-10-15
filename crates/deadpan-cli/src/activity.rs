@@ -193,3 +193,128 @@ pub fn run_pauses(arguments: &[&str]) -> Result<(), crate::CliError> {
         "pauses": pauses,
     }))
 }
+
+/// The recognizer failure check of a transcript against the stored speech
+/// activity of the same Original audio stream, with the person's pause
+/// corrections applied. Without stored activity, coverage is reported as
+/// unchecked rather than assumed.
+pub fn recognition_check(
+    store: &deadpan_store::ProjectStore,
+    content: &str,
+    audio_stream: u32,
+    transcript: &deadpan_analysis::Transcript,
+) -> deadpan_analysis::RecognitionCheck {
+    match stored_activity(store, content).filter(|(key, _)| key.audio_stream == audio_stream) {
+        Some((_, activity)) => {
+            let (pauses, _) =
+                crate::speech::corrected_pauses(store, content, audio_stream, &activity);
+            deadpan_analysis::check_recognition(
+                transcript,
+                Some((activity.audio(), &pauses.pauses)),
+            )
+        }
+        None => deadpan_analysis::check_recognition(transcript, None),
+    }
+}
+
+/// JSON form of a recognition check, adding exact Original sample bounds and
+/// display seconds to every region.
+pub fn recognition_report(
+    check: &deadpan_analysis::RecognitionCheck,
+    transcript: &deadpan_analysis::Transcript,
+) -> Result<serde_json::Value, crate::CliError> {
+    use deadpan_analysis::{Coverage, Repetition, UnrecognizedSpeech};
+    let audio = transcript.audio();
+    let time = |error: deadpan_core::TimeError| {
+        crate::CliError::from(TranscriptionError::Activity(error.into()))
+    };
+    let exact = |sample: u64| -> Result<ExactRatio, crate::CliError> {
+        let offset = ExactRatio::new(
+            i128::from(sample) * i128::from(audio.sample_rate),
+            i128::from(ANALYSIS_SAMPLE_RATE),
+        )
+        .map_err(time)?;
+        ExactRatio::integer(audio.origin)
+            .checked_add(offset)
+            .map_err(time)
+    };
+    let display = |sample: u64| -> Result<f64, crate::CliError> {
+        let exact = exact(sample)?;
+        Ok(exact.numerator() as f64 / exact.denominator() as f64 / f64::from(audio.sample_rate))
+    };
+    let hop = deadpan_analysis::ENERGY_HOP;
+    let repetition = |found: &Repetition| -> Result<serde_json::Value, crate::CliError> {
+        let (start, end) = (
+            u64::from(found.start_cs) * hop,
+            u64::from(found.end_cs) * hop,
+        );
+        Ok(serde_json::json!({
+            "words": [found.first_word, found.end_word],
+            "period": found.period,
+            "copies": found.copies,
+            "phrase": found.phrase,
+            "start_cs": found.start_cs,
+            "end_cs": found.end_cs,
+            "original_sample_start": exact(start)?,
+            "original_sample_end": exact(end)?,
+            "seconds_start": display(start)?,
+            "seconds_end": display(end)?,
+        }))
+    };
+    let stretch = |gap: &UnrecognizedSpeech| -> Result<serde_json::Value, crate::CliError> {
+        Ok(serde_json::json!({
+            "analysis_start": gap.start,
+            "analysis_end": gap.end,
+            "speech_seconds": gap.speech_samples as f64 / f64::from(ANALYSIS_SAMPLE_RATE),
+            "previous_word": gap.previous_word,
+            "next_word": gap.next_word,
+            "original_sample_start": exact(gap.start)?,
+            "original_sample_end": exact(gap.end)?,
+            "seconds_start": display(gap.start)?,
+            "seconds_end": display(gap.end)?,
+        }))
+    };
+    let coverage = match &check.coverage {
+        Coverage::Unchecked { reason } => {
+            serde_json::json!({ "status": "unchecked", "reason": reason })
+        }
+        Coverage::Checked {
+            gaps,
+            longest,
+            speech_samples,
+        } => serde_json::json!({
+            "status": "checked",
+            "speech_seconds": *speech_samples as f64 / f64::from(ANALYSIS_SAMPLE_RATE),
+            "gaps": gaps.iter().map(stretch).collect::<Result<Vec<_>, _>>()?,
+            "longest": longest.as_ref().map(stretch).transpose()?,
+        }),
+    };
+    let passage =
+        |passage: &deadpan_analysis::Passage| -> Result<serde_json::Value, crate::CliError> {
+            let (start, end) = (
+                u64::from(passage.start_cs) * hop,
+                u64::from(passage.end_cs) * hop,
+            );
+            Ok(serde_json::json!({
+                "start_cs": passage.start_cs,
+                "end_cs": passage.end_cs,
+                "word": passage.word,
+                "loops": passage.loops,
+                "unrecognized": passage.unrecognized,
+                "recognized_again": passage.recognized_again,
+                "can_recognize_again": passage.can_recognize_again(),
+                "again_argument": format!("{}:{}", passage.start_cs, passage.end_cs),
+                "seconds_start": display(start)?,
+                "seconds_end": display(end)?,
+            }))
+        };
+    Ok(serde_json::json!({
+        "rule": check.rule,
+        "flagged": check.flagged(),
+        "passages": check.passages.iter().map(passage).collect::<Result<Vec<_>, _>>()?,
+        "recognized_again": transcript.recognized_again(),
+        "loops": check.loops.iter().map(repetition).collect::<Result<Vec<_>, _>>()?,
+        "longest_repetition": check.longest_repetition.as_ref().map(repetition).transpose()?,
+        "coverage": coverage,
+    }))
+}

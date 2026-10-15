@@ -147,7 +147,7 @@ const HELP: &str = "Deadpan headless commands:
   models import <pack> <folder-or-archive.tar> [--accept-license] [--root <dir>]
   models export <pack> <archive.tar> [--root <dir>]
   models remove <pack> [--partial] [--root <dir>]
-  transcribe <project.deadpan> [--model <ggml.bin> --sha256 <hex>] [--vad-model <ggml-silero.bin> --vad-sha256 <hex>] [--language <auto|xx>] [--asset <id>]
+  transcribe <project.deadpan> [--model <ggml.bin> --sha256 <hex>] [--vad-model <ggml-silero.bin> --vad-sha256 <hex>] [--language <auto|xx>] [--asset <id>] [--again <start_cs>:<end_cs>]
   transcript <project.deadpan> [--search <words>] [--asset <id>]
   corrections <project.deadpan> [--asset <id>]
   corrections <project.deadpan> --json <request.json> [--dry-run]

@@ -435,7 +435,8 @@ impl Corrections {
             origins.push(WordOrigin::Recognized(word));
         }
         Ok(CorrectedTranscript {
-            transcript: Transcript::new(audio, words)?,
+            transcript: Transcript::new(audio, words)?
+                .with_recognized_again(proposal.recognized_again().to_vec())?,
             origins,
             replaced,
             skipped,

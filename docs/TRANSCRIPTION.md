@@ -97,8 +97,67 @@ interview were transcribed without errors. Word timing is much coarser than
 word identity: sentence-initial words start a median 315 ms from the energy
 onset, and sentence-final words end a median 650 ms after the speech stops.
 The approximate flag marks about a third of wrong words. Conversational, noisy
-and non-English speech, and the app's own analysis-PCM path, remain unmeasured.
-See the [accuracy record](qualification/transcription-accuracy-2026-10-05.md).
+and non-English speech remain unmeasured. See the
+[accuracy record](qualification/transcription-accuracy-2026-10-05.md). The
+same chapters through the app's own analysis-PCM path (AAC Originals,
+`prepare_original_audio`) gave 5.40% with a simple normalization and the same
+two failures, which the [recognizer failure check](#recognizer-failures) now
+flags and can repair.
+
+## Recognizer failures
+
+`deadpan_analysis::check_recognition` applies the versioned rule
+`deadpan-recognition-1` to a transcript and, when speech has been detected,
+to the pauses of the same analysis PCM. It is derived on every read from the
+stored transcript, speech activity and corrections, like pauses, so it is
+never stored or stale. It reports regions only; it never drops, merges or
+rewrites words.
+
+- **Repetition loops.** Words are compared by their search normalization. A
+  repetition is a maximal run in which each word equals the word one period
+  later, for periods of 1 to 16 words, reported at its shortest period. A
+  repetition of at least 4 whole copies spanning at least 24 words is a loop.
+- **Speech without words.** Detected speech is the analysis clock outside the
+  (corrected) pauses. Each stretch between recognized words, and before the
+  first and after the last, holding at least 5 s of detected speech is
+  flagged. This finds truncation (words ending before the speech does) and
+  words timed far too early, which leave later speech uncovered. Zero-length
+  words still divide stretches. Without speech activity, or with activity of
+  different audio, this part is reported as unchecked with the reason.
+- **Passages.** Each flag becomes a passage: a loop from the end of the word
+  before it to the start of the word after it, unrecognized speech as its own
+  stretch, overlapping regions merged.
+
+Thresholds come from all 87 LibriSpeech test-clean chapters through the real
+CLI: in the 84 good chapters the longest repetition was 10 words (3 copies at
+most) and the longest stretch of speech without words 2.07 s; the failures
+were a 61-copy loop of a 10-word phrase, 19.5 s of speech after the last word
+and 9.7 s left uncovered by a sentence whose 47 words were timed into its
+first 7 s. All three were flagged and no good chapter was. See the
+[qualification record](qualification/recognizer-failures-2026-10-15.md).
+
+### Recognizing a passage again
+
+A flagged passage can be recognized again, explicitly, once.
+`transcribe <project> --again <start_cs>:<end_cs>` takes a passage from the
+`transcript` report (`again_argument`), refuses anything that is not a
+currently flagged passage, one already recognized again, longer than 20
+minutes, or a model other than the stored transcript's, then runs the worker
+on just that passage's analysis PCM with the stored transcript's model and
+language. Words beginning in the passage are replaced by the second pass's
+words; every other word is kept, sentences are renumbered, and the passage is
+recorded in the transcript's `recognized_again` list (a transcript JSON field
+omitted when empty), which the check reports and which prevents another
+attempt. When the second pass begins by repeating words the transcript already
+has just before the passage (its first 4 words occur among the previous 64),
+the earlier words were timed too early rather than missed. Exactly one more
+pass then runs from the start of that earlier sentence through the passage and
+replaces both; if no earlier sentence start exists nothing is saved. The
+whisper.cpp pass hears only the passage, so it is not conditioned on the text
+the whole-file pass produced. On the three failures this brought chapter WER
+from 100.3%, 90.6% and 2.1% (mistimed) to 2.8%, 3.1% and 2.4%, with none
+flagged afterwards. Words at the passage's edges can still differ: the
+retimed sentence ended with an inserted `act.` before the kept `African`.
 
 ## Storage and headless commands
 
@@ -113,7 +172,13 @@ prepares analysis PCM, runs the worker installed beside the executable and
 stores the result, with speech activity of the same PCM when a detector is
 installed or given; it needs the project's writer to save.
 `transcript <project> [--search <words>] [--asset <id>]` prints stored
-transcripts, or phrase matches with exact Original sample bounds.
+transcripts, or phrase matches with exact Original sample bounds. Both forms,
+and the `transcribe` report, include `recognition`: the rule, whether anything
+was flagged, the loops, unrecognized stretches and passages with exact
+Original sample bounds and display seconds, the longest repetition and
+stretch even when unflagged, and passages already recognized again.
+`transcribe <project> --again <start_cs>:<end_cs>` recognizes one flagged
+passage again ([above](#recognizing-a-passage-again)).
 
 ## In the app
 
@@ -139,6 +204,18 @@ words moves the Original cursor to the picture presented when that word begins.
 Replay uses an empty model directory, so it never downloads or uses an
 installed model; the `transcript` scenario saves a synthetic transcript through
 the real service and checks display, search, current word and exact jumps.
+
+Below the word caption, flagged passages appear as a warning ("Recognition may
+have failed in N passages. The words are kept as recognized…") with up to three
+passage links, each moving the Original cursor to where the passage begins,
+and a Recognize again link for passages that allow it. Recognizing again runs
+as a Transcription job (it waits for the AI model slot), shows its progress
+and failures in the section, and saves through the same service request as a
+new transcript, refusing a result whose base transcript was replaced
+meanwhile. Without detected speech the section says missing words are not yet
+checked. The check is recomputed only when the published words or pauses
+change. The `transcript` replay saves a looping synthetic transcript and checks
+the warning, passage link and offer; it cannot run the recognizer.
 
 ## Words as motions and objects
 
@@ -239,8 +316,13 @@ every word per query.
 
 Original operators with word motions, background scheduling by visible range,
 automatic word-boundary refinement from speech activity (manual edges snap to
-measured edges), accuracy on conversational and noisy speech and handling of
-long-form recognizer failures (see [Accuracy on speech](#accuracy-on-speech)).
+measured edges), and accuracy on conversational and noisy speech. The
+recognizer failure check is calibrated only on read English audiobook speech:
+loops with small variations between copies, failures shorter than 5 s of
+speech, wrong words with plausible timing, and false flags on music, singing
+or deliberate repetition in other material are unmeasured. Recognizing again
+uses the same decoding parameters on a shorter input; it is not a temperature
+fallback or a different model.
 The model-pack manager lists every approved pack, including this one
 (`approved_packs()` in `crates/deadpan-models/src/packs.rs`, listed by
 `crates/deadpan-app/src/model_packs.rs`).

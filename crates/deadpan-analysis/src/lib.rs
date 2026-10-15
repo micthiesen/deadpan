@@ -15,12 +15,14 @@ pub mod generated_extension;
 pub mod generated_geometry;
 pub mod generated_region;
 pub mod generation_quality;
+pub mod recognition;
 pub mod shots;
 pub mod tracking;
 pub mod transcript;
 
 pub use activity::*;
 pub use corrections::*;
+pub use recognition::*;
 pub use shots::*;
 pub use tracking::*;
 pub use transcript::*;

@@ -370,3 +370,82 @@ fn adversarial_recognizer_and_stored_transcript_json() {
     );
     report.assert_clean();
 }
+
+#[test]
+fn recognized_again_passages_must_be_ordered_and_inside_the_audio() {
+    let transcript = Transcript::new(
+        AnalysedAudio {
+            origin: 0,
+            sample_rate: 48_000,
+            duration_cs: 500,
+        },
+        Vec::new(),
+    )
+    .unwrap();
+    let passage = |start_cs, end_cs| RecognizedAgain { start_cs, end_cs };
+    assert!(
+        transcript
+            .clone()
+            .with_recognized_again(vec![passage(0, 100), passage(100, 500)])
+            .is_ok()
+    );
+    for invalid in [
+        vec![passage(100, 100)],
+        vec![passage(0, 501)],
+        vec![passage(200, 300), passage(100, 250)],
+    ] {
+        assert!(transcript.clone().with_recognized_again(invalid).is_err());
+    }
+    let unknown = r#"{"audio":{"origin":0,"sample_rate":48000,"duration_cs":500},"words":[],"recognised_again":[]}"#;
+    assert!(serde_json::from_str::<Transcript>(unknown).is_err());
+}
+
+#[test]
+fn a_second_pass_that_repeats_earlier_words_is_detected() {
+    let audio = |duration_cs| AnalysedAudio {
+        origin: 0,
+        sample_rate: 48_000,
+        duration_cs,
+    };
+    let words = |text: &str, from: u32, segment: u32| -> Vec<Word> {
+        text.split_whitespace()
+            .enumerate()
+            .map(|(index, text)| Word {
+                text: text.into(),
+                start_cs: from + 20 * index as u32,
+                end_cs: from + 20 * index as u32 + 15,
+                probability: 0.9,
+                segment,
+            })
+            .collect()
+    };
+    // A long sentence crammed into 2 s, then 10 s with no words.
+    let mut first = words("before this", 0, 0);
+    first.extend(words(
+        "that all the bishops of Europe and Asia were infected",
+        100,
+        1,
+    ));
+    first.extend(words("African believers", 1_300, 2));
+    let transcript = Transcript::new(audio(1_400), first).unwrap();
+    let repeated = Transcript::new(
+        audio(1_000),
+        words("Europe and Asia were infected by", 0, 0),
+    )
+    .unwrap();
+    let fresh = Transcript::new(
+        audio(1_000),
+        words("in determining whether two forms", 0, 0),
+    )
+    .unwrap();
+    assert!(transcript.repeats_before(320, &repeated));
+    assert!(!transcript.repeats_before(320, &fresh));
+    let short = Transcript::new(audio(1_000), words("Europe and Asia", 0, 0)).unwrap();
+    assert!(
+        !transcript.repeats_before(320, &short),
+        "fewer than four words"
+    );
+    assert_eq!(transcript.sentence_start_before(320), Some(100));
+    assert_eq!(transcript.sentence_start_before(100), Some(0));
+    assert_eq!(transcript.sentence_start_before(0), None);
+}

@@ -161,6 +161,101 @@ pub fn transcribe(
     })
 }
 
+/// The merged transcript of [`recognize_again`] and the region it used.
+#[derive(Debug, Clone)]
+pub struct AgainResult {
+    pub transcript: Transcript,
+    /// The region whose words were replaced: the flagged passage, or the
+    /// passage widened back to the start of the sentence before it.
+    pub region: deadpan_analysis::RecognizedAgain,
+    /// Recognizer passes run: one, or two when the first repeated words.
+    pub passes: u8,
+    pub runtime: RuntimeReport,
+    pub elapsed: Duration,
+}
+
+/// Recognize one flagged passage again on its own and merge its words into
+/// `proposal` ([`Transcript::recognize_again`]). `input` must be the analysis
+/// PCM `proposal` was recognized from; the worker hears only the passage, so
+/// it is not conditioned on the text the first pass produced before it.
+///
+/// When the second pass begins with words the transcript already has just
+/// before the passage, those words were timed too early rather than missed;
+/// merging would duplicate them. Exactly one more pass then runs from the
+/// start of that earlier sentence through the passage and replaces both.
+/// If there is no earlier sentence start, nothing is merged.
+#[allow(clippy::too_many_arguments)]
+pub fn recognize_again(
+    runtime: &TranscriptionRuntime,
+    model: &ModelInput,
+    input: &AnalysisInput,
+    proposal: &Transcript,
+    passage: deadpan_analysis::RecognizedAgain,
+    language: Language,
+    attempt: &str,
+    cancelled: &AtomicBool,
+    deadline: Instant,
+    mut progress: impl FnMut(u8),
+) -> Result<AgainResult, TranscriptionError> {
+    if input.audio()? != proposal.audio() {
+        return Err(TranscriptionError::Configuration(
+            "the analysis audio differs from the transcript's",
+        ));
+    }
+    let mut run = |region: deadpan_analysis::RecognizedAgain, attempt: &str| {
+        let hop = deadpan_analysis::ENERGY_HOP as usize;
+        let start = region.start_cs as usize * hop;
+        let end = (region.end_cs as usize * hop).min(input.samples.len());
+        if start >= end {
+            return Err(TranscriptionError::Configuration(
+                "the passage lies outside the analysis audio",
+            ));
+        }
+        let audio = AnalysisInput {
+            samples: input.samples[start..end].to_vec(),
+            origin: input.origin,
+            source_rate: input.source_rate,
+        };
+        transcribe(
+            runtime,
+            model,
+            &audio,
+            language.clone(),
+            attempt,
+            cancelled,
+            deadline,
+            &mut progress,
+        )
+    };
+    let first = run(passage, attempt)?;
+    if !proposal.repeats_before(passage.start_cs, &first.transcript) {
+        return Ok(AgainResult {
+            transcript: proposal.recognize_again(passage, &first.transcript)?,
+            region: passage,
+            passes: 1,
+            runtime: first.runtime,
+            elapsed: first.elapsed,
+        });
+    }
+    let start_cs = proposal.sentence_start_before(passage.start_cs).ok_or(
+        TranscriptionError::Configuration(
+            "recognizing the passage again repeats the words before it, which start the audio; nothing was changed",
+        ),
+    )?;
+    let region = deadpan_analysis::RecognizedAgain {
+        start_cs,
+        end_cs: passage.end_cs,
+    };
+    let second = run(region, &format!("{attempt}-sentence"))?;
+    Ok(AgainResult {
+        transcript: proposal.recognize_again(region, &second.transcript)?,
+        region,
+        passes: 2,
+        runtime: second.runtime,
+        elapsed: first.elapsed + second.elapsed,
+    })
+}
+
 /// A worker artifact admitted after clean teardown and a hashed snapshot.
 pub(crate) struct Completed {
     pub bytes: Vec<u8>,
@@ -564,7 +659,7 @@ fn hex(bytes: &[u8]) -> String {
 pub fn run_transcribe(arguments: &[&str]) -> Result<(), crate::CliError> {
     let usage = || {
         crate::CliError::Usage(
-            "usage: transcribe <project.deadpan> [--model <ggml.bin> --sha256 <hex>] [--vad-model <ggml-silero.bin> --vad-sha256 <hex>] [--language <auto|xx>] [--asset <id>]"
+            "usage: transcribe <project.deadpan> [--model <ggml.bin> --sha256 <hex>] [--vad-model <ggml-silero.bin> --vad-sha256 <hex>] [--language <auto|xx>] [--asset <id>] [--again <start_cs>:<end_cs>]"
                 .into(),
         )
     };
@@ -577,11 +672,19 @@ pub fn run_transcribe(arguments: &[&str]) -> Result<(), crate::CliError> {
     let mut vad_sha256 = None;
     let mut language = Language::Code("en".into());
     let mut asset = None;
+    let mut again = None;
     let mut options = rest.iter();
     while let Some(option) = options.next() {
         let value = options.next().ok_or_else(usage)?;
         match *option {
             "--model" => model = Some(std::fs::canonicalize(value)?),
+            "--again" => {
+                let (start, end) = value.split_once(':').ok_or_else(usage)?;
+                again = Some(deadpan_analysis::RecognizedAgain {
+                    start_cs: start.parse().map_err(|_| usage())?,
+                    end_cs: end.parse().map_err(|_| usage())?,
+                });
+            }
             "--vad-model" => vad_model = Some(std::fs::canonicalize(value)?),
             "--vad-sha256" => {
                 vad_sha256 =
@@ -619,6 +722,9 @@ pub fn run_transcribe(arguments: &[&str]) -> Result<(), crate::CliError> {
         ))?,
         _ => return Err(usage()),
     };
+    if let Some(passage) = again {
+        return run_recognize_again(std::path::Path::new(path), asset.as_ref(), &model, passage);
+    }
     // Speech detection runs on the same analysis PCM when a Silero model is
     // given or installed with the pack.
     let vad = match (vad_model, vad_sha256) {
@@ -704,6 +810,28 @@ pub fn run_transcribe(arguments: &[&str]) -> Result<(), crate::CliError> {
         None => serde_json::Value::Null,
     };
     writer.save_transcript(&key, &result.transcript)?;
+    // Check the fresh words against the fresh detection when it succeeded,
+    // otherwise against whatever activity of this audio is stored.
+    let recognition = match &activity {
+        Some((_, Ok(detected))) => {
+            let (pauses, _) = crate::speech::corrected_pauses(
+                &writer,
+                &key.content,
+                key.audio_stream,
+                &detected.activity,
+            );
+            deadpan_analysis::check_recognition(
+                &result.transcript,
+                Some((detected.activity.audio(), &pauses.pauses)),
+            )
+        }
+        _ => crate::activity::recognition_check(
+            &writer,
+            &key.content,
+            key.audio_stream,
+            &result.transcript,
+        ),
+    };
     let words = result.transcript.words();
     crate::write_json(&serde_json::json!({
         "protocol": 1,
@@ -714,6 +842,109 @@ pub fn run_transcribe(arguments: &[&str]) -> Result<(), crate::CliError> {
         "words": words.len(),
         "approximate_words": words.iter().filter(|word| word.approximate()).count(),
         "speech_activity": activity_report,
+        "recognition": crate::activity::recognition_report(&recognition, &result.transcript)?,
+    }))
+}
+
+/// `transcribe PROJECT --again START:END`: recognize one passage that the
+/// recognition check flagged again by itself, with the stored transcript's
+/// model and language, and store the merged words. Only a currently flagged
+/// passage that has not been recognized again is accepted.
+fn run_recognize_again(
+    path: &std::path::Path,
+    asset: Option<&deadpan_core::AssetId>,
+    model: &ModelInput,
+    passage: deadpan_analysis::RecognizedAgain,
+) -> Result<(), crate::CliError> {
+    let refuse =
+        |reason: String| crate::CliError::Usage(format!("cannot recognize again: {reason}"));
+    let reader = deadpan_store::ProjectStore::open(path, deadpan_store::AccessMode::ReadOnly)?;
+    let receipt = analysed_receipt(&reader, asset)?;
+    let content = receipt.original().content().to_string();
+    let words = crate::speech::stored_words(&reader, &content)
+        .ok_or_else(|| refuse("the Original has no stored transcript".into()))?;
+    let check = crate::activity::recognition_check(
+        &reader,
+        &content,
+        words.key.audio_stream,
+        &words.corrected.transcript,
+    );
+    let flagged = check
+        .passages
+        .iter()
+        .find(|flagged| flagged.region() == passage)
+        .ok_or_else(|| {
+            refuse(format!(
+                "{}:{} is not a flagged passage; transcript lists them under recognition.passages",
+                passage.start_cs, passage.end_cs
+            ))
+        })?;
+    if !flagged.can_recognize_again() {
+        return Err(refuse(if flagged.recognized_again {
+            "the passage has already been recognized again".into()
+        } else {
+            "the passage is longer than 20 minutes".into()
+        }));
+    }
+    if model.sha256.as_str() != words.key.model_sha256 {
+        return Err(refuse(format!(
+            "the transcript was made with model {}, not {}",
+            words.key.model_sha256,
+            model.sha256.as_str()
+        )));
+    }
+    let language =
+        Language::try_from(words.key.language.clone()).map_err(crate::CliError::Usage)?;
+    let cancelled = AtomicBool::new(false);
+    let deadline = Instant::now() + Duration::from_secs(6 * 60 * 60);
+    let analysis = prepare_original_audio(&reader, asset, &cancelled, deadline)?;
+    drop(reader);
+    if analysis.content != words.key.content || analysis.audio_stream != words.key.audio_stream {
+        return Err(refuse(
+            "the Original's audio differs from the transcript's".into(),
+        ));
+    }
+    let runtime = TranscriptionRuntime::beside_current_executable()?;
+    let attempt = uuid::Uuid::new_v4().simple().to_string();
+    let result = recognize_again(
+        &runtime,
+        model,
+        &analysis.input,
+        &words.proposal,
+        passage,
+        language,
+        &attempt,
+        &cancelled,
+        deadline,
+        |_| {},
+    )?;
+    let writer = deadpan_store::ProjectStore::open(path, deadpan_store::AccessMode::ReadWrite)?;
+    if writer.transcript(&words.key)?.as_ref() != Some(&words.proposal) {
+        return Err(refuse(
+            "the stored transcript changed while recognizing".into(),
+        ));
+    }
+    writer.save_transcript(&words.key, &result.transcript)?;
+    let region = result.region;
+    let inside =
+        |word: &&deadpan_analysis::Word| (region.start_cs..region.end_cs).contains(&word.start_cs);
+    let corrected = crate::speech::stored_words(&writer, &content)
+        .map(|stored| stored.corrected.transcript)
+        .unwrap_or_else(|| result.transcript.clone());
+    let recheck =
+        crate::activity::recognition_check(&writer, &content, words.key.audio_stream, &corrected);
+    crate::write_json(&serde_json::json!({
+        "protocol": 1,
+        "key": words.key,
+        "runtime": result.runtime,
+        "worker_elapsed_ms": u64::try_from(result.elapsed.as_millis()).unwrap_or(u64::MAX),
+        "passage": passage,
+        "region": result.region,
+        "passes": result.passes,
+        "replaced_words": words.proposal.words().iter().filter(inside).count(),
+        "recognized_words": result.transcript.words().iter().filter(inside).count(),
+        "words": result.transcript.words().len(),
+        "recognition": crate::activity::recognition_report(&recheck, &corrected)?,
     }))
 }
 
@@ -799,10 +1030,19 @@ pub fn run_transcript(arguments: &[&str]) -> Result<(), crate::CliError> {
                 })
                 .collect::<Vec<_>>()
         });
+        // Every transcript carries its recognizer failure check, including
+        // in search results, so a failed passage is never reported as empty.
+        let recognition = crate::activity::recognition_report(
+            &crate::activity::recognition_check(&store, &content, key.audio_stream, transcript),
+            transcript,
+        )?;
         transcripts.push(match matches {
-            Some(matches) => serde_json::json!({ "key": key, "matches": matches }),
+            Some(matches) => {
+                serde_json::json!({ "key": key, "recognition": recognition, "matches": matches })
+            }
             None => serde_json::json!({
                 "key": key,
+                "recognition": recognition,
                 "transcript": transcript,
                 "corrected_words": corrected_words,
                 "replaced_recognized_words": corrected.replaced,

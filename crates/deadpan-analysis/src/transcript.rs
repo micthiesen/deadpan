@@ -22,6 +22,14 @@ pub const MAX_WORD_BYTES: usize = 256;
 pub const MAX_QUERY_WORDS: usize = 32;
 /// Words heard with lower probability are presented as approximate.
 pub const APPROXIMATE_BELOW: f32 = 0.6;
+/// Longest passage that can be recognized again on its own (20 minutes).
+pub const MAX_AGAIN_CS: u32 = 20 * 60 * 100;
+/// Most passages recognized again in one transcript.
+pub const MAX_AGAIN_PASSAGES: usize = 1_024;
+/// Leading words of a second pass compared with the words before it.
+pub const REPEAT_PROBE_WORDS: usize = 4;
+/// Words before a passage searched for those leading words.
+pub const REPEAT_PROBE_WINDOW: usize = 64;
 
 #[derive(Debug, Error, PartialEq)]
 pub enum TranscriptError {
@@ -92,6 +100,23 @@ impl Word {
     }
 }
 
+/// A passage the recognizer was run on again by itself, after the
+/// [recognition check](crate::check_recognition) flagged it. Its words came
+/// from that second pass; every other word came from the whole-file pass.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct RecognizedAgain {
+    /// Half-open centisecond bounds relative to the analysis PCM start.
+    pub start_cs: u32,
+    pub end_cs: u32,
+}
+
+impl RecognizedAgain {
+    pub fn overlaps(&self, start_cs: u32, end_cs: u32) -> bool {
+        self.start_cs < end_cs && start_cs < self.end_cs
+    }
+}
+
 /// A validated transcript. Construction checks every bound, so stored values
 /// can be trusted by display, search and timing conversion.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -99,6 +124,7 @@ impl Word {
 pub struct Transcript {
     audio: AnalysedAudio,
     words: Vec<Word>,
+    again: Vec<RecognizedAgain>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -106,13 +132,15 @@ pub struct Transcript {
 struct TranscriptRecord {
     audio: AnalysedAudio,
     words: Vec<Word>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    recognized_again: Vec<RecognizedAgain>,
 }
 
 impl TryFrom<TranscriptRecord> for Transcript {
     type Error = TranscriptError;
 
     fn try_from(record: TranscriptRecord) -> Result<Self, Self::Error> {
-        Self::new(record.audio, record.words)
+        Self::new(record.audio, record.words)?.with_recognized_again(record.recognized_again)
     }
 }
 
@@ -121,6 +149,7 @@ impl From<Transcript> for TranscriptRecord {
         Self {
             audio: transcript.audio,
             words: transcript.words,
+            recognized_again: transcript.again,
         }
     }
 }
@@ -154,7 +183,160 @@ impl Transcript {
             }
             previous = Some(word);
         }
-        Ok(Self { audio, words })
+        Ok(Self {
+            audio,
+            words,
+            again: Vec::new(),
+        })
+    }
+
+    /// Record the passages whose words came from recognizing them again.
+    /// They must lie in the audio, in order and without overlap.
+    pub fn with_recognized_again(
+        mut self,
+        again: Vec<RecognizedAgain>,
+    ) -> Result<Self, TranscriptError> {
+        if again.len() > MAX_AGAIN_PASSAGES {
+            return Err(TranscriptError::Limit("passages recognized again"));
+        }
+        let mut end = 0;
+        for passage in &again {
+            if passage.start_cs < end
+                || passage.end_cs <= passage.start_cs
+                || passage.end_cs > self.audio.duration_cs
+            {
+                return Err(TranscriptError::Timing(
+                    "passages recognized again are out of order or outside the audio",
+                ));
+            }
+            end = passage.end_cs;
+        }
+        self.again = again;
+        Ok(self)
+    }
+
+    /// Passages whose words came from recognizing them again, in order.
+    pub fn recognized_again(&self) -> &[RecognizedAgain] {
+        &self.again
+    }
+
+    /// Whether a second pass over audio beginning at `start_cs` starts by
+    /// repeating words this transcript already has just before that point:
+    /// its first [`REPEAT_PROBE_WORDS`] words occur in order among the last
+    /// [`REPEAT_PROBE_WINDOW`] words before it. The recognizer then timed
+    /// those earlier words too early rather than missing the passage's
+    /// speech, and merging would duplicate them.
+    pub fn repeats_before(&self, start_cs: u32, pass: &Transcript) -> bool {
+        let probe: Vec<String> = pass
+            .words
+            .iter()
+            .map(Word::normalized)
+            .filter(|text| !text.is_empty())
+            .take(REPEAT_PROBE_WORDS)
+            .collect();
+        if probe.len() < REPEAT_PROBE_WORDS {
+            return false;
+        }
+        let before = self.words.partition_point(|word| word.start_cs < start_cs);
+        let earlier: Vec<String> = self.words[before.saturating_sub(REPEAT_PROBE_WINDOW)..before]
+            .iter()
+            .map(Word::normalized)
+            .filter(|text| !text.is_empty())
+            .collect();
+        earlier
+            .windows(probe.len())
+            .any(|window| window == probe.as_slice())
+    }
+
+    /// Where the recognizer sentence holding the last word before
+    /// `start_cs` begins, when that is earlier than `start_cs`.
+    pub fn sentence_start_before(&self, start_cs: u32) -> Option<u32> {
+        let before = self.words.partition_point(|word| word.start_cs < start_cs);
+        let last = self.words.get(before.checked_sub(1)?)?;
+        let first = self
+            .words
+            .partition_point(|word| word.segment < last.segment);
+        Some(self.words[first].start_cs).filter(|start| *start < start_cs)
+    }
+
+    /// Replace the words of one passage with those of a second recognizer
+    /// pass over just that passage. `pass` analysed exactly the passage's
+    /// PCM, so its bounds are relative to the passage start. Words beginning
+    /// in the passage are replaced; all other words are kept unchanged.
+    /// Sentences are renumbered in order. A passage is recognized again at
+    /// most once, which bounds repeated attempts.
+    pub fn recognize_again(
+        &self,
+        passage: RecognizedAgain,
+        pass: &Transcript,
+    ) -> Result<Self, TranscriptError> {
+        if passage.end_cs <= passage.start_cs || passage.end_cs > self.audio.duration_cs {
+            return Err(TranscriptError::Timing(
+                "passage outside the analysed audio",
+            ));
+        }
+        if passage.end_cs - passage.start_cs > MAX_AGAIN_CS {
+            return Err(TranscriptError::Limit("passage length"));
+        }
+        if self
+            .again
+            .iter()
+            .any(|done| done.overlaps(passage.start_cs, passage.end_cs))
+        {
+            return Err(TranscriptError::Timing(
+                "this passage has already been recognized again",
+            ));
+        }
+        if pass.audio.duration_cs != passage.end_cs - passage.start_cs
+            || pass.audio.sample_rate != self.audio.sample_rate
+        {
+            return Err(TranscriptError::Timing(
+                "the second pass did not analyse exactly this passage",
+            ));
+        }
+        let inside = |word: &Word| (passage.start_cs..passage.end_cs).contains(&word.start_cs);
+        let before = self
+            .words
+            .iter()
+            .take_while(|word| word.start_cs < passage.start_cs);
+        let after = self
+            .words
+            .iter()
+            .skip_while(|word| word.start_cs < passage.start_cs);
+        let after = after.skip_while(|word| inside(word));
+        let shifted = pass.words.iter().map(|word| Word {
+            start_cs: word.start_cs + passage.start_cs,
+            end_cs: word.end_cs + passage.start_cs,
+            segment: word.segment,
+            ..word.clone()
+        });
+        // Renumber sentences in order: (source, segment) pairs become
+        // consecutive indices.
+        let mut words = Vec::with_capacity(self.words.len());
+        let mut last: Option<(u8, u32)> = None;
+        let mut segment = 0_u32;
+        let sources = before
+            .cloned()
+            .map(|word| (0_u8, word))
+            .chain(shifted.map(|word| (1_u8, word)))
+            .chain(after.cloned().map(|word| (2_u8, word)));
+        for (source, mut word) in sources {
+            let identity = (source, word.segment);
+            if let Some(previous) = last
+                && previous != identity
+            {
+                segment = segment
+                    .checked_add(1)
+                    .ok_or(TranscriptError::Limit("segment count"))?;
+            }
+            last = Some(identity);
+            word.segment = segment;
+            words.push(word);
+        }
+        let mut again = self.again.clone();
+        let position = again.partition_point(|done| done.end_cs <= passage.start_cs);
+        again.insert(position, passage);
+        Self::new(self.audio, words)?.with_recognized_again(again)
     }
 
     /// Build words from recognizer segments. Special tokens are dropped, a

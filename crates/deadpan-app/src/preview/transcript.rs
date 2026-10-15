@@ -40,6 +40,7 @@ enum Event {
 }
 
 mod activity;
+mod recognition;
 
 #[derive(Debug, Clone, PartialEq)]
 enum Status {
@@ -93,6 +94,18 @@ pub(super) struct Transcription {
     thread: Option<std::thread::JoinHandle<()>>,
     /// Speech activity detection, which shares the job and its PCM.
     activity: activity::ActivityJob,
+    /// The recognizer failure check of the published words and pauses,
+    /// recomputed only when either is replaced.
+    recognition: Option<Recognition>,
+    /// A flagged passage being recognized again by itself.
+    again: Option<recognition::Again>,
+}
+
+/// A recognition check and the published analyses it was derived from.
+struct Recognition {
+    transcript: Arc<crate::project::OriginalTranscript>,
+    activity: Option<Arc<crate::project::OriginalActivity>>,
+    check: Arc<deadpan_analysis::RecognitionCheck>,
 }
 
 impl Default for Transcription {
@@ -118,6 +131,8 @@ impl Default for Transcription {
             correction_stream: None,
             thread: None,
             activity: activity::ActivityJob::default(),
+            recognition: None,
+            again: None,
         }
     }
 }
@@ -141,7 +156,18 @@ impl Transcription {
         let Some(save) = save else {
             return;
         };
-        if self.session != Some(save.session) || self.status != Status::Saving(save.attempt) {
+        if self.session != Some(save.session) {
+            return;
+        }
+        if let Some(recognition::Again::Saving { attempt, .. }) = &self.again
+            && *attempt == save.attempt
+        {
+            self.again = save.error.map(|error| recognition::Again::Failed {
+                error: format!("the transcript was not saved: {error}"),
+            });
+            return;
+        }
+        if self.status != Status::Saving(save.attempt) {
             return;
         }
         if let Some(error) = save.error {
@@ -209,14 +235,24 @@ impl DeadpanApp {
             .and_then(|events| events.try_recv().ok())
         {
             match event {
-                Event::Progress(percent) => {
-                    self.transcription.status = Status::Transcribing(percent);
-                }
+                Event::Progress(percent) => match &mut self.transcription.again {
+                    Some(recognition::Again::Running { percent: shown, .. }) => *shown = percent,
+                    _ => self.transcription.status = Status::Transcribing(percent),
+                },
                 Event::Detected { result, last } => {
                     if last {
                         self.transcription.events = None;
                     }
                     self.transcription.activity.receive(result);
+                }
+                Event::Transcribed(result)
+                    if matches!(
+                        self.transcription.again,
+                        Some(recognition::Again::Running { .. })
+                    ) =>
+                {
+                    self.transcription.events = None;
+                    self.received_again(result);
                 }
                 Event::Transcribed(result) => {
                     self.transcription.events = None;
@@ -306,7 +342,11 @@ impl DeadpanApp {
         match self.service.submit(request) {
             Ok(()) => {
                 self.transcription.unsaved = None;
-                self.transcription.status = Status::Saving(attempt);
+                if let Some(recognition::Again::Queued) = self.transcription.again {
+                    self.transcription.again = Some(recognition::Again::Saving { attempt });
+                } else {
+                    self.transcription.status = Status::Saving(attempt);
+                }
             }
             // Another analysis save is still queued; try again shortly.
             Err(_) if self.service.annotation_busy() => {
@@ -314,8 +354,12 @@ impl DeadpanApp {
             }
             Err(error) => {
                 self.transcription.unsaved = None;
-                self.transcription.status =
-                    Status::Failed(format!("the transcript was not saved: {error}"));
+                let error = format!("the transcript was not saved: {error}");
+                if let Some(recognition::Again::Queued) = self.transcription.again {
+                    self.transcription.again = Some(recognition::Again::Failed { error });
+                } else {
+                    self.transcription.status = Status::Failed(error);
+                }
             }
         }
     }
@@ -726,6 +770,7 @@ impl DeadpanApp {
         let words = transcript.transcript.words();
         if words.is_empty() {
             ui.weak("No speech was recognized in the Original.");
+            self.recognition_warning(ui, &transcript);
             return;
         }
         let search = ui.add(
@@ -826,6 +871,7 @@ impl DeadpanApp {
         if let Some(problem) = problem {
             ui.colored_label(style::WARNING, problem);
         }
+        self.recognition_warning(ui, &transcript);
         self.correct_offer(ui);
         if let Some(word) = clicked {
             self.jump_to_word(word);
