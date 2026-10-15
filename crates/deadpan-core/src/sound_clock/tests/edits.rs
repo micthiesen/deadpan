@@ -676,3 +676,52 @@ fn retained_clock_slice_wire_roundtrips_and_rejects_duplicate_history() {
     let error = CapturedEditSlice::from_json(&wire.to_string()).unwrap_err();
     assert!(error.message.contains("duplicate sound clock"), "{error}");
 }
+
+#[test]
+fn speed_changes_before_an_owner_transport_its_sound_and_inside_it_refuse() {
+    let before = fixture();
+    let wrapped = edit(
+        &before,
+        "wrapped",
+        Command::WrapRetime {
+            node: node("lead"),
+            id: node("speed"),
+            duration: frames(3),
+            pitch: crate::PitchPolicy::FollowSpeed,
+        },
+    );
+    assert_eq!(journal(&wrapped), vec![timing("wrapped")]);
+    assert_eq!(
+        wrapped.audio_bindings.timings[&timing("wrapped")],
+        FrozenAudioLayout::capture(&before).unwrap()
+    );
+    let changed = edit(
+        &wrapped,
+        "changed",
+        Command::SetRetime {
+            node: node("speed"),
+            duration: frames(2),
+            pitch: crate::PitchPolicy::FollowSpeed,
+        },
+    );
+    assert_eq!(
+        journal(&changed),
+        vec![timing("wrapped"), timing("changed")]
+    );
+    assert_eq!(changed.beat_sounds, before.beat_sounds);
+    // Slowing the owner itself would change its processing: refused whole.
+    let inside = apply(
+        &before,
+        &request(
+            &before,
+            "inside",
+            Command::WrapRetime {
+                node: node("owner"),
+                id: node("slow"),
+                duration: frames(8),
+                pitch: crate::PitchPolicy::FollowSpeed,
+            },
+        ),
+    );
+    assert!(inside.is_err(), "{inside:?}");
+}

@@ -277,3 +277,47 @@ fn a_longer_pause_before_an_attached_sound_owner_moves_its_sound_on_its_own_cloc
             .all(|sample| *sample == 0.0)
     );
 }
+
+/// Slowing a beat before the owner moves the attached sound by the exact
+/// sample shift of the new boundary, with its PCM unchanged; changing that
+/// speed again appends a second clock.
+#[test]
+fn speed_changes_before_an_owner_move_its_attached_sound_exactly() {
+    let before = ntsc(AudioEdgePolicy::Hard);
+    let wrapped = edit(
+        &before,
+        "slowed",
+        Command::WrapRetime {
+            node: id("lead"),
+            id: id("speed"),
+            duration: FrameDuration::new(3).unwrap(),
+            pitch: PitchPolicy::FollowSpeed,
+        },
+    );
+    let changed = edit(
+        &wrapped,
+        "slower",
+        Command::SetRetime {
+            node: id("speed"),
+            duration: FrameDuration::new(5).unwrap(),
+            pitch: PitchPolicy::FollowSpeed,
+        },
+    );
+    let read = |document: &ProjectDocument, sample: i64| {
+        let mut reader = StageAudio::new(compile(document, false));
+        let mut provider = ClockProvider::new(document);
+        bus(&mut reader, &mut provider, sample, 256).samples
+    };
+    for (document, lead) in [(&wrapped, 3), (&changed, 5)] {
+        let start = frame_sample_boundary(2) + 512;
+        let expected = read(&before, start);
+        assert!(expected.iter().flatten().any(|v| v.abs() > 0.001));
+        let shift = frame_sample_boundary(lead) - frame_sample_boundary(2);
+        compare_copy(
+            &expected,
+            &read(document, start + shift),
+            false,
+            "slowed lead",
+        );
+    }
+}

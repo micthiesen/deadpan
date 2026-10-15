@@ -922,3 +922,61 @@ fn trim_loss_policy_applies_per_binding_and_prefix_preserves_unresolved_coordina
         assert_eq!(visible.mark.unwrap().bindings, [offset + 1]);
     }
 }
+
+/// The fixture followed by a Hold that owns an attached sound.
+fn with_owner(before: &ProjectDocument) -> ProjectDocument {
+    // A tenth of a second of the Original's sound, inside the 4-frame owner.
+    let sound = span(0, 4410, 44_100);
+    modify(before, |value| {
+        value["nodes"]["root"]["kind"]["children"] = json!(["source", "owner"]);
+        value["nodes"]["owner"] = serde_json::to_value(BeatNode {
+            kind: NodeKind::Hold {
+                recipe: HoldRecipe {
+                    duration: frames(4),
+                    video: HoldVideo::Background,
+                    picture_context: None,
+                    audio: HoldAudio::Silence,
+                },
+            },
+            ..BeatNode::sequence("Owner", vec![])
+        })
+        .unwrap();
+        value["beat_sounds"] = json!({"owner": {"effect": BeatSound {
+            label: "Effect".into(),
+            source: SourceAudio { asset: AssetId::new("original").unwrap(), span: sound },
+            mapping: SourceAudioMapping::natural_rate(sound, FrameRate::new(30, 1).unwrap()).unwrap(),
+            offset: AudioSample(11),
+            treatments: AudioTreatments::default(),
+            start_edge: AudioEdgePolicy::Hard,
+            end_edge: AudioEdgePolicy::Automatic,
+            overflow: SoundOverflowPolicy::Reject,
+        }}});
+    })
+}
+
+#[test]
+fn trimming_before_an_attached_sound_owner_transports_its_clock() {
+    for delta in [-3, 3] {
+        let before = with_owner(&fixture(Some((0, 147000)), 7));
+        let command = trim(&before, "source", SourceTrimEdge::Out, delta);
+        let Command::TrimSource { timing, .. } = &command else {
+            unreachable!()
+        };
+        let expected = vec![timing.clone()];
+        let after = edit(&before, command);
+        assert_eq!(after.beat_sounds(), before.beat_sounds());
+        let journal =
+            &after.audio_bindings().sound_clocks()[&id("owner")][&SoundId::new("effect").unwrap()];
+        let clocks: Vec<_> = journal
+            .clocks()
+            .iter()
+            .map(|reference| reference.timing().clone())
+            .collect();
+        assert_eq!(clocks, expected, "delta {delta}");
+        // The owner's new start is the trimmed Source's new end.
+        assert_eq!(
+            after.source_splice_boundary(&id("root"), 1).unwrap(),
+            ProjectFrame(10 + delta)
+        );
+    }
+}

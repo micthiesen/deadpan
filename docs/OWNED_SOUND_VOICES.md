@@ -296,6 +296,18 @@ The final product still requires all of the following:
   `SetHoldDuration` uses that transport too when no root sounds exist, so a
   pause before an owner can change length
   (`a_longer_pause_before_an_attached_sound_owner_moves_its_sound_on_its_own_clock`).
+  Scalar `TrimSource`, `RollSources`, the combined native `ApplySourceTrim`
+  and `WrapRetime`/`SetRetime` outside every sound-bearing scope use the same
+  transport: Trim and Roll reuse their own timing identity (a Trim that needs
+  no audio capture, and a speed change, take the leaf's revision at ordinal
+  zero), and the owner's processing scope must be unchanged, so slowing or
+  trimming inside it still refuses
+  (`trimming_before_an_attached_sound_owner_transports_its_clock`,
+  `combined_trims_and_rolls_before_an_attached_sound_owner_keep_its_sound`,
+  `speed_changes_before_an_owner_transport_its_sound_and_inside_it_refuse`,
+  and decoded PCM in
+  `speed_changes_before_an_owner_move_its_attached_sound_exactly`). Root sounds
+  keep their own guard: a project with root sounds still refuses speed changes.
 - Extend whole-owner copying to partial captures and timing-preserving edits.
   Whole-beat `ib`/`ab` copies already differ without changing picture bounds.
 - Add scoped beat-sound allowances and permitted tails.

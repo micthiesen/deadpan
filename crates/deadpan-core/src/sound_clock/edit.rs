@@ -30,21 +30,31 @@ pub(crate) fn timing(command: &Command) -> Option<&AudioTimingId> {
         | Command::ReplaceSliceChildren { timing, .. }
         | Command::RepeatSelection { timing, .. }
         | Command::SetRepeatPlays { timing, .. }
-        | Command::SetRepeatGaps { timing, .. } => Some(timing),
+        | Command::SetRepeatGaps { timing, .. }
+        | Command::TrimSource { timing, .. }
+        | Command::RollSources { timing, .. } => Some(timing),
+        Command::ApplySourceTrim { resources, .. } => resources.timing.as_ref(),
         _ => None,
     }
 }
 
-/// The capture identity for one command leaf. A plain Split or Hold duration
-/// change names no clock;
+/// The capture identity for one command leaf. A plain Split, Hold duration
+/// or speed change, and a Trim that retains no audio clock, names no clock;
 /// its new layout takes the leaf's own revision at ordinal zero, which no
 /// other table of that revision uses.
-fn capture_timing(command: &Command, allocation: &RevisionId) -> Option<AudioTimingId> {
+pub(crate) fn capture_timing(command: &Command, allocation: &RevisionId) -> Option<AudioTimingId> {
+    let derived = || AudioTimingId {
+        allocation: allocation.clone(),
+        ordinal: 0,
+    };
     match command {
-        Command::Split { .. } | Command::SetHoldDuration { .. } => Some(AudioTimingId {
-            allocation: allocation.clone(),
-            ordinal: 0,
-        }),
+        Command::Split { .. }
+        | Command::SetHoldDuration { .. }
+        | Command::WrapRetime { .. }
+        | Command::SetRetime { .. } => Some(derived()),
+        Command::ApplySourceTrim { resources, .. } => {
+            Some(resources.timing.clone().unwrap_or_else(derived))
+        }
         command => timing(command).cloned(),
     }
 }

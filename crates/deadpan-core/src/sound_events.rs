@@ -309,12 +309,10 @@ pub(crate) fn validate_command(
     command: &Command,
 ) -> Result<(), EditError> {
     validate_group_ownership(document, command)?;
+    // Every other timed edit captures the pre-edit layout and transports each
+    // attached sound whose processing scope only moved; a changed scope refuses.
     if !document.beat_sounds.is_empty()
-        && crate::sound_clock::edit::timing(command).is_none()
-        && !matches!(
-            command,
-            Command::Split { .. } | Command::SetHoldDuration { .. }
-        )
+        && crate::sound_clock::edit::capture_timing(command, document.revision_id()).is_none()
         && !preserves_sound_clocks(command)
     {
         return Err(EditError::new(
@@ -322,7 +320,8 @@ pub(crate) fn validate_command(
             "this structural edit cannot yet preserve beat-owned sound clocks and sample phase; remove beat sounds before editing time",
         ));
     }
-    if document.sounds.is_empty() && document.beat_sounds.is_empty()
+    // Without root sounds, attached sounds were decided above.
+    if document.sounds.is_empty()
         || preserves_sound_clocks(command)
         || matches!(
             command,
@@ -350,9 +349,6 @@ pub(crate) fn validate_command(
                 | Command::Delete { .. }
         )
         || matches!(command, Command::Split { node, .. } if node != document.root())
-        // Root sound routes have no Hold-duration transform; attached sounds
-        // translate through the beat-sound clock transport.
-        || (document.sounds.is_empty() && matches!(command, Command::SetHoldDuration { .. }))
     {
         return Ok(());
     }

@@ -1416,3 +1416,66 @@ fn overwrite_rejects_real_temporary_split_peak_even_when_final_tree_would_fit() 
     assert!(error.message.contains("temporary node budget"));
     assert_eq!(before, original);
 }
+
+#[test]
+fn combined_trims_and_rolls_before_an_attached_sound_owner_keep_its_sound() {
+    let sound = span(0, 4410, 44_100);
+    let before = modify(&fixture(Some((0, 147000)), 7), |wire| {
+        wire["nodes"]["root"]["kind"]["children"] = json!(["left", "right", "owner"]);
+        wire["nodes"]["owner"] = serde_json::to_value(hold(4)).unwrap();
+        wire["beat_sounds"] = json!({"owner": {"effect": BeatSound {
+            label: "Effect".into(),
+            source: SourceAudio { asset: AssetId::new("original").unwrap(), span: sound },
+            mapping: SourceAudioMapping::natural_rate(sound, FrameRate::new(30, 1).unwrap()).unwrap(),
+            offset: AudioSample(11),
+            treatments: AudioTreatments::default(),
+            start_edge: AudioEdgePolicy::Hard,
+            end_edge: AudioEdgePolicy::Automatic,
+            overflow: SoundOverflowPolicy::Reject,
+        }}});
+    });
+    let journal = |document: &ProjectDocument| {
+        document
+            .audio_bindings()
+            .sound_clocks()
+            .get(&id("owner"))
+            .map(|events| events[&SoundId::new("effect").unwrap()].clocks().len())
+            .unwrap_or(0)
+    };
+    let owner_start = |document: &ProjectDocument| {
+        let NodeKind::Sequence { children } = &document.nodes()[&id("root")].kind else {
+            panic!()
+        };
+        let index = children
+            .iter()
+            .position(|child| child == &id("owner"))
+            .unwrap();
+        document
+            .source_splice_boundary(&id("root"), index)
+            .unwrap()
+            .0
+    };
+    // A ripple Out trim moves the owner and records one clock.
+    let (rippled, _) = edit(
+        &before,
+        combined(&before, intent(0, -2, 0, 0, SourceTrimPolicy::Ripple)),
+    );
+    assert_eq!(owner_start(&rippled), 18);
+    assert_eq!(rippled.beat_sounds(), before.beat_sounds());
+    assert_eq!(journal(&rippled), 1);
+    // A Roll keeps the pair's duration: the owner does not move, and no
+    // clock is needed.
+    let (rolled, _) = edit(
+        &before,
+        combined(&before, intent(0, 0, 0, -2, SourceTrimPolicy::Ripple)),
+    );
+    assert_eq!(owner_start(&rolled), 20);
+    assert_eq!(journal(&rolled), 0);
+    // Overwrite fills the trimmed time, so the owner stays in place.
+    let (overwritten, _) = edit(
+        &before,
+        combined(&before, intent(0, -2, 0, 0, SourceTrimPolicy::Overwrite)),
+    );
+    assert_eq!(owner_start(&overwritten), 20);
+    assert_eq!(overwritten.beat_sounds(), before.beat_sounds());
+}
