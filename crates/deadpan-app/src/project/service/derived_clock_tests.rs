@@ -4,7 +4,7 @@ use deadpan_store::ProjectStore;
 use super::snapshot;
 
 #[test]
-fn derived_clocks_refuse_native_workspace_without_authored_changes() {
+fn derived_clocks_open_in_the_native_workspace_without_authored_changes() {
     let id = |name: &str| NodeId::new(name).unwrap();
     let frames = |n| FrameDuration::new(n).unwrap();
     let empty = ProjectDocument::new(
@@ -22,7 +22,7 @@ fn derived_clocks_refuse_native_workspace_without_authored_changes() {
     let mut retime = BeatNode::sequence("Retime", vec![]);
     retime.kind = NodeKind::Retime {
         child: id("hold"),
-        duration: frames(1),
+        duration: frames(2),
         mapping: FrameRange::new(ProjectFrame(0), ProjectFrame(2)).unwrap(),
         pitch: PitchPolicy::FollowSpeed,
         purpose: RetimePurpose::Edit,
@@ -40,7 +40,8 @@ fn derived_clocks_refuse_native_workspace_without_authored_changes() {
     let scratch = tempfile::tempdir().unwrap();
     let path = scratch.path().join("clocked.deadpan");
     let store = ProjectStore::create(&path, &document).unwrap();
-    let error = snapshot(&store, 1, path, None).err().unwrap();
-    assert!(error.contains("native editing of these clocks is not yet supported"));
+    // The plan reads the exact clock; integral recipes outside it are exact.
+    let workspace = snapshot(&store, 1, path, None).unwrap();
+    assert_eq!(workspace.plan.duration(), frames(2));
     assert_eq!(store.snapshot().unwrap(), document);
 }

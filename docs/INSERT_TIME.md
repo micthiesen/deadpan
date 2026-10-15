@@ -179,16 +179,31 @@ at whole and fractional child cuts and after a second pause.
 
 `pause_insertion_target` returns `PauseInsertionTarget::Retimed` with the live
 picture parent, the identity count and `needs_exact_clocks(frames)`. The
-semantic planner and CLI accept it. Because the native workspace does not yet
-display derived clocks, the app refuses pauses whose result would need them.
-Preserve and Shift speed changes, Repeat or Partition ancestors above the
-Retime, nested Retimes inside it, AI pauses, pauses other than a silent freeze
-or black picture, marks and placed sounds still refuse, the latter two already
-in the target query. A document with derived clocks admits further pauses only
-strictly inside a FollowSpeed speed change, not at its seams or the root; other
-ordinary commands still refuse it. Above a fractional Retime, its integral
-recipe is kept at the ceiling of its exact clock, so recipe totals above it
-equal the exact totals.
+semantic planner, CLI and native `,h`/black pauses use it. Transparent windows
+above the speed change (a split slowed beat) pass their unity selection through
+and grow with the pause. Preserve and Shift speed changes, Repeat ancestors,
+nested Retimes inside the speed change, AI pauses, pauses other than a silent
+freeze or black picture, marks and placed sounds still refuse, the latter two
+already in the target query.
+
+## Editing documents with exact clocks
+
+A fractional Retime keeps an integral recipe at the ceiling of its exact clock,
+so outside every clocked speed change integral recipes equal exact extents
+([qualification](qualification/clocked-editing-2026-10-15.md)). Ordinary
+commands therefore run on such documents inside a sealed command scope
+(`derived_clock::with_sealed`), where integral duration queries return those
+recipes after checking that equality. After each command leaf,
+`sealed_preserved` refuses any result that changed content or timing inside a
+clocked speed change, unless the leaf was a retimed pause: sealed content may
+stay unchanged, be removed, or be copied exactly, and the owning Retime may
+change only attributes outside its timing. Copies carry their derived clocks
+(`clone_nodes`; an owned Preserve input refuses), and removed Retimes drop
+theirs. Pauses at root seams, Splits of the speed change, Hold edits elsewhere,
+deletion, grouping and Undo/Redo work; edits inside the speed change refuse
+with a message naming it. The native workspace opens these projects; its
+remaining integral consumers (scoped inspector timing, Trim inspection) report
+the refusal rather than guessing.
 
 ## Remaining full-product work
 

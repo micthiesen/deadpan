@@ -197,7 +197,9 @@ are admitted while no Retime processes pitch: FollowSpeed stages and unity
 Preserve partitions only resample affinely. Shift is refused, and core 55
 admits Preserve only with an owned input projection.
 [Retimed pauses](INSERT_TIME.md#pauses-inside-followspeed-speed-changes) are the
-first command that authors these clocks.
+first command that authors these clocks, and ordinary commands now
+[edit around them](INSERT_TIME.md#editing-documents-with-exact-clocks) while
+refusing changes inside a clocked speed change.
 Exact snapshot restore
 and guarded patches preserve the complete composition. These explicit temporary
 boundaries must be replaced by real lifecycle transforms as splice authoring

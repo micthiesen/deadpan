@@ -73,15 +73,16 @@ pub(crate) fn apply_known(
         ));
     }
     if !document.derived_clocks().is_empty() {
-        // Exact clocks admit new pauses only through the retimed path below.
+        // Inside a FollowSpeed speed change the retimed path authors exact
+        // clocks; elsewhere the ordinary path runs on sealed recipes.
         validate_identities(document, Some(id), identities)?;
         let extents = document.exact_durations()?;
-        let target = retimed::locate(document, &|id| extents.get(id).copied(), at)?
-            .ok_or_else(retimed::outside_follow_speed)?;
-        return retimed::apply(
-            document, &target, at, hold, id, identities, timing, allocation,
-        )
-        .map(|result| (result, None));
+        if let Some(target) = retimed::locate(document, &|id| extents.get(id).copied(), at)? {
+            return retimed::apply(
+                document, &target, at, hold, id, identities, timing, allocation,
+            )
+            .map(|result| (result, None));
+        }
     }
     let durations = document.durations()?;
     let total = durations[document.root()].frames();

@@ -104,7 +104,8 @@ Current crates:
 - `crates/deadpan-render`: bounded shared SDR picture pipeline, linear Rec.2020 working textures, explicit sRGB display transform, ordered framing/clipping, aspect and rotation. No decoding, document mutation or encoding.
 - `native/deadpan-media-worker`: process-isolated FFmpeg conversion, intra-only VideoToolbox preview-proxy encoding and independent decode verification through bounded descriptor-only AVIO. Only the documented FFI call permits unsafe Rust. Requires the explicitly selected pinned LGPL FFmpeg development prefix.
 - `native/deadpan-encode`: bounded descriptor-only H.264/AAC MP4 encoder over composed I420 and canonical stereo PCM. Exact clocks, explicit hardware/software attempts, one shared deadline and restricted fast-start readback; no project, decoding, verification or publication ownership.
-- `native/deadpan-process`: checked worker/leader teardown, Darwin group membership and owned-worker footprint sampling; unsafe is denied except for its two documented bounded libproc calls, `group_members` (`proc_listpids`) and `pid_rusage` (`proc_pid_rusage`, behind `owned_child_memory`). Higher layers continue to forbid unsafe.
+- `native/deadpan-process`: checked worker/leader teardown, Darwin group membership and owned-worker footprint sampling; unsafe is denied except for its two documented bounded libproc calls, `group_members` (`proc_listpids`) and `pid_rusage` (`proc_pid_rusage`, behind `owned_child_memory` and the app's own footprint `own_memory`). Higher layers continue to forbid unsafe.
+- `native/deadpan-sqlite-status`: the one documented `sqlite3_db_status` call that diagnostics use for SQLite page-cache hits, misses, writes and spills. No database ownership or authored state.
 - `crates/deadpan-app`: native `egui`/`eframe` project workspace using Metal. One service owns the writable store, one import worker prepares media, and a separate bounded preview worker consumes immutable workspaces. Native dialogs, source registration, explicit insertion, history, current-depth Camera previews, limited Original/edit/sound audition and automatic SDR Render with explicit preview decisions are implemented, as are crash-recovery reporting, missing-Original relink and storage-failure alerts ([recovery](docs/RECOVERY.md)). Full editing, mastered playback, complete export qualification, rotating backups and release migration remain open.
 - `crates/deadpan-cli`: versioned headless project/command API, reused by `deadpan-app --headless`, and the per-user preview-proxy builder and cache.
 - `crates/deadpan-diagnostics`: dependency-free process-local Section 25.3 counters (file I/O, queue depths, PCM caches, GPU latency, worker memory) as fixed relaxed-atomic statics. Recording never allocates or locks; audio callbacks record nothing; values never enter authored state, history or the database. `:diagnostics` and `doctor --project` show them. See [diagnostics](docs/PERFORMANCE.md#diagnostics).
@@ -462,8 +463,10 @@ are derived clocks, integral ones ordinary recipes, and an adapter keeps the
 Hold's authored project duration. Capture lattices before copying the cut
 leaf and reanchor every moved owner once. A fractional Retime keeps an integral
 recipe at the ceiling of its clock. Derived clocks admit bindings and lineage
-only while no Retime processes pitch. The app refuses retimed pauses that need
-derived clocks until its workspace reads exact durations. See
+only while no Retime processes pitch. Ordinary commands run on clocked
+documents only inside `derived_clock::with_sealed`, and each leaf must pass
+`sealed_preserved`: never let an ordinary reducer change content inside a
+clocked speed change, and copy derived clocks with copied Retimes. See
 [pause insertion](docs/INSERT_TIME.md#pauses-inside-followspeed-speed-changes).
 
 Current native and CLI whole-beat deletion uses `DeleteRipple { node, timing }` through

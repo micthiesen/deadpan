@@ -579,3 +579,40 @@ fn pauses_inside_follow_speed_resume_the_old_samples_at_integral_and_fractional_
         );
     }
 }
+
+#[test]
+fn a_pause_in_a_split_slowed_beat_and_at_root_seams_keeps_every_other_sample() {
+    let (original, mut provider) = slowed_original();
+    // Splitting at frame 4 copies the speed change beneath two windows; the
+    // pause at frame 6 is inside the copy, at child frame 3.
+    let divided = split_command(&original, &id("slow"), 4, "slow-cut");
+    let old = record(&original, &mut provider, false, &[256]);
+    assert_eq!(record(&divided, &mut provider, false, &[127]), old);
+    let inserted = insert_pause(&divided, 6, 1, "split-pause");
+    let actual = record(&inserted, &mut provider, false, &[64, 251]);
+    assert_resumed(&actual, &old, 0..ntsc_boundary(6), 0);
+    assert_pause(&actual, ntsc_boundary(6)..ntsc_boundary(7));
+    assert_resumed(
+        &actual,
+        &old,
+        ntsc_boundary(7)..actual.samples.len(),
+        ntsc_boundary(6),
+    );
+    // With exact clocks present, a pause at the project start moves
+    // everything, clocked speed changes included, on their own clocks.
+    let clocked = insert_pause(&original, 3, 1, "clocked-pause");
+    assert!(!clocked.derived_clocks().is_empty());
+    let before = record(&clocked, &mut provider, false, &[256]);
+    let shifted = insert_pause(&clocked, 0, 2, "start-pause");
+    let actual = record(&shifted, &mut provider, false, &[99, 256]);
+    assert_pause(&actual, 0..ntsc_boundary(2));
+    // Each owner resumes on its own rounded boundary, not a common offset.
+    assert_resumed(&actual, &before, ntsc_boundary(2)..ntsc_boundary(5), 0);
+    assert_pause(&actual, ntsc_boundary(5)..ntsc_boundary(6));
+    assert_resumed(
+        &actual,
+        &before,
+        ntsc_boundary(6)..actual.samples.len(),
+        ntsc_boundary(4),
+    );
+}

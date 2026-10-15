@@ -1140,6 +1140,15 @@ fn apply_with_durations_captured(
     previous: Option<&crate::ValidatedDocument>,
     mut isolation: Option<&mut Vec<crate::ScopedIsolationStep>>,
 ) -> Result<(EditTransaction, ProjectDocument, Validation), EditError> {
+    // Ordinary commands read integral recipes, which equal exact extents
+    // outside clocked speed changes; each leaf refuses changes inside them.
+    if !document.derived_clocks.is_empty() && !crate::derived_clock::sealed_active() {
+        return crate::derived_clock::with_sealed(|| {
+            apply_with_durations_captured(document, request, previous, isolation)
+        });
+    }
+    // A failed earlier leaf on this thread must not exempt this one.
+    crate::insert_time::retimed::take_exact_edit();
     check_revision(
         document,
         &request.project_id,
@@ -1624,6 +1633,14 @@ fn apply_with_durations_captured(
     }
     if let Some(allowances) = allowance_edit {
         allowances.restore(&mut result)?;
+    }
+    // Removed Retimes take their clocks with them; only the retimed pause
+    // path may change timing inside a clocked speed change.
+    result
+        .derived_clocks
+        .retain(|id, _| result.nodes.contains_key(id));
+    if !crate::insert_time::retimed::take_exact_edit() {
+        crate::derived_clock::sealed_preserved(document, &result)?;
     }
     // Pruning only removes entries and compaction only rewrites tables new
     // in this transaction, so equal counts and no new table mean neither
@@ -2936,6 +2953,7 @@ pub(crate) fn remove_subtree(
         document.nodes.remove(&id).ok_or_else(|| missing(&id))?;
         document.overrides.remove(&id);
         document.gap_overrides.remove(&id);
+        document.derived_clocks.remove(&id);
     }
     Ok(())
 }

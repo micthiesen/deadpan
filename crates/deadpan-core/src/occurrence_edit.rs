@@ -589,6 +589,18 @@ pub(crate) fn clone_nodes(
         }
     }
     document.audio_bindings.sound_clocks.extend(sound_clocks);
+    // A copied Retime keeps its exact clock. Owned Preserve input names
+    // descendants by path, which a copy would have to rename.
+    for (old, new) in mapping {
+        if let Some(clock) = document.derived_clocks.get(old).cloned() {
+            if clock.preserve_input.is_some() {
+                return Err(invalid(
+                    "copying an owned Preserve input is not supported yet",
+                ));
+            }
+            document.derived_clocks.insert(new.clone(), clock);
+        }
+    }
     crate::audio_lineage::inherit(document, mapping, allocation);
     crate::audio_binding_lifecycle::inherit(document, mapping);
     Ok(())

@@ -162,6 +162,11 @@ fn resolve(
     {
         return Ok(PauseInsertionTarget::Retimed(target));
     }
+    // Outside a FollowSpeed interior, clocked speed changes are moved whole,
+    // and their integral recipes are exact (see `with_sealed`).
+    if !document.derived_clocks().is_empty() && !crate::derived_clock::sealed_active() {
+        return crate::derived_clock::with_sealed(|| resolve(document, at, within));
+    }
     let durations = document.durations()?;
     if at.0 < 0 || at.0 > durations[document.root()].frames() {
         return Err(invalid("pause boundary is outside the project"));

@@ -173,11 +173,16 @@ fn fractional_child_cuts_author_exact_clocks_and_accept_later_pauses() {
     assert!(!clocks.contains_key(&id("q-2")));
     assert_eq!(retime(&second, "q-2").0, duration(1));
 
-    // Outside the speed change, exact clocks still refuse new pauses.
-    let message = apply(&second, &pause(&second, "r", 0, 1, 3))
-        .unwrap_err()
-        .message;
-    assert!(message.contains("FollowSpeed"), "{message}");
+    // Outside the speed change, the ordinary path moves it whole.
+    let outside = edit(&second, pause(&second, "r", 0, 1, 3));
+    assert_eq!(outside.derived_clocks(), second.derived_clocks());
+}
+
+#[test]
+fn a_root_seam_before_a_plain_speed_change_inserts_a_pause() {
+    let before = fixture();
+    let after = edit(&before, insertion(&before, "seam", 2, 4));
+    assert_eq!(after.duration().unwrap(), duration(32));
 }
 
 #[test]
@@ -242,4 +247,124 @@ fn preserve_speed_changes_and_attached_marks_still_refuse() {
         preserve.pause_insertion_target(ProjectFrame(6)),
         Ok(PauseInsertionTarget::Retimed(_))
     ));
+}
+
+#[test]
+fn ordinary_edits_move_copy_and_keep_clocked_speed_changes_but_refuse_inside_them() {
+    let before = fixture();
+    let clocked = edit(&before, pause(&before, "p", 5, 3, 5));
+    let total = |document: &ProjectDocument| document.exact_durations().unwrap()[document.root()];
+    assert_eq!(total(&clocked), ratio(31, 1));
+
+    // Root seams before and after the speed change move it whole.
+    assert!(matches!(
+        clocked.pause_insertion_target(ProjectFrame(2)).unwrap(),
+        PauseInsertionTarget::Ordinary(_)
+    ));
+    let early = edit(&clocked, insertion(&clocked, "early", 2, 4));
+    assert_eq!(total(&early), ratio(35, 1));
+    assert_eq!(early.derived_clocks(), clocked.derived_clocks());
+    let late = edit(&early, insertion(&early, "late", 33, 1));
+    assert_eq!(total(&late), ratio(36, 1));
+
+    // A Hold outside the speed change keeps ordinary editing.
+    let longer = edit(
+        &late,
+        request(
+            &late,
+            "longer",
+            Command::SetHoldDuration {
+                node: id("pause-early"),
+                duration: duration(6),
+            },
+        ),
+    );
+    assert_eq!(total(&longer), ratio(38, 1));
+
+    // Inside it, ordinary edits would read integral recipes and refuse.
+    let inside = apply(
+        &longer,
+        &request(
+            &longer,
+            "inside",
+            Command::SetHoldDuration {
+                node: id("pause-p"),
+                duration: duration(4),
+            },
+        ),
+    )
+    .unwrap_err();
+    assert!(
+        inside.message.contains("inside a speed change"),
+        "{}",
+        inside.message
+    );
+
+    // Splitting the speed change at a whole project frame copies its clocked
+    // content exactly beneath two transparent windows.
+    let split = edit(
+        &longer,
+        request(
+            &longer,
+            "cut",
+            Command::Split {
+                node: id("slow"),
+                at: duration(10),
+                identities: pool("cut", 16),
+            },
+        ),
+    );
+    assert_eq!(total(&split), total(&longer));
+    assert_eq!(
+        split.derived_clocks().len(),
+        2 * longer.derived_clocks().len()
+    );
+    // The copy keeps exact geometry: a later pause in the right copy works.
+    let NodeKind::Sequence { children } = &split.nodes()[split.root()].kind else {
+        panic!("root")
+    };
+    assert_eq!(children.len(), 6);
+    let again = edit(&split, pause(&split, "again", 26, 2, 8));
+    assert_eq!(total(&again), ratio(40, 1));
+}
+
+#[test]
+fn grouping_and_deleting_a_clocked_speed_change_keep_or_drop_its_clocks() {
+    let before = fixture();
+    let clocked = edit(&before, pause(&before, "p", 5, 3, 5));
+    let grouped = edit(
+        &clocked,
+        request(
+            &clocked,
+            "group",
+            Command::Group {
+                parent: id("root"),
+                start: 0,
+                end: 2,
+                id: id("group"),
+                label: "Group".into(),
+            },
+        ),
+    );
+    assert_eq!(grouped.derived_clocks(), clocked.derived_clocks());
+    assert_eq!(
+        grouped.exact_durations().unwrap()[&id("group")],
+        ratio(29, 1)
+    );
+    let deleted = edit(
+        &clocked,
+        request(
+            &clocked,
+            "drop",
+            Command::DeleteRipple {
+                node: id("slow"),
+                timing: AudioTimingId {
+                    allocation: revision("drop"),
+                    ordinal: 0,
+                },
+            },
+        ),
+    );
+    assert!(deleted.derived_clocks().is_empty());
+    assert_eq!(deleted.duration().unwrap(), duration(4));
 }

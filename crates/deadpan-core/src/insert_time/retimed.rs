@@ -81,9 +81,28 @@ pub(crate) fn locate(
             }
             offset = end;
         }
-        let Some((child, local)) = inside else {
+        let Some((mut child, mut local)) = inside else {
             return Ok(None);
         };
+        // Transparent windows above the speed change pass their unity
+        // selection through, so a split slowed beat still admits a pause.
+        for _ in 0..=crate::MAX_DOCUMENT_DEPTH {
+            let node = &document.nodes()[child];
+            match &node.kind {
+                NodeKind::Retime {
+                    child: inner,
+                    purpose: RetimePurpose::Partition,
+                    ..
+                } => {
+                    local = clock_of(document, child)?
+                        .child_start
+                        .checked_add(local)
+                        .map_err(DocumentError::from)?;
+                    child = inner;
+                }
+                _ => break,
+            }
+        }
         let node = &document.nodes()[child];
         if matches!(node.kind, NodeKind::Sequence { .. }) {
             parent = child;
@@ -101,6 +120,16 @@ pub(crate) fn locate(
     Err(super::limit("pause Sequence depth"))
 }
 
+thread_local! {
+    static EXACT_EDIT: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+/// Whether the current command leaf authored exact clocks through this path,
+/// which the ordinary sealed-content check must not refuse. Clears the flag.
+pub(crate) fn take_exact_edit() -> bool {
+    EXACT_EDIT.with(|flag| flag.replace(false))
+}
+
 /// Document content the retimed path cannot yet transform.
 fn supported(document: &ProjectDocument) -> Result<(), EditError> {
     if !document.marks().is_empty()
@@ -114,13 +143,6 @@ fn supported(document: &ProjectDocument) -> Result<(), EditError> {
         ));
     }
     Ok(())
-}
-
-/// The refusal for documents whose exact clocks the ordinary path cannot read.
-pub(crate) fn outside_follow_speed() -> EditError {
-    super::invalid(
-        "this project has exact speed-change clocks; for now a new pause must be strictly inside a FollowSpeed speed change",
-    )
 }
 
 /// The public query for hosts. Integral documents use their validated
@@ -144,10 +166,7 @@ pub(crate) fn pause_target(
         document.exact_durations()?
     };
     let Some(target) = locate(document, &|id| extents.get(id).copied(), at)? else {
-        if document.derived_clocks().is_empty() {
-            return Ok(None);
-        }
-        return Err(outside_follow_speed());
+        return Ok(None);
     };
     supported(document)?;
     let plan = Plan::new(document, &extents, &target)?;
@@ -184,6 +203,9 @@ struct Plan {
     outer: Vec<(NodeId, usize)>,
     /// Ordinary Sequences inside the Retime down to the site's parent.
     inner: Vec<(NodeId, usize)>,
+    /// Transparent windows above the Retime, innermost first. Each shows the
+    /// pause, so each grows by its length.
+    windows: Vec<NodeId>,
 }
 
 fn clock_of(document: &ProjectDocument, id: &NodeId) -> Result<DerivedRetimeClock, EditError> {
@@ -225,18 +247,27 @@ impl Plan {
         target: &RetimedTarget,
     ) -> Result<Self, EditError> {
         let mut outer = Vec::new();
+        let mut windows = Vec::new();
         let mut current = target.retime.clone();
         while let Some(parent) = document.parent_of(&current) {
-            let NodeKind::Sequence { children } = &document.nodes()[&parent].kind else {
-                return Err(super::invalid(
-                    "a pause inside a speed change needs ordinary Sequence ancestors",
-                ));
-            };
-            let slot = children
-                .iter()
-                .position(|child| child == &current)
-                .ok_or_else(|| super::invalid("pause Retime is missing from its parent"))?;
-            outer.push((parent.clone(), slot));
+            match &document.nodes()[&parent].kind {
+                NodeKind::Sequence { children } => {
+                    let slot = children
+                        .iter()
+                        .position(|child| child == &current)
+                        .ok_or_else(|| super::invalid("pause Retime is missing from its parent"))?;
+                    outer.push((parent.clone(), slot));
+                }
+                NodeKind::Retime {
+                    purpose: RetimePurpose::Partition,
+                    ..
+                } => windows.push(parent.clone()),
+                _ => {
+                    return Err(super::invalid(
+                        "a pause inside a speed change needs ordinary Sequence or transparent window ancestors",
+                    ));
+                }
+            }
             current = parent;
         }
         outer.reverse();
@@ -326,6 +357,7 @@ impl Plan {
             site,
             outer,
             inner,
+            windows,
         })
     }
 
@@ -746,8 +778,29 @@ pub(crate) fn apply(
             .checked_add(child_span)
             .map_err(DocumentError::from)?,
     )?;
+    for window in &plan.windows {
+        let clock = clock_of(&result, window)?;
+        set_clock(
+            &mut result,
+            window,
+            clock
+                .extent
+                .checked_add(hold_frames)
+                .map_err(DocumentError::from)?,
+            clock.child_start,
+            clock
+                .child_end
+                .checked_add(hold_frames)
+                .map_err(DocumentError::from)?,
+        )?;
+    }
+    let clocked: Vec<NodeId> = clocked
+        .into_iter()
+        .chain(plan.windows.iter().cloned())
+        .collect();
     crate::audio_lineage::reconcile_exact(&working, &mut result, &clocked);
     crate::audio_binding_lifecycle::prune(&mut result);
     result.validate()?;
+    EXACT_EDIT.with(|flag| flag.set(true));
     Ok(result)
 }

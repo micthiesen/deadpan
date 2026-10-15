@@ -297,3 +297,100 @@ fn nested_scope_and_split_partition_are_preserved_by_retime() {
     assert_eq!(after.document.nodes()[&node("fragment")], fragment);
     assert_eq!(after.plan.duration().frames(), 10);
 }
+
+#[test]
+fn native_pause_inside_a_tape_speed_change_keeps_exact_clocks_and_one_undo() {
+    let scratch = tempfile::tempdir().unwrap();
+    let service = ProjectService::start(
+        Arc::new(|| {}),
+        Some(ProjectLibrary::from_documents(scratch.path().join("Documents")).unwrap()),
+    )
+    .unwrap();
+    service
+        .submit(ProjectRequest::CreateFromSource {
+            ownership: OriginalOwnership::Managed,
+            path: fixture("cfr-bframes.mp4"),
+        })
+        .unwrap();
+    let initialized = wait(&service, |update| {
+        update.import.as_ref().is_some_and(|status| {
+            matches!(status.stage, ImportStage::Complete | ImportStage::Failed)
+        })
+    });
+    assert!(initialized.error.is_none(), "{:?}", initialized.error);
+    let original = initialized.committed.unwrap().selected_node.unwrap();
+    let before = initialized.workspace.unwrap();
+    let slowed = edited(
+        &service,
+        &before,
+        change(
+            &original,
+            ExactRatio::new(1, 2).unwrap(),
+            PitchPolicy::FollowSpeed,
+            true,
+        ),
+    );
+    assert!(slowed.error.is_none(), "{:?}", slowed.error);
+    let slowed = slowed.workspace.unwrap();
+    let total = slowed.plan.duration().frames();
+    // Frame 31 lands half way through an Original frame; 3 frames span 3/2.
+    let paused = edited(
+        &service,
+        &slowed,
+        ProjectEdit::InsertBlack {
+            at: ProjectFrame(31),
+            duration: FrameDuration::new(3).unwrap(),
+        },
+    );
+    assert!(paused.error.is_none(), "{:?}", paused.error);
+    let after = paused.workspace.unwrap();
+    assert!(!after.document.derived_clocks().is_empty());
+    assert_eq!(after.plan.duration().frames(), total + 3);
+    for (frame, black) in [(30, false), (31, true), (33, true), (34, false)] {
+        let picture = after.plan.picture(ProjectFrame(frame)).unwrap().picture;
+        assert_eq!(
+            matches!(picture, deadpan_plan::Picture::Background),
+            black,
+            "frame {frame}"
+        );
+    }
+    // Later pictures are the old ones three frames on.
+    for frame in [34, 40, total + 2] {
+        assert_eq!(
+            after.plan.picture(ProjectFrame(frame)).unwrap().picture,
+            slowed
+                .plan
+                .picture(ProjectFrame(frame - 3))
+                .unwrap()
+                .picture,
+            "frame {frame}"
+        );
+    }
+    let restored = command(
+        &service,
+        ProjectRequest::Undo {
+            expected_revision: after.document.revision_id().clone(),
+        },
+    )
+    .workspace
+    .unwrap();
+    assert_eq!(*restored.document.nodes(), *slowed.document.nodes());
+    assert!(restored.document.derived_clocks().is_empty());
+    // A freeze captures the picture before the cut, below the speed change,
+    // which stays live over the pause.
+    let frozen = edited(
+        &service,
+        &restored,
+        ProjectEdit::InsertTime {
+            at: ProjectFrame(31),
+            duration: FrameDuration::new(3).unwrap(),
+        },
+    );
+    assert!(frozen.error.is_none(), "{:?}", frozen.error);
+    let frozen = frozen.workspace.unwrap();
+    let held = frozen.plan.picture(ProjectFrame(32)).unwrap().picture;
+    assert!(
+        matches!(held, deadpan_plan::Picture::Freeze { .. }),
+        "{held:?}"
+    );
+}

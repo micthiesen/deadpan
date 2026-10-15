@@ -127,15 +127,6 @@ fn prepare_selected(
                     .into(),
             );
         }
-        deadpan_core::PauseInsertionTarget::Retimed(target)
-            if target.needs_exact_clocks(duration) =>
-        {
-            // The workspace cannot yet display fractional speed-change clocks.
-            return Err(
-                "This pause would split the speed change between whole frames, which the editor cannot show yet. Choose a boundary and length that map to whole frames of the slowed beat."
-                    .into(),
-            );
-        }
         deadpan_core::PauseInsertionTarget::Retimed(target) => Command::InsertTime {
             at,
             hold,

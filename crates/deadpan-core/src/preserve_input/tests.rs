@@ -205,7 +205,7 @@ fn preserve_input_refuses_escape_missing_owner_window_and_unqualified_intrinsic(
         .get_mut(&id("stage"))
         .unwrap()
         .preserve_input = None;
-    rejected(&doc, "exact clock consumer");
+    rejected(&doc, "speed change with exact pause timing");
 }
 
 #[test]

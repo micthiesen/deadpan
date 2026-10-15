@@ -154,7 +154,7 @@ fn legacy_edit_refuses_before_mutation() {
         apply(&doc, &request)
             .unwrap_err()
             .message
-            .contains("exact clock consumer")
+            .contains("speed change with exact pause timing")
     );
     assert_eq!(doc, document(true));
 }

@@ -9,12 +9,12 @@ are implemented in `insert_time/retimed.rs` and exposed as
 `PauseInsertionTarget::Retimed`. Read [the contract](../INSERT_TIME.md#pauses-inside-followspeed-speed-changes).
 Derived-clock admission now refuses bindings/lineage only when a Retime
 processes pitch, judged on recipe and effective clock (`retime_processes`).
-Every ordinary command except `InsertTime` still refuses clocked documents,
-and the native workspace refuses to display them, so the app only accepts
-retimed pauses whose result stays integral. Next: make the native workspace
-and the common commands (Undo/Redo already work; Delete, hold duration,
-further pauses at seams, Split) read exact durations, then Preserve output
-routes and marks/sounds.
+Ordinary commands now run on clocked documents inside
+`derived_clock::with_sealed` and each leaf must pass `sealed_preserved`
+([record](../qualification/clocked-editing-2026-10-15.md)); the native
+workspace opens them. Next: edits inside a clocked speed change (hold duration,
+provider, Split inside), the app's remaining integral consumers (scoped
+inspector, Trim inspection), Preserve output routes, then marks/sounds.
 
 [Historical exact audio geometry](../qualification/frozen-audio-clocks-2026-10-12.md)
 now lives in `FrozenAudioLayout::derived_clocks` as timing-only
