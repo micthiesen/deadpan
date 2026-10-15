@@ -281,10 +281,11 @@ fn ordinary_edits_move_copy_and_keep_clocked_speed_changes_but_refuse_inside_the
     );
     assert_eq!(total(&longer), ratio(38, 1));
 
-    // Inside it, ordinary edits would read integral recipes and refuse.
-    let inside = apply(
+    // Inside it, a pause duration propagates exactly through the adapter and
+    // the speed change: 4 frames span 2 child frames, so both become whole.
+    let lengthened = edit(
         &longer,
-        &request(
+        request(
             &longer,
             "inside",
             Command::SetHoldDuration {
@@ -292,10 +293,31 @@ fn ordinary_edits_move_copy_and_keep_clocked_speed_changes_but_refuse_inside_the
                 duration: duration(4),
             },
         ),
+    );
+    assert_eq!(total(&lengthened), ratio(39, 1));
+    let clocks = lengthened.derived_clocks();
+    assert!(!clocks.contains_key(&id("p-4")));
+    assert_eq!(retime(&lengthened, "p-4").0, duration(2));
+    // The speed change is whole again, so it keeps an ordinary recipe.
+    assert!(!clocks.contains_key(&id("slow")));
+    let (output, window, _) = retime(&lengthened, "slow");
+    assert_eq!((output, window.end().0), (duration(28), 14));
+    // Other changes inside it would read integral recipes, and refuse.
+    let inside = apply(
+        &longer,
+        &request(
+            &longer,
+            "inside-split",
+            Command::Split {
+                node: id("p-1"),
+                at: duration(2),
+                identities: pool("inside-split", 8),
+            },
+        ),
     )
     .unwrap_err();
     assert!(
-        inside.message.contains("inside a speed change"),
+        inside.message.contains("speed change"),
         "{}",
         inside.message
     );

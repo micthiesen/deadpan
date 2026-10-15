@@ -1375,6 +1375,16 @@ fn apply_with_durations_captured(
             }
             result
         }
+        Command::SetHoldDuration { node, duration }
+            if crate::insert_time::retimed::inside_clocked(input, node) =>
+        {
+            crate::insert_time::retimed::set_hold_duration(
+                input,
+                node,
+                *duration,
+                &request.new_revision,
+            )?
+        }
         Command::SpliceSource {
             parent,
             index,

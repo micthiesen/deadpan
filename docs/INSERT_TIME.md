@@ -200,8 +200,13 @@ stay unchanged, be removed, or be copied exactly, and the owning Retime may
 change only attributes outside its timing. Copies carry their derived clocks
 (`clone_nodes`; an owned Preserve input refuses), and removed Retimes drop
 theirs. Pauses at root seams, Splits of the speed change, Hold edits elsewhere,
-deletion, grouping and Undo/Redo work; edits inside the speed change refuse
-with a message naming it. The native workspace opens these projects; its
+deletion, grouping and Undo/Redo work. Inside the speed change,
+`SetHoldDuration` takes an exact path: the authored difference propagates
+through every enclosing adapter, Sequence, speed change and window at its own
+slope (clocks that become whole return to ordinary recipes), and later owners
+only translate, which leaves their retained sample clocks unchanged. A Hold
+only partly visible through a window, or under a Repeat, refuses. Other edits
+inside the speed change refuse with a message naming it. The native workspace opens these projects; its
 remaining integral consumers (scoped inspector timing, Trim inspection) report
 the refusal rather than guessing.
 

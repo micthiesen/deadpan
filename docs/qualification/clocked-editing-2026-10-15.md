@@ -26,7 +26,15 @@ slowed to 24 frames with a fractional pause already inside it:
   goes through its transparent window, which grows with the pause.
 - `Group` keeps the clocks and gives the group the exact extent 29;
   `DeleteRipple` of the speed change removes its clocks.
+- `SetHoldDuration` of the pause inside the speed change from 3 to 4 frames
+  makes its adapter and the speed change whole again (ordinary recipes, exact
+  total 39); a Split of a window inside it refuses.
 - Every committed case round-trips through JSON and its exact inverse patch.
+
+Audio (`lengthening_a_pause_inside_a_slowed_beat_resumes_the_same_later_samples`):
+lengthening a 1-frame pause inside the slowed beat to 3 frames keeps every
+earlier sample, silences frames 3–5 and resumes the old stream from its old
+frame-4 boundary.
 
 Audio (`a_pause_in_a_split_slowed_beat_and_at_root_seams_keeps_every_other_sample`,
 decoded `pcm-mono-44100.wav` at 30000/1001 fps): a pause inside the copied half

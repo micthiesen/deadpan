@@ -616,3 +616,32 @@ fn a_pause_in_a_split_slowed_beat_and_at_root_seams_keeps_every_other_sample() {
         ntsc_boundary(4),
     );
 }
+
+#[test]
+fn lengthening_a_pause_inside_a_slowed_beat_resumes_the_same_later_samples() {
+    let (original, mut provider) = slowed_original();
+    let clocked = insert_pause(&original, 3, 1, "short-pause");
+    let request = CommandRequest {
+        project_id: clocked.project_id().clone(),
+        expected_revision: clocked.revision_id().clone(),
+        new_revision: RevisionId::new("longer-pause").unwrap(),
+        command: Command::SetHoldDuration {
+            node: id("short-pause-pause"),
+            duration: duration(3),
+        },
+    };
+    let transaction = apply(&clocked, &request).unwrap();
+    assert_eq!(transaction.duration_delta, 2);
+    let longer = transaction.forward.apply(&clocked).unwrap();
+    assert_eq!(transaction.inverse.apply(&longer).unwrap(), clocked);
+    let before = record(&clocked, &mut provider, false, &[256]);
+    let actual = record(&longer, &mut provider, false, &[77, 256]);
+    assert_resumed(&actual, &before, 0..ntsc_boundary(3), 0);
+    assert_pause(&actual, ntsc_boundary(3)..ntsc_boundary(6));
+    assert_resumed(
+        &actual,
+        &before,
+        ntsc_boundary(6)..actual.samples.len(),
+        ntsc_boundary(4),
+    );
+}

@@ -804,3 +804,110 @@ pub(crate) fn apply(
     EXACT_EDIT.with(|flag| flag.set(true));
     Ok(result)
 }
+
+/// Whether `node` lies inside a clocked speed change, where only exact
+/// edits may change timing.
+pub(crate) fn inside_clocked(document: &ProjectDocument, node: &NodeId) -> bool {
+    !document.derived_clocks().is_empty() && document.sealed_nodes().contains(node)
+}
+
+/// Change a Hold's authored duration inside a clocked speed change. The
+/// exact extent difference propagates through every enclosing Sequence,
+/// adapter, speed change and window, at each stage's own slope; nothing is
+/// rounded. Later owners only translate, which leaves their retained sample
+/// clocks unchanged.
+pub(crate) fn set_hold_duration(
+    document: &ProjectDocument,
+    node: &NodeId,
+    duration: FrameDuration,
+    allocation: &crate::RevisionId,
+) -> Result<ProjectDocument, EditError> {
+    supported(document)?;
+    let NodeKind::Hold { recipe } = &document.nodes()[node].kind else {
+        return Err(EditError::new(
+            crate::EditErrorCode::WrongNodeKind,
+            "hold duration requires a Hold",
+        ));
+    };
+    let old = ExactRatio::integer(recipe.duration.frames());
+    let mut delta = ExactRatio::integer(duration.frames())
+        .checked_sub(old)
+        .map_err(DocumentError::from)?;
+    let extents = document.exact_durations()?;
+    let mut result = document.clone();
+    crate::command::reduce(
+        &mut result,
+        &Command::SetHoldDuration {
+            node: node.clone(),
+            duration,
+        },
+        allocation,
+    )?;
+    // The changed span in the current parent's child coordinates.
+    let mut start = ExactRatio::ZERO;
+    let mut length = old;
+    let mut child = node.clone();
+    let mut changed = Vec::new();
+    for _ in 0..=crate::MAX_DOCUMENT_DEPTH {
+        let Some(parent) = document.parent_of(&child) else {
+            break;
+        };
+        match &document.nodes()[&parent].kind {
+            NodeKind::Sequence { children } => {
+                for sibling in children.iter().take_while(|id| **id != child) {
+                    start = start
+                        .checked_add(extents[sibling])
+                        .map_err(DocumentError::from)?;
+                }
+            }
+            NodeKind::Retime { .. } => {
+                let clock = clock_of(document, &parent)?;
+                let end = start.checked_add(length).map_err(DocumentError::from)?;
+                if start.compare(clock.child_start).is_lt() || end.compare(clock.child_end).is_gt()
+                {
+                    return Err(super::invalid(
+                        "this pause is only partly visible through its speed change; change it where it is fully shown",
+                    ));
+                }
+                let slope = clock
+                    .child_end
+                    .checked_sub(clock.child_start)
+                    .and_then(|selected| selected.checked_div(clock.extent))
+                    .map_err(DocumentError::from)?;
+                set_clock(
+                    &mut result,
+                    &parent,
+                    clock
+                        .extent
+                        .checked_add(delta.checked_div(slope).map_err(DocumentError::from)?)
+                        .map_err(DocumentError::from)?,
+                    clock.child_start,
+                    clock
+                        .child_end
+                        .checked_add(delta)
+                        .map_err(DocumentError::from)?,
+                )?;
+                changed.push(parent.clone());
+                start = start
+                    .checked_sub(clock.child_start)
+                    .and_then(|offset| offset.checked_div(slope))
+                    .map_err(DocumentError::from)?;
+                length = length.checked_div(slope).map_err(DocumentError::from)?;
+                delta = delta.checked_div(slope).map_err(DocumentError::from)?;
+            }
+            NodeKind::Repeat { .. } => {
+                return Err(super::invalid(
+                    "a pause inside a repeated speed change cannot change its duration yet",
+                ));
+            }
+            NodeKind::Source { .. } | NodeKind::Hold { .. } => {
+                unreachable!("physical beats have no children")
+            }
+        }
+        child = parent;
+    }
+    crate::audio_lineage::reconcile_exact(document, &mut result, &changed);
+    result.validate()?;
+    EXACT_EDIT.with(|flag| flag.set(true));
+    Ok(result)
+}
