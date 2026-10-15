@@ -193,9 +193,12 @@ An earlier isolated audio doctest attempt failed to locate `deadpan_media`;
 its retry and the final full workspace doctests passed.
 
 This implements the edge stage for existing sequential source/room-tone voices.
-The native `:edge` command authors node, play-seam and gap policies; per-play
-override and placement-edge controls, keyboard bindings, listening qualification,
-simultaneous attachment voices, full effect-order authoring, gain/EQ/saturation,
-sends and tails, group/master processing, application playback and export remain
-open. The earlier failed limiter experiments remain unadopted. This stage is
+The native `:edge` command authors node, play-seam and gap policies. Gain, EQ,
+saturation, sends, tails, playback and encoded export now exist in later work
+([AUDIO_GAIN.md](AUDIO_GAIN.md), [EQUALIZER.md](EQUALIZER.md),
+[FINITE_WET_EFFECTS.md](FINITE_WET_EFFECTS.md),
+[preview-export-2026-10-04](qualification/preview-export-2026-10-04.md)). Still
+open: per-side edges on placed sounds (`:sound-edges` sets both endpoints),
+edges on beat-attached sounds, edge controls on overridden plays, a bleep
+overlay mode, keyboard bindings and listening qualification. The earlier failed limiter experiments remain unadopted. This stage is
 neither a limiter nor the final mix, and it establishes no GUI-quality evidence.

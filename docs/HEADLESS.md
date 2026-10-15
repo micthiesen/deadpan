@@ -79,8 +79,12 @@ clocks. [Exact sibling selections](STRUCTURAL_SELECTIONS.md) also retain empty
 endpoint children through capture, grouping, repeat and `delete_children`.
 The dedicated [Macro commands](SEMANTIC_MACROS.md#headless-inspection-save-and-run)
 inspect, save and run bounded motions, frame cuts, beat copies, register pastes
-and named calls. Broader
-range/text selectors, register management and effects remain required work.
+and named calls. Effects that resolve through semantic instructions are
+reachable through inline `apply` (below), and `macro inspect` lists registers.
+Still missing against spec section 6.2: edit operators over mark-range, explicit
+node and transcript-search-result selectors and discontiguous ranges (macro
+selectors are `SemanticSelector` in `crates/deadpan-core/src/semantic/program.rs`;
+`resolve-selection` resolves mark and mark_range selectors read-only).
 
 `compound` executes a bounded `ResolvedTransaction` through the same preview
 and commit boundary. Its flat Edit/Yank/Cut/Paste steps carry exact resolved

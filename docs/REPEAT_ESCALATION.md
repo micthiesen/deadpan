@@ -53,9 +53,12 @@ values, `gain-step=0dB` or `zoom-step=0` removes one, and a decimal zoom step
 is rounded once to the framing grid. The count, when given, must match the
 Repeat's plays: changing the count and the steps together would need two
 undo steps, so a different count is refused with guidance. On a non-Repeat
-selection the command explains that a beat must be wrapped first. `gap=` is
-refused: changing a gap's duration is not supported yet. The inspector shows
-"Gain per play" and "Zoom per play".
+selection the command explains that a beat must be wrapped first. `gap=120ms`
+sets every gap, `gap=0` removes them all, and `gap-step=-40ms` makes each later
+gap shorter (see `crates/deadpan-app/src/navigation/escalation.rs`). The whole
+command is one semantic `SetRepeat { plays, gaps, escalation }`, so count, gaps
+and steps change in one undoable, macro-recorded step ([gags](GAGS.md)). The
+inspector shows "Gain per play" and "Zoom per play".
 
 `,e` applies the escalating-repeat recipe: three plays over the Visual range or
 the selected beat, +3 dB and +0.08 scale per play, through the semantic
@@ -77,6 +80,6 @@ are one Undo, macros record it and dot-repeat reapplies it.
 
 ## Remaining
 
-Per-play speed and gap progression ("One More Time"), escalation toward a
-selected target rather than the canvas center, recording the `:repeat` setter's
-steps in macros, and setting count and steps in one undoable command.
+Per-play speed progression and escalation toward a selected target rather
+than the canvas center. Gap progression, macro recording and setting count,
+gaps and steps in one undoable command are implemented through `SetRepeat`.

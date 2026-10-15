@@ -153,6 +153,9 @@ records source-range PCM, transaction and stale-reply tests, keyboard/IME replay
 the design comparison, and the limits of the offscreen evidence.
 
 Listening across a representative ambience corpus, waveform display and native
-Repeat-gap/fragment occurrence controls remain required. Effect tails, gain
-envelopes, the full voice graph and export remain
-unfinished. No requirement or release gate is complete because a setter exists.
+Repeat-gap/fragment occurrence controls remain required. Export of room tone is
+verified by the `nothing-happens` fixture
+([preview-export-2026-10-04](qualification/preview-export-2026-10-04.md)), and
+gain envelopes and tails exist ([AUDIO_GAIN.md](AUDIO_GAIN.md),
+[REVERSE_AND_TAILS.md](REVERSE_AND_TAILS.md)); the full voice graph remains
+open. No requirement or release gate is complete because a setter exists.

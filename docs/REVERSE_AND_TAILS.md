@@ -249,8 +249,8 @@ a `Tail of: Live 2 s before` row.
 ## Remaining
 
 A bleep mixed over the sound instead of replacing it, bleeping across a cut,
-effect sends from arbitrary beats or sounds into a tail (§10.4 "selected
-sends"), choosing the tail's source range by hand, reversing composite
+choosing the tail's source range by hand, reversing composite
 structure (groups, Repeats, framed scopes) or at other speeds, a reverse
 picture of edited (cutaway) content with its own sound, and listening
-qualification of the two effects.
+qualification of the two effects. Selected sends from beats and placed sounds
+into a tail are implemented ([Selected sends](#selected-sends)).

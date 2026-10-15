@@ -149,7 +149,12 @@ closer than a pixel.
 
 ## Remaining
 
-Headless correction commands (the CLI reads and prints corrections but does
-not change them), audition of the selected word or pause from the sheet,
-correcting sentence boundaries, and a local alignment pass that proposes word
-edges (corrections snap to measured energy edges only).
+Audition of the selected word or pause from the sheet, correcting sentence
+boundaries, and a local alignment pass that proposes word edges (corrections
+snap to measured energy edges only).
+
+Headless correction is implemented: `corrections <project> --json <request.json>
+[--dry-run]` in `crates/deadpan-cli/src/corrections.rs` accepts the changes
+`EditWord`, `RemoveWord`, `JoinWords`, `SetWordBounds`, `AddPauseAfter`,
+`RemovePause`, `SetPauseBounds`, `DropInapplicable`, `DiscardUnreadable`, `Undo`
+and `Redo` (tests in `crates/deadpan-cli/tests/corrections.rs`).

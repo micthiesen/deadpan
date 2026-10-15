@@ -240,5 +240,7 @@ every word per query.
 Original operators with word motions, background scheduling by visible range,
 automatic word-boundary refinement from speech activity (manual edges snap to
 measured edges), accuracy on conversational and noisy speech and handling of
-long-form recognizer failures (see [Accuracy on speech](#accuracy-on-speech)),
-and a manager listing every pack.
+long-form recognizer failures (see [Accuracy on speech](#accuracy-on-speech)).
+The model-pack manager lists every approved pack, including this one
+(`approved_packs()` in `crates/deadpan-models/src/packs.rs`, listed by
+`crates/deadpan-app/src/model_packs.rs`).

@@ -25,7 +25,9 @@ and the separate performance and listening limits.
 The [measured beat overview](WAVEFORMS.md) now has scoped
 [qualification](qualification/gain-waveform-2026-09-28.md). It measures the
 committed owner before effects, separately from full-mix Before/Draft audition.
-Waveform editing and an encoded export path remain open.
+Waveform editing remains open. Encoded export is exercised by the `gain-trim` and
+`saturation` fixtures in
+[preview-export-2026-10-04](qualification/preview-export-2026-10-04.md).
 The [earlier foundation qualification](qualification/gain-clocks-2026-09-27.md)
 records the pure recipe and owner-query checkpoint; it does not qualify this
 later persistence and PCM integration.
@@ -39,8 +41,9 @@ ordered treatment and recursively processes shared Original/sound owners.
 See [shared EQ qualification](qualification/shared-eq-2026-10-12.md).
 [Native EQ](qualification/native-eq-2026-10-12.md) now uses the captured draft,
 Before/Draft comparison and one-step Apply/Cancel lifecycle through `:eq`, with
-complete typed recipes for dot and macros. Remaining automation/send/tail work
-stays open.
+complete typed recipes for dot and macros. Selected tail sends and continuous
+wet returns exist (see below); group automation beyond the cited
+qualifications remains open.
 
 `AudioTreatments` has an explicitly serialized closed stage order. Its current
 vocabulary is `ClipGain`, `Equalizer`, `Saturation` and final `StereoBalance`;
@@ -232,8 +235,10 @@ Ranged gain and ordinary gain edits preserve balance.
 The treatment is shared by limited audition and Render. Stored shared EQ now
 uses the same bus. [Selected tail sends](REVERSE_AND_TAILS.md#selected-sends)
 tap beat/group output after its ordered treatments and balance, or sound-event
-output after its gain and edges. These feed explicit later tail pauses; ordinary
-continuous wet returns and complete group automation remain open. This stage does not qualify
+output after its gain and edges. These feed explicit later tail pauses. Ordinary
+continuous wet returns are implemented (`wet_sends`,
+[finite wet effects](FINITE_WET_EFFECTS.md)); group automation beyond the
+cited qualifications remains open. This stage does not qualify
 the complete master. See [balance qualification](qualification/stereo-balance-2026-10-11.md).
 
 ## Range steps

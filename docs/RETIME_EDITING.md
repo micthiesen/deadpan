@@ -111,8 +111,13 @@ input no longer requires a full input buffer or the old 21.8-second cap.
 The existing shared picture plan and canonical audio path evaluate the resulting
 Retime, including Preserve processing and FollowSpeed sampling. This increment
 does not add a separate preview algorithm. Native descendants under Repeat or
-Retime, arbitrary range/occurrence selection, reverse, variable speed, independent
-pitch shifting, mastered output and encoded export remain open.
+Retime, arbitrary range/occurrence selection, reversing composite structure,
+variable speed and mastered output remain open. Independent pitch shifting
+(`:pitch`, `PitchPolicy::Shift`, see [Pitch shift](#pitch-shift)) and encoded
+export (the `retime-half` and `pitch-shift` fixtures in
+[preview-export-2026-10-04](qualification/preview-export-2026-10-04.md)) are
+implemented. Reversing an Original passage exists as a Hold provider
+([reverse](REVERSE_AND_TAILS.md)).
 
 The current Preserve preparation path streams at most 65,536 input frames
 at once and spills outputs above 1,048,576 frames to private temporary files.

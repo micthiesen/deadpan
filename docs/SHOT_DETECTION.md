@@ -367,5 +367,6 @@ not include transition pictures. The scan copies the Original into its own
 verified snapshot and decodes at normal priority beside preview and audio;
 reusing the preview's snapshot and lowering the scan's priority remain open.
 A failed scan is not retried automatically when the project is reopened in
-the same app run (Try again does), but a new app run tries again. Shot display
-in the timeline remains open.
+the same app run (Try again does), but a new app run tries again. Shot starts are
+drawn as hairline ticks on the Edit cards and moment bar
+(`crates/deadpan-app/src/preview/cards.rs`, `preview/moment.rs`).
