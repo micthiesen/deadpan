@@ -524,3 +524,58 @@ fn a_pause_preserves_the_two_sample_creative_envelope_on_both_sides() {
     );
     assert_eq!(actual.suppressed, vec![false, true, false]);
 }
+
+/// A 4-frame Original slowed to 8 project frames with tape-speed sound. A
+/// pause inside it keeps the slope, so later audio resumes the old samples.
+fn slowed_original() -> (ProjectDocument, FixtureProvider) {
+    let (original, provider) = mono_original(4);
+    let mut wire = serde_json::to_value(&original).unwrap();
+    wire["nodes"]["slow"] =
+        serde_json::to_value(retime("source", 8, 0..4, PitchPolicy::FollowSpeed)).unwrap();
+    wire["nodes"]["root"]["kind"]["children"] = serde_json::json!(["slow"]);
+    (
+        ProjectDocument::from_json(&wire.to_string()).unwrap(),
+        provider,
+    )
+}
+
+#[test]
+fn pauses_inside_follow_speed_resume_the_old_samples_at_integral_and_fractional_cuts() {
+    let (original, mut provider) = slowed_original();
+    // Frame 3 cuts the child at 3/2. A two-frame pause spans one child frame;
+    // a one-frame pause spans half of one and needs exact clocks throughout.
+    for (frames, name) in [(2, "slow-pause-two"), (1, "slow-pause-one")] {
+        let inserted = insert_pause(&original, 3, frames, name);
+        // Frame 3 lands at child frame 3/2 in both cases.
+        assert!(!inserted.derived_clocks().is_empty());
+        for faded in [false, true] {
+            let old = record(&original, &mut provider, faded, &[256]);
+            assert!(old.samples[ntsc_boundary(3)..].iter().any(|v| v[0] != 0.));
+            let actual = record(&inserted, &mut provider, faded, &[127, 3, 251]);
+            let end = usize::try_from(8 + frames).unwrap();
+            assert_eq!(actual.samples.len(), ntsc_boundary(end as i64));
+            assert_resumed(&actual, &old, 0..ntsc_boundary(3), 0);
+            assert_pause(&actual, ntsc_boundary(3)..ntsc_boundary(3 + frames));
+            assert_resumed(
+                &actual,
+                &old,
+                ntsc_boundary(3 + frames)..actual.samples.len(),
+                ntsc_boundary(3),
+            );
+            assert_eq!(record(&inserted, &mut provider, faded, &[1, 239]), actual);
+        }
+        // A second pause after the first resumes on the composed clock.
+        let twice = insert_pause(&inserted, 6 + frames, 1, &format!("{name}-again"));
+        let first = record(&inserted, &mut provider, false, &[256]);
+        let actual = record(&twice, &mut provider, false, &[64, 255]);
+        let cut = ntsc_boundary(6 + frames);
+        assert_resumed(&actual, &first, 0..cut, 0);
+        assert_pause(&actual, cut..ntsc_boundary(7 + frames));
+        assert_resumed(
+            &actual,
+            &first,
+            ntsc_boundary(7 + frames)..actual.samples.len(),
+            cut,
+        );
+    }
+}

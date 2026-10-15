@@ -4,6 +4,18 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Pauses inside FollowSpeed speed changes](../qualification/retimed-pauses-2026-10-15.md)
+are implemented in `insert_time/retimed.rs` and exposed as
+`PauseInsertionTarget::Retimed`. Read [the contract](../INSERT_TIME.md#pauses-inside-followspeed-speed-changes).
+Derived-clock admission now refuses bindings/lineage only when a Retime
+processes pitch, judged on recipe and effective clock (`retime_processes`).
+Every ordinary command except `InsertTime` still refuses clocked documents,
+and the native workspace refuses to display them, so the app only accepts
+retimed pauses whose result stays integral. Next: make the native workspace
+and the common commands (Undo/Redo already work; Delete, hold duration,
+further pauses at seams, Split) read exact durations, then Preserve output
+routes and marks/sounds.
+
 [Historical exact audio geometry](../qualification/frozen-audio-clocks-2026-10-12.md)
 now lives in `FrozenAudioLayout::derived_clocks` as timing-only
 `FrozenRetimeClock` records. Read [the contract](../FROZEN_AUDIO_CLOCKS.md).

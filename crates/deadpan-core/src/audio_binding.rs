@@ -1294,7 +1294,7 @@ impl AudioBindingState {
             // that index here repeated the same pure check on every document
             // validation (most of a 10,000-node project's validation time).
             debug_assert!(layout.validate().is_ok());
-            layout.require_integral_clocks()?;
+            layout.require_follow_speed_clocks()?;
         }
         let mut used = BTreeSet::new();
         work.spend(crate::sound_clock::reference_count(&self.sound_clocks)?)?;

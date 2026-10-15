@@ -274,10 +274,15 @@ pub struct AudioReferencePlan {
 impl AudioReferencePlan {
     pub fn compile(layout: &FrozenAudioLayout) -> Result<Self, PlanError> {
         layout.validate()?;
-        if !layout.derived_clocks().is_empty() && layout.nodes().values().any(|node| {
-            matches!(node.kind, FrozenAudioKind::Retime { pitch, .. } if pitch != PitchPolicy::FollowSpeed)
-        }) {
-            return Err(PlanError::InvalidPlan("exact historical Preserve clocks need their owned output projection"));
+        if !layout.derived_clocks().is_empty()
+            && layout
+                .nodes()
+                .iter()
+                .any(|(id, node)| layout.retime_processes(id, node))
+        {
+            return Err(PlanError::InvalidPlan(
+                "exact historical Preserve clocks need their owned output projection",
+            ));
         }
         let durations = layout
             .nodes()

@@ -153,14 +153,51 @@ nested Sequence interiors or seams. The genuine old-binary fixture preserves
 26 revisions, 12 commands and pending redo. Matching modern transactions forged
 as old history are rejected before promotion; their original and backup survive.
 
+## Pauses inside FollowSpeed speed changes
+
+`InsertTime` at a strict interior of a FollowSpeed Edit Retime, reached through
+ordinary Sequences from the root, keeps that Retime as the live owner of the
+pause ([qualification](qualification/retimed-pauses-2026-10-15.md)). Its slope
+`s` (child frames per output frame) is unchanged: a cut at output frame `k`
+lands at child coordinate `start + k*s`, and a pause of `h` project frames
+occupies `h*s` child frames. Neither value is rounded. A physical leaf is cut
+by transparent left/right windows over the original and a copy (an untreated
+window is refined in place), a single beat below the Retime gains a container
+Sequence, and a non-unity stage wraps the authored Hold in a FollowSpeed
+adapter mapping its `h` frames onto `h*s` child frames. The Hold therefore keeps
+its requested project duration, and later speed edits retime it with its group.
+Integral results keep ordinary recipes; fractional windows become
+[derived clocks](STRUCTURAL_SPLICE_DESIGN.md#derived-owner-clocks). Every value
+stays exact through later pauses in the same speed change.
+
+Sampling lattices are captured before the copy, and each moved owner, inside
+or after the speed change, receives one chronological reanchor step in the
+pre-edit root window, exactly as at root interiors. At 30000/1001 fps, a pause
+inside a 2x-slow FollowSpeed beat keeps every earlier sample, adds exact
+suppressed silence, and resumes the old sample stream bit-identically after it,
+at whole and fractional child cuts and after a second pause.
+
+`pause_insertion_target` returns `PauseInsertionTarget::Retimed` with the live
+picture parent, the identity count and `needs_exact_clocks(frames)`. The
+semantic planner and CLI accept it. Because the native workspace does not yet
+display derived clocks, the app refuses pauses whose result would need them.
+Preserve and Shift speed changes, Repeat or Partition ancestors above the
+Retime, nested Retimes inside it, AI pauses, pauses other than a silent freeze
+or black picture, marks and placed sounds still refuse, the latter two already
+in the target query. A document with derived clocks admits further pauses only
+strictly inside a FollowSpeed speed change, not at its seams or the root; other
+ordinary commands still refuse it. Above a fractional Retime, its integral
+recipe is kept at the ceiling of its exact clock, so recipe totals above it
+equal the exact totals.
+
 ## Remaining full-product work
 
 Current insertion supports existing root seams before arbitrary composite
 suffixes and interiors of Source or ordinary Background/Freeze Hold beats when
 followed by either physical fragments or composite structures, including inside
-unretimed Sequence groups and concrete Repeat plays or gaps. Interior cuts beneath
-authored Retime ancestors, fractional cuts and selected Original-moment payloads
-remain required. Native scoped-inspector temporal intent also remains guarded;
+unretimed Sequence groups, FollowSpeed speed changes and concrete Repeat plays or
+gaps. Interior cuts beneath Preserve or Shift Retime ancestors and selected
+Original-moment payloads remain required. Native scoped-inspector temporal intent also remains guarded;
 the new path addresses the concrete cursor from ordinary Sequence navigation.
 Arbitrary insertion must inherit its enclosing
 group's ownership. These are required follow-ups, not reduced V1 scope.

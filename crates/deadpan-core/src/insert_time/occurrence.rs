@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 
 mod target;
 use target::Site;
-pub use target::{OccurrencePauseTarget, PauseInsertionTarget};
+pub use target::{OccurrencePauseTarget, PauseInsertionTarget, RetimedPauseTarget};
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]

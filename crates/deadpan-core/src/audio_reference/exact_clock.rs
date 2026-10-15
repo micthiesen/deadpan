@@ -50,6 +50,39 @@ impl FrozenAudioLayout {
             }))
     }
 
+    /// Retained bindings read exact affine geometry directly. A processing
+    /// Preserve or Shift stage still needs its owned output route before its
+    /// retained output clock can be evaluated.
+    pub(crate) fn require_follow_speed_clocks(&self) -> Result<(), DocumentError> {
+        if self.derived_clocks.is_empty()
+            || self
+                .nodes
+                .iter()
+                .all(|(id, node)| !self.retime_processes(id, node))
+        {
+            Ok(())
+        } else {
+            Err(invalid(
+                "retained exact Preserve clocks require an owned output route",
+            ))
+        }
+    }
+
+    /// Pitch processing on the integral recipe or the effective clock. Unity
+    /// Preserve partitions and FollowSpeed stages only resample affinely.
+    pub fn retime_processes(&self, id: &NodeId, node: &FrozenAudioNode) -> bool {
+        let FrozenAudioKind::Retime { mapping, pitch, .. } = &node.kind else {
+            return false;
+        };
+        let effective_unity = self.derived_clocks.get(id).is_none_or(|clock| {
+            clock
+                .child_end
+                .checked_sub(clock.child_start)
+                .is_ok_and(|selected| selected == clock.extent)
+        });
+        pitch.processes(mapping.duration() == node.duration) || pitch.processes(effective_unity)
+    }
+
     pub(crate) fn require_integral_clocks(&self) -> Result<(), DocumentError> {
         if self.derived_clocks.is_empty() {
             Ok(())

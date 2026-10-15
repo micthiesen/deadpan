@@ -107,6 +107,34 @@ pub(crate) fn reconcile_shared(
     Ok(())
 }
 
+/// Lineage reconciliation for documents with derived clocks, which have no
+/// integral structural durations. `clocked` names Retimes whose effective
+/// clock changed; a node kind comparison cannot see that change.
+pub(crate) fn reconcile_exact(
+    before: &ProjectDocument,
+    after: &mut ProjectDocument,
+    clocked: &[NodeId],
+) {
+    after
+        .audio_lineage
+        .retain(|id, _| after.nodes.contains_key(id));
+    if after.audio_lineage.is_empty() {
+        return;
+    }
+    let mut changed = changed_closure(before, after);
+    for id in clocked {
+        let mut current = Some(id.clone());
+        // A changed node's ancestors are already in the closure.
+        while let Some(id) = current {
+            if !changed.insert(id.clone()) {
+                break;
+            }
+            current = after.parent_of(&id);
+        }
+    }
+    after.audio_lineage.retain(|id, _| !changed.contains(id));
+}
+
 fn reference_closure(
     before: &ProjectDocument,
     after: &mut ProjectDocument,

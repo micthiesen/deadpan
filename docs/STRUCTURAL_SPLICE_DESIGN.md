@@ -192,8 +192,12 @@ connect that representation to strict document admission, reversible patches,
 SQLite snapshots/history and production picture/audio compilation. Sequence
 and compact Repeat totals use exact child extents; the root must be integral.
 Legacy duration maps and ordinary reducers refuse these documents. Current
-admission still refuses marks, sounds and retained audio bindings/lineage.
-Shift is refused, and core 55 admits Preserve only with an owned input projection.
+admission still refuses marks and sounds. Retained audio bindings and lineage
+are admitted while no Retime processes pitch: FollowSpeed stages and unity
+Preserve partitions only resample affinely. Shift is refused, and core 55
+admits Preserve only with an owned input projection.
+[Retimed pauses](INSERT_TIME.md#pauses-inside-followspeed-speed-changes) are the
+first command that authors these clocks.
 Exact snapshot restore
 and guarded patches preserve the complete composition. These explicit temporary
 boundaries must be replaced by real lifecycle transforms as splice authoring

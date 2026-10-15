@@ -13,7 +13,10 @@ use crate::{
 
 pub(crate) mod composite;
 pub(crate) mod occurrence;
-pub use occurrence::{OccurrencePauseIdentities, OccurrencePauseTarget, PauseInsertionTarget};
+pub(crate) mod retimed;
+pub use occurrence::{
+    OccurrencePauseIdentities, OccurrencePauseTarget, PauseInsertionTarget, RetimedPauseTarget,
+};
 mod delete;
 mod delete_children;
 mod delete_range;
@@ -69,6 +72,17 @@ pub(crate) fn apply_known(
             "insertion timing allocation must equal the new revision",
         ));
     }
+    if !document.derived_clocks().is_empty() {
+        // Exact clocks admit new pauses only through the retimed path below.
+        validate_identities(document, Some(id), identities)?;
+        let extents = document.exact_durations()?;
+        let target = retimed::locate(document, &|id| extents.get(id).copied(), at)?
+            .ok_or_else(retimed::outside_follow_speed)?;
+        return retimed::apply(
+            document, &target, at, hold, id, identities, timing, allocation,
+        )
+        .map(|result| (result, None));
+    }
     let durations = document.durations()?;
     let total = durations[document.root()].frames();
     if at.0 < 0 || at.0 > total {
@@ -78,6 +92,16 @@ pub(crate) fn apply_known(
         .checked_add(hold.duration.frames())
         .ok_or_else(overflow)?;
     validate_identities(document, Some(id), identities)?;
+    if let Some(target) = retimed::locate(
+        document,
+        &|id| durations.get(id).map(|d| ExactRatio::integer(d.frames())),
+        at,
+    )? {
+        return retimed::apply(
+            document, &target, at, hold, id, identities, timing, allocation,
+        )
+        .map(|result| (result, None));
+    }
     let NodeKind::Sequence { children } = &document.nodes()[document.root()].kind else {
         return Err(invalid("pause insertion requires a project-root Sequence"));
     };

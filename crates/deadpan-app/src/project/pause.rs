@@ -121,6 +121,30 @@ fn prepare_selected(
                     .unwrap_or_default(),
             },
         },
+        deadpan_core::PauseInsertionTarget::Retimed(_) if ai => {
+            return Err(
+                "An AI pause inside a speed change is not supported yet; insert a freeze pause."
+                    .into(),
+            );
+        }
+        deadpan_core::PauseInsertionTarget::Retimed(target)
+            if target.needs_exact_clocks(duration) =>
+        {
+            // The workspace cannot yet display fractional speed-change clocks.
+            return Err(
+                "This pause would split the speed change between whole frames, which the editor cannot show yet. Choose a boundary and length that map to whole frames of the slowed beat."
+                    .into(),
+            );
+        }
+        deadpan_core::PauseInsertionTarget::Retimed(target) => Command::InsertTime {
+            at,
+            hold,
+            id,
+            timing,
+            identities: SplitIdentities {
+                nodes: (0..target.required_ids).map(|_| allocate()).collect(),
+            },
+        },
         deadpan_core::PauseInsertionTarget::Occurrence(target) => Command::InsertOccurrenceTime {
             at,
             within,

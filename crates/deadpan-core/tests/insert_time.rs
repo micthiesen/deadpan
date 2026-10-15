@@ -13,6 +13,8 @@ mod delete_range;
 mod interior;
 #[path = "insert_time/nested_sequence.rs"]
 mod nested_sequence;
+#[path = "insert_time/retimed.rs"]
+mod retimed;
 #[path = "insert_time/source_replace.rs"]
 mod source_replace;
 #[path = "insert_time/source_splice.rs"]

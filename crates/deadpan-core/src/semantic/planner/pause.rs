@@ -295,8 +295,20 @@ where
         let provider = provider(self)?;
         self.charge_step(false)?;
         let (new_revision, id, split, occurrence) = match target {
-            crate::PauseInsertionTarget::Ordinary(target) => {
-                let required = target.split.as_ref().map_or(0, |split| split.required_ids);
+            crate::PauseInsertionTarget::Retimed(_) if request_ai => {
+                return Err(invalid(
+                    "an AI pause inside a speed change is not supported yet; insert a freeze pause",
+                ));
+            }
+            target @ (crate::PauseInsertionTarget::Ordinary(_)
+            | crate::PauseInsertionTarget::Retimed(_)) => {
+                let required = match &target {
+                    crate::PauseInsertionTarget::Ordinary(target) => {
+                        target.split.as_ref().map_or(0, |split| split.required_ids)
+                    }
+                    crate::PauseInsertionTarget::Retimed(target) => target.required_ids,
+                    crate::PauseInsertionTarget::Occurrence(_) => unreachable!("matched above"),
+                };
                 let SemanticAllocation::InsertPause {
                     new_revision,
                     id,

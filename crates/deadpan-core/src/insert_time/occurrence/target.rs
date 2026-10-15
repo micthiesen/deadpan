@@ -7,6 +7,38 @@ use crate::{InsertionBias, IterationId, RepeatInstance, RepeatLayout, ScopedNode
 pub enum PauseInsertionTarget {
     Ordinary(InsertTimeTarget),
     Occurrence(OccurrencePauseTarget),
+    /// Inside a FollowSpeed speed change, through `Command::InsertTime`.
+    Retimed(RetimedPauseTarget),
+}
+
+/// A pause inside one FollowSpeed Retime. The Retime stays the live owner of
+/// the pause, so a frozen picture captures only scopes below `picture_parent`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RetimedPauseTarget {
+    /// Ordinary Sequence containing the speed change.
+    pub navigation_parent: NodeId,
+    pub retime: NodeId,
+    /// The structure that will own the pause: a Sequence inside the speed
+    /// change, or the speed change itself when it wraps a single beat.
+    pub picture_parent: NodeId,
+    /// Fresh node identities the command consumes besides the pause itself.
+    pub required_ids: usize,
+    /// Child frames per output frame of the speed change.
+    pub slope: ExactRatio,
+    /// Whether the cut or the document already needs exact derived clocks.
+    pub(crate) exact: bool,
+}
+
+impl RetimedPauseTarget {
+    /// Whether a pause of `frames` leaves derived clocks in the document:
+    /// a fractional child cut, a fractional child span for the pause, or a
+    /// document that already has them.
+    pub fn needs_exact_clocks(&self, frames: FrameDuration) -> bool {
+        self.exact
+            || ExactRatio::integer(frames.frames())
+                .checked_mul(self.slope)
+                .map_or(true, |span| span.denominator() != 1)
+    }
 }
 
 impl PauseInsertionTarget {
@@ -14,6 +46,7 @@ impl PauseInsertionTarget {
         match self {
             Self::Ordinary(target) => &target.parent,
             Self::Occurrence(target) => &target.navigation_parent,
+            Self::Retimed(target) => &target.navigation_parent,
         }
     }
     pub fn picture_parent(&self) -> InstancePath {
@@ -23,6 +56,10 @@ impl PauseInsertionTarget {
                 repeats: Vec::new(),
             },
             Self::Occurrence(target) => target.picture_parent.clone(),
+            Self::Retimed(target) => InstancePath {
+                node: target.picture_parent.clone(),
+                repeats: Vec::new(),
+            },
         }
     }
 }
@@ -109,7 +146,7 @@ pub(super) fn for_command(
 ) -> Result<OccurrencePauseTarget, EditError> {
     match resolve(document, at, within)? {
         PauseInsertionTarget::Occurrence(target) => Ok(target),
-        PauseInsertionTarget::Ordinary(_) => Err(invalid(
+        PauseInsertionTarget::Ordinary(_) | PauseInsertionTarget::Retimed(_) => Err(invalid(
             "occurrence pause requires a concrete Repeat branch",
         )),
     }
@@ -120,6 +157,11 @@ fn resolve(
     at: ProjectFrame,
     within: Option<&InstancePath>,
 ) -> Result<PauseInsertionTarget, EditError> {
+    if within.is_none()
+        && let Some(target) = super::super::retimed::pause_target(document, at)?
+    {
+        return Ok(PauseInsertionTarget::Retimed(target));
+    }
     let durations = document.durations()?;
     if at.0 < 0 || at.0 > durations[document.root()].frames() {
         return Err(invalid("pause boundary is outside the project"));

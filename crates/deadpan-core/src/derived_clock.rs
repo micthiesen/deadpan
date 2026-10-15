@@ -59,6 +59,28 @@ impl ProjectDocument {
         }
     }
 
+    /// Whether a Retime prepares audio through pitch processing on either its
+    /// integral recipe or its effective clock. Unity Preserve partitions and
+    /// every FollowSpeed stage are affine sampling, not processing stages.
+    fn retime_processes(&self, id: &NodeId, node: &crate::BeatNode) -> bool {
+        let NodeKind::Retime {
+            duration,
+            mapping,
+            pitch,
+            ..
+        } = &node.kind
+        else {
+            return false;
+        };
+        let effective_unity = self.derived_clocks.get(id).is_none_or(|clock| {
+            clock
+                .child_end
+                .checked_sub(clock.child_start)
+                .is_ok_and(|selected| selected == clock.extent)
+        });
+        pitch.processes(mapping.duration() == *duration) || pitch.processes(effective_unity)
+    }
+
     /// Actual allocation of every node. Source/Hold recipes remain integral;
     /// Sequence and Repeat compose exact child extents without rounding.
     pub fn exact_durations(&self) -> Result<BTreeMap<NodeId, ExactRatio>, DocumentError> {
@@ -84,11 +106,15 @@ impl ProjectDocument {
             || !self.beat_sounds.is_empty()
             || !self.sound_routes.is_empty()
             || !self.sound_allowances.is_empty()
-            || !self.audio_lineage.is_empty()
-            || !self.audio_bindings.is_empty()
+            || ((!self.audio_lineage.is_empty() || !self.audio_bindings.is_empty())
+                && self
+                    .nodes
+                    .iter()
+                    .any(|(id, node)| self.retime_processes(id, node)))
             || self.nodes.iter().any(|(id, node)| {
-                matches!(node.kind, NodeKind::Retime { pitch, .. } if pitch != PitchPolicy::FollowSpeed &&
-                    (pitch != PitchPolicy::Preserve || !self.derived_clocks.get(id).is_some_and(|clock| clock.preserve_input.is_some())))
+                self.retime_processes(id, node)
+                    && !matches!(node.kind, NodeKind::Retime { pitch: PitchPolicy::Preserve, .. }
+                        if self.derived_clocks.get(id).is_some_and(|clock| clock.preserve_input.is_some()))
             })
         {
             return Err(unsupported());

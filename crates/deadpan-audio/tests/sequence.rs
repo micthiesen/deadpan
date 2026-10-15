@@ -10,7 +10,7 @@ use std::time::Duration;
 
 use deadpan_audio::{
     AudioSourceProvider, PcmWindow, PreparationError, PreparedSource, ResampleRecipe, Resampler,
-    SequenceAudio, SequenceAudioError, StereoMatrix,
+    SequenceAudio, SequenceAudioError, StageAudio, StereoMatrix,
 };
 use deadpan_core::*;
 use deadpan_media::audio_index::AudioChannelLayout;
@@ -206,8 +206,7 @@ fn document_with_asset(
     ProjectDocument::from_json(&wire.to_string()).unwrap()
 }
 
-#[test]
-fn persisted_fractional_clocks_render_decoded_pcm_with_exact_seam_phase() {
+fn fractional_clock_document() -> ProjectDocument {
     let rate = FrameRate::new(30_000, 1001).unwrap();
     let doc = document_with_asset(
         rate,
@@ -242,7 +241,12 @@ fn persisted_fractional_clocks_render_decoded_pcm_with_exact_seam_phase() {
         ),
     ]))
     .unwrap();
-    let doc = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    ProjectDocument::from_json(&wire.to_string()).unwrap()
+}
+
+#[test]
+fn persisted_fractional_clocks_render_decoded_pcm_with_exact_seam_phase() {
+    let doc = fractional_clock_document();
     let reopened = ProjectDocument::from_json(&doc.to_compact_json().unwrap()).unwrap();
     let renderer = SequenceAudio::new(Arc::new(RenderPlan::compile(&reopened).unwrap()));
     let reference_blocks = |recipe: ResampleRecipe, start: i64, count: u32| {
@@ -296,6 +300,66 @@ fn persisted_fractional_clocks_render_decoded_pcm_with_exact_seam_phase() {
             start += count;
         }
         assert_eq!(actual, expected, "chunk width {width}");
+    }
+}
+
+#[test]
+fn retained_lattices_on_fractional_follow_speed_clocks_keep_live_pcm() {
+    let doc = fractional_clock_document();
+    let mut wire = serde_json::to_value(&doc).unwrap();
+    let bindings = capture_unbound_audio_bindings(
+        &doc,
+        AudioTimingId {
+            allocation: RevisionId::new("fractional-lattice").unwrap(),
+            ordinal: 0,
+        },
+    )
+    .unwrap();
+    // Both Sources sit below derived Retimes whose windows are exact.
+    assert_eq!(bindings.bindings().len(), 2);
+    let layout = bindings.timings().values().next().unwrap();
+    assert_eq!(layout.derived_clocks().len(), 2);
+    wire["audio_bindings"] = serde_json::to_value(bindings).unwrap();
+    let bound = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    let bound = ProjectDocument::from_json(&bound.to_compact_json().unwrap()).unwrap();
+    let live = Arc::new(RenderPlan::compile(&doc).unwrap());
+    let retained = Arc::new(RenderPlan::compile(&bound).unwrap());
+    assert!(retained.has_audio_bindings());
+    let mut provider = FixtureProvider::new(4096);
+    let read_all = |plan: &Arc<RenderPlan>, provider: &mut FixtureProvider, width: u32| {
+        let mut stage = StageAudio::new(Arc::clone(plan));
+        let mut output = Vec::new();
+        let mut start = 0u32;
+        while start < 3203 {
+            let count = width.min(3203 - start);
+            let block = stage
+                .read(
+                    provider,
+                    AudioSample(i64::from(start)),
+                    count,
+                    TIMEOUT,
+                    &AtomicBool::new(false),
+                )
+                .unwrap();
+            output.extend(block.samples);
+            start += count;
+        }
+        output
+    };
+    let expected = read_all(&live, &mut provider, 256);
+    // The seam keeps its fractional phase on the retained lattice too.
+    assert!(
+        expected[790..812]
+            .iter()
+            .flatten()
+            .any(|value| *value != 0.0)
+    );
+    for width in [1u32, 31, 256] {
+        assert_eq!(
+            read_all(&retained, &mut provider, width),
+            expected,
+            "chunk width {width}"
+        );
     }
 }
 

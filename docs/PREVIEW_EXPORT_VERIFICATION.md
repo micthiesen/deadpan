@@ -300,13 +300,14 @@ them with public `render` and verify them with `verify-export`:
   exports, 867 pictures and 28 audio windows pass in the
   [2026-10-09 qualification](qualification/vfr-recipes-2026-10-09.md).
 - `every_recipe_export_matches_its_committed_preview` exports every recipe
-  fixture (44: 38 on `cfr-bframes.mp4`, four accepted Generated Holds and two
-  larger generated Originals, below).
+  fixture (66, including four accepted Generated Holds and two
+  larger generated Originals, below; the Section 8 fixtures added on
+  2026-10-15 live in `preview_export/section8.rs`).
   Debug renders cost about four seconds per output second, so it is ignored in
   debug builds. The release-mode gate is
   `cargo test --release --locked -p deadpan-cli --features synthetic-worker --test preview_export`
-  (about 213 s on an M5 Max, of which the two large fixtures take about 82 s
-  of render and verification). It needs a development `ffmpeg` with
+  (418 s for all 33 tests on an M5 Max on 2026-10-15, recorded in
+  [the Section 8 qualification](qualification/preview-export-2026-10-15.md)). It needs a development `ffmpeg` with
   `libx264` (`DEADPAN_BRIDGE_FFMPEG`, else `/opt/homebrew/bin/ffmpeg`) and a
   current `deadpan-media-worker` and `deadpan-track` executables beside the
   tested `deadpan-cli` (`cargo build --release --locked -p deadpan-media-worker

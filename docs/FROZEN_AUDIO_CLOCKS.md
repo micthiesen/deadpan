@@ -31,12 +31,17 @@ also renames the clock owners. Integral spacer compaction cannot represent
 these clocks: scoped capture requests a complete capture, and slicing retains
 the complete bounded layout after validating requested aliases.
 
-`AudioReferencePlan` compiles exact historical FollowSpeed layouts into the same
-absolute RoundEven root allocation as the live plan. It uses effective geometry
-for policy and processing-domain queries. Historical Preserve/Shift processing,
-raw captured audio contexts, independent sound processing and retained binding
-states still refuse exact layouts until their owned output scheduling is
-integrated. Timing-only projection is not permission to process a changed child
+`AudioReferencePlan` compiles exact historical layouts into the same absolute
+RoundEven root allocation as the live plan while no Retime processes pitch.
+It uses effective geometry for policy and processing-domain queries. Retained
+binding states accept these affine layouts: a captured lattice on fractional
+FollowSpeed clocks renders the same decoded PCM as the unbound document, and
+[retimed pauses](INSERT_TIME.md#pauses-inside-followspeed-speed-changes) resume
+on them. A layout is affine when every Retime is FollowSpeed or a unity Preserve
+partition, judged on both its integral recipe and its effective clock.
+Historical Preserve/Shift processing, raw captured audio contexts and
+independent sound processing still refuse exact layouts until their owned
+output scheduling is integrated. Timing-only projection is not permission to process a changed child
 or stretch an intrinsic result to the new allocation.
 
 This is historical geometry support. Core 55/store 83 remain unchanged because

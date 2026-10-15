@@ -214,3 +214,76 @@ fn owned_preserve_input_survives_sqlite_reopen_take_restore_and_undo_redo() {
     assert_eq!(store.snapshot_at(&revision("initial")).unwrap(), initial);
     assert_eq!(store.snapshot_at(&revision("restored")).unwrap(), changed);
 }
+
+#[test]
+fn pauses_inside_follow_speed_commit_reopen_and_navigate_history_exactly() {
+    let scratch = tempfile::tempdir().unwrap();
+    let path = scratch.path().join("retimed-pauses.deadpan");
+    let mut initial = document();
+    // An ordinary 2x-slow speed change: two child frames over four.
+    let mut wire = serde_json::to_value(&initial).unwrap();
+    wire["derived_clocks"] = serde_json::json!({});
+    wire["nodes"]["first"]["kind"]["duration"] = serde_json::json!(4);
+    wire["nodes"]["root"]["kind"]["children"] = serde_json::json!(["first"]);
+    wire["nodes"].as_object_mut().unwrap().remove("last");
+    wire["nodes"].as_object_mut().unwrap().remove("right");
+    initial = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    let mut store = ProjectStore::create(&path, &initial).unwrap();
+    let mut head = initial.revision_id().clone();
+    for (name, at, frames) in [("one", 1, 1), ("two", 3, 3)] {
+        let request = CommandRequest {
+            project_id: initial.project_id().clone(),
+            expected_revision: head.clone(),
+            new_revision: revision(name),
+            command: Command::InsertTime {
+                at: ProjectFrame(at),
+                hold: HoldRecipe {
+                    duration: duration(frames),
+                    video: HoldVideo::Background,
+                    audio: HoldAudio::Silence,
+                    picture_context: None,
+                },
+                id: id(&format!("{name}-pause")),
+                identities: SplitIdentities {
+                    nodes: (0..8).map(|n| id(&format!("{name}-{n}"))).collect(),
+                },
+                timing: AudioTimingId {
+                    allocation: revision(name),
+                    ordinal: 0,
+                },
+            },
+        };
+        store.commit(&request).unwrap();
+        head = revision(name);
+        // Reopening replays and validates the stored history.
+        drop(store);
+        store = ProjectStore::open(&path, AccessMode::ReadWrite).unwrap();
+    }
+    let edited = store.snapshot().unwrap();
+    assert!(!edited.derived_clocks().is_empty());
+    assert_eq!(
+        edited.exact_durations().unwrap()[edited.root()],
+        ExactRatio::integer(8)
+    );
+    store.undo(&revision("two"), revision("undo-two")).unwrap();
+    store
+        .undo(&revision("undo-two"), revision("undo-one"))
+        .unwrap();
+    let mut undone = store.snapshot().unwrap();
+    assert_eq!(undone.duration().unwrap(), duration(4));
+    assert!(undone.derived_clocks().is_empty());
+    store
+        .redo(&revision("undo-one"), revision("redo-one"))
+        .unwrap();
+    store
+        .redo(&revision("redo-one"), revision("redo-two"))
+        .unwrap();
+    drop(store);
+    let store = ProjectStore::open(&path, AccessMode::ReadOnly).unwrap();
+    let redone = store.snapshot().unwrap();
+    assert_eq!(redone.derived_clocks(), edited.derived_clocks());
+    assert_eq!(redone.nodes(), edited.nodes());
+    assert_eq!(redone.audio_bindings(), edited.audio_bindings());
+    undone = store.snapshot_at(&revision("undo-one")).unwrap();
+    assert_eq!(undone.nodes(), initial.nodes());
+}

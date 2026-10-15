@@ -312,9 +312,8 @@ fn correspondence_and_placement_compare_effective_clocks() {
 }
 
 #[test]
-fn legacy_binding_consumers_refuse_exact_timing_tables() {
-    let frozen = FrozenAudioLayout::capture(&document()).unwrap();
-    let state = AudioBindingState {
+fn bindings_accept_affine_exact_tables_and_refuse_processing_stages() {
+    let state = |frozen| AudioBindingState {
         timings: BTreeMap::from([(
             AudioTimingId {
                 allocation: revision("capture"),
@@ -324,11 +323,16 @@ fn legacy_binding_consumers_refuse_exact_timing_tables() {
         )]),
         ..AudioBindingState::default()
     };
+    let follow = FrozenAudioLayout::capture(&document()).unwrap();
+    // FollowSpeed geometry is affine; only the empty binding map is invalid.
+    let message = state(follow.clone()).validate().unwrap_err().message;
     assert!(
-        state
-            .validate()
-            .unwrap_err()
-            .message
-            .contains("exact output consumer")
+        message.contains("unreferenced audio timing record"),
+        "{message}"
     );
+    let mut wire = serde_json::to_value(&follow).unwrap();
+    wire["nodes"]["first"]["kind"]["pitch"] = serde_json::json!("preserve");
+    let preserve = FrozenAudioLayout::from_json(&wire.to_string()).unwrap();
+    let message = state(preserve).validate().unwrap_err().message;
+    assert!(message.contains("owned output route"), "{message}");
 }

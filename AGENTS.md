@@ -455,6 +455,17 @@ replace it before the command returns. History rows use the exact compact
 `command::patch_wire` form (Sequence child splices, implied inverse); keep
 both forms decodable. See [pause work](docs/TIMING_STORAGE.md#pause-work-scoped-to-its-changes).
 
+A pause strictly inside a FollowSpeed Edit Retime keeps that Retime as its
+live owner and its slope unchanged (`insert_time/retimed.rs`). Never round the
+child cut `start + k*s` or the pause's child span `h*s`: fractional windows
+are derived clocks, integral ones ordinary recipes, and an adapter keeps the
+Hold's authored project duration. Capture lattices before copying the cut
+leaf and reanchor every moved owner once. A fractional Retime keeps an integral
+recipe at the ceiling of its clock. Derived clocks admit bindings and lineage
+only while no Retime processes pitch. The app refuses retimed pauses that need
+derived clocks until its workspace reads exact durations. See
+[pause insertion](docs/INSERT_TIME.md#pauses-inside-followspeed-speed-changes).
+
 Current native and CLI whole-beat deletion uses `DeleteRipple { node, timing }` through
 ordinary Sequence ancestors. Capture downstream sample entries before removing
 the child; retain previous lattices/resumes and transform the root sound bus once.

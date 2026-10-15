@@ -2309,3 +2309,72 @@ fn a_removed_picture_cutaway_shows_the_background_and_keeps_every_other_picture(
     }
     assert_eq!(after.duration(), before.duration());
 }
+
+#[test]
+fn pauses_inside_follow_speed_shift_later_pictures_without_changing_their_source_times() {
+    let mut slow = retime("inner", 24, 0, 12);
+    let NodeKind::Retime { pitch, .. } = &mut slow.kind else {
+        unreachable!()
+    };
+    *pitch = PitchPolicy::FollowSpeed;
+    let before = document(
+        &["a", "slow", "b"],
+        vec![
+            ("a", source(2, 0, 2002)),
+            ("slow", slow),
+            ("inner", source(12, 5005, 17017)),
+            ("b", source(2, 30030, 32032)),
+        ],
+    );
+    let old = RenderPlan::compile(&before).unwrap();
+    // Frame 5 cuts the 2x-slow child at 3/2; the pauses span 3/2 and 1/2
+    // child frames, so every window below the speed change is exact.
+    let mut document = before.clone();
+    let mut pauses = Vec::new();
+    for (at, frames, name) in [(5, 3, "first"), (14, 1, "second")] {
+        let request = CommandRequest {
+            project_id: document.project_id().clone(),
+            expected_revision: document.revision_id().clone(),
+            new_revision: revision(name),
+            command: Command::InsertTime {
+                at: ProjectFrame(at),
+                hold: background(frames),
+                id: id(&format!("{name}-pause")),
+                identities: SplitIdentities {
+                    nodes: (0..8).map(|n| id(&format!("{name}-{n}"))).collect(),
+                },
+                timing: AudioTimingId {
+                    allocation: revision(name),
+                    ordinal: 0,
+                },
+            },
+        };
+        let edit = apply(&document, &request).unwrap();
+        document = edit.forward.apply(&document).unwrap();
+        pauses.push((at, frames));
+    }
+    assert!(!document.derived_clocks().is_empty());
+    let new = RenderPlan::compile(&document).unwrap();
+    assert_eq!(new.duration(), duration(32));
+    let mut shift = 0;
+    for frame in 0..32 {
+        let sample = new.picture(ProjectFrame(frame)).unwrap();
+        if let Some((at, frames)) = pauses
+            .iter()
+            .find(|(at, frames)| (*at..at + frames).contains(&frame))
+        {
+            assert_eq!(sample.picture, Picture::Background, "frame {frame}");
+            if frame + 1 == at + frames {
+                shift += frames;
+            }
+            continue;
+        }
+        let expected = old.picture(ProjectFrame(frame - shift)).unwrap();
+        assert_eq!(
+            ticks(&sample.picture),
+            ticks(&expected.picture),
+            "frame {frame} shows old frame {}",
+            frame - shift
+        );
+    }
+}

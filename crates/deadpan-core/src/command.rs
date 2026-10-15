@@ -1171,7 +1171,10 @@ fn apply_with_durations_captured(
     // Until their temporal transforms consume exact clocks, ordinary reducers
     // must not operate on a shadow integral timeline. Exact snapshot restore
     // and guarded reversible patches retain the complete clocks above.
-    document.require_integral_clocks()?;
+    // A pause inside a FollowSpeed speed change authors exact clocks itself.
+    if !matches!(request.command, Command::InsertTime { .. }) {
+        document.require_integral_clocks()?;
+    }
     if let Command::WithBoundaryReplacements { edit } = &request.command {
         let base = CommandRequest {
             project_id: request.project_id.clone(),
