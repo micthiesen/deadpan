@@ -177,7 +177,7 @@ video_packets = video_frames
 audio_packets = (audio_samples + 1023) // 1024 + 2
 report = {
     "info": {
-        "abi_version": 3, "avcodec_version": 4066151, "avformat_version": 4064103,
+        "abi_version": 4, "avcodec_version": 4066151, "avformat_version": 4064103,
         "avutil_version": 3934311, "movie_timescale": math.lcm(numerator, 48000),
         "video_time_base_num": 1, "video_time_base_den": numerator,
         "audio_time_base_num": 1, "audio_time_base_den": 48000,

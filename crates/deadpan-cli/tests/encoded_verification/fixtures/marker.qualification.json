@@ -32,7 +32,7 @@
     "faststart_read_closes": 1,
     "faststart_read_opens": 1,
     "info": {
-      "abi_version": 3,
+      "abi_version": 4,
       "audio_bitrate": 384000,
       "audio_frame_size": 1024,
       "audio_initial_padding": 1024,
@@ -58,8 +58,8 @@
       "video_time_base_den": 60,
       "video_time_base_num": 1
     },
-    "output_bytes": 20312,
-    "packet_bytes": 16670,
+    "output_bytes": 20273,
+    "packet_bytes": 16631,
     "video_duration_from_contract_packets": 120,
     "video_eof": true,
     "video_frames": 120,

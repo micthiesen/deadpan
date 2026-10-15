@@ -1,18 +1,19 @@
 {
-  "date": "2026-10-10",
-  "native_abi": 3,
+  "date": "2026-10-15",
+  "native_abi": 4,
   "scope": "Synthetic native adapter qualification movies. Project contract and document hash are retained transport-test labels, not claims that these movies depict the background projects.",
   "producer": {
-    "source_base": "fdef263d45395056c323f5c3457b0bd15f2d3933",
+    "source_commit": "1ef6742b467d5421a6431cb181509f793dfc011e",
+    "source_tree": "clean `git archive` of source_commit, built outside the shared checkout",
     "source_sha256": {
-      "Cargo.lock": "d220d29feb966aa7ad6e3bddb822f569aed37b8b08dbbb85a14eb509caafd5f3",
+      "Cargo.lock": "9d911d67520092b729ae0e5933a39fc57f0ab4933b7d94b2d72d55a125fca93e",
       "rust-toolchain.toml": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc",
       "native/deadpan-encode/build.rs": "785268bafce3bf6244486294b4ac80519eabb5ed82be3f56a95dd9718a4b50c8",
       "native/deadpan-encode/examples/qualify.rs": "5571cc2bcea1a5086ee30c22c94e7604e60873ea32c8f163133a50650e07ff2d",
-      "native/deadpan-encode/src/encoder.c": "646def44a0f3b9327a0979853f5ea90c2273f2949de008225e690f30efa0750c",
-      "native/deadpan-encode/src/encoder.h": "3705ec6bc5eb42018cd62fa56c95269ec9b5d226cad8c3631384caab32dad490",
+      "native/deadpan-encode/src/encoder.c": "2e6d379f308ab0e50257b67bf2b4ef712f4a133b66cf62813f0eb8d846687cb9",
+      "native/deadpan-encode/src/encoder.h": "c69b4604c1c06eceda777b953f541bb35106ef2324c79a102f2b21c290da35d1",
       "native/deadpan-encode/src/ffi.rs": "f1ec575465ca4d6fc778059198e4f43d54d2beb4a4f3e998f33a26740a5ae06b",
-      "native/deadpan-encode/src/policy.rs": "d6137717b86484b0b2eadd8bc834e8df1350bfaffd25880e3cc2b3d3717d7900",
+      "native/deadpan-encode/src/policy.rs": "af4e36b3d572a151465c5c0cc1bc31bd3aa5c79c909d599e3e9d8dbb0de9d6eb",
       "native/deadpan-encode/src/lib.rs": "1b943b97c953034fe5e62a3c55aeed328326822339c2fdae50ada490f4c2e3c9"
     },
     "build": [
@@ -24,16 +25,18 @@
       "--example",
       "qualify"
     ],
-    "binary": "/tmp/deadpan-youtube-quality-20261009/quality-fixtures/qualify",
-    "binary_sha256": "47eb48ff547ce02cbfcf5cc57f2187c73f3620c21e25a43fc8fa112b6c4d7f25",
+    "build_cwd": "/tmp/deadpan-abi4-fixtures-20261015/src",
+    "CARGO_TARGET_DIR": "/tmp/deadpan-abi4-fixtures-20261015/target",
+    "binary": "/tmp/deadpan-abi4-fixtures-20261015/qualify",
+    "binary_sha256": "448b8a8f28b60b29d215722646a4ca9d495d3cc92f25366b3b66521ac7eba1b7",
     "ffmpeg_prefix": "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix"
   },
   "files": [
     {
       "name": "nonzero",
       "command": [
-        "/tmp/deadpan-youtube-quality-20261009/quality-fixtures/qualify",
-        "/tmp/deadpan-youtube-quality-20261009/quality-fixtures/nonzero.mp4",
+        "/tmp/deadpan-abi4-fixtures-20261015/qualify",
+        "/tmp/deadpan-abi4-fixtures-20261015/out/nonzero.mp4",
         "hardware",
         "none",
         "30000",
@@ -45,14 +48,15 @@
         "v2"
       ],
       "movie_bytes": 3907,
-      "movie_sha256": "3a97e1d2aa6d188a94f85e4acddbc6185d3597e6ed5ee1836c464dcdfb552c4b",
-      "manifest_sha256": "4e05a0ef50f855e8ddb387d9522463a5c318dd2dc52f114c7c7880b493e741e5"
+      "movie_sha256": "b4fe276fbd220f46e04783bb3747bd2cc3f3d0ae47f3ad70fb2336deb388197e",
+      "manifest_sha256": "f907c33a3dc696b689e81e58ffcac4a33f9c22bffe5a9fc5b6f433e6f4ede0c2",
+      "qualification_report_sha256": "5ba1eaf5f32f8ba37d0d1931e161dab0e49db3d4b3bcf3e6dfef7a8f9ae5370c"
     },
     {
       "name": "hardware-gops",
       "command": [
-        "/tmp/deadpan-youtube-quality-20261009/quality-fixtures/qualify",
-        "/tmp/deadpan-youtube-quality-20261009/quality-fixtures/hardware-gops.mp4",
+        "/tmp/deadpan-abi4-fixtures-20261015/qualify",
+        "/tmp/deadpan-abi4-fixtures-20261015/out/hardware-gops.mp4",
         "hardware",
         "none",
         "30000",
@@ -64,14 +68,15 @@
         "v2"
       ],
       "movie_bytes": 10843,
-      "movie_sha256": "b294934b3de38ba605a6a04c8fa30bc9eed9572e17e1959ec12abb4992a77b27",
-      "manifest_sha256": "5a2a1d0e3d21f4c6ddce4c764f01f6a0be960e8bd47c933c6d3aa1a053ec46e4"
+      "movie_sha256": "140f7bdd4f1287b84df1cbb65a934878f1ee4f736b2b9a9a6960b7b4bd2bd861",
+      "manifest_sha256": "d0692a03686d60cb6f17d13b6e52a73e850c1e7be04d1a987c2d151f4e0f8d98",
+      "qualification_report_sha256": "8880d1b152680bfe3c4bcbda8697dcf87f0d4aeba505475f0957626ae37556ca"
     },
     {
       "name": "marker",
       "command": [
-        "/tmp/deadpan-youtube-quality-20261009/quality-fixtures/qualify",
-        "/tmp/deadpan-youtube-quality-20261009/quality-fixtures/marker.mp4",
+        "/tmp/deadpan-abi4-fixtures-20261015/qualify",
+        "/tmp/deadpan-abi4-fixtures-20261015/out/marker.mp4",
         "hardware",
         "none",
         "60",
@@ -82,11 +87,104 @@
         "none",
         "v2"
       ],
-      "movie_bytes": 20312,
-      "movie_sha256": "184a863cee8f0d0ea8779c2a9d837b6c64532077fff03fcd7ae60f9764a8bf74",
-      "manifest_sha256": "f8610492ca142cf0b3358ec1572913aa4b22cbbcf72b6e58a5542583e6af4487"
+      "movie_bytes": 20273,
+      "movie_sha256": "21c8a491e9aaf48e9e2b19e88b5163778229dd71cf6d49fb71b0087925884153",
+      "manifest_sha256": "80e50c3ec38688aa691e6c83078bd083c2384117685d61adf5c255dbc316f0e2",
+      "qualification_report_sha256": "26b14722362fe2175900d06b282198052e8e47ff87b9a4cef915e9f51b81bf9a"
     }
   ],
+  "reproducibility": "A repeated marker run with the same binary differed in one mdat byte (offset 4591); retained bytes, not rerun equality, are bound by each manifest.",
+  "previous_abi3_archive_commit": "1ef6742b467d5421a6431cb181509f793dfc011e",
+  "previous_abi3_provenance": {
+    "date": "2026-10-10",
+    "native_abi": 3,
+    "scope": "Synthetic native adapter qualification movies. Project contract and document hash are retained transport-test labels, not claims that these movies depict the background projects.",
+    "producer": {
+      "source_base": "fdef263d45395056c323f5c3457b0bd15f2d3933",
+      "source_sha256": {
+        "Cargo.lock": "d220d29feb966aa7ad6e3bddb822f569aed37b8b08dbbb85a14eb509caafd5f3",
+        "rust-toolchain.toml": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc",
+        "native/deadpan-encode/build.rs": "785268bafce3bf6244486294b4ac80519eabb5ed82be3f56a95dd9718a4b50c8",
+        "native/deadpan-encode/examples/qualify.rs": "5571cc2bcea1a5086ee30c22c94e7604e60873ea32c8f163133a50650e07ff2d",
+        "native/deadpan-encode/src/encoder.c": "646def44a0f3b9327a0979853f5ea90c2273f2949de008225e690f30efa0750c",
+        "native/deadpan-encode/src/encoder.h": "3705ec6bc5eb42018cd62fa56c95269ec9b5d226cad8c3631384caab32dad490",
+        "native/deadpan-encode/src/ffi.rs": "f1ec575465ca4d6fc778059198e4f43d54d2beb4a4f3e998f33a26740a5ae06b",
+        "native/deadpan-encode/src/policy.rs": "d6137717b86484b0b2eadd8bc834e8df1350bfaffd25880e3cc2b3d3717d7900",
+        "native/deadpan-encode/src/lib.rs": "1b943b97c953034fe5e62a3c55aeed328326822339c2fdae50ada490f4c2e3c9"
+      },
+      "build": [
+        "cargo",
+        "build",
+        "--locked",
+        "-p",
+        "deadpan-encode",
+        "--example",
+        "qualify"
+      ],
+      "binary": "/tmp/deadpan-youtube-quality-20261009/quality-fixtures/qualify",
+      "binary_sha256": "47eb48ff547ce02cbfcf5cc57f2187c73f3620c21e25a43fc8fa112b6c4d7f25",
+      "ffmpeg_prefix": "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix"
+    },
+    "files": [
+      {
+        "name": "nonzero",
+        "command": [
+          "/tmp/deadpan-youtube-quality-20261009/quality-fixtures/qualify",
+          "/tmp/deadpan-youtube-quality-20261009/quality-fixtures/nonzero.mp4",
+          "hardware",
+          "none",
+          "30000",
+          "1001",
+          "1",
+          "1",
+          "impulses",
+          "none",
+          "v2"
+        ],
+        "movie_bytes": 3907,
+        "movie_sha256": "3a97e1d2aa6d188a94f85e4acddbc6185d3597e6ed5ee1836c464dcdfb552c4b",
+        "manifest_sha256": "4e05a0ef50f855e8ddb387d9522463a5c318dd2dc52f114c7c7880b493e741e5"
+      },
+      {
+        "name": "hardware-gops",
+        "command": [
+          "/tmp/deadpan-youtube-quality-20261009/quality-fixtures/qualify",
+          "/tmp/deadpan-youtube-quality-20261009/quality-fixtures/hardware-gops.mp4",
+          "hardware",
+          "none",
+          "30000",
+          "1001",
+          "43",
+          "20",
+          "impulses",
+          "none",
+          "v2"
+        ],
+        "movie_bytes": 10843,
+        "movie_sha256": "b294934b3de38ba605a6a04c8fa30bc9eed9572e17e1959ec12abb4992a77b27",
+        "manifest_sha256": "5a2a1d0e3d21f4c6ddce4c764f01f6a0be960e8bd47c933c6d3aa1a053ec46e4"
+      },
+      {
+        "name": "marker",
+        "command": [
+          "/tmp/deadpan-youtube-quality-20261009/quality-fixtures/qualify",
+          "/tmp/deadpan-youtube-quality-20261009/quality-fixtures/marker.mp4",
+          "hardware",
+          "none",
+          "60",
+          "1",
+          "120",
+          "0",
+          "impulses",
+          "none",
+          "v2"
+        ],
+        "movie_bytes": 20312,
+        "movie_sha256": "184a863cee8f0d0ea8779c2a9d837b6c64532077fff03fcd7ae60f9764a8bf74",
+        "manifest_sha256": "f8610492ca142cf0b3358ec1572913aa4b22cbbcf72b6e58a5542583e6af4487"
+      }
+    ]
+  },
   "previous_abi2_archive_commit": "fdef263d",
   "previous_abi2_provenance": {
     "date": "2026-10-08",

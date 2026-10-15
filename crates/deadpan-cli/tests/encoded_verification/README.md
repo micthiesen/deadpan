@@ -1,8 +1,9 @@
 # Finished-file verification fixtures
 
-The three current MP4 files were generated on 2026-10-10 by the real native
-encoder's `qualify` example using ABI 3 and explicit SDR policy v2. That encoder
-requests frame-QP 24 and a three-times-target rate ceiling, and feeds a silent AAC warm-up block at
+The three current MP4 files were generated on 2026-10-15 by the real native
+encoder's `qualify` example using ABI 4 and explicit SDR policy v2, built from a
+clean archive of `1ef6742b`. That encoder disables AAC perceptual noise
+substitution, requests frame-QP 24 and a three-times-target rate ceiling, and feeds a silent AAC warm-up block at
 negative PTS and retains an exact 2,048-sample priming edit. The input recipe is
 the example's synthetic picture markers and stereo impulses. Raw producer
 reports are retained as `fixtures/*.qualification.json`; their actual reports,
@@ -26,19 +27,24 @@ old manifest cannot enter live admission. Current OS software H.264 lacks the
 QP property and is refused by the quality policy; its older movie is not
 relabeled as evidence of the new controls.
 
-The previous ABI-2 `nonzero` and `marker` files are archived at `fdef263d`.
+The previous ABI-3 `nonzero`, `hardware-gops` and `marker` files are archived
+at `1ef6742b`. The previous ABI-2 `nonzero` and `marker` files are archived at
+`fdef263d`.
 The previous ABI 1 files and manifests remain archived at commit
 `63d81ca4713fc486ced8a408ea471773f959a576`, at these same paths. Their original
 provenance is preserved in `fixtures/provenance.json`. The earlier producer and
 broader numerical/content comparisons are documented in
 [encoded-render qualification](../../../../docs/qualification/encoded-render-2026-09-29.md).
-The current three movies total 35,062 bytes:
+The current three movies total 35,023 bytes:
 
 ```text
-3a97e1d2aa6d188a94f85e4acddbc6185d3597e6ed5ee1836c464dcdfb552c4b  fixtures/nonzero.mp4
-b294934b3de38ba605a6a04c8fa30bc9eed9572e17e1959ec12abb4992a77b27  fixtures/hardware-gops.mp4
-184a863cee8f0d0ea8779c2a9d837b6c64532077fff03fcd7ae60f9764a8bf74  fixtures/marker.mp4
+b4fe276fbd220f46e04783bb3747bd2cc3f3d0ae47f3ad70fb2336deb388197e  fixtures/nonzero.mp4
+140f7bdd4f1287b84df1cbb65a934878f1ee4f736b2b9a9a6960b7b4bd2bd861  fixtures/hardware-gops.mp4
+21c8a491e9aaf48e9e2b19e88b5163778229dd71cf6d49fb71b0087925884153  fixtures/marker.mp4
 ```
+
+Hardware output is not byte-reproducible: a repeated `marker` run with the same
+binary differed in one `mdat` byte. Each manifest binds the retained bytes.
 
 ## What the tests establish
 

@@ -32,7 +32,7 @@
     "faststart_read_closes": 1,
     "faststart_read_opens": 1,
     "info": {
-      "abi_version": 3,
+      "abi_version": 4,
       "audio_bitrate": 384000,
       "audio_frame_size": 1024,
       "audio_initial_padding": 1024,

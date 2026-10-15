@@ -42,7 +42,7 @@
   "movie": {
     "byte_length": 3907,
     "reference": "output/movie.mp4",
-    "sha256": "3a97e1d2aa6d188a94f85e4acddbc6185d3597e6ed5ee1836c464dcdfb552c4b"
+    "sha256": "b4fe276fbd220f46e04783bb3747bd2cc3f3d0ae47f3ad70fb2336deb388197e"
   },
   "report": {
     "audio_eof": true,
@@ -51,7 +51,7 @@
     "faststart_read_closes": 1,
     "faststart_read_opens": 1,
     "info": {
-      "abi_version": 3,
+      "abi_version": 4,
       "audio_bitrate": 384000,
       "audio_frame_size": 1024,
       "audio_initial_padding": 1024,
