@@ -23,6 +23,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     native_input(d)?;
     late_reply(d)?;
     commit_and_history(d)?;
+    recorded_slip(d)?;
     rejected_contexts(d)?;
     nested_partition(d)
 }
@@ -818,4 +819,79 @@ fn exact_picture(d: &mut Driver<'_>, ordinal: u64, proposed: bool) -> Result<(),
     d.check("Submitted Slip picture has the independent expected ordinal and exact decoder PTS",
         passed,json!({"ordinal":ordinal,"pts":expected.pts,"time_base":index.time_base(),"proposed":proposed}),
         json!({"presentation":state,"decoder_ordinal":picture.id,"decoder_pts":metadata.pts}))
+}
+
+/// The selected beat's Source placement start, in project frames.
+fn placement_start(d: &Driver<'_>) -> Result<deadpan_core::ExactRatio, String> {
+    let document = document(d)?;
+    let selected = d.app().selected_beat.as_ref().ok_or("No selected beat")?;
+    let (host, _) = deadpan_core::cutaway_host(document, selected).ok_or("No Source host")?;
+    match &document.nodes()[&host].kind {
+        deadpan_core::NodeKind::Source { source } => Ok(source.video_mapping.start_frames()),
+        _ => Err("The selected beat has no Source".into()),
+    }
+}
+
+/// While a macro records, Slip's Apply commits the shown amount as one `Slip`
+/// instruction; running the macro slips the selected beat again.
+fn recorded_slip(d: &mut Driver<'_>) -> Result<(), String> {
+    let start = placement_start(d)?;
+    d.command("record s")?;
+    let before = d.revision();
+    d.command("slip +5f")?;
+    wait_ready(d)?;
+    d.click(HEADING)?;
+    d.key(Key::Enter)?;
+    d.changed(&before)?;
+    closed(d)?;
+    d.wait_for("The recorded Slip is acknowledged", |app| {
+        !app.service.is_busy() && !app.macros.is_pending()
+    })?;
+    d.command("record-stop")?;
+    d.wait_for("Macro s is saved", |app| {
+        !app.service.is_busy()
+            && !app.macros.recording()
+            && app.copied.entries().any(|(slot, value)| {
+                slot == 's' && matches!(value, crate::preview::copied::Content::Macro(_))
+            })
+    })?;
+    let recorded = d
+        .app()
+        .copied
+        .entries()
+        .find_map(|(slot, value)| match value {
+            crate::preview::copied::Content::Macro(program) if slot == 's' => {
+                Some(program.instructions().to_vec())
+            }
+            _ => None,
+        });
+    let expected = deadpan_core::SemanticInstruction::Slip { frames: 5 };
+    let once = placement_start(d)?;
+    let five = deadpan_core::ExactRatio::integer(5);
+    d.check(
+        "Apply during recording saves one exact Slip instruction",
+        recorded.as_deref() == Some(std::slice::from_ref(&expected))
+            && once.checked_add(five).ok() == Some(start),
+        json!({"instructions":[expected],"start":start.checked_sub(five).ok()}),
+        json!({"recorded":recorded,"start":once}),
+    )?;
+    let before = d.revision();
+    d.command("macro s")?;
+    d.changed(&before)?;
+    d.wait_for("The macro run is acknowledged", |app| {
+        !app.service.is_busy() && !app.macros.is_pending()
+    })?;
+    let twice = placement_start(d)?;
+    d.check(
+        "Running the macro slips the selected beat five more frames",
+        twice.checked_add(five).ok() == Some(once),
+        json!({"start":once.checked_sub(five).ok()}),
+        json!({"start":twice}),
+    )?;
+    for _ in 0..2 {
+        let before = d.revision();
+        d.key(Key::U)?;
+        d.changed(&before)?;
+    }
+    d.settled()
 }

@@ -405,6 +405,13 @@ pub enum SemanticInstruction {
     SetHoldDuration {
         length: PauseLength,
     },
+    /// Slip the selected direct-child Source (`:slip +5f`): show Original
+    /// material this many whole frames later (negative: earlier) without
+    /// changing its position or duration. A replay without that much handle
+    /// refuses rather than clamping.
+    Slip {
+        frames: i64,
+    },
     /// Trim the selected direct-child Source (`,v`, `:trim`) by exactly these
     /// accepted In/Out/Slip/Roll values under one policy, against the literal
     /// right sibling. A replay that cannot apply every value exactly refuses

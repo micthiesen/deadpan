@@ -90,6 +90,7 @@ impl RepeatableEdit {
                 | SemanticInstruction::SetHoldDuration { .. }
                 | SemanticInstruction::Split
                 | SemanticInstruction::Trim { .. }
+                | SemanticInstruction::Slip { .. }
         )
     }
 }

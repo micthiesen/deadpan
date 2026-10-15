@@ -790,6 +790,9 @@ where
                 SemanticInstruction::Trim { intent } => {
                     self.trim(index, *intent)?;
                 }
+                SemanticInstruction::Slip { frames } => {
+                    self.slip(index, *frames)?;
+                }
                 SemanticInstruction::CutFrames {
                     operation,
                     register,
@@ -917,6 +920,7 @@ where
                         | SemanticInstruction::SetHoldDuration { .. }
                         | SemanticInstruction::Split
                         | SemanticInstruction::Trim { .. }
+                        | SemanticInstruction::Slip { .. }
                         | SemanticInstruction::SetAudioLag { .. }
                         | SemanticInstruction::SetAudio { .. }
                         | SemanticInstruction::DeleteRole { .. }

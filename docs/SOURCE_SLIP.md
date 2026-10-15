@@ -174,14 +174,19 @@ Service, input/presentation tests, rendered replay and native keyboard/save/reop
 verification pass. See the [qualification record](qualification/native-slip-2026-10-01.md)
 for exact source identities, results, inspected captures and physical-input limits.
 
+## Recording
+
+While a macro records, Apply closes the preview and commits the shown amount as
+one semantic `Slip { frames }` instruction on the restored selection
+([semantic macros](SEMANTIC_MACROS.md)). A run applies the same whole frames to
+its own selected Source and refuses, rather than clamps, when the Original has
+less handle (`crates/deadpan-core/tests/semantic_trim.rs`, `slip` replay).
+
 ## Remaining work
 
-The native Slip preview stops playback and has no audition or waveform. It
-implements the Slip contract and typed example in specification sections 6.3
-and 6.4; it does not complete [Trim mode](spec/DEADPAN_SPEC.md#77-trim-mode).
-Full Trim still requires In/Out, adjacent Roll, ripple/overwrite policy, physical
-Source growth, nested occurrence editing and paired boundary-frame/waveform
-previews. The specified `,v` entry and Tab mode cycling remain unimplemented.
-Audio-only lead/tail needs an index-derived adjacent-picture interval before it
-can be admitted. Exact windows and stored receipts alone do not qualify those
-cases. Full physical-input, accessibility and release acceptance remain open.
+The `:slip` preview stops playback and has no audition or waveform; the combined
+[Trim mode](COMBINED_TRIM.md#native-trim) (`,v`) provides In/Out/Slip/Roll with
+paired pictures, waveform and audition. Nested occurrence editing and audio-only
+lead/tail still need an index-derived adjacent-picture interval before they can
+be admitted. Exact windows and stored receipts alone do not qualify those cases.
+Full physical-input, accessibility and release acceptance remain open.

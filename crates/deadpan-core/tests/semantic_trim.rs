@@ -1,5 +1,5 @@
-//! The recorded Trim instruction: exact accepted values, one Undo, refusal
-//! instead of clamping on a beat without enough source.
+//! The recorded Trim and Slip instructions: exact accepted values, one Undo,
+//! refusal instead of clamping on a beat without enough source.
 
 use deadpan_core::*;
 use serde_json::json;
@@ -107,6 +107,11 @@ fn allocate(request: SemanticAllocationRequest) -> Result<SemanticAllocation, Ed
                 .map(|n| id(&format!("filler-{step_index}-{n}")))
                 .collect(),
         },
+        SemanticAllocationRequest::ParameterEdit { step_index } => {
+            SemanticAllocation::ParameterEdit {
+                new_revision: RevisionId::new(format!("leaf-{step_index}")).unwrap(),
+            }
+        }
         other => panic!("unexpected allocation {other:?}"),
     })
 }
@@ -204,4 +209,35 @@ fn a_trim_without_enough_source_refuses_instead_of_clamping() {
     assert!(plan(&document, "right", vec![trim(30, SourceTrimPolicy::Ripple)]).is_ok());
     assert!(plan(&document, "right", vec![trim(31, SourceTrimPolicy::Ripple)]).is_err());
     assert!(plan(&document, "right", vec![trim(0, SourceTrimPolicy::Ripple)]).is_err());
+}
+
+fn first_shown(document: &ProjectDocument, node: &str) -> ExactRatio {
+    let NodeKind::Source { source } = &document.nodes()[&id(node)].kind else {
+        panic!()
+    };
+    let SourceVideoMapping::SelectedPlacement { start, .. } = source.video_mapping else {
+        panic!()
+    };
+    start
+}
+
+#[test]
+fn a_recorded_slip_moves_the_selected_beat_by_exact_frames_or_refuses() {
+    let document = document();
+    let slip = |frames| SemanticInstruction::Slip { frames };
+    let planned = plan(&document, "right", vec![slip(5)]).unwrap();
+    let after = replayed(&document, &planned);
+    // Later Original material: the placement starts 5 frames earlier.
+    assert_eq!(first_shown(&after, "right"), ExactRatio::integer(-55));
+    assert_eq!(after.duration().unwrap(), frames(40));
+    assert_eq!(planned.context.selected_child, Some(id("right")));
+    // 30 frames of Original remain after the second beat; 31 refuse.
+    assert!(plan(&document, "right", vec![slip(30)]).is_ok());
+    let refused = plan(&document, "right", vec![slip(31)]).unwrap_err();
+    assert!(
+        refused.message.contains("at most +30"),
+        "{}",
+        refused.message
+    );
+    assert!(plan(&document, "right", vec![slip(0)]).is_err());
 }

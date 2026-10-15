@@ -1,6 +1,6 @@
-//! `,v`/`:trim` as a semantic instruction: the native combined Trim's
-//! accepted In/Out/Slip/Roll values, resolved against the selected Source
-//! and its literal right sibling in the staged document.
+//! `,v`/`:trim` and `:slip` as semantic instructions: the native drafts'
+//! accepted values, resolved against the selected Source (and, for Trim, its
+//! literal right sibling) in the staged document.
 
 use super::*;
 use crate::{AudioTimingId, SourceTrimCapture, SourceTrimIntent, SourceTrimResources};
@@ -96,6 +96,66 @@ where
         self.trace[trace_index].resolved_parent = Some(self.context.parent.clone());
         self.trace[trace_index].resolved_selection =
             Some(SliceCaptureSelection::Child { node: result });
+        self.trace[trace_index].resolved_range =
+            Some(FrameRange::new(start, end).map_err(crate::DocumentError::from)?);
+        Ok(())
+    }
+
+    pub(super) fn slip(&mut self, trace_index: usize, frames: i64) -> Result<(), EditError> {
+        if self.context.visual_selection.is_some() {
+            return Err(invalid("clear the Visual selection before slipping a beat"));
+        }
+        if frames == 0 {
+            return Err(invalid("a slip must move by at least one frame"));
+        }
+        let selected = self.context.selected_child.clone().ok_or_else(|| {
+            EditError::new(
+                EditErrorCode::SelectionUnavailable,
+                "select a beat before slipping it",
+            )
+        })?;
+        let Some(&slot) = self.child_indices.get(&selected) else {
+            return Err(EditError::new(
+                EditErrorCode::SelectionUnavailable,
+                "the beat must be a direct child of the current Sequence",
+            ));
+        };
+        let start = slot
+            .checked_sub(1)
+            .map_or(self.bounds.0, |previous| self.child_ends[previous].1);
+        let end = self.child_ends[slot].1;
+        let parent = self.context.parent.clone();
+        let resolved = self.current.source_slip(&parent, &selected, frames)?;
+        if resolved.applied_delta_frames != frames {
+            return Err(EditError::new(
+                EditErrorCode::SelectionUnavailable,
+                format!(
+                    "a slip of {frames:+} frames needs more Original on that side; at most {:+} frames are available here",
+                    resolved.applied_delta_frames
+                ),
+            ));
+        }
+        self.charge_step(false)?;
+        let SemanticAllocation::ParameterEdit { new_revision } =
+            (self.allocate)(SemanticAllocationRequest::ParameterEdit {
+                step_index: self.steps.len(),
+            })?
+        else {
+            return Err(invalid("a slip requires a parameter allocation"));
+        };
+        self.reserve_revision(&new_revision)?;
+        self.commit_leaf(LeafEdit::new(
+            new_revision,
+            Command::SlipSource {
+                parent,
+                node: selected.clone(),
+                delta_frames: frames,
+            },
+        )?)?;
+        self.context.selected_child = Some(selected.clone());
+        self.trace[trace_index].resolved_parent = Some(self.context.parent.clone());
+        self.trace[trace_index].resolved_selection =
+            Some(SliceCaptureSelection::Child { node: selected });
         self.trace[trace_index].resolved_range =
             Some(FrameRange::new(start, end).map_err(crate::DocumentError::from)?);
         Ok(())

@@ -525,6 +525,22 @@ impl DeadpanApp {
                 if !draft.can_apply() || self.service.is_busy() {
                     return;
                 }
+                // While a macro records, commit the shown slip as one
+                // recorded instruction on the restored selection.
+                if self.macros.recording() {
+                    let frames = draft
+                        .ready()
+                        .map(|prepared| prepared.resolution.applied_delta_frames);
+                    self.close_slip(context);
+                    if let Some(frames) = frames.filter(|frames| *frames != 0) {
+                        let target = self.capture_macro_target();
+                        self.apply_recorded_instruction(
+                            target,
+                            Ok(deadpan_core::SemanticInstruction::Slip { frames }),
+                        );
+                    }
+                    return;
+                }
                 match self
                     .service
                     .submit(ProjectRequest::CommitSlip(draft.proposal.id()))
