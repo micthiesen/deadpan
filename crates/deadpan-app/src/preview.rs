@@ -3519,9 +3519,18 @@ impl DeadpanApp {
     }
 
     fn header(&mut self, ui: &mut egui::Ui, enabled: bool) {
+        // Below 700 points the picture needs the height more than the header
+        // margins do; its 28-point controls keep their hit size.
+        let compact = ui
+            .ctx()
+            .input(|input| input.content_rect().height() < 700.0);
         egui::Panel::top("workspace-header")
             .resizable(false)
-            .frame(style::panel())
+            .frame(if compact {
+                style::panel().inner_margin(egui::Margin::symmetric(12, 6))
+            } else {
+                style::panel()
+            })
             .show(ui, |ui| {
                 if !enabled {
                     ui.disable();
@@ -3534,7 +3543,27 @@ impl DeadpanApp {
                         || "No project".into(),
                         |name| name.to_string_lossy().into_owned(),
                     );
-                ui.columns(3, |columns| {
+                // The title stays centered in the window, but the side groups
+                // may use everything beside it. Equal thirds wrapped a longer
+                // status (Working, Draft preview, Not saved) onto a second
+                // header row at the minimum window width.
+                let full = ui.available_rect_before_wrap();
+                let title_width = (egui::WidgetText::from(style::semibold(&title))
+                    .into_galley(ui, Some(egui::TextWrapMode::Extend), f32::INFINITY, egui::TextStyle::Body)
+                    .size()
+                    .x
+                    .ceil()
+                    + 2.0)
+                    .min(full.width() / 3.0);
+                let center = full.center().x;
+                let side = title_width / 2.0 + 12.0;
+                let mut columns = [
+                    egui::Rect::from_min_max(full.min, egui::pos2(center - side, full.max.y)),
+                    egui::Rect::from_min_max(egui::pos2(center - title_width / 2.0, full.min.y), egui::pos2(center + title_width / 2.0, full.max.y)),
+                    egui::Rect::from_min_max(egui::pos2(center + side, full.min.y), full.max),
+                ]
+                .map(|rect| ui.new_child(egui::UiBuilder::new().max_rect(rect).layout(egui::Layout::top_down(egui::Align::Min))));
+                {
                     columns[0].horizontal(|ui| {
                         ui.spacing_mut().button_padding.x = 6.0;
                         ui.spacing_mut().item_spacing.x = 4.0;
@@ -3719,7 +3748,13 @@ impl DeadpanApp {
                             .ctx()
                             .request_discard("workspace header controls changed height");
                     }
-                });
+                }
+                let used = columns
+                    .iter()
+                    .map(egui::Ui::min_rect)
+                    .reduce(|all, rect| all.union(rect))
+                    .unwrap_or(egui::Rect::from_min_size(full.min, egui::Vec2::ZERO));
+                ui.advance_cursor_after_rect(used);
             });
     }
 
@@ -4803,6 +4838,15 @@ impl DeadpanApp {
             // The empty start surface has no transport or moment controls; its
             // card uses the whole viewer.
             let start_surface = self.workspace.is_none() && self.raw_source.is_none();
+            // At minimum height the caption joins the single-line clock row.
+            // Both rows measure the same fonts the paint below uses.
+            let merged_caption = compact_sounds_heading
+                && self.workspace.as_ref().is_some_and(|workspace| workspace.original_duration.is_some());
+            let spacing = ui.spacing().item_spacing.y;
+            let caption_row = ui.fonts_mut(|fonts| fonts.row_height(&egui::FontId::proportional(11.5))) + spacing;
+            // The duration-difference chip adds one point of margin above and below.
+            let compact_clock = (ui.fonts_mut(|fonts| fonts.row_height(&egui::TextStyle::Monospace.resolve(ui.style()))) + 2.0).max(14.0);
+            let merged_saving = if merged_caption { caption_row } else { 0.0 };
             let controls_height = if start_surface {
                 0.0
             } else if self.gain.is_some() {
@@ -4812,12 +4856,15 @@ impl DeadpanApp {
             } else {
                 let other_controls = if self.view == View::Sequence {
                     if self.copied.selected_content().is_some() {
-                        if compact_sounds_heading { 68.0 } else { 92.0 }
+                        if compact_sounds_heading { 68.0 - merged_saving } else { 92.0 }
+                    } else if compact_sounds_heading {
+                        // Spacing after the picture and after the clock row.
+                        2.0 * spacing + compact_clock + caption_row - merged_saving
                     } else {
                         54.0
                     }
                 } else if self.compact_original_controls(ui.ctx()) {
-                    100.0
+                    100.0 - merged_saving
                 } else {
                     110.0
                 };
@@ -4887,16 +4934,22 @@ impl DeadpanApp {
             }
             ui.painter().rect_stroke(rect, 2.0, egui::Stroke::new(1.0, if self.pane == Pane::Viewer { style::LAVENDER } else { accessibility::border(ui.ctx()) }), egui::StrokeKind::Inside);
             self.camera_overlay(ui, canvas);
-            if let Some(label) = displayed_label {
-                let mut response = accessibility::full_text(ui.add(egui::Label::new(egui::RichText::new(&label).size(11.5).weak()).truncate()), &label).on_hover_text(&label);
-                if let Some(summary) = &self.summary { response = response.on_hover_text(format!("Measured source: {} × {} pixels; original PTS [{}, {}), clock {}/{} seconds per tick.", summary.info.width, summary.info.height, summary.first_pts, summary.terminal_pts, summary.info.time_base_num, summary.info.time_base_den)); }
-                if let Some(source_frame) = self.presentation.displayed_source_frame() { response.on_hover_text(format!("Original source frame {}", u128::from(source_frame.0) + 1)); }
-            } else if !start_surface { ui.label(egui::RichText::new("Stopped-frame inspection").size(11.5).weak()); }
+            // At minimum height the displayed-picture caption shares the
+            // read-only clock row (see `merged_caption`) instead of its own.
+            if merged_caption {
+                // The separate caption label held one automatic ID. Keep the
+                // later controls' IDs stable across this size threshold.
+                ui.skip_ahead_auto_ids(1);
+            } else {
+                self.viewer_caption(ui, displayed_label.as_deref(), start_surface);
+            }
             if let Some(workspace) = &self.workspace && let Some(original) = workspace.original_duration {
                 // These clocks are read-only. At minimum height, reserve text
-                // height instead of the ordinary 28-point button row.
-                let clock_height = if compact_sounds_heading { 14.0 } else { ui.spacing().interact_size.y };
-                ui.allocate_ui_with_layout(egui::vec2(ui.available_width(), clock_height), egui::Layout::left_to_right(egui::Align::Center).with_main_wrap(true), |ui| {
+                // height instead of the ordinary 28-point button row, and keep
+                // the row single-line so its reserve stays exact.
+                let clock_height = if compact_sounds_heading { compact_clock } else { ui.spacing().interact_size.y };
+                let frame_rate = frame_rate_label(workspace.document.presentation_basis().frame_rate);
+                ui.allocate_ui_with_layout(egui::vec2(ui.available_width(), clock_height), egui::Layout::left_to_right(egui::Align::Center).with_main_wrap(!merged_caption), |ui| {
                     let edit = workspace.plan.duration();
                     ui.label(egui::RichText::new(format!("Original {} f", original.frames())).monospace()).widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Label, true, format!("Full Original duration: {} project frames", original.frames())));
                     ui.separator();
@@ -4904,8 +4957,13 @@ impl DeadpanApp {
                     egui::Frame::new().fill(style::SELECTED).corner_radius(4).inner_margin(egui::Margin::symmetric(6, 1)).show(ui, |ui| {
                         ui.label(egui::RichText::new(format!("{:+} f", edit.frames() - original.frames())).monospace().color(style::LAVENDER));
                     });
-                    ui.label(egui::RichText::new(format!("project clock · {}", frame_rate_label(workspace.document.presentation_basis().frame_rate))).size(10.0).weak());
-                }).response.on_hover_text("Both durations use the same project-frame clock. Original includes the measured picture/audio stream union; source browsing counts decoded picture frames separately.");
+                    if merged_caption {
+                        ui.separator();
+                        self.viewer_caption(ui, displayed_label.as_deref(), start_surface);
+                    } else {
+                        ui.label(egui::RichText::new(format!("project clock · {frame_rate}")).size(10.0).weak());
+                    }
+                }).response.on_hover_text(format!("Both durations use the same project clock ({frame_rate}). Original includes the measured picture/audio stream union; source browsing counts decoded picture frames separately."));
             }
             if self.camera.is_some() {
                 ui.weak("Apply or cancel Camera to resume navigation and playback.");
@@ -4919,6 +4977,36 @@ impl DeadpanApp {
                 });
             }
         });
+    }
+
+    /// The displayed picture's identity, or the stopped-inspection hint.
+    /// Truncates rather than wraps so a shared compact row stays one line.
+    fn viewer_caption(&self, ui: &mut egui::Ui, label: Option<&str>, start_surface: bool) {
+        if let Some(label) = label {
+            let mut response = accessibility::full_text(
+                ui.add(egui::Label::new(egui::RichText::new(label).size(11.5).weak()).truncate()),
+                label,
+            )
+            .on_hover_text(label);
+            if let Some(summary) = &self.summary {
+                response = response.on_hover_text(format!("Measured source: {} × {} pixels; original PTS [{}, {}), clock {}/{} seconds per tick.", summary.info.width, summary.info.height, summary.first_pts, summary.terminal_pts, summary.info.time_base_num, summary.info.time_base_den));
+            }
+            if let Some(source_frame) = self.presentation.displayed_source_frame() {
+                response.on_hover_text(format!(
+                    "Original source frame {}",
+                    u128::from(source_frame.0) + 1
+                ));
+            }
+        } else if !start_surface {
+            ui.add(
+                egui::Label::new(
+                    egui::RichText::new("Stopped-frame inspection")
+                        .size(11.5)
+                        .weak(),
+                )
+                .truncate(),
+            );
+        }
     }
 
     fn forget_target(&mut self) {

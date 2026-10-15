@@ -86,9 +86,11 @@ records the latest fixes, review and retained failures:
   edge and painted command mode. Enter, Escape, pointer dismissal and combined
   resize/text/cancellation do not rely on an extra replay wait. Independent
   review also exposed clipped Original shortcuts at 960×640; complete measured
-  key-label pairs now wrap together. The minimum-size picture remains smaller
-  than the design target's emphasis, especially during command entry; responsive
-  beat and playback layout remains improvement work.
+  key-label pairs now wrap together. The minimum-size picture remained smaller
+  than the design target's emphasis; the [2026-10-15 review](qualification/gui-review-2026-10-15.md)
+  raises it from 163 to 205 points in Your edit and 149 to 179 in Original.
+  It is still smaller than the target's proportion, especially during command
+  entry; responsive beat and playback layout remains improvement work.
 - **The earlier replay missed edit feedback budgets.** On 2026-09-26, cached
   Repeat input-to-picture p95 was 75.26 ms against 50 ms, and the 11-frame Hold
   fallback was 138.65 ms against 100 ms. Their observed commit p95 values were
@@ -166,6 +168,48 @@ preserve the measured and visible findings; the focused painted-playback and
 baseline-comparison follow-up passed without erasing them.
 These results establish the tested behavior and identify work still needed; they
 do not establish overall usability or native accessibility.
+
+## 2026-10-15 GUI review
+
+The [GUI review record](qualification/gui-review-2026-10-15.md) replayed the
+workspace, editing, recipes, Gain, Place slice (`:splice`), Trim, Camera,
+transcript, corrections, Help/Keys (`menus`), keymap, layouts and
+accessibility scenarios at default and minimum sizes. Representative captures
+are under [`tools/ui-feedback/evidence/2026-10-15-gui-review`](../tools/ui-feedback/evidence/2026-10-15-gui-review/).
+
+Fixed, with before/after replay evidence:
+
+- **Minimum-size picture priority.** Below 700 points the header uses 6-point
+  vertical margins, the displayed-picture caption shares the single-line
+  clock row, and compact Your edit reserves the clock row's real text height.
+  Your edit grows from 163 to 205 points and Original from 149 to 179 at
+  960×640; every measured compact phase gains about 30 points. The
+  `workspace` replay now requires 200/175 points with the caption, clocks and
+  transport fully painted. Widget IDs stay stable across the threshold.
+- **Header status no longer wraps at 960 points.** Equal header thirds left
+  about 40 points for the status, so `Draft preview` in Trim, Camera and Slip
+  added a second header row. The side groups now use the space beside the
+  centered title. Trim's minimum junction pictures grow from 115 to 147 points.
+- **Camera Cancel** is a left-aligned full-width row like Apply above it.
+- **The start card settles in time after `:backups`.** Its cached height is
+  now kept per compact state and width; the baseline `backups` replay painted
+  one frame after an ignored layout retry.
+
+The Gain waveform visibility failure recorded on 2026-10-11 was already
+resolved by the [scroll-sequencing correction](qualification/gain-scroll-2026-10-11.md);
+release 120 Hz runs pass on both the baseline and final binaries.
+
+Open findings: compact beat cards have no thumbnails and a partly scrolled
+first card is cut without an affordance; pending thumbnails look like an
+authored black Background; Camera's commit rows run under the inspector
+scrollbar; Trim at minimum leaves a 44-point band above its waveform; Help's
+search row teaches its keys as plain text instead of keycaps; the 192-point
+inspector truncates titles and values at 960; the success notice keeps a row
+at minimum size; the Gain waveform has only 13 points of slack in its
+scroller at minimum; populated-sound compact Your edit still measures 145
+points; `place-slice` failed once intermittently on a label comparison; and
+`audio-warming` times out waiting for its real PCM horizon on both the
+baseline and final binaries.
 
 ## Priority improvements
 

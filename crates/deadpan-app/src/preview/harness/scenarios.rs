@@ -322,10 +322,12 @@ fn workspace(d: &mut Driver<'_>) -> Result<(), String> {
         selected_visible(d)?;
         viewer_visible(d)?;
         if width == 960.0 {
+            minimum_picture_priority(d, "Play edit  Space", 200.0)?;
             d.command("source")?;
             d.settled()?;
             d.capture("Original viewer at the minimum window size")?;
             viewer_visible(d)?;
+            minimum_picture_priority(d, "Play Original  Space", 175.0)?;
             d.command("sequence")?;
             d.settled()?;
         }
@@ -459,6 +461,41 @@ pub(super) fn viewer_visible(d: &mut Driver<'_>) -> Result<(), String> {
         )?;
     }
     Ok(())
+}
+
+/// At the minimum window the viewer keeps most of the remaining height while
+/// the read-only clocks, the displayed-picture caption and the transport stay
+/// completely painted. The 2026-10-15 bounds replace 163/149-point viewers.
+fn minimum_picture_priority(d: &mut Driver<'_>, play: &str, minimum: f32) -> Result<(), String> {
+    let label = d
+        .app()
+        .presentation
+        .displayed_label()
+        .ok_or("No displayed picture at the minimum window")?;
+    let viewer = d.rect(&label)?;
+    let texts = [
+        label.as_str(),
+        play,
+        "Loop selection  Shift+Space",
+        "Monitor · :monitor",
+        "Original 120 f",
+    ];
+    let paint = texts
+        .iter()
+        .map(|text| (*text, text_paint_visibility(d, text)))
+        .collect::<Vec<_>>();
+    let painted = paint.iter().all(|(_, shapes)| {
+        !shapes.is_empty()
+            && shapes
+                .iter()
+                .any(|shape| shape["fully_visible"] == true && shape["elided"] == false)
+    });
+    d.check(
+        "The minimum window gives the picture priority without hiding clocks, caption or transport",
+        viewer.height() >= minimum && painted,
+        json!({"minimum_viewer_height":minimum,"fully_painted":texts}),
+        json!({"viewer_height":viewer.height(),"paint":paint}),
+    )
 }
 
 fn replace_text(d: &mut Driver<'_>, text: &str) -> Result<(), String> {

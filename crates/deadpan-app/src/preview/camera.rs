@@ -2772,7 +2772,8 @@ impl DeadpanApp {
                         ui.add_space(8.0);
                         let valid = camera.fields.is_valid() && camera.field_error.is_none() && adjusting;
                         if ui.add_enabled(valid, style::action("Apply", "Enter").fill(style::SELECTED).min_size(egui::vec2(ui.available_width(), 30.0))).clicked() { requested = Some(CameraKey::Commit); }
-                        if ui.add_sized([ui.available_width(), 28.0], style::action("Cancel", "Esc")).clicked() { requested = Some(CameraKey::Cancel); }
+                        // Side-pane commands are full-width, left-aligned rows like Apply.
+                        if ui.add(style::row_action(ui, "Cancel", "Esc")).clicked() { requested = Some(CameraKey::Cancel); }
                         if ui.add(style::action("Reset framing", "r")).clicked() { requested = Some(CameraKey::Reset); }
                         ui.separator();
                         if let Some(label) = &follow_label {

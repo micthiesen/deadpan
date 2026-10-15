@@ -111,6 +111,12 @@ clocks, the selected beat and copied time. Normal Tab still cycles visible panes
 Room tone overlays the same compact background; Camera and Gain keep their
 existing treatment.
 
+Below 700 points the header keeps its controls but halves its vertical
+margins, and the displayed-picture caption shares the single-line read-only
+clock row (truncating, with its full text in hover and accessibility) instead
+of its own row. The header's status uses the space beside the centered title,
+so `Draft preview` or `Working` adds no header row at 960 points unless a
+long title already uses its full third of the width.
 Compact Original uses a read-only clock row and puts Monitor beside idle
 transport actions when their complete labels fit. Otherwise it reserves the
 actual wrapped rows. Transport measurement and paint share text geometry;

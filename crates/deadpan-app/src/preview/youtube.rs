@@ -677,7 +677,11 @@ impl DeadpanApp {
             );
         let margin = if compact { 16 } else { 24 };
         // Center the card on its measured height from the previous frame.
-        let measured = egui::Id::new("start-card-height");
+        // Its content depends on the compact state and width, so remember one
+        // height per layout: closing a command footer can flip `compact` in
+        // the last allowed layout pass, and a stale shared height would then
+        // need a fourth pass and paint an unsettled card.
+        let measured = egui::Id::new(("start-card-height", compact, width.to_bits()));
         let height = ui.ctx().data(|data| data.get_temp::<f32>(measured));
         // Import stages change height asynchronously. Anchor those stages to
         // one top edge, so confirmation never moves underneath a click.
