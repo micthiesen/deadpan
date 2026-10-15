@@ -276,7 +276,7 @@ fn track(
         let picture = decoder
             .copy_current_rgba(control()?)
             .map_err(|error| format!("convert picture at PTS {}: {error}", metadata.pts))?;
-        let picture = analysis_picture(picture, decoder.info(), cancelled, request.deadline)?;
+        let picture = vision_picture(picture, decoder.info(), cancelled, request.deadline)?;
         if failures >= MAX_CONSECUTIVE_FAILURES {
             observations.push(RawObservation {
                 pts: metadata.pts,
@@ -412,14 +412,34 @@ fn analysis_picture(
     deadline: Instant,
 ) -> Result<deadpan_source::DecodedRgbaFrame, Interrupted> {
     deadpan_media::analysis_picture::visible_picture(picture, info, || {
-        decode_control(cancelled, deadline)
-            .map(|_| ())
-            .map_err(|error| match error {
-                Interrupted::Cancelled => "analysis cancelled".into(),
-                Interrupted::Failed(message) => message,
-            })
+        analysis_check(cancelled, deadline)
     })
     .map_err(Interrupted::Failed)
+}
+
+/// The clean picture resampled to square pixels for Vision's tracker and
+/// face detector, which assume square pixels: a squeezed anamorphic subject
+/// made the tracker repeat stale boxes. Normalized coordinates are those of
+/// the clean coded picture either way.
+fn vision_picture(
+    picture: deadpan_source::DecodedRgbaFrame,
+    info: &deadpan_source::SourceStreamInfo,
+    cancelled: &AtomicBool,
+    deadline: Instant,
+) -> Result<deadpan_source::DecodedRgbaFrame, Interrupted> {
+    deadpan_media::analysis_picture::square_pixel_picture(picture, info, || {
+        analysis_check(cancelled, deadline)
+    })
+    .map_err(Interrupted::Failed)
+}
+
+fn analysis_check(cancelled: &AtomicBool, deadline: Instant) -> Result<(), String> {
+    decode_control(cancelled, deadline)
+        .map(|_| ())
+        .map_err(|error| match error {
+            Interrupted::Cancelled => "analysis cancelled".into(),
+            Interrupted::Failed(message) => message,
+        })
 }
 
 /// Open the source directly below `input/` without following links.

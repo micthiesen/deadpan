@@ -35,6 +35,7 @@ deadpan-native-process.workspace = true
 deadpan-cli = { path = "../../crates/deadpan-cli" }
 deadpan-core.workspace = true
 deadpan-plan.workspace = true
+deadpan-render.workspace = true
 deadpan-store.workspace = true
 serde_json.workspace = true
 tempfile.workspace = true

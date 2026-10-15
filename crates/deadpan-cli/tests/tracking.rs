@@ -4,8 +4,8 @@
 //! undo and corrections. Paths here come from the pure policy over the
 //! fixture's indexed pictures; the worker itself is exercised end to end by
 //! native/deadpan-track/tests/worker.rs, which this package cannot build.
-//! Saving while the app holds the writer (the live endpoint route) is not
-//! exercised here.
+//! Saving while the app holds the writer (the live endpoint route) is
+//! exercised with the real worker in native/deadpan-track/tests/geometry.rs.
 
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};

@@ -37,7 +37,14 @@ orientation (`coded_from_displayed`, undoing the stream's clockwise quarter
 turns), then to Vision's lower-left origin, and converts Vision's boxes back the
 same way, clipping any part outside the picture. Sample aspect ratio scales each
 axis uniformly, so it does not change normalized coordinates; it does change
-distances, so the policy measures them in the display aspect (below).
+distances, so the policy measures them in the display aspect (below). Vision
+assumes square pixels, so for a non-square SAR the worker gives the tracker and
+face detector the clean picture resampled to square pixels
+(`deadpan_media::analysis_picture::square_pixel_picture`: bilinear, the narrower
+axis enlarged, or the wider reduced where that would exceed the analysis
+bounds). Normalized coordinates are unchanged. On the coded, squeezed raster
+the tracker repeated stale boxes
+([evidence](qualification/tracking-evidence-2026-10-15.md)).
 Deserialized regions are checked, not adjusted, so stored paths round-trip.
 
 For fractional clean apertures, the worker checks the receipt's exact rectangle
@@ -412,6 +419,17 @@ revision 2:
   replaced with it; a correction keeps every earlier sample, records the new
   engine and keeps the stop reason, and is refused against a stale head; undo
   steps back through replacement, correction and save.
+* [`native/deadpan-track/tests/geometry.rs`](../native/deadpan-track/tests/geometry.rs)
+  runs the real worker on synthetic rotated (90° clockwise), anamorphic (SAR
+  4:3) and rotated-anamorphic (270°, 4:3) Originals against FFmpeg's own upright
+  presentation: every path and saved sample is within 1.3 upright pixels, the
+  recorded `display_aspect` equals the decoded picture's, and the shared
+  renderer's Fit and `follow_pose` place the saved centre on the true square
+  on four canvas shapes. The same file saves a real run through the open
+  project's authenticated live endpoint: one remote commit with its receipt,
+  a host refresh failure that keeps the commit, a stale second save refused
+  with `RevisionConflict`, a remote `--replace`, refusal without an endpoint,
+  and undo ([record](qualification/tracking-evidence-2026-10-15.md)).
 * Cancellation before launch and an expired deadline return typed errors
   without a path; ranges before the first picture and a missing shot analysis
   are refused.
@@ -440,14 +458,16 @@ mostly the unoptimized BGRA copy. The upscale is a measurement input only
   tracking quality; the synthetic square proves the pipeline, coordinate
   mapping, shot stop, loss marking, persistence and correction, not tracking
   quality on people, faces, motion blur, lighting changes or partial occlusion.
-* Rotated and anamorphic sources are covered by pure mapping and aspect tests
-  only; no rotated real-media tracking run exists yet.
-* Saving while the app holds the project goes through the authenticated live
-  endpoint; that path is the shared `dispatch_short` route and is not exercised
-  by these tests.
+* Rotated and anamorphic coverage is synthetic; real rotated phone footage and
+  anamorphic camera originals were not run.
 * The app's real-worker path (`deadpan-track` beside the app binary) is not
-  exercised by app tests or replay, which use the scripted seam. Incremental
-  scheduling by visible cursor neighbourhood (Section 11.4) remains open.
+  exercised by app tests or replay, which use the scripted seam.
+* Incremental scheduling by visible cursor neighbourhood (Section 11.4) remains
+  open. It needs a non-manual continuation seed and an `extend` policy operation
+  equal to one run, reverse decoding for pictures before the selection, an
+  in-memory progressive path with one final `SetTarget`, and cursor priority in
+  the app's job coordinator
+  ([details](qualification/tracking-evidence-2026-10-15.md#incremental-scheduling-not-implemented)).
 * Each attempt copies the whole Original into its workspace.
 * `deadpan-jobs` depends on `deadpan-analysis` for `NormalizedRect` in the
   protocol; moving the wire type was optional and not done.

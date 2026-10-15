@@ -473,6 +473,7 @@ fn a_saved_target_reloads_follows_in_the_plan_and_corrects_only_its_range() {
             "Square".into(),
             outcome.asset.clone(),
             outcome.time_base,
+            outcome.display_aspect,
             &outcome.engine,
             4_096,
         )

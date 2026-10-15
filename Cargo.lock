@@ -1283,6 +1283,7 @@ dependencies = [
  "deadpan-media",
  "deadpan-native-process",
  "deadpan-plan",
+ "deadpan-render",
  "deadpan-source",
  "deadpan-store",
  "image",

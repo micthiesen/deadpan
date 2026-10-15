@@ -215,6 +215,7 @@ fn vision_finds_both_drawn_faces_left_to_right_and_none_in_the_empty_picture() {
         "Face 2".into(),
         prepared.asset.clone(),
         prepared.time_base,
+        prepared.display_aspect,
         prepared.pts,
         prepared.video_end,
     )

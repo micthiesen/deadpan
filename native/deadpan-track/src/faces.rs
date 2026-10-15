@@ -140,7 +140,7 @@ fn detect(
     let picture = decoder
         .copy_current_rgba(control()?)
         .map_err(|error| format!("convert picture at PTS {pts}: {error}"))?;
-    let picture = super::analysis_picture(picture, decoder.info(), cancelled, deadline)?;
+    let picture = super::vision_picture(picture, decoder.info(), cancelled, deadline)?;
     control()?;
     let detected = Instant::now();
     let (faces, revision) = detect_in(&picture, stream.rotation_quarter_turns)?;
