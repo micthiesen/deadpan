@@ -62,7 +62,12 @@ cargo run --locked -p deadpan-cli -- command /tmp/example.deadpan --json /tmp/re
 ```
 
 A dry run returns the validated forward/inverse changes, affected node IDs, and
-duration delta with `committed: false`. It does not allocate a persistent revision
+duration delta with `committed: false`. It also reports spec §6.4 `warnings`
+(each a `code`, message and IDs: `marks_removed`, `marks_unresolved`,
+`sounds_removed`, `exact_speed_change_clocks`, `ai_requests_may_go_stale`, or
+`ai_requests_unknown` when relevance cannot be read) and the `required_jobs` a
+commit would start (`ai_generation` for an AI pause), derived from the previewed
+transaction by [`dry_run::observe`](../crates/deadpan-cli/src/dry_run.rs). It does not allocate a persistent revision
 or change undo history. It checks the same reducer, serialized size limits, and
 never-reused revision rule as commit. A stale expected
 revision fails with `RevisionConflict` and the current revision, without writing.

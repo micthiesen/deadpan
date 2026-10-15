@@ -1347,3 +1347,87 @@ fn storage_report_states_the_ai_variant_retention_policy() -> Result {
     assert!(!usage.status.success());
     Ok(())
 }
+
+#[test]
+fn dry_runs_report_warnings_and_required_jobs() -> Result {
+    use deadpan_core::{
+        Anchor, AnchorLossPolicy, AudioTimingId, BoundaryAnchor, ExactRatio, InsertionBias, MarkId,
+        ProjectFrame, RevisionId, SplitIdentities,
+    };
+    let scratch = tempfile::tempdir()?;
+    let package = create(scratch.path())?;
+    let path = package.to_str().unwrap();
+    let command_file = scratch.path().join("command.json");
+    let command_path = command_file.to_str().unwrap();
+    let initial = ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?;
+    fs::write(&command_file, request(&initial)?.to_string())?;
+    let plain = success(&["command", path, "--json", command_path, "--dry-run"])?;
+    assert_eq!(plain["warnings"], json!([]));
+    assert_eq!(plain["required_jobs"], json!([]));
+    success(&["command", path, "--json", command_path])?;
+    let write_command = |command: Command, revision: &str| -> Result {
+        let document = ProjectStore::open(&package, AccessMode::ReadOnly)?.snapshot()?;
+        fs::write(&command_file,json!({"protocol":1,"project_id":document.project_id(),"expected_revision":document.revision_id(),"new_revision":revision,"command":command}).to_string())?;
+        Ok(())
+    };
+    write_command(
+        Command::SetMark {
+            id: MarkId::new("inside")?,
+            owner: NodeId::new("hold")?,
+            label: "Inside the pause".into(),
+            boundary: BoundaryAnchor {
+                coordinate: Anchor::Local {
+                    node: NodeId::new("hold")?,
+                    position: ExactRatio::integer(12),
+                },
+                bias: InsertionBias::Right,
+            },
+            loss_policy: AnchorLossPolicy::DeleteOwned,
+        },
+        "marked",
+    )?;
+    success(&["command", path, "--json", command_path])?;
+    write_command(
+        Command::DeleteRipple {
+            node: NodeId::new("hold")?,
+            timing: AudioTimingId {
+                allocation: RevisionId::new("deleted")?,
+                ordinal: 0,
+            },
+        },
+        "deleted",
+    )?;
+    let deletion = success(&["command", path, "--json", command_path, "--dry-run"])?;
+    assert_eq!(deletion["warnings"][0]["code"], "marks_removed");
+    assert_eq!(deletion["warnings"][0]["ids"], json!(["inside"]));
+    write_command(
+        Command::InsertAiTime {
+            at: ProjectFrame(0),
+            hold: HoldRecipe {
+                picture_context: None,
+                duration: FrameDuration::new(15)?,
+                video: HoldVideo::Background,
+                audio: HoldAudio::Silence,
+            },
+            id: NodeId::new("ai-pause")?,
+            identities: SplitIdentities::default(),
+            timing: AudioTimingId {
+                allocation: RevisionId::new("ai")?,
+                ordinal: 0,
+            },
+        },
+        "ai",
+    )?;
+    let ai = success(&["command", path, "--json", command_path, "--dry-run"])?;
+    assert_eq!(
+        ai["required_jobs"],
+        json!([{"job": "ai_generation", "target": "ai-pause"}])
+    );
+    assert_eq!(
+        ProjectStore::open(&package, AccessMode::ReadOnly)?
+            .snapshot()?
+            .revision_id(),
+        &RevisionId::new("marked")?
+    );
+    Ok(())
+}

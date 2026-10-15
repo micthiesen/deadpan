@@ -17,6 +17,8 @@ pub mod corrections;
 pub mod diagnostic_export;
 mod doctor;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+pub mod dry_run;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod encoded_render;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod export_picture;

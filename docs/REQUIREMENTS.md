@@ -4,6 +4,13 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 
 ## Resumed implementation, 2026-10-06
 
+Headless `command --dry-run` now reports spec §6.4 warnings (removed or
+unresolved marks, removed sounds, new exact speed-change clocks, AI requests a
+change may make stale) and the jobs a commit would require (AI generation),
+alongside the existing changes, affected IDs and duration delta
+(`dry_runs_report_warnings_and_required_jobs`). Semantic selector resolution
+remains DP-06 work.
+
 [Recognizer failure detection](qualification/recognizer-failures-2026-10-15.md)
 (`deadpan-recognition-1`) flags repetition loops (at least 4 copies and 24
 words) and at least 5 s of detected speech without words, derived on read and

@@ -528,6 +528,18 @@ pub fn execute_short(
                     let edit = store.preview(request).map_err(LiveError::store)?;
                     serde_json::json!({"protocol":1,"committed":false,"edit":edit})
                 };
+                // Spec §6.4: every dry run also reports warnings and the
+                // background jobs a commit would require.
+                let mut output = output;
+                if let Some(edit) = output.get("edit").cloned().and_then(|edit| {
+                    serde_json::from_value::<deadpan_core::EditTransaction>(edit).ok()
+                }) {
+                    let observed = crate::dry_run::observe(store, request, &edit);
+                    output["warnings"] =
+                        serde_json::to_value(&observed.warnings).unwrap_or_default();
+                    output["required_jobs"] =
+                        serde_json::to_value(&observed.required_jobs).unwrap_or_default();
+                }
                 (output, None)
             } else {
                 let outcome = store.commit(request).map_err(LiveError::store)?;
