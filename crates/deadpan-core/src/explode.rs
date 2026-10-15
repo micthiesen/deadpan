@@ -66,6 +66,16 @@ impl Plan {
                 "explode requires a Repeat",
             ));
         };
+        if escalation
+            .as_ref()
+            .and_then(|escalation| escalation.zoom.as_ref())
+            .is_some_and(|zoom| zoom.target.is_some())
+        {
+            // Per-play static framing cannot keep a target-centered zoom.
+            return Err(invalid(
+                "explode cannot yet keep a target-centered escalating zoom; clear its target first",
+            ));
+        }
         let count = usize::try_from(iterations.len()).unwrap_or(usize::MAX);
         if count > MAX_DOCUMENT_NODES {
             return Err(limit("explode would exceed the document node limit"));
@@ -97,7 +107,7 @@ impl Plan {
             plays,
             keep_default,
             gap: gap.clone().filter(|gap| gap.duration.frames() > 0),
-            escalation: *escalation,
+            escalation: escalation.clone(),
             definition,
             owned_marks,
         })

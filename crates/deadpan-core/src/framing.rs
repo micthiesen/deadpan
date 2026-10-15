@@ -537,6 +537,21 @@ pub(crate) fn validate_document(
                 "framing follows a target the project does not have",
             ));
         }
+        if let crate::NodeKind::Repeat {
+            escalation: Some(escalation),
+            ..
+        } = &node.kind
+            && let Some(target) = escalation
+                .zoom
+                .as_ref()
+                .and_then(|zoom| zoom.target.as_ref())
+            && !document.targets().contains_key(target)
+        {
+            return Err(crate::DocumentError::new(
+                crate::DocumentErrorCode::InvalidTree,
+                "an escalating zoom moves toward a target the project does not have",
+            ));
+        }
     }
     // A Repeat's zoom escalation adds a posed layer of its own.
     let escalated = |node: &crate::BeatNode| {

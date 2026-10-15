@@ -299,7 +299,7 @@ fn setting_an_escalators_plays_and_steps_rewrites_its_repeat_and_zero_zoom_remov
             NodeKind::Repeat { iterations, escalation: Some(escalation), .. }
                 if iterations.len() == plays.get()
                     && escalation.gain_step == gain_step
-                    && escalation.zoom.map(|zoom| zoom.step) == (zoom_step != ExactRatio::ZERO).then_some(zoom_step)
+                    && escalation.zoom.as_ref().map(|zoom| zoom.step) == (zoom_step != ExactRatio::ZERO).then_some(zoom_step)
         ));
         let replay = crate::replay_compound::<EditError>(
             &document,

@@ -101,6 +101,7 @@ impl Inspector {
                 ));
                 fields.extend(crate::navigation::escalation::EscalationInput::fields(
                     escalation.as_ref(),
+                    &|target| target.as_str().to_owned(),
                 ));
                 (
                     "Repeat",

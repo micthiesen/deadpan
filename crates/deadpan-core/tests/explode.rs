@@ -367,6 +367,7 @@ fn escalation_becomes_explicit_per_play_gain_and_scale() {
         zoom: Some(ZoomStep {
             step: quantize_zoom_step(ExactRatio::new(1, 10).unwrap()).unwrap(),
             progression: ZoomProgression::Add,
+            target: None,
         }),
     };
     let document = edit(
@@ -374,7 +375,7 @@ fn escalation_becomes_explicit_per_play_gain_and_scale() {
         "esc",
         Command::SetRepeatEscalation {
             node: id("repeat"),
-            escalation: Some(escalation),
+            escalation: Some(escalation.clone()),
         },
     );
     let exploded = explode(&document, "repeat", "x");

@@ -33,16 +33,21 @@ impl ZoomProgression {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct ZoomStep {
     /// Additive scale per play, or the factor per play when multiplying.
     pub step: ExactRatio,
     #[serde(default, skip_serializing_if = "ZoomProgression::is_add")]
     pub progression: ZoomProgression,
+    /// Zoom toward this attention target instead of the picture center,
+    /// keeping each play's view inside the picture. Where the picture is not
+    /// the target's, the zoom stays centered.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target: Option<crate::TargetId>,
 }
 
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct RepeatEscalation {
     /// Gain added for each play after the first.
@@ -97,7 +102,7 @@ impl RepeatEscalation {
         if gain < i64::from(MIN_GAIN_MILLIDECIBELS) || gain > i64::from(MAX_GAIN_MILLIDECIBELS) {
             return Err(EscalationError::GainRange);
         }
-        if let Some(zoom) = self.zoom {
+        if let Some(zoom) = &self.zoom {
             if !on_grid(zoom.step) {
                 return Err(EscalationError::ZoomGrid);
             }
@@ -127,7 +132,7 @@ impl RepeatEscalation {
 
     /// Centered scale pose of 0-based play `play`, or `None` for identity.
     pub fn pose(&self, play: u32) -> Result<Option<FramingPose>, EscalationError> {
-        let Some(zoom) = self.zoom else {
+        let Some(zoom) = &self.zoom else {
             return Ok(None);
         };
         if play == 0 {
@@ -199,7 +204,11 @@ mod tests {
     fn escalation(gain: i32, step: Option<(ExactRatio, ZoomProgression)>) -> RepeatEscalation {
         RepeatEscalation {
             gain_step: GainDb::new(gain).unwrap(),
-            zoom: step.map(|(step, progression)| ZoomStep { step, progression }),
+            zoom: step.map(|(step, progression)| ZoomStep {
+                step,
+                progression,
+                target: None,
+            }),
         }
     }
 

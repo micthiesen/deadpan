@@ -178,3 +178,55 @@ fn a_follow_centers_the_target_where_the_picture_is_fitted_on_the_canvas() {
     assert_eq!(pose(&plan, 0, 0).center_x, grid(1037, 2560));
     assert_eq!(pose(&plan, 0, 0).center_y, grid(1, 4));
 }
+
+#[test]
+fn an_escalating_zoom_moves_toward_its_target_and_keeps_the_view_inside_the_picture() {
+    let mut escalating = repeat("source", 3, 1, "plays");
+    let NodeKind::Repeat { escalation, .. } = &mut escalating.kind else {
+        unreachable!()
+    };
+    *escalation = Some(RepeatEscalation {
+        gain_step: GainDb::UNITY,
+        zoom: Some(ZoomStep {
+            step: ExactRatio::ONE,
+            progression: ZoomProgression::Add,
+            target: None,
+        }),
+    });
+    let document = with_target(
+        document(
+            &["repeat"],
+            vec![("repeat", escalating), ("source", source(4, 0, 4000))],
+        ),
+        10010,
+        &[],
+    );
+    let mut value = serde_json::to_value(&document).unwrap();
+    value["nodes"]["repeat"]["kind"]["escalation"]["zoom"]["target"] = "speaker".into();
+    let document = ProjectDocument::from_json(&value.to_string()).unwrap();
+    let plan = RenderPlan::compile(&document).unwrap();
+    let escalated = |frame: i64| {
+        plan.picture(ProjectFrame(frame))
+            .unwrap()
+            .framing
+            .iter()
+            .find(|layer| layer.escalation)
+            .and_then(|layer| layer.pose)
+    };
+    // Plays occupy 0..4, 5..9 and 10..14; the subject sits at x = 0.2.
+    assert_eq!(escalated(1), None, "the first play is unchanged");
+    // At 2× the view's left edge would cross the picture at center 0.2, so it
+    // stops at 1/4.
+    let second = escalated(6).unwrap();
+    assert_eq!(second.scale, ExactRatio::integer(2));
+    assert_eq!(second.center_x, grid(1, 4));
+    assert_eq!(second.center_y, grid(1, 2));
+    // At 3× the subject itself fits.
+    let third = escalated(12).unwrap();
+    assert_eq!(third.scale, ExactRatio::integer(3));
+    assert_eq!(third.center_x, grid(1, 5));
+    // A target missing from the document refuses the escalation.
+    let mut value = serde_json::to_value(&document).unwrap();
+    value.as_object_mut().unwrap().remove("targets");
+    assert!(ProjectDocument::from_json(&value.to_string()).is_err());
+}

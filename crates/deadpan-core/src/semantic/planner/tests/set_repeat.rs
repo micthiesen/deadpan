@@ -511,7 +511,7 @@ fn escalation_is_one_reversible_parameter_change_checked_against_play_count() {
         &document,
         &request(Command::SetRepeatEscalation {
             node: node("repeated"),
-            escalation: Some(escalation),
+            escalation: Some(escalation.clone()),
         }),
     )
     .unwrap();
@@ -522,7 +522,7 @@ fn escalation_is_one_reversible_parameter_change_checked_against_play_count() {
     else {
         panic!("expected Repeat")
     };
-    assert_eq!(*stored, Some(escalation));
+    assert_eq!(*stored, Some(escalation.clone()));
     assert_eq!(
         escalated.duration(),
         document.duration(),
@@ -555,7 +555,7 @@ fn escalation_is_one_reversible_parameter_change_checked_against_play_count() {
         &document,
         &request(Command::SetRepeatEscalation {
             node: node("prefix"),
-            escalation: Some(escalation),
+            escalation: Some(escalation.clone()),
         }),
     )
     .unwrap_err();

@@ -131,7 +131,7 @@ impl LastEdit {
                     *selector
                 },
                 plays: *plays,
-                escalation: *escalation,
+                escalation: escalation.clone(),
             },
             RepeatableEdit::SetRepeatPlays { plays } => {
                 SemanticInstruction::SetRepeatPlays { plays: *plays }
@@ -209,7 +209,7 @@ impl LastEdit {
                 operation: RepeatableEdit::Repeat {
                     selector: *selector,
                     plays: *plays,
-                    escalation: *escalation,
+                    escalation: escalation.clone(),
                 },
                 register: None,
             });

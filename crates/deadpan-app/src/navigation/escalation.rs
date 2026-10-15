@@ -1,12 +1,12 @@
 //! `:repeat [N] gap=120ms [gap-step=-40ms] gain-step=3dB zoom-step=0.08
-//! [progression=multiply]`: change a selected Repeat's plays, gaps and
+//! [progression=multiply] [zoom-target=current|center]`: change a selected Repeat's plays, gaps and
 //! per-play escalation together, or wrap a plain beat first.
 
 use deadpan_core::{ExactRatio, FrameRate, GainDb, PauseLength, ZoomProgression, ZoomStep};
 
 use super::duration::DurationInput;
 
-pub const USAGE: &str = "Use :repeat 3 gap=120ms gain-step=3dB zoom-step=0.08 on a selected beat or Repeat. gap= sets every gap (gap=0 removes them all); gap-step=-40ms makes each later gap 40 ms shorter. progression=multiply compounds the zoom; gain-step=0dB or zoom-step=0 removes that step.";
+pub const USAGE: &str = "Use :repeat 3 gap=120ms gain-step=3dB zoom-step=0.08 on a selected beat or Repeat. gap= sets every gap (gap=0 removes them all); gap-step=-40ms makes each later gap 40 ms shorter. progression=multiply compounds the zoom; zoom-target=current zooms toward the target on the picture and zoom-target=center back to the middle; gain-step=0dB or zoom-step=0 removes that step.";
 
 /// The most gaps one `gap-step` ladder authors, matching the core bound.
 const MAX_GAPS: u32 = deadpan_core::MAX_SEMANTIC_REPEAT_GAPS as u32;
@@ -94,34 +94,67 @@ pub struct EscalationInput {
     /// A grid-rounded zoom step; `Some(None)` removes the zoom progression.
     pub zoom_step: Option<Option<ExactRatio>>,
     pub progression: Option<ZoomProgression>,
+    /// Where the zoom moves: toward a saved target or the picture center.
+    pub zoom_target: Option<ZoomTarget>,
+}
+
+/// `zoom-target=`: the escalating zoom's direction.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ZoomTarget {
+    /// The saved target on the displayed picture (or the one it follows).
+    Current,
+    /// The picture center.
+    Center,
 }
 
 impl EscalationInput {
     /// Whether the command names any escalation parameter.
     pub fn changes_escalation(&self) -> bool {
-        self.gain_step.is_some() || self.zoom_step.is_some() || self.progression.is_some()
+        self.gain_step.is_some()
+            || self.zoom_step.is_some()
+            || self.progression.is_some()
+            || self.zoom_target.is_some()
     }
 
     /// Merge into a Repeat's current escalation; `None` when nothing remains.
+    #[cfg(test)]
     pub fn apply(
         self,
         current: Option<deadpan_core::RepeatEscalation>,
     ) -> Result<Option<deadpan_core::RepeatEscalation>, String> {
+        self.apply_toward(current, None)
+    }
+
+    /// [`Self::apply`] with `zoom-target=` resolved: `Some(None)` zooms
+    /// toward the center, `Some(Some(id))` toward that saved target.
+    pub fn apply_toward(
+        self,
+        current: Option<deadpan_core::RepeatEscalation>,
+        target: Option<Option<deadpan_core::TargetId>>,
+    ) -> Result<Option<deadpan_core::RepeatEscalation>, String> {
         let current = current.unwrap_or_default();
         let step = match self.zoom_step {
             Some(step) => step,
-            None => current.zoom.map(|zoom| zoom.step),
+            None => current.zoom.as_ref().map(|zoom| zoom.step),
         };
         let progression = self
             .progression
-            .or(current.zoom.map(|zoom| zoom.progression))
+            .or(current.zoom.as_ref().map(|zoom| zoom.progression))
             .unwrap_or_default();
-        let zoom = match (step, self.progression) {
-            (Some(step), _) => Some(ZoomStep { step, progression }),
-            (None, Some(_)) => {
-                return Err("progression needs a zoom-step; this Repeat has none.".into());
+        let zoom = match (step, self.progression.is_some() || target.is_some()) {
+            // A step change keeps the zoom's target unless one is named.
+            (Some(step), _) => Some(ZoomStep {
+                step,
+                progression,
+                target: target
+                    .unwrap_or_else(|| current.zoom.as_ref().and_then(|zoom| zoom.target.clone())),
+            }),
+            (None, true) => {
+                return Err(
+                    "progression and zoom-target need a zoom-step; this Repeat has none.".into(),
+                );
             }
-            (None, None) => None,
+            (None, false) => None,
         };
         let result = deadpan_core::RepeatEscalation {
             gain_step: self.gain_step.unwrap_or(current.gain_step),
@@ -133,6 +166,7 @@ impl EscalationInput {
     /// Inspector rows: the gain and zoom added per play, or no escalation.
     pub fn fields(
         escalation: Option<&deadpan_core::RepeatEscalation>,
+        label: &dyn Fn(&deadpan_core::TargetId) -> String,
     ) -> Vec<(&'static str, String)> {
         let Some(escalation) = escalation else {
             return vec![("Escalation", "None".into())];
@@ -147,7 +181,7 @@ impl EscalationInput {
                 ),
             ));
         }
-        if let Some(zoom) = escalation.zoom {
+        if let Some(zoom) = &escalation.zoom {
             let step = zoom.step.numerator() as f64 / zoom.step.denominator() as f64;
             fields.push((
                 "Zoom per play",
@@ -155,6 +189,10 @@ impl EscalationInput {
                     ZoomProgression::Add => format!("{step:+.3}"),
                     ZoomProgression::Multiply => format!("×{step:.3}"),
                 },
+            ));
+            fields.push((
+                "Zoom toward",
+                zoom.target.as_ref().map_or_else(|| "Center".into(), label),
             ));
         }
         fields
@@ -184,6 +222,7 @@ pub fn parse(arguments: &[&str]) -> Result<Option<EscalationInput>, String> {
         gain_step: None,
         zoom_step: None,
         progression: None,
+        zoom_target: None,
     };
     let mut zoom_step = None;
     let mut progression = None;
@@ -203,6 +242,17 @@ pub fn parse(arguments: &[&str]) -> Result<Option<EscalationInput>, String> {
                     _ => return Err("progression is add or multiply.".into()),
                 });
             }
+            "zoom-target" if input.zoom_target.is_none() => {
+                input.zoom_target = Some(match value {
+                    "current" => ZoomTarget::Current,
+                    "center" => ZoomTarget::Center,
+                    _ => {
+                        return Err(
+                            "zoom-target is current (the target on this picture) or center.".into(),
+                        );
+                    }
+                });
+            }
             "gap" if gap.is_none() => {
                 gap = Some(if value == "0" {
                     DurationInput::Frames(deadpan_core::FrameDuration::ZERO)
@@ -217,7 +267,7 @@ pub fn parse(arguments: &[&str]) -> Result<Option<EscalationInput>, String> {
                 };
                 gap_step = Some((shorter, DurationInput::parse(amount)?));
             }
-            "gain-step" | "zoom-step" | "progression" | "gap" | "gap-step" => {
+            "gain-step" | "zoom-step" | "zoom-target" | "progression" | "gap" | "gap-step" => {
                 return Err(format!("{key} is given twice."));
             }
             _ => return Err(format!("Unknown :repeat parameter {key}. {USAGE}")),
@@ -338,17 +388,20 @@ mod tests {
             .unwrap()
             .unwrap();
         assert_eq!(
-            multiply.zoom.unwrap().progression,
+            multiply.clone().zoom.unwrap().progression,
             ZoomProgression::Multiply
         );
         // progression alone changes an existing zoom step's progression.
         let switched = parse(&["progression=add"])
             .unwrap()
             .unwrap()
-            .apply(Some(multiply))
+            .apply(Some(multiply.clone()))
             .unwrap()
             .unwrap();
-        assert_eq!(switched.zoom.unwrap().progression, ZoomProgression::Add);
+        assert_eq!(
+            switched.clone().zoom.unwrap().progression,
+            ZoomProgression::Add
+        );
         assert!(
             parse(&["progression=multiply"])
                 .unwrap()
@@ -383,19 +436,59 @@ mod tests {
         let louder = parse(&["gain-step=6dB"])
             .unwrap()
             .unwrap()
-            .apply(current)
+            .apply(current.clone())
             .unwrap();
-        assert_eq!(louder.unwrap().gain_step, GainDb::new(6000).unwrap());
-        assert_eq!(louder.unwrap().zoom, current.unwrap().zoom);
         assert_eq!(
-            EscalationInput::fields(louder.as_ref()),
+            louder.clone().unwrap().gain_step,
+            GainDb::new(6000).unwrap()
+        );
+        assert_eq!(louder.clone().unwrap().zoom, current.clone().unwrap().zoom);
+        assert_eq!(
+            EscalationInput::fields(louder.as_ref(), &|id| id.as_str().to_owned()),
             [
                 ("Gain per play", "+6 dB".to_owned()),
-                ("Zoom per play", "+0.250".to_owned())
+                ("Zoom per play", "+0.250".to_owned()),
+                ("Zoom toward", "Center".to_owned())
             ]
         );
+        // A named direction replaces the target; a step change keeps it.
+        let speaker = deadpan_core::TargetId::new("speaker").unwrap();
+        let toward = parse(&["zoom-target=current"])
+            .unwrap()
+            .unwrap()
+            .apply_toward(louder.clone(), Some(Some(speaker.clone())))
+            .unwrap();
         assert_eq!(
-            EscalationInput::fields(None),
+            toward.clone().unwrap().zoom.unwrap().target,
+            Some(speaker.clone())
+        );
+        let stepped = parse(&["zoom-step=0.5"])
+            .unwrap()
+            .unwrap()
+            .apply(toward.clone())
+            .unwrap();
+        assert_eq!(stepped.clone().unwrap().zoom.unwrap().target, Some(speaker));
+        assert_eq!(
+            EscalationInput::fields(stepped.as_ref(), &|_| "Speaker".to_owned())[2],
+            ("Zoom toward", "Speaker".to_owned())
+        );
+        let centered = parse(&["zoom-target=center"])
+            .unwrap()
+            .unwrap()
+            .apply_toward(stepped, Some(None))
+            .unwrap();
+        assert_eq!(centered.unwrap().zoom.unwrap().target, None);
+        assert!(
+            parse(&["zoom-target=center"])
+                .unwrap()
+                .unwrap()
+                .apply_toward(None, Some(None))
+                .is_err(),
+            "a direction needs a zoom"
+        );
+        assert!(parse(&["zoom-target=left"]).is_err());
+        assert_eq!(
+            EscalationInput::fields(None, &|id| id.as_str().to_owned()),
             [("Escalation", "None".to_owned())]
         );
     }

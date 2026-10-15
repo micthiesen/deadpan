@@ -650,7 +650,7 @@ where
                     plays,
                     escalation,
                 } => {
-                    self.repeat(index, *selector, plays.get(), *escalation)?;
+                    self.repeat(index, *selector, plays.get(), escalation.clone())?;
                 }
                 SemanticInstruction::SetRepeatPlays { plays } => {
                     self.set_repeat_plays(index, plays.get())?;
@@ -672,7 +672,7 @@ where
                     gaps,
                     escalation,
                 } => {
-                    self.set_repeat(index, *plays, gaps.as_deref(), *escalation)?;
+                    self.set_repeat(index, *plays, gaps.as_deref(), escalation.clone())?;
                 }
                 SemanticInstruction::SetRoomTone { register } => {
                     self.set_room_tone(index, *register)?;

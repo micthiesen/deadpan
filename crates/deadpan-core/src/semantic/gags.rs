@@ -554,6 +554,7 @@ impl GagRecipe {
                 escalation: Some(RepeatEscalation {
                     gain_step: *gain_step,
                     zoom: (*zoom_step != ExactRatio::ZERO).then_some(ZoomStep {
+                        target: None,
                         step: *zoom_step,
                         progression: crate::ZoomProgression::Add,
                     }),

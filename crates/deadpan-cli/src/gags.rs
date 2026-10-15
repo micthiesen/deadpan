@@ -65,14 +65,19 @@ pub fn expansion_rows(
             } => format!(
                 "Repeat {} for {plays} plays{}",
                 target(selector),
-                escalation.map_or(String::new(), |escalation| format!(
-                    ", each play {:+} dB{}",
-                    f64::from(escalation.gain_step.millidecibels()) / 1000.0,
-                    escalation.zoom.map_or(String::new(), |zoom| format!(
-                        " and {:+.3} scale",
-                        zoom.step.numerator() as f64 / zoom.step.denominator() as f64
+                escalation
+                    .as_ref()
+                    .map_or(String::new(), |escalation| format!(
+                        ", each play {:+} dB{}",
+                        f64::from(escalation.gain_step.millidecibels()) / 1000.0,
+                        escalation
+                            .zoom
+                            .as_ref()
+                            .map_or(String::new(), |zoom| format!(
+                                " and {:+.3} scale",
+                                zoom.step.numerator() as f64 / zoom.step.denominator() as f64
+                            ))
                     ))
-                ))
             ),
             I::SetRepeat {
                 gaps: Some(gaps), ..

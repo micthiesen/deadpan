@@ -1348,6 +1348,7 @@ pub fn escalating_repeat(dir: &Path) -> Result<Fixture> {
                 zoom: Some(ZoomStep {
                     step: grid_step()?,
                     progression: ZoomProgression::Add,
+                    target: None,
                 }),
             }),
         })
@@ -1986,6 +1987,7 @@ pub fn repeat_gaps_steps(dir: &Path) -> Result<Fixture> {
         zoom: Some(ZoomStep {
             step: grid_step()?,
             progression: ZoomProgression::Add,
+            target: None,
         }),
     })?;
     let saved = project.run_semantic(

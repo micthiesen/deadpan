@@ -88,6 +88,7 @@ impl DeadpanApp {
                 )
                 .expect("constant step"),
                 progression: deadpan_core::ZoomProgression::Add,
+                target: None,
             }),
         };
         let target = self.capture_macro_target();
@@ -405,6 +406,7 @@ impl DeadpanApp {
     /// Repeat's plays, gaps and escalation, or wrap a plain beat first, as
     /// one recorded instruction and one Undo.
     pub(super) fn repeat_change(&mut self, input: crate::navigation::escalation::EscalationInput) {
+        use crate::navigation::escalation::ZoomTarget;
         self.cancel_repeats("a Repeat change was requested");
         let target = self.capture_macro_target();
         let instruction = (|| {
@@ -424,22 +426,42 @@ impl DeadpanApp {
                     iterations,
                     escalation,
                     ..
-                }) => (Some(iterations.len()), *escalation),
+                }) => (Some(iterations.len()), escalation.clone()),
                 _ => (None, None),
             };
             let plays = input.plays.or(plays_now).ok_or(
                 "Give a total play count to wrap this beat, for example :repeat 3 gap=120ms.",
             )?;
             let gaps = input.gap.map(|gap| gap.lengths(plays, rate)).transpose()?;
+            let toward = match input.zoom_target {
+                None => None,
+                Some(ZoomTarget::Center) => Some(None),
+                Some(ZoomTarget::Current) => {
+                    let shown: Vec<_> = self
+                        .targets_at_picture()
+                        .into_iter()
+                        .map(|shown| (shown.id, shown.label))
+                        .collect();
+                    match crate::navigation::zoom::resolve(
+                        &crate::navigation::zoom::TargetChoice::Current,
+                        None,
+                        &shown,
+                        |text| self.resolve_target(text),
+                    )?
+                    .0
+                    {
+                        crate::navigation::zoom::Resolved::Target(id) => Some(Some(id)),
+                        _ => Some(None),
+                    }
+                }
+            };
             let escalation = if input.changes_escalation() {
-                Some(
-                    input
-                        .apply(escalation_now)?
-                        .unwrap_or(deadpan_core::RepeatEscalation {
-                            gain_step: deadpan_core::GainDb::UNITY,
-                            zoom: None,
-                        }),
-                )
+                Some(input.apply_toward(escalation_now, toward)?.unwrap_or(
+                    deadpan_core::RepeatEscalation {
+                        gain_step: deadpan_core::GainDb::UNITY,
+                        zoom: None,
+                    },
+                ))
             } else {
                 None
             };

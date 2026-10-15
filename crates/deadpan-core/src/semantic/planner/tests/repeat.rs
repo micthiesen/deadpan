@@ -186,7 +186,7 @@ fn an_escalating_repeat_wraps_and_escalates_in_one_transaction() {
     let escalating = SemanticInstruction::Repeat {
         selector: SemanticSelector::SelectedBeat,
         plays: NonZeroU32::new(3).unwrap(),
-        escalation: Some(escalation),
+        escalation: Some(escalation.clone()),
     };
     let planned = plan(&document, entry.clone(), vec![escalating], &BTreeMap::new()).unwrap();
     assert!(matches!(

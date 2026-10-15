@@ -777,7 +777,7 @@ fn one_repeat_change_wraps_or_sets_plays_gaps_and_escalation_together() {
     let planned = plan_pauses(
         &document,
         start.clone(),
-        vec![change(Some(3), Some(&[4]), Some(escalation))],
+        vec![change(Some(3), Some(&[4]), Some(escalation.clone()))],
     )
     .unwrap();
     assert_eq!(planned.document.duration().unwrap().frames(), 9 + 8 + 4);
@@ -799,7 +799,7 @@ fn one_repeat_change_wraps_or_sets_plays_gaps_and_escalation_together() {
         child: node("a"),
         iterations: crate::IterationOrder::new(revision("old-plays"), 3).unwrap(),
         gap: None,
-        escalation: Some(escalation),
+        escalation: Some(escalation.clone()),
     };
     let existing = tree(
         &["r", "b"],

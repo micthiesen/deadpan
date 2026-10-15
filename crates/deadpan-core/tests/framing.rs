@@ -441,7 +441,7 @@ fn split_retains_framed_partition_as_a_complete_owned_effect_scope() {
 }
 
 #[test]
-fn occurrence_copy_is_independent_and_framed_ungroup_is_refused() {
+fn occurrence_copy_is_independent_and_framed_ungroup_moves_framing_onto_its_child() {
     let initial = document();
     let repeated = edit(
         &initial,
@@ -494,10 +494,22 @@ fn occurrence_copy_is_independent_and_framed_ungroup_is_refused() {
             framing: Some(creep(FramingCurve::Linear)),
         },
     );
+    // Ungroup moves the group's framing onto its unframed child.
+    let ungrouped = edit(&framed, Command::Ungroup { node: id("group") });
+    let moved = ungrouped.nodes()[&id("hold")].framing.as_ref().unwrap();
+    assert_eq!(moved.value, creep(FramingCurve::Linear).value);
+    // A child with its own framing would need two composed layers: refused.
+    let both = edit(
+        &framed,
+        Command::SetFraming {
+            node: id("hold"),
+            framing: Some(creep(FramingCurve::Linear)),
+        },
+    );
     assert!(
         apply(
-            &framed,
-            &request(&framed, Command::Ungroup { node: id("group") })
+            &both,
+            &request(&both, Command::Ungroup { node: id("group") })
         )
         .is_err()
     );

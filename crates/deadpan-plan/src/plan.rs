@@ -868,7 +868,7 @@ impl RenderPlan {
                                 .as_ref()
                                 .map(|recipe| CompiledHold::compile(recipe, document))
                                 .transpose()?,
-                            escalation: *escalation,
+                            escalation: escalation.clone(),
                         },
                         NodeType::Repeat,
                     )
@@ -1284,7 +1284,7 @@ impl RenderPlan {
     fn resolve_follows(
         &self,
         framing: &mut [PictureFraming],
-        follows: &[(usize, &deadpan_core::TargetId, ExactRatio)],
+        follows: &[(usize, &deadpan_core::TargetId, ExactRatio, bool)],
         picture: &Picture,
         captured_geometry: bool,
     ) {
@@ -1299,14 +1299,47 @@ impl RenderPlan {
         };
         let basis = &self.metadata.presentation_basis;
         let canvas = [basis.width, basis.height];
-        for &(index, target, scale) in follows.iter().rev() {
+        for &(index, target, scale, fill) in follows.iter().rev() {
             let Some(found) = self.targets.get(target) else {
                 continue;
             };
             let inner = framing[index + 1..].iter().rev().map(|layer| layer.pose);
-            if let Some(pose) = follow_pose(found, asset, point, canvas, inner, scale) {
-                framing[index].pose = Some(pose);
+            let Some(mut pose) = follow_pose(found, asset, point, canvas, inner, scale) else {
+                continue;
+            };
+            // An escalating zoom moves toward its target but keeps the view
+            // inside the picture: at scale `s` each center stays within
+            // `[1/(2s), 1 - 1/(2s)]`.
+            if fill && scale.compare_integer(1).is_gt() {
+                let Ok(margin) = ExactRatio::ONE
+                    .checked_div(scale)
+                    .and_then(|width| width.checked_div(ExactRatio::integer(2)))
+                else {
+                    continue;
+                };
+                let Ok(upper) = ExactRatio::ONE.checked_sub(margin) else {
+                    continue;
+                };
+                let clamp = |value: ExactRatio| {
+                    if value.compare(margin).is_lt() {
+                        margin
+                    } else if value.compare(upper).is_gt() {
+                        upper
+                    } else {
+                        value
+                    }
+                };
+                let Ok(clamped) = deadpan_core::FramingPose::new(
+                    clamp(pose.center_x),
+                    clamp(pose.center_y),
+                    pose.scale,
+                )
+                .and_then(|pose| pose.quantized()) else {
+                    continue;
+                };
+                pose = clamped;
             }
+            framing[index].pose = Some(pose);
         }
     }
 
@@ -1431,7 +1464,7 @@ impl RenderPlan {
                 ..
             }) = &node.framing
             {
-                follows.push((framing.len(), target, *scale));
+                follows.push((framing.len(), target, *scale, false));
             }
             framing.push(PictureFraming {
                 instance: InstancePath {
@@ -1634,11 +1667,19 @@ impl RenderPlan {
                     // A play and the gap following it share that play's
                     // escalation, applied inside the Repeat's own framing.
                     if let Some(pose) = escalation
+                        .as_ref()
                         .map(|escalation| escalation.pose(location.play.index))
                         .transpose()
                         .map_err(|_| PlanError::InvalidPlan("repeat escalation scale"))?
                         .flatten()
                     {
+                        if let Some(target) = escalation
+                            .as_ref()
+                            .and_then(|escalation| escalation.zoom.as_ref())
+                            .and_then(|zoom| zoom.target.as_ref())
+                        {
+                            follows.push((framing.len(), target, pose.scale, true));
+                        }
                         framing.push(PictureFraming {
                             instance: InstancePath {
                                 node: node.inspection.id.clone(),

@@ -2757,7 +2757,7 @@ pub(crate) fn reduce(
                     "escalation belongs to a Repeat",
                 ));
             };
-            *current = *escalation;
+            current.clone_from(escalation);
         }
         Command::SetAudioTreatments { node, treatments } => {
             treatments.validate().map_err(crate::audio_gain::invalid)?;

@@ -97,7 +97,7 @@ where
         plays: u32,
         escalation: Option<crate::RepeatEscalation>,
     ) -> Result<(), EditError> {
-        if let Some(escalation) = escalation {
+        if let Some(escalation) = &escalation {
             escalation
                 .validate(plays)
                 .map_err(|error| invalid(&error.to_string()))?;

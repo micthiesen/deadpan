@@ -483,7 +483,7 @@ fn escalation(d: &mut Driver<'_>, original: u64) -> Result<(), String> {
     d.settled()?;
     let workspace = d.app().workspace.clone().ok_or("No project")?;
     let escalation = match &workspace.document.nodes()[&repeat].kind {
-        NodeKind::Repeat { escalation, .. } => *escalation,
+        NodeKind::Repeat { escalation, .. } => escalation.clone(),
         _ => None,
     };
     let scale = |frame: u64| -> Result<Option<f64>, String> {
@@ -500,7 +500,7 @@ fn escalation(d: &mut Driver<'_>, original: u64) -> Result<(), String> {
     let (first, third) = (scale(1)?, scale(original * 2 + 1)?);
     d.check(
         "A Repeat setter with steps escalates each later play without nesting or retiming",
-        escalation.is_some_and(|escalation| escalation.gain_step.millidecibels() == 3000)
+        escalation.as_ref().is_some_and(|escalation| escalation.gain_step.millidecibels() == 3000)
             && first.is_none()
             && third.is_some_and(|scale| (scale - 1.16).abs() < 1e-6)
             && d.app().sequence_length() == original * 3
