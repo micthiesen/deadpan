@@ -125,6 +125,19 @@ pub struct DiagnosticReport {
     privacy: &'static str,
 }
 
+/// Record one sample of this process's own memory into process diagnostics
+/// (`deadpan_diagnostics::PROCESS_MEMORY`). Readers call it just before taking
+/// a snapshot; nothing samples in the background.
+pub fn sample_process_memory() {
+    #[cfg(target_os = "macos")]
+    match deadpan_native_process::own_memory() {
+        Ok(memory) => {
+            deadpan_diagnostics::PROCESS_MEMORY.record(memory.phys_footprint, memory.resident_size)
+        }
+        Err(_) => deadpan_diagnostics::PROCESS_MEMORY.failures.increment(),
+    }
+}
+
 /// Read the optional package through the normal bounded, read-only store API.
 /// An unreadable package is evidence and does not prevent diagnostic export.
 pub fn capture(package: Option<&Path>) -> DiagnosticReport {
@@ -220,7 +233,10 @@ impl DiagnosticReport {
             },
             project,
             context: None,
-            counters: crate::doctor::diagnostics(&deadpan_diagnostics::snapshot()),
+            counters: {
+                sample_process_memory();
+                crate::doctor::diagnostics(&deadpan_diagnostics::snapshot())
+            },
             counter_scope: "current process only; independent atomic samples; no other app session",
             privacy: "structural counts and fixed categories only; no user content, identifiers, paths, URLs, credentials, logs or media attached",
         }

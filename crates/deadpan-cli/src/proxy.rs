@@ -296,6 +296,7 @@ pub fn cached_proxy(
     subject: &ProxySubject<'_>,
 ) -> Result<Option<ProxyEntry>, ProxyCacheError> {
     let key = subject.key()?;
+    let counters = &deadpan_diagnostics::CACHES.proxies;
     match cache.lookup(&key) {
         Ok(Some(entry))
             if entry
@@ -303,9 +304,13 @@ pub fn cached_proxy(
                 .validate_for(&subject.identity, subject.index.index(), subject.info)
                 .is_ok() =>
         {
+            counters.hits.increment();
             Ok(Some(entry))
         }
-        Ok(_) | Err(ProxyCacheError::Damaged(_)) => Ok(None),
+        Ok(_) | Err(ProxyCacheError::Damaged(_)) => {
+            counters.misses.increment();
+            Ok(None)
+        }
         Err(error) => Err(error),
     }
 }

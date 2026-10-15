@@ -669,3 +669,17 @@ fn allocation_deadline_does_not_advance_retained_audio() {
         first
     );
 }
+
+#[test]
+fn audio_decoder_descriptor_reads_reach_process_diagnostics() {
+    let name = "pcm-stereo-48000.wav";
+    let length = std::fs::metadata(fixture(name)).unwrap().len();
+    let before = deadpan_diagnostics::IO.audio_decoder_input.snapshot();
+    let mut decoder = open(name);
+    while decoder.next_metadata(control()).unwrap().is_some() {}
+    let after = deadpan_diagnostics::IO.audio_decoder_input.snapshot();
+    // Other tests in this process may add reads; this decoder alone read the
+    // whole file once, published once per call rather than per AVIO read.
+    assert!(after.read_bytes - before.read_bytes >= length);
+    assert!(after.read_ops > before.read_ops);
+}

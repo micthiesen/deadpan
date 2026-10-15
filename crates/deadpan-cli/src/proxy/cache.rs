@@ -932,6 +932,7 @@ impl ProxyCache {
             }
             if self.evict(&entry.name)? {
                 total -= entry.bytes;
+                deadpan_diagnostics::CACHES.proxies.evictions.increment();
                 report.removed_entries.push(entry.name);
             } else {
                 report.kept_in_use.push(entry.name);

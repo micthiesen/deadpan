@@ -8,17 +8,22 @@
 //!
 //! Recording sites are deliberately narrow (see docs/PERFORMANCE.md):
 //! - [`IO`]: bytes and operations at the store's revision rows, the
-//!   descriptor-relative object store, media snapshot copies, native decoder
-//!   descriptor reads, the private PCM cache file and preview-proxy reads.
-//!   These are the callers' own read/write paths, not SQLite page or kernel
-//!   block I/O.
+//!   descriptor-relative object store, media snapshot copies, native video
+//!   and audio decoder descriptor reads, the private PCM cache file and
+//!   preview-proxy reads. These are the callers' own read/write paths, not
+//!   kernel block I/O.
+//! - [`SQLITE_PAGES`]: SQLite page-cache hits, misses (page reads), writes
+//!   and spills of store connections, published by the store.
 //! - [`QUEUES`]: current and high-water depth of bounded request slots and
 //!   the prepared-PCM device queue, updated by their producers.
-//! - [`CACHES`]: hit/miss/eviction counts and residency of PCM caches.
+//! - [`CACHES`]: hit/miss/eviction counts and residency of PCM, thumbnail
+//!   and preview-proxy caches.
 //! - [`GPU`]: shared picture pipeline submissions and the latency from
 //!   `queue.submit` to the observed completion callback.
 //! - [`WORKERS`]: physical footprint of live supervised worker processes,
 //!   sampled at low frequency by their supervisor.
+//! - [`PROCESS_MEMORY`]: this process's own footprint, sampled by the
+//!   diagnostics reader.
 //!
 //! Device audio callbacks never record here.
 
@@ -183,6 +188,8 @@ pub struct Io {
     pub media_snapshots: IoCounters,
     /// Native video decoder descriptor reads (FFmpeg AVIO callbacks).
     pub decoder_input: IoCounters,
+    /// Native audio decoder descriptor reads (FFmpeg AVIO callbacks).
+    pub audio_decoder_input: IoCounters,
     /// Private decoded/prepared PCM cache files: writes during preparation,
     /// bounded reads during source and processed-stage access.
     pub pcm_cache_file: IoCounters,
@@ -195,9 +202,64 @@ pub static IO: Io = Io {
     objects: IoCounters::new(),
     media_snapshots: IoCounters::new(),
     decoder_input: IoCounters::new(),
+    audio_decoder_input: IoCounters::new(),
     pcm_cache_file: IoCounters::new(),
     proxy: IoCounters::new(),
 };
+
+/// SQLite pager activity in database pages, summed over store connections.
+/// Each connection publishes its own counts (read and reset through
+/// `sqlite3_db_status`) when the store records a history row and when the
+/// store closes; work on other connections that never reach those points is
+/// not counted.
+#[derive(Debug, Default)]
+pub struct SqlitePages {
+    /// Page requests served from a connection's page cache.
+    pub hits: Counter,
+    /// Page requests that missed the cache and read the database or WAL.
+    pub misses: Counter,
+    /// Dirty pages written to the database or WAL.
+    pub writes: Counter,
+    /// Pages written early because a cache was full (included in `writes`).
+    pub spills: Counter,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct SqlitePageTotals {
+    pub hits: u64,
+    pub misses: u64,
+    pub writes: u64,
+    pub spills: u64,
+}
+
+impl SqlitePages {
+    pub const fn new() -> Self {
+        Self {
+            hits: Counter::new(),
+            misses: Counter::new(),
+            writes: Counter::new(),
+            spills: Counter::new(),
+        }
+    }
+    pub fn snapshot(&self) -> SqlitePageTotals {
+        SqlitePageTotals {
+            hits: self.hits.get(),
+            misses: self.misses.get(),
+            writes: self.writes.get(),
+            spills: self.spills.get(),
+        }
+    }
+}
+
+impl SqlitePageTotals {
+    /// Cache hits over page requests, when any request happened.
+    pub fn hit_rate(&self) -> Option<f64> {
+        let requests = self.hits + self.misses;
+        (requests != 0).then(|| self.hits as f64 / requests as f64)
+    }
+}
+
+pub static SQLITE_PAGES: SqlitePages = SqlitePages::new();
 
 #[derive(Debug, Default)]
 pub struct Queues {
@@ -206,6 +268,13 @@ pub struct Queues {
     pub picture_preview: Gauge,
     /// Card thumbnail service requests, counted the same way.
     pub thumbnails: Gauge,
+    /// Trim/splice endpoint and Edit-junction picture requests on their
+    /// shared replaceable worker, counted the same way.
+    pub endpoint_pictures: Gauge,
+    /// Gain-definition and Edit (Trim) waveform analysis jobs: the queued
+    /// job plus the one running on the preparation worker, summed over
+    /// playback engines.
+    pub waveforms: Gauge,
     /// Prepared replies waiting for playback control workers, including a
     /// reserved terminal failure. Each engine bounds its own FIFO.
     pub playback_prepared: Gauge,
@@ -221,6 +290,8 @@ pub struct Queues {
 pub static QUEUES: Queues = Queues {
     picture_preview: Gauge::new(),
     thumbnails: Gauge::new(),
+    endpoint_pictures: Gauge::new(),
+    waveforms: Gauge::new(),
     playback_prepared: Gauge::new(),
     playback_prepared_frames: Gauge::new(),
     playback_device_packets: Gauge::new(),
@@ -387,12 +458,21 @@ pub struct Caches {
     pub limiter_tiles: CacheCounters,
     /// Exact limiter input bus blocks (entries and sample bytes).
     pub limiter_inputs: CacheCounters,
+    /// Card thumbnail textures (entries only). A lookup is one card's demand
+    /// when it appears or its picture changes, never every painted frame.
+    pub thumbnails: CacheCounters,
+    /// The per-user preview-proxy cache: lookups of an Original's current
+    /// published proxy and cleanup evictions. Residency is shared across
+    /// processes on disk and is not tracked here.
+    pub proxies: CacheCounters,
 }
 
 pub static CACHES: Caches = Caches {
     decoded_pcm: CacheCounters::new(),
     limiter_tiles: CacheCounters::new(),
     limiter_inputs: CacheCounters::new(),
+    thumbnails: CacheCounters::new(),
+    proxies: CacheCounters::new(),
 };
 
 /// Recent latency samples kept in a fixed ring.
@@ -530,6 +610,54 @@ pub static WORKERS: Workers = Workers {
     other: WorkerMemory::new(),
 };
 
+/// This process's own memory, sampled by whoever reads diagnostics (the
+/// native panel while open, `doctor --project` once).
+#[derive(Debug, Default)]
+pub struct ProcessMemory {
+    /// Physical footprint, which on Apple silicon includes the process's
+    /// Metal/GPU allocations (not broken out separately).
+    pub footprint_bytes: Gauge,
+    pub resident_bytes: Gauge,
+    pub samples: Counter,
+    /// Samples the operating system refused or could not supply.
+    pub failures: Counter,
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct ProcessMemorySnapshot {
+    pub footprint_bytes: Level,
+    pub resident_bytes: Level,
+    pub samples: u64,
+    pub failures: u64,
+}
+
+impl ProcessMemory {
+    pub const fn new() -> Self {
+        Self {
+            footprint_bytes: Gauge::new(),
+            resident_bytes: Gauge::new(),
+            samples: Counter::new(),
+            failures: Counter::new(),
+        }
+    }
+    /// Record one successful sample.
+    pub fn record(&self, footprint: u64, resident: u64) {
+        self.footprint_bytes.set(footprint);
+        self.resident_bytes.set(resident);
+        self.samples.increment();
+    }
+    pub fn snapshot(&self) -> ProcessMemorySnapshot {
+        ProcessMemorySnapshot {
+            footprint_bytes: self.footprint_bytes.level(),
+            resident_bytes: self.resident_bytes.level(),
+            samples: self.samples.get(),
+            failures: self.failures.get(),
+        }
+    }
+}
+
+pub static PROCESS_MEMORY: ProcessMemory = ProcessMemory::new();
+
 /// How often a supervisor samples a live worker's footprint.
 pub const WORKER_SAMPLE_INTERVAL: Duration = Duration::from_millis(500);
 
@@ -555,6 +683,7 @@ pub struct IoTotals {
     pub objects: IoSnapshot,
     pub media_snapshots: IoSnapshot,
     pub decoder_input: IoSnapshot,
+    pub audio_decoder_input: IoSnapshot,
     pub pcm_cache_file: IoSnapshot,
     pub proxy: IoSnapshot,
 }
@@ -563,6 +692,8 @@ pub struct IoTotals {
 pub struct QueueLevels {
     pub picture_preview: Level,
     pub thumbnails: Level,
+    pub endpoint_pictures: Level,
+    pub waveforms: Level,
     pub playback_prepared: Level,
     pub playback_prepared_frames: Level,
     pub playback_device_packets: Level,
@@ -574,6 +705,8 @@ pub struct CacheTotals {
     pub decoded_pcm: CacheSnapshot,
     pub limiter_tiles: CacheSnapshot,
     pub limiter_inputs: CacheSnapshot,
+    pub thumbnails: CacheSnapshot,
+    pub proxies: CacheSnapshot,
 }
 
 /// Every counter at one moment. Fields are read independently; a snapshot
@@ -581,12 +714,14 @@ pub struct CacheTotals {
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub struct Snapshot {
     pub io: IoTotals,
+    pub sqlite_pages: SqlitePageTotals,
     pub queues: QueueLevels,
     pub caches: CacheTotals,
     pub playback_pictures: PlaybackPictureTotals,
     pub gpu: LatencySnapshot,
     pub model_workers: WorkerMemorySnapshot,
     pub other_workers: WorkerMemorySnapshot,
+    pub process_memory: ProcessMemorySnapshot,
 }
 
 pub fn snapshot() -> Snapshot {
@@ -596,12 +731,16 @@ pub fn snapshot() -> Snapshot {
             objects: IO.objects.snapshot(),
             media_snapshots: IO.media_snapshots.snapshot(),
             decoder_input: IO.decoder_input.snapshot(),
+            audio_decoder_input: IO.audio_decoder_input.snapshot(),
             pcm_cache_file: IO.pcm_cache_file.snapshot(),
             proxy: IO.proxy.snapshot(),
         },
+        sqlite_pages: SQLITE_PAGES.snapshot(),
         queues: QueueLevels {
             picture_preview: QUEUES.picture_preview.level(),
             thumbnails: QUEUES.thumbnails.level(),
+            endpoint_pictures: QUEUES.endpoint_pictures.level(),
+            waveforms: QUEUES.waveforms.level(),
             playback_prepared: QUEUES.playback_prepared.level(),
             playback_prepared_frames: QUEUES.playback_prepared_frames.level(),
             playback_device_packets: QUEUES.playback_device_packets.level(),
@@ -611,22 +750,26 @@ pub fn snapshot() -> Snapshot {
             decoded_pcm: CACHES.decoded_pcm.snapshot(),
             limiter_tiles: CACHES.limiter_tiles.snapshot(),
             limiter_inputs: CACHES.limiter_inputs.snapshot(),
+            thumbnails: CACHES.thumbnails.snapshot(),
+            proxies: CACHES.proxies.snapshot(),
         },
         playback_pictures: PLAYBACK_PICTURES.snapshot(),
         gpu: GPU.snapshot(),
         model_workers: WORKERS.model.snapshot(),
         other_workers: WORKERS.other.snapshot(),
+        process_memory: PROCESS_MEMORY.snapshot(),
     }
 }
 
 impl IoTotals {
     /// Named paths in display order.
-    pub fn paths(&self) -> [(&'static str, IoSnapshot); 6] {
+    pub fn paths(&self) -> [(&'static str, IoSnapshot); 7] {
         [
             ("store_revisions", self.store_revisions),
             ("objects", self.objects),
             ("media_snapshots", self.media_snapshots),
             ("decoder_input", self.decoder_input),
+            ("audio_decoder_input", self.audio_decoder_input),
             ("pcm_cache_file", self.pcm_cache_file),
             ("proxy", self.proxy),
         ]
@@ -634,10 +777,12 @@ impl IoTotals {
 }
 
 impl QueueLevels {
-    pub fn named(&self) -> [(&'static str, Level); 6] {
+    pub fn named(&self) -> [(&'static str, Level); 8] {
         [
             ("picture_preview", self.picture_preview),
             ("thumbnails", self.thumbnails),
+            ("endpoint_pictures", self.endpoint_pictures),
+            ("waveforms", self.waveforms),
             ("playback_prepared", self.playback_prepared),
             ("playback_prepared_frames", self.playback_prepared_frames),
             ("playback_device_packets", self.playback_device_packets),
@@ -647,11 +792,13 @@ impl QueueLevels {
 }
 
 impl CacheTotals {
-    pub fn named(&self) -> [(&'static str, CacheSnapshot); 3] {
+    pub fn named(&self) -> [(&'static str, CacheSnapshot); 5] {
         [
             ("decoded_pcm", self.decoded_pcm),
             ("limiter_tiles", self.limiter_tiles),
             ("limiter_inputs", self.limiter_inputs),
+            ("thumbnails", self.thumbnails),
+            ("proxies", self.proxies),
         ]
     }
 }
@@ -729,6 +876,48 @@ mod tests {
         // Only the last 128 samples (73 through 200) remain.
         assert_eq!(snapshot.p50_us, Some(136));
         assert_eq!(snapshot.p95_us, Some(193));
+    }
+
+    #[test]
+    fn sqlite_pages_and_process_memory_report_their_samples() {
+        let pages = SqlitePages::new();
+        assert_eq!(pages.snapshot().hit_rate(), None);
+        pages.hits.add(9);
+        pages.misses.add(1);
+        pages.writes.add(4);
+        pages.spills.add(1);
+        let totals = pages.snapshot();
+        assert_eq!(
+            totals,
+            SqlitePageTotals {
+                hits: 9,
+                misses: 1,
+                writes: 4,
+                spills: 1
+            }
+        );
+        assert_eq!(totals.hit_rate(), Some(0.9));
+
+        let memory = ProcessMemory::new();
+        memory.record(300, 200);
+        memory.record(100, 250);
+        memory.failures.increment();
+        let snapshot = memory.snapshot();
+        assert_eq!(
+            snapshot.footprint_bytes,
+            Level {
+                current: 100,
+                high: 300
+            }
+        );
+        assert_eq!(
+            snapshot.resident_bytes,
+            Level {
+                current: 250,
+                high: 250
+            }
+        );
+        assert_eq!((snapshot.samples, snapshot.failures), (2, 1));
     }
 
     #[test]

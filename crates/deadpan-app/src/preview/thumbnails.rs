@@ -45,18 +45,43 @@ struct Entry<T> {
 struct Cache<T> {
     entries: BTreeMap<Slot, Entry<T>>,
     clock: u64,
+    /// Process diagnostics: card demands, evictions and resident entries.
+    counters: &'static deadpan_diagnostics::CacheCounters,
+    resident: deadpan_diagnostics::Share,
 }
 
 impl<T> Default for Cache<T> {
     fn default() -> Self {
-        Self {
-            entries: BTreeMap::new(),
-            clock: 0,
-        }
+        Self::counting(&deadpan_diagnostics::CACHES.thumbnails)
     }
 }
 
 impl<T> Cache<T> {
+    fn counting(counters: &'static deadpan_diagnostics::CacheCounters) -> Self {
+        Self {
+            entries: BTreeMap::new(),
+            clock: 0,
+            counters,
+            resident: deadpan_diagnostics::Share::new(&counters.entries),
+        }
+    }
+
+    /// Count one card's demand when its key first becomes wanted (it scrolled
+    /// into view or an edit changed its picture): a hit when that exact
+    /// picture is retained, a miss when it must be decoded. A card that stays
+    /// visible is not counted again on every frame.
+    fn record_demand(&self, key: &Key) {
+        if self
+            .entries
+            .get(&key.slot)
+            .is_some_and(|entry| entry.key == *key)
+        {
+            self.counters.hits.increment();
+        } else {
+            self.counters.misses.increment();
+        }
+    }
+
     /// The retained value for a card, whether it matches the wanted key, and
     /// the session that produced it.
     fn get(&mut self, key: &Key) -> Option<(&T, bool, u64)> {
@@ -99,11 +124,14 @@ impl<T> Cache<T> {
                 .map(|(slot, _)| slot.clone())
                 .expect("nonempty cache");
             removed.extend(self.entries.remove(&oldest).map(|entry| entry.value));
+            self.counters.evictions.increment();
         }
+        self.resident.set(self.entries.len() as u64);
         removed
     }
 
     fn clear(&mut self) -> Vec<T> {
+        self.resident.set(0);
         std::mem::take(&mut self.entries)
             .into_values()
             .map(|entry| entry.value)
@@ -139,6 +167,9 @@ pub(super) struct Thumbnails {
     pending: Option<(u64, Key)>,
     received: Option<(Key, Result<crate::worker::Picture, String>)>,
     wanted: Vec<Key>,
+    /// The previous layout pass's wanted keys, so a card's demand is counted
+    /// once when it appears or changes, not on every frame.
+    previous: Vec<Key>,
     /// What each wanted variant thumbnail decodes, by attempt.
     candidates: BTreeMap<deadpan_jobs::AttemptId, Arc<crate::worker::CandidateThumbnail>>,
     /// Displaced textures may still be referenced by the frame being painted;
@@ -157,6 +188,7 @@ impl Thumbnails {
             pending: None,
             received: None,
             wanted: Vec::new(),
+            previous: Vec::new(),
             candidates: BTreeMap::new(),
             retired: Vec::new(),
         })
@@ -171,6 +203,7 @@ impl Thumbnails {
             self.session = session;
             self.release_all();
         }
+        std::mem::swap(&mut self.previous, &mut self.wanted);
         self.wanted.clear();
         self.candidates.clear();
     }
@@ -207,6 +240,9 @@ impl Thumbnails {
             })
         });
         if !self.wanted.contains(&key) {
+            if !self.previous.contains(&key) {
+                self.cache.record_demand(&key);
+            }
             self.wanted.push(key);
         }
         painted
@@ -533,6 +569,32 @@ mod tests {
         assert_eq!(cache.get(&edited), Some((&1, false, 1)));
         assert_eq!(cache.insert(edited.clone(), 3), vec![1]);
         assert_eq!(cache.get(&edited), Some((&3, true, 1)));
+    }
+
+    #[test]
+    fn demands_count_retained_exact_pictures_as_hits_and_evictions_and_residency() {
+        static COUNTERS: deadpan_diagnostics::CacheCounters =
+            deadpan_diagnostics::CacheCounters::new();
+        let mut cache = Cache::counting(&COUNTERS);
+        let first = key(beat("a"), "r1", 0);
+        cache.record_demand(&first);
+        cache.insert(first.clone(), 0);
+        cache.record_demand(&first);
+        // An edit's new revision is a miss even though the old picture paints.
+        cache.record_demand(&key(beat("a"), "r2", 0));
+        for index in 0..MAX_ENTRIES {
+            cache.insert(key(beat(&format!("b-{index}")), "r1", 0), index + 1);
+        }
+        let snapshot = COUNTERS.snapshot();
+        assert_eq!((snapshot.hits, snapshot.misses), (1, 2));
+        assert_eq!(snapshot.evictions, 1);
+        assert_eq!(snapshot.entries.current, MAX_ENTRIES as u64);
+        assert_eq!(snapshot.entries.high, MAX_ENTRIES as u64);
+        cache.clear();
+        assert_eq!(COUNTERS.snapshot().entries.current, 0);
+        cache.insert(first, 0);
+        drop(cache);
+        assert_eq!(COUNTERS.snapshot().entries.current, 0);
     }
 
     #[test]

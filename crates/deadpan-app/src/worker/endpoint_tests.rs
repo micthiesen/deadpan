@@ -24,6 +24,14 @@ fn identity(workspace: &Workspace, change: u64, start: u64, end: u64) -> Endpoin
     }
 }
 
+/// This mailbox's own share of the process endpoint-picture gauge.
+fn depth(mailbox: &EndpointMailbox) -> u64 {
+    mailbox
+        .depth
+        .as_ref()
+        .map_or(0, deadpan_diagnostics::Share::value)
+}
+
 fn await_endpoints(worker: &EndpointWorker) -> EndpointReply {
     let deadline = Instant::now() + Duration::from_secs(15);
     loop {
@@ -100,15 +108,19 @@ fn endpoint_replacement_cancels_active_work_and_rejects_stale_success_and_failur
         first_identity.clone(),
         EndpointInput::Original(workspace.clone())
     ));
+    assert_eq!(depth(&mailbox), 1);
     let EndpointWork::Source(active) = mailbox.start_next().unwrap() else {
         panic!("source endpoint request keeps its typed worker slot")
     };
+    assert_eq!(depth(&mailbox), 1);
     // Even resubmitting the identical external identity cancels this generation.
     assert!(mailbox.submit(
         first_identity.clone(),
         EndpointInput::Original(workspace.clone())
     ));
     assert!(active.cancelled.load(Ordering::Acquire));
+    // The cancelled request still occupies the worker until it unwinds.
+    assert_eq!(depth(&mailbox), 2);
     assert!(!mailbox.publish_source(
         EndpointReply {
             identity: first_identity.clone(),
@@ -116,6 +128,7 @@ fn endpoint_replacement_cancels_active_work_and_rejects_stale_success_and_failur
         },
         &active.cancelled
     ));
+    assert_eq!(depth(&mailbox), 1);
     let EndpointWork::Source(active) = mailbox.start_next().unwrap() else {
         panic!("replacement source endpoint request keeps its typed worker slot")
     };
@@ -149,6 +162,7 @@ fn endpoint_replacement_cancels_active_work_and_rejects_stale_success_and_failur
         &current.cancelled
     ));
     assert_eq!(mailbox.reply.as_ref().unwrap().identity, latest);
+    assert_eq!(depth(&mailbox), 0);
     mailbox.cancel();
     assert!(mailbox.reply.is_none());
     assert!(mailbox.latest.is_none());

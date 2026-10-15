@@ -164,9 +164,22 @@ pub(crate) struct State {
     running: Option<Arc<Job>>,
     reply: Option<AnalysisUpdate>,
     pub memory: WaveformMemory,
+    /// This engine's share of the process waveform queue gauge.
+    depth: Option<deadpan_diagnostics::Share>,
 }
 
 impl State {
+    /// Publish queued plus running analysis jobs (0 through 2: a superseded
+    /// job can still be unwinding while its replacement waits).
+    fn sync_depth(&mut self) {
+        let depth = u64::from(self.pending.is_some()) + u64::from(self.running.is_some());
+        self.depth
+            .get_or_insert_with(|| {
+                deadpan_diagnostics::Share::new(&deadpan_diagnostics::QUEUES.waveforms)
+            })
+            .set(depth);
+    }
+
     fn request(
         &mut self,
         request: WaveformRequest,
@@ -197,15 +210,18 @@ impl State {
         self.reply = Some(job.update(WaveformStatus::Queued));
         self.pending = Some(job.clone());
         self.current = Some(job);
+        self.sync_depth();
         Ok(WaveformTicket(serial))
     }
 
     pub(crate) fn take_pending(&mut self) -> Option<Arc<Job>> {
         let job = self.pending.take()?;
         if job.cancelled.load(Ordering::Acquire) {
+            self.sync_depth();
             return None;
         }
         self.running = Some(job.clone());
+        self.sync_depth();
         Some(job)
     }
 
@@ -215,6 +231,7 @@ impl State {
             job.cancelled.store(true, Ordering::Release);
         }
         self.pending = None;
+        self.sync_depth();
         let Some(job) = &self.current else {
             return false;
         };
@@ -245,6 +262,7 @@ impl State {
         self.current = None;
         self.reply = None;
         self.running = None;
+        self.sync_depth();
     }
 }
 
@@ -266,6 +284,7 @@ impl Shared {
                 .is_some_and(|running| running.ticket == job.ticket)
             {
                 state.waveform.running = None;
+                state.waveform.sync_depth();
             }
         }
         if state.shutdown()

@@ -192,6 +192,7 @@ fn read_revision_json(
     deadpan_diagnostics::IO
         .store_revisions
         .read(json.len() as u64);
+    crate::publish_page_io(connection);
     Ok((parent, kind, json))
 }
 

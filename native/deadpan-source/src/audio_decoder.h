@@ -42,5 +42,8 @@ int deadpan_audio_next(DeadpanAudio *source, uint64_t timeout, DeadpanCancelled 
 int deadpan_audio_copy(DeadpanAudio *source, uint64_t timeout, DeadpanCancelled cancelled,
     const void *opaque, DeadpanAudioFrame *frame, float *samples, size_t length,
     DeadpanSourceError *error);
+/* Cumulative descriptor bytes read since open, including the preflight guard.
+ * Observes a counter only; never performs I/O. */
+uint64_t deadpan_audio_io_bytes(const DeadpanAudio *source);
 void deadpan_audio_close(DeadpanAudio *source);
 #endif

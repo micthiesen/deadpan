@@ -10,7 +10,9 @@
 use std::sync::{Arc, mpsc};
 use std::time::{Duration, Instant};
 
-use deadpan_diagnostics::{CacheSnapshot, IoSnapshot, Level, WorkerMemorySnapshot};
+use deadpan_diagnostics::{
+    CacheSnapshot, IoSnapshot, Level, ProcessMemorySnapshot, SqlitePageTotals, WorkerMemorySnapshot,
+};
 
 use super::*;
 
@@ -88,12 +90,9 @@ fn io(value: IoSnapshot) -> String {
 }
 
 fn cache(value: CacheSnapshot, bytes: bool) -> String {
-    let rate = value.hit_rate().map_or_else(
-        || "no lookups".to_owned(),
-        |rate| format!("{:.0}% hits", rate * 100.0),
-    );
     let mut text = format!(
-        "{rate} ({} / {}) · {} evicted · {} resident ({} high)",
+        "{} ({} / {}) · {} evicted · {} resident ({} high)",
+        rate(value.hits, value.hits + value.misses),
         value.hits,
         value.hits + value.misses,
         value.evictions,
@@ -108,6 +107,54 @@ fn cache(value: CacheSnapshot, bytes: bool) -> String {
         ));
     }
     text
+}
+
+fn rate(hits: u64, lookups: u64) -> String {
+    if lookups == 0 {
+        "no lookups".to_owned()
+    } else {
+        format!("{:.0}% hits", hits as f64 * 100.0 / lookups as f64)
+    }
+}
+
+/// A cache whose residency is not tracked here (the shared proxy cache).
+fn lookups(value: CacheSnapshot) -> String {
+    format!(
+        "{} ({} / {}) · {} evicted",
+        rate(value.hits, value.hits + value.misses),
+        value.hits,
+        value.hits + value.misses,
+        value.evictions
+    )
+}
+
+fn pages(value: SqlitePageTotals) -> String {
+    if value == SqlitePageTotals::default() {
+        return "none yet".into();
+    }
+    format!(
+        "{} ({} / {}) · {} read · {} written",
+        rate(value.hits, value.hits + value.misses),
+        value.hits,
+        value.hits + value.misses,
+        value.misses,
+        value.writes
+    )
+}
+
+fn process(value: ProcessMemorySnapshot) -> String {
+    if value.samples == 0 {
+        return if value.failures == 0 {
+            "not sampled".into()
+        } else {
+            format!("{} samples refused", value.failures)
+        };
+    }
+    format!(
+        "{} now · {} peak · includes Metal",
+        binary_bytes(value.footprint_bytes.current),
+        binary_bytes(value.footprint_bytes.high)
+    )
 }
 
 fn workers(value: WorkerMemorySnapshot) -> String {
@@ -203,6 +250,16 @@ pub(super) fn rows(
         ),
         (
             "DECODE QUEUES",
+            "Endpoint pictures",
+            level(counters.queues.endpoint_pictures),
+        ),
+        (
+            "DECODE QUEUES",
+            "Waveforms",
+            level(counters.queues.waveforms),
+        ),
+        (
+            "DECODE QUEUES",
             "Prepared audio",
             level(counters.queues.playback_prepared),
         ),
@@ -277,6 +334,16 @@ pub(super) fn rows(
         let key: String = key.iter().map(|byte| format!("{byte:02x}")).collect();
         rows.push(("PCM CACHES", "Audio cache key", format!("blake3:{key}")));
     }
+    rows.push((
+        "PICTURE CACHES",
+        "Thumbnail textures",
+        cache(counters.caches.thumbnails, false),
+    ));
+    rows.push((
+        "PICTURE CACHES",
+        "Preview proxies",
+        lookups(counters.caches.proxies),
+    ));
     for (name, label) in [
         // Each row names exactly what it counts; other file I/O is not
         // counted (see docs/PERFORMANCE.md#diagnostics).
@@ -284,6 +351,7 @@ pub(super) fn rows(
         ("objects", "Media objects"),
         ("media_snapshots", "Media snapshots"),
         ("decoder_input", "Video decoder reads"),
+        ("audio_decoder_input", "Audio decoder reads"),
         ("pcm_cache_file", "PCM cache file"),
         ("proxy", "Proxy hashing reads"),
     ] {
@@ -296,16 +364,10 @@ pub(super) fn rows(
             .unwrap_or_default();
         rows.push(("FILE I/O", label, io(value)));
     }
-    rows.push((
-        "MODEL MEMORY",
-        "Model workers",
-        workers(counters.model_workers),
-    ));
-    rows.push((
-        "MODEL MEMORY",
-        "Other workers",
-        workers(counters.other_workers),
-    ));
+    rows.push(("FILE I/O", "SQLite pages", pages(counters.sqlite_pages)));
+    rows.push(("MEMORY", "App process", process(counters.process_memory)));
+    rows.push(("MEMORY", "Model workers", workers(counters.model_workers)));
+    rows.push(("MEMORY", "Other workers", workers(counters.other_workers)));
     let rate = previous
         .map(|previous| {
             let seconds = sample
@@ -364,6 +426,7 @@ impl DeadpanApp {
     }
 
     fn sample_diagnostics(&mut self) {
+        deadpan_cli::diagnostic_export::sample_process_memory();
         let sample = Sample {
             at: Instant::now(),
             counters: deadpan_diagnostics::snapshot(),
@@ -672,5 +735,60 @@ mod tests {
                 .any(|(_, label, value)| *label == "Completion latency"
                     && value == "no completed submission")
         );
+        for (label, value) in [
+            ("SQLite pages", "none yet"),
+            ("App process", "not sampled"),
+            ("Preview proxies", "no lookups (0 / 0) · 0 evicted"),
+            ("Endpoint pictures", "0 now · 0 high"),
+            ("Waveforms", "0 now · 0 high"),
+            ("Audio decoder reads", "none yet"),
+        ] {
+            assert!(
+                rows.iter().any(|row| row.1 == label && row.2 == value),
+                "{label}"
+            );
+        }
+        let mut counters = deadpan_diagnostics::Snapshot {
+            sqlite_pages: deadpan_diagnostics::SqlitePageTotals {
+                hits: 3,
+                misses: 1,
+                writes: 2,
+                spills: 0,
+            },
+            ..Default::default()
+        };
+        counters.process_memory.samples = 1;
+        counters.process_memory.footprint_bytes = Level {
+            current: 2048,
+            high: 4096,
+        };
+        counters.caches.proxies.hits = 1;
+        counters.caches.proxies.misses = 1;
+        let active = rows_for(counters);
+        for (label, value) in [
+            ("SQLite pages", "75% hits (3 / 4) · 1 read · 2 written"),
+            ("App process", "2.0 KiB now · 4.0 KiB peak · includes Metal"),
+            ("Preview proxies", "50% hits (1 / 2) · 0 evicted"),
+        ] {
+            assert!(
+                active.iter().any(|row| row.1 == label && row.2 == value),
+                "{label}: {active:?}"
+            );
+        }
+    }
+
+    fn rows_for(
+        counters: deadpan_diagnostics::Snapshot,
+    ) -> Vec<(&'static str, &'static str, String)> {
+        rows(
+            &Sample {
+                at: Instant::now(),
+                counters,
+                playback: deadpan_playback::Diagnostics::default(),
+                saved_audio: None,
+                frames: 0,
+            },
+            None,
+        )
     }
 }

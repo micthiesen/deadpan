@@ -169,9 +169,21 @@ struct EndpointMailbox {
     junction_reply: Option<EditJunctionReply>,
     clear_requested: bool,
     shutdown: bool,
+    /// This worker's share of the process endpoint-picture queue gauge.
+    depth: Option<deadpan_diagnostics::Share>,
 }
 
 impl EndpointMailbox {
+    /// Publish the pending slot plus the request in progress (0 through 2).
+    fn sync_depth(&mut self) {
+        let depth = u64::from(self.pending.is_some()) + u64::from(self.active.is_some());
+        self.depth
+            .get_or_insert_with(|| {
+                deadpan_diagnostics::Share::new(&deadpan_diagnostics::QUEUES.endpoint_pictures)
+            })
+            .set(depth);
+    }
+
     fn cancel(&mut self) {
         if let Some(active) = &self.active {
             active.store(true, Ordering::Release);
@@ -183,6 +195,7 @@ impl EndpointMailbox {
         self.pending = None;
         self.reply = None;
         self.junction_reply = None;
+        self.sync_depth();
     }
 
     fn submit(&mut self, identity: EndpointIdentity, input: EndpointInput) -> bool {
@@ -212,6 +225,7 @@ impl EndpointMailbox {
         self.cancel();
         self.latest = Some(work.identity());
         self.pending = Some(work);
+        self.sync_depth();
         true
     }
 
@@ -221,11 +235,13 @@ impl EndpointMailbox {
         }
         let request = self.pending.take()?;
         self.active = Some(request.cancelled().clone());
+        self.sync_depth();
         Some(request)
     }
 
     fn publish_source(&mut self, reply: EndpointReply, cancelled: &AtomicBool) -> bool {
         self.active = None;
+        self.sync_depth();
         if self.shutdown
             || cancelled.load(Ordering::Acquire)
             || self.latest.as_ref() != Some(&EndpointWorkIdentity::Source(reply.identity.clone()))
@@ -238,6 +254,7 @@ impl EndpointMailbox {
 
     fn publish_junction(&mut self, reply: EditJunctionReply, cancelled: &AtomicBool) -> bool {
         self.active = None;
+        self.sync_depth();
         if self.shutdown
             || cancelled.load(Ordering::Acquire)
             || self.latest.as_ref()

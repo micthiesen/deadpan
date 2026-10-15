@@ -1238,6 +1238,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "deadpan-sqlite-status"
+version = "0.1.0"
+dependencies = [
+ "rusqlite",
+ "tempfile",
+]
+
+[[package]]
 name = "deadpan-store"
 version = "0.1.0"
 dependencies = [
@@ -1252,6 +1260,7 @@ dependencies = [
  "deadpan-media",
  "deadpan-native-process",
  "deadpan-plan",
+ "deadpan-sqlite-status",
  "rusqlite",
  "rustix 1.1.5",
  "serde",

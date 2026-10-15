@@ -17,10 +17,10 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, Instant};
 
-use deadpan_cli::proxy::cache::{ProxyCache, ProxyEntry, ProxyKey};
+use deadpan_cli::proxy::cache::{ProxyCache, ProxyCleanupPolicy, ProxyEntry, ProxyKey};
 use deadpan_cli::proxy::{
     BuildControl, ProxyBuildError, ProxyProgress, ProxyProgressSnapshot, ProxySubject,
-    build_subject,
+    build_subject, cached_proxy,
 };
 use deadpan_core::AssetId;
 use deadpan_media::proxy::{ProxyOriginal, ProxyPlan, ProxyReason, hex, proxy_raster};
@@ -484,6 +484,12 @@ fn corrected_range_builds_publish_separate_verified_variants() -> Result {
     let scratch = tempfile::tempdir()?;
     let cache = ProxyCache::at(&scratch.path().join("Proxies"))?;
     let automatic_key = original.key();
+    // Process diagnostics count lookups and evictions. Other tests in this
+    // process may add to the shared counters, so only lower bounds hold.
+    let counters = &deadpan_diagnostics::CACHES.proxies;
+    let before = counters.snapshot();
+    assert!(cached_proxy(&cache, &original.subject())?.is_none());
+    assert!(counters.snapshot().misses > before.misses);
     let automatic = original.build(
         &cache,
         &worker,
@@ -512,6 +518,19 @@ fn corrected_range_builds_publish_separate_verified_variants() -> Result {
     );
     assert!(cache.lookup(&automatic_key)?.is_some());
     assert!(cache.lookup(&corrected_key)?.is_some());
+    let hits = counters.snapshot().hits;
+    assert!(cached_proxy(&cache, &original.subject())?.is_some());
+    assert!(counters.snapshot().hits > hits);
+    let evictions = counters.snapshot().evictions;
+    let report = cache.cleanup(
+        &[],
+        ProxyCleanupPolicy {
+            budget_bytes: 0,
+            ..ProxyCleanupPolicy::default()
+        },
+    )?;
+    assert_eq!(report.removed_entries.len(), 2);
+    assert!(counters.snapshot().evictions >= evictions + 2);
     Ok(())
 }
 

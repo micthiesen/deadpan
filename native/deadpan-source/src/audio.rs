@@ -760,6 +760,7 @@ mod ffi {
             length: usize,
             error: *mut Error,
         ) -> c_int;
+        fn deadpan_audio_io_bytes(source: *const c_void) -> u64;
         fn deadpan_audio_close(source: *mut c_void);
     }
 
@@ -798,6 +799,8 @@ mod ffi {
         _file: File,
         mode: AudioDecodeMode,
         _not_sync: PhantomData<Cell<()>>,
+        /// Cumulative descriptor bytes already added to process diagnostics.
+        published_io: u64,
     }
 
     // SAFETY: the instance exclusively owns its heap FFmpeg context and File,
@@ -813,6 +816,19 @@ mod ffi {
     }
 
     impl Decoder {
+        /// Add descriptor reads since the last call to process diagnostics.
+        /// One counted operation per decoder call, not per AVIO read.
+        fn publish_io(&mut self) {
+            // SAFETY: the live context is uniquely owned; this call reads one
+            // counter and never performs I/O or decoding.
+            let total = unsafe { deadpan_audio_io_bytes(self.pointer.as_ptr()) };
+            let delta = total.saturating_sub(self.published_io);
+            if delta != 0 {
+                deadpan_diagnostics::IO.audio_decoder_input.read(delta);
+                self.published_io = total;
+            }
+        }
+
         pub(super) fn open(
             file: File,
             selected_stream: u32,
@@ -871,12 +887,14 @@ mod ffi {
             if result != 1 {
                 return Err(error.into_error());
             }
-            let inner = Self {
+            let mut inner = Self {
                 pointer: NonNull::new(pointer).ok_or_else(invalid_report)?,
                 _file: file,
                 mode,
                 _not_sync: PhantomData,
+                published_io: 0,
             };
+            inner.publish_io();
             let codec = string(&info.codec);
             if !matches!(
                 codec.as_str(),
@@ -947,6 +965,7 @@ mod ffi {
                     &mut error,
                 )
             };
+            self.publish_io();
             match result {
                 1 => Ok((Some(frame.convert()?), evidence.convert(self.mode)?)),
                 0 => Ok((None, evidence.convert(self.mode)?)),
@@ -976,6 +995,7 @@ mod ffi {
                     &mut error,
                 )
             };
+            self.publish_io();
             if result != 1 {
                 return Err(error.into_error());
             }

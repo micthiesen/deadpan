@@ -40,15 +40,22 @@ fn row(d: &Driver<'_>, prefix: &str) -> Option<String> {
     })
 }
 
-const ROWS: [&str; 10] = [
+const ROWS: [&str; 17] = [
     "Saved stretch: ",
     "Underruns: ",
     "Picture preview: ",
+    "Endpoint pictures: ",
+    "Waveforms: ",
     "Prepared audio frames: ",
     "Device packets: ",
     "Submissions: ",
     "Decoded sources: ",
+    "Thumbnail textures: ",
+    "Preview proxies: ",
     "Store history rows: read ",
+    "Audio decoder reads: ",
+    "SQLite pages: ",
+    "App process: ",
     "Model workers: ",
     "UI updates: ",
 ];
@@ -98,6 +105,22 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         gpu.is_some_and(|gpu| gpu.submissions > 0 && gpu.completions > 0 && gpu.p95_us.is_some()),
         json!("submissions > 0 with a p95"),
         json!(format!("{gpu:?}")),
+    )?;
+    let counters = d.app().diagnostics.latest.map(|sample| sample.counters);
+    d.check(
+        "The project store's SQLite page cache and this process's footprint are sampled",
+        counters.is_some_and(|counters| {
+            counters.sqlite_pages.hits + counters.sqlite_pages.misses > 0
+                && counters.process_memory.samples > 0
+                && counters.process_memory.footprint_bytes.current > 0
+        }),
+        json!("page requests > 0 and a nonzero footprint"),
+        json!(
+            counters.map(|counters| format!(
+                "{:?} {:?}",
+                counters.sqlite_pages, counters.process_memory
+            ))
+        ),
     )?;
     d.capture("Diagnostics beside the picture")?;
 

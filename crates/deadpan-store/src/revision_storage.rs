@@ -131,6 +131,7 @@ pub(crate) fn insert(
     deadpan_diagnostics::IO
         .store_revisions
         .write(document.len() as u64 + navigation.map_or(0, |json| json.len() as u64));
+    crate::publish_page_io(connection);
     Ok(())
 }
 
@@ -169,6 +170,7 @@ pub(crate) fn stored_patch(
     deadpan_diagnostics::IO
         .store_revisions
         .read(json.len() as u64);
+    crate::publish_page_io(connection);
     Ok(Some(if kind == "edit" {
         // Rebuilding needs only the forward patch; skip materializing the
         // inverse half of the history entry.

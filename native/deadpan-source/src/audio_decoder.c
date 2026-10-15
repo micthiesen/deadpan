@@ -48,6 +48,8 @@ struct DeadpanAudio {
     int stream, draining, ended, poisoned, current_valid, packet_pending;
     unsigned int stream_count;
     uint64_t frames, packets, samples, io_bytes, deadline;
+    /* Cumulative descriptor bytes across every call, for host diagnostics. */
+    uint64_t total_io_bytes;
     DeadpanCancelled cancelled;
     const void *cancel_opaque;
     DeadpanSourceError *error;
@@ -123,6 +125,7 @@ static int read_descriptor(void *opaque, uint8_t *buffer, int size) {
     if (count <= 0) { fail(s, "io_failure", "input snapshot read failed or ended before its stated length"); return AVERROR(EIO); }
     s->position += count;
     s->io_bytes += (uint64_t)count;
+    s->total_io_bytes = (uint64_t)count > UINT64_MAX - s->total_io_bytes ? UINT64_MAX : s->total_io_bytes + (uint64_t)count;
     return (int)count;
 }
 static int64_t seek_descriptor(void *opaque, int64_t offset, int whence) {
@@ -423,6 +426,7 @@ void deadpan_audio_close(DeadpanAudio *s) {
     if (s->io) { av_freep(&s->io->buffer); avio_context_free(&s->io); }
     av_free(s);
 }
+uint64_t deadpan_audio_io_bytes(const DeadpanAudio *s) { return s->total_io_bytes; }
 int deadpan_audio_open(int fd, int64_t length, uint32_t selected, uint32_t mode, const DeadpanAudioLimits *limits,
     uint64_t preflight_io_bytes, uint64_t timeout, DeadpanCancelled cancelled, const void *opaque, DeadpanAudio **out,
     DeadpanAudioInfo *info, DeadpanAudioEvidence *evidence, DeadpanSourceError *error) {
@@ -435,6 +439,7 @@ int deadpan_audio_open(int fd, int64_t length, uint32_t selected, uint32_t mode,
     if (result > 0 && preflight_io_bytes > s->limits.max_io_bytes_per_call)
         result = fail(s, "resource_limit", "header guard exhausted the opening input byte budget");
     s->io_bytes = preflight_io_bytes;
+    s->total_io_bytes = preflight_io_bytes;
     if (result > 0) result = open_impl(s);
     if (result > 0) result = capture_evidence(s, evidence);
     result = finish(s, result);

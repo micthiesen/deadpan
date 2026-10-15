@@ -171,9 +171,24 @@ fn project_doctor_names_real_sources_and_times_revision_stages_read_only() {
     assert_eq!(revisions["write_ops"], 0);
     assert_eq!(diagnostics["gpu_submissions"]["submissions"], 0);
     assert_eq!(diagnostics["model_workers"]["live"]["high"], 0);
+    // The store's connections published their page-cache activity.
+    let pages = &diagnostics["sqlite_pages"];
+    assert!(
+        pages["hits"].as_u64().unwrap() + pages["misses"].as_u64().unwrap() > 0,
+        "{pages}"
+    );
+    assert!(diagnostics["file_io"]["audio_decoder_input"]["read_ops"].is_u64());
+    #[cfg(target_os = "macos")]
+    assert!(
+        diagnostics["process_memory"]["phys_footprint_bytes"]["current"]
+            .as_u64()
+            .is_some_and(|bytes| bytes > 0)
+    );
     for queue in [
         "picture_preview",
         "thumbnails",
+        "endpoint_pictures",
+        "waveforms",
         "playback_prepared",
         "playback_prepared_frames",
         "playback_device_packets",
@@ -181,6 +196,8 @@ fn project_doctor_names_real_sources_and_times_revision_stages_read_only() {
         assert_eq!(diagnostics["queue_depths"][queue]["current"], 0, "{queue}");
     }
     assert!(diagnostics["pcm_caches"]["decoded_pcm"]["hits"].is_u64());
+    assert!(diagnostics["picture_caches"]["thumbnails"]["hits"].is_u64());
+    assert!(diagnostics["picture_caches"]["proxies"]["misses"].is_u64());
     // Diagnostics never write: the head revision is unchanged.
     assert_eq!(
         run(&["project", "validate", package_text])["revision_id"],

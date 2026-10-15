@@ -154,8 +154,22 @@ pub struct ProjectStore {
     _writer_lock: Option<File>,
 }
 
+/// Add this connection's SQLite page-cache activity since its previous
+/// publication to process diagnostics. Diagnostics never fail a store
+/// operation, so an unreadable status is skipped.
+pub(crate) fn publish_page_io(connection: &Connection) {
+    if let Ok(pages) = deadpan_sqlite_status::take_page_counts(connection) {
+        let sqlite = &deadpan_diagnostics::SQLITE_PAGES;
+        sqlite.hits.add(pages.hits);
+        sqlite.misses.add(pages.misses);
+        sqlite.writes.add(pages.writes);
+        sqlite.spills.add(pages.spills);
+    }
+}
+
 impl Drop for ProjectStore {
     fn drop(&mut self) {
+        publish_page_io(&self.connection);
         #[cfg(any(target_os = "macos", target_os = "linux"))]
         self.import_closed.store(true, Ordering::Release);
         #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -1546,6 +1560,7 @@ fn write_command_plan(
     deadpan_diagnostics::IO
         .store_revisions
         .write((plan.request_json.len() + plan.edit_json.len()) as u64);
+    publish_page_io(connection);
     let history_id = connection.last_insert_rowid();
     if isolated {
         generation_scope::insert_event(connection, plan.next.revision_id(), history_id, true)?;

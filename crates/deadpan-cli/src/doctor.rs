@@ -10,6 +10,7 @@ pub fn project_report(package: &std::path::Path) -> Result<serde_json::Value, Cl
     let mut report = report()?;
     report["project"] = project::report(package)?;
     // Read after the probes so the counters include their work.
+    crate::diagnostic_export::sample_process_memory();
     report["diagnostics"] = diagnostics(&deadpan_diagnostics::snapshot());
     Ok(report)
 }
@@ -40,21 +41,26 @@ pub fn diagnostics(snapshot: &deadpan_diagnostics::Snapshot) -> serde_json::Valu
         .into_iter()
         .map(|(name, value)| (name.to_owned(), level(value)))
         .collect();
-    let caches: Map<String, Value> = snapshot
+    let (pcm_caches, picture_caches): (Vec<_>, Vec<_>) = snapshot
         .caches
         .named()
         .into_iter()
-        .map(|(name, cache)| {
-            (
-                name.to_owned(),
-                json!({
-                    "hits": cache.hits, "misses": cache.misses, "evictions": cache.evictions,
-                    "hit_rate": cache.hit_rate(),
-                    "entries": level(cache.entries), "bytes": level(cache.bytes),
-                }),
-            )
-        })
-        .collect();
+        .partition(|(name, _)| !matches!(*name, "thumbnails" | "proxies"));
+    let caches = |named: Vec<(&str, deadpan_diagnostics::CacheSnapshot)>| -> Map<String, Value> {
+        named
+            .into_iter()
+            .map(|(name, cache)| {
+                (
+                    name.to_owned(),
+                    json!({
+                        "hits": cache.hits, "misses": cache.misses, "evictions": cache.evictions,
+                        "hit_rate": cache.hit_rate(),
+                        "entries": level(cache.entries), "bytes": level(cache.bytes),
+                    }),
+                )
+            })
+            .collect()
+    };
     let workers = |memory: deadpan_diagnostics::WorkerMemorySnapshot| {
         json!({
             "live": level(memory.live),
@@ -63,12 +69,21 @@ pub fn diagnostics(snapshot: &deadpan_diagnostics::Snapshot) -> serde_json::Valu
         })
     };
     let gpu = snapshot.gpu;
+    let pages = snapshot.sqlite_pages;
+    let process = snapshot.process_memory;
     json!({
         "scope": "process-local counters for this deadpan-cli process only; a running app's sessions, GPU work and workers are not visible here",
         "file_io": io,
-        "file_io_note": "the store's revision rows (logical payload bytes, not SQLite pages), object-store copies and snapshots, media snapshots, decoder descriptor reads, the private PCM cache file and proxy reads; one operation is one buffered call",
+        "file_io_note": "the store's revision rows (logical payload bytes; pages are in sqlite_pages), object-store copies and snapshots, media snapshots, video and audio decoder descriptor reads, the private PCM cache file and proxy reads; one operation is one buffered call",
+        "sqlite_pages": {
+            "hits": pages.hits, "misses": pages.misses, "writes": pages.writes,
+            "spills": pages.spills, "hit_rate": pages.hit_rate(),
+            "note": "database pages of store connections, published at history-row reads and writes and when a store closes",
+        },
         "queue_depths": queues,
-        "pcm_caches": caches,
+        "pcm_caches": caches(pcm_caches),
+        "picture_caches": caches(picture_caches),
+        "picture_caches_note": "card thumbnails count one lookup per card when it appears or its picture changes (entries only); preview proxies count lookups of an Original's published proxy and cleanup evictions (no residency)",
         "gpu_submissions": {
             "submissions": gpu.submissions, "completions": gpu.completions,
             "last_us": gpu.last_us, "max_us": gpu.max_us,
@@ -78,6 +93,12 @@ pub fn diagnostics(snapshot: &deadpan_diagnostics::Snapshot) -> serde_json::Valu
         "model_workers": workers(snapshot.model_workers),
         "other_workers": workers(snapshot.other_workers),
         "workers_note": "physical footprint of live supervised workers sampled every 500 ms by their supervisor; doctor starts none",
+        "process_memory": {
+            "phys_footprint_bytes": level(process.footprint_bytes),
+            "resident_bytes": level(process.resident_bytes),
+            "samples": process.samples, "failed_samples": process.failures,
+            "note": "this process, sampled when diagnostics are read; the footprint includes its Metal allocations, not broken out",
+        },
     })
 }
 

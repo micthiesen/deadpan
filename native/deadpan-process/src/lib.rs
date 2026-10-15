@@ -1,10 +1,10 @@
 //! Owned worker teardown, with group-membership confirmation on Darwin, and
-//! footprint sampling of an owned, unreaped worker.
+//! footprint sampling of an owned, unreaped worker or this process.
 //!
 //! Unsafe code is denied except in two documented, bounded libproc calls:
 //! `group_members` (`proc_listpids` with `PROC_PGRP_ONLY`) and
 //! `pid_rusage` (`proc_pid_rusage` with `RUSAGE_INFO_V2`, used by
-//! `owned_child_memory`).
+//! `owned_child_memory` and `own_memory`).
 #![cfg(any(target_os = "macos", target_os = "linux"))]
 
 use std::io;
@@ -221,6 +221,18 @@ pub fn owned_child_memory(child: &Child) -> io::Result<Option<WorkerMemory>> {
             phys_footprint: usage.ri_phys_footprint,
             resident_size: usage.ri_resident_size,
         })
+    })
+}
+
+/// Sample this process's own memory, for diagnostics only. The calling
+/// process's PID cannot be reused while it runs.
+#[cfg(target_os = "macos")]
+pub fn own_memory() -> io::Result<WorkerMemory> {
+    let pid = libc::pid_t::try_from(std::process::id())
+        .map_err(|_| io::Error::new(io::ErrorKind::InvalidInput, "PID out of range"))?;
+    pid_rusage(pid).map(|usage| WorkerMemory {
+        phys_footprint: usage.ri_phys_footprint,
+        resident_size: usage.ri_resident_size,
     })
 }
 
@@ -513,5 +525,18 @@ mod tests {
         child.0.kill().unwrap();
         observe_exit(&child.0);
         assert_eq!(owned_child_memory(&child.0).unwrap(), None);
+    }
+
+    #[test]
+    #[cfg(target_os = "macos")]
+    fn own_memory_reports_this_process_and_grows_with_touched_pages() {
+        let before = own_memory().unwrap();
+        assert!(before.phys_footprint > 0);
+        assert!(before.resident_size > 0);
+        // 64 MiB of written pages count toward this process's footprint.
+        let pages = vec![1_u8; 64 << 20];
+        let after = own_memory().unwrap();
+        assert!(after.phys_footprint >= before.phys_footprint + (32 << 20));
+        drop(std::hint::black_box(pages));
     }
 }
