@@ -56,6 +56,7 @@ fn target() -> AttentionTarget {
             region: region(300_000),
         }],
         provenance: None,
+        display_aspect: None,
     }
 }
 fn point(ticks: i64) -> SourcePoint {
@@ -423,4 +424,93 @@ fn an_unrepresentable_interpolation_is_unavailable_not_a_held_region() {
         }),
         Some((region(250_000), TargetSource::Tracked(TrackState::Tracked)))
     );
+}
+
+fn ratio(numerator: i128, denominator: i128) -> ExactRatio {
+    ExactRatio::new(numerator, denominator).unwrap()
+}
+
+#[test]
+fn display_aspects_are_exact_upright_shapes_within_bounds() {
+    let integer = |value| ExactRatio::integer(value);
+    assert_eq!(
+        display_aspect([integer(1920), integer(1080)], [1, 1], 0),
+        Some(ratio(16, 9))
+    );
+    // Anamorphic 720x480 at 32:27, then a quarter turn.
+    assert_eq!(
+        display_aspect([integer(720), integer(480)], [32, 27], 0),
+        Some(ratio(16, 9))
+    );
+    assert_eq!(
+        display_aspect([integer(720), integer(480)], [32, 27], 3),
+        Some(ratio(9, 16))
+    );
+    assert_eq!(
+        display_aspect([integer(720), integer(480)], [32, 27], 2),
+        Some(ratio(16, 9))
+    );
+    // Fractional clean extents stay exact.
+    assert_eq!(
+        display_aspect([integer(1920), ratio(2161, 2)], [1, 1], 0),
+        Some(ratio(3840, 2161))
+    );
+    assert_eq!(display_aspect([integer(0), integer(1)], [1, 1], 0), None);
+    assert_eq!(display_aspect([integer(2), integer(1)], [0, 1], 0), None);
+    assert_eq!(display_aspect([integer(65), integer(1)], [1, 1], 0), None);
+    assert_eq!(display_aspect([integer(1), integer(65)], [1, 1], 0), None);
+}
+
+#[test]
+fn fit_points_letterbox_and_pillarbox_exactly() {
+    let canvas_vertical = [1080, 1920];
+    let widescreen = ratio(16, 9);
+    // A 16:9 picture on a 9:16 canvas fills the width; it covers
+    // (9/16)/(16/9) = 81/256 of the height, centered.
+    assert_eq!(
+        fit_source_point([ratio(1, 5), ratio(1, 2)], widescreen, canvas_vertical),
+        Some([ratio(1, 5), ratio(1, 2)])
+    );
+    assert_eq!(
+        fit_source_point([ratio(1, 5), ExactRatio::ZERO], widescreen, canvas_vertical),
+        Some([ratio(1, 5), ratio(175, 512)])
+    );
+    assert_eq!(
+        fit_source_point([ratio(1, 5), ExactRatio::ONE], widescreen, canvas_vertical),
+        Some([ratio(1, 5), ratio(337, 512)])
+    );
+    // A 9:16 picture on a 16:9 canvas fills the height, pillarboxed.
+    assert_eq!(
+        fit_source_point([ratio(1, 4), ratio(3, 4)], ratio(9, 16), [1920, 1080]),
+        Some([ratio(431, 1024), ratio(3, 4)])
+    );
+    // Equal aspects leave the point alone; an empty canvas has no placement.
+    assert_eq!(
+        fit_source_point([ratio(1, 4), ratio(3, 4)], widescreen, [1920, 1080]),
+        Some([ratio(1, 4), ratio(3, 4)])
+    );
+    assert_eq!(
+        fit_source_point([ratio(1, 4), ratio(3, 4)], widescreen, [0, 1080]),
+        None
+    );
+}
+
+#[test]
+fn recorded_aspects_validate_and_stay_off_the_wire_when_absent() {
+    let mut target = target();
+    let absent = serde_json::to_value(&target).unwrap();
+    assert!(absent.get("display_aspect").is_none());
+    target.display_aspect = Some(ratio(16, 9));
+    target.validate(&assets()).unwrap();
+    let wire = serde_json::to_string(&target).unwrap();
+    assert_eq!(
+        serde_json::from_str::<AttentionTarget>(&wire).unwrap(),
+        target
+    );
+    for invalid in [ExactRatio::ZERO, ratio(-16, 9), ratio(65, 1), ratio(1, 65)] {
+        target.display_aspect = Some(invalid);
+        assert!(target.validate_shape().is_err(), "{invalid:?}");
+    }
+    target.display_aspect = Some(ratio((1 << 48) + 1, 1 << 48));
+    assert!(target.validate_shape().is_err());
 }

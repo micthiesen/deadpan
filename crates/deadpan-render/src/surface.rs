@@ -117,6 +117,39 @@ impl CleanAperture {
 }
 
 impl FrameMetadata {
+    /// The exact upright display aspect this picture is fitted to a canvas
+    /// with: visible (clean aperture) width times the sample aspect ratio over
+    /// visible height, inverted for a quarter or three-quarter turn, as
+    /// [`crate::PictureGeometry`] lays it out. Attention targets record it so
+    /// a follow places its center on any canvas exactly; `None` for an
+    /// invalid aperture or an aspect outside the recordable bounds.
+    pub fn display_aspect(&self) -> Option<ExactRatio> {
+        let [width, height] = match self.clean_aperture {
+            Some(aperture) => {
+                aperture.validate(self.width, self.height).ok()?;
+                [aperture.rect[2], aperture.rect[3]]
+            }
+            None => [
+                ExactRatio::integer(i64::from(self.width)),
+                ExactRatio::integer(i64::from(self.height)),
+            ],
+        };
+        let turns = match self.rotation {
+            Rotation::None => 0,
+            Rotation::Clockwise90 => 1,
+            Rotation::Clockwise180 => 2,
+            Rotation::Clockwise270 => 3,
+        };
+        deadpan_core::display_aspect(
+            [width, height],
+            [
+                self.sample_aspect_ratio.numerator(),
+                self.sample_aspect_ratio.denominator(),
+            ],
+            turns,
+        )
+    }
+
     pub(crate) fn visible_rect(&self) -> Result<[f64; 4], RenderError> {
         match self.clean_aperture {
             Some(aperture) => {

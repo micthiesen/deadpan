@@ -129,6 +129,7 @@ impl SelectedFixture {
                     samples: vec![],
                     corrections: vec![],
                     provenance: None,
+                    display_aspect: None,
                 },
             },
         );

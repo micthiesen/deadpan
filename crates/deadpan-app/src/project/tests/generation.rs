@@ -452,6 +452,7 @@ fn save_generation_target(fixture: &mut Fixture, name: &str, center: [u32; 2]) {
         samples: vec![],
         corrections: vec![],
         provenance: None,
+        display_aspect: None,
     };
     let update = command(
         &fixture.service,

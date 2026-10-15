@@ -191,6 +191,7 @@ fn a_selected_target_correction_or_removal_stales_only_requests_that_captured_it
         samples: vec![],
         corrections: vec![],
         provenance: None,
+        display_aspect: None,
     };
     let origin = with_target(&bare, "subject", target.clone());
     let request = StoredGenerationRequest {

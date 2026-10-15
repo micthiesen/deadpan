@@ -185,6 +185,33 @@ fn registered(scratch: &Path) -> PathBuf {
     package
 }
 
+#[test]
+fn preparation_measures_the_exact_upright_aspect_targets_record() {
+    let scratch = tempfile::tempdir().unwrap();
+    let package = registered(scratch.path());
+    let store = ProjectStore::open(&package, AccessMode::ReadOnly).unwrap();
+    let prepared = deadpan_cli::tracking::prepare_tracking(
+        &store,
+        &deadpan_cli::tracking::TrackRequest {
+            asset: Some(clip()),
+            from_pts: 0,
+            to_pts: 400,
+            region: square(0),
+            stride: 1,
+            stop_at_shots: false,
+        },
+        &std::sync::atomic::AtomicBool::new(false),
+        std::time::Instant::now() + std::time::Duration::from_secs(60),
+    )
+    .unwrap();
+    // The fixture is 320x180 with square pixels and no rotation.
+    assert_eq!(
+        prepared.exact_display_aspect,
+        Some(deadpan_core::ExactRatio::new(16, 9).unwrap())
+    );
+    assert!((prepared.display_aspect - 16.0 / 9.0).abs() < 1e-12);
+}
+
 fn head(package: &Path) -> deadpan_core::ProjectDocument {
     ProjectStore::open(package, AccessMode::ReadOnly)
         .unwrap()
@@ -244,6 +271,7 @@ fn outcome(head: deadpan_core::ProjectDocument) -> TrackOutcome {
         path: path(&pictures(), 0),
         asset: clip(),
         time_base,
+        display_aspect: Some(deadpan_core::ExactRatio::new(16, 9).unwrap()),
         engine: "test engine".into(),
         head,
     }
@@ -260,7 +288,14 @@ fn saving_respects_the_head_tracked_against_replacement_undo_and_corrections() {
     let intervening = outcome(tracked_against.clone());
     let (other, _) = intervening
         .path
-        .to_target("Other".into(), clip(), intervening.time_base, "test", 4_096)
+        .to_target(
+            "Other".into(),
+            clip(),
+            intervening.time_base,
+            intervening.display_aspect,
+            "test",
+            4_096,
+        )
         .unwrap();
     save_target(
         &package,
@@ -283,6 +318,11 @@ fn saving_respects_the_head_tracked_against_replacement_undo_and_corrections() {
     let target = after_save.targets()[&id].clone();
     assert_eq!(target.label, "Square");
     assert_eq!(target.span.end().ticks, 1_250);
+    // The tracked picture's exact upright aspect is saved with the target.
+    assert_eq!(
+        target.display_aspect,
+        Some(deadpan_core::ExactRatio::new(16, 9).unwrap())
+    );
     assert_eq!(saved["samples"], target.samples.len());
 
     // An existing target is refused without --replace, even from the CLI

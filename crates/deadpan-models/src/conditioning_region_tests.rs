@@ -30,6 +30,7 @@ fn target() -> AttentionTarget {
         samples: vec![],
         corrections: vec![],
         provenance: None,
+        display_aspect: None,
     }
 }
 fn boundary(pts: i64) -> BoundaryPicture {

@@ -575,6 +575,7 @@ fn selected_region_uses_direction_anchor_and_preserves_captured_controls() {
         samples: Vec::new(),
         corrections: Vec::new(),
         provenance: None,
+        display_aspect: None,
     };
     for direction in [ExtensionDirection::FromLeft, ExtensionDirection::FromRight] {
         let (plan, mut constraints, mut prepared) =

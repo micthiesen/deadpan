@@ -120,6 +120,9 @@ pub struct PreparedTrack {
     pub asset: AssetId,
     pub time_base: SourceTimeBase,
     pub display_aspect: f64,
+    /// The same aspect exactly, as a saved target records it; `None` only
+    /// outside the recordable bounds.
+    pub exact_display_aspect: Option<deadpan_core::ExactRatio>,
     /// The head document the range was resolved against, captured before any
     /// tracking. Saving uses its revision as the expected one, so edits made
     /// while tracking refuse the save instead of being overwritten.
@@ -299,6 +302,7 @@ pub fn prepare_tracking(
     } else {
         coded_aspect
     };
+    let exact_display_aspect = exact_display_aspect(interpretation);
 
     let (workspace, source) = copy_verified_original(
         store,
@@ -321,10 +325,28 @@ pub fn prepare_tracking(
         asset,
         time_base,
         display_aspect,
+        exact_display_aspect,
         head: document,
         content,
         shots: stored.map(|(key, _)| key),
     })
+}
+
+/// The exact upright display aspect of a qualified picture stream, the
+/// frame its target regions are normalized to: clean extents, then sample
+/// aspect ratio, then rotation, as the shared renderer fits the picture.
+pub fn exact_display_aspect(
+    interpretation: &deadpan_source::SourceStreamInfo,
+) -> Option<deadpan_core::ExactRatio> {
+    let [_, _, width, height] = interpretation.visible_bounds().ok()?;
+    deadpan_core::display_aspect(
+        [width, height],
+        [
+            interpretation.sample_aspect_num,
+            interpretation.sample_aspect_den,
+        ],
+        interpretation.rotation_quarter_turns,
+    )
 }
 
 /// Copy the receipt's verified Original into `input/source` of a fresh
@@ -754,6 +776,8 @@ pub struct TrackOutcome {
     pub path: TrackedPath,
     pub asset: AssetId,
     pub time_base: SourceTimeBase,
+    /// The tracked picture's exact upright aspect, recorded on the target.
+    pub display_aspect: Option<deadpan_core::ExactRatio>,
     /// Tracker provenance: engine, request revision and level.
     pub engine: String,
     /// The head the range was resolved against, before tracking.
@@ -804,6 +828,7 @@ pub fn track_project(
             "time_base": [prepared.stream.time_base_num, prepared.stream.time_base_den],
             "rotation_quarter_turns": prepared.stream.rotation_quarter_turns,
             "display_aspect": prepared.display_aspect,
+            "exact_display_aspect": prepared.exact_display_aspect,
         },
         "shot_analysis": prepared.shots,
         "pictures": prepared.pictures.len(),
@@ -822,6 +847,7 @@ pub fn track_project(
         path: result.path,
         asset: prepared.asset,
         time_base: prepared.time_base,
+        display_aspect: prepared.exact_display_aspect,
         head: prepared.head,
     })
 }
@@ -895,6 +921,7 @@ pub fn save_tracked(
             label.into(),
             outcome.asset.clone(),
             outcome.time_base,
+            outcome.display_aspect,
             &outcome.engine,
             sample_budget(&outcome.head, id),
         )

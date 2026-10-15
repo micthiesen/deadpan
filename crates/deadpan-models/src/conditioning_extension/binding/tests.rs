@@ -496,6 +496,7 @@ fn target() -> AttentionTarget {
         samples: vec![],
         corrections: vec![],
         provenance: None,
+        display_aspect: None,
     }
 }
 

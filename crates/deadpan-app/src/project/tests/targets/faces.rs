@@ -126,6 +126,7 @@ fn proposals_never_edit_and_a_chosen_face_saves_its_target_and_framing_as_one_un
         "Face 2".into(),
         fixture.asset.clone(),
         span_end.time_base,
+        Some(deadpan_core::ExactRatio::new(16, 9).unwrap()),
         pts,
         span_end.ticks,
     )

@@ -61,6 +61,7 @@ fn with_target(document: ProjectDocument, end: i64, follows: &[(&str, i64)]) -> 
             .collect(),
             corrections: Vec::new(),
             provenance: None,
+            display_aspect: None,
         },
     )]))
     .unwrap();
@@ -120,4 +121,60 @@ fn an_outer_follow_sees_the_subject_through_inner_framing() {
     let mut value = serde_json::to_value(&document).unwrap();
     value.as_object_mut().unwrap().remove("targets");
     assert!(ProjectDocument::from_json(&value.to_string()).is_err());
+}
+
+/// `document` on a `width`x`height` canvas, its target recording `aspect`
+/// and centered at y = 1/4 of the picture.
+fn on_canvas(
+    document: ProjectDocument,
+    width: u32,
+    height: u32,
+    aspect: Option<ExactRatio>,
+) -> ProjectDocument {
+    let mut value = serde_json::to_value(document).unwrap();
+    value["presentation_basis"]["width"] = width.into();
+    value["presentation_basis"]["height"] = height.into();
+    let target = &mut value["targets"]["speaker"];
+    target["display_aspect"] = serde_json::to_value(aspect).unwrap();
+    target["region"]["center"][1] = 250_000.into();
+    for sample in target["samples"].as_array_mut().unwrap() {
+        sample["region"]["center"][1] = 250_000.into();
+    }
+    if aspect.is_none() {
+        target.as_object_mut().unwrap().remove("display_aspect");
+    }
+    ProjectDocument::from_json(&value.to_string()).unwrap()
+}
+
+#[test]
+fn a_follow_centers_the_target_where_the_picture_is_fitted_on_the_canvas() {
+    let widescreen = || {
+        with_target(
+            document(&["a"], vec![("a", source(10, 0, 10010))]),
+            10010,
+            &[("a", 2)],
+        )
+    };
+    // A 16:9 picture on a vertical 1080x1920 canvas fills its width and
+    // covers 81/256 of its height: y = 1/4 lands at 1/2 - 81/1024.
+    let vertical = on_canvas(widescreen(), 1080, 1920, Some(ratio(16, 9)));
+    let plan = RenderPlan::compile(&vertical).unwrap();
+    let centered = pose(&plan, 0, 0);
+    assert_eq!(centered.center_x, grid(1, 5));
+    assert_eq!(centered.center_y, grid(431, 1024));
+    assert_eq!(pose(&plan, 6, 0).center_x, grid(4, 5));
+    // On a canvas of the picture's own aspect nothing moves.
+    let same = on_canvas(widescreen(), 1920, 1080, Some(ratio(16, 9)));
+    let plan = RenderPlan::compile(&same).unwrap();
+    assert_eq!(pose(&plan, 0, 0).center_y, grid(1, 4));
+    // A target recorded without an aspect keeps source coordinates.
+    let legacy = on_canvas(widescreen(), 1080, 1920, None);
+    let plan = RenderPlan::compile(&legacy).unwrap();
+    assert_eq!(pose(&plan, 0, 0).center_y, grid(1, 4));
+    // A 9:16 picture on a 16:9 canvas is pillarboxed: x = 1/5 lands at
+    // 1/2 - (3/10)(81/256).
+    let pillarboxed = on_canvas(widescreen(), 1920, 1080, Some(ratio(9, 16)));
+    let plan = RenderPlan::compile(&pillarboxed).unwrap();
+    assert_eq!(pose(&plan, 0, 0).center_x, grid(1037, 2560));
+    assert_eq!(pose(&plan, 0, 0).center_y, grid(1, 4));
 }

@@ -541,6 +541,7 @@ fn selected_anchor_unavailability_is_preserved_and_binds_request_target() {
         samples: vec![],
         corrections: vec![],
         provenance: None,
+        display_aspect: None,
     };
     let id = TargetId::new("face").unwrap();
     fixture.context.region = ExtensionRegionCapture::new(
@@ -656,6 +657,7 @@ fn selected_region_captures_one_exact_original_anchor_and_rejects_a_moved_seed()
         samples: vec![],
         corrections: vec![],
         provenance: None,
+        display_aspect: None,
     };
     value.region = ExtensionRegionCapture::new(
         TargetId::new("hand").unwrap(),

@@ -114,6 +114,7 @@ fn project(ai: Vec<AiScript>, tracking: Vec<TrackScript>) -> Fixture {
         samples: Vec::new(),
         corrections: Vec::new(),
         provenance: None,
+        display_aspect: None,
     };
     let saved = command(
         &service,

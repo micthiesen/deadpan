@@ -287,6 +287,9 @@ pub(super) struct CameraSession {
     layer: usize,
     /// The asset and indexed PTS of the displayed Original picture.
     picture: Option<(AssetId, i64)>,
+    /// That picture's exact upright display aspect, which targets drawn or
+    /// proposed on it record; `None` for a preview-proxy picture.
+    display_aspect: Option<ExactRatio>,
     follow: Option<FollowDraft>,
     selected_target: Option<TargetId>,
     region_purpose: Option<RegionPurpose>,
@@ -452,6 +455,8 @@ fn layer_poses(
         return Err("The Camera scope is absent from this picture.".into());
     }
     let captured = picture.picture_context.is_some();
+    let basis = document.presentation_basis();
+    let canvas = [basis.width, basis.height];
     let resolve = |target: &TargetId,
                    scale: ExactRatio,
                    fallback: FramingPose,
@@ -467,6 +472,7 @@ fn layer_poses(
                     document.targets().get(target)?,
                     asset,
                     *point,
+                    canvas,
                     inner.iter().copied(),
                     scale,
                 )
@@ -718,6 +724,9 @@ impl CameraSession {
             duration: layer.duration,
             layer: index,
             picture: indexed,
+            display_aspect: (picture.tier == crate::worker::PictureTier::Original)
+                .then(|| frame.metadata().display_aspect())
+                .flatten(),
             region_purpose: None,
             saving: None,
             rebase: None,
@@ -1336,6 +1345,7 @@ impl DeadpanApp {
                 label,
                 pending.asset.clone(),
                 pending.span.start().time_base,
+                pending.camera.display_aspect,
                 pending.span.start().ticks,
                 pending.span.end().ticks,
             )
@@ -1425,6 +1435,7 @@ impl DeadpanApp {
         let target = proposed
             .or_else(|| workspace.document.targets().get(id))
             .ok_or_else(|| format!("There is no saved target {label}."))?;
+        let basis = workspace.document.presentation_basis();
         let pose = sample
             .picture
             .follow_point()
@@ -1433,6 +1444,7 @@ impl DeadpanApp {
                     target,
                     asset,
                     point,
+                    [basis.width, basis.height],
                     sample.framing[..layer].iter().map(|layer| layer.pose),
                     ExactRatio::ONE,
                 )
@@ -2159,6 +2171,7 @@ impl DeadpanApp {
                         samples: Vec::new(),
                         corrections: Vec::new(),
                         provenance: None,
+                        display_aspect: camera.display_aspect,
                     };
                     let ticket = self
                         .submit_target(Operation::Save {
@@ -3322,6 +3335,7 @@ mod tests {
                 region: region(2),
             }],
             provenance: None,
+            display_aspect: None,
         };
         assert_eq!(corrected(&target, 0, region(9)).region, region(9));
         let inserted = corrected(&target, 200, region(3));

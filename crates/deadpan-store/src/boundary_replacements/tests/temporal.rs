@@ -519,6 +519,7 @@ fn removing_a_selected_region_restores_fallback_and_retains_the_missing_selectio
                 samples: vec![],
                 corrections: vec![],
                 provenance: None,
+                display_aspect: None,
             },
         },
         "region",

@@ -151,7 +151,9 @@ its curve only on this explicit request, and the inspector says so.
 
 The preview resolves the follow exactly as the committed plan does
 (`deadpan_plan::follow_pose`: the target's center at the picture's source time,
-carried through every inner operation), then re-resolves every outer follow that
+placed on the presentation canvas where the `Fit` layout puts it when the target
+records its display aspect, carried through every inner operation; see
+[targets](TARGETS.md#following-a-target)), then re-resolves every outer follow that
 sees the changed operation, and replaces those poses atomically on the retained
 picture. Escape restores every operation's entry pose. The `targets` replay
 checks that the committed picture's pose equals the Camera preview exactly.
@@ -323,9 +325,10 @@ Saved region targets, keyboard region creation, following and selected-target
 tracking are implemented (above, [targets](TARGETS.md), [tracking](TRACKING.md)).
 Point targets, face proposals in Camera's numbered picker (only `target=face:N`
 uses them now), general region detection, renaming targets, pointer dragging of
-rectangles, a live follow whose scale changes over time (a creep that tracks a
-moving target), and follow centers corrected for a letterboxed canvas remain
-required. Centered per-play scale
+rectangles, and a live follow whose scale changes over time (a creep that tracks a
+moving target) remain required. Follow centers are placed on a letterboxed or
+pillarboxed canvas for targets that record their display aspect
+([qualification](qualification/letterbox-follow-2026-10-15.md)). Centered per-play scale
 escalation is in [Repeat escalation](REPEAT_ESCALATION.md); target-centered escalation, nested native selection, full
 framed Ungroup, arbitrary temporal envelopes, captions, cutaways, and the remaining
 Section 8 picture operations remain required. [Captured framing](CAPTURED_FRAMING.md)

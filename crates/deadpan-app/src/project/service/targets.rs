@@ -35,11 +35,13 @@ struct Finished {
     engine: String,
     asset: AssetId,
     time_base: SourceTimeBase,
+    /// The tracked picture's exact upright aspect from its qualification.
+    display_aspect: Option<deadpan_core::ExactRatio>,
 }
 
 enum Event {
     Progress(u8),
-    Finished(std::result::Result<Finished, Failure>),
+    Finished(Box<std::result::Result<Finished, Failure>>),
 }
 
 struct Running {
@@ -481,7 +483,7 @@ impl Service {
                     }
                 }
                 Ok(Event::Finished(result)) => {
-                    self.tracking_finished(result);
+                    self.tracking_finished(*result);
                     return true;
                 }
                 Err(mpsc::TryRecvError::Empty) => return changed,
@@ -543,6 +545,7 @@ impl Service {
                 existing.label.clone(),
                 finished.asset,
                 finished.time_base,
+                finished.display_aspect,
                 &finished.engine,
                 budget,
             )
@@ -652,10 +655,11 @@ fn job_thread(
             engine,
             asset: prepared.asset.clone(),
             time_base: prepared.time_base,
+            display_aspect: prepared.exact_display_aspect,
         })
     })();
     // The writer drains every loop iteration; a stopped writer disconnects.
-    let _ = events.send(Event::Finished(result));
+    let _ = events.send(Event::Finished(Box::new(result)));
 }
 
 /// The deterministic replacement for the Vision worker: real range, real

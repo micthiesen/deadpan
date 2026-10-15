@@ -105,6 +105,7 @@ fn drawn(fixture: &Fixture, first: usize) -> AttentionTarget {
         samples: Vec::new(),
         corrections: Vec::new(),
         provenance: None,
+        display_aspect: None,
     }
 }
 
@@ -317,6 +318,11 @@ fn tracking_stops_at_the_stored_cut_saves_against_its_entry_head_and_corrects_on
     let provenance = target.provenance.clone().unwrap();
     assert_eq!(provenance.engine, SCRIPTED_ENGINE);
     assert_eq!(provenance.stop, deadpan_core::TargetStop::ShotBoundary);
+    // The qualified 320x180 square-pixel Original's exact upright aspect.
+    assert_eq!(
+        target.display_aspect,
+        Some(deadpan_core::ExactRatio::new(16, 9).unwrap())
+    );
     // The scripted subject moves right; the saved path follows it.
     let at = |index: usize| deadpan_core::SourcePoint {
         ticks: deadpan_core::ExactRatio::integer(fixture.pictures[index]),

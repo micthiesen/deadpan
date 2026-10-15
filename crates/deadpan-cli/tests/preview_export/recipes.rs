@@ -1140,6 +1140,7 @@ pub fn framing(dir: &Path) -> Result<Fixture> {
                 ],
                 corrections: Vec::new(),
                 provenance: None,
+                display_aspect: None,
             },
         })
     })?;
@@ -1164,6 +1165,114 @@ pub fn framing(dir: &Path) -> Result<Fixture> {
         vec!["Smash zoom", "Slow creep", "Off-center stare", "Framing"],
         expectations,
         Vec::new(),
+    )
+}
+
+/// The 320x180 (16:9) Original on a vertical 180x320 canvas, the whole base
+/// following a target recorded with its exact display aspect: x moves 0.3 to
+/// 0.7 over Original 32..42 and y stays 0.4. The picture is letterboxed into
+/// 81/256 of the canvas height, so the follow centers y at
+/// 1/2 - (1/10)(81/256) = 1199/2560 of the canvas, where the renderer draws
+/// that source point, not at 0.4. Pictures are unchanged.
+pub fn letterbox_follow(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "letterbox-follow")?;
+    project.shorten()?;
+    project.apply(|_, _, _| {
+        Ok(Command::SetCanvas {
+            width: 180,
+            height: 320,
+        })
+    })?;
+    let zoom = ratio(27, 20)?;
+    let half = ratio(1, 2)?;
+    let target = TargetId::new("subject")?;
+    let asset = project.asset.clone();
+    project.apply(|_, document, _| {
+        let (time_base, per_frame) = original_clock(document, &asset)?;
+        let stamp = |ordinal: i64| SourceTimestamp {
+            ticks: ordinal * per_frame,
+            time_base,
+        };
+        let region = |x: u32| TargetRegion {
+            center: [x, 400_000],
+            size: [200_000, 200_000],
+        };
+        Ok(Command::SetTarget {
+            id: target.clone(),
+            target: AttentionTarget {
+                label: "Subject".into(),
+                asset: asset.clone(),
+                span: SourceSpan::new(stamp(32), stamp(42))?,
+                region: region(300_000),
+                samples: vec![
+                    TargetSample {
+                        at: 32 * per_frame,
+                        region: region(300_000),
+                        confidence: 1000,
+                        state: TrackState::Tracked,
+                    },
+                    TargetSample {
+                        at: 41 * per_frame,
+                        region: region(700_000),
+                        confidence: 1000,
+                        state: TrackState::Tracked,
+                    },
+                ],
+                corrections: Vec::new(),
+                provenance: None,
+                display_aspect: Some(ratio(16, 9)?),
+            },
+        })
+    })?;
+    project.apply(|_, document, _| {
+        Ok(Command::SetFraming {
+            node: root_child_at(document, 0)?.0,
+            framing: Some(Framing {
+                clock: FramingClock::OwnerOutput,
+                value: FramingValue::Follow {
+                    target: target.clone(),
+                    scale: zoom,
+                    fallback: FramingPose::new(half, half, zoom)?,
+                },
+            }),
+        })
+    })?;
+    // Independently of the export comparison: the committed plan centers the
+    // letterboxed subject where the picture is fitted on the vertical canvas.
+    let document = project.document()?;
+    let followed_node = root_child_at(&document, 0)?.0;
+    let plan = deadpan_plan::RenderPlan::compile(&document)?;
+    let expected_y = FramingPose::new(half, ratio(1199, 2560)?, zoom)?
+        .quantized()?
+        .center_y;
+    let mut followed = 0;
+    for frame in 0..BASE_FRAMES as i64 {
+        let picture = plan.picture(deadpan_core::ProjectFrame(frame))?;
+        let pose = picture
+            .framing
+            .iter()
+            .find(|layer| layer.instance.node == followed_node)
+            .and_then(|layer| layer.pose)
+            .ok_or("followed beat has a pose")?;
+        if pose.center_y == expected_y {
+            followed += 1;
+        } else if pose != FramingPose::new(half, half, zoom)? {
+            return Err(format!("frame {frame}: unexpected pose {pose:?}").into());
+        }
+    }
+    if followed == 0 {
+        return Err("no frame showed the target".into());
+    }
+    let expectations = [0u64, 5, 10, 15, 20, 25, 29]
+        .into_iter()
+        .map(|frame| (frame, base(frame)))
+        .collect();
+    project.finish(
+        vec!["Off-center stare", "Framing"],
+        expectations,
+        vec![format!(
+            "16:9 Original on a 180x320 canvas; {followed} followed frames center y at 1199/2560"
+        )],
     )
 }
 
@@ -3444,7 +3553,7 @@ const GENERATED: [(&str, Builder); 4] = {
 /// Build every fixture whose tools are available; return the others' names
 /// with the reason they were skipped.
 pub fn all_with_skips(dir: &Path) -> Result<(Vec<Fixture>, Vec<Skipped>)> {
-    let builders: [(&str, Builder); 40] = [
+    let builders: [(&str, Builder); 41] = [
         ("triumphant-sting", triumphant_sting),
         ("micro-loop", micro_loop),
         ("gag-set", gag_set),
@@ -3478,6 +3587,7 @@ pub fn all_with_skips(dir: &Path) -> Result<(Vec<Fixture>, Vec<Skipped>)> {
         ("black-pause", black_pause),
         ("retime-half", retime_half),
         ("framing", framing),
+        ("letterbox-follow", letterbox_follow),
         ("cutaway", cutaway),
         ("escalating-repeat", escalating_repeat),
         ("exploded-repeat", exploded_repeat),

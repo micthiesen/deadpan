@@ -416,6 +416,7 @@ fn saved_target_capture_is_bound_to_the_revision_and_retained_decoded_pictures()
         samples: vec![],
         corrections: vec![],
         provenance: None,
+        display_aspect: None,
     };
     let revision = RevisionId::new("target-captured")?;
     let request = root.path().join("set-target.json");

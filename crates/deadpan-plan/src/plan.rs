@@ -1275,7 +1275,8 @@ impl RenderPlan {
     /// Center each `Follow` layer on its target at the picture's source time.
     ///
     /// `framing` runs from the root inward; the picture enters at the last
-    /// layer. The target's point is carried outward through every inner posed
+    /// layer. The target's point is first placed where the picture is fitted
+    /// on the presentation canvas, then carried outward through every inner posed
     /// layer (`p' = (p - center) * scale + 1/2` per axis), innermost first, so
     /// an outer follow sees where the subject is after inner framing. A layer
     /// keeps its fallback where the picture is not the target's asset, lies
@@ -1296,12 +1297,14 @@ impl RenderPlan {
         let Some((asset, point)) = picture.follow_point() else {
             return;
         };
+        let basis = &self.metadata.presentation_basis;
+        let canvas = [basis.width, basis.height];
         for &(index, target, scale) in follows.iter().rev() {
             let Some(found) = self.targets.get(target) else {
                 continue;
             };
             let inner = framing[index + 1..].iter().rev().map(|layer| layer.pose);
-            if let Some(pose) = follow_pose(found, asset, point, inner, scale) {
+            if let Some(pose) = follow_pose(found, asset, point, canvas, inner, scale) {
                 framing[index].pose = Some(pose);
             }
         }
@@ -1696,16 +1699,20 @@ impl RenderPlan {
 }
 
 /// The pose a `Follow` layer resolves to: the target's region center at
-/// `point`, carried outward through every inner layer's pose (innermost
-/// first, `p' = (p - center) * scale + 1/2` per axis), at `scale`, quantized
-/// to the framing grid. `None` where the picture is not the target's asset,
-/// lies outside its span, or the centered pose is out of range; the layer then
+/// `point`, placed on the `canvas` (width, height) where the renderer fits the
+/// whole upright picture (`deadpan_core::fit_source_point` with the target's
+/// recorded display aspect; a target without one keeps source coordinates),
+/// carried outward through every inner layer's pose (innermost first,
+/// `p' = (p - center) * scale + 1/2` per axis), at `scale`, quantized to the
+/// framing grid. `None` where the picture is not the target's asset, lies
+/// outside its span, or the centered pose is out of range; the layer then
 /// keeps its fallback. Hosts previewing a changed inner pose use this to
 /// re-resolve a follow exactly as the plan does.
 pub fn follow_pose(
     target: &deadpan_core::AttentionTarget,
     asset: &AssetId,
     point: SourcePoint,
+    canvas: [u32; 2],
     inner: impl IntoIterator<Item = Option<deadpan_core::FramingPose>>,
     scale: ExactRatio,
 ) -> Option<deadpan_core::FramingPose> {
@@ -1713,25 +1720,27 @@ pub fn follow_pose(
         return None;
     }
     let (region, _) = target.region_at(point)?;
+    let center = match target.display_aspect {
+        Some(aspect) => deadpan_core::fit_source_point(region.center_ratio(), aspect, canvas)?,
+        None => region.center_ratio(),
+    };
     let half = ExactRatio::new(1, 2).expect("constant ratio");
-    let [x, y] = inner
-        .into_iter()
-        .try_fold(region.center_ratio(), |position, pose| {
-            let Some(pose) = pose else {
-                return Some(position);
-            };
-            let through = |value: ExactRatio, center: ExactRatio| {
-                value
-                    .checked_sub(center)
-                    .and_then(|offset| offset.checked_mul(pose.scale))
-                    .and_then(|offset| offset.checked_add(half))
-                    .ok()
-            };
-            Some([
-                through(position[0], pose.center_x)?,
-                through(position[1], pose.center_y)?,
-            ])
-        })?;
+    let [x, y] = inner.into_iter().try_fold(center, |position, pose| {
+        let Some(pose) = pose else {
+            return Some(position);
+        };
+        let through = |value: ExactRatio, center: ExactRatio| {
+            value
+                .checked_sub(center)
+                .and_then(|offset| offset.checked_mul(pose.scale))
+                .and_then(|offset| offset.checked_add(half))
+                .ok()
+        };
+        Some([
+            through(position[0], pose.center_x)?,
+            through(position[1], pose.center_y)?,
+        ])
+    })?;
     deadpan_core::FramingPose::new(x, y, scale)
         .and_then(|pose| pose.quantized())
         .ok()

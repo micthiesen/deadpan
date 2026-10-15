@@ -26,6 +26,17 @@ that show it. Targets name no person.
   or Unicode line/paragraph separators) naming the tracker of the latest run.
   It is a record, never an authorization; a hand-made target omits it, and
   documents without it are unchanged.
+- `display_aspect` (optional `ExactRatio`): the exact upright aspect of the
+  picture the regions are normalized to, visible (clean aperture) width times
+  the sample aspect ratio over visible height, inverted for a quarter or
+  three-quarter turn (`deadpan_core::display_aspect`, and
+  `deadpan_render::FrameMetadata::display_aspect` for a decoded picture).
+  It must be positive, at most 64:1 either way, with reduced terms of at most
+  2^48. Every creation site records it: Camera's drawn rectangle and
+  `target=face:N` from the exact Original picture, tracking (`track --save`,
+  the app's `T`) and face proposals from the Original's qualified stream
+  geometry. Corrections and re-tracking keep it. Absent targets serialize as
+  before.
 
 Between two consecutive samples in the same moving state (both `Tracked` or both
 `Interpolated`) with no correction after the first up to the second,
@@ -53,7 +64,15 @@ the target at the source time of the picture shown, at a fixed scale. The plan
 resolves it after descending to the picture (`RenderPlan::resolve_follows`): the
 target point is carried outward through every inner posed layer, innermost
 first (`p' = (p - center) * scale + 1/2`), so an outer follow sees the subject
-where inner framing put it. Resolved poses are quantized to the framing grid.
+where inner framing put it. Before that, a target with a `display_aspect` has
+its center placed on the presentation canvas exactly where the renderer fits
+the whole picture (`deadpan_core::fit_source_point`, the `Fit` letterbox or
+pillarbox): along the axis the picture fills the coordinate is unchanged, along
+the other it is scaled about the middle by the covered fraction, in exact
+rational arithmetic. A 16:9 Original on a 1080x1920 Shorts canvas covers
+81/256 of the height, so a subject at y = 0.4 is centered at
+1/2 - (1/10)(81/256) = 1199/2560 of the canvas. Preview, Camera and export use
+the same `follow_pose` with the canvas from the presentation basis. Resolved poses are quantized to the framing grid.
 The fallback applies where the picture is not the target's asset, lies outside
 its span, or the centered pose is out of range (including arithmetic overflow);
 evaluated on its own, a follow is its fallback. An endpoint-held Source picture
@@ -108,9 +127,12 @@ target with its state at the current picture and whole-span summary.
 
 ## Limits
 
-Target regions are in source picture coordinates. When the canvas aspect
-differs from the source's, the innermost layer's input is the fitted canvas,
-and follow centers are not yet corrected for that letterbox. Targets are
+Target regions are in upright source picture coordinates. Follows of targets
+that record their `display_aspect` are placed on canvases of another aspect
+([qualification](qualification/letterbox-follow-2026-10-15.md)). A target
+saved without it (before 2026-10-15) keeps source coordinates on such a canvas
+and centers the wrong point; re-saving it (draw, track or `track --save
+--replace`) records the aspect. Targets are
 created and corrected headlessly (`track --save`, `track-correct`; see
 [tracking](TRACKING.md)) and in Camera, and saved from a face proposal by
 `target=face:N`. `detect-faces` lists proposals headlessly without editing.

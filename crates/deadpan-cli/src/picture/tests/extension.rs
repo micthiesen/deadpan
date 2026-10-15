@@ -246,6 +246,7 @@ fn extension_relevance_keeps_editorial_edits_but_binds_saved_region_and_origin_d
         samples: vec![],
         corrections: vec![],
         provenance: None,
+        display_aspect: None,
     };
     fixture.edit(
         "saved-region",

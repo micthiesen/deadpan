@@ -85,6 +85,9 @@ pub struct PreparedFaces {
     pub ordinal: usize,
     /// The end of the asset's measured video span.
     pub video_end: i64,
+    /// The analysed picture's exact upright aspect, which a face target
+    /// records (`crate::tracking::exact_display_aspect`).
+    pub display_aspect: Option<deadpan_core::ExactRatio>,
     /// The head document the picture was resolved against.
     pub head: deadpan_core::ProjectDocument,
     /// The Original's content identity.
@@ -199,6 +202,7 @@ pub fn prepare_faces(
         pts,
         ordinal,
         video_end: video_span.end().ticks,
+        display_aspect: crate::tracking::exact_display_aspect(interpretation),
         head: document,
         content,
     })
@@ -391,13 +395,15 @@ pub fn choose_face(faces: &[DetectedFace], number: usize) -> Result<&DetectedFac
 
 /// A detected face as an ordinary, untracked attention target over
 /// `[pts, end)` of `asset`: its rectangle is the target's initial region,
-/// with no samples, corrections or provenance. Saving it is the caller's
+/// with no samples, corrections or provenance, and `display_aspect` is the
+/// analysed picture's exact upright aspect. Saving it is the caller's
 /// explicit, reversible `SetTarget` edit.
 pub fn face_target(
     face: &DetectedFace,
     label: String,
     asset: AssetId,
     time_base: SourceTimeBase,
+    display_aspect: Option<deadpan_core::ExactRatio>,
     pts: i64,
     end: i64,
 ) -> Result<AttentionTarget, FaceError> {
@@ -420,6 +426,7 @@ pub fn face_target(
         samples: Vec::new(),
         corrections: Vec::new(),
         provenance: None,
+        display_aspect,
     })
 }
 
@@ -541,10 +548,15 @@ mod tests {
             "Face 2".into(),
             AssetId::new("clip").unwrap(),
             time_base,
+            Some(deadpan_core::ExactRatio::new(9, 16).unwrap()),
             40,
             1_000,
         )
         .unwrap();
+        assert_eq!(
+            target.display_aspect,
+            Some(deadpan_core::ExactRatio::new(9, 16).unwrap())
+        );
         assert_eq!(target.label, "Face 2");
         assert_eq!(target.span.start().ticks, 40);
         assert_eq!(target.span.end().ticks, 1_000);
@@ -558,6 +570,7 @@ mod tests {
                 "x".into(),
                 AssetId::new("clip").unwrap(),
                 time_base,
+                None,
                 40,
                 40
             )

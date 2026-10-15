@@ -580,6 +580,7 @@ fn region_corrections_are_bound_even_when_raw_context_is_unchanged() {
             samples: vec![],
             corrections: vec![],
             provenance: None,
+            display_aspect: None,
         });
     });
     let corrected = edit(&with_region, "corrected", |wire| {

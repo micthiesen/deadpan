@@ -685,9 +685,19 @@ fn dense_paths_compact_within_core_bounds_or_refuse() {
     )
     .unwrap();
     let asset = deadpan_core::AssetId::new("clip").unwrap();
+    let widescreen = deadpan_core::ExactRatio::new(16, 9).unwrap();
     let (target, tolerance) = path
-        .to_target("Square".into(), asset.clone(), time_base(), "test", 4_096)
+        .to_target(
+            "Square".into(),
+            asset.clone(),
+            time_base(),
+            Some(widescreen),
+            "test",
+            4_096,
+        )
         .unwrap();
+    // The tracked picture's exact upright aspect is recorded with the target.
+    assert_eq!(target.display_aspect, Some(widescreen));
     assert!(target.samples.len() < 4_096, "{}", target.samples.len());
     assert_eq!(tolerance, COMPACTION_TOLERANCES[0]);
     let provenance = target.provenance.as_ref().unwrap();
@@ -698,7 +708,7 @@ fn dense_paths_compact_within_core_bounds_or_refuse() {
     assert_reconstructed(&path, &target, tolerance).unwrap();
     // A budget too small for any tolerance refuses rather than coarsen more.
     assert_eq!(
-        path.to_target("Square".into(), asset, time_base(), "test", 2),
+        path.to_target("Square".into(), asset, time_base(), None, "test", 2),
         Err(TrackError::Limit("saved target sample"))
     );
 }
@@ -723,6 +733,7 @@ fn mapping_rounds_and_maps_states_and_confidence() {
             "Square".into(),
             deadpan_core::AssetId::new("clip").unwrap(),
             time_base(),
+            None,
             "test",
             4_096,
         )
@@ -763,7 +774,7 @@ proptest! {
         ).unwrap();
         let asset = deadpan_core::AssetId::new("clip").unwrap();
         let (target, tolerance) = path
-            .to_target("Subject".into(), asset, time_base(), "test", 4_096)
+            .to_target("Subject".into(), asset, time_base(), None, "test", 4_096)
             .unwrap();
         prop_assert!(target.samples.len() <= path.samples().len());
         assert_reconstructed(&path, &target, tolerance)?;

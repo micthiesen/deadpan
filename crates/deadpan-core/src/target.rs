@@ -30,6 +30,87 @@ pub const MAX_DOCUMENT_TARGET_SAMPLES: usize = 32_768;
 pub const MAX_TARGET_CORRECTIONS: usize = 256;
 /// Bytes of each provenance label.
 pub const MAX_TARGET_PROVENANCE_BYTES: usize = 96;
+/// Widest (and, inverted, tallest) display aspect a target may record.
+pub const MAX_TARGET_ASPECT: i64 = 64;
+/// Largest reduced numerator or denominator of a recorded display aspect.
+pub const MAX_TARGET_ASPECT_TERM: i128 = 1 << 48;
+
+/// The exact display aspect of an upright picture: its visible (clean
+/// aperture) width times the sample aspect ratio, over its visible height,
+/// inverted for an odd number of clockwise quarter turns. This is the frame
+/// target regions are normalized to. `None` when an extent is not positive,
+/// the arithmetic overflows, or the result is outside the recordable bounds
+/// ([`MAX_TARGET_ASPECT`], [`MAX_TARGET_ASPECT_TERM`]).
+pub fn display_aspect(
+    visible: [ExactRatio; 2],
+    sample_aspect: [u32; 2],
+    quarter_turns: u8,
+) -> Option<ExactRatio> {
+    let [width, height] = visible;
+    if !width.compare_integer(0).is_gt()
+        || !height.compare_integer(0).is_gt()
+        || sample_aspect.contains(&0)
+    {
+        return None;
+    }
+    let sar = ExactRatio::new(i128::from(sample_aspect[0]), i128::from(sample_aspect[1])).ok()?;
+    let coded = width.checked_mul(sar).ok()?.checked_div(height).ok()?;
+    let aspect = if quarter_turns % 2 == 1 {
+        ExactRatio::ONE.checked_div(coded).ok()?
+    } else {
+        coded
+    };
+    aspect_in_bounds(aspect).then_some(aspect)
+}
+
+fn aspect_in_bounds(aspect: ExactRatio) -> bool {
+    let bound = ExactRatio::integer(MAX_TARGET_ASPECT);
+    aspect.numerator() > 0
+        && aspect.numerator() <= MAX_TARGET_ASPECT_TERM
+        && aspect.denominator() <= MAX_TARGET_ASPECT_TERM
+        && aspect.compare(bound).is_le()
+        && ExactRatio::ONE
+            .checked_div(aspect)
+            .is_ok_and(|inverse| inverse.compare(bound).is_le())
+}
+
+/// Where a normalized upright source point lands on a canvas the source is
+/// fitted into whole (`Fit`: letterboxed or pillarboxed, centered), as
+/// normalized canvas coordinates. Exact: along the axis the source fills the
+/// point is unchanged; along the other it is scaled about the middle by the
+/// covered fraction. `None` for an empty canvas or overflow.
+pub fn fit_source_point(
+    point: [ExactRatio; 2],
+    display_aspect: ExactRatio,
+    canvas: [u32; 2],
+) -> Option<[ExactRatio; 2]> {
+    if canvas.contains(&0) {
+        return None;
+    }
+    let canvas_aspect = ExactRatio::new(i128::from(canvas[0]), i128::from(canvas[1])).ok()?;
+    let half = ExactRatio::new(1, 2).expect("constant ratio");
+    let toward_middle = |value: ExactRatio, covered: ExactRatio| {
+        value
+            .checked_sub(half)
+            .and_then(|offset| offset.checked_mul(covered))
+            .and_then(|offset| offset.checked_add(half))
+            .ok()
+    };
+    let [x, y] = point;
+    match display_aspect.compare(canvas_aspect) {
+        // Wider than the canvas: full width, bars above and below.
+        std::cmp::Ordering::Greater => Some([
+            x,
+            toward_middle(y, canvas_aspect.checked_div(display_aspect).ok()?)?,
+        ]),
+        // Taller than the canvas: full height, bars left and right.
+        std::cmp::Ordering::Less => Some([
+            toward_middle(x, display_aspect.checked_div(canvas_aspect).ok()?)?,
+            y,
+        ]),
+        std::cmp::Ordering::Equal => Some(point),
+    }
+}
 
 /// A rectangle by center and size, in millionths of the displayed picture.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -165,6 +246,14 @@ pub struct AttentionTarget {
     pub corrections: Vec<TargetCorrection>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provenance: Option<TargetProvenance>,
+    /// The exact display aspect (width over height, after clean aperture,
+    /// sample aspect ratio and rotation; see [`display_aspect`]) of the
+    /// picture the regions are normalized to. A `Follow` uses it to place the
+    /// region center on a canvas of another aspect exactly as the renderer
+    /// fits the picture there. Absent on targets recorded without it, whose
+    /// follows keep source coordinates.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub display_aspect: Option<ExactRatio>,
 }
 
 /// The region a target gives one source time, and where it came from.
@@ -234,6 +323,14 @@ impl AttentionTarget {
         self.region.validate()?;
         if let Some(provenance) = &self.provenance {
             provenance.validate()?;
+        }
+        if self
+            .display_aspect
+            .is_some_and(|aspect| !aspect_in_bounds(aspect))
+        {
+            return Err(invalid(
+                "a target's display aspect is positive, at most 64:1 either way, with reduced terms of at most 2^48",
+            ));
         }
         if self.samples.len() > MAX_TARGET_SAMPLES
             || self.corrections.len() > MAX_TARGET_CORRECTIONS

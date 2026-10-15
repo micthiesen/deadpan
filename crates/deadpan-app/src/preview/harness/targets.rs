@@ -162,6 +162,18 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"camera_revision":"current","selected":"target-1","label":"Target 1","samples":0}),
         json!({"camera":state,"label":saved.label,"samples":saved.samples.len(),"region":format!("{:?}", saved.region)}),
     )?;
+    let shown = d
+        .app()
+        .presentation
+        .picture()
+        .and_then(|picture| picture.frame.as_ref())
+        .and_then(|frame| frame.metadata().display_aspect());
+    d.check(
+        "The drawn target records the displayed Original's exact upright aspect",
+        saved.display_aspect.is_some() && saved.display_aspect == shown,
+        json!(format!("{shown:?}")),
+        json!(format!("{:?}", saved.display_aspect)),
+    )?;
     d.capture("Saved target selected in Camera")?;
     let saved_revision = d.revision();
 
@@ -303,6 +315,8 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         matches!(outcome, Some(Outcome::Saved { .. }))
             && !tracked.samples.is_empty()
             && tracked.provenance.as_ref().is_some_and(|provenance| provenance.engine == crate::project::targets::SCRIPTED_ENGINE)
+            && tracked.display_aspect.is_some()
+            && tracked.display_aspect == saved.display_aspect
             && d.revision() != followed_revision
             && camera(d)["follow"] == "target-1",
         json!({"outcome":"Saved","samples":">0","follow":"target-1"}),

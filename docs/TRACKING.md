@@ -125,6 +125,12 @@ core `AttentionTarget` over `[start_pts, end_pts)` of the asset:
   `0..=1,000,000` and sizes to `1..=1,000,000`.
 * Confidence becomes thousandths the same way, clamped to `0..=1000`; absent
   confidence (lost, held) stores 0.
+* The target records the tracked stream's exact upright `display_aspect`
+  (`tracking::exact_display_aspect`: the receipt's clean extents, SAR and
+  rotation), which follows use to place the center on a canvas of another
+  aspect ([targets](TARGETS.md#following-a-target)). The run report adds it as
+  `stream.exact_display_aspect` beside the f64 `display_aspect`. Re-tracking a
+  correction keeps the target's recorded aspect.
 * Compaction fits core bounds (4,096 samples per target and what the project's
   32,768-sample total leaves beside its other targets). Core `region_at`
   interpolates linearly between consecutive samples of the same moving state

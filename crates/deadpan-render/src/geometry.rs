@@ -188,6 +188,77 @@ mod tests {
     }
 
     #[test]
+    fn display_aspect_is_the_upright_fitted_shape_and_places_fit_points() {
+        use deadpan_core::ExactRatio;
+        let ratio = |n, d| ExactRatio::new(n, d).expect("ratio");
+        // Plain 1920x1080: 16:9.
+        assert_eq!(metadata(1920, 1080).display_aspect(), Some(ratio(16, 9)));
+        // Anamorphic 2:1 pixels on a 4x2 raster, a quarter turn: 1:4 upright.
+        let mut anamorphic = metadata(4, 2);
+        anamorphic.sample_aspect_ratio = SampleAspectRatio::new(2, 1).expect("SAR");
+        anamorphic.rotation = Rotation::Clockwise90;
+        assert_eq!(anamorphic.display_aspect(), Some(ratio(1, 4)));
+        anamorphic.rotation = Rotation::Clockwise180;
+        assert_eq!(anamorphic.display_aspect(), Some(ratio(4, 1)));
+        // A fractional clean aperture uses its exact extents.
+        let mut cropped = metadata(1920, 1088);
+        cropped.clean_aperture = Some(
+            crate::CleanAperture::new([
+                ExactRatio::ZERO,
+                ratio(7, 2),
+                ExactRatio::integer(1920),
+                ratio(2161, 2),
+            ])
+            .expect("aperture"),
+        );
+        assert_eq!(cropped.display_aspect(), Some(ratio(3840, 2161)));
+        // An out-of-raster aperture has no aspect.
+        cropped.clean_aperture = Some(
+            crate::CleanAperture::new([
+                ExactRatio::ZERO,
+                ExactRatio::ZERO,
+                ExactRatio::integer(1921),
+                ExactRatio::integer(1080),
+            ])
+            .expect("aperture"),
+        );
+        assert_eq!(cropped.display_aspect(), None);
+
+        // The exact Fit placement agrees with the renderer's layout for every
+        // shape above on vertical, wide and square canvases.
+        for meta in [metadata(1920, 1080), anamorphic, {
+            let mut turned = anamorphic;
+            turned.rotation = Rotation::Clockwise270;
+            turned
+        }] {
+            let aspect = meta.display_aspect().expect("aspect");
+            for canvas in [[1080, 1920], [1920, 800], [1000, 1000]] {
+                let geometry =
+                    PictureGeometry::new(&meta, canvas[0], canvas[1], FitMode::Fit).expect("fit");
+                for point in [[0.3, 0.7], [0.0, 0.0], [1.0, 0.25]] {
+                    let exact = deadpan_core::fit_source_point(
+                        point.map(|v: f64| ratio((v * 1_000_000.0) as i128, 1_000_000)),
+                        aspect,
+                        canvas,
+                    )
+                    .expect("fit point")
+                    .map(|v| v.numerator() as f64 / v.denominator() as f64);
+                    let rendered = geometry
+                        .source_to_input(0, point)
+                        .expect("project")
+                        .expect("visible");
+                    for axis in 0..2 {
+                        assert!(
+                            (exact[axis] - rendered[axis]).abs() < 1e-12,
+                            "{canvas:?} {point:?}: {exact:?} vs {rendered:?}"
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    #[test]
     fn every_right_angle_maps_asymmetric_corners() {
         for (rotation, expected) in [
             (Rotation::None, [0.25, 0.125]),

@@ -212,13 +212,16 @@ fn stamp(ticks: i64, time_base: SourceTimeBase) -> SourceTimestamp {
 
 impl TrackedPath {
     /// This path as a core target over `[start_pts, end_pts)` of `asset`, in
-    /// the asset's (reduced) time base, with at most `budget` samples. Returns
-    /// the target and the compaction tolerance used, in millionths.
+    /// the asset's (reduced) time base, with at most `budget` samples. The
+    /// target records `display_aspect`, the exact upright aspect of the
+    /// tracked picture (`deadpan_core::display_aspect`). Returns the target
+    /// and the compaction tolerance used, in millionths.
     pub fn to_target(
         &self,
         label: String,
         asset: AssetId,
         time_base: SourceTimeBase,
+        display_aspect: Option<deadpan_core::ExactRatio>,
         engine: &str,
         budget: usize,
     ) -> Result<(AttentionTarget, u32), TrackError> {
@@ -249,6 +252,7 @@ impl TrackedPath {
                 engine: engine.into(),
                 stop: target_stop(self.stop()),
             }),
+            display_aspect,
         };
         Ok((target, tolerance))
     }
