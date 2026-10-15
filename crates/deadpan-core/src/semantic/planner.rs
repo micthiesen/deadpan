@@ -30,7 +30,9 @@ mod repeat;
 mod retime;
 mod role_repeat;
 mod selection;
+mod split;
 mod split_edit;
+mod trim;
 
 /// Exact Visual ownership. Time preserves oriented boundaries, including empty
 /// intervals; Object retains its checked group identity. A finished selection
@@ -132,6 +134,19 @@ pub enum SemanticAllocationRequest {
         step_index: usize,
         required_split_ids: usize,
     },
+    /// A combined Source trim with exactly its resolved resources.
+    Trim {
+        step_index: usize,
+        target_wrapper: bool,
+        right_wrapper: bool,
+        split_nodes: usize,
+        filler_nodes: usize,
+    },
+    /// A Split of the selected beat, with an identity pool of `nodes`.
+    Split {
+        step_index: usize,
+        nodes: usize,
+    },
     /// An adjacent Source Roll, with one fresh crop wrapper when needed.
     Roll {
         step_index: usize,
@@ -210,6 +225,17 @@ pub enum SemanticAllocation {
         new_revision: RevisionId,
         node: NodeId,
         split_identities: SplitIdentities,
+    },
+    Split {
+        new_revision: RevisionId,
+        identities: SplitIdentities,
+    },
+    Trim {
+        new_revision: RevisionId,
+        target_wrapper: Option<NodeId>,
+        right_wrapper: Option<NodeId>,
+        split: SplitIdentities,
+        fillers: Vec<NodeId>,
     },
     Roll {
         new_revision: RevisionId,
@@ -758,6 +784,12 @@ where
                 SemanticInstruction::SetHoldDuration { length } => {
                     self.set_hold_duration(index, *length)?;
                 }
+                SemanticInstruction::Split => {
+                    self.split(index)?;
+                }
+                SemanticInstruction::Trim { intent } => {
+                    self.trim(index, *intent)?;
+                }
                 SemanticInstruction::CutFrames {
                     operation,
                     register,
@@ -883,6 +915,8 @@ where
                         | SemanticInstruction::Retime { .. }
                         | SemanticInstruction::Pitch { .. }
                         | SemanticInstruction::SetHoldDuration { .. }
+                        | SemanticInstruction::Split
+                        | SemanticInstruction::Trim { .. }
                         | SemanticInstruction::SetAudioLag { .. }
                         | SemanticInstruction::SetAudio { .. }
                         | SemanticInstruction::DeleteRole { .. }

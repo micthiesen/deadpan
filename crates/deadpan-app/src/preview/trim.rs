@@ -388,7 +388,11 @@ impl DeadpanApp {
         // Called only after the final layout pass has computed the required
         // picture raster. A keypress never becomes an armed future save.
         if !context.will_discard() {
-            self.commit_requested_trim();
+            if self.macros.recording() {
+                self.record_requested_trim(context);
+            } else {
+                self.commit_requested_trim();
+            }
         }
         if !self.service.is_busy() {
             if let Some(id) = self.trim_abandon.front().cloned() {
@@ -640,6 +644,34 @@ impl DeadpanApp {
             }
             Err(error) => self.error = Some(error),
         }
+    }
+
+    /// While a macro records, Apply closes the draft and commits its accepted
+    /// values as one recorded `Trim` instruction on the restored selection,
+    /// so a replay applies the same values to its own selected beat.
+    fn record_requested_trim(&mut self, context: &egui::Context) {
+        let Some(draft) = &mut self.trim else {
+            return;
+        };
+        let Some(id) = draft.apply_requested.take() else {
+            return;
+        };
+        let Some(intent) = draft
+            .input
+            .ready()
+            .filter(|_| draft.input.ready_id() == Some(&id))
+            .filter(|_| draft.can_apply(&self.junction_pictures))
+            .map(|prepared| prepared.accepted)
+        else {
+            return;
+        };
+        self.stop_playback();
+        self.close_trim(context);
+        let target = self.capture_macro_target();
+        self.apply_recorded_instruction(
+            target,
+            Ok(deadpan_core::SemanticInstruction::Trim { intent }),
+        );
     }
 
     fn commit_requested_trim(&mut self) {

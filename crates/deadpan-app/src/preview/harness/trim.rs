@@ -28,6 +28,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     native_input_and_modes(d)?;
     captured_absence(d)?;
     audition_and_commit(d)?;
+    recorded_trim(d)?;
     nested_scope(d)
 }
 
@@ -1504,4 +1505,65 @@ fn playback_update(
 }
 fn string(error: impl std::fmt::Display) -> String {
     error.to_string()
+}
+
+/// While a macro records, Trim's Apply commits its accepted values as one
+/// `Trim` instruction, and running the macro trims the selected beat again.
+fn recorded_trim(d: &mut Driver<'_>) -> Result<(), String> {
+    first_beat(d)?;
+    let frames = d.app().sequence_length();
+    d.command("record t")?;
+    let before = d.revision();
+    d.command("trim edge=out delta=-1f mode=ripple")?;
+    wait_apply(d)?;
+    d.key(Key::Enter)?;
+    d.changed(&before)?;
+    closed(d)?;
+    d.wait_for("The recorded Trim is acknowledged", |app| {
+        !app.service.is_busy() && !app.macros.is_pending()
+    })?;
+    d.command("record-stop")?;
+    d.wait_for("Macro t is saved", |app| {
+        !app.service.is_busy()
+            && !app.macros.recording()
+            && app.copied.entries().any(|(slot, value)| {
+                slot == 't' && matches!(value, crate::preview::copied::Content::Macro(_))
+            })
+    })?;
+    let recorded = d
+        .app()
+        .copied
+        .entries()
+        .find_map(|(slot, value)| match value {
+            crate::preview::copied::Content::Macro(program) if slot == 't' => {
+                Some(program.instructions().to_vec())
+            }
+            _ => None,
+        });
+    let expected = deadpan_core::SemanticInstruction::Trim {
+        intent: SourceTrimIntent {
+            out_frames: -1,
+            ..SourceTrimIntent::default()
+        },
+    };
+    d.check(
+        "Apply during recording saves one exact Trim instruction and shortens the edit",
+        recorded.as_deref() == Some(std::slice::from_ref(&expected))
+            && d.app().sequence_length() + 1 == frames,
+        json!({"instructions":[expected],"frames":frames - 1}),
+        json!({"recorded":recorded,"frames":d.app().sequence_length()}),
+    )?;
+    first_beat(d)?;
+    let before = d.revision();
+    d.command("macro t")?;
+    d.changed(&before)?;
+    d.wait_for("The macro run is acknowledged", |app| {
+        !app.service.is_busy() && !app.macros.is_pending()
+    })?;
+    d.check(
+        "Running the macro trims the selected beat by the same frame",
+        d.app().sequence_length() + 2 == frames,
+        json!({"frames":frames - 2}),
+        json!({"frames":d.app().sequence_length(),"state":state(d)}),
+    )
 }

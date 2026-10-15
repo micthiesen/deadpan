@@ -405,6 +405,17 @@ pub enum SemanticInstruction {
     SetHoldDuration {
         length: PauseLength,
     },
+    /// Trim the selected direct-child Source (`,v`, `:trim`) by exactly these
+    /// accepted In/Out/Slip/Roll values under one policy, against the literal
+    /// right sibling. A replay that cannot apply every value exactly refuses
+    /// rather than clamping.
+    Trim {
+        intent: crate::SourceTrimIntent,
+    },
+    /// Split the selected direct child at the cursor (`s`, `:split`), which
+    /// must lie strictly inside it. The right fragment becomes selected and
+    /// the cursor stays on the new boundary.
+    Split,
     CutFrames {
         operation: FrameCut,
         register: RegisterName,

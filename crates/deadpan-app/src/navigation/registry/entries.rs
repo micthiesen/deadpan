@@ -732,9 +732,9 @@ pub static SPECS: &[Spec] = &[
         keys: &[Keys::Editor(B::Split)],
         commands: &[verb("split", ":split")],
         contexts: C::EDIT,
-        replay: Replay::NotRecorded,
-        headless: eq("command split", STRUCT),
-        help: "Split linked picture and sound at the cursor inside the selected beat. The right fragment stays selected; duration and output stay unchanged.",
+        replay: Replay::RecordedAndDot,
+        headless: eq("split instruction; command split", STRUCT),
+        help: "Split linked picture and sound at the cursor inside the selected beat. The right fragment stays selected; duration and output stay unchanged. Macros record it and . splits again at the cursor, in one Undo.",
     },
     Spec {
         id: "group.create",

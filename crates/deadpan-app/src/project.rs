@@ -892,6 +892,8 @@ pub enum ProjectEdit {
         at: ProjectFrame,
         duration: FrameDuration,
     },
+    /// The app splits through the semantic `Split` instruction.
+    #[cfg_attr(not(test), allow(dead_code, reason = "service tests only"))]
     Split {
         node: NodeId,
         /// Interior boundary in this selected beat's project-frame clock.

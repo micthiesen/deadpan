@@ -17,7 +17,11 @@ host-resolved freeze), framing of the selected beat, built-in
 [gag recipes](GAGS.md), gain trims and steps and saturation of the selected
 beat (`SetAudio`, from `+`/`-`, `:gain` and `:saturate`), J- and L-cuts
 (`SplitEdit`), role-only deletes (`DeleteRole`) and audio-only or video-only repeats (`RoleRepeat`, see
-[role edits](ROLE_EDITS.md)), local recipe save and insert (a whole-group yank
+[role edits](ROLE_EDITS.md)), `Split` of the selected beat at the cursor (`s`,
+`:split`; the right fragment becomes selected, and `.` splits again at the new
+cursor), `Trim` of the selected Source with exact accepted In/Out/Slip/Roll
+values (Apply in the Trim draft while recording; a replay that cannot apply
+every value exactly refuses instead of clamping), local recipe save and insert (a whole-group yank
 and a register paste), and named Macro call. Word, sentence, pause and shot
 motions and objects resolve against analyses projected through each staged
 document.

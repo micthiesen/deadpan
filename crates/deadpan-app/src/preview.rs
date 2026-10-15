@@ -1662,15 +1662,6 @@ impl DeadpanApp {
             BeatEdit::InsertHold(_) | BeatEdit::InsertBlack(_) | BeatEdit::InsertAiHold(_) => {
                 unreachable!("pause handled above")
             }
-            BeatEdit::Split => {
-                let Some(at) =
-                    selection::split_boundary(&self.beat_rows, &node, self.sequence_cursor)
-                else {
-                    self.error = Some("Move inside the selected beat, then split at the cursor. Existing boundaries need no split.".into());
-                    return;
-                };
-                ProjectEdit::Split { node, at }
-            }
             BeatEdit::Repeat(plays) => ProjectEdit::Repeat { node, plays },
             BeatEdit::Escalate(_) => unreachable!("Repeat changes handled above"),
             BeatEdit::Cutaway(input) => match self.cutaway_edit(&node, input) {
@@ -1685,6 +1676,7 @@ impl DeadpanApp {
             BeatEdit::HoldDuration(_)
             | BeatEdit::AudioLag { .. }
             | BeatEdit::Retime(_)
+            | BeatEdit::Split
             | BeatEdit::Pitch(_) => unreachable!("committed as semantic instructions above"),
         };
         self.submit(ProjectRequest::Edit {

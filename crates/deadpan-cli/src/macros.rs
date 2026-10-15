@@ -455,6 +455,31 @@ fn allocate(request: SemanticAllocationRequest) -> Result<SemanticAllocation, Ed
             new_revision: crate::new_revision()?,
             id: deadpan_core::SoundId::new(uuid::Uuid::new_v4().to_string())?,
         },
+        SemanticAllocationRequest::Trim {
+            target_wrapper,
+            right_wrapper,
+            split_nodes,
+            filler_nodes,
+            ..
+        } => SemanticAllocation::Trim {
+            new_revision: crate::new_revision()?,
+            target_wrapper: target_wrapper
+                .then(|| NodeId::new(uuid::Uuid::new_v4().to_string()))
+                .transpose()?,
+            right_wrapper: right_wrapper
+                .then(|| NodeId::new(uuid::Uuid::new_v4().to_string()))
+                .transpose()?,
+            split: SplitIdentities {
+                nodes: nodes(split_nodes)?,
+            },
+            fillers: nodes(filler_nodes)?,
+        },
+        SemanticAllocationRequest::Split { nodes: count, .. } => SemanticAllocation::Split {
+            new_revision: crate::new_revision()?,
+            identities: SplitIdentities {
+                nodes: nodes(count)?,
+            },
+        },
         SemanticAllocationRequest::Roll { needs_wrapper, .. } => SemanticAllocation::Roll {
             new_revision: crate::new_revision()?,
             wrapper: needs_wrapper

@@ -148,6 +148,11 @@ Trim excludes ordinary editing, history, other editing drafts and Render until
 Apply or Cancel. Apply saves the complete accepted intent in one transaction;
 zero intent saves nothing. A saved receipt remains independent of preview
 refresh, so a refresh failure reports that the edit was saved and needs reopening.
+While a macro records, Apply instead closes the draft and commits the accepted
+intent as one semantic `Trim` instruction on the restored selection
+([semantic macros](SEMANTIC_MACROS.md)); a later run applies the same values to
+its own selected Source and refuses, rather than clamps, when they no longer fit
+(`crates/deadpan-core/tests/semantic_trim.rs`, `trim` replay).
 The separate **`:slip +5f`** stopped-picture preview remains supported with its
 own inspection keys; it does not gain Trim's Tab cycling or audition.
 

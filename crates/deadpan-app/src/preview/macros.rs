@@ -287,11 +287,14 @@ impl DeadpanApp {
         if moved && let Some(pending) = &mut self.macros.pending {
             pending.owns_cursor = false;
         }
-        if self
-            .macros
-            .recording
-            .as_ref()
-            .is_some_and(|recording| !recording.expected.matches(self))
+        // An open Trim draft owns the editor context and restores its entry
+        // context when it closes; check the recording after that.
+        if self.trim.is_none()
+            && self
+                .macros
+                .recording
+                .as_ref()
+                .is_some_and(|recording| !recording.expected.matches(self))
         {
             self.macros.recording = None;
             self.bindings.set_macro_recording(false);
@@ -372,7 +375,10 @@ impl DeadpanApp {
                         | BeatEdit::Pitch(_)
                         | BeatEdit::HoldDuration(_)
                         | BeatEdit::AudioLag { .. }
+                        | BeatEdit::Split
                 )
+                // The Trim draft records its accepted values on Apply.
+                | Action::Trim
                 | Action::Mute
                 | Action::Framing(
                     crate::navigation::FramingAction::PunchIn
@@ -393,7 +399,7 @@ impl DeadpanApp {
                 | Action::Invalid(_)
                 | Action::OfferInsert
         ) {
-            self.error = Some("This action cannot be recorded yet. Macros support pauses and their lengths, reverses, J- and L-cuts, tails, gain and saturation changes, speed and pitch changes, cutaways and captions, punch-ins and creeps, frame, beat, word, sentence, pause and shot motions, group boundaries, word, sentence, pause and shot objects, Visual selections, cuts, copies, Repeat wraps, count, gap and escalation changes, gags, grouping, ungrouping, exploding, duplicating, register pastes and named calls. Save or cancel recording first.".into());
+            self.error = Some("This action cannot be recorded yet. Macros support pauses and their lengths, reverses, J- and L-cuts, tails, gain and saturation changes, speed and pitch changes, splits, trims, cutaways and captions, punch-ins and creeps, frame, beat, word, sentence, pause and shot motions, group boundaries, word, sentence, pause and shot objects, Visual selections, cuts, copies, Repeat wraps, count, gap and escalation changes, gags, grouping, ungrouping, exploding, duplicating, register pastes and named calls. Save or cancel recording first.".into());
             return false;
         }
         if matches!(
@@ -505,6 +511,7 @@ impl DeadpanApp {
                 self.macro_action_allowed(Action::DeleteSelection)
             }
             Ok(navigation::command::Entry::SelectRole(_)) => true,
+            Ok(navigation::command::Entry::Trim(_)) => self.macro_action_allowed(Action::Trim),
             // Recorded as one semantic audio-treatment change.
             Ok(
                 navigation::command::Entry::Gain(Some(_))
@@ -890,6 +897,7 @@ impl DeadpanApp {
             BeatEdit::Pitch(semitones) => Ok(SemanticInstruction::Pitch {
                 semitones: *semitones,
             }),
+            BeatEdit::Split => Ok(SemanticInstruction::Split),
             BeatEdit::AudioLag { earlier, amount } => self
                 .workspace
                 .as_ref()

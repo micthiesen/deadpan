@@ -17,6 +17,7 @@ mod retime;
 mod selectors;
 mod set_repeat;
 mod speech;
+mod split;
 mod visual;
 
 fn node(value: &str) -> NodeId {
@@ -120,6 +121,33 @@ fn allocate(request: SemanticAllocationRequest) -> Result<SemanticAllocation, Ed
         SemanticAllocationRequest::Sound { step_index } => SemanticAllocation::Sound {
             new_revision: revision(&format!("leaf-{step_index}")),
             id: crate::SoundId::new(format!("sound-{step_index}")).unwrap(),
+        },
+        SemanticAllocationRequest::Trim {
+            step_index,
+            target_wrapper,
+            right_wrapper,
+            split_nodes,
+            filler_nodes,
+        } => SemanticAllocation::Trim {
+            new_revision: revision(&format!("leaf-{step_index}")),
+            target_wrapper: target_wrapper.then(|| node(&format!("trim-{step_index}"))),
+            right_wrapper: right_wrapper.then(|| node(&format!("trim-right-{step_index}"))),
+            split: SplitIdentities {
+                nodes: (0..split_nodes)
+                    .map(|n| node(&format!("trim-split-{step_index}-{n}")))
+                    .collect(),
+            },
+            fillers: (0..filler_nodes)
+                .map(|n| node(&format!("filler-{step_index}-{n}")))
+                .collect(),
+        },
+        SemanticAllocationRequest::Split { step_index, nodes } => SemanticAllocation::Split {
+            new_revision: revision(&format!("leaf-{step_index}")),
+            identities: SplitIdentities {
+                nodes: (0..nodes)
+                    .map(|n| node(&format!("split-{step_index}-{n}")))
+                    .collect(),
+            },
         },
         SemanticAllocationRequest::Roll {
             step_index,

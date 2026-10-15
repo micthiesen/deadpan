@@ -355,7 +355,7 @@ where
                     .then(|| crate::RepeatEscalation {
                         gain_step: *gain_step,
                         zoom: (*zoom_step != crate::ExactRatio::ZERO).then_some(crate::ZoomStep {
-                        target: None,
+                            target: None,
                             step: *zoom_step,
                             progression: crate::ZoomProgression::Add,
                         }),
