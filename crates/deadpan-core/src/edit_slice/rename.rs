@@ -537,6 +537,11 @@ impl Renamer {
             self.overrides(layout.overrides(), Some(timing))?,
             self.overrides(layout.gap_overrides(), Some(timing))?,
             self.lineage(layout.audio_lineage(), Some(timing))?,
+            layout
+                .derived_clocks()
+                .iter()
+                .map(|(id, clock)| Ok((self.historical(timing, id)?, *clock)))
+                .collect::<Result<_, EditError>>()?,
         )?)
     }
     fn mark(&self, mark: &Mark) -> Result<Mark, EditError> {

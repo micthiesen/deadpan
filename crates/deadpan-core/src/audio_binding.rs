@@ -625,6 +625,7 @@ impl ClockScope<'_> {
                     frames_per_local_frame: ExactRatio::ONE,
                     point: ExactRatio::ZERO,
                     local_duration: duration,
+                    local_extent: ExactRatio::integer(duration.frames()),
                     instance: instance.clone(),
                     gap_after: None,
                     work: 0,
@@ -1293,6 +1294,7 @@ impl AudioBindingState {
             // that index here repeated the same pure check on every document
             // validation (most of a 10,000-node project's validation time).
             debug_assert!(layout.validate().is_ok());
+            layout.require_integral_clocks()?;
         }
         let mut used = BTreeSet::new();
         work.spend(crate::sound_clock::reference_count(&self.sound_clocks)?)?;

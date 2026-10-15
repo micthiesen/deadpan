@@ -1230,7 +1230,7 @@ impl ProjectDocument {
         self.recipe_structural_durations()
     }
 
-    fn recipe_structural_durations(
+    pub(crate) fn recipe_structural_durations(
         &self,
     ) -> Result<BTreeMap<NodeId, FrameDuration>, DocumentError> {
         // Complete validation retains the integral recipe graph separately

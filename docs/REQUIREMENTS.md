@@ -4,6 +4,16 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 
 ## Resumed implementation, 2026-10-06
 
+[Historical exact audio geometry](qualification/frozen-audio-clocks-2026-10-12.md)
+now captures effective Retime windows, fractional Sequence offsets and compact
+Repeat placements independently of intrinsic recipe counts. Bounded layout JSON
+round-trips those facts; FollowSpeed historical queries match live root sample
+allocation. Preserve preparation, captured raw audio and retained binding
+consumers still refuse exact layouts until owned output scheduling is integrated.
+Physical output history, metadata/lifecycle and atomic Retime insertion remain
+open. The primary implemented and self-reviewed alone; no requirement or gate
+is newly complete. See the [contract](FROZEN_AUDIO_CLOCKS.md).
+
 [Owned Preserve inputs](qualification/owned-preserve-inputs-2026-10-12.md) now
 persist complete current-tree operands in core 55/store 83 and compile them into
 intrinsic preparation projections. Nested stages consume inner intrinsic output

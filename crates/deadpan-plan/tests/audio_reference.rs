@@ -150,6 +150,179 @@ fn compile(document: &ProjectDocument) -> AudioReferencePlan {
     AudioReferencePlan::compile(&FrozenAudioLayout::capture(document).unwrap()).unwrap()
 }
 
+fn exact_document(
+    document: ProjectDocument,
+    clocks: BTreeMap<NodeId, DerivedRetimeClock>,
+) -> ProjectDocument {
+    let mut wire = serde_json::to_value(document).unwrap();
+    wire["derived_clocks"] = serde_json::to_value(clocks).unwrap();
+    ProjectDocument::from_json(&wire.to_string()).unwrap()
+}
+
+fn exact_clock(extent: ExactRatio) -> DerivedRetimeClock {
+    DerivedRetimeClock {
+        extent,
+        child_start: ExactRatio::ZERO,
+        child_end: ratio(2, 1),
+        preserve_input: None,
+    }
+}
+
+#[test]
+fn exact_frozen_follow_speed_matches_live_allocation_and_absolute_sample_phase() {
+    for first in [ratio(1, 2), ratio(1, 3), ratio(17, 31), ratio(5, 4)] {
+        let doc = document(
+            FrameRate::new(30_000, 1001).unwrap(),
+            &["first", "last"],
+            vec![
+                ("first", retime("a", 1, 0, 2, PitchPolicy::FollowSpeed)),
+                ("last", retime("b", 1, 0, 2, PitchPolicy::FollowSpeed)),
+                ("a", source(2)),
+                ("b", hold(2, HoldAudio::Silence)),
+            ],
+        );
+        let mut clock = exact_clock(first);
+        clock.child_start = ratio(1, 4);
+        clock.child_end = ratio(7, 4);
+        let doc = exact_document(
+            doc,
+            BTreeMap::from([
+                (id("first"), clock),
+                (
+                    id("last"),
+                    exact_clock(ratio(3, 1).checked_sub(first).unwrap()),
+                ),
+            ]),
+        );
+        let frozen = FrozenAudioLayout::capture(&doc).unwrap();
+        let frozen = FrozenAudioLayout::from_json(&frozen.to_json().unwrap()).unwrap();
+        let reference = AudioReferencePlan::compile(&frozen).unwrap();
+        let live = RenderPlan::compile(&doc).unwrap();
+        let root = reference.root_clock();
+        assert_eq!(root.sample_count().unwrap(), ReferenceSample(4805));
+        let cut = root.grid().boundary(first).unwrap().0;
+        for range in [
+            samples(0, 4805),
+            samples(cut - 1, cut + 1),
+            samples(cut, 4805),
+        ] {
+            let expected = live
+                .audio(
+                    AudioSample(range.start.0)..AudioSample(range.end.0),
+                    Default::default(),
+                )
+                .unwrap();
+            let actual = root.query(range, Default::default()).unwrap();
+            assert_eq!(expected.spans.len(), actual.spans.len());
+            for (old, current) in actual.spans.iter().zip(&expected.spans) {
+                assert_eq!(old.content, policy(&current.content));
+                assert_eq!(
+                    old.allocated_samples,
+                    samples(
+                        current.allocated_samples.start.0,
+                        current.allocated_samples.end.0
+                    )
+                );
+                assert_eq!(old.extent, current.project_extent);
+                assert_eq!(old.instance, current.instance);
+            }
+        }
+        let start = root
+            .processing_domain_at(ReferenceSample(0), Default::default())
+            .unwrap();
+        assert_eq!(start.local_at(ReferenceSample(0)).unwrap(), ratio(1, 4));
+        let end = root
+            .processing_domain_at(ReferenceSample(cut), Default::default())
+            .unwrap();
+        assert_eq!(end.instance().node, id("b"));
+    }
+}
+
+#[test]
+fn exact_frozen_repeat_queries_remain_compact_at_a_billion_plays() {
+    let mut repeated = BeatNode::sequence("Repeat", vec![]);
+    repeated.kind = NodeKind::Repeat {
+        child: id("first"),
+        iterations: IterationOrder::new(RevisionId::new("exact-plays").unwrap(), 1_000_000_001)
+            .unwrap(),
+        gap: None,
+        escalation: None,
+    };
+    let doc = document(
+        FrameRate::new(30_000, 1001).unwrap(),
+        &["repeat", "last"],
+        vec![
+            ("repeat", repeated),
+            ("first", retime("a", 1, 0, 2, PitchPolicy::FollowSpeed)),
+            ("last", retime("b", 1, 0, 2, PitchPolicy::FollowSpeed)),
+            ("a", source(2)),
+            ("b", hold(2, HoldAudio::Silence)),
+        ],
+    );
+    let doc = exact_document(
+        doc,
+        BTreeMap::from([
+            (id("first"), exact_clock(ratio(1, 2))),
+            (id("last"), exact_clock(ratio(1, 2))),
+        ]),
+    );
+    let reference = compile(&doc);
+    let root = reference.root_clock();
+    let cut = root.grid().boundary(ratio(1_000_000_001, 2)).unwrap().0;
+    let before = root
+        .processing_domain_at(ReferenceSample(cut - 1), Default::default())
+        .unwrap();
+    assert_eq!(
+        before.instance().repeats[0].iteration.ordinal,
+        1_000_000_000
+    );
+    assert!(before.lookup().visited_nodes < 10);
+    let after = root
+        .processing_domain_at(ReferenceSample(cut), Default::default())
+        .unwrap();
+    assert_eq!(after.instance().node, id("b"));
+}
+
+#[test]
+fn exact_historical_layouts_cannot_enter_legacy_processing_paths() {
+    let doc = document(
+        FrameRate::new(30, 1).unwrap(),
+        &["stage"],
+        vec![
+            ("stage", retime("a", 1, 0, 2, PitchPolicy::FollowSpeed)),
+            ("a", source(2)),
+        ],
+    );
+    let live = RenderPlan::compile(&doc).unwrap();
+    let exact = exact_document(
+        doc,
+        BTreeMap::from([(id("stage"), exact_clock(ratio(3, 1)))]),
+    );
+    let frozen = FrozenAudioLayout::capture(&exact).unwrap();
+    let assets = std::collections::BTreeSet::from([audio().asset]);
+    assert!(
+        RenderPlan::sound_processing_layout_work(&frozen, &assets)
+            .unwrap_err()
+            .to_string()
+            .contains("owned output")
+    );
+    assert!(
+        live.compile_sound_processing_layout(&frozen, &assets)
+            .unwrap_err()
+            .to_string()
+            .contains("owned output")
+    );
+    let mut wire = serde_json::to_value(frozen).unwrap();
+    wire["nodes"]["stage"]["kind"]["pitch"] = serde_json::json!("preserve");
+    let frozen = FrozenAudioLayout::from_json(&wire.to_string()).unwrap();
+    assert!(
+        AudioReferencePlan::compile(&frozen)
+            .unwrap_err()
+            .to_string()
+            .contains("owned output")
+    );
+}
+
 fn policy(content: &AudioContent) -> ReferenceAudioContent {
     match content {
         AudioContent::Source { .. } => ReferenceAudioContent::Source,

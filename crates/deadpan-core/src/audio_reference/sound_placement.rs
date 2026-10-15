@@ -88,7 +88,8 @@ impl FrozenAudioLayout {
             |projection: &FrozenAudioProjection| -> Result<Range<ExactRatio>, DocumentError> {
                 Ok(projection.origin
                     ..projection.origin.checked_add(
-                        ExactRatio::integer(projection.local_duration.frames())
+                        projection
+                            .local_extent
                             .checked_mul(projection.frames_per_local_frame)?,
                     )?)
             };

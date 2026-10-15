@@ -104,6 +104,9 @@ structure. Core 54 introduced a bounded `derived_clocks` table for FollowSpeed
 Retime allocations and exact child windows; production plans consume it.
 Core 55 also persists the owned Preserve input described below. Authored splice
 construction and retained output routes remain open.
+Historical timing layouts now retain these exact clocks independently of their
+integral recipe counts; see [historical audio clocks](FROZEN_AUDIO_CLOCKS.md).
+This geometry does not yet establish owned output sample continuation.
 Source, Hold and authored Retime counts, the insertion boundary and
 requested duration, and the final project extent retain their integer contracts.
 Every internal effective clock must compose without rounding. A transparent

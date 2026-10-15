@@ -1,7 +1,9 @@
 //! Immutable timing and audibility facts. Aliases belong to this layout, never
 //! to a later live document; no media, marks or previous bindings are retained.
 
+mod exact_clock;
 mod preflight;
+pub use exact_clock::FrozenRetimeClock;
 mod sound_placement;
 pub use sound_placement::FrozenSoundPlacement;
 
@@ -215,8 +217,11 @@ pub struct FrozenAudioNode {
 #[derive(Debug, Clone, Default)]
 struct FrozenIndex {
     /// Looked up per projection step and never iterated, so hashed.
-    parents: crate::id_hash::IdMap<NodeId, (NodeId, i64)>,
-    repeats: BTreeMap<NodeId, RepeatLayout>,
+    parents: crate::id_hash::IdMap<NodeId, (NodeId, ExactRatio)>,
+    repeats: BTreeMap<NodeId, crate::ExactRepeatLayout>,
+    /// Empty for ordinary layouts, whose stored recipe counts are exact.
+    extents: BTreeMap<NodeId, ExactRatio>,
+    root_duration: Option<FrameDuration>,
 }
 
 /// Admitted through capture or bounded JSON only. Cached structural indexes
@@ -242,6 +247,8 @@ pub struct FrozenAudioLayoutData {
     gap_overrides: BTreeMap<NodeId, PlayOverrides>,
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     audio_lineage: BTreeMap<NodeId, AudioLineageId>,
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    derived_clocks: BTreeMap<NodeId, FrozenRetimeClock>,
     #[serde(skip)]
     index: FrozenIndex,
     /// The exact compact JSON length, remembered once counted. The contents
@@ -296,7 +303,8 @@ impl PartialEq for FrozenAudioLayout {
                 && self.nodes == other.nodes
                 && self.overrides == other.overrides
                 && self.gap_overrides == other.gap_overrides
-                && self.audio_lineage == other.audio_lineage)
+                && self.audio_lineage == other.audio_lineage
+                && self.derived_clocks == other.derived_clocks)
     }
 }
 impl Eq for FrozenAudioLayout {}
@@ -314,6 +322,8 @@ struct LayoutWire {
     gap_overrides: BTreeMap<NodeId, PlayOverrides>,
     #[serde(default, deserialize_with = "unique_map")]
     audio_lineage: BTreeMap<NodeId, AudioLineageId>,
+    #[serde(default, deserialize_with = "unique_map")]
+    derived_clocks: BTreeMap<NodeId, FrozenRetimeClock>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
@@ -322,6 +332,8 @@ pub struct FrozenAudioProjection {
     pub frames_per_local_frame: ExactRatio,
     pub point: ExactRatio,
     pub local_duration: FrameDuration,
+    /// Effective allocation, independent of the integral processing recipe.
+    pub local_extent: ExactRatio,
     pub instance: InstancePath,
     pub gap_after: Option<IterationId>,
     /// Charged nodes and compact identity segments, not rendered play count.
@@ -480,6 +492,7 @@ impl FrozenAudioLayout {
         overrides: BTreeMap<NodeId, PlayOverrides>,
         gap_overrides: BTreeMap<NodeId, PlayOverrides>,
         audio_lineage: BTreeMap<NodeId, AudioLineageId>,
+        derived_clocks: BTreeMap<NodeId, FrozenRetimeClock>,
     ) -> Result<Self, DocumentError> {
         Self::admit(LayoutWire {
             root,
@@ -488,6 +501,7 @@ impl FrozenAudioLayout {
             overrides,
             gap_overrides,
             audio_lineage,
+            derived_clocks,
         })
     }
     pub fn capture(document: &ProjectDocument) -> Result<Self, DocumentError> {
@@ -506,9 +520,13 @@ impl FrozenAudioLayout {
     ) -> Result<Self, DocumentError> {
         Self::precharge(document)?;
         let durations = if validate_bindings {
-            document.durations()?
+            document.recipe_durations_shared()?
         } else {
-            document.structural_durations()?
+            let recipes = document.recipe_structural_durations()?;
+            if !document.derived_clocks().is_empty() {
+                document.effective_durations(&recipes)?;
+            }
+            Arc::new(recipes)
         };
         let rate = document.presentation_basis().frame_rate;
         let mut nodes = BTreeMap::new();
@@ -522,6 +540,20 @@ impl FrozenAudioLayout {
             overrides: document.overrides().clone(),
             gap_overrides: document.gap_overrides().clone(),
             audio_lineage: document.audio_lineage().clone(),
+            derived_clocks: document
+                .derived_clocks()
+                .iter()
+                .map(|(id, clock)| {
+                    (
+                        id.clone(),
+                        FrozenRetimeClock {
+                            extent: clock.extent,
+                            child_start: clock.child_start,
+                            child_end: clock.child_end,
+                        },
+                    )
+                })
+                .collect(),
         })
     }
 
@@ -594,6 +626,9 @@ impl FrozenAudioLayout {
         required: &BTreeSet<NodeId>,
     ) -> Result<Option<Self>, DocumentError> {
         let runs = Self::precharge(document)?;
+        if !document.derived_clocks().is_empty() {
+            return Ok(None);
+        }
         let durations = match document.retained_durations() {
             Some(durations) => durations,
             None => Arc::new(document.durations()?),
@@ -730,6 +765,7 @@ impl FrozenAudioLayout {
                 nodes,
                 overrides: retained_overrides(document.overrides()),
                 gap_overrides: retained_overrides(document.gap_overrides()),
+                derived_clocks: BTreeMap::new(),
                 audio_lineage: document
                     .audio_lineage()
                     .iter()
@@ -857,6 +893,7 @@ impl FrozenAudioLayout {
                 overrides: wire.overrides,
                 gap_overrides: wire.gap_overrides,
                 audio_lineage: wire.audio_lineage,
+                derived_clocks: wire.derived_clocks,
                 index: FrozenIndex::default(),
                 wire_bytes: std::sync::OnceLock::new(),
                 complete: None,
@@ -949,6 +986,11 @@ impl FrozenAudioLayout {
                 }
             }
         }
+        // Integral spacers cannot represent fractional historical allocations.
+        // The complete admitted table remains bounded and preserves every alias.
+        if !self.derived_clocks.is_empty() {
+            return Ok(self.clone());
+        }
         let mut nodes = BTreeMap::new();
         let mut pending = vec![&self.root];
         while let Some(id) = pending.pop() {
@@ -1012,6 +1054,7 @@ impl FrozenAudioLayout {
             nodes,
             overrides: retained_overrides(&self.overrides),
             gap_overrides: retained_overrides(&self.gap_overrides),
+            derived_clocks: BTreeMap::new(),
             audio_lineage: self
                 .audio_lineage
                 .iter()
@@ -1081,7 +1124,9 @@ impl FrozenAudioLayout {
         &self.audio_lineage
     }
     pub fn duration(&self) -> FrameDuration {
-        self.nodes[&self.root].duration
+        self.index
+            .root_duration
+            .unwrap_or(self.nodes[&self.root].duration)
     }
 
     /// Prove that two complete processing subtrees correspond, allowing fresh
@@ -1212,6 +1257,7 @@ impl FrozenAudioLayout {
             // or allocating paired-child and compact path indexes.
             spend(&mut work, pair_work, maximum_work)?;
             if historical_node.duration != live_node.duration
+                || self.derived_clocks.get(&historical_id) != current.derived_clocks.get(&live_id)
                 || !same_sound_clock_kind(&historical_node.kind, &live_node.kind)
             {
                 return Err(invalid("sound clock processing subtree changed"));
@@ -1339,7 +1385,9 @@ impl FrozenAudioLayout {
                         ..
                     },
                 ) => {
-                    if self.nodes[parent] != current.nodes[parent] {
+                    if self.nodes[parent] != current.nodes[parent]
+                        || self.derived_clocks.get(parent) != current.derived_clocks.get(parent)
+                    {
                         return Ok((false, work));
                     }
                 }
@@ -1389,7 +1437,7 @@ impl FrozenAudioLayout {
                         )
                     {
                         spend(&mut work, 1, maximum_work)?;
-                        if self.nodes[root].duration != current.nodes[root].duration {
+                        if self.node_extent(root)? != current.node_extent(root)? {
                             return Ok((false, work));
                         }
                     }
@@ -1412,13 +1460,20 @@ impl FrozenAudioLayout {
         live_scope: &NodeId,
         maximum_work: usize,
     ) -> Result<(bool, usize), DocumentError> {
+        #[derive(PartialEq, Eq)]
+        struct Step<'a> {
+            child: &'a NodeId,
+            offset: ExactRatio,
+            duration: FrameDuration,
+            kind: &'a FrozenAudioKind,
+            clock: Option<&'a FrozenRetimeClock>,
+        }
         fn path<'a>(
             layout: &'a FrozenAudioLayout,
             scope: &'a NodeId,
             work: &mut usize,
             maximum: usize,
-        ) -> Result<Vec<(&'a NodeId, i64, FrameDuration, &'a FrozenAudioKind)>, DocumentError>
-        {
+        ) -> Result<Vec<Step<'a>>, DocumentError> {
             let mut child = scope;
             let mut path = Vec::new();
             let mut retained = 0;
@@ -1441,7 +1496,13 @@ impl FrozenAudioLayout {
                     },
                     maximum,
                 )?;
-                path.push((child, *offset, node.duration, &node.kind));
+                path.push(Step {
+                    child,
+                    offset: *offset,
+                    duration: node.duration,
+                    kind: &node.kind,
+                    clock: layout.derived_clocks.get(parent),
+                });
                 if matches!(
                     node.kind,
                     FrozenAudioKind::Retime {
@@ -1570,8 +1631,9 @@ impl FrozenAudioLayout {
             crate::id_hash::id_map(self.nodes.len());
         let mut index = FrozenIndex {
             parents: crate::id_hash::id_map(self.nodes.len()),
-            repeats: BTreeMap::new(),
+            ..FrozenIndex::default()
         };
+        let mut postorder = Vec::with_capacity(self.nodes.len());
         while let Some((id, depth, visited)) = stack.pop() {
             if depth > MAX_DOCUMENT_DEPTH {
                 return Err(limit("frozen audio depth exceeds limit"));
@@ -1623,7 +1685,7 @@ impl FrozenAudioLayout {
                         &branches,
                     )?;
                     let duration = repeat.duration();
-                    index.repeats.insert(id.clone(), repeat);
+                    index.repeats.insert(id.clone(), repeat.into());
                     duration
                 }
                 FrozenAudioKind::Retime { child, mapping, .. } => {
@@ -1641,19 +1703,19 @@ impl FrozenAudioLayout {
                 return Err(invalid("frozen duration disagrees with its structure"));
             }
             durations.insert(id, computed);
-            let mut offset = 0i64;
+            postorder.push(id);
+            let mut offset = ExactRatio::ZERO;
             for child in self.children(id) {
                 index.parents.insert(child.clone(), (id.clone(), offset));
                 if matches!(node.kind, FrozenAudioKind::Sequence { .. }) {
-                    offset = offset
-                        .checked_add(durations[child].frames())
-                        .ok_or_else(|| invalid("frozen sequence offset overflow"))?;
+                    offset = offset.checked_add(ExactRatio::integer(durations[child].frames()))?;
                 }
             }
         }
         if seen.len() != self.nodes.len() {
             return Err(invalid("frozen audio contains unreachable nodes"));
         }
+        self.index_exact_clocks(&mut index, &postorder)?;
         Ok(index)
     }
 
@@ -1781,6 +1843,7 @@ impl FrozenAudioLayout {
         let mut origin = ExactRatio::ZERO;
         let mut scale = ExactRatio::ONE;
         let mut local_duration = target.duration;
+        let mut local_extent = self.node_extent(&instance.node)?;
         if let Some(gap) = gap_after {
             let layout = self
                 .index
@@ -1789,16 +1852,18 @@ impl FrozenAudioLayout {
                 .ok_or_else(|| invalid("frozen gap scope is not a Repeat"))?;
             spend(&mut work, layout.segment_count(), maximum_work)?;
             let play = layout
-                .play(gap)
+                .play(gap)?
                 .ok_or_else(|| invalid("frozen gap play is missing"))?;
-            if play.gap_after == FrameDuration::ZERO || play.gap_child.is_some() {
+            if play.gap_after == ExactRatio::ZERO || play.gap_child.is_some() {
                 return Err(invalid("frozen play has no following gap"));
             }
-            origin = ExactRatio::integer(play.start)
-                .checked_add(ExactRatio::integer(play.duration.frames()))?;
-            local_duration = play.gap_after;
+            origin = play.start.checked_add(play.duration)?;
+            // A default gap remains an integral authored recipe; owned gaps
+            // are independent nodes and never enter this branch.
+            local_duration = crate::derived_clock::integral(play.gap_after)?;
+            local_extent = play.gap_after;
         }
-        let mut support = ExactRatio::ZERO..ExactRatio::integer(local_duration.frames());
+        let mut support = ExactRatio::ZERO..local_extent;
         let mut node = &instance.node;
         let mut step = instance.repeats.len();
         loop {
@@ -1813,20 +1878,19 @@ impl FrozenAudioLayout {
                 .ok_or_else(|| invalid("frozen projection host is outside scope"))?;
             // The admitted root is a Sequence; skip looking it up.
             if parent == &self.root {
-                origin = origin.checked_add(ExactRatio::integer(*offset))?;
+                origin = origin.checked_add(*offset)?;
                 node = parent;
                 continue;
             }
             match &self.nodes[parent].kind {
-                FrozenAudioKind::Sequence { .. } => {
-                    origin = origin.checked_add(ExactRatio::integer(*offset))?
-                }
+                FrozenAudioKind::Sequence { .. } => origin = origin.checked_add(*offset)?,
                 FrozenAudioKind::Retime {
                     mapping,
                     pitch,
                     purpose,
                     ..
                 } => {
+                    let clock = self.retime_clock(parent)?;
                     if mode != ProjectionMode::Affine
                         && pitch.processes(mapping.duration() == self.nodes[parent].duration)
                     {
@@ -1836,21 +1900,14 @@ impl FrozenAudioLayout {
                         || (mode == ProjectionMode::MeaningfulSupport
                             && *purpose != RetimePurpose::Partition)
                     {
-                        let selected = ExactRatio::integer(mapping.start().0)
-                            .checked_sub(origin)?
-                            .checked_div(scale)?
-                            ..ExactRatio::integer(mapping.end().0)
-                                .checked_sub(origin)?
-                                .checked_div(scale)?;
+                        let selected = clock.child_start.checked_sub(origin)?.checked_div(scale)?
+                            ..clock.child_end.checked_sub(origin)?.checked_div(scale)?;
                         clip_binding_support(&mut support, selected)?;
                     }
-                    let factor = ExactRatio::new(
-                        i128::from(self.nodes[parent].duration.frames()),
-                        i128::from(mapping.duration().frames()),
-                    )?;
-                    origin = origin
-                        .checked_sub(ExactRatio::integer(mapping.start().0))?
-                        .checked_mul(factor)?;
+                    let factor = clock
+                        .extent
+                        .checked_div(clock.child_end.checked_sub(clock.child_start)?)?;
+                    origin = origin.checked_sub(clock.child_start)?.checked_mul(factor)?;
                     scale = scale.checked_mul(factor)?;
                 }
                 FrozenAudioKind::Repeat { .. } => {
@@ -1864,7 +1921,7 @@ impl FrozenAudioLayout {
                     let layout = &self.index.repeats[parent];
                     spend(&mut work, layout.segment_count(), maximum_work)?;
                     let play = layout
-                        .play(&selected.iteration)
+                        .play(&selected.iteration)?
                         .ok_or_else(|| invalid("frozen occurrence play is missing"))?;
                     let offset = if &play.child == node {
                         play.start
@@ -1872,19 +1929,17 @@ impl FrozenAudioLayout {
                         // A retained dormant branch still has an affine clock
                         // and meaningful recipe; it contributes no allocation.
                         if mode == ProjectionMode::VisibleAllocation
-                            && play.gap_after == FrameDuration::ZERO
+                            && play.gap_after == ExactRatio::ZERO
                         {
                             support.end = support.start;
                         }
-                        play.start
-                            .checked_add(play.duration.frames())
-                            .ok_or(TimeError::Overflow)?
+                        play.start.checked_add(play.duration)?
                     } else {
                         return Err(invalid(
                             "frozen occurrence selects the wrong override child",
                         ));
                     };
-                    origin = origin.checked_add(ExactRatio::integer(offset))?;
+                    origin = origin.checked_add(offset)?;
                 }
                 _ => return Err(invalid("frozen projection has a leaf parent")),
             }
@@ -1899,6 +1954,7 @@ impl FrozenAudioLayout {
                 frames_per_local_frame: scale,
                 point: origin.checked_add(local.checked_mul(scale)?)?,
                 local_duration,
+                local_extent,
                 instance: instance.clone(),
                 gap_after: gap_after.cloned(),
                 work,

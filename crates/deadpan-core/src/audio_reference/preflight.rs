@@ -25,6 +25,8 @@ enum Role {
     Runs,
     Overrides,
     Lineages,
+    Clocks,
+    Clock,
     Lineage,
     OverrideEntries,
     OverrideEntry,
@@ -252,7 +254,7 @@ impl<'de> Visitor<'de> for Scan<'_> {
             }
             if !matches!(
                 self.role,
-                Role::Nodes | Role::Overrides | Role::Lineages | Role::Unknown
+                Role::Nodes | Role::Overrides | Role::Lineages | Role::Clocks | Role::Unknown
             ) {
                 let bit = record_field_bit(&key);
                 if seen_fields & bit != 0 {
@@ -264,6 +266,13 @@ impl<'de> Visitor<'de> for Scan<'_> {
                 (Role::Root, "nodes") => (Role::Nodes, Charge::None),
                 (Role::Root, "overrides" | "gap_overrides") => (Role::Overrides, Charge::None),
                 (Role::Root, "audio_lineage") => (Role::Lineages, Charge::None),
+                (Role::Root, "derived_clocks") => (Role::Clocks, Charge::None),
+                // This flat map is bounded before each value by the object
+                // member limit, then by actual Retime ownership at admission.
+                (Role::Clocks, _) => (Role::Clock, Charge::None),
+                (Role::Clock, "extent" | "child_start" | "child_end") => {
+                    (Role::Ratio, Charge::None)
+                }
                 (Role::Lineages, _) => (Role::Lineage, Charge::Lineage),
                 (Role::Lineage, "allocation" | "origin") => (Role::String, Charge::None),
                 (Role::Root, "root") => (Role::String, Charge::None),
@@ -403,6 +412,10 @@ fn record_field_bit(key: &str) -> u64 {
         "shift" => 42,
         "semitones" => 43,
         "input" => 44,
+        "derived_clocks" => 45,
+        "extent" => 46,
+        "child_start" => 47,
+        "child_end" => 48,
         _ => return 0,
     };
     1 << ordinal

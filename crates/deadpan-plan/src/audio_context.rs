@@ -17,6 +17,11 @@ impl RenderPlan {
         assets: &BTreeSet<deadpan_core::AssetId>,
     ) -> Result<usize, PlanError> {
         layout.validate()?;
+        if !layout.derived_clocks().is_empty() {
+            return Err(PlanError::InvalidPlan(
+                "exact historical clocks need an owned output projection",
+            ));
+        }
         let mut work = layout.nodes().len();
         for node in layout.nodes().values() {
             let child_work = match &node.kind {
@@ -54,6 +59,11 @@ impl RenderPlan {
         assets: &BTreeSet<deadpan_core::AssetId>,
     ) -> Result<Self, PlanError> {
         layout.validate()?;
+        if !layout.derived_clocks().is_empty() {
+            return Err(PlanError::InvalidPlan(
+                "exact historical clocks need an owned output projection",
+            ));
+        }
         if layout.rate() != self.metadata.presentation_basis.frame_rate {
             return Err(PlanError::InvalidPlan(
                 "sound processing layout has a foreign frame rate",

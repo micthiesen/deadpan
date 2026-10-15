@@ -4,6 +4,23 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Resumed grammar and release audit, 2026-10-06
 
+[Historical exact audio geometry](../qualification/frozen-audio-clocks-2026-10-12.md)
+now lives in `FrozenAudioLayout::derived_clocks` as timing-only
+`FrozenRetimeClock` records. Read [the contract](../FROZEN_AUDIO_CLOCKS.md).
+`node_extent`, `retime_clock` and projection `local_extent` describe effective
+geometry; node durations and `local_duration` retain integral recipes. Capture,
+JSON admission, fractional crops, Sequence offsets, compact Repeat overrides and
+owned gaps preserve exact timing. Slicing clocked layouts retains the complete
+bounded table. Clock comparison and alias renaming include the new facts.
+`AudioReferencePlan` supports exact FollowSpeed historical policy/domain queries;
+Preserve/Shift reference plans, captured raw contexts, independent-sound
+processing and retained bindings refuse exact layouts until output integration.
+Core 55/store 83 are unchanged: this standalone geometry payload is not yet
+admitted into project-embedded contexts or binding tables. Next integrate the
+physical sample grids and chronological resume routes with owned Preserve
+outputs, then atomic insertion and lifecycle transforms. Keep the insertion
+guard. The primary implemented and self-reviewed alone; continue without agents.
+
 [Owned Preserve inputs](../qualification/owned-preserve-inputs-2026-10-12.md)
 now live in core 55/store 83 as `DerivedRetimeClock::preserve_input`.
 Read [the contract](../OWNED_PRESERVE_INPUTS.md) before extending them.
@@ -31,8 +48,8 @@ Root RoundEven and intrinsic PointCeil require separate retained sample indices;
 an affine old-frame offset is insufficient after a pause. Keep the Retime
 insertion guard until those pieces are implemented and verified together.
 Reuse the existing binding placement/phase and routed-output consumers where
-they fit. `FrozenAudioLayout` still stores integral extents and Retime windows;
-it cannot yet capture the exact effective clocks needed by later insertions.
+they fit. The historical-geometry increment above now lets `FrozenAudioLayout`
+capture exact effective clocks; its processing consumers remain guarded.
 
 [Persisted effective clocks](../qualification/derived-clocks-2026-10-12.md) now
 connect exact Retime extents and child windows to core 54, store 82 and production

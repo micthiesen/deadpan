@@ -317,6 +317,7 @@ impl FrozenAudioContext {
             ));
         }
         self.layout.validate()?;
+        self.layout.require_integral_clocks()?;
         if self.schema_version < 6 && self.layout.has_editorial_edges() {
             return Err(invalid(
                 "legacy audio context cannot contain editorial edges",

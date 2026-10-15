@@ -7,7 +7,7 @@ use std::ops::Range;
 use deadpan_core::{
     AudioSample, ExactRatio, FrameDuration, FrozenAudioKind, FrozenAudioLayout, InsertionBias,
     InstancePath, IterationId, MIX_SAMPLE_RATE, NodeId, PitchPolicy, ReferenceAudibility,
-    RepeatInstance, RepeatLayout, RetimePurpose, TimeError,
+    RepeatInstance, RetimePurpose, TimeError,
 };
 use serde::Serialize;
 
@@ -274,11 +274,16 @@ pub struct AudioReferencePlan {
 impl AudioReferencePlan {
     pub fn compile(layout: &FrozenAudioLayout) -> Result<Self, PlanError> {
         layout.validate()?;
+        if !layout.derived_clocks().is_empty() && layout.nodes().values().any(|node| {
+            matches!(node.kind, FrozenAudioKind::Retime { pitch, .. } if pitch != PitchPolicy::FollowSpeed)
+        }) {
+            return Err(PlanError::InvalidPlan("exact historical Preserve clocks need their owned output projection"));
+        }
         let durations = layout
             .nodes()
-            .iter()
-            .map(|(id, node)| (id.clone(), node.duration))
-            .collect();
+            .keys()
+            .map(|id| Ok((id.clone(), layout.node_extent(id)?)))
+            .collect::<Result<BTreeMap<_, _>, deadpan_core::DocumentError>>()?;
         let mut sequences = BTreeMap::new();
         let mut repeats = BTreeMap::new();
         for (id, node) in layout.nodes() {
@@ -288,9 +293,7 @@ impl AudioReferencePlan {
                     let mut entries = Vec::with_capacity(children.len());
                     for child in children {
                         let start = end;
-                        end = end.checked_add(ExactRatio::integer(
-                            layout.nodes()[child].duration.frames(),
-                        ))?;
+                        end = end.checked_add(durations[child])?;
                         if end.compare(start).is_gt() {
                             entries.push(SequenceEntry {
                                 child: child.clone(),
@@ -309,15 +312,14 @@ impl AudioReferencePlan {
                 } => {
                     repeats.insert(
                         id.clone(),
-                        RepeatLayout::compile_with_gap_overrides(
+                        deadpan_core::ExactRepeatLayout::compile_with_gap_overrides(
                             iterations,
                             child,
                             layout.overrides().get(id),
-                            *gap_duration,
+                            ExactRatio::integer(gap_duration.frames()),
                             layout.gap_overrides().get(id),
                             &durations,
-                        )?
-                        .into(),
+                        )?,
                     );
                 }
                 _ => {}
@@ -592,7 +594,7 @@ impl<'plan> ReferenceAudioClock<'plan> {
             work.lookup.visited_nodes += 1;
             let node = &self.plan.layout.nodes()[current];
             let node_extent =
-                transform.origin..transform.at(ExactRatio::integer(node.duration.frames()))?;
+                transform.origin..transform.at(self.plan.layout.node_extent(current)?)?;
             extent = intersect(extent, node_extent.clone())?;
             if stop_at_preserve
                 && !matches!(
@@ -700,15 +702,13 @@ impl<'plan> ReferenceAudioClock<'plan> {
                         None,
                     );
                 }
-                FrozenAudioKind::Retime { child, mapping, .. } => {
-                    let inverse = ExactRatio::new(
-                        i128::from(node.duration.frames()),
-                        i128::from(mapping.duration().frames()),
-                    )?;
+                FrozenAudioKind::Retime { child, .. } => {
+                    let clock = self.plan.layout.retime_clock(current)?;
+                    let inverse = clock
+                        .extent
+                        .checked_div(clock.child_end.checked_sub(clock.child_start)?)?;
                     transform = transform.child(
-                        ExactRatio::ZERO.checked_sub(
-                            ExactRatio::integer(mapping.start().0).checked_mul(inverse)?,
-                        )?,
+                        ExactRatio::ZERO.checked_sub(clock.child_start.checked_mul(inverse)?)?,
                         inverse,
                     )?;
                     current = child;
