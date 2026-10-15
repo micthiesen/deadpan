@@ -1,0 +1,12 @@
+# ThreadSanitizer suppressions for `cargo xtask sanitizers` (thread runs).
+# Each entry names a reviewed false positive; see
+# docs/qualification/sanitizers-2026-10-15.md.
+#
+# Darwin keeps errno in the pthread structure at the top of each thread's
+# stack allocation. libsystem is not instrumented, so when a finished thread's
+# allocation is reused for a new thread TSan sees two different threads touch
+# the same errno word without a happens-before edge. errno is thread-local;
+# observed between a libtest thread's TempDir cleanup and a later
+# deadpan-jobs stderr pump thread (std's io::Error::last_os_error).
+race:3std3sys2io5error4unix5errno
+race:3std3sys2io5error4unix9set_errno

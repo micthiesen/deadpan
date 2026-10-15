@@ -117,6 +117,7 @@ source, then record the new campaign's source and binary identities. The
 | Regression | `cargo test` (default) | Seeded, deterministic, a fixed iteration count per target; about 30 s of debug wall time across the suite. Runs in the normal workspace tests and CI. |
 | Campaign | `cargo xtask chaos [--minutes 10] [--seed HEX] [--only a,b]` | Builds the adversarial test binaries once, records their SHA-256 digests and runs each target for its share of the time from a fresh or given seed. Writes `report.jsonl`, `summary.json`, logs and crash artifacts below `target/chaos/<stamp>` (or `--output`). Fails if any target found a failure. |
 | Sanitized | `cargo xtask chaos --sanitize` | Builds `deadpan-source` with the documented ASan/UBSan C flags and runtime link arguments for `aarch64-apple-darwin` in its own target directory and runs the container and out-of-process decoder targets there. Rust and the FFmpeg libraries are not instrumented. |
+| Native adapter sanitizers | `cargo xtask sanitizers [--only a,b] [--sanitizer address\|thread] [--runs N]` | Nightly ASan/UBSan and TSan of the remaining native adapters with instrumented Rust, std and native dependencies ([below](#native-adapter-sanitizers)). |
 | Replay | `DEADPAN_CHAOS_REPLAY=<file> cargo test -p <crate> <test>` | Runs exactly one saved input. |
 | Stress | `cargo xtask chaos --stress` | Full-scale long-project stress in release (below). |
 
@@ -261,6 +262,83 @@ These tests do not cover:
   these tests.
 - Linux runs of the shared tests; they were run only on macOS.
 
+## Native adapter sanitizers
+
+`chaos --sanitize`, the media qualification's `build_sanitized.py` (media
+worker, source adapters, native encoder) and `deadpan-dsp`'s sanitized runs
+instrument C adapters only. `cargo xtask sanitizers` covers the remaining
+native adapters, whose unsafe code is Rust FFI, by instrumenting Rust as well:
+
+| Entry | Package | Sanitizers | What runs |
+| --- | --- | --- | --- |
+| `fileclone` | `deadpan-fileclone` | ASan/UBSan | Unit tests (`fclonefileat`) |
+| `filesystem` | `deadpan-filesystem` | ASan/UBSan | Unit tests (`fstatfs`/`fgetattrlist`, NSURL bookmark resolution) |
+| `sqlite-status` | `deadpan-sqlite-status` | ASan/UBSan | Unit test; bundled SQLite is instrumented C |
+| `process` | `deadpan-native-process` | ASan/UBSan, TSan | Unit tests (`proc_listpids`, `proc_pid_rusage`, spawn guard, group teardown) |
+| `output` | `deadpan-output` | ASan/UBSan, TSan | All tests, plus `examples/qualify_output` on the default device with digital silence: CoreAudio's real callback thread against the producer (skip with `--no-device`) |
+| `track` | `deadpan-track` | ASan/UBSan | Unit and integration tests, which launch the instrumented worker on the Vision tracking, face and landmark fixtures; deadpan-source C adapters and BLAKE3 instrumented |
+| `transcribe` | `deadpan-transcribe` | ASan/UBSan, TSan | Worker tests, plus a focused harness: the instrumented CLI creates a project from `tools/sanitizer-qualification/fixtures/speech.mp4` and transcribes it through the instrumented worker beside it with the installed `whisper-base-en` model (`--whisper-model` to override; read only). This runs real whisper.cpp/ggml inference on Metal and the worker's raw abort callback; a run passes only if words are recognized |
+
+How it builds (per sanitizer, in `--target-root`, default `target/sanitizers`):
+
+- `cargo +nightly test --no-run --tests -Zbuild-std --locked --target
+  aarch64-apple-darwin` with `CARGO_ENCODED_RUSTFLAGS=-Zsanitizer=address`
+  or `thread`. The standard library is rebuilt with the same sanitizer
+  (required for TSan, and so std is instrumented for ASan). Debug builds keep
+  Rust's `ub_checks` (raw-slice, alignment and other unsafe preconditions)
+  and overflow checks on; Rust has no separate UBSan.
+- Native C/C++/Objective-C built by target build scripts goes through
+  generated `clang`/`clang++` wrappers (`CC_aarch64_apple_darwin`,
+  `CXX_aarch64_apple_darwin`, `CCACHE_DISABLE=1`): address runs add
+  `-fsanitize=address,undefined -fno-sanitize-recover=all`, thread runs
+  `-fsanitize=thread`. Host build scripts are recognized by their `OUT_DIR`
+  and stay uninstrumented, since host Rust links no sanitizer runtime. The
+  target directory name includes the wrappers' hash because not every native
+  build script reruns when `CC` changes.
+- Apple clang's instrumentation links against the nightly Rust compiler-rt
+  runtime, so the Apple ASan version guard is disabled
+  (`-mllvm -asan-guard-against-version-mismatch=0`). Each run therefore
+  starts with positive controls built the same way: Rust heap overflow and
+  use-after-free and C heap overflow and signed overflow (ASan/UBSan), Rust
+  and C data races (TSan) must each be reported, and a clean run must not be.
+  A failed control stops that sanitizer.
+- Every test, worker and harness binary must import `___asan_init` or
+  `___tsan_init`; address runs also record UBSan handler imports, which only
+  instrumented native objects contain.
+- `ggml` (vendored by whisper-rs-sys) is built without
+  `-fsanitize=pointer-overflow`: it sizes graph layouts by offsetting a null
+  pointer. TSan uses `tools/sanitizer-qualification/tsan.supp` for one
+  reviewed Darwin false positive (errno in reused thread storage). Both are
+  third-party, recorded in the summary and the qualification record.
+
+Runtime: `ASAN_OPTIONS=detect_leaks=0:abort_on_error=1:detect_stack_use_after_return=1:strict_string_checks=1:check_initialization_order=1:strict_init_order=1`,
+`UBSAN_OPTIONS=print_stacktrace=1:halt_on_error=1`,
+`TSAN_OPTIONS=halt_on_error=1:second_deadlock_stack=1:report_signal_unsafe=1:suppressions=...`.
+Workers launched by the job supervisor get a cleared environment and so run
+with runtime defaults (ASan and UBSan still abort; TSan exits 66 after a
+report), which their hosts report as worker failures. Each test binary,
+device probe and harness step runs `--runs` times (default 3) in its own
+process group with a 30-minute limit. A step fails on a nonzero exit, a
+timeout or any sanitizer report text. `summary.json` in the run directory
+records the toolchain, flags, controls, every binary's SHA-256 and
+instrumentation, per-run counts, logs and harness results.
+
+```sh
+export DEADPAN_FFMPEG_PREFIX=...   # track and transcribe link deadpan-source
+rustup component add rust-src --toolchain nightly
+cargo xtask sanitizers --runs 3
+```
+
+Not instrumented: Apple frameworks (Vision, CoreVideo, CoreAudio, AppKit,
+Foundation, Metal and its GPU kernels) and the FFmpeg libraries. Their
+allocations still come from the ASan allocator, so instrumented Rust that
+writes past a framework-provided buffer is caught when it reaches a redzone:
+`tools/sanitizer-qualification/corevideo_allocation_probe.c` shows that
+`CVPixelBufferCreate` BGRA buffers are ASan-owned heap chunks with exactly
+`bytesPerRow * height` data (plus up to 64 trailing bytes of the same chunk,
+which are not poisoned). `deadpan-lifecycle`'s AppKit termination hook has no
+test that reaches its unsafe code and is not part of the matrix.
+
 ## Limits
 
 - Stable chaos uses verdict-class novelty; the separate libFuzzer targets use
@@ -272,6 +350,9 @@ These tests do not cover:
 - `chaos --sanitize` instruments the C adapters only. The nightly libFuzzer
   build instruments Rust with sanitizer coverage/ASan; it does not rebuild the
   linked FFmpeg distribution with sanitizers or exercise full codecs.
+  `xtask sanitizers` instruments Rust and native dependencies of the
+  remaining adapters but runs their tests and harnesses, not fuzzing; system
+  frameworks stay uninstrumented and sanitizers only see code that runs.
 - In-process allocation bounds charge the calling thread; work moved to other
   threads is bounded by the child-process RSS check only where a target uses
   one.

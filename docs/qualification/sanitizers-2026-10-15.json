@@ -1,0 +1,1643 @@
+{
+ "dirty_worktree": true,
+ "elapsed_s": 618.828017583,
+ "failures": [],
+ "results": [
+  {
+   "c_flags": [
+    "-fsanitize=address,undefined",
+    "-fno-omit-frame-pointer",
+    "-fno-sanitize-recover=all",
+    "-mllvm",
+    "-asan-guard-against-version-mismatch=0"
+   ],
+   "controls": [
+    {
+     "case": "clean",
+     "exit": 0,
+     "expected": null,
+     "passed": true
+    },
+    {
+     "case": "rust-heap-overflow",
+     "exit": null,
+     "expected": "ERROR: AddressSanitizer: heap-buffer-overflow",
+     "passed": true
+    },
+    {
+     "case": "rust-use-after-free",
+     "exit": null,
+     "expected": "ERROR: AddressSanitizer: heap-use-after-free",
+     "passed": true
+    },
+    {
+     "case": "c-heap-overflow",
+     "exit": null,
+     "expected": "ERROR: AddressSanitizer: heap-buffer-overflow",
+     "passed": true
+    },
+    {
+     "case": "c-signed-overflow",
+     "exit": null,
+     "expected": "runtime error: signed integer overflow",
+     "passed": true
+    }
+   ],
+   "entries": [
+    {
+     "entry": "fileclone",
+     "extra": null,
+     "package": "deadpan-fileclone",
+     "tests": [
+      {
+       "binary": "target/agent-sanitizers/address-ed9129e6216f/aarch64-apple-darwin/debug/build/deadpan-fileclone/ae4081c2734ebe35/out/deadpan_fileclone-ae4081c2734ebe35",
+       "instrumented": true,
+       "runs": [
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 4
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.237748,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 4
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.122118708,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 4
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.159283291,
+         "suppressions_matched": false,
+         "timed_out": false
+        }
+       ],
+       "sha256": "b456ddf7dc191b6bc0c0a7d2b00c2d2e195b3b238fd55d2b78304cf5df30d77b",
+       "ubsan_handler_imports": 0
+      }
+     ],
+     "totals": {
+      "failed": 0,
+      "ignored": 0,
+      "passed": 12
+     },
+     "workers": []
+    },
+    {
+     "entry": "filesystem",
+     "extra": null,
+     "package": "deadpan-filesystem",
+     "tests": [
+      {
+       "binary": "target/agent-sanitizers/address-ed9129e6216f/aarch64-apple-darwin/debug/build/deadpan-filesystem/4a1edf35742fb61d/out/deadpan_filesystem-4a1edf35742fb61d",
+       "instrumented": true,
+       "runs": [
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 5
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.201059542,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 5
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.164834833,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 5
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.200937417,
+         "suppressions_matched": false,
+         "timed_out": false
+        }
+       ],
+       "sha256": "0205d0fa0b33b0148088abb2e25bb382360f836dd396f0bb9ecda207cee971ea",
+       "ubsan_handler_imports": 0
+      }
+     ],
+     "totals": {
+      "failed": 0,
+      "ignored": 0,
+      "passed": 15
+     },
+     "workers": []
+    },
+    {
+     "entry": "sqlite-status",
+     "extra": null,
+     "package": "deadpan-sqlite-status",
+     "tests": [
+      {
+       "binary": "target/agent-sanitizers/address-ed9129e6216f/aarch64-apple-darwin/debug/build/deadpan-sqlite-status/89d96fc230aae2a3/out/deadpan_sqlite_status-89d96fc230aae2a3",
+       "instrumented": true,
+       "runs": [
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 1
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.202972542,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 1
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.257422375,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 1
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.277170584,
+         "suppressions_matched": false,
+         "timed_out": false
+        }
+       ],
+       "sha256": "3dfb4c788af1d56479d10e09c78f1db5eb435960861e7b0daaaf349effba7fe5",
+       "ubsan_handler_imports": 11
+      }
+     ],
+     "totals": {
+      "failed": 0,
+      "ignored": 0,
+      "passed": 3
+     },
+     "workers": []
+    },
+    {
+     "entry": "process",
+     "extra": null,
+     "package": "deadpan-native-process",
+     "tests": [
+      {
+       "binary": "target/agent-sanitizers/address-ed9129e6216f/aarch64-apple-darwin/debug/build/deadpan-native-process/458632d67849a322/out/linux_ownership-458632d67849a322",
+       "instrumented": true,
+       "runs": [
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.267294167,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.178535041,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.157719709,
+         "suppressions_matched": false,
+         "timed_out": false
+        }
+       ],
+       "sha256": "970075a9cf62b2e665eb2f1469ab4c4d7ed6d37ba003c0605f5825e54c988de6",
+       "ubsan_handler_imports": 0
+      },
+      {
+       "binary": "target/agent-sanitizers/address-ed9129e6216f/aarch64-apple-darwin/debug/build/deadpan-native-process/fe8f18dd433a3b36/out/deadpan_native_process-fe8f18dd433a3b36",
+       "instrumented": true,
+       "runs": [
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 12
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.201489458,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 12
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.195839708,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 12
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.19756575,
+         "suppressions_matched": false,
+         "timed_out": false
+        }
+       ],
+       "sha256": "cbc6881cb8fdb70246b46e6ab23b12708f769d1bcc6d4524f4d09acc47ed3ba1",
+       "ubsan_handler_imports": 0
+      }
+     ],
+     "totals": {
+      "failed": 0,
+      "ignored": 0,
+      "passed": 36
+     },
+     "workers": []
+    },
+    {
+     "entry": "output",
+     "extra": {
+      "binary": "target/agent-sanitizers/address-ed9129e6216f/aarch64-apple-darwin/debug/examples/qualify_output",
+      "instrumented": true,
+      "runs": [
+       {
+        "callback_count": "298",
+        "checks_failed": false,
+        "counts": {
+         "failed": 0,
+         "ignored": 0,
+         "passed": 0
+        },
+        "exit": 0,
+        "sanitizer_report": null,
+        "seconds": 3.914654,
+        "suppressions_matched": false,
+        "timed_out": false
+       },
+       {
+        "callback_count": "295",
+        "checks_failed": false,
+        "counts": {
+         "failed": 0,
+         "ignored": 0,
+         "passed": 0
+        },
+        "exit": 0,
+        "sanitizer_report": null,
+        "seconds": 3.678645333,
+        "suppressions_matched": false,
+        "timed_out": false
+       },
+       {
+        "callback_count": "304",
+        "checks_failed": false,
+        "counts": {
+         "failed": 0,
+         "ignored": 0,
+         "passed": 0
+        },
+        "exit": 0,
+        "sanitizer_report": null,
+        "seconds": 3.703265959,
+        "suppressions_matched": false,
+        "timed_out": false
+       }
+      ],
+      "sha256": "4886cb36df681eae3641522febbb3da82d5231772c504007e7b64a1800126fba"
+     },
+     "package": "deadpan-output",
+     "tests": [
+      {
+       "binary": "target/agent-sanitizers/address-ed9129e6216f/aarch64-apple-darwin/debug/build/deadpan-output/cbe160a28188f5e9/out/deadpan_output-cbe160a28188f5e9",
+       "instrumented": true,
+       "runs": [
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 14
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.283086708,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 14
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.199357125,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 14
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.198439,
+         "suppressions_matched": false,
+         "timed_out": false
+        }
+       ],
+       "sha256": "7dd60eb8f0ae79eb5bb272a6ca5ebad81adf623de587b7d434ea1ff204346391",
+       "ubsan_handler_imports": 0
+      },
+      {
+       "binary": "target/agent-sanitizers/address-ed9129e6216f/aarch64-apple-darwin/debug/build/deadpan-output/ab28f5ef18ec2684/out/queue-ab28f5ef18ec2684",
+       "instrumented": true,
+       "runs": [
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 16
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.393385875,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 16
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.2876565,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 16
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.360394458,
+         "suppressions_matched": false,
+         "timed_out": false
+        }
+       ],
+       "sha256": "12514274dd80f8806aae01d6c6562358f47388183239795000dca1762d356ab2",
+       "ubsan_handler_imports": 0
+      },
+      {
+       "binary": "target/agent-sanitizers/address-ed9129e6216f/aarch64-apple-darwin/debug/build/deadpan-output/5c7d34101516317c/out/no_alloc-5c7d34101516317c",
+       "instrumented": true,
+       "runs": [
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 1
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.200674125,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 1
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.200698708,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 1
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.170259917,
+         "suppressions_matched": false,
+         "timed_out": false
+        }
+       ],
+       "sha256": "2572c3406bc8c2cf48474805b4af446922c98bcb99b81985396ea85136ff24bc",
+       "ubsan_handler_imports": 0
+      },
+      {
+       "binary": "target/agent-sanitizers/address-ed9129e6216f/aarch64-apple-darwin/debug/build/deadpan-output/d8fbbf6c7d04c0ec/out/clock-d8fbbf6c7d04c0ec",
+       "instrumented": true,
+       "runs": [
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 10
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.212089667,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 10
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.313844375,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 10
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.289122292,
+         "suppressions_matched": false,
+         "timed_out": false
+        }
+       ],
+       "sha256": "bd2203c2cf6dae15fcdab6e5670f1e76b61ca77594070b14f949a3e820c75d1b",
+       "ubsan_handler_imports": 0
+      }
+     ],
+     "totals": {
+      "failed": 0,
+      "ignored": 0,
+      "passed": 123
+     },
+     "workers": []
+    },
+    {
+     "entry": "track",
+     "extra": null,
+     "package": "deadpan-track",
+     "tests": [
+      {
+       "binary": "target/agent-sanitizers/address-ed9129e6216f/aarch64-apple-darwin/debug/build/deadpan-track/37fd395d89c0e05e/out/deadpan_track-37fd395d89c0e05e",
+       "instrumented": true,
+       "runs": [
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 6
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.192971917,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 6
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.18546475,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 6
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.325122875,
+         "suppressions_matched": false,
+         "timed_out": false
+        }
+       ],
+       "sha256": "7747dd44ff7553fba5cbf0347321c0512e1b063d6397715725e0acbae70c649e",
+       "ubsan_handler_imports": 0
+      },
+      {
+       "binary": "target/agent-sanitizers/address-ed9129e6216f/aarch64-apple-darwin/debug/build/deadpan-track/b4eea2cab470b628/out/extension_landmarks-b4eea2cab470b628",
+       "instrumented": true,
+       "runs": [
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 4
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 2.640002875,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 4
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 2.650014083,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 4
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 2.596611875,
+         "suppressions_matched": false,
+         "timed_out": false
+        }
+       ],
+       "sha256": "a6e25e24a05c88dc76bd54650f362654bdc9da331063e65a75a576b450eb592f",
+       "ubsan_handler_imports": 11
+      },
+      {
+       "binary": "target/agent-sanitizers/address-ed9129e6216f/aarch64-apple-darwin/debug/build/deadpan-track/8cab843e60712946/out/landmarks-8cab843e60712946",
+       "instrumented": true,
+       "runs": [
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 6
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 3.3992115,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 6
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 3.295774917,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 6
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 3.61191475,
+         "suppressions_matched": false,
+         "timed_out": false
+        }
+       ],
+       "sha256": "fdb5ac5807fa7ca69abd94b516552054f71cdc0a601685e659740547169f22ea",
+       "ubsan_handler_imports": 11
+      },
+      {
+       "binary": "target/agent-sanitizers/address-ed9129e6216f/aarch64-apple-darwin/debug/build/deadpan-track/462081cd66338d91/out/faces-462081cd66338d91",
+       "instrumented": true,
+       "runs": [
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 5
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 3.114023833,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 5
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 3.066492875,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 5
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 2.914016084,
+         "suppressions_matched": false,
+         "timed_out": false
+        }
+       ],
+       "sha256": "143c3fd91bdcc9ed5e6fc93920ac08d1b28c749871a7a506e9df6fac851688b5",
+       "ubsan_handler_imports": 14
+      },
+      {
+       "binary": "target/agent-sanitizers/address-ed9129e6216f/aarch64-apple-darwin/debug/build/deadpan-track/8f71c66e3d1b48e3/out/geometry-8f71c66e3d1b48e3",
+       "instrumented": true,
+       "runs": [
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 2
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 7.010537875,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 2
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 7.640157084,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 2
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 5.462149166,
+         "suppressions_matched": false,
+         "timed_out": false
+        }
+       ],
+       "sha256": "3a9a9bb9eef25a5f132ebbc596cf2d254395f473c8b3aa8f7553712c070378ec",
+       "ubsan_handler_imports": 14
+      },
+      {
+       "binary": "target/agent-sanitizers/address-ed9129e6216f/aarch64-apple-darwin/debug/build/deadpan-track/db01b499dab4d022/out/worker-db01b499dab4d022",
+       "instrumented": true,
+       "runs": [
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 6
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 5.08482625,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 6
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 4.950995584,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 6
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 5.1248895,
+         "suppressions_matched": false,
+         "timed_out": false
+        }
+       ],
+       "sha256": "d690ba29971d38af61fd7f6f3a004c7cc73d180c7845d8b1207c3aede63fa4db",
+       "ubsan_handler_imports": 14
+      }
+     ],
+     "totals": {
+      "failed": 0,
+      "ignored": 0,
+      "passed": 87
+     },
+     "workers": [
+      {
+       "binary": "target/agent-sanitizers/address-ed9129e6216f/aarch64-apple-darwin/debug/deadpan-track",
+       "instrumented": true,
+       "sha256": "f217de6d9e20a3242a42ec2433527cb43d68657b3dd8118242a8ddf441226e69",
+       "ubsan_handler_imports": 11
+      }
+     ]
+    },
+    {
+     "entry": "transcribe",
+     "extra": {
+      "cli": "target/agent-sanitizers/address-ed9129e6216f/aarch64-apple-darwin/debug/deadpan-cli",
+      "cli_sha256": "70e6f6736850dc669f0dc2719e129ddad93cd36568f161408dc697c840c29f1a",
+      "fixture": "tools/sanitizer-qualification/fixtures/speech.mp4",
+      "fixture_sha256": "ad0f3aab66599f55d1e6a7b570a3d91e7fcc3465a6859c86ec87853530f5148b",
+      "model": "~/Library/Application Support/Deadpan/Models/whisper-base-en/1/ggml-base.en.bin",
+      "model_sha256": "a03779c86df3323075f5e796cb2ce5029f00ec8869eee3fdfb897afe36c6d002",
+      "runs": [
+       {
+        "create": {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 1.232378541,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        "transcribe": {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 19.728836083,
+         "suppressions_matched": false,
+         "timed_out": false,
+         "words": 21
+        }
+       },
+       {
+        "create": {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.846387875,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        "transcribe": {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 16.709612375,
+         "suppressions_matched": false,
+         "timed_out": false,
+         "words": 21
+        }
+       },
+       {
+        "create": {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.752184041,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        "transcribe": {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 16.377575833,
+         "suppressions_matched": false,
+         "timed_out": false,
+         "words": 21
+        }
+       }
+      ],
+      "worker": "target/agent-sanitizers/address-ed9129e6216f/aarch64-apple-darwin/debug/deadpan-transcribe",
+      "worker_instrumented": true,
+      "worker_sha256": "08ed9912672bd9d383b96283a4e6e67c1b93fea67adbf8cc4419b39cfa22be9f",
+      "worker_ubsan_handler_imports": 13
+     },
+     "package": "deadpan-transcribe",
+     "tests": [
+      {
+       "binary": "target/agent-sanitizers/address-ed9129e6216f/aarch64-apple-darwin/debug/build/deadpan-transcribe/168b852932e355cd/out/deadpan_transcribe-168b852932e355cd",
+       "instrumented": true,
+       "runs": [
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.250608292,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.126084,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.18455425,
+         "suppressions_matched": false,
+         "timed_out": false
+        }
+       ],
+       "sha256": "5f99a90ed5f5dea814d2c7e7cebb5de794a6f9f3c33d15837d49a0ffff2df614",
+       "ubsan_handler_imports": 0
+      },
+      {
+       "binary": "target/agent-sanitizers/address-ed9129e6216f/aarch64-apple-darwin/debug/build/deadpan-transcribe/3924565fd3302afc/out/worker-3924565fd3302afc",
+       "instrumented": true,
+       "runs": [
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 4
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 15.794462542,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 4
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 1.465502708,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 4
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 1.281262208,
+         "suppressions_matched": false,
+         "timed_out": false
+        }
+       ],
+       "sha256": "b919a465d0d62e2fd5ef533261c73ea9d664e52a54190e0100d35279213fd738",
+       "ubsan_handler_imports": 0
+      }
+     ],
+     "totals": {
+      "failed": 0,
+      "ignored": 0,
+      "passed": 12
+     },
+     "workers": [
+      {
+       "binary": "target/agent-sanitizers/address-ed9129e6216f/aarch64-apple-darwin/debug/deadpan-transcribe",
+       "instrumented": true,
+       "sha256": "08ed9912672bd9d383b96283a4e6e67c1b93fea67adbf8cc4419b39cfa22be9f",
+       "ubsan_handler_imports": 13
+      }
+     ]
+    }
+   ],
+   "runtime_environment": {
+    "ASAN_OPTIONS": "detect_leaks=0:abort_on_error=1:detect_stack_use_after_return=1:strict_string_checks=1:check_initialization_order=1:strict_init_order=1",
+    "UBSAN_OPTIONS": "print_stacktrace=1:halt_on_error=1"
+   },
+   "rustflags": "-Zsanitizer=address",
+   "sanitizer": "address",
+   "target_dir": "target/agent-sanitizers/address-ed9129e6216f",
+   "third_party_exclusions": [
+    {
+     "flag": "-fno-sanitize=pointer-overflow",
+     "pattern": "*/whisper.cpp/ggml/*",
+     "reason": "ggml sizes graph layouts by offsetting a null pointer (ggml_graph_nbytes/incr_ptr_aligned); reported as applying a non-zero offset to a null pointer, no memory is accessed"
+    }
+   ]
+  },
+  {
+   "c_flags": [
+    "-fsanitize=thread",
+    "-fno-omit-frame-pointer"
+   ],
+   "controls": [
+    {
+     "case": "clean",
+     "exit": 0,
+     "expected": null,
+     "passed": true
+    },
+    {
+     "case": "rust-race",
+     "exit": null,
+     "expected": "WARNING: ThreadSanitizer: data race",
+     "passed": true
+    },
+    {
+     "case": "c-race",
+     "exit": null,
+     "expected": "WARNING: ThreadSanitizer: data race",
+     "passed": true
+    }
+   ],
+   "entries": [
+    {
+     "entry": "process",
+     "extra": null,
+     "package": "deadpan-native-process",
+     "tests": [
+      {
+       "binary": "target/agent-sanitizers/thread-d84e3edd762b/aarch64-apple-darwin/debug/build/deadpan-native-process/7eeed32ff803d468/out/linux_ownership-7eeed32ff803d468",
+       "instrumented": true,
+       "runs": [
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.599499959,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.400341458,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.616389,
+         "suppressions_matched": false,
+         "timed_out": false
+        }
+       ],
+       "sha256": "d217e82b6bda6dff971018e79051300133939ceb149c020ab0c4baf1beb630f9",
+       "ubsan_handler_imports": 0
+      },
+      {
+       "binary": "target/agent-sanitizers/thread-d84e3edd762b/aarch64-apple-darwin/debug/build/deadpan-native-process/721fa763578214fc/out/deadpan_native_process-721fa763578214fc",
+       "instrumented": true,
+       "runs": [
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 12
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.464221959,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 12
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.670984166,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 12
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.580470416,
+         "suppressions_matched": false,
+         "timed_out": false
+        }
+       ],
+       "sha256": "c94ae0865c7536a0c805cb714141166c128992cd6d3292e04d88e0663256c500",
+       "ubsan_handler_imports": 0
+      }
+     ],
+     "totals": {
+      "failed": 0,
+      "ignored": 0,
+      "passed": 36
+     },
+     "workers": []
+    },
+    {
+     "entry": "output",
+     "extra": {
+      "binary": "target/agent-sanitizers/thread-d84e3edd762b/aarch64-apple-darwin/debug/examples/qualify_output",
+      "instrumented": true,
+      "runs": [
+       {
+        "callback_count": "269",
+        "checks_failed": false,
+        "counts": {
+         "failed": 0,
+         "ignored": 0,
+         "passed": 0
+        },
+        "exit": 0,
+        "sanitizer_report": null,
+        "seconds": 5.926082292,
+        "suppressions_matched": false,
+        "timed_out": false
+       },
+       {
+        "callback_count": "277",
+        "checks_failed": false,
+        "counts": {
+         "failed": 0,
+         "ignored": 0,
+         "passed": 0
+        },
+        "exit": 0,
+        "sanitizer_report": null,
+        "seconds": 6.110600709,
+        "suppressions_matched": false,
+        "timed_out": false
+       },
+       {
+        "callback_count": "287",
+        "checks_failed": false,
+        "counts": {
+         "failed": 0,
+         "ignored": 0,
+         "passed": 0
+        },
+        "exit": 0,
+        "sanitizer_report": null,
+        "seconds": 6.283143708,
+        "suppressions_matched": false,
+        "timed_out": false
+       }
+      ],
+      "sha256": "0c03aa089fa0bc622d0a4668bc84ad13b37049e835dbb5fbcf4ce096e5d2d1b5"
+     },
+     "package": "deadpan-output",
+     "tests": [
+      {
+       "binary": "target/agent-sanitizers/thread-d84e3edd762b/aarch64-apple-darwin/debug/build/deadpan-output/fe9839323b53884f/out/deadpan_output-fe9839323b53884f",
+       "instrumented": true,
+       "runs": [
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 14
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.692609667,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 14
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.665057125,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 14
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.700321041,
+         "suppressions_matched": false,
+         "timed_out": false
+        }
+       ],
+       "sha256": "d9d5d743961d3f3c34e77ca4dc1dbd2b913741cb3465abf18ddbe5d062557814",
+       "ubsan_handler_imports": 0
+      },
+      {
+       "binary": "target/agent-sanitizers/thread-d84e3edd762b/aarch64-apple-darwin/debug/build/deadpan-output/c445ef65ba1d9b51/out/no_alloc-c445ef65ba1d9b51",
+       "instrumented": true,
+       "runs": [
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 1
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.649461208,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 1
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.58629275,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 1
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.713762541,
+         "suppressions_matched": false,
+         "timed_out": false
+        }
+       ],
+       "sha256": "1b12bb7469016082d97031238445eb3ca3078941cf4fadedcbdcaaf005ab1618",
+       "ubsan_handler_imports": 0
+      },
+      {
+       "binary": "target/agent-sanitizers/thread-d84e3edd762b/aarch64-apple-darwin/debug/build/deadpan-output/8f9e75429adc391d/out/clock-8f9e75429adc391d",
+       "instrumented": true,
+       "runs": [
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 10
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.902610542,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 10
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.746661292,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 10
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.922446042,
+         "suppressions_matched": false,
+         "timed_out": false
+        }
+       ],
+       "sha256": "14c0b7d56be51028c2e28d35717ca7e2c9cd85141c6b61be34d3e9c9fe403530",
+       "ubsan_handler_imports": 0
+      },
+      {
+       "binary": "target/agent-sanitizers/thread-d84e3edd762b/aarch64-apple-darwin/debug/build/deadpan-output/385999d4a3ffc1d4/out/queue-385999d4a3ffc1d4",
+       "instrumented": true,
+       "runs": [
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 16
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 1.170650083,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 16
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 1.217761667,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 16
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 1.150752542,
+         "suppressions_matched": false,
+         "timed_out": false
+        }
+       ],
+       "sha256": "9b408f4448783618885117245143ce8809fe3cccc9e0c42c88502b6ca1ef193c",
+       "ubsan_handler_imports": 0
+      }
+     ],
+     "totals": {
+      "failed": 0,
+      "ignored": 0,
+      "passed": 123
+     },
+     "workers": []
+    },
+    {
+     "entry": "transcribe",
+     "extra": {
+      "cli": "target/agent-sanitizers/thread-d84e3edd762b/aarch64-apple-darwin/debug/deadpan-cli",
+      "cli_sha256": "48f99223924122f5c7ab0ff442f8d940ac1f384954f5f50333cbb05a214d00c7",
+      "fixture": "tools/sanitizer-qualification/fixtures/speech.mp4",
+      "fixture_sha256": "ad0f3aab66599f55d1e6a7b570a3d91e7fcc3465a6859c86ec87853530f5148b",
+      "model": "~/Library/Application Support/Deadpan/Models/whisper-base-en/1/ggml-base.en.bin",
+      "model_sha256": "a03779c86df3323075f5e796cb2ce5029f00ec8869eee3fdfb897afe36c6d002",
+      "runs": [
+       {
+        "create": {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 2.022089833,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        "transcribe": {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 83.906693208,
+         "suppressions_matched": false,
+         "timed_out": false,
+         "words": 21
+        }
+       },
+       {
+        "create": {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 2.131585083,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        "transcribe": {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 76.214409708,
+         "suppressions_matched": false,
+         "timed_out": false,
+         "words": 21
+        }
+       },
+       {
+        "create": {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 2.452494292,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        "transcribe": {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 74.198278958,
+         "suppressions_matched": false,
+         "timed_out": false,
+         "words": 21
+        }
+       }
+      ],
+      "worker": "target/agent-sanitizers/thread-d84e3edd762b/aarch64-apple-darwin/debug/deadpan-transcribe",
+      "worker_instrumented": true,
+      "worker_sha256": "58430105cff750c00535d94676c962d35d3180aa2b35a7e72b134bd27e1cd182",
+      "worker_ubsan_handler_imports": 0
+     },
+     "package": "deadpan-transcribe",
+     "tests": [
+      {
+       "binary": "target/agent-sanitizers/thread-d84e3edd762b/aarch64-apple-darwin/debug/build/deadpan-transcribe/18e404241ed77356/out/deadpan_transcribe-18e404241ed77356",
+       "instrumented": true,
+       "runs": [
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.545115583,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.686391459,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 0
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 0.710549166,
+         "suppressions_matched": false,
+         "timed_out": false
+        }
+       ],
+       "sha256": "a45187ad4748090e628147abd6f51ad53f2e7468d595a44585d85b4d5f0ef789",
+       "ubsan_handler_imports": 0
+      },
+      {
+       "binary": "target/agent-sanitizers/thread-d84e3edd762b/aarch64-apple-darwin/debug/build/deadpan-transcribe/62ea22fa6a99b944/out/worker-62ea22fa6a99b944",
+       "instrumented": true,
+       "runs": [
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 4
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 23.921523333,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 4
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 6.39973875,
+         "suppressions_matched": false,
+         "timed_out": false
+        },
+        {
+         "counts": {
+          "failed": 0,
+          "ignored": 0,
+          "passed": 4
+         },
+         "exit": 0,
+         "sanitizer_report": null,
+         "seconds": 6.38973775,
+         "suppressions_matched": false,
+         "timed_out": false
+        }
+       ],
+       "sha256": "1f8cd2198ba82790af5c3b8438ae92a8135d706d12eb2114205fdd6735f789cd",
+       "ubsan_handler_imports": 0
+      }
+     ],
+     "totals": {
+      "failed": 0,
+      "ignored": 0,
+      "passed": 12
+     },
+     "workers": [
+      {
+       "binary": "target/agent-sanitizers/thread-d84e3edd762b/aarch64-apple-darwin/debug/deadpan-transcribe",
+       "instrumented": true,
+       "sha256": "58430105cff750c00535d94676c962d35d3180aa2b35a7e72b134bd27e1cd182",
+       "ubsan_handler_imports": 0
+      }
+     ]
+    }
+   ],
+   "runtime_environment": {
+    "TSAN_OPTIONS": "halt_on_error=1:second_deadlock_stack=1:report_signal_unsafe=1:suppressions=tools/sanitizer-qualification/tsan.supp"
+   },
+   "rustflags": "-Zsanitizer=thread",
+   "sanitizer": "thread",
+   "target_dir": "target/agent-sanitizers/thread-d84e3edd762b",
+   "third_party_exclusions": []
+  }
+ ],
+ "revision": "723cb9dd9dda98c4572df747829eee50df57b336",
+ "runs_per_binary": 3,
+ "toolchain": {
+  "cargo": "cargo 1.101.0-nightly (f3865b2a4 2026-09-29)",
+  "clang": "Apple clang version 21.0.0 (clang-2100.1.1.101)\nTarget: arm64-apple-darwin25.5.0\nThread model: posix\nInstalledDir: /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin",
+  "macos": "26.5.2",
+  "rustc": "rustc 1.101.0-nightly (ea137335b 2026-10-05)\nbinary: rustc\ncommit-hash: ea137335b78829b4514bf1b4c16302f74fab8581\ncommit-date: 2026-10-05\nhost: aarch64-apple-darwin\nrelease: 1.101.0-nightly\nLLVM version: 23.1.3",
+  "sdk": "26.5"
+ }
+}
