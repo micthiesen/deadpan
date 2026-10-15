@@ -85,6 +85,18 @@ Results:
 - Strict Clippy for core, plan, audio, store, CLI and app, all targets, and
   `cargo fmt --check` are clean after the review fixes.
 
+## Export verification
+
+Full release preview/export run on 2026-10-15 (`cargo test --release --locked
+-p deadpan-cli --features synthetic-worker --test preview_export`, source at
+`49b7f3d7` plus the two new fixtures): 33 of 33 tests passed in 606 s, 69 recipe
+fixtures built and verified, none skipped. The `tape-slowed-pause` fixture
+([section8.rs](../../crates/deadpan-cli/tests/preview_export/section8.rs)) slows
+the base's frames 12–24 to 24 frames and inserts a 3-frame black pause at Edit
+frame 17, half way through Original frame 26: 45 pictures, minimum luma PSNR
+56.45 dB and chroma 53.44 dB, 28.1 dB minimum audio block SNR, audio offset
+verified zero, every expected picture provenance matched.
+
 ## Not established
 
 Native display of documents with derived clocks (the app refuses pauses that

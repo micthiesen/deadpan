@@ -14,8 +14,9 @@ use std::num::NonZeroU32;
 
 use super::*;
 use deadpan_core::{
-    GagRecipe, PauseLength, RepeatEditBranch, RepeatEditStep, ScopedNodeEdit, ScopedNodeTarget,
-    SourceTrimCapture, SourceTrimIntent, SourceTrimPolicy, SourceTrimResources,
+    GagRecipe, PauseInsertionTarget, PauseLength, PitchPolicy, RepeatEditBranch, RepeatEditStep,
+    ScopedNodeEdit, ScopedNodeTarget, SourceTrimCapture, SourceTrimIntent, SourceTrimPolicy,
+    SourceTrimResources,
 };
 
 /// Edit sample of project frame `frame` (exact rounding of 1601.6 · frame).
@@ -1047,7 +1048,77 @@ pub fn detach_gag(dir: &Path) -> Result<Fixture> {
 }
 
 /// The builders of this module, by fixture name.
-pub const BUILDERS: [(&str, Builder); 20] = [
+/// A pause inside a slowed beat: the base's [12, 24) slowed to 24 frames, then
+/// a 3-frame black pause at Edit 17, half way through Original frame 26.
+/// FollowSpeed keeps the stage as the pause's owner with exact clocks;
+/// Preserve splits the stage into two full processing contexts. Either way
+/// pictures keep their source times: 12 + n shows Original 24 + n/2, the
+/// pause is black over [17, 20), and later frames show the old ones three on.
+fn slowed_pause(dir: &Path, name: &'static str, pitch: PitchPolicy) -> Result<Fixture> {
+    let mut project = Project::create(dir, name)?;
+    project.shorten()?;
+    project.split_root(12)?;
+    let document = project.split_root(24)?;
+    let target = root_child_at(&document, 12)?.0;
+    project.apply(|_, _, _| {
+        Ok(Command::WrapRetime {
+            node: target.clone(),
+            id: NodeId::new("slow").expect("constant identity"),
+            duration: FrameDuration::new(24).expect("positive duration"),
+            pitch,
+        })
+    })?;
+    let at = ProjectFrame(17);
+    project.apply(|project, document, revision| {
+        let required = match document.pause_insertion_target(at)? {
+            PauseInsertionTarget::Ordinary(target) => {
+                target.split.map_or(0, |split| split.required_ids)
+            }
+            PauseInsertionTarget::Retimed(target) => target.required_ids,
+            PauseInsertionTarget::Occurrence(_) => {
+                return Err("a root speed change is not an occurrence".into());
+            }
+        };
+        Ok(Command::InsertTime {
+            at,
+            hold: silent(3, HoldVideo::Background)?,
+            id: node("pause")?,
+            identities: SplitIdentities {
+                nodes: project.fresh(required)?,
+            },
+            timing: AudioTimingId {
+                allocation: revision.clone(),
+                ordinal: 0,
+            },
+        })
+    })?;
+    let mut expectations = vec![(0, base(0)), (11, base(11))];
+    for n in [0u64, 1, 2, 3, 4] {
+        expectations.push((12 + n, original(24 + n / 2)));
+    }
+    expectations.extend([(17, Expected::Background), (19, Expected::Background)]);
+    for n in [5u64, 6, 7, 12, 23] {
+        expectations.push((15 + n, original(24 + n / 2)));
+    }
+    expectations.extend([(39, original(36)), (44, original(41))]);
+    project.finish(
+        vec!["Hold (insert time)", "Slow delivery"],
+        expectations,
+        Vec::new(),
+    )
+}
+
+pub fn tape_slowed_pause(dir: &Path) -> Result<Fixture> {
+    slowed_pause(dir, "tape-slowed-pause", PitchPolicy::FollowSpeed)
+}
+
+pub fn preserve_slowed_pause(dir: &Path) -> Result<Fixture> {
+    slowed_pause(dir, "preserve-slowed-pause", PitchPolicy::Preserve)
+}
+
+pub const BUILDERS: [(&str, Builder); 22] = [
+    ("tape-slowed-pause", tape_slowed_pause),
+    ("preserve-slowed-pause", preserve_slowed_pause),
     ("false-start", false_start),
     ("interrupted-answer", interrupted_answer),
     ("callback-register", callback_register),
