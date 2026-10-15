@@ -134,8 +134,8 @@ on authored nodes. The plan retains exact owner clocks and provider-to-root scop
 identity; the renderer composes those operations with every intermediate canvas
 clip. Native Camera temporarily changes the retained stopped picture, then submits
 one revision-guarded command through the project service. Its scope is currently
-the selected root beat. Split preserves complete effect clocks; framed Ungroup
-remains required. [Captured Hold geometry](CAPTURED_FRAMING.md) retains the input
+the selected root beat. Split preserves complete effect clocks; Ungroup moves a
+group's camera path onto unframed children, windowed to each child's interval. [Captured Hold geometry](CAPTURED_FRAMING.md) retains the input
 composition before the live Hold and ancestor framing. Native root insertion
 captures lower scopes, preserving exact source PTS and intermediate clips.
 

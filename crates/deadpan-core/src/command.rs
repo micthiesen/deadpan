@@ -2281,11 +2281,37 @@ pub(crate) fn reduce(
                     "reset this Sequence's explicit audio edge choices before ungrouping",
                 ));
             }
-            if beat.framing.is_some() {
-                return Err(EditError::new(
-                    EditErrorCode::InvalidCommand,
-                    "ungroup cannot yet preserve this Sequence's framing; retain the group or explicitly clear its framing",
-                ));
+            // The group's camera path moves to each child, windowed to that
+            // child's own interval of the same path, so it renders unchanged.
+            let mut pushed = Vec::new();
+            if let Some(framing) = beat.framing.clone() {
+                if children.iter().any(|child| {
+                    document
+                        .nodes
+                        .get(child)
+                        .is_some_and(|node| node.framing.is_some())
+                }) {
+                    return Err(EditError::new(
+                        EditErrorCode::InvalidCommand,
+                        "ungroup cannot combine this Sequence's framing with a child's own framing; retain the group or clear one of them",
+                    ));
+                }
+                let extents = document.exact_durations()?;
+                let (mut offset, duration) = match framing.clock {
+                    crate::FramingClock::OwnerOutput => (crate::ExactRatio::ZERO, extents[node]),
+                    crate::FramingClock::RetainedOutput { offset, duration } => (offset, duration),
+                };
+                for child in &children {
+                    let mut moved = framing.clone();
+                    moved.clock = crate::FramingClock::RetainedOutput { offset, duration };
+                    moved.validate().map_err(|error| {
+                        EditError::new(EditErrorCode::InvalidCommand, error.to_string())
+                    })?;
+                    pushed.push((child.clone(), moved));
+                    offset = offset
+                        .checked_add(extents[child])
+                        .map_err(DocumentError::from)?;
+                }
             }
             if !beat.audio_treatments.is_empty() {
                 return Err(EditError::new(
@@ -2300,6 +2326,9 @@ pub(crate) fn reduce(
                 .ok_or_else(|| missing(node))?;
             siblings.splice(position..=position, children);
             document.nodes.remove(node);
+            for (child, framing) in pushed {
+                node_mut(document, &child)?.framing = Some(framing);
+            }
         }
         Command::WrapRepeat {
             node,

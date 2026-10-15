@@ -30,8 +30,10 @@ IME composition remain text after command entry opens. `group.create` and
 default key path; use `:ungroup`.
 
 Ungroup requires an explicitly selected direct-child Sequence with no Visual
-selection, including no empty Visual selection. It refuses a group with framing,
-audio treatments or authored edge policy rather than discarding that behavior.
+selection, including no empty Visual selection. A group's framing moves onto its
+children, each windowed to its own interval of the same camera path, so pictures
+keep their poses; it refuses when a child has its own framing, and for audio
+treatments or authored edge policy, rather than discarding that behavior.
 After success, the first promoted child is selected, including an empty child.
 For an empty group, selection goes to the following sibling, then the previous
 sibling if there is no following one. The cursor remains at the old group start.

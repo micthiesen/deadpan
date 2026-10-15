@@ -720,6 +720,14 @@ fn ungroup_reports_removed_mark_host_and_refuses_non_neutral_owners() {
     );
     for variation in 0..4 {
         let mut refused = grouped.clone();
+        let first = match &refused.nodes[&node("grouped")].kind {
+            NodeKind::Sequence { children } => children[0].clone(),
+            _ => unreachable!("grouped is a Sequence"),
+        };
+        // Group framing alone moves to the children; a child's own framing
+        // cannot be combined with it.
+        refused.nodes.get_mut(&first).unwrap().framing =
+            (variation == 0).then(|| Framing::static_pose(FramingPose::default()).unwrap());
         let beat = refused.nodes.get_mut(&node("grouped")).unwrap();
         match variation {
             0 => beat.framing = Some(Framing::static_pose(FramingPose::default()).unwrap()),

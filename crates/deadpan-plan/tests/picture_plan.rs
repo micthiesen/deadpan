@@ -2378,3 +2378,66 @@ fn pauses_inside_follow_speed_shift_later_pictures_without_changing_their_source
         );
     }
 }
+
+#[test]
+fn ungrouping_a_framed_group_moves_its_camera_path_onto_its_children_unchanged() {
+    let pose = |x: i128, scale: i128| {
+        FramingPose::new(
+            ExactRatio::new(x, 8).unwrap(),
+            ExactRatio::new(1, 2).unwrap(),
+            ExactRatio::new(scale, 4).unwrap(),
+        )
+        .unwrap()
+    };
+    let mut group = BeatNode::sequence("Group", vec![id("a"), id("b")]);
+    group.framing = Some(Framing {
+        clock: Default::default(),
+        value: FramingValue::Envelope {
+            envelope: FramingEnvelope {
+                initial: pose(3, 4),
+                segments: vec![FramingSegment {
+                    end: ExactRatio::ONE,
+                    pose: pose(5, 6),
+                    curve: FramingCurve::Linear,
+                }],
+            },
+        },
+    });
+    let before = document(
+        &["lead", "group"],
+        vec![
+            ("lead", source(2, 0, 2002)),
+            ("group", group),
+            ("a", source(3, 5005, 8008)),
+            ("b", source(5, 10010, 15015)),
+        ],
+    );
+    let edit = apply(
+        &before,
+        &CommandRequest {
+            project_id: before.project_id().clone(),
+            expected_revision: before.revision_id().clone(),
+            new_revision: revision("ungrouped"),
+            command: Command::Ungroup { node: id("group") },
+        },
+    )
+    .unwrap();
+    let after = edit.forward.apply(&before).unwrap();
+    assert!(!after.nodes().contains_key(&id("group")));
+    assert!(after.nodes()[&id("b")].framing.is_some());
+    let old = RenderPlan::compile(&before).unwrap();
+    let new = RenderPlan::compile(&after).unwrap();
+    let poses = |plan: &RenderPlan, frame| {
+        plan.picture(ProjectFrame(frame))
+            .unwrap()
+            .framing
+            .iter()
+            .filter_map(|layer| layer.pose)
+            .collect::<Vec<_>>()
+    };
+    for frame in 0..10 {
+        assert_eq!(poses(&new, frame), poses(&old, frame), "frame {frame}");
+    }
+    // The path still moves across the former group.
+    assert_ne!(poses(&new, 2), poses(&new, 9));
+}

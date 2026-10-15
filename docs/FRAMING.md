@@ -329,8 +329,10 @@ rectangles, and a live follow whose scale changes over time (a creep that tracks
 moving target) remain required. Follow centers are placed on a letterboxed or
 pillarboxed canvas for targets that record their display aspect
 ([qualification](qualification/letterbox-follow-2026-10-15.md)). Centered per-play scale
-escalation is in [Repeat escalation](REPEAT_ESCALATION.md); target-centered escalation, nested native selection, full
-framed Ungroup, arbitrary temporal envelopes, captions, cutaways, and the remaining
+escalation is in [Repeat escalation](REPEAT_ESCALATION.md). Ungroup moves a group's camera path onto its unframed
+children, each windowed to its own interval of the same path (`FramingClock::RetainedOutput`), so every picture keeps
+its pose (`ungrouping_a_framed_group_moves_its_camera_path_onto_its_children_unchanged`); a child with its own framing
+still refuses. Target-centered escalation, nested native selection, arbitrary temporal envelopes, captions, cutaways, and the remaining
 Section 8 picture operations remain required. [Captured framing](CAPTURED_FRAMING.md)
 retains the cropped composition for native Source/Freeze pause insertion, separately
 from the exact source PTS and new Hold framing. Root framing remains inherited
