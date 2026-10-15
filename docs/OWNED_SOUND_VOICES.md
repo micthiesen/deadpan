@@ -293,6 +293,9 @@ The final product still requires all of the following:
   own revision at ordinal zero, both fragments keep the sound behind delivery
   crops, and the mixed PCM is unchanged
   (`a_plain_split_keeps_attached_sound_on_both_fragments_with_identical_pcm`).
+  `SetHoldDuration` uses that transport too when no root sounds exist, so a
+  pause before an owner can change length
+  (`a_longer_pause_before_an_attached_sound_owner_moves_its_sound_on_its_own_clock`).
 - Extend whole-owner copying to partial captures and timing-preserving edits.
   Whole-beat `ib`/`ab` copies already differ without changing picture bounds.
 - Add scoped beat-sound allowances and permitted tails.

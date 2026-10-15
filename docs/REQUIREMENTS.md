@@ -7,8 +7,10 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 A plain `Split` of a beat that owns attached sounds no longer refuses: it
 uses the beat-sound clock transport already used by interior pauses, keeps the
 sound on both fragments and leaves the mixed PCM bit-identical, with and without
-a shared equalizer. Trim, Roll, Repeat and Retime wraps, Hold duration and
-override edits on sound owners still refuse.
+a shared equalizer. `SetHoldDuration` uses the same transport when the project
+has no root sounds: a longer pause before an attached sound owner moves the
+sound, which resumes on its own boundary. Trim, Roll, Repeat and Retime wraps
+and override edits around sound owners still refuse.
 
 [Tracking evidence](qualification/tracking-evidence-2026-10-15.md): rotated,
 anamorphic and rotated-anamorphic synthetic Originals tracked by the real

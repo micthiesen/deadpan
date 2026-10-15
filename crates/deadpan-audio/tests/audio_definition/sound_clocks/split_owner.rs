@@ -238,3 +238,42 @@ fn a_plain_split_keeps_attached_sound_on_both_fragments_with_identical_pcm() {
         );
     }
 }
+
+#[test]
+fn a_longer_pause_before_an_attached_sound_owner_moves_its_sound_on_its_own_clock() {
+    let before = insert_prefix(&ntsc(AudioEdgePolicy::Hard));
+    let longer = edit(
+        &before,
+        "longer-lead",
+        Command::SetHoldDuration {
+            node: id("lead"),
+            duration: FrameDuration::new(3).unwrap(),
+        },
+    );
+    assert_eq!(longer.beat_sounds().len(), 1);
+    let read = |document: &ProjectDocument, sample: i64| {
+        let mut reader = StageAudio::new(compile(document, false));
+        let mut provider = ClockProvider::new(document);
+        bus(&mut reader, &mut provider, sample, 256).samples
+    };
+    // The owner moves from frame 3 to 4 and resumes on its own boundary.
+    let shift = frame_sample_boundary(4) - frame_sample_boundary(3);
+    for offset in [256, 512, 2048] {
+        let start = frame_sample_boundary(3) + offset;
+        let expected = read(&before, start);
+        assert!(expected.iter().flatten().any(|v| v.abs() > 0.001));
+        compare_copy(
+            &expected,
+            &read(&longer, start + shift),
+            false,
+            "longer lead",
+        );
+    }
+    // The longer pause itself stays silent.
+    assert!(
+        render(&longer, 1, 4)
+            .iter()
+            .flatten()
+            .all(|sample| *sample == 0.0)
+    );
+}

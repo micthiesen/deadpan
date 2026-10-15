@@ -311,7 +311,10 @@ pub(crate) fn validate_command(
     validate_group_ownership(document, command)?;
     if !document.beat_sounds.is_empty()
         && crate::sound_clock::edit::timing(command).is_none()
-        && !matches!(command, Command::Split { .. })
+        && !matches!(
+            command,
+            Command::Split { .. } | Command::SetHoldDuration { .. }
+        )
         && !preserves_sound_clocks(command)
     {
         return Err(EditError::new(
@@ -347,6 +350,9 @@ pub(crate) fn validate_command(
                 | Command::Delete { .. }
         )
         || matches!(command, Command::Split { node, .. } if node != document.root())
+        // Root sound routes have no Hold-duration transform; attached sounds
+        // translate through the beat-sound clock transport.
+        || (document.sounds.is_empty() && matches!(command, Command::SetHoldDuration { .. }))
     {
         return Ok(());
     }

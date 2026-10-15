@@ -35,12 +35,13 @@ pub(crate) fn timing(command: &Command) -> Option<&AudioTimingId> {
     }
 }
 
-/// The capture identity for one command leaf. A plain Split names no clock;
+/// The capture identity for one command leaf. A plain Split or Hold duration
+/// change names no clock;
 /// its new layout takes the leaf's own revision at ordinal zero, which no
 /// other table of that revision uses.
 fn capture_timing(command: &Command, allocation: &RevisionId) -> Option<AudioTimingId> {
     match command {
-        Command::Split { .. } => Some(AudioTimingId {
+        Command::Split { .. } | Command::SetHoldDuration { .. } => Some(AudioTimingId {
             allocation: allocation.clone(),
             ordinal: 0,
         }),
