@@ -97,10 +97,10 @@ fn clocked_owners(document: &ProjectDocument) -> BTreeSet<NodeId> {
         .collect()
 }
 
-/// The structure of `id` with child identities replaced by their own
-/// structure, including derived clocks and the play/gap keys of sparse Repeat
-/// branches. Equal values denote the same timing and content under any node
-/// identities.
+/// The timing structure of `id` with child identities replaced by their own
+/// timing structure, including derived clocks and the play/gap keys of sparse
+/// Repeat branches. Equal values denote the same timing under any node
+/// identities, whatever their non-timing attributes.
 fn canonical(
     document: &ProjectDocument,
     id: &NodeId,
@@ -113,15 +113,22 @@ fn canonical(
         )
     })?;
     let node = &document.nodes[id];
-    let mut value = serde_json::to_value(node).map_err(|_| {
+    // Only timing structure counts: labels, framing, treatments, edges,
+    // cutaways, captions and a Hold's picture and sound providers do not
+    // change any extent, so ordinary edits may change them inside.
+    let mut value = serde_json::to_value(&node.kind).map_err(|_| {
         DocumentError::new(DocumentErrorCode::InvalidTree, "node does not serialize")
     })?;
-    if let Some(kind) = value.get_mut("kind") {
-        for field in ["child", "children"] {
-            if let Some(slot) = kind.get_mut(field) {
-                *slot = serde_json::Value::Null;
-            }
+    for field in ["child", "children"] {
+        if let Some(slot) = value.get_mut(field) {
+            *slot = serde_json::Value::Null;
         }
+    }
+    if let Some(recipe) = value
+        .get_mut("recipe")
+        .and_then(|recipe| recipe.as_object_mut())
+    {
+        recipe.retain(|key, _| key == "duration");
     }
     let children = node
         .kind
@@ -187,10 +194,12 @@ fn owner_timing(
     Some((kind, document.derived_clocks.get(id).cloned()))
 }
 
-/// Refuse a command result that changed timing or content inside a clocked
-/// speed change. Each top-level clocked Retime must keep its timing and
-/// unchanged content, be removed, or be an exact copy of a previous one; a
-/// new ordinary wrapper may hold one. Attributes outside timing may change.
+/// Refuse a command result that changed timing structure inside a clocked
+/// speed change. Each top-level clocked Retime must keep its timing and the
+/// timing structure of its content, be removed, or be an exact copy of a
+/// previous one; a new ordinary wrapper may hold one. Attributes outside
+/// timing (labels, framing, treatments, edges, attachments, Hold providers)
+/// may change anywhere.
 pub(crate) fn sealed_preserved(
     before: &ProjectDocument,
     after: &ProjectDocument,

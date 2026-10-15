@@ -301,6 +301,37 @@ fn ordinary_edits_move_copy_and_keep_clocked_speed_changes_but_refuse_inside_the
     assert!(!clocks.contains_key(&id("slow")));
     let (output, window, _) = retime(&lengthened, "slow");
     assert_eq!((output, window.end().0), (duration(28), 14));
+    // Attributes outside timing change freely inside it: a label and a
+    // Camera pose on the pause, keeping every clock.
+    let renamed = edit(
+        &lengthened,
+        request(
+            &lengthened,
+            "renamed",
+            Command::Rename {
+                node: id("pause-p"),
+                label: "Long stare".into(),
+            },
+        ),
+    );
+    let framed = edit(
+        &renamed,
+        request(
+            &renamed,
+            "framed",
+            Command::SetFraming {
+                node: id("pause-p"),
+                framing: Some(Framing {
+                    clock: Default::default(),
+                    value: FramingValue::Static {
+                        pose: FramingPose::new(ratio(1, 3), ratio(1, 2), ratio(2, 1)).unwrap(),
+                    },
+                }),
+            },
+        ),
+    );
+    assert_eq!(framed.derived_clocks(), lengthened.derived_clocks());
+    assert_eq!(total(&framed), ratio(39, 1));
     // Other changes inside it would read integral recipes, and refuse.
     let inside = apply(
         &longer,

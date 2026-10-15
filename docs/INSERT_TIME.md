@@ -223,8 +223,10 @@ deletion, grouping and Undo/Redo work. Inside the speed change,
 through every enclosing adapter, Sequence, speed change and window at its own
 slope (clocks that become whole return to ordinary recipes), and later owners
 only translate, which leaves their retained sample clocks unchanged. A Hold
-only partly visible through a window, or under a Repeat, refuses. Other edits
-inside the speed change refuse with a message naming it. The native workspace opens these projects; its
+only partly visible through a window, or under a Repeat, refuses. Edits that
+change only labels, framing, gain, edges, attachments or a Hold's picture and
+sound providers work inside it, since the check compares timing structure only;
+other timing edits inside it refuse with a message naming it. The native workspace opens these projects; its
 remaining integral consumers (scoped inspector timing, Trim inspection) report
 the refusal rather than guessing.
 
