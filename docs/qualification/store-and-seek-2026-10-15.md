@@ -181,7 +181,9 @@ What this shows:
   2026-10-06 session-cold, page-cache-warm samples at load 2–3 were 125 /
   149 ms (1080p60) and 193 / 275 ms (4K) p50 / p95, and the warm repeats
   here are 1.4–1.6 times those, so this run's misses are mostly load. A
-  gated run (every sample below load 3) is still needed for a PASS or FAIL.
+  gated run (every sample below load 3) is still needed for a PASS or FAIL;
+  a further hour of polling (15:53–16:54) never saw the 1-minute load below
+  3, so none was started.
 
 
 ## Not covered
