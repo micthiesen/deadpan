@@ -213,11 +213,11 @@ impl ProjectStore {
             &plan.next,
             resolver.as_deref(),
         )?);
-        crate::audit::extend(
+        documents.set_receipt_link(crate::audit::extend(
             &transaction,
             plan.current.revision_id().as_str(),
             plan.next.revision_id().as_str(),
-        )?;
+        )?);
         transaction.commit()?;
         documents.insert(plan.next.clone());
         Ok(CommitOutcome {

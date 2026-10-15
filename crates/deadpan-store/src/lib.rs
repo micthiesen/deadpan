@@ -587,6 +587,12 @@ impl ProjectStore {
         if mode == AccessMode::ReadWrite {
             store.recover_writable(&audit, false)?;
             store.begin_writer_session();
+            // A keyframe the previous writer left due (it closed or was
+            // killed before writing it) is written now, off any edit. It is
+            // an optimization: the history is complete without it, so a
+            // failure here does not fail the open; the next commit or open
+            // tries again, and the commit at `MAX_PATCH_CHAIN` stores one.
+            let _ = store.write_due_keyframe();
         }
         Ok(store)
     }
@@ -616,6 +622,12 @@ impl ProjectStore {
                 )?;
                 transaction.commit()?;
             }
+            // The receipt now ends at the head with the audited chain.
+            store.documents.set_receipt_link(Some(audit::ReceiptLink {
+                head: audit.order.last().expect("nonempty chronology").clone(),
+                revisions: i64::try_from(audit.order.len()).unwrap_or(i64::MAX),
+                previous: audit.previous_chain,
+            }));
             // Read the previous writer's evidence first, but replace its
             // marker only after recovery succeeds: a failed or crashed
             // recovery leaves the earlier evidence for the next writer.
@@ -879,6 +891,46 @@ impl ProjectStore {
         transaction.commit()?;
         documents.insert(next);
         Ok(outcome)
+    }
+
+    /// Whether the head's keyframe is due: it is elided at least
+    /// `KEYFRAME_INTERVAL` (64) patches from its nearest stored document.
+    /// Always `false` for read-only stores.
+    pub fn keyframe_due(&self) -> Result<bool, StoreError> {
+        if self.mode == AccessMode::ReadOnly {
+            return Ok(false);
+        }
+        Ok(revision_storage::due_head(&self.connection)?.is_some())
+    }
+
+    /// Store the head's due keyframe (its complete document) in a separate
+    /// transaction, outside the edit that made it due. A host calls this
+    /// when idle after publishing a commit, so an ordinary edit never waits
+    /// for serializing, writing and hashing the whole document. It changes
+    /// no revision's content, history entry or cursor, only how the head is
+    /// stored and the receipt's last link. Returns whether a keyframe was
+    /// written; without one the next commits stay patches until the chain
+    /// reaches `MAX_PATCH_CHAIN` (128), where the commit stores it itself.
+    pub fn write_due_keyframe(&mut self) -> Result<bool, StoreError> {
+        self.require_writer()?;
+        if revision_storage::due_head(&self.connection)?.is_none() {
+            return Ok(false);
+        }
+        // Serialize before taking the write lock; the transaction rechecks
+        // that this document is still the due head.
+        let head = self.documents.head_validated(&self.connection)?;
+        let json = head.to_compact_json()?;
+        let transaction = self
+            .connection
+            .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+        let link = self.documents.receipt_link();
+        if !revision_storage::write_due_keyframe(&transaction, &head, &json, link.as_ref())? {
+            return Ok(false);
+        }
+        failpoint("keyframe-before-commit");
+        transaction.commit()?;
+        failpoint("keyframe-after-commit");
+        Ok(true)
     }
 
     /// Produces a consistent SQLite snapshot including all committed WAL pages.
@@ -1582,11 +1634,11 @@ fn write_command_plan(
     generation_preparation_notices.extend(generation_preparations::reconcile(
         connection, &plan.next, resolver,
     )?);
-    audit::extend(
+    documents.set_receipt_link(audit::extend(
         connection,
         plan.current.revision_id().as_str(),
         plan.next.revision_id().as_str(),
-    )?;
+    )?);
     Ok((
         CommitOutcome {
             revision_id: plan.next.revision_id().clone(),
@@ -1781,6 +1833,90 @@ mod tests {
             observed_full,
             "the real SQLite page limit must reject a write"
         );
+        Ok(())
+    }
+
+    /// The receipt ends at a due head: its row may change only with a link
+    /// that reproduces the stored chain, so a missing or wrong link leaves
+    /// the keyframe due and every row unchanged.
+    #[test]
+    fn a_due_keyframe_needs_a_proved_receipt_link() -> Result<(), Box<dyn std::error::Error>> {
+        let scratch = tempfile::tempdir()?;
+        let document = ProjectDocument::new(
+            ProjectId::new("p")?,
+            RevisionId::new("r0")?,
+            PresentationBasis {
+                width: 1920,
+                height: 1080,
+                frame_rate: FrameRate::new(30, 1)?,
+                color_policy: ColorPolicy::SdrRec709,
+            },
+            NodeId::new("root")?,
+        )?;
+        let path = scratch.path().join("link.deadpan");
+        let mut store = ProjectStore::create(&path, &document)?;
+        for index in 1..=revision_storage::KEYFRAME_INTERVAL {
+            let before = store.snapshot()?;
+            store.commit(&CommandRequest {
+                project_id: before.project_id().clone(),
+                expected_revision: before.revision_id().clone(),
+                new_revision: RevisionId::new(format!("r{index}"))?,
+                command: deadpan_core::Command::Rename {
+                    node: before.root().clone(),
+                    label: format!("label {index}"),
+                },
+            })?;
+        }
+        assert!(store.keyframe_due()?);
+        let rows = |store: &ProjectStore| -> Result<Vec<(String, i64)>, StoreError> {
+            let mut statement = store
+                .connection
+                .prepare("SELECT document,depth FROM revisions ORDER BY rowid")?;
+            let rows = statement
+                .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))?
+                .collect::<Result<_, _>>()?;
+            Ok(rows)
+        };
+        let receipt = |store: &ProjectStore| -> Result<Vec<u8>, StoreError> {
+            Ok(store
+                .connection
+                .query_row("SELECT chain FROM history_receipt", [], |row| row.get(0))?)
+        };
+        let (before, chain) = (rows(&store)?, receipt(&store)?);
+        let proved = store
+            .documents
+            .receipt_link()
+            .expect("the commit extended it");
+        for link in [
+            None,
+            Some(audit::ReceiptLink {
+                previous: [7; 32],
+                ..proved.clone()
+            }),
+            Some(audit::ReceiptLink {
+                revisions: proved.revisions - 1,
+                ..proved.clone()
+            }),
+        ] {
+            store.documents.set_receipt_link(link);
+            assert!(!store.write_due_keyframe()?);
+            assert!(store.keyframe_due()?);
+            assert_eq!(
+                (rows(&store)?, receipt(&store)?),
+                (before.clone(), chain.clone())
+            );
+        }
+        store.documents.set_receipt_link(Some(proved));
+        assert!(store.write_due_keyframe()?);
+        assert!(!store.keyframe_due()?);
+        assert_ne!(receipt(&store)?, chain);
+        assert_eq!(rows(&store)?.last().map(|row| row.1), Some(0));
+        let head = store.snapshot()?;
+        drop(store);
+        let reader = ProjectStore::open(&path, AccessMode::ReadOnly)?;
+        assert_eq!(reader.open_validation().replayed, 0);
+        assert_eq!(reader.snapshot()?, head);
+        reader.validate_full()?;
         Ok(())
     }
 }

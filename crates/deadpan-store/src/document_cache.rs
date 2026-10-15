@@ -45,6 +45,11 @@ impl Entries {
 pub(crate) struct DocumentCache {
     entries: Mutex<Entries>,
     initial: Mutex<Option<Arc<InitialAllocations>>>,
+    /// The history receipt's last link as this store last wrote or proved
+    /// it. A rolled-back transaction may leave a link to a revision that
+    /// never committed; [`crate::audit::head_receipt`] checks it against
+    /// the stored chain before it is used.
+    receipt_link: Mutex<Option<crate::audit::ReceiptLink>>,
 }
 
 /// Allocation names an imported initial snapshot reserves forever.
@@ -89,6 +94,20 @@ impl DocumentCache {
         entries
             .historical
             .retain(|entry| Some(entry.revision_id()) != head.as_ref());
+    }
+
+    pub(crate) fn set_receipt_link(&self, link: Option<crate::audit::ReceiptLink>) {
+        *self
+            .receipt_link
+            .lock()
+            .unwrap_or_else(|error| error.into_inner()) = link;
+    }
+
+    pub(crate) fn receipt_link(&self) -> Option<crate::audit::ReceiptLink> {
+        self.receipt_link
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
+            .clone()
     }
 
     /// One committed revision's validated document.

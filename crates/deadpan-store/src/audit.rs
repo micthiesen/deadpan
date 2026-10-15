@@ -438,23 +438,38 @@ pub(crate) fn certify(
     )
 }
 
+/// The receipt's last link, kept in memory so a deferred keyframe can
+/// replace the head's row and recompute that link without rehashing the
+/// chronology. It is evidence only after [`head_receipt`] checks that it
+/// reproduces the stored chain.
+#[derive(Clone)]
+pub(crate) struct ReceiptLink {
+    /// The revision the receipt covers last.
+    pub head: String,
+    /// How many revisions the receipt covers.
+    pub revisions: i64,
+    /// The chain value before `head`'s rows.
+    pub previous: Chain,
+}
+
 /// After a commit has performed every replay check for `revision`, extend a
-/// receipt that covered its parent. A receipt that is absent, from another
-/// validator, or whose profile changed in this transaction stays as it is;
-/// the next writer open then proves the remaining revisions.
+/// receipt that covered its parent, and return its new last link. A receipt
+/// that is absent, from another validator, or whose profile changed in this
+/// transaction stays as it is; the next writer open then proves the
+/// remaining revisions.
 pub(crate) fn extend(
     connection: &Connection,
     parent: &str,
     revision: &str,
-) -> Result<(), StoreError> {
+) -> Result<Option<ReceiptLink>, StoreError> {
     let Some(receipt) = read(connection)? else {
-        return Ok(());
+        return Ok(None);
     };
     if receipt.validator != VALIDATOR
         || receipt.head != parent
         || receipt.profile != profile_digest(connection)?
     {
-        return Ok(());
+        return Ok(None);
     }
     let rows = read_rows(connection, revision)?;
     if rows.parent.as_deref() != Some(parent) {
@@ -468,11 +483,16 @@ pub(crate) fn extend(
         receipt.qualification_rowid,
         None,
     )?;
+    let extended = ReceiptLink {
+        head: revision.to_owned(),
+        revisions: receipt.revisions + 1,
+        previous: receipt.chain,
+    };
     write(
         connection,
         &Receipt {
             validator: receipt.validator,
-            revisions: receipt.revisions + 1,
+            revisions: extended.revisions,
             head: revision.to_owned(),
             chain: link(&receipt.chain, &rows),
             profile: receipt.profile,
@@ -480,7 +500,60 @@ pub(crate) fn extend(
             qualifications,
             generation_scopes: crate::generation_scope::digest(connection)?,
         },
-    )
+    )?;
+    Ok(Some(extended))
+}
+
+/// Whether replacing the stored rows of the head `old` affects the receipt.
+pub(crate) enum HeadReceipt {
+    /// No receipt this validator would trust covers the head, so the rows
+    /// may change without touching it: opening ignores a receipt from
+    /// another validator, and one covering an earlier prefix still matches.
+    Uncovered,
+    /// The receipt ends at the head and `previous` provably precedes it.
+    Covered { previous: Chain },
+    /// The receipt ends at the head but no link reproduces its chain, so
+    /// the rows must not change.
+    Unproved,
+}
+
+pub(crate) fn head_receipt(
+    connection: &Connection,
+    known: Option<&ReceiptLink>,
+    old: &RevisionRows,
+) -> Result<HeadReceipt, StoreError> {
+    let Some(receipt) = read(connection)? else {
+        return Ok(HeadReceipt::Uncovered);
+    };
+    if receipt.validator != VALIDATOR || receipt.head != old.id {
+        return Ok(HeadReceipt::Uncovered);
+    }
+    Ok(match known {
+        Some(known)
+            if known.head == old.id
+                && known.revisions == receipt.revisions
+                && link(&known.previous, old) == receipt.chain =>
+        {
+            HeadReceipt::Covered {
+                previous: known.previous,
+            }
+        }
+        _ => HeadReceipt::Unproved,
+    })
+}
+
+/// Recompute the receipt's last link over the head's replaced rows. The
+/// caller has established [`HeadReceipt::Covered`] in this transaction.
+pub(crate) fn replace_head_link(
+    connection: &Connection,
+    previous: &Chain,
+    new: &RevisionRows,
+) -> Result<(), StoreError> {
+    let mut receipt = read(connection)?
+        .filter(|receipt| receipt.head == new.id)
+        .ok_or_else(|| StoreError::History("receipt no longer ends at the head".into()))?;
+    receipt.chain = link(previous, new);
+    write(connection, &receipt)
 }
 
 /// After the caller has validated the single-original profile against every

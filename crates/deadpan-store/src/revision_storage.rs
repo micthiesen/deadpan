@@ -5,10 +5,20 @@
 //! marker unless it is the initial revision or a keyframe. Each row records
 //! `depth`, the number of patches since its nearest stored ancestor, and
 //! `json_bound`, an upper bound on its document's compact JSON length. A
-//! revision becomes a keyframe when its depth would reach
-//! [`MAX_PATCH_CHAIN`] or its bound would exceed the document limit, so any
-//! revision is rebuilt from at most `MAX_PATCH_CHAIN - 1` patches and a
+//! revision is stored as a keyframe in its own commit when its depth would
+//! reach [`MAX_PATCH_CHAIN`] or its bound would exceed the document limit, so
+//! any revision is rebuilt from at most `MAX_PATCH_CHAIN - 1` patches and a
 //! document over the limit is always caught by an exact serialization.
+//!
+//! A keyframe is due every [`KEYFRAME_INTERVAL`] patches, but writing one
+//! (serializing, storing and hashing the complete document) is kept off the
+//! edit's commit: a commit at or past the interval stays elided, and
+//! [`write_due_keyframe`] later stores the head's document in its own row in
+//! a separate transaction, together with the history receipt's last link.
+//! Only the head can be converted, because no row depends on its metadata
+//! yet. Until it lands (the host was busy, or the process ended first) depth
+//! keeps growing, bounded by `MAX_PATCH_CHAIN` where the commit itself stores
+//! the keyframe again; a writable open converts a due head.
 //!
 //! The bound holds because a patch carries every after-value it installs,
 //! serialized by the same `Serialize` implementations as the document, and
@@ -30,8 +40,13 @@ use crate::StoreError;
 /// always a JSON object, so the literal can never be a real document.
 pub(crate) const ELIDED: &str = "null";
 
-/// A revision is rebuilt by applying fewer than this many stored patches.
-pub(crate) const MAX_PATCH_CHAIN: i64 = 64;
+/// A keyframe is due once a revision is this many patches from its nearest
+/// stored ancestor; [`write_due_keyframe`] stores it outside the commit.
+pub(crate) const KEYFRAME_INTERVAL: i64 = 64;
+
+/// A revision is rebuilt by applying fewer than this many stored patches: a
+/// commit that would reach it stores its keyframe itself.
+pub(crate) const MAX_PATCH_CHAIN: i64 = 2 * KEYFRAME_INTERVAL;
 
 /// Field-level JSON syntax a patch may add beyond its own length.
 pub(crate) const PATCH_GROWTH_SLACK: i64 = 4096;
@@ -133,6 +148,78 @@ pub(crate) fn insert(
         .write(document.len() as u64 + navigation.map_or(0, |json| json.len() as u64));
     crate::publish_page_io(connection);
     Ok(())
+}
+
+/// The head's identity when its keyframe is due: it is elided at least
+/// [`KEYFRAME_INTERVAL`] patches from its nearest stored ancestor.
+pub(crate) fn due_head(connection: &Connection) -> Result<Option<String>, StoreError> {
+    let head = crate::validation::read_head(connection)?;
+    let depth: Option<i64> = connection
+        .query_row(
+            "SELECT depth FROM revisions WHERE id=?1 AND document=?2",
+            params![head, ELIDED],
+            |row| row.get(0),
+        )
+        .optional()?;
+    Ok(depth
+        .is_some_and(|depth| depth >= KEYFRAME_INTERVAL)
+        .then_some(head))
+}
+
+/// Store the due head's complete document in its own row, inside the
+/// caller's write transaction, and recompute the receipt's last link over
+/// the replaced row. `json` is `head`'s compact serialization.
+///
+/// The row becomes exactly what a keyframe commit would have written
+/// (document, depth 0, bound its length), and nothing depends on its old
+/// metadata: only an elided head without children is converted, and every
+/// later revision is committed after this one and links to the new row.
+/// Returns `false`, leaving the caller to roll back, when the head changed
+/// or the receipt ends at the head but `link` cannot be proved to precede
+/// it; the keyframe then stays due.
+pub(crate) fn write_due_keyframe(
+    connection: &Connection,
+    head: &ProjectDocument,
+    json: &str,
+    link: Option<&crate::audit::ReceiptLink>,
+) -> Result<bool, StoreError> {
+    let id = head.revision_id().as_str();
+    if due_head(connection)?.as_deref() != Some(id) {
+        return Ok(false);
+    }
+    crate::check_document_size(json)?;
+    let bound = i64::try_from(json.len())
+        .map_err(|_| StoreError::Integrity("keyframe length exceeds its bound".into()))?;
+    let old = crate::audit::read_rows(connection, id)?;
+    let previous = match crate::audit::head_receipt(connection, link, &old)? {
+        crate::audit::HeadReceipt::Unproved => return Ok(false),
+        crate::audit::HeadReceipt::Uncovered => None,
+        crate::audit::HeadReceipt::Covered { previous } => Some(previous),
+    };
+    let changed = connection.execute(
+        "UPDATE revisions SET document=?2,depth=0,json_bound=?3
+         WHERE id=?1 AND document=?4 AND NOT EXISTS(SELECT 1 FROM revisions WHERE parent_id=?1)",
+        params![id, json, bound, ELIDED],
+    )?;
+    if changed != 1 {
+        return Err(StoreError::History(
+            "a due keyframe's revision changed while it was written".into(),
+        ));
+    }
+    if let Some(previous) = previous {
+        let new = crate::audit::RevisionRows {
+            document: json.to_owned(),
+            depth: 0,
+            json_bound: bound,
+            ..old
+        };
+        crate::audit::replace_head_link(connection, &previous, &new)?;
+    }
+    deadpan_diagnostics::IO
+        .store_revisions
+        .write(json.len() as u64);
+    crate::publish_page_io(connection);
+    Ok(true)
 }
 
 /// The stored forward patch from `revision`'s parent to `revision`.

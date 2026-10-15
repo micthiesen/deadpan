@@ -268,6 +268,8 @@ pub(crate) struct HistoryAudit {
     pub verified: usize,
     /// The hash chain over every revision.
     pub chain: crate::audit::Chain,
+    /// The hash chain before the head's rows.
+    pub previous_chain: crate::audit::Chain,
 }
 
 pub(crate) fn validate_history(
@@ -399,6 +401,7 @@ fn replay(connection: &Connection, mode: HistoryMode) -> Result<HistoryAudit, St
     // Hash every stored row and check keyframe metadata and the history
     // cursor structure, all without parsing any document or command.
     let mut chain = crate::audit::genesis();
+    let mut previous_chain = chain;
     let mut navigation = Navigation::default();
     let mut verified = 0usize;
     let mut verified_navigation = Navigation::default();
@@ -482,6 +485,7 @@ fn replay(connection: &Connection, mode: HistoryMode) -> Result<HistoryAudit, St
             ));
         }
         metadata = Some((rows.depth, rows.json_bound));
+        previous_chain = chain;
         chain = crate::audit::link(&chain, &rows);
         if let Some(receipt) = &receipt
             && i64::try_from(index + 1).ok() == Some(receipt.revisions)
@@ -566,6 +570,7 @@ fn replay(connection: &Connection, mode: HistoryMode) -> Result<HistoryAudit, St
         order,
         verified,
         chain,
+        previous_chain,
     })
 }
 

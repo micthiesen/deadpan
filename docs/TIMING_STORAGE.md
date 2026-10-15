@@ -78,9 +78,12 @@ and as keyframes plus patches:
   child is committed.
 - Each revision row records `depth`, the number of patches since its nearest
   stored ancestor, and `json_bound`, an upper bound on its compact document
-  length. A revision is stored as a keyframe when its depth would reach 64 or
-  its bound would exceed the 64 MiB document limit, so any revision, the head
-  included, is rebuilt from at most 63 patches, and a document that could
+  length. A keyframe is due every 64 patches and is normally written right
+  after the edit, in its own transaction ([deferred
+  keyframes](#deferred-keyframes)). A commit stores the keyframe itself when
+  its depth would reach 128 or its bound would exceed the 64 MiB document
+  limit, so any revision, the head included, is rebuilt from at most 127
+  patches (63 when every due keyframe is written), and a document that could
   exceed the limit is serialized and checked exactly.
 - The bound is the parent's bound plus the stored patch's length plus 4 KiB.
   A patch carries every after-value it installs, serialized by the same
@@ -104,6 +107,64 @@ and as keyframes plus patches:
 
 Database 64 refuses every earlier schema unchanged; see [development
 formats](DEVELOPMENT_FORMATS.md).
+
+### Deferred keyframes
+
+Serializing, storing and hashing a complete document is the most expensive
+part of a commit on a large project (16.3 MB of compact JSON and 37–55 ms on
+10,000 bound Holds in the [2026-10-15
+record](qualification/store-and-seek-2026-10-15.md)), and it used to land on
+whichever edit happened to be the 64th. Keyframe placement is a storage choice, not authored state, so it
+no longer happens inside the edit:
+
+- A commit whose depth would reach 64 stays elided (a patch, as before) and
+  leaves the keyframe due. `ProjectStore::keyframe_due` reports it.
+- `ProjectStore::write_due_keyframe` later converts the head's row in a
+  separate write transaction: the document becomes the head's compact JSON,
+  `depth` 0 and `json_bound` its length, exactly what a keyframe commit
+  writes. It serializes the cached validated head before taking the write
+  lock. A host calls it once its request queue is idle, after the edit is
+  visible; a writable open calls it for a keyframe the previous writer left
+  due. Nothing else changes: no revision content, history entry, navigation
+  patch, cursor or redo row.
+- Only the head is converted. Every new revision's parent is the head, so
+  the head has no children and no row's metadata depends on its own; the
+  `UPDATE` also requires that it is still elided and childless. Later
+  commits extend the new keyframe's chain (`depth` 1, its length as the
+  bound), so `metadata_holds` checks every row exactly as before.
+- Until the keyframe lands (edits arrive without idle time, or the process
+  ends first), depth keeps growing. At depth 128 (`MAX_PATCH_CHAIN`) the
+  commit stores the keyframe itself, so the bound on reconstruction is 127
+  patches instead of 63, and the open-time checks (`check_stored_sizes`,
+  `metadata_holds`, `reconstruct`) use that bound.
+- The history receipt hashes every row, including the keyframe document and
+  its metadata. The commit that extends the receipt keeps the chain value
+  before its revision in memory (`ReceiptLink`; a writable open takes it from
+  the complete hash it just computed). When the receipt ends at the head,
+  the conversion first checks that this value reproduces the stored chain
+  over the old row, then writes the new row and the receipt's recomputed last
+  link in the same transaction. Without such a proof the conversion is
+  refused and the keyframe stays due. A receipt that ends earlier, or comes
+  from another validator build, does not cover the head's row and is left
+  unchanged; opening then replays as before.
+
+Crash safety follows from the single transaction: before its commit the head
+is the elided row of a due keyframe, with the old receipt; afterwards it is a
+keyframe with the new receipt. Both are valid histories, and opening proves
+either through the receipt without replay. `tests/failpoints.rs` aborts a
+writer at both sides of that commit (`keyframe-before-commit`,
+`keyframe-after-commit`) and checks receipt-proved read-only reopening, the
+writable reopen's conversion, `validate_full` and a later commit.
+`tests/chaos_kills.rs` kills a writer at random while it commits and writes
+due keyframes after every third commit, checking every reported revision,
+the head, that a writable reopen leaves nothing due, and full replay.
+`tests/revision_storage.rs` checks that writing each due keyframe reproduces
+the previous placement exactly, that a host that never writes them stays
+within depth 127 with every revision rebuilt and receipt-proved, that a
+read-only open never writes and a writable one converts, and that a converted
+keyframe is covered by the receipt (changing it fails opening). A unit test
+refuses conversion with a missing or wrong receipt link without changing any
+row. Physical power loss is not covered by these process kills.
 
 ## In-memory head and validation reuse
 
@@ -379,7 +440,11 @@ and validation does not rebuild admitted layouts' indexes. See the
   resolves one resume clock per later sibling, about 1.3 µs each.
 - An edit's history row still carries the changed parent Sequence's complete
   old children list once ([compact history rows](#compact-history-rows)).
-- Every 64th revision is a keyframe: the complete document is serialized and
-  written on that commit. On 10,000 bound Holds that is 7.8 MB of compact
-  JSON and about 40 ms more than a pause otherwise takes; in the 30-cycle
-  edit run it lands on one pause, which is that run's p95.
+- Every 64th revision still needs a keyframe: the complete document is
+  serialized, written and hashed after the edit, in its own transaction
+  ([deferred keyframes](#deferred-keyframes)). It no longer delays that edit
+  (10,000-beat pause p95 104.9 to 75.5 ms), but it holds the writer for
+  about 47 ms, so a request that arrives meanwhile waits for it.
+  The native project service does not call `write_due_keyframe` yet; until
+  it does, its commit at depth 128 stores the keyframe inline, and a
+  writable open converts what is due.

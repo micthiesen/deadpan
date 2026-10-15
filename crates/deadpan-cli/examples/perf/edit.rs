@@ -46,6 +46,9 @@ struct Samples {
     commit: Vec<f64>,
     refresh: Vec<f64>,
     total: Vec<f64>,
+    /// Due keyframes written after the edit's refresh (`write_due_keyframe`),
+    /// as a host does once idle; not part of `total`.
+    keyframes: Vec<f64>,
     refusals: Vec<String>,
 }
 
@@ -56,6 +59,7 @@ impl Samples {
             "store_commit_ms": summary(&self.commit),
             "workspace_refresh_ms": summary(&self.refresh),
             "total_ms": summary(&self.total),
+            "deferred_keyframe_ms": summary(&self.keyframes),
             "committed": self.total.len(),
             "refused": self.refusals.len(),
             // Cost drifts as history accumulates; report it in order.
@@ -188,6 +192,7 @@ pub fn run(options: &Options) -> Result<Value> {
             refresh(&store, &mut document, &mut plan)?;
             undo.refresh.push(ms(refreshed));
             undo.total.push(ms(started));
+            write_due_keyframe(&mut store, &mut undo)?;
         }
         json_bytes.push(document.to_json()?.len() as f64);
     }
@@ -264,7 +269,18 @@ fn measure(
     refresh(store, document, plan)?;
     samples.refresh.push(ms(refreshed));
     samples.total.push(ms(started));
+    write_due_keyframe(store, samples)?;
     Ok(true)
+}
+
+/// After the edit is visible, write a keyframe the commit left due, in its
+/// own transaction, as a host does once its request queue is idle.
+fn write_due_keyframe(store: &mut ProjectStore, samples: &mut Samples) -> Result<()> {
+    let started = Instant::now();
+    if store.write_due_keyframe()? {
+        samples.keyframes.push(ms(started));
+    }
+    Ok(())
 }
 
 /// Refresh as the native service does: the validated head, its plan compiled

@@ -1,6 +1,7 @@
 //! Deterministic crashes at the critical windows of backups, restores,
-//! release migrations and damaged-database replacement
-//! (docs/BACKUPS.md#process-kills). Each case re-executes this binary as a
+//! release migrations, damaged-database replacement
+//! (docs/BACKUPS.md#process-kills) and deferred keyframes
+//! (docs/TIMING_STORAGE.md#deferred-keyframes). Each case re-executes this binary as a
 //! child that aborts at one named failpoint (debug builds only), checks the
 //! child really reached it, then checks the package afterwards. Random kills
 //! (`chaos_kills.rs`) cover the time between these windows.
@@ -125,6 +126,10 @@ fn child(operation: &str, package: &Path, argument: &str) -> Result {
         }
         "damaged" => {
             replace_damaged_database(package, argument, None)?;
+        }
+        // A writable open writes the keyframe the previous writer left due.
+        "open" => {
+            ProjectStore::open(package, AccessMode::ReadWrite)?;
         }
         other => return Err(format!("unknown operation {other}").into()),
     }
@@ -320,6 +325,57 @@ fn crashes_while_replacing_a_damaged_database_fail_loudly_and_a_rerun_completes(
         assert_eq!(store.head_revision()?, backed, "{failpoint}");
         store.validate_full()?;
         let _ = replaced;
+    }
+    Ok(())
+}
+
+/// Stored `(document is a keyframe, depth)` of every revision.
+fn keyframe_rows(path: &Path) -> Result<Vec<(bool, i64)>> {
+    let connection = rusqlite::Connection::open_with_flags(
+        path.join("project.sqlite"),
+        rusqlite::OpenFlags::SQLITE_OPEN_READ_ONLY,
+    )?;
+    let mut statement =
+        connection.prepare("SELECT document != 'null', depth FROM revisions ORDER BY rowid")?;
+    let rows = statement
+        .query_map([], |row| Ok((row.get(0)?, row.get(1)?)))?
+        .collect::<std::result::Result<_, _>>()?;
+    Ok(rows)
+}
+
+#[test]
+fn crashes_while_writing_a_due_keyframe_keep_a_valid_history() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let root = scratch.path().canonicalize()?;
+    for (failpoint, written) in [
+        ("keyframe-before-commit", false),
+        ("keyframe-after-commit", true),
+    ] {
+        // 64 commits leave the head's keyframe due; no host wrote it.
+        let path = root.join(format!("{failpoint}.deadpan"));
+        let mut store = ProjectStore::create(&path, &document()?)?;
+        for index in 1..=64 {
+            insert(&mut store, &format!("r{index}"))?;
+        }
+        assert!(store.keyframe_due()?);
+        let head = store.snapshot()?;
+        drop(store);
+        crash_at(failpoint, "open", &path, "")?;
+        let rows = keyframe_rows(&path)?;
+        assert_eq!(rows.last(), Some(&(written, if written { 0 } else { 64 })));
+        // Reading proves every row through the receipt, either way.
+        let reader = ProjectStore::open(&path, AccessMode::ReadOnly)?;
+        assert_eq!(reader.open_validation().replayed, 0, "{failpoint}");
+        assert_eq!(reader.snapshot()?, head, "{failpoint}");
+        drop(reader);
+        let mut store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+        assert_eq!(store.open_validation().replayed, 0, "{failpoint}");
+        assert!(!store.keyframe_due()?);
+        assert_eq!(keyframe_rows(&path)?.last(), Some(&(true, 0)));
+        store.validate_full()?;
+        insert(&mut store, "after")?;
+        assert_eq!(keyframe_rows(&path)?.last(), Some(&(false, 1)));
+        store.validate_full()?;
     }
     Ok(())
 }

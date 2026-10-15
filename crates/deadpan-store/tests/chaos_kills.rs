@@ -16,6 +16,9 @@
 //!   remain; they are never published),
 //! - the complete history replays (`validate_full`) after the last kill.
 //!
+//! A separate case kills a writer whose commits leave keyframes due while
+//! it writes them in later transactions (`write_due_keyframe`).
+//!
 //! The same package is killed repeatedly, so damage would accumulate. The
 //! regression run uses a fixed seed and 8 kills; `DEADPAN_CHAOS_SEED` (hex)
 //! and `DEADPAN_CHAOS_ITERATIONS` widen it. A process kill is not a power
@@ -432,6 +435,132 @@ fn random_process_kills_during_commits_attempts_backups_and_checkpoints_never_co
     // At least some rounds reached the slower operations.
     assert!(committed.len() > iterations() as usize, "{summary:?}");
     eprintln!("{}", summary.join("\n"));
+    Ok(())
+}
+
+const KEYFRAME_CHILD: &str = "DEADPAN_TEST_CHAOS_KEYFRAME_CHILD";
+
+/// The keyframe child: commit pauses and, after every third commit, write a
+/// due keyframe in its own transaction, as an idle host would; other due
+/// keyframes wait, so commits also land on due heads.
+fn keyframe_child(path: &Path, log: &Path, round: u64) -> Result {
+    let mut report = std::fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(log)?;
+    let mut store = ProjectStore::open(path, AccessMode::ReadWrite)?;
+    for step in 0u64.. {
+        let name = format!("k{round}-{step}");
+        writeln!(report, "attempt-commit {name}")?;
+        let revision = insert(&mut store, &name, &format!("pause-{name}"))?;
+        writeln!(report, "commit {revision}")?;
+        if step % 3 == 0 && store.write_due_keyframe()? {
+            writeln!(report, "keyframe {revision}")?;
+        }
+    }
+    Ok(())
+}
+
+/// Kills while commits leave keyframes due and the host writes them later
+/// (docs/TIMING_STORAGE.md#deferred-keyframes): every reported revision
+/// still rebuilds, the receipt keeps proving the history, a writable reopen
+/// writes any keyframe left due, and the complete history replays.
+#[test]
+fn random_process_kills_around_deferred_keyframes_never_corrupt_the_history() -> Result {
+    if let Some(path) = std::env::var_os(KEYFRAME_CHILD) {
+        let log = PathBuf::from(std::env::var_os(LOG).ok_or("missing log")?);
+        let round = std::env::var(ROUND)?.parse()?;
+        return keyframe_child(Path::new(&path), &log, round);
+    }
+    let scratch = tempfile::tempdir()?;
+    let path = scratch.path().canonicalize()?.join("keyframes.deadpan");
+    // A wider document makes each keyframe a longer window to kill in.
+    drop(ProjectStore::create(&path, &holds_document()?)?);
+    let mut rng = Rng::new(seed() ^ 0x6b65_7966);
+    let mut committed = vec![ProjectStore::open(&path, AccessMode::ReadOnly)?.head_revision()?];
+    let mut keyframes = 0;
+    let mut summary = Vec::new();
+    for round in 0..iterations() {
+        let log = scratch.path().join(format!("keyframes-{round}.log"));
+        let mut child = ProcessCommand::new(std::env::current_exe()?)
+            .args([
+                "--exact",
+                "random_process_kills_around_deferred_keyframes_never_corrupt_the_history",
+                "--nocapture",
+            ])
+            .env(KEYFRAME_CHILD, &path)
+            .env(LOG, &log)
+            .env(ROUND, round.to_string())
+            .stdout(Stdio::null())
+            .stderr(Stdio::piped())
+            .spawn()?;
+        let delay = 100 + rng.below(1500) as u64;
+        std::thread::sleep(Duration::from_millis(delay));
+        let exited_early = child.try_wait()?;
+        child.kill()?;
+        let output = child.wait_with_output()?;
+        if let Some(status) = exited_early {
+            return Err(format!(
+                "round {round}: the child exited before the kill ({status}): {}",
+                String::from_utf8_lossy(&output.stderr)
+            )
+            .into());
+        }
+        let lines = std::fs::read_to_string(&log).unwrap_or_default();
+        let mut attempted = None;
+        let mut operations = 0;
+        for line in complete_reports(&lines) {
+            operations += 1;
+            if let Some(name) = line.strip_prefix("attempt-commit ") {
+                attempted = Some(RevisionId::new(name)?);
+            } else if let Some(revision) = line.strip_prefix("commit ") {
+                committed.push(RevisionId::new(revision)?);
+                attempted = None;
+            } else if line.starts_with("keyframe ") {
+                keyframes += 1;
+            }
+        }
+        summary.push(format!(
+            "round {round}: killed after {delay} ms, {operations} reports"
+        ));
+        // Reading proves the history through the receipt and never writes.
+        let reader = ProjectStore::open(&path, AccessMode::ReadOnly)
+            .map_err(|error| format!("round {round}: read-only reopening failed: {error}"))?;
+        let head = reader.head_revision()?;
+        drop(reader);
+        let last = committed.last().expect("initial revision");
+        assert!(
+            head == *last || attempted.as_ref() == Some(&head),
+            "round {round}: head {head} is neither the last reported commit {last} nor the cut-off {attempted:?}"
+        );
+        if attempted.as_ref() == Some(&head) {
+            committed.push(head.clone());
+        }
+        let store = ProjectStore::open(&path, AccessMode::ReadWrite)
+            .map_err(|error| format!("round {round}: reopening failed: {error}"))?;
+        assert!(
+            !store.keyframe_due()?,
+            "round {round}: a writable open leaves no keyframe due"
+        );
+        for revision in &committed {
+            store
+                .snapshot_at(revision)
+                .map_err(|error| format!("round {round}: revision {revision} lost: {error}"))?;
+        }
+        drop(store);
+    }
+    let store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+    assert_eq!(store.open_validation().replayed, 0);
+    store.validate_full()?;
+    eprintln!(
+        "{} ({keyframes} deferred keyframes reported)",
+        summary.join("\n")
+    );
+    assert!(
+        committed.len() > 64 && keyframes > 0,
+        "{} commits, {keyframes} keyframes: {summary:?}",
+        committed.len()
+    );
     Ok(())
 }
 

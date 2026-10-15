@@ -20,10 +20,12 @@ use std::time::{Instant, SystemTime, UNIX_EPOCH};
 
 use serde_json::{Value, json};
 
-const USAGE: &str = "usage: cargo xtask perf [--output NEW_DIR] [--fixture NAME=PACKAGE]... [--generate] [--ui] [--stages doctor,scale,seek,edit,playback,export,stress,ui] [--audition-seconds N] [--max-load L] [--quick]";
+const USAGE: &str = "usage: cargo xtask perf [--output NEW_DIR] [--fixture NAME=PACKAGE]... [--generate] [--ui] [--stages doctor,scale,seek,cold-seek,edit,playback,export,stress,ui] [--audition-seconds N] [--max-load L] [--quick]";
 const ALL_STAGES: [&str; 6] = ["doctor", "scale", "seek", "edit", "playback", "export"];
 /// Stages run only when named in `--stages` (or `--ui`).
-const OPT_IN_STAGES: [&str; 2] = ["stress", "ui"];
+const OPT_IN_STAGES: [&str; 3] = ["cold-seek", "stress", "ui"];
+/// Page-cache-cold seeks per media fixture, each on a freshly attached image.
+const COLD_SEEKS: u64 = 10;
 /// Fragment length and plays of the jumpy `-cuts` playback fixture.
 const CUT_EVERY: &str = "24";
 const CUT_PLAYS: &str = "3";
@@ -275,6 +277,12 @@ pub fn run(arguments: &[String]) -> Result<(), String> {
             )?;
             report["load"] = load;
             results.insert(format!("seek/{name}"), report);
+        }
+    }
+    if wants("cold-seek") {
+        for (name, package) in &media {
+            let report = cold_seek(&options, &perf, &output, &work, name, package)?;
+            results.insert(format!("cold-seek/{name}"), report);
         }
     }
     if wants("edit") {
@@ -571,6 +579,159 @@ fn copy_package(source: &Path, destination: &Path) -> Result<(), String> {
         return Err(format!("copying {} failed", source.display()));
     }
     Ok(())
+}
+
+fn hdiutil(arguments: &[&str]) -> Result<(), String> {
+    let output = Command::new("hdiutil")
+        .args(arguments)
+        .stdin(Stdio::null())
+        .output()
+        .map_err(|error| format!("run hdiutil: {error}"))?;
+    if output.status.success() {
+        Ok(())
+    } else {
+        Err(format!(
+            "hdiutil {} failed: {}",
+            arguments.join(" "),
+            String::from_utf8_lossy(&output.stderr).trim()
+        ))
+    }
+}
+
+fn attach(image: &Path, mount: &Path) -> Result<(), String> {
+    hdiutil(&[
+        "attach",
+        path_str(image)?,
+        "-mountpoint",
+        path_str(mount)?,
+        "-nobrowse",
+        "-noautoopen",
+        "-noverify",
+        "-quiet",
+    ])
+}
+
+/// Detach, forcing only if a normal detach is refused.
+fn detach(mount: &Path) -> Result<(), String> {
+    let mount = path_str(mount)?;
+    hdiutil(&["detach", mount, "-quiet"])
+        .or_else(|_| hdiutil(&["detach", mount, "-force", "-quiet"]))
+}
+
+fn directory_bytes(path: &Path) -> Result<u64, String> {
+    let mut total = 0;
+    for entry in std::fs::read_dir(path).map_err(|error| format!("{}: {error}", path.display()))? {
+        let entry = entry.map_err(|error| error.to_string())?;
+        let kind = entry.file_type().map_err(|error| error.to_string())?;
+        total += if kind.is_dir() {
+            directory_bytes(&entry.path())?
+        } else {
+            entry.metadata().map_err(|error| error.to_string())?.len()
+        };
+    }
+    Ok(total)
+}
+
+/// Page-cache-cold preview seeks without root. The package is copied onto a
+/// new APFS disk image, which is detached and then attached afresh for every
+/// sample: a new mount has no cached pages of its files, and the disk-image
+/// driver reads its backing file without caching it, so each sample's first
+/// session reads the database and Original from storage. Each run also
+/// repeats the seek once in the same process, page-cache-warm, for
+/// comparison. Reads pass through the disk-image driver; a direct cold read
+/// from the internal volume would need root to purge its cache.
+fn cold_seek(
+    options: &Options,
+    perf: &Path,
+    output: &Path,
+    work: &Path,
+    name: &str,
+    package: &Path,
+) -> Result<Value, String> {
+    let samples = if options.quick { 3 } else { COLD_SEEKS };
+    let image = work.join(format!("cold-{name}.dmg"));
+    let mount = work.join(format!("cold-{name}-mount"));
+    std::fs::create_dir(&mount).map_err(|error| error.to_string())?;
+    let megabytes = directory_bytes(package)? / (1 << 20) * 13 / 10 + 256;
+    hdiutil(&[
+        "create",
+        "-size",
+        &format!("{megabytes}m"),
+        "-fs",
+        "APFS",
+        "-volname",
+        &format!("deadpan-cold-{name}"),
+        "-quiet",
+        path_str(&image)?,
+    ])?;
+    let inner = mount.join(format!("{name}.deadpan"));
+    attach(&image, &mount)?;
+    let copied = copy_package(package, &inner);
+    detach(&mount)?;
+    copied?;
+    let mut runs = Vec::new();
+    let mut cold = Vec::new();
+    let mut warm = Vec::new();
+    let mut open = Vec::new();
+    let mut verified = Vec::new();
+    let mut success = true;
+    // Wait for a quiet machine once; every sample's load is recorded and
+    // any sample above the limit flags the series.
+    let start = quiet(options.max_load);
+    let mut flagged = start["flagged"] == true;
+    let mut loads = Vec::new();
+    for sample in 0..samples {
+        let load = load_average();
+        flagged |= load.is_none_or(|load| load > options.max_load);
+        loads.push(load);
+        attach(&image, &mount)?;
+        let report = stage_json(
+            perf,
+            &[
+                "cold-seek",
+                path_str(&inner)?,
+                "--basis-from",
+                path_str(package)?,
+                "--repeat",
+                "1",
+                "--seed",
+                &(sample + 1).to_string(),
+            ],
+            output,
+            &format!("cold-seek-{name}-{sample}"),
+        );
+        detach(&mount)?;
+        let mut report = report?;
+        report["load_1m_at_start"] = json!(load);
+        success &= report["success"] == true;
+        for run in report["samples"].as_array().into_iter().flatten() {
+            let total = run["total_ms"].as_f64();
+            match (run["page_cache"].as_str(), total) {
+                (Some("cold"), Some(total)) => {
+                    cold.push(total);
+                    open.extend(run["session_open_ms"].as_f64());
+                    verified.extend(run["verified_ms"].as_f64());
+                }
+                (Some("warm"), Some(total)) => warm.push(total),
+                _ => {}
+            }
+        }
+        runs.push(report);
+    }
+    std::fs::remove_file(&image).map_err(|error| error.to_string())?;
+    std::fs::remove_dir(&mount).map_err(|error| error.to_string())?;
+    Ok(json!({
+        "success": success,
+        "load": {"flagged": flagged, "max_load": options.max_load, "load_1m_per_sample": loads,
+            "load_1m_at_start": start["load_1m_at_start"], "waited_seconds": start["waited_seconds"]},
+        "image": {"megabytes": megabytes, "file_system": "APFS",
+            "method": "copied once, then a fresh hdiutil attach and detach around every sample"},
+        "cold_total_ms": distribution(&cold),
+        "cold_session_open_ms": distribution(&open),
+        "cold_verified_ms": distribution(&verified),
+        "warm_repeat_total_ms": distribution(&warm),
+        "runs": runs,
+    }))
 }
 
 /// The 1-minute load average from `vm.loadavg` (`{ 1.43 1.91 3.13 }`).
@@ -1281,6 +1442,19 @@ fn targets(results: &BTreeMap<String, Value>, quick: bool) -> Value {
                     base.clone(),
                 );
             }
+            "cold-seek" => {
+                let cold = &value["cold_total_ms"];
+                push(
+                    "Cold long-GOP seek < 300 ms (page-cache-cold)",
+                    format!(
+                        "{fixture}: preview session on a freshly attached disk image to the first picture (progressive admission), decode + Metal completion"
+                    ),
+                    json!({"cold": cold, "warm_repeat": value["warm_repeat_total_ms"],
+                        "session_open": value["cold_session_open_ms"]}),
+                    cold["max"].as_f64().map(|ms| ms < 300.0),
+                    base.clone().and(enough(cold, COLD_SEEKS)),
+                );
+            }
             "edit" => {
                 for (edit, limit, label) in [
                     (
@@ -1314,6 +1488,18 @@ fn targets(results: &BTreeMap<String, Value>, quick: bool) -> Value {
                         base.clone().and(enough(total, MIN_EDITS)),
                     );
                 }
+                push(
+                    "Deferred keyframe write (informational)",
+                    format!(
+                        "{fixture}: write_due_keyframe after the edit's refresh, outside its total"
+                    ),
+                    json!(
+                        ["split", "insert_pause", "repeat_wrap", "undo"]
+                            .map(|edit| json!({edit: value[edit]["deferred_keyframe_ms"]}))
+                    ),
+                    None,
+                    base.clone(),
+                );
             }
             "playback" => {
                 let audio = &value["audio"];

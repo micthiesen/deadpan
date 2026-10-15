@@ -6,6 +6,7 @@
 //! Usage:
 //!   perf seek PACKAGE [--cold N] [--warm N] [--step N] [--seed N]
 //!             [--proxy-cache NEW_DIR --worker MEDIA_WORKER]
+//!   perf cold-seek PACKAGE --basis-from OTHER_COPY [--repeat N] [--seed N]
 //!   perf proxy-build PACKAGE --proxy-cache DIR --worker MEDIA_WORKER
 //!   perf playback PACKAGE [--seconds N] [--start-frame N]
 //!             [--loop-end EXCLUDED_FRAME --lookahead on|off]
@@ -54,6 +55,7 @@ fn main() -> Result<()> {
     let started = Instant::now();
     let mut report = match stage.as_str() {
         "seek" => seek::run(&options)?,
+        "cold-seek" => seek::cold(&options)?,
         "playback" => playback::run(&options)?,
         "edit" => edit::run(&options)?,
         "make-large" => edit::make_large(&options)?,

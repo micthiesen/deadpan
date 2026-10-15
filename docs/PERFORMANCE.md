@@ -13,7 +13,11 @@ latency, storage and open time superseded by
 [command-work-2026-10-05](qualification/command-work-2026-10-05.md), which also
 records idle CPU. [pause-and-cold-seek-2026-10-06](qualification/pause-and-cold-seek-2026-10-06.md)
 supersedes edit latency on 10,000 beats and the cold, warm 4K and
-refinement seek rows, and [playback-proxy-2026-10-06](qualification/playback-proxy-2026-10-06.md)
+refinement seek rows;
+[store-and-seek-2026-10-15](qualification/store-and-seek-2026-10-15.md)
+moves the 64th-revision keyframe out of the edit (10,000-beat pause p95
+104.9 to 75.5 ms at load 3.25 and 2.9) and adds page-cache-cold seeks
+from a freshly attached disk image; and [playback-proxy-2026-10-06](qualification/playback-proxy-2026-10-06.md)
 the playback rows (with and without proxy pictures, cut edits) and adds the
 stress runs. [Selection-loop decode-ahead](qualification/loop-lookahead-2026-10-11.md)
 adds 30-second real-device comparisons at 1080p60 and 4K30: zero dropped
@@ -93,6 +97,25 @@ cargo xtask perf --output /tmp/deadpan-perf-NEW \
   `"status": "not_needed"`. `perf proxy-build PACKAGE --proxy-cache DIR
   --worker BIN` runs one build alone, for measuring its effect on concurrent
   playback and edits.
+- `--stages cold-seek` (opt-in) measures page-cache-cold preview seeks
+  without root. Each media fixture is copied once onto a new APFS disk
+  image (`hdiutil create`), which is then attached afresh (and detached
+  afterwards) around each of 10 samples (3 with `--quick`). A new mount has
+  no cached pages of its files, and the disk-image driver reads its backing
+  file without caching it (checked with `mincore` in the
+  [2026-10-15 record](qualification/store-and-seek-2026-10-15.md)), so each
+  run's first session reads the database and Original from storage. `perf
+  cold-seek PACKAGE --basis-from OTHER_COPY --repeat 1` sizes the Metal
+  target from another copy, so nothing reads the package before the
+  measured session opens, and repeats the seek once page-cache-warm in the
+  same process. Reads pass through the disk-image driver (about 4.4 GB/s
+  sequential on the 2026-10-15 machine); a direct read from the internal
+  SSD's own volume is not measured, because purging its cache needs root.
+- `perf edit` writes the keyframe a commit left due
+  (`ProjectStore::write_due_keyframe`, see [deferred
+  keyframes](TIMING_STORAGE.md#deferred-keyframes)) after the edit's refresh,
+  as an idle host does, and reports it as `deferred_keyframe_ms`, outside the
+  edit's `total_ms`.
 - `perf edit PACKAGE --kinds split,pause,wrap` measures only the named edit
   kinds (Undo follows each wrap), for attributing one path under a sampling
   profiler such as `sample`. `perf seek PACKAGE --admissions progressive`
@@ -116,7 +139,7 @@ cargo xtask perf --output /tmp/deadpan-perf-NEW \
   see its module documentation).
 - `--quick` shortens fixtures and sample counts for a smoke run; every target
   row is then INFO. `--stages` selects a subset of
-  `doctor,scale,seek,edit,playback,export,stress,ui`. `--audition-seconds` sets the
+  `doctor,scale,seek,cold-seek,edit,playback,export,stress,ui`. `--audition-seconds` sets the
   real-device audition length (default 30).
 - Before each seek, edit, playback, export and UI stage the suite waits up to
   10 minutes for the 1-minute load average to fall to `--max-load` (default
@@ -133,9 +156,12 @@ succeeded, the machine was quiet and it has enough samples: at least 100 warm
 seeks, 20 committed edits of that kind, or 40 UI samples. Otherwise it is INFO
 with the reason. Playback rows also require the audition to cover the
 requested interval (or the rest of a shorter project), with no dropped,
-leading or trailing pictures. It records machine load and `pmset` power/thermal state before and after,
-but it does not purge the OS file cache (that needs root); the reports say
-which samples ran with a warm file cache.
+leading or trailing pictures. It records machine load and `pmset` power/thermal state before and after.
+It never purges the OS file cache (that needs root): the `seek` stage's
+cold samples are session-cold but page-cache-warm, and only the opt-in
+`cold-seek` stage reads from storage, through a freshly attached disk
+image. A `cold-seek` row needs 10 samples and its slowest must be below
+300 ms; the load gate applies to every sample.
 
 Close other heavy work first, and record what else was running. Compare only
 like workloads and the same summary schema.
@@ -152,9 +178,9 @@ Hardware decoding stays opt-in because the measured long-GOP seeks were slower.
 | Section 25 target | Measurement | Notes |
 | --- | --- | --- |
 | Key event to command-state update, p95 < 8 ms | ui `rapid-input` `warm_navigation_input_cpu_ms` | Whole egui input frame CPU: an upper bound on the state update. Small replay fixture. |
-| Cached ordinary edit to visible preview, p95 < 50 ms | ui `edit-latency` `cached_repeat_input_to_picture_complete_ms`; `perf edit` split, Repeat wrap and Undo | The replay measures input through real commit, decode and offscreen Metal completion on its small fixture. `perf edit` measures the store commit plus workspace refresh (the cached validated head and its plan compiled in that validation scope, as the native workspace does) on real and 10,000-beat packages, without the picture. It then reopens the edited package writable and read-only and reports `reopen_*` times and `reopen_validation`. |
+| Cached ordinary edit to visible preview, p95 < 50 ms | ui `edit-latency` `cached_repeat_input_to_picture_complete_ms`; `perf edit` split, Repeat wrap and Undo | The replay measures input through real commit, decode and offscreen Metal completion on its small fixture. `perf edit` measures the store commit plus workspace refresh (the cached validated head and its plan compiled in that validation scope, as the native workspace does) on real and 10,000-beat packages, without the picture. A keyframe the edit left due is written afterwards and reported separately (`deferred_keyframe_ms`, informational row). It then reopens the edited package writable and read-only and reports `reopen_*` times and `reopen_validation`. |
 | Warm seek within an indexed source, p95 < 80 ms | `perf seek` warm random seeks, Original and preview proxy; ui `rapid-input` navigation to picture completion | `perf seek` uses the committed project picture boundary with progressive (preview) admission, the persistent threaded decoder and the shared Metal pipeline, on real long-GOP media at full canvas. Warm samples start after the background index measurement has verified; `measuring_seek` samples random seeks while it still runs. `decode_threads` records the default serving codec thread count and `decode_threads_for_canvas` the count for a stream of the canvas raster (more above 1080p). `proxy.warm_seek` measures the same random seeks through the verified [preview proxy](PROXIES.md), which the native viewer shows first for a stopped seek. `proxy.refinement.refined_ms` is the latency until the exact Original picture replaces it, including the worker's rest before refining an isolated request (30 ms; 150 ms while the cursor keeps moving). |
-| Cold long-GOP seek, < 300 ms | `perf seek` cold samples (10 per admission mode) | Session-cold but page-cache-warm, so INFO: each sample is a new picture session (store, plan, verified private snapshot, decoder, first picture), but the OS file cache is not purged. `cold.progressive` is the preview path (receipt-verified pictures while the complete measurement runs; `verified_ms` is when it finishes); `cold.complete` is the export path, which measures the whole index before its first picture. Retaining the previous picture while loading is a UI property not measured here. |
+| Cold long-GOP seek, < 300 ms | `cold-seek` stage: `perf cold-seek` on a freshly attached disk image (10 samples); `perf seek` cold samples (10 per admission mode) | `cold-seek` is page-cache-cold (preview session from a new mount to the first picture, decode plus Metal completion) and PASSes or FAILs on its slowest sample. The `seek` stage's cold samples are session-cold but page-cache-warm, so INFO: each sample is a new picture session (store, plan, verified private snapshot, decoder, first picture), but the OS file cache is not purged. `cold.progressive` is the preview path (receipt-verified pictures while the complete measurement runs; `verified_ms` is when it finishes); `cold.complete` is the export path, which measures the whole index before its first picture. Retaining the previous picture while loading is a UI property not measured here. |
 | Playback 1080p60 and 4K30 | `perf playback` on the generated fixtures and their cuts copies, with and without the proxy tier; `perf seek` frame stepping | Real device audio; pictures follow the heard clock, newest frame wins, skipped frames count as dropped. Pictures come from a progressively admitted interactive decoder, as in the native viewer (records before 2026-10-06 used a completely admitted `ProjectPictureSession`). Reports per-tier decode cost, presentation intervals, lag at completion, proxy runs until exact pictures resume and the exact picture after the stop. Decode and Metal completion only: no window, compositor or display scanout. |
 | Audio: no callback underruns | `perf playback` `Engine::diagnostics()` | Counts starved and faulted device reports. The full editing/inference stress suite is not yet defined. |
 | Hold insertion fallback visible < 100 ms | ui `edit-latency` `hold_fallback_input_to_picture_complete_ms`; `perf edit` insert pause | The CLI stage commits the native `,h` freeze through the store. |

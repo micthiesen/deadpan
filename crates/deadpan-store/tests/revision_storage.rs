@@ -113,28 +113,22 @@ fn keyframes_bound_every_chain_and_rebuild_every_revision() -> Result {
     store.commit(&request(&current, "r1", beats(8)?)?)?;
     expected.push(store.snapshot()?);
     // Pauses, undo and redo produce every revision kind and enough revisions
-    // to cross more than one keyframe interval.
+    // to cross more than one keyframe interval. The host writes each due
+    // keyframe right after its commit, as a host does once idle.
     for index in 2..140 {
         let current = store.snapshot()?;
         let revision = format!("r{index}");
-        match index % 5 {
-            3 => {
-                store.undo(current.revision_id(), RevisionId::new(&revision)?)?;
-            }
-            4 if index % 10 == 4 => {
-                store.redo(current.revision_id(), RevisionId::new(&revision)?)?;
-            }
-            _ => {
-                let total = current.duration()?.frames();
-                store.commit(&pause(&current, &revision, (index as i64 * 7) % total)?)?;
-            }
-        }
+        commit_kind(&mut store, &current, index, &revision)?;
+        assert_eq!(store.keyframe_due()?, index % 64 == 0, "{revision}");
+        assert_eq!(store.write_due_keyframe()?, index % 64 == 0, "{revision}");
+        assert!(!store.keyframe_due()?);
         expected.push(store.snapshot()?);
     }
     let rows = metadata(&path)?;
     assert_eq!(rows.len(), expected.len());
     // Only the initial revision and every 64th in the linear chronology store
-    // a document, and each bound covers the actual compact document.
+    // a document, exactly as when commits stored their own keyframes, and
+    // each bound covers the actual compact document.
     for (index, ((id, document, depth, bound), snapshot)) in rows.iter().zip(&expected).enumerate()
     {
         assert_eq!(*depth, (index % 64) as i64, "{id}");
@@ -173,6 +167,126 @@ fn keyframes_bound_every_chain_and_rebuild_every_revision() -> Result {
         |row| row.get(0),
     )?;
     assert!(replaced, "the keyframe holds the Beats group");
+    drop(database);
+    for mode in [AccessMode::ReadOnly, AccessMode::ReadWrite] {
+        assert!(ProjectStore::open(&path, mode).is_err(), "{mode:?}");
+    }
+    Ok(())
+}
+
+/// Commit one revision of the kind `index` selects: pauses, undo and redo.
+fn commit_kind(
+    store: &mut ProjectStore,
+    current: &ProjectDocument,
+    index: usize,
+    revision: &str,
+) -> Result {
+    match index % 5 {
+        3 => {
+            store.undo(current.revision_id(), RevisionId::new(revision)?)?;
+        }
+        4 if index % 10 == 4 => {
+            store.redo(current.revision_id(), RevisionId::new(revision)?)?;
+        }
+        _ => {
+            let total = current.duration()?.frames();
+            store.commit(&pause(current, revision, (index as i64 * 7) % total)?)?;
+        }
+    }
+    Ok(())
+}
+
+/// A host that never writes due keyframes: commits stay patches until the
+/// chain would reach 128, where the commit stores the keyframe itself.
+/// Every revision rebuilds, the receipt covers every row, and a writable
+/// open (never a read-only one) writes the head's due keyframe.
+#[test]
+fn due_keyframes_wait_for_the_host_within_the_hard_bound() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let path = scratch.path().join("deferred.deadpan");
+    let mut store = ProjectStore::create(&path, &document()?)?;
+    let mut expected = vec![store.snapshot()?];
+    let current = store.snapshot()?;
+    store.commit(&request(&current, "r1", beats(8)?)?)?;
+    expected.push(store.snapshot()?);
+    for index in 2..200 {
+        let current = store.snapshot()?;
+        commit_kind(&mut store, &current, index, &format!("r{index}"))?;
+        assert_eq!(store.keyframe_due()?, index % 128 >= 64, "r{index}");
+        expected.push(store.snapshot()?);
+    }
+    let rows = metadata(&path)?;
+    for (index, ((id, document, depth, bound), snapshot)) in rows.iter().zip(&expected).enumerate()
+    {
+        assert_eq!(*depth, (index % 128) as i64, "{id}");
+        assert_eq!(document != "null", index % 128 == 0, "{id}");
+        assert!(snapshot.to_compact_json()?.len() as i64 <= *bound, "{id}");
+    }
+    for snapshot in &expected {
+        assert_eq!(&store.snapshot_at(snapshot.revision_id())?, snapshot);
+    }
+    store.validate_full()?;
+    drop(store);
+    // Reading never writes, and the receipt still proves every row.
+    let reader = ProjectStore::open(&path, AccessMode::ReadOnly)?;
+    assert_eq!(reader.open_validation().replayed, 0);
+    assert!(!reader.keyframe_due()?);
+    assert_eq!(&reader.snapshot()?, expected.last().unwrap());
+    drop(reader);
+    assert_eq!(metadata(&path)?, rows);
+    // A writer converts the due head (depth 71) when it opens.
+    let writer = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+    assert_eq!(writer.open_validation().replayed, 0);
+    assert!(!writer.keyframe_due()?);
+    drop(writer);
+    let converted = metadata(&path)?;
+    let (head, document, depth, bound) = converted.last().unwrap();
+    assert_eq!((head.as_str(), *depth), ("r199", 0));
+    assert_eq!(document.len() as i64, *bound);
+    assert_eq!(converted[..converted.len() - 1], rows[..rows.len() - 1]);
+    for mode in [AccessMode::ReadOnly, AccessMode::ReadWrite] {
+        let store = ProjectStore::open(&path, mode)?;
+        assert_eq!(store.open_validation().replayed, 0, "{mode:?}");
+        assert_eq!(&store.snapshot()?, expected.last().unwrap());
+        store.validate_full()?;
+    }
+    // Later commits build on the converted keyframe.
+    let mut store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+    let current = store.snapshot()?;
+    commit_kind(&mut store, &current, 200, "r200")?;
+    assert_eq!(metadata(&path)?.last().unwrap().2, 1);
+    store.validate_full()?;
+    Ok(())
+}
+
+/// A keyframe written after its commit is covered by the receipt like any
+/// other row: altering it is found on open.
+#[test]
+fn a_deferred_keyframe_is_covered_by_the_receipt() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let path = scratch.path().join("covered.deadpan");
+    let mut store = ProjectStore::create(&path, &document()?)?;
+    let current = store.snapshot()?;
+    store.commit(&request(&current, "r1", beats(8)?)?)?;
+    for index in 2..=64 {
+        let current = store.snapshot()?;
+        commit_kind(&mut store, &current, index, &format!("r{index}"))?;
+    }
+    assert!(store.keyframe_due()?);
+    assert!(store.write_due_keyframe()?);
+    assert!(!store.write_due_keyframe()?);
+    let head = store.snapshot()?;
+    drop(store);
+    let reader = ProjectStore::open(&path, AccessMode::ReadOnly)?;
+    assert_eq!(reader.open_validation().replayed, 0);
+    assert_eq!(reader.snapshot()?, head);
+    drop(reader);
+    let database = Connection::open(path.join("project.sqlite"))?;
+    let changed = database.execute(
+        "UPDATE revisions SET document=replace(document,'\"label\":\"Beats\"','\"label\":\"Bxats\"') WHERE id='r64'",
+        [],
+    )?;
+    assert_eq!(changed, 1);
     drop(database);
     for mode in [AccessMode::ReadOnly, AccessMode::ReadWrite] {
         assert!(ProjectStore::open(&path, mode).is_err(), "{mode:?}");

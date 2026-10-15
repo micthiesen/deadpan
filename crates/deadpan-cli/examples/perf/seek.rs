@@ -210,6 +210,74 @@ pub fn run(options: &Options) -> Result<Value> {
     }))
 }
 
+/// Page-cache-cold preview seeks (`cargo xtask perf --stages cold-seek`).
+/// The harness copies PACKAGE onto a disk image and attaches it freshly
+/// before each run, so none of its pages (database, WAL or Original) is in
+/// the OS file cache when this process starts, and the disk-image driver
+/// reads its backing file uncached. The first sample is therefore
+/// page-cache-cold; `--repeat N` further samples at other random frames in
+/// the same process show the same path page-cache-warm. The canvas comes
+/// from `--basis-from`, a different copy of the package, so sizing the GPU
+/// target reads nothing from PACKAGE before the measured session opens.
+pub fn cold(options: &Options) -> Result<Value> {
+    let package = options.package()?;
+    let basis_from = options
+        .text("basis-from")
+        .ok_or("cold-seek needs --basis-from OTHER_COPY")?;
+    let repeat = options.number("repeat", 1)?;
+    let mut random = Lcg::new(options.number("seed", 3)?);
+    let cancelled = AtomicBool::new(false);
+    let (basis, revision) = {
+        let store = ProjectStore::open(std::path::Path::new(basis_from), AccessMode::ReadOnly)?;
+        let document = store.snapshot()?;
+        (
+            document.presentation_basis().clone(),
+            document.revision_id().clone(),
+        )
+    };
+    let mut gpu = Gpu::new(basis.width, basis.height)?;
+    let mut samples = Vec::new();
+    for index in 0..=repeat {
+        let started = Instant::now();
+        let mut session = ProjectPictureSession::open_revision_with(
+            package,
+            &revision,
+            None,
+            SourceAdmission::Progressive,
+            &cancelled,
+        )?;
+        let opened = ms(started);
+        let frames = session.plan().duration().frames();
+        let frame = ProjectFrame(i64::try_from(random.below(u64::try_from(frames)?))?);
+        let prepared_at = Instant::now();
+        let prepared = session.prepare(frame, &cancelled)?;
+        let decoded = ms(prepared_at);
+        let presented = gpu.present(&prepared)?;
+        let total = ms(started);
+        let verified = match session.wait_source_measured(Duration::from_secs(300)) {
+            Some(IndexMeasurement::Verified) | None => ms(started),
+            Some(other) => return Err(format!("index measurement: {other:?}").into()),
+        };
+        samples.push(json!({
+            "page_cache": if index == 0 { "cold" } else { "warm" },
+            "frame": frame.0,
+            "session_open_ms": round(opened),
+            "first_picture_decode_ms": round(decoded),
+            "gpu_complete_ms": round(presented.complete_ms),
+            "total_ms": round(total),
+            "verified_ms": round(verified),
+            "session_stats": stats(&session),
+        }));
+    }
+    Ok(json!({
+        "package": package,
+        "canvas": [basis.width, basis.height],
+        "decode_threads_for_canvas": interactive_decode_threads_for(basis.width, basis.height),
+        "admission": "progressive",
+        "samples": samples,
+    }))
+}
+
 /// The session's own decoder-cache counters (`ProjectPictureSession::stats`).
 fn stats(session: &ProjectPictureSession) -> Value {
     let stats = session.stats();
