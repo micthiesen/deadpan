@@ -286,9 +286,13 @@ PCM cannot hide a revoked dependency.
 The final product still requires all of the following:
 
 - Extend independent sound clocks to edits inside a surviving processing branch.
-- Preserve or transform sound intervals through Split, Trim, grouping inside
-  a retained scope or with endpoint Splits, Repeat, Retime and occurrence
-  isolation.
+- Preserve or transform sound intervals through Trim, grouping inside a
+  retained scope or with endpoint Splits, Repeat, Retime and occurrence
+  isolation. A plain `Split` of an attached sound owner (or its ancestor) now
+  uses the same transport as interior pauses: its new layout takes the leaf's
+  own revision at ordinal zero, both fragments keep the sound behind delivery
+  crops, and the mixed PCM is unchanged
+  (`a_plain_split_keeps_attached_sound_on_both_fragments_with_identical_pcm`).
 - Extend whole-owner copying to partial captures and timing-preserving edits.
   Whole-beat `ib`/`ab` copies already differ without changing picture bounds.
 - Add scoped beat-sound allowances and permitted tails.

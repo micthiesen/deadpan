@@ -35,6 +35,19 @@ pub(crate) fn timing(command: &Command) -> Option<&AudioTimingId> {
     }
 }
 
+/// The capture identity for one command leaf. A plain Split names no clock;
+/// its new layout takes the leaf's own revision at ordinal zero, which no
+/// other table of that revision uses.
+fn capture_timing(command: &Command, allocation: &RevisionId) -> Option<AudioTimingId> {
+    match command {
+        Command::Split { .. } => Some(AudioTimingId {
+            allocation: allocation.clone(),
+            ordinal: 0,
+        }),
+        command => timing(command).cloned(),
+    }
+}
+
 pub(crate) struct SoundClockEditCapture {
     events: BTreeMap<NodeId, BTreeMap<SoundId, BeatSound>>,
     journals: SoundClocks,
@@ -58,9 +71,12 @@ impl SoundClockEditCapture {
         command: &Command,
         allocation: &RevisionId,
     ) -> Result<Option<Self>, EditError> {
-        let Some(timing) = timing(command).filter(|_| !document.beat_sounds.is_empty()) else {
+        let Some(timing) =
+            capture_timing(command, allocation).filter(|_| !document.beat_sounds.is_empty())
+        else {
             return Ok(None);
         };
+        let timing = &timing;
         if &timing.allocation != allocation {
             return Err(invalid(
                 "sound clock allocation must equal the new revision",

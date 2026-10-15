@@ -4,6 +4,12 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 
 ## Resumed implementation, 2026-10-06
 
+A plain `Split` of a beat that owns attached sounds no longer refuses: it
+uses the beat-sound clock transport already used by interior pauses, keeps the
+sound on both fragments and leaves the mixed PCM bit-identical, with and without
+a shared equalizer. Trim, Roll, Repeat and Retime wraps, Hold duration and
+override edits on sound owners still refuse.
+
 [Tracking evidence](qualification/tracking-evidence-2026-10-15.md): rotated,
 anamorphic and rotated-anamorphic synthetic Originals tracked by the real
 `deadpan-track` worker stay within 1.3 upright pixels of FFmpeg's presentation,

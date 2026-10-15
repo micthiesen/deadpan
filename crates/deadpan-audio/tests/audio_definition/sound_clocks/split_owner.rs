@@ -181,3 +181,60 @@ fn interior_pauses_keep_attached_and_shared_equalizer_history() {
 fn split_edits_keep_original_and_attached_sound_in_the_shared_equalizer() {
     witness(true, true);
 }
+
+#[test]
+fn a_plain_split_keeps_attached_sound_on_both_fragments_with_identical_pcm() {
+    for treated in [false, true] {
+        let mut wire = serde_json::to_value(ntsc(AudioEdgePolicy::Hard)).unwrap();
+        if treated {
+            let eq = EqualizerRecipe::new(
+                [6000, -6000, 3000].map(|db| GainDb::new(db).unwrap()),
+                None,
+                None,
+            )
+            .unwrap();
+            wire["beat_sounds"]["owner"]["effect"]["treatments"] =
+                serde_json::to_value(AudioTreatments::default().with_equalizer(Some(eq)).unwrap())
+                    .unwrap();
+        }
+        let initial = ProjectDocument::from_json(&wire.to_string()).unwrap();
+        // Begin from a retained placement clock, as a real project would.
+        let before = insert_prefix(&initial);
+        let split = edit(
+            &before,
+            "plain-split",
+            Command::Split {
+                node: id("owner"),
+                at: FrameDuration::new(2).unwrap(),
+                identities: SplitIdentities {
+                    nodes: (0..4).map(|n| id(&format!("plain-split-{n}"))).collect(),
+                },
+            },
+        );
+        assert_eq!(split.beat_sounds().len(), 2);
+        assert_eq!(split.duration().unwrap(), before.duration().unwrap());
+        // A pure Split changes no time and no audible sample.
+        let total = frame_sample_boundary(before.duration().unwrap().frames());
+        let read = |document: &ProjectDocument, sample: i64, count: u32| {
+            let mut reader = StageAudio::new(compile(document, false));
+            let mut provider = ClockProvider::new(document);
+            bus(&mut reader, &mut provider, sample, count).samples
+        };
+        let mut start = 0;
+        while start < total {
+            let count = u32::try_from((total - start).min(1021)).unwrap();
+            assert_eq!(
+                read(&split, start, count),
+                read(&before, start, count),
+                "samples from {start}, treated {treated}"
+            );
+            start += i64::from(count);
+        }
+        assert!(
+            read(&before, frame_sample_boundary(3), 512)
+                .iter()
+                .flatten()
+                .any(|value| value.abs() > 0.001)
+        );
+    }
+}

@@ -311,6 +311,7 @@ pub(crate) fn validate_command(
     validate_group_ownership(document, command)?;
     if !document.beat_sounds.is_empty()
         && crate::sound_clock::edit::timing(command).is_none()
+        && !matches!(command, Command::Split { .. })
         && !preserves_sound_clocks(command)
     {
         return Err(EditError::new(
