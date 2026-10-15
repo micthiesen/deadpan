@@ -4,6 +4,15 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 
 ## Resumed implementation, 2026-10-06
 
+2026-10-15: [Section 8 export evidence](qualification/preview-export-2026-10-15.md)
+adds twenty headless recipe fixtures (False start, Interrupted answer,
+Callback/registers, Reaction ping-pong, Abrupt return, three gags, group and
+ungroup, dot-repeat, `,i`, `,s`, Trim/Slip/Roll, one-play overrides, macros,
+Camera on a Hold, local recipes, detach) exported through public Render and
+passed by `verify-export`, with framing negatives for the Camera rows. All 66
+recipe fixtures pass in one optimized run. Native key paths remain separate
+evidence; no requirement or gate is newly complete.
+
 [Historical exact audio geometry](qualification/frozen-audio-clocks-2026-10-12.md)
 now captures effective Retime windows, fractional Sequence offsets and compact
 Repeat placements independently of intrinsic recipe counts. Bounded layout JSON

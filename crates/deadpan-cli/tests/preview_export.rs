@@ -1443,6 +1443,46 @@ fn every_recipe_export_matches_its_committed_preview() -> Result {
                 );
             }
         }
+        // The exported pictures carry the authored framing: against a later
+        // revision that changes only one beat's framing, exactly that beat's
+        // frames differ (`:zoom off` really returned the second half to the
+        // full picture; the Hold really shows the magnified detail).
+        let reframed = match fixture.name {
+            "abrupt-return" => Some((
+                recipes::section8::reframe(&fixture, 15, Some(recipes::section8::zoomed()?))?,
+                15..30,
+            )),
+            "freeze-detail" => Some((recipes::section8::reframe(&fixture, 15, None)?, 15..27)),
+            _ => None,
+        };
+        if let Some((revision, changed)) = reframed {
+            let (stale, passed) = verify(
+                &fixture,
+                &movie,
+                &revision,
+                &["--frames", "0,14,15,20,26,27,29", "--no-audio"],
+            )?;
+            assert!(!passed, "{stale}");
+            let mut flagged_frames = Vec::new();
+            for picture in stale["pictures"].as_array().ok_or("pictures")? {
+                let frame = picture["output_frame"].as_u64().ok_or("frame")?;
+                let flagged = picture["flags"].as_array().is_some_and(|f| !f.is_empty());
+                assert_eq!(
+                    flagged,
+                    changed.contains(&frame),
+                    "{} frame {frame} against reframed {revision}: {picture}",
+                    fixture.name
+                );
+                if flagged {
+                    flagged_frames.push(json!([frame, picture["flags"]]));
+                }
+            }
+            eprintln!(
+                "{} against reframed {revision}: flagged {}",
+                fixture.name,
+                Value::Array(flagged_frames)
+            );
+        }
         if fixture.name == "delayed-caption" {
             // The exported pictures carry the caption: against a revision
             // without it, only the captioned frames differ.

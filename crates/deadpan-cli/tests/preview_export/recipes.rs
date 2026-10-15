@@ -46,6 +46,8 @@ pub mod formats;
 pub mod nested_sounds;
 #[path = "partial_sounds.rs"]
 pub mod partial_sounds;
+#[path = "section8.rs"]
+pub mod section8;
 
 #[cfg(feature = "synthetic-worker")]
 #[path = "generated.rs"]
@@ -557,49 +559,121 @@ impl Project {
         cursor: i64,
         selected_child: Option<&NodeId>,
     ) -> Result<ProjectDocument> {
-        let bank = |project: &Self| -> Result<(ProjectDocument, u64)> {
-            let inspected = success(&["macro", "inspect", project.path()])?;
-            Ok((
-                project.document()?,
-                inspected["bank_version"]
-                    .as_u64()
-                    .ok_or("macro inspect reports its bank version")?,
-            ))
-        };
-        let send = |project: &Self, name: &str, request: Value| -> Result {
-            let path = project.directory.join(name);
-            fs::write(&path, serde_json::to_vec(&request)?)?;
-            success(&[
-                "macro",
-                project.path(),
-                "--json",
-                path.to_str().ok_or("UTF-8")?,
-            ])?;
-            Ok(())
-        };
-        let (document, version) = bank(self)?;
-        send(
-            self,
-            "macro-save.json",
-            json!({"protocol":1,"project_id":document.project_id(),
+        self.save_macro('m', instructions)?;
+        self.run_macro('m', cursor, selected_child, 1)
+    }
+
+    /// The current document and register bank version, read separately.
+    fn bank(&self) -> Result<(ProjectDocument, u64)> {
+        let inspected = success(&["macro", "inspect", self.path()])?;
+        Ok((
+            self.document()?,
+            inspected["bank_version"]
+                .as_u64()
+                .ok_or("macro inspect reports its bank version")?,
+        ))
+    }
+
+    /// Send one headless `macro` request with `operation` against the current
+    /// revision and bank version; returns the command's raw output.
+    fn macro_operation(&self, operation: Value, dry_run: bool) -> Result<Output> {
+        let (document, version) = self.bank()?;
+        let path = self.directory.join("macro-request.json");
+        fs::write(
+            &path,
+            serde_json::to_vec(&json!({"protocol":1,"project_id":document.project_id(),
                 "expected_revision":document.revision_id(),"expected_bank_version":version,
-                "operation":{"type":"save","register":"m","program":{"instructions":instructions}}}),
+                "dry_run":dry_run,"operation":operation}))?,
         )?;
-        let (document, version) = bank(self)?;
-        let before = document.revision_id().clone();
-        send(
-            self,
-            "macro-run.json",
-            json!({"protocol":1,"project_id":document.project_id(),
-                "expected_revision":document.revision_id(),"expected_bank_version":version,
-                "operation":{"type":"run","register":"m","parent":document.root(),
-                    "cursor":cursor,"selected_child":selected_child,"count":1}}),
-        )?;
+        cli(&[
+            "macro",
+            self.path(),
+            "--json",
+            path.to_str().ok_or("UTF-8")?,
+        ])
+    }
+
+    fn macro_success(&self, operation: Value) -> Result {
+        let output = self.macro_operation(operation.clone(), false)?;
+        if !output.status.success() {
+            return Err(format!(
+                "macro {operation} failed: {}",
+                String::from_utf8_lossy(&output.stderr)
+            )
+            .into());
+        }
+        Ok(())
+    }
+
+    /// Save `instructions` as Macro `register` (bank only, no revision).
+    fn save_macro(&self, register: char, instructions: Value) -> Result {
+        self.macro_success(json!({"type":"save","register":register.to_string(),
+            "program":{"instructions":instructions}}))
+    }
+
+    /// Run Macro `register` `count` times as one Compound through the headless
+    /// semantic path the native app shares: the same planner, pause-picture
+    /// resolver and store admission.
+    fn run_macro(
+        &mut self,
+        register: char,
+        cursor: i64,
+        selected_child: Option<&NodeId>,
+        count: u32,
+    ) -> Result<ProjectDocument> {
+        let before = self.document()?.revision_id().clone();
+        let parent = self.document()?.root().clone();
+        self.macro_success(json!({"type":"run","register":register.to_string(),
+            "parent":parent,"cursor":cursor,"selected_child":selected_child,"count":count}))?;
         let saved = self.document()?;
         if saved.revision_id() == &before {
             return Err("the semantic run committed no revision".into());
         }
         Ok(saved)
+    }
+
+    /// Plan and commit `instructions` once as an inline `apply`, as a native
+    /// single action (and its `.` resubmission) does; nothing is saved.
+    fn apply_semantic(
+        &mut self,
+        instructions: Value,
+        cursor: i64,
+        selected_child: Option<&NodeId>,
+    ) -> Result<ProjectDocument> {
+        let before = self.document()?.revision_id().clone();
+        let parent = self.document()?.root().clone();
+        self.macro_success(
+            json!({"type":"apply","program":{"instructions":instructions},
+            "parent":parent,"cursor":cursor,"selected_child":selected_child}),
+        )?;
+        let saved = self.document()?;
+        if saved.revision_id() == &before {
+            return Err("the semantic apply committed no revision".into());
+        }
+        Ok(saved)
+    }
+
+    /// Dry-run an inline `apply` that must be refused; returns the refusal.
+    fn semantic_refusal(&self, instructions: Value, cursor: i64) -> Result<String> {
+        let parent = self.document()?.root().clone();
+        let output = self.macro_operation(
+            json!({"type":"apply","program":{"instructions":instructions},
+                "parent":parent,"cursor":cursor}),
+            true,
+        )?;
+        if output.status.success() {
+            return Err(format!("{} was admitted", instructions).into());
+        }
+        Ok(String::from_utf8_lossy(&output.stderr).into_owned())
+    }
+
+    /// `y` in Original: copy Original ordinals [start, end) into `register`
+    /// through the headless `yank_original` operation (bank only).
+    fn yank_original(&self, register: char, start: u64, end: u64) -> Result {
+        self.macro_success(
+            json!({"type":"yank_original","register":register.to_string(),
+            "ordinals":{"start":start,"end":end}}),
+        )
     }
 
     fn finish(
@@ -1549,38 +1623,7 @@ fn place_click_sound(project: &mut Project) -> Result {
 /// Register the stereo WAV at `wav` as the catalog sound and place it whole
 /// as a root sound starting at Edit frame [`SOUND_FRAME`].
 fn place_catalog_sound(project: &mut Project, wav: &Path, label: &str) -> Result {
-    let retained = success(&[
-        "project",
-        "retain-original",
-        project.path(),
-        wav.to_str().ok_or("UTF-8")?,
-    ])?;
-    let content = retained["retained_original"]["record"]["object"]["content"].clone();
-    let document = project.document()?;
-    let revision = project.next_revision()?;
-    let registration = project.directory.join("register-sound.json");
-    fs::write(
-        &registration,
-        serde_json::to_vec(&json!({
-            "protocol": 1,
-            "registration": {
-                "expected_revision": document.revision_id(),
-                "new_revision": revision,
-                "original": content,
-                "new_asset_id": "sound",
-                "label": label,
-                "insertion": null
-            },
-            "streams": {"type": "audio_only", "stream": 0, "interpretation": "stereo_left_right"}
-        }))?,
-    )?;
-    success(&[
-        "project",
-        "register-source",
-        project.path(),
-        "--request-json",
-        registration.to_str().ok_or("UTF-8")?,
-    ])?;
+    register_catalog_sound(project, wav, label)?;
     project.apply(|_, document, _| {
         let asset = document
             .assets()
@@ -1613,6 +1656,44 @@ fn place_catalog_sound(project: &mut Project, wav: &Path, label: &str) -> Result
             },
         })
     })?;
+    Ok(())
+}
+
+/// Register the stereo WAV at `wav` as the audio-only catalog asset `sound`
+/// (`project retain-original`, then `register-source`, the app's `ImportSound`).
+fn register_catalog_sound(project: &mut Project, wav: &Path, label: &str) -> Result {
+    let retained = success(&[
+        "project",
+        "retain-original",
+        project.path(),
+        wav.to_str().ok_or("UTF-8")?,
+    ])?;
+    let content = retained["retained_original"]["record"]["object"]["content"].clone();
+    let document = project.document()?;
+    let revision = project.next_revision()?;
+    let registration = project.directory.join("register-sound.json");
+    fs::write(
+        &registration,
+        serde_json::to_vec(&json!({
+            "protocol": 1,
+            "registration": {
+                "expected_revision": document.revision_id(),
+                "new_revision": revision,
+                "original": content,
+                "new_asset_id": "sound",
+                "label": label,
+                "insertion": null
+            },
+            "streams": {"type": "audio_only", "stream": 0, "interpretation": "stereo_left_right"}
+        }))?,
+    )?;
+    success(&[
+        "project",
+        "register-source",
+        project.path(),
+        "--request-json",
+        registration.to_str().ok_or("UTF-8")?,
+    ])?;
     Ok(())
 }
 
@@ -3405,6 +3486,7 @@ pub fn all_with_skips(dir: &Path) -> Result<(Vec<Fixture>, Vec<Skipped>)> {
         ("gain-trim", gain_trim),
         ("sound-event", sound_event),
     ];
+    let builders: Vec<(&str, Builder)> = builders.into_iter().chain(section8::BUILDERS).collect();
     let mut optional: Vec<Optional> = GENERATED
         .into_iter()
         .map(|(name, build)| (name, generated_tools as fn() -> _, build))
