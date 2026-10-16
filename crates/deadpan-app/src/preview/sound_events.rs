@@ -365,6 +365,15 @@ impl DeadpanApp {
     pub(super) fn sound_action(&mut self, action: SoundAction, context: &egui::Context) {
         let result = self.prepare_sound_action(action, context);
         match result {
+            // While a macro records, placement commits as the recorded
+            // instruction, which resolves the same event at the cursor.
+            Ok(Some(ProjectSoundEdit::Place { asset, .. })) if self.macros.recording() => {
+                let target = self.capture_macro_target();
+                self.apply_recorded_instruction(
+                    target,
+                    Ok(deadpan_core::SemanticInstruction::PlaceSound { asset }),
+                );
+            }
             Ok(Some(edit)) => {
                 let Some(workspace) = &self.workspace else {
                     return;

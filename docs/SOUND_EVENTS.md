@@ -177,6 +177,12 @@ sting. Evidence: `the_sting_is_a_bounded_fanfare_ending_in_silence`, the
 and the release `triumphant-sting` preview/export fixture (the chord window's
 peak predicted from the synthesized samples, silence before and after).
 
+While a macro records, `,s` commits through the semantic `PlaceSound { asset }`
+instruction, which the planner resolves to the same root event (natural-rate
+span from the asset record at the cursor's audio boundary, refused when it would
+end past the edit); store admission still rechecks the receipt. The
+`sound-placement` replay records a placement and runs it at a new cursor.
+
 ## Persisted root sounds
 
 A catalog sound can be repaired or relinked independently of its placed events:

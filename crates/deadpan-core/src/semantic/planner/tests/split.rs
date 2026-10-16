@@ -116,3 +116,80 @@ fn recorded_marks_save_the_native_letter_and_jump_back_to_it() {
     );
     assert!(SemanticProgram::new(vec![SemanticInstruction::SetMark { letter: '1' }]).is_err());
 }
+
+#[test]
+fn a_recorded_sound_placement_puts_the_catalog_sound_at_each_cursor() {
+    let mut document = tree(&["a", "b"], vec![("a", hold(30)), ("b", hold(30))]);
+    let time_base = crate::SourceTimeBase::new(1, 48_000).unwrap();
+    let span = crate::SourceSpan::new(
+        crate::SourceTimestamp {
+            ticks: 0,
+            time_base,
+        },
+        crate::SourceTimestamp {
+            ticks: 9_600,
+            time_base,
+        },
+    )
+    .unwrap();
+    let asset = crate::AssetId::new("boing").unwrap();
+    document.assets.insert(
+        asset.clone(),
+        crate::AssetRecord {
+            label: "Boing".into(),
+            content_hash: "a".repeat(64),
+            video: None,
+            audio: Some(span),
+            still_image: false,
+            frame_count: None,
+            source_qualification: Some(crate::SourceQualificationId::new("b".repeat(64)).unwrap()),
+        },
+    );
+    document.validate().unwrap();
+    let place = SemanticInstruction::PlaceSound {
+        asset: asset.clone(),
+    };
+    let forward = SemanticInstruction::MoveFrames {
+        forward: true,
+        count: NonZeroU32::new(20).unwrap(),
+    };
+    let planned = plan(
+        &document,
+        context("root", 5),
+        vec![place.clone(), forward, place.clone()],
+        &BTreeMap::new(),
+    )
+    .unwrap();
+    let rate = document.presentation_basis().frame_rate;
+    let mut onsets: Vec<_> = planned
+        .document
+        .sounds()
+        .values()
+        .map(|event| event.offset)
+        .collect();
+    onsets.sort();
+    assert_eq!(
+        onsets,
+        [
+            rate.audio_boundary(ProjectFrame(5)).unwrap(),
+            rate.audio_boundary(ProjectFrame(25)).unwrap()
+        ]
+    );
+    assert!(
+        planned
+            .document
+            .sounds()
+            .values()
+            .all(|event| event.source.asset == asset && event.owner == node("root"))
+    );
+    // Too close to the end for the whole sound: refused.
+    assert!(
+        plan(
+            &document,
+            context("root", 59),
+            vec![place],
+            &BTreeMap::new()
+        )
+        .is_err()
+    );
+}

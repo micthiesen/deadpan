@@ -26,7 +26,9 @@ by exact whole frames (Apply in the `:slip` preview while recording, with the
 same refusal), Edit letter marks (`SetMark`, owned by the child at the cursor
 exactly as `m{letter}` saves it) and jumps (`JumpMark`, recorded once the native
 jump lands; a mark in another group or on the Original cancels recording, and a
-run refuses one outside its group), local recipe save and insert (a whole-group yank
+run refuses one outside its group), `PlaceSound` of the selected catalog sound
+at the Edit cursor (`,s`, the same root event the native key places; it must
+end inside the edit), local recipe save and insert (a whole-group yank
 and a register paste), and named Macro call. Word, sentence, pause and shot
 motions and objects resolve against analyses projected through each staged
 document.

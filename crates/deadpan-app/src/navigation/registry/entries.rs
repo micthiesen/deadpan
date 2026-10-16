@@ -1234,7 +1234,7 @@ pub static SPECS: &[Spec] = &[
         keys: &[Keys::Editor(B::PlaceSound)],
         commands: &[verb("sound-place", ":sound-place")],
         contexts: C::EDIT.or(C::CATALOG),
-        replay: Replay::NotRecorded,
+        replay: Replay::Recorded,
         headless: eq("sound <p> --json place", SOUNDS),
         help: "Place the complete selected catalog sound at the edit cursor, without changing picture duration. A sound that ends beyond the edit is rejected; move the edit cursor earlier.",
     },

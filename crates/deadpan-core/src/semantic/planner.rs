@@ -794,6 +794,9 @@ where
                 SemanticInstruction::Slip { frames } => {
                     self.slip(index, *frames)?;
                 }
+                SemanticInstruction::PlaceSound { asset } => {
+                    self.place_sound(index, asset)?;
+                }
                 SemanticInstruction::SetMark { letter } => {
                     self.set_mark(index, *letter)?;
                 }
@@ -929,6 +932,7 @@ where
                         | SemanticInstruction::Trim { .. }
                         | SemanticInstruction::Slip { .. }
                         | SemanticInstruction::SetMark { .. }
+                        | SemanticInstruction::PlaceSound { .. }
                         | SemanticInstruction::SetAudioLag { .. }
                         | SemanticInstruction::SetAudio { .. }
                         | SemanticInstruction::DeleteRole { .. }

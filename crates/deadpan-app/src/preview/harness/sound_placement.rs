@@ -536,7 +536,93 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     )?;
     d.capture("Routed sound retains its journal after rejected repositioning")?;
     allowances::run(d, &first, &catalog.1)?;
-    Ok(())
+    recorded_placement(d, &catalog.1)
+}
+
+/// While a macro records, `,s` in Your edit places the selected catalog sound
+/// through one recorded `PlaceSound`; running the macro places it again at
+/// the new cursor.
+fn recorded_placement(d: &mut Driver<'_>, label: &str) -> Result<(), String> {
+    scenarios::reveal_original_rail(d, label, false)?;
+    d.click(label)?;
+    d.settled()?;
+    let asset = d
+        .app()
+        .selected_sound
+        .clone()
+        .ok_or("No catalog sound is selected")?;
+    let rate = document(d)?.presentation_basis().frame_rate;
+    // Selecting in the catalog retains the sound while Your edit takes focus.
+    d.click("Current group beat outline pane")?;
+    d.chord(&[Key::G, Key::G, Key::Num4, Key::L])?;
+    d.settled()?;
+    if d.app().selected_sound.as_ref() != Some(&asset) {
+        return Err("Focusing Your edit dropped the catalog sound".into());
+    }
+    let count = document(d)?.sounds().len();
+    d.command("record p")?;
+    let before = d.revision();
+    d.chord(&[Key::Comma, Key::S])?;
+    d.changed(&before)?;
+    d.wait_for("The recorded placement is acknowledged", |app| {
+        !app.service.is_busy() && !app.macros.is_pending()
+    })?;
+    d.command("record-stop")?;
+    d.wait_for("Macro p is saved", |app| {
+        !app.service.is_busy()
+            && !app.macros.recording()
+            && app.copied.entries().any(|(slot, value)| {
+                slot == 'p' && matches!(value, crate::preview::copied::Content::Macro(_))
+            })
+    })?;
+    let recorded = d
+        .app()
+        .copied
+        .entries()
+        .find_map(|(slot, value)| match value {
+            crate::preview::copied::Content::Macro(program) if slot == 'p' => {
+                Some(program.instructions().to_vec())
+            }
+            _ => None,
+        });
+    let expected = deadpan_core::SemanticInstruction::PlaceSound {
+        asset: asset.clone(),
+    };
+    let onset = |frame| {
+        rate.audio_boundary(ProjectFrame(frame))
+            .map_err(|e| e.to_string())
+    };
+    let at_four = onset(4)?;
+    d.check(
+        "Recording ,s saves one PlaceSound and places the sound at the cursor",
+        recorded.as_deref() == Some(std::slice::from_ref(&expected))
+            && document(d)?.sounds().len() == count + 1
+            && document(d)?
+                .sounds()
+                .values()
+                .any(|event| event.source.asset == asset && event.offset == at_four),
+        json!({"instructions":[expected],"sounds":count + 1,"onset":at_four}),
+        json!({"recorded":recorded,"sounds":document(d)?.sounds().len()}),
+    )?;
+    d.chord(&[Key::G, Key::G, Key::Num6, Key::L])?;
+    d.settled()?;
+    let before = d.revision();
+    d.command("macro p")?;
+    d.changed(&before)?;
+    d.wait_for("The macro run is acknowledged", |app| {
+        !app.service.is_busy() && !app.macros.is_pending()
+    })?;
+    let at_six = onset(6)?;
+    d.check(
+        "Running the macro places the same catalog sound at the new cursor",
+        document(d)?.sounds().len() == count + 2
+            && document(d)?
+                .sounds()
+                .values()
+                .any(|event| event.source.asset == asset && event.offset == at_six),
+        json!({"sounds":count + 2,"onset":at_six}),
+        json!({"sounds":document(d)?.sounds().len()}),
+    )
 }
 
 fn document<'a>(d: &'a Driver<'_>) -> Result<&'a deadpan_core::ProjectDocument, String> {

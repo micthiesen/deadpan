@@ -405,6 +405,12 @@ pub enum SemanticInstruction {
     SetHoldDuration {
         length: PauseLength,
     },
+    /// Place the complete audio-only catalog sound `asset` at the Edit cursor
+    /// (`,s`) as a root sound event at natural rate, exactly as the native
+    /// key does. It must end inside the edit.
+    PlaceSound {
+        asset: crate::AssetId,
+    },
     /// Set the letter mark at the Edit cursor (`m` then a letter), owned by
     /// the direct child there, exactly as the native key saves it.
     SetMark {

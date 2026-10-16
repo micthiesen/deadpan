@@ -382,6 +382,7 @@ impl DeadpanApp {
                 | Action::Trim
                 | Action::SetMark(_)
                 | Action::JumpMark(_)
+                | Action::Sound(crate::navigation::SoundAction::Place)
                 | Action::Mute
                 | Action::Framing(
                     crate::navigation::FramingAction::PunchIn
@@ -402,7 +403,7 @@ impl DeadpanApp {
                 | Action::Invalid(_)
                 | Action::OfferInsert
         ) {
-            self.error = Some("This action cannot be recorded yet. Macros support pauses and their lengths, reverses, J- and L-cuts, tails, gain and saturation changes, speed and pitch changes, splits, trims and slips, Edit marks and jumps, cutaways and captions, punch-ins and creeps, frame, beat, word, sentence, pause and shot motions, group boundaries, word, sentence, pause and shot objects, Visual selections, cuts, copies, Repeat wraps, count, gap and escalation changes, gags, grouping, ungrouping, exploding, duplicating, register pastes and named calls. Save or cancel recording first.".into());
+            self.error = Some("This action cannot be recorded yet. Macros support pauses and their lengths, reverses, J- and L-cuts, tails, gain and saturation changes, speed and pitch changes, splits, trims and slips, Edit marks and jumps, sound placement, cutaways and captions, punch-ins and creeps, frame, beat, word, sentence, pause and shot motions, group boundaries, word, sentence, pause and shot objects, Visual selections, cuts, copies, Repeat wraps, count, gap and escalation changes, gags, grouping, ungrouping, exploding, duplicating, register pastes and named calls. Save or cancel recording first.".into());
             return false;
         }
         if matches!(

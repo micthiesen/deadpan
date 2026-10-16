@@ -1,6 +1,7 @@
-//! Letter marks as semantic instructions: `m{letter}` saves the same native
-//! mark the editor key does, owned by the direct child at the Edit cursor,
-//! and `'{letter}` moves to its resolved Edit boundary in the current group.
+//! Cursor-anchored annotations as semantic instructions: `m{letter}` saves
+//! the same native mark the editor key does, owned by the direct child at the
+//! Edit cursor, `'{letter}` moves to its resolved Edit boundary in the current
+//! group, and `,s` places a catalog sound at the cursor.
 
 use super::*;
 use crate::{
@@ -141,6 +142,87 @@ where
         {
             *head = cursor;
         }
+        Ok(())
+    }
+
+    pub(super) fn place_sound(
+        &mut self,
+        trace_index: usize,
+        asset: &crate::AssetId,
+    ) -> Result<(), EditError> {
+        let metadata = self.current.assets().get(asset).ok_or_else(|| {
+            EditError::new(
+                EditErrorCode::SelectionUnavailable,
+                "the catalog sound is no longer registered",
+            )
+        })?;
+        let span = match metadata {
+            crate::AssetRecord {
+                video: None,
+                still_image: false,
+                audio: Some(span),
+                source_qualification: Some(_),
+                ..
+            } => *span,
+            _ => {
+                return Err(invalid(
+                    "sound placement requires a qualified audio-only catalog source",
+                ));
+            }
+        };
+        let rate = self.current.presentation_basis().frame_rate;
+        let event = crate::SoundEvent {
+            owner: self.current.root().clone(),
+            label: metadata.label.clone(),
+            source: crate::SourceAudio {
+                asset: asset.clone(),
+                span,
+            },
+            mapping: crate::SourceAudioMapping::natural_rate(span, rate)
+                .map_err(crate::DocumentError::from)?,
+            offset: rate
+                .audio_boundary(self.context.cursor)
+                .map_err(crate::DocumentError::from)?,
+            treatments: crate::AudioTreatments::default(),
+            start_edge: crate::AudioEdgePolicy::Automatic,
+            end_edge: crate::AudioEdgePolicy::Automatic,
+            overflow: crate::SoundOverflowPolicy::Reject,
+        };
+        let selected = event
+            .mapping
+            .selection_frames_with_offset(crate::FrameDuration::ZERO, event.offset, rate)
+            .map_err(crate::DocumentError::from)?;
+        if selected.start.compare_integer(0).is_lt()
+            || selected
+                .end
+                .compare_integer(self.current.duration()?.frames())
+                .is_gt()
+        {
+            return Err(EditError::new(
+                EditErrorCode::SelectionUnavailable,
+                "the complete sound extends past the end of the edit; place it earlier",
+            ));
+        }
+        self.charge_step(false)?;
+        let SemanticAllocation::Sound { new_revision, id } =
+            (self.allocate)(SemanticAllocationRequest::Sound {
+                step_index: self.steps.len(),
+            })?
+        else {
+            return Err(invalid("a placed sound requires a sound allocation"));
+        };
+        if self.current.sounds().contains_key(&id) {
+            return Err(EditError::new(
+                EditErrorCode::IdentityConflict,
+                "the placed sound's identity is already present",
+            ));
+        }
+        self.reserve_revision(&new_revision)?;
+        self.commit_leaf(LeafEdit::new(
+            new_revision,
+            Command::SetSound { id, event },
+        )?)?;
+        self.trace[trace_index].resolved_parent = Some(self.context.parent.clone());
         Ok(())
     }
 }
