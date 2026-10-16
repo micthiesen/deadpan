@@ -2,6 +2,116 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
+## Handoff for the next implementation agent, 2026-10-15
+
+Start here. [Requirements](../REQUIREMENTS.md) is the status of record; this
+section gives the working method, what is in flight, decisions the specification
+leaves open (with a recommended resolution to confirm or replace), and the next
+work in priority order. No requirement or gate is complete because of this
+session; DP-24's 10,000-beat edit latency target is now met.
+
+### Working method
+
+- Test with the three tiers in `AGENTS.md`: named tests while editing,
+  `cargo xtask check` before each commit (changed packages only), and the full
+  gate, replays and release preview/export suite only at a milestone. Run one
+  named replay or one `DEADPAN_PREVIEW_EXPORT_ONLY=<fixture>` export only when
+  that UI path or export behavior changed.
+- The checkout is shared with other sessions. Commit with explicit pathspecs
+  (`git commit -m ... -- <paths>`) after checking `git diff --cached --stat`;
+  stage partial hunks with `git apply --cached` from a filtered patch. A bare
+  `git commit` after `git add` once swept another session's staged work into an
+  unrelated commit (b1dc5df4).
+- Use a separate `CARGO_TARGET_DIR` per concurrent agent and delete it when the
+  agent finishes; machine load makes timeouts and performance numbers
+  unreliable, so rerun one test alone before diagnosing.
+
+### In flight at handoff
+
+- A DP-18 job-coordinator change was being made by another session and is
+  uncommitted in the tree: `crates/deadpan-app/src/{jobs.rs,main.rs,
+  navigation/panels.rs,preview.rs,preview/ai_pause.rs,preview/jobs.rs,
+  preview/jobs/quit.rs,preview/transcript.rs,project/generation.rs,
+  project/service/generation.rs,project/tests/jobs.rs,preview/harness/jobs.rs}`,
+  `crates/deadpan-cli/src/proxy.rs`, `native/deadpan-lifecycle/src/*`, the DP-18
+  hunk of `docs/REQUIREMENTS.md`, `docs/{JOBS,AI_HOLDS,INTERACTION_REVIEW}.md`
+  and its registry entries. Scope: power/thermal and playback gating of model
+  jobs, memory-pressure admission, measured remaining-time estimates, several
+  queued generations per project and a quit dialog that can wait for jobs. At
+  handoff it did not compile (`QuitGuard` methods missing in
+  `deadpan-lifecycle`). Finish it (`cargo xtask check`, the `jobs` replay) and
+  commit it, or discard those files deliberately; do not commit it half-built.
+- Registry entries and `docs/COMMANDS.md` regeneration for that work are part
+  of it; regenerate with `DEADPAN_UPDATE_COMMANDS_MD=1` after it compiles.
+
+### Decisions the specification leaves open
+
+Confirm each with the owner or adopt the recommendation, then record it in
+`DEADPAN_SPEC.md` and `docs/SPEC_PROVENANCE.md` before implementing.
+
+1. **`audio-shift` (§6.5, "a separate explicit command is required to ripple
+   audio independently").** Recommended: `:audio-shift +D|-D` over a Visual
+   range inside one beat moves that beat's linked sound later or earlier by D
+   relative to its picture and ripples only the independent root sound bus after
+   the range by D; pictures and later picture time stay fixed; a shift that
+   would leave the beat's measured audio support refuses; recorded as one
+   semantic instruction. Implement on the existing `audio_offset` and root-route
+   journal (`RootSoundOperation`), not a new clock.
+2. **Video-only repeat policies (§6.5 "explicit fit/trim/hold policy").**
+   `overflow=trim` exists. Recommended: `extend=hold` for video mirrors the
+   audio form (`role_repeat.rs`): insert one silent pause after the beat for the
+   overflow and continue the looping cutaway over it; `fit` is not added unless
+   the owner wants loops time-compressed, which needs a cutaway rate the plan
+   does not have.
+3. **Original-pane operators (DP-10 "Original operators with word motions").**
+   Today `y` in the Original pane copies the moment selection immediately.
+   Recommended: in Original Normal mode `y` becomes an operator: `y` plus a
+   word, sentence, pause or shot motion or object copies that Original span as
+   a moment (same register path as `v`...`y`), and `yy` copies a finished
+   moment selection. This changes a binding: run the keymap compatibility audit
+   (`docs/KEYMAP_COMPATIBILITY.md`), regenerate the routing baseline and update
+   Help and replays together.
+4. **Ranged and one-play zoom in macros (Section 8 coverage).** The zoom's
+   center for a target comes from the displayed picture, which only the app can
+   sample. Recommended: record ranged `:zoom`/`:creep` only with
+   `target=center` or no target (move `navigation/zoom.rs::build` into core and
+   resolve the range against the staged document); refuse recording a
+   target-sampled ranged zoom with a clear message.
+
+### Next work, in priority order
+
+1. Land or discard the in-flight DP-18 work (above).
+2. Remaining macro instructions (DP-06): `,i` whole-Original insertion (it
+   places the full measured A/V union, so add a dedicated instruction rather
+   than reusing an Original register descriptor), Place slice Apply (record as
+   `Paste`/`ReplaceSelection` when the chosen destination equals what those
+   resolve to, otherwise refuse recording), Original marks, ranged and one-play
+   framing (decision 4). Pattern: `semantic/planner/{split,trim,marks}.rs` plus
+   `apply_recorded_instruction` from the native path, guarded by
+   `recorded_context` for drafts.
+3. Pause insertion with mixed play choices or several selected plays, and in
+   nested speed changes (DP-07): extend `insert_time/occurrence.rs`
+   (`all_plays_site`, `apply_all_plays`) and `insert_time/retimed.rs`; keep the
+   decoded-PCM tests in `deadpan-audio/tests/stages/occurrence_pause.rs` as the
+   oracle.
+4. Attached (beat) sounds with all-plays pauses and with edits inside an owner's
+   processing scope (DP-04): currently refused. Add transport in
+   `sound_clock/edit.rs` with a decoded-PCM test before relaxing
+   `sound_events.rs`.
+5. Decisions 1 to 3 once confirmed.
+6. Two-form palette actions (`:undo`/`:redo`, both directions) and a
+   schema-driven argument grammar for the command registry (DP-06).
+7. DP-10: audition and sentence-boundary edits in the `:correct` sheet,
+   transcription scheduling by visible range, automatic word refinement from
+   speech activity.
+8. Milestone: one full `cargo xtask gate`, all replays and the full release
+   preview/export suite, then fix what they find. The last full release export
+   run was 2026-10-15 before the all-plays and extend=hold changes; their own
+   fixtures passed in focused runs.
+
+Owner-only verification (physical input, VoiceOver, clean machine, listening)
+stays on the To verify (owner) list and does not block the work above.
+
 ## Resumed grammar and release audit, 2026-10-06
 
 [Pauses inside FollowSpeed speed changes](../qualification/retimed-pauses-2026-10-15.md)
