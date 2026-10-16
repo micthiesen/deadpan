@@ -225,6 +225,17 @@ impl DeadpanApp {
             })
     }
 
+    /// The compact viewer below 700 points: the caption shares the read-only
+    /// clock row and the controls reserve text height. A populated Placed
+    /// sounds panel in Your edit keeps that compaction.
+    pub(super) fn compact_viewer(&self, context: &egui::Context) -> bool {
+        self.focused_workflow()
+            && self.gain.is_none()
+            && self.camera.is_none()
+            && compact_height(context)
+            && self.workspace.is_some()
+    }
+
     pub(super) fn compact_original_controls(&self, context: &egui::Context) -> bool {
         self.view == View::Source && self.compact_sounds_heading(context)
     }
@@ -679,7 +690,7 @@ impl DeadpanApp {
                 let heading = pane_heading(ui, "SOUND EVENT", self.pane == Pane::Inspector);
                 if pane_focus(ui, Pane::Inspector, heading.rect, "Selected sound inspector pane").has_focus() { self.pane = Pane::Inspector; }
                 ui.separator();
-                egui::ScrollArea::vertical().id_salt("sound-event-inspector").show(ui, |ui| {
+                style::side_scroll(ui, egui::ScrollArea::vertical().id_salt("sound-event-inspector"), |ui| {
                     ui.label(egui::RichText::new(&event.label).size(17.0).color(style::LAVENDER));
                     ui.weak("Your edit · picture length stays the same");
                     ui.add_space(8.0);

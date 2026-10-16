@@ -3773,10 +3773,12 @@ impl DeadpanApp {
         let panel = egui::Panel::bottom("workspace-status").resizable(false).min_size(minimum).frame(style::compact_panel()).show(ui, |ui| {
             ui.spacing_mut().item_spacing = egui::vec2(6.0, 4.0);
             if self.camera.is_some() && !self.sound_focused() {
+                no_inline_notice(ui.ctx());
                 self.camera_footer(ui);
                 return;
             }
             if !self.command_open && self.youtube_footer_shown(ui.ctx()) {
+                no_inline_notice(ui.ctx());
                 self.youtube_footer(ui);
                 return;
             }
@@ -3788,6 +3790,7 @@ impl DeadpanApp {
                     style::key_hint(ui, registry::mode_label("gain.draft.audition"), "audition on heading");
                     style::key_hint(ui, registry::mode_label("gain.draft.apply"), "apply on heading");
                     style::key_hint(ui, registry::mode_label("gain.draft.cancel"), "cancel");
+                    inline_notice(ui);
                 });
                 return;
             }
@@ -3843,6 +3846,7 @@ impl DeadpanApp {
                     let next = self.bindings.pending_next_keys().unwrap_or_else(|| hint.clone());
                     key_labels::pending_guidance(ui, &hint, &next);
                 }
+                inline_notice(ui);
             });
             if self.command_open {
                 focus_command_for_frame(ui.ctx(), &mut self.command_focus_pending);
@@ -4068,6 +4072,25 @@ impl DeadpanApp {
                 .or(self.message.as_ref())
                 .map(|message| egui::RichText::new(message).weak().size(12.0))
         };
+        // Below 700 points a quiet notice joins the end of the footer's mode
+        // row when it fits there whole, instead of taking a row of its own.
+        // The room is the previous pass's measurement; `inline_notice`
+        // retries the pass whenever this decision would change.
+        let candidate = (!urgent && ui.ctx().content_rect().height() < 700.0)
+            .then(|| text.as_ref().map(|text| text.text().to_owned()))
+            .flatten();
+        let width = candidate.as_ref().map(|text| notice_width(ui, text));
+        let inline = width.is_some_and(|width| notice_fits(ui.ctx(), width));
+        ui.ctx().data_mut(|data| {
+            data.insert_temp(
+                egui::Id::new(NOTICE_LINE),
+                NoticeLine {
+                    width,
+                    inline: inline.then(|| candidate.clone()).flatten(),
+                },
+            );
+        });
+        let text = if inline { None } else { text };
         // A bottom panel normally starts with last frame's height. Measure this
         // notice before anchoring it so a new or newly wrapped error is visible
         // on its first paint, including after a viewport resize.
@@ -4146,7 +4169,7 @@ impl DeadpanApp {
                 }
                 ui.separator();
                 self.sound_preview_controls(ui);
-                egui::ScrollArea::vertical().id_salt("original-rail").show(ui, |ui| {
+                style::side_scroll(ui, egui::ScrollArea::vertical().id_salt("original-rail"), |ui| {
                     if matches!(profile, Some(SingleSourceState::AwaitingSource { .. })) {
                         ui.label("Project created. Original not ready.");
                         ui.weak("Choose a video to start with its full picture and sound.");
@@ -4628,10 +4651,12 @@ impl DeadpanApp {
                 // queued for the next frame, where a still-decaying wheel
                 // scroll over the inspector cancels it and leaves the newly
                 // focused control hidden below the fold.
-                egui::ScrollArea::vertical()
-                    .id_salt("inspector-details")
-                    .animated(false)
-                    .show(ui, |ui| {
+                style::side_scroll(
+                    ui,
+                    egui::ScrollArea::vertical()
+                        .id_salt("inspector-details")
+                        .animated(false),
+                    |ui| {
                         ui.horizontal(|ui| {
                             egui::Frame::new()
                                 .fill(style::SELECTED)
@@ -4645,10 +4670,12 @@ impl DeadpanApp {
                                     );
                                 });
                             ui.vertical(|ui| {
-                                style::ink_padded_label(
+                                // A narrow inspector wraps the title onto a
+                                // second row before eliding it.
+                                style::ink_padded_rows(
                                     ui,
                                     style::semibold(&data.label).size(16.0),
-                                    Some(egui::TextWrapMode::Truncate),
+                                    2,
                                 )
                                 .on_hover_text(&data.label);
                                 ui.label(egui::RichText::new(data.kind).weak());
@@ -4779,7 +4806,7 @@ impl DeadpanApp {
             });
     }
 
-    fn viewer(&mut self, ui: &mut egui::Ui, compact_sounds_heading: bool, sounds_in_heading: bool) {
+    fn viewer(&mut self, ui: &mut egui::Ui, compact_viewer: bool, sounds_in_heading: bool) {
         // At compact heights give the picture the eight points otherwise spent
         // on extra outer padding. Keep control reserves and hit sizes intact.
         let frame = if ui
@@ -4832,7 +4859,7 @@ impl DeadpanApp {
             let start_surface = self.workspace.is_none() && self.raw_source.is_none();
             // At minimum height the caption joins the single-line clock row.
             // Both rows measure the same fonts the paint below uses.
-            let merged_caption = compact_sounds_heading
+            let merged_caption = compact_viewer
                 && self.workspace.as_ref().is_some_and(|workspace| workspace.original_duration.is_some());
             let spacing = ui.spacing().item_spacing.y;
             let caption_row = ui.fonts_mut(|fonts| fonts.row_height(&egui::FontId::proportional(11.5))) + spacing;
@@ -4848,8 +4875,8 @@ impl DeadpanApp {
             } else {
                 let other_controls = if self.view == View::Sequence {
                     if self.copied.selected_content().is_some() {
-                        if compact_sounds_heading { 68.0 - merged_saving } else { 92.0 }
-                    } else if compact_sounds_heading {
+                        if compact_viewer { 68.0 - merged_saving } else { 92.0 }
+                    } else if compact_viewer {
                         // Spacing after the picture and after the clock row.
                         2.0 * spacing + compact_clock + caption_row - merged_saving
                     } else {
@@ -4871,7 +4898,7 @@ impl DeadpanApp {
             let canvas = aspect.map_or(rect, |aspect| fit_rect(rect, aspect));
             // Earlier panes and this viewer's tabs can change view while
             // painting. Reject their old panel allocation before GPU work.
-            if compact_sounds_heading != self.compact_sounds_heading(ui.ctx())
+            if compact_viewer != self.compact_viewer(ui.ctx())
                 || self.sounds_in_heading(ui.ctx()) != sounds_in_heading
             {
                 ui.ctx().request_discard("Sounds heading changed placement");
@@ -4939,7 +4966,7 @@ impl DeadpanApp {
                 // These clocks are read-only. At minimum height, reserve text
                 // height instead of the ordinary 28-point button row, and keep
                 // the row single-line so its reserve stays exact.
-                let clock_height = if compact_sounds_heading { compact_clock } else { ui.spacing().interact_size.y };
+                let clock_height = if compact_viewer { compact_clock } else { ui.spacing().interact_size.y };
                 let frame_rate = frame_rate_label(workspace.document.presentation_basis().frame_rate);
                 ui.allocate_ui_with_layout(egui::vec2(ui.available_width(), clock_height), egui::Layout::left_to_right(egui::Align::Center).with_main_wrap(!merged_caption), |ui| {
                     let edit = workspace.plan.duration();
@@ -5410,6 +5437,7 @@ impl eframe::App for DeadpanApp {
         // A pointer activation can change views while the panes are painted.
         // Use one placement decision for Sounds throughout this pass.
         let compact_sounds_heading = self.compact_sounds_heading(&context);
+        let compact_viewer = self.compact_viewer(&context);
         let sounds_in_heading = self.sounds_in_heading(&context);
         let footer_mode = (
             self.command_open,
@@ -5439,7 +5467,7 @@ impl eframe::App for DeadpanApp {
             self.inspector(ui);
             self.placed_sounds(ui, sounds_in_heading);
             self.timeline(ui, sounds_in_heading);
-            self.viewer(ui, compact_sounds_heading, sounds_in_heading);
+            self.viewer(ui, compact_viewer, sounds_in_heading);
         }
         if first_pass {
             self.finish_camera_entry(&context);
@@ -5521,6 +5549,7 @@ impl eframe::App for DeadpanApp {
             context.request_discard("workspace footer mode changed after input");
         }
         if compact_sounds_heading != self.compact_sounds_heading(&context)
+            || compact_viewer != self.compact_viewer(&context)
             || sounds_in_heading != self.sounds_in_heading(&context)
         {
             context.request_discard("Sounds heading changed placement");
@@ -5713,7 +5742,80 @@ fn pane_heading(ui: &mut egui::Ui, title: &str, focused: bool) -> egui::Response
     .response
 }
 
-fn paint_cursor(ui: &egui::Ui, rect: egui::Rect, fraction: f32, cursor: u64) {
+const NOTICE_LINE: &str = "workspace-notice-line";
+const NOTICE_ROOM: &str = "workspace-notice-room";
+/// Separator and spacing before an inline notice.
+const NOTICE_GAP: f32 = 24.0;
+
+/// This pass's quiet compact notice: its one-line width, and its text when
+/// it is painted on the footer's mode row rather than in its own panel.
+#[derive(Clone, Default)]
+struct NoticeLine {
+    width: Option<f32>,
+    inline: Option<String>,
+}
+
+fn notice_text(text: &str) -> egui::RichText {
+    egui::RichText::new(text).weak().size(12.0)
+}
+
+fn notice_width(ui: &egui::Ui, text: &str) -> f32 {
+    egui::WidgetText::from(notice_text(text))
+        .into_galley(
+            ui,
+            Some(egui::TextWrapMode::Extend),
+            f32::INFINITY,
+            egui::TextStyle::Body,
+        )
+        .size()
+        .x
+}
+
+fn notice_fits(context: &egui::Context, width: f32) -> bool {
+    context
+        .data(|data| data.get_temp::<f32>(egui::Id::new(NOTICE_ROOM)))
+        .is_some_and(|room| width + NOTICE_GAP <= room)
+}
+
+/// Record the mode row's remaining room, retry the pass when it changes this
+/// pass's inline decision, and paint an inline notice at the row's end.
+fn inline_notice(ui: &mut egui::Ui) {
+    let room = ui.available_size_before_wrap().x;
+    let line = ui
+        .ctx()
+        .data(|data| data.get_temp::<NoticeLine>(egui::Id::new(NOTICE_LINE)))
+        .unwrap_or_default();
+    ui.ctx()
+        .data_mut(|data| data.insert_temp(egui::Id::new(NOTICE_ROOM), room));
+    let fits = line.width.is_some_and(|width| width + NOTICE_GAP <= room);
+    if fits != line.inline.is_some() {
+        ui.ctx().request_discard("inline notice changed placement");
+    }
+    if let Some(text) = line.inline {
+        ui.separator();
+        // The same fixed live region as the notice panel's text.
+        let response = ui
+            .push_id("workspace-notice-text", |ui| {
+                ui.add(egui::Label::new(notice_text(&text)).extend())
+            })
+            .inner;
+        accessibility::live(&response, false);
+    }
+}
+
+/// A footer without the mode row has no room for an inline notice.
+fn no_inline_notice(context: &egui::Context) {
+    context.data_mut(|data| data.remove_temp::<f32>(egui::Id::new(NOTICE_ROOM)));
+    let line = context
+        .data(|data| data.get_temp::<NoticeLine>(egui::Id::new(NOTICE_LINE)))
+        .unwrap_or_default();
+    if line.inline.is_some() {
+        context.request_discard("inline notice lost its footer row");
+    }
+}
+
+/// Paint the Edit cursor over a card and return its badge's rectangle.
+fn paint_cursor(ui: &egui::Ui, rect: egui::Rect, fraction: f32, cursor: u64) -> egui::Rect {
     let x = egui::lerp(rect.left()..=rect.right(), fraction);
     ui.painter().line_segment(
         [
@@ -5733,25 +5835,13 @@ fn paint_cursor(ui: &egui::Ui, rect: egui::Rect, fraction: f32, cursor: u64) {
     ui.painter().rect_filled(badge, 3.0, style::CURSOR);
     ui.painter()
         .galley(badge.min + egui::vec2(4.0, 2.0), text, style::CANVAS);
+    badge
 }
 
 /// One read-only inspector value with a fixed label column, matching
 /// `style::value_grid` for inspectors that interleave values with controls.
 fn inspector_value(ui: &mut egui::Ui, label: &str, value: &str) {
-    ui.horizontal(|ui| {
-        let (rect, _) = ui.allocate_exact_size(egui::vec2(104.0, 18.0), egui::Sense::hover());
-        ui.put(
-            rect,
-            egui::Label::new(egui::RichText::new(label).size(12.0).weak())
-                .truncate()
-                .halign(egui::Align::Min),
-        );
-        accessibility::full_text(
-            ui.add(egui::Label::new(egui::RichText::new(value).monospace().size(11.5)).truncate()),
-            value,
-        )
-        .on_hover_text(format!("{label}: {value}"));
-    });
+    style::value_row(ui, label, value, 104.0);
 }
 
 type SourceRow = (AssetId, String, bool);

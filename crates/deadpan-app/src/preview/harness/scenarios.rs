@@ -255,7 +255,13 @@ fn workspace(d: &mut Driver<'_>) -> Result<(), String> {
     d.settled()?;
     let before = d.revision();
     d.chord(&[Key::Comma, Key::I])?;
-    d.changed(&before)?;
+    d.wait_for("The new beat's first frame", |app| {
+        app.workspace
+            .as_ref()
+            .is_some_and(|w| w.document.revision_id().as_str() != before)
+    })?;
+    thumbnail_loading(d)?;
+    d.settled()?;
     d.check(
         "Original reuse through ,i creates one new beat",
         d.app().beat_rows.len() == 2,
@@ -321,13 +327,17 @@ fn workspace(d: &mut Driver<'_>) -> Result<(), String> {
         }
         selected_visible(d)?;
         viewer_visible(d)?;
+        strip_edges(d)?;
+        card_thumbnails(d)?;
         if width == 960.0 {
-            minimum_picture_priority(d, "Play edit  Space", 200.0)?;
+            notice_on_mode_row(d)?;
+            inspector_unelided(d)?;
+            minimum_picture_priority(d, "Play edit  Space", 225.0)?;
             d.command("source")?;
             d.settled()?;
             d.capture("Original viewer at the minimum window size")?;
             viewer_visible(d)?;
-            minimum_picture_priority(d, "Play Original  Space", 175.0)?;
+            minimum_picture_priority(d, "Play Original  Space", 200.0)?;
             d.command("sequence")?;
             d.settled()?;
         }
@@ -463,9 +473,229 @@ pub(super) fn viewer_visible(d: &mut Driver<'_>) -> Result<(), String> {
     Ok(())
 }
 
+/// Painted beat cards in strip order: index, label, card rectangle and the
+/// clip of the strip that painted it.
+fn painted_cards(d: &Driver<'_>) -> Vec<(usize, String, egui::Rect, egui::Rect)> {
+    let shapes = &d.harness.output().shapes;
+    let mut cards = d
+        .harness
+        .root()
+        .children_recursive()
+        .filter_map(|node| {
+            let label = node.accesskit_node().label()?;
+            let index = label
+                .strip_prefix("Beat ")?
+                .split(':')
+                .next()?
+                .parse::<usize>()
+                .ok()?;
+            label.contains("half-open frame boundaries").then_some(())?;
+            let rect = node.rect();
+            let clip = shapes.iter().find_map(|clipped| match &clipped.shape {
+                egui::Shape::Rect(shape) if shape.rect == rect => Some(clipped.clip_rect),
+                _ => None,
+            })?;
+            Some((index - 1, label, rect, clip))
+        })
+        .collect::<Vec<_>>();
+    cards.sort_by_key(|card| card.0);
+    cards
+}
+
+/// A strip edge that wholly hides beats says how many, and a card it cuts
+/// off fades out instead of ending mid-text.
+fn strip_edges(d: &mut Driver<'_>) -> Result<(), String> {
+    let cards = painted_cards(d);
+    let count = d.app().beat_rows.len();
+    // Cards with any visible width; a cut card is shown, not counted.
+    let shown = cards
+        .iter()
+        .filter(|(_, _, rect, clip)| rect.intersect(*clip).width() > 0.5)
+        .map(|card| card.0)
+        .collect::<Vec<_>>();
+    let (Some(first), Some(last)) = (shown.first().copied(), shown.last().copied()) else {
+        return Err(format!("No visible beat card: {cards:?}"));
+    };
+    let (before, after) = (first, count - 1 - last);
+    let chip = |text: String| {
+        text_paint_visibility(d, &text).iter().any(|part| {
+            part["text"].as_str() == Some(text.as_str()) && part["fully_visible"] == true
+        })
+    };
+    let shapes = &d.harness.output().shapes;
+    let faded = |x: f32| {
+        shapes.iter().any(|clipped| {
+            matches!(&clipped.shape, egui::Shape::Mesh(mesh)
+                if mesh.vertices.iter().any(|vertex| (vertex.pos.x - x).abs() < 0.5 && vertex.color == style::CANVAS))
+        })
+    };
+    let cut = cards
+        .iter()
+        .filter(|(_, _, rect, clip)| {
+            rect.intersect(*clip).width() > 0.5 && !clip.contains_rect(*rect)
+        })
+        .map(|(index, _, _, clip)| {
+            let leading = *index == first;
+            (
+                *index,
+                leading,
+                faded(if leading { clip.left() } else { clip.right() }),
+            )
+        })
+        .collect::<Vec<_>>();
+    let counted =
+        (before == 0 || chip(format!("‹ {before}"))) && (after == 0 || chip(format!("{after} ›")));
+    d.check(
+        "Strip edges count the beats beyond them and fade any card they cut",
+        counted && cut.iter().all(|(_, _, faded)| *faded) && (before > 0 || after > 0),
+        json!({"before":before,"after":after,"cut_cards_faded":true}),
+        json!({"before":before,"after":after,"cut":cut,"counted":counted}),
+    )
+}
+
+/// Every fully visible card with frames shows its decoded picture, including
+/// the 64-point compact cards.
+fn card_thumbnails(d: &mut Driver<'_>) -> Result<(), String> {
+    let cards = painted_cards(d);
+    let shapes = &d.harness.output().shapes;
+    let pictured = cards
+        .iter()
+        .filter(|(_, _, rect, clip)| clip.contains_rect(*rect))
+        .map(|(index, _, rect, _)| {
+            let thumbnail = shapes.iter().any(|clipped| {
+                matches!(&clipped.shape, egui::Shape::Mesh(mesh)
+                    if mesh.texture_id != egui::TextureId::default()
+                        && rect.contains_rect(mesh.calc_bounds()))
+            });
+            (*index, thumbnail)
+        })
+        .collect::<Vec<_>>();
+    d.check(
+        "Fully visible beat cards show their thumbnails at this size",
+        !pictured.is_empty() && pictured.iter().all(|(_, thumbnail)| *thumbnail),
+        json!("a textured thumbnail inside every fully visible card"),
+        json!({"cards":pictured,"card_height":cards.first().map(|card| card.2.height())}),
+    )
+}
+
+/// A new card's thumbnail that is still decoding says so on a panel tone,
+/// unlike an authored Background's black picture.
+fn thumbnail_loading(d: &mut Driver<'_>) -> Result<(), String> {
+    let cards = painted_cards(d);
+    let selected = d
+        .app()
+        .beat_rows
+        .iter()
+        .position(|row| Some(&row.id) == d.app().selected_beat.as_ref());
+    let card = selected.and_then(|index| cards.iter().find(|card| card.0 == index));
+    let loading = text_paint_visibility(d, cards::THUMBNAIL_LOADING);
+    let inside = card.is_some_and(|(_, _, rect, _)| {
+        loading.iter().any(|part| {
+            let bounds = &part["bounds"];
+            part["fully_visible"] == true
+                && bounds[0]
+                    .as_f64()
+                    .is_some_and(|left| left as f32 >= rect.left())
+                && bounds[2]
+                    .as_f64()
+                    .is_some_and(|right| right as f32 <= rect.right())
+                && bounds[1]
+                    .as_f64()
+                    .is_some_and(|top| top as f32 >= rect.top())
+                && bounds[3]
+                    .as_f64()
+                    .is_some_and(|bottom| bottom as f32 <= rect.bottom())
+        })
+    });
+    let placeholder = card.is_some_and(|(_, _, rect, _)| {
+        d.harness.output().shapes.iter().any(|clipped| {
+            matches!(&clipped.shape, egui::Shape::Rect(shape)
+                if shape.fill == style::PANEL_RAISED && rect.contains_rect(shape.rect))
+        })
+    });
+    d.check(
+        "A new card's pending thumbnail reads as loading, not as a black picture",
+        inside && placeholder,
+        json!({"text":cards::THUMBNAIL_LOADING,"fill":"panel raised","inside_selected_card":true}),
+        json!({"selected":selected,"card":card.map(|card| card.1.clone()),"loading":loading,"placeholder":placeholder}),
+    )
+}
+
+/// Below 700 points a quiet notice that fits joins the footer's mode row
+/// instead of keeping a row of its own.
+pub(super) fn notice_on_mode_row(d: &mut Driver<'_>) -> Result<(), String> {
+    let message = d.app().message.clone().ok_or("No notice to place")?;
+    let exact = |d: &Driver<'_>, text: &str| {
+        text_paint_visibility(d, text)
+            .into_iter()
+            .filter(|part| part["text"].as_str() == Some(text))
+            .collect::<Vec<_>>()
+    };
+    let notice = exact(d, &message);
+    let mode = exact(d, "NORMAL");
+    let center = |parts: &[Value]| {
+        parts.first().and_then(|part| {
+            Some(((part["bounds"][1].as_f64()? + part["bounds"][3].as_f64()?) / 2.0) as f32)
+        })
+    };
+    let same_row = center(&notice)
+        .zip(center(&mode))
+        .is_some_and(|(notice, mode)| (notice - mode).abs() <= 4.0);
+    d.check(
+        "A compact success notice shares the footer's mode row instead of its own row",
+        same_row
+            && notice
+                .iter()
+                .all(|part| part["fully_visible"] == true && part["elided"] == false),
+        json!({"notice":message,"same_row_as":"NORMAL","fully_visible":true}),
+        json!({"notice":notice,"mode":mode}),
+    )
+}
+
+/// The 192-point inspector at the minimum window wraps rather than elides
+/// the selected beat's title and its word values.
+fn inspector_unelided(d: &mut Driver<'_>) -> Result<(), String> {
+    let title = d
+        .app()
+        .beat_rows
+        .iter()
+        .find(|row| Some(&row.id) == d.app().selected_beat.as_ref())
+        .map(|row| row.label.clone())
+        .ok_or("No selected beat for the inspector")?;
+    let texts = [
+        title.as_str(),
+        "Original video",
+        "Original audio",
+        "Root beat",
+        "Linked",
+    ];
+    let paint = texts
+        .iter()
+        .map(|text| {
+            let parts = text_paint_visibility(d, text)
+                .into_iter()
+                .filter(|part| part["text"].as_str() == Some(*text))
+                .collect::<Vec<_>>();
+            (*text, parts)
+        })
+        .collect::<Vec<_>>();
+    let complete = paint.iter().all(|(_, parts)| {
+        parts
+            .iter()
+            .any(|part| part["fully_visible"] == true && part["elided"] == false)
+    });
+    d.check(
+        "The minimum-width inspector shows its title and values without eliding them",
+        complete,
+        json!({"unelided":texts}),
+        json!(paint),
+    )
+}
+
 /// At the minimum window the viewer keeps most of the remaining height while
 /// the read-only clocks, the displayed-picture caption and the transport stay
-/// completely painted. The 2026-10-15 bounds replace 163/149-point viewers.
+/// completely painted. The 2026-10-15 bounds replace 163/149-point viewers;
+/// the later inline notice raises them from 200/175 to 225/200.
 fn minimum_picture_priority(d: &mut Driver<'_>, play: &str, minimum: f32) -> Result<(), String> {
     let label = d
         .app()
@@ -944,6 +1174,11 @@ fn camera(d: &mut Driver<'_>) -> Result<(), String> {
     })?;
     d.step("Camera controls appear after mode entry", true)?;
     footer_anchored(d, "Camera footer fits on its first mode-entry paint")?;
+    rows_clear_of_scrollbar(
+        d,
+        "Camera's full-width commit rows stay clear of the inspector scroll bar",
+        &["Apply  Enter", "Cancel  Esc"],
+    )?;
     d.click("Framing scale, percent of input size")?;
     replace_text(d, "135")?;
     d.settled()?;
@@ -1401,6 +1636,83 @@ fn completed_samples(d: &Driver<'_>, name: &str) -> Vec<f64> {
         .unwrap_or_default()
 }
 
+/// Full-width side-pane rows end before a visible vertical scroll bar's
+/// widest (hovered) extent, so no row border runs beneath it.
+pub(super) fn rows_clear_of_scrollbar(
+    d: &mut Driver<'_>,
+    name: &str,
+    labels: &[&str],
+) -> Result<(), String> {
+    let nodes = d
+        .harness
+        .root()
+        .children_recursive()
+        .filter_map(|node| {
+            let access = node.accesskit_node();
+            access.bounding_box()?;
+            Some((format!("{:?}", access.role()), access.label(), node.rect()))
+        })
+        .collect::<Vec<_>>();
+    let rows = labels
+        .iter()
+        .map(|label| {
+            nodes
+                .iter()
+                .find(|(_, name, _)| name.as_deref() == Some(*label))
+                .map(|(_, _, rect)| *rect)
+        })
+        .collect::<Option<Vec<_>>>();
+    let bars = nodes
+        .iter()
+        .filter(|(role, _, rect)| {
+            role == "ScrollBar"
+                && rect.height() > rect.width()
+                && rows.as_ref().is_some_and(|rows| {
+                    rows.iter()
+                        .any(|row| row.y_range().intersects(rect.y_range()))
+                })
+        })
+        .map(|(_, _, rect)| *rect)
+        .collect::<Vec<_>>();
+    let clear = rows.as_ref().is_some_and(|rows| {
+        !bars.is_empty()
+            && rows
+                .iter()
+                .all(|row| bars.iter().all(|bar| row.right() <= bar.left()))
+    });
+    let describe = |rect: &egui::Rect| [rect.min.x, rect.min.y, rect.max.x, rect.max.y];
+    d.check(
+        name,
+        clear,
+        json!({"rows":labels,"right_edge_before_scroll_bar":true}),
+        json!({"rows":rows.map(|rows| rows.iter().map(describe).collect::<Vec<_>>()),
+            "scroll_bars":bars.iter().map(describe).collect::<Vec<_>>()}),
+    )
+}
+
+/// A fully visible keycap: the exact key text inside an earlier painted
+/// panel-filled, bordered frame, as `style::keycap` draws it.
+pub(super) fn keycap_painted(d: &Driver<'_>, key: &str) -> bool {
+    let viewport = d.harness.ctx.content_rect();
+    let shapes = &d.harness.output().shapes;
+    shapes.iter().enumerate().any(|(index, clipped)| {
+        let egui::Shape::Text(text) = &clipped.shape else {
+            return false;
+        };
+        let bounds = text.visual_bounding_rect();
+        text.galley.text() == key
+            && !text.galley.elided
+            && clipped.clip_rect.contains_rect(bounds)
+            && viewport.contains_rect(bounds)
+            && shapes[..index].iter().rev().any(|earlier| {
+                matches!(&earlier.shape, egui::Shape::Rect(frame)
+                    if frame.fill == style::PANEL
+                        && frame.stroke.color == style::BORDER
+                        && frame.rect.contains_rect(bounds))
+            })
+    })
+}
+
 pub(super) fn text_paint_visibility(d: &Driver<'_>, needle: &str) -> Vec<Value> {
     let viewport = d.harness.ctx.content_rect();
     let shapes = &d.harness.output().shapes;
@@ -1587,6 +1899,14 @@ fn scroll_value(snapshot: &Value, name: &str) -> Result<f64, String> {
 /// leaves the field before it closes Help.
 fn help_search(d: &mut Driver<'_>) -> Result<(), String> {
     let revision = d.revision();
+    let browsing =
+        ["/", "j / k", "PgUp / PgDn", "Home / End", "Esc"].map(|key| (key, keycap_painted(d, key)));
+    d.check(
+        "Help's key line paints its keys as keycaps",
+        browsing.iter().all(|(_, painted)| *painted),
+        json!({"keycaps":["/","j / k","PgUp / PgDn","Home / End","Esc"]}),
+        json!(browsing),
+    )?;
     d.events(
         "Slash opens Help search and the typed key path filters it",
         vec![
@@ -1614,6 +1934,16 @@ fn help_search(d: &mut Driver<'_>) -> Result<(), String> {
             && d.revision() == revision,
         json!({"visible":"Cut the selected beat","hidden":"Insert a pause"}),
         json!({"row":row,"unrelated":unrelated}),
+    )?;
+    let searching = ["Enter", "Esc"].map(|key| (key, keycap_painted(d, key)));
+    let typing = text_paint_visibility(d, "Type to filter");
+    d.check(
+        "The search field's own keys are keycaps while it owns the keyboard",
+        searching.iter().all(|(_, painted)| *painted)
+            && typing.iter().any(|part| part["fully_visible"] == true)
+            && text_paint_visibility(d, "Enter keep filter").is_empty(),
+        json!({"keycaps":["Enter","Esc"],"plain":"Type to filter"}),
+        json!({"keycaps":searching,"typing":typing}),
     )?;
     d.capture("Help search for dd")?;
     d.events(

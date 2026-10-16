@@ -2696,7 +2696,7 @@ impl DeadpanApp {
                 ui.label(egui::RichText::new("Camera · temporary preview").color(style::LAVENDER));
                 ui.separator();
                 ui.add_enabled_ui(!camera.blocked(), |ui| {
-                    egui::ScrollArea::vertical().id_salt("camera-inspector").show(ui, |ui| {
+                    style::side_scroll(ui, egui::ScrollArea::vertical().id_salt("camera-inspector"), |ui| {
                         ui.label(format!("Scope: {}", self.beat_scope_label()));
                         ui.add_space(8.0);
                         if let Some(region) = camera.draft.region() {

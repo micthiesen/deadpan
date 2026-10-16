@@ -4,6 +4,9 @@ use eframe::egui::{self, Color32, FontId, RichText, Stroke};
 
 pub(super) const CANVAS: Color32 = Color32::from_rgb(0x17, 0x19, 0x1d);
 pub(super) const PANEL: Color32 = Color32::from_rgb(0x20, 0x23, 0x29);
+/// A placeholder surface inside a panel or card, such as a thumbnail that
+/// has no picture yet: distinct from both the panel and authored black.
+pub(super) const PANEL_RAISED: Color32 = Color32::from_rgb(0x2b, 0x2e, 0x36);
 pub(super) const TEXT: Color32 = Color32::from_rgb(0xe9, 0xeb, 0xf4);
 pub(super) const MUTED: Color32 = Color32::from_rgb(0xaa, 0xb0, 0xbf);
 pub(super) const BORDER: Color32 = Color32::from_rgb(0x37, 0x3d, 0x49);
@@ -130,29 +133,77 @@ pub(super) fn row_action<'a>(
 }
 
 /// Read-only label/value pairs in aligned columns. Values are plain text,
-/// never field-shaped, so they cannot be mistaken for editable inputs.
+/// never field-shaped, so they cannot be mistaken for editable inputs. The
+/// label column is as wide as its longest label; a value too long for a
+/// narrow pane wraps (up to three rows) rather than truncating.
 pub(super) fn value_grid<'a>(
     ui: &mut egui::Ui,
     id: &str,
     rows: impl IntoIterator<Item = (&'a str, &'a str)>,
 ) {
-    egui::Grid::new(id)
-        .num_columns(2)
-        .spacing(egui::vec2(12.0, 6.0))
-        .min_row_height(18.0)
-        .show(ui, |ui| {
-            for (label, value) in rows {
-                ui.label(RichText::new(label).size(12.0).weak());
-                super::accessibility::full_text(
-                    ui.add(
-                        egui::Label::new(RichText::new(value).monospace().size(11.5)).truncate(),
-                    ),
-                    value,
-                )
+    let rows = rows.into_iter().collect::<Vec<_>>();
+    let column = rows
+        .iter()
+        .map(|(label, _)| {
+            ui.fonts_mut(|fonts| {
+                fonts
+                    .layout_no_wrap((*label).to_owned(), FontId::proportional(12.0), TEXT)
+                    .size()
+                    .x
+            })
+        })
+        .fold(0.0, f32::max)
+        .ceil();
+    ui.push_id(id, |ui| {
+        ui.spacing_mut().item_spacing.y = 6.0;
+        for (label, value) in rows {
+            value_row(ui, label, value, column);
+        }
+    });
+}
+
+/// One read-only label/value row with a fixed label column. Numbers keep
+/// monospace digits; words use the body face, which fits narrow panes.
+pub(super) fn value_row(ui: &mut egui::Ui, label: &str, value: &str, column: f32) {
+    ui.horizontal_top(|ui| {
+        ui.spacing_mut().item_spacing.x = 12.0;
+        ui.allocate_ui_with_layout(
+            egui::vec2(column, 18.0),
+            egui::Layout::left_to_right(egui::Align::Center),
+            |ui| {
+                ui.set_min_size(egui::vec2(column, 18.0));
+                ui.add(egui::Label::new(RichText::new(label).size(12.0).weak()).truncate());
+            },
+        );
+        let numeric = value
+            .chars()
+            .next()
+            .is_some_and(|first| first.is_ascii_digit() || matches!(first, '+' | '-' | '−'));
+        let text = if numeric {
+            RichText::new(value).monospace().size(11.5)
+        } else {
+            RichText::new(value).size(12.5)
+        };
+        let galley = egui::WidgetText::from(text).into_galley_impl(
+            ui.ctx(),
+            ui.style(),
+            egui::text::TextWrapping {
+                max_width: ui.available_width().max(1.0),
+                max_rows: 3,
+                break_anywhere: false,
+                overflow_character: Some('…'),
+            },
+            egui::TextStyle::Body.into(),
+            egui::Align::Center,
+        );
+        // Center a single row on the label's 18-point row.
+        let pad = ((18.0 - galley.size().y) / 2.0).max(0.0);
+        ui.vertical(|ui| {
+            ui.add_space(pad);
+            super::accessibility::full_text(ui.add(egui::Label::new(galley)), value)
                 .on_hover_text(format!("{label}: {value}"));
-                ui.end_row();
-            }
         });
+    });
 }
 
 pub(super) fn apply(context: &egui::Context) {
@@ -188,7 +239,7 @@ pub(super) fn apply(context: &egui::Context) {
             widget.fg_stroke = Stroke::new(1.0, TEXT);
             widget.corner_radius = egui::CornerRadius::same(4);
         }
-        style.visuals.widgets.hovered.bg_fill = Color32::from_rgb(0x2b, 0x2e, 0x36);
+        style.visuals.widgets.hovered.bg_fill = PANEL_RAISED;
         style.visuals.widgets.hovered.bg_stroke = Stroke::new(1.0, LAVENDER);
         style.visuals.widgets.active.bg_fill = SELECTED;
         style.visuals.widgets.active.bg_stroke = Stroke::new(1.5, LAVENDER);
@@ -217,6 +268,27 @@ pub(super) fn panel() -> egui::Frame {
     egui::Frame::new()
         .fill(CANVAS)
         .inner_margin(egui::Margin::same(12))
+}
+
+/// A side pane's vertical scroller. The pane's right margin holds the
+/// floating scroll bar, so full-width rows never run beneath it and keep the
+/// same width whether or not the pane scrolls.
+pub(super) fn side_scroll<R>(
+    ui: &mut egui::Ui,
+    area: egui::ScrollArea,
+    add_contents: impl FnOnce(&mut egui::Ui) -> R,
+) -> egui::scroll_area::ScrollAreaOutput<R> {
+    let margin = panel().inner_margin.right;
+    let mut rect = ui.available_rect_before_wrap();
+    rect.max.x += f32::from(margin);
+    ui.scope_builder(egui::UiBuilder::new().max_rect(rect), |ui| {
+        area.content_margin(egui::Margin {
+            right: margin,
+            ..egui::Margin::ZERO
+        })
+        .show(ui, add_contents)
+    })
+    .inner
 }
 
 pub(super) fn compact_panel() -> egui::Frame {
@@ -301,6 +373,11 @@ fn keycap_frame() -> egui::Frame {
 }
 
 pub(super) fn key_hint(ui: &mut egui::Ui, key: &str, label: &str) {
+    keys_hint(ui, &[key], label);
+}
+
+/// One or more keycaps followed by their action label, wrapped as one unit.
+pub(super) fn keys_hint(ui: &mut egui::Ui, keys: &[&str], label: &str) {
     let galley = |text: RichText| {
         egui::WidgetText::from(text).into_galley(
             ui,
@@ -309,27 +386,37 @@ pub(super) fn key_hint(ui: &mut egui::Ui, key: &str, label: &str) {
             egui::TextStyle::Body,
         )
     };
-    let key = galley(RichText::new(key).monospace().size(11.0));
+    let keys = keys
+        .iter()
+        .map(|key| galley(RichText::new(*key).monospace().size(11.0)))
+        .collect::<Vec<_>>();
     let label = galley(RichText::new(label).weak().size(11.0));
     let frame = keycap_frame();
-    let key_size = key.size() + frame.total_margin().sum();
+    let margins = frame.total_margin().sum();
+    let caps = keys
+        .iter()
+        .map(|key| key.size().x + margins.x + 4.0)
+        .sum::<f32>();
+    let height = keys
+        .iter()
+        .map(|key| key.size().y + margins.y)
+        .fold(label.size().y, f32::max);
     let size = egui::vec2(
-        key_size.x + 4.0 + label.size().x,
-        key_size
-            .y
-            .max(label.size().y)
-            .max(ui.spacing().interact_size.y),
+        caps + label.size().x,
+        height.max(ui.spacing().interact_size.y),
     );
-    // The wrapping parent needs the whole pair's width before allocating it.
+    // The wrapping parent needs the whole group's width before allocating it.
     // A nested horizontal UI otherwise grows past the right edge after layout.
     ui.allocate_ui_with_layout(
         size,
         egui::Layout::left_to_right(egui::Align::Center),
         |ui| {
             ui.spacing_mut().item_spacing.x = 4.0;
-            frame.show(ui, |ui| {
-                ui.label(key);
-            });
+            for key in keys {
+                frame.show(ui, |ui| {
+                    ui.label(key);
+                });
+            }
             ui.label(label);
         },
     );
@@ -350,6 +437,31 @@ pub(super) fn ink_padded_label(
         ui.available_width(),
         egui::TextStyle::Body,
     );
+    ink_padded_galley(ui, galley)
+}
+
+/// [`ink_padded_label`] wrapping to at most `max_rows`, then eliding.
+pub(super) fn ink_padded_rows(
+    ui: &mut egui::Ui,
+    text: RichText,
+    max_rows: usize,
+) -> egui::Response {
+    let galley = egui::WidgetText::from(text).into_galley_impl(
+        ui.ctx(),
+        ui.style(),
+        egui::text::TextWrapping {
+            max_width: ui.available_width().max(1.0),
+            max_rows,
+            break_anywhere: false,
+            overflow_character: Some('…'),
+        },
+        egui::TextStyle::Body.into(),
+        ui.text_valign(),
+    );
+    ink_padded_galley(ui, galley)
+}
+
+fn ink_padded_galley(ui: &mut egui::Ui, galley: std::sync::Arc<egui::Galley>) -> egui::Response {
     let top = (-galley.mesh_bounds.top()).max(0.0).ceil();
     let bottom = (galley.mesh_bounds.bottom() - galley.rect.bottom())
         .max(0.0)

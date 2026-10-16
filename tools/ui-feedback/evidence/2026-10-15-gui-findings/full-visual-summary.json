@@ -1,0 +1,1196 @@
+{
+  "binaries": {
+    "deadpan-app": {
+      "path": "/tmp/gui-fixes/full/bin/deadpan-app",
+      "sha256": "6b4fca44cb0cef09df73752b0d0da275d1433b3b4f36fb2bf899b1f678c22caf",
+      "source": "/Users/michael/Code/deadpan/target/agent-gui-fixes/debug/deadpan-app"
+    },
+    "deadpan-media-worker": {
+      "path": "/tmp/gui-fixes/full/bin/deadpan-media-worker",
+      "sha256": "0dcfe80ffb0fedd583dd8cf429660799c0846be6931f241e18e2d578521393df",
+      "source": "/Users/michael/Code/deadpan/target/agent-gui-fixes/debug/deadpan-media-worker"
+    },
+    "deadpan-track": {
+      "path": "/tmp/gui-fixes/full/bin/deadpan-track",
+      "sha256": "a656c1713a0828d19a38a55dc046caf25a10ab7e6c5a1c1e6dc4185d5b266a74",
+      "source": "/Users/michael/Code/deadpan/target/agent-gui-fixes/debug/deadpan-track"
+    },
+    "deadpan-transcribe": {
+      "path": "/tmp/gui-fixes/full/bin/deadpan-transcribe",
+      "sha256": "9626c227fa040757af57d0274b29d2e6f899eec94556f8148627f17bac2f1ebd",
+      "source": "/Users/michael/Code/deadpan/target/agent-gui-fixes/debug/deadpan-transcribe"
+    }
+  },
+  "build_seconds": 11.494860875,
+  "jobs": 3,
+  "scenarios": [
+    {
+      "checks": 95,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "4 frame(s) settled their layout only on a second retry"
+      ],
+      "name": "workspace",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 167.061193042,
+      "status": "PASS"
+    },
+    {
+      "checks": 59,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "10 frame(s) settled their layout only on a second retry"
+      ],
+      "name": "editing",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 173.28734375,
+      "status": "PASS"
+    },
+    {
+      "checks": 17,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "3 frame(s) settled their layout only on a second retry"
+      ],
+      "name": "camera",
+      "note": null,
+      "other_warnings": 1,
+      "seconds": 159.014277708,
+      "status": "PASS"
+    },
+    {
+      "checks": 41,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "4 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 2 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "targets",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 165.462972083,
+      "status": "PASS"
+    },
+    {
+      "checks": 21,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "6 frame(s) settled their layout only on a second retry"
+      ],
+      "name": "faces",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 155.882325541,
+      "status": "PASS"
+    },
+    {
+      "checks": 45,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "9 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 2 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "menus",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 163.981269542,
+      "status": "PASS"
+    },
+    {
+      "checks": 11,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "1 frame(s) settled their layout only on a second retry"
+      ],
+      "name": "delayed-preview",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 158.40566325,
+      "status": "PASS"
+    },
+    {
+      "checks": 71,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "1 frame(s) settled their layout only on a second retry"
+      ],
+      "name": "rapid-input",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 177.075067667,
+      "status": "PASS"
+    },
+    {
+      "checks": 60,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "17 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 6 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "keymap",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 167.91700525,
+      "status": "PASS"
+    },
+    {
+      "checks": 16,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "1 frame(s) settled their layout only on a second retry"
+      ],
+      "name": "keymap-error",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 155.232522333,
+      "status": "PASS"
+    },
+    {
+      "checks": 15,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "1 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 1 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "playback-feedback",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 154.927607875,
+      "status": "PASS"
+    },
+    {
+      "checks": 77,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "13 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 1 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "terminal-playback",
+      "note": null,
+      "other_warnings": 1,
+      "seconds": 169.794016584,
+      "status": "PASS"
+    },
+    {
+      "checks": 238,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "2 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 1 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "large-project",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 166.335325584,
+      "status": "PASS"
+    },
+    {
+      "checks": 29,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "4 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 1 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "edit-latency",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 159.371136625,
+      "status": "PASS"
+    },
+    {
+      "checks": 75,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "5 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 1 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "nested-pause",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 164.224775083,
+      "status": "PASS"
+    },
+    {
+      "checks": 19,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "5 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 1 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "original-moment",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 136.117773,
+      "status": "PASS"
+    },
+    {
+      "checks": 55,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "4 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 2 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "transcript",
+      "note": null,
+      "other_warnings": 2,
+      "seconds": 145.366095875,
+      "status": "PASS"
+    },
+    {
+      "checks": 32,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "2 frame(s) settled their layout only on a second retry"
+      ],
+      "name": "corrections",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 137.473408,
+      "status": "PASS"
+    },
+    {
+      "checks": 15,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "2 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 1 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "shots",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 141.169411375,
+      "status": "PASS"
+    },
+    {
+      "checks": 14,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "4 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 1 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "proxy-seek",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 139.888408292,
+      "status": "PASS"
+    },
+    {
+      "checks": 26,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "13 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 5 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "source-interpretation",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 142.139035333,
+      "status": "PASS"
+    },
+    {
+      "checks": 11,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "4 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 2 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "cutaway",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 157.773998875,
+      "status": "PASS"
+    },
+    {
+      "checks": 15,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "3 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 1 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "gags",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 163.383178209,
+      "status": "PASS"
+    },
+    {
+      "checks": 75,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "16 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 2 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "recipes",
+      "note": null,
+      "other_warnings": 1,
+      "seconds": 185.551778833,
+      "status": "PASS"
+    },
+    {
+      "checks": 50,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "8 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 3 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "hold-effects",
+      "note": null,
+      "other_warnings": 1,
+      "seconds": 179.308205084,
+      "status": "PASS"
+    },
+    {
+      "checks": 81,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "19 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 4 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "tail-sends",
+      "note": null,
+      "other_warnings": 3,
+      "seconds": 180.604680125,
+      "status": "PASS"
+    },
+    {
+      "checks": 117,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "25 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 4 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "wet-returns",
+      "note": null,
+      "other_warnings": 5,
+      "seconds": 183.349179459,
+      "status": "PASS"
+    },
+    {
+      "checks": 124,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "22 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 2 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "audio-treatments",
+      "note": null,
+      "other_warnings": 1,
+      "seconds": 171.188000041,
+      "status": "PASS"
+    },
+    {
+      "checks": 82,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "17 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 3 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "equalizer",
+      "note": null,
+      "other_warnings": 1,
+      "seconds": 162.474819792,
+      "status": "PASS"
+    },
+    {
+      "checks": 102,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "22 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 10 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "split-edits",
+      "note": null,
+      "other_warnings": 1,
+      "seconds": 156.779649833,
+      "status": "PASS"
+    },
+    {
+      "checks": 27,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "8 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 1 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "recipe-library",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 143.023585916,
+      "status": "PASS"
+    },
+    {
+      "checks": 34,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "5 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 1 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "captions",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 142.320210375,
+      "status": "PASS"
+    },
+    {
+      "checks": 56,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "7 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 2 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "zoom",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 147.92352075,
+      "status": "PASS"
+    },
+    {
+      "checks": 334,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "16 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 6 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "original-layout",
+      "note": null,
+      "other_warnings": 2,
+      "seconds": 155.867262791,
+      "status": "PASS"
+    },
+    {
+      "checks": 353,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "16 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 5 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "original-layout-long",
+      "note": null,
+      "other_warnings": 2,
+      "seconds": 156.325054083,
+      "status": "PASS"
+    },
+    {
+      "checks": 849,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "52 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 43 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "place-slice",
+      "note": null,
+      "other_warnings": 1,
+      "seconds": 186.088629209,
+      "status": "PASS"
+    },
+    {
+      "checks": 312,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "71 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 15 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "delete-range",
+      "note": null,
+      "other_warnings": 1,
+      "seconds": 159.7589795,
+      "status": "PASS"
+    },
+    {
+      "checks": 158,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "63 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 3 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "marks",
+      "note": null,
+      "other_warnings": 1,
+      "seconds": 150.736188375,
+      "status": "PASS"
+    },
+    {
+      "checks": 172,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "30 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 2 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "named-registers",
+      "note": null,
+      "other_warnings": 1,
+      "seconds": 149.476741208,
+      "status": "PASS"
+    },
+    {
+      "checks": 384,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "60 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 8 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "dot-repeat",
+      "note": null,
+      "other_warnings": 1,
+      "seconds": 172.88383675,
+      "status": "PASS"
+    },
+    {
+      "checks": 244,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "29 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 2 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "creative-dot",
+      "note": null,
+      "other_warnings": 1,
+      "seconds": 174.558360208,
+      "status": "PASS"
+    },
+    {
+      "checks": 226,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "26 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 4 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "repeat-operator",
+      "note": null,
+      "other_warnings": 1,
+      "seconds": 187.063035583,
+      "status": "PASS"
+    },
+    {
+      "checks": 69,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "11 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 1 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "repeat-setters",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 164.372284333,
+      "status": "PASS"
+    },
+    {
+      "checks": 483,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "81 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 18 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "groups",
+      "note": null,
+      "other_warnings": 1,
+      "seconds": 189.15844825,
+      "status": "PASS"
+    },
+    {
+      "checks": 78,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "26 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 6 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "scoped-plays",
+      "note": null,
+      "other_warnings": 1,
+      "seconds": 150.698684917,
+      "status": "PASS"
+    },
+    {
+      "checks": 35,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "7 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 1 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "structure-copies",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 143.1059875,
+      "status": "PASS"
+    },
+    {
+      "checks": 375,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "107 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 32 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "macros",
+      "note": null,
+      "other_warnings": 1,
+      "seconds": 183.784146375,
+      "status": "PASS"
+    },
+    {
+      "checks": 21,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "3 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 1 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "original-playback",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 145.404930792,
+      "status": "PASS"
+    },
+    {
+      "checks": 7,
+      "failed_checks": [],
+      "failures": [
+        "Timed out waiting for Real Original PCM horizon finishes: {\"annotation_busy\":false,\"beat_count\":1,\"busy\":false,\"camera_open\":false,\"camera_pending\":false,\"command\":\"source\",\"command_open\":false,\"context\":\"Source\",\"copied_moment\":null,\"copied_slice\":null,\"copy_pending\":false,\"duration\":120,\"edit_selection\":null,\"edit_selection_state\":\"None\",\"edit_visual_active\":false,\"error\":null,\"focused_widget\":\"Id::new(\\\"sequence-pane\\\")\",\"footer_bottom\":[794.0,794.0],\"footer_command_open\":false,\"help_open\":false,\"import\":{\"error\":null,\"stage\":\"Complete\"},\"layout_passes\":1,\"message\":\"Original ready. The full video is on Your edit.\",\"original_selection\":null,\"pane\":\"Sequence\",\"pending_keys\":\"\",\"picture\":{\"decoded\":{\"label\":\"Showing source frame 11\",\"location\":\"Project { session: 1, project: ProjectId(\\\"66ff9c90-484f-4392-8a64-a826496daa84\\\"), revision: RevisionId(\\\"f8102165-a53d-4269-ac59-8fc7a7452515\\\"), view: Source { asset: AssetId(\\\"b7887e08-f1b7-432e-abc5-45a672ea4e25\\\"), frame: SourceFrameId(10) }, empty_sequence: false }\",\"ticket\":\"Ticket { transport: None, source: 3, request: 5 }\"},\"decoded_framing\":\"[]\",\"decoded_geometry_revision\":0,\"decoded_tier\":\"Original\",\"displayed\":{\"label\":\"Showing source frame 11\",\"location\":\"Project { session: 1, project: ProjectId(\\\"66ff9c90-484f-4392-8a64-a826496daa84\\\"), revision: RevisionId(\\\"f8102165-a53d-4269-ac59-8fc7a7452515\\\"), view: Source { asset: AssetId(\\\"b7887e08-f1b7-432e-abc5-45a672ea4e25\\\"), frame: SourceFrameId(10) }, empty_sequence: false }\",\"ticket\":\"Ticket { transport: None, source: 3, request: 5 }\"},\"displayed_tier\":\"Original\",\"error\":null,\"geometry_revision\":0,\"loading\":false,\"needs_render\":false,\"requested\":{\"label\":\"Showing source frame 11\",\"location\":\"Project { session: 1, project: ProjectId(\\\"66ff9c90-484f-4392-8a64-a826496daa84\\\"), revision: RevisionId(\\\"f8102165-a53d-4269-ac59-8fc7a7452515\\\"), view: Source { asset: AssetId(\\\"b7887e08-f1b7-432e-abc5-45a672ea4e25\\\"), frame: SourceFrameId(10) }, empty_sequence: false }\",\"ticket\":\"Ticket { transport: None, source: 3, request: 5 }\"},\"source_frame\":10},\"pixels_per_point\":1.0,\"playback\":null,\"project_error\":null,\"repeat_queue\":{\"active\":false,\"status\":null,\"waiting\":0},\"revision\":\"f8102165-a53d-4269-ac59-8fc7a7452515\",\"room_tone\":null,\"scope_end\":120,\"scope_labels\":[],\"scope_start\":0,\"scoped\":null,\"selected_beat\":\"bb9c8949-c489-45d5-8c37-35a14c888ff1\",\"selected_event\":null,\"selected_sound\":null,\"selected_source\":\"b7887e08-f1b7-432e-abc5-45a672ea4e25\",\"sequence_cursor\":0,\"sequence_scope\":[],\"slip\":null,\"sound_cursor\":0,\"sound_events\":{},\"sound_routes\":{},\"source_cursor\":10,\"source_summary\":{\"first_pts\":0,\"frame_count\":120,\"height\":180,\"terminal_pts\":120120,\"time_base\":[1,30000],\"width\":320},\"splice\":null,\"trim\":{\"abandon_count\":0,\"command_capture\":null,\"draft\":null,\"pair\":{\"displayed\":null,\"expected\":null,\"gpu_pending\":false,\"render_error\":null,\"required_raster\":null,\"worker_error\":null},\"prefix_capture\":null},\"viewport_points\":[1280.0,820.0],\"visual_selection\":false}",
+        "1 timing sample(s) of Real Original PCM horizon finishes did not complete"
+      ],
+      "layout_retry_warnings": [
+        "2 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 1 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "audio-warming",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 156.467750375,
+      "status": "FAIL"
+    },
+    {
+      "checks": 61,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "5 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 1 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "sound-playback",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 153.7030985,
+      "status": "PASS"
+    },
+    {
+      "checks": 273,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "93 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 40 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "sound-placement",
+      "note": null,
+      "other_warnings": 2,
+      "seconds": 166.841361792,
+      "status": "PASS"
+    },
+    {
+      "checks": 223,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "20 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 7 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "room-tone",
+      "note": null,
+      "other_warnings": 1,
+      "seconds": 175.534615916,
+      "status": "PASS"
+    },
+    {
+      "checks": 299,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "16 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 4 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "gain",
+      "note": null,
+      "other_warnings": 1,
+      "seconds": 204.551958459,
+      "status": "PASS"
+    },
+    {
+      "checks": 19,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "6 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 3 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "ai-pause",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 167.094426791,
+      "status": "PASS"
+    },
+    {
+      "checks": 44,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "12 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 3 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "ai-variants",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 175.013293458,
+      "status": "PASS"
+    },
+    {
+      "checks": 18,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "4 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 2 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "ai-extension",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 170.425261792,
+      "status": "PASS"
+    },
+    {
+      "checks": 19,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "4 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 3 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "ai-compare",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 178.298225125,
+      "status": "PASS"
+    },
+    {
+      "checks": 41,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "17 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 4 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "ai-scoped",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 169.851564375,
+      "status": "PASS"
+    },
+    {
+      "checks": 15,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "6 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 2 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "ai-replacements",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 137.540178583,
+      "status": "PASS"
+    },
+    {
+      "checks": 27,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "5 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 2 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "ai-boundaries",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 135.279539375,
+      "status": "PASS"
+    },
+    {
+      "checks": 57,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "12 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 3 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "ai-insertion",
+      "note": null,
+      "other_warnings": 1,
+      "seconds": 136.367870875,
+      "status": "PASS"
+    },
+    {
+      "checks": 0,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [],
+      "name": "ai-pause-ready",
+      "note": "needs an explicit --project fixture; run it directly with deadpan-app --ui-check",
+      "other_warnings": 0,
+      "seconds": 0.0,
+      "status": "SKIP"
+    },
+    {
+      "checks": 28,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "3 frame(s) settled their layout only on a second retry"
+      ],
+      "name": "model-packs",
+      "note": null,
+      "other_warnings": 1,
+      "seconds": 146.922480042,
+      "status": "PASS"
+    },
+    {
+      "checks": 20,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "9 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 2 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "retime",
+      "note": null,
+      "other_warnings": 2,
+      "seconds": 132.441307667,
+      "status": "PASS"
+    },
+    {
+      "checks": 69,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "14 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 5 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "slip",
+      "note": null,
+      "other_warnings": 1,
+      "seconds": 145.256064167,
+      "status": "PASS"
+    },
+    {
+      "checks": 171,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "26 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 6 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "trim",
+      "note": null,
+      "other_warnings": 1,
+      "seconds": 145.541648083,
+      "status": "PASS"
+    },
+    {
+      "checks": 114,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "15 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 1 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "render",
+      "note": null,
+      "other_warnings": 1,
+      "seconds": 293.75741625,
+      "status": "PASS"
+    },
+    {
+      "checks": 14,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "3 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 1 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "recovery",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 134.277468,
+      "status": "PASS"
+    },
+    {
+      "checks": 10,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "2 frame(s) settled their layout only on a second retry"
+      ],
+      "name": "relink",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 138.284460333,
+      "status": "PASS"
+    },
+    {
+      "checks": 22,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "9 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 3 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "sound-relink",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 147.852190583,
+      "status": "PASS"
+    },
+    {
+      "checks": 14,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "3 frame(s) settled their layout only on a second retry"
+      ],
+      "name": "storage-failure",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 141.967499375,
+      "status": "PASS"
+    },
+    {
+      "checks": 0,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [],
+      "name": "generated-picture",
+      "note": "needs an explicit --project fixture; run it directly with deadpan-app --ui-check",
+      "other_warnings": 0,
+      "seconds": 0.0,
+      "status": "SKIP"
+    },
+    {
+      "checks": 0,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [],
+      "name": "generated-playback",
+      "note": "needs an explicit --project fixture; run it directly with deadpan-app --ui-check",
+      "other_warnings": 0,
+      "seconds": 0.0,
+      "status": "SKIP"
+    },
+    {
+      "checks": 0,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [],
+      "name": "generated-loop",
+      "note": "needs an explicit --project fixture; run it directly with deadpan-app --ui-check",
+      "other_warnings": 0,
+      "seconds": 0.0,
+      "status": "SKIP"
+    },
+    {
+      "checks": 126,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "5 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 4 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "youtube",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 151.393428542,
+      "status": "PASS"
+    },
+    {
+      "checks": 20,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "4 frame(s) settled their layout only on a second retry"
+      ],
+      "name": "linked-original",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 136.8404455,
+      "status": "PASS"
+    },
+    {
+      "checks": 40,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "5 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 1 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "accessibility",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 140.578245792,
+      "status": "PASS"
+    },
+    {
+      "checks": 22,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "2 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 1 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "diagnostics",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 135.860480959,
+      "status": "PASS"
+    },
+    {
+      "checks": 24,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "2 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 1 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "storage",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 138.6735675,
+      "status": "PASS"
+    },
+    {
+      "checks": 59,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "18 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 7 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "backups",
+      "note": null,
+      "other_warnings": 1,
+      "seconds": 191.473948042,
+      "status": "PASS"
+    },
+    {
+      "checks": 41,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "7 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 1 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "takes",
+      "note": null,
+      "other_warnings": 1,
+      "seconds": 184.2298255,
+      "status": "PASS"
+    },
+    {
+      "checks": 34,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "1 frame(s) settled their layout only on a second retry"
+      ],
+      "name": "damaged-recovery",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 173.122126958,
+      "status": "PASS"
+    },
+    {
+      "checks": 20,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "4 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 1 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "jobs",
+      "note": null,
+      "other_warnings": 0,
+      "seconds": 155.038531875,
+      "status": "PASS"
+    },
+    {
+      "checks": 133,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "11 frame(s) settled their layout only on a second retry",
+        "egui discard warning: 2 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      ],
+      "name": "full-session",
+      "note": null,
+      "other_warnings": 1,
+      "seconds": 240.811606667,
+      "status": "PASS"
+    },
+    {
+      "checks": 151,
+      "failed_checks": [],
+      "failures": [],
+      "layout_retry_warnings": [
+        "7 frame(s) settled their layout only on a second retry"
+      ],
+      "name": "layouts",
+      "note": null,
+      "other_warnings": 1,
+      "seconds": 160.325936375,
+      "status": "PASS"
+    }
+  ],
+  "wall_seconds": 4421.894152375
+}

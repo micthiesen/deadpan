@@ -1021,7 +1021,31 @@ impl DeadpanApp {
         let mut action = draft.key.take();
         let mut changed = false;
         let mut retry_waveform = false;
-        let height = (ui.ctx().content_rect().height() * 0.34).clamp(224.0, 300.0);
+        // Below 700 points the panel keeps room for the measured waveform's
+        // heading and complete graph together in its scroller.
+        let compact = ui.ctx().content_rect().height() < 700.0;
+        let height = (ui.ctx().content_rect().height() * 0.34)
+            .clamp(if compact { 248.0 } else { 224.0 }, 300.0);
+        let playing = self.transport.as_ref().map_or("Paused", |run| {
+            if run.phase == deadpan_playback::Phase::Preparing {
+                "Preparing audio"
+            } else if run.phase == deadpan_playback::Phase::Ended {
+                "Finishing picture"
+            } else {
+                "Playing"
+            }
+        });
+        let status = format!(
+            "{} · {playing} · {} · loop {}–{}",
+            if draft.choice == Choice::Before {
+                "Before"
+            } else {
+                "Draft"
+            },
+            playback::sound_time(draft.position.0.max(0) as u64),
+            playback::sound_time(draft.window.start().0 as u64),
+            playback::sound_time(draft.window.end().0 as u64)
+        );
         panel.exact_size(height).show(ui, |ui| {
             let title_width = (ui.available_width() - 350.0).clamp(120.0, 480.0);
             let heading = ui
@@ -1083,26 +1107,6 @@ impl DeadpanApp {
                     if draft.pending.is_some() || draft.requested != Some(draft.change) {
                         ui.weak("Preparing the latest draft…");
                     }
-                    let status = self.transport.as_ref().map_or("Paused", |run| {
-                        if run.phase == deadpan_playback::Phase::Preparing {
-                            "Preparing audio"
-                        } else if run.phase == deadpan_playback::Phase::Ended {
-                            "Finishing picture"
-                        } else {
-                            "Playing"
-                        }
-                    });
-                    ui.weak(format!(
-                        "{} · {status} · {} · loop {}–{}",
-                        if draft.choice == Choice::Before {
-                            "Before"
-                        } else {
-                            "Draft"
-                        },
-                        playback::sound_time(draft.position.0.max(0) as u64),
-                        playback::sound_time(draft.window.start().0 as u64),
-                        playback::sound_time(draft.window.end().0 as u64)
-                    ));
                     ui.add_enabled_ui(!draft.applying, |ui| {
                         changed = draft
                             .controls
@@ -1175,6 +1179,25 @@ impl DeadpanApp {
                 if cancel.clicked() {
                     action = Some(DraftAction::Cancel);
                 }
+                // The comparison and heard position follow the commands on
+                // their row, eliding rather than wrapping so the row's
+                // reserve stays exact.
+                let galley = egui::WidgetText::from(egui::RichText::new(&status).weak())
+                    .into_galley_impl(
+                        ui.ctx(),
+                        ui.style(),
+                        egui::text::TextWrapping {
+                            max_width: (ui.available_size_before_wrap().x - 8.0).max(1.0),
+                            max_rows: 1,
+                            break_anywhere: true,
+                            overflow_character: Some('…'),
+                        },
+                        egui::TextStyle::Body.into(),
+                        egui::Align::Center,
+                    );
+                ui.add_space(8.0);
+                accessibility::full_text(ui.add(egui::Label::new(galley)), &status)
+                    .on_hover_text(&status);
             });
         });
         if retry_waveform && !draft.applying {

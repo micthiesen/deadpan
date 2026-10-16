@@ -1176,6 +1176,7 @@ fn waveform(d: &mut Driver<'_>) -> Result<(), String> {
         )?;
     }
     feedback_viewport(d)?;
+    junction_band(d)?;
     d.capture("Trim measured stereo waveform and accepted status")
 }
 
@@ -1184,6 +1185,41 @@ fn graph_text_paint(d: &Driver<'_>, label: &str) -> Vec<Value> {
         .into_iter()
         .filter(|part| part["text"].as_str() == Some(label))
         .collect()
+}
+
+/// The waveform heading follows the junction pictures without an unused
+/// band: an absent junction error reserves no row of its own.
+fn junction_band(d: &mut Driver<'_>) -> Result<(), String> {
+    let pictures = d
+        .harness
+        .root()
+        .children_recursive()
+        .filter_map(|node| {
+            let access = node.accesskit_node();
+            let label = access.label()?;
+            (format!("{:?}", access.role()) == "Image"
+                && (label.ends_with(" decoded picture")
+                    || label.ends_with(" authored Background picture")
+                    || label.ends_with(" no picture exists outside the Edit")))
+            .then(|| node.rect())
+        })
+        .collect::<Vec<_>>();
+    let heading = scenarios::text_paint_visibility(d, "Edit mix · before limiter");
+    let bottom = pictures
+        .iter()
+        .map(|rect| rect.bottom())
+        .fold(f32::MIN, f32::max);
+    let top = heading
+        .iter()
+        .filter_map(|part| part["bounds"][1].as_f64())
+        .fold(f64::MAX, f64::min) as f32;
+    let band = top - bottom;
+    d.check(
+        "Trim's waveform heading follows the junction pictures without an empty band",
+        pictures.len() == 2 && !heading.is_empty() && (0.0..=20.0).contains(&band),
+        json!({"pictures":2,"maximum_band_points":20}),
+        json!({"pictures":pictures.iter().map(|rect| [rect.min.x,rect.min.y,rect.max.x,rect.max.y]).collect::<Vec<_>>(),"heading_top":top,"band":band}),
+    )
 }
 
 fn fully_painted(paint: &[Value], region: egui::Rect) -> bool {

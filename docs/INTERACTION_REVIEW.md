@@ -199,17 +199,32 @@ The Gain waveform visibility failure recorded on 2026-10-11 was already
 resolved by the [scroll-sequencing correction](qualification/gain-scroll-2026-10-11.md);
 release 120 Hz runs pass on both the baseline and final binaries.
 
-Open findings: compact beat cards have no thumbnails and a partly scrolled
-first card is cut without an affordance; pending thumbnails look like an
-authored black Background; Camera's commit rows run under the inspector
-scrollbar; Trim at minimum leaves a 44-point band above its waveform; Help's
-search row teaches its keys as plain text instead of keycaps; the 192-point
-inspector truncates titles and values at 960; the success notice keeps a row
-at minimum size; the Gain waveform has only 13 points of slack in its
-scroller at minimum; populated-sound compact Your edit still measures 145
-points; `place-slice` failed once intermittently on a label comparison; and
-`audio-warming` times out waiting for its real PCM horizon on both the
-baseline and final binaries.
+The [follow-up record](qualification/gui-findings-2026-10-15.md) then fixed
+the open layout findings, each with a replay assertion that fails on the
+previous code:
+
+- **Compact cards show thumbnails** (70 × 52 at 960 points) while keeping
+  their exact text width.
+- **Strip edges say what they hide.** The cursor band counts wholly hidden
+  beats (`‹ 4`, `2 ›`) and a card the edge cuts fades out.
+- **Loading is not black.** A pending thumbnail shows `Loading…` on a raised
+  panel tone and a failed one `No preview`; only a Background is black.
+- **Side-pane scroll bars sit in the pane margin**, clear of Camera's Apply and
+  Cancel and every other full-width row.
+- **Trim's empty junction error row takes no height**; the band above the
+  waveform drops from 39.8 to 16.5 points and the pictures grow to 170 points.
+- **Help's key line uses keycaps** while browsing and while searching.
+- **The narrow inspector wraps** its title and word values instead of eliding.
+- **A quiet compact notice joins the footer's mode row** when it fits; the
+  minimum Your edit picture grows from 205 to 231 points.
+- **Gain's scroller frames its waveform heading and graph together** (123 of
+  133 points); the draft status moved to the command row.
+- **Populated-sound compact Your edit** uses the compact viewer: 145 to 201
+  points.
+
+Still open: the sound event inspector's fixed 104-point label column makes
+long values wrap at 960 points, and `audio-warming` still times out waiting
+for its real PCM horizon on both the baseline and final binaries.
 
 ## Priority improvements
 

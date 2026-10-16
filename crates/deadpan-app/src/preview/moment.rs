@@ -593,7 +593,7 @@ impl DeadpanApp {
                     self.pane = Pane::Inspector;
                 }
                 ui.separator();
-                egui::ScrollArea::vertical().id_salt("moment-inspector").show(ui, |ui| {
+                style::side_scroll(ui, egui::ScrollArea::vertical().id_salt("moment-inspector"), |ui| {
                     ui.label(egui::RichText::new("Select time. Reuse it.").size(17.0));
                     if let Some(range) = self.moment.range() {
                         inspector_value(ui, "In · included", &range.start.to_string());

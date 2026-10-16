@@ -104,8 +104,10 @@ impl Display {
             if self.can_retry() {
                 retry = ui.button(RETRY).reveal_on_focus().clicked();
             }
+            // The measurement state follows the heading on its row, so the
+            // compact scroller frames heading and graph together.
+            ui.weak(self.caption());
         });
-        ui.weak(self.caption());
         if let Some(error) = &self.error {
             ui.small(error);
         }

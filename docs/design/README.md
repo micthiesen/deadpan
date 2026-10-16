@@ -116,7 +116,10 @@ margins, and the displayed-picture caption shares the single-line read-only
 clock row (truncating, with its full text in hover and accessibility) instead
 of its own row. The header's status uses the space beside the centered title,
 so `Draft preview` or `Working` adds no header row at 960 points unless a
-long title already uses its full third of the width.
+long title already uses its full third of the width. The same compact viewer
+applies in Your edit with a populated Placed sounds panel. A quiet notice
+(never an error) joins the end of the footer's mode row when it fits there
+whole, instead of keeping a row of its own; it stays one live region.
 Compact Original uses a read-only clock row and puts Monitor beside idle
 transport actions when their complete labels fit. Otherwise it reserves the
 actual wrapped rows. Transport measurement and paint share text geometry;
@@ -151,6 +154,17 @@ frame boundaries must be explicit; do not put a continuous seconds ruler above
 such cards. A local cursor marker maps within its own card and must not imply
 that adjacent equal-width cards have equal duration. Repeat is one compact object
 with a total-play count, never an expanded widget per occurrence.
+Compact 64-point cards keep a narrowed thumbnail while their exact duration
+and boundaries keep the text's minimum width. A thumbnail that is still
+decoding shows `Loading…` on a raised panel tone and a failed one shows
+`No preview`; only an authored Background is black. When the strip hides
+beats, its edge says how many in the cursor band (`‹ 4`, `2 ›`) and a card
+the edge cuts fades out instead of ending mid-text.
+
+Side panes keep their floating scroll bar in the pane's right margin, so
+full-width command rows never run beneath it. A narrow inspector wraps its
+title (two rows) and word values (three rows) instead of eliding them;
+numbers stay monospace.
 
 ## Interaction contract
 

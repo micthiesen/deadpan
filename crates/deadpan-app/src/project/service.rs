@@ -135,6 +135,8 @@ struct Service {
     take_catalog: Option<deadpan_store::takes::TakeCatalog>,
     damaged: damaged::State,
     pending_session_change: Option<render::PendingSessionChange>,
+    /// The last head revision checked for a due keyframe while idle.
+    keyframe_checked: Option<RevisionId>,
     host: Option<headless::Host>,
     /// Owners a restore replaced, kept only to write their admitted replies.
     retired_hosts: Vec<(headless::Host, std::time::Instant)>,
@@ -232,6 +234,7 @@ pub(super) fn run(
         take_catalog: None,
         damaged: damaged::State::default(),
         pending_session_change: None,
+        keyframe_checked: None,
         host: None,
         retired_hosts: Vec::new(),
         remote_storage: None,
@@ -342,7 +345,7 @@ pub(super) fn run(
                 requests_connected = false;
                 service.shared.stopping.store(true, Ordering::Release);
             }
-            Err(RecvTimeoutError::Timeout) => {}
+            Err(RecvTimeoutError::Timeout) => service.write_due_keyframe(),
         }
         if service.shared.stopping.load(Ordering::Acquire) {
             continue;
@@ -842,6 +845,30 @@ impl Service {
                 self.message = Some("Redo saved".into());
                 Ok(())
             }
+        }
+    }
+
+    /// While idle, store the keyframe a commit made due, once per head
+    /// revision, so the edit itself never waits for serializing the whole
+    /// document. Failure leaves a valid patch history: the commit at depth
+    /// 128 stores the keyframe itself, and a writable open converts it.
+    fn write_due_keyframe(&mut self) {
+        let Some(revision) = self
+            .workspace
+            .as_ref()
+            .map(|workspace| workspace.document.revision_id())
+        else {
+            return;
+        };
+        if self.keyframe_checked.as_ref() == Some(revision) || self.pending_session_change.is_some()
+        {
+            return;
+        }
+        self.keyframe_checked = Some(revision.clone());
+        if let Some(store) = self.store.as_mut()
+            && store.access_mode() == deadpan_store::AccessMode::ReadWrite
+        {
+            let _ = store.write_due_keyframe();
         }
     }
 

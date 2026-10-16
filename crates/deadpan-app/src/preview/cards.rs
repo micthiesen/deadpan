@@ -12,10 +12,35 @@ const MIN_THUMBNAIL_WIDTH: f32 = 64.0;
 /// Room for a card's name, `frames · kind` and `start–end` lines.
 const MIN_TEXT_WIDTH: f32 = 112.0;
 
+/// Words a thumbnail shows while it has no picture of its own. An authored
+/// Background is a black picture; loading and failure are not.
+pub(super) const THUMBNAIL_LOADING: &str = "Loading…";
+pub(super) const THUMBNAIL_UNAVAILABLE: &str = "No preview";
+
 /// Letterboxed picture on black, with a hairline so dark frames keep an edge.
+/// A thumbnail without a picture yet, or whose decode failed, is a panel
+/// tone with words instead, so it never looks like an authored Background.
 pub(super) fn paint_thumbnail(ui: &egui::Ui, rect: egui::Rect, painted: Option<Painted>) {
     let painter = ui.painter();
-    painter.rect_filled(rect, 4.0, egui::Color32::BLACK);
+    let placeholder = match painted {
+        None => Some(THUMBNAIL_LOADING),
+        Some(Painted::Unavailable) => Some(THUMBNAIL_UNAVAILABLE),
+        Some(Painted::Texture { .. } | Painted::Black { .. }) => None,
+    };
+    if let Some(text) = placeholder {
+        painter.rect_filled(rect, 4.0, style::PANEL_RAISED);
+        painter
+            .with_clip_rect(rect.intersect(painter.clip_rect()))
+            .text(
+                rect.center(),
+                egui::Align2::CENTER_CENTER,
+                text,
+                egui::FontId::proportional(10.5),
+                style::muted(ui),
+            );
+    } else {
+        painter.rect_filled(rect, 4.0, egui::Color32::BLACK);
+    }
     if let Some(Painted::Texture { texture, aspect }) = painted {
         painter.image(
             texture,
@@ -120,6 +145,7 @@ pub(super) fn strip(
         let start = (viewport.min.x / layout.card_width).floor().max(0.0) as usize;
         let end = ((viewport.max.x / layout.card_width).ceil() as usize + 1).min(beats.len());
         let origin = canvas.min + egui::vec2(0.0, 20.0);
+        let mut badge = None;
         for (index, beat) in beats.iter().enumerate().take(end).skip(start) {
             let rect = egui::Rect::from_min_size(
                 origin + egui::vec2(index as f32 * layout.card_width, 0.0),
@@ -158,14 +184,148 @@ pub(super) fn strip(
             if let Some((marker_index, fraction)) = markers.cursor
                 && marker_index == index
             {
-                paint_cursor(ui, rect, fraction, markers.frame);
+                badge = Some(paint_cursor(ui, rect, fraction, markers.frame));
             }
             if response.clicked() {
                 clicked = Some(index);
             }
         }
+        edges(ui, canvas, origin.y, layout, beats.len(), viewport, badge);
     });
     clicked
+}
+
+/// Beats wholly outside the strip's viewport on each side. Card `i`
+/// occupies `[i·pitch, (i+1)·pitch − 8)` on the strip canvas; a card the
+/// edge cuts is visible, so it is faded rather than counted.
+fn hidden_cards(count: usize, pitch: f32, viewport: egui::Rect) -> (usize, usize) {
+    if count == 0 || pitch <= 0.0 {
+        return (0, 0);
+    }
+    let before = ((viewport.min.x + 0.5 + 8.0) / pitch).floor().max(0.0) as usize;
+    let reaching = ((viewport.max.x - 0.5) / pitch).ceil().max(0.0) as usize;
+    (before.min(count), count - reaching.min(count))
+}
+
+/// Say how many beats lie past each edge of the strip's viewport, in the
+/// cursor band above the cards, and fade a card the edge cuts off, so a
+/// partly scrolled card never reads as the end of the edit. A count steps
+/// aside from the cursor badge instead of covering it.
+fn edges(
+    ui: &egui::Ui,
+    canvas: egui::Rect,
+    cards_top: f32,
+    layout: style::Layout,
+    count: usize,
+    viewport: egui::Rect,
+    badge: Option<egui::Rect>,
+) {
+    let (before, after) = hidden_cards(count, layout.card_width, viewport);
+    let visible = ui.clip_rect();
+    let x = |canvas_x: f32| canvas.left() + canvas_x;
+    let cards = egui::Rect::from_x_y_ranges(
+        visible.x_range(),
+        cards_top..=cards_top + layout.card_height,
+    );
+    // The first and last cards still in view: fade whichever the edge cuts.
+    let first = x(before as f32 * layout.card_width);
+    if before < count && first < visible.left() - 0.5 {
+        let right = first + layout.card_width - 8.0;
+        fade(ui, cards.with_max_x(right.min(visible.left() + FADE)), true);
+    }
+    let last = x((count - after) as f32 * layout.card_width - 8.0);
+    if after < count && last > visible.right() + 0.5 {
+        let left = last - layout.card_width + 8.0;
+        fade(
+            ui,
+            cards.with_min_x(left.max(visible.right() - FADE)),
+            false,
+        );
+    }
+    if before > 0 {
+        edge_count(ui, cards_top, visible, before, true, badge);
+    }
+    if after > 0 {
+        edge_count(ui, cards_top, visible, after, false, badge);
+    }
+}
+
+const FADE: f32 = 36.0;
+
+/// A canvas-coloured gradient, opaque at the strip edge.
+fn fade(ui: &egui::Ui, rect: egui::Rect, leading: bool) {
+    let (outer, inner) = if leading {
+        (rect.left(), rect.right())
+    } else {
+        (rect.right(), rect.left())
+    };
+    let mut mesh = egui::Mesh::default();
+    for (x, color) in [(outer, style::CANVAS), (inner, egui::Color32::TRANSPARENT)] {
+        mesh.colored_vertex(egui::pos2(x, rect.top()), color);
+        mesh.colored_vertex(egui::pos2(x, rect.bottom()), color);
+    }
+    mesh.add_triangle(0, 1, 2);
+    mesh.add_triangle(1, 2, 3);
+    ui.painter().add(mesh);
+}
+
+fn edge_count(
+    ui: &egui::Ui,
+    cards_top: f32,
+    visible: egui::Rect,
+    hidden: usize,
+    leading: bool,
+    badge: Option<egui::Rect>,
+) {
+    let text = if leading {
+        format!("‹ {hidden}")
+    } else {
+        format!("{hidden} ›")
+    };
+    let galley =
+        ui.painter()
+            .layout_no_wrap(text, egui::FontId::proportional(11.0), style::muted(ui));
+    let size = galley.size() + egui::vec2(10.0, 2.0);
+    let center_y = cards_top - 10.0;
+    let mut chip = if leading {
+        egui::Rect::from_min_size(egui::pos2(visible.left(), center_y - size.y / 2.0), size)
+    } else {
+        egui::Rect::from_min_size(
+            egui::pos2(visible.right() - size.x, center_y - size.y / 2.0),
+            size,
+        )
+    };
+    if let Some(badge) = badge.filter(|badge| badge.expand(2.0).intersects(chip)) {
+        chip = chip.translate(egui::vec2(
+            if leading {
+                badge.right() + 4.0 - chip.left()
+            } else {
+                badge.left() - 4.0 - chip.right()
+            },
+            0.0,
+        ));
+    }
+    ui.painter().rect(
+        chip,
+        4.0,
+        style::PANEL,
+        egui::Stroke::new(1.0, accessibility::border(ui.ctx())),
+        egui::StrokeKind::Inside,
+    );
+    ui.painter()
+        .galley(chip.min + egui::vec2(5.0, 1.0), galley, style::muted(ui));
+    let label = format!(
+        "{hidden} {} {} outside the visible strip",
+        if hidden == 1 { "beat" } else { "beats" },
+        if leading { "before" } else { "after" },
+    );
+    let response = ui.interact(
+        chip,
+        ui.make_persistent_id(("beat-strip-edge", leading)),
+        egui::Sense::hover(),
+    );
+    response.widget_info(|| egui::WidgetInfo::labeled(egui::WidgetType::Label, true, &label));
+    response.on_hover_text(label);
 }
 
 /// Pause bands along a card's top edge and shot ticks below them, mapped
@@ -234,16 +394,10 @@ fn beat_card(
     );
     let compact = rect.height() <= 64.0;
     let mut inner = rect.shrink(if compact { 6.0 } else { 10.0 });
-    // Exact durations and boundaries outrank the picture: narrow cards keep
-    // their full text width. Zero-duration beats have no picture of their own.
-    let width = (inner.height() * 16.0 / 9.0).min(inner.width() * 0.42);
-    if beat.frames > 0
-        && width >= MIN_THUMBNAIL_WIDTH
-        && inner.width() - width - 10.0 >= MIN_TEXT_WIDTH
-    {
+    if let Some(width) = thumbnail_width(beat.frames, inner.size(), compact) {
         let picture = egui::Rect::from_min_size(inner.min, egui::vec2(width, inner.height()));
         paint_thumbnail(ui, picture, thumbnail(beat));
-        inner.min.x = picture.right() + 10.0;
+        inner.min.x = picture.right() + thumbnail_gap(compact);
     }
     let mut content = ui.new_child(
         egui::UiBuilder::new()
@@ -301,6 +455,21 @@ fn beat_card(
     response
 }
 
+fn thumbnail_gap(compact: bool) -> f32 {
+    if compact { 8.0 } else { 10.0 }
+}
+
+/// A card's thumbnail width, or none. Exact durations and boundaries outrank
+/// the picture: the text keeps at least its minimum width and the picture
+/// narrows to the rest, down to its own minimum. Zero-duration beats have no
+/// picture of their own.
+fn thumbnail_width(frames: u64, inner: egui::Vec2, compact: bool) -> Option<f32> {
+    let width = (inner.y * 16.0 / 9.0)
+        .min(inner.x * 0.42)
+        .min(inner.x - thumbnail_gap(compact) - MIN_TEXT_WIDTH);
+    (frames > 0 && width >= MIN_THUMBNAIL_WIDTH).then_some(width)
+}
+
 fn workspace_card(
     ui: &mut egui::Ui,
     rect: egui::Rect,
@@ -347,6 +516,77 @@ fn workspace_card(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Text and fills one thumbnail paints.
+    fn thumbnail_paint(painted: Option<Painted>) -> (Vec<String>, Vec<egui::Color32>) {
+        let context = egui::Context::default();
+        style::apply(&context);
+        let mut output = context.run_ui(egui::RawInput::default(), |ui| {
+            egui::CentralPanel::default().show(ui, |ui| {
+                let rect = egui::Rect::from_min_size(ui.min_rect().min, egui::vec2(70.0, 52.0));
+                paint_thumbnail(ui, rect, painted);
+            });
+        });
+        output.textures_delta.clear();
+        let mut texts = Vec::new();
+        let mut fills = Vec::new();
+        for clipped in output.shapes {
+            match clipped.shape {
+                egui::Shape::Text(text) => texts.push(text.galley.text().to_owned()),
+                egui::Shape::Rect(rect) => fills.push(rect.fill),
+                _ => {}
+            }
+        }
+        (texts, fills)
+    }
+
+    #[test]
+    fn loading_and_failed_thumbnails_never_look_like_an_authored_background() {
+        let (loading, loading_fills) = thumbnail_paint(None);
+        let (failed, failed_fills) = thumbnail_paint(Some(Painted::Unavailable));
+        let (background, background_fills) =
+            thumbnail_paint(Some(Painted::Black { aspect: 16.0 / 9.0 }));
+        assert_eq!(loading, [THUMBNAIL_LOADING]);
+        assert_eq!(failed, [THUMBNAIL_UNAVAILABLE]);
+        assert!(background.is_empty());
+        assert!(loading_fills.contains(&style::PANEL_RAISED));
+        assert!(failed_fills.contains(&style::PANEL_RAISED));
+        assert!(!loading_fills.contains(&egui::Color32::BLACK));
+        assert!(background_fills.contains(&egui::Color32::BLACK));
+        assert!(!background_fills.contains(&style::PANEL_RAISED));
+    }
+
+    #[test]
+    fn compact_cards_keep_their_text_width_and_gain_a_thumbnail() {
+        // A 960-point window's 64-point card: 202 × 64 less 6-point padding.
+        let compact = thumbnail_width(120, egui::vec2(190.0, 52.0), true);
+        assert!(compact.is_some_and(
+            |width| width >= MIN_THUMBNAIL_WIDTH && 190.0 - width - 8.0 >= MIN_TEXT_WIDTH
+        ));
+        // Ordinary cards keep their previous widths.
+        assert_eq!(
+            thumbnail_width(120, egui::vec2(238.0, 72.0), false),
+            Some(238.0 * 0.42)
+        );
+        assert_eq!(thumbnail_width(120, egui::vec2(182.0, 72.0), false), None);
+        assert_eq!(thumbnail_width(0, egui::vec2(190.0, 52.0), true), None);
+    }
+
+    #[test]
+    fn hidden_cards_count_only_wholly_hidden_beats_on_each_side() {
+        let viewport = |left: f32, width: f32| {
+            egui::Rect::from_min_size(egui::pos2(left, 0.0), egui::vec2(width, 84.0))
+        };
+        // Seven 210-point cards in a 600-point strip. Card 2 at [420, 622)
+        // is cut, not hidden.
+        assert_eq!(hidden_cards(7, 210.0, viewport(0.0, 600.0)), (0, 4));
+        assert_eq!(hidden_cards(7, 210.0, viewport(870.0, 600.0)), (4, 0));
+        assert_eq!(hidden_cards(7, 210.0, viewport(420.0, 600.0)), (2, 2));
+        // A viewport starting inside the gap after card 3 hides it wholly.
+        assert_eq!(hidden_cards(7, 210.0, viewport(836.0, 600.0)), (4, 0));
+        assert_eq!(hidden_cards(0, 210.0, viewport(0.0, 600.0)), (0, 0));
+        assert_eq!(hidden_cards(2, 210.0, viewport(0.0, 600.0)), (0, 0));
+    }
 
     #[test]
     fn resize_keeps_the_selected_card_visible_when_card_pitch_changes() {

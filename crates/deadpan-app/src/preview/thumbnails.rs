@@ -146,7 +146,8 @@ pub(super) struct Thumb {
     aspect: f32,
 }
 
-/// What a card paints: the texture and its aspect, or a black Background.
+/// What a card paints: the texture and its aspect, a black Background, or a
+/// remembered failure. A card with no value yet is still loading.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(super) enum Painted {
     Texture {
@@ -156,6 +157,7 @@ pub(super) enum Painted {
     Black {
         aspect: f32,
     },
+    Unavailable,
 }
 
 pub(super) struct Thumbnails {
@@ -236,7 +238,7 @@ impl Thumbnails {
                 None if thumb.aspect > 0.0 => Painted::Black {
                     aspect: thumb.aspect,
                 },
-                None => return None,
+                None => Painted::Unavailable,
             })
         });
         if !self.wanted.contains(&key) {

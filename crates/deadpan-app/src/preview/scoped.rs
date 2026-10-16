@@ -647,7 +647,7 @@ impl DeadpanApp {
                 let heading = pane_heading(ui, "INSPECTOR", self.pane == Pane::Inspector);
                 if pane_focus(ui, Pane::Inspector, heading.rect, "Nested beat inspector pane").has_focus() { self.pane = Pane::Inspector; }
                 ui.separator();
-                egui::ScrollArea::vertical().id_salt("scoped-inspector-details").animated(false).show(ui, |ui| {
+                style::side_scroll(ui, egui::ScrollArea::vertical().id_salt("scoped-inspector-details").animated(false), |ui| {
                     style::ink_padded_label(ui, style::semibold(label).size(16.0), None);
                     ui.colored_label(style::LAVENDER, scope);
                     if let Some(interval) = interval { ui.small(interval); }

@@ -763,9 +763,16 @@ impl JunctionDisplay {
                 ));
             }
         }
-        // Reserve this row even without an error, so readiness/error text never
-        // changes the next frame's requested picture raster.
-        junction_label(ui, layout.error, error.unwrap_or(""), style::LAVENDER);
+        // The error line overlays the pair's bottom edge on a backing, so its
+        // text never changes the next frame's requested picture raster.
+        if let Some(error) = error.filter(|error| !error.is_empty()) {
+            ui.painter().rect_filled(
+                layout.error.intersect(ui.clip_rect()),
+                0.0,
+                style::CANVAS.gamma_multiply(0.9),
+            );
+            junction_label(ui, layout.error, error, style::LAVENDER);
+        }
     }
 
     fn current_error(&self, expected: &EditJunctionIdentity) -> Option<&str> {
@@ -1137,8 +1144,11 @@ fn allocate_junction_layout(ui: &mut egui::Ui, height: f32) -> JunctionLayout {
         egui::vec2(ui.available_width().max(0.0), height.max(0.0)),
         egui::Sense::hover(),
     );
+    // The pictures reach the allocation's bottom edge. Keep them inside the
+    // region's clip when the allocation rounds a fraction past it.
+    let clipped = rect.intersect(ui.clip_rect());
     junction_layout(
-        rect,
+        if clipped.is_positive() { clipped } else { rect },
         ui.text_style_height(&egui::TextStyle::Body),
         ui.spacing().item_spacing,
     )
@@ -1147,19 +1157,39 @@ fn allocate_junction_layout(ui: &mut egui::Ui, height: f32) -> JunctionLayout {
 fn junction_layout(rect: egui::Rect, row_height: f32, spacing: egui::Vec2) -> JunctionLayout {
     let gap_x = spacing.x.max(0.0).min(rect.width());
     let gap_y = spacing.y.max(0.0).min(rect.height() / 2.0);
-    let row_height = row_height.max(0.0).min((rect.height() - 2.0 * gap_y) / 2.0);
+    let requested_row = row_height.max(0.0);
+    let row_height = requested_row.min((rect.height() - 2.0 * gap_y) / 2.0);
     let width = (rect.width() - gap_x) / 2.0;
-    let picture_height = (rect.height() - 2.0 * (row_height + gap_y)).max(0.0);
+    // Only the captions take a row of their own. A readiness or error line
+    // overlays the pictures' bottom edge, so a pair with nothing to report
+    // keeps that height and never changes the requested raster either way.
+    // A panel too short for a whole caption row and an error line shows no
+    // pictures at all.
+    let picture_height = if row_height < requested_row {
+        0.0
+    } else {
+        (rect.height() - row_height - gap_y).max(0.0)
+    };
     let captions = [0, 1].map(|slot| {
         egui::Rect::from_min_size(
             rect.min + egui::vec2(slot as f32 * (width + gap_x), 0.0),
             egui::vec2(width, row_height),
         )
     });
+    // End exactly at the panel's bottom: summing the rows can round past it
+    // and fail the pictures' own containment check.
     let pictures = captions.map(|caption| {
-        egui::Rect::from_min_size(
-            egui::pos2(caption.left(), caption.bottom() + gap_y),
-            egui::vec2(width, picture_height),
+        let top = (caption.bottom() + gap_y).min(rect.bottom());
+        egui::Rect::from_min_max(
+            egui::pos2(caption.left(), top),
+            egui::pos2(
+                caption.left() + width,
+                if picture_height > 0.0 {
+                    rect.bottom()
+                } else {
+                    top
+                },
+            ),
         )
     });
     let error = egui::Rect::from_min_size(
@@ -1401,7 +1431,7 @@ mod tests {
         )));
         assert_eq!(layout.captions[0].size(), egui::vec2(494.0, 20.0));
         assert_eq!(layout.captions[1].size(), layout.captions[0].size());
-        assert_eq!(layout.pictures[0].size(), egui::vec2(494.0, 348.0));
+        assert_eq!(layout.pictures[0].size(), egui::vec2(494.0, 374.0));
         assert_eq!(layout.pictures[1].size(), layout.pictures[0].size());
         assert_eq!(layout.pictures[0].min, egui::pos2(30.0, 76.0));
         assert_eq!(layout.pictures[1].min, egui::pos2(536.0, 76.0));
@@ -1411,7 +1441,7 @@ mod tests {
             egui::Rect::from_min_size(egui::pos2(30.0, 430.0), egui::vec2(1000.0, 20.0))
         );
         for picture in layout.pictures {
-            assert_eq!(picture.bottom() + 6.0, layout.error.top());
+            assert_eq!(picture.bottom(), layout.error.bottom());
         }
     }
 

@@ -99,7 +99,9 @@ unchanged.
 ## Review findings not changed here
 
 Each is a concrete observation from the named capture; none is blessed as a
-baseline.
+baseline. The first seven findings below, the Gain waveform's tight fit and
+the populated-sound viewer height were fixed later the same day; see the
+[follow-up record](gui-findings-2026-10-15.md).
 
 - Compact beat cards (64 points) show no thumbnails, unlike the design
   target, and a partly scrolled first card is cut mid-text without a fade or

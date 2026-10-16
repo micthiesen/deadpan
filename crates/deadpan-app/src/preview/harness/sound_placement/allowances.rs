@@ -50,8 +50,10 @@ pub(super) fn run(d: &mut Driver<'_>, routed: &SoundId, catalog_label: &str) -> 
     for (width, height) in [(960.0, 640.0), (1280.0, 820.0)] {
         resize(d, width, height)?;
         d.step("Paint exact pause allowance controls after resize", true)?;
-        reveal(d, "Allow this sound in pause", -240.0)?;
-        visible(d, ":sound-allow")?;
+        // Reveal the command taught beneath the button; the pair is checked
+        // together whatever the inspector's wrapped height above it.
+        reveal(d, ":sound-allow", -240.0)?;
+        visible(d, "Allow this sound in pause")?;
         d.capture("Exact sound and pause permission before grant")?;
         scenarios::footer_anchored(
             d,
@@ -74,8 +76,10 @@ pub(super) fn run(d: &mut Driver<'_>, routed: &SoundId, catalog_label: &str) -> 
     for (width, height) in [(960.0, 640.0), (1280.0, 820.0)] {
         resize(d, width, height)?;
         d.step("Paint the granted pause permission after resize", true)?;
-        reveal(d, "Silence this sound in pause", -240.0)?;
-        visible(d, ":sound-silence")?;
+        // Reveal the command taught beneath the button; the pair is checked
+        // together whatever the inspector's wrapped height above it.
+        reveal(d, ":sound-silence", -240.0)?;
+        visible(d, "Silence this sound in pause")?;
         d.capture("Allowed sound and its revoke control in the identified pause")?;
         scenarios::footer_anchored(d, "Granted pause permission preserves the workspace footer")?;
         check_allowed(d, &id, routed, &target.issuer, true)?;

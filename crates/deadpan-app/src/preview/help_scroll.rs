@@ -11,7 +11,25 @@ use crate::navigation::registry::mode_label;
 const LINE: f32 = 28.0;
 pub(super) const SEARCH_ID: &str = "keys-reference-search";
 
-/// The key line, which names the field's own keys while it owns the keyboard.
+/// The key line's keycaps and labels, naming the field's own keys while it
+/// owns the keyboard. Typing has no key of its own, so it has no keycap.
+fn hint_parts(searching: bool) -> Vec<(Vec<&'static str>, &'static str)> {
+    if searching {
+        vec![
+            (Vec::new(), "Type to filter"),
+            (vec!["Enter"], "keep filter"),
+            (vec![mode_label("help.close")], "leave search"),
+        ]
+    } else {
+        vec![
+            (vec![mode_label("help.search")], "search"),
+            (mode_label("help.scroll").split(" · ").collect(), "scroll"),
+            (vec![mode_label("help.close")], "close"),
+        ]
+    }
+}
+
+/// The key line as one spoken and hovered sentence.
 fn hint(searching: bool) -> String {
     if searching {
         format!(
@@ -329,8 +347,23 @@ impl HelpScroll {
             .show(context, |ui| {
                 // Spoken when Help opens: the keyboard stays with Help until
                 // Escape, while focus remains on the pane it returns to.
-                let hint = ui.weak(hint(self.field_focused || self.focus_search));
-                super::accessibility::live(&hint, false);
+                // Keycaps teach the keys as they look on the keyboard; the
+                // whole line stays one accessible, live sentence.
+                let searching = self.field_focused || self.focus_search;
+                let line = ui
+                    .horizontal_wrapped(|ui| {
+                        ui.spacing_mut().item_spacing.x = 12.0;
+                        for (keys, label) in hint_parts(searching) {
+                            if keys.is_empty() {
+                                ui.label(egui::RichText::new(label).weak().size(11.0));
+                            } else {
+                                super::style::keys_hint(ui, &keys, label);
+                            }
+                        }
+                    })
+                    .response;
+                let line = super::accessibility::full_text(line, &hint(searching));
+                super::accessibility::live(&line, false);
                 let id = egui::Id::new(SEARCH_ID);
                 // Text typed before an Escape in the same batch still lands:
                 // focus for the draw, then release.

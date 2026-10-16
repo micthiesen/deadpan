@@ -407,10 +407,13 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
             .displayed_label()
             .ok_or("Missing picture label")?;
         let viewer = d.rect(&label)?;
+        // The compact viewer applies with a populated Placed sounds panel:
+        // its caption shares the clock row (145 points before 2026-10-15).
+        let minimum = if width <= 960.0 { 185.0 } else { 120.0 };
         d.check(
             "Sound editing retains useful picture height at the minimum viewport",
-            viewer.height() >= 120.0,
-            json!({"minimum_picture_height":120.0}),
+            viewer.height() >= minimum,
+            json!({"minimum_picture_height":minimum}),
             json!({"viewer_height":viewer.height(),"viewport":[width,height]}),
         )?;
         if width == 960.0 {

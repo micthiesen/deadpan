@@ -477,6 +477,66 @@ fn edit_rejects_stale_session_revision_and_invalid_targets_without_authored_chan
 }
 
 #[test]
+fn an_idle_service_stores_the_keyframe_its_last_edit_made_due() {
+    let scratch = tempfile::tempdir().unwrap();
+    let path = scratch.path().join("keyframe.deadpan");
+    let mut store = seed_holds(&path, &["a", "b"]);
+    // Two insertions and 61 renames leave the head 63 patches from the
+    // initial document; the next edit makes its keyframe due.
+    for index in 0..61 {
+        seed_command(
+            &mut store,
+            Command::Rename {
+                node: node("a"),
+                label: format!("a{index}"),
+            },
+            &format!("rename-{index}"),
+        );
+    }
+    drop(store);
+    let service = ProjectService::new(Arc::new(|| {})).unwrap();
+    let before = command(&service, ProjectRequest::Open(path.clone()))
+        .workspace
+        .unwrap();
+    let head = edited(
+        &service,
+        &before,
+        ProjectEdit::SetFraming {
+            node: node("b"),
+            framing: Some(
+                deadpan_core::Framing::static_pose(deadpan_core::FramingPose {
+                    scale: deadpan_core::ExactRatio::new(3, 2).unwrap(),
+                    ..Default::default()
+                })
+                .unwrap(),
+            ),
+        },
+    )
+    .committed
+    .unwrap()
+    .revision;
+    let depth = || -> i64 {
+        rusqlite::Connection::open(path.join("project.sqlite"))
+            .unwrap()
+            .query_row(
+                "SELECT depth FROM revisions WHERE id=?1",
+                [head.as_str()],
+                |row| row.get(0),
+            )
+            .unwrap()
+    };
+    let deadline = Instant::now() + Duration::from_secs(30);
+    while depth() != 0 {
+        assert!(
+            Instant::now() < deadline,
+            "the due keyframe was never stored"
+        );
+        std::thread::sleep(Duration::from_millis(20));
+    }
+    drop(service);
+}
+
+#[test]
 fn native_framing_preserves_time_and_cursor_with_one_durable_undoable_commit() {
     use deadpan_core::{ExactRatio, Framing, FramingCurve, FramingPose};
     let scratch = tempfile::tempdir().unwrap();

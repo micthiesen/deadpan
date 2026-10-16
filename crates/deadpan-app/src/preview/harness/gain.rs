@@ -282,6 +282,7 @@ fn measured_waveform(
         )?;
         wheel_controls(d, 24.0)?;
         frame_plot(d, WAVEFORM)?;
+        waveform_heading_fits(d)?;
         toolbar_visible(d, width, height)?;
         d.capture("Measured stereo waveform at its fixed amplitude scale")?;
     }
@@ -794,6 +795,29 @@ fn populated_tab_visibility(
 
 fn frame_graph(d: &mut Driver<'_>) -> Result<(), String> {
     frame_plot(d, GRAPH)
+}
+
+/// The measured waveform's heading and its complete graph fit the scroller
+/// together, so framing the graph never scrolls its heading away.
+fn waveform_heading_fits(d: &mut Driver<'_>) -> Result<(), String> {
+    let heading = d.harness.output().shapes.iter().find_map(|clipped| {
+        let egui::Shape::Text(text) = &clipped.shape else {
+            return None;
+        };
+        (text.galley.text() == "Beat audio · before effects")
+            .then(|| (text.visual_bounding_rect(), clipped.clip_rect))
+    });
+    let graph = control_rect(d, WAVEFORM);
+    let extent = heading
+        .zip(graph)
+        .map(|((heading, _), graph)| graph.bottom() - heading.top());
+    let scroller = heading.map(|(_, clip)| clip.height());
+    d.check(
+        "The measured waveform's heading and complete graph fit its scroller together",
+        extent.zip(scroller).is_some_and(|(extent, scroller)| extent <= scroller),
+        json!("heading-to-graph extent no taller than the scroller"),
+        json!({"extent":extent,"scroller_height":scroller,"viewport":[d.harness.ctx.content_rect().width(),d.harness.ctx.content_rect().height()]}),
+    )
 }
 
 fn frame_plot(d: &mut Driver<'_>, label: &str) -> Result<(), String> {
