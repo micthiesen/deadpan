@@ -140,11 +140,13 @@ pub enum Mode {
     Jobs,
     Storage,
     Help,
+    /// The Keys sheet while its search field owns the keyboard.
+    HelpSearch,
 }
 
 impl Mode {
     #[cfg(test)]
-    pub const ALL: [Self; 11] = [
+    pub const ALL: [Self; 12] = [
         Self::Camera,
         Self::Trim,
         Self::Slip,
@@ -156,6 +158,7 @@ impl Mode {
         Self::Jobs,
         Self::Storage,
         Self::Help,
+        Self::HelpSearch,
     ];
 
     #[cfg(test)]
@@ -171,7 +174,7 @@ impl Mode {
             Self::Marks => Contexts::MARKS,
             Self::Jobs => Contexts::JOBS,
             Self::Storage => Contexts::STORAGE,
-            Self::Help => Contexts::HELP,
+            Self::Help | Self::HelpSearch => Contexts::HELP,
         }
     }
 }
@@ -721,7 +724,13 @@ pub fn reference_markdown(labels: &dyn KeyLabels) -> String {
                     Keys::Native(label) => format!("`{label}` (native)"),
                     Keys::Mode { label, .. } => format!("`{label}` (fixed)"),
                 })
-                .collect::<Vec<_>>()
+                .fold(Vec::<String>::new(), |mut keys, label| {
+                    // The same fixed key in two modes is listed once.
+                    if !keys.contains(&label) {
+                        keys.push(label);
+                    }
+                    keys
+                })
                 .join(", ");
             let commands = spec
                 .commands

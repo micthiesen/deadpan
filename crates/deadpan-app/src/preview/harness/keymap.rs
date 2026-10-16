@@ -65,8 +65,8 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     let baseline = document(d)?.clone();
     minimum_size(d)?;
     d.command("help")?;
-    // The reference is long; its search finds the action, and Enter returns
-    // the keyboard to scrolling with the filter kept.
+    // The reference is long; its search finds the action, and Escape returns
+    // the keyboard to scrolling with the filter kept (Enter would run it).
     let press = |key| egui::Event::Key {
         key,
         physical_key: None,
@@ -82,7 +82,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
             egui::Event::Text("Repeat a motion".into()),
         ],
     )?;
-    d.key(Key::Enter)?;
+    d.key(Key::Escape)?;
     d.step("Measure remapped Repeat help", false)?;
     let example = "3cah repeats one frame three times, c3ah repeats three frames twice";
     for _ in 0..128 {

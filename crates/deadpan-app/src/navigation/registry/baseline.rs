@@ -610,6 +610,8 @@ fn dispatch_section(out: &mut String) {
                 panels::storage_key(*key, modifiers).map(|action| format!("storage {action:?}")),
                 panels::marks_key(*key, modifiers).map(|forward| format!("marks {forward}")),
                 panels::help_key(*key, modifiers).map(|action| format!("keys-sheet {action:?}")),
+                panels::help_search_key(*key, modifiers)
+                    .map(|action| format!("keys-search {action:?}")),
             ];
             for result in results.into_iter().flatten() {
                 writeln!(out, "panel {key:?} {name} -> {result}").unwrap();

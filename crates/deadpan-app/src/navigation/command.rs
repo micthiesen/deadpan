@@ -254,7 +254,17 @@ pub fn completions(input: &str) -> Vec<&'static str> {
     let input = input.trim_start();
     let input = input.strip_prefix(':').unwrap_or(input);
     if input.contains(char::is_whitespace) {
-        return Vec::new();
+        // A complete verb followed only by spaces (as the Keys palette
+        // prefills it) still shows that verb's usage; arguments hide it.
+        let verb = input.trim_end();
+        if verb.contains(char::is_whitespace) {
+            return Vec::new();
+        }
+        return commands()
+            .iter()
+            .filter(|(known, _)| known.eq_ignore_ascii_case(verb))
+            .map(|(_, usage)| *usage)
+            .collect();
     }
     let typed = input.to_ascii_lowercase();
     if typed.is_empty() {
@@ -1849,6 +1859,11 @@ mod tests {
             vec![":caption TEXT [at=top|center] [delay=4f]"]
         );
         assert!(completions("caption Hi").is_empty());
+        // A complete verb and a space, as the Keys palette prefills it.
+        assert_eq!(completions("hold "), completions("hold")[..1].to_vec());
+        assert!(completions("hold ")[0].starts_with(":hold "));
+        assert_eq!(completions(":caption  "), completions(":cap"));
+        assert!(completions("ho ").is_empty(), "only a complete verb");
         assert!(completions(":").is_empty());
         assert!(completions("re").len() > 5);
     }

@@ -11,7 +11,7 @@ tests prove each mode router acts on exactly them. Native shortcuts
 (menus, ⌘ chords, panel controls) are described, not router-verified.
 Headless status links to [PARITY](PARITY.md).
 
-210 actions, 137 command verbs.
+212 actions, 137 command verbs.
 
 ## Start & View
 
@@ -353,8 +353,10 @@ Headless status links to [PARITY](PARITY.md).
 
 | Action | Keys | Command | Where | Macro / dot | Headless |
 | --- | --- | --- | --- | --- | --- |
-| **Open this reference** (`help`)<br>Open this reference. It describes every action once, marks what works where you are, and searches by name, key or command. | `?` (`help`) | `:help` | Every editor context | not recorded | [GUI-only](PARITY.md#navigation-view-and-audition): `macro inspect <p> lists registers` |
-| **Search this reference** (`help.search`)<br>Type words, a key (dd, ,h, G) or a command (:hold). Every word must match. Enter keeps the filter and returns to scrolling; Esc in the field leaves it, and Esc again closes Help. | `/` (fixed) | - | Keys | not recorded | [GUI-only](PARITY.md#navigation-view-and-audition): `docs/COMMANDS.md is the same reference` |
+| **Open this reference** (`help`)<br>Open this reference. It describes every action once, marks what works where you are, and searches by name, key or command; Enter or a click runs the highlighted result, so it is also the action palette. | `?` (`help`) | `:help` | Every editor context | not recorded | [GUI-only](PARITY.md#navigation-view-and-audition): `macro inspect <p> lists registers` |
+| **Search this reference** (`help.search`)<br>Type words, a key (dd, ,h, G) or a command (:hold). Every word must match, and the first result is highlighted. Esc in the field leaves it and keeps the filter; Esc again closes Help. | `/` (fixed) | - | Keys | not recorded | [GUI-only](PARITY.md#navigation-view-and-audition): `docs/COMMANDS.md is the same reference` |
+| **Choose a search result** (`help.choose`)<br>While the search field has focus, move the highlight through the results, wrapping at either end. A changed search starts again at the first result. | `Up / Down · Ctrl N / Ctrl P` (fixed) | - | Keys | not recorded | [GUI-only](PARITY.md#navigation-view-and-audition): `none needed` |
+| **Run the highlighted action** (`help.run`)<br>Run the highlighted search result, or click any result. Help closes first. A command without arguments runs as if typed after :, a command with arguments opens the command line with its name so completion shows the usage, and a key-only action is performed as its key would be (an operator such as d waits for its motion). An action that does not work here keeps Help open and says where and how it works. | `Enter` (fixed) | - | Keys | not recorded | [GUI-only](PARITY.md#navigation-view-and-audition): `run the command or key directly` |
 | **Scroll** (`help.scroll`)<br>Scroll by line, page or to the ends. | `j / k · PgUp / PgDn · Home / End` (fixed) | - | Keys | not recorded | [GUI-only](PARITY.md#navigation-view-and-audition): `none needed` |
 | **Close this reference** (`help.close`)<br>Close the reference; keys typed after Esc in the same moment reach the editor in order. | `Esc` (fixed) | - | Keys | not recorded | [GUI-only](PARITY.md#navigation-view-and-audition): `none needed` |
 

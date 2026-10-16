@@ -257,8 +257,13 @@ fn audit_reservation_for(
                 .map(|forward| format!("marks forward={forward}")),
             super::panels::help_key(reservation.key, reservation.modifiers)
                 .map(|action| format!("keys sheet={action:?}")),
+            super::panels::help_search_key(reservation.key, reservation.modifiers)
+                .map(|action| format!("keys search={action:?}")),
         ];
-        for (name, response) in ["Marks", "Keys sheet"].into_iter().zip(panels) {
+        for (name, response) in ["Marks", "Keys sheet", "Keys search"]
+            .into_iter()
+            .zip(panels)
+        {
             record(
                 report,
                 reservation,
@@ -489,9 +494,9 @@ mod tests {
         let editor_cases = prefix_cases * 4 * 4; // Normal/Empty/Range/Object × text/IME.
         // Five drafts and corrections × repeat/background, Camera × repeat
         // and Jobs under each mode companion, plus native input and the
-        // Marks and Keys sheet panels (Storage with Jobs), each under all four text/IME
-        // combinations.
-        let mode_cases = 4 * (MODE_COMPANIONS.len() * (6 * 2 * 2 + 2 + 2) + 1 + 2);
+        // Marks, Keys sheet and Keys search panels (Storage with Jobs), each
+        // under all four text/IME combinations.
+        let mode_cases = 4 * (MODE_COMPANIONS.len() * (6 * 2 * 2 + 2 + 2) + 1 + 3);
         // Includes paired logical @, brackets, quotes, digits and letters.
         let layout_cases = prefix_cases * 4 * 4 * LAYOUT_TEXT_CASES;
         assert_eq!(

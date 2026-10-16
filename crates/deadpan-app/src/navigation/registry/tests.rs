@@ -271,6 +271,7 @@ fn routes(mode: Mode, key: Key, modifiers: Modifiers) -> bool {
             Mode::Jobs => panels::jobs_key(key, modifiers).is_some(),
             Mode::Storage => panels::storage_key(key, modifiers).is_some(),
             Mode::Help => panels::help_key(key, modifiers).is_some(),
+            Mode::HelpSearch => panels::help_search_key(key, modifiers).is_some(),
         };
     }
     any
@@ -353,7 +354,7 @@ fn owner_of(mode: Mode, key: Key, modifiers: Modifiers, flags: [bool; 4]) -> Opt
         }
         // The panels look up the registry itself; their typed tables are
         // proven to cover exactly its chords in `panels.rs`.
-        Mode::Marks | Mode::Jobs | Mode::Storage | Mode::Help => return None,
+        Mode::Marks | Mode::Jobs | Mode::Storage | Mode::Help | Mode::HelpSearch => return None,
     })
 }
 
@@ -490,6 +491,8 @@ fn mode_labels_keep_the_footer_and_button_text() {
         ("help.search", "/"),
         ("help.scroll", "j / k · PgUp / PgDn · Home / End"),
         ("help.close", "Esc"),
+        ("help.choose", "Up / Down · Ctrl N / Ctrl P"),
+        ("help.run", "Enter"),
     ] {
         assert_eq!(super::mode_label(id), label, "{id}");
     }

@@ -57,6 +57,7 @@ mod marks;
 mod model_packs;
 mod moment;
 mod operators;
+mod palette;
 mod playback;
 mod proxies;
 mod recovery;
@@ -2445,6 +2446,8 @@ impl DeadpanApp {
         self.reconcile_repeat_prefix();
         self.bindings.set_routing_domain(self.routed_domain());
         self.bindings.set_macro_recording(self.macros.recording());
+        // An action chosen in the Keys palette runs before the input after it.
+        self.run_palette_choice(context);
         // The field can close before its opener is released. Keep ownership
         // through that transition and filter before any modal early return.
         let mut events = self
@@ -2556,6 +2559,7 @@ impl DeadpanApp {
             self.ime_composing = false;
             self.bindings.clear();
             if self.help_open {
+                self.defer_help_input(context);
                 return None;
             }
             // Escape may precede a command in the same native input batch.
@@ -2591,6 +2595,7 @@ impl DeadpanApp {
                         self.ime_composing = false;
                         context.input_mut(|input| input.events.clone_from(&remaining));
                         if self.help_open {
+                            self.defer_help_input(context);
                             return text_result;
                         }
                         ime_event = remaining
@@ -5220,7 +5225,7 @@ impl DeadpanApp {
         let registers_first = self.help_registers_first;
         let expansion = self.help_expansion.clone();
         let here = self.help_context();
-        self.help_scroll.show(context, &mut self.help_open, |ui, query| {
+        self.help_scroll.show(context, &mut self.help_open, |ui, query, palette| {
             ui.label(&keymap_status);
             if let Some((label, rows)) = &expansion {
                 ui.label(style::section_title("RECIPE EXPANSION", true));
@@ -5231,7 +5236,7 @@ impl DeadpanApp {
                 ui.separator();
             }
             if !query.trim().is_empty() {
-                help_search_results(ui, &bindings, query, here);
+                palette::search_results(ui, &bindings, query, here, palette);
                 return;
             }
             ui.label(
@@ -5268,6 +5273,10 @@ impl DeadpanApp {
             ui.weak(format!("Original browsing never changes it. Your edit commands affect the selected beat in the displayed group and its linked picture and sound. Counts precede operators, such as {}; the visible PENDING badge waits without a timer.", bindings.counted_label(EditorKey::Repeat, 3)));
             ui.weak(format!("{} auditions the focused catalog sound, Original, or full edit. In the catalog, {} selects a sound and {} loops its complete measured audio. Catalog audition keeps the picture and both editor cursors in place. Leaving the catalog or choosing another sound stops it. Elsewhere {} loops the selected Original moment, Edit range or edited beat with context. Playback has edge fades and a safety limiter; pause before changing Monitor volume. Picture-only or sound-only range cuts and placement, temporal edits inside Repeat/Retime contents, moving routed sounds, voice effects, the full mix, and AI generation in the app remain unavailable. Render supports the current SDR picture and audio path; unsupported content fails explicitly. Headless commands can use this open project. Use :renders for saved renders and recovery. HDR output and full mastering remain unavailable.", key(EditorKey::Playback), key_labels::aliases_pair(&bindings, EditorKey::BeatNext, EditorKey::BeatPrevious, "/"), key(EditorKey::Audition), key(EditorKey::Audition)));
         });
+        if self.help_scroll.run_pending() {
+            // The chosen action runs first thing next frame.
+            context.request_repaint();
+        }
     }
 }
 
@@ -5929,7 +5938,7 @@ fn help_spec_row_with(
     help: &str,
     spec: &registry::Spec,
     here: registry::Contexts,
-) {
+) -> egui::Response {
     ui.horizontal_wrapped(|ui| {
         if !keys.is_empty() {
             key_labels::keycap(ui, keys);
@@ -5989,59 +5998,11 @@ fn help_spec_row_with(
             spec.headless.parity.label(),
             spec.headless.form,
             spec.headless.anchor
-        ));
-    });
+        ))
+    })
+    .inner
 }
 
-/// Matching actions, best first: an exact key, then a verb, a name, any text.
-fn help_search_results(
-    ui: &mut egui::Ui,
-    bindings: &Bindings,
-    query: &str,
-    here: registry::Contexts,
-) {
-    let mut matches: Vec<_> = registry::SPECS
-        .iter()
-        .enumerate()
-        .filter_map(|(index, spec)| {
-            let keys = registry::key_text(spec, bindings);
-            let help = registry::render(spec.help, bindings);
-            registry::search_rank(spec, &keys, &help, query)
-                .map(|rank| (rank, spec.section, index, spec, keys, help))
-        })
-        .collect();
-    matches.sort_by_key(|(rank, section, index, ..)| (*rank, *section, *index));
-    let query = query.trim();
-    // One live region with a fixed id: each changed count is announced.
-    let count = ui
-        .push_id("keys-search-count", |ui| {
-            if matches.is_empty() {
-                ui.label(format!(
-                    "No action matches “{query}”. Try a key such as dd, a command such as :hold, or a word such as pause."
-                ))
-            } else {
-                ui.label(style::section_title(
-                    &format!(
-                        "{} {} FOR “{query}”",
-                        matches.len(),
-                        if matches.len() == 1 { "MATCH" } else { "MATCHES" }
-                    ),
-                    true,
-                ))
-            }
-        })
-        .inner;
-    accessibility::live(&count, false);
-    for (_, section, _, spec, keys, help) in &matches {
-        help_spec_row_with(
-            ui,
-            keys,
-            &format!("{help} ({})", section.title().to_lowercase()),
-            spec,
-            here,
-        );
-    }
-}
 /// The completion row for a partially typed verb: up to four usages, and
 /// the complete list for accessibility and hover.
 fn command_completion_text(command: &str) -> Option<(String, String)> {

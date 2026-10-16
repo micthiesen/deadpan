@@ -226,6 +226,25 @@ Still open: the sound event inspector's fixed 104-point label column makes
 long values wrap at 960 points, and `audio-warming` still times out waiting
 for its real PCM horizon on both the baseline and final binaries.
 
+## Keys palette (2026-10-15)
+
+The Keys sheet's search now runs actions (specification §8 and §7.5: open
+Place slice "through the searchable palette or `:splice`"). One result is
+highlighted; Up/Down or Ctrl N/Ctrl P move it, Enter or a click runs it.
+Verbs without arguments run as typed, verbs with arguments open the command
+line with the verb and its usage, key-only actions use the editor's own
+binding dispatch, and an action that cannot run here keeps Help open with a
+sentence naming where it works and its keys rather than doing nothing. Escape
+still leaves the field before it closes Help, and input typed after Enter in
+the same batch reaches whatever the action opened. The `palette` replay drives
+`/splice` plus Enter in one batch into Place slice, Down/Ctrl P, `:jobs`,
+`v` (Visual), the `d` operator's pending prefix, `:hold` with its usage, a
+Trim key's explanation and a clicked row. See [bindings](KEYMAP.md#action-registry).
+
+Still open: a two-verb or two-direction action runs its first form only
+(`:undo`, next beat), and VoiceOver speech of the highlighted row and physical
+key delivery are unverified.
+
 ## Priority improvements
 
 | Priority | Desired interaction | Current boundary and evidence needed |

@@ -1201,6 +1201,40 @@ impl Compiled {
         parts.push(if compact { "Esc" } else { "Esc cancels" }.into());
         Some(parts.join(" · "))
     }
+    /// What running `id` from the Keys palette does in one compiled map:
+    /// the action its path resolves to, or its prefix family's path. `None`
+    /// when the action does not act on this selection and domain, or a prefix
+    /// has no configured path to enter.
+    pub fn palette(
+        &self,
+        id: BindingId,
+        selection: EditSelection,
+        domain: RoutingDomain,
+    ) -> Option<(Option<Rule>, Vec<Stroke>)> {
+        let definition = self
+            .definitions
+            .iter()
+            .find(|definition| definition.id == id)?;
+        if !enabled(id, selection != EditSelection::None, domain) {
+            return None;
+        }
+        if let Some(kind) = PrefixKind::for_binding(id) {
+            return definition
+                .paths
+                .iter()
+                .find(|path| self.prefix(path, selection, domain) == Some(kind))
+                .map(|path| (None, path.clone()));
+        }
+        if definition.paths.is_empty() {
+            // Command aliases with no default key (Ungroup, Explode, Duplicate).
+            return Some((Some(definition.rule), Vec::new()));
+        }
+        definition.paths.iter().find_map(|path| {
+            self.rule(path, selection, domain)
+                .filter(|rule| rule.id() == id)
+                .map(|rule| (Some(*rule), path.clone()))
+        })
+    }
     /// The configured paths of one action (a prefix family's own prefix).
     #[cfg(test)]
     pub fn definition_paths(&self, id: BindingId) -> Vec<Vec<Stroke>> {

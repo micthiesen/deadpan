@@ -7328,10 +7328,14 @@ mode-key group 48 cases: H none, H shift, H ctrl, H alt, H command, H mac-cmd, H
 panel ArrowDown none -> jobs Next
 panel ArrowDown none -> storage NextBackup
 panel ArrowDown none -> keys-sheet LineDown
+panel ArrowDown none -> keys-search Next
 panel ArrowUp none -> jobs Previous
 panel ArrowUp none -> storage PreviousBackup
 panel ArrowUp none -> keys-sheet LineUp
+panel ArrowUp none -> keys-search Previous
 panel Escape none -> keys-sheet Close
+panel Enter none -> keys-sheet Run
+panel Enter none -> keys-search Run
 panel Home none -> keys-sheet Top
 panel End none -> keys-sheet Bottom
 panel PageUp none -> keys-sheet PageUp
@@ -7348,9 +7352,11 @@ panel J none -> keys-sheet LineDown
 panel K none -> jobs Previous
 panel K none -> storage PreviousBackup
 panel K none -> keys-sheet LineUp
+panel N ctrl -> keys-search Next
 panel O none -> storage Restore
 panel O ctrl -> marks false
 panel P none -> storage Preview
+panel P ctrl -> keys-search Previous
 panel R none -> jobs Retry
 panel R none -> storage Remove
 panel S none -> storage PortableCopy

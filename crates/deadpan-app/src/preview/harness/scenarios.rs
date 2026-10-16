@@ -11,6 +11,7 @@ pub(super) fn run(name: &str, d: &mut Driver<'_>) -> Result<(), String> {
         "targets" => super::targets::run(d),
         "faces" => super::faces::run(d),
         "menus" => menus(d),
+        "palette" => super::palette::run(d),
         "delayed-preview" => delayed(d),
         "rapid-input" => rapid(d),
         "playback-feedback" => playback(d),
@@ -2005,14 +2006,14 @@ fn visible_help_markers(d: &Driver<'_>) -> Vec<(String, [f32; 4])> {
             };
             let label = text.galley.text();
             let rect = text.visual_bounding_rect();
-            (markers.contains(&label) && clipped.clip_rect.intersect(rect).is_positive()).then(
-                || {
-                    (
-                        label.to_owned(),
-                        [rect.min.x, rect.min.y, rect.max.x, rect.max.y],
-                    )
-                },
-            )
+            // The sheet ends with its closing notes below the last section.
+            let marker = markers.contains(&label) || label.starts_with("Original browsing never");
+            (marker && clipped.clip_rect.intersect(rect).is_positive()).then(|| {
+                (
+                    label.to_owned(),
+                    [rect.min.x, rect.min.y, rect.max.x, rect.max.y],
+                )
+            })
         })
         .collect()
 }

@@ -29,6 +29,7 @@ mod mark_tests;
 mod object_tests;
 #[cfg(test)]
 mod operator_tests;
+pub mod palette;
 pub mod panels;
 #[cfg(test)]
 mod register_tests;
@@ -324,6 +325,16 @@ pub enum Action {
     Invalid(&'static str),
 }
 
+/// What a Keys palette entry performs for a configured editor binding.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PaletteBinding {
+    /// The action the binding's path resolves to.
+    Action(Action),
+    /// A prefix family (operator, Repeat, mark, register, macro) that waits
+    /// for its next key.
+    Prefix,
+}
+
 /// Empty Visual selections remain explicit targets, including after v finishes.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum EditSelection {
@@ -617,6 +628,33 @@ impl Bindings {
                 self.map
                     .has_descendant(&self.path, self.active_selection(), id, self.domain)
             })
+    }
+
+    /// What the Keys palette performs for a configured action here: the
+    /// action its path resolves to (without a count), or its prefix family.
+    pub fn palette_binding(
+        &self,
+        id: BindingId,
+        selection: EditSelection,
+    ) -> Option<PaletteBinding> {
+        let (rule, _) = self.map.palette(id, selection, self.domain)?;
+        Some(match rule {
+            Some(rule) => PaletteBinding::Action(rule.resolve(None)),
+            None => PaletteBinding::Prefix,
+        })
+    }
+
+    /// Enter a prefix family's configured path, as pressing it would. The
+    /// next key completes it through ordinary routing. Returns false when the
+    /// family has no path that acts on this selection and domain.
+    pub fn enter_prefix(&mut self, id: BindingId, selection: EditSelection) -> bool {
+        let Some((None, path)) = self.map.palette(id, selection, self.domain) else {
+            return false;
+        };
+        self.clear();
+        self.selection = Some(selection);
+        self.path = path;
+        true
     }
 
     pub fn key_mode_label(&self) -> &'static str {

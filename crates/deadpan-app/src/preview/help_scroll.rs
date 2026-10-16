@@ -1,11 +1,15 @@
 //! Keyboard scrolling uses the last measured viewport and the actual pointer
 //! offset. It never installs an offset on an otherwise pointer-driven frame.
 //! `/` moves the keyboard to the sheet's search field, which then owns every
-//! event until egui's own Enter or Escape leaves it.
+//! event until Escape leaves it, except the palette's keys: Up/Down and
+//! Ctrl-N/Ctrl-P move the highlighted result and Enter runs it. A palette key
+//! ends this frame's routing; the field keeps what preceded it, and what
+//! follows resumes in order on the next outer frame, after the key has acted
+//! on the results drawn for the updated search.
 
 use eframe::egui::{self, Event, Key, Modifiers};
 
-use crate::navigation::panels::{HelpKey, help_key};
+use crate::navigation::panels::{HelpKey, PaletteKey, help_key, help_search_key};
 use crate::navigation::registry::mode_label;
 
 const LINE: f32 = 28.0;
@@ -17,7 +21,8 @@ fn hint_parts(searching: bool) -> Vec<(Vec<&'static str>, &'static str)> {
     if searching {
         vec![
             (Vec::new(), "Type to filter"),
-            (vec!["Enter"], "keep filter"),
+            (mode_label("help.choose").split(" · ").collect(), "choose"),
+            (vec![mode_label("help.run")], "run"),
             (vec![mode_label("help.close")], "leave search"),
         ]
     } else {
@@ -33,7 +38,9 @@ fn hint_parts(searching: bool) -> Vec<(Vec<&'static str>, &'static str)> {
 fn hint(searching: bool) -> String {
     if searching {
         format!(
-            "Type to filter     Enter keep filter     {} leave search",
+            "Type to filter     {} choose     {} run     {} leave search",
+            mode_label("help.choose"),
+            mode_label("help.run"),
             mode_label("help.close")
         )
     } else {
@@ -66,6 +73,85 @@ pub(super) struct HelpScroll {
     leave_search: bool,
     /// The query the results were last drawn for; a new one starts at the top.
     shown_query: String,
+    /// The search results' highlight, routed key, chosen action and status.
+    pub(super) palette: Palette,
+    /// Input after a palette key, resumed in order on the next outer frame.
+    deferred: Vec<Event>,
+    /// The field holds an IME composition: Enter and arrows are its own.
+    composing: bool,
+}
+
+/// The Keys sheet's search results as an action palette.
+#[derive(Default)]
+pub(super) struct Palette {
+    /// The highlighted result, the first whenever the search changes.
+    highlight: usize,
+    /// The palette key routed this frame, applied to the drawn results.
+    key: Option<PaletteKey>,
+    /// That key was an autorepeat: move silently, without announcements.
+    held: bool,
+    /// Scroll the highlighted row into view when it is next drawn.
+    reveal: bool,
+    /// The action Enter or a click chose; the editor runs it next frame.
+    run: Option<&'static str>,
+    /// Why the last choice did not run, shown under the field.
+    status: Option<String>,
+}
+
+impl Palette {
+    /// Apply this frame's palette key to the results drawn for the current
+    /// search, in their drawn order.
+    pub(super) fn settle(&mut self, ids: &[&'static str]) {
+        let count = ids.len();
+        self.highlight = self.highlight.min(count.saturating_sub(1));
+        let Some(key) = self.key.take() else {
+            return;
+        };
+        if count == 0 {
+            self.status = Some(
+                "No action matches, so there is nothing to choose or run. Change the search, or press Esc.".into(),
+            );
+            return;
+        }
+        match key {
+            PaletteKey::Next => self.highlight = (self.highlight + 1) % count,
+            PaletteKey::Previous => self.highlight = (self.highlight + count - 1) % count,
+            PaletteKey::Run => self.run = Some(ids[self.highlight]),
+        }
+        self.reveal = key != PaletteKey::Run;
+        if key != PaletteKey::Run {
+            self.status = None;
+        }
+    }
+
+    pub(super) fn highlighted(&self) -> usize {
+        self.highlight
+    }
+
+    /// Whether the highlight moved by a held key this frame.
+    pub(super) fn held(&self) -> bool {
+        self.held
+    }
+
+    /// Scroll the highlighted row into view once.
+    pub(super) fn take_reveal(&mut self) -> bool {
+        std::mem::take(&mut self.reveal)
+    }
+
+    /// A click runs its row, as Enter runs the highlighted one.
+    pub(super) fn choose(&mut self, index: usize, id: &'static str) {
+        self.highlight = index;
+        self.run = Some(id);
+    }
+
+    /// Keep Help open and say why the choice did not run.
+    pub(super) fn explain(&mut self, message: String) {
+        self.status = Some(message);
+    }
+
+    pub(super) fn status(&self) -> Option<&str> {
+        self.status.as_deref()
+    }
 }
 
 fn plain_escape(event: &Event) -> bool {
@@ -90,6 +176,15 @@ fn keyboard_event(event: &Event) -> bool {
             | Event::Copy
             | Event::Cut
     )
+}
+
+/// Whether the field is composing after this event.
+fn composing_after(event: &Event, composing: bool) -> bool {
+    match event {
+        Event::Ime(egui::ImeEvent::Preedit { text, .. }) => !text.is_empty(),
+        Event::Ime(_) | Event::WindowFocused(false) => false,
+        _ => composing,
+    }
 }
 
 pub(super) enum RoutedInput {
@@ -164,8 +259,43 @@ impl HelpScroll {
     fn take_field_events(&mut self, events: &mut Vec<Event>) {
         let (field, rest): (Vec<_>, Vec<_>) =
             std::mem::take(events).into_iter().partition(keyboard_event);
+        for event in &field {
+            self.composing = composing_after(event, self.composing);
+        }
         self.field_events.extend(field);
         *events = rest;
+    }
+
+    /// The action Enter or a click chose, once.
+    pub(super) fn take_run(&mut self) -> Option<&'static str> {
+        self.palette.run.take()
+    }
+
+    /// Whether a chosen action waits for the next frame.
+    pub(super) fn run_pending(&self) -> bool {
+        self.palette.run.is_some()
+    }
+
+    /// Input that followed a palette key, for the next outer frame.
+    pub(super) fn take_deferred(&mut self) -> Vec<Event> {
+        std::mem::take(&mut self.deferred)
+    }
+
+    /// Stop routing at a palette key: input before it stays with its owner,
+    /// the key acts on the results drawn this frame, and the rest waits.
+    fn palette_boundary(&mut self, events: &mut Vec<Event>, index: usize) {
+        let mut rest = events.split_off(index + 1);
+        if let Some(Event::Key {
+            key,
+            modifiers,
+            repeat,
+            ..
+        }) = events.pop()
+        {
+            self.palette.key = help_search_key(key, modifiers);
+            self.palette.held = repeat;
+        }
+        self.deferred.append(&mut rest);
     }
 
     /// The current search text.
@@ -185,6 +315,22 @@ impl HelpScroll {
     pub(super) fn route_events(&mut self, events: &mut Vec<Event>, search_focused: bool) -> bool {
         let escape = events.iter().position(plain_escape);
         if search_focused || (self.field_focused && escape.is_some()) {
+            // A palette key acts only outside a composition, which owns its
+            // own Enter and arrows; Escape keeps its existing precedence.
+            let mut composing = self.composing;
+            let palette = events.iter().position(|event| {
+                composing = composing_after(event, composing);
+                !composing
+                    && matches!(event, Event::Key { key, modifiers, pressed: true, .. }
+                        if help_search_key(*key, *modifiers).is_some())
+            });
+            if let Some(index) = palette
+                && escape.is_none_or(|escape| index < escape)
+            {
+                self.palette_boundary(events, index);
+                self.take_field_events(events);
+                return false;
+            }
             let Some(index) = escape else {
                 self.take_field_events(events);
                 return false;
@@ -212,7 +358,7 @@ impl HelpScroll {
             };
             matches!(
                 help_key(*key, *modifiers),
-                Some(HelpKey::Close | HelpKey::Search)
+                Some(HelpKey::Close | HelpKey::Search | HelpKey::Run)
             ) || (!modifiers.command
                 && !modifiers.ctrl
                 && !modifiers.mac_cmd
@@ -228,6 +374,15 @@ impl HelpScroll {
             {
                 self.key(*key, *modifiers);
             }
+        }
+        if let Some(index) = boundary
+            && matches!(&events[index], Event::Key { key, modifiers, .. }
+                if help_key(*key, *modifiers) == Some(HelpKey::Run))
+        {
+            // Enter runs the highlighted result of a kept filter.
+            self.palette_boundary(events, index);
+            events.retain(|event| !keyboard_event(event));
+            return false;
         }
         let close = boundary.is_some_and(|index| {
             matches!(
@@ -280,17 +435,7 @@ impl HelpScroll {
             self.focus_search = false;
             true
         } else {
-            events.retain(|event| {
-                !matches!(
-                    event,
-                    Event::Key { .. }
-                        | Event::Text(_)
-                        | Event::Ime(_)
-                        | Event::Paste(_)
-                        | Event::Copy
-                        | Event::Cut
-                )
-            });
+            events.retain(|event| !keyboard_event(event));
             false
         }
     }
@@ -325,7 +470,7 @@ impl HelpScroll {
         &mut self,
         context: &egui::Context,
         open: &mut bool,
-        contents: impl FnOnce(&mut egui::Ui, &str) -> R,
+        contents: impl FnOnce(&mut egui::Ui, &str, &mut Palette) -> R,
     ) -> Option<egui::InnerResponse<Option<R>>> {
         if !*open {
             // However Help closed, nothing typed for it survives.
@@ -334,6 +479,8 @@ impl HelpScroll {
             self.field_events.clear();
             self.field_focused = false;
             self.leave_search = false;
+            self.composing = false;
+            self.palette = Palette::default();
         }
         let available = (context.input(|input| input.content_rect().height()) - 80.0).max(140.0);
         egui::Window::new("Keys · reshape one Original")
@@ -394,6 +541,17 @@ impl HelpScroll {
                     }
                     self.field_focused = field.has_focus();
                 });
+                if self.query != self.shown_query {
+                    // A changed search starts at its first result.
+                    self.palette.highlight = 0;
+                    self.palette.status = None;
+                }
+                if let Some(status) = self.palette.status() {
+                    // Why the chosen action did not run, announced once.
+                    let status =
+                        ui.label(egui::RichText::new(status).color(super::style::LAVENDER));
+                    super::accessibility::live(&status, false);
+                }
                 ui.separator();
                 let mut area = egui::ScrollArea::vertical()
                     .id_salt("keys-reference-scroll")
@@ -409,7 +567,16 @@ impl HelpScroll {
                     area = area.vertical_scroll_offset(0.0);
                     self.shown_query.clone_from(&query);
                 }
-                let output = area.show(ui, |ui| contents(ui, &query));
+                let palette = &mut self.palette;
+                let output = area.show(ui, |ui| contents(ui, &query, palette));
+                if self.palette.key.take().is_some() {
+                    // No results were drawn: the sheet is not filtered.
+                    self.palette.status = Some(format!(
+                        "Press {} and type to search; {} then runs the highlighted action.",
+                        mode_label("help.search"),
+                        mode_label("help.run"),
+                    ));
+                }
                 self.measured(
                     output.state.offset.y,
                     output.inner_rect.height(),
@@ -714,7 +881,7 @@ mod tests {
                             egui::Popup::default_response_id(&response.response),
                         );
                     });
-                    self.scroll.show(context, &mut self.help_open, |ui, _| {
+                    self.scroll.show(context, &mut self.help_open, |ui, _, _| {
                         for i in 0..100 {
                             ui.label(format!("Reference row {i}"));
                         }
@@ -833,7 +1000,7 @@ mod tests {
         let mut output = context.run_ui(input, |ui| {
             let mut open = true;
             let shown = scroll
-                .show(ui.ctx(), &mut open, |ui, _| {
+                .show(ui.ctx(), &mut open, |ui, _, _| {
                     for i in 0..100 {
                         last = ui.label(format!("Reference row {i}")).rect;
                     }
@@ -923,7 +1090,7 @@ mod tests {
                 let focused = context.memory(|m| m.has_focus(egui::Id::new(SEARCH_ID)));
                 closed = context.input_mut(|input| scroll.route_events(&mut input.events, focused));
                 *open &= !closed;
-                scroll.show(context, open, |ui, query| {
+                scroll.show(context, open, |ui, query, _| {
                     ui.label(format!("query {query}"));
                 });
             },
@@ -1051,5 +1218,254 @@ mod tests {
         ];
         assert!(!scroll.route_events(&mut events, false));
         assert_eq!(scroll.field_events, vec![Event::Text("x".into())]);
+    }
+
+    /// Draw the sheet with stand-in results, as the app draws its matches.
+    fn palette_frame(
+        context: &egui::Context,
+        scroll: &mut HelpScroll,
+        open: &mut bool,
+        events: Vec<Event>,
+    ) -> bool {
+        let mut closed = false;
+        let mut output = context.run_ui(
+            egui::RawInput {
+                screen_rect: Some(egui::Rect::from_min_size(
+                    egui::Pos2::ZERO,
+                    egui::vec2(900.0, 720.0),
+                )),
+                events,
+                ..Default::default()
+            },
+            |_| {
+                let focused = context.memory(|m| m.has_focus(egui::Id::new(SEARCH_ID)));
+                closed = context.input_mut(|input| scroll.route_events(&mut input.events, focused));
+                *open &= !closed;
+                scroll.show(context, open, |ui, query, palette| {
+                    if !query.is_empty() {
+                        let ids: Vec<&'static str> = ["first", "second", "third"]
+                            .into_iter()
+                            .filter(|id| id.contains(query))
+                            .collect();
+                        palette.settle(&ids);
+                        ui.label(format!("{ids:?}"));
+                    }
+                });
+            },
+        );
+        output.textures_delta.clear();
+        closed
+    }
+
+    fn open_search(context: &egui::Context, scroll: &mut HelpScroll, open: &mut bool) {
+        palette_frame(context, scroll, open, vec![]);
+        palette_frame(
+            context,
+            scroll,
+            open,
+            vec![
+                key_event(Key::Slash, Modifiers::NONE),
+                Event::Text("/".into()),
+            ],
+        );
+        assert!(context.memory(|m| m.has_focus(egui::Id::new(SEARCH_ID))));
+    }
+
+    #[test]
+    fn palette_keys_end_the_batch_after_the_field_reads_its_prefix() {
+        let context = egui::Context::default();
+        let mut scroll = HelpScroll::default();
+        let mut open = true;
+        open_search(&context, &mut scroll, &mut open);
+        // Text, Down, Enter and more text arrive in one batch. The field
+        // reads "ir" first; Down then moves within its results; Enter and
+        // the rest wait, in order, for the next outer frame.
+        let suffix = vec![
+            key_event(Key::Enter, Modifiers::NONE),
+            Event::Text("x".into()),
+        ];
+        let mut batch = vec![
+            Event::Text("ir".into()),
+            key_event(Key::ArrowDown, Modifiers::NONE),
+        ];
+        batch.extend(suffix.clone());
+        assert!(!palette_frame(&context, &mut scroll, &mut open, batch));
+        assert!(open);
+        assert_eq!(scroll.query(), "ir");
+        assert_eq!(
+            scroll.palette.highlighted(),
+            1,
+            "first, third: Down reaches third"
+        );
+        assert!(scroll.take_run().is_none());
+        assert_eq!(scroll.take_deferred(), suffix);
+        // Resumed next frame: Enter runs the highlighted result before "x"
+        // reaches anything, and "x" waits again.
+        assert!(!palette_frame(&context, &mut scroll, &mut open, suffix));
+        assert_eq!(scroll.take_run(), Some("third"));
+        assert_eq!(scroll.take_deferred(), vec![Event::Text("x".into())]);
+        assert_eq!(scroll.query(), "ir", "nothing after Enter was typed");
+    }
+
+    #[test]
+    fn palette_highlight_wraps_resets_with_the_search_and_explains_no_match() {
+        let context = egui::Context::default();
+        let mut scroll = HelpScroll::default();
+        let mut open = true;
+        open_search(&context, &mut scroll, &mut open);
+        palette_frame(
+            &context,
+            &mut scroll,
+            &mut open,
+            vec![Event::Text("i".into())],
+        );
+        // Up from the first result wraps to the last; Ctrl-N wraps back.
+        palette_frame(
+            &context,
+            &mut scroll,
+            &mut open,
+            vec![key_event(Key::ArrowUp, Modifiers::NONE)],
+        );
+        assert_eq!(scroll.palette.highlighted(), 1, "first, third");
+        palette_frame(
+            &context,
+            &mut scroll,
+            &mut open,
+            vec![key_event(Key::N, Modifiers::CTRL)],
+        );
+        assert_eq!(scroll.palette.highlighted(), 0);
+        palette_frame(
+            &context,
+            &mut scroll,
+            &mut open,
+            vec![key_event(Key::P, Modifiers::CTRL)],
+        );
+        assert_eq!(scroll.palette.highlighted(), 1);
+        // A changed search starts at its first result.
+        palette_frame(
+            &context,
+            &mut scroll,
+            &mut open,
+            vec![Event::Text("r".into())],
+        );
+        assert_eq!(scroll.query(), "ir");
+        assert_eq!(scroll.palette.highlighted(), 0);
+        // With no match, Enter runs nothing and says so; Help stays open.
+        palette_frame(
+            &context,
+            &mut scroll,
+            &mut open,
+            vec![Event::Text("zz".into())],
+        );
+        palette_frame(
+            &context,
+            &mut scroll,
+            &mut open,
+            vec![key_event(Key::Enter, Modifiers::NONE)],
+        );
+        assert!(open && scroll.take_run().is_none());
+        assert!(
+            scroll
+                .palette
+                .status()
+                .is_some_and(|status| status.contains("No action matches"))
+        );
+        // Plain arrows with modifiers other than Control stay with the field.
+        let mut events = vec![key_event(Key::ArrowDown, Modifiers::SHIFT)];
+        assert!(!scroll.route_events(&mut events, true));
+        assert!(scroll.palette.key.is_none());
+    }
+
+    #[test]
+    fn enter_on_a_kept_filter_runs_and_escape_still_leaves_search_first() {
+        let context = egui::Context::default();
+        let mut scroll = HelpScroll::default();
+        let mut open = true;
+        open_search(&context, &mut scroll, &mut open);
+        // Typing, Escape (leaves the field), then Enter in one batch: the
+        // Escape keeps Help and its filter, and Help's own Enter runs.
+        palette_frame(
+            &context,
+            &mut scroll,
+            &mut open,
+            vec![
+                Event::Text("sec".into()),
+                key_event(Key::Escape, Modifiers::NONE),
+                key_event(Key::Enter, Modifiers::NONE),
+                key_event(Key::Colon, Modifiers::SHIFT),
+            ],
+        );
+        assert!(open, "the first Escape leaves search, not Help");
+        assert!(!context.memory(|m| m.has_focus(egui::Id::new(SEARCH_ID))));
+        assert_eq!(scroll.query(), "sec");
+        assert_eq!(scroll.take_run(), Some("second"));
+        assert_eq!(
+            scroll.take_deferred(),
+            vec![key_event(Key::Colon, Modifiers::SHIFT)]
+        );
+        // Without a filter, Enter says how to search instead of doing nothing.
+        let mut scroll = HelpScroll::default();
+        let mut open = true;
+        palette_frame(&context, &mut scroll, &mut open, vec![]);
+        palette_frame(
+            &context,
+            &mut scroll,
+            &mut open,
+            vec![key_event(Key::Enter, Modifiers::NONE)],
+        );
+        assert!(open && scroll.take_run().is_none());
+        assert!(
+            scroll
+                .palette
+                .status()
+                .is_some_and(|status| status.contains("type to search"))
+        );
+        // Escape after an unfiltered Enter still closes Help with its suffix.
+        let mut events = vec![
+            key_event(Key::Escape, Modifiers::NONE),
+            key_event(Key::Colon, Modifiers::SHIFT),
+        ];
+        assert!(scroll.route_events(&mut events, false));
+        assert_eq!(events, vec![key_event(Key::Colon, Modifiers::SHIFT)]);
+    }
+
+    #[test]
+    fn a_composition_keeps_its_own_enter_and_arrows() {
+        let mut scroll = HelpScroll::default();
+        let mut events = vec![
+            Event::Ime(egui::ImeEvent::Preedit {
+                text: "か".into(),
+                active_range_chars: None,
+            }),
+            key_event(Key::ArrowDown, Modifiers::NONE),
+            key_event(Key::Enter, Modifiers::NONE),
+            Event::Ime(egui::ImeEvent::Commit("か".into())),
+            key_event(Key::Enter, Modifiers::NONE),
+            Event::Text("z".into()),
+        ];
+        assert!(!scroll.route_events(&mut events, true));
+        // The composition's keys and commit reach the field; the Enter after
+        // the commit runs, and what follows it waits.
+        assert_eq!(scroll.field_events.len(), 4);
+        assert_eq!(scroll.palette.key, Some(PaletteKey::Run));
+        assert_eq!(scroll.take_deferred(), vec![Event::Text("z".into())]);
+        assert!(!scroll.composing);
+    }
+
+    #[test]
+    fn a_click_chooses_its_row_and_closing_help_forgets_the_palette() {
+        let mut palette = Palette::default();
+        palette.choose(2, "third");
+        assert_eq!(palette.highlighted(), 2);
+        assert_eq!(palette.run, Some("third"));
+        let context = egui::Context::default();
+        let mut scroll = HelpScroll {
+            palette,
+            ..HelpScroll::default()
+        };
+        scroll.palette.explain("why".into());
+        let mut open = false;
+        palette_frame(&context, &mut scroll, &mut open, vec![]);
+        assert!(scroll.take_run().is_none() && scroll.palette.status().is_none());
     }
 }

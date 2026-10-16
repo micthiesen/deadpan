@@ -181,7 +181,7 @@ commands_reference` rewrites it and then fails so the diff is reviewed; under
 
 Fixed mode keys are declared there as exact chords: Camera, Trim, Slip, Place
 slice, room tone, the Gain draft, transcript corrections, the Marks, Jobs and
-Storage panels and the Keys sheet. A test drives every egui key through 11
+Storage panels and the Keys sheet and its search. A test drives every egui key through 11
 modifier combinations (including Control+Option, Control+⌘, Option+⌘ and each
 ⌘ chord with and without macOS's separate Command flag) and every router state
 flag through each mode's real router. It requires that the router acts on
@@ -224,12 +224,42 @@ only the whole-beat cut and `s` only Split; with a longer word present, short
 words match prose too. `:` alone lists every verb and `:ho` matches verb
 prefixes. The result
 count is a live region announced as it changes, and the key line names the
-field's own keys while it has focus. Enter keeps the filter and returns to
-scrolling; Escape in the field leaves it, including when `/`, text and Escape
-arrive in one batch (what follows the Escape is Help's again), and Escape again
-closes the sheet. A held `/` never echoes into the field. A layout that shifts
-`/` reaches search by its typed character. While the field has focus it owns
-every key and IME event; no widget drawn before it sees them.
+field's own keys while it has focus. Escape in the field leaves it and keeps
+the filter, including when `/`, text and Escape arrive in one batch (what
+follows the Escape is Help's again), and Escape again closes the sheet. A held
+`/` never echoes into the field. A layout that shifts `/` reaches search by its
+typed character. While the field has focus it owns every key and IME event
+except the palette keys below; no widget drawn before it sees them.
+
+The search is also the action palette
+([`navigation/palette.rs`](../crates/deadpan-app/src/navigation/palette.rs),
+[`preview/palette.rs`](../crates/deadpan-app/src/preview/palette.rs)). One
+result is highlighted, the first whenever the search changes. Up/Down and
+Ctrl N/Ctrl P move it with wrapping while the field has focus (a separate
+`HelpSearch` mode in the registry, so Help's own Up/Down still scroll after
+Escape). The highlighted row is drawn with a selection fill, scrolled into
+view, exposed to AccessKit as a selected row, and the live result count names
+it ("Highlighted 2 of 5: ..."), silently while a key is held. Enter, in the
+field or on a kept filter, runs the highlighted result, and a click runs any
+row. The choice runs first thing on the next frame, before any input that
+followed Enter in the same batch, which is resumed in order behind it:
+
+- a verb whose usage has no arguments closes Help and runs through `:` and
+  `run_command` exactly as typed, with the same command-entry captures;
+- a verb with arguments (required or optional) closes Help and opens the
+  command line with `verb ` typed, so completion shows its usage;
+- a key-only editor action closes Help and is performed through the editor's
+  dispatch: `Bindings::palette_binding` resolves the binding's own trie rule
+  in the current selection and routing domain (no synthetic key events), with
+  the same operator, Repeat, Trim and AI captures a key press makes. A prefix
+  family (`d`, `y`, `r`, marks, registers, macros) enters its configured
+  pending path and waits for its next key;
+- anything else (another context, a mode-only key such as Trim's Enter, a key
+  that does not act on the current selection, the sheet's own keys) keeps Help
+  open and shows, under the field, where it works and with which keys.
+
+A composition keeps its own Enter and arrows. Escape keeps its meaning:
+first it leaves the field, then it closes Help.
 
 Router facts the registry made explicit: Slip's `h`/`l`/arrows and Place
 slice's Shift-Space use egui's `shift_only`, which also admits Control; this is
@@ -394,8 +424,10 @@ retains the original held-key regression.
 Current configuration covers Normal and timeline Visual paths and their teaching.
 Mode keys are declared and verified in the registry but fixed. Command
 arguments still use per-verb parsers rather than a schema-driven typed-unit
-grammar, completion lists verbs but not parameters or the default selector,
-and the searchable Keys sheet describes actions without executing them.
+grammar, and completion lists verbs but not parameters or the default selector.
+The palette runs a two-verb action by its first verb and a two-direction key
+action by its first key (`:undo`, next beat); the others stay a typed command
+or key away.
 The `layouts` replay drives German QWERTZ and French AZERTY presses, as
 egui-winit 0.36 delivers them on macOS, through the production router, and
 drives Russian ЙЦУКЕН letters at their physical positions, and composes

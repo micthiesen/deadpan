@@ -121,6 +121,8 @@ pub enum HelpKey {
     Bottom,
     Search,
     Close,
+    /// Run the highlighted search result.
+    Run,
 }
 
 pub(super) const HELP: &[(&str, Key, HelpKey)] = &[
@@ -134,11 +136,34 @@ pub(super) const HELP: &[(&str, Key, HelpKey)] = &[
     ("help.scroll", Key::End, HelpKey::Bottom),
     ("help.search", Key::Slash, HelpKey::Search),
     ("help.close", Key::Escape, HelpKey::Close),
+    ("help.run", Key::Enter, HelpKey::Run),
 ];
 
 /// A Keys sheet press while its search field does not own the keyboard.
 pub fn help_key(key: Key, modifiers: Modifiers) -> Option<HelpKey> {
     lookup(Mode::Help, HELP, key, modifiers)
+}
+
+/// A palette key of the Keys sheet's search field.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum PaletteKey {
+    Next,
+    Previous,
+    Run,
+}
+
+pub(super) const HELP_SEARCH: &[(&str, Key, PaletteKey)] = &[
+    ("help.choose", Key::ArrowDown, PaletteKey::Next),
+    ("help.choose", Key::N, PaletteKey::Next),
+    ("help.choose", Key::ArrowUp, PaletteKey::Previous),
+    ("help.choose", Key::P, PaletteKey::Previous),
+    ("help.run", Key::Enter, PaletteKey::Run),
+];
+
+/// A press the focused search field leaves to the palette. Every other key
+/// and all text stay with the field.
+pub fn help_search_key(key: Key, modifiers: Modifiers) -> Option<PaletteKey> {
+    lookup(Mode::HelpSearch, HELP_SEARCH, key, modifiers)
 }
 
 #[cfg(test)]
@@ -192,6 +217,8 @@ mod tests {
             Key::End => Some(HelpKey::Bottom),
             Key::Slash => Some(HelpKey::Search),
             Key::Escape => Some(HelpKey::Close),
+            // Added with the palette: Enter runs the highlighted result.
+            Key::Enter => Some(HelpKey::Run),
             _ => None,
         }
     }
@@ -252,5 +279,6 @@ mod tests {
         covers(Mode::Storage, STORAGE);
         covers(Mode::Marks, MARKS);
         covers(Mode::Help, HELP);
+        covers(Mode::HelpSearch, HELP_SEARCH);
     }
 }
