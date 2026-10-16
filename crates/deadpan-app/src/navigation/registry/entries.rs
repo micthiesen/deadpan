@@ -903,7 +903,7 @@ pub static SPECS: &[Spec] = &[
         keys: &[],
         commands: &[verb("hold-silence", ":hold-silence")],
         contexts: C::EDIT.or(C::CONTENTS),
-        replay: Replay::NotRecorded,
+        replay: Replay::Recorded,
         headless: eq("command set_hold_audio", HOLDS),
         help: "Restore the selected ordinary pause to silence in one undoable edit. Explicit per-sound permissions remain separate.",
     },
@@ -914,7 +914,7 @@ pub static SPECS: &[Spec] = &[
         keys: &[],
         commands: &[verb("room-tone", ":room-tone")],
         contexts: C::EDIT.or(C::CONTENTS),
-        replay: Replay::NotRecorded,
+        replay: Replay::Recorded,
         headless: gui(
             "the sheet prepares and auditions; set_room_tone applies a yank_original range",
             HOLDS,
@@ -2286,7 +2286,7 @@ pub static SPECS: &[Spec] = &[
         keys: &[mode(Mode::RoomTone, "Enter", &[chord(Key::Enter, Plain)])],
         commands: &[],
         contexts: C::ROOM_TONE,
-        replay: Replay::NotRecorded,
+        replay: Replay::Recorded,
         headless: eq(
             "command set_hold_audio, or set_room_tone instruction",
             HOLDS,

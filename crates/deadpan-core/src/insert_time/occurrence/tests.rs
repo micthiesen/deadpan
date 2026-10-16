@@ -405,9 +405,17 @@ fn an_all_plays_pause_grows_every_default_play_once_and_reverts_exactly() {
     assert_eq!(children.len(), 3);
     assert_eq!(children[1], id("all-pause"));
     assert_eq!(after.durations().unwrap()[child].frames(), 5);
-    // Two Repeat levels, a gap and an isolated play are refused.
+    // Nested: the inner beat repeats twice in each of three outer plays, so
+    // a pause in its shared definition appears six times.
     let nested = fixture(true);
-    assert!(crate::apply(&nested, &all_plays(&nested, 1, "nested")).is_err());
+    let edit = crate::apply(&nested, &all_plays(&nested, 1, "nested")).unwrap();
+    let grown = edit.forward.apply(&nested).unwrap();
+    assert_eq!(
+        grown.duration().unwrap().frames(),
+        nested.duration().unwrap().frames() + 6
+    );
+    assert_eq!(edit.inverse.apply(&grown).unwrap(), nested);
+    // A gap is refused.
     let gap = all_plays(&before, 5, "gap");
     assert!(crate::apply(&before, &gap).is_err());
 }

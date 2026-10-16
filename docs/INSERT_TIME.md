@@ -91,16 +91,20 @@ selected plays and Retime ancestors are refused for this operation.
 With `all_plays: true` the same command inserts into the Repeat's shared
 definition instead (specification §5.2: default edits affect every iteration),
 so every default play grows and overridden plays keep their own branches. It
-admits one Repeat level whose ancestors are ordinary Sequences, a cut inside the
-definition (never a gap) shown through a default play, and no AI preparation
+admits default plays at every Repeat level with ordinary Sequences around and
+between the Repeats (a nested definition grows in every play of every enclosing
+Repeat), a cut inside the innermost definition (never a gap) shown through any
+default occurrence, and no AI preparation
 (generation needs one effective occurrence). Nothing is isolated: the command
 captures unbound lattices under its timing identity, Splits the definition
 leaf in place (wrapping a direct Repeat child in a Sequence when needed),
-reanchors every owner inside the Repeat from the first default play's cut to
-the Repeat's end on its own pre-edit clock, then the suffix after the Repeat,
+reanchors every owner inside the outermost Repeat from the earliest default
+occurrence's cut to that Repeat's end on its own pre-edit clock, then the suffix after the Repeat,
 exactly as Repeat gap changes do. Decoded 44.1 kHz Source and room-tone gap PCM
 keeps every play, gap and the tail sample-exact on the NTSC grid
-(`an_all_plays_pause_keeps_every_play_and_gap_on_its_own_44100_clock`); core
+(`an_all_plays_pause_keeps_every_play_and_gap_on_its_own_44100_clock`, and for
+nested Repeats entered through the first or last occurrence,
+`an_all_plays_pause_in_nested_repeats_keeps_every_occurrence_on_its_own_clock`); core
 tests cover the structure, exact inverse, an isolated play left unchanged and
 refusals. The scoped inspector's All plays scope (`:scope all`) inserts through
 it (`scoped-plays` replay).

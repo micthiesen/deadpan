@@ -78,7 +78,7 @@ pub(crate) fn prepare(
             ));
         }
         // The definition is edited in place: nothing is isolated.
-        all_plays_site(document, &target)?;
+        all_plays_site(document, &target, *at)?;
         if !identities.isolation.nodes.is_empty()
             || !identities.isolation.marks.is_empty()
             || identities.gap.is_some()
@@ -305,21 +305,22 @@ pub(crate) fn apply(
     )
 }
 
-/// The single default-play Repeat an all-plays pause edits, with its parent
-/// Sequence, slot and absolute range.
+/// The outermost Repeat an all-plays pause edits, with its parent Sequence,
+/// slot and absolute range, and the cut in the earliest default occurrence.
 struct AllPlaysSite {
     repeat: NodeId,
     parent: NodeId,
     slot: usize,
-    start: i64,
     end: i64,
+    first_cut: i64,
 }
 
-/// Admit one Repeat level: a default play of a Repeat whose ancestors are all
-/// ordinary Sequences, and a cut inside its definition (not a gap).
+/// Admit default plays at every Repeat level, ordinary Sequences between and
+/// around them, and a cut inside the innermost definition (not a gap).
 fn all_plays_site(
     document: &ProjectDocument,
     target: &OccurrencePauseTarget,
+    at: ProjectFrame,
 ) -> Result<AllPlaysSite, EditError> {
     let instance = match &target.site {
         Site::Sequence { instance, .. } | Site::Physical { instance, .. } => instance,
@@ -329,25 +330,14 @@ fn all_plays_site(
             ));
         }
     };
-    let [step] = instance.repeats.as_slice() else {
-        return Err(invalid(
-            "a pause for all plays needs exactly one Repeat around it",
-        ));
+    let Some(outer) = instance.repeats.first() else {
+        return Err(invalid("a pause for all plays needs a Repeat around it"));
     };
-    if document
-        .overrides()
-        .get(&step.node)
-        .is_some_and(|plays| plays.get(&step.iteration).is_some())
-    {
-        return Err(invalid(
-            "this play has its own content; add the pause to this play only",
-        ));
-    }
     let durations = document.durations()?;
     let index = crate::AnchorIndex::from_durations(document, durations.clone())?;
     // Absolute start through ordinary Sequence ancestors only.
     let mut start = 0_i64;
-    let mut current = &step.node;
+    let mut current = &outer.node;
     let mut first = None;
     while let Some((parent, offset)) = index.parents.get(current) {
         let NodeKind::Sequence { children } = &document.nodes()[parent].kind else {
@@ -367,14 +357,72 @@ fn all_plays_site(
     }
     let (parent, slot) = first.ok_or_else(|| invalid("the root cannot repeat"))?;
     let end = start
-        .checked_add(durations[&step.node].frames())
+        .checked_add(durations[&outer.node].frames())
         .ok_or_else(overflow)?;
+    // The cursor's own occurrence and the earliest default one, level by level.
+    let mut shown = start;
+    let mut earliest = start;
+    for (level, step) in instance.repeats.iter().enumerate() {
+        let NodeKind::Repeat {
+            child, iterations, ..
+        } = &document.nodes()[&step.node].kind
+        else {
+            return Err(invalid("expected a Repeat step"));
+        };
+        let overrides = document.overrides().get(&step.node);
+        if overrides.is_some_and(|plays| plays.get(&step.iteration).is_some()) {
+            return Err(invalid(
+                "this play has its own content; add the pause to this play only",
+            ));
+        }
+        let layout = index
+            .repeats
+            .get(&step.node)
+            .ok_or_else(|| invalid("the Repeat has no layout"))?;
+        let play = layout
+            .play(&step.iteration)
+            .ok_or_else(|| invalid("the Repeat play is missing"))?;
+        // Overridden plays are sparse, so the first default play is among the
+        // first `overridden + 1` plays.
+        let first_default = (0..iterations.len())
+            .take(overrides.map_or(0, |plays| plays.len()).saturating_add(1))
+            .filter_map(|index| iterations.at(index))
+            .find(|iteration| overrides.is_none_or(|plays| plays.get(iteration).is_none()))
+            .and_then(|iteration| layout.play(&iteration))
+            .ok_or_else(|| invalid("the Repeat has no default play"))?;
+        shown = shown.checked_add(play.start).ok_or_else(overflow)?;
+        earliest = earliest
+            .checked_add(first_default.start)
+            .ok_or_else(overflow)?;
+        // The next Repeat sits at a fixed offset inside this definition.
+        if let Some(next) = instance.repeats.get(level + 1) {
+            let mut offset = 0_i64;
+            let mut current = &next.node;
+            while current != child {
+                let (parent, at) = index
+                    .parents
+                    .get(current)
+                    .ok_or_else(|| invalid("the nested Repeat lost its definition"))?;
+                if !matches!(document.nodes()[parent].kind, NodeKind::Sequence { .. }) {
+                    return Err(invalid(
+                        "a pause for all plays needs ordinary groups between Repeats",
+                    ));
+                }
+                offset = offset.checked_add(*at).ok_or_else(overflow)?;
+                current = parent;
+            }
+            shown = shown.checked_add(offset).ok_or_else(overflow)?;
+            earliest = earliest.checked_add(offset).ok_or_else(overflow)?;
+        }
+    }
+    let local = at.0.checked_sub(shown).ok_or_else(overflow)?;
+    let first_cut = earliest.checked_add(local).ok_or_else(overflow)?;
     Ok(AllPlaysSite {
-        repeat: step.node.clone(),
+        repeat: outer.node.clone(),
         parent,
         slot,
-        start,
         end,
+        first_cut,
     })
 }
 
@@ -392,53 +440,9 @@ fn apply_all_plays(
     timing: &AudioTimingId,
     context: crate::command::EditContext<'_>,
 ) -> Result<ProjectDocument, EditError> {
-    let site = all_plays_site(document, target)?;
+    let site = all_plays_site(document, target, at)?;
     let total = document.duration()?.frames();
-    let NodeKind::Repeat {
-        child,
-        iterations,
-        gap,
-        ..
-    } = &document.nodes()[&site.repeat].kind
-    else {
-        return Err(invalid("expected the edited Repeat"));
-    };
-    let durations = document.durations()?;
-    let layout = crate::RepeatLayout::compile_with_gap_overrides(
-        iterations,
-        child,
-        document.overrides().get(&site.repeat),
-        gap.as_ref().map_or(FrameDuration::ZERO, |gap| gap.duration),
-        document.gap_overrides().get(&site.repeat),
-        &durations,
-    )?;
-    let location = layout.locate(
-        ExactRatio::integer(at.0.checked_sub(site.start).ok_or_else(overflow)?),
-        crate::InsertionBias::Left,
-    )?;
-    let local = i64::try_from(location.position.numerator()).map_err(|_| overflow())?;
-    // Overridden plays are sparse, so the first default play is among the
-    // first `overridden + 1` plays.
-    let overridden = document
-        .overrides()
-        .get(&site.repeat)
-        .map_or(0, |plays| plays.len());
-    let first_default = (0..iterations.len())
-        .take(overridden.saturating_add(1))
-        .filter_map(|index| iterations.at(index))
-        .find(|iteration| {
-            document
-                .overrides()
-                .get(&site.repeat)
-                .is_none_or(|plays| plays.get(iteration).is_none())
-        })
-        .and_then(|iteration| layout.play(&iteration))
-        .ok_or_else(|| invalid("the Repeat has no default play"))?;
-    let first_cut = site
-        .start
-        .checked_add(first_default.start)
-        .and_then(|start| start.checked_add(local))
-        .ok_or_else(overflow)?;
+    let first_cut = site.first_cut;
     let allocation = context.allocation;
     // Every edit retains unbound lattices first, as gap changes do.
     let mut working = document.clone();

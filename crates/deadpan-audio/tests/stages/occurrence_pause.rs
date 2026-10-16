@@ -423,3 +423,88 @@ fn an_all_plays_pause_keeps_every_play_and_gap_on_its_own_44100_clock() {
         );
     }
 }
+
+#[test]
+fn an_all_plays_pause_in_nested_repeats_keeps_every_occurrence_on_its_own_clock() {
+    let (before, mut provider, allocations) = fixture(true);
+    let old = record(&before, &mut provider, false, &[256]);
+    // The four-frame Source allocations are the repeated beat; the others are
+    // room-tone gaps and the tail.
+    let sources: Vec<_> = allocations
+        .iter()
+        .filter(|range| {
+            range.end - range.start == 4
+                && range.end != *allocations.last().map(|r| &r.end).unwrap()
+        })
+        .cloned()
+        .collect();
+    assert_eq!(sources.len(), 4);
+    // Entering through the first or the last occurrence edits the same
+    // shared definition.
+    for (shown, local) in [0, 3]
+        .into_iter()
+        .flat_map(|shown| (1..4).map(move |local| (shown, local)))
+    {
+        let at = sources[shown].start + local;
+        let PauseInsertionTarget::Occurrence(target) =
+            before.pause_insertion_target(ProjectFrame(at)).unwrap()
+        else {
+            panic!()
+        };
+        let revision = RevisionId::new("nested-all-plays").unwrap();
+        let request = CommandRequest {
+            project_id: before.project_id().clone(),
+            expected_revision: before.revision_id().clone(),
+            new_revision: revision.clone(),
+            command: Command::InsertOccurrenceTime {
+                at: ProjectFrame(at),
+                within: None,
+                hold: HoldRecipe {
+                    duration: duration(1),
+                    video: HoldVideo::Background,
+                    audio: HoldAudio::Silence,
+                    picture_context: None,
+                },
+                id: id("pause"),
+                ai: false,
+                all_plays: true,
+                timing: AudioTimingId {
+                    allocation: revision,
+                    ordinal: 0,
+                },
+                identities: OccurrencePauseIdentities {
+                    isolation: OccurrenceIdentities::default(),
+                    split: SplitIdentities {
+                        nodes: (0..target.split_nodes)
+                            .map(|n| id(&format!("split-{n}")))
+                            .collect(),
+                    },
+                    container: target.container.then(|| id("container")),
+                    gap: None,
+                },
+            },
+        };
+        let transaction = apply(&before, &request).unwrap();
+        assert_eq!(transaction.duration_delta, 4);
+        let after = transaction.forward.apply(&before).unwrap();
+        let after = ProjectDocument::from_json(&after.to_json().unwrap()).unwrap();
+        let actual = record(&after, &mut provider, false, &[127, 3, 251]);
+        let mut shift = 0;
+        for range in &allocations {
+            let label = format!("shown {shown} local {local} allocation {range:?}");
+            if sources.contains(range) {
+                let cut = range.start + local;
+                assert_moved(&actual, &old, range.start, cut, shift, true, &label);
+                assert_pause(
+                    &actual,
+                    ntsc_boundary(cut + shift)..ntsc_boundary(cut + shift + 1),
+                );
+                shift += 1;
+                assert_moved(&actual, &old, cut, range.end, shift, false, &label);
+            } else {
+                assert_moved(&actual, &old, range.start, range.end, shift, false, &label);
+            }
+        }
+        assert_eq!(record(&after, &mut provider, false, &[1, 239]), actual);
+    }
+}
