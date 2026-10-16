@@ -54,6 +54,7 @@ keycaps, selection and focus. Observations not changed here:
 | Baseline, 7 affected scenarios | `0626c63d…3c87282b` (`8ce65ac6`) | all pass; source of the before measurements |
 | New assertions on the previous application code, continuing past failures | `548c9b7d…118229ad0` | every new assertion fails, values in the table |
 | All visual scenarios, 3 jobs | `6b4fca44…78c22caf` (`8ce65ac6` plus this change) | 80 pass, 4 fixture skips, `audio-warming` timeout; 8,133 checks |
+| Rebased onto `4057c8d1`: `workspace`, `trim`, `camera`, `menus`, `gain`, `sound-placement`, `recipes`, `macros`, `slip` | `95e2d6f5…02c3b49d` | all 9 pass; 1,435 checks |
 
 `audio-warming` times out waiting for its real PCM horizon exactly as on the
 baseline in the [GUI review](gui-review-2026-10-15.md); it is not touched here.
@@ -63,6 +64,10 @@ Strict Clippy for `deadpan-app` with and without `ui-harness` (all targets,
 `-D warnings`) passes, as do the 295 `preview::` app tests and rustfmt on the
 changed files. The intermittent `place-slice` label comparison from the review
 passed in the full run.
+
+The application, replay and documentation changes landed in `b1dc5df4`,
+whose commit message describes a concurrent session's keyframe change that
+was committed together with them.
 
 The reference host is the M5 Max Mac on macOS 26.5.2 with Rust 1.97.1 and
 qualified FFmpeg 8.0.3. Scratch reports remain under `/tmp/gui-fixes`.
