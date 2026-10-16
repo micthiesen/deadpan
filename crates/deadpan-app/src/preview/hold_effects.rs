@@ -154,6 +154,7 @@ impl DeadpanApp {
         role: deadpan_core::MediaRole,
         plays: std::num::NonZeroU32,
         trim: bool,
+        extend: bool,
         target: Result<macros::Capture, String>,
     ) {
         if self.edit_selection() == navigation::EditSelection::None {
@@ -166,7 +167,12 @@ impl DeadpanApp {
         self.cancel_repeats("a role repeat was requested");
         self.apply_recorded_instruction(
             target,
-            Ok(SemanticInstruction::RoleRepeat { role, plays, trim }),
+            Ok(SemanticInstruction::RoleRepeat {
+                role,
+                plays,
+                trim,
+                extend,
+            }),
         );
     }
 

@@ -348,7 +348,17 @@ fn plan_repeat(
     plays: u32,
     trim: bool,
 ) -> Result<SemanticPlan, EditError> {
-    plan_semantic(
+    plan_repeat_with(document, role, plays, trim, false)
+}
+
+fn plan_repeat_with(
+    document: &ProjectDocument,
+    role: MediaRole,
+    plays: u32,
+    trim: bool,
+    extend: bool,
+) -> Result<SemanticPlan, EditError> {
+    plan_semantic_with_speech(
         document,
         &SemanticContext {
             parent: id("root"),
@@ -364,6 +374,7 @@ fn plan_repeat(
             role,
             plays: NonZeroU32::new(plays).unwrap(),
             trim,
+            extend,
         }])
         .unwrap(),
         SemanticRegisterBank {
@@ -376,10 +387,74 @@ fn plan_repeat(
                 new_revision: RevisionId::new(format!("leaf-{step_index}")).unwrap(),
                 id: SoundId::new(format!("play-{step_index}")).unwrap(),
             }),
+            SemanticAllocationRequest::InsertPause {
+                step_index,
+                required_split_ids,
+            } => Ok(SemanticAllocation::InsertPause {
+                new_revision: RevisionId::new(format!("leaf-{step_index}")).unwrap(),
+                id: id(&format!("held-{step_index}")),
+                split: SplitIdentities {
+                    nodes: (0..required_split_ids)
+                        .map(|n| id(&format!("held-split-{step_index}-{n}")))
+                        .collect(),
+                },
+            }),
             other => allocate(other),
         },
         |_, _| panic!("no register is read"),
+        |_| Err(speech_unavailable()),
+        |_, _| {
+            Ok(PauseProvider {
+                video: HoldVideo::Background,
+                picture_context: None,
+                audio: HoldAudio::Silence,
+            })
+        },
     )
+}
+
+#[test]
+fn an_audio_repeat_with_extend_hold_adds_exactly_its_overflow_and_permits_it() {
+    let before = with_sound();
+    // Three plays of Edit [24, 30) need [24, 42); the beat ends at 40.
+    let audio = plan_repeat_with(&before, MediaRole::Audio, 3, false, true).unwrap();
+    let after = &audio.document;
+    assert_eq!(
+        after.duration().unwrap().frames(),
+        before.duration().unwrap().frames() + 2
+    );
+    // A two-frame silent pause follows the beat.
+    let NodeKind::Sequence { children } = &after.nodes()[after.root()].kind else {
+        panic!()
+    };
+    let right = children
+        .iter()
+        .position(|child| child == &id("right"))
+        .unwrap();
+    let pause = &children[right + 1];
+    let NodeKind::Hold { recipe } = &after.nodes()[pause].kind else {
+        panic!("expected the extension pause after the beat")
+    };
+    assert_eq!(recipe.duration.frames(), 2);
+    // Two repeated sounds; only the one reaching the pause may sound over it.
+    assert_eq!(after.sounds().len(), 2);
+    let allowed: Vec<_> = after.sound_allowances().iter().collect();
+    assert_eq!(allowed.len(), 1, "{allowed:?}");
+    // Video repeats and two policies at once refuse.
+    assert!(plan_repeat_with(&before, MediaRole::Video, 3, false, true).is_err());
+    assert!(
+        SemanticProgram::new(vec![SemanticInstruction::RoleRepeat {
+            role: MediaRole::Audio,
+            plays: NonZeroU32::new(3).unwrap(),
+            trim: true,
+            extend: true,
+        }])
+        .is_err()
+    );
+    let replay =
+        replay_compound::<EditError>(&before, audio.request.as_ref().unwrap(), |_| Ok(())).unwrap();
+    assert_eq!(&replay.document, after);
+    assert_eq!(replay.edit.inverse.apply(&replay.document).unwrap(), before);
 }
 
 #[test]

@@ -315,12 +315,16 @@ pub enum SemanticInstruction {
     /// sound events, muting the host's sound under the repeats. Video: a
     /// looping cutaway repeats its pictures while the host's sound continues.
     /// No picture time is inserted; repeats past the beat refuse unless
-    /// `trim` cuts them at its end.
+    /// `trim` cuts them at its end, or, for audio, `extend` holds the beat's
+    /// last picture for exactly the overflow (`extend=hold`, specification
+    /// §6.5) and lets the repeats sound over that silent pause.
     RoleRepeat {
         role: crate::MediaRole,
         plays: NonZeroU32,
         #[serde(default, skip_serializing_if = "std::ops::Not::not")]
         trim: bool,
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        extend: bool,
     },
     /// Set the selected direct-child Repeat's total count. Visual selection is
     /// incompatible with this node parameter edit, including an empty range.
@@ -714,6 +718,17 @@ impl SemanticProgram {
                 return Err(EditError::new(
                     EditErrorCode::InvalidCommand,
                     "a recorded pause sound is silence or room tone",
+                ));
+            }
+            if let SemanticInstruction::RoleRepeat {
+                trim: true,
+                extend: true,
+                ..
+            } = instruction
+            {
+                return Err(EditError::new(
+                    EditErrorCode::InvalidCommand,
+                    "choose one overflow policy: extend=hold or overflow=trim",
                 ));
             }
             if let SemanticInstruction::Group { label, .. } = instruction {

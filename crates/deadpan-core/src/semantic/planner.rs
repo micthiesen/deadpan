@@ -691,8 +691,13 @@ where
                 SemanticInstruction::DeleteRole { role } => {
                     self.delete_role(index, *role)?;
                 }
-                SemanticInstruction::RoleRepeat { role, plays, trim } => {
-                    self.role_repeat(index, *role, plays.get(), *trim)?;
+                SemanticInstruction::RoleRepeat {
+                    role,
+                    plays,
+                    trim,
+                    extend,
+                } => {
+                    self.role_repeat(index, *role, plays.get(), *trim, *extend)?;
                 }
                 SemanticInstruction::SetRepeat {
                     plays,
@@ -905,9 +910,13 @@ where
                 SemanticInstruction::SetAudioEdges { .. } => 5,
                 // A Roll and a cutaway.
                 SemanticInstruction::SplitEdit { .. } => 2,
-                // A mute and one sound per later play, or one cutaway.
-                SemanticInstruction::RoleRepeat { plays, .. } => {
-                    usize::try_from(plays.get()).unwrap_or(usize::MAX)
+                // A mute and one sound per later play, or one cutaway; an
+                // extension adds a pause and one allowance per play.
+                SemanticInstruction::RoleRepeat { plays, extend, .. } => {
+                    usize::try_from(plays.get())
+                        .unwrap_or(usize::MAX)
+                        .saturating_mul(if *extend { 2 } else { 1 })
+                        .saturating_add(usize::from(*extend))
                 }
                 SemanticInstruction::SetRepeat {
                     plays,

@@ -215,12 +215,13 @@ pub enum Action {
         length: duration::DurationInput,
         bounce: bool,
     },
-    /// `:repeat N role=audio|video [overflow=trim]`: repeat one role of the
-    /// Visual range over its beat without inserting time.
+    /// `:repeat N role=audio|video [overflow=trim|extend=hold]`: repeat one
+    /// role of the Visual range over its beat; only `extend=hold` adds time.
     RoleRepeat {
         role: deadpan_core::MediaRole,
         plays: std::num::NonZeroU32,
         trim: bool,
+        extend: bool,
     },
     /// `:jcut D` / `:lcut D`: move the sound's cut at the cursor's seam
     /// earlier or later by `D` while the picture still cuts at the cursor.

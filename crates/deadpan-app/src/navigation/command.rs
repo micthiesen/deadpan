@@ -919,13 +919,14 @@ pub fn parse(input: &str) -> Result<Entry, String> {
     Ok(Entry::Action(action))
 }
 
-const ROLE_REPEAT_USAGE: &str = "Use :repeat 3 role=audio or :repeat 3 role=video over a Visual range inside one beat; add overflow=trim to cut repeats at the beat's end.";
+const ROLE_REPEAT_USAGE: &str = "Use :repeat 3 role=audio or :repeat 3 role=video over a Visual range inside one beat; add overflow=trim to cut repeats at the beat's end, or extend=hold to hold its last picture for repeated sound.";
 
-/// `:repeat [N] role=audio|video [overflow=trim]`.
+/// `:repeat [N] role=audio|video [overflow=trim|extend=hold]`.
 fn role_repeat<'a>(words: impl Iterator<Item = &'a str>) -> Result<Entry, String> {
     let mut plays = None;
     let mut role = None;
     let mut trim = None;
+    let mut extend = None;
     for word in words {
         match word.split_once('=') {
             Some(("role", value)) if role.is_none() => {
@@ -935,10 +936,8 @@ fn role_repeat<'a>(words: impl Iterator<Item = &'a str>) -> Result<Entry, String
                     _ => return Err(ROLE_REPEAT_USAGE.into()),
                 });
             }
-            Some(("overflow", "trim")) if trim.is_none() => trim = Some(true),
-            Some(("extend", "hold")) => {
-                return Err("extend=hold is not available yet: a role repeat cannot add picture time. Use overflow=trim, fewer plays, or a linked :repeat.".into());
-            }
+            Some(("overflow", "trim")) if trim.is_none() && extend.is_none() => trim = Some(true),
+            Some(("extend", "hold")) if trim.is_none() && extend.is_none() => extend = Some(true),
             None if plays.is_none()
                 && !word.is_empty()
                 && word.bytes().all(|b| b.is_ascii_digit()) =>
@@ -957,6 +956,7 @@ fn role_repeat<'a>(words: impl Iterator<Item = &'a str>) -> Result<Entry, String
         role: role.ok_or(ROLE_REPEAT_USAGE)?,
         plays: plays.unwrap_or(std::num::NonZeroU32::new(2).expect("constant plays")),
         trim: trim.unwrap_or(false),
+        extend: extend.unwrap_or(false),
     }))
 }
 
@@ -1414,7 +1414,17 @@ mod tests {
             Ok(Entry::Action(Action::RoleRepeat {
                 role: MediaRole::Audio,
                 plays: three,
-                trim: false
+                trim: false,
+                extend: false,
+            }))
+        );
+        assert_eq!(
+            parse(":repeat 3 role=audio extend=hold"),
+            Ok(Entry::Action(Action::RoleRepeat {
+                role: MediaRole::Audio,
+                plays: three,
+                trim: false,
+                extend: true,
             }))
         );
         assert_eq!(
@@ -1422,12 +1432,13 @@ mod tests {
             Ok(Entry::Action(Action::RoleRepeat {
                 role: MediaRole::Video,
                 plays: three,
-                trim: true
+                trim: true,
+                extend: false,
             }))
         );
         for input in [
             "repeat 3 role=both",
-            "repeat 3 role=audio extend=hold",
+            "repeat 3 role=audio extend=hold overflow=trim",
             "repeat 0 role=audio",
             "repeat 3 role=audio overflow=wrap",
         ] {

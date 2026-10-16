@@ -480,7 +480,13 @@ impl DeadpanApp {
         {
             // Visual r under a chosen role repeats that role only.
             self.repeat_prefix_target = None;
-            self.role_repeat(self.edit_role, plays, false, self.capture_macro_target());
+            self.role_repeat(
+                self.edit_role,
+                plays,
+                false,
+                false,
+                self.capture_macro_target(),
+            );
             return;
         }
         self.reconcile_repeat_prefix();

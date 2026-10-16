@@ -832,7 +832,7 @@ pub static SPECS: &[Spec] = &[
             "set_repeat_plays / set_repeat / role_repeat instructions",
             REP,
         ),
-        help: "Set total plays on the selected Repeat, preserving its gaps and surviving plays, or wrap a plain beat, in one Undo. gap= sets every gap to a silent hold of the play's last picture (gap=0 removes them); gap-step=-40ms makes each later gap shorter; gain-step=3dB and zoom-step=0.08 escalate each later play (progression=multiply compounds the scale; zoom-target=current zooms toward the saved target on the picture, keeping the view inside it, and zoom-target=center returns to the middle). Omitted parts keep their values. :repeat 3 role=audio|video repeats one role of a Visual range inside a beat without adding time; overflow=trim cuts repeats at the beat's end. Clear Visual selection for a count change.",
+        help: "Set total plays on the selected Repeat, preserving its gaps and surviving plays, or wrap a plain beat, in one Undo. gap= sets every gap to a silent hold of the play's last picture (gap=0 removes them); gap-step=-40ms makes each later gap shorter; gain-step=3dB and zoom-step=0.08 escalate each later play (progression=multiply compounds the scale; zoom-target=current zooms toward the saved target on the picture, keeping the view inside it, and zoom-target=center returns to the middle). Omitted parts keep their values. :repeat 3 role=audio|video repeats one role of a Visual range inside a beat without adding time; overflow=trim cuts repeats at the beat's end, and for sound extend=hold holds the beat's last picture for exactly the overflow. Clear Visual selection for a count change.",
     },
     Spec {
         id: "repeat.escalating",

@@ -3967,7 +3967,7 @@ parse ":hold 1s video=ai audio=room-tone" = Err("A new pause is silent (audio=si
 parse ":hold 0s" = Ok(Action(Edit(InsertHold(Seconds(ExactRatio { numerator: 0, denominator: 1 })))))
 parse ":hold -1s" = Err("Duration must be nonnegative, with explicit units.")
 parse ":repeat 3 gap=120ms gain-step=3dB zoom-step=0.08" = Ok(Action(Edit(Escalate(EscalationInput { plays: Some(3), gap: Some(GapInput { first: Seconds(ExactRatio { numerator: 3, denominator: 25 }), step: None }), gain_step: Some(GainDb(3000)), zoom_step: Some(Some(ExactRatio { numerator: 42949673, denominator: 536870912 })), progression: None, zoom_target: None }))))
-parse ":repeat 3 role=audio overflow=trim" = Ok(Action(RoleRepeat { role: Audio, plays: 3, trim: true }))
+parse ":repeat 3 role=audio overflow=trim" = Ok(Action(RoleRepeat { role: Audio, plays: 3, trim: true, extend: false }))
 parse ":repeat 0" = Err("Total plays must be a positive integer.")
 parse ":repeat 1 2" = Err("Use :repeat 3 gap=120ms gain-step=3dB zoom-step=0.08 on a selected beat or Repeat. gap= sets every gap (gap=0 removes them all); gap-step=-40ms makes each later gap 40 ms shorter. progression=multiply compounds the zoom; zoom-target=current zooms toward the target on the picture and zoom-target=center back to the middle; gain-step=0dB or zoom-step=0 removes that step.")
 parse ":zoom 1.35 target=face:2 curve=step" = Ok(Zoom(ZoomInput { kind: Smash { scale: ExactRatio { numerator: 27, denominator: 20 } }, target: Face(2) }))

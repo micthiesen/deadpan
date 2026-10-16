@@ -58,6 +58,7 @@ at Edit sample 28,781).
 | callback-register | Callback, Paste from register, Registers | apply Visual [12, 24) `"ay`, clear, `G`, `"ap` | 42 |
 | reaction-ping-pong | Reaction ping-pong | `set_cutaways` [3, 8) 90..95, [13, 18) 100..105, [22, 27) 90..95 on one host, sound kept | 30 |
 | abrupt-return | Abrupt return | `s` at 15, static 1.35x on both halves, apply `set_framing null` (`:zoom off`) on the second | 30 |
+| role-repeat-extend | Audio-only repeat (§6.5) | Visual [15, 20), `role_repeat` audio 4 plays `extend`: a 5-frame silent freeze of Edit 29 follows the beat, and the fourth play (click at 52,705) sounds over it through its allowance | 35 |
 | long-answer | The Long Answer, Versioned definition | `:gag long-answer pause=12f creep=1.35` at 15 (macro run); label round-trips through `GagRecipe::from_label`; version 2 refused by a dry-run apply | 42 |
 | escalator | The Escalator, Versioned definition | `:gag escalator plays=3 gain-step=3dB zoom-step=0.08` on Edit [12, 24); label round-trips | 54 |
 | non-sequitur | The Non-Sequitur, Paste from register | `s` at 15, `:gag non-sequitur register=r` (Original 90..96) after the first half | 36 |
@@ -124,6 +125,11 @@ Independently derived checks before export (plan provenance and
 | freeze-detail | 42 | 56.5 | 53.4 | 0.050 | 0.0 | 1 (1) | 1 | 40.3 | 0.03 | verified_zero | 2.49 | 0.76 | yes |
 | local-recipe | 78 | 56.5 | 53.4 | 0.050 | 0.0 | 3 (3) | 4 | 31.9 | 0.09 | verified_zero ×3 | 3.30 | 1.66 | yes |
 | detach-gag | 72 | 56.5 | 53.4 | 0.050 | 0.0 | 2 (2) | 3 | 38.2 | 0.04 | verified_zero ×2 | 2.89 | 1.39 | yes |
+| role-repeat-extend | 35 | 56.5 | 53.4 | 0.050 | 0.0 | 1 (1) | 5 | 45.4 | 0.01 | verified_zero | 2.37 | 0.89 | yes |
+
+`role-repeat-extend` was added later the same day and run on its own with
+`role-repeat` (`DEADPAN_PREVIEW_EXPORT_ONLY`, release build, encoder ABI 4,
+both passed); its row is from that focused run, not the full suite.
 
 Every movie declared an audio edit media time of 2,048 (encoder ABI 2) and
 passed the edit, color, PTS-grid and gap checks. A 0.0 dB neighbor margin

@@ -107,9 +107,13 @@ frames are root frames.
   continues.
 
 Repeats that would pass the beat's end refuse with the missing frame count
-unless `overflow=trim` cuts them at the end; `extend=hold` is refused with an
-explanation, because a role repeat never adds picture time. Recording and `.`
-use the instruction.
+unless `overflow=trim` cuts them at the end or, for sound, `extend=hold` holds
+the beat's last picture for exactly the overflow: one silent freeze pause is
+inserted after the beat (its later content moves on its own sample clocks, as
+for any pause), the repeats run on into it, and each repeat that reaches it
+gets an explicit silence allowance for that pause, so it is heard while the
+picture holds. Only this policy adds time; a video-only repeat refuses it, and
+choosing both policies refuses. Recording and `.` use the instruction.
 
 Evidence: `role_repeats_play_one_role_again_without_inserting_time` (sound
 selections in the beat's clock, mapping phase, mute range, looped pictures,
@@ -125,7 +129,7 @@ earlier, in the export and preview.
 ## Remaining
 
 An explicit `audio-shift` command that ripples sound independently of picture,
-`extend=hold` and fit/hold policies for role repeats, inter-play holds for
+fit/hold policies for video-only repeats, inter-play holds for
 audio-only repeats, copying a range together with its repeats (refused today),
 split edits
 across group boundaries or onto Holds, role scope for yank/repeat/paste, and a

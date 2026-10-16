@@ -9,10 +9,15 @@
 //! `edit_slice`). Video: a looping cutaway of the
 //! range's pictures covers the later plays while the host's sound continues.
 //! A repeat that would run past its beat refuses unless `trim` cuts it at the
-//! beat's end; nothing is silently discarded.
+//! beat's end or, for audio, `extend` adds a silent freeze pause after the
+//! beat for exactly the overflow and permits the repeats over it; nothing is
+//! silently discarded.
 
 use super::*;
-use crate::{Cutaway, CutawayFit, ExactFrameRange, ExactRatio, SourceAudioMapping, SourceVideo};
+use crate::{
+    Cutaway, CutawayFit, ExactFrameRange, ExactRatio, InstancePath, SourceAudioMapping, SourceVideo,
+};
+use std::num::NonZeroU32;
 
 impl<F, R, S, P> Planner<'_, F, R, S, P>
 where
@@ -27,6 +32,7 @@ where
         role: crate::MediaRole,
         plays: u32,
         trim: bool,
+        extend: bool,
     ) -> Result<(), EditError> {
         if role == crate::MediaRole::Linked {
             return Err(invalid(
@@ -57,17 +63,27 @@ where
             range.start().0.checked_add(total).ok_or_else(|| {
                 EditError::new(EditErrorCode::TimingOverflow, "repeat end overflows")
             })?;
+        let mut extension = None;
         let end = if wanted > child_end.0 {
-            if !trim {
+            if extend {
+                if role != crate::MediaRole::Audio {
+                    return Err(invalid(
+                        "extend=hold adds a pause for repeated sound; a video-only repeat covers its beat, so use overflow=trim",
+                    ));
+                }
+                extension = Some(wanted - child_end.0);
+                wanted
+            } else if trim {
+                child_end.0
+            } else {
                 return Err(EditError::new(
                     EditErrorCode::SelectionUnavailable,
                     format!(
-                        "{plays} plays need {} more frames than this beat has; add overflow=trim to cut the repeats at the beat's end",
+                        "{plays} plays need {} more frames than this beat has; add extend=hold to hold its last picture or overflow=trim to cut the repeats at the beat's end",
                         wanted - child_end.0
                     ),
                 ));
             }
-            child_end.0
         } else {
             wanted
         };
@@ -167,8 +183,39 @@ where
                 // host's own sound.
                 self.parameter_leaf(self.muted(
                     &child,
-                    (repeats.start - child_start.0)..(repeats.end - child_start.0),
+                    (repeats.start - child_start.0)..(repeats.end.min(child_end.0) - child_start.0),
                 )?)?;
+                // Hold the beat's last picture for the overflow, after the beat.
+                let pause = match extension {
+                    Some(frames) => {
+                        let cursor = self.context.cursor;
+                        let selection = self.context.visual_selection.take();
+                        self.context.cursor = child_end;
+                        let inserted = self.insert_pause(
+                            trace_index,
+                            crate::PauseLength::Frames {
+                                frames: u32::try_from(frames)
+                                    .ok()
+                                    .and_then(NonZeroU32::new)
+                                    .ok_or_else(|| invalid("the extension is too long"))?,
+                            },
+                            false,
+                        );
+                        self.context.cursor = cursor;
+                        self.context.visual_selection = selection;
+                        inserted?;
+                        Some(
+                            self.context
+                                .selected_child
+                                .clone()
+                                .filter(|node| {
+                                    matches!(self.current.nodes()[node].kind, NodeKind::Hold { .. })
+                                })
+                                .ok_or_else(|| invalid("the extension pause is not selectable"))?,
+                        )
+                    }
+                    None => None,
+                };
 
                 let mut play = 1u32;
                 let mut onset = range.end().0;
@@ -235,8 +282,26 @@ where
                     self.reserve_revision(&new_revision)?;
                     self.commit_leaf(LeafEdit::new(
                         new_revision,
-                        Command::SetSound { id, event },
+                        Command::SetSound {
+                            id: id.clone(),
+                            event,
+                        },
                     )?)?;
+                    // A play reaching the pause sounds over its silence.
+                    if let Some(pause) = &pause
+                        && onset + heard > child_end.0
+                    {
+                        self.parameter_leaf(Command::SetSoundAllowance {
+                            sound: id,
+                            issuer: crate::SoundHoldIssuer::Node {
+                                instance: InstancePath {
+                                    node: pause.clone(),
+                                    repeats: Vec::new(),
+                                },
+                            },
+                            allowed: true,
+                        })?;
+                    }
                     play += 1;
                     onset += length;
                 }

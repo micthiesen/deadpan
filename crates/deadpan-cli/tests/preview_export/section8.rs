@@ -1116,7 +1116,52 @@ pub fn preserve_slowed_pause(dir: &Path) -> Result<Fixture> {
     slowed_pause(dir, "preserve-slowed-pause", PitchPolicy::Preserve)
 }
 
-pub const BUILDERS: [(&str, Builder); 22] = [
+/// `:repeat 4 role=audio extend=hold` over Edit [15, 20) of the 30-frame
+/// base: the four plays need [15, 35), so a five-frame silent freeze of Edit
+/// 29 follows the beat. The click at Edit sample 28,781 sounds again 5, 10
+/// and 15 frames later as root sound events; the last lands inside the pause
+/// (Edit 30..35) and is heard through its explicit allowance.
+pub fn role_repeat_extend(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "role-repeat-extend")?;
+    project.shorten()?;
+    let saved = project.run_semantic(
+        json!([
+            {"type":"begin_selection"},
+            {"type":"move_frames","forward":true,"count":5},
+            {"type":"role_repeat","role":"audio","plays":4,"extend":true}
+        ]),
+        15,
+        None,
+    )?;
+    if saved.duration()?.frames() != BASE_FRAMES as i64 + 5 || saved.sounds().len() != 3 {
+        return Err(format!(
+            "unexpected extended repeat: {} frames, {} root sounds",
+            saved.duration()?.frames(),
+            saved.sounds().len()
+        )
+        .into());
+    }
+    let expectations = [0u64, 15, 20, 29, 30, 32, 34]
+        .into_iter()
+        .map(|frame| (frame, base(frame.min(29))))
+        .collect();
+    let mut fixture = project.finish(
+        vec!["Audio-only / video-only repeat (§6.5)"],
+        expectations,
+        Vec::new(),
+    )?;
+    fixture.audio = vec![
+        (28_681, true),
+        (36_689, true),
+        (44_697, true),
+        (52_705, true),
+        (19_195, false),
+    ];
+    Ok(fixture)
+}
+
+pub const BUILDERS: [(&str, Builder); 23] = [
+    ("role-repeat-extend", role_repeat_extend),
     ("tape-slowed-pause", tape_slowed_pause),
     ("preserve-slowed-pause", preserve_slowed_pause),
     ("false-start", false_start),
