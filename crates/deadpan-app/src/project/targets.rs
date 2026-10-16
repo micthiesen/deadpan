@@ -43,6 +43,14 @@ pub enum Operation {
         id: TargetId,
         mode: TrackMode,
     },
+    /// Delete one target nothing references, as one undoable edit expecting
+    /// `revision`.
+    Delete {
+        ticket: u64,
+        session: u64,
+        revision: RevisionId,
+        id: TargetId,
+    },
     /// Cancel the job started with ticket `job`.
     Cancel { ticket: u64, session: u64, job: u64 },
     /// Propose faces in one indexed picture of `asset` in the background.
@@ -286,3 +294,38 @@ pub enum ScriptEnding {
 /// The engine recorded in a scripted target's provenance.
 #[cfg(any(test, feature = "ui-harness"))]
 pub const SCRIPTED_ENGINE: &str = "Scripted replay tracker";
+
+/// Labels of the beats whose framing follows `id`, directly or through a
+/// Repeat's escalating zoom, in node order. Deleting a used target would
+/// leave that framing invalid.
+pub fn users(document: &deadpan_core::ProjectDocument, id: &TargetId) -> Vec<String> {
+    document
+        .nodes()
+        .iter()
+        .filter(|(_, node)| {
+            matches!(
+                &node.framing,
+                Some(deadpan_core::Framing {
+                    value: deadpan_core::FramingValue::Follow { target, .. },
+                    ..
+                }) if target == id
+            ) || matches!(
+                &node.kind,
+                deadpan_core::NodeKind::Repeat {
+                    escalation: Some(deadpan_core::RepeatEscalation {
+                        zoom: Some(deadpan_core::ZoomStep { target: Some(target), .. }),
+                        ..
+                    }),
+                    ..
+                } if target == id
+            )
+        })
+        .map(|(node, beat)| {
+            if beat.label.is_empty() {
+                node.as_str().to_owned()
+            } else {
+                beat.label.clone()
+            }
+        })
+        .collect()
+}

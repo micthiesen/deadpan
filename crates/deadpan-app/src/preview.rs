@@ -3230,6 +3230,10 @@ impl DeadpanApp {
                 through_shots,
             }) => self.track_command(track_target, target, through_shots),
             Ok(navigation::command::Entry::TrackCancel) => self.track_cancel(),
+            Ok(navigation::command::Entry::TargetRename { target, label }) => {
+                self.rename_target(&target, &label)
+            }
+            Ok(navigation::command::Entry::TargetDelete(target)) => self.delete_target(&target),
             Ok(navigation::command::Entry::Zoom(input)) => {
                 self.zoom_command(zoom_target, input, context)
             }

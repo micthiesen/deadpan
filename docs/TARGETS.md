@@ -113,6 +113,11 @@ Camera picks, draws, follows and corrects targets ([framing](FRAMING.md#native-i
   faces or a changed context ([face proposals](FRAMING.md#face-proposals)).
   Such a target can then be tracked with `T` or `:track face-K` like any drawn
   one.
+- `:target-rename TARGET New label` relabels a target named by id or label as
+  one undoable `SetTarget`; labels stay unique (case-insensitive), so a target
+  can always be named by its label. `:target-delete TARGET` deletes it as one
+  undoable `DeleteTarget`, or refuses and names every beat whose framing or
+  escalating zoom still follows it (`a_target_in_use_refuses_deletion…`).
 - `t` follows the picked target; `c` corrects it at this picture; `T` tracks it.
   A correction of an untracked target replaces the initial rectangle at the
   span start or adds a manual correction at that picture. A correction of a
@@ -136,6 +141,6 @@ and centers the wrong point; re-saving it (draw, track or `track --save
 created and corrected headlessly (`track --save`, `track-correct`; see
 [tracking](TRACKING.md)) and in Camera, and saved from a face proposal by
 `target=face:N`. `detect-faces` lists proposals headlessly without editing.
-Point targets, renaming and deleting targets in the app, pointer rectangle
+Point targets, pointer rectangle
 dragging, face proposals as numbered entries of Camera's picker, general
 (non-face) region proposals and quality evidence on real people remain open.

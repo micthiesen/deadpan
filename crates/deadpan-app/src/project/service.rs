@@ -137,6 +137,8 @@ struct Service {
     pending_session_change: Option<render::PendingSessionChange>,
     /// The last head revision checked for a due keyframe while idle.
     keyframe_checked: Option<RevisionId>,
+    /// After a failed keyframe write, when to try again.
+    keyframe_retry: Option<std::time::Instant>,
     host: Option<headless::Host>,
     /// Owners a restore replaced, kept only to write their admitted replies.
     retired_hosts: Vec<(headless::Host, std::time::Instant)>,
@@ -235,6 +237,7 @@ pub(super) fn run(
         damaged: damaged::State::default(),
         pending_session_change: None,
         keyframe_checked: None,
+        keyframe_retry: None,
         host: None,
         retired_hosts: Vec::new(),
         remote_storage: None,
@@ -850,8 +853,9 @@ impl Service {
 
     /// While idle, store the keyframe a commit made due, once per head
     /// revision, so the edit itself never waits for serializing the whole
-    /// document. Failure leaves a valid patch history: the commit at depth
-    /// 128 stores the keyframe itself, and a writable open converts it.
+    /// document. Failure leaves a valid patch history (the commit at depth
+    /// 128 stores the keyframe itself, and a writable open converts it), so
+    /// it is retried after a pause rather than reported as unsaved work.
     fn write_due_keyframe(&mut self) {
         let Some(revision) = self
             .workspace
@@ -860,15 +864,27 @@ impl Service {
         else {
             return;
         };
-        if self.keyframe_checked.as_ref() == Some(revision) || self.pending_session_change.is_some()
+        if self.keyframe_checked.as_ref() == Some(revision)
+            || self.pending_session_change.is_some()
+            || self
+                .keyframe_retry
+                .is_some_and(|retry| std::time::Instant::now() < retry)
         {
             return;
         }
-        self.keyframe_checked = Some(revision.clone());
-        if let Some(store) = self.store.as_mut()
-            && store.access_mode() == deadpan_store::AccessMode::ReadWrite
-        {
-            let _ = store.write_due_keyframe();
+        let revision = revision.clone();
+        let Some(store) = self
+            .store
+            .as_mut()
+            .filter(|store| store.access_mode() == deadpan_store::AccessMode::ReadWrite)
+        else {
+            return;
+        };
+        if store.write_due_keyframe().is_ok() {
+            self.keyframe_checked = Some(revision);
+            self.keyframe_retry = None;
+        } else {
+            self.keyframe_retry = Some(std::time::Instant::now() + Duration::from_secs(30));
         }
     }
 

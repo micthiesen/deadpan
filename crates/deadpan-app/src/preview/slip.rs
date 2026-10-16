@@ -531,7 +531,17 @@ impl DeadpanApp {
                     let frames = draft
                         .ready()
                         .map(|prepared| prepared.resolution.applied_delta_frames);
+                    let entry = draft.capture.target.clone();
                     self.close_slip(context);
+                    if let Err(error) = self.recorded_context(
+                        entry.session,
+                        &entry.base_revision,
+                        &entry.node,
+                        entry.cursor,
+                    ) {
+                        self.error = Some(error);
+                        return;
+                    }
                     if let Some(frames) = frames.filter(|frames| *frames != 0) {
                         let target = self.capture_macro_target();
                         self.apply_recorded_instruction(

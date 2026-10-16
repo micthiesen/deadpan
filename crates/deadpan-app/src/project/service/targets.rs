@@ -138,6 +138,12 @@ impl Service {
                 id,
                 target,
             } => (ticket, self.save_target(session, revision, id, *target)),
+            Operation::Delete {
+                ticket,
+                session,
+                revision,
+                id,
+            } => (ticket, self.delete_target(session, revision, id)),
             Operation::Track {
                 ticket,
                 session,
@@ -284,6 +290,56 @@ impl Service {
         } else {
             format!("Saved {label}. Undo removes it.")
         });
+        Ok(())
+    }
+
+    fn delete_target(&mut self, session: u64, expected: RevisionId, id: TargetId) -> Result<()> {
+        self.sync_target_session();
+        self.check_context(session, &expected)?;
+        if self.pending_session_change.is_some() {
+            return Err("The project is closing or changing.".into());
+        }
+        let workspace = self.workspace.as_ref().ok_or("Open a project first")?;
+        let label = workspace
+            .document
+            .targets()
+            .get(&id)
+            .map(|target| target.label.clone())
+            .ok_or_else(|| format!("There is no saved target {}.", id.as_str()))?;
+        let users = crate::project::targets::users(&workspace.document, &id);
+        if !users.is_empty() {
+            return Err(format!(
+                "{label} is used by {}; change their framing first (:zoom off or another target), then delete it.",
+                users.join(", ")
+            ));
+        }
+        let request = CommandRequest {
+            project_id: workspace.document.project_id().clone(),
+            expected_revision: expected,
+            new_revision: revision(),
+            command: Command::DeleteTarget { id: id.clone() },
+        };
+        let request_id = id;
+        let base = request.expected_revision.clone();
+        let outcome = self
+            .writer()?
+            .commit(&request)
+            .map_err(|error| match error {
+                StoreError::RevisionConflict { .. } => {
+                    "The project changed meanwhile; the target was not deleted. Try again."
+                        .to_owned()
+                }
+                error => error.to_string(),
+            })?;
+        self.committed = None;
+        self.targets.saved = Some(Saved {
+            session,
+            base,
+            revision: outcome.revision_id,
+            id: request_id,
+        });
+        self.refresh_saved(&format!("Deleted {label}. Undo restores it."))?;
+        self.message = Some(format!("Deleted {label}. Undo restores it."));
         Ok(())
     }
 

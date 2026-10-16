@@ -946,6 +946,27 @@ impl DeadpanApp {
         })
     }
 
+    /// A draft (Trim, Slip, room tone) that captured its own target records
+    /// only when closing it restored exactly that context, so the recorded
+    /// instruction cannot retarget another beat.
+    pub(super) fn recorded_context(
+        &self,
+        session: u64,
+        revision: &RevisionId,
+        node: &NodeId,
+        cursor: ProjectFrame,
+    ) -> Result<(), String> {
+        let restored = self.workspace.as_ref().is_some_and(|workspace| {
+            workspace.session == session && workspace.document.revision_id() == revision
+        }) && self.selected_beat.as_ref() == Some(node)
+            && i64::try_from(self.sequence_cursor).ok() == Some(cursor.0);
+        if restored {
+            Ok(())
+        } else {
+            Err("The edited beat or cursor changed while the preview was open; nothing was recorded or saved. Open it again.".into())
+        }
+    }
+
     pub(super) fn apply_recorded_instruction(
         &mut self,
         target: Result<Capture, String>,

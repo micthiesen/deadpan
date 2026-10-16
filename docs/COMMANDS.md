@@ -11,7 +11,7 @@ tests prove each mode router acts on exactly them. Native shortcuts
 (menus, ⌘ chords, panel controls) are described, not router-verified.
 Headless status links to [PARITY](PARITY.md).
 
-212 actions, 137 command verbs.
+214 actions, 139 command verbs.
 
 ## Start & View
 
@@ -132,6 +132,8 @@ Headless status links to [PARITY](PARITY.md).
 | **Save framing as a preset** (`framing.save`)<br>Keep the selected beat's framing (an off-center stare, a zoom or a creep) as a reusable preset in register a. Select another beat and press @a or :macro a to apply it as one Undo; it replaces that beat's framing. | - | `:framing-save a` | Your edit | not recorded | [Equivalent](PARITY.md#camera-framing-and-attention-targets): `macro save of a set_framing program` |
 | **Track a target** (`track`)<br>Track a saved target through the Original in the background, stopping at the next stored shot boundary. :track ID through-shots crosses cuts. Correcting a tracked target re-tracks only from that picture to its next correction. | `T` (fixed) | `:track [TARGET] [through-shots]` | Your edit, Camera | edits; not recorded | [Equivalent](PARITY.md#camera-framing-and-attention-targets): `track <p> … [--save <id>]` |
 | **Stop tracking** (`track.cancel`)<br>Stop the running background tracking job. | - | `:track-cancel` | Every editor context | not recorded | [GUI-only](PARITY.md#camera-framing-and-attention-targets): `SIGINT to the running track process` |
+| **Rename a target** (`target.rename`)<br>Give a saved target a new label, naming it by id or current label. Labels stay unique, so a target can always be named by its label. One Undo. | - | `:target-rename TARGET New label` | Every editor context | edits; not recorded | [Equivalent](PARITY.md#camera-framing-and-attention-targets): `command set_target with the new label` |
+| **Delete a target** (`target.delete`)<br>Delete a saved target that no framing or escalating zoom follows; otherwise the refusal names the beats that use it. One Undo. | - | `:target-delete TARGET` | Every editor context | edits; not recorded | [Equivalent](PARITY.md#camera-framing-and-attention-targets): `command delete_target` |
 
 ## Sound of a Beat
 

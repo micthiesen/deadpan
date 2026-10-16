@@ -497,3 +497,85 @@ fn a_worker_failure_reports_its_reason_and_saves_nothing() {
 }
 
 mod faces;
+
+#[test]
+fn a_target_in_use_refuses_deletion_and_an_unused_one_deletes_in_one_undo() {
+    let fixture = project(vec![moving()]);
+    let saved = save(&fixture, &fixture.workspace, "target-1", drawn(&fixture, 2));
+    let workspace = saved.workspace.unwrap();
+    let id = TargetId::new("target-1").unwrap();
+    let NodeKind::Sequence { children } =
+        &workspace.document.nodes()[workspace.document.root()].kind
+    else {
+        panic!()
+    };
+    let beat = children[0].clone();
+    let follow = deadpan_core::Framing {
+        clock: deadpan_core::FramingClock::OwnerOutput,
+        value: deadpan_core::FramingValue::Follow {
+            target: id.clone(),
+            scale: deadpan_core::ExactRatio::integer(2),
+            fallback: deadpan_core::FramingPose::identity(),
+        },
+    };
+    let followed = edited(
+        &fixture.service,
+        &workspace,
+        ProjectEdit::SetFraming {
+            node: beat.clone(),
+            framing: Some(follow),
+        },
+    )
+    .workspace
+    .unwrap();
+    assert_eq!(
+        crate::project::targets::users(&followed.document, &id).len(),
+        1
+    );
+    let delete = |workspace: &Workspace, ticket| Operation::Delete {
+        ticket,
+        session: workspace.session,
+        revision: workspace.document.revision_id().clone(),
+        id: id.clone(),
+    };
+    let refused = targets(&fixture.service, delete(&followed, 5));
+    let reason = refusal(&refused).expect("a used target refuses deletion");
+    assert!(reason.contains("used by"), "{reason}");
+    assert!(
+        refused
+            .workspace
+            .unwrap()
+            .document
+            .targets()
+            .contains_key(&id)
+    );
+    // Without the follow, deletion is one undoable edit.
+    let released = edited(
+        &fixture.service,
+        &followed,
+        ProjectEdit::SetFraming {
+            node: beat,
+            framing: None,
+        },
+    )
+    .workspace
+    .unwrap();
+    let deleted = targets(&fixture.service, delete(&released, 6));
+    assert_eq!(refusal(&deleted), None);
+    let after = deleted.workspace.unwrap();
+    assert!(!after.document.targets().contains_key(&id));
+    let undone = command(
+        &fixture.service,
+        ProjectRequest::Undo {
+            expected_revision: after.document.revision_id().clone(),
+        },
+    );
+    assert!(
+        undone
+            .workspace
+            .unwrap()
+            .document
+            .targets()
+            .contains_key(&id)
+    );
+}

@@ -109,6 +109,7 @@ impl Service {
             }
             ProjectRequest::Target(
                 Target::Save { ticket, .. }
+                | Target::Delete { ticket, .. }
                 | Target::Track { ticket, .. }
                 | Target::SaveFramed { ticket, .. },
             ) => self.refuse_target(*ticket, reason.clone()),

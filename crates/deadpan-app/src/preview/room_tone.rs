@@ -351,6 +351,22 @@ impl DeadpanApp {
 
     pub(super) fn silence_hold(&mut self, captured: Option<CommandTarget>) {
         if self.macros.recording() {
+            // The pause captured on command entry must still be the selection.
+            let checked = match captured.as_ref().map(|captured| &captured.target) {
+                Some(Ok(target)) if target.scoped.is_none() => self.recorded_context(
+                    target.session,
+                    &target.revision,
+                    &target.node,
+                    target.cursor,
+                ),
+                _ => Err(
+                    "Select an ordinary pause in Your edit when recording :hold-silence.".into(),
+                ),
+            };
+            if let Err(error) = checked {
+                self.error = Some(error);
+                return;
+            }
             let capture = self.capture_macro_target();
             self.apply_recorded_instruction(
                 capture,
@@ -602,7 +618,22 @@ impl DeadpanApp {
                 // While a macro records, the exact span commits as one
                 // recorded instruction on the restored selection.
                 if self.macros.recording() {
+                    if target.scoped.is_some() {
+                        if let Some(draft) = &mut self.room_tone {
+                            draft.error = Some("Room tone inside Repeat or speed-change contents cannot be recorded yet; save or cancel the macro first.".into());
+                        }
+                        return;
+                    }
                     self.close_room_tone(context);
+                    if let Err(error) = self.recorded_context(
+                        target.session,
+                        &target.revision,
+                        &target.node,
+                        target.cursor,
+                    ) {
+                        self.error = Some(error);
+                        return;
+                    }
                     let capture = self.capture_macro_target();
                     self.apply_recorded_instruction(
                         capture,

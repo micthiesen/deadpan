@@ -141,6 +141,13 @@ pub enum Entry {
         through_shots: bool,
     },
     TrackCancel,
+    /// `:target-rename TARGET New label`: relabel a saved target.
+    TargetRename {
+        target: String,
+        label: String,
+    },
+    /// `:target-delete TARGET`: delete a saved target nothing uses.
+    TargetDelete(String),
     /// `:zoom` and `:creep`: authored framing on the selected beat.
     Zoom(super::zoom::ZoomInput),
     /// `:gag-inspect NAME [parameters]`: list a recipe's expansion without
@@ -365,6 +372,31 @@ pub fn parse(input: &str) -> Result<Entry, String> {
     }
     if verb == "track" {
         return track(words);
+    }
+    if verb == "target-rename" {
+        let target = words
+            .next()
+            .ok_or("Use :target-rename TARGET New label, naming the target by id or label.")?;
+        let label = words.collect::<Vec<_>>().join(" ");
+        if label.trim().is_empty() {
+            return Err(
+                "Give the new label after the target, for example :target-rename target-1 Speaker."
+                    .into(),
+            );
+        }
+        return Ok(Entry::TargetRename {
+            target: target.to_owned(),
+            label: label.trim().to_owned(),
+        });
+    }
+    if verb == "target-delete" {
+        let target = words
+            .next()
+            .ok_or("Use :target-delete TARGET, naming the target by id or label.")?;
+        if words.next().is_some() {
+            return Err("Use :target-delete TARGET with one id or one-word label.".into());
+        }
+        return Ok(Entry::TargetDelete(target.to_owned()));
     }
     if verb == "track-cancel" {
         return match words.next() {

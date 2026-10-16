@@ -650,6 +650,10 @@ impl DeadpanApp {
     /// values as one recorded `Trim` instruction on the restored selection,
     /// so a replay applies the same values to its own selected beat.
     fn record_requested_trim(&mut self, context: &egui::Context) {
+        // Like the native Apply, wait while another project command runs.
+        if self.service.is_busy() {
+            return;
+        }
         let Some(draft) = &mut self.trim else {
             return;
         };
@@ -665,8 +669,18 @@ impl DeadpanApp {
         else {
             return;
         };
+        let entry = draft.capture.target.clone();
         self.stop_playback();
         self.close_trim(context);
+        if let Err(error) = self.recorded_context(
+            entry.session,
+            &entry.base_revision,
+            &entry.node,
+            entry.cursor,
+        ) {
+            self.error = Some(error);
+            return;
+        }
         let target = self.capture_macro_target();
         self.apply_recorded_instruction(
             target,

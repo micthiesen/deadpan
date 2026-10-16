@@ -1041,6 +1041,28 @@ pub static SPECS: &[Spec] = &[
         headless: gui("SIGINT to the running track process", CAM),
         help: "Stop the running background tracking job.",
     },
+    Spec {
+        id: "target.rename",
+        name: "Rename a target",
+        section: Section::Framing,
+        keys: &[],
+        commands: &[verb("target-rename", ":target-rename TARGET New label")],
+        contexts: C::EDITOR,
+        replay: Replay::NotRecorded,
+        headless: eq("command set_target with the new label", CAM),
+        help: "Give a saved target a new label, naming it by id or current label. Labels stay unique, so a target can always be named by its label. One Undo.",
+    },
+    Spec {
+        id: "target.delete",
+        name: "Delete a target",
+        section: Section::Framing,
+        keys: &[],
+        commands: &[verb("target-delete", ":target-delete TARGET")],
+        contexts: C::EDITOR,
+        replay: Replay::NotRecorded,
+        headless: eq("command delete_target", CAM),
+        help: "Delete a saved target that no framing or escalating zoom follows; otherwise the refusal names the beats that use it. One Undo.",
+    },
     // SOUND OF A BEAT
     Spec {
         id: "gain.step",

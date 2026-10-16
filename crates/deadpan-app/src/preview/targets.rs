@@ -212,6 +212,17 @@ impl DeadpanApp {
                 id,
                 mode,
             },
+            Operation::Delete {
+                session,
+                revision,
+                id,
+                ..
+            } => Operation::Delete {
+                ticket,
+                session,
+                revision,
+                id,
+            },
             Operation::Cancel { session, job, .. } => Operation::Cancel {
                 ticket,
                 session,
@@ -334,6 +345,70 @@ impl DeadpanApp {
         })();
         if let Err(error) = result {
             self.error = Some(error);
+        }
+    }
+
+    /// `:target-rename TARGET New label`: one undoable relabel. Labels stay
+    /// unique so a target can still be named by its label.
+    pub(super) fn rename_target(&mut self, target: &str, label: &str) {
+        let result = (|| {
+            let id = self.resolve_target(target)?;
+            let workspace = self.workspace.as_ref().ok_or("Open a project first.")?;
+            if workspace
+                .document
+                .targets()
+                .iter()
+                .any(|(other, saved)| other != &id && saved.label.eq_ignore_ascii_case(label))
+            {
+                return Err(format!("Another target is already labelled {label}."));
+            }
+            let mut renamed = workspace.document.targets()[&id].clone();
+            if renamed.label == label {
+                return Err(format!("{label} already has that label; no edit was made."));
+            }
+            renamed.label = label.to_owned();
+            Ok(Operation::Save {
+                ticket: 0,
+                session: workspace.session,
+                revision: workspace.document.revision_id().clone(),
+                id,
+                target: Box::new(renamed),
+            })
+        })();
+        match result {
+            Ok(operation) => {
+                self.submit_target(operation);
+            }
+            Err(error) => self.error = Some(error),
+        }
+    }
+
+    /// `:target-delete TARGET`: one undoable deletion of a target no framing
+    /// or escalation uses.
+    pub(super) fn delete_target(&mut self, target: &str) {
+        let result = (|| {
+            let id = self.resolve_target(target)?;
+            let workspace = self.workspace.as_ref().ok_or("Open a project first.")?;
+            let users = crate::project::targets::users(&workspace.document, &id);
+            if !users.is_empty() {
+                return Err(format!(
+                    "{} is used by {}; change their framing first (:zoom off or another target), then delete it.",
+                    self.target_label(&id),
+                    users.join(", ")
+                ));
+            }
+            Ok(Operation::Delete {
+                ticket: 0,
+                session: workspace.session,
+                revision: workspace.document.revision_id().clone(),
+                id,
+            })
+        })();
+        match result {
+            Ok(operation) => {
+                self.submit_target(operation);
+            }
+            Err(error) => self.error = Some(error),
         }
     }
 
