@@ -42,7 +42,21 @@ pub(crate) fn timing(command: &Command) -> Option<&AudioTimingId> {
 /// or speed change, and a Trim that retains no audio clock, names no clock;
 /// its new layout takes the leaf's own revision at ordinal zero, which no
 /// other table of that revision uses.
-pub(crate) fn capture_timing(command: &Command, allocation: &RevisionId) -> Option<AudioTimingId> {
+/// Whether this command captures the pre-edit layout and transports attached
+/// sound clocks (an owner scope that changes still refuses at restore).
+pub(crate) fn transports(command: &Command) -> bool {
+    timing(command).is_some()
+        || matches!(
+            command,
+            Command::Split { .. }
+                | Command::SetHoldDuration { .. }
+                | Command::WrapRetime { .. }
+                | Command::SetRetime { .. }
+                | Command::ApplySourceTrim { .. }
+        )
+}
+
+fn capture_timing(command: &Command, allocation: &RevisionId) -> Option<AudioTimingId> {
     let derived = || AudioTimingId {
         allocation: allocation.clone(),
         ordinal: 0,

@@ -540,8 +540,6 @@ where
         self.finish_beat_span(trace_index, selected, local)
     }
 
-    /// `SetRoomTone`: the selected Hold loops the exact audio of an Original
-    /// moment from a register, as the native room-tone sheet authors it.
     /// Silence or an explicit room-tone span for the selected pause.
     pub(super) fn set_hold_audio(
         &mut self,
@@ -593,6 +591,8 @@ where
         Ok(())
     }
 
+    /// `SetRoomTone`: the selected Hold loops the exact audio of an Original
+    /// moment from a register, as the native room-tone sheet authors it.
     pub(super) fn set_room_tone(
         &mut self,
         trace_index: usize,

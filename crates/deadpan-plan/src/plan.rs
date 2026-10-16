@@ -1308,7 +1308,8 @@ impl RenderPlan {
                 continue;
             };
             // An escalating zoom moves toward its target but keeps the view
-            // inside the picture: at scale `s` each center stays within
+            // inside its layer's canvas (bars included for a letterboxed
+            // picture): at scale `s` each center stays within
             // `[1/(2s), 1 - 1/(2s)]`.
             if fill && scale.compare_integer(1).is_gt() {
                 let Ok(margin) = ExactRatio::ONE

@@ -41,8 +41,8 @@ pub struct ZoomStep {
     #[serde(default, skip_serializing_if = "ZoomProgression::is_add")]
     pub progression: ZoomProgression,
     /// Zoom toward this attention target instead of the picture center,
-    /// keeping each play's view inside the picture. Where the picture is not
-    /// the target's, the zoom stays centered.
+    /// keeping each play's view inside its layer's canvas. Where the picture
+    /// is not the target's, the zoom stays centered.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub target: Option<crate::TargetId>,
 }

@@ -77,6 +77,11 @@ pub(crate) fn prepare(
                 "an AI pause needs one play; add it to this play only",
             ));
         }
+        if !document.beat_sounds().is_empty() {
+            return Err(invalid(
+                "a pause for all plays cannot yet move attached sounds; add it to this play only",
+            ));
+        }
         // The definition is edited in place: nothing is isolated.
         all_plays_site(document, &target, *at)?;
         if !identities.isolation.nodes.is_empty()
@@ -313,6 +318,9 @@ struct AllPlaysSite {
     slot: usize,
     end: i64,
     first_cut: i64,
+    /// Default occurrences of the edited definition: the pause appears in
+    /// each, so the outermost Repeat grows by this many pause lengths.
+    occurrences: i64,
 }
 
 /// Admit default plays at every Repeat level, ordinary Sequences between and
@@ -362,6 +370,7 @@ fn all_plays_site(
     // The cursor's own occurrence and the earliest default one, level by level.
     let mut shown = start;
     let mut earliest = start;
+    let mut occurrences = 1_i64;
     for (level, step) in instance.repeats.iter().enumerate() {
         let NodeKind::Repeat {
             child, iterations, ..
@@ -372,7 +381,7 @@ fn all_plays_site(
         let overrides = document.overrides().get(&step.node);
         if overrides.is_some_and(|plays| plays.get(&step.iteration).is_some()) {
             return Err(invalid(
-                "this play has its own content; add the pause to this play only",
+                "this play has its own content; add the pause to this play only, or show a play that uses the shared definition",
             ));
         }
         let layout = index
@@ -384,6 +393,14 @@ fn all_plays_site(
             .ok_or_else(|| invalid("the Repeat play is missing"))?;
         // Overridden plays are sparse, so the first default play is among the
         // first `overridden + 1` plays.
+        let default_plays = i64::from(iterations.len())
+            .checked_sub(
+                i64::try_from(overrides.map_or(0, |plays| plays.len())).map_err(|_| overflow())?,
+            )
+            .ok_or_else(overflow)?;
+        occurrences = occurrences
+            .checked_mul(default_plays)
+            .ok_or_else(overflow)?;
         let first_default = (0..iterations.len())
             .take(overrides.map_or(0, |plays| plays.len()).saturating_add(1))
             .filter_map(|index| iterations.at(index))
@@ -423,6 +440,36 @@ fn all_plays_site(
         slot,
         end,
         first_cut,
+        occurrences,
+    })
+}
+
+/// The independent root bus moves as for other Repeat edits: one insertion
+/// at the outermost Repeat's end of every default occurrence's pause.
+pub(crate) fn all_plays_root_operation(
+    document: &ProjectDocument,
+    command: &Command,
+) -> Result<crate::RootSoundOperation, EditError> {
+    let Command::InsertOccurrenceTime {
+        at,
+        within,
+        hold,
+        all_plays: true,
+        ..
+    } = command
+    else {
+        return Err(invalid("expected an all-plays pause"));
+    };
+    let target = target::for_command(document, *at, within.as_ref())?;
+    let site = all_plays_site(document, &target, *at)?;
+    let frames = hold
+        .duration
+        .frames()
+        .checked_mul(site.occurrences)
+        .ok_or_else(overflow)?;
+    Ok(crate::RootSoundOperation::Insert {
+        at: ProjectFrame(site.end),
+        duration: FrameDuration::new(frames).map_err(crate::DocumentError::from)?,
     })
 }
 

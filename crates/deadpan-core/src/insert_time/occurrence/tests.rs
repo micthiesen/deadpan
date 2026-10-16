@@ -438,3 +438,81 @@ fn an_all_plays_pause_leaves_an_isolated_play_unchanged() {
     // Inside the isolated play itself, all plays is refused.
     assert!(crate::apply(&isolated, &all_plays(&isolated, 8, "own")).is_err());
 }
+
+fn with_root_sound(mut document: ProjectDocument) -> ProjectDocument {
+    let time_base = SourceTimeBase::new(1, 48_000).unwrap();
+    let span = SourceSpan::new(
+        SourceTimestamp {
+            ticks: 0,
+            time_base,
+        },
+        SourceTimestamp {
+            ticks: 1_600,
+            time_base,
+        },
+    )
+    .unwrap();
+    let asset = AssetId::new("boing").unwrap();
+    document.assets.insert(
+        asset.clone(),
+        AssetRecord {
+            label: "Boing".into(),
+            content_hash: "a".repeat(64),
+            video: None,
+            audio: Some(span),
+            still_image: false,
+            frame_count: None,
+            source_qualification: Some(SourceQualificationId::new("b".repeat(64)).unwrap()),
+        },
+    );
+    let rate = document.presentation_basis().frame_rate;
+    document.sounds.insert(
+        SoundId::new("after").unwrap(),
+        SoundEvent {
+            owner: id("root"),
+            label: "After".into(),
+            source: SourceAudio { asset, span },
+            mapping: SourceAudioMapping::natural_rate(span, rate).unwrap(),
+            offset: rate.audio_boundary(ProjectFrame(17)).unwrap(),
+            treatments: AudioTreatments::default(),
+            start_edge: AudioEdgePolicy::Automatic,
+            end_edge: AudioEdgePolicy::Automatic,
+            overflow: SoundOverflowPolicy::Reject,
+        },
+    );
+    document.validate().unwrap();
+    document
+}
+
+#[test]
+fn an_all_plays_pause_moves_root_sounds_by_every_default_occurrence() {
+    let before = with_root_sound(fixture(false));
+    let edit = crate::apply(&before, &all_plays(&before, 7, "all")).unwrap();
+    let after = edit.forward.apply(&before).unwrap();
+    assert_eq!(edit.inverse.apply(&after).unwrap(), before);
+    // The same routes as three frames inserted at the Repeat's end (16).
+    let reference = crate::apply(
+        &before,
+        &CommandRequest {
+            project_id: before.project_id().clone(),
+            expected_revision: before.revision_id().clone(),
+            new_revision: revision("reference"),
+            command: Command::InsertTime {
+                at: ProjectFrame(16),
+                hold: hold(3),
+                id: id("reference-pause"),
+                identities: SplitIdentities::default(),
+                timing: AudioTimingId {
+                    allocation: revision("reference"),
+                    ordinal: 0,
+                },
+            },
+        },
+    )
+    .unwrap()
+    .forward
+    .apply(&before)
+    .unwrap();
+    assert!(!after.sound_routes().is_empty());
+    assert_eq!(after.sound_routes(), reference.sound_routes());
+}

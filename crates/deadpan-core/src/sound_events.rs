@@ -312,7 +312,7 @@ pub(crate) fn validate_command(
     // Every other timed edit captures the pre-edit layout and transports each
     // attached sound whose processing scope only moved; a changed scope refuses.
     if !document.beat_sounds.is_empty()
-        && crate::sound_clock::edit::capture_timing(command, document.revision_id()).is_none()
+        && !crate::sound_clock::edit::transports(command)
         && !preserves_sound_clocks(command)
     {
         return Err(EditError::new(

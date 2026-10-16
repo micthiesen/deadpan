@@ -725,3 +725,80 @@ fn speed_changes_before_an_owner_transport_its_sound_and_inside_it_refuse() {
     );
     assert!(inside.is_err(), "{inside:?}");
 }
+
+#[test]
+fn speed_changes_around_an_owner_refuse() {
+    let before = fixture();
+    // The owner sits inside group `top`; slowing the group changes the
+    // owner's processing scope and must refuse whole.
+    for command in [
+        Command::WrapRetime {
+            node: node("top"),
+            id: node("slow-group"),
+            duration: frames(16),
+            pitch: crate::PitchPolicy::FollowSpeed,
+        },
+        Command::WrapRetime {
+            node: node("owner"),
+            id: node("slow-owner"),
+            duration: frames(8),
+            pitch: crate::PitchPolicy::Preserve,
+        },
+    ] {
+        let refused = apply(&before, &request(&before, "refused", command));
+        assert!(refused.is_err(), "{refused:?}");
+    }
+    // Changing a speed that already contains the owner refuses too.
+    let wrapped = {
+        let mut document = before.clone();
+        let edit = apply(
+            &document,
+            &request(
+                &document,
+                "wrapped-top",
+                Command::WrapRetime {
+                    node: node("top"),
+                    id: node("speed-top"),
+                    duration: frames(8),
+                    pitch: crate::PitchPolicy::FollowSpeed,
+                },
+            ),
+        );
+        // Wrapping is itself refused; build the speed change without sounds
+        // and add the sound afterwards.
+        assert!(edit.is_err());
+        let sounds = std::mem::take(&mut document.beat_sounds);
+        let mut wrapped = edit_without_sounds(&document);
+        wrapped.beat_sounds = sounds;
+        wrapped.validate().unwrap();
+        wrapped
+    };
+    let changed = apply(
+        &wrapped,
+        &request(
+            &wrapped,
+            "changed-top",
+            Command::SetRetime {
+                node: node("speed-top"),
+                duration: frames(12),
+                pitch: crate::PitchPolicy::FollowSpeed,
+            },
+        ),
+    );
+    assert!(changed.is_err(), "{changed:?}");
+}
+
+/// `document` with group `top` wrapped in an 8-frame FollowSpeed Retime,
+/// applied while it has no attached sounds.
+fn edit_without_sounds(document: &ProjectDocument) -> ProjectDocument {
+    edit(
+        document,
+        "speed-top-rev",
+        Command::WrapRetime {
+            node: node("top"),
+            id: node("speed-top"),
+            duration: frames(8),
+            pitch: crate::PitchPolicy::FollowSpeed,
+        },
+    )
+}

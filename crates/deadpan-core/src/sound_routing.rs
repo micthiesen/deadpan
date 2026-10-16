@@ -439,6 +439,17 @@ impl RootSoundEditCapture {
                 output_frames: document.duration()?.frames(),
             }));
         }
+        if matches!(
+            command,
+            Command::InsertOccurrenceTime {
+                all_plays: true,
+                ..
+            }
+        ) {
+            let operation =
+                crate::insert_time::occurrence::all_plays_root_operation(document, command)?;
+            return Self::prepare_operation(document, operation).map(Some);
+        }
         let operation = match command {
             Command::TrimSource {
                 parent,

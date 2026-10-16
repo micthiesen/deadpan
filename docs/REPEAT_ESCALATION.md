@@ -41,10 +41,12 @@ Repeat keeps it in its frozen view.
 
 With `zoom.target`, each later play's layer centers on where that target is at
 the picture's source time, seen through the contents' framing, exactly as a
-Follow does. Unlike a Follow it keeps the view inside the picture: at scale `s`
-both centers are clamped to `[1/(2s), 1 - 1/(2s)]` before the one quantization
-to the framing grid, so a subject near the edge pulls the zoom toward it without
-showing background. Where the picture is not the target's asset, outside the
+Follow does. Unlike a Follow it keeps the view inside its layer's canvas: at
+scale `s` both centers are clamped to `[1/(2s), 1 - 1/(2s)]` before the one
+quantization to the framing grid, so a subject near the edge pulls the zoom
+toward it without moving past the canvas edge. For an Original letterboxed or
+pillarboxed on the canvas, that canvas includes the bars, so a zoom toward a
+subject at the picture's edge can still show part of a bar. Where the picture is not the target's asset, outside the
 target's span, or below a pause's captured geometry, the layer stays centered.
 A scale below 1 is not clamped. Document validation refuses a target the
 project does not have, so deleting a target needs the escalation changed first.
