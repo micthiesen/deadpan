@@ -17,7 +17,12 @@ refinement seek rows;
 [store-and-seek-2026-10-15](qualification/store-and-seek-2026-10-15.md)
 moves the 64th-revision keyframe out of the edit (10,000-beat pause p95
 104.9 to 75.5 ms at load 3.25 and 2.9) and adds page-cache-cold seeks
-from a freshly attached disk image; and [playback-proxy-2026-10-06](qualification/playback-proxy-2026-10-06.md)
+from a freshly attached disk image;
+[edit-latency-2026-10-15](qualification/edit-latency-2026-10-15.md)
+supersedes 10,000-beat edit latency (pause p95 71.4 / 74.3 to 40.3 /
+44.7 ms, split, wrap and Undo p95 about 45 to about 20 ms, gated at load
+2.8 to 3.0) by no longer rehashing the history on each writer edit and by
+sharing document maps and identities; and [playback-proxy-2026-10-06](qualification/playback-proxy-2026-10-06.md)
 the playback rows (with and without proxy pictures, cut edits) and adds the
 stress runs. [Selection-loop decode-ahead](qualification/loop-lookahead-2026-10-11.md)
 adds 30-second real-device comparisons at 1080p60 and 4K30: zero dropped
