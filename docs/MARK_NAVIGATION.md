@@ -78,3 +78,13 @@ older valid positions. Saved marks are the durable way to follow edited content.
 This does not add structural-edit rebasing for transient history, history for
 every motion, persistent named registers, motion/text-object operators or native
 navigation inside Repeat/Retime occurrence scopes. DP-05 and DP-20 remain partial.
+
+## Recording
+
+While a macro records, `m{letter}` in Your edit saves through the semantic
+`SetMark` instruction, with the same host, position and bias as the native key,
+and `'{letter}` records `JumpMark` once the native jump has landed. A jump into
+another group or to an Original mark cancels recording, because a macro moves
+only inside its group; a run likewise refuses a mark outside its group. Planner
+tests and the `marks` replay record a set, a motion and a jump and run them at a
+new cursor.

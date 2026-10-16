@@ -405,6 +405,16 @@ pub enum SemanticInstruction {
     SetHoldDuration {
         length: PauseLength,
     },
+    /// Set the letter mark at the Edit cursor (`m` then a letter), owned by
+    /// the direct child there, exactly as the native key saves it.
+    SetMark {
+        letter: char,
+    },
+    /// Jump to the letter mark's Edit boundary (`'` then a letter). It must
+    /// lie in the current group; Original marks are outside a macro's clock.
+    JumpMark {
+        letter: char,
+    },
     /// Slip the selected direct-child Source (`:slip +5f`): show Original
     /// material this many whole frames later (negative: earlier) without
     /// changing its position or duration. A replay without that much handle
@@ -677,6 +687,11 @@ impl SemanticProgram {
                     EditErrorCode::InvalidCommand,
                     "word-end motions move forward only",
                 ));
+            }
+            if let SemanticInstruction::SetMark { letter }
+            | SemanticInstruction::JumpMark { letter } = instruction
+            {
+                super::native_mark_id(*letter)?;
             }
             if let SemanticInstruction::Group { label, .. } = instruction {
                 crate::validate_group_label(label)?;

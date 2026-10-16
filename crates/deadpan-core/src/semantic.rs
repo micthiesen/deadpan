@@ -12,6 +12,17 @@ pub use planner::*;
 pub use program::*;
 pub use speech::*;
 
+/// The authored identity of a native letter mark (`native-mark-{letter}`).
+pub fn native_mark_id(letter: char) -> Result<crate::MarkId, crate::EditError> {
+    if !letter.is_ascii_alphabetic() {
+        return Err(crate::EditError::new(
+            crate::EditErrorCode::InvalidCommand,
+            "a mark uses one letter: a-z or A-Z",
+        ));
+    }
+    crate::MarkId::new(format!("native-mark-{letter}")).map_err(crate::EditError::from)
+}
+
 use std::num::NonZeroU32;
 
 use serde::{Deserialize, Serialize};

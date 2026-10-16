@@ -386,6 +386,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     )?;
     painted(d, "Remove Z")?;
     d.key(Key::Escape)?;
+    recorded_marks(d)?;
     d.report.skipped.push("Marks use real project writes, anchor transforms and decoded pictures. Delayed service delivery and IME input are explicitly injected; physical key layouts, native IME and VoiceOver remain separate acceptance.".into());
     Ok(())
 }
@@ -489,5 +490,83 @@ fn painted(d: &mut Driver<'_>, text: &str) -> Result<(), String> {
         !painted.is_empty() && painted.iter().all(|entry| entry["fully_visible"] == true),
         json!(text),
         json!(painted),
+    )
+}
+
+fn macro_program(d: &Driver<'_>, name: char) -> Option<Vec<deadpan_core::SemanticInstruction>> {
+    d.app()
+        .copied
+        .entries()
+        .find_map(|(slot, value)| match value {
+            crate::preview::copied::Content::Macro(program) if slot == name => {
+                Some(program.instructions().to_vec())
+            }
+            _ => None,
+        })
+}
+
+fn macro_idle(d: &mut Driver<'_>) -> Result<(), String> {
+    d.wait_for("The macro action is acknowledged", |app| {
+        !app.service.is_busy() && !app.macros.is_pending() && !app.marks.is_pending()
+    })?;
+    d.settled()
+}
+
+fn edit_mark_position(d: &Driver<'_>, letter: char) -> Option<deadpan_core::ExactRatio> {
+    match &mark(d, letter).ok()?.boundary.coordinate {
+        Anchor::Occurrence { position, .. } => Some(*position),
+        _ => None,
+    }
+}
+
+/// While a macro records, `m{letter}` saves through the recorded instruction
+/// and `'{letter}` records its jump once it lands; a run repeats both.
+fn recorded_marks(d: &mut Driver<'_>) -> Result<(), String> {
+    use deadpan_core::SemanticInstruction as I;
+    goto(d, 30)?;
+    d.command("record r")?;
+    let revision = d.revision();
+    d.chord(&[Key::M, Key::K])?;
+    d.changed(&revision)?;
+    macro_idle(d)?;
+    d.chord(&[Key::Num5, Key::L])?;
+    macro_idle(d)?;
+    jump(d, Key::K)?;
+    macro_idle(d)?;
+    cursor(d, View::Sequence, 30)?;
+    d.command("record-stop")?;
+    d.wait_for("Macro r is saved", |app| {
+        !app.service.is_busy()
+            && !app.macros.recording()
+            && app.copied.entries().any(|(slot, value)| {
+                slot == 'r' && matches!(value, crate::preview::copied::Content::Macro(_))
+            })
+    })?;
+    let expected = vec![
+        I::SetMark { letter: 'k' },
+        I::MoveFrames {
+            forward: true,
+            count: std::num::NonZeroU32::new(5).ok_or("count")?,
+        },
+        I::JumpMark { letter: 'k' },
+    ];
+    d.check(
+        "Recording saves the mark, the motion and the jump as three instructions",
+        macro_program(d, 'r').as_ref() == Some(&expected)
+            && edit_mark_position(d, 'k') == Some(deadpan_core::ExactRatio::integer(30)),
+        json!({"instructions":expected,"k":30}),
+        json!({"recorded":macro_program(d, 'r'),"k":mark(d, 'k').ok()}),
+    )?;
+    goto(d, 50)?;
+    let revision = d.revision();
+    d.command("macro r")?;
+    d.changed(&revision)?;
+    macro_idle(d)?;
+    d.check(
+        "Running the macro moves mark k to the cursor and returns to it",
+        d.app().sequence_cursor == 50
+            && edit_mark_position(d, 'k') == Some(deadpan_core::ExactRatio::integer(50)),
+        json!({"Edit":50,"k":50}),
+        json!({"Edit":d.app().sequence_cursor,"k":mark(d, 'k').ok()}),
     )
 }

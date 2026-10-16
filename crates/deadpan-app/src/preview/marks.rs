@@ -269,6 +269,25 @@ impl DeadpanApp {
                 return;
             }
         };
+        // While a macro records, an Edit mark is saved through the recorded
+        // instruction; a jump records itself once it lands (below).
+        if self.macros.recording() {
+            match (&capture.location, action) {
+                (Location::Edit { .. }, Action::SetMark(letter)) => {
+                    let target = self.capture_macro_target();
+                    self.apply_recorded_instruction(
+                        target,
+                        Ok(deadpan_core::SemanticInstruction::SetMark { letter }),
+                    );
+                    return;
+                }
+                (Location::Edit { .. }, Action::JumpMark(_)) => {}
+                _ => {
+                    self.error = Some("A macro records Edit marks and jumps only. Save or cancel recording first.".into());
+                    return;
+                }
+            }
+        }
         let operation = match action {
             Action::SetMark(letter) => Operation::Set {
                 letter,
@@ -352,9 +371,30 @@ impl DeadpanApp {
                 let mut destination = pending.departure.entry();
                 destination.location = location;
                 let departure = self.current_jump_entry(&pending.departure);
+                let recorded = match (
+                    &pending.request.operation,
+                    &pending.departure.location,
+                    &destination.location,
+                ) {
+                    (
+                        Operation::Jump { letter },
+                        Location::Edit { scope, .. },
+                        ResolvedLocation::Edit { scope: landed, .. },
+                    ) if self.macros.recording() => Some((*letter, scope == landed)),
+                    _ => None,
+                };
                 if let Err(error) = self.apply_jump(&destination, context) {
                     self.error = Some(error);
                     return;
+                }
+                match recorded {
+                    Some((letter, true)) => self
+                        .record_macro_local(deadpan_core::SemanticInstruction::JumpMark { letter }),
+                    Some((_, false)) => {
+                        self.cancel_macro_recording();
+                        self.message = Some("Macro recording cancelled: the mark is in another group, and a macro stays in its group. The previous macro is unchanged.".into());
+                    }
+                    None => {}
                 }
                 self.marks.history.jump(departure, &destination);
                 self.describe_jump(&destination);

@@ -26,6 +26,7 @@ mod gag_edit;
 mod group;
 mod pause;
 pub use pause::copied_moment_audio;
+mod marks;
 mod repeat;
 mod retime;
 mod role_repeat;
@@ -793,6 +794,12 @@ where
                 SemanticInstruction::Slip { frames } => {
                     self.slip(index, *frames)?;
                 }
+                SemanticInstruction::SetMark { letter } => {
+                    self.set_mark(index, *letter)?;
+                }
+                SemanticInstruction::JumpMark { letter } => {
+                    self.jump_mark(*letter)?;
+                }
                 SemanticInstruction::CutFrames {
                     operation,
                     register,
@@ -921,6 +928,7 @@ where
                         | SemanticInstruction::Split
                         | SemanticInstruction::Trim { .. }
                         | SemanticInstruction::Slip { .. }
+                        | SemanticInstruction::SetMark { .. }
                         | SemanticInstruction::SetAudioLag { .. }
                         | SemanticInstruction::SetAudio { .. }
                         | SemanticInstruction::DeleteRole { .. }
