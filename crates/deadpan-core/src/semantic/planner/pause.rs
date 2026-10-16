@@ -387,6 +387,7 @@ where
                 identities,
                 timing,
                 ai: request_ai,
+                all_plays: false,
             }
         } else if request_ai {
             Command::InsertAiTime {

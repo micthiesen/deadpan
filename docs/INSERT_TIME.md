@@ -85,8 +85,25 @@ occurrence. `pause_insertion_within` starts there and admits both its edges,
 so insertion at the beginning of play two cannot fall into play one. The
 command remaps the address through its own isolation before resolving the
 insertion again. Native requests retain the session, revision, scope and cursor;
-the saved receipt selects the new Hold within the same stable play. All plays,
-multiple plays and Retime ancestors are refused for this operation.
+the saved receipt selects the new Hold within the same stable play. Several
+selected plays and Retime ancestors are refused for this operation.
+
+With `all_plays: true` the same command inserts into the Repeat's shared
+definition instead (specification §5.2: default edits affect every iteration),
+so every default play grows and overridden plays keep their own branches. It
+admits one Repeat level whose ancestors are ordinary Sequences, a cut inside the
+definition (never a gap) shown through a default play, and no AI preparation
+(generation needs one effective occurrence). Nothing is isolated: the command
+captures unbound lattices under its timing identity, Splits the definition
+leaf in place (wrapping a direct Repeat child in a Sequence when needed),
+reanchors every owner inside the Repeat from the first default play's cut to
+the Repeat's end on its own pre-edit clock, then the suffix after the Repeat,
+exactly as Repeat gap changes do. Decoded 44.1 kHz Source and room-tone gap PCM
+keeps every play, gap and the tail sample-exact on the NTSC grid
+(`an_all_plays_pause_keeps_every_play_and_gap_on_its_own_44100_clock`); core
+tests cover the structure, exact inverse, an isolated play left unchanged and
+refusals. The scoped inspector's All plays scope (`:scope all`) inserts through
+it (`scoped-plays` replay).
 
 The command captures every later play, gap and enclosing Sequence sibling on
 its own pre-edit sampling clock. The inserted time grows only the selected

@@ -448,6 +448,7 @@ pub fn occurrence_pauses(dir: &Path) -> Result<Fixture> {
                     ordinal: 0,
                 },
                 ai: false,
+                all_plays: false,
                 identities: OccurrencePauseIdentities {
                     isolation: OccurrenceIdentities {
                         nodes: project.fresh(target.isolation_nodes)?,

@@ -30,17 +30,28 @@ pub struct Target {
 impl Target {
     /// A temporal edit must name exactly one concrete branch at every Repeat
     /// level. A displayed representative of All plays is not that authority.
-    pub fn pause_instance(&self, workspace: &Workspace) -> Result<&InstancePath, String> {
+    /// The concrete play a pause resolves in, and whether it goes into the
+    /// shared definition for all plays: one Repeat level on All plays, shown
+    /// through its representative play.
+    pub fn pause_instance(&self, workspace: &Workspace) -> Result<(&InstancePath, bool), String> {
         self.validate(workspace)?;
+        let all_plays = matches!(
+            self.target.repeats.as_slice(),
+            [RepeatEditStep {
+                branch: RepeatEditBranch::Default,
+                ..
+            }]
+        );
         if !self.also.is_empty()
             || self.target.repeats.is_empty()
-            || self
-                .target
-                .repeats
-                .iter()
-                .any(|step| matches!(step.branch, RepeatEditBranch::Default))
+            || (!all_plays
+                && self
+                    .target
+                    .repeats
+                    .iter()
+                    .any(|step| matches!(step.branch, RepeatEditBranch::Default)))
         {
-            return Err("Choose This play at every enclosing Repeat before inserting a pause. All plays and multiple-play timing edits are not available yet.".into());
+            return Err("Choose This play at every enclosing Repeat, or All plays of a single Repeat, before inserting a pause. Several selected plays and nested All plays are not available yet.".into());
         }
         let instance = self
             .presentation
@@ -50,7 +61,7 @@ impl Target {
             .document
             .pause_insertion_within(self.cursor, instance)
             .map_err(|error| error.to_string())?;
-        Ok(instance)
+        Ok((instance, all_plays))
     }
 
     pub fn validate(&self, workspace: &Workspace) -> Result<(), String> {

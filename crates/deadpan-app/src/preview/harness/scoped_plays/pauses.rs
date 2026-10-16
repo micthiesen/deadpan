@@ -73,23 +73,76 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         d.snapshot(),
     )?;
     d.key(Key::Enter)?;
-    for scope in ["scope all", "scope plays 1,2"] {
-        d.command(scope)?;
-        idle(d)?;
-        let before = document(d)?.clone();
-        d.command("hold 3f")?;
-        idle(d)?;
-        d.check(
-            &format!("{scope} cannot silently insert in only the displayed play"),
-            document(d)? == &before
-                && d.app()
-                    .error
-                    .as_deref()
-                    .is_some_and(|error| error.contains("Choose This play")),
-            json!("no authored change; choose one play"),
-            d.snapshot(),
-        )?;
+    d.command("scope all")?;
+    idle(d)?;
+    let before = document(d)?.clone();
+    let root = d
+        .app()
+        .scoped_target()?
+        .ok_or("No All plays capture")?
+        .root
+        .clone();
+    let NodeKind::Repeat { iterations, .. } = &before.nodes()[&root].kind else {
+        return Err("The inspected root is not a Repeat".into());
+    };
+    let default_plays = i64::from(iterations.len())
+        - i64::try_from(before.overrides().get(&root).map_or(0, |plays| plays.len()))
+            .map_err(|error| error.to_string())?;
+    let revision = d.revision();
+    d.command("hold 3f")?;
+    d.changed(&revision)?;
+    idle(d)?;
+    d.check(
+        "All plays inserts one pause into the shared definition, growing every default play",
+        document(d)?
+            .duration()
+            .map_err(|error| error.to_string())?
+            .frames()
+            == before
+                .duration()
+                .map_err(|error| error.to_string())?
+                .frames()
+                + 3 * default_plays
+            && d.app().message.as_deref() == Some("Pause inserted in all plays and saved")
+            && d.app().scoped_target()?.is_some_and(|target| {
+                target
+                    .target
+                    .repeats
+                    .iter()
+                    .all(|step| matches!(step.branch, deadpan_core::RepeatEditBranch::Default))
+            }),
+        json!({"added_frames":3 * default_plays,"scope":"All plays"}),
+        d.snapshot(),
+    )?;
+    let revision = d.revision();
+    d.key(Key::U)?;
+    d.changed(&revision)?;
+    idle(d)?;
+    d.check(
+        "One Undo restores the shared definition",
+        document(d)?.nodes() == before.nodes()
+            && document(d)?.audio_bindings() == before.audio_bindings(),
+        json!("restored"),
+        d.snapshot(),
+    )?;
+    if d.app().scoped.is_none() {
+        d.key(Key::Enter)?;
     }
+    d.command("scope plays 1,2")?;
+    idle(d)?;
+    let before = document(d)?.clone();
+    d.command("hold 3f")?;
+    idle(d)?;
+    d.check(
+        "Several selected plays cannot silently insert in only the displayed play",
+        document(d)? == &before
+            && d.app()
+                .error
+                .as_deref()
+                .is_some_and(|error| error.contains("Choose This play")),
+        json!("no authored change; choose one play"),
+        d.snapshot(),
+    )?;
     d.command("scope play 2")?;
     let revision = d.revision();
     d.command("hold 2f")?;

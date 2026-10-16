@@ -50,7 +50,11 @@ start of a later play. One transaction isolates the necessary branches and
 inserts time; the inspector keeps the new Hold selected. AI insertion saves its
 durable preparation with the fallback and still requires explicit acceptance.
 
-All plays, multiple plays and Retime ancestors refuse pause insertion. Freeze
+All plays of a single Repeat inserts the pause into the shared definition, so
+every default play grows by it and overridden plays keep their own branches
+(one Undo; [pause insertion](INSERT_TIME.md)). All plays of nested Repeats,
+several selected plays, AI pauses for all plays and Retime ancestors refuse
+pause insertion. Freeze
 capture also refuses a boundary whose preceding picture does not pass through
 the selected insertion parent; black pauses need no sampled picture. Other
 timing edits, copy/paste and macros inside these contents remain required work;

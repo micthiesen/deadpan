@@ -20,6 +20,7 @@ fn pause(before: &ProjectDocument, at: i64) -> ProjectDocument {
             id: id("pause"),
             timing: timing("pause"),
             ai: false,
+            all_plays: false,
             identities: OccurrencePauseIdentities {
                 isolation: OccurrenceIdentities {
                     nodes: (0..target.isolation_nodes)

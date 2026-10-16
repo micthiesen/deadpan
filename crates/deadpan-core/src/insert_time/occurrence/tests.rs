@@ -94,6 +94,7 @@ fn request_within(
             hold: hold(1),
             id: id(&format!("{name}-pause")),
             ai: false,
+            all_plays: false,
             timing: AudioTimingId {
                 allocation: revision(name),
                 ordinal: 0,
@@ -368,4 +369,64 @@ fn occurrence_pause_preserves_gap_permissions_without_granting_the_new_hold() {
     );
     assert_eq!(after.sounds()[&sound].offset, AudioSample(137));
     assert_eq!(transaction.inverse.apply(&after).unwrap(), before);
+}
+
+fn all_plays(document: &ProjectDocument, at: i64, name: &str) -> CommandRequest {
+    let mut request = request(document, ProjectFrame(at), name);
+    let Command::InsertOccurrenceTime {
+        all_plays,
+        identities,
+        ..
+    } = &mut request.command
+    else {
+        unreachable!()
+    };
+    *all_plays = true;
+    identities.isolation = OccurrenceIdentities::default();
+    request
+}
+
+#[test]
+fn an_all_plays_pause_grows_every_default_play_once_and_reverts_exactly() {
+    let before = fixture(false);
+    // Plays 0..4, 6..10 and 12..16 with 2-frame gaps, then the tail.
+    let request = all_plays(&before, 7, "all");
+    let edit = crate::apply(&before, &request).unwrap();
+    let after = edit.forward.apply(&before).unwrap();
+    assert_eq!(edit.inverse.apply(&after).unwrap(), before);
+    assert_eq!(after.duration().unwrap().frames(), 19 + 3);
+    // One definition: the Repeat's child now holds the pause at local 1.
+    let NodeKind::Repeat { child, .. } = &after.nodes()[&id("outer")].kind else {
+        panic!()
+    };
+    let NodeKind::Sequence { children } = &after.nodes()[child].kind else {
+        panic!("the definition became a Sequence")
+    };
+    assert_eq!(children.len(), 3);
+    assert_eq!(children[1], id("all-pause"));
+    assert_eq!(after.durations().unwrap()[child].frames(), 5);
+    // Two Repeat levels, a gap and an isolated play are refused.
+    let nested = fixture(true);
+    assert!(crate::apply(&nested, &all_plays(&nested, 1, "nested")).is_err());
+    let gap = all_plays(&before, 5, "gap");
+    assert!(crate::apply(&before, &gap).is_err());
+}
+
+#[test]
+fn an_all_plays_pause_leaves_an_isolated_play_unchanged() {
+    let before = fixture(false);
+    // Isolate the second play with an ordinary one-play pause first.
+    let isolated = {
+        let edit = crate::apply(&before, &request(&before, ProjectFrame(7), "one")).unwrap();
+        edit.forward.apply(&before).unwrap()
+    };
+    assert_eq!(isolated.duration().unwrap().frames(), 20);
+    // Now the first play is still a default play: the pause grows plays one
+    // and three, not the isolated second play.
+    let request = all_plays(&isolated, 2, "rest");
+    let edit = crate::apply(&isolated, &request).unwrap();
+    let after = edit.forward.apply(&isolated).unwrap();
+    assert_eq!(after.duration().unwrap().frames(), 20 + 2);
+    // Inside the isolated play itself, all plays is refused.
+    assert!(crate::apply(&isolated, &all_plays(&isolated, 8, "own")).is_err());
 }

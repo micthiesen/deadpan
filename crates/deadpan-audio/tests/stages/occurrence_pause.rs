@@ -88,6 +88,7 @@ fn pause_within(
             },
             id: id("pause"),
             ai: false,
+            all_plays: false,
             timing: AudioTimingId {
                 allocation: revision,
                 ordinal: 0,
@@ -305,4 +306,120 @@ fn occurrence_pause_in_permitted_gap_keeps_root_sound_pcm_and_silences_only_new_
             .iter()
             .all(|sample| *sample == [0.; 2])
     );
+}
+
+fn all_plays_pause(document: &ProjectDocument, at: i64) -> ProjectDocument {
+    let PauseInsertionTarget::Occurrence(target) =
+        document.pause_insertion_target(ProjectFrame(at)).unwrap()
+    else {
+        panic!("expected Repeat at {at}")
+    };
+    let revision = RevisionId::new("all-plays-pause").unwrap();
+    let request = CommandRequest {
+        project_id: document.project_id().clone(),
+        expected_revision: document.revision_id().clone(),
+        new_revision: revision.clone(),
+        command: Command::InsertOccurrenceTime {
+            at: ProjectFrame(at),
+            within: None,
+            hold: HoldRecipe {
+                duration: duration(1),
+                video: HoldVideo::Background,
+                audio: HoldAudio::Silence,
+                picture_context: None,
+            },
+            id: id("pause"),
+            ai: false,
+            all_plays: true,
+            timing: AudioTimingId {
+                allocation: revision,
+                ordinal: 0,
+            },
+            identities: OccurrencePauseIdentities {
+                isolation: OccurrenceIdentities::default(),
+                split: SplitIdentities {
+                    nodes: (0..target.split_nodes)
+                        .map(|n| id(&format!("split-{n}")))
+                        .collect(),
+                },
+                container: target.container.then(|| id("container")),
+                gap: None,
+            },
+        },
+    };
+    let transaction = apply(document, &request).unwrap_or_else(|e| panic!("pause at {at}: {e}"));
+    let after = transaction.forward.apply(document).unwrap();
+    // Three default plays each grow by the one-frame pause.
+    assert_eq!(transaction.duration_delta, 3);
+    assert_eq!(transaction.inverse.apply(&after).unwrap(), *document);
+    ProjectDocument::from_json(&after.to_json().unwrap()).unwrap()
+}
+
+/// Compare new frames `[from + shift, to + shift)` with old frames
+/// `[from, to)` sample for sample on the NTSC grid. A shifted allocation can
+/// round one sample longer: inside a Source it continues the Source's own
+/// samples, and at a structural end it is silent.
+fn assert_moved(
+    actual: &Recorded,
+    old: &Recorded,
+    from: i64,
+    to: i64,
+    shift: i64,
+    continues: bool,
+    label: &str,
+) {
+    let old_samples = ntsc_boundary(from)..ntsc_boundary(to);
+    let new_samples = ntsc_boundary(from + shift)..ntsc_boundary(to + shift);
+    for (offset, sample) in new_samples.enumerate() {
+        let previous = old_samples.start + offset;
+        let expected = if previous < old_samples.end || continues {
+            old.samples[previous]
+        } else {
+            [0.; 2]
+        };
+        assert_eq!(
+            actual.samples[sample], expected,
+            "{label}: old {previous} new {sample}"
+        );
+    }
+}
+
+#[test]
+fn an_all_plays_pause_keeps_every_play_and_gap_on_its_own_44100_clock() {
+    let (before, mut provider, _) = fixture(false);
+    let old = record(&before, &mut provider, false, &[256]);
+    // Plays start at Edit 1, 7 and 13 (four frames each, two-frame room-tone
+    // gaps), then the tail at 17.
+    for local in 1..4 {
+        let after = all_plays_pause(&before, 1 + local);
+        let actual = record(&after, &mut provider, false, &[127, 3, 251]);
+        assert_eq!(
+            actual.samples[..ntsc_boundary(1 + local)],
+            old.samples[..ntsc_boundary(1 + local)]
+        );
+        for play in 0..3_i64 {
+            let start = 1 + 6 * play;
+            let label = format!("local {local} play {play}");
+            assert_moved(&actual, &old, start, start + local, play, true, &label);
+            let cut = start + play + local;
+            assert_pause(&actual, ntsc_boundary(cut)..ntsc_boundary(cut + 1));
+            // The Source after the cut, then its gap, each its own allocation.
+            assert_moved(
+                &actual,
+                &old,
+                start + local,
+                start + 4,
+                play + 1,
+                false,
+                &label,
+            );
+            assert_moved(&actual, &old, start + 4, start + 6, play + 1, false, &label);
+        }
+        assert_moved(&actual, &old, 17, 21, 3, false, "tail");
+        assert_eq!(
+            record(&after, &mut provider, false, &[1, 239]),
+            actual,
+            "chunk independence local={local}"
+        );
+    }
 }

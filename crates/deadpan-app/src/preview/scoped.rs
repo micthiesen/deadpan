@@ -7,7 +7,7 @@ use crate::project::scoped::Target;
 
 pub(super) mod model;
 
-const STRUCTURE_UNAVAILABLE: &str = "Inside Repeat and Retime contents, gain, Camera, pause audio and AI pictures are available. Choose This play at every Repeat level to insert a pause. Other timing edits and range copying require the parent.";
+const STRUCTURE_UNAVAILABLE: &str = "Inside Repeat and Retime contents, gain, Camera, pause audio and AI pictures are available. Choose This play at every Repeat level, or All plays of a single Repeat, to insert a pause. Other timing edits and range copying require the parent.";
 
 impl DeadpanApp {
     pub(super) fn insert_scoped_pause(

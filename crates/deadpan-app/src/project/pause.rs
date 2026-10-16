@@ -26,6 +26,7 @@ pub(super) fn prepare(
             black,
             ai: false,
             within: None,
+            all_plays: false,
         },
         allocate,
     )
@@ -38,7 +39,13 @@ pub(super) fn prepare_scoped(
     black: bool,
     ai: bool,
 ) -> Result<CommandRequest, String> {
-    let within = target.pause_instance(workspace)?.clone();
+    let (within, all_plays) = target.pause_instance(workspace)?;
+    if all_plays && ai {
+        return Err(
+            "An AI pause needs one play. Choose This play (:scope play N), then insert it.".into(),
+        );
+    }
+    let within = within.clone();
     prepare_selected(
         workspace,
         duration,
@@ -49,6 +56,7 @@ pub(super) fn prepare_scoped(
             black,
             ai,
             within: Some(within),
+            all_plays,
         },
         super::service::node,
     )
@@ -59,6 +67,8 @@ struct Selection {
     black: bool,
     ai: bool,
     within: Option<deadpan_core::InstancePath>,
+    /// Into the Repeat's shared definition: no play is isolated.
+    all_plays: bool,
 }
 
 fn prepare_selected(
@@ -74,6 +84,7 @@ fn prepare_selected(
         black,
         ai,
         within,
+        all_plays,
     } = selection;
     let document = &workspace.document;
     let total = workspace.plan.duration().frames();
@@ -143,10 +154,15 @@ fn prepare_selected(
             id,
             timing,
             ai,
+            all_plays,
             identities: deadpan_core::OccurrencePauseIdentities {
                 isolation: deadpan_core::OccurrenceIdentities {
-                    nodes: (0..target.isolation_nodes).map(|_| allocate()).collect(),
+                    nodes: (0..target.isolation_nodes)
+                        .filter(|_| !all_plays)
+                        .map(|_| allocate())
+                        .collect(),
                     marks: (0..target.isolation_marks)
+                        .filter(|_| !all_plays)
                         .map(|_| {
                             deadpan_core::MarkId::new(uuid::Uuid::new_v4().to_string())
                                 .expect("UUID is a mark identity")
@@ -157,7 +173,7 @@ fn prepare_selected(
                     nodes: (0..target.split_nodes).map(|_| allocate()).collect(),
                 },
                 container: target.container.then(&mut allocate),
-                gap: target.gap.then(&mut allocate),
+                gap: (target.gap && !all_plays).then(&mut allocate),
             },
         },
     };

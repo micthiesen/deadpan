@@ -185,6 +185,11 @@ define_commands! {
         identities: crate::OccurrencePauseIdentities,
         timing: crate::AudioTimingId,
         ai: bool,
+        /// Insert into the Repeat's default definition, so every default play
+        /// grows (specification §5.2: default edits affect every iteration).
+        /// Overridden plays keep their own branches.
+        #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+        all_plays: bool,
     },
     /// Insert one Source at an explicit ordinary Sequence slot, preserving the
     /// sampled entry of every shifted physical owner. Ancestors stay live.

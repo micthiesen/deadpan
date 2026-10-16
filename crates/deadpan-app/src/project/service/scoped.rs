@@ -212,7 +212,7 @@ impl Service {
     ) -> Result<()> {
         self.check_scoped_head(&target)?;
         let workspace = self.workspace.as_ref().ok_or("Open a project first")?;
-        target.pause_instance(workspace)?;
+        let (_, all_plays) = target.pause_instance(workspace)?;
         if black && ai {
             return Err("An AI pause requires its captured freeze fallback.".into());
         }
@@ -242,8 +242,13 @@ impl Service {
                     .iter()
                     .map(|step| deadpan_core::RepeatEditStep {
                         repeat: step.node.clone(),
-                        branch: deadpan_core::RepeatEditBranch::Play {
-                            iteration: step.iteration.clone(),
+                        // All plays keeps the inspector on the shared definition.
+                        branch: if all_plays {
+                            deadpan_core::RepeatEditBranch::Default
+                        } else {
+                            deadpan_core::RepeatEditBranch::Play {
+                                iteration: step.iteration.clone(),
+                            }
                         },
                     })
                     .collect(),
@@ -263,8 +268,13 @@ impl Service {
             range_selection: None,
             scoped: Some(receipt),
         });
-        self.refresh_saved("Pause inserted in This play and saved")?;
-        self.message = Some("Pause inserted in This play and saved".into());
+        let saved = if all_plays {
+            "Pause inserted in all plays and saved"
+        } else {
+            "Pause inserted in This play and saved"
+        };
+        self.refresh_saved(saved)?;
+        self.message = Some(saved.into());
         Ok(())
     }
 

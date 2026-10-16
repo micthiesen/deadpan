@@ -89,6 +89,7 @@ fn occurrence_pause_ai_intent_keeps_one_owned_play_through_reopen_and_history() 
                 ordinal: 0,
             },
             ai: true,
+            all_plays: false,
             identities: OccurrencePauseIdentities {
                 isolation: OccurrenceIdentities {
                     nodes: (0..target.isolation_nodes)
