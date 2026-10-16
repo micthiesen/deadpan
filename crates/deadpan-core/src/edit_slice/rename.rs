@@ -940,8 +940,8 @@ pub(super) fn prepare(
         lineage: rename.lineage(&slice.audio_lineage, None)?,
         bindings: AudioBindingState {
             timings,
-            bindings: rename.bindings(&slice.audio_bindings.bindings)?,
-            gap_bindings: rename.bindings(&slice.audio_bindings.gap_bindings)?,
+            bindings: rename.bindings(&slice.audio_bindings.bindings)?.into(),
+            gap_bindings: rename.bindings(&slice.audio_bindings.gap_bindings)?.into(),
             sound_clocks,
         },
         beat_sounds,

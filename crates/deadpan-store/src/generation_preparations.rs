@@ -415,6 +415,36 @@ pub(crate) fn verify(connection: &Connection) -> Result<(), StoreError> {
     validate_store(connection)
 }
 
+/// [`verify`] for the open writer's edit and navigation transactions.
+///
+/// Opening validated the complete history, and the writer lock makes this
+/// store its only writer: every row the receipt covers was either proved at
+/// opening or written by this writer after its replay checks. When the
+/// receipt still ends at the head and its operational dependencies (profile,
+/// generation scopes including preparation constraints, qualification
+/// receipts) still hold, hashing every stored row again proves nothing new,
+/// at a cost that grows with the history (10 to 15 ms per edit on the
+/// 10,000-beat fixture after 64 revisions). A changed dependency, or a
+/// receipt that does not cover the head, takes the complete [`verify`] path
+/// exactly as before. A history row changed underneath an open writer is
+/// detected by the next open or `validate`, as for every other read.
+pub(crate) fn verify_for_writer(connection: &Connection) -> Result<(), StoreError> {
+    let current = match crate::audit::read(connection)? {
+        Some(receipt) if receipt.revisions >= 1 => {
+            let revisions: i64 =
+                connection.query_row("SELECT COUNT(*) FROM revisions", [], |row| row.get(0))?;
+            receipt.revisions == revisions
+                && receipt.head == crate::validation::read_head(connection)?
+                && crate::audit::dependencies_hold(connection, &receipt)?
+        }
+        _ => false,
+    };
+    if !current {
+        return verify(connection);
+    }
+    validate_store(connection)
+}
+
 fn claim_matches(connection: &Connection, claim: &PreparationClaim) -> Result<bool, StoreError> {
     Ok(claim.preparation.state == PreparationState::Claimed
         && crate::validation::read_head(connection)? == claim.preparation.current_revision.as_str()

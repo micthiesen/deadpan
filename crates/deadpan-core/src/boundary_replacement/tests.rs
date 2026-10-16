@@ -506,9 +506,8 @@ fn private_inner_branch_under_shared_outer_play_still_refuses() {
 #[test]
 fn owned_gap_and_default_can_be_replaced_together() {
     let mut before = nested();
-    before
-        .nodes
-        .insert(node("gap-held"), before.nodes[&node("held")].clone());
+    let held = before.nodes[&node("held")].clone();
+    before.nodes.insert(node("gap-held"), held);
     before.gap_overrides.insert(
         node("inner"),
         PlayOverrides::try_from(vec![PlayOverride {

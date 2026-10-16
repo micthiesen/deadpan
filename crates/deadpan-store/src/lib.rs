@@ -1561,7 +1561,7 @@ fn write_command_plan(
     resolver: Option<&dyn generation::GenerationContextResolver>,
 ) -> Result<(CommitOutcome, deadpan_core::ValidatedDocument), StoreError> {
     compound::require_authored(&plan)?;
-    generation_preparations::verify(connection)?;
+    generation_preparations::verify_for_writer(connection)?;
     let request: CommandRequest = serde_json::from_str(&plan.request_json)?;
     let mut preparations =
         generation_preparations::command_births(connection, &plan.current, &request, &plan.next)?;

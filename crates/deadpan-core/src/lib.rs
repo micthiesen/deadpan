@@ -71,6 +71,7 @@ mod repeat_layout;
 mod repeat_selection;
 mod scoped_edit;
 mod semantic;
+mod shared_map;
 mod sound_allowance;
 mod sound_clock;
 mod sound_events;

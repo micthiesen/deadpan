@@ -789,10 +789,15 @@ pub(crate) fn compact_new_timings(
 /// Removal never leaves dangling live owners or unreferenced timing objects.
 /// Phase expressions can reference more than the primary sampling lattice.
 pub(crate) fn prune(document: &mut ProjectDocument) {
-    document
-        .audio_bindings
-        .bindings
-        .retain(|owner, _| document.nodes.contains_key(owner));
+    // `retain` visits keys in ascending order, so a cursor over the sorted
+    // node identities answers `contains_key` for each owner in one merge.
+    let mut nodes = document.nodes.keys().peekable();
+    document.audio_bindings.bindings.retain(|owner, _| {
+        while nodes.next_if(|node| *node < owner).is_some() {}
+        let kept = nodes.peek() == Some(&owner);
+        debug_assert_eq!(kept, document.nodes.contains_key(owner));
+        kept
+    });
     document.audio_bindings.gap_bindings.retain(|owner, _| {
         matches!(document.nodes.get(owner).map(|node| &node.kind), Some(NodeKind::Repeat { gap: Some(gap), .. }) if gap.duration != crate::FrameDuration::ZERO)
     });
@@ -811,24 +816,35 @@ pub(crate) fn prune(document: &mut ProjectDocument) {
             });
             !journals.is_empty()
         });
+    let state = &mut document.audio_bindings;
     let mut retained = BTreeSet::new();
-    for (_, _, binding) in document.audio_bindings.owners() {
+    // Consecutive owners usually name the same table; skip repeated inserts.
+    let mut last = None;
+    for binding in state.bindings.values().chain(state.gap_bindings.values()) {
         for template in binding.placements() {
-            retained.insert(template.reference.timing.clone());
+            let timing = &template.reference.timing;
+            if last != Some(timing) {
+                retained.insert(timing);
+                last = Some(timing);
+            }
         }
     }
-    for journals in document.audio_bindings.sound_clocks.values() {
+    for journals in state.sound_clocks.values() {
         for journal in journals.values() {
-            retained.extend(
-                journal
-                    .clocks()
-                    .iter()
-                    .map(|reference| reference.timing().clone()),
-            );
+            retained.extend(journal.clocks().iter().map(|reference| reference.timing()));
         }
     }
-    document
-        .audio_bindings
+    if retained.len() == state.timings.len()
+        && retained
+            .iter()
+            .all(|identity| state.timings.contains_key(*identity))
+    {
+        // As many distinct retained identities as tables, each naming one:
+        // every table is retained.
+        return;
+    }
+    let retained: BTreeSet<AudioTimingId> = retained.into_iter().cloned().collect();
+    state
         .timings
         .retain(|identity, _| retained.contains(identity));
 }
@@ -1446,9 +1462,8 @@ mod tests {
             .placement
             .reference
             .timing = second.clone();
-        before
-            .nodes
-            .insert(node("other"), before.nodes[&node("hold")].clone());
+        let hold = before.nodes[&node("hold")].clone();
+        before.nodes.insert(node("other"), hold);
         let NodeKind::Sequence { children } =
             &mut before.nodes.get_mut(&node("root")).unwrap().kind
         else {

@@ -84,7 +84,8 @@ fn document() -> ProjectDocument {
         (id("right"), hold(4)),
         (id("pause"), hold(2)),
         (id("outside"), hold(2)),
-    ]);
+    ])
+    .into();
     doc.derived_clocks.insert(
         id("stage"),
         DerivedRetimeClock {

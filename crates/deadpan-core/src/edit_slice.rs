@@ -696,7 +696,7 @@ impl CapturedEditSlice {
         document.source_interpretations = value.source_interpretations.clone();
         document.overrides = value.overrides.clone();
         document.gap_overrides = value.gap_overrides.clone();
-        document.audio_lineage = value.audio_lineage.clone();
+        document.audio_lineage = value.audio_lineage.clone().into();
         document.audio_bindings = value.audio_bindings.clone();
         document.targets = value.targets.clone();
         document.validate()?;

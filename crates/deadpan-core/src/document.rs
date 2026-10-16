@@ -19,14 +19,55 @@ pub const MAX_DOCUMENT_DEPTH: usize = 256;
 pub const MAX_DOCUMENT_JSON_BYTES: usize = 64 * 1024 * 1024;
 pub const MAX_IDENTITY_BYTES: usize = 128;
 
+/// Lexicographic byte order, exactly `<[u8] as Ord>::cmp` (and so the order
+/// of the text), compared inline eight bytes at a time. Identity keys are
+/// short and often share long prefixes, and every ordered-map lookup compares
+/// several of them; the library comparison calls the platform `memcmp` for
+/// each, which dominated lookups in large documents.
+#[inline]
+fn compare_identity(left: &[u8], right: &[u8]) -> std::cmp::Ordering {
+    let common = left.len().min(right.len());
+    let (mut left_chunks, mut right_chunks) = (
+        left[..common].chunks_exact(8),
+        right[..common].chunks_exact(8),
+    );
+    for (a, b) in (&mut left_chunks).zip(&mut right_chunks) {
+        let a = u64::from_be_bytes(a.try_into().expect("eight-byte chunk"));
+        let b = u64::from_be_bytes(b.try_into().expect("eight-byte chunk"));
+        if a != b {
+            return a.cmp(&b);
+        }
+    }
+    for (a, b) in left_chunks.remainder().iter().zip(right_chunks.remainder()) {
+        if a != b {
+            return a.cmp(b);
+        }
+    }
+    left.len().cmp(&right.len())
+}
+
 macro_rules! identifier {
     ($name:ident) => {
-        #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+        /// Shared immutable text: identities are cloned and dropped with
+        /// every document copy, so a clone is a reference count rather than
+        /// an allocation. Equality, ordering, hashing and serialization are
+        /// those of the text.
+        #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
         #[serde(try_from = "String", into = "String")]
-        pub struct $name(String);
+        pub struct $name(Arc<str>);
+        impl Ord for $name {
+            fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+                compare_identity(self.0.as_bytes(), other.0.as_bytes())
+            }
+        }
+        impl PartialOrd for $name {
+            fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+                Some(self.cmp(other))
+            }
+        }
         impl $name {
             pub fn new(value: impl Into<String>) -> Result<Self, DocumentError> {
-                let value = value.into();
+                let value: String = value.into();
                 if value.is_empty()
                     || value.len() > MAX_IDENTITY_BYTES
                     || !value
@@ -41,7 +82,7 @@ macro_rules! identifier {
                         ),
                     ));
                 }
-                Ok(Self(value))
+                Ok(Self(Arc::from(value)))
             }
             pub fn as_str(&self) -> &str {
                 &self.0
@@ -55,7 +96,7 @@ macro_rules! identifier {
         }
         impl From<$name> for String {
             fn from(value: $name) -> Self {
-                value.0
+                String::from(&*value.0)
             }
         }
         impl fmt::Display for $name {
@@ -560,7 +601,7 @@ pub struct ProjectDocument {
     pub(crate) presentation_basis: PresentationBasis,
     pub(crate) basis_state: BasisState,
     pub(crate) root: NodeId,
-    pub(crate) nodes: BTreeMap<NodeId, BeatNode>,
+    pub(crate) nodes: crate::shared_map::SharedMap<NodeId, BeatNode>,
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub(crate) derived_clocks: BTreeMap<NodeId, crate::DerivedRetimeClock>,
     pub(crate) assets: BTreeMap<AssetId, AssetRecord>,
@@ -580,8 +621,8 @@ pub struct ProjectDocument {
     /// A final play retains its override without rendering trailing time.
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub(crate) gap_overrides: BTreeMap<NodeId, PlayOverrides>,
-    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
-    pub(crate) audio_lineage: BTreeMap<NodeId, crate::AudioLineageId>,
+    #[serde(skip_serializing_if = "crate::shared_map::is_empty")]
+    pub(crate) audio_lineage: crate::shared_map::SharedMap<NodeId, crate::AudioLineageId>,
     #[serde(skip_serializing_if = "crate::AudioBindingState::is_empty")]
     pub(crate) audio_bindings: crate::AudioBindingState,
     /// Attention targets followed in source time.
@@ -669,7 +710,7 @@ impl ProjectDocument {
             presentation_basis: value.presentation_basis,
             basis_state: value.basis_state,
             root: value.root,
-            nodes: value.nodes,
+            nodes: value.nodes.into(),
             derived_clocks: value.derived_clocks,
             assets: value.assets,
             source_interpretations: value.source_interpretations,
@@ -680,7 +721,7 @@ impl ProjectDocument {
             sound_allowances: value.sound_allowances,
             overrides: value.overrides,
             gap_overrides: value.gap_overrides,
-            audio_lineage: value.audio_lineage,
+            audio_lineage: value.audio_lineage.into(),
             audio_bindings: value.audio_bindings,
             targets: value.targets,
         }
@@ -700,7 +741,7 @@ impl ProjectDocument {
             revision_id,
             presentation_basis,
             basis_state: BasisState::explicit(),
-            nodes: BTreeMap::from([(root.clone(), BeatNode::sequence("Sequence", vec![]))]),
+            nodes: BTreeMap::from([(root.clone(), BeatNode::sequence("Sequence", vec![]))]).into(),
             derived_clocks: BTreeMap::new(),
             root,
             assets: BTreeMap::new(),
@@ -712,7 +753,7 @@ impl ProjectDocument {
             sound_allowances: BTreeMap::new(),
             overrides: BTreeMap::new(),
             gap_overrides: BTreeMap::new(),
-            audio_lineage: BTreeMap::new(),
+            audio_lineage: Default::default(),
             audio_bindings: crate::AudioBindingState::default(),
             targets: BTreeMap::new(),
         };
@@ -2425,3 +2466,50 @@ mod validated {
 #[cfg(test)]
 #[path = "validated_tests.rs"]
 mod validated_tests;
+
+#[cfg(test)]
+mod identity_order_tests {
+    use super::*;
+
+    /// The inline comparison equals the byte (and text) order, including
+    /// shared prefixes of every length around the eight-byte chunks.
+    #[test]
+    fn identity_order_is_the_text_order() {
+        let mut state = 0x9e37_79b9_7f4a_7c15_u64;
+        let mut next = move |bound: u64| {
+            state = state
+                .wrapping_mul(6_364_136_223_846_793_005)
+                .wrapping_add(1_442_695_040_888_963_407);
+            (state >> 33) % bound
+        };
+        let alphabet = b"-0_aZ";
+        let mut texts = Vec::new();
+        for _ in 0..600 {
+            let length = 1 + next(40) as usize;
+            texts.push(
+                (0..length)
+                    .map(|_| alphabet[next(alphabet.len() as u64) as usize] as char)
+                    .collect::<String>(),
+            );
+        }
+        // Long shared prefixes that differ only late or only in length.
+        for length in 1..=33 {
+            let base = "perf-12345-".repeat(4)[..length].to_owned();
+            texts.push(base.clone());
+            texts.push(format!("{base}a"));
+            texts.push(format!("{base}-"));
+        }
+        let ids: Vec<NodeId> = texts
+            .iter()
+            .map(|text| NodeId::new(text.clone()).unwrap())
+            .collect();
+        for (a, left) in texts.iter().zip(&ids) {
+            for (b, right) in texts.iter().zip(&ids) {
+                assert_eq!(left.cmp(right), a.as_bytes().cmp(b.as_bytes()), "{a} {b}");
+                assert_eq!(left.cmp(right), a.cmp(b));
+                assert_eq!(left.partial_cmp(right), Some(a.cmp(b)));
+                assert_eq!(left == right, a == b);
+            }
+        }
+    }
+}

@@ -57,7 +57,8 @@ fn fixture() -> ProjectDocument {
         ),
         (node("owner"), hold(4)),
         (node("sibling"), hold(4)),
-    ]);
+    ])
+    .into();
     let time_base = SourceTimeBase::new(1, 48_000).unwrap();
     let span = SourceSpan::new(
         SourceTimestamp {

@@ -361,6 +361,20 @@ writer opens the package and recertifies it. Recovery checkpoints never trust
 a receipt: before publishing one, the store bounds every stored value and
 replays the complete history of the copy.
 
+Edits and Undo/Redo on an open writer check the receipt's currency instead
+of hashing the history again (`generation_preparations::verify_for_writer`).
+When the receipt ends at the head, covers every revision, and its validator,
+profile, generation-scope (including preparation constraints) and
+qualification dependencies still hold, the stored rows are the ones the
+writer proved at opening or wrote itself after their replay checks, under
+the writer lock; the transaction then checks only the preparation table
+against the head. Otherwise it performs the complete receipt validation as
+before. Hashing every row on every edit had grown to 10 to 15 ms per edit on
+the 10,000-beat fixture once its 16 MB keyframe existed, growing with the
+history. As with every other read of an open store, a history row changed
+underneath an open writer by another program is detected by the next open or
+`validate`; a changed receipt dependency is still refused by the next edit.
+
 Any modified, removed, inserted or reordered row changes the chain from that
 revision on, so it is recomputed and rejected if it no longer agrees.
 `project validate` (`ProjectStore::validate_full`) ignores the receipt and
@@ -427,24 +441,56 @@ commit parses no document and serializes only its patch (keyframes excepted),
 and validation does not rebuild admitted layouts' indexes. See the
 [incremental commit record](qualification/incremental-commit-2026-10-05.md).
 
+### Shared collections and identities
+
+Every edit derives several documents from the validated head (the capture
+copy, the Split result, the insertion result), and the store cache, the
+workspace and the plan keep further copies. On 10,000 beats copying and
+freeing those maps cost about 7 ms of a pause in the
+[2026-10-15 edit-latency record](qualification/edit-latency-2026-10-15.md).
+Two representation changes remove most of it without changing any value:
+
+- `nodes`, `audio_lineage` and the binding state's `bindings` and
+  `gap_bindings` are `SharedMap`s (core `shared_map`): a `BTreeMap` behind an
+  `Arc`. Cloning or dropping one adjusts a reference count; the first mutable
+  access through a shared handle copies the map once (`Arc::make_mut`), so an
+  edit still copies exactly the maps it changes. `Deref` exposes the inner
+  map, and equality, iteration order and serialization are the inner map's
+  (equality has no identity shortcut, so irreflexive values compare as
+  before). A plan's binding state and the workspace's document copy now share
+  the head's maps.
+- Identifiers (`NodeId`, `RevisionId` and the other `identifier!` types) hold
+  `Arc<str>`. Cloning one is a reference count rather than an allocation;
+  equality, hashing and the wire form are those of the text.
+- Identifier ordering compares the bytes inline, eight at a time
+  (`compare_identity`), instead of calling the platform `memcmp` for every
+  comparison. The order is exactly the text's byte order (a unit test
+  compares both over shared prefixes of every length), so every map keeps
+  its iteration and serialization order. Ordered-map lookups by identity
+  had spent about a quarter of a 10,000-beat pause in `memcmp`.
+
 ## Remaining costs
 
 - The first edit that binds owners still captures every physical owner's
   lattice, and the full-structure table they share: on 10,000 Holds about
-  3 MB of bindings and 2.8 MB of layout, retained once.
+  3 MB of bindings and 2.8 MB of layout, retained once (the first pause
+  of a run, 100 to 160 ms).
 - Each commit still validates its result once over the whole document, and
   a pause validates its capture, its Split intermediate and its resumed
   bindings too (four binding validations, each over every owner, now with
   hashed and merge-joined lookups); see
   [command work reuse](#command-work-reuse). On a wide root a pause still
-  resolves one resume clock per later sibling, about 1.3 µs each.
+  resolves one resume clock per later sibling. After the changes above
+  these passes are most of a 10,000-beat pause
+  ([2026-10-15 record](qualification/edit-latency-2026-10-15.md)).
+- An edit still copies each large map it changes once (`nodes` for every
+  structural edit, the binding maps for timing edits), and a commit's
+  durable WAL sync (`F_FULLFSYNC`) takes 3 to 5 ms.
 - An edit's history row still carries the changed parent Sequence's complete
   old children list once ([compact history rows](#compact-history-rows)).
 - Every 64th revision still needs a keyframe: the complete document is
   serialized, written and hashed after the edit, in its own transaction
-  ([deferred keyframes](#deferred-keyframes)). It no longer delays that edit
-  (10,000-beat pause p95 104.9 to 75.5 ms), but it holds the writer for
-  about 47 ms, so a request that arrives meanwhile waits for it.
-  The native project service does not call `write_due_keyframe` yet; until
-  it does, its commit at depth 128 stores the keyframe inline, and a
-  writable open converts what is due.
+  ([deferred keyframes](#deferred-keyframes)). It no longer delays that edit,
+  but it holds the writer for about 47 ms, so a request that arrives
+  meanwhile waits for it. The native project service writes it when its
+  request queue is idle.

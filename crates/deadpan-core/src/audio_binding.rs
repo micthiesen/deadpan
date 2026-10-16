@@ -299,8 +299,8 @@ pub struct AudioTimingRecord {
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct AudioBindingState {
     pub(crate) timings: BTreeMap<AudioTimingId, FrozenAudioLayout>,
-    pub(crate) bindings: BTreeMap<NodeId, OwnedAudioBinding>,
-    pub(crate) gap_bindings: BTreeMap<NodeId, OwnedAudioBinding>,
+    pub(crate) bindings: crate::shared_map::SharedMap<NodeId, OwnedAudioBinding>,
+    pub(crate) gap_bindings: crate::shared_map::SharedMap<NodeId, OwnedAudioBinding>,
     pub(crate) sound_clocks: crate::sound_clock::SoundClocks,
 }
 
@@ -1160,8 +1160,8 @@ impl AudioBindingState {
         }
         Ok(Self {
             timings: unique,
-            bindings,
-            gap_bindings,
+            bindings: bindings.into(),
+            gap_bindings: gap_bindings.into(),
             sound_clocks,
         })
     }

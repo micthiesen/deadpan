@@ -443,6 +443,15 @@ the owner's packages. Linked media keeps a system bookmark; a resolved
 bookmark is only a candidate for the content-verified relink. Every revision is
 retained; see [backups](docs/BACKUPS.md) for history limits and kill tests.
 
+The document's large maps (`nodes`, `audio_lineage`, the binding state's
+`bindings` and `gap_bindings`) are copy-on-write `SharedMap`s, and
+identifiers hold `Arc<str>`. Clone documents freely; a mutable access copies
+a shared map once. Keep their equality content-only (no identity shortcut).
+Open-writer edits and Undo/Redo check the history receipt's currency instead
+of rehashing every row (`verify_for_writer`); keep per-edit checks
+proportional to the edit, not the history. See [shared
+collections](docs/TIMING_STORAGE.md#shared-collections-and-identities).
+
 Commands compute each whole-document pass once: lineage, marks and final
 validation share one structural pass, intermediate validations reuse the
 scoped head's durations and binding proof, and Split's validation is adopted
