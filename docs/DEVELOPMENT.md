@@ -53,6 +53,12 @@ cargo test -p deadpan-playback --lib --locked
 After independent review, run one full gate for the completed milestone from
 the repository root:
 
+For each commit, `cargo xtask check` is the fast tier: it formats the changed
+Rust files, runs strict Clippy and nextest for only the workspace packages
+changed since `origin/main` (including uncommitted and untracked files), and
+leaves dependants, replays and release exports to the milestone gate. See the
+three tiers in `AGENTS.md`.
+
 ```sh
 cargo xtask gate
 ```

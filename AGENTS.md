@@ -1604,10 +1604,26 @@ rollback, and pass over an incompatible update with a reported reason while
 refusing integrity failures.
 
 Build the pinned FFmpeg developer prefix and export `DEADPAN_FFMPEG_PREFIX` as
-described in [Development](docs/DEVELOPMENT.md). During implementation, run
-focused tests and strict Clippy for the changed crates and affected dependants.
-Finish independent review before one full workspace gate for a coherent delivery
-milestone. Do not run the full gate after each small increment:
+described in [Development](docs/DEVELOPMENT.md). Testing has three tiers;
+choose the cheapest one that covers the change:
+
+1. While editing (seconds to a few minutes): the new or changed tests by name,
+   `cargo test -p <crate> --locked --lib <filter>` or `--test <file> <filter>`.
+2. Before each commit (minutes): `cargo xtask check`, which formats, lints with
+   `-D warnings` and runs nextest for only the packages changed since
+   `origin/main` (`--since REV`, `--no-test`, `--filter EXPR`). Add one named
+   replay (`cargo xtask replays --scenario <name>`) only when that scenario's
+   UI path changed, and one `DEADPAN_PREVIEW_EXPORT_ONLY=<fixture>` release
+   export only when export behavior changed.
+3. Milestone only (long): `cargo xtask gate`, all `cargo xtask replays` and the
+   full release preview/export suite, after independent review, once per
+   coherent delivery rather than per commit.
+
+Nextest stops any test still running after five minutes (`.config/nextest.toml`).
+A timeout or slowness while other builds run is machine load, not a result;
+rerun that one test alone before diagnosing. Never run two full-workspace test
+or replay builds at once in the shared target directory. Do not run the full
+gate after each small increment:
 
 ```sh
 cargo xtask gate

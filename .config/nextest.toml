@@ -1,3 +1,8 @@
+# A test still running after five minutes is reported and stopped, so a
+# hung real-media or worker test cannot hold a run for half an hour.
+[profile.default]
+slow-timeout = { period = "60s", terminate-after = 5 }
+
 # Tests that attach a private APFS disk image and fill it. APFS releases
 # space asynchronously, and several images filling at once on the same
 # host keep each other from staying full, so they run one at a time.
