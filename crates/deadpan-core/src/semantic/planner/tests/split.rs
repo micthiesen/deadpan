@@ -193,3 +193,48 @@ fn a_recorded_sound_placement_puts_the_catalog_sound_at_each_cursor() {
         .is_err()
     );
 }
+
+#[test]
+fn a_recorded_pause_sound_sets_the_selected_hold_and_refuses_other_sounds() {
+    let mut tone = hold(6);
+    let NodeKind::Hold { recipe } = &mut tone.kind else {
+        unreachable!()
+    };
+    recipe.audio = HoldAudio::Tone {
+        frequency_hz: 1000,
+        level: crate::GainDb::new(-12_000).unwrap(),
+    };
+    let document = tree(&["a", "b"], vec![("a", hold(3)), ("b", tone)]);
+    let silence = SemanticInstruction::SetHoldAudio {
+        audio: HoldAudio::Silence,
+    };
+    let planned = plan(
+        &document,
+        selected("b", 4),
+        vec![silence.clone()],
+        &BTreeMap::new(),
+    )
+    .unwrap();
+    assert!(matches!(
+        &planned.document.nodes()[&node("b")].kind,
+        NodeKind::Hold { recipe } if recipe.audio == HoldAudio::Silence
+    ));
+    assert!(
+        plan(
+            &document,
+            context("root", 4),
+            vec![silence],
+            &BTreeMap::new()
+        )
+        .is_err()
+    );
+    assert!(
+        SemanticProgram::new(vec![SemanticInstruction::SetHoldAudio {
+            audio: HoldAudio::Tone {
+                frequency_hz: 1000,
+                level: crate::GainDb::new(-12_000).unwrap(),
+            },
+        }])
+        .is_err()
+    );
+}

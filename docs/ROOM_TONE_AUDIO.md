@@ -159,3 +159,12 @@ verified by the `nothing-happens` fixture
 gain envelopes and tails exist ([AUDIO_GAIN.md](AUDIO_GAIN.md),
 [REVERSE_AND_TAILS.md](REVERSE_AND_TAILS.md)); the full voice graph remains
 open. No requirement or release gate is complete because a setter exists.
+
+## Recording
+
+While a macro records, the sheet's Apply closes it and commits the exact
+prepared source span as one semantic `SetHoldAudio { audio: RoomTone }`, and
+`:hold-silence` records `SetHoldAudio { audio: Silence }`; a run applies them to
+its own selected pause, where store admission rechecks the span against the
+qualified Original. Other pause sounds keep their own instructions. The
+`room-tone` replay records both and runs them.

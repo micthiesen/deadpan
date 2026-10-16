@@ -287,10 +287,11 @@ impl DeadpanApp {
         if moved && let Some(pending) = &mut self.macros.pending {
             pending.owns_cursor = false;
         }
-        // An open Trim or Slip draft owns the editor context and restores its entry
+        // An open Trim, Slip or room-tone draft owns the editor context and restores its entry
         // context when it closes; check the recording after that.
         if self.trim.is_none()
             && self.slip.is_none()
+            && self.room_tone.is_none()
             && self
                 .macros
                 .recording
@@ -403,7 +404,7 @@ impl DeadpanApp {
                 | Action::Invalid(_)
                 | Action::OfferInsert
         ) {
-            self.error = Some("This action cannot be recorded yet. Macros support pauses and their lengths, reverses, J- and L-cuts, tails, gain and saturation changes, speed and pitch changes, splits, trims and slips, Edit marks and jumps, sound placement, cutaways and captions, punch-ins and creeps, frame, beat, word, sentence, pause and shot motions, group boundaries, word, sentence, pause and shot objects, Visual selections, cuts, copies, Repeat wraps, count, gap and escalation changes, gags, grouping, ungrouping, exploding, duplicating, register pastes and named calls. Save or cancel recording first.".into());
+            self.error = Some("This action cannot be recorded yet. Macros support pauses and their lengths, reverses, J- and L-cuts, tails, gain and saturation changes, speed and pitch changes, splits, trims and slips, Edit marks and jumps, sound placement, pause silence and room tone, cutaways and captions, punch-ins and creeps, frame, beat, word, sentence, pause and shot motions, group boundaries, word, sentence, pause and shot objects, Visual selections, cuts, copies, Repeat wraps, count, gap and escalation changes, gags, grouping, ungrouping, exploding, duplicating, register pastes and named calls. Save or cancel recording first.".into());
             return false;
         }
         if matches!(
@@ -515,9 +516,12 @@ impl DeadpanApp {
                 self.macro_action_allowed(Action::DeleteSelection)
             }
             Ok(navigation::command::Entry::SelectRole(_)) => true,
-            Ok(navigation::command::Entry::Trim(_) | navigation::command::Entry::Slip(_)) => {
-                self.macro_action_allowed(Action::Trim)
-            }
+            Ok(
+                navigation::command::Entry::Trim(_)
+                | navigation::command::Entry::Slip(_)
+                | navigation::command::Entry::RoomTone
+                | navigation::command::Entry::HoldSilence,
+            ) => self.macro_action_allowed(Action::Trim),
             // Recorded as one semantic audio-treatment change.
             Ok(
                 navigation::command::Entry::Gain(Some(_))

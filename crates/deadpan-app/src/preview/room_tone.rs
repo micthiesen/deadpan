@@ -350,6 +350,16 @@ impl DeadpanApp {
     }
 
     pub(super) fn silence_hold(&mut self, captured: Option<CommandTarget>) {
+        if self.macros.recording() {
+            let capture = self.capture_macro_target();
+            self.apply_recorded_instruction(
+                capture,
+                Ok(deadpan_core::SemanticInstruction::SetHoldAudio {
+                    audio: HoldAudio::Silence,
+                }),
+            );
+            return;
+        }
         let result = (|| {
             let target = captured
                 .ok_or("No pause was captured when command entry opened.")?
@@ -589,6 +599,19 @@ impl DeadpanApp {
             SheetAction::Apply => {
                 let target = draft.target.clone();
                 let source = draft.prepared.as_ref().expect("ready draft").source.clone();
+                // While a macro records, the exact span commits as one
+                // recorded instruction on the restored selection.
+                if self.macros.recording() {
+                    self.close_room_tone(context);
+                    let capture = self.capture_macro_target();
+                    self.apply_recorded_instruction(
+                        capture,
+                        Ok(deadpan_core::SemanticInstruction::SetHoldAudio {
+                            audio: HoldAudio::RoomTone { source },
+                        }),
+                    );
+                    return;
+                }
                 if self.submit(hold_request(target, HoldAudio::RoomTone { source })) {
                     self.close_room_tone(context);
                 }

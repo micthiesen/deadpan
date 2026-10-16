@@ -794,6 +794,9 @@ where
                 SemanticInstruction::Slip { frames } => {
                     self.slip(index, *frames)?;
                 }
+                SemanticInstruction::SetHoldAudio { audio } => {
+                    self.set_hold_audio(index, audio.clone())?;
+                }
                 SemanticInstruction::PlaceSound { asset } => {
                     self.place_sound(index, asset)?;
                 }
@@ -933,6 +936,7 @@ where
                         | SemanticInstruction::Slip { .. }
                         | SemanticInstruction::SetMark { .. }
                         | SemanticInstruction::PlaceSound { .. }
+                        | SemanticInstruction::SetHoldAudio { .. }
                         | SemanticInstruction::SetAudioLag { .. }
                         | SemanticInstruction::SetAudio { .. }
                         | SemanticInstruction::DeleteRole { .. }

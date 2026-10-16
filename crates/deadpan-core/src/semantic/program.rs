@@ -347,6 +347,12 @@ pub enum SemanticInstruction {
     SetRoomTone {
         register: RegisterName,
     },
+    /// Give the selected direct-child Hold silence (`:hold-silence`) or room
+    /// tone from an exact Original sample span (the room-tone sheet's Apply).
+    /// Other pause sounds have their own instructions.
+    SetHoldAudio {
+        audio: crate::HoldAudio,
+    },
     /// Show the Original moment held in `register` over the whole selected
     /// direct child while its own sound continues (`:cutaway register=`).
     /// The cutaway belongs to the beat's Source or Hold.
@@ -698,6 +704,17 @@ impl SemanticProgram {
             | SemanticInstruction::JumpMark { letter } = instruction
             {
                 super::native_mark_id(*letter)?;
+            }
+            if let SemanticInstruction::SetHoldAudio { audio } = instruction
+                && !matches!(
+                    audio,
+                    crate::HoldAudio::Silence | crate::HoldAudio::RoomTone { .. }
+                )
+            {
+                return Err(EditError::new(
+                    EditErrorCode::InvalidCommand,
+                    "a recorded pause sound is silence or room tone",
+                ));
             }
             if let SemanticInstruction::Group { label, .. } = instruction {
                 crate::validate_group_label(label)?;

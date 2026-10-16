@@ -541,6 +541,57 @@ where
 
     /// `SetRoomTone`: the selected Hold loops the exact audio of an Original
     /// moment from a register, as the native room-tone sheet authors it.
+    /// Silence or an explicit room-tone span for the selected pause.
+    pub(super) fn set_hold_audio(
+        &mut self,
+        trace_index: usize,
+        audio: HoldAudio,
+    ) -> Result<(), EditError> {
+        if self.context.visual_selection.is_some() {
+            return Err(invalid(
+                "clear the Visual selection before changing a pause's sound",
+            ));
+        }
+        let selected = self.context.selected_child.clone().ok_or_else(|| {
+            EditError::new(
+                EditErrorCode::SelectionUnavailable,
+                "select a pause before changing its sound",
+            )
+        })?;
+        if !self.child_indices.contains_key(&selected) {
+            return Err(EditError::new(
+                EditErrorCode::SelectionUnavailable,
+                "the pause must be a direct child of the current Sequence",
+            ));
+        }
+        if !matches!(self.current.nodes()[&selected].kind, NodeKind::Hold { .. }) {
+            return Err(EditError::new(
+                EditErrorCode::WrongNodeKind,
+                "a pause sound applies to a pause (Hold)",
+            ));
+        }
+        self.charge_step(false)?;
+        let SemanticAllocation::ParameterEdit { new_revision } =
+            (self.allocate)(SemanticAllocationRequest::ParameterEdit {
+                step_index: self.steps.len(),
+            })?
+        else {
+            return Err(invalid("a pause sound requires a parameter allocation"));
+        };
+        self.reserve_revision(&new_revision)?;
+        self.commit_leaf(LeafEdit::new(
+            new_revision,
+            Command::SetHoldAudio {
+                node: selected.clone(),
+                audio,
+            },
+        )?)?;
+        self.trace[trace_index].resolved_parent = Some(self.context.parent.clone());
+        self.trace[trace_index].resolved_selection =
+            Some(SliceCaptureSelection::Child { node: selected });
+        Ok(())
+    }
+
     pub(super) fn set_room_tone(
         &mut self,
         trace_index: usize,

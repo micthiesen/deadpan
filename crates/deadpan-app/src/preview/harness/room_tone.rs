@@ -234,9 +234,109 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!(expected_hold),
         d.snapshot(),
     )?;
+    recorded_pause_sound(d, &target, &original_hold, &expected_hold)?;
     stale_range(d, &chosen)?;
     stale_target(d, &target)?;
     Ok(())
+}
+
+fn saved_macro(
+    d: &mut Driver<'_>,
+    name: char,
+) -> Result<Vec<deadpan_core::SemanticInstruction>, String> {
+    d.wait_for("The macro is saved", |app| {
+        !app.service.is_busy()
+            && !app.macros.recording()
+            && app.copied.entries().any(|(slot, value)| {
+                slot == name && matches!(value, crate::preview::copied::Content::Macro(_))
+            })
+    })?;
+    d.app()
+        .copied
+        .entries()
+        .find_map(|(slot, value)| match value {
+            crate::preview::copied::Content::Macro(program) if slot == name => {
+                Some(program.instructions().to_vec())
+            }
+            _ => None,
+        })
+        .ok_or_else(|| format!("Macro {name} is missing"))
+}
+
+fn macro_settled(d: &mut Driver<'_>) -> Result<(), String> {
+    d.wait_for("The macro action is acknowledged", |app| {
+        !app.service.is_busy() && !app.macros.is_pending()
+    })?;
+    d.settled()
+}
+
+/// While a macro records, `:hold-silence` and the room-tone sheet's Apply
+/// commit as one recorded `SetHoldAudio`, which a run applies again.
+fn recorded_pause_sound(
+    d: &mut Driver<'_>,
+    target: &NodeId,
+    silent: &HoldRecipe,
+    toned: &HoldRecipe,
+) -> Result<(), String> {
+    use deadpan_core::SemanticInstruction as I;
+    d.command("record w")?;
+    let before = d.revision();
+    d.command("hold-silence")?;
+    d.changed(&before)?;
+    macro_settled(d)?;
+    d.command("record-stop")?;
+    let silence = saved_macro(d, 'w')?;
+    d.check(
+        "Recording :hold-silence saves one SetHoldAudio and silences the pause",
+        silence
+            == [I::SetHoldAudio {
+                audio: HoldAudio::Silence,
+            }]
+            && hold(d, target)? == *silent,
+        json!({"instructions":["set_hold_audio silence"]}),
+        json!({"recorded":silence}),
+    )?;
+    let before = d.revision();
+    d.key(Key::U)?;
+    d.changed(&before)?;
+    d.command("record x")?;
+    open(d)?;
+    let before = d.revision();
+    d.key(Key::Enter)?;
+    d.changed(&before)?;
+    macro_settled(d)?;
+    d.command("record-stop")?;
+    let toned_program = saved_macro(d, 'x')?;
+    let HoldAudio::RoomTone { source } = &toned.audio else {
+        return Err("The approved pause has no room tone".into());
+    };
+    d.check(
+        "Recording the room-tone sheet's Apply saves its exact source span",
+        toned_program
+            == [I::SetHoldAudio {
+                audio: HoldAudio::RoomTone {
+                    source: source.clone(),
+                },
+            }]
+            && hold(d, target)? == *toned,
+        json!({"source":source}),
+        json!({"recorded":toned_program}),
+    )?;
+    let before = d.revision();
+    d.command("macro w")?;
+    d.changed(&before)?;
+    macro_settled(d)?;
+    let silenced = hold(d, target)? == *silent;
+    let before = d.revision();
+    d.command("macro x")?;
+    d.changed(&before)?;
+    macro_settled(d)?;
+    d.check(
+        "Running the macros silences the pause and gives back its exact room tone",
+        silenced && hold(d, target)? == *toned,
+        json!({"silenced":true,"restored":source}),
+        json!({"silenced":silenced,"hold":hold(d, target)?}),
+    )
 }
 
 fn document<'a>(d: &'a Driver<'_>) -> Result<&'a deadpan_core::ProjectDocument, String> {
