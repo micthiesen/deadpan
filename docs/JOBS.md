@@ -182,6 +182,29 @@ its transport.
   ([preview proxies](PROXIES.md#resuming)).
 - **Shots.** A cancelled shot scan shows Try again.
 
+## Sleep and AI generation
+
+Native workspace sleep and wake notifications advance an atomic lifecycle
+epoch. The callback does not take the coordinator or project-writer lock.
+The writer cancels affected AI generations through their existing cooperative
+stop and bounded worker teardown. Queued generations do not load their model;
+running generations retain the resource until their worker drains.
+
+A sleep/wake pair remains observable even if the writer resumes only after
+wake. Affected attempts and pending automatic preparations become durably
+Interrupted, retaining their retry inputs and intent. Wake never restarts them.
+An explicit retry validates the inputs and creates a new attempt; this backend
+does not claim an inference checkpoint. An earlier user cancellation keeps its
+Cancelled outcome. Run anyway cannot bypass sleep interruption.
+
+Publication checks the captured epoch between object promotions and at the
+final Ready transaction boundary. If interrupted there, it rolls back the
+provisional Ready record. The final successful guard observation orders
+publication against sleep: a notification after it does not retract the
+SQLite commit already admitted at that boundary. Ready variants and accepted
+providers remain intact. This policy covers app-owned AI pause generation;
+other job kinds retain their existing lifecycle contracts.
+
 ## Jobs panel
 
 Open the panel with `:jobs` or Deadpan › Jobs…. While it is open it owns the
@@ -206,6 +229,8 @@ R and D at their physical positions.
 The chosen row is kept by identity (job ID, or request and attempt), not by
 position. Rows reorder as jobs are admitted, finish or appear; an action
 always applies to the row the person chose, and says so if it has finished.
+Keyboard row movement scrolls the complete selected row and its actions into
+view. The list keeps a visible scrollbar when lower rows extend past its panel.
 
 Each row is one accessible sentence, for example: `AI pause pictures · Pause:
 Running · Generating pictures 50% · 0:42 elapsed · about 0:40 left in this stage`. Queued
@@ -358,6 +383,10 @@ The list survives acknowledging the recovery report.
   - a crash copy reopens with its interrupted attempt
   - R retries it as a new attempt of the same request
   - a second crash copy is discarded durably with D
+  - an injected sleep/wake interrupts running and queued AI attempts without
+    restarting either; R explicitly starts a new attempt of the retained request
+  - J reveals the lower interrupted row and its complete Retry/Discard buttons,
+    verified against actual paint clips and opaque overlap; K returns to the first
   - on an injected battery reading, two AI jobs wait with the reason and
     Run anyway; O starts one, the other waits its turn for the model, and X
     cancels only it
@@ -374,8 +403,8 @@ These are not implemented or not qualified:
 - **Running inference during playback.** A model that is already running is
   not reduced or paused when playback starts; workers have no qualified safe
   boundary. Physical interference is unmeasured.
-- **Sleep.** No sleep policy for model jobs beyond the existing worker
-  deadlines.
+- **Sleep.** AI pause generation has the policy above. Sleep policy for other
+  model jobs and physical sleep/wake qualification remain outstanding.
 - **Historical estimates.** Remaining time uses only the current run's
   measured rate.
 - **Physical quit paths.** ⌘Q and Dock Quit through the native guard are

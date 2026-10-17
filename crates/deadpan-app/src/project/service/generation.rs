@@ -49,6 +49,10 @@ pub(crate) const MAX_LIVE_GENERATIONS: usize = 4;
 /// Concluded queued generations kept for the inspector.
 const MAX_CONCLUDED: usize = 8;
 
+const SLEEP_INTERRUPTION: &str =
+    "System sleep interrupted AI generation. Retry in Jobs to start a new attempt.";
+const SLEEP_BEFORE_INPUTS: &str = "System sleep interrupted AI conditioning before inputs were recorded. Select this pause and run :generate again.";
+
 struct StartInput {
     ticket: u64,
     session: u64,
@@ -89,6 +93,9 @@ enum Event {
 
 struct Running {
     cancelled: Arc<AtomicBool>,
+    lifecycle_epoch: u64,
+    /// User cancellation that preceded sleep owns the terminal outcome.
+    user_cancelled: bool,
     events: Receiver<Event>,
     /// A dedicated one-slot channel: each attempt's run is never dropped
     /// behind queued progress, and its qualified workspace reaches `finish`.
@@ -130,6 +137,7 @@ struct Slot {
 #[derive(Default)]
 pub(super) struct State {
     backend: Backend,
+    lifecycle_epoch: u64,
     session: u64,
     running: Option<Running>,
     job: Option<Job>,
@@ -333,6 +341,53 @@ impl Service {
         self.cancel_presented_generation();
     }
 
+    /// Observe the monotonic sleep epoch, including a sleep/wake pair that
+    /// occurred between writer iterations. Interrupted intentions require an
+    /// explicit retry; waking never puts them back in the automatic queue.
+    pub(super) fn observe_generation_lifecycle(&mut self) -> bool {
+        let lifecycle = self.shared.job_board.lifecycle();
+        let epoch = lifecycle.snapshot();
+        let changed = epoch != self.generation.lifecycle_epoch;
+        for index in 0..self.generation.others.len() {
+            self.in_slot(index, Self::interrupt_presented_generation);
+        }
+        self.interrupt_presented_generation();
+        if changed {
+            if let Some(store) = self.store.as_mut() {
+                match store.interrupt_pending_generation_preparations(SLEEP_INTERRUPTION) {
+                    Ok(_) => {
+                        self.generation.lifecycle_epoch = epoch;
+                        self.generation.variants_changed();
+                    }
+                    Err(error) => {
+                        self.set_error(Some(display(error)));
+                        // Retry the durable transition on the next iteration.
+                    }
+                }
+            } else {
+                self.generation.lifecycle_epoch = epoch;
+            }
+        }
+        changed
+    }
+
+    fn generation_interrupted(&self) -> bool {
+        self.generation.running.as_ref().is_some_and(|running| {
+            !running.user_cancelled
+                && self
+                    .shared
+                    .job_board
+                    .lifecycle()
+                    .interrupted_since(running.lifecycle_epoch)
+        })
+    }
+
+    fn interrupt_presented_generation(&mut self) {
+        if self.generation_interrupted() {
+            self.cancel_presented_generation();
+        }
+    }
+
     /// Run `f` with further generation `index` presented in place of the
     /// presented job, so it uses exactly the single-job transitions.
     fn in_slot<R>(&mut self, index: usize, f: impl FnOnce(&mut Self) -> R) -> R {
@@ -362,6 +417,10 @@ impl Service {
     }
 
     fn user_cancel_generation(&mut self) -> Result<()> {
+        if self.generation_interrupted() {
+            self.interrupt_presented_generation();
+            return Ok(());
+        }
         let activation = self
             .generation
             .running
@@ -377,6 +436,9 @@ impl Service {
             self.generation.variants_changed();
         }
         // Only this job: others queued beside it keep their turn.
+        if let Some(running) = &mut self.generation.running {
+            running.user_cancelled = true;
+        }
         self.cancel_presented_generation();
         Ok(())
     }
@@ -388,6 +450,7 @@ impl Service {
     /// Independent generation feedback. Accept is an ordinary edit and is
     /// handled through [`Service::accept_generation`].
     pub(super) fn generation_command(&mut self, operation: GenerationOperation) {
+        self.observe_generation_lifecycle();
         let ticket = match &operation {
             GenerationOperation::Start { ticket, .. }
             | GenerationOperation::Cancel { ticket, .. }
@@ -402,6 +465,12 @@ impl Service {
                 unreachable!("acceptance is an ordinary edit")
             }
         };
+        if matches!(operation, GenerationOperation::RetryPreparation { .. })
+            && !self.shared.job_board.lifecycle().is_awake()
+        {
+            self.refuse_generation(ticket, SLEEP_INTERRUPTION.into());
+            return;
+        }
         let result = match operation {
             GenerationOperation::Start {
                 ticket,
@@ -698,6 +767,10 @@ impl Service {
     /// further generation: it reads its boundary pictures and records its
     /// attempt now, then waits its turn for the one model slot.
     fn start_generation(&mut self, input: StartInput) -> Result<()> {
+        self.observe_generation_lifecycle();
+        if !self.shared.job_board.lifecycle().is_awake() {
+            return Err("AI generation is unavailable while the Mac is sleeping.".into());
+        }
         let target = input.authoring.clone().unwrap_or_else(|| ScopedNodeTarget {
             node: input.hold.clone(),
             repeats: Vec::new(),
@@ -934,6 +1007,10 @@ impl Service {
         label: String,
         claim: Option<PreparationClaim>,
     ) -> Result<()> {
+        let lifecycle_epoch = self.shared.job_board.lifecycle().snapshot();
+        if !lifecycle_epoch.is_multiple_of(2) {
+            return Err(SLEEP_INTERRUPTION.into());
+        }
         let WorkerSelection {
             worker,
             seed,
@@ -991,6 +1068,8 @@ impl Service {
             .map_err(|error| format!("Could not start the AI pause job: {error}"))?;
         self.generation.running = Some(Running {
             cancelled,
+            lifecycle_epoch,
+            user_cancelled: false,
             events: receive_events,
             finished: receive_finished,
             allocation: Some(allocation),
@@ -1409,7 +1488,7 @@ impl Service {
 
     /// Apply queued job events on the writer. True when published state changed.
     pub(super) fn pump_generation(&mut self) -> bool {
-        let mut changed = false;
+        let mut changed = self.observe_generation_lifecycle();
         let mut index = 0;
         while index < self.generation.others.len() {
             changed |= self.in_slot(index, Self::pump_presented_generation);
@@ -1462,6 +1541,7 @@ impl Service {
     }
 
     fn generation_event(&mut self, event: Event) {
+        self.interrupt_presented_generation();
         match event {
             Event::Controls(options) => {
                 if let Some(job) = &mut self.generation.job {
@@ -1528,6 +1608,7 @@ impl Service {
     }
 
     fn generation_prepared(&mut self, prepared: std::result::Result<Box<PreparedInputs>, String>) {
+        self.interrupt_presented_generation();
         let Some(running) = &mut self.generation.running else {
             return;
         };
@@ -1635,6 +1716,7 @@ impl Service {
 
     /// Hand the job thread its next attempt.
     fn dispatch_attempt(&mut self, allocated: Allocated) {
+        self.interrupt_presented_generation();
         if let Some(job) = &mut self.generation.job {
             job.request = Some(allocated.request.request_id.clone());
             job.plan = allocated.request.plan.clone();
@@ -1672,30 +1754,42 @@ impl Service {
     }
 
     fn generation_finished(&mut self, run: WorkerRun) {
+        self.interrupt_presented_generation();
+        let lifecycle = self.shared.job_board.lifecycle();
         let Some(running) = &mut self.generation.running else {
             return;
         };
         let cancelled = running.cancelled.load(Ordering::Acquire);
+        let lifecycle_epoch = running.lifecycle_epoch;
+        let user_cancelled = running.user_cancelled;
         let allocated = running.allocated.take();
-        let outcome = match (allocated.as_ref(), self.store.as_mut()) {
-            (Some(allocated), Some(store)) => match attempt::finish(store, allocated, run) {
-                Ok(finished) => match finished.state {
-                    JobState::Ready => Outcome::Ready(allocated.request.request_id.clone()),
-                    JobState::Cancelled => Outcome::Cancelled,
-                    _ => Outcome::Failed(
-                        finished
-                            .failure
-                            .as_ref()
-                            .map_or_else(|| "The AI pause did not finish.".into(), failure_text),
-                    ),
+        let outcome =
+            match (allocated.as_ref(), self.store.as_mut()) {
+                (Some(allocated), Some(store)) => {
+                    match attempt::finish_with_interruption(store, allocated, run, || {
+                        !user_cancelled && lifecycle.interrupted_since(lifecycle_epoch)
+                    }) {
+                        Ok(finished) => match finished.state {
+                            JobState::Ready => Outcome::Ready(allocated.request.request_id.clone()),
+                            JobState::Cancelled => Outcome::Cancelled,
+                            _ if matches!(finished.failure.as_ref(), Some(JobFailure::Host(failure))
+                                if failure.code == HostFailureCode::Interrupted) =>
+                            {
+                                Outcome::Failed(SLEEP_INTERRUPTION.into())
+                            }
+                            _ => Outcome::Failed(finished.failure.as_ref().map_or_else(
+                                || "The AI pause did not finish.".into(),
+                                failure_text,
+                            )),
+                        },
+                        Err(error) => Outcome::Failed(display(error)),
+                    }
+                }
+                _ => match run.result {
+                    RunResult::Cancelled => Outcome::Cancelled,
+                    _ => Outcome::Failed("The AI pause stopped before it was recorded.".into()),
                 },
-                Err(error) => Outcome::Failed(display(error)),
-            },
-            _ => match run.result {
-                RunResult::Cancelled => Outcome::Cancelled,
-                _ => Outcome::Failed("The AI pause stopped before it was recorded.".into()),
-            },
-        };
+            };
         self.generation.epoch += 1;
         let next = match (&outcome, &mut self.generation.job, allocated) {
             (Outcome::Ready(_), Some(job), Some(allocated)) => {
@@ -1792,6 +1886,8 @@ impl Service {
 
     /// The job thread ended without sending a run for its current attempt.
     fn generation_stopped(&mut self) {
+        self.interrupt_presented_generation();
+        let lifecycle = self.shared.job_board.lifecycle();
         let Some(mut running) = self.generation.running.take() else {
             return;
         };
@@ -1800,6 +1896,8 @@ impl Service {
             .thread
             .take()
             .is_some_and(|thread| thread.join().is_err());
+        let interrupted =
+            !running.user_cancelled && lifecycle.interrupted_since(running.lifecycle_epoch);
         if self
             .generation
             .job
@@ -1812,7 +1910,9 @@ impl Service {
         if running.allocated.is_none()
             && let Some(claim) = &running.preparation
         {
-            let failure = if cancelled
+            let failure = if interrupted {
+                PreparationFailure::Interrupted(SLEEP_INTERRUPTION.into())
+            } else if cancelled
                 && !self.shared.stopping.load(Ordering::Acquire)
                 && self.pending_session_change.is_none()
             {
@@ -1835,15 +1935,28 @@ impl Service {
                     "the AI pause job stopped unexpectedly",
                 )))
             };
-            match attempt::finish(
+            match attempt::finish_with_interruption(
                 store,
                 allocated,
                 WorkerRun::without_workspace(result, RunTimings::default()),
+                || !running.user_cancelled && lifecycle.interrupted_since(running.lifecycle_epoch),
             ) {
                 Ok(finished) if finished.state == JobState::Cancelled => Outcome::Cancelled,
+                Ok(finished)
+                    if matches!(finished.failure.as_ref(), Some(JobFailure::Host(failure))
+                    if failure.code == HostFailureCode::Interrupted) =>
+                {
+                    Outcome::Failed(SLEEP_INTERRUPTION.into())
+                }
                 Ok(_) => Outcome::Failed("The AI pause job stopped unexpectedly.".into()),
                 Err(error) => Outcome::Failed(display(error)),
             }
+        } else if interrupted {
+            Outcome::Failed(if running.preparation.is_some() {
+                SLEEP_INTERRUPTION.into()
+            } else {
+                SLEEP_BEFORE_INPUTS.into()
+            })
         } else if cancelled {
             Outcome::Cancelled
         } else {
@@ -1857,6 +1970,20 @@ impl Service {
     }
 
     fn conclude_generation(&mut self, outcome: Outcome) {
+        let outcome = if self.generation_interrupted() && matches!(outcome, Outcome::Cancelled) {
+            let recorded = self
+                .generation
+                .running
+                .as_ref()
+                .is_some_and(|running| running.started || running.preparation.is_some());
+            Outcome::Failed(if recorded {
+                SLEEP_INTERRUPTION.into()
+            } else {
+                SLEEP_BEFORE_INPUTS.into()
+            })
+        } else {
+            outcome
+        };
         if let Outcome::Failed(error) = &outcome
             && crate::recovery::storage_code(error).is_some()
             && self
@@ -1896,6 +2023,11 @@ impl Service {
                 "The AI job was cancelled; the pause is unchanged.".into()
             }
             Outcome::Cancelled => "The AI pause was cancelled; the pause is unchanged.".into(),
+            Outcome::Failed(reason) if reason == SLEEP_INTERRUPTION => {
+                "AI generation was interrupted by sleep. Retry in Jobs; the pause is unchanged."
+                    .into()
+            }
+            Outcome::Failed(reason) if reason == SLEEP_BEFORE_INPUTS => reason.clone(),
             Outcome::Failed(_) => "The AI pause failed; the pause is unchanged.".into(),
             Outcome::Unavailable(_) => {
                 "AI pauses are unavailable on this Mac; the inspector lists what is missing.".into()

@@ -228,7 +228,9 @@ impl Service {
     }
 
     pub(super) fn pump_preparations(&mut self) -> bool {
-        if self.pending_session_change.is_some()
+        if !self.shared.job_board.lifecycle().is_awake()
+            || self.shared.job_board.lifecycle().snapshot() != self.generation.lifecycle_epoch
+            || self.pending_session_change.is_some()
             || self.shared.stopping.load(Ordering::Acquire)
             || self.shared.busy.load(Ordering::Acquire)
             || self.generation.running.is_some()
@@ -506,22 +508,26 @@ impl Service {
         else {
             return;
         };
-        let failure = match outcome {
-            Outcome::Cancelled
-                if self.shared.stopping.load(Ordering::Acquire)
-                    || self.pending_session_change.is_some() =>
-            {
-                PreparationFailure::Interrupted(
-                    "Deadpan closed before AI conditioning finished. Retry in Jobs.".into(),
-                )
+        let failure = if self.generation_interrupted() {
+            PreparationFailure::Interrupted(SLEEP_INTERRUPTION.into())
+        } else {
+            match outcome {
+                Outcome::Cancelled
+                    if self.shared.stopping.load(Ordering::Acquire)
+                        || self.pending_session_change.is_some() =>
+                {
+                    PreparationFailure::Interrupted(
+                        "Deadpan closed before AI conditioning finished. Retry in Jobs.".into(),
+                    )
+                }
+                Outcome::Cancelled => {
+                    PreparationFailure::Cancelled("AI preparation was cancelled.".into())
+                }
+                Outcome::Unavailable(reason) | Outcome::Failed(reason) => {
+                    PreparationFailure::Unavailable(reason.clone())
+                }
+                Outcome::Ready(_) => return,
             }
-            Outcome::Cancelled => {
-                PreparationFailure::Cancelled("AI preparation was cancelled.".into())
-            }
-            Outcome::Unavailable(reason) | Outcome::Failed(reason) => {
-                PreparationFailure::Unavailable(reason.clone())
-            }
-            Outcome::Ready(_) => return,
         };
         self.finish_preparation(&claim, failure);
     }

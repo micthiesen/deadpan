@@ -1272,8 +1272,30 @@ pub fn finish(
     allocated: &Allocated,
     run: WorkerRun,
 ) -> Result<Finished, GenerationError> {
+    finish_with_interruption(store, allocated, run, || false)
+}
+
+/// Finish with a monotonic host interruption guard. It must be cheap and must
+/// remain true after interruption; publication checks it between retained
+/// objects and at the store's final Ready transaction boundary.
+/// It describes this attempt's host-owned stop, not merely global sleep state;
+/// an earlier user cancellation must retain its own reason.
+/// The final false guard observation orders successful publication before a
+/// concurrent later sleep; it is not an atomic wall-clock check with SQLite's
+/// commit. An independent failure observed before interruption keeps its cause.
+pub fn finish_with_interruption(
+    store: &mut ProjectStore,
+    allocated: &Allocated,
+    run: WorkerRun,
+    interrupted: impl Fn() -> bool,
+) -> Result<Finished, GenerationError> {
     let identity = &allocated.identity;
     let started = Instant::now();
+    // A concrete worker or teardown failure keeps its diagnostic, including
+    // when its terminal message was recorded before this result was drained.
+    if !matches!(run.result, RunResult::Failed(_)) && interrupted() {
+        return finish_interrupted(store, identity, started);
+    }
     let stored_state = |store: &ProjectStore| -> Result<JobState, GenerationError> {
         Ok(store
             .generation_attempt(identity)?
@@ -1288,28 +1310,47 @@ pub fn finish(
                 receipt,
                 declaration,
             } = *qualified;
-            let published = (|| -> Result<(), StoreError> {
+            let published = (|| -> Result<bool, StoreError> {
                 let limits = object_limits();
                 let (mut native, mut sampled, mut provenance, conditioning) = bundle.into_parts();
                 store.promote_generated_object(&mut native, receipt.native_object(), limits)?;
+                if interrupted() {
+                    return Ok(true);
+                }
                 store.promote_generated_object(&mut sampled, receipt.sampled_object(), limits)?;
+                if interrupted() {
+                    return Ok(true);
+                }
                 store.promote_generated_object(
                     &mut provenance,
                     receipt.provenance_object(),
                     limits,
                 )?;
+                if interrupted() {
+                    return Ok(true);
+                }
                 for mut input in conditioning {
                     let object = input.object().clone();
                     store.promote_generated_object(&mut input, &object, limits)?;
+                    if interrupted() {
+                        return Ok(true);
+                    }
                 }
-                store.record_generation_bundle_ready(
+                let outcome = store.record_generation_bundle_ready_with_interruption(
                     identity,
                     &declaration,
                     receipt.clone(),
                     limits,
+                    &interrupted,
                 )?;
-                Ok(())
+                Ok(matches!(
+                    outcome,
+                    deadpan_store::generation_attempts::BundleReadyOutcome::Interrupted
+                ))
             })();
+            if matches!(published, Ok(true)) {
+                return finish_interrupted(store, identity, started);
+            }
             if let Err(error) = published {
                 if !stored_state(store)?.is_terminal() {
                     store.fail_generation_attempt(
@@ -1330,6 +1371,7 @@ pub fn finish(
             })
         }
         RunResult::Failed(failure) => {
+            // Sleep must not replace the already-observed failure cause.
             if !stored_state(store)?.is_terminal() {
                 let host = match &failure {
                     JobFailure::Host(host) => host.clone(),
@@ -1351,6 +1393,9 @@ pub fn finish(
             })
         }
         RunResult::Cancelled => {
+            if interrupted() {
+                return finish_interrupted(store, identity, started);
+            }
             let state = stored_state(store)?;
             if !state.is_terminal() {
                 if state != JobState::Cancelling {
@@ -1362,6 +1407,13 @@ pub fn finish(
                 store
                     .finish_generation_attempt_cancelled(identity, &allocated.cancellation_token)?;
             }
+            // Cancellation can be the worker's acknowledgement of our sleep
+            // teardown. Unlike an independent failure, preserve that captured
+            // stop reason even if its flag arrives during cancellation commit.
+            // Earlier user cancellation is excluded by the guard's contract.
+            if interrupted() {
+                return finish_interrupted(store, identity, started);
+            }
             Ok(Finished {
                 state: stored_state(store)?,
                 receipt: None,
@@ -1370,6 +1422,26 @@ pub fn finish(
             })
         }
     }
+}
+
+fn finish_interrupted(
+    store: &mut ProjectStore,
+    identity: &MessageIdentity,
+    started: Instant,
+) -> Result<Finished, GenerationError> {
+    store.interrupt_generation_attempt(
+        identity,
+        "System sleep interrupted AI work. Retry prepares fresh work.",
+    )?;
+    let stored = store
+        .generation_attempt(identity)?
+        .ok_or_else(|| invalid("the interrupted attempt is missing from the project"))?;
+    Ok(Finished {
+        state: stored.checkpoint.state,
+        receipt: None,
+        failure: stored.checkpoint.failure,
+        publication: started.elapsed(),
+    })
 }
 
 #[cfg(any(test, feature = "synthetic-worker"))]

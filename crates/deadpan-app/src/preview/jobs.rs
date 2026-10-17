@@ -38,6 +38,13 @@ pub(super) struct State {
     pub(super) quit: quit::State,
 }
 
+#[cfg(feature = "ui-harness")]
+impl State {
+    pub(super) fn selected(&self) -> Option<&RowKey> {
+        self.selected.as_ref()
+    }
+}
+
 /// A row's stable identity.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(super) enum RowKey {
@@ -157,10 +164,10 @@ pub(super) fn job_text(row: &JobRow, current: Option<u64>) -> String {
 pub(super) fn interrupted_text(item: &Interrupted) -> String {
     match &item.pause {
         Some(label) => format!(
-            "AI pause pictures for “{label}” stopped when Deadpan last closed. Retry generates a new variant; Discard removes this entry."
+            "AI pause pictures for “{label}” were interrupted. Retry starts a new attempt; Discard removes this entry."
         ),
         None => format!(
-            "AI pause pictures for pause {} stopped when Deadpan last closed; the pause is no longer in your edit. Discard removes this entry.",
+            "AI pause pictures for pause {} were interrupted; the pause is no longer in your edit. Discard removes this entry.",
             item.hold
         ),
     }
@@ -288,6 +295,17 @@ impl DeadpanApp {
     }
 
     fn cancel_job(&mut self, row: &JobRow) {
+        if row.kind == JobKind::AiPause {
+            // The writer records user cancellation before signalling its
+            // worker, preserving that reason if sleep arrives during teardown.
+            self.jobs.status = Some(match row.tag {
+                Some(ticket) => self
+                    .ai_cancel_ticket(ticket)
+                    .map_or_else(|error| error, |()| "Cancelling AI pause…".into()),
+                None => "That AI job is no longer available.".into(),
+            });
+            return;
+        }
         let board = self.service.jobs().clone();
         let label = row.kind.label();
         self.jobs.status = Some(match board.cancel(row.id) {
@@ -302,15 +320,8 @@ impl DeadpanApp {
             // also a request get it, so their own phase and receipts stay
             // exact; the flag alone already stops them.
             CancelOutcome::Signalled(kind, _) => {
-                match kind {
-                    // Exactly this row's job: several may be queued.
-                    JobKind::AiPause => {
-                        if let Some(ticket) = row.tag {
-                            let _ = self.ai_cancel_ticket(ticket);
-                        }
-                    }
-                    JobKind::Tracking => self.track_cancel(),
-                    _ => {}
+                if kind == JobKind::Tracking {
+                    self.track_cancel();
                 }
                 format!("Cancelling {label}…")
             }
@@ -491,6 +502,7 @@ impl DeadpanApp {
                         self.jobs.selected.as_ref(),
                         if action == 'j' { 1 } else { -1 },
                     );
+                    self.jobs.focus_pending = true;
                 }
                 action => self.act_on_row(action),
             }
@@ -510,6 +522,7 @@ impl DeadpanApp {
         let height = (content.height() - 270.0).max(160.0);
         let mut close = false;
         let mut chosen: Option<(RowKey, char)> = None;
+        let reveal_selected = self.jobs.focus_pending;
         let modal = egui::Modal::new(egui::Id::new("jobs-window"))
             .backdrop_color(egui::Color32::TRANSPARENT)
             .area(
@@ -531,6 +544,7 @@ impl DeadpanApp {
                 let mut first = None;
                 egui::ScrollArea::vertical()
                     .id_salt("jobs-rows")
+                    .scroll_bar_visibility(egui::scroll_area::ScrollBarVisibility::AlwaysVisible)
                     .max_height(height)
                     .auto_shrink([false, true])
                     .show(ui, |ui| {
@@ -562,7 +576,7 @@ impl DeadpanApp {
                                     interrupted_text(item)
                                 }
                             };
-                            ui.horizontal_wrapped(|ui| {
+                            let row_response = ui.horizontal_wrapped(|ui| {
                                 let response = ui.add(
                                     egui::Button::selectable(
                                         selected,
@@ -609,6 +623,9 @@ impl DeadpanApp {
                                     }
                                 }
                             });
+                            if selected && reveal_selected {
+                                row_response.response.scroll_to_me(Some(egui::Align::Center));
+                            }
                         }
                     });
                 if let Some(warning) = self.ai_interrupted_warning() {

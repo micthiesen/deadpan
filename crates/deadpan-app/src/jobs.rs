@@ -26,6 +26,9 @@
 //!   scans wait under critical memory pressure ([`Gates`]). The person may
 //!   run a held job anyway ([`Jobs::run_anyway`]); nothing running is ever
 //!   stopped by a condition.
+//! - **Sleep.** [`Lifecycle`] invalidates AI pause generations across sleep
+//!   and wake. Their writer owns durable interruption and retry; Run anyway
+//!   cannot revive them. Other job kinds retain their own sleep policies.
 //! - **Cancellation and drain.** [`Jobs::cancel`] sets the job's own
 //!   cooperative cancel flag; [`Jobs::shutdown`] releases every queued or
 //!   paused waiter so each job's existing shutdown can join its thread.
@@ -38,6 +41,9 @@ use std::collections::BTreeMap;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Condvar, Mutex, MutexGuard};
 use std::time::{Duration, Instant};
+
+mod lifecycle;
+pub use lifecycle::Lifecycle;
 
 /// How often a waiting job rechecks its own cancel flag. Coordinator events
 /// (admission, cancellation, foreground changes, shutdown) wake it at once.
@@ -506,6 +512,7 @@ impl Measured {
 pub enum Stopped {
     Cancelled,
     ShuttingDown,
+    Interrupted,
 }
 
 impl std::fmt::Display for Stopped {
@@ -513,11 +520,13 @@ impl std::fmt::Display for Stopped {
         formatter.write_str(match self {
             Self::Cancelled => "cancelled",
             Self::ShuttingDown => "Deadpan is closing",
+            Self::Interrupted => "system sleep interrupted the job",
         })
     }
 }
 
 struct Entry {
+    lifecycle_epoch: u64,
     kind: JobKind,
     session: Option<u64>,
     detail: String,
@@ -557,6 +566,7 @@ impl Entry {
 
 #[derive(Default)]
 struct Board {
+    lifecycle: Lifecycle,
     next: u64,
     entries: BTreeMap<JobId, Entry>,
     foreground: Foreground,
@@ -638,6 +648,10 @@ impl Board {
 
     /// The admission condition holding `entry`, if one does.
     fn held(&self, entry: &Entry) -> Option<String> {
+        if entry.kind == JobKind::AiPause && self.lifecycle.interrupted_since(entry.lifecycle_epoch)
+        {
+            return Some("system sleep interrupted the job".into());
+        }
         let gates = entry.rules().gates;
         if entry.forced || !gates.any() {
             return None;
@@ -733,6 +747,12 @@ impl Default for Jobs {
 }
 
 impl Jobs {
+    /// Capture once outside native callbacks; notifications only mutate the
+    /// returned atomic state and never take the coordinator lock.
+    pub fn lifecycle(&self) -> Lifecycle {
+        self.lock().lifecycle.clone()
+    }
+
     pub fn new() -> Self {
         Self(Arc::new(Inner {
             board: Mutex::new(Board::default()),
@@ -762,9 +782,11 @@ impl Jobs {
         let id = JobId(board.next);
         let closed = board.closed;
         let now = Instant::now();
+        let lifecycle_epoch = board.lifecycle.snapshot();
         board.entries.insert(
             id,
             Entry {
+                lifecycle_epoch,
                 kind: spec.kind,
                 session: spec.session,
                 detail: spec.detail,
@@ -858,6 +880,12 @@ impl Jobs {
     /// two models never load together. False when it is not waiting.
     pub fn run_anyway(&self, id: JobId) -> bool {
         let mut board = self.lock();
+        if board.entries.get(&id).is_some_and(|entry| {
+            entry.kind == JobKind::AiPause
+                && board.lifecycle.interrupted_since(entry.lifecycle_epoch)
+        }) {
+            return false;
+        }
         let Some(entry) = board.entries.get_mut(&id) else {
             return false;
         };
@@ -1087,6 +1115,10 @@ impl JobHandle {
             Some(Stopped::ShuttingDown)
         } else if entry.cancelling || cancel.is_some_and(|cancel| cancel.load(Ordering::Acquire)) {
             Some(Stopped::Cancelled)
+        } else if entry.kind == JobKind::AiPause
+            && board.lifecycle.interrupted_since(entry.lifecycle_epoch)
+        {
+            Some(Stopped::Interrupted)
         } else {
             None
         }
@@ -1315,6 +1347,41 @@ pub(crate) fn crash_copy(from: &std::path::Path, to: &std::path::Path) -> Result
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn sleep_invalidates_waiting_inference_even_after_wake_and_run_anyway() {
+        let jobs = Jobs::new();
+        let holder = jobs.register(spec(JobKind::Transcription));
+        let waiting = jobs.register(spec(JobKind::AiPause));
+        assert!(!waiting.admitted());
+        let lifecycle = jobs.lifecycle();
+        lifecycle.will_sleep();
+        lifecycle.did_wake();
+        drop(holder);
+        assert!(!waiting.admitted());
+        assert!(!jobs.run_anyway(waiting.id()));
+        assert_eq!(waiting.wait_admitted(None), Err(Stopped::Interrupted));
+        drop(waiting);
+        let retried = jobs.register(spec(JobKind::AiPause));
+        assert!(retried.admitted());
+    }
+
+    #[test]
+    fn sleep_invalidates_running_inference_and_refuses_new_sleeping_work() {
+        let jobs = Jobs::new();
+        let running = jobs.register(spec(JobKind::AiPause));
+        assert!(running.admitted());
+        jobs.lifecycle().will_sleep();
+        assert_eq!(running.checkpoint(None), Err(Stopped::Interrupted));
+        let sleeping = jobs.register(spec(JobKind::AiPause));
+        assert!(!sleeping.admitted());
+        assert!(!jobs.run_anyway(sleeping.id()));
+        assert_eq!(sleeping.wait_admitted(None), Err(Stopped::Interrupted));
+        drop(running);
+        assert!(!sleeping.admitted());
+        jobs.lifecycle().did_wake();
+        assert_eq!(sleeping.wait_admitted(None), Err(Stopped::Interrupted));
+    }
 
     fn spec(kind: JobKind) -> JobSpec {
         JobSpec::new(kind, Some(1))

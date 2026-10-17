@@ -163,9 +163,10 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     d.check(
         "After reopening, the interrupted attempt is offered with Retry and Discard",
         widgets.contains("INTERRUPTED")
-            && widgets.contains("stopped when Deadpan last closed. Retry generates a new variant")
+            && widgets.contains("were interrupted")
+            && widgets.contains("Retry")
             && widgets.contains("Nothing is running in the background."),
-        json!("AI pause pictures for “Pause” stopped when Deadpan last closed. Retry…"),
+        json!("AI pause pictures for “Pause” were interrupted. Retry…"),
         json!({"rows":format!("{:?}", d.app().job_rows())}),
     )?;
     d.capture("Interrupted attempt after reopening")?;
@@ -234,7 +235,200 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     d.capture("Interrupted attempt discarded")?;
     d.key(Key::Escape)?;
     d.settled()?;
+    sleep_and_retry(d)?;
     conditions_and_quit(d)
+}
+
+/// Real service attempts, with only the system notification replaced by an
+/// injected lifecycle epoch. No OS sleep or wake is requested by this replay.
+fn sleep_and_retry(d: &mut Driver<'_>) -> Result<(), String> {
+    d.report.skipped.push(
+        "Sleep/wake is injected through the Jobs lifecycle atomics. This verifies writer interruption, retry and the Jobs UI, not native notification delivery or physical sleep.".into(),
+    );
+    super::transcript::focus_your_edit(d)?;
+    d.chord(&[Key::G, Key::G, Key::Num1, Key::Num0, Key::L])?;
+    d.chord(&[Key::Comma, Key::A])?;
+    d.wait_for("Generation running before sleep", generating)?;
+    d.chord(&[Key::G, Key::G, Key::Num4, Key::Num0, Key::L])?;
+    let before = d.revision();
+    d.chord(&[Key::Comma, Key::H])?;
+    d.changed(&before)?;
+    d.settled()?;
+    d.command("generate")?;
+    d.wait_for("Second AI attempt queued before sleep", |app| {
+        let rows = app.service.jobs().snapshot();
+        rows.iter()
+            .any(|row| row.kind == JobKind::AiPause && row.state == RowState::Running)
+            && rows.iter().any(|row| {
+                row.kind == JobKind::AiPause && matches!(row.state, RowState::Queued { .. })
+            })
+    })?;
+    let revision = d.revision();
+    let lifecycle = d.app().service.jobs().lifecycle();
+    lifecycle.will_sleep();
+    lifecycle.did_wake();
+    d.wait_for(
+        "Running and queued attempts interrupted after sleep",
+        |app| {
+            app.ai_interrupted().len() == 2
+                && !app
+                    .service
+                    .jobs()
+                    .snapshot()
+                    .iter()
+                    .any(|row| row.kind == JobKind::AiPause)
+        },
+    )?;
+    d.command("jobs")?;
+    d.step("Sleep interruptions visible", true)?;
+    let widgets = widget_text(d);
+    d.check(
+        "Sleep interrupts both attempts and wake leaves explicit Retry controls without resuming",
+        ai_rows(d).is_empty()
+            && d.revision() == revision
+            && widgets.contains("INTERRUPTED")
+            && widgets.contains("were interrupted")
+            && widgets.contains("Retry")
+            && widgets.contains("Nothing is running in the background.")
+            && !widgets.contains("stopped when Deadpan last closed"),
+        json!({"interrupted":2,"running":0,"retry":"R","authored_revision":"unchanged"}),
+        json!({"interrupted":d.app().ai_interrupted().len(),"rows":format!("{:?}", ai_rows(d)),"revision":d.revision()}),
+    )?;
+    d.capture("AI attempts interrupted by sleep with explicit Retry")?;
+    let second = d
+        .app()
+        .ai_interrupted()
+        .get(1)
+        .cloned()
+        .ok_or("Missing second sleep interruption")?;
+    d.key(Key::J)?;
+    d.settled()?;
+    d.step("Second interrupted row scrolled into view", true)?;
+    let text = crate::preview::jobs::interrupted_text(&second);
+    let subject = format!(
+        "interrupted AI pause pictures for “{}”",
+        second
+            .pause
+            .as_deref()
+            .ok_or("Interrupted pause is unavailable")?
+    );
+    let controls = |d: &Driver<'_>| {
+        [
+            interrupted_control_visibility(d, &text, &text),
+            interrupted_control_visibility(d, &format!("Retry {subject} (R)"), "Retry"),
+            interrupted_control_visibility(d, &format!("Discard {subject} (D)"), "Discard"),
+        ]
+    };
+    let mut visibility = controls(d);
+    // Scroll-to-selection animates over several simulated frames. Bound the
+    // observation without sending more navigation or scrolling input.
+    for _ in 0..d.options.hz / 2 {
+        if visibility.iter().all(|item| item["visible"] == true) {
+            break;
+        }
+        d.step("Keyboard row reveal animation", false)?;
+        visibility = controls(d);
+    }
+    d.check(
+        "J scrolls the second interrupted row and its complete Retry and Discard buttons into view",
+        d.app().jobs.selected()
+            == Some(&crate::preview::jobs::RowKey::Interrupted(
+                second.request.clone(),
+                second.attempt.clone(),
+            ))
+            && visibility.iter().all(|item| item["visible"] == true),
+        json!(
+            "second row selected; row text and complete action hit rectangles inside paint clips"
+        ),
+        json!(visibility),
+    )?;
+    d.capture("Second interrupted AI row selected and fully visible")?;
+    d.key(Key::K)?;
+    d.settled()?;
+    let interrupted = d
+        .app()
+        .ai_interrupted()
+        .first()
+        .cloned()
+        .ok_or("Missing sleep interruption")?;
+    let path = d.app().workspace.as_ref().ok_or("No project")?.path.clone();
+    let request = deadpan_jobs::RequestId::new(interrupted.request.clone())
+        .map_err(|error| error.to_string())?;
+    let attempt_count =
+        deadpan_store::ProjectStore::open(&path, deadpan_store::AccessMode::ReadOnly)
+            .and_then(|store| store.generation_attempts(&request, 0, 100))
+            .map_err(|error| error.to_string())?
+            .len();
+    d.key(Key::R)?;
+    d.wait_for("R explicitly retries after sleep", generating)?;
+    d.wait_for(
+        "Only the retried sleep interruption leaves the list",
+        |app| app.ai_interrupted().len() == 1,
+    )?;
+    let attempts = deadpan_store::ProjectStore::open(&path, deadpan_store::AccessMode::ReadOnly)
+        .and_then(|store| store.generation_attempts(&request, 0, 100))
+        .map_err(|error| error.to_string())?;
+    d.check(
+        "R creates a fresh attempt of the retained request without changing the pause provider",
+        attempts.len() == attempt_count + 1
+            && attempts.last().is_some_and(|attempt| attempt.checkpoint.identity.attempt_id.as_str() != interrupted.attempt)
+            && d.app().ai.job().is_some_and(|job| job.request.as_ref() == Some(&request))
+            && d.revision() == revision,
+        json!({"attempts":attempt_count+1,"request":interrupted.request,"authored_revision":"unchanged"}),
+        json!({"attempts":attempts.len(),"job":format!("{:?}", d.app().ai.job()),"revision":d.revision()}),
+    )?;
+    d.step("Explicit sleep retry running", true)?;
+    d.capture("Fresh AI attempt after explicit sleep retry")?;
+    // Reopening selects the live row, rather than its stale interrupted key.
+    d.key(Key::Escape)?;
+    d.command("jobs")?;
+    d.key(Key::X)?;
+    d.wait_for("Retried sleep attempt cancelled", |app| {
+        app.ai
+            .job()
+            .is_some_and(|job| job.outcome == Some(Outcome::Cancelled))
+    })?;
+    d.key(Key::Escape)?;
+    d.command("jobs")?;
+    d.key(Key::D)?;
+    d.wait_for("Remaining sleep interruption discarded", |app| {
+        app.ai_interrupted().is_empty()
+    })?;
+    d.key(Key::Escape)?;
+    d.settled()
+}
+
+/// Both pauses have the same label. The later matching accessible control
+/// belongs to the second row; require its whole hit target and final text
+/// paint to be visible, rather than trusting an offscreen accessibility node.
+fn interrupted_control_visibility(d: &Driver<'_>, label: &str, text: &str) -> Value {
+    let rect = d
+        .harness
+        .root()
+        .children_recursive()
+        .filter_map(|node| {
+            let access = node.accesskit_node();
+            (access.label().as_deref() == Some(label)
+                && !access.is_hidden()
+                && !access.is_disabled()
+                && access.bounding_box().is_some())
+            .then(|| node.rect())
+        })
+        .max_by(|a, b| a.center().y.total_cmp(&b.center().y));
+    let paint = scenarios::text_paint_visibility(d, text);
+    let visible = rect.is_some_and(|rect| {
+        rect.is_positive()
+            && d.harness.ctx.content_rect().contains_rect(rect)
+            && d.harness.output().shapes.iter().any(|clipped| {
+                matches!(&clipped.shape, egui::Shape::Text(painted)
+                    if painted.galley.text().contains(text)
+                        && rect.contains_rect(painted.visual_bounding_rect()))
+                    && clipped.clip_rect.contains_rect(rect)
+            })
+    }) && paint
+        .last()
+        .is_some_and(|part| part["fully_visible"] == true);
+    json!({"label":label,"visible":visible,"hit_rect":format!("{rect:?}"),"paint":paint})
 }
 
 fn ai_rows(d: &Driver<'_>) -> Vec<crate::jobs::JobRow> {

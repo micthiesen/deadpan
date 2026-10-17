@@ -263,6 +263,121 @@ fn a_cancelled_run_whose_cancel_record_was_lost_still_finishes_cancelled() {
 }
 
 #[test]
+fn sleep_before_or_during_cancel_finalization_remains_durably_interrupted() {
+    use std::cell::Cell;
+    for interrupt_check in [1, 3] {
+        let directory = tempfile::tempdir().unwrap();
+        let mut store = project(directory.path());
+        let allocated = allocated(&mut store);
+        let calls = Cell::new(0);
+        let finished = finish_with_interruption(
+            &mut store,
+            &allocated,
+            WorkerRun::without_workspace(RunResult::Cancelled, RunTimings::default()),
+            || {
+                calls.set(calls.get() + 1);
+                calls.get() >= interrupt_check
+            },
+        )
+        .unwrap();
+        assert_eq!(finished.state, JobState::Failed);
+        assert!(
+            matches!(finished.failure, Some(JobFailure::Host(ref failure)) if failure.code == HostFailureCode::Interrupted)
+        );
+        let stored = store
+            .generation_attempt(&allocated.identity)
+            .unwrap()
+            .unwrap();
+        assert_eq!(stored.checkpoint.failure, finished.failure);
+        assert!(stored.bundle_receipt.is_none());
+        store.validate_full().unwrap();
+    }
+}
+
+#[test]
+fn independent_failure_observed_before_sleep_keeps_its_original_cause() {
+    use std::cell::Cell;
+    let directory = tempfile::tempdir().unwrap();
+    let mut store = project(directory.path());
+    let allocated = allocated(&mut store);
+    let failure = JobFailure::Host(host_failure(
+        HostFailureCode::WorkerExited,
+        "worker exited before sleep",
+    ));
+    let calls = Cell::new(0);
+    let finished = finish_with_interruption(
+        &mut store,
+        &allocated,
+        WorkerRun::without_workspace(RunResult::Failed(failure.clone()), RunTimings::default()),
+        || {
+            calls.set(calls.get() + 1);
+            true
+        },
+    )
+    .unwrap();
+    assert_eq!(calls.get(), 0, "sleep cannot replace a concrete failure");
+    assert_eq!(finished.failure, Some(failure.clone()));
+    assert_eq!(
+        store
+            .generation_attempt(&allocated.identity)
+            .unwrap()
+            .unwrap()
+            .checkpoint
+            .failure,
+        Some(failure)
+    );
+    store.validate_full().unwrap();
+}
+
+#[test]
+fn sleep_during_qualified_object_promotion_never_publishes_ready() {
+    use std::cell::Cell;
+    let Some(worker) = synthetic_tools() else {
+        eprintln!("skipped: needs ffmpeg with libx264rgb and a built deadpan-media-worker");
+        return;
+    };
+    let directory = tempfile::tempdir().unwrap();
+    let mut store = project(directory.path());
+    let expected_revision = store.head_revision().unwrap();
+    let allocated = allocate(
+        &mut store,
+        AllocateInput {
+            hold: hold_id(),
+            expected_revision,
+            seed: 7,
+            inputs: picture_inputs().into(),
+        },
+    )
+    .unwrap();
+    let run = synthetic::run(
+        &allocated,
+        &worker,
+        |_| {},
+        |record| super::record(&mut store, &allocated, &record).map_err(|error| error.to_string()),
+        &AtomicBool::new(false),
+    );
+    assert!(matches!(run.result, RunResult::Qualified(_)));
+    let calls = Cell::new(0);
+    let finished = finish_with_interruption(&mut store, &allocated, run, || {
+        calls.set(calls.get() + 1);
+        calls.get() >= 2
+    })
+    .unwrap();
+    assert_eq!(calls.get(), 2);
+    assert!(finished.receipt.is_none());
+    assert!(
+        matches!(finished.failure, Some(JobFailure::Host(ref failure)) if failure.code == HostFailureCode::Interrupted)
+    );
+    assert!(
+        store
+            .selected_generation_bundle(&allocated.identity.request_id)
+            .unwrap()
+            .is_none()
+    );
+    store.validate_full().unwrap();
+}
+
+#[test]
 fn a_worker_that_exits_without_a_candidate_fails_truthfully() {
     let directory = tempfile::tempdir().unwrap();
     let mut store = project(directory.path());

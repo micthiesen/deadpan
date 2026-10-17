@@ -18,7 +18,14 @@ pub enum LifecycleError {
     MainThreadRequired,
 }
 
-/// Calls one interruption action on both WillSleep and DidWake. The action
+/// The workspace transition delivered by the native notification center.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum LifecycleEvent {
+    WillSleep,
+    DidWake,
+}
+
+/// Observes workspace sleep and wake transitions. The action
 /// should revoke playback and set a flag; it must not block, perform media or
 /// device I/O, or panic. A callback already in flight may finish during removal,
 /// so its state is owned and Send + Sync. This guard is !Send and !Sync, ensuring
@@ -29,7 +36,17 @@ pub struct LifecycleObserver {
 }
 
 impl LifecycleObserver {
+    /// Calls the same interruption action for both sleep and wake, preserving
+    /// the playback observer's original contract.
     pub fn new(callback: Arc<dyn Fn() + Send + Sync>) -> Result<Self, LifecycleError> {
+        Self::with_events(Arc::new(move |_| callback()))
+    }
+
+    /// Reports the exact transition. The callback follows the nonblocking,
+    /// owned-state contract documented on `LifecycleObserver`.
+    pub fn with_events(
+        callback: Arc<dyn Fn(LifecycleEvent) + Send + Sync>,
+    ) -> Result<Self, LifecycleError> {
         let main_thread = MainThreadMarker::new().ok_or(LifecycleError::MainThreadRequired)?;
         let center = NSWorkspace::sharedWorkspace().notificationCenter();
         Ok(Self {
@@ -45,20 +62,24 @@ struct ObserverTokens {
 }
 
 impl ObserverTokens {
-    fn new(center: Retained<NSNotificationCenter>, callback: Arc<dyn Fn() + Send + Sync>) -> Self {
+    fn new(
+        center: Retained<NSNotificationCenter>,
+        callback: Arc<dyn Fn(LifecycleEvent) + Send + Sync>,
+    ) -> Self {
         // SAFETY: These immutable AppKit notification-name globals are present
         // throughout supported macOS versions and remain valid for the process.
         let names = unsafe {
             [
-                NSWorkspaceWillSleepNotification,
-                NSWorkspaceDidWakeNotification,
+                (NSWorkspaceWillSleepNotification, LifecycleEvent::WillSleep),
+                (NSWorkspaceDidWakeNotification, LifecycleEvent::DidWake),
             ]
         };
-        let tokens = names.map(|name| {
+        let tokens = names.map(|(name, event)| {
             let callback = Arc::clone(&callback);
-            let block = RcBlock::new(move |_notification: NonNull<NSNotification>| callback());
+            let block = RcBlock::new(move |_notification: NonNull<NSNotification>| callback(event));
             // SAFETY: No object filter or operation queue is supplied. The
-            // copied block owns only an Arc<dyn Fn() + Send + Sync + 'static>,
+            // copied block owns only the immutable event and an
+            // Arc<dyn Fn(LifecycleEvent) + Send + Sync + 'static>,
             // so synchronous delivery on any posting thread is valid. The
             // notification pointer is never dereferenced or retained. The
             // center copies/retains the block; we retain its observer token.
@@ -94,6 +115,10 @@ mod tests {
                 LifecycleObserver::new(Arc::new(|| {})),
                 Err(LifecycleError::MainThreadRequired)
             ));
+            assert!(matches!(
+                LifecycleObserver::with_events(Arc::new(|_| {})),
+                Err(LifecycleError::MainThreadRequired)
+            ));
         })
         .join()
         .unwrap();
@@ -104,12 +129,22 @@ mod tests {
         // A private Foundation center exercises actual block registration and
         // removal without publishing sleep/wake to NSWorkspace or other apps.
         let center = NSNotificationCenter::new();
-        let calls = Arc::new(AtomicUsize::new(0));
-        let counter = Arc::clone(&calls);
+        // Base-three digits retain delivery order without locking, allocating,
+        // or panicking in the callback: sleep=1 and wake=2.
+        let events = Arc::new(AtomicUsize::new(0));
+        let observed = Arc::clone(&events);
         let observer = ObserverTokens::new(
             center.clone(),
-            Arc::new(move || {
-                counter.fetch_add(1, Ordering::Relaxed);
+            Arc::new(move |event| {
+                let digit = match event {
+                    LifecycleEvent::WillSleep => 1,
+                    LifecycleEvent::DidWake => 2,
+                };
+                let _ = observed.fetch_update(Ordering::Relaxed, Ordering::Relaxed, |value| {
+                    value
+                        .checked_mul(3)
+                        .and_then(|value| value.checked_add(digit))
+                });
             }),
         );
         // SAFETY: Immutable AppKit names, no object argument, and a private
@@ -117,15 +152,17 @@ mod tests {
         unsafe {
             center.postNotificationName_object(NSWorkspaceWillSleepNotification, None);
             center.postNotificationName_object(NSWorkspaceDidWakeNotification, None);
+            center.postNotificationName_object(NSWorkspaceDidWakeNotification, None);
+            center.postNotificationName_object(NSWorkspaceWillSleepNotification, None);
         }
-        assert_eq!(calls.load(Ordering::Relaxed), 2);
+        assert_eq!(events.load(Ordering::Relaxed), 52); // digits 1, 2, 2, 1
         drop(observer);
         // SAFETY: Same private-center/name contract; observers have been removed.
         unsafe {
             center.postNotificationName_object(NSWorkspaceWillSleepNotification, None);
             center.postNotificationName_object(NSWorkspaceDidWakeNotification, None);
         }
-        assert_eq!(calls.load(Ordering::Relaxed), 2);
-        assert_eq!(Arc::strong_count(&calls), 1);
+        assert_eq!(events.load(Ordering::Relaxed), 52);
+        assert_eq!(Arc::strong_count(&events), 1);
     }
 }

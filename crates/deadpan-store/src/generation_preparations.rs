@@ -544,6 +544,38 @@ impl ProjectStore {
         Ok(value)
     }
 
+    /// Interrupt live queued/claimed work without claiming it or closing its
+    /// retained intent. Retry remains an explicit operation after wake.
+    pub fn interrupt_pending_generation_preparations(
+        &mut self,
+        detail: &str,
+    ) -> Result<usize, StoreError> {
+        self.require_writer()?;
+        let detail = reason(detail.to_owned())?;
+        let transaction = self
+            .connection
+            .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+        verify(&transaction)?;
+        let mut interrupted = 0;
+        for (mut value, _) in all(&transaction)? {
+            if matches!(
+                value.state,
+                PreparationState::Queued | PreparationState::Claimed
+            ) && has_current_intent(&transaction, &value)?
+            {
+                advance(&mut value)?;
+                value.state = PreparationState::Interrupted;
+                value.reason = Some(detail.clone());
+                save(&transaction, &value)?;
+                interrupted += 1;
+            }
+        }
+        retention::compact(&transaction)?;
+        crate::audit::refresh_generation_scopes(&transaction)?;
+        transaction.commit()?;
+        Ok(interrupted)
+    }
+
     pub fn cancel_generation_preparation(
         &mut self,
         id: &PreparationId,

@@ -514,6 +514,7 @@ impl Service {
     }
 
     fn command(&mut self, request: ProjectRequest) -> Result<()> {
+        self.observe_generation_lifecycle();
         let request = match request {
             ProjectRequest::Takes(request) => {
                 self.takes_command(request);

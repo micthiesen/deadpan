@@ -325,8 +325,13 @@ impl DeadpanApp {
         let lifecycle = {
             let stop = playback.stop_handle();
             let interrupted = Arc::clone(&playback_interrupted);
+            let jobs_lifecycle = service.jobs().lifecycle();
             let repaint = context.egui_ctx.clone();
-            deadpan_output::LifecycleObserver::new(Arc::new(move || {
+            deadpan_output::LifecycleObserver::with_events(Arc::new(move |event| {
+                match event {
+                    deadpan_output::LifecycleEvent::WillSleep => jobs_lifecycle.will_sleep(),
+                    deadpan_output::LifecycleEvent::DidWake => jobs_lifecycle.did_wake(),
+                }
                 stop.stop();
                 interrupted.store(true, Ordering::Release);
                 repaint.request_repaint();

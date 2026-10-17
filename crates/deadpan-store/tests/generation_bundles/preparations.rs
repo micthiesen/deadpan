@@ -45,6 +45,55 @@ fn accepted(package: &Path) -> Result<ProjectStore> {
     Ok(store)
 }
 
+#[test]
+fn sleep_interrupts_queued_and_claimed_preparations_without_losing_retry_intent() -> Result {
+    for claimed in [false, true] {
+        let scratch = tempfile::tempdir()?;
+        let package = scratch.path().join("sleep-preparation.deadpan");
+        let mut store = accepted(&package)?;
+        let id = resize(&mut store, "extend", 18)?
+            .generation_preparations
+            .remove(0);
+        let revision = store.head_revision()?;
+        let claim = if claimed {
+            Some(store.claim_generation_preparation(&id, &revision)?)
+        } else {
+            None
+        };
+        let before = store.generation_preparation(&id)?.unwrap();
+        let document = store.snapshot()?;
+        assert_eq!(
+            store.interrupt_pending_generation_preparations("System sleep; retry explicitly")?,
+            1
+        );
+        let interrupted = store.generation_preparation(&id)?.unwrap();
+        assert_eq!(interrupted.state, PreparationState::Interrupted);
+        assert_eq!(interrupted.claim_sequence, before.claim_sequence + 1);
+        assert_eq!(interrupted.intent, before.intent);
+        assert_eq!(interrupted.origin, before.origin);
+        assert_eq!(interrupted.target, before.target);
+        assert_eq!(store.snapshot()?, document);
+        assert_eq!(
+            store.interrupt_pending_generation_preparations("System sleep; retry explicitly")?,
+            0
+        );
+        if let Some(claim) = claim {
+            assert!(!store.generation_preparation_claim_is_current(&claim)?);
+        }
+        drop(store);
+        let mut store = ProjectStore::open(&package, AccessMode::ReadWrite)?;
+        assert_eq!(
+            store.generation_preparation(&id)?.unwrap().state,
+            PreparationState::Interrupted
+        );
+        assert_eq!(
+            store.retry_generation_preparation(&id, &revision)?.state,
+            PreparationState::Queued
+        );
+    }
+    Ok(())
+}
+
 fn command(store: &ProjectStore, revision: &str, command: Command) -> Result<CommandRequest> {
     let before = store.snapshot()?;
     Ok(CommandRequest {

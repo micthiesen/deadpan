@@ -437,6 +437,113 @@ fn modern_ready_requires_objects_and_eviction_survives_reopen() -> Result {
 }
 
 #[test]
+fn sleep_at_final_bundle_commit_rolls_back_ready_and_retains_interrupted() -> Result {
+    use deadpan_store::generation_attempts::BundleReadyOutcome;
+    use std::cell::Cell;
+    let scratch = tempfile::tempdir()?;
+    let package = scratch.path().join("interrupted-publication.deadpan");
+    let mut store = ProjectStore::create(&package, &document()?)?;
+    let request = allocate_bridge(&mut store, "request", 1)?;
+    let identity = begin(&mut store, &request, "attempt")?;
+    let candidate = native_candidate(&request);
+    complete_bridge(&mut store, &identity, &candidate)?;
+    publish_bundle(&mut store)?;
+    let calls = Cell::new(0);
+    assert_eq!(
+        store.record_generation_bundle_ready_with_interruption(
+            &identity,
+            &candidate,
+            receipt(&candidate),
+            media_limits(),
+            || {
+                calls.set(calls.get() + 1);
+                calls.get() >= 2
+            },
+        )?,
+        BundleReadyOutcome::Interrupted
+    );
+    assert_eq!(calls.get(), 2);
+    assert!(
+        store
+            .selected_generation_bundle(&request.request_id)?
+            .is_none()
+    );
+    let stored = store.generation_attempt(&identity)?.unwrap();
+    assert_eq!(stored.checkpoint.state, JobState::Failed);
+    assert!(
+        matches!(stored.checkpoint.failure, Some(deadpan_jobs::JobFailure::Host(ref failure)) if failure.code == deadpan_jobs::HostFailureCode::Interrupted)
+    );
+    assert!(stored.bundle_receipt.is_none());
+    drop(store);
+    let reopened = ProjectStore::open(&package, AccessMode::ReadOnly)?;
+    let stored = reopened.generation_attempt(&identity)?.unwrap();
+    assert!(
+        matches!(stored.checkpoint.failure, Some(deadpan_jobs::JobFailure::Host(ref failure)) if failure.code == deadpan_jobs::HostFailureCode::Interrupted)
+    );
+    assert!(
+        reopened
+            .selected_generation_bundle(&request.request_id)?
+            .is_none()
+    );
+    Ok(())
+}
+
+#[test]
+fn missing_or_corrupt_bundle_objects_keep_validation_failure_despite_sleep() -> Result {
+    use std::cell::Cell;
+    for corrupt in [false, true] {
+        let scratch = tempfile::tempdir()?;
+        let package = scratch.path().join("invalid-publication.deadpan");
+        let mut store = ProjectStore::create(&package, &document()?)?;
+        let request = allocate_bridge(&mut store, "request", 1)?;
+        let identity = begin(&mut store, &request, "attempt")?;
+        let candidate = native_candidate(&request);
+        complete_bridge(&mut store, &identity, &candidate)?;
+        let receipt = receipt(&candidate);
+        if corrupt {
+            publish_bundle(&mut store)?;
+            let path = stored_path(&package, receipt.native_object());
+            // Published objects are read-only. Replace this disposable test
+            // object's bytes to exercise validation rather than permissions.
+            std::fs::remove_file(&path)?;
+            std::fs::write(path, b"corrupt native object")?;
+        }
+        let before = store.generation_attempt(&identity)?.unwrap();
+        let guard_calls = Cell::new(0);
+        let result = store.record_generation_bundle_ready_with_interruption(
+            &identity,
+            &candidate,
+            receipt,
+            media_limits(),
+            || {
+                guard_calls.set(guard_calls.get() + 1);
+                true
+            },
+        );
+        assert!(
+            result.is_err(),
+            "invalid media must retain its validation error"
+        );
+        assert_eq!(
+            guard_calls.get(),
+            0,
+            "object verification precedes sleep admission"
+        );
+        let after = store.generation_attempt(&identity)?.unwrap();
+        assert_eq!(after.checkpoint, before.checkpoint);
+        assert_eq!(after.checkpoint.state, JobState::Validating);
+        assert!(after.checkpoint.failure.is_none());
+        assert!(after.bundle_receipt.is_none());
+        assert!(
+            store
+                .selected_generation_bundle(&request.request_id)?
+                .is_none()
+        );
+    }
+    Ok(())
+}
+
+#[test]
 fn protocol_kinds_cannot_cross_attempt_or_readiness_boundaries() -> Result {
     let scratch = tempfile::tempdir()?;
     let package = scratch.path().join("cross-kind.deadpan");

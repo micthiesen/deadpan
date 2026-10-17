@@ -2,6 +2,20 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
+## AI generation sleep interruption, 2026-10-17
+
+[Sleep qualification](qualification/generation-sleep-2026-10-17.md) records
+typed native sleep/wake observation, durable interruption of running and queued
+AI pauses, retained retry intent and guarded candidate publication. Wake does
+not restart affected jobs; Retry creates a new attempt. Earlier user cancellation
+and concrete worker/storage failures keep their own causes. Physical sleep and
+real inference teardown remain owner checks; other job kinds and the remaining
+DP-18 requirements stay open.
+The scoped regression selections, both strict Clippy configurations, 37-check
+release visual/performance Jobs replays and native Metal startup/shutdown pass.
+Visual review also fixed keyboard scrolling to reveal complete Jobs rows and
+their action buttons.
+
 ## Jobs and whole-Original macros, 2026-10-16
 
 [Jobs qualification](qualification/jobs-2026-10-16.md) records power/pressure
@@ -2615,6 +2629,7 @@ exercised; the feature itself is implemented and verified as far as possible.
 
 | Area | What remains for the owner | Related |
 | --- | --- | --- |
+| AI generation during physical sleep | 1. In a disposable project with two unaccepted pauses and an installed AI pack, select the first pause and run `:generate`; wait for inference steps in `:jobs`. Start generation for the second pause so it queues. 2. Put the Mac to sleep from the Apple menu, then wake it. Both affected jobs must stop as Interrupted, retain explicit Retry actions, and never restart automatically. The edit revision and accepted providers must stay unchanged. 3. Select one interrupted row and press R; a fresh attempt must start after input validation. Separately cancel a generation before sleeping; it must remain Cancelled rather than reappear for retry. 4. Repeat during candidate validation/publication: a result admitted before the final publication guard may remain Ready; otherwise it must be Interrupted with no new Ready candidate. Injected lifecycle, durable retry and publication boundaries are covered in [qualification](qualification/generation-sleep-2026-10-17.md); physical notification delivery and real inference teardown are not. | DP-12, DP-18 |
 | Native EQ listening and physical input | 1. Open a disposable project with speech and a placed sound, select a beat in Your edit and enter `:eq`. Using the physical keyboard, Tab through all five fields, enter bass `3`, middle `-6`, treble `1.5`, low cut `80`, high cut `12000`, and activate Set EQ. Enter in a field must not save. 2. Compare Before/Draft through headphones or speakers; both must use the same loop and timing, with only the authored tone/filter changes. Tab must reveal every focused control at 960×640. 3. Apply once, listen and render; Undo must restore the prior sound and recipe. Reopen EQ, change a band and Escape; the saved recipe must remain unchanged. Offscreen focus/paint, immutable proposals and shared numerical/export audio are already verified. | DP-09, DP-16, DP-20 |
 | Idle audio power policy | 1. Open a project with a Preserve retime, leave playback stopped and press `l`; wait for the audio preparation status. Neither editor clock may advance further and no sound may start. 2. On a Mac with a battery, unplug power and press `l` again; after the current cooperative read/check yields, expect **Audio cache deferred** with the battery reason on hover. Repeat with Low Power Mode enabled through System Settings and expect that reason. 3. Press Space in each restricted state; explicit Play must still work. Pause, restore AC/normal power, move with `l` and confirm optional preparation can complete again. Simulated policy and cancellation pass in the [qualification](qualification/audio-warming-2026-10-11.md); physical power transitions remain unexercised. | DP-09, DP-16, DP-24 |
 | Clean machine | Install the bundle on a Mac with no Homebrew, Python, FFmpeg, yt-dlp, Deno, Xcode tools or model cache; import local and YouTube media, install the model pack in the app, generate and accept a pause, restart offline and render (spec §26.6). The agent approximates this with a relocated bundle in a scrubbed environment. | DP-13, DP-14, DP-22, Gate F, Gate G |

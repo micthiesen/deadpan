@@ -648,6 +648,12 @@ pub enum AttemptMutationOutcome {
     CompletionDiscardedDuringCancellation,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BundleReadyOutcome {
+    Ready(AttemptMutationOutcome),
+    Interrupted,
+}
+
 pub(crate) fn create_tables(connection: &Connection) -> Result<(), StoreError> {
     connection.execute_batch(CREATE_TABLES)?;
     Ok(())
@@ -1004,6 +1010,44 @@ impl ProjectStore {
         Ok(AttemptMutationOutcome::Applied)
     }
 
+    /// Retain a host interruption even when worker teardown already recorded
+    /// cancellation or failure. A committed Ready result is never rewritten.
+    /// The caller must own this attempt's stop reason: an earlier explicit user
+    /// cancellation or independent terminal failure must not be reclassified.
+    pub fn interrupt_generation_attempt(
+        &mut self,
+        identity: &MessageIdentity,
+        detail: &str,
+    ) -> Result<AttemptMutationOutcome, StoreError> {
+        self.require_writer()?;
+        let failure = HostFailure {
+            code: HostFailureCode::Interrupted,
+            detail: Diagnostic::new(detail).map_err(|error| attempt_error(&error.to_string()))?,
+        };
+        let transaction = self
+            .connection
+            .transaction_with_behavior(TransactionBehavior::Immediate)?;
+        let mut stored = read_attempt(&transaction, identity)?;
+        if stored.checkpoint.state == JobState::Ready {
+            return Err(attempt_error(
+                "a committed Ready attempt cannot be interrupted",
+            ));
+        }
+        if stored.checkpoint.failure == Some(JobFailure::Host(failure.clone())) {
+            return Ok(AttemptMutationOutcome::Duplicate);
+        }
+        stored.checkpoint.state = JobState::Failed;
+        stored.checkpoint.failure = Some(JobFailure::Host(failure));
+        stored.checkpoint.completion = None;
+        stored.checkpoint.cancellation_acknowledgement = None;
+        let relevance = read_request(&transaction, &identity.request_id)?.relevance;
+        JobLifecycle::from_checkpoint(stored.checkpoint.clone(), relevance)
+            .map_err(lifecycle_error)?;
+        write_attempt(&transaction, &stored)?;
+        transaction.commit()?;
+        Ok(AttemptMutationOutcome::Applied)
+    }
+
     pub fn record_generation_candidate_ready(
         &mut self,
         identity: &MessageIdentity,
@@ -1087,12 +1131,47 @@ impl ProjectStore {
         receipt: BundleValidationReceipt,
         limits: crate::generated_media::GeneratedMediaLimits,
     ) -> Result<AttemptMutationOutcome, StoreError> {
+        match self.record_generation_bundle_ready_with_interruption(
+            identity,
+            declaration,
+            receipt,
+            limits,
+            || false,
+        )? {
+            BundleReadyOutcome::Ready(outcome) => Ok(outcome),
+            BundleReadyOutcome::Interrupted => Err(attempt_error(
+                "unguarded bundle publication was interrupted",
+            )),
+        }
+    }
+
+    /// Verify first, then check interruption at the Ready transaction boundary.
+    /// Interrupted publication retains a retryable failure and no Ready receipt.
+    /// The final false guard observation is the publication ordering point. A
+    /// sleep arriving after it overlaps the commit and Ready wins; the check
+    /// and SQLite commit are not an atomic wall-clock observation.
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    pub fn record_generation_bundle_ready_with_interruption(
+        &mut self,
+        identity: &MessageIdentity,
+        declaration: &NativeCandidateManifest,
+        receipt: BundleValidationReceipt,
+        limits: crate::generated_media::GeneratedMediaLimits,
+        interrupted: impl Fn() -> bool,
+    ) -> Result<BundleReadyOutcome, StoreError> {
         self.require_writer()?;
         // Verify the receipt's complete immutable object set before opening the SQLite
         // transaction. A missing or corrupt object therefore cannot leave a
         // Ready receipt behind, and the bound is supplied by the host rather
         // than inferred from untrusted receipt metadata.
         self.verify_bundle_objects(&receipt, limits)?;
+        if interrupted() {
+            self.interrupt_generation_attempt(
+                identity,
+                "System sleep interrupted AI publication. Retry prepares fresh work.",
+            )?;
+            return Ok(BundleReadyOutcome::Interrupted);
+        }
         let transaction = self
             .connection
             .transaction_with_behavior(TransactionBehavior::Immediate)?;
@@ -1110,7 +1189,7 @@ impl ProjectStore {
         validate_bundle_receipt(&request, stored.ordinal, Some(&expected), &receipt)?;
         if stored.checkpoint.state == JobState::Ready {
             if stored.bundle_receipt.as_ref() == Some(&receipt) {
-                return Ok(AttemptMutationOutcome::Duplicate);
+                return Ok(BundleReadyOutcome::Ready(AttemptMutationOutcome::Duplicate));
             }
             return Err(attempt_error(
                 "Ready attempt has a different bundle validation receipt",
@@ -1163,8 +1242,16 @@ impl ProjectStore {
                 params![identity.attempt_id.as_str(), identity.request_id.as_str()],
             )?;
         }
+        if interrupted() {
+            drop(transaction);
+            self.interrupt_generation_attempt(
+                identity,
+                "System sleep interrupted AI publication. Retry prepares fresh work.",
+            )?;
+            return Ok(BundleReadyOutcome::Interrupted);
+        }
         transaction.commit()?;
-        Ok(AttemptMutationOutcome::Applied)
+        Ok(BundleReadyOutcome::Ready(AttemptMutationOutcome::Applied))
     }
 
     pub fn select_generation_variant(
