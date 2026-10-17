@@ -1023,6 +1023,18 @@ impl Service {
             options,
             preparation,
         } = input;
+        let estimated_memory_bytes = match &worker {
+            Worker::Real(runtime) => runtime.model_manifest.memory_bytes,
+            #[cfg(any(test, feature = "ui-harness"))]
+            Worker::Scripted { .. } => {
+                job.operation
+                    .and_then(|operation| {
+                        deadpan_models::packs::approved_pack(prepare::pack_for(operation))
+                    })
+                    .ok_or("The scripted worker's compiled model pack is missing.")?
+                    .memory_bytes
+            }
+        };
         let session = job.session;
         let variants = job.variants;
         let cancelled = Arc::new(AtomicBool::new(false));
@@ -1034,6 +1046,7 @@ impl Service {
         // inference budget see the job from its first instant.
         let handle = self.shared.job_board.register(
             crate::jobs::JobSpec::new(crate::jobs::JobKind::AiPause, Some(session))
+                .estimated_memory_bytes(estimated_memory_bytes)
                 // Conditioning and publication run without the model slot.
                 .deferred()
                 .tag(job.ticket)

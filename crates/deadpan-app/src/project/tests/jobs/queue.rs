@@ -362,6 +362,7 @@ fn model_jobs_wait_for_power_playback_and_memory_and_can_run_anyway() {
     board.set_conditions(Conditions {
         power: Some("running on battery".into()),
         memory: MemoryPressure::Normal,
+        ..Default::default()
     });
     assert_eq!(ai.start(&workspace, &fixture.hold, 2), None);
     ai.phase(2, "the job to wait", |job| {
@@ -388,6 +389,7 @@ fn model_jobs_wait_for_power_playback_and_memory_and_can_run_anyway() {
     board.set_conditions(Conditions {
         power: None,
         memory: MemoryPressure::Warning,
+        ..Default::default()
     });
     assert_eq!(ai.start(&workspace, &other, 3), None);
     ai.phase(3, "the second to queue", |job| job.phase == Phase::Queued);
@@ -410,6 +412,74 @@ fn model_jobs_wait_for_power_playback_and_memory_and_can_run_anyway() {
     ai.cancel_from_panel(&board, session, 3);
     ai.concluded(3);
     until("the coordinator to empty", || board.is_empty());
+}
+
+#[test]
+fn memory_headroom_holds_worker_launch_while_edits_and_cancellation_commit() {
+    const GIB: u64 = 1024 * 1024 * 1024;
+    let pid = Arc::new(AtomicU32::new(0));
+    let fixture = project(
+        vec![AiScript {
+            unavailable: None,
+            steps: 2,
+            step_interval: Duration::from_millis(2),
+            ending: AiEnding::Process(pid.clone()),
+        }],
+        vec![],
+    );
+    let board = fixture.service.jobs().clone();
+    board.set_conditions(Conditions {
+        memory_headroom: Some(deadpan_cli::system_conditions::MemoryHeadroom {
+            total_bytes: 64 * GIB,
+            available_bytes: 20 * GIB,
+        }),
+        ..Conditions::default()
+    });
+    let mut ai = Observer::new(&fixture.service);
+    assert_eq!(ai.start(&fixture.workspace, &fixture.hold, 2), None);
+    let request = ai
+        .phase(2, "memory admission before worker launch", |job| {
+            job.phase == Phase::Queued && job.request.is_some()
+        })
+        .request
+        .unwrap();
+    assert_eq!(
+        row_of(&board, 2).state,
+        RowState::Held("available memory is 21.47 GB; the model estimates 22.55 GB plus 8.59 GB reserved for the Mac".into())
+    );
+    assert_eq!(
+        attempt_states(&fixture.workspace.path, &request),
+        [deadpan_jobs::JobState::Queued]
+    );
+    assert_eq!(pid.load(Ordering::Acquire), 0, "held worker never launched");
+    let mut workspace = fixture.workspace.clone();
+    for _ in 0..2 {
+        let edited = ai.edit(&workspace);
+        assert_ne!(
+            edited.document.revision_id(),
+            workspace.document.revision_id()
+        );
+        workspace = edited;
+        assert_eq!(
+            pid.load(Ordering::Acquire),
+            0,
+            "editing cannot admit the worker"
+        );
+    }
+    ai.cancel_from_panel(&board, workspace.session, 2);
+    assert_eq!(ai.concluded(2).outcome, Some(AiOutcome::Cancelled));
+    assert_eq!(
+        attempt_states(&workspace.path, &request),
+        [deadpan_jobs::JobState::Cancelled]
+    );
+    until("the cancelled memory-held registration to drain", || {
+        board.is_empty()
+    });
+    assert_eq!(
+        pid.load(Ordering::Acquire),
+        0,
+        "cancellation never launched the worker"
+    );
 }
 
 /// Chaos under load: the model worker process is killed while a second

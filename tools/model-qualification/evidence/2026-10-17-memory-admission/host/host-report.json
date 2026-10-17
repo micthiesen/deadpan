@@ -1,0 +1,52 @@
+{
+  "accepted": false,
+  "cancellation_sent": false,
+  "clean_exit": true,
+  "discarded_log_bytes": 0,
+  "elapsed_seconds": 618.919344667,
+  "extension_bundle": {
+    "native": {
+      "byte_length": 12501922,
+      "reference": "outputs/native.mp4",
+      "sha256": "9162d19a947793d9427254755141cce21183670d29d049eae16862dcc00e621a"
+    },
+    "provenance": {
+      "byte_length": 68516,
+      "reference": "outputs/provenance.json",
+      "sha256": "5ae5c000bc68fa98767deb596098f72f8b2dcb4d301f77842884cba72a23978f"
+    },
+    "provider": {
+      "pack_id": "ltx-2.3-q4-extension",
+      "pack_version": "1",
+      "runtime_id": "ltx-mlx",
+      "runtime_version": "0.15.8+deadpan-extension1",
+      "seed": 42107
+    },
+    "video": {
+      "frame_rate": {
+        "denominator": 1,
+        "numerator": 24
+      },
+      "frames": 81,
+      "height": 320,
+      "width": 768
+    }
+  },
+  "failure": null,
+  "faults": [],
+  "hash_verified_extension_bundle": true,
+  "media_validated": false,
+  "model_workers": {
+    "failed_samples": 0,
+    "live": {
+      "current": 0,
+      "high": 1
+    },
+    "phys_footprint_bytes": {
+      "current": 0,
+      "high": 18348993696
+    },
+    "samples": 1221
+  },
+  "state": "Validating"
+}

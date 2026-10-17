@@ -1,0 +1,22 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.09s
+     Running `target/debug/xtask check --filter 'test(preview::jobs::tests)'`
+check: packages changed since origin/main: deadpan-app, deadpan-cli, deadpan-jobs
+    Checking deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 5.60s
+    Checking deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 8.39s
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+warning: linker stderr: ld: __eh_frame section too large (max 16MB) to encode dwarf unwind offsets in compact unwind table, performance of exception handling might be affected
+  |
+  = note: `#[warn(linker_messages)]` on by default
+
+warning: `deadpan-app` (bin "deadpan-app") generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 4.33s
+────────────
+ Nextest run ID 47aaa493-6342-4812-abfa-26ca272a9992 with nextest profile: default
+    Starting 3 tests across 51 binaries (2107 tests skipped)
+        PASS [   0.025s] (1/3) deadpan-app::bin/deadpan-app preview::jobs::tests::the_selection_follows_its_job_when_rows_reorder
+        PASS [   0.025s] (2/3) deadpan-app::bin/deadpan-app preview::jobs::tests::rows_read_as_complete_sentences_for_voiceover
+        PASS [   0.025s] (3/3) deadpan-app::bin/deadpan-app preview::jobs::tests::memory_capacity_rows_do_not_advertise_an_override
+────────────
+     Summary [   0.029s] 3 tests run: 3 passed, 2107 skipped

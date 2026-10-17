@@ -1,0 +1,16 @@
+   Compiling ring v0.17.14
+   Compiling rustls v0.23.45
+   Compiling rustls-webpki v0.103.15
+   Compiling rustls-platform-verifier v0.7.1
+   Compiling ureq v3.4.2
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.67s
+     Running unittests src/lib.rs (target/debug/deps/deadpan_cli-3ee593ec9a4b9674)
+
+running 1 test
+MemoryHeadroom { total_bytes: 137438953472, available_bytes: 86401826816 }; reserve_bytes=17179869184; pressure=Some(1)
+test system_conditions::tests::live_memory_headroom_observation ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 511 filtered out; finished in 0.05s
+

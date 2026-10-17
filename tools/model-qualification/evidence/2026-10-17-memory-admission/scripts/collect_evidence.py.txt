@@ -1,0 +1,38 @@
+from pathlib import Path
+import gzip,hashlib,json,shutil,subprocess
+root=Path(__file__).resolve().parent
+repo=Path('/Users/michael/Code/deadpan')
+dest=repo/'tools/model-qualification/evidence/2026-10-17-memory-admission'
+def read(p):return json.loads(p.read_text())
+def sha(p):
+ with p.open('rb') as f:return hashlib.file_digest(f,'sha256').hexdigest()
+def save(p,v):p.parent.mkdir(parents=True,exist_ok=True);p.write_text(json.dumps(v,indent=2)+'\n')
+host=read(root/'host/host-report.json');memory=host['model_workers']
+assert host['clean_exit'] and not host['faults'] and host['failure'] is None and host['hash_verified_extension_bundle']
+assert memory['live']['high']==1 and memory['failed_samples']==0 and memory['samples']>0 and memory['phys_footprint_bytes']['high']>0
+assert host['media_validated'] is False  # Supervisor hashes; independent helper qualifies.
+qualification=read(root/'media/report.json');assert read(root/'qualify-execution.json')['exit_code']==0
+assert qualification['binding']['identity']==read(root/'request.json')['identity']
+assert qualification['declaration']['video']['frames']==81
+assert (root/'media/native.mkv').stat().st_size>0 and (root/'media/sampled.mkv').stat().st_size>0
+dest.mkdir(parents=True,exist_ok=False)
+def copy(rel,out=None):
+ p=dest/(out or rel);p.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(root/rel,p)
+def compressed(rel):
+ p=dest/(rel+'.gz');p.parent.mkdir(parents=True,exist_ok=True)
+ with p.open('wb') as f,gzip.GzipFile(filename='',mode='wb',fileobj=f,mtime=0) as z:
+  with (root/rel).open('rb') as s:shutil.copyfileobj(s,z)
+for name in ['prepare.py','qualify_output.py','collect_evidence.py'] :copy(name,'scripts/'+name+'.txt')
+for p in root.iterdir():
+ if p.is_file() and p.suffix=='.json':copy(p.name)
+for rel in ['host/host-report.json','host/events.jsonl','workspace/capture.json','retained/retention-report.json','media/report.json']:copy(rel)
+for p in sorted((root/'workspace/inputs').iterdir()):
+ assert p.is_file() and p.stat().st_size<16*1024**2
+ copy(str(p.relative_to(root)))
+for rel in ['host/worker.stderr.log','host/native.snapshot.mp4','host/provenance.snapshot.json','media/native.mkv','media/sampled.mkv','media/provenance.json']:compressed(rel)
+for p in root.iterdir():
+ if p.is_file() and p.suffix in ['.stdout','.stderr']:compressed(p.name)
+summary={'schema':1,'scope':'One maximum-shape Extension, full inference and independent media qualification; no acceptance or universal memory bound','plan':read(root/'plan.json'),'worker_seconds':host['elapsed_seconds'],'model_workers':memory,'sample_interval_ms':500,'sampled_peak_gib':memory['phys_footprint_bytes']['high']/2**30,'supervisor':{'clean_exit':host['clean_exit'],'hash_verified_extension_bundle':True,'media_validated':host['media_validated']},'independent_media_qualification':{'passed':True,'seconds':qualification['elapsed_seconds'],'native_frames':81,'output_frames':72},'input_retention_note':'Independent qualification receipt captured after worker completion; input hashes recorded during inference and checked unchanged. This is not pre-launch receipt qualification.'}
+save(dest/'summary.json',summary)
+save(dest/'inventory.json',{str(p.relative_to(dest)):{'bytes':p.stat().st_size,'sha256':sha(p)} for p in sorted(dest.rglob('*')) if p.is_file()})
+print(json.dumps(summary,indent=2))

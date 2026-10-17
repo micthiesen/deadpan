@@ -1,0 +1,75 @@
+from pathlib import Path
+import gzip
+import hashlib
+import json
+import shutil
+
+repo = Path('/Users/michael/Code/deadpan')
+dest = repo / 'tools/model-qualification/evidence/2026-10-17-memory-admission'
+validation = dest / 'validation'
+validation.mkdir(exist_ok=True)
+
+def digest(path):
+    with path.open('rb') as source:
+        return hashlib.file_digest(source, 'sha256').hexdigest()
+
+def compressed(source, target):
+    with target.open('wb') as out, gzip.GzipFile(filename='', mode='wb', fileobj=out, mtime=0) as archive:
+        with source.open('rb') as data:
+            shutil.copyfileobj(data, archive)
+
+reports = {}
+for mode in ['visual', 'performance']:
+    root = Path(f'/tmp/deadpan-memory-jobs-{mode}-final-2026-10-17')
+    report = json.loads((root / 'report.json').read_text())
+    assert not report['failed']
+    scenario = next(item for item in report['scenarios'] if item['name'] == 'jobs')
+    assert len(scenario['checks']) == 41 and all(item['passed'] for item in scenario['checks'])
+    compressed(root / 'report.json', validation / f'jobs-{mode}-report.json.gz')
+    reports[mode] = {
+        'checks': len(scenario['checks']),
+        'failed': report['failed'],
+        'timings': {item['name']: item['summary'] for item in scenario['timings']},
+        'findings': scenario['findings'],
+    }
+    if mode == 'visual':
+        capture = next(item['screenshot'] for item in scenario['steps'] if item['input'] == 'AI jobs waiting for model memory')
+        shutil.copyfile(root / capture, validation / 'memory-held.png')
+
+for name in ['check', 'check-v2', 'check-final', 'check-status', 'check-replay', 'live', 'release-build', 'release-final-build', 'jobs-visual', 'jobs-visual-final', 'jobs-performance-final', 'native-smoke']:
+    source = Path(f'/tmp/deadpan-memory-{name}.log')
+    assert source.is_file(), source
+    shutil.copyfile(source, validation / source.name)
+
+failed = json.loads(Path('/tmp/deadpan-memory-jobs-visual-2026-10-17/report.json').read_text())
+(validation / 'initial-replay-failure.json').write_text(json.dumps([
+    check for scenario in failed['scenarios'] for check in scenario['checks'] if not check['passed']
+], indent=2) + '\n')
+source_paths = [
+    'crates/deadpan-app/src/jobs.rs',
+    'crates/deadpan-app/src/preview/jobs.rs',
+    'crates/deadpan-app/src/preview/harness/jobs.rs',
+    'crates/deadpan-app/src/preview/transcript.rs',
+    'crates/deadpan-app/src/preview/transcript/recognition.rs',
+    'crates/deadpan-app/src/project/service/generation.rs',
+    'crates/deadpan-app/src/project/tests/jobs/queue.rs',
+    'crates/deadpan-cli/src/system_conditions.rs',
+    'crates/deadpan-jobs/examples/qualify_model_worker.rs',
+]
+record = {
+    'base_revision': '88ee08e6',
+    'source_sha256': {name: digest(repo / name) for name in source_paths},
+    'binaries_sha256': json.loads(Path('/tmp/deadpan-memory-final-bin-2026-10-17/hashes.json').read_text()),
+    'scoped_checks': ['198 tests before policy tightening', '60 affected tests after tightening', '3 presentation tests after stale-row status fix', 'normal and ui-harness strict Clippy after final replay assertion correction'],
+    'native_smoke': 'passed: Apple M5 Max Metal, window and shutdown callback',
+    'replays': reports,
+    'limitations': ['scripted AI in UI replays, not real inference interference', 'no packaging bundle rebuilt', 'sampled worker footprint is not a universal maximum'],
+}
+(validation / 'summary.json').write_text(json.dumps(record, indent=2) + '\n')
+shutil.copyfile(Path(__file__), dest / 'scripts/retain_validation.py.txt')
+inventory = {
+    str(path.relative_to(dest)): {'bytes': path.stat().st_size, 'sha256': digest(path)}
+    for path in sorted(dest.rglob('*')) if path.is_file() and path != dest / 'inventory.json'
+}
+(dest / 'inventory.json').write_text(json.dumps(inventory, indent=2) + '\n')
+print(f'Retained {len(inventory)} evidence files')

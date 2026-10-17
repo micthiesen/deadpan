@@ -1,0 +1,26 @@
+from pathlib import Path
+import hashlib,json,subprocess,time
+root=Path(__file__).resolve().parent
+repo=Path('/Users/michael/Code/deadpan')
+def read(p):return json.loads(p.read_text())
+def save(p,v):p.write_text(json.dumps(v,indent=2)+'\n')
+def run(name,args):
+ start=time.monotonic()
+ with (root/(name+'.stdout')).open('x') as out,(root/(name+'.stderr')).open('x') as err:
+  p=subprocess.run(list(map(str,args)),stdout=out,stderr=err)
+ record={'command':list(map(str,args)),'exit_code':p.returncode,'seconds':time.monotonic()-start,'binary_sha256':hashlib.sha256(Path(args[0]).read_bytes()).hexdigest()}
+ save(root/(name+'-execution.json'),record)
+ assert p.returncode==0,record
+host=read(root/'host/host-report.json');assert host['clean_exit'] and host['hash_verified_extension_bundle'] and not host['faults']
+request=read(root/'request.json');capture=read(root/'workspace/capture.json')
+for rel,record in read(root/'input-hashes-before-qualification.json').items():
+ assert hashlib.sha256((root/rel).read_bytes()).hexdigest()==record['sha256'],rel
+limits={'maximum_manifest_bytes':1048576,'maximum_frame_bytes':16777216,'timeout_ms':30000}
+save(root/'retain-config.json',{'workspace':str(root/'workspace'),'request':request,'input_scope':'inputs','manifest':{'reference':capture['input']['manifest'],'sha256':capture['input']['sha256'],'byte_length':capture['input']['byte_length']},'limits':limits,'output_directory':str(root/'retained')})
+run('retain',[repo/'target/debug/examples/retain_extension_conditioning',root/'retain-config.json'])
+# This qualification receipt is captured after inference. Its host-owned input
+# hashes are compared with the inputs recorded while the worker was running.
+config={'codec':'/tmp/deadpan-inference-pause-final-bin-2026-10-17/deadpan-media-worker','tracker':'/tmp/deadpan-inference-pause-final-bin-2026-10-17/deadpan-track','workspace':str(root/'workspace'),'request':request,'candidate':host['extension_bundle'],'selected_provider':read(root/'provider.json'),'output_directory':str(root/'media'),'limits':{'media':{'max_input_bytes':536870912,'max_output_bytes':536870912,'max_scratch_bytes':536870912,'timeout_ms':300000},'maximum_worker_provenance_bytes':4194304,'maximum_host_provenance_bytes':33554432},'retained_inputs':{'directory':str(root/'retained'),'receipt':read(root/'retained/retention-report.json')['conditioning'],'input_scope':'inputs','limits':limits}}
+save(root/'media-config.json',config)
+run('qualify',[repo/'target/debug/examples/qualify_extension_media',root/'media-config.json'])
+print(root/'media/report.json')

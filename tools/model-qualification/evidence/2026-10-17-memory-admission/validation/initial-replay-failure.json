@@ -1,0 +1,14 @@
+[
+  {
+    "actual": {
+      "rows": "[JobRow { id: JobId(12), kind: AiPause, session: Some(3), detail: \"Pause \u00b7 AI pictures\", state: Held(\"available memory is 21.47 GB; the model estimates 22.55 GB plus 8.59 GB reserved for the Mac\"), progress: Progress { stage: \"\", fraction: None }, elapsed: 90.637416ms, remaining: None, cancellable: true, tag: Some(2305843009213693955), can_run_anyway: false }, JobRow { id: JobId(13), kind: AiPause, session: Some(3), detail: \"Pause\", state: Held(\"available memory is 21.47 GB; the model estimates 22.55 GB plus 8.59 GB reserved for the Mac\"), progress: Progress { stage: \"\", fraction: None }, elapsed: 18.722666ms, remaining: None, cancellable: true, tag: Some(9), can_run_anyway: false }]",
+      "status": "Cannot run AI pause pictures yet: available memory is 21.47 GB; the model estimates 22.55 GB plus 8.59 GB reserved for the Mac. This wait cannot be overridden; Cancel remains available."
+    },
+    "expected": {
+      "held_jobs": 2,
+      "override": false
+    },
+    "name": "O cannot launch either memory-held job and explains the capacity limit",
+    "passed": false
+  }
+]

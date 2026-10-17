@@ -1,0 +1,238 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.16s
+     Running `target/debug/xtask check --filter 'test(jobs::) | test(system_conditions::) | test(transcript) | test(generation::)'`
+check: packages changed since origin/main: deadpan-app, deadpan-cli, deadpan-jobs
+   Compiling ring v0.17.14
+   Compiling rustls v0.23.45
+    Checking rustls-webpki v0.103.15
+    Checking rustls-platform-verifier v0.7.1
+    Checking ureq v3.4.2
+    Checking deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+    Checking deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Checking deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 17.44s
+    Checking deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Checking deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+    Checking deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+    Checking deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Checking deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 22.06s
+   Compiling ring v0.17.14
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling rustls-webpki v0.103.15
+   Compiling rustls v0.23.45
+   Compiling deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+   Compiling rustls-platform-verifier v0.7.1
+   Compiling ureq v3.4.2
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+warning: linker stderr: ld: __eh_frame section too large (max 16MB) to encode dwarf unwind offsets in compact unwind table, performance of exception handling might be affected
+  |
+  = note: `#[warn(linker_messages)]` on by default
+
+warning: `deadpan-app` (bin "deadpan-app") generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 51.11s
+────────────
+ Nextest run ID 33ae276f-3302-44d6-aa82-0d680185deb8 with nextest profile: default
+    Starting 198 tests across 51 binaries (1909 tests skipped)
+        PASS [   0.031s] (  1/198) deadpan-app::bin/deadpan-app jobs::tests::automatic_scans_take_turns_and_requested_work_is_never_queued
+        PASS [   0.033s] (  2/198) deadpan-app::bin/deadpan-app jobs::tests::a_waiter_observes_its_own_cancel_flag
+        PASS [   0.033s] (  3/198) deadpan-app::bin/deadpan-app jobs::tests::a_cancelled_runner_keeps_its_slot_until_it_drains
+        PASS [   0.033s] (  4/198) deadpan-app::bin/deadpan-app jobs::tests::at_most_one_inference_runs_and_the_next_is_queued_not_refused
+        PASS [   0.033s] (  5/198) deadpan-app::bin/deadpan-app jobs::memory_admission_tests::model_admission_requires_estimate_plus_reserve_at_exact_boundary
+        PASS [   0.033s] (  6/198) deadpan-app::bin/deadpan-app jobs::memory_admission_tests::model_release_requires_a_new_production_headroom_sample
+        PASS [   0.034s] (  7/198) deadpan-app::bin/deadpan-app jobs::memory_admission_tests::model_unknown_and_overflow_are_held_but_override_keeps_one_model_slot
+        PASS [   0.034s] (  8/198) deadpan-app::bin/deadpan-app jobs::lifecycle::tests::counter_exhaustion_stays_interrupted_and_asleep
+        PASS [   0.034s] (  9/198) deadpan-app::bin/deadpan-app jobs::tests::estimates_come_only_from_measured_progress_over_enough_time
+        PASS [   0.034s] ( 10/198) deadpan-app::bin/deadpan-app jobs::tests::inference_pause_waits_for_ack_and_retains_model_slot
+        PASS [   0.035s] ( 11/198) deadpan-app::bin/deadpan-app jobs::lifecycle::tests::coalesced_sleep_and_wake_cannot_revive_a_captured_job
+        PASS [   0.035s] ( 12/198) deadpan-app::bin/deadpan-app jobs::memory_admission_tests::probe_started_before_model_release_cannot_restore_old_observation
+        PASS [   0.035s] ( 13/198) deadpan-app::bin/deadpan-app jobs::tests::a_freed_slot_goes_to_the_highest_priority_waiter
+        PASS [   0.038s] ( 14/198) deadpan-app::bin/deadpan-app jobs::tests::a_probe_is_sampled_by_the_waiting_thread_before_gated_admission
+        PASS [   0.019s] ( 15/198) deadpan-app::bin/deadpan-app jobs::tests::inference_yields_to_render_and_cancel_overrides_acknowledged_pause
+        PASS [   0.018s] ( 16/198) deadpan-app::bin/deadpan-app jobs::tests::owner_cancelled_jobs_are_marked_only_after_their_request
+        PASS [   0.018s] ( 17/198) deadpan-app::bin/deadpan-app jobs::tests::model_jobs_wait_on_battery_heat_or_low_power_and_can_run_anyway
+        PASS [   0.019s] ( 18/198) deadpan-app::bin/deadpan-app jobs::tests::progress_is_clamped_and_rows_list_running_before_queued
+        PASS [   0.019s] ( 19/198) deadpan-app::bin/deadpan-app jobs::tests::memory_pressure_holds_new_heavy_work_by_level
+        PASS [   0.020s] ( 20/198) deadpan-app::bin/deadpan-app jobs::tests::priority_classes_are_ordered_as_the_specification_lists_them
+        PASS [   0.021s] ( 21/198) deadpan-app::bin/deadpan-app jobs::tests::requested_jobs_and_tags_are_listed_for_the_quit_question
+        PASS [   0.020s] ( 22/198) deadpan-app::bin/deadpan-app preview::jobs::quit::tests::a_close_asks_only_for_requested_work_not_yet_confirmed
+        PASS [   0.020s] ( 23/198) deadpan-app::bin/deadpan-app jobs::tests::uncancellable_jobs_refuse_panel_cancellation
+        PASS [   0.021s] ( 24/198) deadpan-app::bin/deadpan-app jobs::tests::sleep_invalidates_waiting_inference_even_after_wake_and_run_anyway
+        PASS [   0.021s] ( 25/198) deadpan-app::bin/deadpan-app jobs::tests::sleep_invalidates_running_inference_and_refuses_new_sleeping_work
+        PASS [   0.018s] ( 26/198) deadpan-app::bin/deadpan-app preview::jobs::tests::rows_read_as_complete_sentences_for_voiceover
+        PASS [   0.021s] ( 27/198) deadpan-app::bin/deadpan-app preview::jobs::tests::the_selection_follows_its_job_when_rows_reorder
+        PASS [   0.020s] ( 28/198) deadpan-app::bin/deadpan-app project::service::generation::final_provider_feedback_tests::completed_preparation_does_not_claim_generated_pictures_were_accepted
+        PASS [   0.021s] ( 29/198) deadpan-app::bin/deadpan-app project::service::generation::preparations::tests::a_different_edit_or_session_restarts_a_completed_scan
+        PASS [   0.021s] ( 30/198) deadpan-app::bin/deadpan-app project::service::generation::final_provider_feedback_tests::replacement_feedback_distinguishes_queued_work_from_unavailable_and_cancelled_work
+        PASS [   0.023s] ( 31/198) deadpan-app::bin/deadpan-app project::service::generation::preparations::tests::capacity_notices_keep_the_complete_count_without_listing_or_losing_ids
+        PASS [   0.022s] ( 32/198) deadpan-app::bin/deadpan-app project::service::generation::preparations::tests::host_source_registration_without_an_edit_has_no_capacity_notice
+        PASS [   0.024s] ( 33/198) deadpan-app::bin/deadpan-app project::service::generation::preparations::tests::claim_failure_retries_a_queued_row_after_a_bounded_delay
+        PASS [   0.031s] ( 34/198) deadpan-app::bin/deadpan-app project::generation::final_provider_tests::final_mapped_hold_determines_feedback_even_when_original_still_has_ai_pictures
+        PASS [   0.031s] ( 35/198) deadpan-app::bin/deadpan-app project::generation::final_provider_tests::fallback_requires_exact_saved_asset_and_timestamp
+        PASS [   0.031s] ( 36/198) deadpan-app::bin/deadpan-app project::generation::final_provider_tests::accepted_identity_checks_every_object_sampling_and_canvas
+        PASS [   0.031s] ( 37/198) deadpan-app::bin/deadpan-app project::generation::final_provider_tests::missing_non_hold_and_unrelated_provider_are_not_reported_as_fallback
+        PASS [   0.028s] ( 38/198) deadpan-app::bin/deadpan-app project::service::generation::preparations::tests::host_source_registration_commit_preserves_capacity_notices
+        PASS [   0.020s] ( 39/198) deadpan-app::bin/deadpan-app project::service::generation::preparations::tests::retrying_an_earlier_id_restarts_a_partly_scanned_queue
+        PASS [   0.021s] ( 40/198) deadpan-app::bin/deadpan-app project::service::generation::preparations::tests::intent_capacity_does_not_claim_that_only_queued_work_was_discarded
+        PASS [   0.104s] ( 41/198) deadpan-app::bin/deadpan-app jobs::tests::cancelling_a_queued_job_releases_its_waiter_and_sets_its_flag
+        PASS [   0.104s] ( 42/198) deadpan-app::bin/deadpan-app jobs::tests::earlier_sessions_are_cancelled_and_app_wide_jobs_are_kept
+        PASS [   0.114s] ( 43/198) deadpan-app::bin/deadpan-app jobs::tests::deferred_jobs_claim_the_model_only_around_their_model_step
+        PASS [   0.114s] ( 44/198) deadpan-app::bin/deadpan-app jobs::tests::inference_waits_for_playback_and_running_model_requests_a_boundary
+        PASS [   0.088s] ( 45/198) deadpan-app::bin/deadpan-app jobs::tests::shutdown_releases_every_waiter_and_refuses_new_admission
+        PASS [   0.149s] ( 46/198) deadpan-app::bin/deadpan-app jobs::tests::yield_rules_pause_at_boundaries_and_resume
+        PASS [   1.086s] ( 47/198) deadpan-app::bin/deadpan-app project::tests::generation::an_unavailable_runtime_reports_its_reason_and_records_nothing
+        PASS [   1.101s] ( 48/198) deadpan-app::bin/deadpan-app project::tests::generation::cancelling_during_conditioning_shows_cancelling_at_once
+        PASS [   1.097s] ( 49/198) deadpan-app::bin/deadpan-app project::tests::generation::explicit_extension_selects_its_operation_before_runtime_availability
+        PASS [   1.217s] ( 50/198) deadpan-app::bin/deadpan-app project::tests::generation::cancelling_immediately_never_leaves_a_live_attempt
+        PASS [   1.743s] ( 51/198) deadpan-app::bin/deadpan-app project::tests::corrections::a_transcript_only_session_is_backed_up
+        PASS [   1.771s] ( 52/198) deadpan-app::bin/deadpan-app project::tests::generation::a_worker_failure_is_recorded_and_shown_without_editing
+        PASS [   1.775s] ( 53/198) deadpan-app::bin/deadpan-app project::tests::generation::a_running_job_reports_progress_and_cancels_to_a_recorded_cancellation
+        PASS [   1.881s] ( 54/198) deadpan-app::bin/deadpan-app project::tests::generation::controls_survive_a_runtime_failure_before_the_request_is_recorded
+        PASS [   1.905s] ( 55/198) deadpan-app::bin/deadpan-app project::tests::generation::closing_the_project_cancels_and_drains_the_job_before_releasing_the_writer
+        PASS [   1.999s] ( 56/198) deadpan-app::bin/deadpan-app project::tests::generation::live::a_live_cancellation_names_exactly_the_observed_job
+        PASS [   2.019s] ( 57/198) deadpan-app::bin/deadpan-app project::tests::generation::live::a_consumed_native_receipt_does_not_block_remote_edits_during_job_progress
+        PASS [   1.762s] ( 58/198) deadpan-app::bin/deadpan-app project::tests::generation::live::remote_variant_and_storage_requests_while_a_job_runs
+        PASS [   1.335s] ( 59/198) deadpan-app::bin/deadpan-app project::tests::generation::ready_fixture::ready_bundles_are_discovered_previewed_without_an_edit_and_discarded_durably
+        PASS [   1.326s] ( 60/198) deadpan-app::bin/deadpan-app project::tests::generation::ready_fixture::variants_are_chosen_previewed_discarded_and_go_stale_with_their_pause
+        PASS [   3.333s] ( 61/198) deadpan-app::bin/deadpan-app project::tests::generation::live::live_status_distinguishes_scopes_that_share_a_hold
+        PASS [   1.715s] ( 62/198) deadpan-app::bin/deadpan-app project::tests::generation::ready_fixture::live_variant_choices_refresh_the_inspector_and_match_the_closed_command
+        PASS [   4.866s] ( 63/198) deadpan-app::bin/deadpan-app project::tests::generation::interrupted_jobs_distinguish_nested_defaults_and_plays_of_the_same_hold
+        PASS [   1.724s] ( 64/198) deadpan-app::bin/deadpan-app project::tests::generation::shutdown_drains_a_running_job
+        PASS [   0.480s] ( 65/198) deadpan-app::bin/deadpan-app project::tests::generation::stale_and_invalid_generation_requests_are_refused_by_identity
+        PASS [   2.271s] ( 66/198) deadpan-app::bin/deadpan-app project::tests::generation::scoped_cancellation_records_no_authored_edit
+        PASS [   6.337s] ( 67/198) deadpan-app::bin/deadpan-app project::tests::generation::generation_controls_survive_retries_and_reopen_and_changes_start_a_new_request
+        PASS [   6.447s] ( 68/198) deadpan-app::bin/deadpan-app project::tests::generation::live::a_live_request_runs_the_apps_job_and_accepts_its_variant
+        PASS [   5.954s] ( 69/198) deadpan-app::bin/deadpan-app project::tests::generation::preparations::native_revert_after_another_edit_is_captured_and_restores_only_the_provider
+        PASS [   6.305s] ( 70/198) deadpan-app::bin/deadpan-app project::tests::generation::preparations::missing_runtime_is_durable_retryable_and_discardable_without_changing_the_edit
+        PASS [   2.832s] ( 71/198) deadpan-app::bin/deadpan-app project::tests::generation::target_arriving_after_job_start_does_not_fill_the_captured_absence
+        PASS [   1.887s] ( 72/198) deadpan-app::bin/deadpan-app project::tests::jobs::generation_queues_for_the_model_and_cancels_durably_while_queued
+        PASS [   6.634s] ( 73/198) deadpan-app::bin/deadpan-app project::tests::generation::preparations::native_revert_of_an_active_fallback_cancels_pending_replacement_without_changing_timing
+        PASS [   6.548s] ( 74/198) deadpan-app::bin/deadpan-app project::tests::generation::preparations::undo_cancels_a_blocked_replacement_and_retry_cannot_resurrect_it
+        PASS [   2.037s] ( 75/198) deadpan-app::bin/deadpan-app project::tests::jobs::interrupted_attempts_are_listed_after_reopen_and_can_be_discarded
+        PASS [   5.291s] ( 76/198) deadpan-app::bin/deadpan-app project::tests::generation::scoped_requests_and_options_are_independent_for_default_and_this_play
+        PASS [   7.675s] ( 77/198) deadpan-app::bin/deadpan-app project::tests::generation::preparations::a_replacement_uses_the_existing_cancellable_model_slot
+        PASS [   0.239s] ( 78/198) deadpan-cli encoded_render::jobs::tests::automatic_manifest_never_accepts_missing_evidence_or_future_fields
+        PASS [   0.338s] ( 79/198) deadpan-cli encoded_render::jobs::tests::automatic_intent_algorithm_must_match_the_committed_color_branch
+        PASS [   3.507s] ( 80/198) deadpan-app::bin/deadpan-app project::tests::jobs::edits_stay_immediate_while_every_kind_of_job_runs_and_cancellation_drains
+        PASS [   0.194s] ( 81/198) deadpan-cli encoded_render::jobs::tests::automatic_manifest_requires_exact_original_decision_and_completion_binding
+        PASS [   0.173s] ( 82/198) deadpan-cli encoded_render::jobs::tests::legacy_manifest_bytes_keep_frozen_four_field_shape_and_reject_automatic_policy
+        PASS [   5.840s] ( 83/198) deadpan-app::bin/deadpan-app project::tests::generation::retimed_hold_generates_intrinsic_duration_and_previews_its_visible_root_window
+        PASS [   0.326s] ( 84/198) deadpan-cli generation::attempt::tests::a_cancelled_run_whose_cancel_record_was_lost_still_finishes_cancelled
+        PASS [   0.339s] ( 85/198) deadpan-cli generation::attempt::tests::a_worker_failure_the_store_missed_is_recorded_as_a_host_failure
+        PASS [   0.469s] ( 86/198) deadpan-cli generation::attempt::tests::a_worker_that_exits_without_a_candidate_fails_truthfully
+        PASS [   0.319s] ( 87/198) deadpan-cli generation::attempt::tests::allocation_records_a_current_bridge_request_and_a_queued_attempt
+        PASS [   8.828s] ( 88/198) deadpan-app::bin/deadpan-app project::tests::generation::partial_variants_are_kept_and_reported
+        PASS [   0.680s] ( 89/198) deadpan-cli generation::attempt::tests::ai_network_inference_host_preserves_files_protocol_and_owned_group
+        PASS [   0.222s] ( 90/198) deadpan-cli generation::attempt::tests::cancellation_before_launch_is_recorded_as_cancelled
+        PASS [   0.301s] ( 91/198) deadpan-cli generation::attempt::tests::extension::bridge_capture_uses_selected_plan_and_refuses_a_different_saved_clock
+        PASS [   2.313s] ( 92/198) deadpan-app::bin/deadpan-app project::tests::jobs::queue::running_generation_yields_to_playback_without_releasing_model_or_blocking_writer
+        PASS [   1.983s] ( 93/198) deadpan-app::bin/deadpan-app project::tests::jobs::sleep::user_cancellation_before_sleep_remains_cancelled_without_retry
+        PASS [   0.666s] ( 94/198) deadpan-cli generation::attempt::tests::extension::extension_completion_requires_v3_operation_native_contract_and_selected_provider
+        PASS [   7.873s] ( 95/198) deadpan-app::bin/deadpan-app project::tests::generation::region_choice_is_retained_when_omitted_and_explicit_none_stays_empty
+        PASS [   0.768s] ( 96/198) deadpan-cli generation::attempt::tests::independent_failure_observed_before_sleep_keeps_its_original_cause
+        PASS [   1.771s] ( 97/198) deadpan-cli generation::attempt::tests::extension::extension_workspace_refuses_wrong_provider_missing_context_and_changed_signatures
+        PASS [   3.310s] ( 98/198) deadpan-app::bin/deadpan-app project::tests::jobs::sleep::coalesced_sleep_and_wake_interrupt_queued_generation_without_resuming_it
+        PASS [   3.319s] ( 99/198) deadpan-app::bin/deadpan-app project::tests::jobs::sleep::sleep_interrupts_running_generation_and_explicit_retry_creates_a_new_attempt
+        PASS [   1.849s] (100/198) deadpan-cli generation::attempt::tests::extension::extension_allocation_retains_operation_origin_and_rejects_changed_variants
+        PASS [  10.642s] (101/198) deadpan-app::bin/deadpan-app project::tests::generation::preparations::extending_an_accepted_pause_automatically_generates_full_replacement_without_accepting
+        PASS [   3.824s] (102/198) deadpan-app::bin/deadpan-app project::tests::jobs::queue::model_jobs_wait_for_power_playback_and_memory_and_can_run_anyway
+        PASS [  11.949s] (103/198) deadpan-app::bin/deadpan-app project::tests::generation::generated_variants_share_a_request_and_one_is_accepted
+        PASS [   4.442s] (104/198) deadpan-app::bin/deadpan-app project::tests::jobs::queue::a_killed_worker_process_fails_durably_while_other_jobs_and_edits_run
+        PASS [  12.156s] (105/198) deadpan-app::bin/deadpan-app project::tests::generation::kept_variants_survive_and_the_automatic_pass_expires_old_ones
+        PASS [   0.891s] (106/198) deadpan-cli generation::attempt::tests::reaping_finishes_cancel_and_keeps_the_first_failure
+        PASS [   1.001s] (107/198) deadpan-cli generation::attempt::tests::selected_pack_identity_is_durable_and_variants_keep_that_identity
+        PASS [   4.548s] (108/198) deadpan-app::bin/deadpan-app project::tests::jobs::queue::several_generations_queue_for_the_model_and_cancel_individually
+        PASS [   0.023s] (109/198) deadpan-cli generation::color::tests::rec709_codes_convert_at_the_curve_break_and_across_the_full_byte_range
+        PASS [   0.022s] (110/198) deadpan-cli generation::color::tests::srgb_is_unchanged_and_other_interpretations_refuse
+        PASS [   0.023s] (111/198) deadpan-cli generation::command::options::tests::explicit_controls_are_bounded_and_cannot_change_another_request
+        PASS [   0.021s] (112/198) deadpan-cli generation::command::options::tests::modes_are_explicit_and_another_cannot_replace_the_captured_operation
+        PASS [   0.023s] (113/198) deadpan-cli generation::command::options::tests::scope_is_strict_bounded_and_names_the_requested_hold
+        PASS [   0.023s] (114/198) deadpan-cli generation::conditioning::continuity::tests::interpretation_is_retained_across_context_frames_and_checked_at_seams
+        PASS [   0.022s] (115/198) deadpan-cli generation::conditioning::continuity::tests::measured_vfr_support_respects_direction_exact_endpoints_and_clamps
+        PASS [   1.493s] (116/198) deadpan-cli generation::attempt::tests::sleep_before_or_during_cancel_finalization_remains_durably_interrupted
+        PASS [   0.395s] (117/198) deadpan-cli generation::conditioning::extension::tests::aggregate_png_limit_includes_opposite_and_cancellation_deadline_win_before_open
+        PASS [   3.564s] (118/198) deadpan-cli generation::attempt::tests::extension::supervised_extension_cancel_and_host_refusals_are_terminal_before_ready
+        PASS [   0.030s] (119/198) deadpan-cli generation::conditioning::extension::tests::development_envelope_is_exact_at_integer_and_fractional_rates
+        PASS [   0.030s] (120/198) deadpan-cli generation::conditioning::extension::tests::development_project_rate_matches_worker_envelope_without_rounding
+        PASS [   0.034s] (121/198) deadpan-cli generation::conditioning::extension::tests::selected_capture_refuses_changed_hold_rate_and_unbounded_or_different_raster
+        PASS [   0.042s] (122/198) deadpan-cli generation::conditioning::extension::tests::selected_capture_refuses_mismatched_provider_plan_or_operation_before_open
+        PASS [   0.980s] (123/198) deadpan-cli generation::conditioning::extension::tests::selected_one_second_plan_preserves_e24_inputs_and_authored_duration
+        PASS [   4.820s] (124/198) deadpan-cli generation::attempt::tests::hostile_ai_provenance_claims_fail_before_media_qualification
+        PASS [   1.230s] (125/198) deadpan-cli generation::conditioning::extension::tests::selected_region_uses_direction_anchor_and_preserves_captured_controls
+        PASS [   4.577s] (126/198) deadpan-cli generation::attempt::tests::sleep_during_qualified_object_promotion_never_publishes_ready
+        PASS [   5.853s] (127/198) deadpan-cli generation::attempt::tests::hostile_ai_workers_fail_truthfully_and_leave_no_group_member
+        PASS [   0.038s] (128/198) deadpan-cli generation::conditioning::tests::colour_summary_reports_bt709_conversion_and_retained_approximations
+        PASS [   0.033s] (129/198) deadpan-cli generation::conditioning::tests::conditioning_and_join_measurements_sample_the_same_fractional_clean_image
+        PASS [   0.034s] (130/198) deadpan-cli generation::conditioning::tests::measured_colour_is_recorded_and_uncovered_colour_refuses
+        PASS [   0.104s] (131/198) deadpan-cli generation::conditioning::tests::prepared_png_converts_bt709_and_keeps_srgb_padding_and_alpha_separate
+        PASS [   0.044s] (132/198) deadpan-cli generation::joins::tests::boundary_pictures_and_presented_masters_share_one_space
+        PASS [   0.056s] (133/198) deadpan-cli generation::joins::tests::bt709_boundaries_and_srgb_masters_compare_in_the_same_transfer
+        PASS [   0.040s] (134/198) deadpan-cli generation::joins::tests::classes_follow_the_documented_thresholds
+        PASS [   0.031s] (135/198) deadpan-cli generation::joins::tests::extension_joins_distinguish_absent_opposite_from_authored_black
+        PASS [   0.030s] (136/198) deadpan-cli generation::joins::tests::identical_pictures_are_smooth_and_differences_are_exact_means
+        PASS [   0.030s] (137/198) deadpan-cli generation::joins::tests::malformed_inputs_are_refused
+        PASS [   0.033s] (138/198) deadpan-cli generation::joins::tests::only_the_centered_content_region_counts
+        PASS [   0.039s] (139/198) deadpan-cli generation::joins::tests::pngs_decode_only_at_the_expected_raster
+        PASS [   0.052s] (140/198) deadpan-cli generation::provider_tests::development_provider_uses_the_compiled_bridge_runtime_version
+        PASS [   0.037s] (141/198) deadpan-cli generation::provider_tests::rollback_to_a_different_pack_version_starts_a_distinct_request_identity
+        PASS [   0.075s] (142/198) deadpan-cli generation::runtime::check::tests::complete_worker_smoke_report_requires_every_well_formed_adapter_source
+        PASS [  11.779s] (143/198) deadpan-app::bin/deadpan-app project::tests::generation::this_play_preview_acceptance_and_history_keep_the_exact_authoring_target
+        PASS [   0.068s] (144/198) deadpan-cli generation::runtime::check::tests::smoke_report_must_match_every_captured_identity_and_operation
+        PASS [   0.054s] (145/198) deadpan-cli generation::runtime::launch::tests::ai_network_launcher_refuses_missing_isolation_and_invalid_python
+        PASS [   0.790s] (146/198) deadpan-cli generation::conditioning::tests::conditioning_refuses_extreme_sample_aspect_before_display_allocation
+        PASS [   0.053s] (147/198) deadpan-cli generation::runtime::selection::constraints::tests::launch_constraints_cannot_bypass_raster_duration_or_operation_limits
+        PASS [   0.038s] (148/198) deadpan-cli generation::runtime::selection::constraints::tests::narrower_controls_refuse_motion_and_count_instruction_bytes_for_each_operation
+        PASS [   0.049s] (149/198) deadpan-cli generation::runtime::selection::tests::extension_selection_uses_manifest_duration_and_exact_project_grid
+        PASS [   0.033s] (150/198) deadpan-cli generation::runtime::selection::tests::provider_selection_never_grants_another_operation_or_a_wider_capability
+        PASS [   0.037s] (151/198) deadpan-cli generation::runtime::tests::a_cleared_source_checkout_is_reported
+        PASS [   0.042s] (152/198) deadpan-cli generation::runtime::tests::a_complete_runtime_resolves_to_canonical_paths
+        PASS [   0.033s] (153/198) deadpan-cli generation::runtime::tests::a_missing_home_leaves_the_model_cache_unresolved
+        PASS [   0.093s] (154/198) deadpan-cli generation::runtime::tests::a_packaged_app_uses_only_its_bundled_runtime_and_installed_pack
+        PASS [   0.098s] (155/198) deadpan-cli generation::runtime::tests::an_installed_bridge_pack_does_not_satisfy_an_extension_request
+        PASS [   0.056s] (156/198) deadpan-cli generation::runtime::tests::bundles_use_only_explicit_variables
+        PASS [   0.064s] (157/198) deadpan-cli generation::runtime::tests::development_builds_prefer_an_installed_pack_over_the_qualification_cache
+        PASS [   0.040s] (158/198) deadpan-cli generation::runtime::tests::every_missing_piece_is_named_with_its_variable
+        PASS [   0.032s] (159/198) deadpan-cli generation::runtime::tests::selected_manifest_keeps_its_os_and_picture_constraints
+        PASS [   0.034s] (160/198) deadpan-cli generation::runtime::tests::the_bundled_runtime_names_its_minimum_macos
+        PASS [   0.028s] (161/198) deadpan-cli system_conditions::tests::admission_preserves_reserve_and_checks_arithmetic
+        PASS [   0.030s] (162/198) deadpan-cli system_conditions::tests::headroom_counts_printed_speculative_once_and_excludes_other_reclaimable_fields
+        PASS [   0.029s] (163/198) deadpan-cli system_conditions::tests::headroom_rejects_missing_duplicate_invalid_and_overflowed_observations
+        PASS [   0.064s] (164/198) deadpan-cli system_conditions::tests::system_observations_reject_unsuccessful_commands
+        PASS [   4.578s] (165/198) deadpan-cli generation::conditioning::extension::tests::assembly_rejects_wrong_scope_order_opposite_clock_and_controls
+        PASS [   0.817s] (166/198) deadpan-cli generation::runtime::network_tests::ai_network_smoke_check_denies_sockets_and_descendants_while_files_work
+        PASS [   4.977s] (167/198) deadpan-cli generation::conditioning::extension::tests::assembly_preserves_chronological_pngs_definition_clocks_geometry_and_absence
+        PASS [   0.631s] (168/198) deadpan-cli::encoded_verification jobs::closing_owner_cancels_and_reaps_a_running_encode_without_user_cancellation
+        PASS [   6.352s] (169/198) deadpan-cli generation::attempt::tests::synthetic_one_frame_hold_measures_both_joins_at_the_same_sample
+        PASS [   0.748s] (170/198) deadpan-cli::encoded_verification jobs::corrupted_retained_movie_cannot_reuse_saved_manifest_or_verification
+        PASS [   1.067s] (171/198) deadpan-cli::encoded_verification jobs::closing_owner_cancels_and_reaps_a_running_verifier_without_user_cancellation
+        PASS [   1.009s] (172/198) deadpan-cli::encoded_verification jobs::restart_preserves_checkpoint_and_fresh_attempt_reverifies_exact_bytes
+        PASS [   1.077s] (173/198) deadpan-cli::encoded_verification jobs::owner_revocation_during_native_verification_cannot_admit_a_candidate
+        PASS [   0.238s] (174/198) deadpan-jobs transcription::tests::adversarial_transcription_frames
+        PASS [   0.024s] (175/198) deadpan-jobs transcription::tests::each_attempt_accepts_only_its_own_completion_kind
+        PASS [   0.021s] (176/198) deadpan-jobs transcription::tests::framed_messages_round_trip_and_reject_unknown_fields
+        PASS [   0.022s] (177/198) deadpan-jobs transcription::tests::languages_are_auto_or_two_lowercase_letters
+        PASS [   0.022s] (178/198) deadpan-jobs transcription::tests::requests_bound_paths_audio_scope_budget_and_timeout
+        PASS [   0.020s] (179/198) deadpan-jobs transcription::tests::responses_bind_identity_scope_budget_and_the_verified_model
+        PASS [   0.019s] (180/198) deadpan-jobs transcription::tests::speech_detection_messages_round_trip
+        PASS [   0.020s] (181/198) deadpan-jobs transcription::tests::speech_detection_requests_bound_their_probability_budget
+        PASS [   3.287s] (182/198) deadpan-cli generation::conditioning::tests::conditioning_and_the_presentation_crop_cancel_out
+        PASS [   8.370s] (183/198) deadpan-cli generation::attempt::tests::missing_landmark_helper_fails_without_replacing_ready_or_fallback
+        PASS [   7.114s] (184/198) deadpan-cli generation::attempt::tests::synthetic_wrong_uniform_endpoints_preserve_ready_and_fallback
+        PASS [   7.725s] (185/198) deadpan-cli generation::attempt::tests::synthetic_middle_flash_fails_qualification_and_preserves_ready_fallback
+        PASS [   1.405s] (186/198) deadpan-cli::hostile_analysis_workers transcription_admits_only_a_contained_regular_transcript
+        PASS [  10.483s] (187/198) deadpan-cli generation::attempt::tests::an_escaped_ai_worker_descendant_fails_the_attempt_and_is_not_contained
+        PASS [   9.957s] (188/198) deadpan-cli generation::attempt::tests::extension::supervised_extension_both_directions_publish_all_inputs_then_accept_and_reopen
+        PASS [   1.028s] (189/198) deadpan-cli::transcription transcript_commands_report_absence_usage_and_unavailable_sources
+        PASS [   3.003s] (190/198) deadpan-cli::encoded_verification jobs::malformed_or_retargeted_retained_manifests_fail_before_verification
+        PASS [   9.038s] (191/198) deadpan-cli generation::attempt::tests::synthetic_variants_publish_distinct_ready_bundles_for_one_request
+        PASS [  10.074s] (192/198) deadpan-cli generation::attempt::tests::preparations::replacement_keeps_controls_rejects_stale_claims_and_needs_explicit_acceptance
+        PASS [   6.953s] (193/198) deadpan-cli generation::conditioning::tests::captured_rectangles_match_portrait_odd_and_anamorphic_preparation
+        PASS [  11.248s] (194/198) deadpan-cli generation::attempt::tests::synthetic_entry_and_exit_mismatches_are_checked_independently
+        PASS [   4.590s] (195/198) deadpan-cli::hostile_analysis_workers transcription_bounds_frames_stderr_stalls_and_descendants
+        PASS [  11.614s] (196/198) deadpan-cli generation::attempt::tests::stalled_and_forking_ai_workers_are_stopped_by_cancellation
+        PASS [   5.163s] (197/198) deadpan-cli::hostile_analysis_workers transcription_escapee_keeping_pipes_fails_and_outlives_group_cleanup
+        PASS [  29.481s] (198/198) deadpan-app::bin/deadpan-app project::tests::generation::extensions::automatic_edge_extensions_become_ready_without_editing_and_accept_explicitly
+────────────
+     Summary [  29.567s] 198 tests run: 198 passed, 1909 skipped

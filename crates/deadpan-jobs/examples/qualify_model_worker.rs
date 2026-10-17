@@ -305,6 +305,9 @@ mod supported {
         }
         let logs = process.log_tail();
         create(&config.report_directory.join("worker.stderr.log"))?.write_all(&logs.bytes)?;
+        // This process supervises one model worker. Its sampled high-water mark
+        // survives worker exit; a separate diagnostics process cannot read it.
+        let memory = deadpan_diagnostics::WORKERS.model.snapshot();
         let mut result = json!({
             "elapsed_seconds":started.elapsed().as_secs_f64(),
             "clean_exit":clean_exit,
@@ -315,6 +318,15 @@ mod supported {
             "discarded_log_bytes":logs.discarded_bytes,
             "media_validated":false,
             "accepted":false,
+            "model_workers": {
+                "live": {"current": memory.live.current, "high": memory.live.high},
+                "phys_footprint_bytes": {
+                    "current": memory.footprint_bytes.current,
+                    "high": memory.footprint_bytes.high,
+                },
+                "samples": memory.samples,
+                "failed_samples": memory.failures,
+            },
         });
         if clean_exit && faults.is_empty() && lifecycle.state() == JobState::Validating {
             let captured: Result<serde_json::Value, Box<dyn Error>> = (|| {

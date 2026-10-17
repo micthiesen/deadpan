@@ -1,0 +1,6 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.05s
+     Running `target/debug/xtask check --no-test`
+check: packages changed since origin/main: deadpan-app, deadpan-cli, deadpan-jobs
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.15s
+    Checking deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 5.13s

@@ -1,0 +1,79 @@
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.09s
+     Running `target/debug/xtask check --filter 'test(jobs::) | test(system_conditions::)'`
+check: packages changed since origin/main: deadpan-app, deadpan-cli, deadpan-jobs
+    Checking deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 6.08s
+    Checking deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 9.26s
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+warning: linker stderr: ld: __eh_frame section too large (max 16MB) to encode dwarf unwind offsets in compact unwind table, performance of exception handling might be affected
+  |
+  = note: `#[warn(linker_messages)]` on by default
+
+warning: `deadpan-app` (bin "deadpan-app") generated 1 warning
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 9.77s
+────────────
+ Nextest run ID 80d0228c-c64a-49d0-96e5-706a74c1ed7c with nextest profile: default
+    Starting 60 tests across 51 binaries (2050 tests skipped)
+        PASS [   0.032s] ( 1/60) deadpan-app::bin/deadpan-app jobs::lifecycle::tests::coalesced_sleep_and_wake_cannot_revive_a_captured_job
+        PASS [   0.034s] ( 2/60) deadpan-app::bin/deadpan-app jobs::lifecycle::tests::counter_exhaustion_stays_interrupted_and_asleep
+        PASS [   0.035s] ( 3/60) deadpan-app::bin/deadpan-app jobs::memory_admission_tests::pressure_override_requires_fresh_capacity_and_keeps_the_model_slot
+        PASS [   0.035s] ( 4/60) deadpan-app::bin/deadpan-app jobs::tests::inference_pause_waits_for_ack_and_retains_model_slot
+        PASS [   0.036s] ( 5/60) deadpan-app::bin/deadpan-app jobs::memory_admission_tests::unknown_insufficient_and_overflow_memory_cannot_be_overridden
+        PASS [   0.037s] ( 6/60) deadpan-app::bin/deadpan-app jobs::tests::automatic_scans_take_turns_and_requested_work_is_never_queued
+        PASS [   0.037s] ( 7/60) deadpan-app::bin/deadpan-app jobs::tests::deferred_jobs_claim_the_model_only_around_their_model_step
+        PASS [   0.037s] ( 8/60) deadpan-app::bin/deadpan-app jobs::tests::a_freed_slot_goes_to_the_highest_priority_waiter
+        PASS [   0.037s] ( 9/60) deadpan-app::bin/deadpan-app jobs::memory_admission_tests::model_release_requires_a_new_production_headroom_sample
+        PASS [   0.037s] (10/60) deadpan-app::bin/deadpan-app jobs::tests::at_most_one_inference_runs_and_the_next_is_queued_not_refused
+        PASS [   0.037s] (11/60) deadpan-app::bin/deadpan-app jobs::memory_admission_tests::model_admission_requires_estimate_plus_reserve_at_exact_boundary
+        PASS [   0.037s] (12/60) deadpan-app::bin/deadpan-app jobs::tests::a_waiter_observes_its_own_cancel_flag
+        PASS [   0.037s] (13/60) deadpan-app::bin/deadpan-app jobs::tests::earlier_sessions_are_cancelled_and_app_wide_jobs_are_kept
+        PASS [   0.038s] (14/60) deadpan-app::bin/deadpan-app jobs::memory_admission_tests::probe_started_before_model_release_cannot_restore_old_observation
+        PASS [   0.038s] (15/60) deadpan-app::bin/deadpan-app jobs::tests::estimates_come_only_from_measured_progress_over_enough_time
+        PASS [   0.039s] (16/60) deadpan-app::bin/deadpan-app jobs::tests::a_cancelled_runner_keeps_its_slot_until_it_drains
+        PASS [   0.046s] (17/60) deadpan-app::bin/deadpan-app jobs::tests::a_probe_is_sampled_by_the_waiting_thread_before_gated_admission
+        PASS [   0.023s] (18/60) deadpan-app::bin/deadpan-app jobs::tests::model_jobs_wait_on_battery_heat_or_low_power_and_can_run_anyway
+        PASS [   0.024s] (19/60) deadpan-app::bin/deadpan-app jobs::tests::owner_cancelled_jobs_are_marked_only_after_their_request
+        PASS [   0.026s] (20/60) deadpan-app::bin/deadpan-app jobs::tests::inference_yields_to_render_and_cancel_overrides_acknowledged_pause
+        PASS [   0.023s] (21/60) deadpan-app::bin/deadpan-app jobs::tests::priority_classes_are_ordered_as_the_specification_lists_them
+        PASS [   0.025s] (22/60) deadpan-app::bin/deadpan-app jobs::tests::memory_pressure_holds_new_heavy_work_by_level
+        PASS [   0.023s] (23/60) deadpan-app::bin/deadpan-app jobs::tests::uncancellable_jobs_refuse_panel_cancellation
+        PASS [   0.025s] (24/60) deadpan-app::bin/deadpan-app jobs::tests::requested_jobs_and_tags_are_listed_for_the_quit_question
+        PASS [   0.024s] (25/60) deadpan-app::bin/deadpan-app preview::jobs::tests::rows_read_as_complete_sentences_for_voiceover
+        PASS [   0.026s] (26/60) deadpan-app::bin/deadpan-app jobs::tests::progress_is_clamped_and_rows_list_running_before_queued
+        PASS [   0.025s] (27/60) deadpan-app::bin/deadpan-app preview::jobs::quit::tests::a_close_asks_only_for_requested_work_not_yet_confirmed
+        PASS [   0.027s] (28/60) deadpan-app::bin/deadpan-app preview::jobs::tests::memory_capacity_rows_do_not_advertise_an_override
+        PASS [   0.028s] (29/60) deadpan-app::bin/deadpan-app jobs::tests::sleep_invalidates_running_inference_and_refuses_new_sleeping_work
+        PASS [   0.028s] (30/60) deadpan-app::bin/deadpan-app jobs::tests::sleep_invalidates_waiting_inference_even_after_wake_and_run_anyway
+        PASS [   0.023s] (31/60) deadpan-app::bin/deadpan-app preview::jobs::tests::the_selection_follows_its_job_when_rows_reorder
+        PASS [   0.103s] (32/60) deadpan-app::bin/deadpan-app jobs::tests::cancelling_a_queued_job_releases_its_waiter_and_sets_its_flag
+        PASS [   0.088s] (33/60) deadpan-app::bin/deadpan-app jobs::tests::shutdown_releases_every_waiter_and_refuses_new_admission
+        PASS [   0.114s] (34/60) deadpan-app::bin/deadpan-app jobs::tests::inference_waits_for_playback_and_running_model_requests_a_boundary
+        PASS [   0.025s] (35/60) deadpan-cli system_conditions::tests::admission_preserves_reserve_and_checks_arithmetic
+        PASS [   0.026s] (36/60) deadpan-cli system_conditions::tests::headroom_counts_printed_speculative_once_and_excludes_other_reclaimable_fields
+        PASS [   0.157s] (37/60) deadpan-app::bin/deadpan-app jobs::tests::yield_rules_pause_at_boundaries_and_resume
+        PASS [   0.022s] (38/60) deadpan-cli system_conditions::tests::headroom_rejects_missing_duplicate_invalid_and_overflowed_observations
+        PASS [   0.036s] (39/60) deadpan-cli system_conditions::tests::system_observations_reject_unsuccessful_commands
+        PASS [   0.537s] (40/60) deadpan-cli encoded_render::jobs::tests::automatic_intent_algorithm_must_match_the_committed_color_branch
+        PASS [   0.550s] (41/60) deadpan-cli encoded_render::jobs::tests::automatic_manifest_requires_exact_original_decision_and_completion_binding
+        PASS [   0.570s] (42/60) deadpan-cli encoded_render::jobs::tests::automatic_manifest_never_accepts_missing_evidence_or_future_fields
+        PASS [   0.631s] (43/60) deadpan-cli encoded_render::jobs::tests::legacy_manifest_bytes_keep_frozen_four_field_shape_and_reject_automatic_policy
+        PASS [   1.289s] (44/60) deadpan-cli::encoded_verification jobs::corrupted_retained_movie_cannot_reuse_saved_manifest_or_verification
+        PASS [   1.305s] (45/60) deadpan-cli::encoded_verification jobs::closing_owner_cancels_and_reaps_a_running_encode_without_user_cancellation
+        PASS [   1.499s] (46/60) deadpan-cli::encoded_verification jobs::closing_owner_cancels_and_reaps_a_running_verifier_without_user_cancellation
+        PASS [   1.177s] (47/60) deadpan-cli::encoded_verification jobs::owner_revocation_during_native_verification_cannot_admit_a_candidate
+        PASS [   1.190s] (48/60) deadpan-cli::encoded_verification jobs::restart_preserves_checkpoint_and_fresh_attempt_reverifies_exact_bytes
+        PASS [   2.372s] (49/60) deadpan-app::bin/deadpan-app project::tests::jobs::generation_queues_for_the_model_and_cancels_durably_while_queued
+        PASS [   2.421s] (50/60) deadpan-app::bin/deadpan-app project::tests::jobs::queue::memory_headroom_holds_worker_launch_while_edits_and_cancellation_commit
+        PASS [   2.428s] (51/60) deadpan-app::bin/deadpan-app project::tests::jobs::sleep::user_cancellation_before_sleep_remains_cancelled_without_retry
+        PASS [   2.557s] (52/60) deadpan-app::bin/deadpan-app project::tests::jobs::queue::running_generation_yields_to_playback_without_releasing_model_or_blocking_writer
+        PASS [   2.696s] (53/60) deadpan-app::bin/deadpan-app project::tests::jobs::interrupted_attempts_are_listed_after_reopen_and_can_be_discarded
+        PASS [   3.531s] (54/60) deadpan-app::bin/deadpan-app project::tests::jobs::sleep::coalesced_sleep_and_wake_interrupt_queued_generation_without_resuming_it
+        PASS [   3.554s] (55/60) deadpan-app::bin/deadpan-app project::tests::jobs::sleep::sleep_interrupts_running_generation_and_explicit_retry_creates_a_new_attempt
+        PASS [   3.788s] (56/60) deadpan-app::bin/deadpan-app project::tests::jobs::edits_stay_immediate_while_every_kind_of_job_runs_and_cancellation_drains
+        PASS [   3.842s] (57/60) deadpan-app::bin/deadpan-app project::tests::jobs::queue::model_jobs_wait_for_power_playback_and_memory_and_can_run_anyway
+        PASS [   3.298s] (58/60) deadpan-cli::encoded_verification jobs::malformed_or_retargeted_retained_manifests_fail_before_verification
+        PASS [   4.126s] (59/60) deadpan-app::bin/deadpan-app project::tests::jobs::queue::a_killed_worker_process_fails_durably_while_other_jobs_and_edits_run
+        PASS [   4.668s] (60/60) deadpan-app::bin/deadpan-app project::tests::jobs::queue::several_generations_queue_for_the_model_and_cancel_individually
+────────────
+     Summary [   4.733s] 60 tests run: 60 passed, 2050 skipped

@@ -495,6 +495,7 @@ fn conditions_and_quit(d: &mut Driver<'_>) -> Result<(), String> {
         .set_conditions(crate::jobs::Conditions {
             power: Some("running on battery".into()),
             memory: crate::jobs::MemoryPressure::Normal,
+            ..Default::default()
         });
     super::transcript::focus_your_edit(d)?;
     d.chord(&[Key::G, Key::G, Key::Num1, Key::Num0, Key::L])?;
@@ -550,6 +551,80 @@ fn conditions_and_quit(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"rows":format!("{:?}", ai_rows(d))}),
     )?;
     d.capture("AI jobs waiting on battery")?;
+
+    // Replace only the observation: the same two queued jobs now expose
+    // their selected model estimate and the Mac's reserve in the real panel.
+    const GIB: u64 = 1024 * 1024 * 1024;
+    let memory_reason = "available memory is 21.47 GB; the model estimates 22.55 GB plus 8.59 GB reserved for the Mac";
+    d.app()
+        .service
+        .jobs()
+        .set_conditions(crate::jobs::Conditions {
+            memory_headroom: Some(deadpan_cli::system_conditions::MemoryHeadroom {
+                total_bytes: 64 * GIB,
+                available_bytes: 20 * GIB,
+            }),
+            ..Default::default()
+        });
+    d.step("Jobs panel waiting for model memory", true)?;
+    let rows = ai_rows(d);
+    let widgets = widget_text(d);
+    let paint = scenarios::text_paint_visibility(d, memory_reason);
+    let cancel_paint = scenarios::text_paint_visibility(d, "Cancel");
+    d.check(
+        "Both AI jobs show their full memory estimate and reserve with Cancel only",
+        rows.len() == 2
+            && rows
+                .iter()
+                .all(|row| row.state == RowState::Held(memory_reason.into()))
+            && widgets.contains(memory_reason)
+            && rows.iter().all(|row| !row.can_run_anyway)
+            && !widgets.contains("Run anyway")
+            && !widgets.contains("O runs it anyway")
+            && widgets.contains("Cancel")
+            && !paint.is_empty()
+            && paint
+                .iter()
+                .all(|item| item["fully_visible"] == true && item["elided"] == false)
+            && !cancel_paint.is_empty()
+            && cancel_paint
+                .iter()
+                .all(|item| item["fully_visible"] == true),
+        json!({"reason":memory_reason,"action":"Cancel","fully_visible":true}),
+        json!({"rows":format!("{rows:?}"),"memory_paint":paint,"cancel_paint":cancel_paint}),
+    )?;
+    d.capture("AI jobs waiting for model memory")?;
+    d.key(Key::O)?;
+    d.step("Memory capacity cannot be overridden", true)?;
+    d.check(
+        "O cannot launch either memory-held job and explains the capacity limit",
+        ai_rows(d).len() == 2
+            && ai_rows(d).iter().all(|row| {
+                row.state == RowState::Held(memory_reason.into()) && !row.can_run_anyway
+            })
+            && d.app().jobs.status.as_deref().is_some_and(|status| {
+                status.contains(memory_reason) && status.contains("This wait cannot be overridden")
+            }),
+        json!({"held_jobs":2,"override":false}),
+        json!({"rows":format!("{:?}", ai_rows(d)),"status":d.app().jobs.status}),
+    )?;
+    d.app()
+        .service
+        .jobs()
+        .set_conditions(crate::jobs::Conditions {
+            power: Some("running on battery".into()),
+            ..Default::default()
+        });
+    d.step("Battery admission restored", true)?;
+    d.check(
+        "Restoring battery conditions preserves both queued targets before Run anyway",
+        ai_rows(d).len() == 2
+            && ai_rows(d)
+                .iter()
+                .all(|row| row.state == RowState::Held("running on battery".into())),
+        json!({"held_on_battery":2}),
+        json!({"rows":format!("{:?}", ai_rows(d))}),
+    )?;
 
     // O on the first row starts it despite the battery; the second then
     // waits for the model it holds.

@@ -410,6 +410,7 @@ impl DeadpanApp {
                 self.transcription.session,
             )
             // Reading the sound and detecting pauses need no model slot.
+            .estimated_memory_bytes(pack.memory_bytes)
             .deferred()
             .detail("the Original")
             .cancel_flag(&cancel),

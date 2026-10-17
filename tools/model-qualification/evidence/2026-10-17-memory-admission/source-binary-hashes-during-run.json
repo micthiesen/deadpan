@@ -1,0 +1,50 @@
+{
+  "/Users/michael/Code/deadpan/target/debug/examples/qualify_model_worker": {
+    "bytes": 5323160,
+    "sha256": "9ca58dda5b5a303a4a1e0b19dac00a356c7da77ff2f5dd9c3af8358f6e03a6f2"
+  },
+  "/Users/michael/Code/deadpan/target/debug/examples/prepare_extension_context": {
+    "bytes": 97647272,
+    "sha256": "360c5d3b7ffb0a37d0470ed8f597d49e4faa7670b21df2b1b7571e0d3ed1d673"
+  },
+  "/Users/michael/Code/deadpan/crates/deadpan-jobs/examples/qualify_model_worker.rs": {
+    "bytes": 20553,
+    "sha256": "47c9144581cff65bdc58975fa7ebb7c645782aaa06c25270a48ce9a61fb2dded"
+  },
+  "/Users/michael/Code/deadpan/models/packs/ltx-2.3-q4-extension-1.json": {
+    "bytes": 15817,
+    "sha256": "2f9834cb8d8147a1abfac2f82c04cf9d4b9e2171f02c45b736ef29c97bf3eb06"
+  },
+  "/Users/michael/Code/deadpan/tools/model-qualification/worker.py": {
+    "bytes": 32565,
+    "sha256": "9bf3668cff1035c0d73994ec6a79ac64064955ada6d86722f6b493025327fd57"
+  },
+  "/Users/michael/Code/deadpan/tools/model-qualification/worker_extension_context.py": {
+    "bytes": 21822,
+    "sha256": "271325737be21ae2e81dbf92f5109465ca9140ff197920d838a6c14b2d48f79c"
+  },
+  "/Users/michael/Code/deadpan/tools/model-qualification/prepare_run.py": {
+    "bytes": 7210,
+    "sha256": "6dcdd1ab1633f2b67a4ee2797c963da39b266728695b97a680101cb1e9515c54"
+  },
+  "/Users/michael/Code/deadpan/tools/model-qualification/mlx_backend.py": {
+    "bytes": 42628,
+    "sha256": "2ce15538657efd07ab1de9ab45e257b7fe760ef106d46857b5e1de7fce2eee5b"
+  },
+  "/Users/michael/Code/deadpan/tools/model-qualification/worker_media.py": {
+    "bytes": 15518,
+    "sha256": "75608e052a744deaabe864521a6d3da2e20645171e1173191815619cfed104d1"
+  },
+  "/Users/michael/Code/deadpan/tools/model-qualification/verify_run.py": {
+    "bytes": 4214,
+    "sha256": "0abc3e706946621b9c135e981747a8e63c2faba74c1042899b1ba3cc6e7f225e"
+  },
+  "/Users/michael/Code/deadpan/tools/model-qualification/runtime_source.py": {
+    "bytes": 2809,
+    "sha256": "83dddd9cd6e84d1c2d01d27e6d28098325624afc3572f17ba7037ecd4acbbbad"
+  },
+  "/Users/michael/Code/deadpan/tools/model-qualification/worker_protocol.py": {
+    "bytes": 58417,
+    "sha256": "b7cb747ff3774283ad7f5279d81b6545189dcaf149b7e98a64acc73f1f73214c"
+  }
+}

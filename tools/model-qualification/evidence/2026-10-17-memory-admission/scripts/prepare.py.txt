@@ -1,0 +1,35 @@
+from pathlib import Path
+import json, subprocess, hashlib, sys
+root=Path(__file__).resolve().parent
+repo=Path('/Users/michael/Code/deadpan')
+cli=Path('/tmp/deadpan-inference-pause-final-bin-2026-10-17/deadpan-cli')
+package=root/'fixture.deadpan'
+def save(p,v): p.write_text(json.dumps(v,indent=2)+'\n')
+def run(name,args):
+ p=subprocess.run(list(map(str,args)),capture_output=True,text=True)
+ (root/(name+'.stdout')).write_text(p.stdout); (root/(name+'.stderr')).write_text(p.stderr)
+ if p.returncode: raise RuntimeError((name,p.returncode,p.stderr))
+ return json.loads(p.stdout) if p.stdout.startswith('{') else p.stdout
+created=run('create',[cli,'project','create-original',package,repo/'tools/model-qualification/evidence/2026-10-08-extension-one-second/fixtures/from_left.mp4'])['created']
+doc=run('original',[cli,'project','dump',package,'--json'])
+assert doc['presentation_basis']['frame_rate']=={'numerator':24,'denominator':1}
+request={'protocol':1,'project_id':doc['project_id'],'expected_revision':doc['revision_id'],'new_revision':'memory-max-extension','command':{'command':'insert','parent':doc['root'],'index':1,'subtree':{'root':'extension','nodes':{'extension':{'label':'Maximum Extension footprint qualification','kind':{'type':'hold','recipe':{'duration':72,'video':{'type':'freeze','asset':created['asset_id'],'timestamp':{'ticks':8,'time_base':{'numerator':1,'denominator':24}}},'audio':{'type':'silence'}}}}},'overrides':{},'gap_overrides':{}}}}
+save(root/'insert.json',request);run('insert',[cli,'command',package,'--json',root/'insert.json'])
+pack=json.loads((repo/'models/packs/ltx-2.3-q4-extension-1.json').read_text()); c=pack['constraints']['extension']
+plan={'schema_version':1,'operation':'extension','sampling':{'schema_version':1,'direction':'from_left','project_rate':{'numerator':24,'denominator':1},'native_rate':{'numerator':24,'denominator':1},'context_frame_count':9,'generated_frame_count':72,'output_frame_count':72,'interpolation':'encoded_srgb_rgb8_linear_half_up','policy':'frame_centers_clamped'},'native_dimensions':{'width':768,'height':320}}
+provider={k:pack[k] for k in ['pack_id','pack_version','runtime_id']};provider.update(runtime_version=pack['runtime_versions'][0],seed=42107)
+selected={'schema_version':1,'operation':'extension','selection':provider,'native_frame_rate':c['native_frame_rate'],'context_frame_count':9,'generated_frame_counts':c['generated_frame_counts'],'width':c['width'],'height':c['height'],'maximum_output_frames':72}
+save(root/'plan.json',plan);save(root/'provider.json',selected);save(root/'target.json',{'node':'extension','repeats':[]})
+run('capture',[repo/'target/debug/examples/prepare_extension_context','--project',package,'--revision','memory-max-extension','--target',root/'target.json','--plan',root/'plan.json','--provider',root/'provider.json','--output',root/'workspace'])
+capture=json.loads((root/'workspace/capture.json').read_text());(root/'workspace/outputs').mkdir()
+request={'operation':'generate_extension','protocol':3,'identity':{'request_id':'max-extension-memory','attempt_id':'attempt-1'},'cancellation_token':'cancel-max-extension-memory','project_id':capture['project_id'],'revision_id':capture['revision_id'],'target':{'hold_id':'extension','request_version':1},'input':{k:capture['input'][k] for k in ['manifest','sha256']},'output_workspace':'outputs','constraints':capture['constraints'],'provider':provider,'plan':capture['plan']}
+source=Path('/Users/michael/Library/Caches/Deadpan/ltx-runtime/ltx-2-mlx-3392d75934120b7e69eefbe55893f7ef82be92a4')
+provenance=json.loads(Path('/tmp/deadpan-inference-pause-real-2026-10-17/fixture.deadpan/Media/Generated/blake3-dd60de489cd6699744350a712550fb8506ad4e7013f070c14bcb16aed3b3ce11').read_text())
+runtime={'runtime_source':str(source),'model_cache':'/Users/michael/Library/Application Support/Deadpan/Models/ltx-2.3-q4-extension/1','ffmpeg':'/opt/homebrew/bin/ffmpeg','ffprobe':'/opt/homebrew/bin/ffprobe','model_pack':{k:pack[k] for k in ['pack_id','pack_version','model_family','runtime_id','runtime_versions','operations']},'model_manifest_sha256':'fb5ad65515dd4f5b1d3c2fe56b963931f96d517ff1ec57af03490fb487462151'}
+runtime['model_pack']['files']=[{k:f[k] for k in ['name','sha256','bytes']} for f in pack['files']]
+save(root/'runtime.json',runtime);save(root/'request.json',request)
+save(root/'host.json',{'executable':str(source/'.venv/bin/python3'),'worker_script':str(repo/'tools/model-qualification/worker.py'),'runtime_config':str(root/'runtime.json'),'workspace':str(root/'workspace'),'report_directory':str(root/'host'),'request':request,'cancel_after_millis':None,'cancel_at_stage':None})
+sys.path.insert(0,str(repo/'tools/model-qualification'))
+from worker_protocol import parse_host_message
+parse_host_message(request)
+print(root/'host.json')

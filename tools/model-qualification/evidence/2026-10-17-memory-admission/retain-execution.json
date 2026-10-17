@@ -1,0 +1,9 @@
+{
+  "command": [
+    "/Users/michael/Code/deadpan/target/debug/examples/retain_extension_conditioning",
+    "/private/tmp/deadpan-memory-admission-2026-10-17/retain-config.json"
+  ],
+  "exit_code": 0,
+  "seconds": 0.08146241726353765,
+  "binary_sha256": "20b766e85c61bb8db04904d4b2ac08dacc71d4d952ff3b5fafca167605ec18a6"
+}

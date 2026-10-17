@@ -5,7 +5,7 @@
 //!
 //! `:jobs` or Deadpan › Jobs… opens it. While it is open it owns the
 //! keyboard: Up/Down (or J/K) choose a row, X cancels the chosen job, O runs
-//! a job held by battery, heat, memory or playback anyway, R retries and D
+//! a job held by battery, heat, memory pressure or playback anyway, R retries and D
 //! discards the chosen interrupted attempt, Escape closes.
 //!
 //! Quitting while work the person asked for is live asks first (`quit`).
@@ -158,7 +158,7 @@ pub(super) fn job_text(row: &JobRow, current: Option<u64>) -> String {
             duration(remaining)
         ));
     }
-    if matches!(row.state, RowState::Held(_)) {
+    if row.can_run_anyway {
         text.push_str(" · O runs it anyway");
     }
     text
@@ -367,8 +367,17 @@ impl DeadpanApp {
             RowState::Held(reason) if self.service.jobs().run_anyway(row.id) => format!(
                 "Starting {label} although {reason}. It still waits its turn for the AI model."
             ),
-            RowState::Held(_) => "That job is no longer waiting.".into(),
-            _ => "O starts a job that waits for battery power, heat, memory or playback; this one is not waiting for them.".into(),
+            RowState::Held(_) => {
+                let current = self.service.jobs().snapshot().into_iter().find(|current| current.id == row.id);
+                match current.as_ref().and_then(|current| match &current.state {
+                    RowState::Held(reason) => Some(reason.as_str()),
+                    _ => None,
+                }) {
+                    Some(reason) => format!("Cannot run {label} yet: {reason}. This wait cannot be overridden; Cancel remains available."),
+                    None => "That job is no longer waiting.".into(),
+                }
+            },
+            _ => "O starts a job that waits for battery power, heat, memory pressure or playback; this one is not waiting for them.".into(),
         });
     }
 
@@ -538,7 +547,7 @@ impl DeadpanApp {
                 ui.label(style::section_title("JOBS", true));
                 ui.label(
                     egui::RichText::new(
-                        "Editing and playback have priority. One AI model runs at a time; others wait their turn. Models start on power, without heat or memory pressure and while nothing plays; O runs a waiting one anyway. AI pictures pause at supported boundaries during playback or rendering; an active GPU step must finish. Shot detection and seek proxies also yield to tracking.",
+                        "Editing and playback have priority. One AI model runs at a time; others wait their turn. Models start on power, without heat or memory pressure and while nothing plays; O overrides those conditions when memory capacity is available. AI pictures pause at supported boundaries during playback or rendering; an active GPU step must finish. Shot detection and seek proxies also yield to tracking.",
                     )
                     .size(11.5)
                     .weak(),
@@ -612,7 +621,7 @@ impl DeadpanApp {
                                             "X",
                                             'x',
                                         );
-                                        if matches!(job.state, RowState::Held(_)) {
+                                        if job.can_run_anyway {
                                             action(ui, true, "Run anyway", "O", 'o');
                                         }
                                     }
@@ -695,6 +704,7 @@ mod tests {
             kind: JobKind::AiPause,
             session: Some(2),
             detail: "pause hold-1".into(),
+            can_run_anyway: matches!(state, RowState::Held(_)),
             state,
             progress,
             elapsed: Duration::from_secs(75),
@@ -702,6 +712,18 @@ mod tests {
             cancellable: true,
             tag: Some(4),
         }
+    }
+
+    #[test]
+    fn memory_capacity_rows_do_not_advertise_an_override() {
+        let mut held = row(
+            RowState::Held("available memory is below the model estimate".into()),
+            Progress::default(),
+        );
+        held.can_run_anyway = false;
+        let text = job_text(&held, Some(2));
+        assert!(text.contains("available memory is below the model estimate"));
+        assert!(!text.contains("O runs it anyway"));
     }
 
     #[test]

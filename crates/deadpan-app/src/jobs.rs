@@ -184,6 +184,8 @@ pub struct Conditions {
     /// "Low Power Mode is on", "the Mac is under thermal pressure").
     pub power: Option<String>,
     pub memory: MemoryPressure,
+    /// Observed system headroom, not a sum of model reservations.
+    pub memory_headroom: Option<deadpan_cli::system_conditions::MemoryHeadroom>,
 }
 
 /// Samples [`Conditions`]. It may block (it runs `pmset`); only waiting job
@@ -197,6 +199,7 @@ pub fn system_probe() -> Probe {
         power: deadpan_cli::system_conditions::power_guard(),
         memory: deadpan_cli::system_conditions::memory_pressure_level()
             .map_or(MemoryPressure::Normal, MemoryPressure::from_level),
+        memory_headroom: deadpan_cli::system_conditions::memory_headroom(),
     })
 }
 
@@ -352,6 +355,8 @@ pub enum CancelOutcome {
 
 /// What to register.
 pub struct JobSpec {
+    /// Selected model manifest's estimate, checked only when claiming inference.
+    pub estimated_memory_bytes: Option<u64>,
     pub kind: JobKind,
     /// The project session the job belongs to; `None` for app-wide jobs.
     pub session: Option<u64>,
@@ -373,6 +378,7 @@ impl JobSpec {
     pub fn new(kind: JobKind, session: Option<u64>) -> Self {
         Self {
             kind,
+            estimated_memory_bytes: None,
             session,
             detail: String::new(),
             cancel: None,
@@ -384,6 +390,11 @@ impl JobSpec {
 
     pub fn tag(mut self, tag: u64) -> Self {
         self.tag = Some(tag);
+        self
+    }
+
+    pub fn estimated_memory_bytes(mut self, bytes: u64) -> Self {
+        self.estimated_memory_bytes = Some(bytes);
         self
     }
 
@@ -427,7 +438,7 @@ pub enum RowState {
         waiting_for: String,
     },
     /// Its resource has room, but an admission condition holds it (see
-    /// [`Gates`]); [`Jobs::run_anyway`] admits it regardless.
+    /// [`Gates`]) or a hard memory capacity limit. Only soft conditions can be overridden.
     Held(String),
     Running,
     /// The external worker has not yet acknowledged a safe boundary.
@@ -470,6 +481,8 @@ pub struct JobRow {
     pub remaining: Option<Duration>,
     pub cancellable: bool,
     pub tag: Option<u64>,
+    /// Whether a current soft admission condition can be overridden.
+    pub can_run_anyway: bool,
 }
 
 /// What a job that is not yet admitted waits for.
@@ -537,6 +550,7 @@ impl std::fmt::Display for Stopped {
 }
 
 struct Entry {
+    estimated_memory_bytes: Option<u64>,
     lifecycle_epoch: u64,
     kind: JobKind,
     session: Option<u64>,
@@ -587,8 +601,10 @@ struct Board {
     sampled: Option<Instant>,
     /// A thread is sampling now; others keep waiting on the old reading.
     sampling: bool,
-    /// Whether a probe is installed. Without one, conditions are only what
-    /// [`Jobs::set_conditions`] records (tests and replays).
+    /// Invalidates an observation started before model release or probe changes.
+    observation_epoch: u64,
+    /// Whether a probe is installed. Without one, tests and replays explicitly
+    /// record conditions.
     probed: bool,
     closed: bool,
     /// Admission order, for tests and diagnostics: every admitted id in order.
@@ -658,21 +674,61 @@ impl Board {
                 .is_some_and(|sampled| sampled.elapsed() < CONDITIONS_TTL)
     }
 
+    /// A hard capacity limit: Run anyway never bypasses unknown or insufficient memory.
+    fn memory_admission_reason(&self, entry: &Entry) -> Option<String> {
+        if entry.claims
+            && entry.rules().resource == Some(Resource::Inference)
+            && (self.probed || self.conditions.memory_headroom.is_some())
+        {
+            if !self.fresh() {
+                return Some("Deadpan checks power and memory".into());
+            }
+            let Some(estimate) = entry.estimated_memory_bytes.filter(|bytes| *bytes > 0) else {
+                return Some("the model's memory estimate is unavailable".into());
+            };
+            let Some(headroom) = &self.conditions.memory_headroom else {
+                return Some("available memory could not be measured".into());
+            };
+            if !headroom.permits(estimate) {
+                return Some(format!(
+                    "available memory is {}; the model estimates {} plus {} reserved for the Mac",
+                    crate::model_packs::format_bytes(headroom.available_bytes),
+                    crate::model_packs::format_bytes(estimate),
+                    crate::model_packs::format_bytes(headroom.reserve_bytes()),
+                ));
+            }
+        }
+        None
+    }
+
+    fn can_run_anyway(&self, entry: &Entry) -> bool {
+        entry.admitted.is_none()
+            && !entry.cancelling
+            && !(entry.kind == JobKind::AiPause
+                && self.lifecycle.interrupted_since(entry.lifecycle_epoch))
+            && self.fresh()
+            && self.memory_admission_reason(entry).is_none()
+            && self.held(entry).is_some()
+    }
+
     /// The admission condition holding `entry`, if one does.
     fn held(&self, entry: &Entry) -> Option<String> {
         if entry.kind == JobKind::AiPause && self.lifecycle.interrupted_since(entry.lifecycle_epoch)
         {
             return Some("system sleep interrupted the job".into());
         }
+        if let Some(reason) = self.memory_admission_reason(entry) {
+            return Some(reason);
+        }
         let gates = entry.rules().gates;
+        if gates.any() && !self.fresh() {
+            return Some("Deadpan checks power and memory".into());
+        }
         if entry.forced || !gates.any() {
             return None;
         }
         if gates.playback && self.foreground.playback {
             return Some("the edit is playing".into());
-        }
-        if !self.fresh() {
-            return Some("Deadpan checks power and memory".into());
         }
         if gates.power
             && let Some(reason) = &self.conditions.power
@@ -798,6 +854,7 @@ impl Jobs {
         board.entries.insert(
             id,
             Entry {
+                estimated_memory_bytes: spec.estimated_memory_bytes,
                 lifecycle_epoch,
                 kind: spec.kind,
                 session: spec.session,
@@ -839,7 +896,7 @@ impl Jobs {
 
     /// Install the probe that samples power, thermal and memory conditions
     /// (production: [`system_probe`]). Without one, the board admits gated
-    /// work on what [`Jobs::set_conditions`] recorded.
+    /// work on the conditions explicitly recorded by tests and replays.
     pub fn set_probe(&self, probe: Option<Probe>) {
         *self
             .0
@@ -848,6 +905,7 @@ impl Jobs {
             .unwrap_or_else(|error| error.into_inner()) = probe.clone();
         let mut board = self.lock();
         board.probed = probe.is_some();
+        board.observation_epoch = board.observation_epoch.wrapping_add(1);
         board.sampled = None;
         board.admit();
         drop(board);
@@ -856,9 +914,11 @@ impl Jobs {
 
     /// Record an observation of the machine; held jobs are admitted once it
     /// clears.
+    #[cfg(any(test, feature = "ui-harness"))]
     pub fn set_conditions(&self, conditions: Conditions) {
         let mut board = self.lock();
         board.conditions = conditions;
+        board.observation_epoch = board.observation_epoch.wrapping_add(1);
         board.sampled = Some(Instant::now());
         board.admit();
         drop(board);
@@ -868,43 +928,48 @@ impl Jobs {
     /// Sample conditions through the probe when the last reading is stale.
     /// Called by waiting job threads only: the probe may block.
     fn refresh_conditions(&self) {
-        let probe = {
+        let (probe, epoch) = {
             let mut board = self.lock();
             if !board.probed || board.fresh() || board.sampling {
                 return;
             }
             board.sampling = true;
-            self.0
+            let probe = self
+                .0
                 .probe
                 .lock()
                 .unwrap_or_else(|error| error.into_inner())
-                .clone()
+                .clone();
+            (probe, board.observation_epoch)
         };
         let conditions = probe.map(|probe| probe());
-        self.lock().sampling = false;
-        match conditions {
-            Some(conditions) => self.set_conditions(conditions),
-            None => self.notify(),
+        let mut board = self.lock();
+        board.sampling = false;
+        if epoch == board.observation_epoch
+            && let Some(conditions) = conditions
+        {
+            board.conditions = conditions;
+            board.sampled = Some(Instant::now());
+            board.admit();
         }
+        drop(board);
+        self.notify();
     }
 
     /// The person chose to run a held job despite its admission conditions
-    /// (battery, heat, memory, playback). It still waits for its resource:
+    /// (battery, heat, memory pressure, playback). Memory capacity and fresh
+    /// observations are required even with this override. It still waits for its resource:
     /// two models never load together. False when it is not waiting.
     pub fn run_anyway(&self, id: JobId) -> bool {
         let mut board = self.lock();
-        if board.entries.get(&id).is_some_and(|entry| {
-            entry.kind == JobKind::AiPause
-                && board.lifecycle.interrupted_since(entry.lifecycle_epoch)
-        }) {
+        if !board
+            .entries
+            .get(&id)
+            .is_some_and(|entry| board.can_run_anyway(entry))
+        {
             return false;
         }
-        let Some(entry) = board.entries.get_mut(&id) else {
-            return false;
-        };
-        if entry.admitted.is_some() || entry.cancelling {
-            return false;
-        }
+        let entry = board.entries.get_mut(&id).expect("eligible entry");
         entry.forced = true;
         board.admit();
         drop(board);
@@ -1024,6 +1089,8 @@ impl Jobs {
                     .flatten();
                 JobRow {
                     id: *id,
+                    can_run_anyway: matches!(state, RowState::Held(_))
+                        && board.can_run_anyway(entry),
                     kind: entry.kind,
                     session: entry.session,
                     detail: entry.detail.clone(),
@@ -1294,7 +1361,14 @@ impl JobHandle {
             && entry.claims
             && entry.admitted.is_some()
         {
+            let released_model = entry.rules().resource == Some(Resource::Inference);
             entry.claims = false;
+            if released_model && board.probed {
+                // The previous sample can include the model that just exited.
+                // A waiting thread resamples outside this lock before admission.
+                board.sampled = None;
+                board.observation_epoch = board.observation_epoch.wrapping_add(1);
+            }
             board.admit();
         }
         drop(board);
@@ -1339,7 +1413,14 @@ impl JobHandle {
 impl Drop for JobHandle {
     fn drop(&mut self) {
         let mut board = self.jobs.lock();
-        board.entries.remove(&self.id);
+        let held_model = board
+            .entries
+            .remove(&self.id)
+            .is_some_and(|entry| entry.holds() == Some(Resource::Inference));
+        if held_model && board.probed {
+            board.sampled = None;
+            board.observation_epoch = board.observation_epoch.wrapping_add(1);
+        }
         board.admit();
         drop(board);
         self.jobs.notify();
@@ -1808,6 +1889,7 @@ mod tests {
         Conditions {
             power: Some("running on battery".into()),
             memory: MemoryPressure::Normal,
+            ..Default::default()
         }
     }
 
@@ -1910,6 +1992,7 @@ mod tests {
         jobs.set_conditions(Conditions {
             power: None,
             memory: MemoryPressure::Warning,
+            ..Default::default()
         });
         let ai = jobs.register(spec(JobKind::AiPause));
         let shots = jobs.register(spec(JobKind::Shots));
@@ -1927,6 +2010,7 @@ mod tests {
         jobs.set_conditions(Conditions {
             power: None,
             memory: MemoryPressure::Critical,
+            ..Default::default()
         });
         let pauses = jobs.register(spec(JobKind::SpeechActivity));
         assert_eq!(
@@ -1944,7 +2028,13 @@ mod tests {
     #[test]
     fn a_probe_is_sampled_by_the_waiting_thread_before_gated_admission() {
         let jobs = Jobs::new();
-        let reading = Arc::new(Mutex::new(battery()));
+        let reading = Arc::new(Mutex::new(Conditions {
+            memory_headroom: Some(deadpan_cli::system_conditions::MemoryHeadroom {
+                total_bytes: 64 * 1024 * 1024 * 1024,
+                available_bytes: 40 * 1024 * 1024 * 1024,
+            }),
+            ..battery()
+        }));
         let calls = Arc::new(std::sync::atomic::AtomicUsize::new(0));
         jobs.set_probe(Some({
             let (reading, calls) = (reading.clone(), calls.clone());
@@ -1954,7 +2044,7 @@ mod tests {
             })
         }));
         // Registration (possibly on the UI thread) never runs the probe.
-        let ai = jobs.register(spec(JobKind::AiPause));
+        let ai = jobs.register(spec(JobKind::AiPause).estimated_memory_bytes(1024));
         let render = jobs.register(spec(JobKind::Render));
         assert!(render.admitted());
         assert_eq!(calls.load(Ordering::Acquire), 0);
@@ -2057,5 +2147,180 @@ mod tests {
         drop((ai, render));
         assert!(!jobs.any_live(&ids));
         drop(proxy);
+    }
+}
+
+#[cfg(test)]
+mod memory_admission_tests {
+    use super::*;
+    use deadpan_cli::system_conditions::MemoryHeadroom;
+
+    const GIB: u64 = 1024 * 1024 * 1024;
+
+    fn conditions(available_bytes: u64) -> Conditions {
+        Conditions {
+            memory_headroom: Some(MemoryHeadroom {
+                total_bytes: 64 * GIB,
+                available_bytes,
+            }),
+            ..Conditions::default()
+        }
+    }
+
+    fn model(bytes: u64) -> JobSpec {
+        JobSpec::new(JobKind::AiPause, None).estimated_memory_bytes(bytes)
+    }
+
+    #[test]
+    fn model_admission_requires_estimate_plus_reserve_at_exact_boundary() {
+        let jobs = Jobs::new();
+        jobs.set_conditions(conditions(29 * GIB - 1));
+        let handle = jobs.register(model(21 * GIB).deferred());
+        assert!(
+            handle.admitted(),
+            "preparation does not claim the model's memory"
+        );
+        handle.claim();
+        assert!(!handle.admitted());
+        jobs.set_conditions(conditions(29 * GIB));
+        assert!(handle.admitted());
+        // Admission only: changing headroom never evicts a resident model.
+        jobs.set_conditions(conditions(0));
+        assert!(handle.admitted());
+        drop(handle);
+        jobs.set_conditions(conditions(40 * GIB));
+        let overflow = jobs.register(model(u64::MAX));
+        assert!(!overflow.admitted());
+        assert!(
+            matches!(&jobs.snapshot()[0].state, RowState::Held(reason) if reason.contains("available memory"))
+        );
+    }
+
+    #[test]
+    fn model_release_requires_a_new_production_headroom_sample() {
+        let jobs = Jobs::new();
+        let calls = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        jobs.set_probe(Some({
+            let calls = calls.clone();
+            Arc::new(move || {
+                calls.fetch_add(1, Ordering::Relaxed);
+                conditions(40 * GIB)
+            })
+        }));
+        jobs.set_conditions(conditions(40 * GIB));
+        let first = jobs.register(model(21 * GIB));
+        let second = jobs.register(model(21 * GIB));
+        assert!(first.admitted());
+        assert!(!second.admitted());
+        first.release();
+        assert!(
+            !second.admitted(),
+            "old headroom cannot admit the next model"
+        );
+        assert_eq!(
+            calls.load(Ordering::Relaxed),
+            0,
+            "release never blocks on a probe"
+        );
+        jobs.refresh_conditions();
+        assert!(second.admitted());
+        assert_eq!(calls.load(Ordering::Relaxed), 1);
+    }
+
+    #[test]
+    fn probe_started_before_model_release_cannot_restore_old_observation() {
+        let jobs = Jobs::new();
+        let (started, observed) = std::sync::mpsc::sync_channel(1);
+        let (resume, released) = std::sync::mpsc::sync_channel(1);
+        let released = Mutex::new(released);
+        let calls = std::sync::atomic::AtomicUsize::new(0);
+        jobs.set_probe(Some(Arc::new(move || {
+            if calls.fetch_add(1, Ordering::Relaxed) == 0 {
+                started.send(()).unwrap();
+                released
+                    .lock()
+                    .unwrap()
+                    .recv_timeout(Duration::from_secs(2))
+                    .unwrap();
+            }
+            conditions(40 * GIB)
+        })));
+        jobs.set_conditions(conditions(40 * GIB));
+        let first = jobs.register(model(21 * GIB));
+        let second = jobs.register(model(21 * GIB));
+        jobs.lock().sampled = None;
+        let probe = {
+            let jobs = jobs.clone();
+            std::thread::spawn(move || jobs.refresh_conditions())
+        };
+        observed.recv_timeout(Duration::from_secs(2)).unwrap();
+        first.release();
+        resume.send(()).unwrap();
+        probe.join().unwrap();
+        assert!(!second.admitted());
+        assert!(jobs.lock().sampled.is_none());
+        jobs.refresh_conditions();
+        assert!(second.admitted());
+    }
+
+    #[test]
+    fn unknown_insufficient_and_overflow_memory_cannot_be_overridden() {
+        let jobs = Jobs::new();
+        jobs.set_probe(Some(Arc::new(Conditions::default)));
+        jobs.set_conditions(Conditions::default());
+        let unknown = jobs.register(JobSpec::new(JobKind::AiPause, None));
+        let no_reading = jobs.register(model(21 * GIB));
+        assert!(!jobs.run_anyway(unknown.id()));
+        assert!(!jobs.run_anyway(no_reading.id()));
+        assert!(jobs.snapshot().iter().all(|row| !row.can_run_anyway));
+        jobs.set_conditions(conditions(20 * GIB));
+        assert!(!jobs.run_anyway(no_reading.id()));
+        assert!(!no_reading.admitted());
+        jobs.set_conditions(Conditions {
+            memory_headroom: Some(MemoryHeadroom {
+                total_bytes: 16 * GIB,
+                available_bytes: 16 * GIB,
+            }),
+            ..Conditions::default()
+        });
+        assert!(
+            !jobs.run_anyway(no_reading.id()),
+            "a smaller Mac cannot load this model"
+        );
+        assert!(!no_reading.admitted());
+        drop(no_reading);
+        let overflow = jobs.register(model(u64::MAX));
+        jobs.set_conditions(conditions(40 * GIB));
+        assert!(!jobs.run_anyway(overflow.id()));
+        assert!(!overflow.admitted());
+        assert!(!jobs.run_anyway(unknown.id()));
+    }
+
+    #[test]
+    fn pressure_override_requires_fresh_capacity_and_keeps_the_model_slot() {
+        let jobs = Jobs::new();
+        jobs.set_probe(Some(Arc::new(|| conditions(40 * GIB))));
+        jobs.set_conditions(Conditions {
+            memory: MemoryPressure::Warning,
+            ..conditions(40 * GIB)
+        });
+        let first = jobs.register(model(21 * GIB));
+        let second = jobs.register(model(21 * GIB));
+        assert!(jobs.snapshot().iter().all(|row| row.can_run_anyway));
+        assert!(jobs.run_anyway(first.id()));
+        assert!(first.admitted());
+        assert!(jobs.run_anyway(second.id()));
+        assert!(
+            !second.admitted(),
+            "override never takes a resident model's slot"
+        );
+        first.release();
+        assert!(
+            !second.admitted(),
+            "forced entries still require a fresh observation"
+        );
+        assert!(!jobs.run_anyway(second.id()));
+        jobs.refresh_conditions();
+        assert!(second.admitted());
     }
 }

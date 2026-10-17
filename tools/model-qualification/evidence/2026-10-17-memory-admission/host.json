@@ -1,0 +1,74 @@
+{
+  "executable": "/Users/michael/Library/Caches/Deadpan/ltx-runtime/ltx-2-mlx-3392d75934120b7e69eefbe55893f7ef82be92a4/.venv/bin/python3",
+  "worker_script": "/Users/michael/Code/deadpan/tools/model-qualification/worker.py",
+  "runtime_config": "/tmp/deadpan-memory-admission-2026-10-17/runtime.json",
+  "workspace": "/tmp/deadpan-memory-admission-2026-10-17/workspace",
+  "report_directory": "/tmp/deadpan-memory-admission-2026-10-17/host",
+  "request": {
+    "operation": "generate_extension",
+    "protocol": 3,
+    "identity": {
+      "request_id": "max-extension-memory",
+      "attempt_id": "attempt-1"
+    },
+    "cancellation_token": "cancel-max-extension-memory",
+    "project_id": "c01bf55e-dc1b-474a-a391-c672b43bb7ca",
+    "revision_id": "memory-max-extension",
+    "target": {
+      "hold_id": "extension",
+      "request_version": 1
+    },
+    "input": {
+      "manifest": "inputs/context.json",
+      "sha256": "14e049706b7f287c70b926f688b9ac9d0345fc7f55fba6d85db52cb239dd69b1"
+    },
+    "output_workspace": "outputs",
+    "constraints": {
+      "conditioning": "extend_from_left",
+      "motion": "still",
+      "video": {
+        "frame_rate": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "frames": 72,
+        "height": 320,
+        "width": 768
+      }
+    },
+    "provider": {
+      "pack_id": "ltx-2.3-q4-extension",
+      "pack_version": "1",
+      "runtime_id": "ltx-mlx",
+      "runtime_version": "0.15.8+deadpan-extension1",
+      "seed": 42107
+    },
+    "plan": {
+      "native_dimensions": {
+        "height": 320,
+        "width": 768
+      },
+      "operation": "extension",
+      "sampling": {
+        "context_frame_count": 9,
+        "direction": "from_left",
+        "generated_frame_count": 72,
+        "interpolation": "encoded_srgb_rgb8_linear_half_up",
+        "native_rate": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "output_frame_count": 72,
+        "policy": "frame_centers_clamped",
+        "project_rate": {
+          "denominator": 1,
+          "numerator": 24
+        },
+        "schema_version": 1
+      },
+      "schema_version": 1
+    }
+  },
+  "cancel_after_millis": null,
+  "cancel_at_stage": null
+}

@@ -283,6 +283,7 @@ impl DeadpanApp {
                 crate::jobs::JobKind::Transcription,
                 self.transcription.session,
             )
+            .estimated_memory_bytes(installed.manifest.memory_bytes)
             .deferred()
             .detail("a passage of the Original")
             .cancel_flag(&cancel),

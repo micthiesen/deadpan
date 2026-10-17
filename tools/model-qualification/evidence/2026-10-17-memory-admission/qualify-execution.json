@@ -1,0 +1,9 @@
+{
+  "command": [
+    "/Users/michael/Code/deadpan/target/debug/examples/qualify_extension_media",
+    "/private/tmp/deadpan-memory-admission-2026-10-17/media-config.json"
+  ],
+  "exit_code": 0,
+  "seconds": 6.9566957503557205,
+  "binary_sha256": "9d50b13c5141110a0ecdbf0b001e97e421a2c73f3cd6da82ec839d239b770d72"
+}

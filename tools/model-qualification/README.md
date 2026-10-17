@@ -197,6 +197,14 @@ pinned sampler callback runs before the current Euler update.
 [Scheduling qualification](../../docs/qualification/inference-scheduling-2026-10-17.md)
 records the real Extension pause/resume/cancel test and its limits.
 
+The `qualify_model_worker` supervisor also records its own process-local model
+memory diagnostics in `host-report.json`: live worker count, sampled physical
+footprint high-water mark, sample count and failures. These are not RSS or the
+MLX allocator counter. [Memory admission qualification](../../docs/qualification/memory-admission-2026-10-17.md)
+records a complete maximum-shape Extension run and separate media validation.
+Its 500 ms sampled peak is evidence for that input, not a universal allocation
+bound. A separate `doctor` process cannot observe this supervisor's counters.
+
 Routine contract tests need only Python's standard library:
 
 ```sh

@@ -1,0 +1,56 @@
+{
+  "schema": 1,
+  "scope": "One maximum-shape Extension, full inference and independent media qualification; no acceptance or universal memory bound",
+  "plan": {
+    "schema_version": 1,
+    "operation": "extension",
+    "sampling": {
+      "schema_version": 1,
+      "direction": "from_left",
+      "project_rate": {
+        "numerator": 24,
+        "denominator": 1
+      },
+      "native_rate": {
+        "numerator": 24,
+        "denominator": 1
+      },
+      "context_frame_count": 9,
+      "generated_frame_count": 72,
+      "output_frame_count": 72,
+      "interpolation": "encoded_srgb_rgb8_linear_half_up",
+      "policy": "frame_centers_clamped"
+    },
+    "native_dimensions": {
+      "width": 768,
+      "height": 320
+    }
+  },
+  "worker_seconds": 618.919344667,
+  "model_workers": {
+    "failed_samples": 0,
+    "live": {
+      "current": 0,
+      "high": 1
+    },
+    "phys_footprint_bytes": {
+      "current": 0,
+      "high": 18348993696
+    },
+    "samples": 1221
+  },
+  "sample_interval_ms": 500,
+  "sampled_peak_gib": 17.088832050561905,
+  "supervisor": {
+    "clean_exit": true,
+    "hash_verified_extension_bundle": true,
+    "media_validated": false
+  },
+  "independent_media_qualification": {
+    "passed": true,
+    "seconds": 6.8613367499999995,
+    "native_frames": 81,
+    "output_frames": 72
+  },
+  "input_retention_note": "Independent qualification receipt captured after worker completion; input hashes recorded during inference and checked unchanged. This is not pre-launch receipt qualification."
+}

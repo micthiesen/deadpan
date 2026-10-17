@@ -1,0 +1,1054 @@
+{
+  "base_revision": "88ee08e6",
+  "source_sha256": {
+    "crates/deadpan-app/src/jobs.rs": "6639021bb42f43e10257c85298c1ddd8e4e44a4ca264519045c6e39590512296",
+    "crates/deadpan-app/src/preview/jobs.rs": "c0ac03e5dc80c2fb747dfd2b0b8cd79196b0e80541facd42c3c62e325872b858",
+    "crates/deadpan-app/src/preview/harness/jobs.rs": "ca3c66eb23e8d267ab6adaf24f4e9b4ba5bec6490889c88963331e9fe6c6a5cc",
+    "crates/deadpan-app/src/preview/transcript.rs": "1afce7402d010c8b9edbb4770b2d41746238ad8f46a9f74e89196deff2d9b568",
+    "crates/deadpan-app/src/preview/transcript/recognition.rs": "c1b4518befb299cf3843e99d099b8545fd992e8b91975813ec5466df99cc473e",
+    "crates/deadpan-app/src/project/service/generation.rs": "2c8a8f969c126c250266888a43f90c60dcc0da683d7c36cd90523ecc6f374885",
+    "crates/deadpan-app/src/project/tests/jobs/queue.rs": "c9577c107a129e8c2691df73fa9b7e2da0eb77b2aa377be935f51b91eb80add4",
+    "crates/deadpan-cli/src/system_conditions.rs": "2360e91743829ad3845ae5b17926a8c985814147b871b29ef4009a6b1bbadf56",
+    "crates/deadpan-jobs/examples/qualify_model_worker.rs": "47c9144581cff65bdc58975fa7ebb7c645782aaa06c25270a48ce9a61fb2dded"
+  },
+  "binaries_sha256": {
+    "deadpan-app": "5b7670c5081ea1c51c829d4d9627506dadf5039c9a54003a1fb9dc28653c64b8",
+    "deadpan-media-worker": "a072f82a294153361e548eefc6e2a00ec239d8abefde127b8f9381f1a4db6944",
+    "deadpan-track": "63f95135ade0dbb4438a73549a0d5a632f976c13b7c7c037c7902c5b29e41aa5",
+    "deadpan-cli": "8690b3444a53cdb01b3ab16742e60a9e06ba9f4e434a6e38310d67b12e9d03dd"
+  },
+  "scoped_checks": [
+    "198 tests before policy tightening",
+    "60 affected tests after tightening",
+    "3 presentation tests after stale-row status fix",
+    "normal and ui-harness strict Clippy after final replay assertion correction"
+  ],
+  "native_smoke": "passed: Apple M5 Max Metal, window and shutdown callback",
+  "replays": {
+    "visual": {
+      "checks": 41,
+      "failed": false,
+      "timings": {
+        "ui_frame_cpu_ms": {
+          "completed": {
+            "max_ms": 7.130708,
+            "n": 1758,
+            "p50_ms": 0.257667,
+            "p95_ms": 0.568041,
+            "p99_ms": 1.266875
+          },
+          "failed": 0,
+          "samples": 1758,
+          "timed_out": 0
+        },
+        "ui_composition_submit_cpu_ms": {
+          "completed": {
+            "max_ms": 0.692542,
+            "n": 1758,
+            "p50_ms": 0.11541599999999999,
+            "p95_ms": 0.153667,
+            "p99_ms": 0.19612500000000002
+          },
+          "failed": 0,
+          "samples": 1758,
+          "timed_out": 0
+        },
+        "ui_composition_complete_ms": {
+          "completed": {
+            "max_ms": 8.631,
+            "n": 1758,
+            "p50_ms": 0.364875,
+            "p95_ms": 0.8220000000000001,
+            "p99_ms": 1.030208
+          },
+          "failed": 0,
+          "samples": 1758,
+          "timed_out": 0
+        },
+        "input_to_state_ms": {
+          "completed": {
+            "max_ms": 1.9462920000000001,
+            "n": 99,
+            "p50_ms": 0.6784579999999999,
+            "p95_ms": 1.410875,
+            "p99_ms": 1.9462920000000001
+          },
+          "failed": 0,
+          "samples": 99,
+          "timed_out": 0
+        },
+        "input_to_commit_ms": {
+          "completed": {
+            "max_ms": 93.9395,
+            "n": 7,
+            "p50_ms": 11.445125,
+            "p95_ms": 93.9395,
+            "p99_ms": 93.9395
+          },
+          "failed": 0,
+          "samples": 7,
+          "timed_out": 0
+        },
+        "request_to_decode_delivery_ms": {
+          "completed": {
+            "max_ms": 14.0785,
+            "n": 21,
+            "p50_ms": 5.9629579999999995,
+            "p95_ms": 8.339457999999999,
+            "p99_ms": 14.0785
+          },
+          "failed": 0,
+          "samples": 21,
+          "timed_out": 0
+        },
+        "request_to_worker_start_ms": {
+          "completed": {
+            "max_ms": 0.355583,
+            "n": 21,
+            "p50_ms": 0.007375,
+            "p95_ms": 0.355333,
+            "p99_ms": 0.355583
+          },
+          "failed": 0,
+          "samples": 21,
+          "timed_out": 0
+        },
+        "worker_execution_ms": {
+          "completed": {
+            "max_ms": 2.8453749999999998,
+            "n": 21,
+            "p50_ms": 0.40525,
+            "p95_ms": 1.8554579999999998,
+            "p99_ms": 2.8453749999999998
+          },
+          "failed": 0,
+          "samples": 21,
+          "timed_out": 0
+        },
+        "worker_publication_delay_ms": {
+          "completed": {
+            "max_ms": 0.00033299999999999996,
+            "n": 21,
+            "p50_ms": 0.000167,
+            "p95_ms": 0.000292,
+            "p99_ms": 0.00033299999999999996
+          },
+          "failed": 0,
+          "samples": 21,
+          "timed_out": 0
+        },
+        "publication_to_decode_delivery_ms": {
+          "completed": {
+            "max_ms": 12.002458,
+            "n": 21,
+            "p50_ms": 5.499041,
+            "p95_ms": 7.797041999999999,
+            "p99_ms": 12.002458
+          },
+          "failed": 0,
+          "samples": 21,
+          "timed_out": 0
+        },
+        "request_to_picture_submission_ms": {
+          "completed": {
+            "max_ms": 14.486583000000001,
+            "n": 21,
+            "p50_ms": 6.502292,
+            "p95_ms": 9.148708000000001,
+            "p99_ms": 14.486583000000001
+          },
+          "failed": 0,
+          "samples": 21,
+          "timed_out": 0
+        },
+        "request_to_picture_complete_ms": {
+          "completed": {
+            "max_ms": 15.240791999999999,
+            "n": 21,
+            "p50_ms": 7.2625839999999995,
+            "p95_ms": 10.351583,
+            "p99_ms": 15.240791999999999
+          },
+          "failed": 0,
+          "samples": 21,
+          "timed_out": 0
+        },
+        "input_to_picture_complete_ms": {
+          "completed": {
+            "max_ms": 104.297292,
+            "n": 19,
+            "p50_ms": 7.627125,
+            "p95_ms": 104.297292,
+            "p99_ms": 104.297292
+          },
+          "failed": 0,
+          "samples": 19,
+          "timed_out": 0
+        },
+        "Original initialized and displayed": {
+          "completed": {
+            "max_ms": 99.513875,
+            "n": 1,
+            "p50_ms": 99.513875,
+            "p95_ms": 99.513875,
+            "p99_ms": 99.513875
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        },
+        "Project and picture settled": {
+          "completed": {
+            "max_ms": 5.6472500000000005,
+            "n": 17,
+            "p50_ms": 0.000209,
+            "p95_ms": 5.6472500000000005,
+            "p99_ms": 5.6472500000000005
+          },
+          "failed": 0,
+          "samples": 17,
+          "timed_out": 0
+        },
+        "Committed revision changed": {
+          "completed": {
+            "max_ms": 11.883083,
+            "n": 3,
+            "p50_ms": 11.608125000000001,
+            "p95_ms": 11.883083,
+            "p99_ms": 11.883083
+          },
+          "failed": 0,
+          "samples": 3,
+          "timed_out": 0
+        },
+        "Scripted generation reaches its last step": {
+          "completed": {
+            "max_ms": 279.363334,
+            "n": 1,
+            "p50_ms": 279.363334,
+            "p95_ms": 279.363334,
+            "p99_ms": 279.363334
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        },
+        "Inference yields at its scripted safe boundary": {
+          "completed": {
+            "max_ms": 5.528458,
+            "n": 1,
+            "p50_ms": 5.528458,
+            "p95_ms": 5.528458,
+            "p99_ms": 5.528458
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        },
+        "Inference resumes without a new attempt": {
+          "completed": {
+            "max_ms": 0.000959,
+            "n": 1,
+            "p50_ms": 0.000959,
+            "p95_ms": 0.000959,
+            "p99_ms": 0.000959
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        },
+        "Generation cancelled from the panel": {
+          "completed": {
+            "max_ms": 37.857124999999996,
+            "n": 1,
+            "p50_ms": 37.857124999999996,
+            "p95_ms": 37.857124999999996,
+            "p99_ms": 37.857124999999996
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        },
+        "The queued job is admitted": {
+          "completed": {
+            "max_ms": 0.00045900000000000004,
+            "n": 1,
+            "p50_ms": 0.00045900000000000004,
+            "p95_ms": 0.00045900000000000004,
+            "p99_ms": 0.00045900000000000004
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        },
+        "Crash copy opened with its recovery report": {
+          "completed": {
+            "max_ms": 48.958375,
+            "n": 2,
+            "p50_ms": 44.379209,
+            "p95_ms": 48.958375,
+            "p99_ms": 48.958375
+          },
+          "failed": 0,
+          "samples": 2,
+          "timed_out": 0
+        },
+        "Retry generates again": {
+          "completed": {
+            "max_ms": 142.181625,
+            "n": 1,
+            "p50_ms": 142.181625,
+            "p95_ms": 142.181625,
+            "p99_ms": 142.181625
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        },
+        "The retried attempt leaves the list": {
+          "completed": {
+            "max_ms": 8.4e-05,
+            "n": 1,
+            "p50_ms": 8.4e-05,
+            "p95_ms": 8.4e-05,
+            "p99_ms": 8.4e-05
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        },
+        "Retry cancelled": {
+          "completed": {
+            "max_ms": 37.3255,
+            "n": 1,
+            "p50_ms": 37.3255,
+            "p95_ms": 37.3255,
+            "p99_ms": 37.3255
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        },
+        "Interrupted attempt listed again": {
+          "completed": {
+            "max_ms": 0.00041600000000000003,
+            "n": 1,
+            "p50_ms": 0.00041600000000000003,
+            "p95_ms": 0.00041600000000000003,
+            "p99_ms": 0.00041600000000000003
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        },
+        "Discarded": {
+          "completed": {
+            "max_ms": 5.963625,
+            "n": 1,
+            "p50_ms": 5.963625,
+            "p95_ms": 5.963625,
+            "p99_ms": 5.963625
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        },
+        "Generation running before sleep": {
+          "completed": {
+            "max_ms": 267.563042,
+            "n": 1,
+            "p50_ms": 267.563042,
+            "p95_ms": 267.563042,
+            "p99_ms": 267.563042
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        },
+        "Second AI attempt queued before sleep": {
+          "completed": {
+            "max_ms": 34.932667,
+            "n": 1,
+            "p50_ms": 34.932667,
+            "p95_ms": 34.932667,
+            "p99_ms": 34.932667
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        },
+        "Running and queued attempts interrupted after sleep": {
+          "completed": {
+            "max_ms": 69.295583,
+            "n": 1,
+            "p50_ms": 69.295583,
+            "p95_ms": 69.295583,
+            "p99_ms": 69.295583
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        },
+        "R explicitly retries after sleep": {
+          "completed": {
+            "max_ms": 151.818542,
+            "n": 1,
+            "p50_ms": 151.818542,
+            "p95_ms": 151.818542,
+            "p99_ms": 151.818542
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        },
+        "Only the retried sleep interruption leaves the list": {
+          "completed": {
+            "max_ms": 0.000458,
+            "n": 1,
+            "p50_ms": 0.000458,
+            "p95_ms": 0.000458,
+            "p99_ms": 0.000458
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        },
+        "Retried sleep attempt cancelled": {
+          "completed": {
+            "max_ms": 40.112042,
+            "n": 1,
+            "p50_ms": 40.112042,
+            "p95_ms": 40.112042,
+            "p99_ms": 40.112042
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        },
+        "Remaining sleep interruption discarded": {
+          "completed": {
+            "max_ms": 9.501791,
+            "n": 1,
+            "p50_ms": 9.501791,
+            "p95_ms": 9.501791,
+            "p99_ms": 9.501791
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        },
+        "The first generation waits on battery": {
+          "completed": {
+            "max_ms": 283.760042,
+            "n": 1,
+            "p50_ms": 283.760042,
+            "p95_ms": 283.760042,
+            "p99_ms": 283.760042
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        },
+        "A second pause queues beside the first": {
+          "completed": {
+            "max_ms": 0.00125,
+            "n": 1,
+            "p50_ms": 0.00125,
+            "p95_ms": 0.00125,
+            "p99_ms": 0.00125
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        },
+        "Both generations reach battery admission": {
+          "completed": {
+            "max_ms": 39.005125,
+            "n": 1,
+            "p50_ms": 39.005125,
+            "p95_ms": 39.005125,
+            "p99_ms": 39.005125
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        },
+        "The first generation runs": {
+          "completed": {
+            "max_ms": 122.2255,
+            "n": 1,
+            "p50_ms": 122.2255,
+            "p95_ms": 122.2255,
+            "p99_ms": 122.2255
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        },
+        "The second waits for the model": {
+          "completed": {
+            "max_ms": 0.000709,
+            "n": 1,
+            "p50_ms": 0.000709,
+            "p95_ms": 0.000709,
+            "p99_ms": 0.000709
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        },
+        "Only the queued generation is cancelled": {
+          "completed": {
+            "max_ms": 72.104833,
+            "n": 1,
+            "p50_ms": 72.104833,
+            "p95_ms": 72.104833,
+            "p99_ms": 72.104833
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        },
+        "Generation cancelled": {
+          "completed": {
+            "max_ms": 44.956292000000005,
+            "n": 1,
+            "p50_ms": 44.956292000000005,
+            "p95_ms": 44.956292000000005,
+            "p99_ms": 44.956292000000005
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        }
+      },
+      "findings": [
+        {
+          "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+          "severity": "warning"
+        },
+        {
+          "message": "11 frame(s) settled their layout only on a second retry: [{\"frame\":39,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5450)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5585)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]},{\"frame\":299,\"input\":\"Command jobs\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5450)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5585)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]},{\"frame\":342,\"input\":\"Command jobs\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5450)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5585)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]},{\"frame\":577,\"input\":\"Command jobs\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5450)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5585)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]},{\"frame\":811,\"input\":\"Command generate\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5450)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5585)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]},{\"frame\":889,\"input\":\"Command jobs\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5450)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5585)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]},{\"frame\":1126,\"input\":\"Command jobs\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5450)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5585)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]},{\"frame\":1193,\"input\":\"Command jobs\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5450)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5585)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]},{\"frame\":1307,\"input\":\"Command generate\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5450)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5585)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]},{\"frame\":1356,\"input\":\"Command jobs\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5450)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5585)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]},{\"frame\":1685,\"input\":\"Command cancel-ai\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5450)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5585)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]}]",
+          "severity": "warning"
+        },
+        {
+          "message": "egui discard warning: 4 run(s) of 3+ consecutive retrying frames, each frame with its own cause: [[{\"frame\":582,\"input\":\"Key Modifiers::NONE Escape\",\"new_input\":true,\"reasons\":[\"pass 0: jobs closed (crates/deadpan-app/src/preview/jobs.rs:215)\"]},{\"frame\":583,\"input\":\"Key Modifiers::NONE Tab\",\"new_input\":true,\"reasons\":[\"pass 0: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]},{\"frame\":584,\"input\":\"Key Modifiers::NONE Tab\",\"new_input\":true,\"reasons\":[\"pass 0: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]}],[{\"frame\":1124,\"input\":\"Key Modifiers::NONE Escape\",\"new_input\":true,\"reasons\":[\"pass 0: jobs closed (crates/deadpan-app/src/preview/jobs.rs:215)\"]},{\"frame\":1125,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:5900)\",\"pass 0: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]},{\"frame\":1126,\"input\":\"Command jobs\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5450)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5585)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]}],[{\"frame\":1190,\"input\":\"Retried sleep attempt cancelled\",\"new_input\":false,\"reasons\":[\"pass 0: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]},{\"frame\":1191,\"input\":\"Key Modifiers::NONE Escape\",\"new_input\":true,\"reasons\":[\"pass 0: jobs closed (crates/deadpan-app/src/preview/jobs.rs:215)\"]},{\"frame\":1192,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:5900)\"]},{\"frame\":1193,\"input\":\"Command jobs\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5450)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5585)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]}],[{\"frame\":1210,\"input\":\"Key Modifiers::NONE Escape\",\"new_input\":true,\"reasons\":[\"pass 0: jobs closed (crates/deadpan-app/src/preview/jobs.rs:215)\"]},{\"frame\":1211,\"input\":\"Key Modifiers::NONE Tab\",\"new_input\":true,\"reasons\":[\"pass 0: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]},{\"frame\":1212,\"input\":\"Key Modifiers::NONE Tab\",\"new_input\":true,\"reasons\":[\"pass 0: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]}]]",
+          "severity": "warning"
+        }
+      ]
+    },
+    "performance": {
+      "checks": 41,
+      "failed": false,
+      "timings": {
+        "ui_frame_cpu_ms": {
+          "completed": {
+            "max_ms": 6.273375000000001,
+            "n": 2273,
+            "p50_ms": 0.255042,
+            "p95_ms": 0.464209,
+            "p99_ms": 0.9846250000000001
+          },
+          "failed": 0,
+          "samples": 2273,
+          "timed_out": 0
+        },
+        "ui_composition_submit_cpu_ms": {
+          "completed": {
+            "max_ms": 0.614,
+            "n": 2273,
+            "p50_ms": 0.114666,
+            "p95_ms": 0.153792,
+            "p99_ms": 0.21579199999999998
+          },
+          "failed": 0,
+          "samples": 2273,
+          "timed_out": 0
+        },
+        "ui_composition_complete_ms": {
+          "completed": {
+            "max_ms": 8.363583,
+            "n": 2273,
+            "p50_ms": 0.352542,
+            "p95_ms": 0.565917,
+            "p99_ms": 0.8122090000000001
+          },
+          "failed": 0,
+          "samples": 2273,
+          "timed_out": 0
+        },
+        "input_to_state_ms": {
+          "completed": {
+            "max_ms": 1.95075,
+            "n": 99,
+            "p50_ms": 0.634208,
+            "p95_ms": 1.386833,
+            "p99_ms": 1.95075
+          },
+          "failed": 0,
+          "samples": 99,
+          "timed_out": 0
+        },
+        "input_to_commit_ms": {
+          "completed": {
+            "max_ms": 84.370416,
+            "n": 7,
+            "p50_ms": 9.903458,
+            "p95_ms": 84.370416,
+            "p99_ms": 84.370416
+          },
+          "failed": 0,
+          "samples": 7,
+          "timed_out": 0
+        },
+        "request_to_decode_delivery_ms": {
+          "completed": {
+            "max_ms": 12.454042,
+            "n": 21,
+            "p50_ms": 1.351292,
+            "p95_ms": 7.331375,
+            "p99_ms": 12.454042
+          },
+          "failed": 0,
+          "samples": 21,
+          "timed_out": 0
+        },
+        "request_to_worker_start_ms": {
+          "completed": {
+            "max_ms": 6.481875,
+            "n": 21,
+            "p50_ms": 0.007,
+            "p95_ms": 0.3685,
+            "p99_ms": 6.481875
+          },
+          "failed": 0,
+          "samples": 21,
+          "timed_out": 0
+        },
+        "worker_execution_ms": {
+          "completed": {
+            "max_ms": 5.910292,
+            "n": 21,
+            "p50_ms": 0.414542,
+            "p95_ms": 2.37725,
+            "p99_ms": 5.910292
+          },
+          "failed": 0,
+          "samples": 21,
+          "timed_out": 0
+        },
+        "worker_publication_delay_ms": {
+          "completed": {
+            "max_ms": 0.00033299999999999996,
+            "n": 21,
+            "p50_ms": 0.000125,
+            "p95_ms": 0.00033299999999999996,
+            "p99_ms": 0.00033299999999999996
+          },
+          "failed": 0,
+          "samples": 21,
+          "timed_out": 0
+        },
+        "publication_to_decode_delivery_ms": {
+          "completed": {
+            "max_ms": 4.944917,
+            "n": 21,
+            "p50_ms": 0.977709,
+            "p95_ms": 3.2679169999999997,
+            "p99_ms": 4.944917
+          },
+          "failed": 0,
+          "samples": 21,
+          "timed_out": 0
+        },
+        "request_to_picture_submission_ms": {
+          "completed": {
+            "max_ms": 12.784875,
+            "n": 21,
+            "p50_ms": 1.931917,
+            "p95_ms": 7.953290999999999,
+            "p99_ms": 12.784875
+          },
+          "failed": 0,
+          "samples": 21,
+          "timed_out": 0
+        },
+        "request_to_picture_complete_ms": {
+          "completed": {
+            "max_ms": 13.408458999999999,
+            "n": 21,
+            "p50_ms": 2.505584,
+            "p95_ms": 9.239875,
+            "p99_ms": 13.408458999999999
+          },
+          "failed": 0,
+          "samples": 21,
+          "timed_out": 0
+        },
+        "input_to_picture_complete_ms": {
+          "completed": {
+            "max_ms": 93.615375,
+            "n": 19,
+            "p50_ms": 2.75875,
+            "p95_ms": 93.615375,
+            "p99_ms": 93.615375
+          },
+          "failed": 0,
+          "samples": 19,
+          "timed_out": 0
+        },
+        "Original initialized and displayed": {
+          "completed": {
+            "max_ms": 92.969042,
+            "n": 1,
+            "p50_ms": 92.969042,
+            "p95_ms": 92.969042,
+            "p99_ms": 92.969042
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        },
+        "Project and picture settled": {
+          "completed": {
+            "max_ms": 10.229500000000002,
+            "n": 17,
+            "p50_ms": 0.000292,
+            "p95_ms": 10.229500000000002,
+            "p99_ms": 10.229500000000002
+          },
+          "failed": 0,
+          "samples": 17,
+          "timed_out": 0
+        },
+        "Committed revision changed": {
+          "completed": {
+            "max_ms": 10.933290999999999,
+            "n": 3,
+            "p50_ms": 10.853625000000001,
+            "p95_ms": 10.933290999999999,
+            "p99_ms": 10.933290999999999
+          },
+          "failed": 0,
+          "samples": 3,
+          "timed_out": 0
+        },
+        "Scripted generation reaches its last step": {
+          "completed": {
+            "max_ms": 352.228667,
+            "n": 1,
+            "p50_ms": 352.228667,
+            "p95_ms": 352.228667,
+            "p99_ms": 352.228667
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        },
+        "Inference yields at its scripted safe boundary": {
+          "completed": {
+            "max_ms": 5.34025,
+            "n": 1,
+            "p50_ms": 5.34025,
+            "p95_ms": 5.34025,
+            "p99_ms": 5.34025
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        },
+        "Inference resumes without a new attempt": {
+          "completed": {
+            "max_ms": 0.700208,
+            "n": 1,
+            "p50_ms": 0.700208,
+            "p95_ms": 0.700208,
+            "p99_ms": 0.700208
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        },
+        "Generation cancelled from the panel": {
+          "completed": {
+            "max_ms": 41.1075,
+            "n": 1,
+            "p50_ms": 41.1075,
+            "p95_ms": 41.1075,
+            "p99_ms": 41.1075
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        },
+        "The queued job is admitted": {
+          "completed": {
+            "max_ms": 0.0005,
+            "n": 1,
+            "p50_ms": 0.0005,
+            "p95_ms": 0.0005,
+            "p99_ms": 0.0005
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        },
+        "Crash copy opened with its recovery report": {
+          "completed": {
+            "max_ms": 44.195166,
+            "n": 2,
+            "p50_ms": 39.449,
+            "p95_ms": 44.195166,
+            "p99_ms": 44.195166
+          },
+          "failed": 0,
+          "samples": 2,
+          "timed_out": 0
+        },
+        "Retry generates again": {
+          "completed": {
+            "max_ms": 158.17304099999998,
+            "n": 1,
+            "p50_ms": 158.17304099999998,
+            "p95_ms": 158.17304099999998,
+            "p99_ms": 158.17304099999998
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        },
+        "The retried attempt leaves the list": {
+          "completed": {
+            "max_ms": 8.4e-05,
+            "n": 1,
+            "p50_ms": 8.4e-05,
+            "p95_ms": 8.4e-05,
+            "p99_ms": 8.4e-05
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        },
+        "Retry cancelled": {
+          "completed": {
+            "max_ms": 39.252,
+            "n": 1,
+            "p50_ms": 39.252,
+            "p95_ms": 39.252,
+            "p99_ms": 39.252
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        },
+        "Interrupted attempt listed again": {
+          "completed": {
+            "max_ms": 0.00033299999999999996,
+            "n": 1,
+            "p50_ms": 0.00033299999999999996,
+            "p95_ms": 0.00033299999999999996,
+            "p99_ms": 0.00033299999999999996
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        },
+        "Discarded": {
+          "completed": {
+            "max_ms": 11.733584,
+            "n": 1,
+            "p50_ms": 11.733584,
+            "p95_ms": 11.733584,
+            "p99_ms": 11.733584
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        },
+        "Generation running before sleep": {
+          "completed": {
+            "max_ms": 385.434792,
+            "n": 1,
+            "p50_ms": 385.434792,
+            "p95_ms": 385.434792,
+            "p99_ms": 385.434792
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        },
+        "Second AI attempt queued before sleep": {
+          "completed": {
+            "max_ms": 38.219333,
+            "n": 1,
+            "p50_ms": 38.219333,
+            "p95_ms": 38.219333,
+            "p99_ms": 38.219333
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        },
+        "Running and queued attempts interrupted after sleep": {
+          "completed": {
+            "max_ms": 67.068792,
+            "n": 1,
+            "p50_ms": 67.068792,
+            "p95_ms": 67.068792,
+            "p99_ms": 67.068792
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        },
+        "R explicitly retries after sleep": {
+          "completed": {
+            "max_ms": 169.142,
+            "n": 1,
+            "p50_ms": 169.142,
+            "p95_ms": 169.142,
+            "p99_ms": 169.142
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        },
+        "Only the retried sleep interruption leaves the list": {
+          "completed": {
+            "max_ms": 0.00025,
+            "n": 1,
+            "p50_ms": 0.00025,
+            "p95_ms": 0.00025,
+            "p99_ms": 0.00025
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        },
+        "Retried sleep attempt cancelled": {
+          "completed": {
+            "max_ms": 40.77725,
+            "n": 1,
+            "p50_ms": 40.77725,
+            "p95_ms": 40.77725,
+            "p99_ms": 40.77725
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        },
+        "Remaining sleep interruption discarded": {
+          "completed": {
+            "max_ms": 8.84525,
+            "n": 1,
+            "p50_ms": 8.84525,
+            "p95_ms": 8.84525,
+            "p99_ms": 8.84525
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        },
+        "The first generation waits on battery": {
+          "completed": {
+            "max_ms": 53.714749999999995,
+            "n": 1,
+            "p50_ms": 53.714749999999995,
+            "p95_ms": 53.714749999999995,
+            "p99_ms": 53.714749999999995
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        },
+        "A second pause queues beside the first": {
+          "completed": {
+            "max_ms": 0.0012079999999999999,
+            "n": 1,
+            "p50_ms": 0.0012079999999999999,
+            "p95_ms": 0.0012079999999999999,
+            "p99_ms": 0.0012079999999999999
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        },
+        "Both generations reach battery admission": {
+          "completed": {
+            "max_ms": 48.232875,
+            "n": 1,
+            "p50_ms": 48.232875,
+            "p95_ms": 48.232875,
+            "p99_ms": 48.232875
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        },
+        "The first generation runs": {
+          "completed": {
+            "max_ms": 124.605958,
+            "n": 1,
+            "p50_ms": 124.605958,
+            "p95_ms": 124.605958,
+            "p99_ms": 124.605958
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        },
+        "The second waits for the model": {
+          "completed": {
+            "max_ms": 0.00075,
+            "n": 1,
+            "p50_ms": 0.00075,
+            "p95_ms": 0.00075,
+            "p99_ms": 0.00075
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        },
+        "Only the queued generation is cancelled": {
+          "completed": {
+            "max_ms": 65.386042,
+            "n": 1,
+            "p50_ms": 65.386042,
+            "p95_ms": 65.386042,
+            "p99_ms": 65.386042
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        },
+        "Generation cancelled": {
+          "completed": {
+            "max_ms": 42.239208,
+            "n": 1,
+            "p50_ms": 42.239208,
+            "p95_ms": 42.239208,
+            "p99_ms": 42.239208
+          },
+          "failed": 0,
+          "samples": 1,
+          "timed_out": 0
+        }
+      },
+      "findings": [
+        {
+          "message": "11 frame(s) settled their layout only on a second retry: [{\"frame\":127,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5450)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5585)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]},{\"frame\":368,\"input\":\"Command jobs\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5450)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5585)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]},{\"frame\":529,\"input\":\"Command jobs\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5450)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5585)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]},{\"frame\":934,\"input\":\"Command jobs\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5450)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5585)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]},{\"frame\":1195,\"input\":\"Command generate\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5450)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5585)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]},{\"frame\":1355,\"input\":\"Command jobs\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5450)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5585)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]},{\"frame\":1620,\"input\":\"Command jobs\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5450)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5585)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]},{\"frame\":1689,\"input\":\"Command jobs\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5450)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5585)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]},{\"frame\":1809,\"input\":\"Command generate\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5450)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5585)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]},{\"frame\":1872,\"input\":\"Command jobs\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5450)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5585)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]},{\"frame\":2203,\"input\":\"Command cancel-ai\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5450)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5585)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]}]",
+          "severity": "warning"
+        },
+        {
+          "message": "egui discard warning: 4 run(s) of 3+ consecutive retrying frames, each frame with its own cause: [[{\"frame\":953,\"input\":\"Key Modifiers::NONE Escape\",\"new_input\":true,\"reasons\":[\"pass 0: jobs closed (crates/deadpan-app/src/preview/jobs.rs:215)\"]},{\"frame\":954,\"input\":\"Key Modifiers::NONE Tab\",\"new_input\":true,\"reasons\":[\"pass 0: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]},{\"frame\":955,\"input\":\"Key Modifiers::NONE Tab\",\"new_input\":true,\"reasons\":[\"pass 0: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]}],[{\"frame\":1618,\"input\":\"Key Modifiers::NONE Escape\",\"new_input\":true,\"reasons\":[\"pass 0: jobs closed (crates/deadpan-app/src/preview/jobs.rs:215)\"]},{\"frame\":1619,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:5900)\",\"pass 0: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]},{\"frame\":1620,\"input\":\"Command jobs\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5450)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5585)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]}],[{\"frame\":1686,\"input\":\"Retried sleep attempt cancelled\",\"new_input\":false,\"reasons\":[\"pass 0: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]},{\"frame\":1687,\"input\":\"Key Modifiers::NONE Escape\",\"new_input\":true,\"reasons\":[\"pass 0: jobs closed (crates/deadpan-app/src/preview/jobs.rs:215)\"]},{\"frame\":1688,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:5900)\"]},{\"frame\":1689,\"input\":\"Command jobs\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5450)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5585)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]}],[{\"frame\":1705,\"input\":\"Key Modifiers::NONE Escape\",\"new_input\":true,\"reasons\":[\"pass 0: jobs closed (crates/deadpan-app/src/preview/jobs.rs:215)\"]},{\"frame\":1706,\"input\":\"Key Modifiers::NONE Tab\",\"new_input\":true,\"reasons\":[\"pass 0: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]},{\"frame\":1707,\"input\":\"Key Modifiers::NONE Tab\",\"new_input\":true,\"reasons\":[\"pass 0: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]}]]",
+          "severity": "warning"
+        }
+      ]
+    }
+  },
+  "limitations": [
+    "scripted AI in UI replays, not real inference interference",
+    "no packaging bundle rebuilt",
+    "sampled worker footprint is not a universal maximum"
+  ]
+}

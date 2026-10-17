@@ -84,12 +84,12 @@ Where each job waits for admission:
 ## Admission conditions
 
 Heavy work also waits at its admission boundary while the machine asks for
-restraint (§18.4). The rules are fixed per resource (`Gates` in
-`JobKind::rules`):
+restraint (§18.4). Conditions are fixed per job kind (`Gates` in
+`JobKind::rules`); memory estimates come from the selected model pack:
 
 | Resource | Waits while | Why |
 | --- | --- | --- |
-| `Inference` (AI pauses, transcription) | on battery power, in Low Power Mode or under thermal pressure; while Original or edit playback runs; under memory pressure (warning or critical) | A model load is seconds of GPU and gigabytes of unified memory. |
+| `Inference` (AI pauses, transcription) | on battery power, in Low Power Mode or under thermal pressure; while Original or edit playback runs; under memory pressure (warning or critical); when estimated available memory cannot cover the selected model plus the OS/editor reserve | A model load is seconds of GPU and gigabytes of unified memory. |
 | `Scan` (shot and pause detection) | under critical memory pressure | A whole-Original decode is smaller and resumable. |
 
 - **Observation.** Power and thermal state are the seek proxies' own reading
@@ -97,27 +97,44 @@ restraint (§18.4). The rules are fixed per resource (`Gates` in
   kernel's `kern.memorystatus_vm_pressure_level` (1 normal, 2 warning, 4
   critical) read through `/usr/sbin/sysctl` with the same bounded runner. No
   new unsafe code or OS binding is involved. Only a waiting job thread
-  samples (`Jobs::set_probe`, at most once per 15 seconds, outside the board
-  lock), never the UI or the writer. Until a reading exists the job shows
-  "Waiting while Deadpan checks power and memory".
+  samples (`Jobs::set_probe`, with a 15-second cache invalidated by model
+  release, outside the board lock), never the UI or the writer. Until a
+  reading exists the job shows "Waiting while Deadpan checks power and memory".
 - **Native launches only.** `DeadpanApp::follow_system_conditions` installs
   the probe from `main`. Tests and replays inject observations with
   `Jobs::set_conditions` and never read the Mac's power state.
 - **Visible reason.** The row reads, for example, `Waiting while running on
   battery · 0:12 waiting · O runs it anyway`; the AI inspector and the
   transcript section say the same.
-- **Run anyway.** O (or the row's Run anyway button) lifts the conditions for
-  that job only (`Jobs::run_anyway`). It still waits for its resource: two
-  models never load together.
+- **Run anyway.** O (or the row's Run anyway button) lifts power, heat,
+  playback and memory-pressure conditions for that job only
+  (`Jobs::run_anyway`). It cannot bypass the memory byte budget or a missing
+  memory observation. Those rows offer Cancel, without a Run anyway hint.
+  Resource capacity still applies: two models never load together.
 - **Playback.** A queued model does not start while anything plays. Running
   AI picture generation requests a cooperative pause at its next supported
   inference boundary. The panel distinguishes the request from the worker's
   acknowledgment after dispatched GPU work drains. This is not instantaneous
   kernel preemption. Playback never waits for the acknowledgment. Transcription
   still has no running-worker pause policy.
-- **Budgets stay counts.** The model and scan budgets remain one each; memory
-  pressure only withholds new admissions. The kernel's level is the
-  measurement, so no byte budget is invented.
+- **Memory admission.** Before claiming inference, the selected pack's
+  `memory_bytes` estimate must fit in observed headroom after reserving the
+  greater of 8 GiB or one eighth of physical RAM for the OS, editor and other
+  applications. Missing estimates or unreadable headroom hold the job. The
+  reserve is a policy, not a measured bound on future application allocations.
+  `sysctl hw.memsize` supplies physical RAM; `vm_stat` supplies free,
+  speculative and inactive pages. Their sum estimates reclaimable headroom.
+  Apple's displayed free count excludes speculative pages, so these are added
+  once. Compressed and purgeable counts are not added. Pressure remains an
+  independent gate. Model release invalidates the observation so a waiting
+  thread samples again outside the board lock. No running job is evicted when
+  headroom falls, and its estimate is not subtracted from headroom again.
+  Run anyway cannot override this admission budget. Pack estimates are not
+  hard allocation limits or proof of worst-case footprints across every
+  supported input.
+  The calculation follows the available-memory approximation in
+  [psutil's macOS collector](https://github.com/giampaolo/psutil/blob/master/psutil/arch/osx/mem.c),
+  adjusted for [Apple's printed `vm_stat` counters](https://github.com/apple-oss-distributions/system_cmds/blob/main/vm_stat/vm_stat.c).
 
 ## Yield rules
 

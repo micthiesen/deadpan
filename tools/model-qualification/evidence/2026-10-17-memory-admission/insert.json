@@ -1,0 +1,41 @@
+{
+  "protocol": 1,
+  "project_id": "c01bf55e-dc1b-474a-a391-c672b43bb7ca",
+  "expected_revision": "4acf1a08-411a-4d8c-b8f8-d13ccd389887",
+  "new_revision": "memory-max-extension",
+  "command": {
+    "command": "insert",
+    "parent": "61b8947d-fc16-4546-a0ef-26e4e598861c",
+    "index": 1,
+    "subtree": {
+      "root": "extension",
+      "nodes": {
+        "extension": {
+          "label": "Maximum Extension footprint qualification",
+          "kind": {
+            "type": "hold",
+            "recipe": {
+              "duration": 72,
+              "video": {
+                "type": "freeze",
+                "asset": "f3eae157-7091-4111-8f39-dc1fd0207db0",
+                "timestamp": {
+                  "ticks": 8,
+                  "time_base": {
+                    "numerator": 1,
+                    "denominator": 24
+                  }
+                }
+              },
+              "audio": {
+                "type": "silence"
+              }
+            }
+          }
+        }
+      },
+      "overrides": {},
+      "gap_overrides": {}
+    }
+  }
+}
