@@ -314,7 +314,8 @@ transactions reject an invalidated epoch before writing and before commit.
 A save admitted at the final guard remains valid if sleep follows it.
 See [qualification](qualification/transcription-sleep-2026-10-17.md) for the real
 Whisper cancellation test and publication regressions. Standalone speech
-activity retains its separate lifecycle policy.
+activity now applies the same sleep policy through its own run capture;
+see [standalone detection qualification](qualification/activity-sleep-2026-10-17.md).
 
 Known limits: the host and worker each hold analysis PCM twice while
 transferring it (about 1.4 GB at the three-hour cap); the worker hashes the

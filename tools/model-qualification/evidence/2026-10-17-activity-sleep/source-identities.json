@@ -1,0 +1,14 @@
+{
+  "base_revision": "a9888d1b",
+  "files": {
+    "crates/deadpan-app/src/jobs.rs": "b2838481b2d56a35b1c7b2f2a2110652bd077c959537e4e4bb917bbc85a4694d",
+    "crates/deadpan-app/src/preview/harness/transcript.rs": "bb84fbebfce79617719bbcef107fa36297344a5c92cd5fa1bb5cda244c068217",
+    "crates/deadpan-app/src/preview/transcript.rs": "9393600c34e0786042af2c14981913af6fe7fd857df6de00100aa1980659125e",
+    "crates/deadpan-app/src/preview/transcript/activity.rs": "d2d890d2b11a20e00c131417dc902995bf2727c7783d4341086382e44ee3f2b8",
+    "crates/deadpan-app/src/preview/transcript/lifecycle.rs": "79a6516345760dfae20c069503347ed23abc78b703f47aaba085993dc628aa9a",
+    "crates/deadpan-app/src/preview/transcript/lifecycle/real_activity.rs": "5131ccd52b217a6b8ad94fa5571bfaa85a5f54f044e3829fa560ef14b542795e",
+    "crates/deadpan-app/src/project/service/transcripts.rs": "0550e57a9610c2d63aef1f3b10bc60e08a012c73bbfb7d258600c15f5b6cac1d",
+    "crates/deadpan-cli/src/activity.rs": "b9dd2cd08da700523c24adb93a21749ff5c1692b0d7df375043e1c56e03def1d",
+    "native/deadpan-transcribe/src/main.rs": "9ef6cdbb833d3377ebdb86c03489958d0eb0a90566176c8f41a7d1edfa73a5ba"
+  }
+}

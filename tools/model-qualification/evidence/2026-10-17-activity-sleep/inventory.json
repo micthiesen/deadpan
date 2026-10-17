@@ -1,0 +1,66 @@
+{
+  "deadpan-activity-sleep-check.log.gz": {
+    "bytes": 3484,
+    "sha256": "94f392ea5cd5e01eb9223736b4f837a9960b744df9df82450cba789c6778ec79"
+  },
+  "deadpan-activity-sleep-helper-build.log.gz": {
+    "bytes": 357,
+    "sha256": "bf43a3166b33cdb21b9b3699f76bf8c35141cf2953edbf889ccbb98dffc1efec"
+  },
+  "deadpan-activity-sleep-native.log.gz": {
+    "bytes": 118,
+    "sha256": "403fba52a6f218200e8d88ffbd898818abc47672c6639c9074e1978233d685cb"
+  },
+  "deadpan-activity-sleep-performance.log.gz": {
+    "bytes": 109,
+    "sha256": "ce0253d397645de948d41888edb41554e5190a0538daa62882a79871ad8beeb7"
+  },
+  "deadpan-activity-sleep-real.log.gz": {
+    "bytes": 632,
+    "sha256": "1fc33dafd04aeb77f4953819259580fb3d970560d74e4e4c84a04dc814d3d6a0"
+  },
+  "deadpan-activity-sleep-release.log.gz": {
+    "bytes": 147,
+    "sha256": "cc99ae186c7988ede9d6fdef83d0254d9b042ed5beaba733bed820c1189ca867"
+  },
+  "deadpan-activity-sleep-visual.log.gz": {
+    "bytes": 106,
+    "sha256": "51c993247d57dce1d7c8d1d73db2642df1a6ececd8417d46a9d16fde03b8e6be"
+  },
+  "interrupted-pause-retry.png": {
+    "bytes": 329958,
+    "sha256": "6faddf0d7a118eb0609a0a29c0bc3896122465fbafd597abdc855c14d834257d"
+  },
+  "new-source/crates/deadpan-app/src/preview/transcript/lifecycle/real_activity.rs.gz": {
+    "bytes": 2089,
+    "sha256": "718402ff6c1d5ea0e070fc41e90739b0d876e7902904523b301fb53182db1db1"
+  },
+  "performance-report.json.gz": {
+    "bytes": 46293,
+    "sha256": "2b79bbc3b6e115a70343c3ed70b50914f33c08423c1e315c32b9b938e5fb082b"
+  },
+  "real-inputs.json": {
+    "bytes": 367,
+    "sha256": "a481ec1c3c1154e37defd425880e3873098fabc28266bb88ba7d70aee055eaf6"
+  },
+  "real-result.json": {
+    "bytes": 495,
+    "sha256": "a3fea6c4f17c2a8ab6ab0f0d4a20535e966e60d771a100512e2c9527d51dff0a"
+  },
+  "release-binaries.json": {
+    "bytes": 446,
+    "sha256": "a246048f5e2f11b676097cfff6038d7d9b90c3b50385fd3581c88968f2dc3edb"
+  },
+  "source-identities.json": {
+    "bytes": 1160,
+    "sha256": "5b27aefc0c98aae55c92ff5aba7f83f144f987783e02094a63552e9b8869b841"
+  },
+  "tracked-source.diff.gz": {
+    "bytes": 7740,
+    "sha256": "4a987aa95b69c2725eccb653a1ddae68401834f6b187a465c72b71488f8a5acc"
+  },
+  "visual-report.json.gz": {
+    "bytes": 806031,
+    "sha256": "2bad52da99b29b558566474631aa94c3ae0371291c7af0cc46e80357f5d879a9"
+  }
+}

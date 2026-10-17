@@ -39,6 +39,23 @@ pub fn detect_speech(
     cancelled: &AtomicBool,
     deadline: Instant,
 ) -> Result<ActivityResult, TranscriptionError> {
+    detect_speech_with_progress(runtime, model, input, attempt, cancelled, deadline, |_| {})
+}
+
+/// Run speech detection and report worker progress events.
+///
+/// The current worker reports only that the detector model loaded and it is
+/// entering synchronous detection. This is a phase marker, not a percentage
+/// estimate or evidence of incremental inference progress.
+pub fn detect_speech_with_progress(
+    runtime: &TranscriptionRuntime,
+    model: &ModelInput,
+    input: &AnalysisInput,
+    attempt: &str,
+    cancelled: &AtomicBool,
+    deadline: Instant,
+    progress: impl FnMut(u8),
+) -> Result<ActivityResult, TranscriptionError> {
     let samples = input.samples.len() as u64;
     let hops = samples.div_ceil(transcription::VAD_HOP);
     let expected_bytes = hops
@@ -53,7 +70,7 @@ pub fn detect_speech(
         expected_bytes,
         cancelled,
         deadline,
-        |_| {},
+        progress,
         |audio, timeout_millis| {
             Ok(HostMessage::DetectSpeech {
                 protocol: transcription::VERSION,

@@ -39,6 +39,7 @@ pub(super) struct ActivityJob {
     /// Finished activity not yet admitted by a busy project service.
     unsaved: Option<(SpeechActivityKey, Arc<SpeechActivity>)>,
     lifecycle_epoch: Option<u64>,
+    run: Option<RunCapture>,
 }
 
 impl ActivityJob {
@@ -66,24 +67,80 @@ impl ActivityJob {
         }
     }
 
-    pub(super) fn start(&mut self) {
+    pub(super) fn start(&mut self, run: RunCapture) {
         self.status = ActivityStatus::Detecting;
         self.unsaved = None;
-        self.lifecycle_epoch = None;
+        self.lifecycle_epoch = Some(run.epoch);
+        self.run = Some(run);
+        self.observe_interruption();
     }
 
-    pub(super) fn interrupt(&mut self) {
-        if self.unsaved.is_some() || matches!(self.status, ActivityStatus::Detecting) {
-            self.unsaved = None;
-            self.status = ActivityStatus::Interrupted;
+    #[cfg(feature = "ui-harness")]
+    pub(super) fn replay_queued(&mut self, lifecycle: crate::jobs::Lifecycle) {
+        assert!(self.unsaved.is_none());
+        self.start(RunCapture::new(lifecycle, Arc::new(AtomicBool::new(false))));
+    }
+
+    #[cfg(feature = "ui-harness")]
+    pub(super) fn status_name(&self) -> &'static str {
+        match self.status {
+            ActivityStatus::Interrupted => "interrupted",
+            ActivityStatus::NeedsModel => "needs_model",
+            ActivityStatus::Ready => "ready",
+            _ => "pending_or_failed",
         }
     }
 
+    pub(super) fn observe_interruption(&mut self) {
+        let Some(stop) = self.run.as_ref().and_then(RunCapture::stop) else {
+            return;
+        };
+        // The transactional receipt owns the outcome once a save is admitted.
+        if matches!(self.status, ActivityStatus::Saving(_)) {
+            return;
+        }
+        self.unsaved = None;
+        self.status = match stop {
+            Stop::Interrupted => ActivityStatus::Interrupted,
+            Stop::Cancelled => ActivityStatus::Failed("pause detection was cancelled".into()),
+        };
+    }
+
+    pub(super) fn accepts_result(&mut self) -> bool {
+        let accepted = self.run.as_ref().and_then(RunCapture::stop).is_none();
+        if !accepted {
+            self.observe_interruption();
+        }
+        accepted
+    }
+
+    fn retry(&mut self, lifecycle: &crate::jobs::Lifecycle, drained: bool) -> bool {
+        if !drained
+            || !lifecycle.is_awake()
+            || !matches!(
+                self.status,
+                ActivityStatus::Interrupted | ActivityStatus::Failed(_)
+            )
+        {
+            return false;
+        }
+        self.run = None;
+        self.lifecycle_epoch = None;
+        self.status = ActivityStatus::Unchecked;
+        true
+    }
+
     pub(super) fn receive(&mut self, result: Detection, lifecycle_epoch: Option<u64>) {
-        self.lifecycle_epoch = lifecycle_epoch;
+        if !self.accepts_result() {
+            return;
+        }
+        self.lifecycle_epoch = self.run.as_ref().map(|run| run.epoch).or(lifecycle_epoch);
         match result {
             Ok((key, activity)) => self.unsaved = Some((key, Arc::new(activity))),
-            Err(error) => self.status = ActivityStatus::Failed(error),
+            Err(error) => {
+                self.run = None;
+                self.status = ActivityStatus::Failed(error);
+            }
         }
     }
 }
@@ -98,11 +155,18 @@ impl Transcription {
         {
             return;
         }
+        let cancelled = save.interrupted
+            && self.activity.run.as_ref().and_then(RunCapture::stop) == Some(Stop::Cancelled);
+        self.activity.run = None;
         if let Some(error) = save.error {
-            self.activity.status = if save.interrupted {
+            self.activity.status = if save.interrupted && !cancelled {
                 ActivityStatus::Interrupted
             } else {
-                ActivityStatus::Failed(format!("the pauses were not saved: {error}"))
+                ActivityStatus::Failed(if cancelled {
+                    "pause detection was cancelled".into()
+                } else {
+                    format!("the pauses were not saved: {error}")
+                })
             };
         }
     }
@@ -173,6 +237,7 @@ impl DeadpanApp {
         };
         if workspace.speech_activity.is_some() {
             self.transcription.activity.status = ActivityStatus::Ready;
+            self.transcription.activity.run = None;
             return;
         }
         let idle = self.transcription.events.is_none();
@@ -211,12 +276,13 @@ impl DeadpanApp {
         let package = workspace.path.clone();
         let (sender, receiver) = mpsc::channel();
         let cancel = Arc::new(AtomicBool::new(false));
-        // Independent VAD keeps its existing lifecycle policy. A sibling VAD
-        // result from transcription carries that recognition run's epoch.
-        self.transcription.run = None;
+        let run = RunCapture::new(self.service.jobs().lifecycle(), Arc::clone(&cancel));
+        self.transcription.activity.start(run.clone());
+        if run.stop().is_some() {
+            return;
+        }
         self.transcription.cancel = Arc::clone(&cancel);
         self.transcription.events = Some(receiver);
-        self.transcription.activity.start();
         let repaint = context.clone();
         let handle = self.service.jobs().register(
             crate::jobs::JobSpec::new(
@@ -230,16 +296,20 @@ impl DeadpanApp {
             .name("deadpan-speech-activity".into())
             .spawn(move || {
                 let deadline = std::time::Instant::now() + Duration::from_secs(60 * 60);
-                let result = handle
-                    .wait_admitted(Some(&cancel))
-                    .map_err(|stopped| format!("pause detection was {stopped} before it started"))
-                    .and_then(|()| {
-                        handle.set_progress("Detecting speech", None);
-                        prepare(&package, &cancel, deadline)
-                    })
-                    .and_then(|(analysis, runtime)| {
-                        detect(&runtime, &vad, &analysis, &cancel, deadline)
-                    });
+                let result = run.run(|| {
+                    handle
+                        .wait_admitted(Some(&cancel))
+                        .map_err(|stopped| {
+                            format!("pause detection was {stopped} before it started")
+                        })
+                        .and_then(|()| {
+                            handle.set_progress("Detecting speech", None);
+                            prepare(&package, &cancel, deadline)
+                        })
+                        .and_then(|(analysis, runtime)| {
+                            detect(&runtime, &vad, &analysis, &cancel, deadline)
+                        })
+                });
                 let _ = sender.send(Event::Detected { result, last: true });
                 repaint.request_repaint();
             });
@@ -247,6 +317,7 @@ impl DeadpanApp {
             Ok(thread) => self.transcription.thread = Some(thread),
             Err(error) => {
                 self.transcription.events = None;
+                self.transcription.activity.run = None;
                 self.transcription.activity.status = ActivityStatus::Failed(error.to_string());
             }
         }
@@ -287,6 +358,7 @@ impl DeadpanApp {
             }
             Err(error) => {
                 self.transcription.activity.unsaved = None;
+                self.transcription.activity.run = None;
                 self.transcription.activity.status =
                     ActivityStatus::Failed(format!("the pauses were not saved: {error}"));
             }
@@ -326,7 +398,10 @@ impl DeadpanApp {
                 ui.add_space(4.0);
                 reveal_interruption(ui, message.rect, &retry);
                 if retry.clicked() {
-                    self.transcription.activity.status = ActivityStatus::Unchecked;
+                    self.transcription.activity.retry(
+                        &self.service.jobs().lifecycle(),
+                        self.transcription.events.is_none(),
+                    );
                 }
             }
             ActivityStatus::Failed(error) => {
@@ -334,8 +409,18 @@ impl DeadpanApp {
                     ui.visuals().error_fg_color,
                     format!("Pause detection failed: {error}"),
                 );
-                if ui.add(style::row_action(ui, "Try again", "")).clicked() {
-                    self.transcription.activity.status = ActivityStatus::Unchecked;
+                if ui
+                    .add_enabled(
+                        self.transcription.events.is_none()
+                            && self.service.jobs().lifecycle().is_awake(),
+                        style::row_action(ui, "Try again", ""),
+                    )
+                    .clicked()
+                {
+                    self.transcription.activity.retry(
+                        &self.service.jobs().lifecycle(),
+                        self.transcription.events.is_none(),
+                    );
                 }
             }
             ActivityStatus::Unchecked
@@ -370,6 +455,124 @@ mod tests {
                 assert!(
                     matches!(state.activity.status, ActivityStatus::Failed(ref error) if error.contains("save diagnostic"))
                 );
+            }
+        }
+    }
+    fn detected() -> Detection {
+        Ok((
+            SpeechActivityKey {
+                content: "a".repeat(64),
+                audio_stream: 0,
+                model_sha256: "b".repeat(64),
+                engine: "test".into(),
+            },
+            SpeechActivity::new(
+                deadpan_analysis::ActivityAudio {
+                    origin: 0,
+                    sample_rate: 16_000,
+                    samples: 512,
+                },
+                vec![240],
+                vec![200; 4],
+            )
+            .unwrap(),
+        ))
+    }
+
+    #[test]
+    fn standalone_sleep_rejects_queued_running_and_buffered_results_until_explicit_retry() {
+        for buffered in [false, true] {
+            let lifecycle = crate::jobs::Lifecycle::default();
+            let cancel = Arc::new(AtomicBool::new(false));
+            let mut state = Transcription {
+                status: Status::Ready,
+                ..Transcription::default()
+            };
+            let (sender, receiver) = mpsc::channel();
+            state.events = Some(receiver);
+            let run = RunCapture::new(lifecycle.clone(), cancel.clone());
+            state.activity.start(run.clone());
+            if buffered {
+                state.activity.receive(detected(), None);
+            }
+            lifecycle.will_sleep();
+            lifecycle.did_wake();
+            state.observe_interruption();
+            assert_eq!(state.status, Status::Ready);
+            assert_eq!(state.activity.status, ActivityStatus::Interrupted);
+            assert!(cancel.load(Ordering::Acquire));
+            assert!(state.activity.unsaved.is_none());
+            assert!(!state.activity.retry(&lifecycle, state.events.is_none()));
+            sender
+                .send(Event::Detected {
+                    result: detected(),
+                    last: true,
+                })
+                .unwrap();
+            let event = state.events.as_ref().unwrap().try_recv().unwrap();
+            assert!(!state.accepts_event(&event));
+            assert!(state.events.is_none());
+            state.activity.recheck();
+            assert_eq!(state.activity.status, ActivityStatus::Interrupted);
+            lifecycle.will_sleep();
+            assert!(!state.activity.retry(&lifecycle, true));
+            lifecycle.did_wake();
+            assert!(state.activity.retry(&lifecycle, true));
+            let retry = RunCapture::new(lifecycle.clone(), Arc::new(AtomicBool::new(false)));
+            assert_ne!(retry.epoch, run.epoch);
+            state.activity.start(retry);
+            state.activity.receive(detected(), None);
+            assert!(state.activity.unsaved.is_some());
+            assert_eq!(state.activity.lifecycle_epoch, Some(lifecycle.snapshot()));
+        }
+    }
+
+    #[test]
+    fn standalone_save_receipt_preserves_commit_failure_and_prior_cancellation() {
+        for (interrupted, error, cancelled) in [
+            (false, None, false),
+            (false, Some("disk failure"), false),
+            (true, Some("sleep guard"), false),
+            (true, Some("sleep guard"), true),
+        ] {
+            let lifecycle = crate::jobs::Lifecycle::default();
+            let cancel = Arc::new(AtomicBool::new(false));
+            let mut state = Transcription {
+                session: Some(7),
+                status: Status::Ready,
+                ..Transcription::default()
+            };
+            state
+                .activity
+                .start(RunCapture::new(lifecycle.clone(), cancel.clone()));
+            state.activity.status = ActivityStatus::Saving(4);
+            if cancelled {
+                cancel.store(true, Ordering::Release);
+            }
+            lifecycle.will_sleep();
+            state.observe_interruption();
+            assert_eq!(state.activity.status, ActivityStatus::Saving(4));
+            state.receive_activity_save(Some(crate::project::TranscriptSave {
+                session: 7,
+                attempt: 4,
+                interrupted,
+                error: error.map(str::to_owned),
+            }));
+            state.observe_interruption();
+            assert!(state.activity.run.is_none());
+            assert_eq!(state.status, Status::Ready);
+            if cancelled {
+                assert!(
+                    matches!(state.activity.status, ActivityStatus::Failed(ref error) if error.contains("cancelled"))
+                );
+            } else if interrupted {
+                assert_eq!(state.activity.status, ActivityStatus::Interrupted);
+            } else if error.is_some() {
+                assert!(
+                    matches!(state.activity.status, ActivityStatus::Failed(ref error) if error.contains("disk failure"))
+                );
+            } else {
+                assert_eq!(state.activity.status, ActivityStatus::Saving(4));
             }
         }
     }

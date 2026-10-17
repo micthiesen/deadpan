@@ -145,6 +145,7 @@ impl Default for Transcription {
 impl Transcription {
     /// Invalidate uncommitted results before processing any delayed event or save.
     fn observe_interruption(&mut self) {
+        self.activity.observe_interruption();
         let Some(stop) = self.run.as_ref().and_then(RunCapture::stop) else {
             return;
         };
@@ -157,9 +158,6 @@ impl Transcription {
             return;
         }
         self.unsaved = None;
-        if self.again.is_none() && self.status != Status::Ready {
-            self.activity.interrupt();
-        }
         if self.again.is_some() {
             self.again = Some(match stop {
                 Stop::Interrupted => recognition::Again::Interrupted,
@@ -176,6 +174,13 @@ impl Transcription {
     }
 
     fn accepts_event(&mut self, event: &Event) -> bool {
+        if let Event::Detected { last, .. } = event {
+            let accepted = self.activity.accepts_result();
+            if !accepted && *last {
+                self.events = None;
+            }
+            return accepted;
+        }
         if self.run.as_ref().and_then(RunCapture::stop).is_none() {
             return true;
         }
@@ -291,6 +296,17 @@ impl Transcription {
         self.cancel = Arc::new(AtomicBool::new(false));
         self.run = Some(RunCapture::new(lifecycle, Arc::clone(&self.cancel)));
         self.status = Status::Preparing;
+    }
+
+    #[cfg(feature = "ui-harness")]
+    pub(super) fn replay_queued_activity(&mut self, lifecycle: crate::jobs::Lifecycle) {
+        assert!(self.events.is_none());
+        self.activity.replay_queued(lifecycle);
+    }
+
+    #[cfg(feature = "ui-harness")]
+    pub(super) fn activity_status_name(&self) -> &'static str {
+        self.activity.status_name()
     }
 
     /// Replay-visible status name.
@@ -529,7 +545,7 @@ impl DeadpanApp {
         self.transcription.events = Some(receiver);
         self.transcription.status = Status::Preparing;
         if vad.is_some() {
-            self.transcription.activity.start();
+            self.transcription.activity.start(run.clone());
         }
         let repaint = context.clone();
         let handle = self.service.jobs().register(

@@ -232,10 +232,11 @@ publication against sleep: a notification after it does not retract the
 SQLite commit already admitted at that boundary. Ready variants and accepted
 providers remain intact.
 
-App-owned transcription and Recognize again also capture the lifecycle epoch.
+App-owned transcription, Recognize again and standalone pause detection also
+capture the lifecycle epoch.
 A scoped watcher checks it every 20 ms and signals the existing supervised
 worker cancellation path without requiring UI frames or progress callbacks.
-The model slot remains owned until the job drains. A cancellation already
+The model or scan slot remains owned until the job drains. A cancellation already
 requested when interruption is observed retains its cancellation outcome;
 this does not assert exact ordering for simultaneous notifications and clicks.
 
@@ -245,9 +246,12 @@ transcript and speech activity produced by recognition carry the captured epoch
 through the annotation queue. Their SQLite writes check it before writing and
 immediately before commit, rolling back rejected inserts or replacements.
 The final successful guard orders publication against sleep, as above. Already
-stored transcripts, corrections and accepted media remain intact. Independent
-speech-activity runs and other job kinds retain their existing lifecycle
-contracts. See [transcription sleep qualification](qualification/transcription-sleep-2026-10-17.md).
+stored transcripts, corrections and accepted media remain intact. Standalone
+pause detection owns a separate capture, so a completed recognition run cannot
+cancel a later detector. Its results and queued saves use the same publication
+guards, and its retry waits for wake and worker drain. Other job kinds retain
+their existing lifecycle contracts. See [transcription sleep qualification](qualification/transcription-sleep-2026-10-17.md)
+and [standalone detection qualification](qualification/activity-sleep-2026-10-17.md).
 
 ## Jobs panel
 

@@ -255,7 +255,9 @@ fn run(
 
 /// Verify the VAD model and PCM, detect speech and write the probabilities.
 /// Detection is fast (well under a second per minute of audio), so
-/// cancellation is observed before and after it rather than during it.
+/// cancellation is observed before and after it rather than during it. The
+/// zero progress event marks model load completion and entry into detection;
+/// it does not report inference progress.
 fn run_detection(
     job: &Job,
     model: &ModelInput,
@@ -270,7 +272,7 @@ fn run_detection(
     if cancelled.load(Ordering::Acquire) {
         return Ok(None);
     }
-    let probabilities = detect_speech(model, &pcm)?;
+    let probabilities = detect_speech(model, &pcm, || job.send(job.progress(0)))?;
     if cancelled.load(Ordering::Acquire) {
         return Ok(None);
     }
@@ -308,7 +310,11 @@ fn run_detection(
 }
 
 #[cfg(target_os = "macos")]
-fn detect_speech(model: &ModelInput, pcm: &[f32]) -> Result<Vec<f32>, String> {
+fn detect_speech(
+    model: &ModelInput,
+    pcm: &[f32],
+    detector_loaded: impl FnOnce() -> Result<(), String>,
+) -> Result<Vec<f32>, String> {
     use whisper_rs::{WhisperVadContext, WhisperVadContextParams};
 
     if pcm.is_empty() || i32::try_from(pcm.len()).is_err() {
@@ -319,6 +325,7 @@ fn detect_speech(model: &ModelInput, pcm: &[f32]) -> Result<Vec<f32>, String> {
     parameters.set_use_gpu(false);
     let mut context = WhisperVadContext::new(path, parameters)
         .map_err(|error| format!("load speech detector: {error}"))?;
+    detector_loaded()?;
     context
         .detect_speech(pcm)
         .map_err(|error| format!("detect speech: {error}"))?;
@@ -326,7 +333,11 @@ fn detect_speech(model: &ModelInput, pcm: &[f32]) -> Result<Vec<f32>, String> {
 }
 
 #[cfg(not(target_os = "macos"))]
-fn detect_speech(_model: &ModelInput, _pcm: &[f32]) -> Result<Vec<f32>, String> {
+fn detect_speech(
+    _model: &ModelInput,
+    _pcm: &[f32],
+    _detector_loaded: impl FnOnce() -> Result<(), String>,
+) -> Result<Vec<f32>, String> {
     Err("this platform has no qualified speech detection runtime".into())
 }
 

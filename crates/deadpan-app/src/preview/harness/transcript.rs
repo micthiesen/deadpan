@@ -72,14 +72,27 @@ fn interrupted_retry(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"status":"interrupted","retry":"Try again","revision":revision}),
         json!({"status":d.app().transcription.status_name(),"message":message,"retry":retry.map(|r| [r.min.x,r.min.y,r.max.x,r.max.y]),"revision":d.revision()}),
     )?;
+    focus_interrupted_retry(d, "Transcription interrupted by system sleep.")?;
+    d.wait_for("Explicit retry checks model availability again", |app| {
+        app.transcription.status_name() == "needs_model"
+    })?;
+    d.check(
+        "Retry returns to the real missing-model offer without changing the edit",
+        d.revision() == revision,
+        json!({"revision":revision}),
+        json!({"revision":d.revision()}),
+    )
+}
+
+fn focus_interrupted_retry(d: &mut Driver<'_>, message_text: &str) -> Result<(), String> {
+    let retry_label = "Try again  ";
     d.harness.get_by_label(retry_label).focus();
     d.step("Focus explicit transcription retry", true)?;
     // AccessKit focus, scroll offset and the resulting paint can settle in
     // separate frames. Bound the wait on the actual complete painted control.
     for _ in 0..6 {
         let hits = super::sound_placement::control_hits(d, &[retry_label]);
-        let message =
-            scenarios::text_paint_visibility(d, "Transcription interrupted by system sleep.");
+        let message = scenarios::text_paint_visibility(d, message_text);
         let label = scenarios::text_paint_visibility(d, retry_label);
         if hits[0]["complete_hit"] == true
             && !message.is_empty()
@@ -99,8 +112,7 @@ fn interrupted_retry(d: &mut Driver<'_>) -> Result<(), String> {
             && !access.is_disabled()
             && !access.is_hidden()
     });
-    let revealed_message =
-        scenarios::text_paint_visibility(d, "Transcription interrupted by system sleep.");
+    let revealed_message = scenarios::text_paint_visibility(d, message_text);
     let retry_paint = scenarios::text_paint_visibility(d, retry_label);
     let retry_hits = super::sound_placement::control_hits(d, &[retry_label]);
     d.check(
@@ -117,17 +129,52 @@ fn interrupted_retry(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"focused":true,"complete_hit":true,"fully_visible":true}),
         json!({"focused":focused,"controls":retry_hits,"paint":retry_paint,"message":revealed_message}),
     )?;
-    d.capture("Sleep-interrupted transcription with focused explicit retry")?;
-    d.key(Key::Enter)?;
-    d.wait_for("Explicit retry checks model availability again", |app| {
-        app.transcription.status_name() == "needs_model"
+    d.capture(if message_text.starts_with("Pause") {
+        "Sleep-interrupted pause detection with focused explicit retry"
+    } else {
+        "Sleep-interrupted transcription with focused explicit retry"
     })?;
-    d.check(
-        "Retry returns to the real missing-model offer without changing the edit",
-        d.revision() == revision,
-        json!({"revision":revision}),
-        json!({"revision":d.revision()}),
-    )
+    d.key(Key::Enter)?;
+    Ok(())
+}
+
+fn interrupted_activity_retry(d: &mut Driver<'_>) -> Result<(), String> {
+    d.command("source")?;
+    d.wait_for("Pause model availability checked", |app| {
+        app.transcription.activity_status_name() == "needs_model" && !app.service.annotation_busy()
+    })?;
+    let revision = d.revision();
+    let workspace = d.app().workspace.as_ref().ok_or("No project")?;
+    let words = workspace.transcript.clone().ok_or("No stored words")?;
+    let corrections = workspace.corrections.clone();
+    let lifecycle = d.app().service.jobs().lifecycle();
+    d.app_mut()
+        .transcription
+        .replay_queued_activity(lifecycle.clone());
+    lifecycle.will_sleep();
+    lifecycle.did_wake();
+    d.wait_for("Standalone pause detection observes sleep", |app| {
+        app.transcription.activity_status_name() == "interrupted"
+    })?;
+    d.step("Wake does not restart standalone pause detection", true)?;
+    focus_interrupted_retry(d, "Pause detection interrupted by system sleep.")?;
+    d.wait_for("Explicit pause retry checks model availability", |app| {
+        app.transcription.activity_status_name() == "needs_model"
+    })?;
+    let workspace = d.app().workspace.as_ref().ok_or("No project")?;
+    let words_unchanged = workspace
+        .transcript
+        .as_ref()
+        .is_some_and(|current| Arc::ptr_eq(current, &words));
+    let corrections_unchanged = match (&corrections, &workspace.corrections) {
+        (None, None) => true,
+        (Some(before), Some(after)) => Arc::ptr_eq(before, after),
+        _ => false,
+    };
+    d.check("Standalone pause interruption and retry preserve stored words, corrections and edit",
+        words_unchanged && corrections_unchanged && d.revision() == revision,
+        json!({"words_unchanged":true,"corrections_unchanged":true,"revision":revision}),
+        json!({"words_unchanged":words_unchanged,"corrections_unchanged":corrections_unchanged,"revision":d.revision()}))
 }
 
 pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
@@ -269,6 +316,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"source_cursor":d.app().source_cursor}),
     )?;
     words_in_your_edit(d, &expected)?;
+    interrupted_activity_retry(d)?;
     pauses_in_your_edit(d)?;
     repetition_loop_warning(d)?;
     d.report.skipped.push("Replay saves a synthetic transcript; real recognition is covered by the worker tests and transcription qualification. No model is downloaded.".into());

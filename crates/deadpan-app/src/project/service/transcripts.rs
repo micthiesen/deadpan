@@ -11,7 +11,7 @@ fn annotation_lifecycle_guard(
 ) -> std::result::Result<(), deadpan_store::StoreError> {
     if captured.is_some_and(|epoch| lifecycle.interrupted_since(epoch)) {
         Err(deadpan_store::StoreError::AnalysisInterrupted(
-            "System sleep interrupted recognition. Try again to start a new run.".into(),
+            "System sleep interrupted analysis. Try again to start a new run.".into(),
         ))
     } else {
         Ok(())

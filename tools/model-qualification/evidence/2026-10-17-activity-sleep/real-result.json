@@ -1,0 +1,10 @@
+{
+  "test_binary_sha256": "66009701529981c51221ded84236b7c2c29da34df7fc3dca20ef1d712b8b1df5",
+  "detector_loaded_seconds": 5.129349625,
+  "cancellation_drain_ms": 514.774625,
+  "retry_ms": 643.520791,
+  "engine": "whisper.cpp 1.8.3",
+  "backend": "Cpu",
+  "retry_hops": 32,
+  "scope": "120-second sine; lifecycle injected at observed model-loaded marker before synchronous detection. Fresh 1-second retry. No physical sleep, exact kernel interruption point, or classification accuracy claim."
+}

@@ -152,7 +152,28 @@ boundaries appear as hairline ticks in the same places.
 Detection is not resumable: the worker processes the whole analysis PCM in one
 call (177 ms for the 18 s interview, including model loading). Its time on a
 long Original is unmeasured; this machine has only the version 1 pack, without
-the detector. Preparing analysis PCM precedes it and reports no progress.
+the detector installed in the app. Qualification can use the pinned detector
+in private scratch storage. Preparing analysis PCM precedes it and reports no
+progress. The worker emits a zero-valued phase marker after loading its model
+and immediately before the synchronous detection call. It is not a percentage
+estimate or evidence of incremental inference progress.
+
+## Sleep interruption
+
+Standalone pause detection captures its own sleep epoch through admission,
+preparation, native work and publication. A scoped watcher signals cancellation
+without UI repaints. The scan slot stays owned while the supervisor drains;
+the backend itself still checks cancellation only around its synchronous call,
+with the existing bounded process teardown as the fallback.
+
+Wake does not restart interrupted detection. The rail shows the interruption
+and a keyboard-reachable Try again after the worker drains and the system is
+awake. Stored words and corrections stay available. Late results and buffered
+output from an invalidated run are discarded, and queued saves carry the epoch
+through the guarded transaction. A successful final guard admits publication;
+later sleep does not retract that commit. Typed receipts preserve genuine
+storage errors separately from interruption. See
+[qualification](qualification/activity-sleep-2026-10-17.md).
 
 ## Remaining
 

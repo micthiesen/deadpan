@@ -4,6 +4,8 @@ use super::*;
 
 #[cfg(test)]
 mod real;
+#[cfg(test)]
+mod real_activity;
 use std::sync::Mutex;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -212,11 +214,20 @@ mod tests {
             )),
             ..Transcription::default()
         };
-        state.activity.start();
         lifecycle.will_sleep();
+        lifecycle.did_wake();
+        let activity_cancel = Arc::new(AtomicBool::new(false));
+        state
+            .activity
+            .start(RunCapture::new(lifecycle.clone(), activity_cancel.clone()));
         state.observe_interruption();
         assert_eq!(state.status, Status::Ready);
+        assert!(!activity_cancel.load(Ordering::Acquire));
         assert!(state.activity.not_ready().unwrap().contains("while"));
+        lifecycle.will_sleep();
+        state.observe_interruption();
+        assert!(activity_cancel.load(Ordering::Acquire));
+        assert!(state.activity.not_ready().unwrap().contains("sleep"));
     }
     #[test]
     fn save_receipt_before_ui_sleep_observation_preserves_publication_outcome() {
