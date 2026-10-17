@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-12T15:58:17Z",
+  "updated_at": "2026-10-17T07:09:45Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Integrate partial attached-sound occurrence windows with capture and gate envelopes; finish broader nested loop/incoming-tail qualification, persistent filtered caching, mastering, format/color, workflow, performance and release obligations.",
+  "focus": "Finish job byte budgets, running-inference/playback and sleep policies; continue semantic editing, audio mastering, renderer and full-workflow qualification.",
   "features": [
     {
       "id": "editing",
@@ -16,7 +16,7 @@
         "DP-07",
         "DP-21"
       ],
-      "note": "Slices, registers, repeats and macros work. Advanced operators and nested timing remain."
+      "note": "Slices, registers, repeats and macros work, including full-A/V whole-Original reuse with one Undo. Advanced operators and nested timing remain."
     },
     {
       "id": "projects",
@@ -102,7 +102,7 @@
         "DP-18",
         "DP-24"
       ],
-      "note": "Bounded workers and diagnostics work. Several measured latency and scheduling gaps remain."
+      "note": "Bounded workers, condition-aware model admission, queued pauses, Run anyway and quit/wait controls work. Byte budgets, running-inference interference, sleep policy and broader latency qualification remain."
     },
     {
       "id": "models",
@@ -709,6 +709,14 @@
       "revision": "1ea6b929e8ba74f69117e9edbc65406a81270644",
       "retrospective": false,
       "summary": "Continuous beat/group reverb and delay now use captured :wet-send commands and the shared owner graph, with explicit pause permissions and bounded complete history. All 3,950 tests, final 320 service checks, strict workspace checks, 350 offscreen scenario checks and real release export pass: 30 pictures, two audio blocks and one zero-offset window. Independent event sends and remaining scope/cache/mastering work stay open; no requirement or gate is newly complete."
+    },
+    {
+      "date": "2026-10-17",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "31a04b1e",
+      "retrospective": false,
+      "summary": "Verified condition-aware queued AI jobs, quit/wait controls and whole-Original semantic macros. Strict Clippy, 330 targeted tests, Jobs and macro release replays, and native smoke pass; expanded media checks retain all assertions within unchanged test limits."
     }
   ]
 }
