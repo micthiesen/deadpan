@@ -1486,16 +1486,16 @@ Verification that needs anything unavailable to the agent here is recorded as **
 
 ## 29.2 Persistent progress dashboard
 
-Maintain the [Deadpan progress Executor artifact](https://mcp.syas.ca/boris/artifacts/art_6hz2jxipjvvmuy979s3),
-identifier **`art_6hz2jxipjvvmuy979s3`**, during any goal against this specification.
+Maintain the [Deadpan progress Shared Artifact](https://artifacts.syas.workers.dev/a/a3ysikxugbmr4),
+identifier **`a3ysikxugbmr4`**, during any goal against this specification.
 The owner must not need to request updates. It shows a large overall progress
 bar, high-level feature completion stages, current work, dated milestones and
 the rate of estimated progress. Requirements and evidence remain authoritative.
 
-The artifact reads **`docs/progress.json` from `micthiesen/deadpan`, branch
-`main`**, through Executor's GitHub `get_file_contents` tool. Routine progress
-updates need no MCP write: update the repository data, commit and push it; the
-artifact reads the new report on opening or Refresh. Use
+The artifact shows **`docs/progress.json` from `micthiesen/deadpan`, branch
+`main`**: its live data source re-fetches the raw file every 15 minutes.
+Routine progress updates need no MCP write: update the repository data, commit
+and push it, and the dashboard shows it within 15 minutes. Use
 `python3 tools/progress/update.py record --percent N --summary "Verified milestone" --focus "Current work"`,
 then `python3 tools/progress/update.py check`. Update feature notes/stages in
 the JSON when needed. Full instructions are in [Progress reporting](../PROGRESS.md).
@@ -1519,12 +1519,11 @@ estimates downward when evidence warrants it and explain the change. Label
 retrospective baselines; never fabricate intermediate observations or a finish
 date from the rate.
 
-If the dashboard layout needs changing, edit the existing artifact with
-Executor `edit-artifact`, passing `artifactId: "art_6hz2jxipjvvmuy979s3"` and
-exact source replacements. Keep `tools/progress/artifact.tsx` in sync. For a
-full rewrite, use `create-artifact` with that same `artifactId` and the complete
-component. Read Executor's current artifact guides before either operation;
-never create a duplicate dashboard for this goal.
+If the dashboard layout needs changing, edit `app.tsx` in the existing artifact
+with the Shared Artifacts `artifact_edit` tool (`id: "a3ysikxugbmr4"`, exact
+`oldText`/`newText` replacements), or `artifact_write_files` for a rewrite, and
+keep `tools/progress/app.tsx` in sync. Call `artifact_guide` first; fix any
+failed render check. Never create a duplicate dashboard for this goal.
 
 # 30. Implementation workstreams and delivery gates
 

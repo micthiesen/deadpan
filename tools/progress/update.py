@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Maintain the small, versioned data file read by the Executor progress artifact."""
+"""Maintain the small, versioned data file shown by the Deadpan progress Shared Artifact."""
 import argparse
 from datetime import date, datetime, timezone
 import json
