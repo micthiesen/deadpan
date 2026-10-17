@@ -2614,12 +2614,20 @@ fn job_thread(
             })?
         };
         let run = match &mut worker {
-            Worker::Real(runtime) => {
-                attempt::run_worker(&allocated, runtime, progress, records, &cancelled)
-            }
+            Worker::Real(runtime) => attempt::run_worker_scheduled(
+                &allocated,
+                runtime,
+                progress,
+                records,
+                &cancelled,
+                || handle.external_pause_requested(),
+                |paused| handle.external_pause_acknowledged(paused),
+            ),
             #[cfg(any(test, feature = "ui-harness"))]
             Worker::Scripted { queue, first } => match first.take().or_else(|| queue.next()) {
-                Some(script) => scripted(&script, &allocated, progress, records, &cancelled),
+                Some(script) => {
+                    scripted(&script, &allocated, progress, records, &cancelled, &handle)
+                }
                 None => WorkerRun::without_workspace(
                     RunResult::Failed(JobFailure::Host(attempt::host_failure(
                         HostFailureCode::WorkerExited,

@@ -530,6 +530,13 @@ impl TryFrom<NativeCandidateManifestWire> for NativeCandidateManifest {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "operation", rename_all = "snake_case", deny_unknown_fields)]
 pub enum HostMessage {
+    SetPaused {
+        protocol: ProtocolVersion,
+        identity: MessageIdentity,
+        cancellation_token: CancellationToken,
+        sequence: u64,
+        paused: bool,
+    },
     GenerateHold {
         protocol: ProtocolVersion,
         identity: MessageIdentity,
@@ -581,6 +588,7 @@ impl HostMessage {
             Self::GenerateHold { identity, .. }
             | Self::GenerateBridge { identity, .. }
             | Self::GenerateExtension { identity, .. }
+            | Self::SetPaused { identity, .. }
             | Self::Cancel { identity, .. } => identity,
         }
     }
@@ -590,12 +598,16 @@ impl HostMessage {
             Self::GenerateHold { protocol, .. }
             | Self::GenerateBridge { protocol, .. }
             | Self::GenerateExtension { protocol, .. }
+            | Self::SetPaused { protocol, .. }
             | Self::Cancel { protocol, .. } => *protocol,
         }
     }
 
     pub fn validate(&self) -> Result<(), ValueError> {
         match self {
+            Self::SetPaused {
+                protocol, sequence, ..
+            } => validate_pause(*protocol, *sequence),
             Self::GenerateHold { protocol, .. } if *protocol != ProtocolVersion::V1 => {
                 Err(ValueError::ProtocolOperationMismatch)
             }
@@ -727,6 +739,13 @@ pub struct WorkerFailure {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "event", rename_all = "snake_case", deny_unknown_fields)]
 pub enum WorkerMessage {
+    /// Compute is synchronized before acknowledging paused=true.
+    PauseState {
+        protocol: ProtocolVersion,
+        identity: MessageIdentity,
+        sequence: u64,
+        paused: bool,
+    },
     Stage {
         protocol: ProtocolVersion,
         identity: MessageIdentity,
@@ -774,6 +793,7 @@ impl WorkerMessage {
             | Self::CompletedExtension { identity, .. }
             | Self::Failed { identity, .. }
             | Self::Cancelled { identity, .. } => identity,
+            Self::PauseState { identity, .. } => identity,
         }
     }
 
@@ -786,6 +806,7 @@ impl WorkerMessage {
             | Self::CompletedExtension { protocol, .. }
             | Self::Failed { protocol, .. }
             | Self::Cancelled { protocol, .. } => *protocol,
+            Self::PauseState { protocol, .. } => *protocol,
         }
     }
 
@@ -794,6 +815,9 @@ impl WorkerMessage {
             Self::Completed { protocol, .. } if *protocol != ProtocolVersion::V1 => {
                 Err(ValueError::ProtocolOperationMismatch)
             }
+            Self::PauseState {
+                protocol, sequence, ..
+            } => validate_pause(*protocol, *sequence),
             Self::CompletedBridge {
                 protocol,
                 candidate,
@@ -817,6 +841,16 @@ impl WorkerMessage {
             _ => Ok(()),
         }
     }
+}
+
+fn validate_pause(protocol: ProtocolVersion, sequence: u64) -> Result<(), ValueError> {
+    if protocol == ProtocolVersion::V1 {
+        return Err(ValueError::ProtocolOperationMismatch);
+    }
+    if sequence == 0 {
+        return Err(ValueError::InvalidPauseSequence);
+    }
+    Ok(())
 }
 
 pub fn read_host_message(reader: &mut impl Read) -> Result<Option<HostMessage>, CodecError> {
@@ -958,6 +992,8 @@ impl Write for BoundedBuffer {
 
 #[derive(Debug, Error)]
 pub enum ValueError {
+    #[error("pause scheduling sequence must be nonzero")]
+    InvalidPauseSequence,
     #[error(
         "AI instructions must contain 1-512 UTF-8 bytes, non-whitespace text and no control characters"
     )]

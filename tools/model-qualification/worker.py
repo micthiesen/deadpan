@@ -515,31 +515,37 @@ def run():
     # Native extensions and subprocesses inherit stderr for ordinary stdout.
     os.dup2(2, 1)
     request = protocol.read_request()
-    errors = []
     finished = threading.Event()
 
-    def read_cancel():
+    def read_controls():
         try:
-            if not protocol.read_cancel() and not finished.is_set():
-                errors.append("host control pipe closed during generation")
+            while protocol.read_control():
+                pass
+            if not finished.is_set():
+                protocol.control_failed("host control pipe closed during generation")
         except Exception as error:
-            errors.append(str(error))
+            protocol.control_failed(str(error))
 
-    threading.Thread(target=read_cancel, daemon=True, name="deadpan-cancel-reader").start()
+    threading.Thread(target=read_controls, daemon=True, name="deadpan-control-reader").start()
 
     def check_cancel():
-        if errors:
-            raise ValueError(errors[0])
         if protocol.cancel_requested:
             raise Cancelled()
+        protocol.check_control_error()
         if resource.getrusage(resource.RUSAGE_SELF).ru_maxrss > 80 * 1024**3:
             raise MemoryError("process RSS exceeded the development envelope")
+
+    def checkpoint(synchronize):
+        protocol.scheduling_checkpoint(check_cancel, synchronize)
 
     last_stage = None
 
     def stage(value):
         nonlocal last_stage
-        check_cancel()
+        # Before MLX loads there is no GPU queue. Later stage boundaries
+        # acknowledge holds only after its dispatched work has drained.
+        mlx = sys.modules.get("mlx.core")
+        checkpoint(mlx.synchronize if mlx is not None else lambda: None)
         if value != last_stage:
             protocol.emit_stage(value)
             last_stage = value
@@ -595,7 +601,9 @@ def run():
         paths = runtime_paths(strict_json(runtime_bytes), check_cancel, provider=request.provider,
                               operation="extension_hold" if extension else "bridge_hold")
         native, provenance, _report = generate(
-            paths, wire, context, inputs, output, stage, check_cancel, ADAPTER_SOURCES
+            paths, wire, context, inputs, output, stage, check_cancel, ADAPTER_SOURCES,
+            checkpoint=checkpoint,
+            emit_progress=protocol.emit_progress,
         )
         check_cancel()
         native_artifact = finished_artifact(

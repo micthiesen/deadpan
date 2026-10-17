@@ -62,6 +62,23 @@ fn main() {
         fs::write("listening", b"ready").unwrap();
         fs::write("cancellation.json", packet()).unwrap();
     }
+    if mode == "pause-cancel" || mode == "pause-toggle-cancel" {
+        fs::write("pause-request.json", packet()).unwrap();
+        io::stdout()
+            .write_all(&fs::read("pause.bin").unwrap())
+            .unwrap();
+        io::stdout().flush().unwrap();
+        if mode == "pause-toggle-cancel" {
+            for sequence in [2, 3] {
+                fs::write(format!("pause-request-{sequence}.json"), packet()).unwrap();
+                io::stdout()
+                    .write_all(&fs::read(format!("pause-{sequence}.bin")).unwrap())
+                    .unwrap();
+                io::stdout().flush().unwrap();
+            }
+        }
+        fs::write("cancellation.json", packet()).unwrap();
+    }
     if mode == "stderr" {
         io::stderr().write_all(&vec![b'd'; 256 * 1024]).unwrap();
     }

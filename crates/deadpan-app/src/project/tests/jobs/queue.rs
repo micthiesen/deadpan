@@ -235,6 +235,44 @@ fn attempt_states(
 /// second job for the same pause is refused; the next queued one is
 /// admitted when the model frees; edits commit throughout.
 #[test]
+fn running_generation_yields_to_playback_without_releasing_model_or_blocking_writer() {
+    let fixture = project(vec![ai_waiting()], vec![]);
+    let board = fixture.service.jobs().clone();
+    let mut ai = Observer::new(&fixture.service);
+    assert_eq!(ai.start(&fixture.workspace, &fixture.hold, 2), None);
+    let request = ai.phase(2, "inference", stepping).request.unwrap();
+    let before_pause = attempt_states(&fixture.workspace.path, &request);
+    let queued = board.register(JobSpec::new(
+        JobKind::Transcription,
+        Some(fixture.workspace.session),
+    ));
+    board.set_foreground(Foreground { playback: true });
+    let deadline = Instant::now() + TIMEOUT;
+    while !matches!(row_of(&board, 2).state, RowState::Paused(_)) {
+        assert!(Instant::now() < deadline, "generation did not yield");
+        std::thread::sleep(Duration::from_millis(2));
+    }
+    assert!(!queued.admitted());
+    assert_eq!(
+        attempt_states(&fixture.workspace.path, &request),
+        before_pause
+    );
+    let edited = ai.edit(&fixture.workspace);
+    assert_ne!(
+        edited.document.revision_id(),
+        fixture.workspace.document.revision_id()
+    );
+    ai.cancel_from_panel(&board, fixture.workspace.session, 2);
+    assert_eq!(ai.concluded(2).outcome, Some(AiOutcome::Cancelled));
+    assert_eq!(
+        attempt_states(&fixture.workspace.path, &request),
+        [deadpan_jobs::JobState::Cancelled]
+    );
+    board.set_foreground(Foreground { playback: false });
+    assert!(queued.admitted());
+}
+
+#[test]
 fn several_generations_queue_for_the_model_and_cancel_individually() {
     let fixture = project(vec![ai_waiting()], vec![]);
     let board = fixture.service.jobs().clone();

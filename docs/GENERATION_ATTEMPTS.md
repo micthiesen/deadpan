@@ -35,8 +35,9 @@ completion records an untrusted declaration and enters validation. Host failure,
 cancellation, and readiness use separate typed calls. Wrong identities, tokens,
 state combinations, or candidate declarations fail without partial writes.
 
-Progress remains bounded live state. The persistence entrypoint explicitly
-rejects progress messages rather than losing their monotonicity checks through
+Progress and cooperative scheduling remain bounded live state. The persistence
+entrypoint explicitly rejects progress and pause-acknowledgment messages rather
+than losing their monotonicity checks through
 snapshot restoration. Exact duplicate current-stage or retained terminal
 declarations can be recognized; the snapshot is not an event journal that
 recognizes arbitrary past messages. A worker cancellation acknowledgement, or a

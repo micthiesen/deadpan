@@ -116,6 +116,31 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"open":d.app().jobs.open,"rows":format!("{:?}", d.app().job_rows())}),
     )?;
     d.capture("Running and queued jobs")?;
+    let render =
+        d.app().service.jobs().register(
+            JobSpec::new(JobKind::Render, session).detail("scripted scheduling boundary"),
+        );
+    d.wait_for("Inference yields at its scripted safe boundary", |app| {
+        app.service
+            .jobs()
+            .row_of(JobKind::AiPause, session)
+            .is_some_and(|row| row.state == RowState::Paused("a render is running".into()))
+    })?;
+    d.step("Acknowledged inference pause", true)?;
+    d.check(
+        "The paused model keeps its slot and the Jobs panel explains the yield",
+        !queued.admitted() && widget_text(d).contains("Paused while a render is running"),
+        json!({"model_slot_retained":true,"paused_for":"render"}),
+        json!({"queued_admitted":queued.admitted(),"rows":format!("{:?}", d.app().job_rows())}),
+    )?;
+    d.capture("Inference paused for render")?;
+    drop(render);
+    d.wait_for("Inference resumes without a new attempt", |app| {
+        app.service
+            .jobs()
+            .row_of(JobKind::AiPause, session)
+            .is_some_and(|row| row.state == RowState::Running)
+    })?;
     d.check(
         "Editor keys do not reach the project while the panel is open",
         !d.app().service.is_busy(),

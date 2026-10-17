@@ -15,6 +15,9 @@ use deadpan_jobs::*;
 #[path = "supervisor/extension.rs"]
 mod extension;
 
+#[path = "supervisor/pause.rs"]
+mod pause;
+
 fn identity() -> MessageIdentity {
     MessageIdentity::new(
         RequestId::new("job").unwrap(),

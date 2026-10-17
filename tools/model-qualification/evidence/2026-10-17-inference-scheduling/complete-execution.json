@@ -1,0 +1,18 @@
+{
+  "command": [
+    "/tmp/deadpan-inference-pause-final-bin-2026-10-17/deadpan-cli",
+    "generate-hold",
+    "/private/tmp/deadpan-inference-pause-real-2026-10-17/fixture.deadpan",
+    "--hold",
+    "extension",
+    "--mode",
+    "auto",
+    "--motion",
+    "still",
+    "--seed",
+    "42107"
+  ],
+  "exit_code": 0,
+  "seconds": 152.63015104085207,
+  "binary_sha256": "8690b3444a53cdb01b3ab16742e60a9e06ba9f4e434a6e38310d67b12e9d03dd"
+}

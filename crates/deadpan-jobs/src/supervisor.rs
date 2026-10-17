@@ -60,14 +60,34 @@ impl WorkerProtocol for GenerationProtocol {
                     cancellation_token: cancellation_token.clone(),
                 },
             }),
-            HostMessage::Cancel { .. } => Err(SupervisorError::Configuration(
-                "initial request must generate a hold",
-            )),
+            HostMessage::Cancel { .. } | HostMessage::SetPaused { .. } => Err(
+                SupervisorError::Configuration("initial request must generate a hold"),
+            ),
         }
     }
 
     fn cancellation(&self) -> Self::Request {
         self.cancel_message.clone()
+    }
+
+    fn pause_request(&self, sequence: u64, paused: bool) -> Result<Self::Request, SupervisorError> {
+        let HostMessage::Cancel {
+            cancellation_token, ..
+        } = &self.cancel_message
+        else {
+            unreachable!("generation adapter retains its cancel message")
+        };
+        let request = HostMessage::SetPaused {
+            protocol: self.protocol,
+            identity: self.identity.clone(),
+            cancellation_token: cancellation_token.clone(),
+            sequence,
+            paused,
+        };
+        request
+            .validate()
+            .map_err(|error| SupervisorError::Request(error.to_string()))?;
+        Ok(request)
     }
 
     fn write_request(writer: &mut impl Write, request: &Self::Request) -> Result<(), String> {
@@ -87,6 +107,12 @@ impl WorkerProtocol for GenerationProtocol {
             return Err("worker response identity differs from this attempt".into());
         }
         Ok(match response {
+            WorkerMessage::PauseState {
+                sequence, paused, ..
+            } => ResponseKind::PauseState {
+                sequence: *sequence,
+                paused: *paused,
+            },
             WorkerMessage::Completed { .. }
             | WorkerMessage::CompletedBridge { .. }
             | WorkerMessage::CompletedExtension { .. } => ResponseKind::Completed,

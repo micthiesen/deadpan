@@ -846,9 +846,32 @@ fn validate_input_sizes(inputs: &PreparedInputs) -> Result<(), String> {
 pub fn run_worker(
     allocated: &Allocated,
     runtime: &BridgeRuntime,
+    progress: impl FnMut(AttemptProgress),
+    records: impl FnMut(AttemptRecord) -> Result<(), String>,
+    cancelled: &AtomicBool,
+) -> WorkerRun {
+    run_worker_scheduled(
+        allocated,
+        runtime,
+        progress,
+        records,
+        cancelled,
+        || false,
+        |_| {},
+    )
+}
+
+/// Run with cooperative in-process scheduling. Requesting a pause does not mean
+/// GPU work has stopped: `pause_acknowledged` runs only after the supervisor
+/// validates the worker's acknowledgment. The caller retains its model slot.
+pub fn run_worker_scheduled(
+    allocated: &Allocated,
+    runtime: &BridgeRuntime,
     mut progress: impl FnMut(AttemptProgress),
     mut records: impl FnMut(AttemptRecord) -> Result<(), String>,
     cancelled: &AtomicBool,
+    mut pause_requested: impl FnMut() -> bool,
+    mut pause_acknowledged: impl FnMut(bool),
 ) -> WorkerRun {
     let mut timings = RunTimings::default();
     let started = Instant::now();
@@ -969,6 +992,8 @@ pub fn run_worker(
     };
 
     let mut cancellation_sent = false;
+    let mut scheduling_sequence = 0_u64;
+    let mut requested_pause = false;
     let mut clean_exit = false;
     let mut faulted = false;
     let cancel = |lifecycle: &mut JobLifecycle,
@@ -991,6 +1016,30 @@ pub fn run_worker(
                 &mut records,
                 &mut cancellation_sent,
             );
+        }
+        if !cancellation_sent
+            && !lifecycle.state().is_terminal()
+            && lifecycle.state() != deadpan_jobs::JobState::Validating
+        {
+            let desired = pause_requested();
+            if desired != requested_pause {
+                let result = scheduling_sequence
+                    .checked_add(1)
+                    .ok_or_else(|| "worker scheduling sequence exhausted".to_owned())
+                    .and_then(|sequence| {
+                        process
+                            .request_pause(sequence, desired)
+                            .map_err(|error| error.to_string())?;
+                        scheduling_sequence = sequence;
+                        requested_pause = desired;
+                        Ok(())
+                    });
+                if let Err(detail) = result {
+                    fail(&mut lifecycle, HostFailureCode::ProtocolViolation, &detail);
+                    let _ = process.request_cancel(Instant::now());
+                    faulted = true;
+                }
+            }
         }
         let events = match process.poll(Instant::now()) {
             Ok(events) => events,
@@ -1024,6 +1073,12 @@ pub fn run_worker(
                         continue;
                     }
                     match message.as_ref() {
+                        WorkerMessage::PauseState { paused, .. } => {
+                            pause_acknowledged(*paused);
+                            // Scheduling is transient. Restart always requires a
+                            // new attempt, never a saved in-memory pause.
+                            continue;
+                        }
                         WorkerMessage::Progress {
                             stage,
                             progress: step,

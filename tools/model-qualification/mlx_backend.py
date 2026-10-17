@@ -297,10 +297,26 @@ def runtime_paths(config, check_cancel, hash_assets=True, provider=None, operati
     return paths
 
 
-def generate(paths, request, context, input_bytes, output, stage, check_cancel, adapter_sources):
+def _step_progress(index, count, synchronize, emit_progress, *, offset=0, total=None):
+    """The pinned callback precedes this step's Euler update and async eval.
+
+    Drain prior dispatched work before reporting only the previous steps.
+    Bridge's two passes share one monotonic 23-step inference counter.
+    """
+    if not 0 <= index < count:
+        raise ValueError("invalid denoising callback position")
+    if emit_progress is not None:
+        synchronize()
+        emit_progress("inference", offset + index, total if total is not None else count)
+
+
+def generate(paths, request, context, input_bytes, output, stage, check_cancel, adapter_sources,
+             *, checkpoint=None, emit_progress=None):
+    checkpoint = checkpoint or (lambda synchronize: check_cancel())
     if request.get("operation") == "generate_extension":
         return generate_extension(paths, request, context, input_bytes, output,
-                                  stage, check_cancel, adapter_sources)
+                                  stage, check_cancel, adapter_sources, checkpoint=checkpoint,
+                                  emit_progress=emit_progress)
     started = time.monotonic()
     # Reject malformed guidance before importing any model implementation.
     prompt = hold_prompt(request["constraints"])
@@ -388,13 +404,17 @@ def generate(paths, request, context, input_bytes, output, stage, check_cancel, 
     class BridgePipeline(KeyframeInterpolationPipeline):
         def _stepwise_hook(self, latent_frames, latent_height, latent_width, *, stage=None):
             del latent_frames, latent_height, latent_width
-            check_cancel()
+            checkpoint(mx.synchronize)
             emit_stage("inference")
 
             def on_step(index, total, video_x0, sigma):
                 del video_x0, sigma
-                check_cancel()
-                print(f"denoise stage={stage} completed={index + 1} total={total}", file=sys.stderr, flush=True)
+                checkpoint(mx.synchronize)
+                if (stage, total) not in [(1, 20), (2, 3)]:
+                    raise ValueError("bridge denoising steps differ from the pinned configuration")
+                _step_progress(index, total, mx.synchronize, emit_progress,
+                               offset=20 if stage == 2 else 0, total=23)
+                print(f"denoise stage={stage} prior_steps={index} total={total}", file=sys.stderr, flush=True)
             return on_step
 
         def _decode_and_save_video(self, video_latent, audio_latent, output_path, *, frame_rate, seed=0):
@@ -406,10 +426,11 @@ def generate(paths, request, context, input_bytes, output, stage, check_cancel, 
             native_frames = []
             with decode_cache_limit():
                 for chunk in decoder.tiled_decode(video_latent, tiling):
+                    checkpoint(mx.synchronize)
                     if tuple(chunk.shape[:2]) != (1, 3) or tuple(chunk.shape[3:]) != (height, width):
                         raise ValueError("unexpected VAE RGB geometry")
                     for index in range(chunk.shape[2]):
-                        check_cancel()
+                        checkpoint(mx.synchronize)
                         if len(native_frames) >= native_count:
                             raise ValueError("VAE emitted too many native frames")
                         # Match pinned upstream RGB8 quantization before interpolation.
@@ -474,13 +495,15 @@ def generate(paths, request, context, input_bytes, output, stage, check_cancel, 
     return output / "native.mp4", provenance_path, report
 
 
-def generate_extension(paths, request, context, input_bytes, output, stage, check_cancel, adapter_sources):
+def generate_extension(paths, request, context, input_bytes, output, stage, check_cancel, adapter_sources,
+                       *, checkpoint=None, emit_progress=None):
     """Measured low-level Retake extension with host-owned chronological RGB.
 
     The convenience video loader is deliberately absent: it probes paths and
     rounds frame counts. Joint audio latents are generated but never decoded
     or retained as authored sound.
     """
+    checkpoint = checkpoint or (lambda synchronize: check_cancel())
     from worker_protocol import GenerateExtensionRequest, parse_host_message
     parsed = parse_host_message(request)
     if not isinstance(parsed, GenerateExtensionRequest) or paths.get("operation") != "extension_hold":
@@ -579,8 +602,9 @@ def generate_extension(paths, request, context, input_bytes, output, stage, chec
 
             def on_step(index, total, video_x0, sigma):
                 del video_x0, sigma
-                check_cancel()
-                print(f"extension denoise completed={index + 1} total={total}", file=sys.stderr, flush=True)
+                checkpoint(mx.synchronize)
+                _step_progress(index, total, mx.synchronize, emit_progress)
+                print(f"extension denoise prior_steps={index} total={total}", file=sys.stderr, flush=True)
             return on_step
 
     emit_stage = stage
@@ -597,11 +621,11 @@ def generate_extension(paths, request, context, input_bytes, output, stage, chec
     tensor = mx.array(rgb.astype(np.float32) / 127.5 - 1).transpose(3, 0, 1, 2)[None]
 
     def encode(encoder):
-        check_cancel()
+        checkpoint(mx.synchronize)
         value = encoder.encode(tensor)
         mx.eval(value)
         mx.synchronize()
-        check_cancel()
+        checkpoint(mx.synchronize)
         return value
 
     latent = pipe.image_conditioner(encode, free_after=True)
@@ -647,12 +671,12 @@ def generate_extension(paths, request, context, input_bytes, output, stage, chec
     native_frames = []
     with decode_cache_limit():
         for chunk in decoder.tiled_decode(generated, tiling):
-            check_cancel()
+            checkpoint(mx.synchronize)
             if (tuple(chunk.shape[:2]) != (1, 3) or tuple(chunk.shape[3:]) != (height, width)
                     or not mx.all(mx.isfinite(chunk)).item()):
                 raise ValueError("extension VAE produced invalid RGB geometry or values")
             for index in range(chunk.shape[2]):
-                check_cancel()
+                checkpoint(mx.synchronize)
                 if len(native_frames) >= native_count:
                     raise ValueError("extension VAE emitted too many native frames")
                 frame = ((mx.clip(chunk[0, :, index], -1, 1) + 1) * 127.5).astype(mx.uint8)

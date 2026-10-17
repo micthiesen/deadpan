@@ -81,7 +81,7 @@ pub enum StoreError {
     GenerationAttemptNotFound { request: String, attempt: String },
     #[error("Generation attempt ordinals are exhausted for request {0}")]
     GenerationAttemptExhausted(String),
-    #[error("Generation progress is live UI data and is not persisted")]
+    #[error("Generation progress and scheduling are live data and are not persisted")]
     GenerationProgressNotPersistent,
     #[error("Generation attempt transition is invalid: {0}")]
     GenerationAttempt(String),

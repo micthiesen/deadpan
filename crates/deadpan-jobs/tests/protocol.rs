@@ -572,3 +572,51 @@ fn attempt_providers_are_seeded_variants_below_the_worker_seed_limit() {
         assert!(base.for_attempt(ordinal).seed < 1 << 32);
     }
 }
+
+#[test]
+fn cooperative_pause_wire_contract_is_versioned_and_nonzero() {
+    for protocol in [
+        ProtocolVersion::V1,
+        ProtocolVersion::V2,
+        ProtocolVersion::V3,
+    ] {
+        for sequence in [0, 1, u64::MAX] {
+            let request = HostMessage::SetPaused {
+                protocol,
+                identity: identity(),
+                cancellation_token: CancellationToken::new("cancel").unwrap(),
+                sequence,
+                paused: true,
+            };
+            let response = WorkerMessage::PauseState {
+                protocol,
+                identity: identity(),
+                sequence,
+                paused: false,
+            };
+            let valid = protocol != ProtocolVersion::V1 && sequence != 0;
+            let mut bytes = Vec::new();
+            assert_eq!(
+                deadpan_jobs::write_host_message(&mut bytes, &request).is_ok(),
+                valid
+            );
+            if valid {
+                assert_eq!(
+                    deadpan_jobs::read_host_message(&mut Cursor::new(bytes)).unwrap(),
+                    Some(request)
+                );
+            }
+            let mut bytes = Vec::new();
+            assert_eq!(
+                deadpan_jobs::write_worker_message(&mut bytes, &response).is_ok(),
+                valid
+            );
+            if valid {
+                assert_eq!(
+                    deadpan_jobs::read_worker_message(&mut Cursor::new(bytes)).unwrap(),
+                    Some(response)
+                );
+            }
+        }
+    }
+}

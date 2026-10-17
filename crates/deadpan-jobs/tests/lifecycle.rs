@@ -622,3 +622,47 @@ fn lifecycle_rejects_message_and_checkpoint_protocol_crossovers() {
         Err(LifecycleError::InvalidCheckpoint(_))
     ));
 }
+
+#[test]
+fn cooperative_pause_does_not_change_authored_lifecycle_and_cancellation_wins() {
+    for protocol in [ProtocolVersion::V2, ProtocolVersion::V3] {
+        let mut job = JobLifecycle::new_with_protocol(identity(), token(), binding(), protocol);
+        let pause = WorkerMessage::PauseState {
+            protocol,
+            identity: identity(),
+            sequence: 1,
+            paused: true,
+        };
+        let before = job.checkpoint();
+        assert_eq!(
+            job.apply_worker_message(&pause).unwrap(),
+            WorkerEventOutcome::Applied
+        );
+        assert_eq!(job.checkpoint(), before);
+        job.apply_worker_message(&WorkerMessage::Stage {
+            protocol,
+            identity: identity(),
+            stage: WorkerStage::Preflight,
+        })
+        .unwrap();
+        job.apply_worker_message(&WorkerMessage::Stage {
+            protocol,
+            identity: identity(),
+            stage: WorkerStage::Inference,
+        })
+        .unwrap();
+        let before = job.checkpoint();
+        assert_eq!(
+            job.apply_worker_message(&pause).unwrap(),
+            WorkerEventOutcome::Applied
+        );
+        assert_eq!(job.checkpoint(), before);
+        job.request_cancel(&identity(), &token()).unwrap();
+        let before = job.checkpoint();
+        assert_eq!(
+            job.apply_worker_message(&pause).unwrap(),
+            WorkerEventOutcome::IgnoredDuringCancellation
+        );
+        assert_eq!(job.checkpoint(), before);
+    }
+}

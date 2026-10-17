@@ -1,0 +1,14 @@
+{
+  "base_revision": "4d20ad6c",
+  "sha256": {
+    "target/debug/deps/deadpan_cli-cd5c117e28903094": "24ce3fc357baaad233d9468936f826224357150d6b52def2681ecad4183e0efe",
+    "/tmp/deadpan-sleep-final-bin-2026-10-17/deadpan-app": "ef25ec807b23aae3503886cbb07bd45ef412c270f267cf4ac3b5a5c82cef5f48",
+    "tools/model-qualification/worker.py": "9bf3668cff1035c0d73994ec6a79ac64064955ada6d86722f6b493025327fd57",
+    "tools/model-qualification/worker_protocol.py": "b7cb747ff3774283ad7f5279d81b6545189dcaf149b7e98a64acc73f1f73214c",
+    "tools/model-qualification/worker_media.py": "75608e052a744deaabe864521a6d3da2e20645171e1173191815619cfed104d1",
+    "tools/model-qualification/worker_extension_context.py": "271325737be21ae2e81dbf92f5109465ca9140ff197920d838a6c14b2d48f79c",
+    "tools/model-qualification/mlx_backend.py": "2ce15538657efd07ab1de9ab45e257b7fe760ef106d46857b5e1de7fce2eee5b",
+    "tools/model-qualification/runtime_source.py": "83dddd9cd6e84d1c2d01d27e6d28098325624afc3572f17ba7037ecd4acbbbad",
+    "tools/model-qualification/ltx-source-manifest.json": "abc7e873e28097d1f9307b030dd4b1f415f6b5091c841ac1babd421c8d74f092"
+  }
+}

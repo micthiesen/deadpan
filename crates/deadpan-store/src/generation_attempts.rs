@@ -869,7 +869,10 @@ impl ProjectStore {
         &mut self,
         message: &WorkerMessage,
     ) -> Result<AttemptMutationOutcome, StoreError> {
-        if matches!(message, WorkerMessage::Progress { .. }) {
+        if matches!(
+            message,
+            WorkerMessage::Progress { .. } | WorkerMessage::PauseState { .. }
+        ) {
             return Err(StoreError::GenerationProgressNotPersistent);
         }
         self.require_writer()?;
@@ -2386,7 +2389,9 @@ fn duplicate_worker_terminal(attempt: &StoredGenerationAttempt, message: &Worker
             ) && attempt.checkpoint.cancellation_acknowledgement
                 == Some(CancellationAcknowledgement::Cancelled)
         }
-        WorkerMessage::Stage { .. } | WorkerMessage::Progress { .. } => false,
+        WorkerMessage::Stage { .. }
+        | WorkerMessage::Progress { .. }
+        | WorkerMessage::PauseState { .. } => false,
     }
 }
 

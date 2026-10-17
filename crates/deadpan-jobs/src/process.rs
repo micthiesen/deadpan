@@ -22,6 +22,9 @@ use rustix::fs::{OFlags, fcntl_getfl, fcntl_setfl};
 use rustix::process::{Pid, WaitId, WaitIdOptions, waitid};
 use thiserror::Error;
 
+mod pause;
+use pause::{MAX_ACKNOWLEDGED_PAUSE, PauseControl};
+
 /// A host-selected protocol layered over the shared process transport.
 ///
 /// Implementations validate the initial operation, response identity, version,
@@ -35,6 +38,15 @@ pub trait WorkerProtocol: Sized {
     /// Validate the initial request and capture its immutable response identity.
     fn from_request(request: &Self::Request) -> Result<Self, SupervisorError>;
     fn cancellation(&self) -> Self::Request;
+    fn pause_request(
+        &self,
+        _sequence: u64,
+        _paused: bool,
+    ) -> Result<Self::Request, SupervisorError> {
+        Err(SupervisorError::Configuration(
+            "worker does not support cooperative pause",
+        ))
+    }
     fn write_request(writer: &mut impl Write, request: &Self::Request) -> Result<(), String>;
     fn read_response(reader: &mut impl Read) -> Result<Option<Self::Response>, String>;
     fn classify(&self, response: &Self::Response) -> Result<ResponseKind, String>;
@@ -46,6 +58,10 @@ pub trait WorkerProtocol: Sized {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ResponseKind {
     Progress,
+    PauseState {
+        sequence: u64,
+        paused: bool,
+    },
     /// Failure or cancellation acknowledgement, delivered immediately.
     Terminal,
     /// Validated failure, delivered immediately. Exit code 1 is expected after
@@ -332,6 +348,7 @@ pub struct SupervisedProcess<P: WorkerProtocol> {
     pid: Pid,
     protocol: P,
     cancel_message: P::Request,
+    pause: PauseControl,
     control: Option<mpsc::SyncSender<P::Request>>,
     events: Option<mpsc::Receiver<PipeEvent<P::Response>>>,
     readers: Vec<JoinHandle<()>>,
@@ -401,12 +418,14 @@ impl<P: WorkerProtocol> SupervisedProcess<P> {
         )?;
         let pid = Pid::from_child(&child);
         let (event_tx, event_rx) = mpsc::sync_channel(EVENT_CAPACITY);
-        let (control_tx, control_rx) = mpsc::sync_channel(2);
+        // Initial request, at most one in-flight pause, and a reserved cancel.
+        let (control_tx, control_rx) = mpsc::sync_channel(3);
         let mut process = Self {
             child,
             pid,
             protocol,
             cancel_message,
+            pause: PauseControl::default(),
             control: Some(control_tx),
             events: Some(event_rx),
             readers: Vec::new(),
@@ -600,6 +619,42 @@ impl<P: WorkerProtocol> SupervisedProcess<P> {
         Ok(true)
     }
 
+    /// Coalesce scheduling updates behind one in-flight request. Cancellation
+    /// prevents further scheduling sends and retains its reserved control slot.
+    pub fn request_pause(&mut self, sequence: u64, paused: bool) -> Result<bool, SupervisorError> {
+        if self.cancel_started.is_some()
+            || self.terminal_received.is_some()
+            || self.reap_attempted
+            || self.faulted
+        {
+            return Ok(false);
+        }
+        self.protocol.pause_request(sequence, paused)?;
+        let changed = self
+            .pause
+            .request(sequence, paused)
+            .map_err(SupervisorError::Configuration)?;
+        self.send_pending_pause()?;
+        Ok(changed)
+    }
+
+    fn send_pending_pause(&mut self) -> Result<(), SupervisorError> {
+        if self.cancel_started.is_some() || self.terminal_received.is_some() || self.faulted {
+            return Ok(());
+        }
+        if let Some((sequence, paused)) = self.pause.pending()
+            && let Some(control) = &self.control
+        {
+            let message = self.protocol.pause_request(sequence, paused)?;
+            match control.try_send(message) {
+                Ok(()) => self.pause.sent((sequence, paused)),
+                Err(mpsc::TrySendError::Full(_)) => {}
+                Err(mpsc::TrySendError::Disconnected(_)) => self.control = None,
+            }
+        }
+        Ok(())
+    }
+
     pub fn log_tail(&self) -> LogTail {
         let logs = self.logs.lock().unwrap_or_else(|error| error.into_inner());
         LogTail {
@@ -769,6 +824,7 @@ impl<P: WorkerProtocol> SupervisedProcess<P> {
             self.control = None;
         }
         self.sample_footprint(now);
+        self.send_pending_pause()?;
         if self.exit.is_none() && !self.group_stopped {
             if self.cancel_started.is_some_and(|start| {
                 now.saturating_duration_since(start) >= self.limits.cancellation_grace
@@ -776,7 +832,13 @@ impl<P: WorkerProtocol> SupervisedProcess<P> {
                 self.cancellation_escalated = true;
                 self.cancellation_kill.store(true, Ordering::Release);
                 self.stop_group()?;
-            } else if now.saturating_duration_since(self.started) >= self.limits.maximum_duration {
+            } else if self.pause.paused_duration(now) >= MAX_ACKNOWLEDGED_PAUSE {
+                self.fail(
+                    "worker exceeded its maximum acknowledged pause duration".into(),
+                    &mut output,
+                )?;
+            } else if self.pause.compute_duration(self.started, now) >= self.limits.maximum_duration
+            {
                 self.fail("worker exceeded its maximum duration".into(), &mut output)?;
             } else if self
                 .terminal_received
@@ -880,6 +942,18 @@ impl<P: WorkerProtocol> SupervisedProcess<P> {
                         output,
                     )?;
                 } else {
+                    if let ResponseKind::PauseState { sequence, paused } = kind {
+                        match self.pause.acknowledge(sequence, paused, now) {
+                            Ok(newly_acknowledged) => {
+                                if newly_acknowledged && self.cancel_started.is_none() {
+                                    output.push(ProcessEvent::Message(message));
+                                }
+                                self.send_pending_pause()?;
+                            }
+                            Err(reason) => self.fail(reason.into(), output)?,
+                        }
+                        return Ok(());
+                    }
                     if kind != ResponseKind::Progress {
                         self.terminal_received = Some(now);
                         self.failure_exit_expected = kind == ResponseKind::Failed;

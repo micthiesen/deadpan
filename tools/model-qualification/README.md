@@ -176,13 +176,26 @@ records its scope and remaining product work.
 
 Use a fresh run with `--cancel-after-millis` or `--cancel-at-stage inference`
 to exercise actual cancellation.
-The host enforces a 30-minute attempt deadline and a five-second cancellation
+The host enforces a 30-minute computation deadline and a five-second cancellation
 grace period. MLX's 64 GiB setting is a guideline; the worker checks 80 GiB process
 RSS at cooperative boundaries. These are not OS memory or network isolation.
 Blocking FFmpeg pipe I/O has no cooperative polling guarantee; the supervisor's
 termination deadline is the bound there. All 139 LTX source files are verified
 against a manifest bound to the upstream Git tree, and imported package/module
 locations and hashes are checked before generation and again before completion.
+
+Protocols 2 and 3 also accept sequenced `set_paused` controls and emit
+`pause_state` acknowledgments from the compute thread. The control reader
+continues during a hold. Stage, denoising and decoded-chunk checkpoints drain
+dispatched MLX work before acknowledging a pause; native helper I/O remains
+cancellation-only. Resume retains in-memory tensors, not a restart checkpoint.
+Only acknowledged hold time is excluded from the computation deadline, with a
+two-hour cumulative hold limit. Cancellation and terminal-exit deadlines do not
+pause. Framed inference progress counts synchronized prior steps because the
+pinned sampler callback runs before the current Euler update.
+
+[Scheduling qualification](../../docs/qualification/inference-scheduling-2026-10-17.md)
+records the real Extension pause/resume/cancel test and its limits.
 
 Routine contract tests need only Python's standard library:
 

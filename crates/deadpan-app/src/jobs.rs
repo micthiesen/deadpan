@@ -237,7 +237,15 @@ impl JobKind {
             Self::Render => (Priority::Render, None, NONE),
             // The person asked and is waiting; Vision runs per picture.
             Self::Tracking | Self::Faces => (Priority::Requested, None, NONE),
-            Self::AiPause => (Priority::Requested, Some(Resource::Inference), NONE),
+            Self::AiPause => (
+                Priority::Requested,
+                Some(Resource::Inference),
+                Yields {
+                    playback: true,
+                    render: true,
+                    ..NONE
+                },
+            ),
             // Automatic: runs whenever the Original lacks a transcript.
             Self::Transcription => (Priority::Background, Some(Resource::Inference), NONE),
             // An isolated VAD process with no safe pause point; short.
@@ -422,6 +430,8 @@ pub enum RowState {
     /// [`Gates`]); [`Jobs::run_anyway`] admits it regardless.
     Held(String),
     Running,
+    /// The external worker has not yet acknowledged a safe boundary.
+    Pausing(String),
     /// Admitted, but waiting at a safe boundary.
     Paused(String),
     /// Cancellation was requested; the job is draining.
@@ -437,6 +447,7 @@ impl RowState {
             } => format!("Queued #{position}, waiting for {waiting_for}"),
             Self::Held(reason) => format!("Waiting while {reason}"),
             Self::Running => "Running".into(),
+            Self::Pausing(reason) => format!("Waiting for an inference boundary: {reason}"),
             Self::Paused(reason) => format!("Paused while {reason}"),
             Self::Cancelling => "Cancelling".into(),
         }
@@ -541,6 +552,7 @@ struct Entry {
     cancellable: bool,
     cancelling: bool,
     paused: Option<String>,
+    pause_requested: Option<String>,
     progress: Progress,
     measured: Option<Measured>,
     /// The person chose to run it despite its admission conditions.
@@ -798,6 +810,7 @@ impl Jobs {
                 cancellable: spec.cancellable,
                 cancelling: closed,
                 paused: None,
+                pause_requested: None,
                 progress: Progress::default(),
                 measured: None,
                 forced: false,
@@ -1001,6 +1014,8 @@ impl Jobs {
                     }
                 } else if let Some(reason) = &entry.paused {
                     RowState::Paused(reason.clone())
+                } else if let Some(reason) = &entry.pause_requested {
+                    RowState::Pausing(reason.clone())
                 } else {
                     RowState::Running
                 };
@@ -1105,6 +1120,35 @@ pub struct JobHandle {
 }
 
 impl JobHandle {
+    /// Request scheduling without claiming that the external worker has stopped.
+    pub fn external_pause_requested(&self) -> bool {
+        let mut board = self.jobs.lock();
+        let reason = board.pause_reason(self.id);
+        if let Some(entry) = board.entries.get_mut(&self.id) {
+            entry.pause_requested.clone_from(&reason);
+            if reason.is_some() {
+                entry.measured = None;
+            }
+        }
+        reason.is_some()
+    }
+
+    /// Record only a validated acknowledgment from the worker's compute thread.
+    pub fn external_pause_acknowledged(&self, paused: bool) {
+        let mut board = self.jobs.lock();
+        if let Some(entry) = board.entries.get_mut(&self.id) {
+            entry.paused = paused.then(|| {
+                entry
+                    .pause_requested
+                    .clone()
+                    .unwrap_or_else(|| "inference resumes at its next boundary".into())
+            });
+            entry.measured = None;
+        }
+        drop(board);
+        self.jobs.notify();
+    }
+
     #[cfg(test)]
     pub fn id(&self) -> JobId {
         self.id
@@ -1242,6 +1286,10 @@ impl JobHandle {
     /// example while the host publishes a finished model run).
     pub fn release(&self) {
         let mut board = self.jobs.lock();
+        if let Some(entry) = board.entries.get_mut(&self.id) {
+            entry.paused = None;
+            entry.pause_requested = None;
+        }
         if let Some(entry) = board.entries.get_mut(&self.id)
             && entry.claims
             && entry.admitted.is_some()
@@ -1466,6 +1514,65 @@ mod tests {
         drop(shots);
         assert!(pauses.admitted());
         assert_eq!(jobs.admissions().len(), 6);
+    }
+
+    #[test]
+    fn inference_pause_waits_for_ack_and_retains_model_slot() {
+        let jobs = Jobs::new();
+        let ai = jobs.register(spec(JobKind::AiPause));
+        let next = jobs.register(spec(JobKind::Transcription));
+        jobs.set_foreground(Foreground { playback: true });
+        assert!(ai.external_pause_requested());
+        assert_eq!(
+            state(&jobs, &ai),
+            RowState::Pausing("the edit is playing".into())
+        );
+        assert!(!next.admitted());
+        ai.external_pause_acknowledged(true);
+        assert_eq!(
+            state(&jobs, &ai),
+            RowState::Paused("the edit is playing".into())
+        );
+        jobs.set_foreground(Foreground { playback: false });
+        assert!(!ai.external_pause_requested());
+        assert!(matches!(state(&jobs, &ai), RowState::Paused(_)));
+        // Playback restarts before the worker acknowledges the earlier resume.
+        // Its physical resume must remain visible until the next pause arrives.
+        jobs.set_foreground(Foreground { playback: true });
+        assert!(ai.external_pause_requested());
+        ai.external_pause_acknowledged(false);
+        assert_eq!(
+            state(&jobs, &ai),
+            RowState::Pausing("the edit is playing".into())
+        );
+        ai.external_pause_acknowledged(true);
+        jobs.set_foreground(Foreground { playback: false });
+        assert!(!ai.external_pause_requested());
+        ai.external_pause_acknowledged(false);
+        assert_eq!(state(&jobs, &ai), RowState::Running);
+        assert!(!next.admitted());
+        drop(ai);
+        assert!(next.admitted());
+    }
+
+    #[test]
+    fn inference_yields_to_render_and_cancel_overrides_acknowledged_pause() {
+        let jobs = Jobs::new();
+        let flag = Arc::new(AtomicBool::new(false));
+        let ai = jobs.register(spec(JobKind::AiPause).cancel_flag(&flag));
+        let render = jobs.register(spec(JobKind::Render));
+        assert!(ai.external_pause_requested());
+        ai.external_pause_acknowledged(true);
+        assert_eq!(
+            state(&jobs, &ai),
+            RowState::Paused("a render is running".into())
+        );
+        jobs.cancel(ai.id());
+        assert!(flag.load(Ordering::Acquire));
+        assert_eq!(state(&jobs, &ai), RowState::Cancelling);
+        drop(render);
+        ai.release();
+        assert_eq!(state(&jobs, &ai), RowState::Cancelling);
     }
 
     #[test]
@@ -1762,13 +1869,18 @@ mod tests {
     }
 
     #[test]
-    fn inference_does_not_start_during_playback_and_a_running_model_continues() {
+    fn inference_waits_for_playback_and_running_model_requests_a_boundary() {
         let jobs = Jobs::new();
         let running = jobs.register(spec(JobKind::AiPause).deferred());
         running.acquire(None).expect("admitted");
         jobs.set_foreground(Foreground { playback: true });
-        assert_eq!(running.pause_reason(), None, "never paused mid-step");
+        // Foreground state alone cannot establish that dispatched work stopped.
         assert_eq!(state(&jobs, &running), RowState::Running);
+        assert!(running.external_pause_requested());
+        assert_eq!(
+            state(&jobs, &running),
+            RowState::Pausing("the edit is playing".into())
+        );
         running.release();
         let next = jobs.register(spec(JobKind::Transcription).deferred());
         let waiter = std::thread::spawn(move || next.acquire(None).map(|()| next));

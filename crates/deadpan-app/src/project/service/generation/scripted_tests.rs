@@ -9,6 +9,7 @@ pub(super) fn scripted(
     mut progress: impl FnMut(AttemptProgress),
     mut records: impl FnMut(AttemptRecord) -> std::result::Result<(), String>,
     cancelled: &AtomicBool,
+    handle: &crate::jobs::JobHandle,
 ) -> WorkerRun {
     use crate::project::generation::ScriptEnding;
     use deadpan_jobs::WorkerStage;
@@ -22,7 +23,7 @@ pub(super) fn scripted(
     }
     progress(AttemptProgress::Stage(WorkerStage::ModelLoading));
     for completed in 1..=script.steps {
-        if cancelled.load(Ordering::Acquire) {
+        if handle.checkpoint(Some(cancelled)).is_err() {
             return cancel(&mut records);
         }
         std::thread::sleep(script.step_interval);
@@ -35,6 +36,9 @@ pub(super) fn scripted(
     match &script.ending {
         ScriptEnding::WaitForCancel => {
             while !cancelled.load(Ordering::Acquire) {
+                if handle.checkpoint(Some(cancelled)).is_err() {
+                    return cancel(&mut records);
+                }
                 std::thread::sleep(Duration::from_millis(5));
             }
             cancel(&mut records)

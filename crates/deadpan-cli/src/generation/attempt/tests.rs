@@ -18,6 +18,7 @@ use crate::generation::runtime::BridgeRuntime;
 const FRAMES: i64 = 24;
 
 mod extension;
+mod extension_scheduling;
 mod preparations;
 
 fn fixture_rate(frames: i64) -> deadpan_core::FrameRate {

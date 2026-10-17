@@ -135,7 +135,10 @@ pub(super) fn job_text(row: &JobRow, current: Option<u64>) -> String {
         text.push_str(" (closing project)");
     }
     text.push_str(&format!(": {}", row.state.label()));
-    let running = matches!(row.state, RowState::Running | RowState::Paused(_));
+    let running = matches!(
+        row.state,
+        RowState::Running | RowState::Pausing(_) | RowState::Paused(_)
+    );
     if running && !row.progress.stage.is_empty() {
         text.push_str(&format!(" · {}", row.progress.stage));
         if let Some(fraction) = row.progress.fraction {
@@ -535,7 +538,7 @@ impl DeadpanApp {
                 ui.label(style::section_title("JOBS", true));
                 ui.label(
                     egui::RichText::new(
-                        "Background work never delays editing or playback. One AI model runs at a time; others wait their turn. AI models start only on power, without heat or memory pressure and while nothing plays; O runs a waiting one anyway. Shot detection and seek proxies pause while the edit plays, a render runs or tracking runs.",
+                        "Editing and playback have priority. One AI model runs at a time; others wait their turn. Models start on power, without heat or memory pressure and while nothing plays; O runs a waiting one anyway. AI pictures pause at supported boundaries during playback or rendering; an active GPU step must finish. Shot detection and seek proxies also yield to tracking.",
                     )
                     .size(11.5)
                     .weak(),
@@ -703,6 +706,16 @@ mod tests {
 
     #[test]
     fn rows_read_as_complete_sentences_for_voiceover() {
+        assert_eq!(
+            job_text(
+                &row(
+                    RowState::Pausing("the edit is playing".into()),
+                    Progress::default()
+                ),
+                Some(2)
+            ),
+            "AI pause pictures · pause hold-1: Waiting for an inference boundary: the edit is playing · 1:15 elapsed"
+        );
         assert_eq!(
             job_text(
                 &row(

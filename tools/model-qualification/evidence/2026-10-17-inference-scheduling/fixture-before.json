@@ -1,0 +1,143 @@
+{
+  "schema_version": 55,
+  "project_id": "1d3bd644-8f75-4c49-987d-b794e39fb193",
+  "revision_id": "scheduling-pause",
+  "presentation_basis": {
+    "width": 768,
+    "height": 320,
+    "frame_rate": {
+      "numerator": 24,
+      "denominator": 1
+    },
+    "color_policy": "sdr_rec709"
+  },
+  "basis_state": {
+    "rate_origin": "primary_source",
+    "geometry_origin": "primary_source",
+    "primary": {
+      "asset": "a22e0b81-c5ad-4094-ba8d-2b09ae07313d",
+      "qualification": "ff0e87b36747548763db737e9c6ef0ca3057639680dcba803099e6c844cdb742"
+    }
+  },
+  "root": "1a5f4e16-eff2-434e-b945-d0b1586c0baa",
+  "nodes": {
+    "1a5f4e16-eff2-434e-b945-d0b1586c0baa": {
+      "label": "Sequence",
+      "kind": {
+        "type": "sequence",
+        "children": [
+          "7f08e882-f15a-4904-933c-846d474884a0",
+          "extension"
+        ]
+      }
+    },
+    "7f08e882-f15a-4904-933c-846d474884a0": {
+      "label": "from_left",
+      "kind": {
+        "type": "source",
+        "source": {
+          "duration": 9,
+          "edit_window": {
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "end": {
+              "numerator": "9",
+              "denominator": "1"
+            }
+          },
+          "video": {
+            "type": "stream",
+            "asset": "a22e0b81-c5ad-4094-ba8d-2b09ae07313d",
+            "span": {
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 24
+                }
+              },
+              "end": {
+                "ticks": 9,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 24
+                }
+              }
+            }
+          },
+          "video_mapping": {
+            "type": "placement",
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "frames": {
+              "numerator": "9",
+              "denominator": "1"
+            },
+            "endpoints": "hold_adjacent"
+          },
+          "audio": null,
+          "audio_mapping": {
+            "type": "fit_beat"
+          },
+          "link": "independent",
+          "audio_offset": 0
+        }
+      }
+    },
+    "extension": {
+      "label": "Extension scheduling qualification",
+      "kind": {
+        "type": "hold",
+        "recipe": {
+          "duration": 12,
+          "video": {
+            "type": "freeze",
+            "asset": "a22e0b81-c5ad-4094-ba8d-2b09ae07313d",
+            "timestamp": {
+              "ticks": 8,
+              "time_base": {
+                "numerator": 1,
+                "denominator": 24
+              }
+            }
+          },
+          "audio": {
+            "type": "silence"
+          }
+        }
+      }
+    }
+  },
+  "assets": {
+    "a22e0b81-c5ad-4094-ba8d-2b09ae07313d": {
+      "label": "from_left",
+      "content_hash": "blake3:bd9962a5638f6804f6817a3ffd4352b4c76cb7c4c06f73befd8e937755f1e7e8",
+      "video": {
+        "start": {
+          "ticks": 0,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 24
+          }
+        },
+        "end": {
+          "ticks": 9,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 24
+          }
+        }
+      },
+      "audio": null,
+      "still_image": false,
+      "frame_count": 9,
+      "source_qualification": "ff0e87b36747548763db737e9c6ef0ca3057639680dcba803099e6c844cdb742"
+    }
+  },
+  "marks": {},
+  "overrides": {}
+}

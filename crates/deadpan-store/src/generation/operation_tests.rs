@@ -352,6 +352,16 @@ fn extension_attempts_persist_completion_cancellation_and_interrupted_validation
         }),
         Err(StoreError::GenerationProgressNotPersistent)
     ));
+    assert!(matches!(
+        store.record_generation_worker_message(&WorkerMessage::PauseState {
+            protocol: ProtocolVersion::V3,
+            identity: identity.clone(),
+            sequence: 1,
+            paused: true,
+        }),
+        Err(StoreError::GenerationProgressNotPersistent)
+    ));
+    assert_eq!(store.generation_attempt(&identity)?.unwrap(), running);
     // A worker declaration enters Validating; it cannot establish Ready.
     let mut declaration: serde_json::Value = serde_json::from_str(include_str!(
         "../../../deadpan-jobs/tests/fixtures/completed_extension_v3.json"

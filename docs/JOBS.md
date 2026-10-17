@@ -109,11 +109,12 @@ restraint (§18.4). The rules are fixed per resource (`Gates` in
 - **Run anyway.** O (or the row's Run anyway button) lifts the conditions for
   that job only (`Jobs::run_anyway`). It still waits for its resource: two
   models never load together.
-- **Playback.** A queued model does not start while anything plays. A model
-  already running continues: its worker has no qualified safe pause point
-  and §18.4 forbids promising an instantaneous AI pause. Its next variant (a
-  new admission) waits again. Playback keeps its own priority: audio and
-  preview never wait for a model, and seek proxies still yield to it.
+- **Playback.** A queued model does not start while anything plays. Running
+  AI picture generation requests a cooperative pause at its next supported
+  inference boundary. The panel distinguishes the request from the worker's
+  acknowledgment after dispatched GPU work drains. This is not instantaneous
+  kernel preemption. Playback never waits for the acknowledgment. Transcription
+  still has no running-worker pause policy.
 - **Budgets stay counts.** The model and scan budgets remain one each; memory
   pressure only withholds new admissions. The kernel's level is the
   measurement, so no byte budget is invented.
@@ -127,7 +128,17 @@ is preempted mid-step, and GPU kernels are not interrupted.
 | --- | --- | --- |
 | Shot detection | the edit plays, a render runs, tracking or face detection runs | Between pictures (`JobHandle::checkpoint` in the scan's progress callback). Its ten-second checkpoints still save. |
 | Seek proxy | the edit plays, a render runs, an AI model runs (generation or transcription), tracking or face detection runs | The existing monitor suspends the worker's process group (SIGSTOP/SIGCONT). It now combines `JobHandle::pause_reason` with the UI's busy signal and the power guard. |
-| AI generation, transcription, pause detection, tracking, faces, render | nothing | These are isolated worker processes without a qualified safe pause point. §18.4 forbids promising an instantaneous AI pause. |
+| AI generation | playback or a render | Cooperative stage, denoising-step and decoded-chunk boundaries in the MLX adapter, after synchronizing dispatched GPU work. |
+| Transcription, pause detection, tracking, faces, render | nothing | These workers do not implement cooperative scheduling holds. |
+
+AI scheduling controls are identity/token-bound and monotonically sequenced.
+The host bounds and coalesces pending changes; cancellation remains available
+while paused. A paused model retains its inference slot and its loaded weights.
+Only acknowledged pause time is excluded from the computation deadline;
+cancellation and terminal-exit grace periods remain real monotonic deadlines.
+Total acknowledged pause time is bounded at two hours. These holds are transient:
+restart still requires a new attempt, and sleep still interrupts rather than
+resumes generation. No pause checkpoint is written to project history.
 
 A cancelled job that is still draining keeps holding its yields as well as
 its resource: a cancelled render or model is still using the machine until
@@ -400,9 +411,9 @@ These are not implemented or not qualified:
 - **Byte budgets.** Admission follows the kernel's pressure level; there is
   no per-job byte budget from measured model footprints, and the one-model
   and one-scan counts are fixed.
-- **Running inference during playback.** A model that is already running is
-  not reduced or paused when playback starts; workers have no qualified safe
-  boundary. Physical interference is unmeasured.
+- **Running inference during playback.** AI picture generation has cooperative
+  scheduling; physical playback interference and the other model workers remain
+  unqualified.
 - **Sleep.** AI pause generation has the policy above. Sleep policy for other
   model jobs and physical sleep/wake qualification remain outstanding.
 - **Historical estimates.** Remaining time uses only the current run's

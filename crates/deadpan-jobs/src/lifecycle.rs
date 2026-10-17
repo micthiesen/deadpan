@@ -322,6 +322,22 @@ impl JobLifecycle {
         }
 
         match message {
+            WorkerMessage::PauseState { .. } if self.state == JobState::Cancelling => {
+                Ok(WorkerEventOutcome::IgnoredDuringCancellation)
+            }
+            WorkerMessage::PauseState { .. } => {
+                if matches!(
+                    self.state,
+                    JobState::Queued | JobState::Preflight | JobState::Loading | JobState::Running
+                ) {
+                    Ok(WorkerEventOutcome::Applied)
+                } else {
+                    Err(LifecycleError::InvalidTransition {
+                        from: self.state,
+                        event: "pause acknowledgement",
+                    })
+                }
+            }
             WorkerMessage::Stage { .. } | WorkerMessage::Progress { .. }
                 if self.state == JobState::Cancelling =>
             {

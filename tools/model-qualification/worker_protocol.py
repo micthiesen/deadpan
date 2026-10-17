@@ -670,6 +670,33 @@ class CancelRequest:
 
 
 @dataclass(frozen=True, slots=True)
+class SetPausedRequest:
+    protocol: int
+    identity: MessageIdentity
+    cancellation_token: str
+    sequence: int
+    paused: bool
+
+    def __post_init__(self) -> None:
+        _integer(self.protocol, "pause protocol", minimum=BRIDGE_PROTOCOL_VERSION,
+                 maximum=EXTENSION_PROTOCOL_VERSION)
+        if not isinstance(self.identity, MessageIdentity):
+            raise ProtocolError("identity must be a MessageIdentity")
+        _protocol_identifier(self.cancellation_token, "cancellation token")
+        _integer(self.sequence, "pause sequence", minimum=1, maximum=_MAX_U64)
+        if type(self.paused) is not bool:
+            raise ProtocolError("paused must be a boolean")
+
+    def _wire(self) -> dict[str, Any]:
+        return {"operation": "set_paused", "protocol": self.protocol,
+                "identity": self.identity._wire(), "cancellation_token": self.cancellation_token,
+                "sequence": self.sequence, "paused": self.paused}
+
+    def to_wire(self) -> dict[str, Any]:
+        return self._wire()
+
+
+@dataclass(frozen=True, slots=True)
 class StageProgress:
     completed: int
     total: int
@@ -910,7 +937,7 @@ def _parse_extension_plan(value: Any) -> dict[str, Any]:
 
 def parse_host_message(
     value: Mapping[str, Any],
-) -> GenerateHoldRequest | GenerateBridgeRequest | GenerateExtensionRequest | CancelRequest:
+) -> GenerateHoldRequest | GenerateBridgeRequest | GenerateExtensionRequest | CancelRequest | SetPausedRequest:
     """Validate one decoded host object and return its typed request."""
 
     if not isinstance(value, dict):
@@ -1003,7 +1030,13 @@ def parse_host_message(
             _parse_identity(value["identity"]),
             _protocol_identifier(value["cancellation_token"], "cancellation token"),
         )
-    raise ProtocolError("host message operation must be generate_hold, generate_bridge, generate_extension, or cancel")
+    if operation == "set_paused":
+        value = _object(value, {"operation", "protocol", "identity", "cancellation_token",
+                                "sequence", "paused"}, "set_paused")
+        return SetPausedRequest(_parse_protocol(value["protocol"]),
+                                _parse_identity(value["identity"]),
+                                value["cancellation_token"], value["sequence"], value["paused"])
+    raise ProtocolError("host message operation must be generate_hold, generate_bridge, generate_extension, cancel, or set_paused")
 
 
 @dataclass(frozen=True, slots=True)
@@ -1107,6 +1140,27 @@ class CancelledEvent:
         }
 
 
+@dataclass(frozen=True, slots=True)
+class PauseStateEvent:
+    protocol: int
+    identity: MessageIdentity
+    sequence: int
+    paused: bool
+
+    def __post_init__(self) -> None:
+        _integer(self.protocol, "pause protocol", minimum=BRIDGE_PROTOCOL_VERSION,
+                 maximum=EXTENSION_PROTOCOL_VERSION)
+        if not isinstance(self.identity, MessageIdentity):
+            raise ProtocolError("identity must be a MessageIdentity")
+        _integer(self.sequence, "pause sequence", minimum=1, maximum=_MAX_U64)
+        if type(self.paused) is not bool:
+            raise ProtocolError("paused must be a boolean")
+
+    def _wire(self) -> dict[str, Any]:
+        return {"event": "pause_state", "protocol": self.protocol,
+                "identity": self.identity._wire(), "sequence": self.sequence, "paused": self.paused}
+
+
 WorkerEvent = (
     StageEvent
     | ProgressEvent
@@ -1115,6 +1169,7 @@ WorkerEvent = (
     | CompletedExtensionEvent
     | FailedEvent
     | CancelledEvent
+    | PauseStateEvent
 )
 
 
@@ -1134,6 +1189,9 @@ def parse_worker_message(value: Mapping[str, Any]) -> WorkerEvent:
     common = {"event", "protocol", "identity"}
     protocol = _parse_protocol(value.get("protocol"))
     identity = _parse_identity(value.get("identity"))
+    if event == "pause_state":
+        value = _object(value, common | {"sequence", "paused"}, "pause_state")
+        return PauseStateEvent(protocol, identity, value["sequence"], value["paused"])
     if event == "stage":
         value = _object(value, common | {"stage"}, "stage")
         return StageEvent(protocol, identity, _parse_stage(value["stage"]))
@@ -1188,7 +1246,7 @@ def _wire_value(value: Any) -> Mapping[str, Any]:
 
 def write_host_message(
     stream: BinaryIO,
-    message: GenerateHoldRequest | GenerateBridgeRequest | GenerateExtensionRequest | CancelRequest,
+    message: GenerateHoldRequest | GenerateBridgeRequest | GenerateExtensionRequest | CancelRequest | SetPausedRequest,
 ) -> None:
     write_frame(stream, _wire_value(message))
 
@@ -1199,7 +1257,7 @@ def write_worker_message(stream: BinaryIO, message: WorkerEvent) -> None:
 
 def read_host_message(
     stream: BinaryIO,
-) -> GenerateHoldRequest | GenerateBridgeRequest | GenerateExtensionRequest | CancelRequest | None:
+) -> GenerateHoldRequest | GenerateBridgeRequest | GenerateExtensionRequest | CancelRequest | SetPausedRequest | None:
     value = read_frame(stream)
     return None if value is None else parse_host_message(value)
 
@@ -1213,7 +1271,7 @@ class WorkerProtocol:
     """Stateful worker-side protocol endpoint.
 
     ``read_request`` must be called once before any other operation.  A
-    cancellation reader may call ``read_cancel`` in its own thread while the
+    control reader may call ``read_control`` in its own thread while the
     inference thread uses the emit methods; writes are serialized and a
     matching identity plus token are required before cancellation is exposed.
     """
@@ -1225,6 +1283,11 @@ class WorkerProtocol:
         self._request: GenerateHoldRequest | GenerateBridgeRequest | GenerateExtensionRequest | None = None
         self._cancel_read = False
         self._cancel_requested = threading.Event()
+        self._control = threading.Condition()
+        self._pause_sequence = 0
+        self._pause_requested = False
+        self._pause_acknowledged = 0
+        self._control_error: str | None = None
         self._terminal = False
 
     @classmethod
@@ -1261,24 +1324,85 @@ class WorkerProtocol:
 
     def read_cancel(self) -> bool:
         """Read the one optional cancellation frame, returning false on EOF."""
-
-        self.request
         if self._cancel_read:
             raise ProtocolError("worker received more than one cancellation frame")
+        return self.read_control(cancel_only=True)
+
+    def read_control(self, *, cancel_only: bool = False) -> bool:
+        """Read one control; the caller continuously reads until EOF/error."""
+        self.request
         message = read_host_message(self._reader)
         if message is None:
             return False
-        self._cancel_read = True
-        if not isinstance(message, CancelRequest):
-            raise ProtocolError("only a matching cancel may follow a generation request")
+        allowed = (CancelRequest,) if cancel_only else (CancelRequest, SetPausedRequest)
+        if not isinstance(message, allowed):
+            raise ProtocolError("only matching controls may follow a generation request")
         if message.protocol != self.request.protocol:
-            raise ProtocolError("cancel protocol does not match generation request")
+            raise ProtocolError("control protocol does not match generation request")
         if message.identity != self.request.identity:
-            raise ProtocolError("cancel identity does not match generate_hold")
+            raise ProtocolError("control identity does not match generation request")
         if message.cancellation_token != self.request.cancellation_token:
-            raise ProtocolError("cancel token does not match generate_hold")
-        self._cancel_requested.set()
+            raise ProtocolError("control token does not match generation request")
+        with self._control:
+            if isinstance(message, CancelRequest):
+                if self._cancel_read:
+                    raise ProtocolError("worker received more than one cancellation frame")
+                self._cancel_read = True
+                self._cancel_requested.set()
+            else:
+                if message.sequence <= self._pause_sequence:
+                    raise ProtocolError("pause sequence must increase")
+                self._pause_sequence = message.sequence
+                self._pause_requested = message.paused
+            self._control.notify_all()
         return True
+
+    def control_failed(self, detail: str) -> None:
+        """A malformed frame or unexpected EOF wakes a held compute thread."""
+        with self._control:
+            if self._control_error is None:
+                self._control_error = str(detail)[:MAX_DIAGNOSTIC_BYTES]
+            self._control.notify_all()
+
+    def check_control_error(self) -> None:
+        with self._control:
+            if self._control_error is not None:
+                raise ProtocolError(self._control_error)
+
+    def scheduling_checkpoint(self, check_cancel, synchronize) -> None:
+        """Cooperate only on the compute thread at an explicit safe boundary.
+
+        Pending GPU work is drained before reporting a hold. Native helper I/O
+        uses cancellation-only checks so its pipes continue draining. No lock
+        is held while synchronization runs: cancel/control errors can arrive.
+        """
+        drained = False
+        while True:
+            check_cancel()
+            with self._control:
+                self.check_control_error()
+                if self._cancel_requested.is_set():
+                    # The caller's cancellation callback must raise; never
+                    # acknowledge a pause or dispatch more work after cancel.
+                    check_cancel()
+                    raise ProtocolError("cancellation callback did not stop the worker")
+                sequence, paused = self._pause_sequence, self._pause_requested
+                if sequence == 0:
+                    return
+                if paused and not drained:
+                    needs_drain = True
+                else:
+                    needs_drain = False
+                    if sequence > self._pause_acknowledged:
+                        self._emit(PauseStateEvent(self.request.protocol, self.request.identity,
+                                                   sequence, paused))
+                        self._pause_acknowledged = sequence
+                    if not paused:
+                        return
+                    self._control.wait(timeout=0.1)
+            if needs_drain:
+                synchronize()
+                drained = True
 
     def _emit(self, value: WorkerEvent, *, terminal: bool = False) -> None:
         with self._lock:
@@ -1369,6 +1493,7 @@ __all__ = [
     "GenerateBridgeRequest",
     "GenerateExtensionRequest",
     "CancelRequest",
+    "SetPausedRequest",
     "StageProgress",
     "WorkerFailure",
     "StageEvent",
@@ -1378,6 +1503,7 @@ __all__ = [
     "CompletedExtensionEvent",
     "FailedEvent",
     "CancelledEvent",
+    "PauseStateEvent",
     "WorkerEvent",
     "parse_host_message",
     "parse_worker_message",
