@@ -444,10 +444,10 @@ the footer teach the actions:
 | Action | Keys | Effect |
 | --- | --- | --- |
 | Insert AI pause | `,a`, `3,a`, `:ai-hold 0.5s`, `:hold 1.5s video=ai audio=silence` | Insert a silent fallback at the Edit cursor and queue pictures; counts scale the half-second duration |
-| Generate for an existing pause | `:hold-provider ai`, `:generate`, Generate another | Start one background job for the selected pause that adds one variant without inserting time |
+| Generate for an existing pause | `:hold-provider ai`, `:generate`, Generate another | Start one background job for the selected pause that adds one variant without inserting time; while another pause generates, it queues behind it (up to four AI jobs per project) |
 | Generate several | `:generate N` (1 to 4) | One job that generates N variants, one attempt after another |
 | Motion and guidance | `:generate [N] motion=subtle text=Keep the hands still.` | Replace the generation controls and generate; `text=` is optional and comes last |
-| Cancel | `:cancel-ai`, or X in the Jobs panel (`:jobs`) (Esc never cancels) | Cancel cooperatively; the running attempt ends Cancelled, earlier variants stay Ready |
+| Cancel | `:cancel-ai` (the selected pause's job, else the shown one), or X on its row in the Jobs panel (`:jobs`) (Esc never cancels) | Cancel cooperatively; the running attempt ends Cancelled, earlier variants stay Ready, other queued jobs keep their turn |
 | Choose | `:next-ai`, `:prev-ai`, `:pick-ai N`, a click on a variant row | Choose which variant Preview, Audition and Accept use; stored as the request's selection, never an edit |
 | Preview | `:preview-ai`; Esc leaves it once nothing else owns Esc | Show the chosen variant's pictures in the viewer at the edit cursor |
 | Audition | `:audition-ai`, Audition; Space while previewing | Play the pause with the chosen variant's pictures and the pause's own sound |
@@ -495,6 +495,20 @@ model or file read on the UI thread.
   Cancelled without a worker. After a crash, the Jobs panel lists the
   interrupted attempt with Retry (a new variant through `:generate`) and
   Discard.
+- **Admission conditions.** A model also waits, before it loads, while the
+  Mac runs on battery, in Low Power Mode, under thermal or memory pressure,
+  or while the edit plays. The inspector and the Jobs panel say why; O in the
+  panel runs it anyway. A running model is never paused
+  ([job coordinator](JOBS.md#admission-conditions)).
+- **Several pauses.** Generating another pause while one runs starts a
+  further job beside it: it reads its boundary pictures and records its
+  attempt at once, then waits its turn for the model. Up to four AI jobs
+  live per project; a second job for the same pause is refused. Each has its
+  own Jobs row, phase and Cancel, and the inspector shows each pause's own
+  job. The service presents one job and processes each further job by
+  swapping it into the same single-job state machine, so every durable
+  transition, record and refusal is unchanged. Inserted AI pauses (`,a`)
+  keep their own durable preparation queue and start one at a time.
 - One bounded job thread per project (`deadpan-ai-pause`) runs
   `conditioning::prepare` (read-only store) and then `run_worker`. Allocation,
   every `AttemptRecord`, `finish` and acceptance run on the service's writer

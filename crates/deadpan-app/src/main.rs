@@ -130,6 +130,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             )?;
             if !smoke_test {
                 app.follow_system_display();
+                // Model jobs wait on battery, heat and memory pressure.
+                app.follow_system_conditions();
                 // Offer the project an earlier launch left open, unless one
                 // was named explicitly on the command line.
                 match recovery::LaunchJournal::user() {

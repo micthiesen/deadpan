@@ -1,5 +1,7 @@
 //! One bounded native responsibility: ask before system termination discards
 //! editor previews. The host publishes their names after each input frame.
+//! While the host has background work the person asked for, termination is
+//! cancelled and handed to the host, which asks in its own window.
 //! The adapter never owns a project, worker or editor command.
 //!
 //! `macos` contains the unsafe boundary: a previously absent selector on the
@@ -19,6 +21,11 @@ struct PreviewState {
     generation: u64,
     invalid: bool,
     asking: bool,
+    /// The host has background work the person asked for and answers a
+    /// quit itself: system termination is cancelled and handed to it.
+    background: bool,
+    /// A quit was handed to the host and not yet taken.
+    deferred: bool,
 }
 
 impl PreviewState {
@@ -46,6 +53,11 @@ impl PreviewState {
         if self.invalid || self.asking {
             return Decision::Cancel;
         }
+        if self.background {
+            // The host's own question covers previews and background work.
+            self.deferred = true;
+            return Decision::Defer;
+        }
         if self.names.is_empty() {
             return Decision::Quit;
         }
@@ -68,12 +80,31 @@ impl PreviewState {
 enum Decision {
     Cancel,
     Quit,
-    Ask { generation: u64, message: String },
+    /// Cancel termination; the host asks in its own window.
+    Defer,
+    Ask {
+        generation: u64,
+        message: String,
+    },
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn background_work_hands_quit_to_the_host_once() {
+        let mut state = PreviewState {
+            background: true,
+            ..PreviewState::default()
+        };
+        state.update(&["Camera framing"]);
+        assert!(matches!(state.begin(), Decision::Defer));
+        assert!(std::mem::take(&mut state.deferred));
+        assert!(!state.deferred);
+        state.background = false;
+        assert!(matches!(state.begin(), Decision::Ask { .. }));
+    }
 
     #[test]
     fn repeated_quit_and_changed_previews_cannot_reuse_a_discard_decision() {

@@ -60,6 +60,7 @@ mod source_registration;
 pub mod speech;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod storage;
+pub mod system_conditions;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 mod takes;
 #[cfg(any(target_os = "macos", target_os = "linux"))]

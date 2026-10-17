@@ -245,6 +245,28 @@ Still open: a two-verb or two-direction action runs its first form only
 (`:undo`, next beat), and VoiceOver speech of the highlighted row and physical
 key delivery are unverified.
 
+## Jobs: waiting reasons, queued pauses and quitting (2026-10-16)
+
+AI models now wait before loading on battery power, in Low Power Mode,
+under thermal or memory pressure and during playback. The Jobs row says
+which (`Waiting while running on battery · O runs it anyway`) and offers a
+Run anyway button and the O key; the AI inspector repeats the reason.
+Generating a second pause no longer refuses: it queues behind the running
+one with its own row and Cancel, and X cancels exactly that row's job.
+Running rows add `about M:SS left in this stage` only from measured progress. Closing or
+quitting while requested work runs asks Quit when they finish (focused),
+Cancel them and quit, or Go back (Escape); waiting shows a banner below the
+header that keeps the project name visible. The `jobs` replay drives each
+path through real keys and inspects the captures ("AI jobs waiting on
+battery", "Run anyway; second generation queued", "Quit while jobs run",
+"Waiting to quit"). Visual and isolated release runs each pass 29 checks;
+the final captures were inspected against the workspace target. See
+[qualification and retained limits](qualification/jobs-2026-10-16.md).
+
+Still open: VoiceOver speech of the held rows and the quit question, ⌘Q and
+Dock Quit through the native guard on a physical Mac, and the remaining-time
+text on a real model run (the replay's scripted run is too short to show it).
+
 ## Priority improvements
 
 | Priority | Desired interaction | Current boundary and evidence needed |

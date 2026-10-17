@@ -533,6 +533,10 @@ pub struct Update {
     /// None only in an unpublished/default update.
     pub revision: Option<RevisionId>,
     pub job: Option<Job>,
+    /// Further generations started while `job` ran: each has recorded its
+    /// attempt and waits for (or holds) the one model slot. Recently
+    /// concluded ones follow, newest last.
+    pub others: Vec<Job>,
     /// Ready candidates by authored target for the published workspace revision.
     pub candidates: Arc<BTreeMap<ScopedNodeTarget, Candidate>>,
     /// Stored controls, including requests with no Ready candidate yet.
@@ -611,6 +615,11 @@ pub enum ScriptEnding {
     /// executable or its parent directory) and its sibling `deadpan-track`;
     /// without them the attempt fails and says so.
     Ready,
+    /// Run a real child process (`/bin/sleep`) as the model worker and
+    /// publish its PID here. If the process dies, the attempt fails as an
+    /// exited worker; a cancellation kills and reaps it (chaos tests).
+    #[cfg_attr(not(test), allow(dead_code, reason = "constructed by chaos tests"))]
+    Process(std::sync::Arc<std::sync::atomic::AtomicU32>),
 }
 
 /// The synthetic worker's external tools, from the environment or their

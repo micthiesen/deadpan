@@ -703,7 +703,7 @@ impl DeadpanApp {
         ui.label(style::section_title("TRANSCRIPT", false));
         match self.transcription.status.clone() {
             Status::Unchecked | Status::Preparing => {
-                let waiting = self.service.jobs().waiting_for(
+                let waiting = self.service.jobs().waiting(
                     crate::jobs::JobKind::Transcription,
                     self.transcription.session,
                 );
@@ -711,8 +711,9 @@ impl DeadpanApp {
                     crate::preview::accessibility::busy(ui);
                     match waiting {
                         // Pauses are still detected while it waits.
-                        Some(holder) => ui.weak(format!(
-                            "Transcription waits for {holder} to finish; :jobs shows the queue."
+                        Some(waiting) => ui.weak(format!(
+                            "Transcription waits {}; :jobs shows the queue.",
+                            waiting.phrase()
                         )),
                         None => ui.weak("Preparing the Original’s audio…"),
                     };

@@ -38,6 +38,8 @@ pub enum JobsKey {
     Cancel,
     Retry,
     Discard,
+    /// Admit a job held by battery, heat, memory or playback.
+    RunAnyway,
 }
 
 pub(super) const JOBS: &[(&str, Key, JobsKey)] = &[
@@ -48,6 +50,7 @@ pub(super) const JOBS: &[(&str, Key, JobsKey)] = &[
     ("jobs.cancel", Key::X, JobsKey::Cancel),
     ("jobs.retry", Key::R, JobsKey::Retry),
     ("jobs.discard", Key::D, JobsKey::Discard),
+    ("jobs.run-anyway", Key::O, JobsKey::RunAnyway),
 ];
 
 /// A Jobs panel press, after `mode_key` has read its typed character.
@@ -177,6 +180,8 @@ mod tests {
             Key::X => Some(JobsKey::Cancel),
             Key::R => Some(JobsKey::Retry),
             Key::D => Some(JobsKey::Discard),
+            // Added with admission conditions: run a held job anyway.
+            Key::O => Some(JobsKey::RunAnyway),
             _ => None,
         }
     }

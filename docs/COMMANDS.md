@@ -11,7 +11,7 @@ tests prove each mode router acts on exactly them. Native shortcuts
 (menus, ⌘ chords, panel controls) are described, not router-verified.
 Headless status links to [PARITY](PARITY.md).
 
-214 actions, 139 command verbs.
+215 actions, 139 command verbs.
 
 ## Start & View
 
@@ -328,6 +328,7 @@ Headless status links to [PARITY](PARITY.md).
 | **Cancel a job** (`jobs.cancel`)<br>Cancel the chosen job. A held key never repeats a cancel. | `x` (fixed) | - | Jobs | not recorded | [GUI-only](PARITY.md#project-and-files): `SIGINT to the job's command` |
 | **Retry a job** (`jobs.retry`)<br>Retry the chosen interrupted AI attempt or unavailable replacement preparation. | `r` (fixed) | - | Jobs | not recorded | [GUI-only](PARITY.md#project-and-files): `rerun the job's command` |
 | **Discard an attempt or replacement preparation** (`jobs.discard`)<br>Discard an interrupted AI attempt or a queued, unavailable or interrupted replacement preparation. Committed pause timing stays saved. | `d` (fixed) | - | Jobs | not recorded | [Equivalent](PARITY.md#ai-pauses): `dismiss-attempt <p> --request <id> --attempt <id>` |
+| **Run a waiting job anyway** (`jobs.run-anyway`)<br>Start the chosen job although it waits for battery power, heat, memory pressure or playback to end. It still waits its turn for the AI model. | `o` (fixed) | - | Jobs | not recorded | [GUI-only](PARITY.md#project-and-files): `closed-project commands do not wait` |
 | **Close jobs** (`jobs.close`)<br>Close the panel; jobs keep running. | `Esc` (native) | - | Jobs | not recorded | [GUI-only](PARITY.md#project-and-files): `none needed` |
 
 ## Storage Panel

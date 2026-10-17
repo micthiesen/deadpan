@@ -139,6 +139,17 @@ Everything else is local:
 
 ## Secrets, cookies and reports
 
+The 2026-10-16 job-coordinator review moves power and thermal observations
+from the preview-proxy module into `deadpan-cli/src/system_conditions.rs`.
+It runs only fixed `/usr/bin/pmset` and `/usr/sbin/sysctl` queries, with a
+cleared environment, a two-second deadline and bounded local output. No
+media, project data or credentials enter their arguments. The generation
+service's test-only `generation/scripted_tests.rs` backend also launches `/bin/sleep 600` through the
+owned process adapter to test worker death and cancellation; it performs no
+network operation and is excluded from the production launch allowlist.
+The subprocess source allowlist records the neutral system-observation module.
+Production inference still uses its existing restricted worker boundary.
+
 | Property | Evidence |
 | --- | --- |
 | Live endpoint secret never in errors or responses | `host/tests.rs` `strict_frames_and_authentication_never_reach_dispatch`, `adversarial_live_endpoint_frames`; discovery is mode 0600; secret-bearing types have no `Debug` (audit above); portable copies are built fresh without `.host.json`; backups contain only the database |

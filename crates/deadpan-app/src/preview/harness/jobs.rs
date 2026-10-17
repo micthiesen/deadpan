@@ -8,6 +8,13 @@
 //! the package taken while the attempt was live is what a crash leaves; the
 //! panel lists that interrupted attempt after reopening, R retries it as a
 //! new variant, and D discards another copy's entry durably.
+//!
+//! Then, on battery power (an injected observation; replays never read the
+//! Mac's power state), `,a` and `:generate` on a second pause leave two AI
+//! jobs waiting with the reason and Run anyway. O starts the first, the second then waits its
+//! turn for the model, and X cancels only it. A window close asks what to
+//! do with the running generation: Quit when they finish arms an automatic
+//! quit with a banner, and a second close, Go back, stays open.
 
 use egui::{Key, Modifiers};
 
@@ -226,5 +233,200 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     )?;
     d.capture("Interrupted attempt discarded")?;
     d.key(Key::Escape)?;
+    d.settled()?;
+    conditions_and_quit(d)
+}
+
+fn ai_rows(d: &Driver<'_>) -> Vec<crate::jobs::JobRow> {
+    d.app()
+        .service
+        .jobs()
+        .snapshot()
+        .into_iter()
+        .filter(|row| row.kind == JobKind::AiPause)
+        .collect()
+}
+
+fn focused(d: &Driver<'_>) -> Option<String> {
+    d.harness.root().children_recursive().find_map(|node| {
+        let access = node.accesskit_node();
+        access.is_focused().then(|| access.label()).flatten()
+    })
+}
+
+fn request_close(d: &mut Driver<'_>) -> Result<(), String> {
+    d.harness
+        .input_mut()
+        .viewports
+        .get_mut(&egui::ViewportId::ROOT)
+        .ok_or("Missing replay viewport")?
+        .events
+        .push(egui::ViewportEvent::Close);
+    d.step("Window close requested", true)?;
+    d.step("Quit question focused", true)
+}
+
+/// Battery power holds both generations visibly; O runs one anyway, the
+/// other waits its turn and X cancels only it; closing asks about the
+/// running one.
+fn conditions_and_quit(d: &mut Driver<'_>) -> Result<(), String> {
+    d.app()
+        .service
+        .jobs()
+        .set_conditions(crate::jobs::Conditions {
+            power: Some("running on battery".into()),
+            memory: crate::jobs::MemoryPressure::Normal,
+        });
+    super::transcript::focus_your_edit(d)?;
+    d.chord(&[Key::G, Key::G, Key::Num1, Key::Num0, Key::L])?;
+    d.chord(&[Key::Comma, Key::A])?;
+    d.wait_for("The first generation waits on battery", |app| {
+        app.service
+            .jobs()
+            .snapshot()
+            .iter()
+            .any(|row| row.state == RowState::Held("running on battery".into()))
+    })?;
+    d.chord(&[Key::G, Key::G, Key::Num4, Key::Num0, Key::L])?;
+    let before = d.revision();
+    d.chord(&[Key::Comma, Key::H])?;
+    d.changed(&before)?;
+    d.settled()?;
+    // `:generate` on that plain pause starts a second job at once.
+    d.command("generate")?;
+    d.wait_for("A second pause queues beside the first", |app| {
+        app.service
+            .jobs()
+            .snapshot()
+            .iter()
+            .filter(|row| row.kind == JobKind::AiPause)
+            .count()
+            == 2
+    })?;
+    d.wait_for("Both generations reach battery admission", |app| {
+        let rows: Vec<_> = app
+            .service
+            .jobs()
+            .snapshot()
+            .into_iter()
+            .filter(|row| row.kind == JobKind::AiPause)
+            .collect();
+        rows.len() == 2
+            && rows
+                .iter()
+                .all(|row| row.state == RowState::Held("running on battery".into()))
+    })?;
+    d.command("jobs")?;
+    d.step("Jobs panel on battery", true)?;
+    let widgets = widget_text(d);
+    d.check(
+        "On battery both AI jobs wait at admission, say why and offer Run anyway",
+        ai_rows(d)
+            .iter()
+            .all(|row| row.state == RowState::Held("running on battery".into()))
+            && widgets.contains(": Waiting while running on battery")
+            && widgets.contains("O runs it anyway")
+            && widgets.contains("Run anyway"),
+        json!({"rows":"Waiting while running on battery · O runs it anyway","button":"Run anyway"}),
+        json!({"rows":format!("{:?}", ai_rows(d))}),
+    )?;
+    d.capture("AI jobs waiting on battery")?;
+
+    // O on the first row starts it despite the battery; the second then
+    // waits for the model it holds.
+    d.key(Key::O)?;
+    d.wait_for("The first generation runs", generating)?;
+    d.wait_for("The second waits for the model", |app| {
+        app.service.jobs().snapshot().iter().any(|row| {
+            row.kind == JobKind::AiPause
+                && row.state
+                    == RowState::Queued {
+                        position: 1,
+                        waiting_for: "AI pause pictures".into(),
+                    }
+        })
+    })?;
+    d.step("Run anyway", true)?;
+    let widgets = widget_text(d);
+    d.check(
+        "O runs the chosen job anyway; the other waits its turn for the one model",
+        widgets.contains(": Running · Generating pictures 100%")
+            && widgets.contains(": Queued #1, waiting for AI pause pictures"),
+        json!({"first":"Running","second":"Queued #1, waiting for AI pause pictures"}),
+        json!({"rows":format!("{:?}", ai_rows(d)),"status":d.app().jobs.status}),
+    )?;
+    d.capture("Run anyway; second generation queued")?;
+
+    // J chooses the queued one; X cancels exactly it.
+    d.key(Key::J)?;
+    d.key(Key::X)?;
+    d.wait_for("Only the queued generation is cancelled", |app| {
+        app.service
+            .jobs()
+            .snapshot()
+            .iter()
+            .filter(|row| row.kind == JobKind::AiPause)
+            .count()
+            == 1
+    })?;
+    d.step("Queued generation cancelled", true)?;
+    d.check(
+        "X cancels only the chosen queued generation; the running one continues",
+        ai_rows(d).iter().all(|row| row.state == RowState::Running) && generating(d.app()),
+        json!({"running":1}),
+        json!({"rows":format!("{:?}", ai_rows(d))}),
+    )?;
+    d.key(Key::Escape)?;
+    d.settled()?;
+
+    // Closing with the generation running asks first.
+    request_close(d)?;
+    let widgets = widget_text(d);
+    d.check(
+        "Closing while a generation runs asks: quit when finished, cancel and quit, or go back",
+        d.app().jobs.quit.open
+            && !d.app().close_pending
+            && widgets.contains("Quit while jobs run?")
+            && widgets.contains("AI pause pictures")
+            && widgets.contains("Cancel them and quit")
+            && focused(d).is_some_and(|label| label.starts_with("Quit when they finish")),
+        json!({"open":true,"closing":false,"focused":"Quit when they finish…"}),
+        json!({"open":d.app().jobs.quit.open,"closing":d.app().close_pending,"focused":focused(d)}),
+    )?;
+    d.capture("Quit while jobs run")?;
+    d.key(Key::Enter)?;
+    d.step("Quit when finished", true)?;
+    d.check(
+        "Quit when they finish keeps the window open with a banner while the job runs",
+        d.app().quit_waiting()
+            && !d.app().close_pending
+            && generating(d.app())
+            && widget_text(d).contains("Quitting when 1 job finishes"),
+        json!({"waiting":true,"closing":false}),
+        json!({"waiting":d.app().quit_waiting(),"closing":d.app().close_pending}),
+    )?;
+    d.capture("Waiting to quit")?;
+    request_close(d)?;
+    d.key(Key::Escape)?;
+    d.step("Went back", true)?;
+    d.check(
+        "Asking again and going back stays open and stops waiting; the job keeps running",
+        !d.app().quit_waiting()
+            && !d.app().jobs.quit.open
+            && !d.app().close_pending
+            && generating(d.app()),
+        json!({"waiting":false,"closing":false,"running":true}),
+        json!({"waiting":d.app().quit_waiting(),"closing":d.app().close_pending,"running":generating(d.app())}),
+    )?;
+    d.app()
+        .service
+        .jobs()
+        .set_conditions(crate::jobs::Conditions::default());
+    d.command("cancel-ai")?;
+    d.wait_for("Generation cancelled", |app| {
+        app.ai
+            .job()
+            .is_some_and(|job| job.outcome == Some(Outcome::Cancelled))
+    })?;
     d.settled()
 }

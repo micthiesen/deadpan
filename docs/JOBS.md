@@ -18,6 +18,10 @@ A job holds a `JobHandle`. The handle can wait for admission, wait at safe
 boundaries, report progress and observe cancellation. Dropping the handle
 removes the job and admits the next waiter.
 
+A job is admitted when its resource has room and no admission condition
+holds it ([Admission conditions](#admission-conditions)). Once admitted, it
+runs to its own safe boundaries; conditions never stop it.
+
 ## Priority classes
 
 | Class | Work | Relation to jobs |
@@ -58,7 +62,8 @@ publication never hold the model slot.
 
 Some jobs already serialize themselves and still refuse a second instance:
 
-- one AI pause job per project service
+- one AI pause job per pause, and at most four AI pause jobs per project
+  (`MAX_LIVE_GENERATIONS`); further ones queue for the model slot
 - one tracking job
 - one face detection
 - one YouTube import
@@ -72,8 +77,46 @@ Where each job waits for admission:
 | Job | Wait point |
 | --- | --- |
 | AI pause | Each attempt claims the model after conditioning and allocation, just before its worker starts, and releases it as soon as the worker has exited, before the writer publishes the run. Reading the boundary pictures (about one second) and recording the request happen immediately, so edits made while queued cannot stale the captured pictures. The attempt is durably recorded while queued; the service's phase is `Queued` ("Queued for the AI model"). Once admitted, the job rereads the request (read-only); if edits made it stale meanwhile, the model is not loaded and the attempt ends `Cancelled` with a note to generate again. A cancellation or shutdown while queued ends the attempt `Cancelled` without launching a worker. |
+| Further AI pauses | Generating another pause while one runs starts a further job beside it, with its own thread, conditioning, recorded attempt and Jobs row. It waits for the model slot like any other model job and is cancelled from its own row (X) or `:cancel-ai` on its pause. The service processes it by swapping it into the same single-job state, so records, refusals and per-request rules (one nonterminal attempt per request) are unchanged. Inserted AI pauses (`,a`) keep their durable preparation queue and start one at a time. |
 | Transcription | Claims the model only before whisper starts; reading the sound and detecting pauses (CPU) run first and hold nothing. |
 | Shot and pause detection | Before opening the Original. |
+
+## Admission conditions
+
+Heavy work also waits at its admission boundary while the machine asks for
+restraint (§18.4). The rules are fixed per resource (`Gates` in
+`JobKind::rules`):
+
+| Resource | Waits while | Why |
+| --- | --- | --- |
+| `Inference` (AI pauses, transcription) | on battery power, in Low Power Mode or under thermal pressure; while Original or edit playback runs; under memory pressure (warning or critical) | A model load is seconds of GPU and gigabytes of unified memory. |
+| `Scan` (shot and pause detection) | under critical memory pressure | A whole-Original decode is smaller and resumable. |
+
+- **Observation.** Power and thermal state are the seek proxies' own reading
+  (`deadpan_cli::system_conditions::power_guard`, from `pmset`). Memory pressure is the
+  kernel's `kern.memorystatus_vm_pressure_level` (1 normal, 2 warning, 4
+  critical) read through `/usr/sbin/sysctl` with the same bounded runner. No
+  new unsafe code or OS binding is involved. Only a waiting job thread
+  samples (`Jobs::set_probe`, at most once per 15 seconds, outside the board
+  lock), never the UI or the writer. Until a reading exists the job shows
+  "Waiting while Deadpan checks power and memory".
+- **Native launches only.** `DeadpanApp::follow_system_conditions` installs
+  the probe from `main`. Tests and replays inject observations with
+  `Jobs::set_conditions` and never read the Mac's power state.
+- **Visible reason.** The row reads, for example, `Waiting while running on
+  battery · 0:12 waiting · O runs it anyway`; the AI inspector and the
+  transcript section say the same.
+- **Run anyway.** O (or the row's Run anyway button) lifts the conditions for
+  that job only (`Jobs::run_anyway`). It still waits for its resource: two
+  models never load together.
+- **Playback.** A queued model does not start while anything plays. A model
+  already running continues: its worker has no qualified safe pause point
+  and §18.4 forbids promising an instantaneous AI pause. Its next variant (a
+  new admission) waits again. Playback keeps its own priority: audio and
+  preview never wait for a model, and seek proxies still yield to it.
+- **Budgets stay counts.** The model and scan budgets remain one each; memory
+  pressure only withholds new admissions. The kernel's level is the
+  measurement, so no byte budget is invented.
 
 ## Yield rules
 
@@ -149,6 +192,7 @@ and never acts.
 | --- | --- |
 | Up/Down, or J/K | Choose a row |
 | X | Cancel the chosen job |
+| O | Run the chosen waiting job anyway |
 | R | Retry the chosen interrupted attempt |
 | D | Discard the chosen interrupted attempt |
 | Escape | Close the panel |
@@ -164,11 +208,42 @@ position. Rows reorder as jobs are admitted, finish or appear; an action
 always applies to the row the person chose, and says so if it has finished.
 
 Each row is one accessible sentence, for example: `AI pause pictures · Pause:
-Running · Generating pictures 100% · 0:42 elapsed`. Queued rows show their
-position, what they wait for and the waiting time. Rows of an earlier session
-that is still draining say "(closing project)". Progress comes from the
-job's own measured stage: steps, frames or bytes. Without a measurement it
-is shown indeterminate (stage only).
+Running · Generating pictures 50% · 0:42 elapsed · about 0:40 left in this stage`. Queued
+rows show their position, what they wait for and the waiting time; rows held
+by a condition say why and offer O. Rows of an earlier session that is still
+draining say "(closing project)". Progress comes from the job's own measured
+stage: steps, frames or bytes. Without a measurement it is shown
+indeterminate (stage only).
+
+**Remaining time** is shown only from measured progress: the rate from the
+first fraction reported in the current stage to the latest one. It needs at
+least 5% progress over at least five seconds, and hides while the progress
+is indeterminate, paused, requeued, complete, in a new stage, or once the job
+has outlasted its own projection. Nothing is estimated from history or from
+other jobs.
+
+The AI cancel of a row addresses exactly that job (its ticket is the row's
+tag), so several queued generations are cancelled one at a time.
+
+## Quitting with jobs
+
+A window close, ⌘Q or Dock Quit while work the person asked for (a render,
+AI pause pictures, tracking, face detection, a YouTube import, a model
+install or a portable copy) is running or queued asks first:
+
+| Choice | Effect |
+| --- | --- |
+| Quit when they finish (focused) | The window stays open with a banner; Deadpan quits once exactly those jobs have finished. Quitting again asks again. |
+| Cancel them and quit | The existing close path: `Jobs::shutdown`, each job's own drain, then release of the writer once cleanup is known. |
+| Go back (Escape) | Stay open; a pending automatic quit is withdrawn. |
+
+Automatic work (transcription, shot and pause detection, seek proxies) never
+asks: it stops on quit and resumes next time. The question owns input above
+every draft, like the unsaved-previews question, which still comes first.
+On macOS the native quit guard (`deadpan-lifecycle`) cancels system
+termination while such work is live and hands it to this question
+(`QuitGuard::set_background`, `take_deferred`); no new unsafe code was
+added. Waiting to quit changes nothing about how jobs run, drain or record.
 
 **Interrupted AI attempts.** A writable open marks abandoned attempts failed
 `interrupted` (`GENERATION_ATTEMPTS.md`). The store now lists them with
@@ -216,6 +291,14 @@ The list survives acknowledging the recovery report.
   - earlier-session cancellation
   - uncancellable rows
   - progress clamping and row order
+  - power, thermal and Low Power holds for models only, Run anyway still
+    bounded by the model slot, no stop of running work
+  - playback holding a queued model while a running one continues
+  - memory pressure levels (warning holds models, critical holds scans)
+  - the probe sampled only by a waiting thread, never at registration
+  - remaining time only from measured progress over enough time, hidden
+    when too early, indeterminate, paused, in a new stage or outlasted
+  - requested jobs and owner tags for the quit question
 - **Panel tests** (`preview::jobs::tests`) cover the accessible row sentences
   and selection by identity across reordering.
 - **Store tests** cover listing after a writable reopen, supersession by a
@@ -248,6 +331,20 @@ The list survives acknowledging the recovery report.
   while queued with a durable `Cancelled` attempt and no worker, and the
   interrupted list after reopening a crash copy taken through SQLite's
   backup API (`jobs::crash_copy`), with Discard.
+
+  `project::tests::jobs::queue` adds:
+  - two pauses generating: the second records its attempt and queues, each
+    is cancelled from its own row, a second job for the same pause is
+    refused even after the primary slot empties while a secondary job still
+    runs, the queued one is admitted when the model frees, and a retry
+    is a second attempt of the same request
+  - battery, memory pressure and playback holding a recorded attempt at
+    admission, Run anyway, and edits throughout
+  - chaos under load: the scripted worker's real child process is killed
+    with SIGKILL while a second generation waits, tracking runs, a
+    transcription queues and a shot scan yields. The attempt ends durably
+    `Failed`, the waiting generation runs, and every edit commits within a
+    five-second budget.
 - **What the stubs do not exercise.** The real transcription, shot and proxy
   threads are not run here (they need the model pack and full decodes).
   Their coordinator calls are small and covered by their own replays
@@ -261,21 +358,28 @@ The list survives acknowledging the recovery report.
   - a crash copy reopens with its interrupted attempt
   - R retries it as a new attempt of the same request
   - a second crash copy is discarded durably with D
+  - on an injected battery reading, two AI jobs wait with the reason and
+    Run anyway; O starts one, the other waits its turn for the model, and X
+    cancels only it
+  - a window close asks about the running generation; Quit when they finish
+    shows the banner and a second close's Go back stays open
 
 ## Remaining
 
 These are not implemented or not qualified:
 
-- **Measured budgets.** Memory and pressure budgets measured from available
-  memory (§18.4). Capacities are fixed counts, not measurements.
-- **Inference during playback.** Inference is not reduced during playback.
-  The workers have no safe boundary.
-- **Battery, thermal and sleep policy for model jobs.** Only proxies observe
-  them.
-- **Measured estimates.** Historical estimates for progress.
-- **Quit choice.** A quit dialog offering "keep running".
-- **Queued generation per project.** More than one queued AI generation per
-  project. The service still runs one generation job and refuses a second.
+- **Byte budgets.** Admission follows the kernel's pressure level; there is
+  no per-job byte budget from measured model footprints, and the one-model
+  and one-scan counts are fixed.
+- **Running inference during playback.** A model that is already running is
+  not reduced or paused when playback starts; workers have no qualified safe
+  boundary. Physical interference is unmeasured.
+- **Sleep.** No sleep policy for model jobs beyond the existing worker
+  deadlines.
+- **Historical estimates.** Remaining time uses only the current run's
+  measured rate.
+- **Physical quit paths.** ⌘Q and Dock Quit through the native guard are
+  not exercised by replays (they push a window close).
 - **App-wide coordinator.** A coordinator shared across several app
   instances. Each app process has its own; proxies keep their per-user
   encoder lock.

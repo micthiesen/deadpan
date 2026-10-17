@@ -11,6 +11,8 @@
 
 use std::sync::atomic::AtomicUsize;
 
+mod queue;
+
 use deadpan_core::{AttentionTarget, SourceSpan, SourceTimestamp, TargetId, TargetRegion};
 
 use super::*;

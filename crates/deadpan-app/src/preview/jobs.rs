@@ -4,8 +4,11 @@
 //! unfinished, with Retry and Discard (specification §18.3 to §18.5, DP-18).
 //!
 //! `:jobs` or Deadpan › Jobs… opens it. While it is open it owns the
-//! keyboard: Up/Down (or J/K) choose a row, X cancels the chosen job, R
-//! retries and D discards the chosen interrupted attempt, Escape closes.
+//! keyboard: Up/Down (or J/K) choose a row, X cancels the chosen job, O runs
+//! a job held by battery, heat, memory or playback anyway, R retries and D
+//! discards the chosen interrupted attempt, Escape closes.
+//!
+//! Quitting while work the person asked for is live asks first (`quit`).
 //! Rows come from the shared coordinator (`crate::jobs`), so what the panel
 //! shows is exactly what admission, queueing and yielding act on.
 
@@ -13,6 +16,8 @@ use crate::jobs::{CancelOutcome, JobHandle, JobId, JobKind, JobRow, JobSpec, Row
 use crate::project::generation::{Interrupted, Preparation};
 
 use super::*;
+
+mod quit;
 
 #[derive(Default)]
 pub(super) struct State {
@@ -30,6 +35,7 @@ pub(super) struct State {
     /// The newest project session the UI has shown.
     last_session: Option<u64>,
     pub(super) status: Option<String>,
+    pub(super) quit: quit::State,
 }
 
 /// A row's stable identity.
@@ -129,15 +135,22 @@ pub(super) fn job_text(row: &JobRow, current: Option<u64>) -> String {
             text.push_str(&format!(" {:.0}%", fraction * 100.0));
         }
     }
+    let waiting = matches!(row.state, RowState::Queued { .. } | RowState::Held(_));
     text.push_str(&format!(
         " · {} {}",
         duration(row.elapsed),
-        if matches!(row.state, RowState::Queued { .. }) {
-            "waiting"
-        } else {
-            "elapsed"
-        }
+        if waiting { "waiting" } else { "elapsed" }
     ));
+    // Only from the job's own measured rate, never a guess.
+    if let Some(remaining) = row.remaining {
+        text.push_str(&format!(
+            " · about {} left in this stage",
+            duration(remaining)
+        ));
+    }
+    if matches!(row.state, RowState::Held(_)) {
+        text.push_str(" · O runs it anyway");
+    }
     text
 }
 
@@ -201,6 +214,7 @@ impl DeadpanApp {
         board.set_foreground(crate::jobs::Foreground {
             playback: self.transport.is_some(),
         });
+        self.reconcile_quit(context);
         // Jobs of sessions the UI has left; never one it has not seen yet.
         if let Some(session) = self.workspace.as_ref().map(|workspace| workspace.session) {
             self.jobs.last_session = Some(session);
@@ -289,8 +303,11 @@ impl DeadpanApp {
             // exact; the flag alone already stops them.
             CancelOutcome::Signalled(kind, _) => {
                 match kind {
+                    // Exactly this row's job: several may be queued.
                     JobKind::AiPause => {
-                        let _ = self.ai_cancel_running();
+                        if let Some(ticket) = row.tag {
+                            let _ = self.ai_cancel_ticket(ticket);
+                        }
                     }
                     JobKind::Tracking => self.track_cancel(),
                     _ => {}
@@ -327,6 +344,17 @@ impl DeadpanApp {
                     )
                 }
             }
+        });
+    }
+
+    fn run_anyway(&mut self, row: &JobRow) {
+        let label = row.kind.label();
+        self.jobs.status = Some(match &row.state {
+            RowState::Held(reason) if self.service.jobs().run_anyway(row.id) => format!(
+                "Starting {label} although {reason}. It still waits its turn for the AI model."
+            ),
+            RowState::Held(_) => "That job is no longer waiting.".into(),
+            _ => "O starts a job that waits for battery power, heat, memory or playback; this one is not waiting for them.".into(),
         });
     }
 
@@ -371,15 +399,20 @@ impl DeadpanApp {
                 self.jobs.status = Some("D discards an AI preparation. R retries an unavailable or interrupted preparation.".into());
             }
             ('x', Row::Job(job)) => self.cancel_job(&job),
+            ('o', Row::Job(job)) => self.run_anyway(&job),
             ('r', Row::Interrupted(item)) => self.retry_interrupted(&item),
             ('d', Row::Interrupted(item)) => self.discard_interrupted(&item),
             ('x', Row::Interrupted(_)) => {
                 self.jobs.status =
                     Some("This attempt is not running. R retries it, D discards it.".into());
             }
+            ('o', _) => {
+                self.jobs.status =
+                    Some("O runs a waiting job anyway; this row is not a job.".into());
+            }
             (_, Row::Job(_)) => {
                 self.jobs.status = Some(
-                    "X cancels a job; R and D act on interrupted attempts and AI preparations."
+                    "X cancels a job and O runs a waiting one anyway; R and D act on interrupted attempts and AI preparations."
                         .into(),
                 );
             }
@@ -433,6 +466,7 @@ impl DeadpanApp {
                                 JobsKey::Cancel => 'x',
                                 JobsKey::Retry => 'r',
                                 JobsKey::Discard => 'd',
+                                JobsKey::RunAnyway => 'o',
                             }
                         })
                 {
@@ -488,7 +522,7 @@ impl DeadpanApp {
                 ui.label(style::section_title("JOBS", true));
                 ui.label(
                     egui::RichText::new(
-                        "Background work never delays editing or playback. One AI model runs at a time; others wait their turn. Shot detection and seek proxies pause while the edit plays, a render runs or tracking runs.",
+                        "Background work never delays editing or playback. One AI model runs at a time; others wait their turn. AI models start only on power, without heat or memory pressure and while nothing plays; O runs a waiting one anyway. Shot detection and seek proxies pause while the edit plays, a render runs or tracking runs.",
                     )
                     .size(11.5)
                     .weak(),
@@ -553,13 +587,18 @@ impl DeadpanApp {
                                     }
                                 };
                                 match row {
-                                    Row::Job(job) => action(
-                                        ui,
-                                        job.cancellable && job.state != RowState::Cancelling,
-                                        "Cancel",
-                                        "X",
-                                        'x',
-                                    ),
+                                    Row::Job(job) => {
+                                        action(
+                                            ui,
+                                            job.cancellable && job.state != RowState::Cancelling,
+                                            "Cancel",
+                                            "X",
+                                            'x',
+                                        );
+                                        if matches!(job.state, RowState::Held(_)) {
+                                            action(ui, true, "Run anyway", "O", 'o');
+                                        }
+                                    }
                                     Row::Preparation(item) => {
                                         action(ui, item.retryable(), "Retry", "R", 'r');
                                         action(ui, true, "Discard", "D", 'd');
@@ -639,7 +678,9 @@ mod tests {
             state,
             progress,
             elapsed: Duration::from_secs(75),
+            remaining: None,
             cancellable: true,
+            tag: Some(4),
         }
     }
 
@@ -670,6 +711,32 @@ mod tests {
                 Some(3)
             ),
             "AI pause pictures · pause hold-1 (closing project): Queued #1, waiting for Transcription · 1:15 waiting"
+        );
+        assert_eq!(
+            job_text(
+                &JobRow {
+                    remaining: Some(Duration::from_secs(80)),
+                    ..row(
+                        RowState::Running,
+                        Progress {
+                            stage: "Generating pictures".into(),
+                            fraction: Some(0.5),
+                        }
+                    )
+                },
+                Some(2)
+            ),
+            "AI pause pictures · pause hold-1: Running · Generating pictures 50% · 1:15 elapsed · about 1:20 left in this stage"
+        );
+        assert_eq!(
+            job_text(
+                &row(
+                    RowState::Held("running on battery".into()),
+                    Progress::default()
+                ),
+                Some(2)
+            ),
+            "AI pause pictures · pause hold-1: Waiting while running on battery · 1:15 waiting · O runs it anyway"
         );
         assert_eq!(duration(Duration::from_secs(3_725)), "1:02:05");
         let gone = Interrupted {

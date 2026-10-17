@@ -462,12 +462,27 @@ impl State {
         self.ticket
     }
 
-    /// A generation job is still running for this session.
+    /// A generation job is still running (or queued) for this session.
     pub(super) fn generation_running(&self) -> bool {
-        self.update
-            .as_ref()
-            .and_then(|update| update.job.as_ref())
-            .is_some_and(|job| job.running())
+        self.update.as_ref().is_some_and(|update| {
+            update
+                .job
+                .iter()
+                .chain(&update.others)
+                .any(|job| job.running())
+        })
+    }
+
+    /// The job shown for `target`: a running one first, else the newest.
+    fn job_for(&self, target: &ScopedNodeTarget) -> Option<Job> {
+        let update = self.update.as_ref()?;
+        update
+            .job
+            .iter()
+            .chain(&update.others)
+            .filter(|job| &job.target == target)
+            .max_by_key(|job| (job.running(), job.started))
+            .cloned()
     }
 
     #[cfg(feature = "ui-harness")]
@@ -831,9 +846,18 @@ impl DeadpanApp {
         let hold = target.hold.ok_or(
             "AI pictures fill a pause. Select a pause beat in Your edit, then press the key again.",
         )?;
-        if self.ai_running().is_some() {
+        // Other pauses may queue behind a running one; the service bounds
+        // how many and refuses a second job for the same pause.
+        let authored = target
+            .authoring
+            .clone()
+            .unwrap_or_else(|| ScopedNodeTarget {
+                node: hold.clone(),
+                repeats: Vec::new(),
+            });
+        if self.ai.job_for(&authored).is_some_and(|job| job.running()) {
             return Err(
-                "An AI pause is already generating. Cancel it with :cancel-ai first.".into(),
+                "This pause is already generating or waiting for the AI model. Cancel it with :cancel-ai first.".into(),
             );
         }
         let start = GenerationOperation::Start {
@@ -853,10 +877,27 @@ impl DeadpanApp {
     }
 
     fn ai_cancel(&mut self) -> Result<(), String> {
-        let job = self
-            .ai_running()
-            .ok_or("No AI pause is generating.")?
-            .ticket;
+        // The selected pause's own job, else the presented running one.
+        let selected = self
+            .ai_authoring()
+            .ok()
+            .flatten()
+            .and_then(|target| self.ai.job_for(&target))
+            .filter(Job::running);
+        let job = match selected {
+            Some(job) => job.ticket,
+            None => {
+                self.ai_running()
+                    .ok_or("No AI pause is generating.")?
+                    .ticket
+            }
+        };
+        self.ai_cancel_ticket(job)
+    }
+
+    /// Cancel exactly the AI job with `job` as its ticket (the Jobs panel
+    /// knows each row's ticket).
+    pub(super) fn ai_cancel_ticket(&mut self, job: u64) -> Result<(), String> {
         let session = self
             .workspace
             .as_ref()
@@ -868,11 +909,6 @@ impl DeadpanApp {
             job,
         });
         Ok(())
-    }
-
-    /// The Jobs panel's Cancel: the same request as `:cancel-ai`.
-    pub(super) fn ai_cancel_running(&mut self) -> Result<(), String> {
-        self.ai_cancel()
     }
 
     /// Interrupted attempts offered for retry, for the published session.
@@ -1906,15 +1942,9 @@ impl DeadpanApp {
         {
             self.ai_action(AiAction::Revert, Some(self.ai_capture()));
         }
-        let job = self
-            .ai
-            .update
-            .as_ref()
-            .and_then(|update| update.job.clone())
-            .filter(|job| job.target == target);
-        let other_running = self
-            .ai_running()
-            .is_some_and(|running| running.target != target);
+        let job = self.ai.job_for(&target);
+        // Another pause may be generating: this one queues behind it.
+        let queueing = self.ai.generation_running();
         let running = job.as_ref().is_some_and(Job::running);
         let current_job = job.as_ref().filter(|job| {
             job.running()
@@ -2005,7 +2035,7 @@ impl DeadpanApp {
                 );
             }
         }
-        if ui.add_enabled(ready && !running && !other_running && !controls_pending,
+        if ui.add_enabled(ready && !running && !controls_pending,
             style::row_action(ui, "Generation controls…", ":generate mode=…"))
             .on_hover_text("Choose mode=auto|bridge|extend-left|extend-right, motion=still|subtle|moderate, target=ID for a saved region or target=none, and optional text=guidance (last, up to 512 UTF-8 bytes). Auto uses Bridge with both neighbors, or Extension from the available side. An explicit Extension keeps its direction; its opposite seam is unconditioned or absent. Omitted target retains this captured choice. Enter generates; Escape cancels command entry. Changed choices start a new request. The model may not follow every instruction.")
             .clicked()
@@ -2037,6 +2067,19 @@ impl DeadpanApp {
                 None => {
                     ui.label(job.phase.label());
                 }
+            }
+            if let Some(waiting) = self
+                .service
+                .jobs()
+                .waiting_tagged(crate::jobs::JobKind::AiPause, job.ticket)
+            {
+                let text = match waiting {
+                    crate::jobs::Waiting::Condition(reason) => {
+                        format!("Waits while {reason}. :jobs can run it anyway.")
+                    }
+                    holder => format!("Waits {}. :jobs shows the queue.", holder.phrase()),
+                };
+                ui.label(egui::RichText::new(text).size(12.0).weak());
             }
             if let Some(plan) = self.workspace.as_ref().and_then(|workspace| {
                 timing::current_job_plan(
@@ -2108,7 +2151,7 @@ impl DeadpanApp {
             if !running
                 && ui
                     .add_enabled(
-                        ready && !other_running,
+                        ready,
                         style::row_action(ui, "Generate another", generate_key),
                     )
                     .on_hover_text("Generate one more variant from a new seed; :generate N makes several. The variants above stay offered.")
@@ -2126,7 +2169,7 @@ impl DeadpanApp {
         }
         if ui
             .add_enabled(
-                ready && !other_running,
+                ready,
                 style::row_action(ui, "Generate AI pictures", generate_key),
             )
             .on_hover_text("Fill this pause using the selected generation mode and local model. It runs in the background; nothing changes until you accept. :generate 3 makes three variants to choose from.")
@@ -2135,8 +2178,8 @@ impl DeadpanApp {
             self.ai_action(AiAction::Generate { variants: 1 }, Some(self.ai_capture()));
         }
         ui.label(
-            egui::RichText::new(if other_running {
-                "Another pause is generating; cancel it first."
+            egui::RichText::new(if queueing {
+                "Another pause is generating; this one waits its turn for the AI model. Nothing changes until you accept."
             } else {
                 "Proposes pictures for this pause. Nothing changes until you accept."
             })

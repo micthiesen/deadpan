@@ -20,6 +20,12 @@
 //!   and proxies wait while the edit plays, a render runs or tracking runs;
 //!   proxies also wait while an AI model runs. A job checks [`JobHandle::checkpoint`] (or polls
 //!   [`JobHandle::pause_reason`]); nothing is preempted mid-step.
+//! - **Admission conditions** hold heavy work at its admission boundary:
+//!   model jobs wait while the edit plays, on battery power, in Low Power
+//!   Mode, under thermal pressure or under memory pressure, and automatic
+//!   scans wait under critical memory pressure ([`Gates`]). The person may
+//!   run a held job anyway ([`Jobs::run_anyway`]); nothing running is ever
+//!   stopped by a condition.
 //! - **Cancellation and drain.** [`Jobs::cancel`] sets the job's own
 //!   cooperative cancel flag; [`Jobs::shutdown`] releases every queued or
 //!   paused waiter so each job's existing shutdown can join its thread.
@@ -36,6 +42,16 @@ use std::time::{Duration, Instant};
 /// How often a waiting job rechecks its own cancel flag. Coordinator events
 /// (admission, cancellation, foreground changes, shutdown) wake it at once.
 const WAIT_POLL: Duration = Duration::from_millis(50);
+
+/// How long one observation of power, thermal and memory conditions stays
+/// current. A waiting job thread samples again once it is older, off the
+/// UI thread and outside the board lock.
+const CONDITIONS_TTL: Duration = Duration::from_secs(15);
+
+/// An estimate needs this much measured progress since its baseline...
+const ESTIMATE_MIN_PROGRESS: f32 = 0.05;
+/// ...over at least this much time, or none is shown.
+const ESTIMATE_MIN_TIME: Duration = Duration::from_secs(5);
 
 /// Kinds of background work. Each kind has one fixed priority, resource and
 /// set of yield rules ([`JobKind::rules`]).
@@ -115,12 +131,77 @@ pub struct Yields {
     pub tracking: bool,
 }
 
+/// How much memory pressure macOS reports (`kern.memorystatus_vm_pressure_level`).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Default, Hash)]
+pub enum MemoryPressure {
+    #[default]
+    Normal,
+    Warning,
+    Critical,
+}
+
+impl MemoryPressure {
+    /// The kernel's level: 1 normal, 2 warning, 4 critical. Unknown values
+    /// read as the nearest stricter level, never as relief.
+    pub fn from_level(level: u32) -> Self {
+        match level {
+            0 | 1 => Self::Normal,
+            2 | 3 => Self::Warning,
+            _ => Self::Critical,
+        }
+    }
+}
+
+/// Conditions a kind waits out before it is admitted. They hold work at its
+/// admission boundary only: a job already running is never stopped by them.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+pub struct Gates {
+    /// Battery power, Low Power Mode or thermal pressure.
+    pub power: bool,
+    /// Original or edit playback.
+    pub playback: bool,
+    /// The memory pressure at which new work of this kind waits.
+    pub memory: Option<MemoryPressure>,
+}
+
+impl Gates {
+    const fn any(self) -> bool {
+        self.power || self.playback || self.memory.is_some()
+    }
+}
+
+/// One observation of the machine: the same power and thermal reading the
+/// seek proxies use, plus memory pressure.
+#[derive(Clone, Debug, PartialEq, Eq, Default)]
+pub struct Conditions {
+    /// Why power or temperature asks for restraint ("running on battery",
+    /// "Low Power Mode is on", "the Mac is under thermal pressure").
+    pub power: Option<String>,
+    pub memory: MemoryPressure,
+}
+
+/// Samples [`Conditions`]. It may block (it runs `pmset`); only waiting job
+/// threads call it, never the UI or the writer.
+pub type Probe = Arc<dyn Fn() -> Conditions + Send + Sync>;
+
+/// The production probe: the proxies' power and thermal guard and the
+/// kernel's memory pressure level, both read through bounded system tools.
+pub fn system_probe() -> Probe {
+    Arc::new(|| Conditions {
+        power: deadpan_cli::system_conditions::power_guard(),
+        memory: deadpan_cli::system_conditions::memory_pressure_level()
+            .map_or(MemoryPressure::Normal, MemoryPressure::from_level),
+    })
+}
+
 /// One kind's fixed scheduling contract.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct Rules {
     pub priority: Priority,
     pub resource: Option<Resource>,
     pub yields: Yields,
+    /// Admission conditions; see [`Gates`].
+    pub gates: Gates,
 }
 
 impl JobKind {
@@ -179,10 +260,32 @@ impl JobKind {
                 (Priority::Requested, None, NONE)
             }
         };
+        let gates = match resource {
+            // A large model: never loaded on battery, in Low Power Mode,
+            // under thermal pressure, while the edit plays or once memory
+            // is under pressure (§18.4).
+            Some(Resource::Inference) => Gates {
+                power: true,
+                playback: true,
+                memory: Some(MemoryPressure::Warning),
+            },
+            // A whole-Original decode: only critical pressure holds it.
+            Some(Resource::Scan) => Gates {
+                power: false,
+                playback: false,
+                memory: Some(MemoryPressure::Critical),
+            },
+            None => Gates {
+                power: false,
+                playback: false,
+                memory: None,
+            },
+        };
         Rules {
             priority,
             resource,
             yields,
+            gates,
         }
     }
 
@@ -247,6 +350,9 @@ pub struct JobSpec {
     /// Runs at once without its resource; claims it later with
     /// [`JobHandle::acquire`] (for example only around a model step).
     pub deferred: bool,
+    /// The owner's own identity for this job (an AI job's ticket), so the
+    /// panel can address the owner's request to exactly this job.
+    pub tag: Option<u64>,
 }
 
 impl JobSpec {
@@ -258,7 +364,13 @@ impl JobSpec {
             cancel: None,
             cancellable: true,
             deferred: false,
+            tag: None,
         }
+    }
+
+    pub fn tag(mut self, tag: u64) -> Self {
+        self.tag = Some(tag);
+        self
     }
 
     /// Admit at once without the kind's resource; the job claims it later
@@ -300,6 +412,9 @@ pub enum RowState {
         position: usize,
         waiting_for: String,
     },
+    /// Its resource has room, but an admission condition holds it (see
+    /// [`Gates`]); [`Jobs::run_anyway`] admits it regardless.
+    Held(String),
     Running,
     /// Admitted, but waiting at a safe boundary.
     Paused(String),
@@ -314,6 +429,7 @@ impl RowState {
                 position,
                 waiting_for,
             } => format!("Queued #{position}, waiting for {waiting_for}"),
+            Self::Held(reason) => format!("Waiting while {reason}"),
             Self::Running => "Running".into(),
             Self::Paused(reason) => format!("Paused while {reason}"),
             Self::Cancelling => "Cancelling".into(),
@@ -332,7 +448,57 @@ pub struct JobRow {
     pub progress: Progress,
     /// Running time once admitted, waiting time while queued.
     pub elapsed: Duration,
+    /// Remaining time, only from the job's own measured progress over
+    /// enough time; `None` while indeterminate, paused or too early.
+    pub remaining: Option<Duration>,
     pub cancellable: bool,
+    pub tag: Option<u64>,
+}
+
+/// What a job that is not yet admitted waits for.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Waiting {
+    /// The jobs holding its resource.
+    Holder(String),
+    /// An admission condition ([`Gates`]).
+    Condition(String),
+}
+
+impl Waiting {
+    /// "for X to finish" or "while X", to follow "waits".
+    pub fn phrase(&self) -> String {
+        match self {
+            Self::Holder(holder) => format!("for {holder} to finish"),
+            Self::Condition(reason) => format!("while {reason}"),
+        }
+    }
+}
+
+/// Progress measured since a baseline: the first fraction of the current
+/// stage, reset by a new stage, a fraction going back, a pause or a requeue.
+#[derive(Clone, Debug, PartialEq)]
+struct Measured {
+    stage: String,
+    since: Instant,
+    from: f32,
+    at: Instant,
+    fraction: f32,
+}
+
+impl Measured {
+    /// Remaining time at `now` from the measured rate, or `None` when too
+    /// little progress or time was measured, it is complete, or the job has
+    /// already outlasted the projection (an estimate is never invented).
+    fn remaining(&self, now: Instant) -> Option<Duration> {
+        let done = self.fraction - self.from;
+        let span = self.at.saturating_duration_since(self.since);
+        if done < ESTIMATE_MIN_PROGRESS || span < ESTIMATE_MIN_TIME || self.fraction >= 1.0 {
+            return None;
+        }
+        let projected = span.mul_f64(f64::from(1.0 - self.fraction) / f64::from(done));
+        let since_report = now.saturating_duration_since(self.at);
+        (since_report < projected).then(|| projected - since_report)
+    }
 }
 
 /// Why a waiting job stopped waiting without being admitted or resumed.
@@ -367,6 +533,10 @@ struct Entry {
     cancelling: bool,
     paused: Option<String>,
     progress: Progress,
+    measured: Option<Measured>,
+    /// The person chose to run it despite its admission conditions.
+    forced: bool,
+    tag: Option<u64>,
 }
 
 impl Entry {
@@ -390,6 +560,14 @@ struct Board {
     next: u64,
     entries: BTreeMap<JobId, Entry>,
     foreground: Foreground,
+    conditions: Conditions,
+    /// When `conditions` was last sampled by the probe.
+    sampled: Option<Instant>,
+    /// A thread is sampling now; others keep waiting on the old reading.
+    sampling: bool,
+    /// Whether a probe is installed. Without one, conditions are only what
+    /// [`Jobs::set_conditions`] records (tests and replays).
+    probed: bool,
     closed: bool,
     /// Admission order, for tests and diagnostics: every admitted id in order.
     #[cfg(test)]
@@ -434,6 +612,9 @@ impl Board {
         }
         let mut changed = false;
         for id in self.waiting() {
+            if self.held(&self.entries[&id]).is_some() {
+                continue;
+            }
             let resource = self.entries[&id].rules().resource;
             let fits = resource.is_none_or(|resource| self.running(resource) < resource.capacity());
             if fits {
@@ -445,6 +626,53 @@ impl Board {
             }
         }
         changed
+    }
+
+    /// Whether the last observation is current enough to admit gated work.
+    fn fresh(&self) -> bool {
+        !self.probed
+            || self
+                .sampled
+                .is_some_and(|sampled| sampled.elapsed() < CONDITIONS_TTL)
+    }
+
+    /// The admission condition holding `entry`, if one does.
+    fn held(&self, entry: &Entry) -> Option<String> {
+        let gates = entry.rules().gates;
+        if entry.forced || !gates.any() {
+            return None;
+        }
+        if gates.playback && self.foreground.playback {
+            return Some("the edit is playing".into());
+        }
+        if !self.fresh() {
+            return Some("Deadpan checks power and memory".into());
+        }
+        if gates.power
+            && let Some(reason) = &self.conditions.power
+        {
+            return Some(reason.clone());
+        }
+        match gates.memory {
+            Some(at) if self.conditions.memory >= at => Some(match self.conditions.memory {
+                MemoryPressure::Critical => "memory pressure is critical".into(),
+                _ => "memory is under pressure".into(),
+            }),
+            _ => None,
+        }
+    }
+
+    /// Why a waiting entry is not admitted yet.
+    fn waiting_reason(&self, id: JobId) -> Waiting {
+        let entry = &self.entries[&id];
+        let full = entry
+            .rules()
+            .resource
+            .is_some_and(|resource| self.running(resource) >= resource.capacity());
+        match self.held(entry) {
+            Some(reason) if !full => Waiting::Condition(reason),
+            _ => Waiting::Holder(self.waiting_for(id)),
+        }
     }
 
     /// Why `entry` must wait at its next safe boundary, if it must.
@@ -491,6 +719,7 @@ impl Board {
 struct Inner {
     board: Mutex<Board>,
     changed: Condvar,
+    probe: Mutex<Option<Probe>>,
 }
 
 /// The shared coordinator. Cloning shares it.
@@ -508,6 +737,7 @@ impl Jobs {
         Self(Arc::new(Inner {
             board: Mutex::new(Board::default()),
             changed: Condvar::new(),
+            probe: Mutex::new(None),
         }))
     }
 
@@ -547,6 +777,9 @@ impl Jobs {
                 cancelling: closed,
                 paused: None,
                 progress: Progress::default(),
+                measured: None,
+                forced: false,
+                tag: spec.tag,
             },
         );
         board.admit();
@@ -563,9 +796,79 @@ impl Jobs {
         let mut board = self.lock();
         if board.foreground != foreground {
             board.foreground = foreground;
+            board.admit();
             drop(board);
             self.notify();
         }
+    }
+
+    /// Install the probe that samples power, thermal and memory conditions
+    /// (production: [`system_probe`]). Without one, the board admits gated
+    /// work on what [`Jobs::set_conditions`] recorded.
+    pub fn set_probe(&self, probe: Option<Probe>) {
+        *self
+            .0
+            .probe
+            .lock()
+            .unwrap_or_else(|error| error.into_inner()) = probe.clone();
+        let mut board = self.lock();
+        board.probed = probe.is_some();
+        board.sampled = None;
+        board.admit();
+        drop(board);
+        self.notify();
+    }
+
+    /// Record an observation of the machine; held jobs are admitted once it
+    /// clears.
+    pub fn set_conditions(&self, conditions: Conditions) {
+        let mut board = self.lock();
+        board.conditions = conditions;
+        board.sampled = Some(Instant::now());
+        board.admit();
+        drop(board);
+        self.notify();
+    }
+
+    /// Sample conditions through the probe when the last reading is stale.
+    /// Called by waiting job threads only: the probe may block.
+    fn refresh_conditions(&self) {
+        let probe = {
+            let mut board = self.lock();
+            if !board.probed || board.fresh() || board.sampling {
+                return;
+            }
+            board.sampling = true;
+            self.0
+                .probe
+                .lock()
+                .unwrap_or_else(|error| error.into_inner())
+                .clone()
+        };
+        let conditions = probe.map(|probe| probe());
+        self.lock().sampling = false;
+        match conditions {
+            Some(conditions) => self.set_conditions(conditions),
+            None => self.notify(),
+        }
+    }
+
+    /// The person chose to run a held job despite its admission conditions
+    /// (battery, heat, memory, playback). It still waits for its resource:
+    /// two models never load together. False when it is not waiting.
+    pub fn run_anyway(&self, id: JobId) -> bool {
+        let mut board = self.lock();
+        let Some(entry) = board.entries.get_mut(&id) else {
+            return false;
+        };
+        if entry.admitted.is_some() || entry.cancelling {
+            return false;
+        }
+        entry.forced = true;
+        board.admit();
+        drop(board);
+        self.notify();
+        true
     }
 
     /// Request cancellation from the Jobs panel. A job registered with its
@@ -652,6 +955,7 @@ impl Jobs {
     /// order.
     pub fn snapshot(&self) -> Vec<JobRow> {
         let board = self.lock();
+        let now = Instant::now();
         let waiting = board.waiting();
         let mut rows: Vec<JobRow> = board
             .entries
@@ -660,15 +964,21 @@ impl Jobs {
                 let state = if entry.cancelling {
                     RowState::Cancelling
                 } else if entry.admitted.is_none() {
-                    RowState::Queued {
-                        position: waiting.iter().position(|w| w == id).map_or(0, |p| p + 1),
-                        waiting_for: board.waiting_for(*id),
+                    match board.waiting_reason(*id) {
+                        Waiting::Condition(reason) => RowState::Held(reason),
+                        Waiting::Holder(waiting_for) => RowState::Queued {
+                            position: waiting.iter().position(|w| w == id).map_or(0, |p| p + 1),
+                            waiting_for,
+                        },
                     }
                 } else if let Some(reason) = &entry.paused {
                     RowState::Paused(reason.clone())
                 } else {
                     RowState::Running
                 };
+                let remaining = (state == RowState::Running)
+                    .then(|| entry.measured.as_ref()?.remaining(now))
+                    .flatten();
                 JobRow {
                     id: *id,
                     kind: entry.kind,
@@ -681,13 +991,15 @@ impl Jobs {
                     } else {
                         entry.queued_at.elapsed()
                     },
+                    remaining,
                     cancellable: entry.cancellable,
+                    tag: entry.tag,
                 }
             })
             .collect();
         rows.sort_by_key(|row| {
             (
-                matches!(row.state, RowState::Queued { .. }),
+                matches!(row.state, RowState::Queued { .. } | RowState::Held(_)),
                 row.kind.rules().priority,
                 row.id,
             )
@@ -698,14 +1010,43 @@ impl Jobs {
     /// What the newest queued job of `kind` in `session` waits for, when one
     /// is queued: the job's own status line shows it.
     pub fn waiting_for(&self, kind: JobKind, session: Option<u64>) -> Option<String> {
+        self.waiting(kind, session).map(|waiting| match waiting {
+            Waiting::Holder(text) | Waiting::Condition(text) => text,
+        })
+    }
+
+    /// What the newest waiting job of `kind` in `session` waits for.
+    pub fn waiting(&self, kind: JobKind, session: Option<u64>) -> Option<Waiting> {
+        self.waiting_where(|entry| entry.kind == kind && entry.session == session)
+    }
+
+    /// What the waiting job with the owner's `tag` waits for.
+    pub fn waiting_tagged(&self, kind: JobKind, tag: u64) -> Option<Waiting> {
+        self.waiting_where(|entry| entry.kind == kind && entry.tag == Some(tag))
+    }
+
+    fn waiting_where(&self, matches: impl Fn(&Entry) -> bool) -> Option<Waiting> {
         let board = self.lock();
-        let (id, _) = board.entries.iter().rev().find(|(_, entry)| {
-            entry.kind == kind
-                && entry.session == session
-                && entry.admitted.is_none()
-                && !entry.cancelling
-        })?;
-        Some(board.waiting_for(*id))
+        let (id, _) =
+            board.entries.iter().rev().find(|(_, entry)| {
+                matches(entry) && entry.admitted.is_none() && !entry.cancelling
+            })?;
+        Some(board.waiting_reason(*id))
+    }
+
+    /// Live jobs the person asked for (renders and requested work), which
+    /// quitting would cancel. Automatic work resumes on its own next time.
+    pub fn requested(&self) -> Vec<JobRow> {
+        self.snapshot()
+            .into_iter()
+            .filter(|row| row.kind.rules().priority <= Priority::Requested)
+            .collect()
+    }
+
+    /// Whether any of `ids` is still registered.
+    pub fn any_live(&self, ids: &[JobId]) -> bool {
+        let board = self.lock();
+        ids.iter().any(|id| board.entries.contains_key(id))
     }
 
     /// The registered job of `kind`, if any (the newest).
@@ -774,6 +1115,13 @@ impl JobHandle {
             if entry.admitted.is_some() {
                 return Ok(());
             }
+            if entry.rules().gates.any() && board.probed && !board.fresh() {
+                // Sample outside the lock: the probe runs system tools.
+                drop(board);
+                self.jobs.refresh_conditions();
+                board = self.jobs.lock();
+                continue;
+            }
             board = self
                 .jobs
                 .0
@@ -801,6 +1149,10 @@ impl JobHandle {
             let reason = board.pause_reason(self.id);
             let entry = board.entries.get_mut(&self.id).expect("checked above");
             entry.paused.clone_from(&reason);
+            if reason.is_some() {
+                // Paused time is not progress: restart the measured rate.
+                entry.measured = None;
+            }
             if reason.is_none() {
                 return Ok(());
             }
@@ -822,6 +1174,9 @@ impl JobHandle {
         let reason = board.pause_reason(self.id);
         if let Some(entry) = board.entries.get_mut(&self.id) {
             entry.paused.clone_from(&reason);
+            if reason.is_some() {
+                entry.measured = None;
+            }
         }
         reason
     }
@@ -844,6 +1199,7 @@ impl JobHandle {
             entry.claims = true;
             entry.admitted = None;
             entry.queued_at = Instant::now();
+            entry.measured = None;
             board.admit();
         }
         drop(board);
@@ -866,12 +1222,36 @@ impl JobHandle {
     }
 
     pub fn set_progress(&self, stage: impl Into<String>, fraction: Option<f32>) {
+        self.set_progress_at(stage, fraction, Instant::now());
+    }
+
+    fn set_progress_at(&self, stage: impl Into<String>, fraction: Option<f32>, at: Instant) {
         let mut board = self.jobs.lock();
         if let Some(entry) = board.entries.get_mut(&self.id) {
-            entry.progress = Progress {
-                stage: stage.into(),
-                fraction: fraction.map(|fraction| fraction.clamp(0.0, 1.0)),
+            let stage = stage.into();
+            let fraction = fraction
+                .filter(|fraction| fraction.is_finite())
+                .map(|fraction| fraction.clamp(0.0, 1.0));
+            entry.measured = match (fraction, entry.measured.take()) {
+                (None, _) => None,
+                (Some(fraction), Some(measured))
+                    if measured.stage == stage && fraction >= measured.fraction =>
+                {
+                    Some(Measured {
+                        at,
+                        fraction,
+                        ..measured
+                    })
+                }
+                (Some(fraction), _) => Some(Measured {
+                    stage: stage.clone(),
+                    since: at,
+                    from: fraction,
+                    at,
+                    fraction,
+                }),
             };
+            entry.progress = Progress { stage, fraction };
         }
     }
 }
@@ -1248,5 +1628,255 @@ mod tests {
         ai.acquire(None).expect("reacquired");
         assert!(ai.admitted());
         drop(transcription);
+    }
+
+    fn battery() -> Conditions {
+        Conditions {
+            power: Some("running on battery".into()),
+            memory: MemoryPressure::Normal,
+        }
+    }
+
+    #[test]
+    fn model_jobs_wait_on_battery_heat_or_low_power_and_can_run_anyway() {
+        let jobs = Jobs::new();
+        jobs.set_conditions(battery());
+        let ai = jobs.register(spec(JobKind::AiPause));
+        let transcription = jobs.register(spec(JobKind::Transcription));
+        // Work that loads no model is never held by power.
+        let render = jobs.register(spec(JobKind::Render));
+        let shots = jobs.register(spec(JobKind::Shots));
+        assert!(render.admitted() && shots.admitted());
+        assert!(!ai.admitted() && !transcription.admitted());
+        assert_eq!(
+            state(&jobs, &ai),
+            RowState::Held("running on battery".into())
+        );
+        assert_eq!(
+            state(&jobs, &ai).label(),
+            "Waiting while running on battery"
+        );
+        assert_eq!(
+            jobs.waiting(JobKind::AiPause, Some(1)),
+            Some(Waiting::Condition("running on battery".into()))
+        );
+        // Run anyway lifts the condition for that job only, never the budget.
+        assert!(jobs.run_anyway(ai.id()));
+        assert!(ai.admitted());
+        assert!(!transcription.admitted());
+        assert_eq!(
+            state(&jobs, &transcription),
+            RowState::Queued {
+                position: 1,
+                waiting_for: "AI pause pictures".into()
+            },
+            "a forced model still holds the one model slot"
+        );
+        assert!(!jobs.run_anyway(ai.id()), "an admitted job is not waiting");
+        drop(ai);
+        assert_eq!(
+            state(&jobs, &transcription),
+            RowState::Held("running on battery".into())
+        );
+        jobs.set_conditions(Conditions {
+            power: Some("the Mac is under thermal pressure".into()),
+            ..Conditions::default()
+        });
+        assert_eq!(
+            state(&jobs, &transcription).label(),
+            "Waiting while the Mac is under thermal pressure"
+        );
+        jobs.set_conditions(Conditions::default());
+        assert!(transcription.admitted());
+        // Conditions never stop a job that is already running.
+        jobs.set_conditions(battery());
+        assert_eq!(state(&jobs, &transcription), RowState::Running);
+        assert_eq!(transcription.pause_reason(), None);
+    }
+
+    #[test]
+    fn inference_does_not_start_during_playback_and_a_running_model_continues() {
+        let jobs = Jobs::new();
+        let running = jobs.register(spec(JobKind::AiPause).deferred());
+        running.acquire(None).expect("admitted");
+        jobs.set_foreground(Foreground { playback: true });
+        assert_eq!(running.pause_reason(), None, "never paused mid-step");
+        assert_eq!(state(&jobs, &running), RowState::Running);
+        running.release();
+        let next = jobs.register(spec(JobKind::Transcription).deferred());
+        let waiter = std::thread::spawn(move || next.acquire(None).map(|()| next));
+        std::thread::sleep(Duration::from_millis(80));
+        assert!(
+            !waiter.is_finished(),
+            "the model waits while the edit plays"
+        );
+        assert!(
+            jobs.snapshot()
+                .iter()
+                .any(|row| row.kind == JobKind::Transcription
+                    && row.state == RowState::Held("the edit is playing".into()))
+        );
+        jobs.set_foreground(Foreground::default());
+        let next = waiter
+            .join()
+            .expect("thread")
+            .expect("admitted after playback");
+        assert!(next.admitted());
+        drop(running);
+    }
+
+    #[test]
+    fn memory_pressure_holds_new_heavy_work_by_level() {
+        let jobs = Jobs::new();
+        jobs.set_conditions(Conditions {
+            power: None,
+            memory: MemoryPressure::Warning,
+        });
+        let ai = jobs.register(spec(JobKind::AiPause));
+        let shots = jobs.register(spec(JobKind::Shots));
+        let tracking = jobs.register(spec(JobKind::Tracking));
+        assert_eq!(
+            state(&jobs, &ai),
+            RowState::Held("memory is under pressure".into())
+        );
+        assert!(
+            shots.admitted(),
+            "a scan waits only under critical pressure"
+        );
+        assert!(tracking.admitted());
+        drop(shots);
+        jobs.set_conditions(Conditions {
+            power: None,
+            memory: MemoryPressure::Critical,
+        });
+        let pauses = jobs.register(spec(JobKind::SpeechActivity));
+        assert_eq!(
+            state(&jobs, &pauses),
+            RowState::Held("memory pressure is critical".into())
+        );
+        jobs.set_conditions(Conditions::default());
+        assert!(ai.admitted() && pauses.admitted());
+        assert_eq!(MemoryPressure::from_level(1), MemoryPressure::Normal);
+        assert_eq!(MemoryPressure::from_level(2), MemoryPressure::Warning);
+        assert_eq!(MemoryPressure::from_level(4), MemoryPressure::Critical);
+        assert_eq!(MemoryPressure::from_level(9), MemoryPressure::Critical);
+    }
+
+    #[test]
+    fn a_probe_is_sampled_by_the_waiting_thread_before_gated_admission() {
+        let jobs = Jobs::new();
+        let reading = Arc::new(Mutex::new(battery()));
+        let calls = Arc::new(std::sync::atomic::AtomicUsize::new(0));
+        jobs.set_probe(Some({
+            let (reading, calls) = (reading.clone(), calls.clone());
+            Arc::new(move || {
+                calls.fetch_add(1, Ordering::AcqRel);
+                reading.lock().unwrap().clone()
+            })
+        }));
+        // Registration (possibly on the UI thread) never runs the probe.
+        let ai = jobs.register(spec(JobKind::AiPause));
+        let render = jobs.register(spec(JobKind::Render));
+        assert!(render.admitted());
+        assert_eq!(calls.load(Ordering::Acquire), 0);
+        assert_eq!(
+            state(&jobs, &ai),
+            RowState::Held("Deadpan checks power and memory".into())
+        );
+        let id = ai.id();
+        let waiter = std::thread::spawn(move || ai.wait_admitted(None).map(|()| ai));
+        let deadline = Instant::now() + Duration::from_secs(2);
+        while jobs
+            .snapshot()
+            .iter()
+            .all(|row| row.state != RowState::Held("running on battery".into()))
+        {
+            assert!(Instant::now() < deadline, "the waiter never sampled");
+            std::thread::sleep(Duration::from_millis(5));
+        }
+        assert_eq!(calls.load(Ordering::Acquire), 1, "one sample while fresh");
+        assert!(jobs.run_anyway(id));
+        let ai = waiter.join().expect("thread").expect("admitted");
+        assert!(ai.admitted());
+    }
+
+    #[test]
+    fn estimates_come_only_from_measured_progress_over_enough_time() {
+        let start = Instant::now();
+        let at = |seconds: u64| start + Duration::from_secs(seconds);
+        let measured = |from: f32, since: u64, fraction: f32, report: u64| Measured {
+            stage: "Generating pictures".into(),
+            since: at(since),
+            from,
+            at: at(report),
+            fraction,
+        };
+        // 40% in 20 s: 30 s remain at the report, 25 s five seconds later.
+        let rate = measured(0.0, 0, 0.4, 20);
+        let seconds = |remaining: Option<Duration>| {
+            remaining.map(|remaining| (remaining.as_secs_f64() * 1000.0).round() / 1000.0)
+        };
+        assert_eq!(seconds(rate.remaining(at(20))), Some(30.0));
+        assert_eq!(seconds(rate.remaining(at(25))), Some(25.0));
+        // Outlasting the projection hides it rather than show zero.
+        assert_eq!(rate.remaining(at(51)), None);
+        // Too early, too little progress, or complete.
+        assert_eq!(measured(0.0, 0, 0.5, 4).remaining(at(4)), None);
+        assert_eq!(measured(0.2, 0, 0.24, 30).remaining(at(30)), None);
+        assert_eq!(measured(0.0, 0, 1.0, 30).remaining(at(30)), None);
+
+        let jobs = Jobs::new();
+        let job = jobs.register(spec(JobKind::Render));
+        let row = |jobs: &Jobs| jobs.snapshot().remove(0);
+        job.set_progress_at("Encoding", Some(0.1), at(0));
+        job.set_progress_at("Encoding", Some(0.5), at(10));
+        // The baseline is the first report: 0.4 in 10 s.
+        let remaining = row(&jobs).remaining.expect("measured");
+        assert!(remaining <= Duration::from_millis(12_500) && remaining > Duration::ZERO);
+        // A new stage, an indeterminate report or a pause restarts it.
+        job.set_progress_at("Verifying", Some(0.6), at(11));
+        assert_eq!(row(&jobs).remaining, None);
+        job.set_progress_at("Verifying", None, at(12));
+        assert_eq!(row(&jobs).remaining, None);
+        job.set_progress_at("Verifying", Some(0.0), at(0));
+        job.set_progress_at("Verifying", Some(0.5), at(10));
+        assert!(row(&jobs).remaining.is_some());
+        job.set_progress_at("Verifying", f32::NAN.into(), at(11));
+        assert_eq!(row(&jobs).progress.fraction, None);
+        let shots = jobs.register(spec(JobKind::Shots));
+        shots.set_progress_at("Scanning", Some(0.0), at(0));
+        shots.set_progress_at("Scanning", Some(0.5), at(10));
+        jobs.set_foreground(Foreground { playback: true });
+        assert!(shots.pause_reason().is_some());
+        jobs.set_foreground(Foreground::default());
+        shots.set_progress_at("Scanning", Some(0.6), at(11));
+        let shots_row = jobs
+            .snapshot()
+            .into_iter()
+            .find(|row| row.kind == JobKind::Shots)
+            .expect("listed");
+        assert_eq!(shots_row.remaining, None, "a pause restarts the baseline");
+    }
+
+    #[test]
+    fn requested_jobs_and_tags_are_listed_for_the_quit_question() {
+        let jobs = Jobs::new();
+        let ai = jobs.register(spec(JobKind::AiPause).tag(7));
+        let proxy = jobs.register(spec(JobKind::Proxy));
+        let render = jobs.register(spec(JobKind::Render));
+        let requested: Vec<_> = jobs.requested().into_iter().map(|row| row.kind).collect();
+        assert_eq!(requested, [JobKind::Render, JobKind::AiPause]);
+        assert_eq!(
+            jobs.snapshot()
+                .into_iter()
+                .find(|row| row.kind == JobKind::AiPause)
+                .and_then(|row| row.tag),
+            Some(7)
+        );
+        let ids = [ai.id(), render.id()];
+        assert!(jobs.any_live(&ids));
+        drop((ai, render));
+        assert!(!jobs.any_live(&ids));
+        drop(proxy);
     }
 }

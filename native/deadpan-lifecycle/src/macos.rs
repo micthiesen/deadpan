@@ -29,6 +29,8 @@ thread_local! {
 struct State {
     delegate: Retained<ProtocolObject<dyn NSApplicationDelegate>>,
     previews: RefCell<PreviewState>,
+    /// Wakes the host after a quit was handed to it.
+    wake: RefCell<Option<Box<dyn Fn()>>>,
 }
 
 /// Main-thread, single-owner lifetime for native termination confirmation.
@@ -65,6 +67,7 @@ impl QuitGuard {
         let state = Rc::new(State {
             delegate,
             previews: RefCell::new(PreviewState::default()),
+            wake: RefCell::new(None),
         });
         ACTIVE.with(|active| *active.borrow_mut() = Some(Rc::downgrade(&state)));
         // Refresh AppKit's optional-delegate-method cache without replacing
@@ -77,6 +80,23 @@ impl QuitGuard {
     /// No app borrows remain live while AppKit runs its native confirmation.
     pub fn update(&self, previews: &[&'static str]) {
         self.state.previews.borrow_mut().update(previews);
+    }
+
+    /// Whether the host has background work the person asked for. While it
+    /// does, a system quit is cancelled and handed to the host
+    /// ([`QuitGuard::take_deferred`]), which asks in its own window.
+    pub fn set_background(&self, background: bool) {
+        self.state.previews.borrow_mut().background = background;
+    }
+
+    /// Called (on the main thread) when a quit is handed to the host.
+    pub fn on_deferred(&self, wake: Box<dyn Fn()>) {
+        *self.state.wake.borrow_mut() = Some(wake);
+    }
+
+    /// Whether a system quit was handed to the host since the last call.
+    pub fn take_deferred(&self) -> bool {
+        std::mem::take(&mut self.state.previews.borrow_mut().deferred)
     }
 }
 
@@ -151,6 +171,12 @@ fn confirm_quit(delegate: &AnyObject) -> NSApplicationTerminateReply {
     else {
         return match decision {
             Decision::Quit => NSApplicationTerminateReply::TerminateNow,
+            Decision::Defer => {
+                if let Some(wake) = state.wake.borrow().as_ref() {
+                    wake();
+                }
+                NSApplicationTerminateReply::TerminateCancel
+            }
             _ => NSApplicationTerminateReply::TerminateCancel,
         };
     };

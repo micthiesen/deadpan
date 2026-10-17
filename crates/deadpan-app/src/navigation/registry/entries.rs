@@ -2571,6 +2571,17 @@ pub static SPECS: &[Spec] = &[
         help: "Discard an interrupted AI attempt or a queued, unavailable or interrupted replacement preparation. Committed pause timing stays saved.",
     },
     Spec {
+        id: "jobs.run-anyway",
+        name: "Run a waiting job anyway",
+        section: Section::Jobs,
+        keys: &[mode(Mode::Jobs, "o", &[chord(Key::O, Plain)])],
+        commands: &[],
+        contexts: C::JOBS,
+        replay: Replay::Ignored,
+        headless: gui("closed-project commands do not wait", PROJECT),
+        help: "Start the chosen job although it waits for battery power, heat, memory pressure or playback to end. It still waits its turn for the AI model.",
+    },
+    Spec {
         id: "jobs.close",
         name: "Close jobs",
         section: Section::Jobs,

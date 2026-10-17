@@ -31,13 +31,23 @@ use deadpan_store::generation_preparations::{
 };
 
 mod preparations;
+#[cfg(any(test, feature = "ui-harness"))]
+mod scripted_tests;
 use crate::project::generation::{
     Backend, Candidate, CandidatePreview, FinalProvider, GenerationOperation,
     GenerationPresentation, Job, MAX_VARIANTS, Outcome, Phase, PreviewParts, Update, Variant,
 };
+#[cfg(any(test, feature = "ui-harness"))]
+use scripted_tests::scripted;
 
 /// Events the job thread may queue ahead of the writer.
 const EVENT_CAPACITY: usize = 64;
+
+/// The most AI generations one project runs or queues at once. Each holds a
+/// job thread and a recorded attempt; only one loads its model at a time.
+pub(crate) const MAX_LIVE_GENERATIONS: usize = 4;
+/// Concluded queued generations kept for the inspector.
+const MAX_CONCLUDED: usize = 8;
 
 struct StartInput {
     ticket: u64,
@@ -107,12 +117,26 @@ impl Drop for Running {
     }
 }
 
+/// A further generation started while another ran: its own job thread,
+/// recorded attempt and wait for the model slot. The writer processes it by
+/// swapping it into `State::running`/`State::job` ([`Service::in_slot`]), so
+/// every durable transition uses exactly the single-job path.
+#[derive(Default)]
+struct Slot {
+    running: Option<Running>,
+    job: Option<Job>,
+}
+
 #[derive(Default)]
 pub(super) struct State {
     backend: Backend,
     session: u64,
     running: Option<Running>,
     job: Option<Job>,
+    /// Live further generations, oldest first.
+    others: Vec<Slot>,
+    /// Concluded further generations, newest last.
+    concluded: Vec<Job>,
     candidates: Arc<BTreeMap<ScopedNodeTarget, Candidate>>,
     options: Arc<BTreeMap<ScopedNodeTarget, GenerationOptions>>,
     candidates_key: Option<(u64, RevisionId, u64)>,
@@ -219,13 +243,64 @@ impl State {
 
     /// A job thread is live; the writer must not be released.
     pub(super) fn active(&self) -> bool {
-        self.running.is_some()
+        self.running.is_some() || self.others.iter().any(|slot| slot.running.is_some())
+    }
+
+    /// Exchange the presented job with further generation `index`.
+    fn swap_slot(&mut self, index: usize) {
+        let slot = &mut self.others[index];
+        std::mem::swap(&mut slot.running, &mut self.running);
+        std::mem::swap(&mut slot.job, &mut self.job);
+    }
+
+    /// Every job this session knows: the presented one, then the others.
+    fn jobs(&self) -> impl Iterator<Item = &Job> {
+        self.job
+            .iter()
+            .chain(self.others.iter().filter_map(|slot| slot.job.as_ref()))
+    }
+
+    /// Live jobs (with a job thread), presented first.
+    fn live(&self) -> impl Iterator<Item = &Job> {
+        self.job.iter().filter(|_| self.running.is_some()).chain(
+            self.others
+                .iter()
+                .filter(|slot| slot.running.is_some())
+                .filter_map(|slot| slot.job.as_ref()),
+        )
+    }
+
+    /// Where the running job with `ticket` is: `Some(None)` presented,
+    /// `Some(Some(index))` a further generation.
+    fn running_ticket(&self, ticket: u64) -> Option<Option<usize>> {
+        let running = |running: &Option<Running>, job: &Option<Job>| {
+            running.is_some()
+                && job
+                    .as_ref()
+                    .is_some_and(|job| job.ticket == ticket && job.running())
+        };
+        if running(&self.running, &self.job) {
+            return Some(None);
+        }
+        self.others
+            .iter()
+            .position(|slot| running(&slot.running, &slot.job))
+            .map(Some)
+    }
+
+    fn remember(&mut self, job: Job) {
+        if self.concluded.len() >= MAX_CONCLUDED {
+            self.concluded.remove(0);
+        }
+        self.concluded.push(job);
     }
 
     fn reset(&mut self, session: u64) {
-        debug_assert!(self.running.is_none());
+        debug_assert!(!self.active());
         self.session = session;
         self.job = None;
+        self.others.clear();
+        self.concluded.clear();
         self.candidates = Arc::default();
         self.options = Arc::default();
         self.candidates_key = None;
@@ -250,8 +325,32 @@ fn failure_text(failure: &JobFailure) -> String {
 }
 
 impl Service {
-    /// Cancel any live job cooperatively; the pump drains it.
+    /// Cancel every live job cooperatively; the pump drains them.
     pub(super) fn cancel_generation(&mut self) {
+        for index in 0..self.generation.others.len() {
+            self.in_slot(index, Self::cancel_presented_generation);
+        }
+        self.cancel_presented_generation();
+    }
+
+    /// Run `f` with further generation `index` presented in place of the
+    /// presented job, so it uses exactly the single-job transitions.
+    fn in_slot<R>(&mut self, index: usize, f: impl FnOnce(&mut Self) -> R) -> R {
+        self.generation.swap_slot(index);
+        let result = f(self);
+        self.generation.swap_slot(index);
+        result
+    }
+
+    /// Run `f` on the running job with `ticket`, wherever it is.
+    fn with_running_ticket<R>(&mut self, ticket: u64, f: impl FnOnce(&mut Self) -> R) -> Option<R> {
+        match self.generation.running_ticket(ticket)? {
+            None => Some(f(self)),
+            Some(index) => Some(self.in_slot(index, f)),
+        }
+    }
+
+    fn cancel_presented_generation(&mut self) {
         if let Some(running) = &self.generation.running {
             running.cancelled.store(true, Ordering::Release);
             if let Some(job) = &mut self.generation.job
@@ -277,7 +376,8 @@ impl Service {
                 .map_err(display)?;
             self.generation.variants_changed();
         }
-        self.cancel_generation();
+        // Only this job: others queued beside it keep their turn.
+        self.cancel_presented_generation();
         Ok(())
     }
 
@@ -326,19 +426,14 @@ impl Service {
                 job: started,
                 ..
             } => {
-                let matches = self.generation.session == session
-                    && self.generation.running.is_some()
-                    && self
-                        .generation
-                        .job
-                        .as_ref()
-                        .is_some_and(|job| job.ticket == started && job.running());
-                if matches {
-                    self.user_cancel_generation().map(|()| {
+                let cancelled = (self.generation.session == session)
+                    .then(|| self.with_running_ticket(started, Self::user_cancel_generation))
+                    .flatten();
+                match cancelled {
+                    Some(result) => result.map(|()| {
                         self.message = Some("Cancelling the AI pause…".into());
-                    })
-                } else {
-                    Err("No matching AI pause is generating.".into())
+                    }),
+                    None => Err("No matching AI pause is generating.".into()),
                 }
             }
             GenerationOperation::Select {
@@ -599,7 +694,47 @@ impl Service {
         }
     }
 
+    /// Start a generation. While another runs, it starts beside it as a
+    /// further generation: it reads its boundary pictures and records its
+    /// attempt now, then waits its turn for the one model slot.
     fn start_generation(&mut self, input: StartInput) -> Result<()> {
+        let target = input.authoring.clone().unwrap_or_else(|| ScopedNodeTarget {
+            node: input.hold.clone(),
+            repeats: Vec::new(),
+        });
+        if self.generation.live().any(|job| job.target == target) {
+            return Err(
+                "This pause is already generating or waiting for the AI model. Cancel it with :cancel-ai or in :jobs first."
+                    .into(),
+            );
+        }
+        if self.generation.live().count() >= MAX_LIVE_GENERATIONS {
+            return Err(format!(
+                "{MAX_LIVE_GENERATIONS} AI pauses are already generating or waiting. Cancel one in :jobs first."
+            ));
+        }
+        if self.generation.running.is_none() {
+            return self.start_presented_generation(input);
+        }
+        self.generation.others.push(Slot::default());
+        let index = self.generation.others.len() - 1;
+        let result = self.in_slot(index, |service| service.start_presented_generation(input));
+        if self.generation.others[index].running.is_none() {
+            let slot = self.generation.others.remove(index);
+            if let Some(job) = slot.job {
+                self.generation.remember(job);
+            }
+        } else if result.is_ok() {
+            let waiting = self.generation.live().count() - 1;
+            self.message = Some(format!(
+                "Queued AI pictures for this pause behind {waiting} other AI job{}; it starts when the model is free. :jobs shows the queue.",
+                if waiting == 1 { "" } else { "s" }
+            ));
+        }
+        result
+    }
+
+    fn start_presented_generation(&mut self, input: StartInput) -> Result<()> {
         let StartInput {
             ticket,
             session,
@@ -824,6 +959,7 @@ impl Service {
             crate::jobs::JobSpec::new(crate::jobs::JobKind::AiPause, Some(session))
                 // Conditioning and publication run without the model slot.
                 .deferred()
+                .tag(job.ticket)
                 .detail(if variants > 1 {
                     format!("{label} · {variants} variants")
                 } else {
@@ -1119,7 +1255,7 @@ impl Service {
         let Some(workspace) = &self.workspace else {
             return Arc::default();
         };
-        if self.generation.session != workspace.session && self.generation.running.is_none() {
+        if self.generation.session != workspace.session && !self.generation.active() {
             self.generation.reset(workspace.session);
         }
         let key = (
@@ -1242,6 +1378,14 @@ impl Service {
                 .job
                 .clone()
                 .filter(|job| job.session == session),
+            others: self
+                .generation
+                .others
+                .iter()
+                .filter_map(|slot| slot.job.clone())
+                .chain(self.generation.concluded.iter().cloned())
+                .filter(|job| job.session == session)
+                .collect(),
             candidates,
             options: self.generation.options.clone(),
             preview,
@@ -1265,6 +1409,24 @@ impl Service {
 
     /// Apply queued job events on the writer. True when published state changed.
     pub(super) fn pump_generation(&mut self) -> bool {
+        let mut changed = false;
+        let mut index = 0;
+        while index < self.generation.others.len() {
+            changed |= self.in_slot(index, Self::pump_presented_generation);
+            if self.generation.others[index].running.is_none() {
+                let slot = self.generation.others.remove(index);
+                if let Some(job) = slot.job {
+                    self.generation.remember(job);
+                }
+                changed = true;
+            } else {
+                index += 1;
+            }
+        }
+        self.pump_presented_generation() | changed
+    }
+
+    fn pump_presented_generation(&mut self) -> bool {
         if self.generation.running.is_none() {
             return self.pump_preparations();
         }
@@ -1807,7 +1969,7 @@ impl Service {
             ));
         }
         let session = workspace.session;
-        if workspace.session != self.generation.session && self.generation.running.is_none() {
+        if workspace.session != self.generation.session && !self.generation.active() {
             self.generation.reset(session);
         }
         self.generation.remote = self.generation.remote.wrapping_add(1);
@@ -1832,7 +1994,7 @@ impl Service {
         ticket: u64,
     ) -> std::result::Result<deadpan_cli::live_project::Reply, deadpan_cli::live_project::LiveError>
     {
-        let current = self.generation.job.as_ref().filter(|job| {
+        let current = self.generation.jobs().find(|job| {
             job.ticket == ticket
                 && self
                     .workspace
@@ -1868,9 +2030,8 @@ impl Service {
     {
         if self
             .generation
-            .job
-            .as_ref()
-            .is_some_and(|job| job.ticket == ticket && job.running())
+            .jobs()
+            .any(|job| job.ticket == ticket && job.running())
         {
             return Err(deadpan_cli::live_project::LiveError::new(
                 "GenerationBusy",
@@ -1889,14 +2050,8 @@ impl Service {
     ) -> std::result::Result<deadpan_cli::live_project::Reply, deadpan_cli::live_project::LiveError>
     {
         let reply = self.host_generation_status(ticket)?;
-        if self.generation.running.is_some()
-            && self
-                .generation
-                .job
-                .as_ref()
-                .is_some_and(|job| job.ticket == ticket && job.running())
-        {
-            self.user_cancel_generation().map_err(|message| {
+        if let Some(result) = self.with_running_ticket(ticket, Self::user_cancel_generation) {
+            result.map_err(|message| {
                 deadpan_cli::live_project::LiveError::new("GenerationCancelFailed", message)
             })?;
             self.message = Some("Cancelling the AI pause…".into());
@@ -2363,64 +2518,4 @@ fn request_current(package: &std::path::Path, request: &RequestId) -> bool {
         store.generation_request(request),
         Ok(Some(stored)) if stored.relevance != deadpan_jobs::Relevance::Current
     )
-}
-
-/// The deterministic replacement for the model worker. It reports progress
-/// and ends in a cancellation, a failure, or synthetic footage that the
-/// production qualification and publication path makes Ready.
-#[cfg(any(test, feature = "ui-harness"))]
-fn scripted(
-    script: &crate::project::generation::Script,
-    allocated: &Allocated,
-    mut progress: impl FnMut(AttemptProgress),
-    mut records: impl FnMut(AttemptRecord) -> std::result::Result<(), String>,
-    cancelled: &AtomicBool,
-) -> WorkerRun {
-    use crate::project::generation::ScriptEnding;
-    use deadpan_jobs::WorkerStage;
-    let cancel = |records: &mut dyn FnMut(AttemptRecord) -> std::result::Result<(), String>| {
-        let _ = records(AttemptRecord::CancelRequested);
-        WorkerRun::without_workspace(RunResult::Cancelled, RunTimings::default())
-    };
-    progress(AttemptProgress::Preparing);
-    if cancelled.load(Ordering::Acquire) {
-        return cancel(&mut records);
-    }
-    progress(AttemptProgress::Stage(WorkerStage::ModelLoading));
-    for completed in 1..=script.steps {
-        if cancelled.load(Ordering::Acquire) {
-            return cancel(&mut records);
-        }
-        std::thread::sleep(script.step_interval);
-        progress(AttemptProgress::Step {
-            stage: WorkerStage::Inference,
-            completed,
-            total: script.steps,
-        });
-    }
-    match &script.ending {
-        ScriptEnding::WaitForCancel => {
-            while !cancelled.load(Ordering::Acquire) {
-                std::thread::sleep(Duration::from_millis(5));
-            }
-            cancel(&mut records)
-        }
-        ScriptEnding::Fail(reason) => WorkerRun::without_workspace(
-            RunResult::Failed(JobFailure::Host(attempt::host_failure(
-                HostFailureCode::WorkerExited,
-                reason,
-            ))),
-            RunTimings::default(),
-        ),
-        ScriptEnding::Ready => match crate::project::generation::synthetic_tools() {
-            Ok(worker) => attempt::synthetic::run(allocated, &worker, progress, records, cancelled),
-            Err(reason) => WorkerRun::without_workspace(
-                RunResult::Failed(JobFailure::Host(attempt::host_failure(
-                    HostFailureCode::WorkerExited,
-                    &reason,
-                ))),
-                RunTimings::default(),
-            ),
-        },
-    }
 }

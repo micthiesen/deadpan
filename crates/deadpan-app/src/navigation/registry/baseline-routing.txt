@@ -7353,6 +7353,7 @@ panel K none -> jobs Previous
 panel K none -> storage PreviousBackup
 panel K none -> keys-sheet LineUp
 panel N ctrl -> keys-search Next
+panel O none -> jobs RunAnyway
 panel O none -> storage Restore
 panel O ctrl -> marks false
 panel P none -> storage Preview

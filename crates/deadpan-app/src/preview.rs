@@ -2503,6 +2503,9 @@ impl DeadpanApp {
         if self.recovery_keyboard(context) {
             return None;
         }
+        if self.quit_keyboard(context) {
+            return None;
+        }
         if self.trim.is_some() {
             self.trim_keyboard(context);
             return None;
@@ -3380,7 +3383,10 @@ impl DeadpanApp {
     /// tests keep the in-window File menu.
     #[cfg(target_os = "macos")]
     pub fn install_menu(&mut self, context: &egui::Context) -> Result<(), String> {
-        self.quit_guard = Some(deadpan_lifecycle::QuitGuard::install()?);
+        let guard = deadpan_lifecycle::QuitGuard::install()?;
+        let wake = context.clone();
+        guard.on_deferred(Box::new(move || wake.request_repaint()));
+        self.quit_guard = Some(guard);
         self.refresh_quit_previews();
         let repaint = context.clone();
         self.menu = Some(crate::menu::MenuBar::install(move || {
@@ -5326,7 +5332,8 @@ impl eframe::App for DeadpanApp {
             ));
         }
         if context.input(|i| i.viewport().close_requested())
-            && (self.close_pending || !self.hold_close_for_previews(&context))
+            && (self.close_pending
+                || (!self.hold_close_for_previews(&context) && !self.hold_close_for_jobs(&context)))
         {
             self.close_pending = true;
         }
@@ -5513,6 +5520,7 @@ impl eframe::App for DeadpanApp {
         }
         // Drawn even over Trim, whose close question it may be asking.
         self.recovery_windows(&context);
+        self.quit_window(&context);
         self.damaged_window(&context);
         if input_scope
             != (
