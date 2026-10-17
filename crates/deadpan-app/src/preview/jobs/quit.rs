@@ -53,7 +53,8 @@ fn jobs_count(count: usize) -> String {
 
 impl DeadpanApp {
     /// Native launches: sample battery, Low Power Mode, thermal and memory
-    /// conditions for the coordinator. Replays and tests never read them.
+    /// conditions for the coordinator. Only explicitly opted-in real-model
+    /// qualification replays use this production probe.
     pub fn follow_system_conditions(&self) {
         self.service
             .jobs()

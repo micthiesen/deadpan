@@ -1,0 +1,32 @@
+{
+  "scope": "Read after completed runs; not executed worker provenance",
+  "runtime_source": "/Users/michael/Library/Caches/Deadpan/ltx-runtime/ltx-2-mlx-3392d75934120b7e69eefbe55893f7ef82be92a4",
+  "packages": {
+    "mlx": {
+      "status": "observed",
+      "records": [
+        {
+          "path": "/Users/michael/Library/Caches/Deadpan/ltx-runtime/ltx-2-mlx-3392d75934120b7e69eefbe55893f7ef82be92a4/.venv/lib/python3.12/site-packages/mlx-0.32.2.dist-info/METADATA",
+          "sha256": "d3454348122b9b131c3b8f97587635e0b13baa6d7805da27e1334d39214f1a41",
+          "identity_lines": [
+            "Name: mlx",
+            "Version: 0.32.2"
+          ]
+        }
+      ]
+    },
+    "mlx_lm": {
+      "status": "observed",
+      "records": [
+        {
+          "path": "/Users/michael/Library/Caches/Deadpan/ltx-runtime/ltx-2-mlx-3392d75934120b7e69eefbe55893f7ef82be92a4/.venv/lib/python3.12/site-packages/mlx_lm-0.31.1.dist-info/METADATA",
+          "sha256": "4ffec76681833222bae449c22b2fd94e2ea9de20cde85f1e837e762f4a0e1347",
+          "identity_lines": [
+            "Name: mlx-lm",
+            "Version: 0.31.1"
+          ]
+        }
+      ]
+    }
+  }
+}

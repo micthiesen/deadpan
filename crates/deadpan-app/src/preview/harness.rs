@@ -13,6 +13,7 @@ use crate::ui_harness::{self, Options, gpu::Offscreen, report::*};
 mod accessibility;
 mod ai_insertion;
 mod ai_pause;
+mod ai_playback_interference;
 mod ai_replacements;
 mod audio_treatments;
 mod audio_warming;
@@ -105,6 +106,8 @@ pub(super) struct Feedback {
     pub suppress_audio_warming: bool,
     pub playback_updates: std::collections::VecDeque<deadpan_playback::Update>,
     pub last_playback_update: Option<deadpan_playback::Update>,
+    /// Request-time device coordinates disambiguate identical loop pictures.
+    pub transport_picture_requests: std::collections::VecDeque<(Ticket, u64, i64)>,
     /// The scripted downloader behind the `youtube` replay's job seam.
     pub youtube: Option<Arc<crate::youtube::scripted::Scripted>>,
     /// The video the replay created its project from.
@@ -366,6 +369,9 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                             Some(fixture.to_owned()),
                         )]);
                         app.feedback.simulate_playback = !ui_harness::real_playback(name);
+                        if name == "ai-playback-interference" {
+                            app.follow_system_conditions();
+                        }
                         // Existing replay cache states remain deterministic.
                         // The audio-warming scenario explicitly enables this.
                         app.feedback.suppress_audio_warming = true;
@@ -404,10 +410,12 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                                 (DialogKind::Cookies, Some(cookies.clone())),
                             ]);
                         }
-                        // Replay never sees models or downloader updates
-                        // installed on this Mac.
-                        app.models.manager.set_root(models.clone());
-                        app.models.manager.set_helpers_root(models.join("helpers"));
+                        // Only the explicit interference qualification uses
+                        // installed models and their production admission path.
+                        if name != "ai-playback-interference" {
+                            app.models.manager.set_root(models.clone());
+                            app.models.manager.set_helpers_root(models.join("helpers"));
+                        }
                         if name == "model-packs" {
                             // Only the installer is scripted: the panel, its
                             // gating, the store's state and its receipts are real.
@@ -486,10 +494,14 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                 driver.step("Initial workspace", true)?;
                 if ui_harness::real_playback(name) {
                     driver.click("Open project…  ⌘O")?;
-                    driver.wait_for("Accepted playback fixture copy opened", |app| {
+                    driver.wait_for("Private playback fixture copy opened", |app| {
                         app.workspace.is_some() && !app.service.is_busy()
                     })?;
-                    return generated_playback::run(&mut driver, name == "generated-loop");
+                    return if name == "ai-playback-interference" {
+                        ai_playback_interference::run(&mut driver)
+                    } else {
+                        generated_playback::run(&mut driver, name == "generated-loop")
+                    };
                 }
                 if name == "generated-picture" {
                     driver.click("Open project…  ⌘O")?;
@@ -615,11 +627,14 @@ pub(crate) fn run(name: &str, options: &Options, fixture: &Path) -> ScenarioRepo
                     ),
                 });
             }
-            driver.report.skipped.extend([
+            driver.report.skipped.push(
                 "OS picker behavior: only its selected path is scripted".into(),
-                "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
-                    .into(),
-            ]);
+            );
+            driver.report.skipped.push(if ui_harness::real_playback(name) {
+                "Physical display presentation, VoiceOver, OS IME delivery and acoustic listening".into()
+            } else {
+                "Physical display presentation, VoiceOver, OS IME delivery and audio device output".into()
+            });
             // Drop the app and its writer before cleaning temporary storage.
             // Requested retained project roots remain in the report output.
             drop(driver);
@@ -872,8 +887,15 @@ impl Driver<'_> {
     }
 
     fn step(&mut self, input: &str, capture: bool) -> Result<(), String> {
-        if self.frame >= 6000 {
-            return Err("Scenario exceeded the 6000-frame trace budget".into());
+        let frame_budget = if self.report.name == "ai-playback-interference" {
+            24_000
+        } else {
+            6000
+        };
+        if self.frame >= frame_budget {
+            return Err(format!(
+                "Scenario exceeded the {frame_budget}-frame trace budget"
+            ));
         }
         self.frame += 1;
         self.harness.input_mut().time = Some(self.frame as f64 / f64::from(self.options.hz));

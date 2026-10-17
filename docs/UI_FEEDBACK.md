@@ -37,9 +37,19 @@ seconds. `generated-loop.json` records each displayed lap independently;
 relative to `window_frames[0]`. Completion requires the first picture of the
 next lap and the device clock reaching that lap. Stopping must retain the last
 submitted picture.
-Ordinary replay batches skip both; all other scenarios retain their simulated delivery. No native window or screenshot
+Ordinary replay batches skip these fixture-only scenarios. No native window or screenshot
 readback is involved, and this does not measure physical display latency or
 listening.
+
+`ai-playback-interference` additionally opts into the installed Extension model
+and production power, thermal and memory admission. Supply `--mode performance
+--project /absolute/original.deadpan --hz 120` with a fresh full-source Original
+of at least 40 seconds. The replay edits a private portable copy, compares real
+device playback before and during app-owned inference, and cancels without
+accepting generated pictures. Add `--retain-projects` to preserve that private
+copy and its model-attempt evidence after shutdown. Its scheduling timestamps are sampled UI
+observations, not GPU preemption measurements. Ordinary batches skip it;
+remaining scenarios simulate audio delivery.
 
 `cargo xtask replays` now replays every scenario from one harness build (see
 [All scenarios](#all-scenarios)). On 2026-10-04 with three jobs it ran 43

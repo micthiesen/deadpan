@@ -1,0 +1,116 @@
+#!/usr/bin/env python3
+"""Run one explicitly selected real inference/playback replay. No timeout kill."""
+import argparse
+import hashlib
+import json
+import os
+from pathlib import Path
+import platform
+import subprocess
+import time
+from datetime import datetime, timezone
+
+
+def sha(path):
+    with path.open('rb') as stream:
+        return hashlib.file_digest(stream, 'sha256').hexdigest()
+
+
+def identity(path):
+    return {'path': str(path), 'resolved_path': str(path.resolve()),
+            'bytes': path.stat().st_size, 'sha256': sha(path)}
+
+
+def observation(command):
+    started = time.monotonic()
+    try:
+        result = subprocess.run(command, capture_output=True, text=True, timeout=15)
+        return {'argv': command, 'exit_code': result.returncode,
+                'stdout': result.stdout, 'stderr': result.stderr,
+                'seconds': time.monotonic() - started}
+    except (OSError, subprocess.TimeoutExpired) as error:
+        return {'argv': command, 'error': str(error),
+                'seconds': time.monotonic() - started}
+
+
+def conditions():
+    return {'at_utc': datetime.now(timezone.utc).isoformat(),
+            'load_average': os.getloadavg(),
+            'observations': [observation(command) for command in [
+                ['pmset', '-g', 'batt'], ['pmset', '-g', 'therm'],
+                ['sysctl', '-n', 'kern.memorystatus_vm_pressure_level'],
+                ['vm_stat'], ['sysctl', '-n', 'vm.swapusage']]]}
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--binary', type=Path, required=True)
+    parser.add_argument('--fixture', type=Path, required=True)
+    parser.add_argument('--output', type=Path, required=True)
+    args = parser.parse_args()
+    binary, fixture, output = (p.absolute() for p in (args.binary, args.fixture, args.output))
+    if not binary.is_file() or not os.access(binary, os.X_OK):
+        parser.error('binary must be an existing executable')
+    if not fixture.is_dir() or fixture.suffix != '.deadpan':
+        parser.error('fixture must be an existing .deadpan package')
+    metadata = output.with_name(output.name + '.execution.json')
+    log = output.with_name(output.name + '.log')
+    if any(p.exists() for p in [output, metadata, log]):
+        parser.error('output, sibling .execution.json and sibling .log must all be new')
+    output.parent.mkdir(parents=True, exist_ok=True)
+    command = [str(binary), '--ui-check', '--scenario', 'ai-playback-interference',
+               '--mode', 'performance', '--project', str(fixture),
+               '--output', str(output), '--hz', '120', '--retain-projects']
+    fixture_records = {}
+    for name in ['fixture-preparation.json', 'fixture-verification.json']:
+        path = fixture.parent / name
+        if path.is_file():
+            fixture_records[name] = {'identity': identity(path), 'content': json.loads(path.read_text())}
+    package_files = {}
+    # Exact input identity without recursively copying media, databases or caches.
+    for path in sorted(fixture.rglob('*')):
+        if path.is_file():
+            package_files[str(path.relative_to(fixture))] = identity(path)
+    record = {
+        'schema': 1, 'argv': command, 'cwd': os.getcwd(),
+        'binary': identity(binary),
+        'helpers': {name: identity(binary.parent / name) if (binary.parent / name).is_file() else {'missing': True}
+                    for name in ['deadpan-cli', 'deadpan-media-worker', 'deadpan-track']},
+        'fixture': {'path': str(fixture), 'files': package_files, 'source_records': fixture_records},
+        'host': {'platform': platform.platform(), 'observations': [observation(c) for c in [
+            ['sw_vers'], ['sysctl', '-n', 'hw.model'],
+            ['sysctl', '-n', 'machdep.cpu.brand_string'], ['sysctl', '-n', 'hw.memsize']]]},
+        'limitations': ['Cache state is uncontrolled; no cache purge is performed.',
+                         'Other host activity is uncontrolled; no idle-host claim is made.',
+                         'No forced timeout or process termination: parent owns cancellation.',
+                         'Offscreen Metal and real device counters do not prove physical display timing or acoustic quality.'],
+        'before': conditions(), 'status': 'prepared', 'log': str(log),
+    }
+    with metadata.open('x') as stream:
+        json.dump(record, stream, indent=2)
+        stream.write('\n')
+    started = time.monotonic()
+    try:
+        with log.open('x') as stream:
+            child = subprocess.Popen(command, stdout=stream, stderr=subprocess.STDOUT)
+            record.update(status='running', pid=child.pid,
+                          started_utc=datetime.now(timezone.utc).isoformat())
+            metadata.write_text(json.dumps(record, indent=2) + '\n')
+            record['exit_code'] = child.wait()
+        record['status'] = 'finished'
+    except BaseException as error:
+        record.update(status='runner_interrupted', runner_error=repr(error))
+        raise
+    finally:
+        record['seconds'] = time.monotonic() - started
+        record['after'] = conditions()
+        record['binary_unchanged'] = sha(binary) == record['binary']['sha256']
+        record['finished_utc'] = datetime.now(timezone.utc).isoformat()
+        metadata.write_text(json.dumps(record, indent=2) + '\n')
+    print(json.dumps({'exit_code': record['exit_code'], 'seconds': record['seconds'],
+                      'metadata': str(metadata), 'log': str(log)}, indent=2), flush=True)
+    return record['exit_code']
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

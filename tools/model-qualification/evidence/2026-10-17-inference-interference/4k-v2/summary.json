@@ -1,0 +1,410 @@
+{
+  "scope": "paired real audio and offscreen Metal; scheduling timestamps are sampled UI observations",
+  "limitations": [
+    "No physical display, compositor latency, acoustic sync or listening measurement",
+    "No exact GPU preemption or protocol acknowledgment timestamp measurement"
+  ],
+  "fixture": {
+    "loop_frames": 150,
+    "original_frames": 1800,
+    "presentation_basis": {
+      "color_policy": "sdr_rec709",
+      "frame_rate": {
+        "denominator": 1,
+        "numerator": 30
+      },
+      "height": 2160,
+      "width": 3840
+    },
+    "project": "/private/tmp/deadpan-inference-interference-2026-10-17/4k-v2/projects/ai-playback-interference/generated-playback.deadpan"
+  },
+  "generation": {
+    "operation": "Some(ExtendFromLeft)",
+    "plan": "Some(Extension(ExtensionGenerationPlan { sampling: ExtensionSamplingMap { direction: FromLeft, project_rate: FrameRate { numerator: 30, denominator: 1 }, native_rate: FrameRate { numerator: 24, denominator: 1 }, context_frame_count: FrameDuration(9), generated_frame_count: FrameDuration(72), output_frame_count: FrameDuration(90), interpolation: EncodedSrgbRgb8LinearHalfUp, native_frame_count: FrameDuration(81) }, dimensions: NativeDimensions { width: 768, height: 320 }, requested_duration: ExactRatio { numerator: 3, denominator: 1 }, generated_duration: ExactRatio { numerator: 3, denominator: 1 }, native_movie_duration: ExactRatio { numerator: 27, denominator: 8 }, context_duration: ExactRatio { numerator: 3, denominator: 8 }, context_anchor_span: ExactRatio { numerator: 1, denominator: 3 }, speed: ExactRatio { numerator: 1, denominator: 1 }, retime_deviation: ExactRatio { numerator: 0, denominator: 1 } }))",
+    "request": "ai-hold-66b4ea1d160a4882927cc01418ca0223",
+    "startup_seconds": 95.878192208,
+    "ticket": 1
+  },
+  "elapsed_seconds": 132.154327125,
+  "result_error": null,
+  "intervals": [
+    {
+      "label": "baseline",
+      "passed": true,
+      "duration_ms": 30258.456417,
+      "first_audio_ms": 261.372042,
+      "expected_laps": 6,
+      "heard_laps": 6,
+      "window_frames": [
+        0,
+        150
+      ],
+      "window_matches": true,
+      "revision_unchanged": true,
+      "acknowledged_pause_while_playing": false,
+      "missing_ticket_attributions": 0,
+      "pictures_count": {
+        "exact": 900,
+        "reduced": 0,
+        "requested": 901,
+        "skipped": 0
+      },
+      "errors": {
+        "app": null,
+        "picture": null,
+        "project": null
+      },
+      "missing_picture_count": 0,
+      "missing_picture_examples": [],
+      "presented_picture_records": 900,
+      "audio": {
+        "faults": 0,
+        "max_callback_render_cost_ns": 9709,
+        "reports": 2817,
+        "silent_padding_frames": 0,
+        "underruns": 0,
+        "max_callback_render_cost_us": 9.709,
+        "callback_max_scope": "Engine cumulative high-water, not an interval delta"
+      }
+    },
+    {
+      "label": "inference",
+      "passed": true,
+      "duration_ms": 30112.910165999998,
+      "first_audio_ms": 124.900875,
+      "expected_laps": 6,
+      "heard_laps": 6,
+      "window_frames": [
+        0,
+        150
+      ],
+      "window_matches": true,
+      "revision_unchanged": true,
+      "acknowledged_pause_while_playing": true,
+      "missing_ticket_attributions": 0,
+      "pictures_count": {
+        "exact": 900,
+        "reduced": 0,
+        "requested": 901,
+        "skipped": 0
+      },
+      "errors": {
+        "app": null,
+        "picture": null,
+        "project": null
+      },
+      "missing_picture_count": 0,
+      "missing_picture_examples": [],
+      "presented_picture_records": 900,
+      "audio": {
+        "faults": 0,
+        "max_callback_render_cost_ns": 16542,
+        "reports": 2816,
+        "silent_padding_frames": 0,
+        "underruns": 0,
+        "max_callback_render_cost_us": 16.542,
+        "callback_max_scope": "Engine cumulative high-water, not an interval delta"
+      }
+    }
+  ],
+  "scheduling_timeline_scope": "Sampled UI states; not exact GPU dispatch or protocol acknowledgment timestamps",
+  "scheduling_timeline": [
+    {
+      "observed_ms": 864.9797500000001,
+      "model": null,
+      "outcome": null,
+      "phase": null,
+      "playback": "Preparing",
+      "inference_step": null
+    },
+    {
+      "observed_ms": 1108.6688330000002,
+      "model": null,
+      "outcome": null,
+      "phase": null,
+      "playback": "Playing",
+      "inference_step": null
+    },
+    {
+      "observed_ms": 31120.992292,
+      "model": null,
+      "outcome": null,
+      "phase": null,
+      "playback": null,
+      "inference_step": null
+    },
+    {
+      "observed_ms": 31326.088583,
+      "model": "Running",
+      "outcome": "None",
+      "phase": "Conditioning",
+      "playback": null,
+      "inference_step": null
+    },
+    {
+      "observed_ms": 51227.962708,
+      "model": "Held(\"Deadpan checks power and memory\")",
+      "outcome": "None",
+      "phase": "Conditioning",
+      "playback": null,
+      "inference_step": null
+    },
+    {
+      "observed_ms": 51330.047999999995,
+      "model": "Running",
+      "outcome": "None",
+      "phase": "Queued",
+      "playback": null,
+      "inference_step": null
+    },
+    {
+      "observed_ms": 51430.400875,
+      "model": "Running",
+      "outcome": "None",
+      "phase": "Preparing",
+      "playback": null,
+      "inference_step": null
+    },
+    {
+      "observed_ms": 51531.213041999996,
+      "model": "Running",
+      "outcome": "None",
+      "phase": "Stage(Preflight)",
+      "playback": null,
+      "inference_step": null
+    },
+    {
+      "observed_ms": 63410.988875,
+      "model": "Running",
+      "outcome": "None",
+      "phase": "Stage(RuntimeLoading)",
+      "playback": null,
+      "inference_step": null
+    },
+    {
+      "observed_ms": 64044.004625,
+      "model": "Running",
+      "outcome": "None",
+      "phase": "Stage(Conditioning)",
+      "playback": null,
+      "inference_step": null
+    },
+    {
+      "observed_ms": 64788.876125,
+      "model": "Running",
+      "outcome": "None",
+      "phase": "Stage(Inference)",
+      "playback": null,
+      "inference_step": null
+    },
+    {
+      "observed_ms": 81399.054208,
+      "model": "Running",
+      "outcome": "None",
+      "phase": "Step { stage: Inference, completed: 0, total: 30 }",
+      "playback": null,
+      "inference_step": {
+        "completed": 0,
+        "total": 30
+      }
+    },
+    {
+      "observed_ms": 95878.156542,
+      "model": "Running",
+      "outcome": "None",
+      "phase": "Step { stage: Inference, completed: 1, total: 30 }",
+      "playback": null,
+      "inference_step": {
+        "completed": 1,
+        "total": 30
+      }
+    },
+    {
+      "observed_ms": 96034.486292,
+      "model": "Pausing(\"the edit is playing\")",
+      "outcome": "None",
+      "phase": "Step { stage: Inference, completed: 1, total: 30 }",
+      "playback": "Preparing",
+      "inference_step": {
+        "completed": 1,
+        "total": 30
+      }
+    },
+    {
+      "observed_ms": 96146.136125,
+      "model": "Pausing(\"the edit is playing\")",
+      "outcome": "None",
+      "phase": "Step { stage: Inference, completed: 1, total: 30 }",
+      "playback": "Playing",
+      "inference_step": {
+        "completed": 1,
+        "total": 30
+      }
+    },
+    {
+      "observed_ms": 111556.31850000001,
+      "model": "Paused(\"the edit is playing\")",
+      "outcome": "None",
+      "phase": "Step { stage: Inference, completed: 1, total: 30 }",
+      "playback": "Playing",
+      "inference_step": {
+        "completed": 1,
+        "total": 30
+      }
+    },
+    {
+      "observed_ms": 126149.137708,
+      "model": "Paused(\"the edit is playing\")",
+      "outcome": "None",
+      "phase": "Step { stage: Inference, completed: 1, total: 30 }",
+      "playback": null,
+      "inference_step": {
+        "completed": 1,
+        "total": 30
+      }
+    },
+    {
+      "observed_ms": 126259.489583,
+      "model": "Running",
+      "outcome": "None",
+      "phase": "Step { stage: Inference, completed: 1, total: 30 }",
+      "playback": null,
+      "inference_step": {
+        "completed": 1,
+        "total": 30
+      }
+    },
+    {
+      "observed_ms": 126359.610125,
+      "model": "Running",
+      "outcome": "None",
+      "phase": "Step { stage: Inference, completed: 2, total: 30 }",
+      "playback": null,
+      "inference_step": {
+        "completed": 2,
+        "total": 30
+      }
+    },
+    {
+      "observed_ms": 126962.919625,
+      "model": "Running",
+      "outcome": "None",
+      "phase": "Cancelling",
+      "playback": null,
+      "inference_step": null
+    },
+    {
+      "observed_ms": 132045.92583300002,
+      "model": null,
+      "outcome": "None",
+      "phase": "Cancelling",
+      "playback": null,
+      "inference_step": null
+    },
+    {
+      "observed_ms": 132154.27875,
+      "model": null,
+      "outcome": "Some(Cancelled)",
+      "phase": "Cancelling",
+      "playback": null,
+      "inference_step": null
+    }
+  ],
+  "interaction_scope": "three stopped seeks, one split and one undo per interval: smoke samples, not percentile qualification",
+  "interaction_smoke_samples": [
+    {
+      "interval": "baseline",
+      "model_state": null,
+      "operation": "stopped_seek",
+      "second": 2,
+      "settled_ms": 114.387417
+    },
+    {
+      "interval": "baseline",
+      "model_state": null,
+      "operation": "stopped_seek",
+      "second": 12,
+      "settled_ms": 158.64108399999998
+    },
+    {
+      "interval": "baseline",
+      "model_state": null,
+      "operation": "stopped_seek",
+      "second": 4,
+      "settled_ms": 144.056916
+    },
+    {
+      "after": "4eacb34a-4a80-4b56-9380-b94c97a5b828",
+      "before": "2a78f43d-0dad-488d-a64a-be09b029773f",
+      "interval": "baseline",
+      "model_state": null,
+      "operation": "split",
+      "settled_ms": 34.953334000000005
+    },
+    {
+      "interval": "baseline",
+      "operation": "undo",
+      "revision": "c07de8ca-9b78-47bc-8419-458e5556c07b",
+      "settled_ms": 29.407584
+    },
+    {
+      "interval": "inference",
+      "model_state": "Running",
+      "operation": "stopped_seek",
+      "second": 2,
+      "settled_ms": 105.35558400000001
+    },
+    {
+      "interval": "inference",
+      "model_state": "Running",
+      "operation": "stopped_seek",
+      "second": 12,
+      "settled_ms": 144.268041
+    },
+    {
+      "interval": "inference",
+      "model_state": "Running",
+      "operation": "stopped_seek",
+      "second": 4,
+      "settled_ms": 139.07825
+    },
+    {
+      "after": "f0956fbb-70cd-4137-a23b-67ea44257226",
+      "before": "c07de8ca-9b78-47bc-8419-458e5556c07b",
+      "interval": "inference",
+      "model_state": "Running",
+      "operation": "split",
+      "settled_ms": 41.699708
+    },
+    {
+      "interval": "inference",
+      "operation": "undo",
+      "revision": "010b6ae9-6bae-41fd-bc05-fc294389871f",
+      "settled_ms": 29.95175
+    }
+  ],
+  "failed_main_checks": [],
+  "all_main_findings": [
+    {
+      "scenario": "ai-playback-interference",
+      "message": "10 frame(s) settled their layout only on a second retry: [{\"frame\":49,\"input\":\"Command proxies off\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5450)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5585)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]},{\"frame\":51,\"input\":\"Command monitor 5%\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5450)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5585)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]},{\"frame\":53,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5450)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5585)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]},{\"frame\":239,\"input\":\"Command hold 3s\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5450)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5585)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]},{\"frame\":538,\"input\":\"Command split\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5450)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5585)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]},{\"frame\":571,\"input\":\"Command audition-context lead=0ms follow=0ms\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5450)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5585)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]},{\"frame\":3585,\"input\":\"Command generate mode=extend-left\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5450)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5585)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]},{\"frame\":4196,\"input\":\"Command audition-context lead=0ms follow=0ms\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5450)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5585)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]},{\"frame\":7402,\"input\":\"Command split\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5450)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5585)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]},{\"frame\":7436,\"input\":\"Command jobs\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5450)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5585)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]}]",
+      "severity": "warning"
+    },
+    {
+      "scenario": "ai-playback-interference",
+      "message": "egui discard warning: 2 run(s) of 3+ consecutive retrying frames, each frame with its own cause: [[{\"frame\":47,\"input\":\"Private playback fixture copy opened\",\"new_input\":false,\"reasons\":[\"pass 0: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]},{\"frame\":48,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:5900)\"]},{\"frame\":49,\"input\":\"Command proxies off\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5450)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5585)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]},{\"frame\":50,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:5900)\"]},{\"frame\":51,\"input\":\"Command monitor 5%\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5450)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5585)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]},{\"frame\":52,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:5900)\"]},{\"frame\":53,\"input\":\"Command sequence\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5450)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5585)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]}],[{\"frame\":3584,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:5900)\"]},{\"frame\":3585,\"input\":\"Command generate mode=extend-left\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5450)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5585)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]},{\"frame\":3586,\"input\":\"Real Extension inference startup\",\"new_input\":false,\"reasons\":[\"pass 0: workspace footer height changed (crates/deadpan-app/src/preview.rs:4068)\"]}]]",
+      "severity": "warning"
+    }
+  ],
+  "failed_timing_samples": [],
+  "cleanup": {
+    "error": null,
+    "model_rows": 0,
+    "cancelled": {
+      "fallback_preserved": true,
+      "model_rows": 0,
+      "outcome": "Some(Cancelled)",
+      "revision": "010b6ae9-6bae-41fd-bc05-fc294389871f"
+    }
+  }
+}

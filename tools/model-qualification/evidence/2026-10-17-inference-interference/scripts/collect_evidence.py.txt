@@ -1,0 +1,81 @@
+#!/usr/bin/env python3
+"""Collect completed real-interference runs to an explicit NEW destination."""
+from pathlib import Path
+import argparse,gzip,hashlib,json,shutil,sqlite3
+from datetime import datetime,timezone
+ROOT=Path(__file__).resolve().parent
+REPO=Path('/Users/michael/Code/deadpan')
+TABLES=['generation_requests','generation_attempts','generation_attempt_heads','generation_candidate_receipts','generation_bundle_receipts','generation_accepted_origins','generation_variant_retention','generation_preparations','generation_preparation_retirements']
+def sha(p):
+ with p.open('rb') as f:return hashlib.file_digest(f,'sha256').hexdigest()
+def save(p,v):p.parent.mkdir(parents=True,exist_ok=True);p.write_text(json.dumps(v,indent=2)+'\n')
+def compress(source,target):
+ target.parent.mkdir(parents=True,exist_ok=True)
+ with source.open('rb') as s,target.open('wb') as o,gzip.GzipFile(filename='',fileobj=o,mode='wb',mtime=0) as z:shutil.copyfileobj(s,z)
+def inspect(run):
+ package=run/'projects/ai-playback-interference/generated-playback.deadpan'
+ database=package/'project.sqlite'
+ connection=sqlite3.connect(database.as_uri()+'?mode=ro',uri=True);connection.row_factory=sqlite3.Row
+ with connection:
+  tables={table:[dict(row) for row in connection.execute('SELECT * FROM '+table)] for table in TABLES}
+ connection.close()
+ attempts=tables['generation_attempts'];heads=tables['generation_attempt_heads']
+ assert len(attempts)==1 and attempts[0]['state']=='cancelled' and attempts[0]['worker_candidate'] is None
+ assert all(row['selected_ready_attempt_id'] is None for row in heads)
+ assert not tables['generation_bundle_receipts'] and not tables['generation_accepted_origins']
+ generated=list((package/'Media/Generated').glob('*')) if (package/'Media/Generated').exists() else []
+ return {'read_at_utc':datetime.now(timezone.utc).isoformat(),'database':str(database),'access':'SQLite URI mode=ro','tables':tables,'generated_files':[{'name':p.name,'bytes':p.stat().st_size,'sha256':sha(p)} for p in generated if p.is_file()],'interpretation':'Cancelled attempt; no selected Ready or accepted origins. Temporary worker workspace was cleaned; executed runtime config, raw conditioning PNGs and worker output provenance are unavailable. Stored request retains provider, exact plan, context hash and input binding.'}
+def main():
+ parser=argparse.ArgumentParser(description=__doc__);parser.add_argument('--destination',type=Path,required=True);parser.add_argument('--runs',nargs='+',default=['1080p-v2','4k-v2']);args=parser.parse_args();dest=args.destination.absolute()
+ if dest.exists():parser.error('destination must be new; publication requires parent approval')
+ prepared=[]
+ for name in args.runs:
+  run=ROOT/name;metadata=json.loads((ROOT/(name+'.execution.json')).read_text());assert metadata['status']=='finished' and metadata['exit_code']==0,name
+  evidence=json.loads((run/'ai-playback-interference.json').read_text());assert evidence['result'] is None and evidence['cleanup_error'] is None,name
+  assert len(evidence['intervals'])==2 and all(i['passed'] for i in evidence['intervals']),name
+  prepared.append((name,run,metadata,evidence,inspect(run)))
+ dest.mkdir(parents=True)
+ for name in ['prepare_originals.py','run.py','summarize.py','collect_evidence.py']:
+  target=dest/'scripts'/(name+'.txt');target.parent.mkdir(parents=True,exist_ok=True);shutil.copyfile(ROOT/name,target)
+ for name in ['fixture-preparation.json','fixture-verification.json']:shutil.copyfile(ROOT/name,dest/name)
+ for name,run,metadata,evidence,durable in prepared:
+  target=dest/name;target.mkdir();save(target/'execution.json',metadata);save(target/'durable-cancellation.json',durable)
+  compress(ROOT/(name+'.log'),target/'run.log.gz')
+  for filename in ['report.json','ai-playback-interference.json']:
+   compress(run/filename,target/(filename+'.gz'))
+  for suffix in ['.summary.json','-summary.json']:
+   p=ROOT/(name+suffix)
+   if p.exists():shutil.copyfile(p,target/'summary.json')
+  binary=Path(metadata['binary']['path']);pins=binary.parent/'hashes.json'
+  if pins.exists():shutil.copyfile(pins,target/'executed-binary-pins.json')
+  package=run/'projects/ai-playback-interference/generated-playback.deadpan'
+  # Snapshot the closed private project's SQLite state with the read-only
+  # connection backup API, so WAL contents are preserved consistently.
+  connection=sqlite3.connect((package/'project.sqlite').as_uri()+'?mode=ro',uri=True)
+  snapshot=sqlite3.connect(':memory:');connection.backup(snapshot);connection.close()
+  sql='\n'.join(snapshot.iterdump()).encode();snapshot.close()
+  with (target/'project.sql.gz').open('wb') as output,gzip.GzipFile(filename='',fileobj=output,mode='wb',mtime=0) as z:z.write(sql)
+ validation=dest/'validation';validation.mkdir()
+ for name in ['1080p-first.execution.json','1080p-first.log']:
+  path=ROOT/name
+  if not path.is_file():raise RuntimeError('Missing initial failed run evidence: '+name)
+  if path.suffix=='.log':compress(path,validation/(name+'.gz'))
+  else:shutil.copyfile(path,validation/name)
+ source_files=['crates/deadpan-app/src/preview/harness.rs','crates/deadpan-app/src/preview/playback.rs','crates/deadpan-app/src/ui_harness.rs','crates/deadpan-app/src/preview/jobs/quit.rs','crates/deadpan-app/src/preview/harness/ai_playback_interference.rs','crates/deadpan-app/src/jobs.rs','crates/deadpan-cli/src/generation/attempt.rs','crates/deadpan-jobs/src/process.rs','crates/deadpan-jobs/src/process/pause.rs','models/packs/ltx-2.3-q4-extension-1.json','tools/model-qualification/ltx-source-manifest.json']
+ source_files += ['tools/model-qualification/'+n for n in ['worker.py','worker_protocol.py','worker_media.py','worker_extension_context.py','mlx_backend.py','runtime_source.py']]
+ hashes={}
+ for name in source_files:
+  p=REPO/name;hashes[name]={'bytes':p.stat().st_size,'sha256':sha(p)};compress(p,dest/'source'/(name+'.gz'))
+ runtime=Path('/Users/michael/Library/Caches/Deadpan/ltx-runtime/ltx-2-mlx-3392d75934120b7e69eefbe55893f7ef82be92a4')
+ installed={}
+ for package in ['mlx','mlx_lm']:
+  records=[]
+  for path in (runtime/'.venv/lib').glob('python*/site-packages/'+package+'-*.dist-info/METADATA'):
+   records.append({'path':str(path),'sha256':sha(path),'identity_lines':[line for line in path.read_text().splitlines() if line.startswith(('Name:','Version:'))]})
+  installed[package]={'status':'observed' if records else 'unavailable','records':records}
+ save(dest/'installed-runtime-observation.json',{'scope':'Read after completed runs; not executed worker provenance','runtime_source':str(runtime),'packages':installed})
+ save(dest/'collection-source-hashes.json',{'scope':'Current source at collection, not an executed-source identity unless matched against retained build evidence','files':hashes})
+ save(dest/'limitations.json',{'cache':'Uncontrolled; no cold-cache claim','other_activity':'Uncontrolled; see per-run load/power observations','physical':'Real audio device reports and offscreen Metal; no acoustic, compositor or physical display timing','timing':'Scheduling timestamps sampled by UI, not precise dispatch or acknowledgment times','runtime':'Actual selected provider/runtime and plan retained in each durable request; temporary runtime configuration and conditioning bytes were not archived before cancellation','originals':'Large original media excluded. Fixture paths, hashes and sizes retained in fixture-preparation.json; generated testsrc2+sine recipe documented in docs/qualification/performance-2026-10-04.md','sources':'Collection-time source snapshots must not be silently substituted for executed source pins'})
+ save(dest/'inventory.json',{str(p.relative_to(dest)):{'bytes':p.stat().st_size,'sha256':sha(p)} for p in sorted(dest.rglob('*')) if p.is_file()})
+ print(dest)
+if __name__=='__main__':main()

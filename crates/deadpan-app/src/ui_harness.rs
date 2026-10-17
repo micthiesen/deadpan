@@ -86,6 +86,7 @@ pub(crate) const SCENARIOS: &[&str] = &[
     "generated-picture",
     "generated-playback",
     "generated-loop",
+    "ai-playback-interference",
     "youtube",
     "linked-original",
     "accessibility",
@@ -165,7 +166,7 @@ impl Options {
             .is_some_and(|name| PROJECT_FIXTURE_SCENARIOS.contains(&name));
         if project.is_some() && !fixture_scenario {
             return Err(
-                "--project requires generated-picture, generated-playback, generated-loop or ai-pause-ready".into(),
+                "--project requires generated-picture, generated-playback, generated-loop, ai-playback-interference or ai-pause-ready".into(),
             );
         }
         if fixture_scenario && project.is_none() {
@@ -175,9 +176,7 @@ impl Options {
             ));
         }
         if scenario.as_deref().is_some_and(real_playback) && mode != RunMode::Performance {
-            return Err(
-                "Generated playback opens real audio and requires --mode performance".into(),
-            );
+            return Err("Real playback opens device audio and requires --mode performance".into());
         }
         if project.as_ref().is_some_and(|path| {
             !path.is_absolute()
@@ -187,7 +186,10 @@ impl Options {
         }) {
             return Err("--project must name an absolute .deadpan fixture package".into());
         }
-        if project.is_some() && retain_projects {
+        if project.is_some()
+            && retain_projects
+            && scenario.as_deref() != Some("ai-playback-interference")
+        {
             return Err(
                 "The explicit --project fixture is already retained; omit --retain-projects".into(),
             );
@@ -256,11 +258,15 @@ pub(crate) const PROJECT_FIXTURE_SCENARIOS: &[&str] = &[
     "generated-picture",
     "generated-playback",
     "generated-loop",
+    "ai-playback-interference",
     "ai-pause-ready",
 ];
 
 pub(crate) fn real_playback(name: &str) -> bool {
-    matches!(name, "generated-playback" | "generated-loop")
+    matches!(
+        name,
+        "generated-playback" | "generated-loop" | "ai-playback-interference"
+    )
 }
 
 /// One scenario per line for tools such as `cargo xtask replays`. A
@@ -285,7 +291,7 @@ pub(crate) fn entry(arguments: &[String]) -> Result<(), String> {
     }
     if arguments == ["--help"] {
         println!(
-            "Usage: deadpan-app --ui-check --output NEW_DIRECTORY [--mode visual|performance] [--scenario NAME] [--hz 60|120] [--kestrel-source Shortcuts.swift] [--baseline PRIOR_DIRECTORY] [--retain-projects]\n       deadpan-app --ui-check --list-scenarios\n\nScenarios: {}\nVisual mode writes report.json, report.html and actual offscreen PNG frames.\nPerformance mode submits full UI + picture GPU work without screenshot readback.\nUse --release for performance. Projects use private temporary storage by default.\n--retain-projects keeps each scenario's Documents root under output/projects/NAME for native QA after replay exits.\nGenerated picture replay requires --scenario generated-picture --project /absolute/accepted.deadpan, exported by the real bundle qualification test with DEADPAN_GENERATED_PICTURE_FIXTURE_ROOT. It opens the generic compatibility fixture without editing it.\nai-pause-ready requires --project /absolute/project.deadpan whose last edit accepted real AI pictures; it replays a private copy.\ngenerated-playback requires --mode performance --project and runs real device audio at 5% monitor gain on a private copy of a <=32-second accepted project. generated-loop uses the same real-audio setup, selects from the first through last Generated picture (at most eight seconds), and loops for at least 30 seconds. All other scenarios simulate audio delivery. Native pickers are scripted; no desktop window is opened.",
+            "Usage: deadpan-app --ui-check --output NEW_DIRECTORY [--mode visual|performance] [--scenario NAME] [--hz 60|120] [--kestrel-source Shortcuts.swift] [--baseline PRIOR_DIRECTORY] [--retain-projects]\n       deadpan-app --ui-check --list-scenarios\n\nScenarios: {}\nVisual mode writes report.json, report.html and actual offscreen PNG frames.\nPerformance mode submits full UI + picture GPU work without screenshot readback.\nUse --release for performance. Projects use private temporary storage by default.\n--retain-projects keeps each scenario's Documents root under output/projects/NAME for native QA after replay exits.\nGenerated picture replay requires --scenario generated-picture --project /absolute/accepted.deadpan, exported by the real bundle qualification test with DEADPAN_GENERATED_PICTURE_FIXTURE_ROOT. It opens the generic compatibility fixture without editing it.\nai-pause-ready requires --project /absolute/project.deadpan whose last edit accepted real AI pictures; it replays a private copy.\ngenerated-playback requires --mode performance --project and runs real device audio at 5% monitor gain on a private copy of a <=32-second accepted project. generated-loop uses the same real-audio setup, selects from the first through last Generated picture (at most eight seconds), and loops for at least 30 seconds. ai-playback-interference requires --mode performance --project with a fresh full-source Original of at least 40 seconds and the installed Extension model; it uses real inference, production scheduling and device audio at 5% monitor gain on a private project copy. All other scenarios simulate audio delivery. Native pickers are scripted; no desktop window is opened.",
             SCENARIOS.join(", ")
         );
         return Ok(());
@@ -313,7 +319,9 @@ pub(crate) fn entry(arguments: &[String]) -> Result<(), String> {
         .map_err(|error| format!("Resolve replay fixture: {error}"))?;
     let ready_fixture = matches!(
         options.scenario.as_deref(),
-        Some("ai-pause-ready" | "generated-playback" | "generated-loop")
+        Some(
+            "ai-pause-ready" | "generated-playback" | "generated-loop" | "ai-playback-interference"
+        )
     );
     let fixture_identity = if ready_fixture {
         fixture.join("project.sqlite")
@@ -352,6 +360,7 @@ pub(crate) fn entry(arguments: &[String]) -> Result<(), String> {
             .map(|bytes| sha256(&bytes))
             .map_err(|error| error.to_string())?
     };
+    let interference = options.scenario.as_deref() == Some("ai-playback-interference");
     let mut report = Report::new(
         options.mode,
         json!({
@@ -366,14 +375,14 @@ pub(crate) fn entry(arguments: &[String]) -> Result<(), String> {
             "hardware": command_output("sysctl", &["-n", "machdep.cpu.brand_string"]),
             "os": command_output("sw_vers", &["-productVersion"]),
             "rust": command_output("rustc", &["--version"]),
-            "fixture": if ready_fixture { "project with real accepted AI pictures (replayed from a private copy)" } else if options.project.is_some() { "accepted Generated compatibility project" } else { "cfr-bframes.mp4" },
+            "fixture": if interference { "full-source Original project (replayed from a private portable copy)" } else if ready_fixture { "project with real accepted AI pictures (replayed from a private copy)" } else if options.project.is_some() { "accepted Generated compatibility project" } else { "cfr-bframes.mp4" },
             "fixture_identity_file": fixture_identity,
             "fixture_sha256": fixture_hash,
             "replay_hz": options.hz, "viewport_points": [1280,820],
             "physical_display_measured": false, "gpu_readback_in_timing_run": false,
             "wait_strategy": "egui_repaint_callback_v1",
             "picture_worker_timing": "request_start_finish_publication_receipt_v1",
-            "cache_state": if options.project.is_some() { "first six-object generated admission/index cold, subsequent navigation warm; OS file cache uncontrolled" } else { "first import/index cold, subsequent operations warm; OS file cache uncontrolled" },
+            "cache_state": if interference { "baseline precedes inference in the same process; decoder and model caches are not reset; OS file cache uncontrolled" } else if options.project.is_some() { "first six-object generated admission/index cold, subsequent navigation warm; OS file cache uncontrolled" } else { "first import/index cold, subsequent operations warm; OS file cache uncontrolled" },
             "power_thermal_state": "uncontrolled; compare on the same idle machine and power mode",
         }),
     );
@@ -554,7 +563,11 @@ mod tests {
 
     #[test]
     fn real_playback_requires_explicit_performance_mode_and_project() {
-        for name in ["generated-playback", "generated-loop"] {
+        for name in [
+            "generated-playback",
+            "generated-loop",
+            "ai-playback-interference",
+        ] {
             let arguments = |tail: &[&str]| {
                 ["--output", "/tmp/example", "--scenario", name]
                     .into_iter()
@@ -583,6 +596,35 @@ mod tests {
                 .is_err()
             );
         }
+    }
+
+    #[test]
+    fn interference_retains_its_private_copy_for_attempt_evidence() {
+        let options = Options::parse(
+            &[
+                "--output",
+                "/tmp/replay",
+                "--scenario",
+                "ai-playback-interference",
+                "--project",
+                "/tmp/original.deadpan",
+                "--mode",
+                "performance",
+                "--retain-projects",
+            ]
+            .into_iter()
+            .map(str::to_owned)
+            .collect::<Vec<_>>(),
+        )
+        .unwrap();
+        assert_eq!(
+            options
+                .retained_project_root("ai-playback-interference")
+                .unwrap(),
+            Some(PathBuf::from(
+                "/tmp/replay/projects/ai-playback-interference"
+            ))
+        );
     }
 
     #[test]

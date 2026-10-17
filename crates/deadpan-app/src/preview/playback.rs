@@ -617,6 +617,14 @@ impl DeadpanApp {
             {
                 if let Some(run) = &mut self.transport {
                     run.picture_submitted(ticket.request);
+                    #[cfg(feature = "ui-harness")]
+                    if let Ok(lap) = run.lap() {
+                        let requests = &mut self.feedback.transport_picture_requests;
+                        if requests.len() == 8192 {
+                            requests.pop_front();
+                        }
+                        requests.push_back((ticket, lap, run.sample.0));
+                    }
                 }
             } else {
                 let error = self.error.take().unwrap_or_else(|| {

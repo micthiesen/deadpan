@@ -1,0 +1,452 @@
+{
+  "schema": 1,
+  "argv": [
+    "/tmp/deadpan-inference-interference-2026-10-17/bin/deadpan-app",
+    "--ui-check",
+    "--scenario",
+    "ai-playback-interference",
+    "--mode",
+    "performance",
+    "--project",
+    "/tmp/deadpan-inference-interference-2026-10-17/1080p.deadpan",
+    "--output",
+    "/tmp/deadpan-inference-interference-2026-10-17/1080p-first",
+    "--hz",
+    "120",
+    "--retain-projects"
+  ],
+  "cwd": "/Users/michael/Code/deadpan",
+  "binary": {
+    "path": "/tmp/deadpan-inference-interference-2026-10-17/bin/deadpan-app",
+    "resolved_path": "/private/tmp/deadpan-inference-interference-2026-10-17/bin/deadpan-app",
+    "bytes": 73623664,
+    "sha256": "886cabc9ae0688ed2430e36fc5f1f5a18f72592faae9b40daee5d430adb06da1"
+  },
+  "helpers": {
+    "deadpan-cli": {
+      "path": "/tmp/deadpan-inference-interference-2026-10-17/bin/deadpan-cli",
+      "resolved_path": "/private/tmp/deadpan-inference-interference-2026-10-17/bin/deadpan-cli",
+      "bytes": 48159712,
+      "sha256": "8690b3444a53cdb01b3ab16742e60a9e06ba9f4e434a6e38310d67b12e9d03dd"
+    },
+    "deadpan-media-worker": {
+      "path": "/tmp/deadpan-inference-interference-2026-10-17/bin/deadpan-media-worker",
+      "resolved_path": "/private/tmp/deadpan-inference-interference-2026-10-17/bin/deadpan-media-worker",
+      "bytes": 1169696,
+      "sha256": "a072f82a294153361e548eefc6e2a00ec239d8abefde127b8f9381f1a4db6944"
+    },
+    "deadpan-track": {
+      "path": "/tmp/deadpan-inference-interference-2026-10-17/bin/deadpan-track",
+      "resolved_path": "/private/tmp/deadpan-inference-interference-2026-10-17/bin/deadpan-track",
+      "bytes": 1656592,
+      "sha256": "63f95135ade0dbb4438a73549a0d5a632f976c13b7c7c037c7902c5b29e41aa5"
+    }
+  },
+  "fixture": {
+    "path": "/tmp/deadpan-inference-interference-2026-10-17/1080p.deadpan",
+    "files": {
+      ".writer.lock": {
+        "path": "/tmp/deadpan-inference-interference-2026-10-17/1080p.deadpan/.writer.lock",
+        "resolved_path": "/private/tmp/deadpan-inference-interference-2026-10-17/1080p.deadpan/.writer.lock",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      "Media/Originals/blake3-d1b2d31fe675e11ba7f41e2e3e63507de140cfafd0e1c1d9b2e0d38a81c9187b": {
+        "path": "/tmp/deadpan-inference-interference-2026-10-17/1080p.deadpan/Media/Originals/blake3-d1b2d31fe675e11ba7f41e2e3e63507de140cfafd0e1c1d9b2e0d38a81c9187b",
+        "resolved_path": "/private/tmp/deadpan-inference-interference-2026-10-17/1080p.deadpan/Media/Originals/blake3-d1b2d31fe675e11ba7f41e2e3e63507de140cfafd0e1c1d9b2e0d38a81c9187b",
+        "bytes": 126134871,
+        "sha256": "987d08a9212890ca9908de4817d23a707f3b258a58fdc5cd064157304d0d7837"
+      },
+      "manifest.json": {
+        "path": "/tmp/deadpan-inference-interference-2026-10-17/1080p.deadpan/manifest.json",
+        "resolved_path": "/private/tmp/deadpan-inference-interference-2026-10-17/1080p.deadpan/manifest.json",
+        "bytes": 82,
+        "sha256": "97341d2e8cc02f44391dab31a87f4c3c7de1eabf6d787755cf85c70bde5f67a3"
+      },
+      "project.sqlite": {
+        "path": "/tmp/deadpan-inference-interference-2026-10-17/1080p.deadpan/project.sqlite",
+        "resolved_path": "/private/tmp/deadpan-inference-interference-2026-10-17/1080p.deadpan/project.sqlite",
+        "bytes": 2162688,
+        "sha256": "0e242960a8e3cef09970d9694fa0646538bab23f947809fbee2889fa04c3275d"
+      },
+      "project.sqlite-shm": {
+        "path": "/tmp/deadpan-inference-interference-2026-10-17/1080p.deadpan/project.sqlite-shm",
+        "resolved_path": "/private/tmp/deadpan-inference-interference-2026-10-17/1080p.deadpan/project.sqlite-shm",
+        "bytes": 32768,
+        "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+      },
+      "project.sqlite-wal": {
+        "path": "/tmp/deadpan-inference-interference-2026-10-17/1080p.deadpan/project.sqlite-wal",
+        "resolved_path": "/private/tmp/deadpan-inference-interference-2026-10-17/1080p.deadpan/project.sqlite-wal",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "source_records": {
+      "fixture-preparation.json": {
+        "identity": {
+          "path": "/tmp/deadpan-inference-interference-2026-10-17/fixture-preparation.json",
+          "resolved_path": "/private/tmp/deadpan-inference-interference-2026-10-17/fixture-preparation.json",
+          "bytes": 3190,
+          "sha256": "b43fb5559da25f3ab378edf62c7a9344315cce76c6bf21533c86c005b9965954"
+        },
+        "content": {
+          "executable": "/tmp/deadpan-inference-pause-final-bin-2026-10-17/deadpan-cli",
+          "executable_sha256": "8690b3444a53cdb01b3ab16742e60a9e06ba9f4e434a6e38310d67b12e9d03dd",
+          "identity": "Retained qualified standalone CLI from 2026-10-17 inference scheduling run; not rebuilt for this preparation",
+          "runs": [
+            {
+              "name": "1080p",
+              "project": "/private/tmp/deadpan-inference-interference-2026-10-17/1080p.deadpan",
+              "fixture": "/tmp/dp-perf-after-1/fixtures/gen-1080p60.mp4",
+              "fixture_bytes": 126134871,
+              "fixture_sha256": "987d08a9212890ca9908de4817d23a707f3b258a58fdc5cd064157304d0d7837",
+              "commands": [
+                {
+                  "command": [
+                    "/tmp/deadpan-inference-pause-final-bin-2026-10-17/deadpan-cli",
+                    "project",
+                    "create-original",
+                    "/private/tmp/deadpan-inference-interference-2026-10-17/1080p.deadpan",
+                    "/tmp/dp-perf-after-1/fixtures/gen-1080p60.mp4"
+                  ],
+                  "exit_code": 0,
+                  "seconds": 12.114688832778484
+                },
+                {
+                  "command": [
+                    "/tmp/deadpan-inference-pause-final-bin-2026-10-17/deadpan-cli",
+                    "project",
+                    "dump",
+                    "/private/tmp/deadpan-inference-interference-2026-10-17/1080p.deadpan",
+                    "--json"
+                  ],
+                  "exit_code": 0,
+                  "seconds": 0.025439375080168247
+                },
+                {
+                  "command": [
+                    "/tmp/deadpan-inference-pause-final-bin-2026-10-17/deadpan-cli",
+                    "project",
+                    "validate",
+                    "/private/tmp/deadpan-inference-interference-2026-10-17/1080p.deadpan",
+                    "--quick"
+                  ],
+                  "exit_code": 0,
+                  "seconds": 0.024239290971308947
+                }
+              ]
+            },
+            {
+              "name": "4k",
+              "project": "/private/tmp/deadpan-inference-interference-2026-10-17/4k.deadpan",
+              "fixture": "/tmp/dp-perf-after-1/fixtures/gen-4k30.mp4",
+              "fixture_bytes": 157743974,
+              "fixture_sha256": "b82763e50a24b01b1c2f7e226c7268084a4a7caba196604391272600f21f9ca2",
+              "commands": [
+                {
+                  "command": [
+                    "/tmp/deadpan-inference-pause-final-bin-2026-10-17/deadpan-cli",
+                    "project",
+                    "create-original",
+                    "/private/tmp/deadpan-inference-interference-2026-10-17/4k.deadpan",
+                    "/tmp/dp-perf-after-1/fixtures/gen-4k30.mp4"
+                  ],
+                  "exit_code": 0,
+                  "seconds": 13.478161292150617
+                },
+                {
+                  "command": [
+                    "/tmp/deadpan-inference-pause-final-bin-2026-10-17/deadpan-cli",
+                    "project",
+                    "dump",
+                    "/private/tmp/deadpan-inference-interference-2026-10-17/4k.deadpan",
+                    "--json"
+                  ],
+                  "exit_code": 0,
+                  "seconds": 0.016007124911993742
+                },
+                {
+                  "command": [
+                    "/tmp/deadpan-inference-pause-final-bin-2026-10-17/deadpan-cli",
+                    "project",
+                    "validate",
+                    "/private/tmp/deadpan-inference-interference-2026-10-17/4k.deadpan",
+                    "--quick"
+                  ],
+                  "exit_code": 0,
+                  "seconds": 0.014480875339359045
+                }
+              ]
+            }
+          ]
+        }
+      },
+      "fixture-verification.json": {
+        "identity": {
+          "path": "/tmp/deadpan-inference-interference-2026-10-17/fixture-verification.json",
+          "resolved_path": "/private/tmp/deadpan-inference-interference-2026-10-17/fixture-verification.json",
+          "bytes": 1331,
+          "sha256": "218ec9893ba092af432c13ecc17057f75dbfa8ba774bfe870157e2df8d26908f"
+        },
+        "content": [
+          {
+            "project": "1080p.deadpan",
+            "canvas": [
+              1920,
+              1080
+            ],
+            "rate": {
+              "numerator": 60,
+              "denominator": 1
+            },
+            "source_frames": 7200,
+            "seconds": 120.0,
+            "audio": {
+              "asset": "44f77974-56bc-41db-a7fd-cd80c46ae767",
+              "span": {
+                "start": {
+                  "ticks": 0,
+                  "time_base": {
+                    "numerator": 1,
+                    "denominator": 48000
+                  }
+                },
+                "end": {
+                  "ticks": 5760000,
+                  "time_base": {
+                    "numerator": 1,
+                    "denominator": 48000
+                  }
+                }
+              }
+            },
+            "node_count": 2,
+            "accepted_generated_media": false
+          },
+          {
+            "project": "4k.deadpan",
+            "canvas": [
+              3840,
+              2160
+            ],
+            "rate": {
+              "numerator": 30,
+              "denominator": 1
+            },
+            "source_frames": 1800,
+            "seconds": 60.0,
+            "audio": {
+              "asset": "10c71825-b967-4210-8cb4-ed1dfe9e7407",
+              "span": {
+                "start": {
+                  "ticks": 0,
+                  "time_base": {
+                    "numerator": 1,
+                    "denominator": 48000
+                  }
+                },
+                "end": {
+                  "ticks": 2880000,
+                  "time_base": {
+                    "numerator": 1,
+                    "denominator": 48000
+                  }
+                }
+              }
+            },
+            "node_count": 2,
+            "accepted_generated_media": false
+          }
+        ]
+      }
+    }
+  },
+  "host": {
+    "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+    "observations": [
+      {
+        "argv": [
+          "sw_vers"
+        ],
+        "exit_code": 0,
+        "stdout": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84\n",
+        "stderr": "",
+        "seconds": 0.007120875176042318
+      },
+      {
+        "argv": [
+          "sysctl",
+          "-n",
+          "hw.model"
+        ],
+        "exit_code": 0,
+        "stdout": "Mac17,7\n",
+        "stderr": "",
+        "seconds": 0.0029478748328983784
+      },
+      {
+        "argv": [
+          "sysctl",
+          "-n",
+          "machdep.cpu.brand_string"
+        ],
+        "exit_code": 0,
+        "stdout": "Apple M5 Max\n",
+        "stderr": "",
+        "seconds": 0.0022834171541035175
+      },
+      {
+        "argv": [
+          "sysctl",
+          "-n",
+          "hw.memsize"
+        ],
+        "exit_code": 0,
+        "stdout": "137438953472\n",
+        "stderr": "",
+        "seconds": 0.0021031671203672886
+      }
+    ]
+  },
+  "limitations": [
+    "Cache state is uncontrolled; no cache purge is performed.",
+    "Other host activity is uncontrolled; no idle-host claim is made.",
+    "No forced timeout or process termination: parent owns cancellation.",
+    "Offscreen Metal and real device counters do not prove physical display timing or acoustic quality."
+  ],
+  "before": {
+    "at_utc": "2026-10-17T08:54:24.743617+00:00",
+    "load_average": [
+      3.06982421875,
+      2.375,
+      2.40869140625
+    ],
+    "observations": [
+      {
+        "argv": [
+          "pmset",
+          "-g",
+          "batt"
+        ],
+        "exit_code": 0,
+        "stdout": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=22741091)\t80%; AC attached; not charging present: true\n",
+        "stderr": "",
+        "seconds": 0.009274458047002554
+      },
+      {
+        "argv": [
+          "pmset",
+          "-g",
+          "therm"
+        ],
+        "exit_code": 0,
+        "stdout": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n",
+        "stderr": "",
+        "seconds": 0.006365874782204628
+      },
+      {
+        "argv": [
+          "sysctl",
+          "-n",
+          "kern.memorystatus_vm_pressure_level"
+        ],
+        "exit_code": 0,
+        "stdout": "1\n",
+        "stderr": "",
+        "seconds": 0.0022741248831152916
+      },
+      {
+        "argv": [
+          "vm_stat"
+        ],
+        "exit_code": 0,
+        "stdout": "Mach Virtual Memory Statistics: (page size of 16384 bytes)\nPages free:                                  1740500.\nPages active:                                2662688.\nPages inactive:                              3145189.\nPages speculative:                            292122.\nPages throttled:                                   0.\nPages wired down:                             320301.\nPages purgeable:                               21249.\n\"Translation faults\":                    37669429807.\nPages copy-on-write:                      2185513935.\nPages zero filled:                       28658772655.\nPages reactivated:                          15523770.\nPages purged:                               46255574.\nFile-backed pages:                           2440613.\nAnonymous pages:                             3659386.\nPages stored in compressor:                   398330.\nPages occupied by compressor:                 160894.\nDecompressions:                              3268862.\nCompressions:                               14665257.\nPageins:                                   491281884.\nPageouts:                                      36678.\nSwapins:                                           0.\nSwapouts:                                          0.\nPages tagged:                                 251553.\nPages tagged resident:                        231658.\nPages tagged compressed:                       19895.\nPages tag-storage:                            262144.\nPages tag-storage holding tags:                11447.\nPages tag-storage free:                         6707.\nPages tag-storage non-tag pageable:           243982.\nPages tag-storage non-tag wired:                   8.\nBytes of compressed tags:                    2712896.\nTagged compressions:                           52684.\nTagged decompressions:                         24927.\n",
+        "stderr": "",
+        "seconds": 0.0025567496195435524
+      },
+      {
+        "argv": [
+          "sysctl",
+          "-n",
+          "vm.swapusage"
+        ],
+        "exit_code": 0,
+        "stdout": "total = 0.00M  used = 0.00M  free = 0.00M  (encrypted)\n",
+        "stderr": "",
+        "seconds": 0.002269874792546034
+      }
+    ]
+  },
+  "status": "finished",
+  "log": "/tmp/deadpan-inference-interference-2026-10-17/1080p-first.log",
+  "pid": 4263,
+  "started_utc": "2026-10-17T08:54:24.768206+00:00",
+  "exit_code": 1,
+  "seconds": 0.006860541645437479,
+  "after": {
+    "at_utc": "2026-10-17T08:54:24.773713+00:00",
+    "load_average": [
+      3.06982421875,
+      2.375,
+      2.40869140625
+    ],
+    "observations": [
+      {
+        "argv": [
+          "pmset",
+          "-g",
+          "batt"
+        ],
+        "exit_code": 0,
+        "stdout": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=22741091)\t80%; AC attached; not charging present: true\n",
+        "stderr": "",
+        "seconds": 0.006541749928146601
+      },
+      {
+        "argv": [
+          "pmset",
+          "-g",
+          "therm"
+        ],
+        "exit_code": 0,
+        "stdout": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n",
+        "stderr": "",
+        "seconds": 0.006096167024224997
+      },
+      {
+        "argv": [
+          "sysctl",
+          "-n",
+          "kern.memorystatus_vm_pressure_level"
+        ],
+        "exit_code": 0,
+        "stdout": "1\n",
+        "stderr": "",
+        "seconds": 0.002274957951158285
+      },
+      {
+        "argv": [
+          "vm_stat"
+        ],
+        "exit_code": 0,
+        "stdout": "Mach Virtual Memory Statistics: (page size of 16384 bytes)\nPages free:                                  1740383.\nPages active:                                2662690.\nPages inactive:                              3145184.\nPages speculative:                            292130.\nPages throttled:                                   0.\nPages wired down:                             320336.\nPages purgeable:                               21249.\n\"Translation faults\":                    37669433798.\nPages copy-on-write:                      2185514771.\nPages zero filled:                       28658773085.\nPages reactivated:                          15523770.\nPages purged:                               46255574.\nFile-backed pages:                           2440615.\nAnonymous pages:                             3659389.\nPages stored in compressor:                   398330.\nPages occupied by compressor:                 160894.\nDecompressions:                              3268862.\nCompressions:                               14665257.\nPageins:                                   491281895.\nPageouts:                                      36678.\nSwapins:                                           0.\nSwapouts:                                          0.\nPages tagged:                                 251532.\nPages tagged resident:                        231637.\nPages tagged compressed:                       19895.\nPages tag-storage:                            262144.\nPages tag-storage holding tags:                11447.\nPages tag-storage free:                         6705.\nPages tag-storage non-tag pageable:           243984.\nPages tag-storage non-tag wired:                   8.\nBytes of compressed tags:                    2712896.\nTagged compressions:                           52684.\nTagged decompressions:                         24927.\n",
+        "stderr": "",
+        "seconds": 0.00207070866599679
+      },
+      {
+        "argv": [
+          "sysctl",
+          "-n",
+          "vm.swapusage"
+        ],
+        "exit_code": 0,
+        "stdout": "total = 0.00M  used = 0.00M  free = 0.00M  (encrypted)\n",
+        "stderr": "",
+        "seconds": 0.002095999661833048
+      }
+    ]
+  },
+  "binary_unchanged": true,
+  "finished_utc": "2026-10-17T08:54:24.817175+00:00"
+}

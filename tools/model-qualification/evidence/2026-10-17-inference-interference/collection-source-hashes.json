@@ -1,0 +1,73 @@
+{
+  "scope": "Current source at collection, not an executed-source identity unless matched against retained build evidence",
+  "files": {
+    "crates/deadpan-app/src/preview/harness.rs": {
+      "bytes": 57773,
+      "sha256": "499b2b42dfabd83260541264c9e4e01435fdce4f7cbed6b7bc7020b39478ffa8"
+    },
+    "crates/deadpan-app/src/preview/playback.rs": {
+      "bytes": 36849,
+      "sha256": "ad8404de10046914d839c6b57aef469ae3ba6a5e211a41e8e324bd5de1c78d0e"
+    },
+    "crates/deadpan-app/src/ui_harness.rs": {
+      "bytes": 27516,
+      "sha256": "6a34b1387cfd0b6e68f6a4bee5fa6361b831373a10901e6cb2aa9f7a921cdd55"
+    },
+    "crates/deadpan-app/src/preview/jobs/quit.rs": {
+      "bytes": 10712,
+      "sha256": "b44184c03a1368173b2441e76b48aeb8a392ec370c331e3955a26e32858f3234"
+    },
+    "crates/deadpan-app/src/preview/harness/ai_playback_interference.rs": {
+      "bytes": 23050,
+      "sha256": "973f03c3c776af27f37f1f8dfda69bcc8acd0ea124eb81b45e17539fedb723a9"
+    },
+    "crates/deadpan-app/src/jobs.rs": {
+      "bytes": 86824,
+      "sha256": "6639021bb42f43e10257c85298c1ddd8e4e44a4ca264519045c6e39590512296"
+    },
+    "crates/deadpan-cli/src/generation/attempt.rs": {
+      "bytes": 56462,
+      "sha256": "cac6c3aa39181e8c8f9b5953db5c627bbec17cc1e1a1c57d59d94f54d3fb1357"
+    },
+    "crates/deadpan-jobs/src/process.rs": {
+      "bytes": 55985,
+      "sha256": "076fa7802570ac91de7f7291e68e4aae49b752e38c212594bfb3ee4304c67005"
+    },
+    "crates/deadpan-jobs/src/process/pause.rs": {
+      "bytes": 6113,
+      "sha256": "9e41e46a09a8400539c005fd46a34249c260d606d46ca141387d59a2093e9822"
+    },
+    "models/packs/ltx-2.3-q4-extension-1.json": {
+      "bytes": 15817,
+      "sha256": "2f9834cb8d8147a1abfac2f82c04cf9d4b9e2171f02c45b736ef29c97bf3eb06"
+    },
+    "tools/model-qualification/ltx-source-manifest.json": {
+      "bytes": 35602,
+      "sha256": "abc7e873e28097d1f9307b030dd4b1f415f6b5091c841ac1babd421c8d74f092"
+    },
+    "tools/model-qualification/worker.py": {
+      "bytes": 32565,
+      "sha256": "9bf3668cff1035c0d73994ec6a79ac64064955ada6d86722f6b493025327fd57"
+    },
+    "tools/model-qualification/worker_protocol.py": {
+      "bytes": 58417,
+      "sha256": "b7cb747ff3774283ad7f5279d81b6545189dcaf149b7e98a64acc73f1f73214c"
+    },
+    "tools/model-qualification/worker_media.py": {
+      "bytes": 15518,
+      "sha256": "75608e052a744deaabe864521a6d3da2e20645171e1173191815619cfed104d1"
+    },
+    "tools/model-qualification/worker_extension_context.py": {
+      "bytes": 21822,
+      "sha256": "271325737be21ae2e81dbf92f5109465ca9140ff197920d838a6c14b2d48f79c"
+    },
+    "tools/model-qualification/mlx_backend.py": {
+      "bytes": 42628,
+      "sha256": "2ce15538657efd07ab1de9ab45e257b7fe760ef106d46857b5e1de7fce2eee5b"
+    },
+    "tools/model-qualification/runtime_source.py": {
+      "bytes": 2809,
+      "sha256": "83dddd9cd6e84d1c2d01d27e6d28098325624afc3572f17ba7037ecd4acbbbad"
+    }
+  }
+}

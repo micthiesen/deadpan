@@ -1,0 +1,56 @@
+{
+  "read_at_utc": "2026-10-17T09:02:47.211075+00:00",
+  "database": "/private/tmp/deadpan-inference-interference-2026-10-17/1080p-v2/projects/ai-playback-interference/generated-playback.deadpan/project.sqlite",
+  "access": "SQLite URI mode=ro",
+  "tables": {
+    "generation_requests": [
+      {
+        "request_id": "ai-hold-f719e8b1139e4cf8ace698f7f9573f49",
+        "project_id": "fe5e92e9-7738-438d-869f-91c3fc5e3e23",
+        "hold_id": "300e4b24-67d6-4bf5-aa7a-ce840ae93543",
+        "scope_id": "ai-hold-f719e8b1139e4cf8ace698f7f9573f49",
+        "origin_target": "{\"node\":\"300e4b24-67d6-4bf5-aa7a-ce840ae93543\",\"repeats\":[]}",
+        "request_version": 1,
+        "origin_revision": "e94d16b1-331e-4795-ab05-8934a2d936f3",
+        "context_sha256": "29b9d8d8ff38281be1fa54a4fb905d4fcdb70cd7098aea8fea6f7ae3ba53b284",
+        "constraints": "{\"video\":{\"frames\":180,\"frame_rate\":{\"numerator\":60,\"denominator\":1},\"width\":768,\"height\":320},\"conditioning\":\"extend_from_left\",\"motion\":\"still\"}",
+        "provider": "{\"pack_id\":\"ltx-2.3-q4-extension\",\"pack_version\":\"1\",\"runtime_id\":\"ltx-mlx\",\"runtime_version\":\"0.15.8+deadpan-extension1\",\"seed\":2368948656}",
+        "plan": "{\"operation\":\"extension\",\"plan\":{\"schema_version\":1,\"operation\":\"extension\",\"sampling\":{\"schema_version\":1,\"direction\":\"from_left\",\"project_rate\":{\"numerator\":60,\"denominator\":1},\"native_rate\":{\"numerator\":24,\"denominator\":1},\"context_frame_count\":9,\"generated_frame_count\":72,\"output_frame_count\":180,\"interpolation\":\"encoded_srgb_rgb8_linear_half_up\",\"policy\":\"frame_centers_clamped\"},\"native_dimensions\":{\"width\":768,\"height\":320}}}",
+        "input_binding": "{\"duration\":180,\"frame_rate\":{\"numerator\":60,\"denominator\":1},\"canvas\":[1920,1080],\"inputs\":{\"operation\":\"extension\",\"capture\":{\"operation\":\"extension\",\"direction\":\"from_left\",\"native_rate\":{\"numerator\":24,\"denominator\":1},\"context_frames\":9,\"policy\":\"temporal_context_v1\"},\"samples\":[{\"position\":{\"numerator\":\"-20\",\"denominator\":\"1\"},\"picture\":{\"kind\":\"original\",\"qualification\":\"c03e3983d65793c9754b546921be7cda6efa52b99d99bc8e2ebd090602fbcaf3\",\"frame\":7179}},{\"position\":{\"numerator\":\"-35\",\"denominator\":\"2\"},\"picture\":{\"kind\":\"original\",\"qualification\":\"c03e3983d65793c9754b546921be7cda6efa52b99d99bc8e2ebd090602fbcaf3\",\"frame\":7182}},{\"position\":{\"numerator\":\"-15\",\"denominator\":\"1\"},\"picture\":{\"kind\":\"original\",\"qualification\":\"c03e3983d65793c9754b546921be7cda6efa52b99d99bc8e2ebd090602fbcaf3\",\"frame\":7184}},{\"position\":{\"numerator\":\"-25\",\"denominator\":\"2\"},\"picture\":{\"kind\":\"original\",\"qualification\":\"c03e3983d65793c9754b546921be7cda6efa52b99d99bc8e2ebd090602fbcaf3\",\"frame\":7187}},{\"position\":{\"numerator\":\"-10\",\"denominator\":\"1\"},\"picture\":{\"kind\":\"original\",\"qualification\":\"c03e3983d65793c9754b546921be7cda6efa52b99d99bc8e2ebd090602fbcaf3\",\"frame\":7189}},{\"position\":{\"numerator\":\"-15\",\"denominator\":\"2\"},\"picture\":{\"kind\":\"original\",\"qualification\":\"c03e3983d65793c9754b546921be7cda6efa52b99d99bc8e2ebd090602fbcaf3\",\"frame\":7192}},{\"position\":{\"numerator\":\"-5\",\"denominator\":\"1\"},\"picture\":{\"kind\":\"original\",\"qualification\":\"c03e3983d65793c9754b546921be7cda6efa52b99d99bc8e2ebd090602fbcaf3\",\"frame\":7194}},{\"position\":{\"numerator\":\"-5\",\"denominator\":\"2\"},\"picture\":{\"kind\":\"original\",\"qualification\":\"c03e3983d65793c9754b546921be7cda6efa52b99d99bc8e2ebd090602fbcaf3\",\"frame\":7197}},{\"position\":{\"numerator\":\"0\",\"denominator\":\"1\"},\"picture\":{\"kind\":\"original\",\"qualification\":\"c03e3983d65793c9754b546921be7cda6efa52b99d99bc8e2ebd090602fbcaf3\",\"frame\":7199}}],\"opposite\":null,\"support\":[{\"start\":{\"numerator\":\"-20\",\"denominator\":\"1\"},\"end_exclusive\":{\"numerator\":\"0\",\"denominator\":\"1\"},\"first\":{\"kind\":\"original\",\"qualification\":\"c03e3983d65793c9754b546921be7cda6efa52b99d99bc8e2ebd090602fbcaf3\",\"frame\":7179},\"last\":{\"kind\":\"original\",\"qualification\":\"c03e3983d65793c9754b546921be7cda6efa52b99d99bc8e2ebd090602fbcaf3\",\"frame\":7199}}],\"terminal\":{\"position\":{\"numerator\":\"0\",\"denominator\":\"1\"},\"picture\":{\"kind\":\"original\",\"qualification\":\"c03e3983d65793c9754b546921be7cda6efa52b99d99bc8e2ebd090602fbcaf3\",\"frame\":7199}}},\"region\":null}",
+        "relevance": "current"
+      }
+    ],
+    "generation_attempts": [
+      {
+        "request_id": "ai-hold-f719e8b1139e4cf8ace698f7f9573f49",
+        "attempt_id": "8afada79e66940e6890432ade56f7307",
+        "ordinal": 1,
+        "cancellation_token": "be1db77e1f344d7394a44ff40ec696ba",
+        "state": "cancelled",
+        "worker_stage": "inference",
+        "transition_sequence": 8,
+        "cancel_response": null,
+        "worker_candidate": null,
+        "failure_origin": null,
+        "failure_code": null,
+        "failure_detail": null
+      }
+    ],
+    "generation_attempt_heads": [
+      {
+        "request_id": "ai-hold-f719e8b1139e4cf8ace698f7f9573f49",
+        "high_water": 1,
+        "latest_attempt_id": "8afada79e66940e6890432ade56f7307",
+        "selected_ready_attempt_id": null
+      }
+    ],
+    "generation_candidate_receipts": [],
+    "generation_bundle_receipts": [],
+    "generation_accepted_origins": [],
+    "generation_variant_retention": [],
+    "generation_preparations": [],
+    "generation_preparation_retirements": []
+  },
+  "generated_files": [],
+  "interpretation": "Cancelled attempt; no selected Ready or accepted origins. Temporary worker workspace was cleaned; executed runtime config, raw conditioning PNGs and worker output provenance are unavailable. Stored request retains provider, exact plan, context hash and input binding."
+}

@@ -1,0 +1,9 @@
+{
+  "cache": "Uncontrolled; no cold-cache claim",
+  "other_activity": "Uncontrolled; see per-run load/power observations",
+  "physical": "Real audio device reports and offscreen Metal; no acoustic, compositor or physical display timing",
+  "timing": "Scheduling timestamps sampled by UI, not precise dispatch or acknowledgment times",
+  "runtime": "Actual selected provider/runtime and plan retained in each durable request; temporary runtime configuration and conditioning bytes were not archived before cancellation",
+  "originals": "Large original media excluded. Fixture paths, hashes and sizes retained in fixture-preparation.json; generated testsrc2+sine recipe documented in docs/qualification/performance-2026-10-04.md",
+  "sources": "Collection-time source snapshots must not be silently substituted for executed source pins"
+}

@@ -1,0 +1,91 @@
+{
+  "executable": "/tmp/deadpan-inference-pause-final-bin-2026-10-17/deadpan-cli",
+  "executable_sha256": "8690b3444a53cdb01b3ab16742e60a9e06ba9f4e434a6e38310d67b12e9d03dd",
+  "identity": "Retained qualified standalone CLI from 2026-10-17 inference scheduling run; not rebuilt for this preparation",
+  "runs": [
+    {
+      "name": "1080p",
+      "project": "/private/tmp/deadpan-inference-interference-2026-10-17/1080p.deadpan",
+      "fixture": "/tmp/dp-perf-after-1/fixtures/gen-1080p60.mp4",
+      "fixture_bytes": 126134871,
+      "fixture_sha256": "987d08a9212890ca9908de4817d23a707f3b258a58fdc5cd064157304d0d7837",
+      "commands": [
+        {
+          "command": [
+            "/tmp/deadpan-inference-pause-final-bin-2026-10-17/deadpan-cli",
+            "project",
+            "create-original",
+            "/private/tmp/deadpan-inference-interference-2026-10-17/1080p.deadpan",
+            "/tmp/dp-perf-after-1/fixtures/gen-1080p60.mp4"
+          ],
+          "exit_code": 0,
+          "seconds": 12.114688832778484
+        },
+        {
+          "command": [
+            "/tmp/deadpan-inference-pause-final-bin-2026-10-17/deadpan-cli",
+            "project",
+            "dump",
+            "/private/tmp/deadpan-inference-interference-2026-10-17/1080p.deadpan",
+            "--json"
+          ],
+          "exit_code": 0,
+          "seconds": 0.025439375080168247
+        },
+        {
+          "command": [
+            "/tmp/deadpan-inference-pause-final-bin-2026-10-17/deadpan-cli",
+            "project",
+            "validate",
+            "/private/tmp/deadpan-inference-interference-2026-10-17/1080p.deadpan",
+            "--quick"
+          ],
+          "exit_code": 0,
+          "seconds": 0.024239290971308947
+        }
+      ]
+    },
+    {
+      "name": "4k",
+      "project": "/private/tmp/deadpan-inference-interference-2026-10-17/4k.deadpan",
+      "fixture": "/tmp/dp-perf-after-1/fixtures/gen-4k30.mp4",
+      "fixture_bytes": 157743974,
+      "fixture_sha256": "b82763e50a24b01b1c2f7e226c7268084a4a7caba196604391272600f21f9ca2",
+      "commands": [
+        {
+          "command": [
+            "/tmp/deadpan-inference-pause-final-bin-2026-10-17/deadpan-cli",
+            "project",
+            "create-original",
+            "/private/tmp/deadpan-inference-interference-2026-10-17/4k.deadpan",
+            "/tmp/dp-perf-after-1/fixtures/gen-4k30.mp4"
+          ],
+          "exit_code": 0,
+          "seconds": 13.478161292150617
+        },
+        {
+          "command": [
+            "/tmp/deadpan-inference-pause-final-bin-2026-10-17/deadpan-cli",
+            "project",
+            "dump",
+            "/private/tmp/deadpan-inference-interference-2026-10-17/4k.deadpan",
+            "--json"
+          ],
+          "exit_code": 0,
+          "seconds": 0.016007124911993742
+        },
+        {
+          "command": [
+            "/tmp/deadpan-inference-pause-final-bin-2026-10-17/deadpan-cli",
+            "project",
+            "validate",
+            "/private/tmp/deadpan-inference-interference-2026-10-17/4k.deadpan",
+            "--quick"
+          ],
+          "exit_code": 0,
+          "seconds": 0.014480875339359045
+        }
+      ]
+    }
+  ]
+}

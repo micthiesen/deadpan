@@ -1,5 +1,12 @@
 # Performance measurement
 
+[Real inference interference](qualification/inference-interference-2026-10-17.md)
+qualifies paired 30-second ordinary-source loops at 1080p60 and 4K30 with
+app-owned Extension inference, actual device audio and offscreen Metal:
+complete picture coverage and no underruns, faults or padding. Its seek/edit
+samples are smoke checks; broader effects, rendering and latency distributions
+remain unqualified by that workload.
+
 [Specification Section 25](spec/DEADPAN_SPEC.md#25-performance-requirements-and-instrumentation)
 sets engineering targets. This page maps each target to the measurement that
 evaluates it, describes the reproducible suite, and lists the diagnostics the

@@ -1,0 +1,70 @@
+[
+  {
+    "project": "1080p.deadpan",
+    "canvas": [
+      1920,
+      1080
+    ],
+    "rate": {
+      "numerator": 60,
+      "denominator": 1
+    },
+    "source_frames": 7200,
+    "seconds": 120.0,
+    "audio": {
+      "asset": "44f77974-56bc-41db-a7fd-cd80c46ae767",
+      "span": {
+        "start": {
+          "ticks": 0,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 48000
+          }
+        },
+        "end": {
+          "ticks": 5760000,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 48000
+          }
+        }
+      }
+    },
+    "node_count": 2,
+    "accepted_generated_media": false
+  },
+  {
+    "project": "4k.deadpan",
+    "canvas": [
+      3840,
+      2160
+    ],
+    "rate": {
+      "numerator": 30,
+      "denominator": 1
+    },
+    "source_frames": 1800,
+    "seconds": 60.0,
+    "audio": {
+      "asset": "10c71825-b967-4210-8cb4-ed1dfe9e7407",
+      "span": {
+        "start": {
+          "ticks": 0,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 48000
+          }
+        },
+        "end": {
+          "ticks": 2880000,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 48000
+          }
+        }
+      }
+    },
+    "node_count": 2,
+    "accepted_generated_media": false
+  }
+]

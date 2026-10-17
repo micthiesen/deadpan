@@ -1,0 +1,38 @@
+{
+  "base_revision": "eb33f5ce",
+  "executed_release_app_sha256": "5cdfea503252e02529380927650e72d3d51bff8e4bdb856620dac1c60e44ac76",
+  "focused_tests": {
+    "command": "cargo nextest run -p deadpan-app --features ui-harness --locked -E 'test(ui_harness::tests) or test(ai_playback_interference::tests)'",
+    "passed": 9,
+    "skipped": 1183
+  },
+  "scoped_check": {
+    "command": "cargo xtask check --no-test",
+    "normal_clippy": "passed",
+    "ui_harness_clippy": "passed",
+    "rustfmt": "passed"
+  },
+  "release_replays": {
+    "1080p-v2": {
+      "scenario_checks": 22,
+      "shortcut_checks": 1,
+      "exit_code": 0
+    },
+    "4k-v2": {
+      "scenario_checks": 22,
+      "shortcut_checks": 1,
+      "exit_code": 0
+    }
+  },
+  "review_fixes": [
+    "Failed interval results now gate final scenario success while retaining paired evidence",
+    "Coverage uses request-time ticket lap/sample instead of inferring lap from current heard frame",
+    "Error cleanup cancels by captured job identity and attempts bounded drain even after UI errors",
+    "Metadata identifies fresh Original and uncontrolled cache state truthfully"
+  ],
+  "not_run": [
+    "No full workspace suite: change is an opt-in harness and cfg-gated request trace",
+    "No new bundle build",
+    "No physical display or acoustic qualification"
+  ]
+}

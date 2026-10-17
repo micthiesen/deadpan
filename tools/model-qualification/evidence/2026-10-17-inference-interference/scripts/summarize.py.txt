@@ -1,0 +1,77 @@
+#!/usr/bin/env python3
+"""Summarize existing interference replay evidence without running workloads."""
+import argparse
+import json
+from pathlib import Path
+import re
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('output', type=Path, help='Existing replay output directory')
+    parser.add_argument('--write', type=Path, help='Optional NEW summary JSON file')
+    args = parser.parse_args()
+    evidence = json.loads((args.output / 'ai-playback-interference.json').read_text())
+    report = json.loads((args.output / 'report.json').read_text())
+    intervals = []
+    for interval in evidence.get('intervals', []):
+        result = {key: interval.get(key) for key in [
+            'label', 'passed', 'duration_ms', 'first_audio_ms', 'expected_laps',
+            'heard_laps', 'window_frames', 'window_matches', 'revision_unchanged',
+            'acknowledged_pause_while_playing', 'missing_ticket_attributions',
+            'pictures_count', 'errors']}
+        missing = interval.get('missing_pictures')
+        result['missing_picture_count'] = len(missing) if isinstance(missing, list) else None
+        result['missing_picture_examples'] = missing[:10] if isinstance(missing, list) else None
+        result['presented_picture_records'] = len(interval['pictures']) if isinstance(interval.get('pictures'), list) else None
+        result['audio'] = interval.get('audio')
+        if isinstance(result['audio'], dict):
+            result['audio'] = dict(result['audio'])
+            ns = result['audio'].get('max_callback_render_cost_ns')
+            result['audio']['max_callback_render_cost_us'] = ns / 1000 if isinstance(ns, (int, float)) else None
+            result['audio']['callback_max_scope'] = 'Engine cumulative high-water, not an interval delta'
+        intervals.append(result)
+    timeline = []
+    for observation in evidence.get('scheduling_observations', []):
+        state = observation.get('state', {})
+        phase = state.get('phase')
+        match = re.search(r'completed: (\d+), total: (\d+)', phase or '')
+        timeline.append({'observed_ms': observation.get('observed_ms'), **state,
+                         'inference_step': {'completed': int(match[1]), 'total': int(match[2])}
+                         if match and 'Inference' in phase else None})
+    checks, findings, failed_timings = [], [], []
+    for scenario in report.get('scenarios', []):
+        for check in scenario.get('checks', []):
+            if check.get('passed') is False:
+                checks.append({'scenario': scenario.get('name'), **check})
+        for finding in scenario.get('findings', []):
+            findings.append({'scenario': scenario.get('name'), **finding})
+        for metric in scenario.get('timings', []):
+            failed = [sample for sample in metric.get('samples', [])
+                      if sample.get('error') is not None or sample.get('outcome') in ['failed', 'timed_out']]
+            if failed:
+                failed_timings.append({'scenario': scenario.get('name'), 'metric': metric.get('name'), 'samples': failed})
+    summary = {
+        'scope': evidence.get('scope'), 'limitations': evidence.get('limitations'),
+        'fixture': evidence.get('fixture'), 'generation': evidence.get('generation'),
+        'elapsed_seconds': evidence.get('elapsed_seconds'), 'result_error': evidence.get('result'),
+        'intervals': intervals,
+        'scheduling_timeline_scope': 'Sampled UI states; not exact GPU dispatch or protocol acknowledgment timestamps',
+        'scheduling_timeline': timeline,
+        'interaction_scope': evidence.get('interaction_scope'),
+        'interaction_smoke_samples': evidence.get('interaction_samples'),
+        'failed_main_checks': checks, 'all_main_findings': findings,
+        'failed_timing_samples': failed_timings,
+        'cleanup': {'error': evidence.get('cleanup_error'),
+                    'model_rows': evidence.get('cleanup_model_rows'),
+                    'cancelled': evidence.get('cancelled')},
+    }
+    text = json.dumps(summary, indent=2) + '\n'
+    if args.write:
+        with args.write.open('x') as stream:
+            stream.write(text)
+    print(text, end='')
+
+
+if __name__ == '__main__':
+    main()
