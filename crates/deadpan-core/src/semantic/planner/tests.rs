@@ -100,6 +100,9 @@ fn macro_value(instructions: Vec<SemanticInstruction>) -> Arc<RegisterValue> {
 }
 fn allocate(request: SemanticAllocationRequest) -> Result<SemanticAllocation, EditError> {
     Ok(match request {
+        SemanticAllocationRequest::InsertOriginal { .. } => {
+            return Err(invalid("test requires a whole-Original source allocator"));
+        }
         SemanticAllocationRequest::Group {
             step_index,
             required_split_ids,
@@ -703,13 +706,15 @@ fn fresh_identity_contract_rejects_revision_capture_and_split_reuse() {
             },
             revision("outer"),
             |request| {
-                let mut allocation = allocate(request)?;
-                if matches!(
+                let second_cut = matches!(
                     request,
                     SemanticAllocationRequest::Cut { step_index: 1, .. }
-                ) && let SemanticAllocation::Cut {
-                    capture_revision, ..
-                } = &mut allocation
+                );
+                let mut allocation = allocate(request)?;
+                if second_cut
+                    && let SemanticAllocation::Cut {
+                        capture_revision, ..
+                    } = &mut allocation
                 {
                     *capture_revision = revision(duplicate);
                 }
@@ -731,13 +736,15 @@ fn fresh_identity_contract_rejects_revision_capture_and_split_reuse() {
             },
             revision("outer"),
             |request| {
-                let mut allocation = allocate(request)?;
-                if matches!(
+                let second_cut = matches!(
                     request,
                     SemanticAllocationRequest::Cut { step_index: 1, .. }
-                ) && let SemanticAllocation::Cut {
-                    split_identities, ..
-                } = &mut allocation
+                );
+                let mut allocation = allocate(request)?;
+                if second_cut
+                    && let SemanticAllocation::Cut {
+                        split_identities, ..
+                    } = &mut allocation
                 {
                     split_identities.nodes[0] = node(duplicate);
                 }

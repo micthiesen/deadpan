@@ -141,6 +141,11 @@ impl SemanticSelector {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
 pub enum SemanticInstruction {
+    /// Reuse the full measured Original, including audio lead/tail, after the
+    /// selected child or at the current Sequence's end. Never replaces Visual.
+    InsertOriginal {
+        asset: crate::AssetId,
+    },
     MoveFrames {
         forward: bool,
         count: NonZeroU32,

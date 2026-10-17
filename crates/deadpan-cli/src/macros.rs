@@ -352,7 +352,7 @@ pub fn plan_program(
             version: bank.version,
         },
         new_revision,
-        allocate,
+        |request| allocate_for_project(store, document, request),
         |staged, value| {
             let record = match value {
                 RegisterValue::Original { asset, .. } => staged.assets().get(asset),
@@ -414,6 +414,90 @@ fn pause_error(message: &str) -> EditError {
     }
 }
 
+fn allocate_for_project(
+    store: &ProjectStore,
+    document: &ProjectDocument,
+    request: SemanticAllocationRequest,
+) -> Result<SemanticAllocation, EditError> {
+    let SemanticAllocationRequest::InsertOriginal { asset, .. } = request else {
+        return allocate(request);
+    };
+    let source = whole_original_source(store, document, &asset)
+        .map_err(|error| pause_error(&error.to_string()))?;
+    Ok(SemanticAllocation::InsertOriginal {
+        new_revision: crate::new_revision()?,
+        node: NodeId::new(uuid::Uuid::new_v4().to_string())?,
+        source: Box::new(source),
+    })
+}
+
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+fn whole_original_source(
+    store: &ProjectStore,
+    document: &ProjectDocument,
+    asset: &deadpan_core::AssetId,
+) -> Result<SourceNode, LiveError> {
+    let Some(deadpan_store::single_source::SingleSourceState::Ready {
+        asset: original,
+        qualification,
+        ..
+    }) = store.single_source_state().map_err(LiveError::store)?
+    else {
+        return Err(LiveError::new(
+            "OriginalUnavailable",
+            "Whole-Original macros require an initialized single-Original project",
+        ));
+    };
+    if original != *asset {
+        return Err(LiveError::new(
+            "OriginalUnavailable",
+            "The recorded asset is not this project's Original",
+        ));
+    }
+    let record = document.assets().get(asset).ok_or_else(|| {
+        LiveError::new(
+            "OriginalUnavailable",
+            "The Original is absent from the staged edit",
+        )
+    })?;
+    if record.source_qualification.as_ref() != Some(&qualification) {
+        return Err(LiveError::new(
+            "OriginalUnavailable",
+            "The Original qualification changed",
+        ));
+    }
+    let receipt = store
+        .source_qualification(&qualification)
+        .map_err(LiveError::store)?;
+    if receipt
+        .asset_record(record.label.clone())
+        .map_err(LiveError::store)?
+        != *record
+    {
+        return Err(LiveError::new(
+            "OriginalUnavailable",
+            "The Original differs from its qualification",
+        ));
+    }
+    receipt
+        .snapshot()
+        .derive_timing(document.presentation_basis().frame_rate)
+        .map(|timing| timing.source_node(asset.clone()))
+        .map_err(|error| LiveError::new("SourceRegistration", error))
+}
+
+#[cfg(not(any(target_os = "macos", target_os = "linux")))]
+fn whole_original_source(
+    _: &ProjectStore,
+    _: &ProjectDocument,
+    _: &deadpan_core::AssetId,
+) -> Result<SourceNode, LiveError> {
+    Err(LiveError::new(
+        "SourceAdmissionUnavailable",
+        "Whole-Original insertion is unavailable on this platform",
+    ))
+}
+
 fn allocate(request: SemanticAllocationRequest) -> Result<SemanticAllocation, EditError> {
     let nodes = |count| {
         (0..count)
@@ -421,6 +505,11 @@ fn allocate(request: SemanticAllocationRequest) -> Result<SemanticAllocation, Ed
             .collect::<Result<Vec<_>, _>>()
     };
     Ok(match request {
+        SemanticAllocationRequest::InsertOriginal { .. } => {
+            return Err(pause_error(
+                "whole-Original insertion requires project source qualification",
+            ));
+        }
         SemanticAllocationRequest::Group {
             required_split_ids, ..
         } => SemanticAllocation::Group {

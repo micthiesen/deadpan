@@ -14,6 +14,9 @@ pub(super) struct Capture {
     context: SemanticContext,
     bank_version: u64,
     pane: Pane,
+    view: View,
+    sound_focused: bool,
+    event_focused: bool,
 }
 
 impl Capture {
@@ -139,10 +142,10 @@ impl Capture {
         }) && app.sequence_scope == self.scope
             && i64::try_from(app.sequence_cursor).ok() == Some(self.context.cursor.0)
             && app.pane == self.pane
-            && app.view == View::Sequence
+            && app.view == self.view
             && app.capture_visual_selection().as_ref() == Ok(&self.context.visual_selection)
-            && !app.sound_focused()
-            && !app.event_focused()
+            && app.sound_focused() == self.sound_focused
+            && app.event_focused() == self.event_focused
             && app.frame_delete_blocked().is_none()
     }
 
@@ -234,6 +237,14 @@ impl State {
 
 impl DeadpanApp {
     pub(super) fn capture_macro_target(&self) -> Result<Capture, String> {
+        self.capture_edit_target(true)
+    }
+
+    pub(super) fn capture_original_insert_target(&self) -> Result<Capture, String> {
+        self.capture_edit_target(false)
+    }
+
+    fn capture_edit_target(&self, require_edit_focus: bool) -> Result<Capture, String> {
         if self.scoped.is_some() {
             return Err(
                 "Return to the parent before recording or applying structural edits.".into(),
@@ -242,10 +253,11 @@ impl DeadpanApp {
         if let Some(error) = self.frame_delete_blocked() {
             return Err(error.into());
         }
-        if self.view != View::Sequence
-            || matches!(self.pane, Pane::Sources | Pane::Sounds)
-            || self.sound_focused()
-            || self.event_focused()
+        if require_edit_focus
+            && (self.view != View::Sequence
+                || matches!(self.pane, Pane::Sources | Pane::Sounds)
+                || self.sound_focused()
+                || self.event_focused())
         {
             return Err("Focus Your edit before using this action.".into());
         }
@@ -275,6 +287,9 @@ impl DeadpanApp {
                 .bank_version()
                 .ok_or("The project registers are still loading.")?,
             pane: self.pane,
+            view: self.view,
+            sound_focused: self.sound_focused(),
+            event_focused: self.event_focused(),
         })
     }
 
@@ -337,6 +352,7 @@ impl DeadpanApp {
         if !matches!(
             action,
             Action::Step { .. }
+                | Action::Insert
                 | Action::Beat { .. }
                 | Action::Word { .. }
                 | Action::Sentence { .. }

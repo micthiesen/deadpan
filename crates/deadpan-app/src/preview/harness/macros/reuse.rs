@@ -4,7 +4,107 @@ use super::*;
 
 pub(super) fn run(d: &mut Driver<'_>, baseline: &ProjectDocument) -> Result<(), String> {
     edited(d, baseline)?;
-    original(d, baseline)
+    original(d, baseline)?;
+    whole_original(d, baseline)
+}
+
+fn whole_original(d: &mut Driver<'_>, baseline: &ProjectDocument) -> Result<(), String> {
+    at(d, 20)?;
+    let before_bank = bank(d)?;
+    d.command("record z")?;
+    let before = d.revision();
+    d.chord(&[Key::Comma, Key::I])?;
+    d.changed(&before)?;
+    idle(d)?;
+    d.check(
+        "Whole-Original reuse records one semantic instruction and leaves copies unchanged",
+        d.app().sequence_length() == 240
+            && d.app().macros.instruction_count() == 1
+            && bank(d)? == before_bank,
+        json!({"frames":240,"instructions":1,"bank_unchanged":true}),
+        state(d),
+    )?;
+    d.command("record-stop")?;
+    wait_saved(d, 'z')?;
+    d.check(
+        "Whole-Original macro retains asset identity without a moment register",
+        program(d, 'z').is_some_and(|program| {
+            matches!(
+                program.instructions(),
+                [SemanticInstruction::InsertOriginal { .. }]
+            )
+        }),
+        json!(["insert_original"]),
+        state(d),
+    )?;
+    undo(d, baseline)?;
+    at(d, 20)?;
+    let before = d.revision();
+    execute(d, 'z', Some(2))?;
+    d.changed(&before)?;
+    idle(d)?;
+    d.check(
+        "Counted whole-Original macro inserts two full sources in one Undo",
+        d.app().sequence_length() == 360,
+        json!({"frames":360}),
+        state(d),
+    )?;
+    undo(d, baseline)?;
+    at(d, 20)?;
+    d.command("source")?;
+    d.key(Key::Escape)?;
+    let captured = d.app().capture_original_insert_target()?;
+    d.check(
+        "Original-pane reuse captures its own current view and focus",
+        captured.matches(d.app()),
+        json!(true),
+        state(d),
+    )?;
+    let pane = d.app().pane;
+    d.app_mut().pane = if pane == Pane::Inspector {
+        Pane::Viewer
+    } else {
+        Pane::Inspector
+    };
+    let changed_pane_refused = !captured.matches(d.app());
+    d.app_mut().pane = pane;
+    d.app_mut().sequence_cursor += 1;
+    let changed_cursor_refused = !captured.matches(d.app());
+    d.app_mut().sequence_cursor -= 1;
+    d.app_mut().view = View::Sequence;
+    let changed_view_refused = !captured.matches(d.app());
+    d.app_mut().view = View::Source;
+    d.app_mut().pane = Pane::Sources;
+    let focus_capture = d.app().capture_original_insert_target()?;
+    let selected_sound = d.app().selected_sound.clone();
+    d.app_mut().selected_sound =
+        Some(deadpan_core::AssetId::new("focus-witness").map_err(|error| error.to_string())?);
+    let changed_focus_refused = !focus_capture.matches(d.app());
+    d.app_mut().selected_sound = selected_sound;
+    d.app_mut().pane = pane;
+    d.check(
+        "A captured Original reuse refuses later pane, view or Edit cursor changes",
+        changed_pane_refused
+            && changed_cursor_refused
+            && changed_view_refused
+            && changed_focus_refused
+            && captured.matches(d.app()),
+        json!({"pane":true,"view":true,"cursor":true,"sound_focus":true}),
+        state(d),
+    )?;
+    let original_cursor = d.app().source_cursor;
+    let before = d.revision();
+    d.chord(&[Key::Comma, Key::I])?;
+    d.changed(&before)?;
+    idle(d)?;
+    d.check(
+        "Whole-Original insertion succeeds from the Original pane without losing its cursor",
+        d.app().sequence_length() == 240 && d.app().source_cursor == original_cursor,
+        json!({"frames":240,"Original":original_cursor}),
+        state(d),
+    )?;
+    at(d, 20)?;
+    undo(d, baseline)
 }
 
 fn edited(d: &mut Driver<'_>, baseline: &ProjectDocument) -> Result<(), String> {

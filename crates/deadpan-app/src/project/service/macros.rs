@@ -183,6 +183,7 @@ impl Service {
                             SemanticInstruction::Cut { .. } => "Cut selection",
                             SemanticInstruction::ReplaceSelection { .. } => "Replace selection",
                             SemanticInstruction::Paste { .. } => "Paste register",
+                            SemanticInstruction::InsertOriginal { .. } => "Reuse whole Original",
                             SemanticInstruction::Repeat { .. } => "Wrap Repeat",
                             SemanticInstruction::SetRepeatPlays { .. } => "Set Repeat plays",
                             SemanticInstruction::SetRepeat { .. } => "Change Repeat",

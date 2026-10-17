@@ -81,8 +81,13 @@ pub struct SemanticRegisterBank<'a> {
     pub version: u64,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SemanticAllocationRequest {
+    /// Resolve the complete qualified source, independently of moment registers.
+    InsertOriginal {
+        step_index: usize,
+        asset: crate::AssetId,
+    },
     Group {
         step_index: usize,
         required_split_ids: usize,
@@ -178,6 +183,11 @@ pub enum SemanticAllocationRequest {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SemanticAllocation {
+    InsertOriginal {
+        new_revision: RevisionId,
+        node: NodeId,
+        source: Box<SourceNode>,
+    },
     Group {
         new_revision: RevisionId,
         identities: GroupSelectionIdentities,
@@ -856,6 +866,9 @@ where
                 SemanticInstruction::ReplaceSelection { register } => {
                     self.replace_selection(index, *register)?;
                 }
+                SemanticInstruction::InsertOriginal { asset } => {
+                    self.insert_original(index, asset)?;
+                }
                 SemanticInstruction::Paste { register, before } => {
                     self.paste_instruction(index, *register, *before)?;
                 }
@@ -962,6 +975,7 @@ where
                         | SemanticInstruction::Duplicate { .. }
                         | SemanticInstruction::YankBeat { .. }
                         | SemanticInstruction::Paste { .. }
+                        | SemanticInstruction::InsertOriginal { .. }
                         | SemanticInstruction::YankSelection { .. }
                         | SemanticInstruction::CutSelection { .. }
                         | SemanticInstruction::ReplaceSelection { .. }

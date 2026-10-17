@@ -175,7 +175,7 @@ fn unchanged_count_still_uses_fresh_leaf_revisions_and_bounded_counted_calls() {
         },
         revision("outer"),
         |request| {
-            requests.push(request);
+            requests.push(request.clone());
             allocate(request)
         },
         no_original,

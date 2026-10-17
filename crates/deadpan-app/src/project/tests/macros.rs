@@ -20,6 +20,85 @@ fn setup(path: &Path) -> (Harness, ProjectUpdate) {
     (harness, opened)
 }
 
+#[test]
+fn whole_original_macro_preserves_full_av_union_and_undo_bank() {
+    let scratch = tempfile::tempdir().unwrap();
+    let service = ProjectService::start(
+        Arc::new(|| {}),
+        Some(ProjectLibrary::from_documents(scratch.path().join("Documents")).unwrap()),
+    )
+    .unwrap();
+    service
+        .submit(ProjectRequest::CreateFromSource {
+            ownership: OriginalOwnership::Managed,
+            path: fixture("offset-bframes.mp4"),
+        })
+        .unwrap();
+    let initialized = wait(&service, |update| {
+        update.import.as_ref().is_some_and(|status| {
+            matches!(status.stage, ImportStage::Complete | ImportStage::Failed)
+        })
+    });
+    assert!(initialized.error.is_none(), "{:?}", initialized.error);
+    let opened = command(
+        &service,
+        ProjectRequest::Open(initialized.workspace.as_ref().unwrap().path.clone()),
+    );
+    let workspace = opened.workspace.as_ref().unwrap();
+    let Some(SingleSourceState::Ready { asset, node, .. }) = &workspace.single_source else {
+        panic!()
+    };
+    let baseline = workspace.document.clone();
+    let NodeKind::Source { source } = &baseline.nodes()[node].kind else {
+        panic!()
+    };
+    assert!(
+        source
+            .video_mapping
+            .start_frames()
+            .compare_integer(0)
+            .is_gt()
+    );
+    let saved = send(
+        &service,
+        save(
+            &opened,
+            1,
+            'a',
+            program(vec![SemanticInstruction::InsertOriginal {
+                asset: asset.clone(),
+            }]),
+        ),
+    );
+    let before_bank = saved.registers.as_ref().unwrap().version;
+    let applied = send(&service, run(&saved, 2, 'a', 2, 0));
+    let after = &applied.workspace.as_ref().unwrap().document;
+    assert_eq!(
+        after.duration().unwrap().frames(),
+        baseline.duration().unwrap().frames() * 3
+    );
+    let NodeKind::Sequence { children } = &after.nodes()[after.root()].kind else {
+        panic!()
+    };
+    assert_eq!(children.len(), 3);
+    assert_ne!(children[1], children[2]);
+    for child in &children[1..] {
+        assert_eq!(&after.nodes()[child].kind, &baseline.nodes()[node].kind);
+    }
+    assert_eq!(applied.registers.as_ref().unwrap().version, before_bank);
+    let undone = command(
+        &service,
+        ProjectRequest::Undo {
+            expected_revision: after.revision_id().clone(),
+        },
+    );
+    let restored = &undone.workspace.as_ref().unwrap().document;
+    assert_eq!(restored.nodes(), baseline.nodes());
+    assert_eq!(restored.duration().unwrap(), baseline.duration().unwrap());
+    assert_eq!(undone.registers.as_ref().unwrap().version, before_bank);
+    assert!(!undone.workspace.as_ref().unwrap().can_undo);
+}
+
 fn id(update: &ProjectUpdate, request: u64) -> Id {
     let workspace = update.workspace.as_ref().unwrap();
     Id {

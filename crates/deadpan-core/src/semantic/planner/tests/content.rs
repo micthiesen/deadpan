@@ -393,6 +393,131 @@ fn new_content_instructions_are_closed_and_round_trip() {
     }
 }
 
+#[test]
+fn whole_original_appends_without_selection_and_never_replaces_visual() {
+    let (document, _, source) = original_fixture();
+    let asset = crate::AssetId::new("original").unwrap();
+    let instruction = SemanticInstruction::InsertOriginal { asset };
+    let bank = BTreeMap::from([(name('m'), macro_value(vec![instruction.clone()]))]);
+    for visual_selection in [
+        None,
+        Some(SemanticVisualSelection::Time {
+            anchor: ProjectFrame(0),
+            head: ProjectFrame(3),
+            extending: false,
+        }),
+    ] {
+        let planned = plan_semantic(
+            &document,
+            &SemanticContext {
+                visual_selection,
+                ..context("root", 1)
+            },
+            &program(vec![call('m', 2)]),
+            SemanticRegisterBank {
+                entries: &bank,
+                version: 0,
+            },
+            revision("outer"),
+            |request| match request {
+                SemanticAllocationRequest::InsertOriginal { step_index, .. } => {
+                    Ok(SemanticAllocation::InsertOriginal {
+                        new_revision: revision(&format!("leaf-{step_index}")),
+                        node: node(&format!("whole-{step_index}")),
+                        source: Box::new(source.clone()),
+                    })
+                }
+                _ => panic!("unexpected allocation"),
+            },
+            no_original,
+        )
+        .unwrap();
+        assert_eq!(
+            children(&planned.document, "root"),
+            vec![node("held"), node("whole-0"), node("whole-1")]
+        );
+        assert_eq!(planned.document.duration().unwrap().frames(), 64);
+        assert_eq!(planned.context.cursor, ProjectFrame(34));
+        assert!(planned.register_writes.is_empty());
+        assert!(
+            planned
+                .trace
+                .iter()
+                .all(|step| step.removed_range.is_none())
+        );
+        let replayed = crate::replay_compound::<EditError>(
+            &document,
+            planned.request.as_ref().unwrap(),
+            |_| Ok(()),
+        )
+        .unwrap();
+        assert_eq!(replayed.document, planned.document);
+        assert_eq!(
+            replayed.edit.inverse.apply(&replayed.document).unwrap(),
+            document
+        );
+    }
+    assert_eq!(
+        serde_json::from_str::<SemanticProgram>(
+            &serde_json::to_string(&program(vec![instruction.clone()])).unwrap()
+        )
+        .unwrap(),
+        program(vec![instruction])
+    );
+}
+
+#[test]
+fn whole_original_resolves_nested_selected_slot_and_refuses_reused_identity() {
+    let (mut document, _, source) = original_fixture();
+    document.nodes.insert(
+        node("group"),
+        BeatNode::sequence("Group", vec![node("first"), node("last")]),
+    );
+    document.nodes.insert(node("first"), hold(2));
+    document.nodes.insert(node("last"), hold(3));
+    document.nodes.get_mut(&node("root")).unwrap().kind = NodeKind::Sequence {
+        children: vec![node("held"), node("group")],
+    };
+    document.validate().unwrap();
+    let body = program(vec![SemanticInstruction::InsertOriginal {
+        asset: crate::AssetId::new("original").unwrap(),
+    }]);
+    for reused in [false, true] {
+        let result = plan_semantic(
+            &document,
+            &selected("group", 8, "first"),
+            &body,
+            SemanticRegisterBank {
+                entries: &BTreeMap::new(),
+                version: 0,
+            },
+            revision("outer"),
+            |_| {
+                Ok(SemanticAllocation::InsertOriginal {
+                    new_revision: revision("leaf"),
+                    node: node(if reused { "first" } else { "inserted" }),
+                    source: Box::new(source.clone()),
+                })
+            },
+            no_original,
+        );
+        if reused {
+            assert!(result.is_err());
+        } else {
+            let planned = result.unwrap();
+            assert_eq!(
+                children(&planned.document, "group"),
+                vec![node("first"), node("inserted"), node("last")]
+            );
+            assert_eq!(planned.context.cursor, ProjectFrame(6));
+            assert_eq!(
+                planned.document.nodes()[&node("held")],
+                document.nodes()[&node("held")]
+            );
+        }
+    }
+}
+
 pub(super) fn original_fixture() -> (ProjectDocument, Arc<RegisterValue>, SourceNode) {
     use crate::{
         AssetId, AssetRecord, AudioSample, LinkRelation, SourceAudioMapping, SourceQualificationId,

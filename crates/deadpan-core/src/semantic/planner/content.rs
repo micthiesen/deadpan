@@ -26,6 +26,89 @@ where
     S: FnMut(&ProjectDocument) -> Result<Arc<SpeechTimeline>, EditError>,
     P: FnMut(&ProjectDocument, super::PauseSite) -> Result<super::PauseProvider, EditError>,
 {
+    pub(super) fn insert_original(
+        &mut self,
+        trace_index: usize,
+        asset: &crate::AssetId,
+    ) -> Result<(), EditError> {
+        validate_selection(&self.current, &self.context)?;
+        let parent = self.context.parent.clone();
+        let NodeKind::Sequence { children } = &self.current.nodes()[&parent].kind else {
+            unreachable!("validated ordinary Sequence")
+        };
+        let index = self
+            .context
+            .selected_child
+            .as_ref()
+            .and_then(|selected| children.iter().position(|child| child == selected))
+            .map_or(children.len(), |index| index + 1);
+        let cursor = self.current.source_splice_boundary(&parent, index)?;
+        let label = self
+            .current
+            .assets()
+            .get(asset)
+            .ok_or_else(|| invalid("the Original asset is absent from this edit"))?
+            .label
+            .clone();
+        self.charge_step(false)?;
+        let SemanticAllocation::InsertOriginal {
+            new_revision,
+            node,
+            source,
+        } = (self.allocate)(SemanticAllocationRequest::InsertOriginal {
+            step_index: self.steps.len(),
+            asset: asset.clone(),
+        })?
+        else {
+            return Err(invalid(
+                "whole-Original insertion requires a qualified source allocation",
+            ));
+        };
+        if !matches!(&source.video, crate::SourceVideo::Stream { asset: resolved, .. } if resolved == asset)
+            || source
+                .audio
+                .as_ref()
+                .is_some_and(|audio| audio.asset != *asset)
+        {
+            return Err(invalid(
+                "the resolved whole Original names a different asset",
+            ));
+        }
+        self.reserve_revision(&new_revision)?;
+        self.reserve_node(&node)?;
+        let end = cursor
+            .0
+            .checked_add(source.duration.frames())
+            .ok_or_else(|| limit("whole-Original insertion overflows the project clock"))?;
+        let range =
+            FrameRange::new(cursor, ProjectFrame(end)).map_err(crate::DocumentError::from)?;
+        let timing = AudioTimingId {
+            allocation: new_revision.clone(),
+            ordinal: 0,
+        };
+        self.commit_leaf(LeafEdit::new(
+            new_revision,
+            Command::SpliceSource {
+                parent: parent.clone(),
+                index,
+                source: *source,
+                id: node.clone(),
+                label,
+                timing,
+            },
+        )?)?;
+        let seam = FrameRange::new(cursor, cursor).map_err(crate::DocumentError::from)?;
+        let target = selection::ResolvedTarget::local(
+            &parent,
+            SliceCaptureSelection::Range { range: seam },
+            seam,
+        );
+        self.continue_target(&target, cursor, Some(node))?;
+        self.trace[trace_index].resolved_parent = Some(parent);
+        self.trace[trace_index].resolved_range = Some(range);
+        Ok(())
+    }
+
     pub(super) fn capture_selector(
         &mut self,
         trace_index: usize,

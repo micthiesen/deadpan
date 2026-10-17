@@ -76,6 +76,19 @@ checks, rendered captures, retained failures and remaining limits.
 
 ## Recording and input ownership
 
+Whole-Original reuse (`InsertOriginal`, `,i` or `:insert`) inserts the complete
+measured A/V union after the selected direct child, or appends to the current
+ordinary Sequence when no child is selected. Visual selection never turns this
+action into replacement. Each invocation receives fresh identities, selects its
+inserted beat and leaves all copy registers unchanged. The host verifies the
+project's pinned Original and qualification; this instruction refuses legacy
+multi-video projects. Legacy interactive insertion keeps its separate path.
+The full source uses its measured audio lead/tail and picture endpoint holds,
+not the picture-ordinal bounds of an Original moment register.
+Like other semantic transactions, reuse requires the project's register-bank
+version to be loaded so it can prove that the unchanged bank is still current.
+See [whole-Original qualification](qualification/whole-original-macros-2026-10-16.md).
+
 Recording performs normal edits. A motion enters the body when dispatched;
 a copy, cut, paste or call enters only after its matching successful receipt. A pending
 operation blocks the next recorded action until that result arrives. Failed

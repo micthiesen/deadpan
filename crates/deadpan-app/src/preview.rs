@@ -1533,6 +1533,13 @@ impl DeadpanApp {
         let Some(asset) = original_asset(workspace).or(self.selected_source.as_ref()) else {
             return;
         };
+        if workspace.single_source.is_some() {
+            let instruction = deadpan_core::SemanticInstruction::InsertOriginal {
+                asset: asset.clone(),
+            };
+            self.apply_recorded_instruction(self.capture_original_insert_target(), Ok(instruction));
+            return;
+        }
         let scope = match self.sequence_scope.resolve(workspace) {
             Ok(scope) => scope,
             Err(error) => {
