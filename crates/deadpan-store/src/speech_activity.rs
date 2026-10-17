@@ -64,6 +64,18 @@ impl ProjectStore {
         key: &SpeechActivityKey,
         activity: &SpeechActivity,
     ) -> Result<(), StoreError> {
+        self.save_speech_activity_guarded(key, activity, || Ok(()))
+    }
+
+    /// Save only while the caller's publication guard permits it. The guard
+    /// runs before the write and immediately before commit; rejection rolls
+    /// back the transaction, preserving any previously stored annotation.
+    pub fn save_speech_activity_guarded(
+        &self,
+        key: &SpeechActivityKey,
+        activity: &SpeechActivity,
+        mut guard: impl FnMut() -> Result<(), StoreError>,
+    ) -> Result<(), StoreError> {
         self.require_writer()?;
         key.validate()?;
         let audio = activity.audio();
@@ -81,6 +93,7 @@ impl ProjectStore {
                 "project already retains its maximum speech activity analyses",
             ));
         }
+        guard()?;
         transaction.execute(
             "INSERT INTO speech_activity(content,audio_stream,model_sha256,engine,
                 origin,sample_rate,samples,speech,energy)
@@ -100,6 +113,7 @@ impl ProjectStore {
                 activity.energy()
             ],
         )?;
+        guard()?;
         transaction.commit()?;
         Ok(())
     }

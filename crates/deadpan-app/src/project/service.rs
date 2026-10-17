@@ -489,15 +489,29 @@ impl Service {
             ProjectRequest::SaveTranscript {
                 expected_session,
                 attempt,
+                lifecycle_epoch,
                 key,
                 transcript,
-            } => self.save_transcript_command(expected_session, attempt, key, transcript),
+            } => self.save_transcript_command(
+                expected_session,
+                attempt,
+                lifecycle_epoch,
+                key,
+                transcript,
+            ),
             ProjectRequest::SaveSpeechActivity {
                 expected_session,
                 attempt,
+                lifecycle_epoch,
                 key,
                 activity,
-            } => self.save_speech_activity_command(expected_session, attempt, key, activity),
+            } => self.save_speech_activity_command(
+                expected_session,
+                attempt,
+                lifecycle_epoch,
+                key,
+                activity,
+            ),
             ProjectRequest::SaveShotAnalysis {
                 expected_session,
                 attempt,
@@ -527,19 +541,33 @@ impl Service {
             ProjectRequest::SaveTranscript {
                 expected_session,
                 attempt,
+                lifecycle_epoch,
                 key,
                 transcript,
             } => {
-                self.save_transcript_command(expected_session, attempt, key, transcript);
+                self.save_transcript_command(
+                    expected_session,
+                    attempt,
+                    lifecycle_epoch,
+                    key,
+                    transcript,
+                );
                 return Ok(());
             }
             ProjectRequest::SaveSpeechActivity {
                 expected_session,
                 attempt,
+                lifecycle_epoch,
                 key,
                 activity,
             } => {
-                self.save_speech_activity_command(expected_session, attempt, key, activity);
+                self.save_speech_activity_command(
+                    expected_session,
+                    attempt,
+                    lifecycle_epoch,
+                    key,
+                    activity,
+                );
                 return Ok(());
             }
             ProjectRequest::SaveShotAnalysis {

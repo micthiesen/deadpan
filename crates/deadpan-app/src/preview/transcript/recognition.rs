@@ -27,6 +27,7 @@ pub(super) enum Again {
     Failed {
         error: String,
     },
+    Interrupted,
 }
 
 /// Flagged passages listed individually; the rest are counted.
@@ -105,6 +106,9 @@ impl DeadpanApp {
             }
             Some(Again::Queued | Again::Saving { .. }) => {
                 ui.weak("Saving the passage’s new words…");
+            }
+            Some(Again::Interrupted) => {
+                ui.colored_label(style::WARNING, "Recognizing again was interrupted by system sleep. Choose Recognize again to retry; the stored words are unchanged.");
             }
             Some(Again::Failed { error }) => {
                 ui.colored_label(
@@ -270,6 +274,12 @@ impl DeadpanApp {
         let package = workspace.path.clone();
         let (sender, receiver) = mpsc::channel();
         let cancel = Arc::new(AtomicBool::new(false));
+        let run = RunCapture::new(self.service.jobs().lifecycle(), Arc::clone(&cancel));
+        self.transcription.run = Some(run.clone());
+        if run.stop().is_some() {
+            self.transcription.again = Some(Again::Interrupted);
+            return;
+        }
         self.transcription.cancel = Arc::clone(&cancel);
         self.transcription.events = Some(receiver);
         self.transcription.again = Some(Again::Running {
@@ -292,7 +302,7 @@ impl DeadpanApp {
             .name("deadpan-transcription".into())
             .spawn(move || {
                 let deadline = std::time::Instant::now() + Duration::from_secs(6 * 60 * 60);
-                let result = (|| {
+                let result = run.run(|| {
                     handle.set_progress("Reading the Original's sound", None);
                     let (analysis, runtime) = activity::prepare(&package, &cancel, deadline)?;
                     if analysis.content != key.content || analysis.audio_stream != key.audio_stream
@@ -325,7 +335,7 @@ impl DeadpanApp {
                     )
                     .map_err(|error| error.to_string())?;
                     Ok((key, result.transcript))
-                })();
+                });
                 let _ = sender.send(Event::Transcribed(result));
                 repaint.request_repaint();
             });
@@ -350,14 +360,21 @@ impl DeadpanApp {
             .and_then(|workspace| workspace.transcript.as_ref())
             .map(|transcript| Arc::clone(&transcript.proposal));
         self.transcription.again = match result {
-            Err(error) => Some(Again::Failed { error }),
+            Err(error) => {
+                self.transcription.run = None;
+                Some(Again::Failed { error })
+            }
             Ok(_) if !current.is_some_and(|current| Arc::ptr_eq(&current, &base)) => {
+                self.transcription.run = None;
                 Some(Again::Failed {
                     error: "the transcript changed while the passage was recognized".into(),
                 })
             }
             Ok((key, transcript)) => {
-                self.transcription.unsaved = Some((key, Arc::new(transcript)));
+                let Some(run) = &self.transcription.run else {
+                    return;
+                };
+                self.transcription.unsaved = Some((key, Arc::new(transcript), run.epoch));
                 Some(Again::Queued)
             }
         };

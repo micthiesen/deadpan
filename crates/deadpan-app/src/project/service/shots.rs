@@ -44,6 +44,7 @@ impl Service {
         self.shot_save = Some(crate::project::TranscriptSave {
             session: expected_session,
             attempt,
+            interrupted: false,
             error,
         });
     }

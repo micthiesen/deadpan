@@ -1,0 +1,31 @@
+{
+  "base_revision": "ce3cbda7",
+  "scope": "Final release source; real-worker test ran before receipt and focus-only fixes, with its executed binary hash retained separately. RunCapture production watcher and real test source unchanged.",
+  "files": {
+    "crates/deadpan-app/src/jobs.rs": "f4a5208a1b276948a9a24bfd81bc73331c480488a10753e6f9f27ed8c8f00f1d",
+    "crates/deadpan-app/src/preview/harness/corrections.rs": "65929970c0db92ae9bd2cd5026ee259579cba7b8463fb75c00260568a90c6941",
+    "crates/deadpan-app/src/preview/harness/layouts.rs": "bcac68d8ca9565f6ba1f2fccd73dc7f34a4136f95da20f02d44ef0a08a32d3d9",
+    "crates/deadpan-app/src/preview/harness/transcript.rs": "08f08374f9eb98bd78886aa86317ff88e80b573942c111f2221cbfc8873f82ea",
+    "crates/deadpan-app/src/preview/transcript.rs": "739cfdd0f1439c03f8dc362c91cb8f64f60154d09a9e88e1c050cf9d7f178854",
+    "crates/deadpan-app/src/preview/transcript/activity.rs": "cc509ddce44e9908db3f15c673f43cd5beb80ff32eb88a815c40c3f28043e742",
+    "crates/deadpan-app/src/preview/transcript/lifecycle.rs": "46fb8a9de66c9068f43dd643f90deab31769b9551b22faaf5607e677f0009ffc",
+    "crates/deadpan-app/src/preview/transcript/lifecycle/real.rs": "6a613cb0023ae2a71c6cd8250a6f29100ce2c18d9cfaa697051b3aac9ad3654b",
+    "crates/deadpan-app/src/preview/transcript/recognition.rs": "460fa7afa49e9aaf2f16704d46f0595cef41e09f16adb62722365461e40d3279",
+    "crates/deadpan-app/src/project.rs": "8b88ffd174b9e1198593a3ea5cc252c2c88c8051631c133c9cc127c3cac93bcb",
+    "crates/deadpan-app/src/project/service.rs": "14f65b2b1e1147210078fb1f6782971affa7848bea63c89d1c282d9d55c69ee8",
+    "crates/deadpan-app/src/project/service/readonly.rs": "2c6fd3646e316d6bb43b705e57e74eda0f822c314648484b2c2cbd7e8ea2b0e7",
+    "crates/deadpan-app/src/project/service/shots.rs": "d0825205b80d7cefedff928c75a09d641735bba979ac6629719aa35e9e663a2f",
+    "crates/deadpan-app/src/project/service/transcripts.rs": "e58a3c4f633b2a50a991e69149211e87af3f98b3b6544b876a0e1e87b93ba6be",
+    "crates/deadpan-app/src/project/tests.rs": "2e5e9004c46a18333b676ae97efe5bd149ea0b28d36941d201f019454b18727f",
+    "crates/deadpan-app/src/project/tests/corrections.rs": "a7f701dff2780d58e0a6e1861a7e266c12bccfd0c510bf0f1764ddce70b73e9f",
+    "crates/deadpan-app/src/project/tests/headless/operations.rs": "8cac5a3f4078345cbd0ca3ee22ef6a4f72469f516bf6d559c6f83cd2fec4e810",
+    "crates/deadpan-app/src/project/tests/readonly.rs": "37bdee0c32163d1c76edeaa7aaaa1394624c08cd653486b4d2998ee3f0ce488a",
+    "crates/deadpan-app/src/project/tests/speech_activity.rs": "221279e5bb733863b7f7e719d41ada1162d0e50e66cdd128175391648113182a",
+    "crates/deadpan-app/src/project/tests/transcript_lifecycle.rs": "dbbca883236a7d6c3000cbb798c236f6eaaec6f82e1beb06c3719bcb297937a9",
+    "crates/deadpan-store/src/error.rs": "3c8080288e3f3bc2c1b780c9bd37cd46e428f805bad086549b95f1e5f368cb5a",
+    "crates/deadpan-store/src/speech_activity.rs": "eceecdfc5c908a9cfbfa3eb5cffa539fd62f81bbfc9bccfa4efe955d2f65b69b",
+    "crates/deadpan-store/src/transcripts.rs": "bab2eaa889bb4d3ec19f721b8ff60ee2b59e74fe62f9fc34bfd1bf2fbd169135",
+    "crates/deadpan-store/tests/speech_activity.rs": "838d036c52362a33cecd9bb1124111a0762e593a3992bfec491a3219f70e9d0b",
+    "crates/deadpan-store/tests/transcripts.rs": "eb5e9b25c718dc0b7f6f9ac4248205a6f9ef5da088b64eb5db8682ebf638c702"
+  }
+}

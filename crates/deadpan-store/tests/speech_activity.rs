@@ -83,6 +83,73 @@ fn activity_saves_replaces_and_reopens_without_touching_history() -> Result {
 }
 
 #[test]
+fn guarded_activity_rejects_new_and_replacement_writes_without_history_changes() -> Result {
+    for existing in [false, true] {
+        for reject_at in [1, 2] {
+            let scratch = tempfile::tempdir()?;
+            let path = project(&scratch)?;
+            let store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+            let key = key("whisper.cpp 1.8.3");
+            let previous = activity(0);
+            let replacement = activity(1_024);
+            if existing {
+                store.save_speech_activity(&key, &previous)?;
+            }
+            let head = store.head_revision()?;
+            let mut calls = 0;
+            let result = store.save_speech_activity_guarded(&key, &replacement, || {
+                calls += 1;
+                if calls == 2 {
+                    // The final guard sees the pending write before rejecting it.
+                    assert_eq!(store.speech_activity(&key)?, Some(replacement.clone()));
+                }
+                if calls == reject_at {
+                    Err(StoreError::Integrity("publication interrupted".into()))
+                } else {
+                    Ok(())
+                }
+            });
+            assert!(
+                matches!(result, Err(StoreError::Integrity(detail)) if detail == "publication interrupted")
+            );
+            assert_eq!(calls, reject_at);
+            assert_eq!(store.head_revision()?, head);
+            assert!(store.preview_undo(&head, RevisionId::new("undo")?).is_err());
+            let expected = existing.then_some(previous);
+            assert_eq!(store.speech_activity(&key)?, expected);
+            drop(store);
+            let reader = ProjectStore::open(&path, AccessMode::ReadOnly)?;
+            assert_eq!(reader.speech_activity(&key)?, expected);
+            assert_eq!(reader.head_revision()?, head);
+        }
+    }
+    Ok(())
+}
+
+#[test]
+fn guarded_activity_commits_when_both_checks_permit_publication() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let path = project(&scratch)?;
+    let store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+    let head = store.head_revision()?;
+    for value in [activity(0), activity(1_024)] {
+        let mut calls = 0;
+        store.save_speech_activity_guarded(&key("whisper.cpp 1.8.3"), &value, || {
+            calls += 1;
+            Ok(())
+        })?;
+        assert_eq!(calls, 2);
+        assert_eq!(
+            store.speech_activity(&key("whisper.cpp 1.8.3"))?,
+            Some(value)
+        );
+    }
+    assert_eq!(store.head_revision()?, head);
+    assert!(store.preview_undo(&head, RevisionId::new("undo")?).is_err());
+    Ok(())
+}
+
+#[test]
 fn activity_keys_are_validated_and_the_count_is_bounded() -> Result {
     let scratch = tempfile::tempdir()?;
     let path = project(&scratch)?;

@@ -319,6 +319,7 @@ fn readonly_pending_channels_preserve_captured_identities_and_all_package_bytes(
         TranscriptSave {
             session: correction.expected_session,
             attempt: correction.attempt,
+            interrupted: false,
             error: update.error
         }
     );

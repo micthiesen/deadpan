@@ -29,6 +29,7 @@ enum ActivityStatus {
     /// Waiting for the service to store this attempt.
     Saving(u64),
     Failed(String),
+    Interrupted,
     Ready,
 }
 
@@ -37,6 +38,7 @@ pub(super) struct ActivityJob {
     status: ActivityStatus,
     /// Finished activity not yet admitted by a busy project service.
     unsaved: Option<(SpeechActivityKey, Arc<SpeechActivity>)>,
+    lifecycle_epoch: Option<u64>,
 }
 
 impl ActivityJob {
@@ -49,6 +51,7 @@ impl ActivityJob {
             ActivityStatus::Detecting | ActivityStatus::Saving(_) => {
                 "Pauses are not ready while the Original's speech is analysed.".into()
             }
+            ActivityStatus::Interrupted => "Pauses are not ready: analysis was interrupted by system sleep. Try again in the Original rail.".into(),
             ActivityStatus::Failed(_) => {
                 "Pauses are not ready: detection failed. Try again in the Original rail.".into()
             }
@@ -66,9 +69,18 @@ impl ActivityJob {
     pub(super) fn start(&mut self) {
         self.status = ActivityStatus::Detecting;
         self.unsaved = None;
+        self.lifecycle_epoch = None;
     }
 
-    pub(super) fn receive(&mut self, result: Detection) {
+    pub(super) fn interrupt(&mut self) {
+        if self.unsaved.is_some() || matches!(self.status, ActivityStatus::Detecting) {
+            self.unsaved = None;
+            self.status = ActivityStatus::Interrupted;
+        }
+    }
+
+    pub(super) fn receive(&mut self, result: Detection, lifecycle_epoch: Option<u64>) {
+        self.lifecycle_epoch = lifecycle_epoch;
         match result {
             Ok((key, activity)) => self.unsaved = Some((key, Arc::new(activity))),
             Err(error) => self.status = ActivityStatus::Failed(error),
@@ -87,8 +99,11 @@ impl Transcription {
             return;
         }
         if let Some(error) = save.error {
-            self.activity.status =
-                ActivityStatus::Failed(format!("the pauses were not saved: {error}"));
+            self.activity.status = if save.interrupted {
+                ActivityStatus::Interrupted
+            } else {
+                ActivityStatus::Failed(format!("the pauses were not saved: {error}"))
+            };
         }
     }
 }
@@ -196,6 +211,9 @@ impl DeadpanApp {
         let package = workspace.path.clone();
         let (sender, receiver) = mpsc::channel();
         let cancel = Arc::new(AtomicBool::new(false));
+        // Independent VAD keeps its existing lifecycle policy. A sibling VAD
+        // result from transcription carries that recognition run's epoch.
+        self.transcription.run = None;
         self.transcription.cancel = Arc::clone(&cancel);
         self.transcription.events = Some(receiver);
         self.transcription.activity.start();
@@ -254,6 +272,7 @@ impl DeadpanApp {
         let attempt = self.transcription.attempts;
         let request = ProjectRequest::SaveSpeechActivity {
             expected_session: session,
+            lifecycle_epoch: self.transcription.activity.lifecycle_epoch,
             attempt,
             key: key.clone(),
             activity: Arc::clone(activity),
@@ -294,6 +313,22 @@ impl DeadpanApp {
                     self.offer_transcription_model(ui.ctx());
                 }
             }
+            ActivityStatus::Interrupted => {
+                let message = ui
+                    .label("Pause detection interrupted by system sleep. Try again to restart it.");
+                let retry = ui.add_enabled(
+                    self.transcription.events.is_none()
+                        && self.service.jobs().lifecycle().is_awake(),
+                    style::row_action(ui, "Try again", ""),
+                );
+                // Leave scroll range beyond the button border so fractional
+                // device-pixel rounding cannot clip its final row.
+                ui.add_space(4.0);
+                reveal_interruption(ui, message.rect, &retry);
+                if retry.clicked() {
+                    self.transcription.activity.status = ActivityStatus::Unchecked;
+                }
+            }
             ActivityStatus::Failed(error) => {
                 ui.colored_label(
                     ui.visuals().error_fg_color,
@@ -307,6 +342,35 @@ impl DeadpanApp {
             | ActivityStatus::NeedsModel
             | ActivityStatus::Saving(_)
             | ActivityStatus::Ready => {}
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn save_receipt_keeps_guard_interruption_distinct_from_real_failure() {
+        for interrupted in [false, true] {
+            let mut state = Transcription {
+                session: Some(7),
+                ..Transcription::default()
+            };
+            state.activity.status = ActivityStatus::Saving(4);
+            state.receive_activity_save(Some(crate::project::TranscriptSave {
+                session: 7,
+                attempt: 4,
+                error: Some("save diagnostic".into()),
+                interrupted,
+            }));
+            if interrupted {
+                assert_eq!(state.activity.status, ActivityStatus::Interrupted);
+            } else {
+                assert!(
+                    matches!(state.activity.status, ActivityStatus::Failed(ref error) if error.contains("save diagnostic"))
+                );
+            }
         }
     }
 }

@@ -40,6 +40,8 @@ enum Event {
 }
 
 mod activity;
+mod lifecycle;
+use lifecycle::{RunCapture, Stop};
 mod recognition;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -53,6 +55,7 @@ enum Status {
     /// Waiting for the service to store this attempt.
     Saving(u64),
     Failed(String),
+    Interrupted,
     Ready,
 }
 
@@ -61,6 +64,7 @@ pub(super) struct Transcription {
     status: Status,
     events: Option<mpsc::Receiver<Event>>,
     cancel: Arc<AtomicBool>,
+    run: Option<RunCapture>,
     search: String,
     matches: Vec<Range<usize>>,
     current_match: Option<usize>,
@@ -68,7 +72,7 @@ pub(super) struct Transcription {
     /// or removal re-checks the pack.
     seen_pack_changes: u64,
     /// A finished transcript not yet admitted by a busy project service.
-    unsaved: Option<(TranscriptKey, Arc<Transcript>)>,
+    unsaved: Option<(TranscriptKey, Arc<Transcript>, u64)>,
     attempts: u64,
     /// Correction saves, numbered per app run like transcript attempts.
     pub(super) correction_attempts: u64,
@@ -115,6 +119,7 @@ impl Default for Transcription {
             status: Status::Unchecked,
             events: None,
             cancel: Arc::new(AtomicBool::new(false)),
+            run: None,
             search: String::new(),
             matches: Vec::new(),
             current_match: None,
@@ -138,6 +143,61 @@ impl Default for Transcription {
 }
 
 impl Transcription {
+    /// Invalidate uncommitted results before processing any delayed event or save.
+    fn observe_interruption(&mut self) {
+        let Some(stop) = self.run.as_ref().and_then(RunCapture::stop) else {
+            return;
+        };
+        // An admitted save has its own transactional guard. Keep its attempt
+        // identity until the receipt distinguishes a successful commit, an
+        // interruption rejection, and an independent storage failure.
+        if matches!(self.status, Status::Saving(_))
+            || matches!(self.again, Some(recognition::Again::Saving { .. }))
+        {
+            return;
+        }
+        self.unsaved = None;
+        if self.again.is_none() && self.status != Status::Ready {
+            self.activity.interrupt();
+        }
+        if self.again.is_some() {
+            self.again = Some(match stop {
+                Stop::Interrupted => recognition::Again::Interrupted,
+                Stop::Cancelled => recognition::Again::Failed {
+                    error: "recognizing again was cancelled".into(),
+                },
+            });
+        } else if self.status != Status::Ready {
+            self.status = match stop {
+                Stop::Interrupted => Status::Interrupted,
+                Stop::Cancelled => Status::Failed("transcription was cancelled".into()),
+            };
+        }
+    }
+
+    fn accepts_event(&mut self, event: &Event) -> bool {
+        if self.run.as_ref().and_then(RunCapture::stop).is_none() {
+            return true;
+        }
+        if matches!(
+            event,
+            Event::Transcribed(_) | Event::Detected { last: true, .. }
+        ) {
+            self.events = None;
+        }
+        self.observe_interruption();
+        false
+    }
+
+    fn retry_interrupted(&mut self, lifecycle: &crate::jobs::Lifecycle) -> bool {
+        if self.status != Status::Interrupted || self.events.is_some() || !lifecycle.is_awake() {
+            return false;
+        }
+        self.run = None;
+        self.status = Status::Unchecked;
+        true
+    }
+
     /// A new project session cancels its transcription. Model installs
     /// belong to the Models panel and continue.
     fn reset(&mut self, session: Option<u64>) {
@@ -162,16 +222,40 @@ impl Transcription {
         if let Some(recognition::Again::Saving { attempt, .. }) = &self.again
             && *attempt == save.attempt
         {
-            self.again = save.error.map(|error| recognition::Again::Failed {
-                error: format!("the transcript was not saved: {error}"),
+            let cancelled = save.interrupted
+                && self.run.as_ref().and_then(RunCapture::stop) == Some(Stop::Cancelled);
+            self.run = None;
+            self.again = save.error.map(|error| {
+                if save.interrupted && !cancelled {
+                    recognition::Again::Interrupted
+                } else {
+                    recognition::Again::Failed {
+                        error: if cancelled {
+                            "recognizing again was cancelled".into()
+                        } else {
+                            format!("the transcript was not saved: {error}")
+                        },
+                    }
+                }
             });
             return;
         }
         if self.status != Status::Saving(save.attempt) {
             return;
         }
+        let cancelled = save.interrupted
+            && self.run.as_ref().and_then(RunCapture::stop) == Some(Stop::Cancelled);
+        self.run = None;
         if let Some(error) = save.error {
-            self.status = Status::Failed(format!("the transcript was not saved: {error}"));
+            self.status = if save.interrupted && !cancelled {
+                Status::Interrupted
+            } else {
+                Status::Failed(if cancelled {
+                    "transcription was cancelled".into()
+                } else {
+                    format!("the transcript was not saved: {error}")
+                })
+            };
         }
     }
 
@@ -200,6 +284,15 @@ impl Transcription {
         &self.search
     }
 
+    /// Inject only queued UI state; the replay uses the real lifecycle and retry route.
+    #[cfg(feature = "ui-harness")]
+    pub(super) fn replay_queued_recognition(&mut self, lifecycle: crate::jobs::Lifecycle) {
+        assert!(self.events.is_none() && self.unsaved.is_none());
+        self.cancel = Arc::new(AtomicBool::new(false));
+        self.run = Some(RunCapture::new(lifecycle, Arc::clone(&self.cancel)));
+        self.status = Status::Preparing;
+    }
+
     /// Replay-visible status name.
     #[cfg(feature = "ui-harness")]
     pub(super) fn status_name(&self) -> &'static str {
@@ -210,8 +303,18 @@ impl Transcription {
             Status::Transcribing(_) => "transcribing",
             Status::Saving(_) => "saving",
             Status::Failed(_) => "failed",
+            Status::Interrupted => "interrupted",
             Status::Ready => "ready",
         }
+    }
+}
+
+/// A focus event can be consumed by a discarded layout pass. Keep revealing
+/// the complete explanation and action until a retained layout contains both.
+fn reveal_interruption(ui: &egui::Ui, message: egui::Rect, retry: &egui::Response) {
+    let block = message.union(retry.rect);
+    if retry.has_focus() && !ui.clip_rect().contains_rect(block) {
+        ui.scroll_to_rect_animation(block, None, egui::style::ScrollAnimation::none());
     }
 }
 
@@ -228,12 +331,16 @@ impl DeadpanApp {
         if self.transcription.session != session {
             self.transcription.reset(session);
         }
+        self.transcription.observe_interruption();
         while let Some(event) = self
             .transcription
             .events
             .as_ref()
             .and_then(|events| events.try_recv().ok())
         {
+            if !self.transcription.accepts_event(&event) {
+                continue;
+            }
             match event {
                 Event::Progress(percent) => match &mut self.transcription.again {
                     Some(recognition::Again::Running { percent: shown, .. }) => *shown = percent,
@@ -243,7 +350,9 @@ impl DeadpanApp {
                     if last {
                         self.transcription.events = None;
                     }
-                    self.transcription.activity.receive(result);
+                    self.transcription
+                        .activity
+                        .receive(result, self.transcription.run.as_ref().map(|run| run.epoch));
                 }
                 Event::Transcribed(result)
                     if matches!(
@@ -258,9 +367,15 @@ impl DeadpanApp {
                     self.transcription.events = None;
                     match result {
                         Ok((key, transcript)) => {
-                            self.transcription.unsaved = Some((key, Arc::new(transcript)));
+                            if let Some(run) = &self.transcription.run {
+                                self.transcription.unsaved =
+                                    Some((key, Arc::new(transcript), run.epoch));
+                            }
                         }
-                        Err(error) => self.transcription.status = Status::Failed(error),
+                        Err(error) => {
+                            self.transcription.status = Status::Failed(error);
+                            self.transcription.run = None;
+                        }
                     }
                 }
             }
@@ -284,6 +399,12 @@ impl DeadpanApp {
             // Projects transcribed before pause detection get it on its own.
             self.reconcile_activity(context);
             self.transcription.status = Status::Ready;
+            if self.transcription.again.is_none()
+                && self.transcription.events.is_none()
+                && self.transcription.unsaved.is_none()
+            {
+                self.transcription.run = None;
+            }
             return;
         }
         if !matches!(
@@ -322,7 +443,7 @@ impl DeadpanApp {
             self.transcription.unsaved = None;
             return;
         };
-        let Some((key, transcript)) = self.transcription.unsaved.as_ref() else {
+        let Some((key, transcript, lifecycle_epoch)) = self.transcription.unsaved.as_ref() else {
             return;
         };
         // Saves use their own lane and never occupy the user-command slot,
@@ -335,6 +456,7 @@ impl DeadpanApp {
         let attempt = self.transcription.attempts;
         let request = ProjectRequest::SaveTranscript {
             expected_session: session,
+            lifecycle_epoch: Some(*lifecycle_epoch),
             attempt,
             key: key.clone(),
             transcript: Arc::clone(transcript),
@@ -397,6 +519,12 @@ impl DeadpanApp {
         let package = workspace.path.clone();
         let (sender, receiver) = mpsc::channel();
         let cancel = Arc::new(AtomicBool::new(false));
+        let run = RunCapture::new(self.service.jobs().lifecycle(), Arc::clone(&cancel));
+        self.transcription.run = Some(run.clone());
+        if run.stop().is_some() {
+            self.transcription.observe_interruption();
+            return;
+        }
         self.transcription.cancel = Arc::clone(&cancel);
         self.transcription.events = Some(receiver);
         self.transcription.status = Status::Preparing;
@@ -425,18 +553,20 @@ impl DeadpanApp {
                     });
                     repaint.request_repaint();
                 };
-                let result = run_transcription(
-                    &package,
-                    &model,
-                    vad.as_ref(),
-                    &cancel,
-                    &handle,
-                    detected,
-                    |percent| {
-                        let _ = sender.send(Event::Progress(percent));
-                        repaint.request_repaint();
-                    },
-                );
+                let result = run.run(|| {
+                    run_transcription(
+                        &package,
+                        &model,
+                        vad.as_ref(),
+                        &cancel,
+                        &handle,
+                        detected,
+                        |percent| {
+                            let _ = sender.send(Event::Progress(percent));
+                            repaint.request_repaint();
+                        },
+                    )
+                });
                 let _ = sender.send(Event::Transcribed(result));
                 repaint.request_repaint();
             });
@@ -747,12 +877,38 @@ impl DeadpanApp {
             Status::Saving(_) => {
                 ui.weak("Saving transcript…");
             }
+            Status::Interrupted => {
+                let message = ui.colored_label(
+                    style::WARNING,
+                    "Transcription interrupted by system sleep. Try again to restart it.",
+                );
+                let retry = ui.add_enabled(
+                    self.transcription.events.is_none()
+                        && self.service.jobs().lifecycle().is_awake(),
+                    style::row_action(ui, "Try again", ""),
+                );
+                // Leave scroll range beyond the button border so fractional
+                // device-pixel rounding cannot clip its final row.
+                ui.add_space(4.0);
+                reveal_interruption(ui, message.rect, &retry);
+                if retry.clicked() {
+                    self.transcription
+                        .retry_interrupted(&self.service.jobs().lifecycle());
+                }
+            }
             Status::Failed(error) => {
                 ui.colored_label(
                     ui.visuals().error_fg_color,
                     format!("Transcription failed: {error}"),
                 );
-                if ui.add(style::row_action(ui, "Try again", "")).clicked() {
+                if ui
+                    .add_enabled(
+                        self.transcription.events.is_none(),
+                        style::row_action(ui, "Try again", ""),
+                    )
+                    .clicked()
+                {
+                    self.transcription.run = None;
                     self.transcription.status = Status::Unchecked;
                 }
             }
@@ -1109,6 +1265,7 @@ impl DeadpanApp {
             Status::Failed(_) => {
                 "Words are not ready: transcription failed. Try again in the Original rail.".into()
             }
+            Status::Interrupted => "Words are not ready: transcription was interrupted by system sleep. Try again in the Original rail.".into(),
             Status::Ready => "Words are not ready: the Original has no transcript.".into(),
         }
     }
@@ -1128,6 +1285,7 @@ impl DeadpanApp {
             Status::Failed(_) => {
                 "Pauses are not ready: analysis failed. Try again in the Original rail.".into()
             }
+            Status::Interrupted => "Pauses are not ready: analysis was interrupted by system sleep. Try again in the Original rail.".into(),
             Status::Ready => {
                 "Pauses are not ready: the Original's speech has not been analysed.".into()
             }

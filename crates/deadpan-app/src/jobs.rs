@@ -26,9 +26,9 @@
 //!   scans wait under critical memory pressure ([`Gates`]). The person may
 //!   run a held job anyway ([`Jobs::run_anyway`]); nothing running is ever
 //!   stopped by a condition.
-//! - **Sleep.** [`Lifecycle`] invalidates AI pause generations across sleep
-//!   and wake. Their writer owns durable interruption and retry; Run anyway
-//!   cannot revive them. Other job kinds retain their own sleep policies.
+//! - **Sleep.** [`Lifecycle`] invalidates AI pause generation and transcription
+//!   across sleep and wake. Each owner interrupts and drains its worker;
+//!   Run anyway cannot revive it. Other job kinds retain their sleep policies.
 //! - **Cancellation and drain.** [`Jobs::cancel`] sets the job's own
 //!   cooperative cancel flag; [`Jobs::shutdown`] releases every queued or
 //!   paused waiter so each job's existing shutdown can join its thread.
@@ -214,6 +214,9 @@ pub struct Rules {
 }
 
 impl JobKind {
+    fn interrupted_by_sleep(self) -> bool {
+        matches!(self, Self::AiPause | Self::Transcription)
+    }
     #[cfg(test)]
     pub const ALL: [Self; 11] = [
         Self::Render,
@@ -704,7 +707,7 @@ impl Board {
     fn can_run_anyway(&self, entry: &Entry) -> bool {
         entry.admitted.is_none()
             && !entry.cancelling
-            && !(entry.kind == JobKind::AiPause
+            && !(entry.kind.interrupted_by_sleep()
                 && self.lifecycle.interrupted_since(entry.lifecycle_epoch))
             && self.fresh()
             && self.memory_admission_reason(entry).is_none()
@@ -713,7 +716,8 @@ impl Board {
 
     /// The admission condition holding `entry`, if one does.
     fn held(&self, entry: &Entry) -> Option<String> {
-        if entry.kind == JobKind::AiPause && self.lifecycle.interrupted_since(entry.lifecycle_epoch)
+        if entry.kind.interrupted_by_sleep()
+            && self.lifecycle.interrupted_since(entry.lifecycle_epoch)
         {
             return Some("system sleep interrupted the job".into());
         }
@@ -1226,7 +1230,7 @@ impl JobHandle {
             Some(Stopped::ShuttingDown)
         } else if entry.cancelling || cancel.is_some_and(|cancel| cancel.load(Ordering::Acquire)) {
             Some(Stopped::Cancelled)
-        } else if entry.kind == JobKind::AiPause
+        } else if entry.kind.interrupted_by_sleep()
             && board.lifecycle.interrupted_since(entry.lifecycle_epoch)
         {
             Some(Stopped::Interrupted)
@@ -1510,6 +1514,48 @@ mod tests {
         assert!(!sleeping.admitted());
         jobs.lifecycle().did_wake();
         assert_eq!(sleeping.wait_admitted(None), Err(Stopped::Interrupted));
+    }
+
+    #[test]
+    fn transcription_sleep_stops_queued_and_running_work_without_releasing_a_live_model() {
+        let jobs = Jobs::new();
+        let running = jobs.register(spec(JobKind::Transcription));
+        let queued = jobs.register(spec(JobKind::Transcription));
+        assert!(running.admitted());
+        assert!(!queued.admitted());
+        jobs.lifecycle().will_sleep();
+        jobs.lifecycle().did_wake();
+        assert_eq!(running.checkpoint(None), Err(Stopped::Interrupted));
+        assert_eq!(queued.wait_admitted(None), Err(Stopped::Interrupted));
+        assert!(!jobs.run_anyway(queued.id()));
+        let fresh = jobs.register(spec(JobKind::Transcription));
+        assert!(
+            !fresh.admitted(),
+            "interruption does not free a resident model"
+        );
+        drop(running);
+        assert!(fresh.admitted());
+        drop(queued);
+        assert_eq!(fresh.checkpoint(None), Ok(()));
+    }
+
+    #[test]
+    fn explicit_transcription_cancellation_keeps_its_outcome_across_sleep() {
+        let jobs = Jobs::new();
+        let cancel = Arc::new(AtomicBool::new(false));
+        let running = jobs.register(spec(JobKind::Transcription).cancel_flag(&cancel));
+        assert!(matches!(
+            jobs.cancel(running.id()),
+            CancelOutcome::Signalled(..)
+        ));
+        jobs.lifecycle().will_sleep();
+        jobs.lifecycle().did_wake();
+        assert_eq!(running.checkpoint(None), Err(Stopped::Cancelled));
+        let asleep = jobs.lifecycle();
+        asleep.will_sleep();
+        let new = jobs.register(spec(JobKind::Transcription));
+        assert_eq!(new.wait_admitted(None), Err(Stopped::Interrupted));
+        assert!(!jobs.run_anyway(new.id()));
     }
 
     fn spec(kind: JobKind) -> JobSpec {

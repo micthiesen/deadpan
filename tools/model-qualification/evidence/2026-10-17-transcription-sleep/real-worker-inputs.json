@@ -1,0 +1,11 @@
+{
+  "worker": {
+    "path": "/tmp/deadpan-transcription-sleep-2026-10-17/bin/deadpan-transcribe",
+    "sha256": "bfa68068195c975709d262f6fca8c05df508b67bd31fe270f0fa43f26f2d2bee"
+  },
+  "model": {
+    "path": "/Users/michael/Library/Application Support/Deadpan/Models/whisper-base-en/1/ggml-base.en.bin",
+    "expected_sha256": "a03779c86df3323075f5e796cb2ce5029f00ec8869eee3fdfb897afe36c6d002",
+    "expected_bytes": 147964211
+  }
+}

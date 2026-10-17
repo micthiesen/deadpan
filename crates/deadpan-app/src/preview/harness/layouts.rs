@@ -212,6 +212,7 @@ fn prepare(d: &mut Driver<'_>) -> Result<Fixture, String> {
     let (key, transcript, index) = super::transcript::synthetic(d)?;
     let session = d.app().workspace.as_ref().ok_or("No project")?.session;
     d.app_mut().submit(ProjectRequest::SaveTranscript {
+        lifecycle_epoch: None,
         expected_session: session,
         attempt: 0,
         key,

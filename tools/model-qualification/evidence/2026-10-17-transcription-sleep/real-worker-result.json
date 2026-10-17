@@ -1,0 +1,15 @@
+{
+  "base_revision": "ce3cbda7",
+  "test_binary": {
+    "path": "/Users/michael/Code/deadpan/target/debug/deps/deadpan_app-9447c8e0f717258a",
+    "sha256": "2d0000c1ce037204e07d279218177ba0832340115c242ddf1383afee11d77ffb"
+  },
+  "injected_progress_percent": 25,
+  "seconds_to_injection": 5.240557209,
+  "cancellation_drain_ms": 356.723541,
+  "retry_ms": 723.44725,
+  "engine": "whisper.cpp 1.8.3",
+  "backend": "Metal",
+  "retry_words": 0,
+  "scope": "Synthetic 120-second sine, injected lifecycle notification at real interior progress; fresh one-second retry. No physical sleep or speech accuracy claim."
+}

@@ -3,6 +3,21 @@
 
 use super::*;
 
+/// The final successful observation orders publication against native sleep.
+/// A later notification does not retract a transaction already admitted here.
+fn annotation_lifecycle_guard(
+    lifecycle: &crate::jobs::Lifecycle,
+    captured: Option<u64>,
+) -> std::result::Result<(), deadpan_store::StoreError> {
+    if captured.is_some_and(|epoch| lifecycle.interrupted_since(epoch)) {
+        Err(deadpan_store::StoreError::AnalysisInterrupted(
+            "System sleep interrupted recognition. Try again to start a new run.".into(),
+        ))
+    } else {
+        Ok(())
+    }
+}
+
 impl Service {
     /// Store a transcript for the current session's Original and publish it
     /// with the workspace. The document revision and history are unchanged.
@@ -10,9 +25,11 @@ impl Service {
         &mut self,
         expected_session: u64,
         attempt: u64,
+        lifecycle_epoch: Option<u64>,
         key: deadpan_store::TranscriptKey,
         transcript: Arc<deadpan_analysis::Transcript>,
     ) {
+        let mut interrupted = false;
         let result = (|| -> Result<Arc<Workspace>> {
             let workspace = self.workspace.as_ref().ok_or("Open a project first")?;
             if workspace.session != expected_session {
@@ -20,7 +37,16 @@ impl Service {
             }
             require_original(workspace, &key.content, key.audio_stream)?;
             let store = self.store.as_ref().ok_or("Open a project first")?;
-            store.save_transcript(&key, &transcript).map_err(display)?;
+            let lifecycle = self.shared.job_board.lifecycle();
+            store
+                .save_transcript_guarded(&key, &transcript, || {
+                    annotation_lifecycle_guard(&lifecycle, lifecycle_epoch)
+                })
+                .map_err(|error| {
+                    interrupted =
+                        matches!(error, deadpan_store::StoreError::AnalysisInterrupted(_));
+                    display(error)
+                })?;
             // Publish the preferred stored transcript with the person's
             // corrections, the same words operators and macros read, so
             // motions and edits never use different words.
@@ -40,6 +66,7 @@ impl Service {
         self.transcript_save = Some(crate::project::TranscriptSave {
             session: expected_session,
             attempt,
+            interrupted,
             error,
         });
     }
@@ -51,9 +78,11 @@ impl Service {
         &mut self,
         expected_session: u64,
         attempt: u64,
+        lifecycle_epoch: Option<u64>,
         key: deadpan_store::SpeechActivityKey,
         activity: Arc<deadpan_analysis::SpeechActivity>,
     ) {
+        let mut interrupted = false;
         let result = (|| -> Result<Arc<Workspace>> {
             let workspace = self.workspace.as_ref().ok_or("Open a project first")?;
             if workspace.session != expected_session {
@@ -61,9 +90,16 @@ impl Service {
             }
             require_original(workspace, &key.content, key.audio_stream)?;
             let store = self.store.as_ref().ok_or("Open a project first")?;
+            let lifecycle = self.shared.job_board.lifecycle();
             store
-                .save_speech_activity(&key, &activity)
-                .map_err(display)?;
+                .save_speech_activity_guarded(&key, &activity, || {
+                    annotation_lifecycle_guard(&lifecycle, lifecycle_epoch)
+                })
+                .map_err(|error| {
+                    interrupted =
+                        matches!(error, deadpan_store::StoreError::AnalysisInterrupted(_));
+                    display(error)
+                })?;
             let (key, activity) = deadpan_cli::activity::stored_activity(store, &key.content)
                 .unwrap_or_else(|| (key, (*activity).clone()));
             let (pauses, corrections_error) = deadpan_cli::speech::corrected_pauses(
@@ -91,6 +127,7 @@ impl Service {
         self.activity_save = Some(crate::project::TranscriptSave {
             session: expected_session,
             attempt,
+            interrupted,
             error,
         });
     }
@@ -190,6 +227,7 @@ impl Service {
         self.correction_save = Some(crate::project::TranscriptSave {
             session: expected_session,
             attempt,
+            interrupted: false,
             error,
         });
     }

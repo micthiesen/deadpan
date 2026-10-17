@@ -110,6 +110,8 @@ pub enum StoreError {
     OriginalMedia(#[from] crate::original_media::OriginalMediaError),
     #[error("The analysis corrections did not change: {0}")]
     AnalysisCorrections(String),
+    #[error("Analysis was not saved: {0}")]
+    AnalysisInterrupted(String),
     #[error("Project storage: {0}")]
     Storage(String),
     #[error("Project history is inconsistent: {0}")]
@@ -156,6 +158,7 @@ impl StoreError {
             Self::NothingToUndo => "NothingToUndo",
             Self::NothingToRedo => "NothingToRedo",
             Self::AnalysisCorrections(_) => "AnalysisCorrectionsConflict",
+            Self::AnalysisInterrupted(_) => "AnalysisInterrupted",
             Self::SingleSource(_) => "SingleSourceInvalid",
             Self::Storage(_) => "StorageFailure",
             Self::GenerationRequestReused(_) => "GenerationRequestReused",

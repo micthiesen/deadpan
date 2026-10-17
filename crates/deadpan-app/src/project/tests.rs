@@ -44,6 +44,7 @@ mod splice;
 mod storage_errors;
 mod takes;
 mod targets;
+mod transcript_lifecycle;
 mod trim;
 
 const TIMEOUT: Duration = Duration::from_secs(20);

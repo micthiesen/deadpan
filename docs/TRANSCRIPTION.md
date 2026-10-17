@@ -304,6 +304,18 @@ host as cancellation, and the app cancels and briefly joins its job thread on
 quit, so recognition never continues unowned. An unrequested `cancelled` reply
 is a protocol failure.
 
+System sleep interrupts initial recognition and Recognize again. A bounded
+watcher signals worker cancellation even without UI or progress callbacks;
+wake never resumes the old attempt. The rail explains the interruption and
+offers Try again after the worker drains. Existing words and corrections remain
+available when Recognize again is interrupted. Late results and queued saves
+retain the run's lifecycle epoch: transcript and accompanying speech-activity
+transactions reject an invalidated epoch before writing and before commit.
+A save admitted at the final guard remains valid if sleep follows it.
+See [qualification](qualification/transcription-sleep-2026-10-17.md) for the real
+Whisper cancellation test and publication regressions. Standalone speech
+activity retains its separate lifecycle policy.
+
 Known limits: the host and worker each hold analysis PCM twice while
 transferring it (about 1.4 GB at the three-hour cap); the worker hashes the
 model and whisper.cpp then opens it by path; a script without spaces between

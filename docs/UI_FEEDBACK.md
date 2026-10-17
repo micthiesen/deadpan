@@ -11,6 +11,13 @@ The [specification](spec/DEADPAN_SPEC.md), [design targets](design/README.md) an
 
 ## Current status
 
+The `transcript` replay now covers sleep interruption, no automatic restart,
+fully revealed keyboard retry, and unchanged edit revision before continuing
+its existing transcript workflow. Final release visual/performance runs each
+pass 58 checks plus the shortcut audit. Visual inspection found and corrected
+a clipped retry button; the assertion checks complete hit bounds and painted
+text after scroll settles. See [transcription sleep qualification](qualification/transcription-sleep-2026-10-17.md).
+
 The `equalizer` replay covers buffered native EQ fields, invalid passbands,
 keyboard Apply/Cancel, complete typed recipes and removal, dot, macros, stale
 captures and one-play isolation. The final release passes 81 checks and actual

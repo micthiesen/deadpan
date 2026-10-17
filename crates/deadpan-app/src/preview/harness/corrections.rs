@@ -18,6 +18,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     let (key, transcript, _) = super::transcript::synthetic(d)?;
     let session = d.app().workspace.as_ref().ok_or("No project")?.session;
     d.app_mut().submit(ProjectRequest::SaveTranscript {
+        lifecycle_epoch: None,
         expected_session: session,
         attempt: 0,
         key,
@@ -234,6 +235,7 @@ pub(super) fn save_activity(d: &mut Driver<'_>) -> Result<(), String> {
     };
     let session = workspace.session;
     d.app_mut().submit(ProjectRequest::SaveSpeechActivity {
+        lifecycle_epoch: None,
         expected_session: session,
         attempt: 0,
         key,

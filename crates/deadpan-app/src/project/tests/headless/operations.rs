@@ -72,6 +72,7 @@ fn live_corrections_and_original_copies_publish_the_native_state() {
     let _ = service.take_update();
     service
         .submit(ProjectRequest::SaveTranscript {
+            lifecycle_epoch: None,
             expected_session: before.session,
             attempt: 1,
             key: deadpan_store::TranscriptKey {

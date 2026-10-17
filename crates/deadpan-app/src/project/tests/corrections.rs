@@ -104,6 +104,7 @@ fn corrections_are_published_undone_without_edit_history_and_reloaded() {
     let _ = service.take_update();
     service
         .submit(ProjectRequest::SaveTranscript {
+            lifecycle_epoch: None,
             expected_session: before.session,
             attempt: 1,
             key,
@@ -286,6 +287,7 @@ fn a_transcript_only_session_is_backed_up() {
     };
     service
         .submit(ProjectRequest::SaveTranscript {
+            lifecycle_epoch: None,
             expected_session: before.session,
             attempt: 1,
             key,

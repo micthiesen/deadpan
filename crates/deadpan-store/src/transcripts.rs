@@ -63,6 +63,18 @@ impl ProjectStore {
         key: &TranscriptKey,
         transcript: &Transcript,
     ) -> Result<(), StoreError> {
+        self.save_transcript_guarded(key, transcript, || Ok(()))
+    }
+
+    /// Save only while the caller's publication guard permits it. The guard
+    /// runs before the write and immediately before commit; rejection rolls
+    /// back the transaction, preserving any previously stored annotation.
+    pub fn save_transcript_guarded(
+        &self,
+        key: &TranscriptKey,
+        transcript: &Transcript,
+        mut guard: impl FnMut() -> Result<(), StoreError>,
+    ) -> Result<(), StoreError> {
         self.require_writer()?;
         key.validate()?;
         let value = serde_json::to_string(transcript)?;
@@ -87,6 +99,7 @@ impl ProjectStore {
         if !existing && count >= MAX_TRANSCRIPTS {
             return Err(invalid("project already retains its maximum transcripts"));
         }
+        guard()?;
         transaction.execute(
             "INSERT INTO transcripts(content,audio_stream,model_sha256,language,engine,value)
                 VALUES(?1,?2,?3,?4,?5,?6)
@@ -101,6 +114,7 @@ impl ProjectStore {
                 value
             ],
         )?;
+        guard()?;
         transaction.commit()?;
         Ok(())
     }

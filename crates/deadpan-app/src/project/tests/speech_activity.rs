@@ -29,6 +29,7 @@ fn save(
     let _ = service.take_update();
     service
         .submit(ProjectRequest::SaveSpeechActivity {
+            lifecycle_epoch: None,
             expected_session: session,
             attempt,
             key: key.clone(),

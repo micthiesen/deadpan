@@ -184,6 +184,8 @@ pub struct OriginalShots {
 pub struct TranscriptSave {
     pub session: u64,
     pub attempt: u64,
+    /// True only when the publication guard rejected an invalidated run.
+    pub interrupted: bool,
     pub error: Option<String>,
 }
 
@@ -985,6 +987,8 @@ pub enum ProjectRequest {
     SaveTranscript {
         expected_session: u64,
         attempt: u64,
+        /// Captured by an app-owned recognition run; manual annotations omit it.
+        lifecycle_epoch: Option<u64>,
         key: deadpan_store::TranscriptKey,
         transcript: Arc<deadpan_analysis::Transcript>,
     },
@@ -992,6 +996,8 @@ pub enum ProjectRequest {
     SaveSpeechActivity {
         expected_session: u64,
         attempt: u64,
+        /// Present for speech activity produced as part of recognition.
+        lifecycle_epoch: Option<u64>,
         key: deadpan_store::SpeechActivityKey,
         activity: Arc<deadpan_analysis::SpeechActivity>,
     },

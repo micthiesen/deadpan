@@ -210,7 +210,7 @@ its transport.
   ([preview proxies](PROXIES.md#resuming)).
 - **Shots.** A cancelled shot scan shows Try again.
 
-## Sleep and AI generation
+## Sleep and model work
 
 Native workspace sleep and wake notifications advance an atomic lifecycle
 epoch. The callback does not take the coordinator or project-writer lock.
@@ -230,8 +230,24 @@ final Ready transaction boundary. If interrupted there, it rolls back the
 provisional Ready record. The final successful guard observation orders
 publication against sleep: a notification after it does not retract the
 SQLite commit already admitted at that boundary. Ready variants and accepted
-providers remain intact. This policy covers app-owned AI pause generation;
-other job kinds retain their existing lifecycle contracts.
+providers remain intact.
+
+App-owned transcription and Recognize again also capture the lifecycle epoch.
+A scoped watcher checks it every 20 ms and signals the existing supervised
+worker cancellation path without requiring UI frames or progress callbacks.
+The model slot remains owned until the job drains. A cancellation already
+requested when interruption is observed retains its cancellation outcome;
+this does not assert exact ordering for simultaneous notifications and clicks.
+
+The rail shows interruption and an explicit retry; wake does not restart work.
+Delayed progress/results and unsaved recognition output are rejected. Both the
+transcript and speech activity produced by recognition carry the captured epoch
+through the annotation queue. Their SQLite writes check it before writing and
+immediately before commit, rolling back rejected inserts or replacements.
+The final successful guard orders publication against sleep, as above. Already
+stored transcripts, corrections and accepted media remain intact. Independent
+speech-activity runs and other job kinds retain their existing lifecycle
+contracts. See [transcription sleep qualification](qualification/transcription-sleep-2026-10-17.md).
 
 ## Jobs panel
 

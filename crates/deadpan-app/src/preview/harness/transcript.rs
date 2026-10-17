@@ -9,6 +9,7 @@ use deadpan_analysis::{
     ActivityAudio, AnalysedAudio, SpeechActivity, Transcript, Word, picture_at,
 };
 use egui::Key;
+use egui_kittest::kittest::Queryable as _;
 
 pub(super) fn model_offer_visible(d: &mut Driver<'_>) -> Result<(), String> {
     d.wait_for("Transcript status checked", |app| {
@@ -38,17 +39,121 @@ pub(super) fn model_offer_visible(d: &mut Driver<'_>) -> Result<(), String> {
     d.capture("Complete transcript model offer beside the interpretation control")
 }
 
+/// UI-only queued state, followed by production sleep observation and retry input.
+/// No model or successful recognition is fabricated by this check.
+fn interrupted_retry(d: &mut Driver<'_>) -> Result<(), String> {
+    let revision = d.revision();
+    let lifecycle = d.app().service.jobs().lifecycle();
+    d.app_mut()
+        .transcription
+        .replay_queued_recognition(lifecycle.clone());
+    lifecycle.will_sleep();
+    lifecycle.did_wake();
+    // settled() may return without rendering: queued transcription is not a
+    // project/picture busy flag. Wait for the actual outer-frame observation.
+    d.wait_for("Transcription observes coalesced sleep and wake", |app| {
+        app.transcription.status_name() == "interrupted"
+    })?;
+    d.step(
+        "Wake alone must not restart interrupted transcription",
+        true,
+    )?;
+    let message = scenarios::text_paint_visibility(d, "Transcription interrupted by system sleep.");
+    // row_action retains its two-space key separator even with no shortcut.
+    let retry_label = "Try again  ";
+    let retry = d.rect(retry_label).ok();
+    d.check(
+        "Sleep and wake leave transcription interrupted with an explicit visible retry",
+        d.app().transcription.status_name() == "interrupted"
+            && d.revision() == revision
+            && retry.is_some()
+            && !message.is_empty()
+            && message.iter().all(|paint| paint["fully_visible"] == true),
+        json!({"status":"interrupted","retry":"Try again","revision":revision}),
+        json!({"status":d.app().transcription.status_name(),"message":message,"retry":retry.map(|r| [r.min.x,r.min.y,r.max.x,r.max.y]),"revision":d.revision()}),
+    )?;
+    d.harness.get_by_label(retry_label).focus();
+    d.step("Focus explicit transcription retry", true)?;
+    // AccessKit focus, scroll offset and the resulting paint can settle in
+    // separate frames. Bound the wait on the actual complete painted control.
+    for _ in 0..6 {
+        let hits = super::sound_placement::control_hits(d, &[retry_label]);
+        let message =
+            scenarios::text_paint_visibility(d, "Transcription interrupted by system sleep.");
+        let label = scenarios::text_paint_visibility(d, retry_label);
+        if hits[0]["complete_hit"] == true
+            && !message.is_empty()
+            && message.iter().all(|paint| paint["fully_visible"] == true)
+            && !label.is_empty()
+            && label.iter().all(|paint| paint["fully_visible"] == true)
+        {
+            break;
+        }
+        d.step("Wait for fully painted transcription retry", true)?;
+    }
+    let focused = d.harness.root().children_recursive().any(|node| {
+        let access = node.accesskit_node();
+        access.role() == egui::accesskit::Role::Button
+            && access.label().as_deref() == Some(retry_label)
+            && access.is_focused()
+            && !access.is_disabled()
+            && !access.is_hidden()
+    });
+    let revealed_message =
+        scenarios::text_paint_visibility(d, "Transcription interrupted by system sleep.");
+    let retry_paint = scenarios::text_paint_visibility(d, retry_label);
+    let retry_hits = super::sound_placement::control_hits(d, &[retry_label]);
+    d.check(
+        "Focused transcription retry is fully painted and keyboard accessible",
+        focused
+            && retry_hits[0]["complete_hit"] == true
+            && retry_hits[0]["enabled"] == true
+            && !revealed_message.is_empty()
+            && revealed_message.iter().all(|paint| paint["fully_visible"] == true)
+            && !retry_paint.is_empty()
+            && retry_paint
+                .iter()
+                .all(|paint| paint["fully_visible"] == true),
+        json!({"focused":true,"complete_hit":true,"fully_visible":true}),
+        json!({"focused":focused,"controls":retry_hits,"paint":retry_paint,"message":revealed_message}),
+    )?;
+    d.capture("Sleep-interrupted transcription with focused explicit retry")?;
+    d.key(Key::Enter)?;
+    d.wait_for("Explicit retry checks model availability again", |app| {
+        app.transcription.status_name() == "needs_model"
+    })?;
+    d.check(
+        "Retry returns to the real missing-model offer without changing the edit",
+        d.revision() == revision,
+        json!({"revision":revision}),
+        json!({"revision":d.revision()}),
+    )
+}
+
 pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     model_offer_visible(d)?;
+    interrupted_retry(d)?;
     let revision = d.revision();
     let (key, transcript, index) = synthetic(d)?;
     let session = d.app().workspace.as_ref().ok_or("No project")?.session;
+    // Returning to the model offer does not imply that sibling annotation
+    // saves have drained from the shared bounded service lane.
+    d.wait_for("Annotation lane ready for synthetic transcript", |app| {
+        !app.service.annotation_busy()
+    })?;
     let submitted = d.app_mut().submit(ProjectRequest::SaveTranscript {
         expected_session: session,
+        lifecycle_epoch: None,
         attempt: 0,
         key,
         transcript: Arc::new(transcript.clone()),
     });
+    d.check(
+        "Synthetic transcript admitted by the available annotation lane",
+        submitted,
+        json!({"submitted":true}),
+        json!({"submitted":submitted,"error":d.app().error}),
+    )?;
     d.wait_for("Transcript saved and shown", |app| {
         app.workspace
             .as_ref()
@@ -469,6 +574,7 @@ fn pauses_in_your_edit(d: &mut Driver<'_>) -> Result<(), String> {
     let revision = d.revision();
     let submitted = d.app_mut().submit(ProjectRequest::SaveSpeechActivity {
         expected_session: session,
+        lifecycle_epoch: None,
         attempt: 0,
         key,
         activity: Arc::new(activity),
@@ -598,6 +704,7 @@ fn repetition_loop_warning(d: &mut Driver<'_>) -> Result<(), String> {
     let revision = d.revision();
     d.app_mut().submit(ProjectRequest::SaveTranscript {
         expected_session: session,
+        lifecycle_epoch: None,
         attempt: 0,
         key,
         transcript: Arc::new(looped.clone()),
