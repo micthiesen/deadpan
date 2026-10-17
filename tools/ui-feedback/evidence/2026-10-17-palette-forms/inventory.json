@@ -1,0 +1,66 @@
+{
+  "check.log.gz": {
+    "bytes": 2127,
+    "sha256": "3d162bb6147319a10c8e9700388dd0169886f89c8c0174ce3fc422c767d63f84"
+  },
+  "feature-tests.log.gz": {
+    "bytes": 1972,
+    "sha256": "5df73f3fc0236997db58555e4683e2652ab2fa96db0a4c3ac3cd7aa9eb108078"
+  },
+  "final-binaries.json": {
+    "bytes": 361,
+    "sha256": "b9499f7adb351ba0c09cb5e1cfe6e3a40d55fd92cc78b585f70467075f43f2a9"
+  },
+  "final-lint.log.gz": {
+    "bytes": 220,
+    "sha256": "1204a5d2e1711b002934a125ed6f9cbf7d52b0e9e01ca36b7ea24bbc21090f8a"
+  },
+  "frame-directions.png": {
+    "bytes": 578336,
+    "sha256": "16645eb26bb18e46e3dc7db7ecb3af5d0981045953e57ea5dbf850384ab66ac4"
+  },
+  "initial-binaries.json": {
+    "bytes": 361,
+    "sha256": "6bb57038017665294aae38fd4f39eb9edb92b51a83c3053c8a3fe8483ff6f394"
+  },
+  "initial-visual-report.json.gz": {
+    "bytes": 878193,
+    "sha256": "604e97bfc0e1dc9e2758fe3f8e19e43182f151c8e02bc9e243a542852ae58536"
+  },
+  "performance-report.json.gz": {
+    "bytes": 41737,
+    "sha256": "f3cc2541b4ba7808dafdd46d391b159731274ff427ea4a59ec2e642400e72c40"
+  },
+  "performance.log.gz": {
+    "bytes": 103,
+    "sha256": "39aaa1ff3766e6b6b903ca35961c014e8af17b38eb42e98060ee7dd7a2220aaa"
+  },
+  "release-build.log.gz": {
+    "bytes": 136,
+    "sha256": "d4442ef305afb6b4303bbb0c387bc1628f78d8df1f9899e2ef44ac04044923a7"
+  },
+  "source-identities.json": {
+    "bytes": 566,
+    "sha256": "ed0a6ddc1ee6795aeb5353ab15e977e4fe43f554ad7ea03562c883c731b8cb97"
+  },
+  "source.diff.gz": {
+    "bytes": 9218,
+    "sha256": "828f066d51553e7523efae73cb0e7f57f7b013f0f87db83f675ba025de934f6a"
+  },
+  "unavailable-action.png": {
+    "bytes": 398756,
+    "sha256": "4cb31cba3435be6d04fc898619035c3a300fce294c04be6ee116bbeb930ac032"
+  },
+  "undo-redo.png": {
+    "bytes": 583897,
+    "sha256": "ff6017e732bba068a4bcd8b312f72771b0339a1d5278c412b2c29d9368f571f2"
+  },
+  "visual-report.json.gz": {
+    "bytes": 1347111,
+    "sha256": "43be8228396db008e49d19057d2d192f4e9a87f4a269e60522144f6331cf97e6"
+  },
+  "visual.log.gz": {
+    "bytes": 106,
+    "sha256": "fe44a9f33f95bdfec23ace7584cb7786deb8b5bd126b23effa7b2eee4ad41ec3"
+  }
+}

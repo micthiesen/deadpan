@@ -38,6 +38,28 @@ fn closed_without_edit(d: &Driver<'_>, revision: &str) -> bool {
     !d.app().help_open && d.revision() == revision
 }
 
+fn palette_row_text_is_fully_visible(
+    d: &Driver<'_>,
+    found: &crate::navigation::palette::Match,
+) -> bool {
+    let body = super::scenarios::text_paint_visibility(d, found.spec.name)
+        .into_iter()
+        .filter(|paint| {
+            paint["text"]
+                .as_str()
+                .is_some_and(|text| text.starts_with(found.spec.name) && text.contains(&found.help))
+        })
+        .collect::<Vec<_>>();
+    let key = super::scenarios::text_paint_visibility(d, &found.keys)
+        .into_iter()
+        .filter(|paint| paint["text"].as_str() == Some(found.keys.as_str()))
+        .collect::<Vec<_>>();
+    body.len() == 1
+        && body[0]["fully_visible"] == true
+        && key.len() == 1
+        && key[0]["fully_visible"] == true
+}
+
 pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     d.report.skipped.push("Palette keys and clicks are replayed as egui events through the production router; physical key delivery, VoiceOver speech of the highlighted row and pointer hit-testing on a native window are not exercised here.".into());
     super::transcript::focus_your_edit(d)?;
@@ -245,5 +267,237 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     )?;
     d.key(Key::Escape)?;
     d.wait_for("The Jobs panel closes", |app| !app.jobs.open)?;
+
+    // The two forms of one registry action remain separately searchable and
+    // executable. This starts after the checks that depend on the untouched
+    // baseline revision.
+    d.chord(&[Key::G, Key::G, Key::Num1, Key::Num0, Key::L])?;
+    d.settled()?;
+    let original_structure = d
+        .app()
+        .workspace
+        .as_ref()
+        .ok_or("No project for palette history check")?
+        .document
+        .nodes()
+        .clone();
+    let before_split = d.revision();
+    d.command("split")?;
+    d.changed(&before_split)?;
+    d.settled()?;
+    let split_revision = d.revision();
+    let split_structure = d
+        .app()
+        .workspace
+        .as_ref()
+        .ok_or("No project after palette split")?
+        .document
+        .nodes()
+        .clone();
+    d.check(
+        "A split creates a durable edit for the palette's Undo / Redo choices",
+        split_structure != original_structure
+            && d.app()
+                .workspace
+                .as_ref()
+                .is_some_and(|workspace| workspace.can_undo),
+        json!({"structure_changed":true,"can_undo":true}),
+        json!({"structure_changed":split_structure != original_structure,"nodes":split_structure.len(),"can_undo":d.app().workspace.as_ref().map(|workspace| workspace.can_undo)}),
+    )?;
+
+    search(d, "undo")?;
+    let history_rows = crate::navigation::palette::matches(&d.app().bindings, "undo");
+    let undo_row = history_rows.iter().find(|found| {
+        found.choice.spec_id == "undo"
+            && found.choice.form == crate::navigation::palette::Form::Command(0)
+    });
+    let redo_row = history_rows.iter().find(|found| {
+        found.choice.spec_id == "undo"
+            && found.choice.form == crate::navigation::palette::Form::Command(1)
+    });
+    let painted_history = [undo_row, redo_row]
+        .map(|row| row.is_some_and(|found| palette_row_text_is_fully_visible(d, found)));
+    d.check(
+        "One broad search paints distinct Undo and Redo names and key paths",
+        undo_row.is_some_and(|found| found.spec.name == "Undo")
+            && redo_row.is_some_and(|found| found.spec.name == "Redo")
+            && undo_row.unwrap().keys != redo_row.unwrap().keys
+            && painted_history == [true, true],
+        json!({"rows":[{"name":"Undo","key":"u"},{"name":"Redo","key":"Ctrl R / ⌘⇧Z"}]}),
+        json!({"rows":history_rows.iter().map(|found| json!({"name":found.spec.name,"keys":found.keys,"form":format!("{:?}",found.choice.form)})).collect::<Vec<_>>(),"painted":painted_history}),
+    )?;
+    d.capture("Palette shows separate Undo and Redo actions")?;
+    // `search` opens a fresh Help sheet. Leave the current field and sheet
+    // before starting the command-specific searches below.
+    d.key(Key::Escape)?;
+    d.key(Key::Escape)?;
+    d.wait_for("Help closes after the broad Undo / Redo search", |app| {
+        !app.help_open
+    })?;
+
+    // The :undo query must pick Command(0), then the exact :redo query must
+    // pick Command(1) and restore the same durable split.
+    search(d, ":undo")?;
+    let undo_matches = crate::navigation::palette::matches(&d.app().bindings, ":undo");
+    d.check(
+        "Searching :undo highlights the Undo form",
+        undo_matches.first().is_some_and(|found| {
+            found.choice.spec_id == "undo"
+                && found.choice.form == crate::navigation::palette::Form::Command(0)
+                && found.spec.name == "Undo"
+        }),
+        json!({"form":"Command(0)","name":"Undo"}),
+        json!(
+            undo_matches.first().map(
+                |found| json!({"form":format!("{:?}",found.choice.form),"name":found.spec.name})
+            )
+        ),
+    )?;
+    d.key(Key::Enter)?;
+    d.changed(&split_revision)?;
+    let undone_revision = d.revision();
+    let undone_structure = d
+        .app()
+        .workspace
+        .as_ref()
+        .ok_or("No project after palette Undo")?
+        .document
+        .nodes()
+        .clone();
+    d.check(
+        "Palette Undo reverses the split and makes Redo available",
+        undone_structure == original_structure
+            && d.app()
+                .workspace
+                .as_ref()
+                .is_some_and(|workspace| workspace.can_redo),
+        json!({"structure_restored":true,"can_redo":true}),
+        json!({"structure_restored":undone_structure == original_structure,"nodes":undone_structure.len(),"can_redo":d.app().workspace.as_ref().map(|workspace| workspace.can_redo)}),
+    )?;
+
+    search(d, ":redo")?;
+    let redo_matches = crate::navigation::palette::matches(&d.app().bindings, ":redo");
+    d.check(
+        "Searching :redo highlights the Redo form rather than Undo",
+        redo_matches.first().is_some_and(|found| {
+            found.choice.spec_id == "undo"
+                && found.choice.form == crate::navigation::palette::Form::Command(1)
+                && found.spec.name == "Redo"
+        }),
+        json!({"form":"Command(1)","name":"Redo"}),
+        json!(
+            redo_matches.first().map(
+                |found| json!({"form":format!("{:?}",found.choice.form),"name":found.spec.name})
+            )
+        ),
+    )?;
+    d.key(Key::Enter)?;
+    d.changed(&undone_revision)?;
+    let redone_structure = d
+        .app()
+        .workspace
+        .as_ref()
+        .ok_or("No project after palette Redo")?
+        .document
+        .nodes()
+        .clone();
+    d.check(
+        "Palette Redo restores the same durable split",
+        redone_structure == split_structure
+            && d.app()
+                .workspace
+                .as_ref()
+                .is_some_and(|workspace| workspace.can_undo && !workspace.can_redo),
+        json!({"structure_restored":true,"can_undo":true,"can_redo":false}),
+        json!({"structure_restored":redone_structure == split_structure,"nodes":redone_structure.len(),"can_undo":d.app().workspace.as_ref().map(|workspace| workspace.can_undo),"can_redo":d.app().workspace.as_ref().map(|workspace| workspace.can_redo)}),
+    )?;
+
+    // Search both directional key-only forms together, then choose the
+    // previous row by click and the next row by its exact configured key.
+    let previous_key = d
+        .app()
+        .bindings
+        .key_label(crate::navigation::BindingId::FramePrevious);
+    let next_key = d
+        .app()
+        .bindings
+        .key_label(crate::navigation::BindingId::FrameNext);
+    search(d, "frame")?;
+    let frame_rows = crate::navigation::palette::matches(&d.app().bindings, "frame");
+    let previous = frame_rows.iter().find(|found| {
+        found.choice.spec_id == "frame"
+            && found.choice.form == crate::navigation::palette::Form::Binding(0)
+    });
+    let next = frame_rows.iter().find(|found| {
+        found.choice.spec_id == "frame"
+            && found.choice.form == crate::navigation::palette::Form::Binding(1)
+    });
+    let contains_primary_key = |found: &&crate::navigation::palette::Match, key: &str| {
+        found
+            .keys
+            .split(" · ")
+            .flat_map(|part| part.split(" / "))
+            .any(|shown| shown == key)
+    };
+    let painted_directions = [previous, next]
+        .map(|row| row.is_some_and(|found| palette_row_text_is_fully_visible(d, found)));
+    d.check(
+        "A broad frame search paints separate Previous frame and Next frame rows and keys",
+        previous.is_some_and(|found| {
+            found.spec.name == "Previous frame" && contains_primary_key(&found, &previous_key)
+        }) && next.is_some_and(|found| {
+            found.spec.name == "Next frame" && contains_primary_key(&found, &next_key)
+        })
+            && previous_key != next_key
+            && painted_directions == [true, true],
+        json!({"previous":"Previous frame","previous_key":previous_key.clone(),"next":"Next frame","next_key":next_key.clone()}),
+        json!({"rows":frame_rows.iter().filter(|found| found.choice.spec_id == "frame").map(|found| json!({"name":found.spec.name,"keys":found.keys,"form":format!("{:?}",found.choice.form)})).collect::<Vec<_>>(),"painted":painted_directions}),
+    )?;
+    d.capture("Palette distinguishes Previous frame and Next frame")?;
+    let cursor_before = d.app().sequence_cursor;
+    let previous_label = format!(
+        "{}. {}",
+        previous.unwrap().spec.name,
+        previous.unwrap().help
+    );
+    d.click(&previous_label)?;
+    d.wait_for("The clicked Previous frame moves left", |app| {
+        app.sequence_cursor + 1 == cursor_before && !app.help_open
+    })?;
+
+    search(d, &next_key)?;
+    let next_matches = crate::navigation::palette::matches(&d.app().bindings, &next_key);
+    let next_index = next_matches
+        .iter()
+        .position(|found| {
+            found.choice.spec_id == "frame"
+                && found.choice.form == crate::navigation::palette::Form::Binding(1)
+                && found
+                    .keys
+                    .split(" · ")
+                    .flat_map(|part| part.split(" / "))
+                    .any(|key| key == next_key)
+        })
+        .ok_or("exact next-frame key did not find its Next frame choice")?;
+    for _ in 0..next_index {
+        d.key(Key::ArrowDown)?;
+    }
+    d.check(
+        "The exact next-frame key query highlights Next frame",
+        d.app().help_scroll.palette.highlighted() == next_index,
+        json!({"highlighted":next_index,"name":"Next frame","key":next_key.clone()}),
+        json!({"highlighted":d.app().help_scroll.palette.highlighted()}),
+    )?;
+    let cursor_before = d.app().sequence_cursor;
+    d.key(Key::Enter)?;
+    d.wait_for("The exact-key Next frame choice moves right", |app| {
+        app.sequence_cursor == cursor_before + 1 && !app.help_open
+    })?;
+    d.check(
+        "Palette key-only Previous frame and Next frame move in their named directions",
+        d.app().sequence_cursor == cursor_before + 1,
+        json!({"next_cursor":cursor_before + 1}),
+        json!({"cursor":d.app().sequence_cursor}),
+    )?;
     Ok(())
 }

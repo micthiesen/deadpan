@@ -16,17 +16,17 @@ impl DeadpanApp {
         if !self.help_open || context.current_pass_index() != 0 {
             return;
         }
-        let Some(id) = self.help_scroll.take_run() else {
+        let Some(choice) = self.help_scroll.take_run() else {
             return;
         };
-        let Some(spec) = registry::by_id(id) else {
+        let Some(spec) = choice.spec() else {
             return;
         };
         self.bindings.set_routing_domain(self.routed_domain());
         let selection = self.routed_edit_selection();
         let probe = self.bindings.clone();
         let outcome = palette::resolve(
-            spec,
+            &spec,
             self.help_context(),
             |binding| probe.palette_binding(binding, selection).is_some(),
             &probe,
@@ -154,7 +154,7 @@ pub(super) fn search_results(
     state: &mut help_scroll::Palette,
 ) {
     let matches = palette::matches(bindings, query);
-    let ids: Vec<_> = matches.iter().map(|found| found.spec.id).collect();
+    let ids: Vec<_> = matches.iter().map(|found| found.choice).collect();
     state.settle(&ids);
     let query = query.trim();
     let highlighted = state.highlighted();
@@ -202,7 +202,7 @@ pub(super) fn search_results(
             .corner_radius(4.0)
             .inner_margin(egui::Margin::symmetric(4, 2))
             .show(ui, |ui| {
-                ui.push_id(("keys-result", found.spec.id), |ui| {
+                ui.push_id(("keys-result", found.choice), |ui| {
                     // A press chooses the row; it does not start a text selection.
                     ui.style_mut().interaction.selectable_labels = false;
                     help_spec_row_with(
@@ -213,7 +213,7 @@ pub(super) fn search_results(
                             found.help,
                             found.spec.section.title().to_lowercase()
                         ),
-                        found.spec,
+                        &found.spec,
                         here,
                     )
                 })
@@ -230,7 +230,7 @@ pub(super) fn search_results(
             )
         });
         if response.clicked() {
-            state.choose(index, found.spec.id);
+            state.choose(index, found.choice);
         }
         if selected && reveal {
             row.response.scroll_to_me(None);

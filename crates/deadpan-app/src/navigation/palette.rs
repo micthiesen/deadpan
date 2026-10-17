@@ -24,28 +24,253 @@ pub enum Outcome {
     Explain(String),
 }
 
-/// One search result, with the text its row shows.
+/// A selected action form survives search changes and deferred input intact.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub struct Choice {
+    pub spec_id: &'static str,
+    pub form: Form,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+pub enum Form {
+    Whole,
+    Command(usize),
+    Binding(usize),
+}
+
+impl From<&'static str> for Choice {
+    fn from(spec_id: &'static str) -> Self {
+        Self {
+            spec_id,
+            form: Form::Whole,
+        }
+    }
+}
+
+impl Choice {
+    /// Resolve the exact displayed form, never another usable sibling.
+    pub fn spec(self) -> Option<Spec> {
+        let parent = registry::by_id(self.spec_id)?;
+        match self.form {
+            Form::Whole => Some(*parent),
+            Form::Command(index) => {
+                let command = parent.commands.get(index)?;
+                if alias(command.verb) {
+                    return None;
+                }
+                let end = (index + 1..parent.commands.len())
+                    .find(|next| !alias(parent.commands[*next].verb))
+                    .unwrap_or(parent.commands.len());
+                let name = command_name(command.verb, parent.name);
+                let keys: &'static [Keys] = match (parent.id, index) {
+                    ("undo", 0) => &[Keys::Editor(BindingId::Undo), Keys::Native("⌘Z")],
+                    ("macro.record", 0) => &parent.keys[..1],
+                    ("mark.history", 0) => &[Keys::Native("Ctrl O")],
+                    ("mark.history", 1) => &[Keys::Native("Ctrl I")],
+                    ("undo", 1) => &[Keys::Native("Ctrl R / ⌘⇧Z")],
+                    ("paste", index) => &parent.keys[index..index + 1],
+                    _ => &[],
+                };
+                Some(Spec {
+                    name,
+                    keys,
+                    commands: &parent.commands[index..end],
+                    help: name,
+                    ..*parent
+                })
+            }
+            Form::Binding(index) => {
+                let Keys::Editor(binding) = parent.keys.get(index)? else {
+                    return None;
+                };
+                let name = binding_name(*binding, parent.name);
+                Some(Spec {
+                    name,
+                    keys: &parent.keys[index..index + 1],
+                    commands: &[],
+                    help: name,
+                    ..*parent
+                })
+            }
+        }
+    }
+}
+
+// These are parser aliases, not additional operations. Keep their syntax
+// searchable on the same row as the canonical verb.
+fn alias(verb: &str) -> bool {
+    matches!(verb, "new-url" | "generate-ai" | "previous-ai")
+}
+
+fn choices(spec: &'static Spec) -> Vec<Choice> {
+    let commands = spec
+        .commands
+        .iter()
+        .filter(|verb| !alias(verb.verb))
+        .count();
+    let bindings = editor_bindings(spec).count();
+    if commands <= 1 && bindings <= 1 {
+        return vec![spec.id.into()];
+    }
+    let mut choices = Vec::new();
+    for (index, command) in spec.commands.iter().enumerate() {
+        if !alias(command.verb) {
+            choices.push(Choice {
+                spec_id: spec.id,
+                form: Form::Command(index),
+            });
+        }
+    }
+    for (index, key) in spec.keys.iter().enumerate() {
+        if matches!(key, Keys::Editor(_))
+            && (commands == 0 || spec.id == "gain.step" || spec.id == "ai.compare")
+        {
+            choices.push(Choice {
+                spec_id: spec.id,
+                form: Form::Binding(index),
+            });
+        }
+    }
+    choices
+}
+
+fn command_name(verb: &str, fallback: &'static str) -> &'static str {
+    match verb {
+        "undo" => "Undo",
+        "redo" => "Redo",
+        "jump-back" => "Jump backward in history",
+        "jump-forward" => "Jump forward in history",
+        "paste" => "Paste after or replace",
+        "paste-before" => "Paste before or replace",
+        "jcut" => "J-cut",
+        "lcut" => "L-cut",
+        "retime" => "Change speed",
+        "wrap-retime" => "Wrap in a new speed stage",
+        "reverse" => "Reverse hiccup",
+        "ping-pong" => "Ping-pong hiccup",
+        "gain" => "Set exact gain or open Gain draft",
+        "sound-eq" => "Sound equalizer",
+        "sound-saturate" => "Sound saturation",
+        "sound-balance" => "Sound stereo balance",
+        "sound-mute" => "Mute sound",
+        "sound-envelope" => "Sound gain envelope",
+        "sound-allow" => "Allow sound in a pause",
+        "sound-silence" => "Silence sound in a pause",
+        "next-ai" => "Choose next AI variant",
+        "prev-ai" => "Choose previous AI variant",
+        "pick-ai" => "Choose numbered AI variant",
+        "preview-ai" => "Preview AI pictures",
+        "audition-ai" => "Audition AI pictures",
+        "gag-save" => "Save a gag preset",
+        "gag-presets" => "List gag presets",
+        "recipe-save" => "Save a local recipe",
+        "recipe" => "Apply a local recipe",
+        "recipe-inspect" => "Inspect a local recipe",
+        "record" => "Record a macro",
+        "record-stop" => "Stop and save macro recording",
+        _ => fallback,
+    }
+}
+
+fn binding_name(binding: BindingId, fallback: &'static str) -> &'static str {
+    use BindingId::*;
+    match binding {
+        PaneNext => "Focus next pane",
+        PanePrevious => "Focus previous pane",
+        FramePrevious => "Previous frame",
+        FrameNext => "Next frame",
+        BeatNext => "Next beat",
+        BeatPrevious => "Previous beat",
+        WordNext => "Next word",
+        WordPrevious => "Previous word",
+        WordEnd => "End of word",
+        SentenceNext => "Next sentence",
+        SentencePrevious => "Previous sentence",
+        PauseNext => "Next pause",
+        PausePrevious => "Previous pause",
+        ShotNext => "Next shot",
+        ShotPrevious => "Previous shot",
+        First => "First boundary",
+        Last => "Last boundary",
+        PlayNext => "Next Repeat play",
+        PlayPrevious => "Previous Repeat play",
+        SearchNext => "Next search match",
+        SearchPrevious => "Previous search match",
+        InnerGroup => "Select group contents",
+        AroundGroup => "Select whole group",
+        InnerBeat => "Select beat without attachments",
+        AroundBeat => "Select beat with attachments",
+        InnerWord => "Select word",
+        AroundWord => "Select word with surrounding gap",
+        InnerSentence => "Select sentence",
+        AroundSentence => "Select sentence with surrounding gap",
+        InnerPause => "Select pause",
+        AroundPause => "Select pause with surrounding speech",
+        InnerShot => "Select shot",
+        AroundShot => "Select whole shot (same hard-cut boundaries)",
+        RepeatOperator => "Repeat a motion",
+        RepeatRange => "Repeat selected range",
+        GainUp => "Increase gain",
+        GainDown => "Decrease gain",
+        CompareAi => "Toggle AI comparison",
+        NextAi => "Show next AI variant",
+        _ => fallback,
+    }
+}
+
+/// One independently executable search result, with the text its row shows.
 pub struct Match {
-    pub spec: &'static Spec,
+    pub choice: Choice,
+    pub spec: Spec,
     pub keys: String,
     pub help: String,
 }
 
-/// Matching actions, best first: an exact key, then a verb, a name, any
-/// text; ties keep the registry's section and declaration order. The Keys
-/// sheet draws exactly this list, and Enter runs its highlighted entry.
+/// Matching forms, best first. Exact keys, verbs and form names take priority
+/// over the shared registry explanation.
 pub fn matches(labels: &dyn KeyLabels, query: &str) -> Vec<Match> {
-    let mut found: Vec<_> = registry::SPECS
-        .iter()
-        .enumerate()
-        .filter_map(|(index, spec)| {
-            let keys = registry::key_text(spec, labels);
-            let help = registry::render(spec.help, labels);
-            registry::search_rank(spec, &keys, &help, query)
-                .map(|rank| (rank, spec.section, index, Match { spec, keys, help }))
-        })
-        .collect();
-    found.sort_by_key(|(rank, section, index, _)| (*rank, *section, *index));
+    let mut found = Vec::new();
+    for (index, parent) in registry::SPECS.iter().enumerate() {
+        for (form_index, choice) in choices(parent).into_iter().enumerate() {
+            let Some(spec) = choice.spec() else {
+                continue;
+            };
+            let keys = registry::key_text(&spec, labels);
+            let shared_help = registry::render(parent.help, labels);
+            // The row and its accessibility label already name this form.
+            let help = shared_help.clone();
+            // Keep the registry's detailed context discoverable as a prose
+            // fallback. Exact keys/verbs and each form's own name rank first.
+            let exact_key = !query.trim().is_empty()
+                && keys
+                    .split(" · ")
+                    .flat_map(|part| part.split(" / "))
+                    .any(|key| key == query.trim());
+            let rank = if exact_key {
+                Some(0)
+            } else {
+                registry::search_rank(&spec, &keys, spec.name, query)
+                    .or_else(|| registry::search_rank(&spec, &keys, &shared_help, query).map(|_| 3))
+            };
+            if let Some(rank) = rank {
+                found.push((
+                    rank,
+                    spec.section,
+                    index,
+                    form_index,
+                    Match {
+                        choice,
+                        spec,
+                        keys,
+                        help,
+                    },
+                ));
+            }
+        }
+    }
+    found.sort_by_key(|(rank, section, index, form_index, _)| {
+        (*rank, *section, *index, *form_index)
+    });
     found.into_iter().map(|(.., found)| found).collect()
 }
 
@@ -71,7 +296,7 @@ pub fn resolve(
                 Outcome::Run(verb.verb)
             };
         }
-        if let Some(id) = editor_bindings(spec).find(|id| usable(*id)) {
+        if let Some(id) = editor_bindings(spec).next().filter(|id| usable(*id)) {
             return Outcome::Key(id);
         }
     }
@@ -149,7 +374,8 @@ mod tests {
         // `:splice` opens Place slice exactly as typed.
         assert_eq!(edit("splice"), Outcome::Run("splice"));
         assert_eq!(edit("jobs"), Outcome::Run("jobs"));
-        // The first verb of a pair; `:redo` stays reachable by typing.
+        // This helper exercises the original registry view; form-specific
+        // resolution below separately covers every executable sibling.
         assert_eq!(edit("undo"), Outcome::Run("undo"));
         // A verb with arguments, even optional ones, opens its usage.
         assert_eq!(edit("hold"), Outcome::Prefill("hold"));
@@ -335,5 +561,139 @@ mod tests {
             found.iter().map(|f| f.spec.id).collect::<Vec<_>>()
         );
         assert!(matches(&bindings, "zzzz-no-such-action").is_empty());
+    }
+    #[test]
+    fn selected_verbs_directions_and_native_keys_resolve_the_exact_form() {
+        let bindings = Bindings::default();
+        for (query, expected) in [
+            (":redo", Outcome::Run("redo")),
+            ("⌘Z", Outcome::Run("undo")),
+            ("⌘⇧Z", Outcome::Run("redo")),
+            ("Ctrl O", Outcome::Run("jump-back")),
+            ("Ctrl I", Outcome::Run("jump-forward")),
+            ("previous beat", Outcome::Key(BindingId::BeatPrevious)),
+            ("next beat", Outcome::Key(BindingId::BeatNext)),
+            (":wrap-retime", Outcome::Prefill("wrap-retime")),
+            (":previous-ai", Outcome::Run("prev-ai")),
+            (":record-stop", Outcome::Run("record-stop")),
+        ] {
+            let found = matches(&bindings, query);
+            let choice = found
+                .first()
+                .unwrap_or_else(|| panic!("no result for {query}"));
+            assert_eq!(
+                resolve(&choice.spec, Contexts::EDIT, |_| true, &bindings),
+                expected,
+                "{query}: {}",
+                choice.spec.name
+            );
+        }
+    }
+
+    #[test]
+    fn unavailable_direction_never_falls_back_to_its_usable_sibling() {
+        let bindings = Bindings::default();
+        let choice = matches(&bindings, "previous beat").remove(0);
+        assert!(matches!(
+            resolve(
+                &choice.spec,
+                Contexts::EDIT,
+                |binding| binding == BindingId::BeatNext,
+                &bindings
+            ),
+            Outcome::Explain(_)
+        ));
+        let personal = Bindings::from_json(
+            br#"{"version":1,"key_mode":"logical","bindings":[{"action":"frame.previous","keys":[["F7"],["F8"]]}]}"#,
+        ).unwrap();
+        for key in ["F7", "F8"] {
+            let chosen = matches(&personal, key).remove(0);
+            assert_eq!(
+                resolve(&chosen.spec, Contexts::EDIT, |_| true, &personal),
+                Outcome::Key(BindingId::FramePrevious)
+            );
+        }
+    }
+
+    #[test]
+    fn expanded_forms_have_unique_names_and_cover_every_declared_executable_form() {
+        for parent in registry::SPECS {
+            let choices = choices(parent);
+            let mut identities = std::collections::HashSet::new();
+            let mut names = std::collections::HashSet::new();
+            let forms: Vec<_> = choices
+                .iter()
+                .map(|choice| choice.spec().unwrap())
+                .collect();
+            for (choice, form) in choices.iter().zip(&forms) {
+                assert!(
+                    identities.insert(*choice),
+                    "duplicate choice in {}",
+                    parent.id
+                );
+                assert!(
+                    names.insert(form.name),
+                    "ambiguous form name in {}",
+                    parent.id
+                );
+                assert!(
+                    form.commands.len() <= 1
+                        || form.commands[1..].iter().all(|verb| alias(verb.verb)),
+                    "grouped operations in {}",
+                    parent.id
+                );
+                assert!(
+                    editor_bindings(form).count() <= 1,
+                    "grouped bindings in {}",
+                    parent.id
+                );
+            }
+            for command in parent.commands {
+                assert!(
+                    forms.iter().any(|form| form.commands.contains(command)),
+                    "lost :{}",
+                    command.verb
+                );
+            }
+            for binding in editor_bindings(parent) {
+                assert!(
+                    forms
+                        .iter()
+                        .any(|form| editor_bindings(form).any(|id| id == binding)),
+                    "lost {binding:?}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn aliases_share_one_choice_and_mixed_parameterized_actions_remain_distinct() {
+        let bindings = Bindings::default();
+        for (first, alias) in [
+            (":youtube", ":new-url"),
+            (":generate", ":generate-ai"),
+            (":prev-ai", ":previous-ai"),
+        ] {
+            assert_eq!(
+                matches(&bindings, first)[0].choice,
+                matches(&bindings, alias)[0].choice
+            );
+        }
+        let gain = choices(spec("gain.step"));
+        assert_eq!(gain.len(), 3);
+        let compare = choices(spec("ai.compare"));
+        assert_eq!(compare.len(), 3);
+        let outcomes: Vec<_> = compare
+            .into_iter()
+            .map(|choice| resolve(&choice.spec().unwrap(), Contexts::EDIT, |_| true, &bindings))
+            .collect();
+        assert!(outcomes.contains(&Outcome::Prefill("compare-ai")));
+        assert!(outcomes.contains(&Outcome::Key(BindingId::CompareAi)));
+        assert!(outcomes.contains(&Outcome::Key(BindingId::NextAi)));
+        assert!(
+            matches(&bindings, "full-Original starting point")
+                .iter()
+                .any(|found| found.choice.spec_id == "undo")
+        );
     }
 }

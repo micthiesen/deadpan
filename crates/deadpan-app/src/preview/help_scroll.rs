@@ -9,6 +9,7 @@
 
 use eframe::egui::{self, Event, Key, Modifiers};
 
+use crate::navigation::palette::Choice;
 use crate::navigation::panels::{HelpKey, PaletteKey, help_key, help_search_key};
 use crate::navigation::registry::mode_label;
 
@@ -93,7 +94,7 @@ pub(super) struct Palette {
     /// Scroll the highlighted row into view when it is next drawn.
     reveal: bool,
     /// The action Enter or a click chose; the editor runs it next frame.
-    run: Option<&'static str>,
+    run: Option<Choice>,
     /// Why the last choice did not run, shown under the field.
     status: Option<String>,
 }
@@ -101,7 +102,7 @@ pub(super) struct Palette {
 impl Palette {
     /// Apply this frame's palette key to the results drawn for the current
     /// search, in their drawn order.
-    pub(super) fn settle(&mut self, ids: &[&'static str]) {
+    pub(super) fn settle(&mut self, ids: &[Choice]) {
         let count = ids.len();
         self.highlight = self.highlight.min(count.saturating_sub(1));
         let Some(key) = self.key.take() else {
@@ -139,7 +140,7 @@ impl Palette {
     }
 
     /// A click runs its row, as Enter runs the highlighted one.
-    pub(super) fn choose(&mut self, index: usize, id: &'static str) {
+    pub(super) fn choose(&mut self, index: usize, id: Choice) {
         self.highlight = index;
         self.run = Some(id);
     }
@@ -267,7 +268,7 @@ impl HelpScroll {
     }
 
     /// The action Enter or a click chose, once.
-    pub(super) fn take_run(&mut self) -> Option<&'static str> {
+    pub(super) fn take_run(&mut self) -> Option<Choice> {
         self.palette.run.take()
     }
 
@@ -1243,9 +1244,10 @@ mod tests {
                 *open &= !closed;
                 scroll.show(context, open, |ui, query, palette| {
                     if !query.is_empty() {
-                        let ids: Vec<&'static str> = ["first", "second", "third"]
+                        let ids: Vec<Choice> = ["first", "second", "third"]
                             .into_iter()
                             .filter(|id| id.contains(query))
+                            .map(Choice::from)
                             .collect();
                         palette.settle(&ids);
                         ui.label(format!("{ids:?}"));
@@ -1302,7 +1304,7 @@ mod tests {
         // Resumed next frame: Enter runs the highlighted result before "x"
         // reaches anything, and "x" waits again.
         assert!(!palette_frame(&context, &mut scroll, &mut open, suffix));
-        assert_eq!(scroll.take_run(), Some("third"));
+        assert_eq!(scroll.take_run(), Some("third".into()));
         assert_eq!(scroll.take_deferred(), vec![Event::Text("x".into())]);
         assert_eq!(scroll.query(), "ir", "nothing after Enter was typed");
     }
@@ -1398,7 +1400,7 @@ mod tests {
         assert!(open, "the first Escape leaves search, not Help");
         assert!(!context.memory(|m| m.has_focus(egui::Id::new(SEARCH_ID))));
         assert_eq!(scroll.query(), "sec");
-        assert_eq!(scroll.take_run(), Some("second"));
+        assert_eq!(scroll.take_run(), Some("second".into()));
         assert_eq!(
             scroll.take_deferred(),
             vec![key_event(Key::Colon, Modifiers::SHIFT)]
@@ -1455,9 +1457,9 @@ mod tests {
     #[test]
     fn a_click_chooses_its_row_and_closing_help_forgets_the_palette() {
         let mut palette = Palette::default();
-        palette.choose(2, "third");
+        palette.choose(2, "third".into());
         assert_eq!(palette.highlighted(), 2);
-        assert_eq!(palette.run, Some("third"));
+        assert_eq!(palette.run, Some("third".into()));
         let context = egui::Context::default();
         let mut scroll = HelpScroll {
             palette,
@@ -1467,5 +1469,29 @@ mod tests {
         let mut open = false;
         palette_frame(&context, &mut scroll, &mut open, vec![]);
         assert!(scroll.take_run().is_none() && scroll.palette.status().is_none());
+    }
+    #[test]
+    fn deferred_choice_retains_exact_sibling_after_results_change() {
+        use crate::navigation::palette::Form;
+        let undo = Choice {
+            spec_id: "undo",
+            form: Form::Command(0),
+        };
+        let redo = Choice {
+            spec_id: "undo",
+            form: Form::Command(1),
+        };
+        let mut palette = Palette {
+            key: Some(PaletteKey::Next),
+            ..Palette::default()
+        };
+        palette.settle(&[undo, redo]);
+        palette.key = Some(PaletteKey::Run);
+        palette.settle(&[undo, redo]);
+        // A later filter/result pass cannot reinterpret the already chosen row.
+        palette.settle(&[undo]);
+        assert_eq!(palette.run, Some(redo));
+        palette.choose(0, undo);
+        assert_eq!(palette.run, Some(undo));
     }
 }

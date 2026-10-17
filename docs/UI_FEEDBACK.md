@@ -11,6 +11,13 @@ The [specification](spec/DEADPAN_SPEC.md), [design targets](design/README.md) an
 
 ## Current status
 
+The `palette` replay now verifies separate Undo/Redo and Previous/Next frame
+choices, exact durable structure restoration, configured keys, pointer selection
+and keyboard execution. Final release visual/performance runs each pass 34 checks
+plus the Kestrel audit. Inspected captures show distinct names and keycaps with
+visible focus and unavailable-action explanations. See
+[palette forms qualification](qualification/palette-forms-2026-10-17.md).
+
 The `transcript` replay now covers recognition and standalone pause-detection
 sleep interruption, no automatic restart, fully revealed keyboard retry, and
 unchanged words, corrections and edit revision before continuing its existing

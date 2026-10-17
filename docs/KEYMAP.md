@@ -258,6 +258,13 @@ followed Enter in the same batch, which is resumed in order behind it:
   that does not act on the current selection, the sheet's own keys) keeps Help
   open and shows, under the field, where it works and with which keys.
 
+Grouped reference entries expose separate palette choices for distinct verbs
+and editor directions. Undo and Redo, for example, are independently searchable
+and executable; a selected previous-direction key cannot fall back to the next
+direction. Each choice retains its exact command or binding through deferred
+execution, with its own displayed keys. Equivalent command aliases remain one
+choice. The unfiltered Keys reference retains its compact grouped entries.
+
 A composition keeps its own Enter and arrows. Escape keeps its meaning:
 first it leaves the field, then it closes Help.
 
@@ -425,9 +432,6 @@ Current configuration covers Normal and timeline Visual paths and their teaching
 Mode keys are declared and verified in the registry but fixed. Command
 arguments still use per-verb parsers rather than a schema-driven typed-unit
 grammar, and completion lists verbs but not parameters or the default selector.
-The palette runs a two-verb action by its first verb and a two-direction key
-action by its first key (`:undo`, next beat); the others stay a typed command
-or key away.
 The `layouts` replay drives German QWERTZ and French AZERTY presses, as
 egui-winit 0.36 delivers them on macOS, through the production router, and
 drives Russian ЙЦУКЕН letters at their physical positions, and composes

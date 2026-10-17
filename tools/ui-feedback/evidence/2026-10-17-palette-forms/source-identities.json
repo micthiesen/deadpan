@@ -1,0 +1,9 @@
+{
+  "base_revision": "2cc6cdb3aa01d42cf7c8a1630f36cf00b620ac3f",
+  "files": {
+    "crates/deadpan-app/src/navigation/palette.rs": "e6d7ed48f80ff4a2b51a622123d55d5218150185e3031fcb89bc455ab66d83ca",
+    "crates/deadpan-app/src/preview/palette.rs": "754e82e37cdcf9c8ddfcdc9aaf7c6c5b45bd922e6853706b4e8209a1bfb0a67c",
+    "crates/deadpan-app/src/preview/help_scroll.rs": "7b40d4d66359402c0ee8b7e1b88c991a1f91bc7a150deb68175d021dafbf4c75",
+    "crates/deadpan-app/src/preview/harness/palette.rs": "3e750bcba211035c99859ce2d999d42d1b3baccd9496fe2364a4bd13b455442b"
+  }
+}
