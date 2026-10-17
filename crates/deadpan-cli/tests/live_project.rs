@@ -239,7 +239,8 @@ fn shared_executor_matches_direct_store_preview_commit_undo_and_redo() -> Result
     } = execute_short(&mut actual, initial.project_id(), &edit(&request, true))?;
     assert_eq!(
         preview,
-        json!({"protocol":1,"committed":false,"edit":direct.preview(&request)?})
+        json!({"protocol":1,"committed":false,"edit":direct.preview(&request)?,
+            "warnings":[],"required_jobs":[]})
     );
     assert!(receipt.is_none());
     assert_eq!(actual.snapshot()?, initial);

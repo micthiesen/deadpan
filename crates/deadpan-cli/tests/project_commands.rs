@@ -49,8 +49,14 @@ fn success(arguments: &[&str]) -> Result<Value> {
 #[test]
 fn doctor_reports_sound_document_and_database_schemas() -> Result {
     let report = success(&["doctor"])?;
-    assert_eq!(report["document_schema"], 49);
-    assert_eq!(report["database_schema"], 77);
+    assert_eq!(
+        report["document_schema"],
+        deadpan_core::DOCUMENT_SCHEMA_VERSION
+    );
+    assert_eq!(
+        report["database_schema"],
+        deadpan_store::DATABASE_SCHEMA_VERSION
+    );
     let partial = report["partial"].as_array().unwrap();
     for capability in [
         "schema-1-through-57-development-format-refusal",

@@ -593,7 +593,21 @@ fn continuous_owner_return_preserves_preview_and_verified_export() -> Result {
 }
 
 #[test]
-fn every_recipe_builds_a_valid_package_whose_plan_matches_its_expectations() -> Result {
+fn every_recipe_builds_a_valid_package_whose_plan_matches_its_expectations_part_1() -> Result {
+    check_recipe_partition(0)
+}
+
+#[test]
+fn every_recipe_builds_a_valid_package_whose_plan_matches_its_expectations_part_2() -> Result {
+    check_recipe_partition(1)
+}
+
+#[test]
+fn every_recipe_builds_a_valid_package_whose_plan_matches_its_expectations_part_3() -> Result {
+    check_recipe_partition(2)
+}
+
+fn check_recipe_partition(partition: usize) -> Result {
     let scratch = tempfile::tempdir()?;
     // DEADPAN_PREVIEW_EXPORT_KEEP=1 retains the packages for inspection.
     let root = if std::env::var_os("DEADPAN_PREVIEW_EXPORT_KEEP").is_some() {
@@ -601,7 +615,9 @@ fn every_recipe_builds_a_valid_package_whose_plan_matches_its_expectations() -> 
     } else {
         scratch.path().to_owned()
     };
-    for fixture in recipes::all(&root)? {
+    // All three residues cover the shared inventory exactly once. New builders
+    // automatically join one test without changing a hand-maintained name list.
+    for fixture in recipes::partition(&root, partition, 3)? {
         eprintln!(
             "{}: {} frames at {} {:?} {}",
             fixture.name,
@@ -888,11 +904,32 @@ fn sdr_codec_originals_render_sdr_with_exact_picture_and_audio_timing() -> Resul
 }
 
 #[test]
-fn source_formats_preserve_independent_clocks_through_combined_structural_edits() -> Result {
+fn source_formats_preserve_independent_clocks_through_combined_structural_edits_part_1() -> Result {
+    check_source_format_partition(0)
+}
+
+#[test]
+fn source_formats_preserve_independent_clocks_through_combined_structural_edits_part_2() -> Result {
+    check_source_format_partition(1)
+}
+
+#[test]
+fn source_formats_preserve_independent_clocks_through_combined_structural_edits_part_3() -> Result {
+    check_source_format_partition(2)
+}
+
+#[test]
+fn source_formats_preserve_independent_clocks_through_combined_structural_edits_part_4() -> Result {
+    check_source_format_partition(3)
+}
+
+fn check_source_format_partition(partition: usize) -> Result {
     use deadpan_core::PitchPolicy;
     let (root, _guard) = keep_or(tempfile::tempdir()?);
     eprintln!("Source-format operation evidence: {}", root.display());
-    for case in recipes::formats::CASES {
+    // The four residues cover every current and future case exactly once;
+    // each case still exercises both pitch policies and every original check.
+    for case in recipes::formats::CASES.iter().skip(partition).step_by(4) {
         for (policy, pitch) in [
             ("preserve", PitchPolicy::Preserve),
             ("tape", PitchPolicy::FollowSpeed),

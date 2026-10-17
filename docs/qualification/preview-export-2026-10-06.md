@@ -34,7 +34,7 @@ real-model, HDR, device playback or listening qualification.
 - Strict Clippy: `cargo clippy --locked -p deadpan-cli --all-targets -- -D warnings`
   passes, both without and with `--features synthetic-worker`.
 - Debug plan test (`every_recipe_builds_a_valid_package_whose_plan_matches_its_expectations`,
-  which runs in the default gate) on the six new fixtures plus `black-pause`:
+  now split into `_part_1` through `_part_3` in the default gate) on the six new fixtures plus `black-pause`:
   38.1 s.
 
 ## New fixtures

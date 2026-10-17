@@ -3506,6 +3506,19 @@ pub fn all(dir: &Path) -> Result<Vec<Fixture>> {
     Ok(fixtures)
 }
 
+/// Build one partition, reporting unavailable optional tools just like `all`.
+pub fn partition(dir: &Path, partition: usize, partitions: usize) -> Result<Vec<Fixture>> {
+    assert!(partitions > 0 && partition < partitions);
+    if partitions == 1 {
+        return all(dir);
+    }
+    let (fixtures, skipped) = partition_with_skips(dir, partition, partitions)?;
+    for (name, reason) in skipped {
+        eprintln!("SKIPPED fixture {name}: {reason}");
+    }
+    Ok(fixtures)
+}
+
 /// A fixture that needs a tool outside the build: the generated large
 /// Original needs a development `ffmpeg`, accepted Generated Holds also the
 /// synthetic worker (`--features synthetic-worker`) and `deadpan-media-worker`.
@@ -3555,6 +3568,18 @@ const GENERATED: [(&str, Builder); 4] = {
 /// Build every fixture whose tools are available; return the others' names
 /// with the reason they were skipped.
 pub fn all_with_skips(dir: &Path) -> Result<(Vec<Fixture>, Vec<Skipped>)> {
+    partition_with_skips(dir, 0, 1)
+}
+
+/// Build one disjoint stripe of the complete builder inventory. Partitioning
+/// happens before tool checks or construction, so running all partitions builds
+/// each fixture exactly once, including newly added and optional fixtures.
+pub fn partition_with_skips(
+    dir: &Path,
+    partition: usize,
+    partitions: usize,
+) -> Result<(Vec<Fixture>, Vec<Skipped>)> {
+    assert!(partitions > 0 && partition < partitions);
     let builders: [(&str, Builder); 41] = [
         ("triumphant-sting", triumphant_sting),
         ("micro-loop", micro_loop),
@@ -3645,14 +3670,16 @@ pub fn all_with_skips(dir: &Path) -> Result<(Vec<Fixture>, Vec<Skipped>)> {
     let build = |name: &str, build: Builder| -> Result<Fixture> {
         build(&dir.join(name)).map_err(|error| format!("{name}: {error}").into())
     };
+    let optional_offset = builders.len();
     let mut fixtures = builders
         .into_iter()
-        .filter(|(name, _)| selected(name))
-        .map(|(name, builder)| build(name, builder))
+        .enumerate()
+        .filter(|(index, (name, _))| index % partitions == partition && selected(name))
+        .map(|(_, (name, builder))| build(name, builder))
         .collect::<Result<Vec<_>>>()?;
     let mut skipped = Vec::new();
-    for (name, available, builder) in optional {
-        if !selected(name) {
+    for (index, (name, available, builder)) in optional.into_iter().enumerate() {
+        if (optional_offset + index) % partitions != partition || !selected(name) {
             continue;
         }
         match available() {
