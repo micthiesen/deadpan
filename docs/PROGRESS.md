@@ -1,7 +1,7 @@
 # Progress reporting
 
 [Open the dashboard](https://artifacts.boo/a/a3ysikxugbmr4).
-Shared Artifact ID: **`a3ysikxugbmr4`**.
+Artifact ID: **`a3ysikxugbmr4`**.
 
 [Spec §29.2](spec/DEADPAN_SPEC.md#292-persistent-progress-dashboard) requires
 occasional milestone updates whenever an agent works against the specification.
