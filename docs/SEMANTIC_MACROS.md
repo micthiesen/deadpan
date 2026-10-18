@@ -77,6 +77,31 @@ checks, rendered captures, retained failures and remaining limits.
 
 ## Recording and input ownership
 
+### Place slice Apply
+
+While recording in Your edit, `:splice` keeps its unsaved placement preview.
+Apply records the existing `Paste` or `ReplaceSelection` instruction only when
+that instruction resolves to the displayed placement. Copy must use the entry
+register's exact source, including its endpoints. An insertion must use the
+literal child slot immediately before or after the captured selected beat;
+slot zero also works in an empty Sequence. Replacement must use the captured
+nonempty time range or exact Object selection. Empty structural Objects retain
+their identity and can be replaced.
+
+Move, refined source endpoints, interior or nonadjacent insertion, and insertion
+with an Object selection refuse recording with a visible explanation. The draft,
+registers and saved edit stay intact, so restoring an eligible proposal permits
+Apply. Escape cancels the placement and restores its entry context.
+
+Successful recorded Apply abandons the preview and submits one semantic
+transaction. The instruction enters the recording only after its successful
+receipt. It stores the register and before/after or replacement intent; replay
+resolves the current selected child or selection instead of retaining the old
+preview destination. The committed placement has fresh identities, with the
+same picture and canonical PCM semantics as the preview. The footer explains
+the current recording restriction or the one-action Apply behavior.
+See [Place slice macro qualification](qualification/place-slice-macros-2026-10-18.md).
+
 ### Original frame navigation and marks
 
 Recording and execution use the active invocation clock. On Original, the

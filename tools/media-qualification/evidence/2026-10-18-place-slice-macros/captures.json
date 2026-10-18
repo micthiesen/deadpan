@@ -1,0 +1,27 @@
+{
+  "refined-source-refusal.png": {
+    "label": "A refined Place slice shows its explicit recording restriction",
+    "frame": 3614,
+    "source": "place-slice-143.png"
+  },
+  "eligible-apply.png": {
+    "label": "Eligible Place slice explains its recorded semantic Apply",
+    "frame": 3620,
+    "source": "place-slice-144.png"
+  },
+  "recorded-paste.png": {
+    "label": "Place slice recorded as one named semantic paste",
+    "frame": 3640,
+    "source": "place-slice-145.png"
+  },
+  "replayed-replacement.png": {
+    "label": "Recorded Place slice replaces the new invocation range",
+    "frame": 3831,
+    "source": "place-slice-146.png"
+  },
+  "move-refusal.png": {
+    "label": "Move placement explains its recording restriction",
+    "frame": 3895,
+    "source": "place-slice-147.png"
+  }
+}

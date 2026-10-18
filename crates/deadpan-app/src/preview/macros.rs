@@ -136,13 +136,17 @@ impl Capture {
     }
 
     fn matches_without_bank_or_selection(&self, app: &DeadpanApp) -> bool {
+        self.matches_editor_state(app, false)
+    }
+
+    fn matches_editor_state(&self, app: &DeadpanApp, splice: bool) -> bool {
         app.workspace.as_ref().is_some_and(|workspace| {
             workspace.session == self.base.session
                 && workspace.document.project_id() == self.base.document.project_id()
                 && workspace.document.revision_id() == self.base.document.revision_id()
         }) && app.sequence_scope == self.scope
             && i64::try_from(app.sequence_cursor).ok() == Some(self.context.cursor.0)
-            && app.pane == self.pane
+            && app.pane == if splice { Pane::Viewer } else { self.pane }
             && app.view == self.view
             && app.capture_visual_selection().as_ref() == Ok(&self.context.visual_selection)
             && app.sound_focused() == self.sound_focused
@@ -159,7 +163,87 @@ impl Capture {
                             .is_some_and(|source| source.receipt.id() == &original.qualification)
                     })
             })
-            && app.frame_delete_blocked().is_none()
+            && if splice {
+                app.splice.is_some()
+                    && app.scoped.is_none()
+                    && !app.close_pending
+                    && !app.dialogs.is_open()
+                    && !app.render.blocking()
+                    && !app.help_open
+                    && app.camera.is_none()
+                    && app.trim.is_none()
+                    && app.slip.is_none()
+                    && app.gain.is_none()
+                    && app.room_tone.is_none()
+            } else {
+                app.frame_delete_blocked().is_none()
+            }
+    }
+
+    pub(super) fn matches_splice_entry(&self, app: &DeadpanApp) -> bool {
+        app.copied.bank_version() == Some(self.bank_version)
+            && app.selected_beat == self.context.selected_child
+            && self.matches_editor_state(app, true)
+            && app.macros.recording.as_ref().is_some_and(|recording| {
+                let expected = &recording.expected;
+                expected.id(0) == self.id(0)
+                    && expected.scope == self.scope
+                    && expected.context == self.context
+                    && expected.pane == self.pane
+                    && expected.view == self.view
+                    && expected.sound_focused == self.sound_focused
+                    && expected.event_focused == self.event_focused
+                    && expected.original_selection == self.original_selection
+            })
+    }
+
+    pub(super) fn splice_instruction(
+        &self,
+        proposal: &crate::project::splice::Proposal,
+        initial_source: &crate::project::splice::Source,
+        register: Option<char>,
+    ) -> Result<SemanticInstruction, String> {
+        if self.context.original.is_some() || self.view != View::Sequence {
+            return Err("Place slice can be recorded only in Your edit.".into());
+        }
+        if proposal.id.session != self.base.session
+            || &proposal.id.project != self.base.document.project_id()
+            || &proposal.id.base_revision != self.base.document.revision_id()
+            || proposal.scope != self.scope
+            || proposal.parent != self.context.parent
+        {
+            return Err(
+                "The captured Place slice context changed. Cancel and open it again.".into(),
+            );
+        }
+        let owner = self.scope.resolve(&self.base)?;
+        if owner.owner != &self.context.parent {
+            return Err(
+                "The captured Place slice parent changed. Cancel and open it again.".into(),
+            );
+        }
+        let captured_range = match &self.context.visual_selection {
+            Some(deadpan_core::SemanticVisualSelection::Time { anchor, head, .. }) => Some(
+                deadpan_core::FrameRange::new((*anchor).min(*head), (*anchor).max(*head))
+                    .map_err(|error| error.to_string())?,
+            ),
+            Some(deadpan_core::SemanticVisualSelection::Object { selection, .. }) => Some(
+                self.base
+                    .document
+                    .resolve_object_selection(&self.context.parent, selection)
+                    .map_err(|error| error.to_string())?
+                    .range,
+            ),
+            None => None,
+        };
+        splice_instruction(
+            &self.context,
+            owner.children,
+            proposal,
+            initial_source,
+            register_name(register)?,
+            captured_range,
+        )
     }
 
     fn id(&self, request: u64) -> protocol::Id {
@@ -347,11 +431,12 @@ impl DeadpanApp {
         if moved && let Some(pending) = &mut self.macros.pending {
             pending.owns_cursor = false;
         }
-        // An open Trim, Slip or room-tone draft owns the editor context and restores its entry
+        // An open Trim, Slip, Place slice or room-tone draft owns the editor context and restores its entry
         // context when it closes; check the recording after that.
         if self.trim.is_none()
             && self.slip.is_none()
             && self.room_tone.is_none()
+            && self.splice.is_none()
             && self
                 .macros
                 .recording
@@ -568,6 +653,9 @@ impl DeadpanApp {
             return false;
         }
         match command {
+            Ok(navigation::command::Entry::Splice) => {
+                self.macro_action_allowed(Action::PasteMoment { before: false })
+            }
             Ok(navigation::command::Entry::Group { .. }) => {
                 self.macro_action_allowed(Action::Group)
             }
@@ -1544,6 +1632,66 @@ impl DeadpanApp {
                     }
                 }
             }
+        }
+    }
+}
+
+/// Recognize only placements with the same structural resolution as an existing
+/// semantic instruction. Equal-time seams are distinguished by their child slot.
+fn splice_instruction(
+    context: &SemanticContext,
+    children: &[NodeId],
+    proposal: &crate::project::splice::Proposal,
+    initial_source: &crate::project::splice::Source,
+    register: RegisterName,
+    captured_range: Option<deadpan_core::FrameRange>,
+) -> Result<SemanticInstruction, String> {
+    use crate::project::splice::{Destination, Operation};
+    if proposal.operation != Operation::Copy {
+        return Err("Macro recording supports Copy placement. Use m to return to Copy, or cancel recording before Move.".into());
+    }
+    if &proposal.source != initial_source {
+        return Err("Macro recording uses the captured register's exact source. Restore its In and Out, or cancel recording before refining them.".into());
+    }
+    match &proposal.destination {
+        Destination::Replace { range }
+            if matches!(context.visual_selection, Some(deadpan_core::SemanticVisualSelection::Time { .. }))
+                && captured_range == Some(*range)
+                && range.start() < range.end() =>
+        {
+            Ok(SemanticInstruction::ReplaceSelection { register })
+        }
+        Destination::Object { selection }
+            if matches!(&context.visual_selection, Some(deadpan_core::SemanticVisualSelection::Object { selection: captured, .. }) if captured == selection)
+                && captured_range.is_some() =>
+        {
+            Ok(SemanticInstruction::ReplaceSelection { register })
+        }
+        Destination::Replace { .. } | Destination::Object { .. } => Err(
+            "Macro recording can replace only the exact Edit selection captured when Place slice opened; a time range must be nonempty.".into(),
+        ),
+        Destination::Interior { .. } => Err(
+            "Macro recording needs the seam immediately before or after the captured selected beat. Use j/k to choose that seam.".into(),
+        ),
+        Destination::Slot(slot) => {
+            if matches!(context.visual_selection, Some(deadpan_core::SemanticVisualSelection::Object { .. })) {
+                return Err("A macro paste with an Object selection replaces that object. Use r for the captured replacement, or cancel and clear the selection before inserting.".into());
+            }
+            let before = if children.is_empty() && *slot == 0 {
+                true
+            } else {
+                let selected = context.selected_child.as_ref()
+                    .and_then(|selected| children.iter().position(|child| child == selected))
+                    .ok_or("Select a beat before recording Place slice insertion.")?;
+                if *slot == selected {
+                    true
+                } else if selected.checked_add(1) == Some(*slot) {
+                    false
+                } else {
+                    return Err("Macro recording needs the seam immediately before or after the captured selected beat. Use j/k to choose that seam.".into());
+                }
+            };
+            Ok(SemanticInstruction::Paste { register, before })
         }
     }
 }

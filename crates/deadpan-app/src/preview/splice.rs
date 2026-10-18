@@ -65,12 +65,22 @@ pub(super) struct Draft {
     entry_source: u64,
     entry_pane: Pane,
     entry_selection: edit_range::Selection,
+    entry_macro: Result<macros::Capture, String>,
+    entry_register: Option<char>,
+    initial_source: Source,
     focus_pending: bool,
     keys: Vec<SpliceKey>,
     scope_label: String,
 }
 
 impl Draft {
+    fn recorded_instruction(&self) -> Result<deadpan_core::SemanticInstruction, String> {
+        self.entry_macro
+            .as_ref()
+            .map_err(Clone::clone)?
+            .splice_instruction(&self.proposal, &self.initial_source, self.entry_register)
+    }
+
     #[cfg(feature = "ui-harness")]
     pub(in crate::preview) fn proposal_for_check(&self) -> &Proposal {
         &self.proposal
@@ -498,7 +508,7 @@ impl DeadpanApp {
                 draft: token,
                 change: 1,
             },
-            source,
+            source: source.clone(),
             operation: Operation::Copy,
             scope: target.scope,
             parent,
@@ -543,6 +553,9 @@ impl DeadpanApp {
             entry_source: target.source_cursor,
             entry_pane: target.pane,
             entry_selection: target.selection,
+            entry_macro: target.macro_capture,
+            entry_register: target.register,
+            initial_source: source,
             focus_pending: true,
             keys: Vec::new(),
             scope_label: if self.scope_labels.is_empty() {
@@ -893,6 +906,10 @@ impl DeadpanApp {
             return;
         }
         if action == SpliceKey::Apply {
+            if self.macros.recording() {
+                self.record_requested_splice(context);
+                return;
+            }
             let Some(draft) = &mut self.splice else {
                 return;
             };
@@ -1149,6 +1166,44 @@ impl DeadpanApp {
         self.request_picture_for_transport_at(false, None, None);
         context.memory_mut(|memory| memory.request_focus(egui::Id::new(FOCUS)));
         context.request_repaint();
+    }
+
+    fn record_requested_splice(&mut self, context: &egui::Context) {
+        let ready = self.splice.as_ref().is_some_and(|draft| {
+            draft.prepared.is_some() && !draft.dirty && draft.pending.is_none()
+        });
+        if !ready || self.service.is_busy() || self.macros.is_pending() || self.copied.is_pending()
+        {
+            return;
+        }
+        let result = (|| {
+            let draft = self
+                .splice
+                .as_ref()
+                .ok_or("Place slice is no longer open.")?;
+            let instruction = draft.recorded_instruction()?;
+            let captured = draft.entry_macro.as_ref().map_err(Clone::clone)?;
+            if !captured.matches_splice_entry(self) {
+                return Err("The captured editing context or registers changed. Cancel and open Place slice again; no edit was made.".into());
+            }
+            if self.macros.instruction_count() >= deadpan_core::MAX_SEMANTIC_PROGRAM_INSTRUCTIONS {
+                return Err("The macro has reached 1024 instructions. Cancel Place slice, then save or cancel recording.".into());
+            }
+            Ok((captured.clone(), instruction))
+        })();
+        let (captured, instruction) = match result {
+            Ok(value) => value,
+            Err(error) => {
+                if let Some(draft) = &mut self.splice {
+                    draft.error = Some(error);
+                }
+                return;
+            }
+        };
+        // The semantic request is the only authored write. Abandon the prepared
+        // proposal and restore exactly the entry context before admitting it.
+        self.close_splice(context);
+        self.apply_recorded_instruction(Ok(captured), Ok(instruction));
     }
 
     fn splice_audition(&mut self, action: SpliceKey) {

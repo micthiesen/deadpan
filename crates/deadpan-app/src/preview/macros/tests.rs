@@ -2,6 +2,8 @@ use super::*;
 use crate::project::CommittedEdit;
 use deadpan_core::ProjectId;
 
+mod splice;
+
 fn applied(committed: bool) -> protocol::Receipt {
     let selected = Some(NodeId::new("selected-empty-group").unwrap());
     protocol::Receipt {

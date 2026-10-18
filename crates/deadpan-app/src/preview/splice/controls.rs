@@ -144,7 +144,14 @@ impl DeadpanApp {
                 ui.ctx().request_discard("Place slice controls changed before picture submission");
             }
             ui.separator();
-            let footer = Footer::measure(ui, &draft, self.error.as_deref(), self.audition_context);
+            let recording_note = self.macros.recording().then(|| {
+                draft.recorded_instruction().map_or_else(
+                    |error| error,
+                    |_| "Apply records this register placement as one semantic action and one Undo.".into(),
+                )
+            });
+            let recording_note = recording_note.as_deref().filter(|note| Some(*note) != draft.error.as_deref());
+            let footer = Footer::measure(ui, &draft, self.error.as_deref(), recording_note, self.audition_context);
             let height = (ui.available_height() - footer.height - FOOTER_SEPARATOR - ui.spacing().item_spacing.y).max(120.0);
             let left_width = 220.0_f32.min(ui.available_width() * 0.29);
             let picture_width = (ui.available_width() - left_width - ui.spacing().item_spacing.x).max(100.0);
@@ -205,6 +212,7 @@ impl Footer {
         ui: &egui::Ui,
         draft: &Draft,
         error: Option<&str>,
+        recording_note: Option<&str>,
         context: playback::AuditionContext,
     ) -> Self {
         let destination = if draft.replacing
@@ -359,6 +367,7 @@ impl Footer {
             draft.comparison_note.as_deref(),
             draft.error.as_deref(),
             error,
+            recording_note,
         ]
         .into_iter()
         .flatten()

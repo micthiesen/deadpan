@@ -153,6 +153,16 @@ fn replacement_proposal_matches_saved_picture_pcm_and_retained_suffix_at_both_jo
     verify_equivalence(Placement::Replace);
 }
 
+#[test]
+fn semantic_paste_matches_place_slice_preview_pictures_pcm_and_one_undo() {
+    verify_equivalence_with(Placement::Seam, true);
+}
+
+#[test]
+fn semantic_replacement_matches_place_slice_preview_pictures_pcm_and_one_undo() {
+    verify_equivalence_with(Placement::Replace, true);
+}
+
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Placement {
     Seam,
@@ -161,6 +171,10 @@ enum Placement {
 }
 
 fn verify_equivalence(placement: Placement) {
+    verify_equivalence_with(placement, false);
+}
+
+fn verify_equivalence_with(placement: Placement, semantic: bool) {
     let scratch = tempfile::tempdir().unwrap();
     let harness = Harness::with_library(Some(
         ProjectLibrary::from_documents(scratch.path().join("Documents")).unwrap(),
@@ -205,6 +219,27 @@ fn verify_equivalence(placement: Placement) {
             range: deadpan_core::FrameRange::new(ProjectFrame(30), ProjectFrame(60)).unwrap(),
         },
     };
+    let bank_version = semantic.then(|| {
+        let (asset, qualification, ordinals) = original_source(&request);
+        let captured = command(
+            &harness.service,
+            ProjectRequest::CaptureOriginal(crate::project::registers::OriginalRequest {
+                id: crate::project::slice::CopyId {
+                    session: before.session,
+                    project: before.document.project_id().clone(),
+                    source_revision: before.document.revision_id().clone(),
+                    request: 41,
+                    persisted_version: None,
+                },
+                register: Some('w'),
+                asset: asset.clone(),
+                qualification: qualification.clone(),
+                ordinals: ordinals.clone(),
+            }),
+        );
+        assert!(captured.error.is_none(), "{:?}", captured.error);
+        captured.registers.as_ref().unwrap().version
+    });
     let reply = command(
         &harness.service,
         ProjectRequest::PrepareSplice(request.clone()),
@@ -332,11 +367,80 @@ fn verify_equivalence(placement: Placement) {
     );
     unchanged(&before);
 
-    let committed = command(&harness.service, ProjectRequest::CommitSplice(request.id));
+    let committed = if let Some(bank_version) = bank_version {
+        let abandoned = command(
+            &harness.service,
+            ProjectRequest::AbandonSplice(request.id.clone()),
+        );
+        assert!(abandoned.error.is_none(), "{:?}", abandoned.error);
+        let instruction = if placement == Placement::Replace {
+            deadpan_core::SemanticInstruction::ReplaceSelection {
+                register: deadpan_core::RegisterName::new('w').unwrap(),
+            }
+        } else {
+            deadpan_core::SemanticInstruction::Paste {
+                register: deadpan_core::RegisterName::new('w').unwrap(),
+                before: false,
+            }
+        };
+        command(
+            &harness.service,
+            ProjectRequest::Macro(crate::project::macros::Operation::Apply {
+                id: crate::project::macros::Id {
+                    session: before.session,
+                    project: before.document.project_id().clone(),
+                    revision: before.document.revision_id().clone(),
+                    bank_version,
+                    request: 42,
+                },
+                instruction,
+                repeat_version: None,
+                scope: SequenceScope::default(),
+                context: deadpan_core::SemanticContext {
+                    original: None,
+                    parent: request.parent.clone(),
+                    cursor: ProjectFrame(30),
+                    selected_child: before.document.children(&request.parent).next().cloned(),
+                    visual_selection: (placement == Placement::Replace).then_some(
+                        deadpan_core::SemanticVisualSelection::Time {
+                            anchor: ProjectFrame(60),
+                            head: ProjectFrame(30),
+                            extending: false,
+                        },
+                    ),
+                },
+            }),
+        )
+    } else {
+        command(&harness.service, ProjectRequest::CommitSplice(request.id))
+    };
     assert!(committed.error.is_none(), "{:?}", committed.error);
-    assert!(committed.splice_commit.as_ref().unwrap().result.is_ok());
+    if let Some(bank_version) = bank_version {
+        assert!(committed.macros.as_ref().unwrap().result.is_ok());
+        assert!(
+            committed
+                .saved_macro
+                .as_ref()
+                .unwrap()
+                .committed()
+                .is_some()
+        );
+        assert_eq!(committed.registers.as_ref().unwrap().version, bank_version);
+    } else {
+        assert!(committed.splice_commit.as_ref().unwrap().result.is_ok());
+    }
     let after = committed.workspace.unwrap();
-    assert_eq!(*after.document, *proposed.snapshot.document);
+    if semantic {
+        // Semantic Apply allocates fresh identities after abandoning the draft.
+        // The independent decoded picture/PCM oracle below compares its meaning.
+        assert_ne!(
+            after.document.revision_id(),
+            proposed.snapshot.document.revision_id()
+        );
+        assert_eq!(after.plan.duration(), proposed.plan.duration());
+    } else {
+        assert_eq!(*after.document, *proposed.snapshot.document);
+    }
     for (index, frame) in frames.into_iter().enumerate() {
         let actual = decode(
             &worker,
@@ -351,7 +455,26 @@ fn verify_equivalence(placement: Placement) {
         let expected = &pictures[index];
         assert_eq!(actual.id, expected.id);
         assert_eq!(actual.canvas, expected.canvas);
-        assert_eq!(actual.framing, expected.framing);
+        if semantic {
+            assert_eq!(actual.framing.len(), expected.framing.len());
+            for (actual, expected) in actual.framing.iter().zip(&expected.framing) {
+                let mut expected = expected.clone();
+                if !before
+                    .document
+                    .nodes()
+                    .contains_key(&expected.instance.node)
+                {
+                    assert!(!before.document.nodes().contains_key(&actual.instance.node));
+                    assert_ne!(actual.instance.node, expected.instance.node);
+                    // Preview allocations are abandoned. Compare every owner
+                    // clock and pose while allowing only their fresh node ID.
+                    expected.instance.node = actual.instance.node.clone();
+                }
+                assert_eq!(actual, &expected);
+            }
+        } else {
+            assert_eq!(actual.framing, expected.framing);
+        }
         assert_eq!(actual.framing_gap, expected.framing_gap);
         assert_eq!(actual.picture_context, expected.picture_context);
         assert_eq!(
@@ -372,9 +495,37 @@ fn verify_equivalence(placement: Placement) {
         let actual = committed_audio
             .read_limited(start, 256, &cancelled)
             .unwrap();
+        let mut expected = expected;
+        if semantic {
+            assert_eq!(actual.samples, expected.samples);
+            assert_eq!(
+                expected.revision_id,
+                *proposed.snapshot.document.revision_id()
+            );
+            // The DSP and every sample stay exact; only the enclosing authored
+            // revision differs from the abandoned proposal's identity.
+            expected.revision_id = after.document.revision_id().clone();
+        }
         assert_eq!(
             actual, expected,
             "PCM, limiter gains and owned context agree across the join"
+        );
+    }
+    if semantic {
+        let undone = command(
+            &harness.service,
+            ProjectRequest::Undo {
+                expected_revision: after.document.revision_id().clone(),
+            },
+        );
+        assert!(undone.error.is_none(), "{:?}", undone.error);
+        let restored = undone.workspace.unwrap();
+        let mut value = serde_json::to_value(&restored.document).unwrap();
+        value["revision_id"] = serde_json::json!(before.document.revision_id());
+        assert_eq!(value, serde_json::to_value(&before.document).unwrap());
+        assert_eq!(
+            undone.registers.as_ref().unwrap().version,
+            bank_version.unwrap()
         );
     }
     worker.shutdown();

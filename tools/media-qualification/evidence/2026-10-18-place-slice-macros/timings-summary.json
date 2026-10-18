@@ -1,0 +1,782 @@
+{
+  "ui_frame_cpu_ms": {
+    "completed": {
+      "max_ms": 6.289750000000001,
+      "n": 4103,
+      "p50_ms": 0.238625,
+      "p95_ms": 0.696292,
+      "p99_ms": 1.877875
+    },
+    "failed": 0,
+    "samples": 4103,
+    "timed_out": 0
+  },
+  "ui_composition_submit_cpu_ms": {
+    "completed": {
+      "max_ms": 0.64925,
+      "n": 4103,
+      "p50_ms": 0.097417,
+      "p95_ms": 0.148667,
+      "p99_ms": 0.178417
+    },
+    "failed": 0,
+    "samples": 4103,
+    "timed_out": 0
+  },
+  "ui_composition_complete_ms": {
+    "completed": {
+      "max_ms": 9.006625000000001,
+      "n": 4103,
+      "p50_ms": 0.392416,
+      "p95_ms": 0.558917,
+      "p99_ms": 0.7825
+    },
+    "failed": 0,
+    "samples": 4103,
+    "timed_out": 0
+  },
+  "input_to_state_ms": {
+    "completed": {
+      "max_ms": 2.172042,
+      "n": 1382,
+      "p50_ms": 0.364417,
+      "p95_ms": 0.961667,
+      "p99_ms": 1.929375
+    },
+    "failed": 0,
+    "samples": 1382,
+    "timed_out": 0
+  },
+  "input_to_commit_ms": {
+    "completed": {
+      "max_ms": 174.854166,
+      "n": 32,
+      "p50_ms": 14.501583,
+      "p95_ms": 162.72875000000002,
+      "p99_ms": 174.854166
+    },
+    "failed": 0,
+    "samples": 32,
+    "timed_out": 0
+  },
+  "request_to_decode_delivery_ms": {
+    "completed": {
+      "max_ms": 7.327833,
+      "n": 674,
+      "p50_ms": 0.806583,
+      "p95_ms": 2.5254589999999997,
+      "p99_ms": 3.375709
+    },
+    "failed": 0,
+    "samples": 674,
+    "timed_out": 0
+  },
+  "request_to_worker_start_ms": {
+    "completed": {
+      "max_ms": 0.307167,
+      "n": 674,
+      "p50_ms": 0.006375,
+      "p95_ms": 0.007958000000000002,
+      "p99_ms": 0.013167
+    },
+    "failed": 0,
+    "samples": 674,
+    "timed_out": 0
+  },
+  "worker_execution_ms": {
+    "completed": {
+      "max_ms": 2.8355,
+      "n": 674,
+      "p50_ms": 0.31024999999999997,
+      "p95_ms": 0.605125,
+      "p99_ms": 1.538708
+    },
+    "failed": 0,
+    "samples": 674,
+    "timed_out": 0
+  },
+  "worker_publication_delay_ms": {
+    "completed": {
+      "max_ms": 0.000375,
+      "n": 674,
+      "p50_ms": 8.3e-05,
+      "p95_ms": 0.000167,
+      "p99_ms": 0.00025
+    },
+    "failed": 0,
+    "samples": 674,
+    "timed_out": 0
+  },
+  "publication_to_decode_delivery_ms": {
+    "completed": {
+      "max_ms": 4.970625,
+      "n": 674,
+      "p50_ms": 0.5105,
+      "p95_ms": 2.037584,
+      "p99_ms": 2.842584
+    },
+    "failed": 0,
+    "samples": 674,
+    "timed_out": 0
+  },
+  "request_to_picture_submission_ms": {
+    "completed": {
+      "max_ms": 8.078375000000001,
+      "n": 521,
+      "p50_ms": 1.234625,
+      "p95_ms": 2.99525,
+      "p99_ms": 3.9177079999999997
+    },
+    "failed": 0,
+    "samples": 521,
+    "timed_out": 0
+  },
+  "request_to_picture_complete_ms": {
+    "completed": {
+      "max_ms": 8.957125,
+      "n": 521,
+      "p50_ms": 1.760333,
+      "p95_ms": 3.619083,
+      "p99_ms": 4.576709
+    },
+    "failed": 0,
+    "samples": 521,
+    "timed_out": 0
+  },
+  "input_to_picture_complete_ms": {
+    "completed": {
+      "max_ms": 178.994583,
+      "n": 430,
+      "p50_ms": 1.776709,
+      "p95_ms": 14.067458,
+      "p99_ms": 100.028167
+    },
+    "failed": 0,
+    "samples": 430,
+    "timed_out": 0
+  },
+  "Original initialized and displayed": {
+    "completed": {
+      "max_ms": 90.493833,
+      "n": 1,
+      "p50_ms": 90.493833,
+      "p95_ms": 90.493833,
+      "p99_ms": 90.493833
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Project and picture settled": {
+    "completed": {
+      "max_ms": 2.786542,
+      "n": 208,
+      "p50_ms": 0.8002079999999999,
+      "p95_ms": 1.035417,
+      "p99_ms": 1.129542
+    },
+    "failed": 0,
+    "samples": 208,
+    "timed_out": 0
+  },
+  "Committed revision changed": {
+    "completed": {
+      "max_ms": 15.086584,
+      "n": 72,
+      "p50_ms": 7.337958,
+      "p95_ms": 13.525458,
+      "p99_ms": 15.086584
+    },
+    "failed": 0,
+    "samples": 72,
+    "timed_out": 0
+  },
+  "Original slice copy is durable": {
+    "completed": {
+      "max_ms": 5.081958,
+      "n": 1,
+      "p50_ms": 5.081958,
+      "p95_ms": 5.081958,
+      "p99_ms": 5.081958
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Advancing playback picture is withheld": {
+    "completed": {
+      "max_ms": 0.5994579999999999,
+      "n": 1,
+      "p50_ms": 0.5994579999999999,
+      "p95_ms": 0.5994579999999999,
+      "p99_ms": 0.5994579999999999
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Visible Place slice button opens the draft": {
+    "completed": {
+      "max_ms": 4.1e-05,
+      "n": 1,
+      "p50_ms": 4.1e-05,
+      "p95_ms": 4.1e-05,
+      "p99_ms": 4.1e-05
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "The saved destination reaches GPU while proposal delivery is held": {
+    "completed": {
+      "max_ms": 0.724375,
+      "n": 1,
+      "p50_ms": 0.724375,
+      "p95_ms": 0.724375,
+      "p99_ms": 0.724375
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Cancel the Place draft with its prepared reply still withheld": {
+    "completed": {
+      "max_ms": 0.000125,
+      "n": 1,
+      "p50_ms": 0.000125,
+      "p95_ms": 0.000125,
+      "p99_ms": 0.000125
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Place slice opens at the captured interior destination": {
+    "completed": {
+      "max_ms": 8.3e-05,
+      "n": 1,
+      "p50_ms": 8.3e-05,
+      "p95_ms": 8.3e-05,
+      "p99_ms": 8.3e-05
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Latest exact slice proposal is prepared": {
+    "completed": {
+      "max_ms": 14.53425,
+      "n": 105,
+      "p50_ms": 1.301916,
+      "p95_ms": 8.579334,
+      "p99_ms": 13.566084
+    },
+    "failed": 0,
+    "samples": 105,
+    "timed_out": 0
+  },
+  "Exact source picture reaches the proposed or endpoint viewer": {
+    "completed": {
+      "max_ms": 2.563375,
+      "n": 88,
+      "p50_ms": 0.5507920000000001,
+      "p95_ms": 1.5191670000000002,
+      "p99_ms": 2.563375
+    },
+    "failed": 0,
+    "samples": 88,
+    "timed_out": 0
+  },
+  "Escape closes and abandons the slice proposal": {
+    "completed": {
+      "max_ms": 0.00025,
+      "n": 1,
+      "p50_ms": 0.00025,
+      "p95_ms": 0.00025,
+      "p99_ms": 0.00025
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Concurrent service Undo invalidates the captured destination": {
+    "completed": {
+      "max_ms": 5.916292,
+      "n": 1,
+      "p50_ms": 5.916292,
+      "p95_ms": 5.916292,
+      "p99_ms": 5.916292
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Cancel releases the invalidated placement": {
+    "completed": {
+      "max_ms": 0.000334,
+      "n": 1,
+      "p50_ms": 0.000334,
+      "p95_ms": 0.000334,
+      "p99_ms": 0.000334
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Cancel the batched-count draft without saving": {
+    "completed": {
+      "max_ms": 0.000167,
+      "n": 2,
+      "p50_ms": 0.000167,
+      "p95_ms": 0.000167,
+      "p99_ms": 0.000167
+    },
+    "failed": 0,
+    "samples": 2,
+    "timed_out": 0
+  },
+  "Close the service writer before adding empty seam fixtures": {
+    "completed": {
+      "max_ms": 14.443792,
+      "n": 1,
+      "p50_ms": 14.443792,
+      "p95_ms": 14.443792,
+      "p99_ms": 14.443792
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Reopen the Original with leading and trailing empty Sequences": {
+    "completed": {
+      "max_ms": 21.412582999999998,
+      "n": 1,
+      "p50_ms": 21.412582999999998,
+      "p95_ms": 21.412582999999998,
+      "p99_ms": 21.412582999999998
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Original copy is durably saved before the next operation": {
+    "completed": {
+      "max_ms": 6.3547910000000005,
+      "n": 2,
+      "p50_ms": 5.046082999999999,
+      "p95_ms": 6.3547910000000005,
+      "p99_ms": 6.3547910000000005
+    },
+    "failed": 0,
+    "samples": 2,
+    "timed_out": 0
+  },
+  "Terminal slice cancellation releases the draft and service": {
+    "completed": {
+      "max_ms": 0.000125,
+      "n": 2,
+      "p50_ms": 4.2e-05,
+      "p95_ms": 0.000125,
+      "p99_ms": 0.000125
+    },
+    "failed": 0,
+    "samples": 2,
+    "timed_out": 0
+  },
+  "Cancel replacement without saving": {
+    "completed": {
+      "max_ms": 4.1e-05,
+      "n": 1,
+      "p50_ms": 4.1e-05,
+      "p95_ms": 4.1e-05,
+      "p99_ms": 4.1e-05
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Prepare a real preceding edit for stale command capture": {
+    "completed": {
+      "max_ms": 8.190125,
+      "n": 3,
+      "p50_ms": 7.4422500000000005,
+      "p95_ms": 8.190125,
+      "p99_ms": 8.190125
+    },
+    "failed": 0,
+    "samples": 3,
+    "timed_out": 0
+  },
+  "Concurrent Undo changes revision while placement command text remains open": {
+    "completed": {
+      "max_ms": 13.150834,
+      "n": 3,
+      "p50_ms": 9.123417,
+      "p95_ms": 13.150834,
+      "p99_ms": 13.150834
+    },
+    "failed": 0,
+    "samples": 3,
+    "timed_out": 0
+  },
+  "Split finishes while its completion is withheld": {
+    "completed": {
+      "max_ms": 6.631708,
+      "n": 1,
+      "p50_ms": 6.631708,
+      "p95_ms": 6.631708,
+      "p99_ms": 6.631708
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Late split completion selects Your edit": {
+    "completed": {
+      "max_ms": 1.227416,
+      "n": 1,
+      "p50_ms": 1.227416,
+      "p95_ms": 1.227416,
+      "p99_ms": 1.227416
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Release writer before grouping the nested replacement fixture": {
+    "completed": {
+      "max_ms": 1.973916,
+      "n": 1,
+      "p50_ms": 1.973916,
+      "p95_ms": 1.973916,
+      "p99_ms": 1.973916
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Reopen nested replacement fixture": {
+    "completed": {
+      "max_ms": 23.170125,
+      "n": 1,
+      "p50_ms": 23.170125,
+      "p95_ms": 23.170125,
+      "p99_ms": 23.170125
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "The project service returns the exact edited copy": {
+    "completed": {
+      "max_ms": 7.282334,
+      "n": 1,
+      "p50_ms": 7.282334,
+      "p95_ms": 7.282334,
+      "p99_ms": 7.282334
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Open the copied slice at an unsupported Repeat interior": {
+    "completed": {
+      "max_ms": 0.0,
+      "n": 1,
+      "p50_ms": 0.0,
+      "p95_ms": 0.0,
+      "p99_ms": 0.0
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Cancel edited placement without saving": {
+    "completed": {
+      "max_ms": 0.00025,
+      "n": 16,
+      "p50_ms": 4.1e-05,
+      "p95_ms": 0.00025,
+      "p99_ms": 0.00025
+    },
+    "failed": 0,
+    "samples": 16,
+    "timed_out": 0
+  },
+  "Capture a current-revision Edit range for Move": {
+    "completed": {
+      "max_ms": 9.857292,
+      "n": 8,
+      "p50_ms": 8.590667,
+      "p95_ms": 9.857292,
+      "p99_ms": 9.857292
+    },
+    "failed": 0,
+    "samples": 8,
+    "timed_out": 0
+  },
+  "A history-neutral query republishes the retained Move receipt": {
+    "completed": {
+      "max_ms": 0.6086670000000001,
+      "n": 1,
+      "p50_ms": 0.6086670000000001,
+      "p95_ms": 0.6086670000000001,
+      "p99_ms": 0.6086670000000001
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Close the Move project before testing old-session replies": {
+    "completed": {
+      "max_ms": 1.817833,
+      "n": 1,
+      "p50_ms": 1.817833,
+      "p95_ms": 1.817833,
+      "p99_ms": 1.817833
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Reopen the saved Move in a new project session": {
+    "completed": {
+      "max_ms": 35.630833,
+      "n": 1,
+      "p50_ms": 35.630833,
+      "p95_ms": 35.630833,
+      "p99_ms": 35.630833
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Wait for the revision-bound Move rejection": {
+    "completed": {
+      "max_ms": 0.678542,
+      "n": 4,
+      "p50_ms": 0.5293329999999999,
+      "p95_ms": 0.678542,
+      "p99_ms": 0.678542
+    },
+    "failed": 0,
+    "samples": 4,
+    "timed_out": 0
+  },
+  "Move's final picture finishes after audio End": {
+    "completed": {
+      "max_ms": 0.625833,
+      "n": 2,
+      "p50_ms": 0.426209,
+      "p95_ms": 0.625833,
+      "p99_ms": 0.625833
+    },
+    "failed": 0,
+    "samples": 2,
+    "timed_out": 0
+  },
+  "Release the writer before grouping the Move fixture": {
+    "completed": {
+      "max_ms": 2.343,
+      "n": 1,
+      "p50_ms": 2.343,
+      "p95_ms": 2.343,
+      "p99_ms": 2.343
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Reopen the grouped Move fixture through the service": {
+    "completed": {
+      "max_ms": 35.413958,
+      "n": 1,
+      "p50_ms": 35.413958,
+      "p95_ms": 35.413958,
+      "p99_ms": 35.413958
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Capture the entire right group child through production y": {
+    "completed": {
+      "max_ms": 11.796833,
+      "n": 1,
+      "p50_ms": 11.796833,
+      "p95_ms": 11.796833,
+      "p99_ms": 11.796833
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "The late matching Move receipt restores the destination scope and range": {
+    "completed": {
+      "max_ms": 2.2925,
+      "n": 1,
+      "p50_ms": 2.2925,
+      "p95_ms": 2.2925,
+      "p99_ms": 2.2925
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Republish the already-consumed cross-parent Move receipt": {
+    "completed": {
+      "max_ms": 0.8991669999999999,
+      "n": 1,
+      "p50_ms": 0.8991669999999999,
+      "p95_ms": 0.8991669999999999,
+      "p99_ms": 0.8991669999999999
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Copy a positive whole child for refinement and Move recovery": {
+    "completed": {
+      "max_ms": 14.992500000000001,
+      "n": 1,
+      "p50_ms": 14.992500000000001,
+      "p95_ms": 14.992500000000001,
+      "p99_ms": 14.992500000000001
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Restoring the exact child extent rejects a no-op Move at its current position": {
+    "completed": {
+      "max_ms": 5.505667,
+      "n": 1,
+      "p50_ms": 5.505667,
+      "p95_ms": 5.505667,
+      "p99_ms": 5.505667
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Release the writer before installing empty groups": {
+    "completed": {
+      "max_ms": 2.139875,
+      "n": 1,
+      "p50_ms": 2.139875,
+      "p95_ms": 2.139875,
+      "p99_ms": 2.139875
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Open three adjacent empty groups beside the qualified Original": {
+    "completed": {
+      "max_ms": 20.2805,
+      "n": 1,
+      "p50_ms": 20.2805,
+      "p95_ms": 20.2805,
+      "p99_ms": 20.2805
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Capture the exact middle empty child through production yy": {
+    "completed": {
+      "max_ms": 10.275334,
+      "n": 1,
+      "p50_ms": 10.275334,
+      "p95_ms": 10.275334,
+      "p99_ms": 10.275334
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Copy an empty child in a completely zero-time edit": {
+    "completed": {
+      "max_ms": 5.948791999999999,
+      "n": 1,
+      "p50_ms": 5.948791999999999,
+      "p95_ms": 5.948791999999999,
+      "p99_ms": 5.948791999999999
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Release the writer before saving the exact empty forest": {
+    "completed": {
+      "max_ms": 1.986958,
+      "n": 1,
+      "p50_ms": 1.986958,
+      "p95_ms": 1.986958,
+      "p99_ms": 1.986958
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Restore the persisted empty forest in a fresh project session": {
+    "completed": {
+      "max_ms": 36.3825,
+      "n": 1,
+      "p50_ms": 36.3825,
+      "p95_ms": 36.3825,
+      "p99_ms": 36.3825
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Save the exact Original range in named register w": {
+    "completed": {
+      "max_ms": 5.917999999999999,
+      "n": 1,
+      "p50_ms": 5.917999999999999,
+      "p95_ms": 5.917999999999999,
+      "p99_ms": 5.917999999999999
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "The recorded placement and proposal abandonment complete": {
+    "completed": {
+      "max_ms": 0.00025,
+      "n": 5,
+      "p50_ms": 0.000167,
+      "p95_ms": 0.00025,
+      "p99_ms": 0.00025
+    },
+    "failed": 0,
+    "samples": 5,
+    "timed_out": 0
+  },
+  "The recorded placement program is saved": {
+    "completed": {
+      "max_ms": 7.651833,
+      "n": 3,
+      "p50_ms": 6.3120829999999994,
+      "p95_ms": 7.651833,
+      "p99_ms": 7.651833
+    },
+    "failed": 0,
+    "samples": 3,
+    "timed_out": 0
+  },
+  "Save the exact linked Edit range in register v": {
+    "completed": {
+      "max_ms": 5.335042,
+      "n": 1,
+      "p50_ms": 5.335042,
+      "p95_ms": 5.335042,
+      "p99_ms": 5.335042
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  }
+}

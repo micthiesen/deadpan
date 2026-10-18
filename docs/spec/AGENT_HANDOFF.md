@@ -4,15 +4,25 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Current continuation, 2026-10-18
 
-The older priority list below predates the completed whole-Original macro and
-Original mark work. See [whole-Original macros](../qualification/whole-original-macros-2026-10-16.md)
-and [Original mark macros](../qualification/original-mark-macros-2026-10-18.md).
-Remaining DP-06 instructions include Place slice Apply and ranged/one-play
-framing. Place slice should record existing `Paste` or `ReplaceSelection` only
-when its displayed proposal exactly matches that semantic resolution; Move,
-refined source endpoints, interior/nonadjacent insertion and Object-selected
-insertion need explicit recording refusals. Keep captured entry context and
-commit once through semantic Apply, not CommitSplice followed by append.
+The older priority list below predates completed whole-Original, Original mark
+and eligible Place slice macro work. See [whole-Original macros](../qualification/whole-original-macros-2026-10-16.md),
+[Original mark macros](../qualification/original-mark-macros-2026-10-18.md)
+and [Place slice macros](../qualification/place-slice-macros-2026-10-18.md).
+Place slice now records `Paste` or `ReplaceSelection` only when the shown
+proposal exactly matches that semantic resolution. Move, refined endpoints,
+interior/nonadjacent insertion and Object-selected insertion refuse recording.
+Apply retains captured context and commits once through semantic Apply.
+
+Next DP-06 framing work: ordinary ranged `:zoom`/`:creep` intent, followed by
+one-play invocation authority. Original-center projection can use the staged
+`RenderPlan::picture`, shared `picture::render_layers` and CPU-only
+`PictureGeometry::composed(...).source_to_input`, with qualified provider
+metadata and the native Q32 quantization, without decoding. Move the pure builder into
+core, resolve ranges on each staged document, and use a shared host resolver
+for exact current pose and center through nested/captured framing. Preserve the
+native path/follow refusals. One-play work additionally needs scoped context,
+staged isolation remapping and scoped receipts; merely allowing the inspector
+in ordinary macro capture would edit the shared definition incorrectly.
 
 Nested FollowSpeed pauses are implemented and qualified on this Mac; nested
 pitch processing, selected/mixed play choices and the other DP-07 limits remain.

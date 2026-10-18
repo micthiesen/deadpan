@@ -1,0 +1,23 @@
+{
+  "base_revision": "22dd2e08",
+  "sha256": {
+    "crates/deadpan-app/src/preview/harness/splice.rs": "2d81ea4fee64e73eed81d5fdc9ced02106be6caef7339365aea262ab4790a430",
+    "crates/deadpan-app/src/preview/harness/splice/macros.rs": "61907a6185a7115462458a5889311a865680b9988b55ced7ec8ee4f3fed5c168",
+    "crates/deadpan-app/src/preview/harness/splice/replacement.rs": "586ab5975e9074412fe0b8c66f06de989fb01652b717cb1e72028771eb257201",
+    "crates/deadpan-app/src/preview/macros.rs": "4be07cc5fdf36c609abea3a7137391f465e02bf78b7ffd35c3576de8a65bf213",
+    "crates/deadpan-app/src/preview/macros/tests.rs": "59ecacb53ecc43db397f378ee2fd026b28b09af688b0aac68280886d607c8c67",
+    "crates/deadpan-app/src/preview/macros/tests/splice.rs": "fa4712770c98e591e207d669cd1ea97bfc483c18828a2884c2a4c495cb62a430",
+    "crates/deadpan-app/src/preview/splice.rs": "c9118468aeaf449d037669b4a0c96a023f48f1871918d17d7cad74690c4de040",
+    "crates/deadpan-app/src/preview/splice/controls.rs": "acdc705b87d6e2f18c531b4e276592ee8f54d902d0e118746be8bf8227c0d30a",
+    "crates/deadpan-app/src/project/tests/splice_equivalence.rs": "b152546795e8db107c4afe426299495ef323fef0b018669284e10f4b881a8076",
+    "Cargo.lock": "cb6aeba21bb9ae6e0bdcf97642e75b4f3185643654269c10d4e004f8ec401af8",
+    "rust-toolchain.toml": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc"
+  },
+  "environment": {
+    "hardware": "Apple M5 Max",
+    "macOS": "26.5.2 (25F84)",
+    "Rust": "1.97.1",
+    "power": "AC attached, battery 80%, not charging"
+  },
+  "ffmpeg_prefix": "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix"
+}

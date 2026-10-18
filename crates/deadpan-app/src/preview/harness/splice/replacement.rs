@@ -551,8 +551,30 @@ fn command_capture(d: &mut Driver<'_>) -> Result<(), String> {
     // A command opened in Original captures the absence of an Edit destination.
     d.key(Key::Escape)?;
     d.chord(&[Key::G, Key::G, Key::Num2, Key::Num0, Key::L])?;
+    let workspace = d
+        .app()
+        .workspace
+        .as_ref()
+        .ok_or("No delayed split workspace")?;
+    let request = ProjectRequest::Edit {
+        expected_session: workspace.session,
+        expected_revision: workspace.document.revision_id().clone(),
+        cursor: ProjectFrame(20),
+        scope: d.app().sequence_scope.clone(),
+        edit: ProjectEdit::Split {
+            node: d
+                .app()
+                .selected_beat
+                .clone()
+                .ok_or("No delayed split target")?,
+            at: deadpan_core::FrameDuration::new(20).map_err(|error| error.to_string())?,
+        },
+    };
+    // Submit the concurrent typed edit directly: a pending native semantic Split
+    // deliberately blocks new command entry until its receipt is consumed.
+    // This fixture needs a late service continuation while command entry stays live.
     d.app_mut().feedback.hold_project_updates = true;
-    d.key(Key::S)?;
+    d.app().service.submit(request)?;
     d.wait_for("Split finishes while its completion is withheld", |app| {
         !app.service.is_busy()
     })?;

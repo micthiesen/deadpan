@@ -11,6 +11,15 @@ The [specification](spec/DEADPAN_SPEC.md), [design targets](design/README.md) an
 
 ## Current status
 
+The `place-slice` replay now covers semantic macro recording of eligible named
+register placements, explicit Interior/refinement/Move refusals, exact typed
+programs, replay at new selected children and backward ranges, and one-step
+Undo. Final release visual/performance runs each pass 904 checks plus the
+Kestrel audit. Inspected 960×640 captures show the complete recording
+explanations and exact proposed frame before Apply. Real-media service tests
+compare preview pictures/framing and bit-identical canonical PCM with semantic
+Apply. See [Place slice macro qualification](qualification/place-slice-macros-2026-10-18.md).
+
 The `marks` replay now covers recording and replaying Original marks at measured
 PTS, native Back/Forward, retained independent Edit ranges, delayed and cancelled
 calls, and coalesced headless saves. Final release visual/performance runs each

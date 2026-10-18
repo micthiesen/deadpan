@@ -1,0 +1,16 @@
+{
+  "scope": "Place slice recording production paths and tests, read-only independent review",
+  "reviewer": "/root/nested_review",
+  "cargo_owner": "/root only",
+  "findings": [],
+  "conclusions": [
+    "Capture requires the same immutable source, bank version, scope, revision, selected child and entry selection.",
+    "Adjacent slots are compared structurally, including equal-time seams; Object identity remains exact, including zero-time Objects.",
+    "Move, refinement and interior false equivalences refuse without closing the draft.",
+    "Draft closure restores entry context, abandons the preview and submits semantic Apply without a second CommitSplice write.",
+    "Ordinary unrecorded placement remains on its existing path.",
+    "Equivalence normalization permits only fresh preview owner IDs and outer revision identity; all framing clocks and PCM fields remain exact.",
+    "Follow-up review cleared the delayed typed Split fixture: it retains a real revision-bound edit and late continuation while capturing absent Edit authority on Original.",
+    "The native replay derives the literal before slot and exercises production recording, Apply, save, replay at new targets and exact one-Undo restoration."
+  ]
+}

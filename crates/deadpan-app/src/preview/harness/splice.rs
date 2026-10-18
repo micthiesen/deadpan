@@ -8,6 +8,7 @@ use egui::{Key, Modifiers};
 
 mod edited;
 mod input;
+mod macros;
 mod move_range;
 mod replacement;
 mod structural_capture;
@@ -227,6 +228,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     edited::run(d)?;
     move_range::run(d)?;
     structural_capture::run(d)?;
+    macros::run(d)?;
     Ok(())
 }
 

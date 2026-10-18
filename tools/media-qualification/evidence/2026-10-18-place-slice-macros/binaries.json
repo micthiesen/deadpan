@@ -1,0 +1,11 @@
+{
+  "sha256": {
+    "deadpan-app": "1fb8bffdfa44322a630fed1df4366132044bb10e83c85952d7c654a6d8fede07",
+    "deadpan-cli": "212d3b4ca4cb440a3bb659023cfef15a7ced68ebab3029b34754294bf1ce5bc8",
+    "deadpan-media-worker": "a072f82a294153361e548eefc6e2a00ec239d8abefde127b8f9381f1a4db6944",
+    "deadpan-track": "63f95135ade0dbb4438a73549a0d5a632f976c13b7c7c037c7902c5b29e41aa5",
+    "deadpan-transcribe": "4369d0f1917b3ac2e7692dad72b29ebaf55521dc75369a4be7200a2a9bbafe2e"
+  },
+  "app_source": "22dd2e088b525225e0d61472b70f5e8dc88aefda plus retained source diff",
+  "other_executables": "Unchanged private helpers from Original mark qualification; their source identities are retained there. The new recording uses in-process project service requests."
+}
