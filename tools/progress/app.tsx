@@ -1,4 +1,4 @@
-// Deadpan progress dashboard, published as a Shared Artifact.
+// Deadpan progress dashboard, published as an artifact on artifacts.boo.
 // data/progress.json is kept in sync with docs/progress.json on GitHub main by the
 // artifact's live data source; this file only renders it. See docs/PROGRESS.md.
 import { useState } from "react";
