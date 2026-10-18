@@ -89,6 +89,7 @@ fn fixture() -> ProjectDocument {
 }
 fn context(selected: Option<&str>) -> SemanticContext {
     SemanticContext {
+        original: None,
         parent: node("group"),
         cursor: ProjectFrame(0),
         selected_child: selected.map(node),

@@ -1,8 +1,9 @@
 # Semantic macros
 
 `q` plus a letter records a Macro in a project register. While recording, `q`
-saves. Escape clears an existing Visual selection and records that action;
-without a selection it cancels the draft. `@` plus a letter runs a saved Macro;
+saves. On Your edit, Escape clears an existing Visual selection and records that
+action; without a selection it cancels the draft. On Original it cancels the
+draft and retains the independent Edit selection. `@` plus a letter runs a saved Macro;
 `3@a` runs `a` three times in one transaction. The command equivalents are
 `:record a`, `:record-stop`, `:record-cancel` and `:macro a 3`.
 Both binding families are configurable through `macro.record` and
@@ -25,8 +26,8 @@ every value exactly refuses instead of clamping), `Slip` of the selected Source
 by exact whole frames (Apply in the `:slip` preview while recording, with the
 same refusal), Edit letter marks (`SetMark`, owned by the child at the cursor
 exactly as `m{letter}` saves it) and jumps (`JumpMark`, recorded once the native
-jump lands; a mark in another group or on the Original cancels recording, and a
-run refuses one outside its group), `PlaceSound` of the selected catalog sound
+jump lands; crossing the active clock or Edit group cancels recording, and a
+run refuses a jump outside that context), `PlaceSound` of the selected catalog sound
 at the Edit cursor (`,s`, the same root event the native key places; it must
 end inside the edit), `SetHoldAudio` with silence (`:hold-silence`) or the
 room-tone sheet's exact Original sample span (its Apply while recording), local
@@ -75,6 +76,37 @@ See [copy/paste qualification](qualification/macro-reuse-2026-10-02.md) for
 checks, rendered captures, retained failures and remaining limits.
 
 ## Recording and input ownership
+
+### Original frame navigation and marks
+
+Recording and execution use the active invocation clock. On Original, the
+supported instructions are relative frame motion, start/end motion, letter
+mark saves and jumps, and named calls containing those instructions. The same
+saved intent resolves against Original when invoked there and against Your
+edit when invoked there. A program never stores the recording's cursor or PTS.
+
+The host admits the Original's committed qualification and measured picture
+index. Navigation uses presentation ordinals, including the terminal video
+boundary. Mark saves store the exact measured video PTS, or terminal video end,
+as a root-owned Source anchor. Jumps require a bound mark on that same Original
+and an exact measured boundary. Wrong-clock, unresolved, ambiguous or conflicting
+named marks refuse atomically. The native recorded jump retains the ordinary
+Ctrl O/Ctrl I trail.
+
+Original actions preserve the separate Edit cursor, ordinary Sequence scope,
+selected beat and oriented Visual selection. An active Original moment selection
+refuses recording or execution; other Original instructions and retained Edit
+occurrence scopes also refuse explicitly. Escape cancels Original recording
+without clearing the inactive Edit range. The recording hint names Original.
+
+Mark-only commits publish separate revision proofs so retained Edit selection,
+jump metadata and the accepted picture survive consecutive native or headless
+saves, including coalesced updates. These proofs never authorize a remote
+cursor continuation. A delayed native receipt cannot reclaim navigation after
+the captured Original cursor, source, qualification or selection changed.
+See [Original mark qualification](qualification/original-mark-macros-2026-10-18.md).
+
+### Whole-Original reuse
 
 Whole-Original reuse (`InsertOriginal`, `,i` or `:insert`) inserts the complete
 measured A/V union after the selected direct child, or appends to the current
@@ -219,6 +251,9 @@ parameters after commit, including during recording. Recording `.` stores that
 effective instruction; later playback does not consult session repeat state. Bank-only
 operations preserve the candidate. See [semantic repeat](SEMANTIC_REPEAT.md).
 
+Original mark-only runs and Applies also preserve the candidate, as native
+standalone mark saves do.
+
 ## Headless inspection, save and run
 
 The standalone CLI and `deadpan-app --headless` share these commands:
@@ -271,6 +306,22 @@ revision; omission allocates it on the host.
   "count": 3
 }
 ```
+
+To invoke on Original, `run` and `apply` accept an optional `original` object:
+
+```json
+{
+  "asset": "ORIGINAL_ASSET_ID",
+  "qualification": "COMMITTED_QUALIFICATION_ID",
+  "ordinal": 40
+}
+```
+
+The host loads its committed measured index; the request cannot supply one.
+`parent`, `cursor`, `selected_child` and `visual_selection` still describe the
+independent retained Edit context. Results return `original`, and each trace
+entry returns `before_original` and `after_original`. Omission or `null` uses
+the Edit clock.
 
 `selected_child` is independent of `cursor`. Omission or `null` means no selected
 beat. A motion may establish one. Whole-beat yank requires one; seam paste also

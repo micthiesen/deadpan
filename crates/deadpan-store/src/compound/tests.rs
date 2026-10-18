@@ -710,6 +710,7 @@ fn planned_macro_multi_cut_has_one_undo_and_final_copy_survives_reopen_and_body_
     let plan = plan_semantic(
         &initial,
         &SemanticContext {
+            original: None,
             parent: node("root"),
             cursor: ProjectFrame(0),
             selected_child: None,

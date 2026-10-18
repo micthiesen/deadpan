@@ -97,6 +97,7 @@ fn run(
     request(
         update,
         MacroOperation::Run {
+            original: None,
             register: RegisterName::new(register).unwrap(),
             parent: node(parent),
             cursor: ProjectFrame(cursor),
@@ -849,6 +850,7 @@ fn unread_native_save_motion_and_copy_continuations_block_remote_mutation() {
                     count: 2,
                     scope: SequenceScope::default(),
                     context: SemanticContext {
+                        original: None,
                         parent: node("root"),
                         cursor: ProjectFrame(3),
                         selected_child: None,

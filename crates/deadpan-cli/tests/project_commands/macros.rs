@@ -6,6 +6,8 @@ use deadpan_core::{RegisterName, RegisterValue, RevisionId};
 mod apply;
 #[path = "macros/groups.rs"]
 mod groups;
+#[path = "macros/original.rs"]
+mod original;
 
 fn state(package: &Path) -> Result<Vec<String>> {
     let database = rusqlite::Connection::open(package.join("project.sqlite"))?;

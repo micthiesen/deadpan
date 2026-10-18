@@ -1,0 +1,326 @@
+{
+  "ui_frame_cpu_ms": {
+    "completed": {
+      "max_ms": 6.346667,
+      "n": 1498,
+      "p50_ms": 0.31187499999999996,
+      "p95_ms": 0.9833750000000001,
+      "p99_ms": 1.20575
+    },
+    "failed": 0,
+    "samples": 1498,
+    "timed_out": 0
+  },
+  "ui_composition_submit_cpu_ms": {
+    "completed": {
+      "max_ms": 0.631459,
+      "n": 1498,
+      "p50_ms": 0.10575,
+      "p95_ms": 0.141375,
+      "p99_ms": 0.153625
+    },
+    "failed": 0,
+    "samples": 1498,
+    "timed_out": 0
+  },
+  "ui_composition_complete_ms": {
+    "completed": {
+      "max_ms": 9.238875,
+      "n": 1498,
+      "p50_ms": 0.37616700000000003,
+      "p95_ms": 0.510375,
+      "p99_ms": 0.639334
+    },
+    "failed": 0,
+    "samples": 1498,
+    "timed_out": 0
+  },
+  "input_to_state_ms": {
+    "completed": {
+      "max_ms": 2.03075,
+      "n": 417,
+      "p50_ms": 0.433625,
+      "p95_ms": 1.05175,
+      "p99_ms": 1.352042
+    },
+    "failed": 0,
+    "samples": 417,
+    "timed_out": 0
+  },
+  "input_to_commit_ms": {
+    "completed": {
+      "max_ms": 83.2505,
+      "n": 4,
+      "p50_ms": 8.677583,
+      "p95_ms": 83.2505,
+      "p99_ms": 83.2505
+    },
+    "failed": 0,
+    "samples": 4,
+    "timed_out": 0
+  },
+  "request_to_decode_delivery_ms": {
+    "completed": {
+      "max_ms": 7.382750000000001,
+      "n": 124,
+      "p50_ms": 0.8516659999999999,
+      "p95_ms": 1.692917,
+      "p99_ms": 2.2912079999999997
+    },
+    "failed": 0,
+    "samples": 124,
+    "timed_out": 0
+  },
+  "request_to_worker_start_ms": {
+    "completed": {
+      "max_ms": 0.021542000000000002,
+      "n": 124,
+      "p50_ms": 0.006625,
+      "p95_ms": 0.008124999999999999,
+      "p99_ms": 0.01025
+    },
+    "failed": 0,
+    "samples": 124,
+    "timed_out": 0
+  },
+  "worker_execution_ms": {
+    "completed": {
+      "max_ms": 2.551292,
+      "n": 124,
+      "p50_ms": 0.07020900000000001,
+      "p95_ms": 0.47758300000000004,
+      "p99_ms": 1.9942499999999999
+    },
+    "failed": 0,
+    "samples": 124,
+    "timed_out": 0
+  },
+  "worker_publication_delay_ms": {
+    "completed": {
+      "max_ms": 0.00020800000000000001,
+      "n": 124,
+      "p50_ms": 8.3e-05,
+      "p95_ms": 0.000167,
+      "p99_ms": 0.00020800000000000001
+    },
+    "failed": 0,
+    "samples": 124,
+    "timed_out": 0
+  },
+  "publication_to_decode_delivery_ms": {
+    "completed": {
+      "max_ms": 4.821,
+      "n": 124,
+      "p50_ms": 0.7078749999999999,
+      "p95_ms": 1.40825,
+      "p99_ms": 2.178417
+    },
+    "failed": 0,
+    "samples": 124,
+    "timed_out": 0
+  },
+  "request_to_picture_submission_ms": {
+    "completed": {
+      "max_ms": 8.045250000000001,
+      "n": 124,
+      "p50_ms": 1.119458,
+      "p95_ms": 1.9400000000000002,
+      "p99_ms": 2.522667
+    },
+    "failed": 0,
+    "samples": 124,
+    "timed_out": 0
+  },
+  "request_to_picture_complete_ms": {
+    "completed": {
+      "max_ms": 8.87125,
+      "n": 124,
+      "p50_ms": 1.635417,
+      "p95_ms": 2.402708,
+      "p99_ms": 3.03025
+    },
+    "failed": 0,
+    "samples": 124,
+    "timed_out": 0
+  },
+  "input_to_picture_complete_ms": {
+    "completed": {
+      "max_ms": 92.12925,
+      "n": 50,
+      "p50_ms": 1.673542,
+      "p95_ms": 10.263292,
+      "p99_ms": 92.12925
+    },
+    "failed": 0,
+    "samples": 50,
+    "timed_out": 0
+  },
+  "Original initialized and displayed": {
+    "completed": {
+      "max_ms": 91.522667,
+      "n": 1,
+      "p50_ms": 91.522667,
+      "p95_ms": 91.522667,
+      "p99_ms": 91.522667
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Project and picture settled": {
+    "completed": {
+      "max_ms": 1.8384580000000001,
+      "n": 120,
+      "p50_ms": 0.746,
+      "p95_ms": 0.8428749999999999,
+      "p99_ms": 0.947333
+    },
+    "failed": 0,
+    "samples": 120,
+    "timed_out": 0
+  },
+  "Committed revision changed": {
+    "completed": {
+      "max_ms": 12.518125,
+      "n": 67,
+      "p50_ms": 5.534166,
+      "p95_ms": 9.358333,
+      "p99_ms": 12.518125
+    },
+    "failed": 0,
+    "samples": 67,
+    "timed_out": 0
+  },
+  "Mark navigation completes": {
+    "completed": {
+      "max_ms": 1.753708,
+      "n": 9,
+      "p50_ms": 1.211208,
+      "p95_ms": 1.753708,
+      "p99_ms": 1.753708
+    },
+    "failed": 0,
+    "samples": 9,
+    "timed_out": 0
+  },
+  "Mark resolves while UI delivery is withheld": {
+    "completed": {
+      "max_ms": 0.0,
+      "n": 1,
+      "p50_ms": 0.0,
+      "p95_ms": 0.0,
+      "p99_ms": 0.0
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Missing mark reports its exact error": {
+    "completed": {
+      "max_ms": 0.76975,
+      "n": 1,
+      "p50_ms": 0.76975,
+      "p95_ms": 0.76975,
+      "p99_ms": 0.76975
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Marks closes after explicit Escape": {
+    "completed": {
+      "max_ms": 8.3e-05,
+      "n": 2,
+      "p50_ms": 0.0,
+      "p95_ms": 8.3e-05,
+      "p99_ms": 8.3e-05
+    },
+    "failed": 0,
+    "samples": 2,
+    "timed_out": 0
+  },
+  "Close releases the marked project": {
+    "completed": {
+      "max_ms": 14.402834,
+      "n": 1,
+      "p50_ms": 14.402834,
+      "p95_ms": 14.402834,
+      "p99_ms": 14.402834
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Reopen loads persistent marks": {
+    "completed": {
+      "max_ms": 25.6265,
+      "n": 1,
+      "p50_ms": 25.6265,
+      "p95_ms": 25.6265,
+      "p99_ms": 25.6265
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "The macro action is acknowledged": {
+    "completed": {
+      "max_ms": 0.000167,
+      "n": 9,
+      "p50_ms": 8.3e-05,
+      "p95_ms": 0.000167,
+      "p99_ms": 0.000167
+    },
+    "failed": 0,
+    "samples": 9,
+    "timed_out": 0
+  },
+  "Macro r is saved": {
+    "completed": {
+      "max_ms": 4.914042,
+      "n": 1,
+      "p50_ms": 4.914042,
+      "p95_ms": 4.914042,
+      "p99_ms": 4.914042
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Original macro o is saved": {
+    "completed": {
+      "max_ms": 4.503,
+      "n": 1,
+      "p50_ms": 4.503,
+      "p95_ms": 4.503,
+      "p99_ms": 4.503
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Original motion macro n is saved": {
+    "completed": {
+      "max_ms": 4.938332999999999,
+      "n": 1,
+      "p50_ms": 4.938332999999999,
+      "p95_ms": 4.938332999999999,
+      "p99_ms": 4.938332999999999
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Both headless mark saves are visible": {
+    "completed": {
+      "max_ms": 0.00020800000000000001,
+      "n": 1,
+      "p50_ms": 0.00020800000000000001,
+      "p95_ms": 0.00020800000000000001,
+      "p99_ms": 0.00020800000000000001
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  }
+}

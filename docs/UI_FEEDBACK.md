@@ -11,6 +11,15 @@ The [specification](spec/DEADPAN_SPEC.md), [design targets](design/README.md) an
 
 ## Current status
 
+The `marks` replay now covers recording and replaying Original marks at measured
+PTS, native Back/Forward, retained independent Edit ranges, delayed and cancelled
+calls, and coalesced headless saves. Final release visual/performance runs each
+pass 203 checks; the broader macro regression passes 401, all with the Kestrel
+audit. Inspected 960×640 captures corrected Edit-only recording hints and the
+Escape label. The service also prevents a later bank save from resurrecting an
+Original mark as an Edit-cursor continuation. See
+[Original mark qualification](qualification/original-mark-macros-2026-10-18.md).
+
 The `retime` replay now covers silent freeze and black pauses inside two live
 tape-speed stages, exact source PTS, retained Original cursor and complete
 Undo/Redo snapshots. Final release visual/performance runs each pass 36 checks

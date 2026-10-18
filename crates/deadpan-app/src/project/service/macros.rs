@@ -282,6 +282,7 @@ impl Service {
                             cursor: plan.context.cursor,
                             selected: plan.selected_child.clone(),
                             visual_selection: plan.context.visual_selection.clone(),
+                            original: plan.context.original.clone(),
                             committed: None,
                             refresh_error: None,
                         },
@@ -290,6 +291,7 @@ impl Service {
                             cursor: plan.context.cursor,
                             selected: plan.selected_child.clone(),
                             visual_selection: plan.context.visual_selection.clone(),
+                            original: plan.context.original.clone(),
                             committed: None,
                             refresh_error: None,
                         },
@@ -298,7 +300,11 @@ impl Service {
                 };
                 let Some(request) = &plan.request else {
                     self.saved_macro = Some((operation.clone(), receipt.clone()));
-                    self.message = Some(format!("{label} updated the Edit cursor and selection"));
+                    self.message = Some(if plan.context.original.is_some() {
+                        format!("{label} updated the Original cursor")
+                    } else {
+                        format!("{label} updated the Edit cursor and selection")
+                    });
                     self.error = None;
                     return Ok(receipt);
                 };
@@ -321,6 +327,15 @@ impl Service {
                     .map_err(display)?;
                 if let Some(saved) = &outcome.committed {
                     self.capture_preparation_notices(&saved.generation_preparation_notices);
+                    if plan.context.original.is_some() {
+                        self.preserve_semantic(&id.revision, &saved.revision_id);
+                        self.marks.record_metadata(
+                            id.session,
+                            &id.project,
+                            &id.revision,
+                            &saved.revision_id,
+                        );
+                    }
                 }
                 if let Some(saved) = &outcome.committed
                     && let Operation::Apply { instruction, .. } = operation
@@ -360,7 +375,10 @@ impl Service {
                 }
                 self.registers = Some(Arc::new(bank));
                 if let Some(committed) = &committed {
-                    self.committed = Some(committed.clone());
+                    // The Macro receipt retains durable success. Original
+                    // marks grant no generic Edit continuation, including in
+                    // later publications after a bank save replaces that receipt.
+                    self.committed = plan.context.original.is_none().then(|| committed.clone());
                 }
                 self.saved_macro = Some((operation.clone(), receipt.clone()));
                 #[cfg(test)]

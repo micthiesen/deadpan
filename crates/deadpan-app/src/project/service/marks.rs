@@ -113,6 +113,12 @@ impl Service {
             })
             .map_err(display)?;
         self.preserve_semantic(&request.id.revision, &committed.revision_id);
+        self.marks.record_metadata(
+            request.id.session,
+            &request.id.project,
+            &request.id.revision,
+            &committed.revision_id,
+        );
         let mut saved = contract::Saved {
             id: request.id.clone(),
             letter,

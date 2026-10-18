@@ -4,6 +4,8 @@ use super::*;
 use deadpan_core::{Anchor, Mark, MarkState};
 use egui::Key;
 
+mod original;
+
 pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     goto(d, 20)?;
     let old = d.app().capture_mark()?;
@@ -387,6 +389,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     painted(d, "Remove Z")?;
     d.key(Key::Escape)?;
     recorded_marks(d)?;
+    original::run(d)?;
     d.report.skipped.push("Marks use real project writes, anchor transforms and decoded pictures. Delayed service delivery and IME input are explicitly injected; physical key layouts, native IME and VoiceOver remain separate acceptance.".into());
     Ok(())
 }
@@ -409,6 +412,10 @@ fn has_mark(d: &Driver<'_>, letter: char) -> bool {
 }
 fn goto(d: &mut Driver<'_>, frame: u64) -> Result<(), String> {
     d.key(Key::Escape)?;
+    navigate(d, frame)
+}
+
+fn navigate(d: &mut Driver<'_>, frame: u64) -> Result<(), String> {
     d.chord(&[Key::G, Key::G])?;
     if frame > 0 {
         for digit in frame.to_string().chars() {

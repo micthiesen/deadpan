@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use deadpan_core::{
     NodeId, ProjectFrame, ProjectId, RevisionId, SemanticContext, SemanticInstruction,
-    SemanticProgram, SemanticVisualSelection,
+    SemanticOriginalContext, SemanticProgram, SemanticVisualSelection,
 };
 
 use super::{CommittedEdit, SequenceScope};
@@ -63,6 +63,7 @@ pub enum Outcome {
         cursor: ProjectFrame,
         selected: Option<NodeId>,
         visual_selection: Option<SemanticVisualSelection>,
+        original: Option<SemanticOriginalContext>,
         committed: Option<Box<CommittedEdit>>,
         refresh_error: Option<String>,
     },
@@ -71,6 +72,7 @@ pub enum Outcome {
         cursor: ProjectFrame,
         selected: Option<NodeId>,
         visual_selection: Option<SemanticVisualSelection>,
+        original: Option<SemanticOriginalContext>,
         committed: Option<Box<CommittedEdit>>,
         refresh_error: Option<String>,
     },
@@ -84,6 +86,15 @@ pub struct Receipt {
 }
 
 impl Receipt {
+    pub fn original(&self) -> Option<&SemanticOriginalContext> {
+        match &self.outcome {
+            Outcome::Executed { original, .. } | Outcome::Applied { original, .. } => {
+                original.as_ref()
+            }
+            Outcome::Saved { .. } => None,
+        }
+    }
+
     pub fn committed(&self) -> Option<&CommittedEdit> {
         match &self.outcome {
             Outcome::Executed { committed, .. } | Outcome::Applied { committed, .. } => {

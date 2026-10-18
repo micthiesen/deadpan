@@ -19,7 +19,7 @@ pub(super) struct CommandTarget {
 enum CapturedEdit {
     TimeOrBeat(Box<ProjectEdit>),
     Object {
-        capture: macros::Capture,
+        capture: Box<macros::Capture>,
         label: String,
     },
 }
@@ -46,7 +46,7 @@ impl DeadpanApp {
                 scope,
                 parent,
                 edit: CapturedEdit::Object {
-                    capture: self.capture_macro_target()?,
+                    capture: Box::new(self.capture_macro_target()?),
                     label: self
                         .edit_range_label()
                         .ok_or("The group selection changed.")?,
@@ -106,7 +106,7 @@ impl DeadpanApp {
                     )
                     .map(|register| deadpan_core::SemanticInstruction::CutSelection { register })
                     .map_err(|error| error.to_string());
-                self.apply_recorded_instruction(Ok(capture), instruction);
+                self.apply_recorded_instruction(Ok(*capture), instruction);
                 return;
             }
             other => other,

@@ -414,6 +414,20 @@ impl Service {
                     self.store.as_mut().ok_or_else(owner_changed)?,
                     &prepared,
                 )?;
+                if let Some(after) = &execution.committed_revision
+                    && prepared
+                        .plan
+                        .as_ref()
+                        .is_some_and(|plan| plan.context.original.is_some())
+                {
+                    self.marks.record_metadata(
+                        self.session,
+                        &request.project_id,
+                        &request.expected_revision,
+                        after,
+                    );
+                    self.preserve_semantic(&request.expected_revision, after);
+                }
                 if let Some(bank) = bank {
                     self.registers = Some(bank);
                 }
@@ -447,6 +461,12 @@ impl Service {
                         Command::SetMark { .. } | Command::DeleteMark { .. }
                     ) =>
                 {
+                    self.marks.record_metadata(
+                        self.session,
+                        &request.project_id,
+                        &request.expected_revision,
+                        revision,
+                    );
                     Some(&request.expected_revision)
                 }
                 _ => None,

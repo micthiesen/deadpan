@@ -14,6 +14,7 @@ fn applied(committed: bool) -> protocol::Receipt {
         },
         bank_version: if committed { 4 } else { 5 },
         outcome: protocol::Outcome::Applied {
+            original: None,
             scope: SequenceScope::default(),
             cursor: ProjectFrame(11),
             selected: selected.clone(),
@@ -85,6 +86,7 @@ fn recorded_paste_requires_the_authored_receipt_revision_even_when_cursor_did_no
 fn a_bank_only_named_call_uses_the_same_receipt_admission_as_a_recorded_yank() {
     let mut receipt = applied(false);
     receipt.outcome = protocol::Outcome::Executed {
+        original: None,
         register: 'a',
         count: 3,
         scope: SequenceScope::default(),

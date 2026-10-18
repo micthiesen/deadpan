@@ -2,6 +2,23 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
+## Current continuation, 2026-10-18
+
+The older priority list below predates the completed whole-Original macro and
+Original mark work. See [whole-Original macros](../qualification/whole-original-macros-2026-10-16.md)
+and [Original mark macros](../qualification/original-mark-macros-2026-10-18.md).
+Remaining DP-06 instructions include Place slice Apply and ranged/one-play
+framing. Place slice should record existing `Paste` or `ReplaceSelection` only
+when its displayed proposal exactly matches that semantic resolution; Move,
+refined source endpoints, interior/nonadjacent insertion and Object-selected
+insertion need explicit recording refusals. Keep captured entry context and
+commit once through semantic Apply, not CommitSplice followed by append.
+
+Nested FollowSpeed pauses are implemented and qualified on this Mac; nested
+pitch processing, selected/mixed play choices and the other DP-07 limits remain.
+[Requirements](../REQUIREMENTS.md) is still the status of record. No requirement
+or gate is complete because of these slices.
+
 ## Handoff for the next implementation agent, 2026-10-15
 
 Start here. [Requirements](../REQUIREMENTS.md) is the status of record; this

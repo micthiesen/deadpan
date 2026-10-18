@@ -1,0 +1,17 @@
+{
+  "scope": "Pure Original planner and measured-index admission; CLI/store atomicity; native recording, receipt ownership, mark metadata, scoped inspection, Escape and footer behavior",
+  "independent_review": "nested_review",
+  "resolved": [
+    "Coalesced mark-only publications retain a bounded run base and an admitted visible-head proof.",
+    "Recorded Original jumps use native Back/Forward and exact-position bookkeeping.",
+    "Remote mark-only revisions rebase nested inspection through the admitted actual visible revision.",
+    "Original authored success remains in its Macro receipt and metadata proof; generic Edit continuations cannot resurface after later bank saves.",
+    "Original Escape explicitly revokes pending cursor ownership even when no selection changes."
+  ],
+  "visual_review_corrections": [
+    "Original recording footer names its supported motion/mark/call actions and Escape cancellation.",
+    "Generic Escape no longer clears the independent Edit range when cancelling Original recording."
+  ],
+  "final_review": "No remaining findings in reviewed production changes. Final captures and real replay receipts verified by root.",
+  "verification_note": "Final release reports and source identities establish final behavior. The development replay is preparatory, before footer and final Escape corrections. Initial failed reports remain failures."
+}

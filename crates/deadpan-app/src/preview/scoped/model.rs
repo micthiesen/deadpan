@@ -5,7 +5,7 @@ use std::{collections::BTreeMap, ops::Range, sync::Arc};
 use deadpan_core::{
     ExactRatio, FrameDuration, InsertionBias, InstancePath, IterationId, MAX_DOCUMENT_DEPTH,
     NodeId, NodeKind, ProjectDocument, ProjectFrame, RepeatEditBranch, RepeatEditStep,
-    RepeatInstance, RepeatLayout, ScopedNodeTarget,
+    RepeatInstance, RepeatLayout, RevisionId, ScopedNodeTarget,
 };
 use deadpan_plan::RenderPlan;
 
@@ -172,15 +172,37 @@ impl State {
         if session != saved.id.session
             || document.project_id() != &saved.id.project
             || document.revision_id() != &saved.revision
-            || self.session != saved.id.session
-            || self.index.document.project_id() != &saved.id.project
         {
             return false;
         }
-        if self.index.document.revision_id() == &saved.revision {
+        self.rebase_metadata_in(session, document, plan, &saved.id.revision)
+    }
+
+    /// The caller has admitted the service's complete mark-only transition
+    /// from this actually displayed revision, possibly across coalesced saves.
+    pub fn rebase_mark_metadata(&mut self, workspace: &Workspace, before: &RevisionId) -> bool {
+        self.rebase_metadata_in(
+            workspace.session,
+            &workspace.document,
+            &workspace.plan,
+            before,
+        )
+    }
+
+    fn rebase_metadata_in(
+        &mut self,
+        session: u64,
+        document: &Arc<ProjectDocument>,
+        plan: &Arc<RenderPlan>,
+        before: &RevisionId,
+    ) -> bool {
+        if self.session != session || self.index.document.project_id() != document.project_id() {
+            return false;
+        }
+        if self.index.document.revision_id() == document.revision_id() {
             return true;
         }
-        if self.index.document.revision_id() != &saved.id.revision {
+        if self.index.document.revision_id() != before {
             return false;
         }
         let index = Arc::make_mut(&mut self.index);

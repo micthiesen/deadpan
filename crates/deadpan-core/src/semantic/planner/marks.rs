@@ -1,13 +1,13 @@
 //! Cursor-anchored annotations as semantic instructions: `m{letter}` saves
-//! the same native mark the editor key does, owned by the direct child at the
-//! Edit cursor, `'{letter}` moves to its resolved Edit boundary in the current
-//! group, and `,s` places a catalog sound at the cursor.
+//! the same native mark the editor key does on the invocation clock. Edit marks
+//! belong to the direct child at the cursor; measured Original marks belong to
+//! the root. Jumps retain that clock, and `,s` places sound only in Your edit.
 
 use super::*;
 use crate::{
     Anchor, AnchorIndex, AnchorLossPolicy, BoundaryAnchor, BoundarySelector, ExactRatio,
-    InsertionBias, InstancePath, MediaRole, NamedMarkTarget, ResolvedSelectionKind,
-    SelectionRequest,
+    InsertionBias, InstancePath, MarkState, MediaRole, NamedMarkTarget, ResolvedSelectionKind,
+    SelectionRequest, SourceMoment, SourceStream, SourceTimestamp,
 };
 
 impl<F, R, S, P> Planner<'_, F, R, S, P>
@@ -29,6 +29,72 @@ where
                 "mark {letter} conflicts with a named mark using its native key address"
             )));
         }
+        let (host, boundary) = if let Some(original) = &self.context.original {
+            let index = self
+                .original_index
+                .as_ref()
+                .ok_or_else(|| invalid("Original macros require a measured picture index"))?;
+            let ordinal = usize::try_from(original.ordinal.0)
+                .map_err(|_| invalid("Original mark ordinal is not representable"))?;
+            let terminal = ordinal == index.frames().len();
+            let ticks = if terminal {
+                index.terminal_end()
+            } else {
+                index
+                    .frames()
+                    .get(ordinal)
+                    .ok_or_else(|| {
+                        invalid("Original mark ordinal is outside its measured picture index")
+                    })?
+                    .pts
+            };
+            (
+                self.current.root().clone(),
+                BoundaryAnchor {
+                    coordinate: Anchor::Source {
+                        asset: original.asset.clone(),
+                        moment: SourceMoment::Timestamp {
+                            stream: SourceStream::Video,
+                            timestamp: SourceTimestamp {
+                                ticks,
+                                time_base: index.time_base(),
+                            },
+                        },
+                    },
+                    bias: if terminal {
+                        InsertionBias::Left
+                    } else {
+                        InsertionBias::Right
+                    },
+                },
+            )
+        } else {
+            self.edit_mark_boundary()?
+        };
+        self.charge_step(false)?;
+        let SemanticAllocation::ParameterEdit { new_revision } =
+            (self.allocate)(SemanticAllocationRequest::ParameterEdit {
+                step_index: self.steps.len(),
+            })?
+        else {
+            return Err(invalid("a mark requires a parameter allocation"));
+        };
+        self.reserve_revision(&new_revision)?;
+        self.commit_leaf(LeafEdit::new(
+            new_revision,
+            Command::SetMark {
+                id,
+                owner: host,
+                label: letter.to_string(),
+                boundary,
+                loss_policy: AnchorLossPolicy::KeepUnresolved,
+            },
+        )?)?;
+        self.trace[trace_index].resolved_parent = Some(self.context.parent.clone());
+        Ok(())
+    }
+
+    fn edit_mark_boundary(&self) -> Result<(NodeId, BoundaryAnchor), EditError> {
         let at = self.context.cursor;
         // The child containing the cursor, the last child at the group's end,
         // or a selected empty child exactly at the cursor; else the group.
@@ -54,40 +120,23 @@ where
         let position =
             at.0.checked_sub(start.0)
                 .ok_or_else(|| invalid("the mark precedes its host"))?;
-        self.charge_step(false)?;
-        let SemanticAllocation::ParameterEdit { new_revision } =
-            (self.allocate)(SemanticAllocationRequest::ParameterEdit {
-                step_index: self.steps.len(),
-            })?
-        else {
-            return Err(invalid("a mark requires a parameter allocation"));
-        };
-        self.reserve_revision(&new_revision)?;
-        self.commit_leaf(LeafEdit::new(
-            new_revision,
-            Command::SetMark {
-                id,
-                owner: host.clone(),
-                label: letter.to_string(),
-                boundary: BoundaryAnchor {
-                    coordinate: Anchor::Occurrence {
-                        instance: InstancePath {
-                            node: host,
-                            repeats: Vec::new(),
-                        },
-                        position: ExactRatio::integer(position),
+        Ok((
+            host.clone(),
+            BoundaryAnchor {
+                coordinate: Anchor::Occurrence {
+                    instance: InstancePath {
+                        node: host,
+                        repeats: Vec::new(),
                     },
-                    bias: if at == end {
-                        InsertionBias::Left
-                    } else {
-                        InsertionBias::Right
-                    },
+                    position: ExactRatio::integer(position),
                 },
-                loss_policy: AnchorLossPolicy::KeepUnresolved,
+                bias: if at == end {
+                    InsertionBias::Left
+                } else {
+                    InsertionBias::Right
+                },
             },
-        )?)?;
-        self.trace[trace_index].resolved_parent = Some(self.context.parent.clone());
-        Ok(())
+        ))
     }
 
     pub(super) fn jump_mark(&mut self, letter: char) -> Result<(), EditError> {
@@ -97,6 +146,14 @@ where
             .marks()
             .get(&id)
             .ok_or_else(|| invalid(&format!("mark {letter} has not been set")))?;
+        if mark.label != letter.to_string() {
+            return Err(invalid(&format!(
+                "mark {letter} conflicts with a named mark using its native key address"
+            )));
+        }
+        if self.context.original.is_some() {
+            return self.jump_original_mark(letter);
+        }
         if mark
             .bindings()
             .any(|binding| matches!(binding.coordinate, Anchor::Source { .. }))
@@ -142,6 +199,67 @@ where
         {
             *head = cursor;
         }
+        Ok(())
+    }
+
+    fn jump_original_mark(&mut self, letter: char) -> Result<(), EditError> {
+        let original = self
+            .context
+            .original
+            .as_ref()
+            .ok_or_else(|| invalid("Original context is missing"))?;
+        let index = self
+            .original_index
+            .as_ref()
+            .ok_or_else(|| invalid("Original macros require a measured picture index"))?;
+        let mark = &self.current.marks()[&crate::semantic::native_mark_id(letter)?];
+        let mut ordinal = None;
+        for binding in mark
+            .bindings()
+            .filter(|binding| binding.state == MarkState::Bound)
+        {
+            let Anchor::Source {
+                asset,
+                moment:
+                    SourceMoment::Timestamp {
+                        stream: SourceStream::Video,
+                        timestamp,
+                    },
+            } = binding.coordinate
+            else {
+                return Err(invalid(
+                    "an Original macro mark requires unambiguous measured video bindings",
+                ));
+            };
+            if asset != original.asset || timestamp.time_base != index.time_base() {
+                return Err(invalid(
+                    "the mark differs from the invocation Original or its measured timestamp clock",
+                ));
+            }
+            let candidate = if timestamp.ticks == index.terminal_end() {
+                index.frames().len()
+            } else {
+                index
+                    .frames()
+                    .binary_search_by_key(&timestamp.ticks, |frame| frame.pts)
+                    .map_err(|_| {
+                        invalid("Original mark timestamp is absent from the measured index")
+                    })?
+            };
+            if ordinal.is_some_and(|previous| previous != candidate) {
+                return Err(invalid("the mark resolves to distinct Original boundaries"));
+            }
+            ordinal = Some(candidate);
+        }
+        let ordinal = ordinal.ok_or_else(|| invalid("the Original mark has no bound location"))?;
+        self.context
+            .original
+            .as_mut()
+            .ok_or_else(|| invalid("Original context is missing"))?
+            .ordinal = crate::SourceFrameId(
+            u64::try_from(ordinal)
+                .map_err(|_| invalid("Original mark ordinal is not representable"))?,
+        );
         Ok(())
     }
 

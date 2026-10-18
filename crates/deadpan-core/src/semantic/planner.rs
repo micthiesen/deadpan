@@ -19,6 +19,7 @@ use crate::{
 };
 
 use super::{MAX_SEMANTIC_CALL_DEPTH, MAX_SEMANTIC_INSTRUCTION_FUEL};
+use original::validate_original_context;
 
 mod beat_object;
 mod content;
@@ -27,6 +28,7 @@ mod group;
 mod pause;
 pub use pause::copied_moment_audio;
 mod marks;
+mod original;
 mod repeat;
 mod retime;
 mod role_repeat;
@@ -65,6 +67,9 @@ pub struct SemanticCaptureProvenance {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SemanticContext {
+    /// Invocation on the measured Original clock. Edit state below remains
+    /// independent and is retained by Original navigation and mark operations.
+    pub original: Option<SemanticOriginalContext>,
     pub parent: NodeId,
     /// Absolute Edit boundary, including either endpoint of the ordinary scope.
     pub cursor: ProjectFrame,
@@ -72,6 +77,14 @@ pub struct SemanticContext {
     /// no selected beat, including when nonempty children surround the cursor.
     pub selected_child: Option<NodeId>,
     pub visual_selection: Option<SemanticVisualSelection>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SemanticOriginalContext {
+    pub asset: crate::AssetId,
+    pub qualification: crate::SourceQualificationId,
+    pub ordinal: crate::SourceFrameId,
 }
 
 /// Frozen register contents and the version the host must admit at commit.
@@ -403,6 +416,36 @@ pub fn plan_semantic_with_speech(
     resolve_speech: impl FnMut(&ProjectDocument) -> Result<Arc<SpeechTimeline>, EditError>,
     resolve_pause: impl FnMut(&ProjectDocument, PauseSite) -> Result<PauseProvider, EditError>,
 ) -> Result<SemanticPlan, EditError> {
+    plan_semantic_with_original(
+        document,
+        context,
+        program,
+        registers,
+        new_revision,
+        allocate,
+        resolve_original,
+        resolve_speech,
+        resolve_pause,
+        None,
+    )
+}
+
+/// Plan against a qualified measured Original index when the invocation context
+/// selects that clock. The retained Edit scope must still be an ordinary
+/// Sequence; Original instructions never modify its cursor or selection.
+#[allow(clippy::too_many_arguments)]
+pub fn plan_semantic_with_original(
+    document: &ProjectDocument,
+    context: &SemanticContext,
+    program: &SemanticProgram,
+    registers: SemanticRegisterBank<'_>,
+    new_revision: RevisionId,
+    allocate: impl FnMut(SemanticAllocationRequest) -> Result<SemanticAllocation, EditError>,
+    resolve_original: impl FnMut(&ProjectDocument, &RegisterValue) -> Result<SourceNode, EditError>,
+    resolve_speech: impl FnMut(&ProjectDocument) -> Result<Arc<SpeechTimeline>, EditError>,
+    resolve_pause: impl FnMut(&ProjectDocument, PauseSite) -> Result<PauseProvider, EditError>,
+    original_index: Option<Arc<crate::SourceFrameIndex>>,
+) -> Result<SemanticPlan, EditError> {
     program.validate()?;
     document.validate()?;
     crate::command::check_revision(
@@ -412,6 +455,7 @@ pub fn plan_semantic_with_speech(
         &new_revision,
     )?;
     let bounds = validate_context(document, context)?;
+    validate_original_context(document, context, original_index.as_deref())?;
     let document_bytes = wire::size(document, MAX_DOCUMENT_JSON_BYTES)?;
     let mut revisions: BTreeSet<_> = document
         .audio_bindings()
@@ -463,6 +507,7 @@ pub fn plan_semantic_with_speech(
         resolve_speech,
         resolve_pause,
         speech: None,
+        original_index,
     };
     planner.execute(program)?;
     let selected_child = planner.context.selected_child.clone();
@@ -526,6 +571,7 @@ struct Planner<'a, F, R, S, P> {
     resolve_pause: P,
     /// Speech for the staged document after this many resolved steps.
     speech: Option<(usize, Arc<SpeechTimeline>)>,
+    original_index: Option<Arc<crate::SourceFrameIndex>>,
 }
 
 impl<F, R, S, P> Planner<'_, F, R, S, P>
@@ -585,6 +631,28 @@ where
                 captured_child_label: None,
                 depth: self.calls.len(),
             });
+            if self.context.original.is_some() {
+                match instruction {
+                    SemanticInstruction::MoveFrames { forward, count } => {
+                        self.move_original(*forward, count.get())?;
+                    }
+                    SemanticInstruction::MoveScope { end } => {
+                        self.move_original_scope(*end)?;
+                    }
+                    SemanticInstruction::SetMark { letter } => self.set_mark(index, *letter)?,
+                    SemanticInstruction::JumpMark { letter } => self.jump_mark(*letter)?,
+                    SemanticInstruction::Call { register, count } => {
+                        self.call(*register, count.get())?;
+                    }
+                    _ => {
+                        return Err(invalid(
+                            "this macro instruction requires Your edit; Original macros support frame navigation and letter marks",
+                        ));
+                    }
+                }
+                self.trace[index].after = self.context.clone();
+                continue;
+            }
             if instruction.uses_speech() {
                 self.ensure_speech()?;
             }

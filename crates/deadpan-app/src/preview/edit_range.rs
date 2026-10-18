@@ -124,12 +124,27 @@ impl Selection {
     /// A typed mark-only receipt proves the timeline and this scope unchanged.
     /// Never rebase through an unrelated edit or a stale visible workspace.
     pub(super) fn rebase_mark(&mut self, saved: &crate::project::marks::Saved) {
+        self.rebase_revision(
+            saved.id.session,
+            &saved.id.project,
+            &saved.id.revision,
+            &saved.revision,
+        );
+    }
+
+    pub(super) fn rebase_revision(
+        &mut self,
+        session: u64,
+        project: &deadpan_core::ProjectId,
+        before: &RevisionId,
+        after: &RevisionId,
+    ) {
         if let Some(identity) = &mut self.identity
-            && identity.session == saved.id.session
-            && identity.project == saved.id.project
-            && identity.revision == saved.id.revision
+            && identity.session == session
+            && &identity.project == project
+            && &identity.revision == before
         {
-            identity.revision = saved.revision.clone();
+            identity.revision = after.clone();
         }
     }
     fn reconcile(&mut self, identity: Option<Identity>) {

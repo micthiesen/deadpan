@@ -1,0 +1,22 @@
+{
+  "recording-original.png": {
+    "label": "Recording marks on Original with an independent Edit selection",
+    "frame": 1277,
+    "source": "marks-123.png"
+  },
+  "replayed-original.png": {
+    "label": "Replayed Original mark at the new invocation with Edit retained",
+    "frame": 1343,
+    "source": "marks-124.png"
+  },
+  "delayed-original.png": {
+    "label": "Original macro navigation retained after a delayed completion",
+    "frame": 1365,
+    "source": "marks-125.png"
+  },
+  "headless-marks.png": {
+    "label": "Two headless Original mark saves retain the independent native selection",
+    "frame": 1368,
+    "source": "marks-126.png"
+  }
+}

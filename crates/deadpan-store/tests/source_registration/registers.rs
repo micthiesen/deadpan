@@ -41,6 +41,7 @@ fn qualified_range_repeat_stages_exact_wrapper_capture_and_reopens_with_one_undo
     let plan = plan_semantic(
         &before,
         &SemanticContext {
+            original: None,
             parent: before.root().clone(),
             cursor: ProjectFrame(1),
             selected_child: None,
@@ -429,6 +430,7 @@ fn typed_selectors_capture_qualified_source_and_staged_range_with_one_history_en
     let plan = plan_semantic(
         &before,
         &SemanticContext {
+            original: None,
             parent: before.root().clone(),
             cursor: ProjectFrame(3),
             selected_child: Some(NodeId::new("clip")?),
@@ -572,6 +574,7 @@ fn counted_semantic_original_paste_keeps_exact_mapping_through_undo_and_reopen()
     let plan = plan_semantic(
         &before,
         &SemanticContext {
+            original: None,
             parent: before.root().clone(),
             cursor: ProjectFrame(0),
             selected_child: None,
@@ -645,6 +648,7 @@ fn counted_semantic_original_paste_keeps_exact_mapping_through_undo_and_reopen()
     let plan = plan_semantic(
         &before_replace,
         &SemanticContext {
+            original: None,
             parent: before_replace.root().clone(),
             cursor: ProjectFrame(0),
             selected_child: None,

@@ -903,6 +903,42 @@ fn assert_same_inspector_navigation(before: &State, after: &State) {
 }
 
 #[test]
+fn coalesced_mark_metadata_preserves_nested_inspection_from_the_actual_visible_revision() {
+    let document = mark_navigation_fixture();
+    let mut state = state(document.clone(), "outer", 8);
+    state.switch_play_in(2).unwrap();
+    state.enter_in().unwrap();
+    state.select_in(1).unwrap();
+    state.enter_in().unwrap();
+    state.switch_play_in(2).unwrap();
+    let current = state.clone();
+    let (marked, _, _) = mark_transition(&document, set_navigation_mark(), "first-mark");
+    let (latest, plan, _) = mark_transition(
+        &marked,
+        Command::DeleteMark {
+            id: MarkId::new("native-mark-a").unwrap(),
+        },
+        "second-mark",
+    );
+    // The service proof admits the entire run, not just its last immediate edge.
+    assert!(!state.rebase_metadata_in(17, &latest, &plan, marked.revision_id()));
+    assert_same_inspector_navigation(&current, &state);
+    assert!(state.rebase_metadata_in(17, &latest, &plan, document.revision_id()));
+    assert_same_inspector_navigation(&current, &state);
+    assert!(state.matches_identity(17, &latest));
+    assert!(Arc::ptr_eq(&state.index.document, &latest));
+    assert!(Arc::ptr_eq(&state.index.plan, &plan));
+    let rebased = state.index.clone();
+    assert!(state.rebase_metadata_in(17, &latest, &plan, document.revision_id()));
+    assert!(Arc::ptr_eq(&rebased, &state.index));
+    assert!(
+        !current
+            .clone()
+            .rebase_metadata_in(18, &latest, &plan, document.revision_id())
+    );
+}
+
+#[test]
 fn exact_mark_transition_preserves_current_nested_navigation_and_repeated_receipt_is_noop() {
     let document = mark_navigation_fixture();
     let mut state = state(document.clone(), "outer", 8);

@@ -67,9 +67,22 @@ pub(super) struct State {
     name: String,
     focus_pending: bool,
     return_focus: Option<(u64, Pane)>,
+    metadata_seen: Option<crate::project::marks::MetadataRevision>,
 }
 
 impl State {
+    pub(super) fn admits_metadata(
+        &self,
+        proof: &crate::project::marks::MetadataRevision,
+        before: &Workspace,
+        after: &Workspace,
+    ) -> bool {
+        proof.matches(after)
+            && before.session == proof.session
+            && before.document.project_id() == &proof.project
+            && proof.admits_previous(before.document.revision_id(), self.metadata_seen.as_ref())
+    }
+
     pub fn is_pending(&self) -> bool {
         self.pending.is_some()
     }
@@ -113,17 +126,32 @@ impl State {
     }
 
     fn rebase(&mut self, saved: &Saved) {
+        self.rebase_revision(
+            saved.id.session,
+            &saved.id.project,
+            &saved.id.revision,
+            &saved.revision,
+        );
+    }
+
+    pub(super) fn rebase_revision(
+        &mut self,
+        session: u64,
+        project: &ProjectId,
+        before: &RevisionId,
+        after: &RevisionId,
+    ) {
         let update_capture = |capture: &mut Capture| {
-            if same_base(&capture.id, &saved.id) {
-                capture.id.revision = saved.revision.clone();
+            if capture.id.session == session
+                && &capture.id.project == project
+                && &capture.id.revision == before
+            {
+                capture.id.revision = after.clone();
             }
         };
         self.history.for_each_mut(|entry| {
-            if entry.session == saved.id.session
-                && entry.project == saved.id.project
-                && entry.revision == saved.id.revision
-            {
-                entry.revision = saved.revision.clone();
+            if entry.session == session && &entry.project == project && &entry.revision == before {
+                entry.revision = after.clone();
             }
         });
         if let Some((capture, _)) = &mut self.exact {
@@ -142,6 +170,21 @@ fn same_base(left: &Id, right: &Id) -> bool {
 }
 
 impl Capture {
+    pub(super) fn original_context(&self) -> Option<deadpan_core::SemanticOriginalContext> {
+        match &self.location {
+            Location::Original {
+                asset,
+                qualification,
+                ordinal,
+            } => Some(deadpan_core::SemanticOriginalContext {
+                asset: asset.clone(),
+                qualification: qualification.clone(),
+                ordinal: SourceFrameId(*ordinal),
+            }),
+            Location::Edit { .. } => None,
+        }
+    }
+
     fn same_position(&self, other: &Self) -> bool {
         same_base(&self.id, &other.id) && self.location == other.location
     }
@@ -273,6 +316,11 @@ impl DeadpanApp {
         // instruction; a jump records itself once it lands (below).
         if self.macros.recording() {
             match (&capture.location, action) {
+                (Location::Original { .. }, Action::SetMark(letter)) => {
+                    let instruction = deadpan_core::SemanticInstruction::SetMark { letter };
+                    self.apply_recorded_instruction(self.capture_macro_target(), Ok(instruction));
+                    return;
+                }
                 (Location::Edit { .. }, Action::SetMark(letter)) => {
                     let target = self.capture_macro_target();
                     self.apply_recorded_instruction(
@@ -282,6 +330,7 @@ impl DeadpanApp {
                     return;
                 }
                 (Location::Edit { .. }, Action::JumpMark(_)) => {}
+                (Location::Original { .. }, Action::JumpMark(_)) => {}
                 _ => {
                     self.error = Some("A macro records Edit marks and jumps only. Save or cancel recording first.".into());
                     return;
@@ -320,7 +369,36 @@ impl DeadpanApp {
         }
     }
 
-    pub(super) fn rebase_mark_metadata(&mut self, update: &Update) {
+    pub(super) fn rebase_mark_metadata(
+        &mut self,
+        update: &Update,
+        metadata_from: Option<&RevisionId>,
+    ) {
+        if let Some(proof) = &update.metadata {
+            if self
+                .workspace
+                .as_ref()
+                .is_some_and(|workspace| proof.matches(workspace))
+            {
+                if let Some(before) = metadata_from {
+                    self.edit_range.rebase_revision(
+                        proof.session,
+                        &proof.project,
+                        before,
+                        &proof.after,
+                    );
+                    self.marks
+                        .rebase_revision(proof.session, &proof.project, before, &proof.after);
+                }
+                // Seeing the current head proves membership even when this is
+                // the first installed workspace. It does not authorize rebasing
+                // selection state from an unknown earlier revision.
+                if self.marks.metadata_seen.as_ref() != Some(proof) {
+                    self.marks.metadata_seen = Some(proof.clone());
+                }
+            }
+            return;
+        }
         let Some(saved) = &update.saved else {
             return;
         };
@@ -380,7 +458,24 @@ impl DeadpanApp {
                         Operation::Jump { letter },
                         Location::Edit { scope, .. },
                         ResolvedLocation::Edit { scope: landed, .. },
-                    ) if self.macros.recording() => Some((*letter, scope == landed)),
+                    ) if self.macros.recording() => Some((*letter, scope == landed, "group")),
+                    (
+                        Operation::Jump { letter },
+                        Location::Original {
+                            asset,
+                            qualification,
+                            ..
+                        },
+                        ResolvedLocation::Original {
+                            asset: landed,
+                            qualification: current,
+                            ..
+                        },
+                    ) if self.macros.recording() => Some((
+                        *letter,
+                        asset == landed && qualification == current,
+                        "Original",
+                    )),
                     _ => None,
                 };
                 if let Err(error) = self.apply_jump(&destination, context) {
@@ -388,11 +483,13 @@ impl DeadpanApp {
                     return;
                 }
                 match recorded {
-                    Some((letter, true)) => self
+                    Some((letter, true, _)) => self
                         .record_macro_local(deadpan_core::SemanticInstruction::JumpMark { letter }),
-                    Some((_, false)) => {
+                    Some((_, false, domain)) => {
                         self.cancel_macro_recording();
-                        self.message = Some("Macro recording cancelled: the mark is in another group, and a macro stays in its group. The previous macro is unchanged.".into());
+                        self.message = Some(format!(
+                            "Macro recording cancelled: the mark is outside this {domain}. The previous macro is unchanged."
+                        ));
                     }
                     None => {}
                 }

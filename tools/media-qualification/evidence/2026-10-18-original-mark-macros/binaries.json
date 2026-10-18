@@ -1,0 +1,11 @@
+{
+  "sha256": {
+    "deadpan-app": "d917dddfb391a1af51a48fa5c608e1b8b61d5fdf49d153f7195c33a39e1a0995",
+    "deadpan-cli": "212d3b4ca4cb440a3bb659023cfef15a7ced68ebab3029b34754294bf1ce5bc8",
+    "deadpan-media-worker": "a072f82a294153361e548eefc6e2a00ec239d8abefde127b8f9381f1a4db6944",
+    "deadpan-track": "63f95135ade0dbb4438a73549a0d5a632f976c13b7c7c037c7902c5b29e41aa5",
+    "deadpan-transcribe": "4369d0f1917b3ac2e7692dad72b29ebaf55521dc75369a4be7200a2a9bbafe2e"
+  },
+  "app_source": "637553a2791c9a2c1f63004e2a325b3ff4955d7f plus retained source diff",
+  "other_executables": "Unchanged prior private binaries from nested-speed qualification; source identities retained there. No headless CLI process is used for the new in-process live Macro requests."
+}

@@ -11,6 +11,7 @@ mod explode;
 mod gag_edit;
 mod group;
 mod objects;
+mod original;
 mod pause;
 mod repeat;
 mod retime;
@@ -66,6 +67,7 @@ fn fixture(frames: i64) -> ProjectDocument {
 }
 fn context(parent: &str, cursor: i64) -> SemanticContext {
     SemanticContext {
+        original: None,
         parent: node(parent),
         cursor: ProjectFrame(cursor),
         selected_child: None,
@@ -884,6 +886,7 @@ fn cumulative_document_and_capture_budgets_refuse_before_another_leaf_allocation
             },
             resolve_original: no_original,
             resolve_speech: |_: &ProjectDocument| Err(speech_unavailable()),
+            original_index: None,
             resolve_pause: |_: &ProjectDocument, _: super::PauseSite| {
                 Err(super::pause_unavailable())
             },

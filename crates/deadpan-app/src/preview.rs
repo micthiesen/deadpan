@@ -785,6 +785,12 @@ impl DeadpanApp {
                 });
             self.reconcile_repeat_prefix();
             self.prepare_macro_update(&mut update);
+            let mark_metadata_save = update.marks.metadata.as_ref().is_some_and(|proof| {
+                self.workspace
+                    .as_ref()
+                    .zip(update.workspace.as_ref())
+                    .is_some_and(|(before, after)| self.marks.admits_metadata(proof, before, after))
+            });
             if let Some(saved) = &update.marks.saved
                 && saved.needs_refresh(update.workspace.as_deref())
                 && let Some(warning) = &saved.refresh_error
@@ -912,6 +918,9 @@ impl DeadpanApp {
                     .as_ref()
                     .and_then(|commit| commit.scoped.as_ref()),
                 update.marks.saved.as_ref(),
+                mark_metadata_save
+                    .then_some(old_revision.as_ref())
+                    .flatten(),
                 saved_target.as_ref(),
                 saved_interpretation,
             );
@@ -1082,7 +1091,8 @@ impl DeadpanApp {
                 completion = selection::Completion::None;
             }
             let committed_selection = completion == selection::Completion::Edit;
-            let preserve_picture = saved_interpretation.is_some()
+            let preserve_picture = mark_metadata_save
+                || saved_interpretation.is_some()
                 || committed_selection
                     && old_session == new_session
                     && update
@@ -1141,7 +1151,12 @@ impl DeadpanApp {
             self.sequence_cursor = self.sequence_cursor.min(self.sequence_length());
             self.source_cursor = self.source_cursor.min(self.source_length());
             self.reconcile_moment();
-            self.rebase_mark_metadata(&update.marks);
+            self.rebase_mark_metadata(
+                &update.marks,
+                mark_metadata_save
+                    .then_some(old_revision.as_ref())
+                    .flatten(),
+            );
             if let Some(saved) = saved_interpretation {
                 self.edit_range.rebase_source_interpretation(saved);
             }
@@ -2427,11 +2442,14 @@ impl DeadpanApp {
                 // Other Escape owners clear first; only an otherwise idle
                 // Escape leaves the AI preview. It never cancels generation.
                 let owned = self.escape_owned_elsewhere();
+                let original_recording = self.macros.recording_original();
                 self.record_macro_escape();
                 self.cancel_register_choice();
                 if !self.sound_focused() {
                     self.moment.cancel();
-                    self.edit_range.clear();
+                    if !original_recording {
+                        self.edit_range.clear();
+                    }
                 }
                 self.pause_playback();
                 self.command_open = false;
@@ -3864,7 +3882,7 @@ impl DeadpanApp {
                 if let Some(label) = self.macros.label() {
                     ui.colored_label(style::CURSOR, label);
                     style::key_hint(ui, &self.editor_key(EditorKey::MacroRecord), "save macro");
-                    style::key_hint(ui, "Esc", if self.edit_selection() == navigation::EditSelection::None || self.macros.is_pending() { "cancel recording" } else { "clear selection" });
+                    style::key_hint(ui, "Esc", if self.macros.recording_original() || self.edit_selection() == navigation::EditSelection::None || self.macros.is_pending() { "cancel recording" } else { "clear selection" });
                 }
                 if !self.command_open && !self.sound_focused() && self.pane != Pane::Sounds && !self.event_focused()
                     && ui.add(egui::Button::new(format!("Marks  {}", self.editor_pair(EditorKey::MarkSet, EditorKey::MarkJump, " / "))).small().wrap()).on_hover_text(format!("{} + letter saves this position; {} + letter returns. Browse with :marks.", self.editor_key(EditorKey::MarkSet), self.editor_key(EditorKey::MarkJump))).clicked()
@@ -3923,18 +3941,25 @@ impl DeadpanApp {
                     if self.macros.recording() {
                         // The way out of recording comes first; the footer keeps
                         // as many of the remaining keys as fit.
-                        let visual = self.edit_selection() != navigation::EditSelection::None;
+                        let original = self.macros.recording_original();
+                        let visual = !original && self.edit_selection() != navigation::EditSelection::None;
                         hints.push(("Esc".into(), if visual && !self.macros.is_pending() { "clear selection".into() } else { "cancel recording".into() }));
                         self.add_editor_hint(&mut hints, EditorKey::MacroRecord, "save macro");
                         self.add_editor_pair_hint(&mut hints, EditorKey::FramePrevious, EditorKey::FrameNext, " / ", "frame");
-                        self.add_editor_pair_hint(&mut hints, EditorKey::BeatNext, EditorKey::BeatPrevious, " / ", "beat");
-                        self.add_editor_pair_hint(&mut hints, EditorKey::First, EditorKey::Last, " / ", "group bounds");
-                        self.add_editor_hint(&mut hints, EditorKey::Visual, if self.edit_range.active { "finish range" } else { "start range" });
-                        self.add_editor_hint(&mut hints, if visual { EditorKey::CutRange } else { EditorKey::CutFrames }, if visual { "cut range" } else { "cut frames" });
-                        self.add_editor_hint(&mut hints, EditorKey::Copy, if visual { "copy range" } else { "copy beat" });
-                        self.add_editor_hint(&mut hints, EditorKey::Repeat, if visual { "repeat range" } else { "repeat beat" });
-                        self.add_editor_hint(&mut hints, EditorKey::Group, "name group");
-                        self.add_editor_pair_hint(&mut hints, EditorKey::PasteAfter, EditorKey::PasteBefore, " / ", if visual { "replace range" } else { "paste" });
+                        if original {
+                            self.add_editor_pair_hint(&mut hints, EditorKey::First, EditorKey::Last, " / ", "Original bounds");
+                            self.add_editor_hint(&mut hints, EditorKey::MarkSet, "+ letter: save mark");
+                            self.add_editor_hint(&mut hints, EditorKey::MarkJump, "+ letter: jump mark");
+                        } else {
+                            self.add_editor_pair_hint(&mut hints, EditorKey::BeatNext, EditorKey::BeatPrevious, " / ", "beat");
+                            self.add_editor_pair_hint(&mut hints, EditorKey::First, EditorKey::Last, " / ", "group bounds");
+                            self.add_editor_hint(&mut hints, EditorKey::Visual, if self.edit_range.active { "finish range" } else { "start range" });
+                            self.add_editor_hint(&mut hints, if visual { EditorKey::CutRange } else { EditorKey::CutFrames }, if visual { "cut range" } else { "cut frames" });
+                            self.add_editor_hint(&mut hints, EditorKey::Copy, if visual { "copy range" } else { "copy beat" });
+                            self.add_editor_hint(&mut hints, EditorKey::Repeat, if visual { "repeat range" } else { "repeat beat" });
+                            self.add_editor_hint(&mut hints, EditorKey::Group, "name group");
+                            self.add_editor_pair_hint(&mut hints, EditorKey::PasteAfter, EditorKey::PasteBefore, " / ", if visual { "replace range" } else { "paste" });
+                        }
                         self.add_editor_hint(&mut hints, EditorKey::MacroExecute, "+ letter: record call");
                     } else if self.sound_focused() {
                         self.add_editor_pair_hint(&mut hints, EditorKey::BeatNext, EditorKey::BeatPrevious, " ", "sound");

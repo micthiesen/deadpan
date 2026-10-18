@@ -17,6 +17,7 @@ pub(super) struct Capture {
     view: View,
     sound_focused: bool,
     event_focused: bool,
+    original_selection: Option<moment::Selection>,
 }
 
 impl Capture {
@@ -146,6 +147,18 @@ impl Capture {
             && app.capture_visual_selection().as_ref() == Ok(&self.context.visual_selection)
             && app.sound_focused() == self.sound_focused
             && app.event_focused() == self.event_focused
+            && self.context.original.as_ref().is_none_or(|original| {
+                app.source_cursor == original.ordinal.0
+                    && app.selected_source.as_ref() == Some(&original.asset)
+                    && app.raw_source.is_none()
+                    && self.original_selection.as_ref() == Some(&app.moment)
+                    && app.workspace.as_ref().is_some_and(|workspace| {
+                        workspace
+                            .sources
+                            .get(&original.asset)
+                            .is_some_and(|source| source.receipt.id() == &original.qualification)
+                    })
+            })
             && app.frame_delete_blocked().is_none()
     }
 
@@ -189,6 +202,12 @@ impl State {
         self.recording.is_some()
     }
 
+    pub fn recording_original(&self) -> bool {
+        self.recording
+            .as_ref()
+            .is_some_and(|recording| recording.expected.context.original.is_some())
+    }
+
     /// Replace the pending action's success message.
     pub fn set_summary(&mut self, summary: String) {
         if let Some(pending) = &mut self.pending {
@@ -202,6 +221,13 @@ impl State {
                 .recording
                 .as_ref()
                 .is_some_and(|recording| recording.cut.is_some())
+    }
+
+    #[cfg(feature = "ui-harness")]
+    pub fn pending_identity(&self) -> Option<protocol::Id> {
+        self.pending
+            .as_ref()
+            .map(|pending| pending.operation.id().clone())
     }
 
     pub fn recording_name(&self) -> Option<char> {
@@ -237,7 +263,24 @@ impl State {
 
 impl DeadpanApp {
     pub(super) fn capture_macro_target(&self) -> Result<Capture, String> {
-        self.capture_edit_target(true)
+        let mut captured = self.capture_edit_target(self.view != View::Source)?;
+        if self.view == View::Source {
+            if self.sound_focused() || self.event_focused() || self.pane == Pane::Sounds {
+                return Err("Focus Original before recording its marks and motions.".into());
+            }
+            if self.moment.active {
+                return Err(
+                    "Finish the Original Visual selection before recording marks and motions."
+                        .into(),
+                );
+            }
+            captured.context.original =
+                Some(self.capture_mark()?.original_context().ok_or(
+                    "Choose a registered Original before recording its marks and motions.",
+                )?);
+            captured.original_selection = Some(self.moment.clone());
+        }
+        Ok(captured)
     }
 
     pub(super) fn capture_original_insert_target(&self) -> Result<Capture, String> {
@@ -277,6 +320,7 @@ impl DeadpanApp {
             ),
             selected_child: self.selected_beat.clone(),
             visual_selection: self.capture_visual_selection()?,
+            original: None,
         };
         Ok(Capture {
             base,
@@ -290,6 +334,7 @@ impl DeadpanApp {
             view: self.view,
             sound_focused: self.sound_focused(),
             event_focused: self.event_focused(),
+            original_selection: None,
         })
     }
 
@@ -348,6 +393,26 @@ impl DeadpanApp {
         }
         if !self.macros.recording() {
             return true;
+        }
+        if self.macros.recording_original()
+            && !matches!(
+                action,
+                Action::Step { .. }
+                    | Action::First
+                    | Action::Last
+                    | Action::SetMark(_)
+                    | Action::JumpMark(_)
+                    | Action::MacroExecute { .. }
+                    | Action::MacroStop
+                    | Action::MacroCancel
+                    | Action::Command
+                    | Action::Escape
+                    | Action::Invalid(_)
+                    | Action::OfferInsert
+            )
+        {
+            self.error = Some("An Original macro records frame and boundary motions, marks, jumps and named calls. Save or cancel recording before another action.".into());
+            return false;
         }
         if !matches!(
             action,
@@ -617,10 +682,17 @@ impl DeadpanApp {
                         cut: None,
                     });
                     self.bindings.set_macro_recording(true);
-                    self.message = Some(format!(
-                        "Recording @{name}: motions, Visual selections, cuts, copies, pastes and named calls. {} saves; Esc clears a selection, otherwise cancels.",
-                        self.editor_key(EditorKey::MacroRecord)
-                    ));
+                    self.message = Some(if self.view == View::Source {
+                        format!(
+                            "Recording @{name} on Original: frame and boundary motions, marks, jumps and named calls. {} saves; Esc cancels.",
+                            self.editor_key(EditorKey::MacroRecord)
+                        )
+                    } else {
+                        format!(
+                            "Recording @{name}: motions, Visual selections, cuts, copies, pastes and named calls. {} saves; Esc clears a selection, otherwise cancels.",
+                            self.editor_key(EditorKey::MacroRecord)
+                        )
+                    });
                 }
                 Action::MacroExecute { register, count } => {
                     let instruction = SemanticInstruction::Call {
@@ -782,6 +854,13 @@ impl DeadpanApp {
 
     pub(super) fn record_macro_escape(&mut self) {
         if !self.macros.recording() {
+            if let Some(pending) = &mut self.macros.pending {
+                pending.owns_cursor = false;
+            }
+            return;
+        }
+        if self.macros.recording_original() {
+            self.cancel_macro_recording();
             if let Some(pending) = &mut self.macros.pending {
                 pending.owns_cursor = false;
             }
@@ -1191,7 +1270,7 @@ impl DeadpanApp {
                         workspace.document.revision_id(),
                     )
                 });
-                if owned && visible {
+                if owned && visible && receipt.original().is_none() {
                     update.committed = Some(commit.clone());
                 } else if update
                     .committed
@@ -1378,6 +1457,7 @@ impl DeadpanApp {
                         cursor,
                         selected,
                         visual_selection,
+                        original,
                         committed,
                         refresh_error,
                         ..
@@ -1387,6 +1467,7 @@ impl DeadpanApp {
                         cursor,
                         selected,
                         visual_selection,
+                        original,
                         committed,
                         refresh_error,
                     } => {
@@ -1403,6 +1484,37 @@ impl DeadpanApp {
                         if !pending.owns_cursor {
                             self.cancel_macro_recording();
                             self.message = Some("Action completed after the editing context changed. Its final cursor and selection were not applied.".into());
+                            return;
+                        }
+                        if let Some(original) = original {
+                            let admitted = self.workspace.as_ref().is_some_and(|workspace| {
+                                workspace
+                                    .sources
+                                    .get(&original.asset)
+                                    .is_some_and(|source| {
+                                        source.receipt.id() == &original.qualification
+                                            && source.video_index.as_ref().is_some_and(|index| {
+                                                original.ordinal.0 <= index.frames().len() as u64
+                                            })
+                                    })
+                            });
+                            if self.view != View::Source
+                                || self.selected_source.as_ref() != Some(&original.asset)
+                                || !admitted
+                            {
+                                self.cancel_macro_recording();
+                                self.message = Some("The Original macro completed, but its qualified source is no longer visible. Its cursor was not applied.".into());
+                                return;
+                            }
+                            let moved = self.source_cursor != original.ordinal.0;
+                            self.source_cursor = original.ordinal.0;
+                            if moved {
+                                self.request_picture(false);
+                            }
+                            if let Some(instruction) = pending.instruction {
+                                self.append_macro_instruction(instruction);
+                            }
+                            self.message = Some(completed_message);
                             return;
                         }
                         // Ownership was captured before receive installed the bank.

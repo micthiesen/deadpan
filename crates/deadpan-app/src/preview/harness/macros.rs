@@ -78,6 +78,7 @@ fn headless_macros(d: &mut Driver<'_>, baseline: &ProjectDocument) -> Result<(),
     let moved = remote_macro(
         d,
         Operation::Run {
+            original: None,
             register: register('h')?,
             parent: document(d)?.root().clone(),
             cursor: ProjectFrame(60),
@@ -106,6 +107,7 @@ fn headless_macros(d: &mut Driver<'_>, baseline: &ProjectDocument) -> Result<(),
     let executed = remote_macro(
         d,
         Operation::Run {
+            original: None,
             register: register('a')?,
             parent: document(d)?.root().clone(),
             cursor: ProjectFrame(60),
@@ -532,9 +534,11 @@ fn native_ownership(d: &mut Driver<'_>) -> Result<(), String> {
 
 fn captured_context(d: &mut Driver<'_>, baseline: &ProjectDocument) -> Result<(), String> {
     d.command("source")?;
+    d.key(Key::Escape)?;
+    d.key(Key::V)?;
     for prefix in [keys(&[Key::Q]), at_events()] {
         d.events(
-            "Enter a macro family while Original has no eligible Edit target",
+            "Enter a macro family during an unsupported Original Visual selection",
             prefix,
         )?;
         d.check(
@@ -555,6 +559,7 @@ fn captured_context(d: &mut Driver<'_>, baseline: &ProjectDocument) -> Result<()
             state(d),
         )?;
     }
+    d.key(Key::Escape)?;
     for finished in [false, true] {
         at(d, 20)?;
         d.key(Key::V)?;
@@ -782,7 +787,7 @@ fn at(d: &mut Driver<'_>, cursor: u64) -> Result<(), String> {
     )
 }
 
-fn execute(d: &mut Driver<'_>, name: char, count: Option<u32>) -> Result<(), String> {
+pub(super) fn execute(d: &mut Driver<'_>, name: char, count: Option<u32>) -> Result<(), String> {
     let mut events = count.map_or(Ok(Vec::new()), |count| count_keys(u64::from(count)))?;
     events.extend(at_events());
     let key = Key::from_name(&name.to_string()).ok_or("Invalid macro replay register key")?;

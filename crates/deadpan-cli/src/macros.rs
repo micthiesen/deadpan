@@ -6,8 +6,9 @@ use deadpan_core::{
     AssetId, AssetRecord, EditError, EditErrorCode, FrameRate, MarkId, NodeId,
     OccurrenceIdentities, ProjectDocument, ProjectFrame, ProjectId, RegisterName, RegisterValue,
     RevisionId, SemanticAllocation, SemanticAllocationRequest, SemanticContext,
-    SemanticInstruction, SemanticPlan, SemanticProgram, SemanticRegisterBank,
-    SemanticVisualSelection, SlicePasteIdentities, SourceNode, SplitIdentities,
+    SemanticInstruction, SemanticOriginalContext, SemanticPlan, SemanticProgram,
+    SemanticRegisterBank, SemanticVisualSelection, SlicePasteIdentities, SourceNode,
+    SplitIdentities,
 };
 use deadpan_store::{AccessMode, CompoundPreview, ProjectStore, registers::RegisterBank};
 use serde::{Deserialize, Serialize};
@@ -45,6 +46,8 @@ pub enum Operation {
         selected_child: Option<NodeId>,
         #[serde(default)]
         visual_selection: Option<SemanticVisualSelection>,
+        #[serde(default)]
+        original: Option<SemanticOriginalContext>,
         count: NonZeroU32,
         #[serde(default)]
         new_revision: Option<RevisionId>,
@@ -61,6 +64,8 @@ pub enum Operation {
         selected_child: Option<NodeId>,
         #[serde(default)]
         visual_selection: Option<SemanticVisualSelection>,
+        #[serde(default)]
+        original: Option<SemanticOriginalContext>,
         #[serde(default)]
         new_revision: Option<RevisionId>,
     },
@@ -225,6 +230,7 @@ pub fn prepare(store: &ProjectStore, request: &Request) -> Result<Prepared, Live
             cursor,
             selected_child,
             visual_selection,
+            original,
             count,
             new_revision,
         } => {
@@ -242,6 +248,7 @@ pub fn prepare(store: &ProjectStore, request: &Request) -> Result<Prepared, Live
                     cursor: *cursor,
                     selected_child: selected_child.clone(),
                     visual_selection: visual_selection.clone(),
+                    original: original.clone(),
                 },
                 &program,
                 new_revision.as_ref(),
@@ -270,6 +277,7 @@ pub fn prepare(store: &ProjectStore, request: &Request) -> Result<Prepared, Live
             cursor,
             selected_child,
             visual_selection,
+            original,
             new_revision,
         } => plan_and_preview(
             store,
@@ -280,6 +288,7 @@ pub fn prepare(store: &ProjectStore, request: &Request) -> Result<Prepared, Live
                 cursor: *cursor,
                 selected_child: selected_child.clone(),
                 visual_selection: visual_selection.clone(),
+                original: original.clone(),
             },
             program,
             new_revision.as_ref(),
@@ -343,7 +352,12 @@ pub fn plan_program(
     let mut speech: Option<Result<crate::speech::StoredSpeech, EditError>> = None;
     // Measured picture indexes for pause pictures, loaded once per asset.
     let mut indexes: Vec<(deadpan_core::AssetId, Arc<deadpan_core::SourceFrameIndex>)> = Vec::new();
-    let result = deadpan_core::plan_semantic_with_speech(
+    let original_index = context
+        .original
+        .as_ref()
+        .map(|original| qualified_original_index(store, document, original))
+        .transpose()?;
+    let result = deadpan_core::plan_semantic_with_original(
         document,
         context,
         program,
@@ -402,8 +416,67 @@ pub fn plan_program(
             })
             .map_err(|error| pause_error(&error))
         },
+        original_index,
     );
     result.map_err(|error| source_error.unwrap_or_else(|| edit_error(error)))
+}
+
+#[cfg(any(target_os = "macos", target_os = "linux"))]
+fn qualified_original_index(
+    store: &ProjectStore,
+    document: &ProjectDocument,
+    original: &SemanticOriginalContext,
+) -> Result<Arc<deadpan_core::SourceFrameIndex>, LiveError> {
+    let unavailable = |message| LiveError::new("OriginalUnavailable", message);
+    let record = document
+        .assets()
+        .get(&original.asset)
+        .ok_or_else(|| unavailable("Original asset is absent from this revision"))?;
+    if record.source_qualification.as_ref() != Some(&original.qualification) {
+        return Err(unavailable(
+            "Original invocation qualification differs from this revision",
+        ));
+    }
+    let receipt = store
+        .source_qualification(&original.qualification)
+        .map_err(LiveError::store)?;
+    if receipt
+        .asset_record(record.label.clone())
+        .map_err(LiveError::store)?
+        != *record
+    {
+        return Err(unavailable("Original differs from its saved qualification"));
+    }
+    let index = receipt
+        .snapshot()
+        .video()
+        .ok_or_else(|| unavailable("Original has no qualified picture index"))?
+        .index()
+        .index();
+    // Rebind only the authored alias. PTS, duration, decode hints and terminal
+    // provenance come intact from the one committed qualification read above.
+    Ok(Arc::new(
+        deadpan_core::SourceFrameIndex::new(
+            original.asset.clone(),
+            index.time_base(),
+            index.frames().to_vec(),
+            index.terminal_end(),
+            index.terminal_provenance(),
+        )
+        .map_err(|error| LiveError::new("OriginalUnavailable", error.to_string()))?,
+    ))
+}
+
+#[cfg(not(any(target_os = "macos", target_os = "linux")))]
+fn qualified_original_index(
+    _: &ProjectStore,
+    _: &ProjectDocument,
+    _: &SemanticOriginalContext,
+) -> Result<Arc<deadpan_core::SourceFrameIndex>, LiveError> {
+    Err(LiveError::new(
+        "SourceAdmissionUnavailable",
+        "Original macro admission is unavailable on this platform",
+    ))
 }
 
 fn pause_error(message: &str) -> EditError {
@@ -963,7 +1036,7 @@ impl Prepared {
             );
             output["context"] = json!({"parent":plan.context.parent,"cursor":plan.context.cursor,
                         "selected_child":plan.selected_child,
-                        "visual_selection":plan.context.visual_selection});
+                        "visual_selection":plan.context.visual_selection,"original":plan.context.original});
             output["trace"] = Value::Array(plan.trace.iter().map(|row| json!({
                         "instruction":row.instruction,"before_revision":row.before_revision,
                         "before_scope":row.before_scope,"parent":row.before.parent,
@@ -974,6 +1047,7 @@ impl Prepared {
                         "after_selected_child":row.after.selected_child,
                         "before_visual_selection":row.before.visual_selection,
                         "after_visual_selection":row.after.visual_selection,
+                        "before_original":row.before.original,"after_original":row.after.original,
                         "captured_child_label":row.captured_child_label,
                         "resolved_selection":row.resolved_selection,
                         "resolved_range":row.resolved_range,"removed_range":row.removed_range,"depth":row.depth,
