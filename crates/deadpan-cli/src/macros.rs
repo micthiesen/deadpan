@@ -357,7 +357,7 @@ pub fn plan_program(
         .as_ref()
         .map(|original| qualified_original_index(store, document, original))
         .transpose()?;
-    let result = deadpan_core::plan_semantic_with_original(
+    let result = deadpan_core::plan_semantic_with_framing(
         document,
         context,
         program,
@@ -417,6 +417,7 @@ pub fn plan_program(
             .map_err(|error| pause_error(&error))
         },
         original_index,
+        |staged, site| crate::framing::resolve(store, staged, site),
     );
     result.map_err(|error| source_error.unwrap_or_else(|| edit_error(error)))
 }

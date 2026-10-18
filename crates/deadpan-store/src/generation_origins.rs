@@ -129,6 +129,11 @@ impl AcceptedOriginReceipt {
     pub fn input_binding(&self) -> &GenerationInputBinding {
         &self.origin.input_binding
     }
+    /// The validated native contract retained when this artifact was accepted.
+    /// Reading it does not reopen generated media or provenance sidecars.
+    pub fn plan(&self) -> &deadpan_jobs::GenerationPlan {
+        &self.origin.plan
+    }
     pub fn accepted_revision(&self) -> &RevisionId {
         &self.accepted_revision
     }

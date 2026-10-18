@@ -13,16 +13,23 @@ proposal exactly matches that semantic resolution. Move, refined endpoints,
 interior/nonadjacent insertion and Object-selected insertion refuse recording.
 Apply retains captured context and commits once through semantic Apply.
 
-Next DP-06 framing work: ordinary ranged `:zoom`/`:creep` intent, followed by
-one-play invocation authority. Original-center projection can use the staged
-`RenderPlan::picture`, shared `picture::render_layers` and CPU-only
-`PictureGeometry::composed(...).source_to_input`, with qualified provider
-metadata and the native Q32 quantization, without decoding. Move the pure builder into
-core, resolve ranges on each staged document, and use a shared host resolver
-for exact current pose and center through nested/captured framing. Preserve the
-native path/follow refusals. One-play work additionally needs scoped context,
-staged isolation remapping and scoped receipts; merely allowing the inspector
-in ordinary macro capture would edit the shared definition incorrectly.
+Ordinary ranged `:zoom`/`:creep` now records invocation-relative `Zoom` intent:
+scales and curve plus `Keep` or explicit `OriginalCenter`, without captured
+range fractions, owner identity or sampled target points. Core resolves each
+selection against its staged selected direct child and uses the shared pure
+`framing_zoom` builder. The shared plan-only host resolver supplies the evaluated
+pose and projects the Original center through nested/captured picture geometry
+using qualified provider metadata and native Q32 quantization, without decoding
+or proxy access. Sampled-target recording and unsupported outside-range
+path/follow behavior refuse explicitly. Successful ranged Apply also supplies
+invocation-relative dot-repeat. Pending picture work retains the full macro
+capture and is cancelled with recording before it can submit a delayed edit.
+See [ranged framing macros](../qualification/ranged-framing-macros-2026-10-18.md)
+for the verification record; implementation alone does not establish qualification.
+
+Next DP-06 framing work is one-play invocation authority. It needs scoped
+context, staged isolation remapping and scoped receipts; merely allowing the
+inspector in ordinary macro capture would edit the shared definition incorrectly.
 
 Nested FollowSpeed pauses are implemented and qualified on this Mac; nested
 pitch processing, selected/mixed play choices and the other DP-07 limits remain.
@@ -98,24 +105,21 @@ Confirm each with the owner or adopt the recommendation, then record it in
    moment selection. This changes a binding: run the keymap compatibility audit
    (`docs/KEYMAP_COMPATIBILITY.md`), regenerate the routing baseline and update
    Help and replays together.
-4. **Ranged and one-play zoom in macros (Section 8 coverage).** The zoom's
-   center for a target comes from the displayed picture, which only the app can
-   sample. Recommended: record ranged `:zoom`/`:creep` only with
-   `target=center` or no target (move `navigation/zoom.rs::build` into core and
-   resolve the range against the staged document); refuse recording a
-   target-sampled ranged zoom with a clear message.
+4. **Ranged and one-play zoom in macros (Section 8 coverage).** The ranged
+   recommendation was adopted in specification §7.4 on 2026-10-18: record
+   `target=center` or retained-center intent, resolve each invocation range
+   against the staged document, and refuse target-sampled recording. The pure
+   builder now lives in core; a shared host resolver supplies plan-evaluated
+   pose and qualified picture geometry. One-play authority remains open.
 
 ### Next work, in priority order
 
 1. Land or discard the in-flight DP-18 work (above).
-2. Remaining macro instructions (DP-06): `,i` whole-Original insertion (it
-   places the full measured A/V union, so add a dedicated instruction rather
-   than reusing an Original register descriptor), Place slice Apply (record as
-   `Paste`/`ReplaceSelection` when the chosen destination equals what those
-   resolve to, otherwise refuse recording), Original marks, ranged and one-play
-   framing (decision 4). Pattern: `semantic/planner/{split,trim,marks}.rs` plus
-   `apply_recorded_instruction` from the native path, guarded by
-   `recorded_context` for drafts.
+2. Remaining macro framing (DP-06): one-play invocation authority (decision 4).
+   Whole-Original insertion, eligible Place slice Apply, Original marks and
+   ordinary ranged Zoom intent are implemented; follow their linked
+   qualifications in the current continuation above. One-play work must map
+   isolation authority through staged commands and publish scoped receipts.
 3. Pause insertion with mixed play choices or several selected plays, and in
    nested speed changes (DP-07): extend `insert_time/occurrence.rs`
    (`all_plays_site`, `apply_all_plays`) and `insert_time/retimed.rs`; keep the

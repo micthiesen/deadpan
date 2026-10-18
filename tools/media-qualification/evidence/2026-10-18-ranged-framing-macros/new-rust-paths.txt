@@ -1,0 +1,8 @@
+crates/deadpan-app/src/preview/harness/zoom/macros.rs
+crates/deadpan-cli/src/framing.rs
+crates/deadpan-cli/src/framing/tests.rs
+crates/deadpan-cli/tests/project_commands/macros/framing.rs
+crates/deadpan-core/src/framing_zoom.rs
+crates/deadpan-core/src/framing_zoom/tests.rs
+crates/deadpan-core/src/semantic/planner/framing.rs
+crates/deadpan-core/src/semantic/planner/tests/framing.rs

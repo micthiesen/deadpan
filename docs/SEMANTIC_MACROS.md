@@ -14,7 +14,8 @@ Visual selection begin/finish/clear, frame, beat or Visual cut, selected-beat or
 Visual yank, typed operator motions and group objects, Repeat wraps (optionally
 escalating) and count setters, named Group, neutral Ungroup, register paste or
 Visual replacement, pauses (`InsertPause`, exact frames or milliseconds with a
-host-resolved freeze), framing of the selected beat, built-in
+host-resolved freeze), framing of the selected beat and invocation-relative
+ranged zooms and creeps, built-in
 [gag recipes](GAGS.md), gain trims and steps and saturation of the selected
 beat (`SetAudio`, from `+`/`-`, `:gain` and `:saturate`), J- and L-cuts
 (`SplitEdit`), role-only deletes (`DeleteRole`) and audio-only or video-only repeats (`RoleRepeat`, see
@@ -76,6 +77,52 @@ See [copy/paste qualification](qualification/macro-reuse-2026-10-02.md) for
 checks, rendered captures, retained failures and remaining limits.
 
 ## Recording and input ownership
+
+### Ranged zoom and creep
+
+On an ordinary selected direct child, `:zoom` and `:creep` over an Edit
+selection record `Zoom { kind, center }`. The instruction retains the scale,
+optional starting scale, curve and either `Keep` or `OriginalCenter` intent.
+It never stores the recording's range fractions, selected owner, displayed
+pose or sampled target point. Each invocation resolves the selected owner and
+its exact duration from the preceding staged document, then converts the
+invocation's selection to that owner's local frames. Time selections retain
+their oriented state; Object selections resolve their exact owned range.
+An empty or cross-owner range refuses. A range spanning the complete owner
+uses the existing whole-owner behavior.
+
+No target keeps the retained framing center. Explicit `target=center` projects
+the Original picture's center through the framing entering the selected owner;
+it refuses if that point is clipped. Recording a ranged command that would
+sample a selected, current, named or face target refuses with an explanation.
+An implicit selected-target choice is treated as Keep only when no saved target
+or target follow is involved. Ordinary interactive target sampling remains
+available. Existing whole-beat presets keep their `SetFraming` behavior.
+
+Native commands and semantic replay share the pure `framing_zoom` builder.
+A ranged smash restores the preceding static pose after the range; a creep
+holds its arrival pose. Existing dynamic paths and follows refuse ranged
+replacement when their outside behavior cannot be preserved. The shared host
+resolver uses the staged render plan's evaluated pose and clock, qualified
+provider metadata and composed picture geometry. It opens no source media,
+creates no decoder or picture raster and reads no proxy. The invocation cursor
+must show the selected owner, as the native framing command requires.
+
+A successful ranged Apply establishes the same Zoom intent for `.`. Repeating
+it resolves the new invocation selection; recording `.` stores that instruction.
+Named runs retain ordinary Compound atomicity and one Undo, including when an
+earlier instruction changes the owner's duration. An unchanged framing adds no
+authored step. One-play framing authority remains open and is refused while
+recording; an ordinary macro cannot infer permission to edit one Repeat play.
+
+The pending stopped-picture request retains the full macro capture, including
+session, revision, bank version, ordinary scope, cursor, selected child, Visual
+state and pane. Context changes cannot supply a new target to a delayed reply.
+While recording, another action waits for that request; Escape or
+`:record-cancel` cancels it and the recording. Cancellation before submission
+cannot later commit or append the pending framing. Already queued authored
+work retains the ordinary durable receipt rules.
+See [ranged framing macro qualification](qualification/ranged-framing-macros-2026-10-18.md).
 
 ### Place slice Apply
 

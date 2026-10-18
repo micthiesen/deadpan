@@ -1,0 +1,11 @@
+{
+  "sha256": {
+    "deadpan-app": "762144bb32c51305dbd4c7e799bbaf9c88aac053e17483b59f812d105dca4443",
+    "deadpan-cli": "993a6972b381d385f17b41d092ea25221f11ac5baf9776104b54b9d9f2f78894",
+    "deadpan-media-worker": "a072f82a294153361e548eefc6e2a00ec239d8abefde127b8f9381f1a4db6944",
+    "deadpan-track": "63f95135ade0dbb4438a73549a0d5a632f976c13b7c7c037c7902c5b29e41aa5",
+    "deadpan-transcribe": "4369d0f1917b3ac2e7692dad72b29ebaf55521dc75369a4be7200a2a9bbafe2e"
+  },
+  "app_and_cli_source": "14703b44 plus retained source diff",
+  "helpers": "Unchanged private release helpers retained by Place slice qualification; original source identities in Original mark qualification."
+}

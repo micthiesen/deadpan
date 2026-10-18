@@ -23,6 +23,7 @@ use original::validate_original_context;
 
 mod beat_object;
 mod content;
+mod framing;
 mod gag_edit;
 mod group;
 mod pause;
@@ -393,6 +394,25 @@ pub struct PauseProvider {
     pub audio: crate::HoldAudio,
 }
 
+/// Exact stopped-picture geometry requested from the staged document. The
+/// provider owns qualification/plan interpretation, never authored mutation.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SemanticFramingSite {
+    pub node: NodeId,
+    pub frame: ProjectFrame,
+    pub original_center: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SemanticFramingState {
+    pub current: crate::FramingPose,
+    /// Original picture center projected into this owner's input canvas.
+    pub original_center: Option<[crate::ExactRatio; 2]>,
+}
+
+type FramingResolver<'a> = dyn FnMut(&ProjectDocument, &SemanticFramingSite) -> Result<SemanticFramingState, EditError>
+    + 'a;
+
 /// The error for word and sentence selectors without a transcript.
 pub fn speech_unavailable() -> EditError {
     EditError::new(
@@ -445,6 +465,45 @@ pub fn plan_semantic_with_original(
     resolve_speech: impl FnMut(&ProjectDocument) -> Result<Arc<SpeechTimeline>, EditError>,
     resolve_pause: impl FnMut(&ProjectDocument, PauseSite) -> Result<PauseProvider, EditError>,
     original_index: Option<Arc<crate::SourceFrameIndex>>,
+) -> Result<SemanticPlan, EditError> {
+    plan_semantic_with_framing(
+        document,
+        context,
+        program,
+        registers,
+        new_revision,
+        allocate,
+        resolve_original,
+        resolve_speech,
+        resolve_pause,
+        original_index,
+        |_, _| {
+            Err(EditError::new(
+                EditErrorCode::SelectionUnavailable,
+                "zoom intent requires the host's staged picture geometry",
+            ))
+        },
+    )
+}
+
+/// Original-index planning with a narrow host resolver for exact evaluated
+/// framing and Original-center projection through the staged picture plan.
+#[allow(clippy::too_many_arguments)]
+pub fn plan_semantic_with_framing(
+    document: &ProjectDocument,
+    context: &SemanticContext,
+    program: &SemanticProgram,
+    registers: SemanticRegisterBank<'_>,
+    new_revision: RevisionId,
+    allocate: impl FnMut(SemanticAllocationRequest) -> Result<SemanticAllocation, EditError>,
+    resolve_original: impl FnMut(&ProjectDocument, &RegisterValue) -> Result<SourceNode, EditError>,
+    resolve_speech: impl FnMut(&ProjectDocument) -> Result<Arc<SpeechTimeline>, EditError>,
+    resolve_pause: impl FnMut(&ProjectDocument, PauseSite) -> Result<PauseProvider, EditError>,
+    original_index: Option<Arc<crate::SourceFrameIndex>>,
+    mut resolve_framing: impl FnMut(
+        &ProjectDocument,
+        &SemanticFramingSite,
+    ) -> Result<SemanticFramingState, EditError>,
 ) -> Result<SemanticPlan, EditError> {
     program.validate()?;
     document.validate()?;
@@ -506,6 +565,7 @@ pub fn plan_semantic_with_original(
         resolve_original,
         resolve_speech,
         resolve_pause,
+        resolve_framing: &mut resolve_framing,
         speech: None,
         original_index,
     };
@@ -569,6 +629,7 @@ struct Planner<'a, F, R, S, P> {
     resolve_original: R,
     resolve_speech: S,
     resolve_pause: P,
+    resolve_framing: &'a mut FramingResolver<'a>,
     /// Speech for the staged document after this many resolved steps.
     speech: Option<(usize, Arc<SpeechTimeline>)>,
     original_index: Option<Arc<crate::SourceFrameIndex>>,
@@ -850,6 +911,9 @@ where
                 SemanticInstruction::SetFraming { framing } => {
                     self.set_framing(index, framing.as_deref().cloned())?;
                 }
+                SemanticInstruction::Zoom { kind, center } => {
+                    self.zoom(index, *kind, *center)?;
+                }
                 SemanticInstruction::SetAudioLag { offset } => {
                     self.set_audio_lag(index, *offset)?;
                 }
@@ -1018,6 +1082,7 @@ where
                         | SemanticInstruction::Bleep { .. }
                         | SemanticInstruction::Tail { .. }
                         | SemanticInstruction::SetFraming { .. }
+                        | SemanticInstruction::Zoom { .. }
                         | SemanticInstruction::Retime { .. }
                         | SemanticInstruction::Pitch { .. }
                         | SemanticInstruction::SetHoldDuration { .. }

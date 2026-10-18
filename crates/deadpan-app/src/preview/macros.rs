@@ -7,6 +7,9 @@ use deadpan_core::{RegisterName, SemanticContext, SemanticInstruction, SemanticP
 use super::*;
 use crate::project::{macros as protocol, slice};
 
+const PENDING_FRAMING: &str =
+    "Wait for the pending framing action to finish, or press Esc to cancel it.";
+
 #[derive(Clone)]
 pub(super) struct Capture {
     base: Arc<Workspace>,
@@ -459,6 +462,12 @@ impl DeadpanApp {
             self.error = Some("The macro save is already queued. Wait for its result.".into());
             return;
         }
+        if self.macros.recording.is_some() && self.camera_pending.is_some() {
+            self.cancel_camera();
+            if self.error.as_deref() == Some(PENDING_FRAMING) {
+                self.error = None;
+            }
+        }
         if self.macros.recording.take().is_some() {
             self.message = Some("Macro recording cancelled. The previous macro is unchanged; completed edits remain undoable.".into());
         }
@@ -467,6 +476,16 @@ impl DeadpanApp {
 
     pub(super) fn macro_action_allowed(&mut self, action: Action) -> bool {
         self.reconcile_macro_recording();
+        if self.macros.recording()
+            && self.camera_pending.is_some()
+            && !matches!(
+                action,
+                Action::Invalid(_) | Action::OfferInsert | Action::MacroCancel | Action::Escape
+            )
+        {
+            self.error = Some(PENDING_FRAMING.into());
+            return false;
+        }
         if self.macros.is_pending()
             && !matches!(
                 action,

@@ -1,0 +1,37 @@
+{
+  "base_revision": "14703b44",
+  "sha256": {
+    "Cargo.lock": "cb6aeba21bb9ae6e0bdcf97642e75b4f3185643654269c10d4e004f8ec401af8",
+    "crates/deadpan-app/src/navigation/zoom.rs": "bcfba6831b46f2212c56d7ef182997c0b72464fe9139b63a46686269ec18a7e4",
+    "crates/deadpan-app/src/preview.rs": "73ebe2cbc2a1b331d7c529f17b61e184ccec01358c5582a4a7d228683042f3c7",
+    "crates/deadpan-app/src/preview/camera.rs": "6bc57aed71610128d740a4caca7cc081dde667ad9edbfbaf7b142c29f6b82a33",
+    "crates/deadpan-app/src/preview/harness/zoom.rs": "c7a9f82f3d45bf9d89172c2aefe62f23c4878365306e761e6593d9489fe60639",
+    "crates/deadpan-app/src/preview/harness/zoom/macros.rs": "6c984696bbf30db4a989bea4f291f733e72599bc8afa01bfa412c0487ac781ff",
+    "crates/deadpan-app/src/preview/macros.rs": "317862f9f14505b86f58edb3cf9968321aa09802c6ff7cc35ef0a997a019987e",
+    "crates/deadpan-app/src/project/semantic.rs": "ba7b9842d6049970922e5c2998739cdbbcff36b6d65a645685a16cfd60f4a087",
+    "crates/deadpan-cli/src/framing.rs": "afa683ac74062aa6e2f7daddab50cc6e845415b0f2abcaf37608d019409a3be5",
+    "crates/deadpan-cli/src/framing/tests.rs": "f7fd1695ea6fbb60a7fc310fcf444b6a70009355d8cab91668f1f78e52ac31ea",
+    "crates/deadpan-cli/src/lib.rs": "d7b97aad4aee8fe4a1fd2be1fab0cf8363b36e4be6758ff1cdc56f15ef21b57b",
+    "crates/deadpan-cli/src/macros.rs": "e3dbfdc9c70bea3b54ce24aacf48fc4fe943fcb42326034c0342b3da74035951",
+    "crates/deadpan-cli/src/picture.rs": "e2e5445cfafac523dceebb346aa1e9214d5ff58463ce155227ab072af9ed4de3",
+    "crates/deadpan-cli/src/picture/shared.rs": "530252db06dab5ec864fb78f920ae3aff33993a862a758a652333c30fe182000",
+    "crates/deadpan-cli/tests/project_commands/macros.rs": "5ee375238d375825774df9e3ab3dd63ad714cb051d67bf030f0cf16785fe2875",
+    "crates/deadpan-cli/tests/project_commands/macros/framing.rs": "b6452c8aa8ed8f31c67e62572b0fc3468316b79834f640877c8a1828a6433d71",
+    "crates/deadpan-core/src/framing_zoom.rs": "2d96eee2f4973950b19727a635c62817adf00d5df388759294e8ae768a26ca80",
+    "crates/deadpan-core/src/framing_zoom/tests.rs": "5366881cdf5df8dcd9e96f5bb467e3ef219a713a0805ce000d1c12ff7ef53722",
+    "crates/deadpan-core/src/lib.rs": "467dca01e870c589963cdcd1b37b649c839eaa3eb0dd25f633921e812434ccdd",
+    "crates/deadpan-core/src/semantic/planner.rs": "3bef3822f6a3dfb2185b6b2191e4d5b570c82b85cd4b408fbbe6ef5a8a3ce983",
+    "crates/deadpan-core/src/semantic/planner/framing.rs": "ff28d6bbb3bec4df3245e03334d9355944272bd9d37a2840ec609b1e9614a815",
+    "crates/deadpan-core/src/semantic/planner/tests.rs": "3d3cf90ad2a710bc61b9953af2f9a7316afc6a3689399c0ef71f2e871b3ec8bb",
+    "crates/deadpan-core/src/semantic/planner/tests/framing.rs": "aff36c681b31288f3350f05c7a7e4bf66064d5d43d62b0eacda4cc74b0a5afed",
+    "crates/deadpan-core/src/semantic/program.rs": "603b3927eeb8a39db504d734d5df1f4d89bf672025f9313e3d116a2d8fe144ab",
+    "crates/deadpan-store/src/generation_origins.rs": "fa0d32219f8fea9989aa8b9530dea06ed6935e10d2a59f1f40790bc41f2a44ee",
+    "rust-toolchain.toml": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc"
+  },
+  "environment": {
+    "hardware": "Apple M5 Max",
+    "macOS": "26.5.2 (25F84)",
+    "Rust": "1.97.1"
+  },
+  "ffmpeg_prefix": "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix"
+}

@@ -1,0 +1,14 @@
+{
+  "reviewer": "/root/nested_review",
+  "scope": "Shared pure builder, semantic staged framing resolution, qualified source/generated metadata, native capture and delayed cancellation, pending recording gate, integration and replay oracles",
+  "supported_finding": "A whole-beat Zoom waiting for its exact picture with no Visual selection could survive Escape and submit afterward.",
+  "resolution": "Idle Escape explicitly cancels camera_pending before delayed picture admission. Recording cannot save while it waits, and recording cancellation revokes that pending entry.",
+  "regression": "Production replay holds the real stopped-picture reply and tests ordinary, recording and ranged-recording cases, q save refusal, exact bank/body invariants, Escape cancellation, delayed release and absence of stale error.",
+  "refuted": "The original current.duration() call already resolves exact integral root duration with fractional inner retained clocks. No query change was needed; a real pause-produced derived-clock regression proves root163 and fractional inner refusal.",
+  "final_followup": "No supported findings after targeted fix review. Reviewer ran no Cargo and made no edits. Runtime qualification reported separately.",
+  "followup_findings": "Pending ranged framing with a Visual selection cleared it and kept recording on Escape; q-blocked wait error survived cancellation.",
+  "followup_resolution": "Cancel recording while camera_pending still exists, before generic Escape selection handling. Clear only exact owned PENDING_FRAMING error during cancellation; preserve unrelated errors.",
+  "visual_finding": "Minimum-size ordinary cancellation capture still displayed Preparing the stopped picture for framing after camera_pending was cleared.",
+  "visual_resolution": "take_camera_pending clears only its owned PREPARING_PICTURE message when a pending request actually ends, preserving unrelated feedback. Replay asserts no stale preparation status after delayed delivery.",
+  "visual_review_followup": "No findings: every camera_pending exit uses the owned-status helper. No Cargo or edits by reviewer."
+}

@@ -42,6 +42,7 @@ mod edit_slice;
 mod exact;
 mod explode;
 mod framing;
+pub mod framing_zoom;
 mod gap_override;
 mod generated;
 mod group_selection;

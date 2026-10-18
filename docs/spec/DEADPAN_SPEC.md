@@ -395,6 +395,18 @@ A count before `r` is total plays. Counts before motions indicate motion distanc
 
 While recording a macro, bare `q` stops recording and cannot start another macro. Registers hold typed content or a macro and show that type; incompatible use produces an error. Macro execution is one undoable transaction, validates all operations first, and has recursion and instruction limits. Do not allow macro execution to invoke arbitrary processes.
 
+Ranged `:zoom` and `:creep` macros retain scale, curve and center intent, then
+resolve the invocation's selection against each staged document. Supported
+centers are the retained framing center or explicit `target=center`, projected
+from the Original picture through the framing entering the selected owner.
+Do not retain the recording's range fractions, owner identity or sampled target
+point. Recording a ranged command that samples a selected, named or face target
+must refuse with an explanation; ordinary interactive target sampling remains
+available. Preserve existing camera paths and target follows outside the range
+or refuse explicitly when that cannot be represented. One-play framing uses
+explicit invocation occurrence authority and isolates only the chosen play;
+it must never fall back to changing the shared definition.
+
 ## 7.5 Comma-leader editing vocabulary
 
 These bindings are mnemonic accelerators for ordinary commands. All actions also exist in the palette.

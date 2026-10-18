@@ -48,16 +48,42 @@ pub fn source_to_render_frame(
     if decoded.width != info.width || decoded.height != info.height {
         return Err(ProjectPictureError::DecodedDimensions);
     }
-    let metadata = FrameMetadata {
+    let metadata = source_frame_metadata(
+        info,
+        decoded.metadata.pts,
+        u32::try_from(decoded.row_stride_bytes).map_err(|_| {
+            ProjectPictureError::Limits("source row stride exceeds the renderer limit")
+        })?,
+    )?;
+    // Ten-bit SDR/HDR sources arrive as RGBA64 so their low bits reach the
+    // shared renderer; an eight-bit HDR picture is analysis-only.
+    match (decoded.sample_bits, info.color.transfer) {
+        (8, ColorTransfer::Bt709 | ColorTransfer::Srgb | ColorTransfer::Linear) => {
+            Ok(Rgba8Frame::new(metadata, decoded.rgba)?)
+        }
+        (16, _) => Ok(Rgba8Frame::new_rgba16(metadata, decoded.rgba)?),
+        _ => Err(ProjectPictureError::Limits(
+            "HDR source pictures require sixteen-bit decoded samples",
+        )),
+    }
+}
+
+/// Preserve a qualified provider's interpretation without allocating pixels or
+/// opening its media. Geometry callers supply an RGBA8 row stride; decoded
+/// pictures retain their actual row stride, including RGBA16.
+pub fn source_frame_metadata(
+    info: &SourceStreamInfo,
+    pts: i64,
+    row_stride_bytes: u32,
+) -> Result<FrameMetadata, ProjectPictureError> {
+    Ok(FrameMetadata {
         clean_aperture: info
             .clean_aperture
             .map(deadpan_render::CleanAperture::new)
             .transpose()?,
-        width: decoded.width,
-        height: decoded.height,
-        row_stride_bytes: u32::try_from(decoded.row_stride_bytes).map_err(|_| {
-            ProjectPictureError::Limits("source row stride exceeds the renderer limit")
-        })?,
+        width: info.width,
+        height: info.height,
+        row_stride_bytes,
         sample_aspect_ratio: SampleAspectRatio::new(
             info.sample_aspect_num,
             info.sample_aspect_den,
@@ -84,21 +110,10 @@ pub fn source_to_render_frame(
             },
         },
         pts: SourceTimestamp {
-            ticks: decoded.metadata.pts,
+            ticks: pts,
             time_base: SourceTimeBase::new(info.time_base_num, info.time_base_den)?,
         },
-    };
-    // Ten-bit SDR/HDR sources arrive as RGBA64 so their low bits reach the
-    // shared renderer; an eight-bit HDR picture is analysis-only.
-    match (decoded.sample_bits, info.color.transfer) {
-        (8, ColorTransfer::Bt709 | ColorTransfer::Srgb | ColorTransfer::Linear) => {
-            Ok(Rgba8Frame::new(metadata, decoded.rgba)?)
-        }
-        (16, _) => Ok(Rgba8Frame::new_rgba16(metadata, decoded.rgba)?),
-        _ => Err(ProjectPictureError::Limits(
-            "HDR source pictures require sixteen-bit decoded samples",
-        )),
-    }
+    })
 }
 
 /// Preserve every sampled provider-to-root scope, including identities and the
@@ -145,20 +160,9 @@ pub fn fill_canvas_aspect(
     canvas: [u32; 2],
 ) -> Result<Rgba8Frame, ProjectPictureError> {
     let metadata = *frame.metadata();
-    let quarter_turned = matches!(
-        metadata.rotation,
-        Rotation::Clockwise90 | Rotation::Clockwise270
-    );
-    if quarter_turned || canvas[0] == 0 || canvas[1] == 0 {
-        return Ok(frame);
-    }
+    let cropped = fill_canvas_aspect_metadata(metadata, canvas);
     let (width, height) = (metadata.width, metadata.height);
-    let sar = metadata.sample_aspect_ratio;
-    let [crop_width, crop_height] = aspect_region(
-        canvas,
-        [width, height],
-        [sar.numerator(), sar.denominator()],
-    );
+    let (crop_width, crop_height) = (cropped.width, cropped.height);
     if (crop_width, crop_height) == (width, height) {
         return Ok(frame);
     }
@@ -174,15 +178,36 @@ pub fn fill_canvas_aspect(
         let start = left as usize * 4;
         bytes.extend_from_slice(&row[start..start + crop_width as usize * 4]);
     }
-    Ok(Rgba8Frame::new(
-        FrameMetadata {
-            width: crop_width,
-            height: crop_height,
-            row_stride_bytes: crop_width * 4,
-            ..metadata
-        },
-        bytes,
-    )?)
+    Ok(Rgba8Frame::new(cropped, bytes)?)
+}
+
+/// The exact metadata of [`fill_canvas_aspect`], without reading or allocating
+/// picture pixels. Generated providers use the same centered aspect crop in
+/// decoder-free geometry and decoded presentation.
+pub fn fill_canvas_aspect_metadata(metadata: FrameMetadata, canvas: [u32; 2]) -> FrameMetadata {
+    let quarter_turned = matches!(
+        metadata.rotation,
+        Rotation::Clockwise90 | Rotation::Clockwise270
+    );
+    if quarter_turned || canvas[0] == 0 || canvas[1] == 0 {
+        return metadata;
+    }
+    let (width, height) = (metadata.width, metadata.height);
+    let sar = metadata.sample_aspect_ratio;
+    let [crop_width, crop_height] = aspect_region(
+        canvas,
+        [width, height],
+        [sar.numerator(), sar.denominator()],
+    );
+    if (crop_width, crop_height) == (width, height) {
+        return metadata;
+    }
+    FrameMetadata {
+        width: crop_width,
+        height: crop_height,
+        row_stride_bytes: crop_width * 4,
+        ..metadata
+    }
 }
 
 /// The largest centered region of a `bounds` pixel raster, with pixel aspect

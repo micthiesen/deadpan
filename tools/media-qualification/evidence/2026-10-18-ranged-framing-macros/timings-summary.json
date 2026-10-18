@@ -1,0 +1,302 @@
+{
+  "ui_frame_cpu_ms": {
+    "completed": {
+      "max_ms": 6.7347079999999995,
+      "n": 737,
+      "p50_ms": 0.248792,
+      "p95_ms": 0.8109999999999999,
+      "p99_ms": 1.208417
+    },
+    "failed": 0,
+    "samples": 737,
+    "timed_out": 0
+  },
+  "ui_composition_submit_cpu_ms": {
+    "completed": {
+      "max_ms": 0.608541,
+      "n": 737,
+      "p50_ms": 0.095834,
+      "p95_ms": 0.133666,
+      "p99_ms": 0.15170799999999998
+    },
+    "failed": 0,
+    "samples": 737,
+    "timed_out": 0
+  },
+  "ui_composition_complete_ms": {
+    "completed": {
+      "max_ms": 8.949957999999999,
+      "n": 737,
+      "p50_ms": 0.346709,
+      "p95_ms": 0.5087079999999999,
+      "p99_ms": 0.774375
+    },
+    "failed": 0,
+    "samples": 737,
+    "timed_out": 0
+  },
+  "input_to_state_ms": {
+    "completed": {
+      "max_ms": 1.59625,
+      "n": 223,
+      "p50_ms": 0.541833,
+      "p95_ms": 1.0109590000000002,
+      "p99_ms": 1.4789160000000001
+    },
+    "failed": 0,
+    "samples": 223,
+    "timed_out": 0
+  },
+  "input_to_commit_ms": {
+    "completed": {
+      "max_ms": 87.768875,
+      "n": 19,
+      "p50_ms": 6.532083,
+      "p95_ms": 87.768875,
+      "p99_ms": 87.768875
+    },
+    "failed": 0,
+    "samples": 19,
+    "timed_out": 0
+  },
+  "request_to_decode_delivery_ms": {
+    "completed": {
+      "max_ms": 7.788208,
+      "n": 67,
+      "p50_ms": 0.969041,
+      "p95_ms": 4.117292,
+      "p99_ms": 7.788208
+    },
+    "failed": 0,
+    "samples": 67,
+    "timed_out": 0
+  },
+  "request_to_worker_start_ms": {
+    "completed": {
+      "max_ms": 0.008124999999999999,
+      "n": 67,
+      "p50_ms": 0.006333,
+      "p95_ms": 0.006875,
+      "p99_ms": 0.008124999999999999
+    },
+    "failed": 0,
+    "samples": 67,
+    "timed_out": 0
+  },
+  "worker_execution_ms": {
+    "completed": {
+      "max_ms": 2.441667,
+      "n": 67,
+      "p50_ms": 0.279417,
+      "p95_ms": 0.43375,
+      "p99_ms": 2.441667
+    },
+    "failed": 0,
+    "samples": 67,
+    "timed_out": 0
+  },
+  "worker_publication_delay_ms": {
+    "completed": {
+      "max_ms": 0.00029099999999999997,
+      "n": 67,
+      "p50_ms": 8.3e-05,
+      "p95_ms": 0.000125,
+      "p99_ms": 0.00029099999999999997
+    },
+    "failed": 0,
+    "samples": 67,
+    "timed_out": 0
+  },
+  "publication_to_decode_delivery_ms": {
+    "completed": {
+      "max_ms": 5.338125,
+      "n": 67,
+      "p50_ms": 0.717625,
+      "p95_ms": 3.752459,
+      "p99_ms": 5.338125
+    },
+    "failed": 0,
+    "samples": 67,
+    "timed_out": 0
+  },
+  "request_to_picture_submission_ms": {
+    "completed": {
+      "max_ms": 8.58375,
+      "n": 67,
+      "p50_ms": 1.2542090000000001,
+      "p95_ms": 4.359667,
+      "p99_ms": 8.58375
+    },
+    "failed": 0,
+    "samples": 67,
+    "timed_out": 0
+  },
+  "request_to_picture_complete_ms": {
+    "completed": {
+      "max_ms": 9.504,
+      "n": 67,
+      "p50_ms": 1.7493750000000001,
+      "p95_ms": 4.747333,
+      "p99_ms": 9.504
+    },
+    "failed": 0,
+    "samples": 67,
+    "timed_out": 0
+  },
+  "input_to_picture_complete_ms": {
+    "completed": {
+      "max_ms": 97.28191699999999,
+      "n": 55,
+      "p50_ms": 2.0257500000000004,
+      "p95_ms": 10.457583,
+      "p99_ms": 97.28191699999999
+    },
+    "failed": 0,
+    "samples": 55,
+    "timed_out": 0
+  },
+  "Original initialized and displayed": {
+    "completed": {
+      "max_ms": 96.666791,
+      "n": 1,
+      "p50_ms": 96.666791,
+      "p95_ms": 96.666791,
+      "p99_ms": 96.666791
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Project and picture settled": {
+    "completed": {
+      "max_ms": 1.039041,
+      "n": 94,
+      "p50_ms": 8.4e-05,
+      "p95_ms": 0.845541,
+      "p99_ms": 1.039041
+    },
+    "failed": 0,
+    "samples": 94,
+    "timed_out": 0
+  },
+  "Shot analysis stored for the Original": {
+    "completed": {
+      "max_ms": 10.177417,
+      "n": 1,
+      "p50_ms": 10.177417,
+      "p95_ms": 10.177417,
+      "p99_ms": 10.177417
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Committed revision changed": {
+    "completed": {
+      "max_ms": 9.678125,
+      "n": 28,
+      "p50_ms": 6.071625,
+      "p95_ms": 8.152625,
+      "p99_ms": 9.678125
+    },
+    "failed": 0,
+    "samples": 28,
+    "timed_out": 0
+  },
+  "Camera opens": {
+    "completed": {
+      "max_ms": 4.2e-05,
+      "n": 2,
+      "p50_ms": 0.0,
+      "p95_ms": 4.2e-05,
+      "p99_ms": 4.2e-05
+    },
+    "failed": 0,
+    "samples": 2,
+    "timed_out": 0
+  },
+  "Target saved": {
+    "completed": {
+      "max_ms": 7.217582999999999,
+      "n": 1,
+      "p50_ms": 7.217582999999999,
+      "p95_ms": 7.217582999999999,
+      "p99_ms": 7.217582999999999
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Macro b saved": {
+    "completed": {
+      "max_ms": 4.550666,
+      "n": 1,
+      "p50_ms": 4.550666,
+      "p95_ms": 4.550666,
+      "p99_ms": 4.550666
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Second target saved": {
+    "completed": {
+      "max_ms": 6.181792000000001,
+      "n": 1,
+      "p50_ms": 6.181792000000001,
+      "p95_ms": 6.181792000000001,
+      "p99_ms": 6.181792000000001
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Semantic framing receipt finishes": {
+    "completed": {
+      "max_ms": 0.000125,
+      "n": 18,
+      "p50_ms": 4.2e-05,
+      "p95_ms": 0.000125,
+      "p99_ms": 0.000125
+    },
+    "failed": 0,
+    "samples": 18,
+    "timed_out": 0
+  },
+  "Ranged framing macro is saved": {
+    "completed": {
+      "max_ms": 5.166542,
+      "n": 2,
+      "p50_ms": 5.077917,
+      "p95_ms": 5.166542,
+      "p99_ms": 5.166542
+    },
+    "failed": 0,
+    "samples": 2,
+    "timed_out": 0
+  },
+  "Sampled ranged recording reports its restriction": {
+    "completed": {
+      "max_ms": 0.0,
+      "n": 2,
+      "p50_ms": 0.0,
+      "p95_ms": 0.0,
+      "p99_ms": 0.0
+    },
+    "failed": 0,
+    "samples": 2,
+    "timed_out": 0
+  },
+  "Retain the real stopped-frame reply before zoom admission": {
+    "completed": {
+      "max_ms": 0.0,
+      "n": 3,
+      "p50_ms": 0.0,
+      "p95_ms": 0.0,
+      "p99_ms": 0.0
+    },
+    "failed": 0,
+    "samples": 3,
+    "timed_out": 0
+  }
+}

@@ -1,0 +1,75 @@
+from pathlib import Path
+import gzip, hashlib, json, shutil
+root = Path('/Users/michael/Code/deadpan')
+scratch = Path('/tmp/deadpan-ranged-framing-2026-10-18')
+dest = root / 'tools/media-qualification/evidence/2026-10-18-ranged-framing-macros'
+dest.mkdir(parents=True, exist_ok=True)
+for name in ('prepare.py', 'collect.py'):
+    shutil.copy2(scratch / name, dest / (name + '.txt'))
+reports = {name: json.loads((scratch / name / 'report.json').read_text()) for name in ('visual', 'performance')}
+identity = json.loads((scratch / 'binaries.json').read_text())
+for name, report in reports.items():
+    assert not report['failed'], name
+    assert all(not s['failed'] for s in report['scenarios']), name
+    assert report['metadata']['binary_sha256'] == identity['sha256']['deadpan-app'], name
+sources = json.loads((scratch / 'source-identities.json').read_text())
+for name, digest in sources['sha256'].items():
+    assert hashlib.sha256((root / name).read_bytes()).hexdigest() == digest, name
+
+def compressed(source, name):
+    (dest / (name + '.gz')).write_bytes(gzip.compress(source.read_bytes(), mtime=0))
+
+for source in sorted(Path('/tmp').glob('deadpan-ranged-framing-*.log')):
+    compressed(source, source.name.removeprefix('deadpan-ranged-framing-'))
+for directory in sorted(scratch.iterdir()):
+    if directory.is_dir() and (directory / 'report.json').exists():
+        compressed(directory / 'report.json', directory.name + '-report.json')
+        log = scratch / (directory.name + '.log')
+        if log.exists(): compressed(log, log.name)
+for source in sorted(scratch.iterdir()):
+    if source.is_file() and (source.suffix == '.json' or source.name.endswith('paths.txt')):
+        shutil.copy2(source, dest / source.name)
+    elif source.is_file() and source.suffix == '.diff':
+        compressed(source, source.name)
+labels = {
+    'Recording a ranged zoom retains its selection and semantic intent': 'recorded-ranged-zoom.png',
+    'Replayed ranged zoom uses the new backward invocation selection': 'replayed-backward-zoom.png',
+    'A replayed ranged creep holds its new arrival pose': 'replayed-ranged-creep.png',
+    'Ranged macro recording explains its sampled-target restriction': 'sampled-target-refusal.png',
+    'Cancelled pending zoom leaves the edit unchanged after delayed picture delivery': 'cancelled-pending-zoom.png',
+}
+captures = {}
+for scenario in reports['visual']['scenarios']:
+    for step in scenario['steps']:
+        if step['input'] in labels and step.get('screenshot'):
+            name = labels[step['input']]
+            shutil.copy2(scratch / 'visual' / step['screenshot'], dest / name)
+            captures[name] = {'label': step['input'], 'frame': step['frame'], 'source': step['screenshot']}
+assert len(captures) == len(labels), captures
+pending = [t for scenario in reports['visual']['scenarios'] for t in scenario['steps'] if t['input'] == 'Cancelled pending zoom leaves the edit unchanged after delayed picture delivery' and t.get('screenshot')]
+assert len(pending) == 3
+for name, step in zip(('cancelled-ordinary-zoom.png', 'cancelled-recording-zoom.png'), pending):
+    shutil.copy2(scratch / 'visual' / step['screenshot'], dest / name)
+    captures[name] = {'label': step['input'], 'frame': step['frame'], 'source': step['screenshot']}
+for name in captures:
+    import struct
+    assert struct.unpack('>II', (dest / name).read_bytes()[16:24]) == (960, 640), name
+for directory, prefix in (('large-visual','large-'), ('stale-status-visual','pre-status-')):
+    old_report = json.loads((scratch / directory / 'report.json').read_text())
+    for scenario in old_report['scenarios']:
+        for step in scenario['steps']:
+            if step['input'] in labels and step.get('screenshot'):
+                shutil.copy2(scratch / directory / step['screenshot'], dest / (prefix + labels[step['input']]))
+    if directory == 'stale-status-visual':
+        first = next(t for scenario in old_report['scenarios'] for t in scenario['steps'] if t['input'] == 'Cancelled pending zoom leaves the edit unchanged after delayed picture delivery' and t.get('screenshot'))
+        shutil.copy2(scratch / directory / first['screenshot'], dest / 'pre-status-cancelled-ordinary-zoom.png')
+(dest / 'captures.json').write_text(json.dumps(captures, indent=2) + '\n')
+timings = {t['name']: t['summary'] for s in reports['performance']['scenarios'] if s['name'] == 'zoom' for t in s['timings']}
+(dest / 'timings-summary.json').write_text(json.dumps(timings, indent=2) + '\n')
+fixture = 'native/deadpan-source/tests/fixtures/cfr-bframes.mp4'
+(dest / 'fixture-identities.json').write_text(json.dumps({fixture: hashlib.sha256((root / fixture).read_bytes()).hexdigest()}, indent=2) + '\n')
+inventory = {p.name: {'bytes': p.stat().st_size, 'sha256': hashlib.sha256(p.read_bytes()).hexdigest()} for p in sorted(dest.iterdir()) if p.is_file() and p.name != 'inventory.json'}
+(dest / 'inventory.json').write_text(json.dumps(inventory, indent=2) + '\n')
+for name, item in inventory.items():
+    assert hashlib.sha256((dest / name).read_bytes()).hexdigest() == item['sha256'], name
+print(json.dumps({'files':len(inventory),'bytes':sum(x['bytes'] for x in inventory.values()),'checks':{name:{s['name']:len(s['checks']) for s in r['scenarios']} for name,r in reports.items()},'timings':{name:timings[name] for name in ('input_to_state_ms','input_to_picture_complete_ms')}}, indent=2))

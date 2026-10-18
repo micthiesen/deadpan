@@ -8,6 +8,7 @@ use std::num::NonZeroU32;
 mod beat_objects;
 mod content;
 mod explode;
+mod framing;
 mod gag_edit;
 mod group;
 mod objects;
@@ -864,6 +865,9 @@ fn cumulative_document_and_capture_budgets_refuse_before_another_leaf_allocation
         (MAX_COMPOUND_DOCUMENT_BYTES - size + 1, 0),
         (0, MAX_COMPOUND_CAPTURE_BYTES - size + 1),
     ] {
+        let mut no_framing = |_: &ProjectDocument, _: &SemanticFramingSite| {
+            Err(invalid("work-budget fixture does not resolve framing"))
+        };
         let mut planner = Planner {
             current: document.clone(),
             context: context("root", 0),
@@ -891,6 +895,7 @@ fn cumulative_document_and_capture_budgets_refuse_before_another_leaf_allocation
                 Err(super::pause_unavailable())
             },
             speech: None,
+            resolve_framing: &mut no_framing,
         };
         let error = planner.execute(&program(vec![cut(1, 'a')])).unwrap_err();
         assert_eq!(error.code, EditErrorCode::LimitExceeded);

@@ -22,6 +22,8 @@ use deadpan_render::FramingLayer;
 
 use super::*;
 
+const PREPARING_PICTURE: &str = "Preparing the stopped picture for framing…";
+
 #[derive(Debug, PartialEq, Eq)]
 pub(super) enum KeyDispatch {
     Native,
@@ -227,6 +229,59 @@ pub(super) struct CameraPending {
     cursor: u64,
     navigation_scope: SequenceScope,
     scoped: Option<crate::project::scoped::Target>,
+    semantic_capture: Option<Result<Box<macros::Capture>, String>>,
+}
+
+fn semantic_zoom_center(
+    choice: &crate::navigation::zoom::TargetChoice,
+    follows_target: bool,
+    saved_targets: bool,
+) -> Result<deadpan_core::SemanticZoomCenter, String> {
+    use crate::navigation::zoom::TargetChoice;
+    use deadpan_core::SemanticZoomCenter;
+    match choice {
+        TargetChoice::Keep => Ok(SemanticZoomCenter::Keep),
+        TargetChoice::Center => Ok(SemanticZoomCenter::OriginalCenter),
+        TargetChoice::Selected if !follows_target && !saved_targets => Ok(SemanticZoomCenter::Keep),
+        _ => Err("A ranged zoom macro cannot sample a selected, named or face target. Use target=center or :creep without target=, or save or cancel recording first.".into()),
+    }
+}
+
+#[cfg(test)]
+mod semantic_zoom_tests {
+    use super::*;
+    use crate::navigation::zoom::TargetChoice;
+    use deadpan_core::SemanticZoomCenter;
+
+    #[test]
+    fn ranged_zoom_intent_never_turns_an_implicit_saved_target_into_keep() {
+        assert_eq!(
+            semantic_zoom_center(&TargetChoice::Selected, false, false),
+            Ok(SemanticZoomCenter::Keep)
+        );
+        for (follow, saved) in [(true, false), (false, true), (true, true)] {
+            assert!(semantic_zoom_center(&TargetChoice::Selected, follow, saved).is_err());
+        }
+        for choice in [
+            TargetChoice::Current,
+            TargetChoice::Named("person".into()),
+            TargetChoice::Face(1),
+        ] {
+            assert!(
+                semantic_zoom_center(&choice, false, false)
+                    .unwrap_err()
+                    .contains("cannot sample")
+            );
+        }
+        assert_eq!(
+            semantic_zoom_center(&TargetChoice::Keep, true, true),
+            Ok(SemanticZoomCenter::Keep)
+        );
+        assert_eq!(
+            semantic_zoom_center(&TargetChoice::Center, true, true),
+            Ok(SemanticZoomCenter::OriginalCenter)
+        );
+    }
 }
 
 /// One numbered picker entry: a saved target covering this picture, or a
@@ -994,6 +1049,8 @@ impl DeadpanApp {
             };
             *range = captured;
         }
+        let semantic_capture = matches!(request, FramingRequest::Zoom { .. })
+            .then(|| self.capture_macro_target().map(Box::new));
         self.service.set_preview_active(true);
         self.camera_pending = Some(CameraPending {
             request,
@@ -1003,6 +1060,7 @@ impl DeadpanApp {
             cursor: self.sequence_cursor,
             navigation_scope: self.sequence_scope.clone(),
             scoped,
+            semantic_capture,
         });
         self.finish_camera_entry(context);
     }
@@ -1016,12 +1074,17 @@ impl DeadpanApp {
             && self.sequence_scope == pending.navigation_scope
             && self.sequence_cursor == pending.cursor
             && self.inspected_target_matches(&pending.node, pending.scoped.as_ref())
+            && pending.semantic_capture.as_ref().is_none_or(|captured| {
+                captured
+                    .as_ref()
+                    .map_or(true, |captured| captured.matches(self))
+            })
             && self.workspace.as_ref().is_some_and(|workspace| {
                 workspace.session == pending.session
                     && workspace.document.revision_id() == &pending.revision
             });
         if !valid {
-            self.camera_pending = None;
+            let _ = self.take_camera_pending();
             return;
         }
         let frame = ProjectFrame(
@@ -1036,16 +1099,17 @@ impl DeadpanApp {
                 && !self.presentation.needs_render()
                 && !self.presentation.refining()
             {
-                self.camera_pending = None;
+                let _ = self.take_camera_pending();
                 self.error =
                     Some("Camera needs a successfully displayed picture at the cursor.".into());
             } else {
-                self.message = Some("Preparing the stopped picture for framing…".into());
+                self.message = Some(PREPARING_PICTURE.into());
                 context.request_repaint();
             }
             return;
         };
-        let pending = self.camera_pending.take().expect("pending checked");
+        let pending = self.take_camera_pending().expect("pending checked");
+        let semantic_capture = pending.semantic_capture.clone();
         let request = pending.request.clone();
         let session = match CameraSession::from_picture(self, pending, ticket) {
             Ok(session) => session,
@@ -1063,25 +1127,40 @@ impl DeadpanApp {
             context.memory_mut(|memory| memory.request_focus(pane_id(Pane::Viewer)));
             return;
         };
+        let center_intent = range.filter(|_| session.scoped.is_none()).map(|_| {
+            semantic_zoom_center(
+                &input.target,
+                matches!(
+                    &session.entry,
+                    Some(Framing {
+                        value: FramingValue::Follow { .. },
+                        ..
+                    })
+                ),
+                session.picker.iter().any(|entry| entry.saved.is_some()),
+            )
+        });
+        if self.macros.recording()
+            && let Some(Err(error)) = &center_intent
+        {
+            self.error = Some(error.clone());
+            return;
+        }
+        let center_intent = center_intent.and_then(Result::ok);
         if let crate::navigation::zoom::TargetChoice::Face(number) = input.target {
             self.start_face_zoom(session, input, range, number);
             return;
         }
         match self.zoom_framing(&session, &input, range, None) {
             Ok((framing, note))
-                if self.macros.recording() || (session.scoped.is_none() && range.is_none()) =>
+                if self.macros.recording()
+                    || (session.scoped.is_none() && range.is_none())
+                    || center_intent.is_some() =>
             {
-                // The semantic framing of the selected beat, recorded by a
-                // macro and repeated by `.`; a scoped play has no semantic
-                // equivalent yet. A ranged envelope stores beat fractions,
-                // which would not mean the same range on another beat, so it
-                // is neither recorded nor repeated.
+                // Ranges retain zoom intent, resolved anew on invocation.
+                // Whole-beat presets retain their existing completed framing.
                 if session.scoped.is_some() {
                     self.error = Some("Framing a single Repeat play cannot be recorded yet; record framing on an ordinary beat.".into());
-                    return;
-                }
-                if range.is_some() {
-                    self.error = Some("A zoom over a range cannot be recorded yet; clear the Visual range to record whole-beat framing. Save or cancel recording first.".into());
                     return;
                 }
                 if framing == session.entry {
@@ -1097,13 +1176,19 @@ impl DeadpanApp {
                             .map_or_else(|| id.as_str().to_owned(), |target| target.label.clone())
                     })
                 });
-                let target = self.capture_macro_target();
-                self.apply_recorded_instruction(
-                    target,
-                    Ok(deadpan_core::SemanticInstruction::SetFraming {
+                let target = semantic_capture
+                    .ok_or_else(|| "The framing action has no captured editing context.".to_owned())
+                    .and_then(|capture| capture.map(|capture| *capture));
+                let instruction = center_intent.map_or_else(
+                    || deadpan_core::SemanticInstruction::SetFraming {
                         framing: framing.map(Box::new),
-                    }),
+                    },
+                    |center| deadpan_core::SemanticInstruction::Zoom {
+                        kind: input.kind,
+                        center,
+                    },
                 );
+                self.apply_recorded_instruction(target, Ok(instruction));
                 if self.macros.is_pending()
                     && let Some(described) = described
                 {
@@ -1512,6 +1597,7 @@ impl DeadpanApp {
             cursor: old.cursor,
             navigation_scope: old.navigation_scope.clone(),
             scoped,
+            semantic_capture: None,
         };
         let mut session = match CameraSession::from_picture(self, pending, ticket) {
             Ok(session) => session,
@@ -1610,7 +1696,7 @@ impl DeadpanApp {
     }
 
     pub(super) fn cancel_camera(&mut self) {
-        self.camera_pending = None;
+        let _ = self.take_camera_pending();
         if let Some(camera) = self.camera.take()
             && !camera.committing
             && camera.rebase.is_none()
@@ -1621,6 +1707,14 @@ impl DeadpanApp {
                 .set_framing_poses(camera.ticket, &camera.entry_layers);
         }
         self.bindings.clear();
+    }
+
+    fn take_camera_pending(&mut self) -> Option<CameraPending> {
+        let pending = self.camera_pending.take();
+        if pending.is_some() && self.message.as_deref() == Some(PREPARING_PICTURE) {
+            self.message = None;
+        }
+        pending
     }
 
     /// Whether a revision change is exactly this Camera's own target save,

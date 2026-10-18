@@ -43,7 +43,9 @@ and installs dot intent:
 - `:edge hard|auto [start|end|both|plays|gaps]` (`SetAudioEdges`) and
   `:gag-set` (`SetGag`, the complete new recipe on another gag of the same
   recipe);
-- whole-beat `,z`/`,c` zoom and creep framing (`SetFraming`);
+- whole-beat `,z`/`,c` zoom and creep framing (`SetFraming`), and ordinary
+  ranged Keep/OriginalCenter framing (`Zoom` intent, resolved against the new
+  invocation's owner and selection; see [qualification](qualification/ranged-framing-macros-2026-10-18.md));
 - cutaways (`SetCutaway`) and captions (`SetCaption`) over the selected beat or
   over the Edit range inside one beat;
 - J- and L-cuts (`SplitEdit`, at the cut under the new cursor), role-only
@@ -52,9 +54,9 @@ and installs dot intent:
 
 The dot hint names the edit ("repeat: speed 2/1× · preserve pitch"). A Repeat
 play scope (`:scope play N`) edits one play directly and clears dot intent, as
-do a zoom over a Visual range (its envelope stores fractions of that beat),
-a face-target zoom that also saves a target, clearing cutaways or captions,
-the Camera editor and the Trim, Slip and Split edits. Each split fragment keeps
+do a ranged zoom that samples a target, a face-target zoom that also saves a
+target, clearing cutaways or captions, the Camera editor and the Trim and Slip
+edits. `s`/`:split` uses semantic `Split` intent since 2026-10-15. Each split fragment keeps
 its own copy of the Original's Source, so an audio lag set on one fragment
 does not move the others. A repeated or recorded edit that would change
 nothing reports "No edit was made" as a message, without a revision. The [creative-dot replay](#native-interaction)

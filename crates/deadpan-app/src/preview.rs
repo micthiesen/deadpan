@@ -2441,7 +2441,11 @@ impl DeadpanApp {
             Action::Escape => {
                 // Other Escape owners clear first; only an otherwise idle
                 // Escape leaves the AI preview. It never cancels generation.
-                let owned = self.escape_owned_elsewhere();
+                let owned = self.escape_owned_elsewhere() || self.camera_pending.is_some();
+                if self.camera_pending.is_some() {
+                    self.cancel_macro_recording();
+                    self.cancel_camera();
+                }
                 let original_recording = self.macros.recording_original();
                 self.record_macro_escape();
                 self.cancel_register_choice();

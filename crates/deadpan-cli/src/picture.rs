@@ -26,7 +26,8 @@ use deadpan_store::{AccessMode, ProjectStore, StoreError};
 
 mod shared;
 pub use shared::{
-    aspect_region, fill_canvas_aspect, render_layers, same_index_mapping, source_to_render_frame,
+    aspect_region, fill_canvas_aspect, fill_canvas_aspect_metadata, render_layers,
+    same_index_mapping, source_frame_metadata, source_to_render_frame,
 };
 mod generated;
 pub use generated::{

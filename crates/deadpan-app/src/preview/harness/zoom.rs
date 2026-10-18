@@ -7,6 +7,8 @@ use egui::Key;
 
 use super::*;
 
+mod macros;
+
 fn framing(d: &Driver<'_>) -> Option<Framing> {
     let node = d.app().selected_beat.clone()?;
     d.app().workspace.as_ref()?.document.nodes()[&node]
@@ -379,5 +381,5 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!("Follow target-2"),
         json!(format!("{named:?}")),
     )?;
-    Ok(())
+    macros::run(d)
 }

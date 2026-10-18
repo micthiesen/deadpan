@@ -4,6 +4,8 @@ use deadpan_core::{RegisterName, RegisterValue, RevisionId};
 
 #[path = "macros/apply.rs"]
 mod apply;
+#[path = "macros/framing.rs"]
+mod framing;
 #[path = "macros/groups.rs"]
 mod groups;
 #[path = "macros/original.rs"]

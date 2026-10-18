@@ -1,0 +1,37 @@
+{
+  "recorded-ranged-zoom.png": {
+    "label": "Recording a ranged zoom retains its selection and semantic intent",
+    "frame": 176,
+    "source": "zoom-121.png"
+  },
+  "replayed-backward-zoom.png": {
+    "label": "Replayed ranged zoom uses the new backward invocation selection",
+    "frame": 221,
+    "source": "zoom-122.png"
+  },
+  "replayed-ranged-creep.png": {
+    "label": "A replayed ranged creep holds its new arrival pose",
+    "frame": 305,
+    "source": "zoom-123.png"
+  },
+  "sampled-target-refusal.png": {
+    "label": "Ranged macro recording explains its sampled-target restriction",
+    "frame": 333,
+    "source": "zoom-124.png"
+  },
+  "cancelled-pending-zoom.png": {
+    "label": "Cancelled pending zoom leaves the edit unchanged after delayed picture delivery",
+    "frame": 499,
+    "source": "zoom-127.png"
+  },
+  "cancelled-ordinary-zoom.png": {
+    "label": "Cancelled pending zoom leaves the edit unchanged after delayed picture delivery",
+    "frame": 458,
+    "source": "zoom-125.png"
+  },
+  "cancelled-recording-zoom.png": {
+    "label": "Cancelled pending zoom leaves the edit unchanged after delayed picture delivery",
+    "frame": 473,
+    "source": "zoom-126.png"
+  }
+}

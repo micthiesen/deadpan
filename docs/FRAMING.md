@@ -198,8 +198,10 @@ on each framed submission; upload reuse and measured latency remain open.
 `,z`, `,c`, `:zoom` and `:creep` build one typed `SetFraming` edit for the
 selected direct child (or the inspected Repeat play) after its stopped picture
 is displayed, through the same Camera entry checks, macro recording and
-revision guard as Camera. The construction is pure and unit-tested in
-[`navigation/zoom.rs`](../crates/deadpan-app/src/navigation/zoom.rs).
+revision guard as Camera. Parsing stays in
+[`navigation/zoom.rs`](../crates/deadpan-app/src/navigation/zoom.rs); pure framing
+construction and its numeric tests live in
+[`framing_zoom`](../crates/deadpan-core/src/framing_zoom.rs).
 
 | Input | Result |
 | --- | --- |
@@ -241,9 +243,25 @@ Envelope progress is exact (`frame / beat frames`, reduced, at most one million)
 
 `:zoom` and `:creep` capture the session, revision, view, selected beat, Repeat
 scope, cursor and Edit range when `:` opens, including their absence; any
-change before Enter refuses instead of retargeting. Macros record whole-beat
-results as `SetFraming`; ranged results are refused while recording, because
-an envelope in beat fractions would not mean the same range on another beat.
+change before Enter refuses instead of retargeting. Whole-beat macro presets
+retain their `SetFraming` behavior. Ordinary ranged commands record `Zoom`
+intent with scales, curve and `Keep` or explicit `OriginalCenter`; replay
+resolves the invocation's selected owner and exact range against each staged
+document. It retains no old range fractions or sampled target point. A
+successful ranged Apply supplies the same invocation-relative intent for `.`.
+Recording a range that samples a selected, current, named or face target
+refuses; one-play macro framing also remains unsupported.
+
+The native and semantic paths share the pure
+[`framing_zoom` builder](../crates/deadpan-core/src/framing_zoom.rs) and its
+[numeric tests](../crates/deadpan-core/src/framing_zoom/tests.rs). The shared
+host resolver uses the staged render plan's evaluated pose and qualified
+provider geometry to project the Original center without decoding or proxy
+access. Existing outside-range path/follow refusals remain. Pending picture
+work keeps the full macro capture; Escape or `:record-cancel` cancels it before
+it can submit delayed framing. See [semantic macros](SEMANTIC_MACROS.md#ranged-zoom-and-creep)
+and [ranged framing qualification](qualification/ranged-framing-macros-2026-10-18.md)
+for implementation and verification scope.
 
 The save message describes the committed framing (`Framing saved: 1.350×
 following Target 1`), and the inspector shows `Path · 1.00–1.35×` for camera

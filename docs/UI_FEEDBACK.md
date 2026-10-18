@@ -11,6 +11,15 @@ The [specification](spec/DEADPAN_SPEC.md), [design targets](design/README.md) an
 
 ## Current status
 
+The `zoom` replay now covers invocation-relative ranged Zoom/Creep recording,
+backward selections, dot on another beat, sampled-target refusal and real
+delayed-picture cancellation. Final release visual/performance runs each pass
+136 checks plus the Kestrel audit. All seven 960×640 captures were inspected;
+that review corrected an obsolete preparation message after cancellation.
+The quiet run reports median input-to-state 0.542 ms and input-to-picture
+2.026 ms, with no failed or timed-out samples. See
+[ranged framing qualification](qualification/ranged-framing-macros-2026-10-18.md).
+
 The `place-slice` replay now covers semantic macro recording of eligible named
 register placements, explicit Interior/refinement/Move refusals, exact typed
 programs, replay at new selected children and backward ranges, and one-step

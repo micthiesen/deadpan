@@ -27,6 +27,8 @@ pub mod export_verification;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod faces;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+mod framing;
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 pub mod gags;
 pub mod generation;
 pub mod generation_context;

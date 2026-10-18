@@ -290,6 +290,12 @@ pub enum SemanticInstruction {
     SetFraming {
         framing: Option<Box<crate::Framing>>,
     },
+    /// Resolve zoom/creep against this invocation's selected beat and range.
+    /// Neither an owner identity nor the recording's range fractions are saved.
+    Zoom {
+        kind: crate::framing_zoom::ZoomKind,
+        center: SemanticZoomCenter,
+    },
     /// `+`/`-`, `:gain` and `:saturate` on the selected direct child: change
     /// its clip-gain trim or its saturation stage, keeping every other
     /// treatment and the authored stage order.
@@ -528,6 +534,14 @@ impl SemanticInstruction {
     }
 }
 
+/// Spatial intent that does not sample a named, selected or detected target.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SemanticZoomCenter {
+    Keep,
+    OriginalCenter,
+}
+
 /// Which sound edges `:edge` sets on the selected beat.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -703,6 +717,10 @@ impl SemanticProgram {
             ));
         }
         for instruction in &self.instructions {
+            if let SemanticInstruction::Zoom { kind, .. } = instruction {
+                kind.validate()
+                    .map_err(|message| EditError::new(EditErrorCode::InvalidCommand, message))?;
+            }
             if instruction.backward_word_end() {
                 return Err(EditError::new(
                     EditErrorCode::InvalidCommand,

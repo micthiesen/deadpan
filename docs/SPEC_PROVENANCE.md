@@ -70,6 +70,14 @@ revised to match. Implementation scope is unchanged.
 
 Source archive SHA-256: `7c44444cdbabaa7196910fb7affefc03f0c920169f2ffa2a710ea6bccd236046`.
 
+On 2026-10-18 the implementation adopted the existing handoff's decision 4
+recommendation for ranged zoom/creep macros: retain center/scale/curve intent,
+resolve the new invocation range, allow retained-center and `target=center`,
+and refuse ranged sampled-target recording explicitly. Section 7.4 now records
+that rule and the requirement to preserve outside-range paths/follows and
+explicit one-play authority. This does not claim the implementation or DP-06
+acceptance is complete; [Requirements](REQUIREMENTS.md) tracks the remaining work.
+
 | File | Bytes | SHA-256 |
 | --- | ---: | --- |
 | [AGENT_HANDOFF.md](spec/archive/1.0/AGENT_HANDOFF.md) | 4,340 | `464f689e1eb5ad6b2905286e516259f07dc83fea8ebb2b0330663976b905ae6c` |

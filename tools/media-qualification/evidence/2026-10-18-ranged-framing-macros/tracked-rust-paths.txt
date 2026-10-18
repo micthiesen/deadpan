@@ -1,0 +1,16 @@
+crates/deadpan-app/src/navigation/zoom.rs
+crates/deadpan-app/src/preview.rs
+crates/deadpan-app/src/preview/camera.rs
+crates/deadpan-app/src/preview/harness/zoom.rs
+crates/deadpan-app/src/preview/macros.rs
+crates/deadpan-app/src/project/semantic.rs
+crates/deadpan-cli/src/lib.rs
+crates/deadpan-cli/src/macros.rs
+crates/deadpan-cli/src/picture.rs
+crates/deadpan-cli/src/picture/shared.rs
+crates/deadpan-cli/tests/project_commands/macros.rs
+crates/deadpan-core/src/lib.rs
+crates/deadpan-core/src/semantic/planner.rs
+crates/deadpan-core/src/semantic/planner/tests.rs
+crates/deadpan-core/src/semantic/program.rs
+crates/deadpan-store/src/generation_origins.rs
