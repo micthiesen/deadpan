@@ -15,7 +15,7 @@ Visual yank, typed operator motions and group objects, Repeat wraps (optionally
 escalating) and count setters, named Group, neutral Ungroup, register paste or
 Visual replacement, pauses (`InsertPause`, exact frames or milliseconds with a
 host-resolved freeze), framing of the selected beat and invocation-relative
-ranged zooms and creeps, built-in
+ranged zooms and creeps, explicitly scoped one-play framing, built-in
 [gag recipes](GAGS.md), gain trims and steps and saturation of the selected
 beat (`SetAudio`, from `+`/`-`, `:gain` and `:saturate`), J- and L-cuts
 (`SplitEdit`), role-only deletes (`DeleteRole`) and audio-only or video-only repeats (`RoleRepeat`, see
@@ -97,7 +97,7 @@ it refuses if that point is clipped. Recording a ranged command that would
 sample a selected, current, named or face target refuses with an explanation.
 An implicit selected-target choice is treated as Keep only when no saved target
 or target follow is involved. Ordinary interactive target sampling remains
-available. Existing whole-beat presets keep their `SetFraming` behavior.
+available. Existing ordinary whole-beat presets keep their `SetFraming` behavior.
 
 Native commands and semantic replay share the pure `framing_zoom` builder.
 A ranged smash restores the preceding static pose after the range; a creep
@@ -112,8 +112,8 @@ A successful ranged Apply establishes the same Zoom intent for `.`. Repeating
 it resolves the new invocation selection; recording `.` stores that instruction.
 Named runs retain ordinary Compound atomicity and one Undo, including when an
 earlier instruction changes the owner's duration. An unchanged framing adds no
-authored step. One-play framing authority remains open and is refused while
-recording; an ordinary macro cannot infer permission to edit one Repeat play.
+authored step. One-play framing uses the separate invocation authority below;
+an ordinary macro cannot infer permission to edit one Repeat play.
 
 The pending stopped-picture request retains the full macro capture, including
 session, revision, bank version, ordinary scope, cursor, selected child, Visual
@@ -123,6 +123,42 @@ While recording, another action waits for that request; Escape or
 cannot later commit or append the pending framing. Already queued authored
 work retains the ordinary durable receipt rules.
 See [ranged framing macro qualification](qualification/ranged-framing-macros-2026-10-18.md).
+
+### One-play zoom and creep
+
+Choose This play at every enclosing Repeat before recording or running a
+framing macro. `:zoom`, `:creep`, `,z` and `,c` use `Zoom` intent with Keep or
+explicit OriginalCenter. A successful single Apply also supplies that intent
+for dot. Choose another play before `@a` or `.` to frame that invocation's play.
+The saved program contains no node, play, presentation or recording-time pose.
+
+The invocation captures the authoring target and its separate concrete
+presentation, plus the ordinary Sequence context. Each staged instruction
+resolves that exact plan layer and its intrinsic owner clock, isolates only
+changed selected branches, and maps both addresses for the next instruction.
+Existing overrides need no additional isolation; unchanged framing creates no
+revision. One run commits once, and one Undo restores framing and isolation.
+The native receipt retains the mapped inspector. Any scope navigation revokes
+its cursor ownership permanently, including moving away and back in one event
+batch before a delayed receipt arrives.
+
+Only Zoom and named Call instructions are admitted under one-play authority,
+including every expanded nested call. An unsupported later instruction refuses
+the complete run without history or bank writes. All plays, mixed choices,
+several plays, absent or mismatched presentations, Original invocation and
+Visual ranges cannot supply this authority. Scope navigation is not recorded;
+save or cancel before another editing action. Sampled, named and face-target
+framing refuses recording before analysis or authored work. Their ordinary
+interactive paths remain available. A Retime scope without a Repeat ancestor
+retains its existing direct framing path.
+
+Headless Run and Apply accept optional `scoped` invocation context with `root`,
+`target` (`ScopedNodeTarget`) and `presentation` (`InstancePath`). Dry-run and
+commit validate the same address. Output context and each trace row retain the
+mapped authority. Request bytes have a depth/identity-derived allowance while
+saved programs retain their independent 128 KiB limit.
+See [one-play qualification](qualification/one-play-framing-macros-2026-10-18.md)
+for real-media, durable-history, native replay, review and timing evidence.
 
 ### Place slice Apply
 

@@ -28,6 +28,7 @@ fn context() -> SemanticContext {
         selected_child: Some(node("middle")),
         visual_selection: None,
         original: None,
+        scoped: None,
     }
 }
 

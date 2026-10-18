@@ -243,7 +243,7 @@ fn semantic_zoom_center(
         TargetChoice::Keep => Ok(SemanticZoomCenter::Keep),
         TargetChoice::Center => Ok(SemanticZoomCenter::OriginalCenter),
         TargetChoice::Selected if !follows_target && !saved_targets => Ok(SemanticZoomCenter::Keep),
-        _ => Err("A ranged zoom macro cannot sample a selected, named or face target. Use target=center or :creep without target=, or save or cancel recording first.".into()),
+        _ => Err("A framing macro cannot sample a selected, named or face target. Use target=center, or save or cancel recording first.".into()),
     }
 }
 
@@ -922,6 +922,9 @@ impl DeadpanApp {
     }
 
     pub(super) fn framing_action(&mut self, action: FramingAction, context: &egui::Context) {
+        if !self.macro_action_allowed(Action::Framing(action)) {
+            return;
+        }
         use crate::navigation::zoom::ZoomInput;
         let request = match action {
             FramingAction::EnterCamera => FramingRequest::Camera,
@@ -1127,7 +1130,14 @@ impl DeadpanApp {
             context.memory_mut(|memory| memory.request_focus(pane_id(Pane::Viewer)));
             return;
         };
-        let center_intent = range.filter(|_| session.scoped.is_none()).map(|_| {
+        let scoped_semantic = session.scoped.is_some()
+            && semantic_capture.as_ref().is_some_and(|captured| {
+                captured.as_ref().is_ok_and(|captured| captured.is_scoped())
+            });
+        let intent_scope = (range.is_some() && session.scoped.is_none())
+            || scoped_semantic
+            || (session.scoped.is_some() && self.macros.recording());
+        let center_intent = intent_scope.then(|| {
             semantic_zoom_center(
                 &input.target,
                 matches!(
@@ -1159,8 +1169,11 @@ impl DeadpanApp {
             {
                 // Ranges retain zoom intent, resolved anew on invocation.
                 // Whole-beat presets retain their existing completed framing.
-                if session.scoped.is_some() {
-                    self.error = Some("Framing a single Repeat play cannot be recorded yet; record framing on an ordinary beat.".into());
+                if session.scoped.is_some() && center_intent.is_none() {
+                    self.error = Some(
+                        "Choose one visible play at every Repeat level before recording framing."
+                            .into(),
+                    );
                     return;
                 }
                 if framing == session.entry {

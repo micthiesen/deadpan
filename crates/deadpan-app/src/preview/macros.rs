@@ -21,9 +21,14 @@ pub(super) struct Capture {
     sound_focused: bool,
     event_focused: bool,
     original_selection: Option<moment::Selection>,
+    scoped: Option<crate::project::scoped::Target>,
 }
 
 impl Capture {
+    pub(super) fn is_scoped(&self) -> bool {
+        self.context.scoped.is_some()
+    }
+
     /// The selected direct child as it was when the command was entered.
     pub(super) fn selected_node(&self) -> Option<&deadpan_core::BeatNode> {
         self.context
@@ -154,6 +159,7 @@ impl Capture {
             && app.capture_visual_selection().as_ref() == Ok(&self.context.visual_selection)
             && app.sound_focused() == self.sound_focused
             && app.event_focused() == self.event_focused
+            && app.scoped_target().as_ref() == Ok(&self.scoped)
             && self.context.original.as_ref().is_none_or(|original| {
                 app.source_cursor == original.ordinal.0
                     && app.selected_source.as_ref() == Some(&original.asset)
@@ -197,6 +203,7 @@ impl Capture {
                     && expected.sound_focused == self.sound_focused
                     && expected.event_focused == self.event_focused
                     && expected.original_selection == self.original_selection
+                    && expected.scoped == self.scoped
             })
     }
 
@@ -310,6 +317,14 @@ impl State {
                 .is_some_and(|recording| recording.cut.is_some())
     }
 
+    /// Navigation permanently releases a queued edit's continuation, even if
+    /// the user returns to the same address before its receipt arrives.
+    pub fn revoke_cursor(&mut self) {
+        if let Some(pending) = &mut self.pending {
+            pending.owns_cursor = false;
+        }
+    }
+
     #[cfg(feature = "ui-harness")]
     pub fn pending_identity(&self) -> Option<protocol::Id> {
         self.pending
@@ -371,15 +386,13 @@ impl DeadpanApp {
     }
 
     pub(super) fn capture_original_insert_target(&self) -> Result<Capture, String> {
+        if self.scoped.is_some() {
+            return Err("Return to the parent before reusing the Original.".into());
+        }
         self.capture_edit_target(false)
     }
 
     fn capture_edit_target(&self, require_edit_focus: bool) -> Result<Capture, String> {
-        if self.scoped.is_some() {
-            return Err(
-                "Return to the parent before recording or applying structural edits.".into(),
-            );
-        }
         if let Some(error) = self.frame_delete_blocked() {
             return Err(error.into());
         }
@@ -408,7 +421,16 @@ impl DeadpanApp {
             selected_child: self.selected_beat.clone(),
             visual_selection: self.capture_visual_selection()?,
             original: None,
+            scoped: None,
         };
+        let scoped = self.scoped_target()?;
+        let mut context = context;
+        if let Some(target) = &scoped {
+            if context.visual_selection.is_some() || self.view != View::Sequence {
+                return Err("Clear the Visual selection and focus Your edit before using one-play framing macros.".into());
+            }
+            context.scoped = Some(target.semantic_framing(&base)?);
+        }
         Ok(Capture {
             base,
             scope,
@@ -422,6 +444,7 @@ impl DeadpanApp {
             sound_focused: self.sound_focused(),
             event_focused: self.event_focused(),
             original_selection: None,
+            scoped,
         })
     }
 
@@ -497,6 +520,25 @@ impl DeadpanApp {
         }
         if !self.macros.recording() {
             return true;
+        }
+        if self.scoped.is_some()
+            && !matches!(
+                action,
+                Action::Framing(
+                    crate::navigation::FramingAction::PunchIn
+                        | crate::navigation::FramingAction::Creep
+                ) | Action::RepeatLast
+                    | Action::MacroExecute { .. }
+                    | Action::MacroStop
+                    | Action::MacroCancel
+                    | Action::Command
+                    | Action::Escape
+                    | Action::Invalid(_)
+                    | Action::OfferInsert
+            )
+        {
+            self.error = Some("A one-play framing macro records zooms, creeps and named calls. Save or cancel recording before another action.".into());
+            return false;
         }
         if self.macros.recording_original()
             && !matches!(
@@ -792,6 +834,11 @@ impl DeadpanApp {
                     self.message = Some(if self.view == View::Source {
                         format!(
                             "Recording @{name} on Original: frame and boundary motions, marks, jumps and named calls. {} saves; Esc cancels.",
+                            self.editor_key(EditorKey::MacroRecord)
+                        )
+                    } else if self.scoped.is_some() {
+                        format!(
+                            "Recording @{name} in this play: zooms, creeps and named framing calls. {} saves; Esc cancels.",
                             self.editor_key(EditorKey::MacroRecord)
                         )
                     } else {
@@ -1277,6 +1324,14 @@ impl DeadpanApp {
             }
             let captured = target?;
             let instruction = instruction?;
+            if captured.context.scoped.is_some()
+                && !matches!(
+                    instruction,
+                    SemanticInstruction::Zoom { .. } | SemanticInstruction::Call { .. }
+                )
+            {
+                return Err("This play supports semantic Zoom, Creep and named framing calls only. Return to the parent for other macro edits.".into());
+            }
             if !captured.matches(self)
                 || self
                     .macros

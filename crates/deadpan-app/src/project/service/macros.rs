@@ -14,6 +14,68 @@ use crate::project::macros::{Id, Operation, Outcome, Receipt, Update};
 use crate::project::registers::{Bank, Value};
 use crate::project::slice::{Captured, CopyId};
 
+fn scoped_macro_target(
+    workspace: &Workspace,
+    id: &Id,
+    scope: &SequenceScope,
+    context: &deadpan_core::SemanticContext,
+) -> Result<Option<crate::project::scoped::Target>> {
+    let Some(scoped) = &context.scoped else {
+        return Ok(None);
+    };
+    if context.original.is_some() || context.visual_selection.is_some() {
+        return Err("One-play framing requires Your edit with no Visual selection.".into());
+    }
+    let target = crate::project::scoped::Target {
+        session: id.session,
+        project: id.project.clone(),
+        revision: id.revision.clone(),
+        scope: scope.clone(),
+        root: scoped.root.clone(),
+        target: scoped.target.clone(),
+        presentation: Some(scoped.presentation.clone()),
+        cursor: context.cursor,
+        also: Vec::new(),
+    };
+    target.validate_request(workspace, id.session, &id.revision, scope, context.cursor)?;
+    if target.semantic_framing(workspace)? != *scoped {
+        return Err("The framing authority differs from its captured native scope.".into());
+    }
+    Ok(Some(target))
+}
+
+fn scoped_macro_receipt(
+    before: Option<crate::project::scoped::Target>,
+    context: &deadpan_core::SemanticContext,
+    plan: &SemanticPlan,
+) -> Result<Option<crate::project::scoped::Commit>> {
+    match (before, &plan.context.scoped) {
+        (None, None) => Ok(None),
+        (Some(before), Some(after)) => {
+            let mut expected = context.clone();
+            expected.scoped = Some(after.clone());
+            if expected != plan.context
+                || before.root != after.root
+                || !after
+                    .target
+                    .matches_instance(&plan.document, &after.presentation)
+                    .map_err(display)?
+            {
+                return Err(
+                    "Scoped framing changed its ordinary context or lost its concrete play.".into(),
+                );
+            }
+            Ok(Some(crate::project::scoped::Commit {
+                before,
+                revision: plan.document.revision_id().clone(),
+                target: after.target.clone(),
+                presentation: Some(after.presentation.clone()),
+            }))
+        }
+        _ => Err("Scoped framing did not preserve its invocation authority.".into()),
+    }
+}
+
 impl Service {
     /// Remote macros use explicit document coordinates. Build every runtime
     /// copy before committing, without creating a native cursor continuation.
@@ -209,7 +271,8 @@ impl Service {
                             SemanticInstruction::Tail { .. } => "Add tail",
                             SemanticInstruction::Lift { .. } => "Lift selection",
                             SemanticInstruction::Bleep { .. } => "Bleep selection",
-                            SemanticInstruction::SetFraming { .. } => "Frame beat",
+                            SemanticInstruction::SetFraming { .. }
+                            | SemanticInstruction::Zoom { .. } => "Frame beat",
                             SemanticInstruction::Retime { .. } => "Change speed",
                             SemanticInstruction::Pitch { .. } => "Shift pitch",
                             SemanticInstruction::SetHoldDuration { .. } => "Change pause length",
@@ -253,6 +316,12 @@ impl Service {
                 if owner.owner != &context.parent {
                     return Err("Macro target differs from the captured Sequence scope".into());
                 }
+                let scoped_before = scoped_macro_target(
+                    self.workspace.as_ref().ok_or("Open a project first")?,
+                    id,
+                    scope,
+                    context,
+                )?;
                 let invocation = SemanticProgram::new(vec![instruction]).map_err(display)?;
                 let plan = deadpan_cli::macros::plan_program(
                     self.store.as_ref().ok_or("Open a project first")?,
@@ -269,6 +338,7 @@ impl Service {
                     &final_picture_plan,
                     &plan.context.parent,
                 )?;
+                let scoped_receipt = scoped_macro_receipt(scoped_before, context, &plan)?;
                 let mut receipt = Receipt {
                     id: id.clone(),
                     bank_version: stored.version,
@@ -354,10 +424,13 @@ impl Service {
                 // revision. Only the store's authored receipt grants a native
                 // edit continuation; never infer one from a Compound request.
                 let committed = outcome.committed.map(|saved| CommittedEdit {
-                    scoped: None,
+                    selected_node: scoped_receipt
+                        .as_ref()
+                        .map(|receipt| receipt.before.root.clone())
+                        .or_else(|| plan.selected_child.clone()),
+                    preserve_cursor: scoped_receipt.is_some(),
+                    scoped: scoped_receipt,
                     revision: saved.revision_id,
-                    selected_node: plan.selected_child.clone(),
-                    preserve_cursor: false,
                     cursor: Some(plan.context.cursor),
                     scope: final_scope,
                     sound: None,

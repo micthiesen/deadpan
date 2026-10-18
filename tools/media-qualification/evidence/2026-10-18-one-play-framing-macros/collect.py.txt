@@ -1,0 +1,77 @@
+from pathlib import Path
+import gzip
+import hashlib
+import json
+import shutil
+import struct
+
+root = Path('/Users/michael/Code/deadpan')
+scratch = Path('/tmp/deadpan-one-play-framing-2026-10-18')
+dest = root / 'tools/media-qualification/evidence/2026-10-18-one-play-framing-macros'
+dest.mkdir(parents=True, exist_ok=True)
+reports = {name: json.loads((scratch / name / 'report.json').read_text()) for name in ('visual', 'performance')}
+identity = json.loads((scratch / 'binaries.json').read_text())
+for name, report in reports.items():
+    assert not report['failed'], name
+    assert all(not s['failed'] for s in report['scenarios']), name
+    assert report['metadata']['binary_sha256'] == identity['sha256']['deadpan-app'], name
+sources = json.loads((scratch / 'source-identities.json').read_text())
+for name, digest in sources['sha256'].items():
+    assert hashlib.sha256((root / name).read_bytes()).hexdigest() == digest, name
+
+def compressed(source, name):
+    (dest / (name + '.gz')).write_bytes(gzip.compress(source.read_bytes(), mtime=0))
+
+for name in ('prepare.py', 'collect.py', 'finish-docs.py', 'update-coverage.py'):
+    shutil.copy2(scratch / name, dest / (name + '.txt'))
+for source in sorted(Path('/tmp').glob('deadpan-one-play-framing-*.log')):
+    compressed(source, source.name.removeprefix('deadpan-one-play-framing-'))
+for directory in sorted(scratch.iterdir()):
+    if directory.is_dir() and (directory / 'report.json').exists():
+        compressed(directory / 'report.json', directory.name + '-report.json')
+        log = scratch / (directory.name + '.log')
+        if log.exists():
+            compressed(log, log.name)
+for source in sorted(scratch.iterdir()):
+    if source.is_file() and (source.suffix == '.json' or source.name.endswith('paths.txt')):
+        shutil.copy2(source, dest / source.name)
+    elif source.is_file() and source.suffix == '.diff':
+        compressed(source, source.name)
+labels = {
+    'One-play framing records intent while retaining the selected play': 'recording-this-play.png',
+    'A saved framing macro applies to the newly selected first play': 'replay-first-play.png',
+    'Dot repeats framing only on the play selected now': 'dot-new-play.png',
+    'A replayed one-play creep retains its own owner clock': 'creep-owner-clock.png',
+    'One-play recording explains its sampled-target restriction': 'sampled-target-refusal.png',
+    'Framing macros require explicit This play authority': 'all-plays-refusal.png',
+    'Delayed one-play framing preserves the newer navigation': 'delayed-newer-navigation.png',
+    'Returning to the same play cannot revive delayed framing authority': 'delayed-round-trip.png',
+}
+captures = {}
+for scenario in reports['visual']['scenarios']:
+    for step in scenario['steps']:
+        if step['input'] in labels and step.get('screenshot'):
+            name = labels[step['input']]
+            shutil.copy2(scratch / 'visual' / step['screenshot'], dest / name)
+            captures[name] = {'label': step['input'], 'frame': step['frame'], 'source': step['screenshot']}
+assert len(captures) == len(labels), captures
+for name in captures:
+    assert struct.unpack('>II', (dest / name).read_bytes()[16:24]) == (960, 640), name
+old_report = json.loads((scratch / 'pre-text-visual' / 'report.json').read_text())
+for scenario in old_report['scenarios']:
+    for step in scenario['steps']:
+        if step['input'] in (
+            'One-play framing records intent while retaining the selected play',
+            'One-play recording explains its sampled-target restriction',
+        ) and step.get('screenshot'):
+            shutil.copy2(scratch / 'pre-text-visual' / step['screenshot'], dest / ('pre-text-' + labels[step['input']]))
+(dest / 'captures.json').write_text(json.dumps(captures, indent=2) + '\n')
+timings = {t['name']: t['summary'] for s in reports['performance']['scenarios'] if s['name'] == 'scoped-plays' for t in s['timings']}
+(dest / 'timings-summary.json').write_text(json.dumps(timings, indent=2) + '\n')
+fixture = 'native/deadpan-source/tests/fixtures/cfr-bframes.mp4'
+(dest / 'fixture-identities.json').write_text(json.dumps({fixture: hashlib.sha256((root / fixture).read_bytes()).hexdigest()}, indent=2) + '\n')
+inventory = {p.name: {'bytes': p.stat().st_size, 'sha256': hashlib.sha256(p.read_bytes()).hexdigest()} for p in sorted(dest.iterdir()) if p.is_file() and p.name != 'inventory.json'}
+(dest / 'inventory.json').write_text(json.dumps(inventory, indent=2) + '\n')
+for name, item in inventory.items():
+    assert hashlib.sha256((dest / name).read_bytes()).hexdigest() == item['sha256'], name
+print(json.dumps({'files': len(inventory), 'bytes': sum(x['bytes'] for x in inventory.values()), 'checks': {name: {s['name']: len(s['checks']) for s in r['scenarios']} for name, r in reports.items()}, 'timings': {name: timings[name] for name in ('input_to_state_ms', 'input_to_picture_complete_ms')}}, indent=2))

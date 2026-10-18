@@ -45,7 +45,9 @@ and installs dot intent:
   recipe);
 - whole-beat `,z`/`,c` zoom and creep framing (`SetFraming`), and ordinary
   ranged Keep/OriginalCenter framing (`Zoom` intent, resolved against the new
-  invocation's owner and selection; see [qualification](qualification/ranged-framing-macros-2026-10-18.md));
+  invocation's owner and selection; see [qualification](qualification/ranged-framing-macros-2026-10-18.md)),
+  and whole-owner Keep/OriginalCenter Zoom intent in an explicit single play
+  at every enclosing Repeat ([one-play authority](SEMANTIC_MACROS.md#one-play-zoom-and-creep));
 - cutaways (`SetCutaway`) and captions (`SetCaption`) over the selected beat or
   over the Edit range inside one beat;
 - J- and L-cuts (`SplitEdit`, at the cut under the new cursor), role-only
@@ -53,10 +55,11 @@ and installs dot intent:
   range, reverse and ping-pong pauses, tails and gags.
 
 The dot hint names the edit ("repeat: speed 2/1× · preserve pitch"). A Repeat
-play scope (`:scope play N`) edits one play directly and clears dot intent, as
-do a ranged zoom that samples a target, a face-target zoom that also saves a
-target, clearing cutaways or captions, the Camera editor and the Trim and Slip
-edits. `s`/`:split` uses semantic `Split` intent since 2026-10-15. Each split fragment keeps
+play scope (`:scope play N`) supplies dot intent for eligible whole-owner Zoom
+and Creep commands; other direct play edits clear it. Ranged zooms that sample
+a target, face-target zooms that also save a target, clearing cutaways or
+captions, the Camera editor and Trim/Slip edits also clear dot intent.
+`s`/`:split` uses semantic `Split` intent since 2026-10-15. Each split fragment keeps
 its own copy of the Original's Source, so an audio lag set on one fragment
 does not move the others. A repeated or recorded edit that would change
 nothing reports "No edit was made" as a message, without a revision. The [creative-dot replay](#native-interaction)

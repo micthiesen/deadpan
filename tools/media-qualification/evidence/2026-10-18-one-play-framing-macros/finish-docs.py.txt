@@ -1,0 +1,62 @@
+from pathlib import Path
+
+root = Path('/Users/michael/Code/deadpan')
+scratch = Path('/tmp/deadpan-one-play-framing-2026-10-18')
+draft = (scratch / 'qualification-draft.md').read_text()
+before = '''PENDING: final release visual, minimum-size captures, separate quiet performance,
+binary/source hashes and evidence inventory.'''
+after = '''The first release visual replay passes 149 scoped-play checks plus the
+Kestrel audit. Inspection of its eight 960×640 captures found a misleading
+"ranged zoom" refusal in a whole-play context and a Marks hint that the scoped
+recording gate did not admit. The message now says "framing macro", and that
+hint is hidden while recording. The inspector's Camera button now enters the
+same recording gate as its key, refusing the unsupported draft before opening
+it. A replay check clicks that real button and verifies no camera, pending
+entry, instruction or authored edit. Follow-up review finds no regression from
+the shared gate. Strict normal/UI lint and both focused checks pass again.
+
+The final optimized visual and separate performance replays each pass 150
+scoped-play checks plus the live Kestrel audit: 62 reserved bindings,
+21,885,504 routing cases, no conflict or source drift. The replay records
+Zoom/Creep in play 3, runs the saved intent on play 1, repeats a direct Zoom
+with dot on another play, restores complete documents through Undo, refuses
+sampled targets and All plays, and exercises both withheld-receipt navigation
+cases. The existing scoped editing and pause cases still pass.
+
+All eight final captures were inspected at 960×640. Play badges, independent
+Original/Edit clocks, recording instruction counts, valid keys, refusal text
+and delayed-result messages are visible. The keyboard and pointer paths use
+production widgets, the project service, SQLite and offscreen Metal. The replay
+opens no native window and does not establish physical keyboard, IME, display
+or acoustic behavior.
+
+The quiet performance run has no concurrent Cargo or agent work and performs
+GPU submissions without PNG readback. Power is AC with battery at 80%; caches,
+thermal state and unrelated system background activity are uncontrolled.
+
+| Measurement | Completed | Median | p95 | Maximum | Failed / timed out |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Input to state | 153 | 0.514 ms | 1.086 ms | 1.699 ms | 0 / 0 |
+| Input to completed picture | 50 | 2.127 ms | 9.663 ms | 87.968 ms | 0 / 0 |
+
+These are short-fixture offscreen measurements, not full-resolution or physical
+display latency. The picture tail remains recorded rather than hidden by the
+median. The final app and CLI build without the debug compact-unwind warning.
+
+## Retained evidence
+
+The [evidence directory](../../tools/media-qualification/evidence/2026-10-18-one-play-framing-macros)
+retains failed and passing logs, both visual reports, the final performance
+report, final and pre-fix captures, source diffs including new files, source and
+binary identities, fixture identity, independent review, collection scripts
+and the checked SHA-256 inventory. The final app is
+`51f554a1d49546813a2db62e795125cea8fe9f2f4f9543032f3d4102f10918c4`;
+the CLI is `131b29e169b603a583c7ef09c590bce9d6bc79b2eb03d21708690bcdc1ed038a`.
+Unchanged private media, tracking and transcription helpers retain the hashes
+recorded in `binaries.json`. The source manifest binds this checkout to the
+base revision plus its retained diff; no archived-source executable is reused
+as a current app.'''
+assert draft.count(before) == 1
+draft = draft.replace(before, after)
+assert 'PENDING:' not in draft
+(root / 'docs/qualification/one-play-framing-macros-2026-10-18.md').write_text(draft)

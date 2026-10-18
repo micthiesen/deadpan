@@ -243,14 +243,19 @@ Envelope progress is exact (`frame / beat frames`, reduced, at most one million)
 
 `:zoom` and `:creep` capture the session, revision, view, selected beat, Repeat
 scope, cursor and Edit range when `:` opens, including their absence; any
-change before Enter refuses instead of retargeting. Whole-beat macro presets
+change before Enter refuses instead of retargeting. Ordinary whole-beat macro presets
 retain their `SetFraming` behavior. Ordinary ranged commands record `Zoom`
 intent with scales, curve and `Keep` or explicit `OriginalCenter`; replay
 resolves the invocation's selected owner and exact range against each staged
 document. It retains no old range fractions or sampled target point. A
 successful ranged Apply supplies the same invocation-relative intent for `.`.
 Recording a range that samples a selected, current, named or face target
-refuses; one-play macro framing also remains unsupported.
+refuses. With This play chosen at every enclosing Repeat, whole-owner framing
+uses the same Zoom intent for recording and dot. Each invocation captures its
+own exact play, maps authoring and presentation addresses through staged
+isolation, and returns a scoped receipt. Only Zoom and named framing calls are
+admitted there; All/mixed/multiple plays and sampled-target recording refuse.
+See [one-play framing macros](SEMANTIC_MACROS.md#one-play-zoom-and-creep).
 
 The native and semantic paths share the pure
 [`framing_zoom` builder](../crates/deadpan-core/src/framing_zoom.rs) and its

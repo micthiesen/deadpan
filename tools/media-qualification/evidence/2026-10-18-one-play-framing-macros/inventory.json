@@ -1,0 +1,182 @@
+{
+  "all-plays-refusal.png": {
+    "bytes": 280383,
+    "sha256": "376b9c6babe8105769ce401e7363448753958e0e0e3f8d5bd73445b1809c5630"
+  },
+  "binaries.json": {
+    "bytes": 660,
+    "sha256": "cbb5fe12f743e5e52007570d5ffe69329bd30fdcb7f813c7bcf4dcc88bc854c6"
+  },
+  "captures.json": {
+    "bytes": 1320,
+    "sha256": "4b472f7ff0bed5f4e71369f8ba4b33bcb4237c30e4c26ed7479a59bae8fb9642"
+  },
+  "check-2.log.gz": {
+    "bytes": 593,
+    "sha256": "7fc0a746b35e977899141940cac243f572b59fe0ed53542fdeaab3ed2dca14af"
+  },
+  "check.log.gz": {
+    "bytes": 945,
+    "sha256": "1f14c538be0a5ec261ac48660413d371e9765dbd4622e65fea52ded1e0efde91"
+  },
+  "cli-rerun-2.log.gz": {
+    "bytes": 439,
+    "sha256": "8a7e17562617e181fb37f5a8d36a62b3cae34705328c7e74b2103ce6ab662123"
+  },
+  "cli-rerun.log.gz": {
+    "bytes": 1726,
+    "sha256": "bd5238259ca58a227ee5994b8b5cf5b9ad2ba2fa8cf9a83a76f618aab10c5b98"
+  },
+  "collect.py.txt": {
+    "bytes": 4912,
+    "sha256": "c38ab1ae9a69d662b1186020bc55651c1e00ca57f3f54b661677ab3c42cf9938"
+  },
+  "creep-owner-clock.png": {
+    "bytes": 270396,
+    "sha256": "19f5f7785591cc04b56c54a399b9912664da675da63472a78b49d520db1f1b53"
+  },
+  "delayed-newer-navigation.png": {
+    "bytes": 280650,
+    "sha256": "f903f777e9abc0a346ffd2b6a83c5955ef809d9df4ca3efd9a270776368590cd"
+  },
+  "delayed-round-trip.png": {
+    "bytes": 276072,
+    "sha256": "4e92ca35a8b02e95e61d395f9f9c44a2c1175082c9407fda93b5cfb5894e0990"
+  },
+  "dot-new-play.png": {
+    "bytes": 270185,
+    "sha256": "25c07f8404d2f829f596b1c2a467f04ce38cf025592eddacb51d71bb1321f6e8"
+  },
+  "final-gate.log.gz": {
+    "bytes": 828,
+    "sha256": "a79d2169fda402e6fbb4b0edd23c171313107d6c4d0213a1cb8a6f25be5d0a94"
+  },
+  "final-release-build.log.gz": {
+    "bytes": 136,
+    "sha256": "d4442ef305afb6b4303bbb0c387bc1628f78d8df1f9899e2ef44ac04044923a7"
+  },
+  "finish-docs.py.txt": {
+    "bytes": 3674,
+    "sha256": "0929dfaa1900e3272c1dcb88ebe56a00ac9518ef886c670dbf83874e67fd1fe0"
+  },
+  "fixture-identities.json": {
+    "bytes": 129,
+    "sha256": "6525fba454b47b270cea6e93117c655424c08515078c8cb6dd2577bf0c8498a1"
+  },
+  "gate.log.gz": {
+    "bytes": 15690,
+    "sha256": "9c69cc72b68ce52e6d4d2a9c15dd025e18e7a199d5a5a85765ea21ba6db656b6"
+  },
+  "new-rust-paths.txt": {
+    "bytes": 342,
+    "sha256": "e0ee39363e6cbca7609a6af1cbc64090d9ce3b93dfdaf8b7dde61dca038a5af0"
+  },
+  "performance-report.json.gz": {
+    "bytes": 111827,
+    "sha256": "17aae5a07a44195f8bbb936e8f99fa91b3c35ff2f6562ce860bc573ebcd4939f"
+  },
+  "performance.log.gz": {
+    "bytes": 111,
+    "sha256": "6796e1a62d4509d7369bd6fbd8d5d696fc458a46134336129700d2fe8d73c84f"
+  },
+  "pre-text-binaries.json": {
+    "bytes": 660,
+    "sha256": "9b4c566d42a8465d602425d2a7e56d9083f5885de04d80ea01cfb72f27a65443"
+  },
+  "pre-text-recording-this-play.png": {
+    "bytes": 253633,
+    "sha256": "17a0d44c947d7561dc42c9138d3997eac4ab6f1a1731e8064215c13d14ef2708"
+  },
+  "pre-text-sampled-target-refusal.png": {
+    "bytes": 275517,
+    "sha256": "13e18e0ba1c06e70e6e06503bd8b955cf7f0e27729c9bbecc1789b95063fe8b1"
+  },
+  "pre-text-source-identities.json": {
+    "bytes": 4926,
+    "sha256": "91db089bbb5c0c2b3dbf4ae9e89d3c0895586c42167156f94fb77a1df69bb572"
+  },
+  "pre-text-source.diff.gz": {
+    "bytes": 32831,
+    "sha256": "f798e5dbff4c0d390f3cd7796f97a931216b4d677bbec45fe82c545f6707baed"
+  },
+  "pre-text-visual-report.json.gz": {
+    "bytes": 818100,
+    "sha256": "1b3a1565ecc794c5274e8de3800306c9730510552cc81efa3b7ed36294df2f6c"
+  },
+  "pre-text-visual.log.gz": {
+    "bytes": 109,
+    "sha256": "835481e24da595626ecace2f72b41e981a85236f0b3eb3210795d44da6fccca9"
+  },
+  "prepare.py.txt": {
+    "bytes": 1662,
+    "sha256": "757b01d33c781cfc5ecabd1224ac16c6fd868d638e23b60a7badc362c3fb318f"
+  },
+  "recording-this-play.png": {
+    "bytes": 253254,
+    "sha256": "ea222ed8e546b27bc1fd30cbda4cac9b84ffc55cfff2d54e9e62957cb6bf28fc"
+  },
+  "release-build.log.gz": {
+    "bytes": 258,
+    "sha256": "6b0f5ae7fc10d41757058a5a4c0558307493d24fb2796b14312c503b40759e5d"
+  },
+  "replay-first-play.png": {
+    "bytes": 264537,
+    "sha256": "c44060bf60d7163047a8bab8d9380e642fc22a03864cb25d04e9dad6a12ef595"
+  },
+  "review.json": {
+    "bytes": 1549,
+    "sha256": "5ece8d880b1487d56beb32a52a9a563838482b1b5da1596e5efce45766ae5c55"
+  },
+  "sampled-target-refusal.png": {
+    "bytes": 276693,
+    "sha256": "59bc2806d4b4b27da9a64c2af66bee6a4b0784bb547a5c337a3f9928c7cec32c"
+  },
+  "source-identities.json": {
+    "bytes": 4926,
+    "sha256": "6ed738b9127d5a6606d277d3ff5c956451e604d8b48e9fb2806835bd3d8b469c"
+  },
+  "source.diff.gz": {
+    "bytes": 33435,
+    "sha256": "6f731e2ea35daaa0abcebd88fa685e7fa2d88cd33e6b9a135a90c7a1de97d5ca"
+  },
+  "tests.log.gz": {
+    "bytes": 1624,
+    "sha256": "07be7d256427f2a46e7b83f5ec02bf844571a71d4131f2cd833e42928adc98c3"
+  },
+  "timings-summary.json": {
+    "bytes": 6719,
+    "sha256": "9dcf607b6570f804510377ce7bb817d4aad8dcb11cd6fc95ad94d74a31c55516"
+  },
+  "tracked-rust-paths.txt": {
+    "bytes": 1390,
+    "sha256": "2e0225e5a64b8501134750238b528680e1df9b9e124940ddf4d1d69c3f9a541f"
+  },
+  "ui-rerun.log.gz": {
+    "bytes": 546,
+    "sha256": "cace8863cea4fe4d45c096b3fd75c8d92e12cb4b05c0fdb88a8d3559e4a8c567"
+  },
+  "ui-tests.log.gz": {
+    "bytes": 16486,
+    "sha256": "d25b404e1d7aee98456d20a51fd55340f6658552565719beb420d58d2da7f38d"
+  },
+  "update-coverage.py.txt": {
+    "bytes": 3912,
+    "sha256": "4bec39706f6ef4bacc21d46f230046cbf7c00ea1487841b132ce60643119d0d9"
+  },
+  "visual-fix-gate.log.gz": {
+    "bytes": 717,
+    "sha256": "d6e2fb3f0b6bbeb118b0ddbb9e2deddfef9a07583b098535e45b4e6afe56fc54"
+  },
+  "visual-report.json.gz": {
+    "bytes": 818024,
+    "sha256": "0b71615d2720e156b5a0775479adb0d41b9d29e983f0e203848dba82ac3a813d"
+  },
+  "visual-review.json": {
+    "bytes": 1308,
+    "sha256": "45d508f0323004148bac8cee0663b9404e8cd39121a9fdc05c9648542a4a850d"
+  },
+  "visual.log.gz": {
+    "bytes": 109,
+    "sha256": "835481e24da595626ecace2f72b41e981a85236f0b3eb3210795d44da6fccca9"
+  }
+}

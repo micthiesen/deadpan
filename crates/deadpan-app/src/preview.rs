@@ -3889,6 +3889,7 @@ impl DeadpanApp {
                     style::key_hint(ui, "Esc", if self.macros.recording_original() || self.edit_selection() == navigation::EditSelection::None || self.macros.is_pending() { "cancel recording" } else { "clear selection" });
                 }
                 if !self.command_open && !self.sound_focused() && self.pane != Pane::Sounds && !self.event_focused()
+                    && !(self.scoped.is_some() && self.macros.recording())
                     && ui.add(egui::Button::new(format!("Marks  {}", self.editor_pair(EditorKey::MarkSet, EditorKey::MarkJump, " / "))).small().wrap()).on_hover_text(format!("{} + letter saves this position; {} + letter returns. Browse with :marks.", self.editor_key(EditorKey::MarkSet), self.editor_key(EditorKey::MarkJump))).clicked()
                 {
                     self.open_marks(ui.ctx());
@@ -3946,9 +3947,14 @@ impl DeadpanApp {
                         // The way out of recording comes first; the footer keeps
                         // as many of the remaining keys as fit.
                         let original = self.macros.recording_original();
-                        let visual = !original && self.edit_selection() != navigation::EditSelection::None;
+                        let scoped = self.scoped.is_some();
+                        let visual = !original && !scoped && self.edit_selection() != navigation::EditSelection::None;
                         hints.push(("Esc".into(), if visual && !self.macros.is_pending() { "clear selection".into() } else { "cancel recording".into() }));
                         self.add_editor_hint(&mut hints, EditorKey::MacroRecord, "save macro");
+                        if scoped {
+                            self.add_editor_pair_hint(&mut hints, EditorKey::PunchIn, EditorKey::Creep, " / ", "punch in / creep");
+                            if let Some(label) = self.repeat_hint() { self.add_editor_hint(&mut hints, EditorKey::RepeatLast, &label); }
+                        } else {
                         self.add_editor_pair_hint(&mut hints, EditorKey::FramePrevious, EditorKey::FrameNext, " / ", "frame");
                         if original {
                             self.add_editor_pair_hint(&mut hints, EditorKey::First, EditorKey::Last, " / ", "Original bounds");
@@ -3963,6 +3969,7 @@ impl DeadpanApp {
                             self.add_editor_hint(&mut hints, EditorKey::Repeat, if visual { "repeat range" } else { "repeat beat" });
                             self.add_editor_hint(&mut hints, EditorKey::Group, "name group");
                             self.add_editor_pair_hint(&mut hints, EditorKey::PasteAfter, EditorKey::PasteBefore, " / ", if visual { "replace range" } else { "paste" });
+                        }
                         }
                         self.add_editor_hint(&mut hints, EditorKey::MacroExecute, "+ letter: record call");
                     } else if self.sound_focused() {
@@ -3985,6 +3992,10 @@ impl DeadpanApp {
                         self.add_editor_pair_hint(&mut hints, EditorKey::PlayNext, EditorKey::PlayPrevious, " ", "Repeat play");
                         self.add_editor_pair_hint(&mut hints, EditorKey::GainUp, EditorKey::GainDown, " / ", "gain 3 dB");
                         self.add_editor_hint(&mut hints, EditorKey::Camera, "camera");
+                        self.add_editor_pair_hint(&mut hints, EditorKey::PunchIn, EditorKey::Creep, " / ", "punch in / creep");
+                        if let Some(label) = self.repeat_hint() { self.add_editor_hint(&mut hints, EditorKey::RepeatLast, &label); }
+                        self.add_editor_hint(&mut hints, EditorKey::MacroRecord, "+ letter: record framing");
+                        self.add_editor_hint(&mut hints, EditorKey::MacroExecute, "+ letter: framing macro");
                         hints.push((":scope".into(), "all / play N / plays 2-3".into()));
                         self.add_editor_hint(&mut hints, EditorKey::Undo, "undo");
                     } else if self.view == View::Sequence {

@@ -1,0 +1,42 @@
+{
+  "recording-this-play.png": {
+    "label": "One-play framing records intent while retaining the selected play",
+    "frame": 139,
+    "source": "scoped-plays-111.png"
+  },
+  "replay-first-play.png": {
+    "label": "A saved framing macro applies to the newly selected first play",
+    "frame": 164,
+    "source": "scoped-plays-121.png"
+  },
+  "dot-new-play.png": {
+    "label": "Dot repeats framing only on the play selected now",
+    "frame": 213,
+    "source": "scoped-plays-122.png"
+  },
+  "creep-owner-clock.png": {
+    "label": "A replayed one-play creep retains its own owner clock",
+    "frame": 302,
+    "source": "scoped-plays-123.png"
+  },
+  "sampled-target-refusal.png": {
+    "label": "One-play recording explains its sampled-target restriction",
+    "frame": 324,
+    "source": "scoped-plays-124.png"
+  },
+  "all-plays-refusal.png": {
+    "label": "Framing macros require explicit This play authority",
+    "frame": 333,
+    "source": "scoped-plays-125.png"
+  },
+  "delayed-newer-navigation.png": {
+    "label": "Delayed one-play framing preserves the newer navigation",
+    "frame": 357,
+    "source": "scoped-plays-126.png"
+  },
+  "delayed-round-trip.png": {
+    "label": "Returning to the same play cannot revive delayed framing authority",
+    "frame": 387,
+    "source": "scoped-plays-127.png"
+  }
+}

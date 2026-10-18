@@ -31,7 +31,10 @@ pub(crate) fn resolve(
         .position(|layer| {
             !layer.escalation
                 && layer.instance.node == site.node
-                && layer.instance.repeats.is_empty()
+                && site.presentation.as_ref().map_or_else(
+                    || layer.instance.repeats.is_empty(),
+                    |instance| instance == &layer.instance,
+                )
         })
         .ok_or_else(|| unavailable("move the cursor inside the selected beat to frame it"))?;
     // Follow evaluation belongs to the plan, which retains its exact live and
@@ -65,6 +68,7 @@ pub(crate) fn resolve(
     Ok(SemanticFramingState {
         current,
         original_center,
+        duration: sample.framing[index].duration,
     })
 }
 

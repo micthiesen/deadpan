@@ -223,6 +223,7 @@ fn original_macro_admission_and_late_failure_leave_history_and_registers_untouch
     forged["assets"]["camera"]["content_hash"] = json!("e".repeat(64));
     let forged = ProjectDocument::from_json(&forged.to_string())?;
     let forged_context = deadpan_core::SemanticContext {
+        scoped: None,
         parent: forged.root().clone(),
         cursor: deadpan_core::ProjectFrame(1),
         selected_child: None,

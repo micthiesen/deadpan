@@ -138,7 +138,7 @@ and write nothing. Headless requests carry an explicit `parent`, `cursor`,
 |---|---|---|---|
 | Camera panel draft (`,f`, pan, scale, follow) | interactive; headless passes the final pose or envelope | D | GUI-only |
 | Camera Enter (apply) | `command` `set_framing` (or `edit_scoped`) with an explicit pose or envelope | R, D | Equivalent |
-| `,z`, `,c`, `:zoom`, `:creep` | `set_framing` instruction | R, D | Equivalent |
+| `,z`, `,c`, `:zoom`, `:creep` | `set_framing` for completed presets; `zoom` intent for ordinary ranges and explicit one-play invocations, with exact `scoped` authoring and presentation context | R, D | Equivalent |
 | `:zoom … target=face:N` | `detect-faces <p> --at <pts>`, `command` `set_target` with the chosen face, then the `set_framing` instruction naming it: the same detection, target and framing writes the app makes in sequence | R, D | Equivalent |
 | `:framing-save a`, `@a` | `macro` `save` of a `set_framing` program, `macro` `run` | R, D | Equivalent |
 | `:track`, Camera `T` | `track <p> … [--save <id>]` | R (head at start) | Equivalent |
@@ -189,7 +189,7 @@ and write nothing. Headless requests carry an explicit `parent`, `cursor`,
 |---|---|---|---|
 | `qa` … `q`, `:record a`, `:record-stop` | `macro <p> --json` `save` with an explicit program | R, D | Equivalent (no recording session headlessly) |
 | `:record-cancel` | none needed | - | GUI-only |
-| `@a`, `:macro a N` | `macro` `run` | R, D | Equivalent |
+| `@a`, `:macro a N` | `macro` `run`; optional `scoped` invocation authority admits Zoom and named framing calls for the chosen play | R, D | Equivalent |
 | Register display | `macro inspect <p> [--register a]` | - | Equivalent (read) |
 
 ## Captions, cutaways and gags

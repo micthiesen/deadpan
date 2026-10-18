@@ -1,0 +1,20 @@
+{
+  "independent_review": "nested_review; read-only; no competing Cargo process",
+  "initial_core_native_review": "No supported findings in explicit Play authority, exact presentation, staged isolation, allocation pools, atomic refusals, and durable receipts.",
+  "supported_findings": [
+    {
+      "finding": "A legal maximum-depth scoped address exceeded the former 128 KiB program plus 4 KiB request bound.",
+      "fix": "Derive a separate 170707-byte authority allowance from the shared identity/depth limits. Retain the independent 128 KiB program limit and bounded raw input.",
+      "verification": "Parser regressions cover legal maximum depth, widest serde Apply/Run, exact byte boundary, oversized raw input and an oversized program inside the enlarged envelope."
+    },
+    {
+      "finding": "The replay incorrectly expected a whole-owner creep endpoint at its last half-open picture sample.",
+      "fix": "Require the last picture strictly between the endpoints and verify the exact authored endpoint separately."
+    },
+    {
+      "finding": "A non-recording pending macro could regain inspector continuation ownership after same-batch scope navigation away and back.",
+      "fix": "Every scoped_changed call permanently revokes pending cursor ownership. Add a real withheld-receipt replay with same-batch Previous/Next returning to the same captured address."
+    }
+  ],
+  "followup": "Reviewer inspected both native fixes and the round-trip replay; no further supported findings. Runtime verification is recorded separately."
+}

@@ -16,6 +16,7 @@ mod original;
 mod pause;
 mod repeat;
 mod retime;
+mod scoped_framing;
 mod selectors;
 mod set_repeat;
 mod speech;
@@ -69,6 +70,7 @@ fn fixture(frames: i64) -> ProjectDocument {
 fn context(parent: &str, cursor: i64) -> SemanticContext {
     SemanticContext {
         original: None,
+        scoped: None,
         parent: node(parent),
         cursor: ProjectFrame(cursor),
         selected_child: None,

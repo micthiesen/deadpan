@@ -28,6 +28,33 @@ pub struct Target {
 }
 
 impl Target {
+    /// A semantic framing invocation needs explicit authority for exactly one
+    /// visible play at every Repeat level, independently of its presentation.
+    pub fn semantic_framing(
+        &self,
+        workspace: &Workspace,
+    ) -> Result<deadpan_core::SemanticScopedContext, String> {
+        self.validate(workspace)?;
+        if !self.also.is_empty()
+            || self.target.repeats.is_empty()
+            || self
+                .target
+                .repeats
+                .iter()
+                .any(|step| !matches!(step.branch, RepeatEditBranch::Play { .. }))
+        {
+            return Err("Choose This play at every Repeat level before using a framing macro or dot. All plays, mixed choices and several plays are not available for semantic framing.".into());
+        }
+        Ok(deadpan_core::SemanticScopedContext {
+            root: self.root.clone(),
+            target: self.target.clone(),
+            presentation: self
+                .presentation
+                .clone()
+                .ok_or("This play has no visible occurrence for semantic framing.")?,
+        })
+    }
+
     /// A temporal edit must name exactly one concrete branch at every Repeat
     /// level. A displayed representative of All plays is not that authority.
     /// The concrete play a pause resolves in, and whether it goes into the

@@ -125,6 +125,7 @@ fn plan(
         document,
         &SemanticContext {
             original: None,
+            scoped: None,
             parent: id("root"),
             cursor: ProjectFrame(0),
             selected_child: Some(id(selected)),

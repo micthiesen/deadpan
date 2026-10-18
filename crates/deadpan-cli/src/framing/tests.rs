@@ -24,6 +24,8 @@ use deadpan_store::source_registration::{SourceInsertionRequest, SourceRegistrat
 
 use super::*;
 
+mod scoped;
+
 type Result<T = ()> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 fn node(value: &str) -> NodeId {
@@ -76,6 +78,7 @@ fn site(owner: &str, frame: i64, original_center: bool) -> SemanticFramingSite {
         node: node(owner),
         frame: ProjectFrame(frame),
         original_center,
+        presentation: None,
     }
 }
 

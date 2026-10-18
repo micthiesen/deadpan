@@ -11,6 +11,16 @@ The [specification](spec/DEADPAN_SPEC.md), [design targets](design/README.md) an
 
 ## Current status
 
+The `scoped-plays` replay now records Zoom/Creep intent in one play and replays
+it or dot on another, with complete Undo and late-result ownership checks.
+Final release visual/performance runs each pass 150 checks plus the Kestrel
+audit. All eight 960×640 captures were inspected; review corrected whole-play
+refusal wording, unsupported recording hints and the Camera button's entry gate.
+The separate quiet run reports median input-to-state 0.514 ms and
+input-to-picture 2.127 ms, with no failed or timed-out samples. The maximum
+picture response is 87.968 ms. See
+[one-play qualification](qualification/one-play-framing-macros-2026-10-18.md).
+
 The `zoom` replay now covers invocation-relative ranged Zoom/Creep recording,
 backward selections, dot on another beat, sampled-target refusal and real
 delayed-picture cancellation. Final release visual/performance runs each pass

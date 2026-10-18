@@ -1,0 +1,40 @@
+from pathlib import Path
+
+root = Path('/Users/michael/Code/deadpan')
+changes = {
+    'docs/REQUIREMENTS.md': [
+        ('[Ranged Zoom/Creep](qualification/ranged-framing-macros-2026-10-18.md) retains scale/curve and Keep or OriginalCenter intent, resolves each staged owner/range and establishes invocation-relative dot.', '[Ranged Zoom/Creep](qualification/ranged-framing-macros-2026-10-18.md) retains scale/curve and Keep or OriginalCenter intent, resolves each staged owner/range and establishes invocation-relative dot. [One-play framing](qualification/one-play-framing-macros-2026-10-18.md) captures explicit current Play authority and a separate presentation, maps both through nested isolation, preserves intrinsic owner and Follow clocks, and returns durable scoped receipts; saved Zoom/Call programs retain no concrete owner or play IDs.'),
+        ('Remaining Macro editing instructions (broader Place slice placement intent and one-play framing)', 'Remaining Macro editing instructions (broader Place slice placement intent and general occurrence edits)'),
+        ('dot-repeat of one-play edits and target-sampled ranged or face zoom', 'dot-repeat of other one-play edits and target-sampled ranged or face zoom'),
+        ('one-play and target-sampled ranged-zoom dot/macro coverage', 'general occurrence macros and target-sampled ranged-zoom dot coverage'),
+    ],
+    'docs/SECTION8_COVERAGE.md': [
+        ('whole-beat `,z`/`,c` framing and ordinary ranged Keep/OriginalCenter `Zoom` intent, cutaways', 'whole-beat `,z`/`,c` framing, ordinary ranged Keep/OriginalCenter `Zoom` intent and explicit whole-owner one-play Zoom intent, cutaways'),
+        ('Edits of one Repeat play (`:scope play N`) and a ranged zoom sampling a target', 'Other edits of one Repeat play (`:scope play N`) and a ranged zoom sampling a target'),
+        ('Edit range honored; ranged Keep/OriginalCenter intent is recordable and dot-repeatable', 'Edit range honored; ranged and explicit whole-owner one-play Keep/OriginalCenter intent is recordable and dot-repeatable'),
+        ('Sampled-target recording; scoped one-play macro framing', 'Sampled-target recording explicitly refuses under §7.4'),
+        ('ordinary ranged Keep/OriginalCenter intent is recordable and dot-repeatable', 'ordinary ranged and explicit whole-owner one-play Keep/OriginalCenter intent is recordable and dot-repeatable'),
+        ('Gain, Camera and Hold audio isolate one play; `:repeat gap-step=`', 'Gain, Camera and Hold audio isolate one play; whole-owner Zoom/Call macros and dot capture the currently chosen play; `:repeat gap-step=`'),
+        ('Timing edits, copy/paste and macros inside plays; editing one gap', 'Other timing edits, copy/paste and general macros inside plays; editing one gap'),
+        ('and ordinary ranged `Zoom`/Creep intent with Keep/OriginalCenter, also used by dot', 'and ordinary ranged or explicitly scoped whole-owner one-play `Zoom`/Creep intent with Keep/OriginalCenter, also used by dot'),
+        ('Recording of scoped (one-play) framing; sampled-target ranged recording explicitly refuses', 'General occurrence editing; sampled-target ranged or one-play recording explicitly refuses'),
+    ],
+}
+prepared = []
+for name, replacements in changes.items():
+    path = root / name
+    value = path.read_text()
+    if name == 'docs/REQUIREMENTS.md':
+        addition = replacements[0][1].removeprefix(replacements[0][0]).strip()
+        doubled = addition + ' ' + addition
+        if doubled in value:
+            assert value.count(doubled) == 1
+            value = value.replace(doubled, addition)
+    for before, after in replacements:
+        if value.count(after) == 1:
+            continue
+        assert value.count(before) == 1, (name, before, value.count(before))
+        value = value.replace(before, after)
+    prepared.append((path, value))
+for path, value in prepared:
+    path.write_text(value)

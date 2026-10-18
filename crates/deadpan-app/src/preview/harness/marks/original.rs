@@ -189,6 +189,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
             expected_bank_version: bank_version,
             dry_run: false,
             operation: deadpan_cli::macros::Operation::Apply {
+                scoped: None,
                 program: Arc::new(
                     deadpan_core::SemanticProgram::new(vec![I::SetMark { letter }])
                         .map_err(|error| error.to_string())?,

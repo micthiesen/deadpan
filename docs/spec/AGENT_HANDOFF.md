@@ -27,9 +27,19 @@ capture and is cancelled with recording before it can submit a delayed edit.
 See [ranged framing macros](../qualification/ranged-framing-macros-2026-10-18.md)
 for the verification record; implementation alone does not establish qualification.
 
-Next DP-06 framing work is one-play invocation authority. It needs scoped
-context, staged isolation remapping and scoped receipts; merely allowing the
-inspector in ordinary macro capture would edit the shared definition incorrectly.
+One-play whole-owner Zoom/Creep now captures explicit Play authority at every
+Repeat level plus the separate concrete presentation. It isolates through
+`EditScoped`, maps both addresses through every staged Zoom/Call, and publishes
+one native scoped receipt. Saved intent retains no concrete owner or play IDs.
+Direct eligible Apply supplies dot intent; named Run keeps its existing dot
+rule. All/mixed/multiple-play choices, Visual ranges, sampled-target recording
+and unsupported expanded instructions refuse without writes. Scope navigation
+permanently revokes pending continuation ownership, including same-batch
+away/back navigation. See [one-play semantics](../SEMANTIC_MACROS.md#one-play-zoom-and-creep)
+and [qualification](../qualification/one-play-framing-macros-2026-10-18.md).
+The normal/UI selections cover 448/474 tests with targeted reruns for retained
+diagnostics. Final release visual/performance scoped-play replays each pass
+150 checks plus the Kestrel audit; all eight 960×640 captures were inspected.
 
 Nested FollowSpeed pauses are implemented and qualified on this Mac; nested
 pitch processing, selected/mixed play choices and the other DP-07 limits remain.
@@ -110,16 +120,18 @@ Confirm each with the owner or adopt the recommendation, then record it in
    `target=center` or retained-center intent, resolve each invocation range
    against the staged document, and refuse target-sampled recording. The pure
    builder now lives in core; a shared host resolver supplies plan-evaluated
-   pose and qualified picture geometry. One-play authority remains open.
+   pose and qualified picture geometry. One-play authority is implemented for
+   whole-owner Zoom/Call under explicit Play choices at every Repeat level,
+   with staged target/presentation mapping and native scoped receipts.
 
 ### Next work, in priority order
 
 1. Land or discard the in-flight DP-18 work (above).
-2. Remaining macro framing (DP-06): one-play invocation authority (decision 4).
-   Whole-Original insertion, eligible Place slice Apply, Original marks and
-   ordinary ranged Zoom intent are implemented; follow their linked
-   qualifications in the current continuation above. One-play work must map
-   isolation authority through staged commands and publish scoped receipts.
+2. Remaining macro work (DP-06): broader Place slice placement, selectors,
+   parser acceptance and general temporal occurrence scopes. Whole-Original
+   insertion, eligible Place slice Apply, Original marks, ordinary ranged Zoom
+   intent and explicit one-play whole-owner Zoom/Call are implemented; follow
+   their linked qualifications in the current continuation above.
 3. Pause insertion with mixed play choices or several selected plays, and in
    nested speed changes (DP-07): extend `insert_time/occurrence.rs`
    (`all_plays_site`, `apply_all_plays`) and `insert_time/retimed.rs`; keep the

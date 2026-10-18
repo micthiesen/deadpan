@@ -1,0 +1,314 @@
+{
+  "ui_frame_cpu_ms": {
+    "completed": {
+      "max_ms": 6.361584,
+      "n": 683,
+      "p50_ms": 0.201042,
+      "p95_ms": 0.985042,
+      "p99_ms": 1.4611669999999999
+    },
+    "failed": 0,
+    "samples": 683,
+    "timed_out": 0
+  },
+  "ui_composition_submit_cpu_ms": {
+    "completed": {
+      "max_ms": 0.612667,
+      "n": 683,
+      "p50_ms": 0.0925,
+      "p95_ms": 0.129208,
+      "p99_ms": 0.156917
+    },
+    "failed": 0,
+    "samples": 683,
+    "timed_out": 0
+  },
+  "ui_composition_complete_ms": {
+    "completed": {
+      "max_ms": 8.860834,
+      "n": 683,
+      "p50_ms": 0.35770799999999997,
+      "p95_ms": 0.5134169999999999,
+      "p99_ms": 0.7651249999999999
+    },
+    "failed": 0,
+    "samples": 683,
+    "timed_out": 0
+  },
+  "input_to_state_ms": {
+    "completed": {
+      "max_ms": 1.698583,
+      "n": 153,
+      "p50_ms": 0.514,
+      "p95_ms": 1.0855000000000001,
+      "p99_ms": 1.4611669999999999
+    },
+    "failed": 0,
+    "samples": 153,
+    "timed_out": 0
+  },
+  "input_to_commit_ms": {
+    "completed": {
+      "max_ms": 78.925125,
+      "n": 14,
+      "p50_ms": 6.709874999999999,
+      "p95_ms": 78.925125,
+      "p99_ms": 78.925125
+    },
+    "failed": 0,
+    "samples": 14,
+    "timed_out": 0
+  },
+  "request_to_decode_delivery_ms": {
+    "completed": {
+      "max_ms": 7.4644580000000005,
+      "n": 72,
+      "p50_ms": 1.1713330000000002,
+      "p95_ms": 2.1675,
+      "p99_ms": 7.4644580000000005
+    },
+    "failed": 0,
+    "samples": 72,
+    "timed_out": 0
+  },
+  "request_to_worker_start_ms": {
+    "completed": {
+      "max_ms": 0.302208,
+      "n": 72,
+      "p50_ms": 0.006416,
+      "p95_ms": 0.007167,
+      "p99_ms": 0.302208
+    },
+    "failed": 0,
+    "samples": 72,
+    "timed_out": 0
+  },
+  "worker_execution_ms": {
+    "completed": {
+      "max_ms": 2.654834,
+      "n": 72,
+      "p50_ms": 0.06933399999999999,
+      "p95_ms": 0.464666,
+      "p99_ms": 2.654834
+    },
+    "failed": 0,
+    "samples": 72,
+    "timed_out": 0
+  },
+  "worker_publication_delay_ms": {
+    "completed": {
+      "max_ms": 0.00029099999999999997,
+      "n": 72,
+      "p50_ms": 4.2e-05,
+      "p95_ms": 0.000125,
+      "p99_ms": 0.00029099999999999997
+    },
+    "failed": 0,
+    "samples": 72,
+    "timed_out": 0
+  },
+  "publication_to_decode_delivery_ms": {
+    "completed": {
+      "max_ms": 4.798916999999999,
+      "n": 72,
+      "p50_ms": 1.0718329999999998,
+      "p95_ms": 1.872417,
+      "p99_ms": 4.798916999999999
+    },
+    "failed": 0,
+    "samples": 72,
+    "timed_out": 0
+  },
+  "request_to_picture_submission_ms": {
+    "completed": {
+      "max_ms": 8.237708,
+      "n": 69,
+      "p50_ms": 1.453125,
+      "p95_ms": 2.6025419999999997,
+      "p99_ms": 8.237708
+    },
+    "failed": 0,
+    "samples": 69,
+    "timed_out": 0
+  },
+  "request_to_picture_complete_ms": {
+    "completed": {
+      "max_ms": 9.036208,
+      "n": 69,
+      "p50_ms": 1.9541659999999998,
+      "p95_ms": 3.0395000000000003,
+      "p99_ms": 9.036208
+    },
+    "failed": 0,
+    "samples": 69,
+    "timed_out": 0
+  },
+  "input_to_picture_complete_ms": {
+    "completed": {
+      "max_ms": 87.96775,
+      "n": 50,
+      "p50_ms": 2.127417,
+      "p95_ms": 9.663458,
+      "p99_ms": 87.96775
+    },
+    "failed": 0,
+    "samples": 50,
+    "timed_out": 0
+  },
+  "Original initialized and displayed": {
+    "completed": {
+      "max_ms": 87.32266700000001,
+      "n": 1,
+      "p50_ms": 87.32266700000001,
+      "p95_ms": 87.32266700000001,
+      "p99_ms": 87.32266700000001
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Project and picture settled": {
+    "completed": {
+      "max_ms": 2.152167,
+      "n": 86,
+      "p50_ms": 0.630583,
+      "p95_ms": 0.923083,
+      "p99_ms": 2.152167
+    },
+    "failed": 0,
+    "samples": 86,
+    "timed_out": 0
+  },
+  "Scoped edit receipt is admitted": {
+    "completed": {
+      "max_ms": 8.3e-05,
+      "n": 26,
+      "p50_ms": 4.1e-05,
+      "p95_ms": 4.2e-05,
+      "p99_ms": 8.3e-05
+    },
+    "failed": 0,
+    "samples": 26,
+    "timed_out": 0
+  },
+  "Committed revision changed": {
+    "completed": {
+      "max_ms": 13.432457999999999,
+      "n": 29,
+      "p50_ms": 6.649667,
+      "p95_ms": 7.953917,
+      "p99_ms": 13.432457999999999
+    },
+    "failed": 0,
+    "samples": 29,
+    "timed_out": 0
+  },
+  "Unchanged scoped gain proposal is ready": {
+    "completed": {
+      "max_ms": 0.904375,
+      "n": 1,
+      "p50_ms": 0.904375,
+      "p95_ms": 0.904375,
+      "p99_ms": 0.904375
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Mark is saved while its UI receipt is withheld": {
+    "completed": {
+      "max_ms": 4.401292000000001,
+      "n": 1,
+      "p50_ms": 4.401292000000001,
+      "p95_ms": 4.401292000000001,
+      "p99_ms": 4.401292000000001
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Scoped Camera opens on the selected play picture": {
+    "completed": {
+      "max_ms": 4.2e-05,
+      "n": 1,
+      "p50_ms": 4.2e-05,
+      "p95_ms": 4.2e-05,
+      "p99_ms": 4.2e-05
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Scoped edit is durable while its UI receipt is withheld": {
+    "completed": {
+      "max_ms": 3.938792,
+      "n": 1,
+      "p50_ms": 3.938792,
+      "p95_ms": 3.938792,
+      "p99_ms": 3.938792
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "One-play semantic receipt is admitted": {
+    "completed": {
+      "max_ms": 2.1265,
+      "n": 28,
+      "p50_ms": 4.2e-05,
+      "p95_ms": 1.9615829999999999,
+      "p99_ms": 2.1265
+    },
+    "failed": 0,
+    "samples": 28,
+    "timed_out": 0
+  },
+  "Save the framing-only macro without concrete play authority": {
+    "completed": {
+      "max_ms": 4.075833,
+      "n": 2,
+      "p50_ms": 3.821792,
+      "p95_ms": 4.075833,
+      "p99_ms": 4.075833
+    },
+    "failed": 0,
+    "samples": 2,
+    "timed_out": 0
+  },
+  "The scoped macro edit commits while its continuation is withheld": {
+    "completed": {
+      "max_ms": 5.18425,
+      "n": 1,
+      "p50_ms": 5.18425,
+      "p95_ms": 5.18425,
+      "p99_ms": 5.18425
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "A non-recording framing macro commits before its receipt arrives": {
+    "completed": {
+      "max_ms": 5.167292000000001,
+      "n": 1,
+      "p50_ms": 5.167292000000001,
+      "p95_ms": 5.167292000000001,
+      "p99_ms": 5.167292000000001
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Undo completes with the scoped command open": {
+    "completed": {
+      "max_ms": 5.201875,
+      "n": 1,
+      "p50_ms": 5.201875,
+      "p95_ms": 5.201875,
+      "p99_ms": 5.201875
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  }
+}

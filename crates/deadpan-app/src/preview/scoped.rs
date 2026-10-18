@@ -236,6 +236,10 @@ impl DeadpanApp {
     }
 
     fn scoped_changed(&mut self, context: &egui::Context) {
+        self.macros.revoke_cursor();
+        if self.macros.recording() {
+            self.cancel_macro_recording();
+        }
         self.ai_stop_preview();
         self.cancel_camera();
         self.stop_playback();
@@ -388,6 +392,9 @@ impl DeadpanApp {
         if self.scoped.is_none() {
             return false;
         }
+        if self.macros.recording() && !self.macro_action_allowed(action) {
+            return true;
+        }
         if matches!(self.pane, Pane::Sources | Pane::Sounds)
             || self.sound_focused()
             || self.event_focused()
@@ -426,6 +433,9 @@ impl DeadpanApp {
                 }
             }
             Action::Escape if !self.help_open => {
+                if self.macros.recording() {
+                    self.cancel_macro_recording();
+                }
                 self.scoped = None;
                 self.cancel_camera();
                 // Keep the ordinary Escape path's playback, register and
@@ -708,9 +718,6 @@ fn scoped_structural_action(action: Action) -> bool {
             | Action::Repeat { .. }
             | Action::DeleteSelection
             | Action::DeleteFrames(_)
-            | Action::RepeatLast
             | Action::PasteMoment { .. }
-            | Action::MacroRecord(_)
-            | Action::MacroExecute { .. }
     )
 }

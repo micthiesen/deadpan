@@ -1,0 +1,18 @@
+{
+  "binary_sha256": "51f554a1d49546813a2db62e795125cea8fe9f2f4f9543032f3d4102f10918c4",
+  "dimensions": [960, 640],
+  "final_captures_inspected": [
+    "recording-this-play.png",
+    "replay-first-play.png",
+    "dot-new-play.png",
+    "creep-owner-clock.png",
+    "sampled-target-refusal.png",
+    "all-plays-refusal.png",
+    "delayed-newer-navigation.png",
+    "delayed-round-trip.png"
+  ],
+  "observations": "The picture, independent clocks, chosen-play badges, saved state, recording count, footer keys, complete refusal messages and stale-result messages are readable. Recording footer hides unsupported Marks keys. Camera pointer refusal retains the draft's recording and authored state. Final captures show no stale preparation message or clipped footer.",
+  "pre_fix_findings": "Whole-play refusal incorrectly said ranged zoom; Marks keys were taught while unsupported in scoped recording; Camera button needed the same entry gate as its key. Fixed and requalified in final replay.",
+  "independent_followup": "Read-only reviewer found no regression in the extra gate, duplicate key-path check or actual-button replay. No competing Cargo process.",
+  "limits": "Production widgets and offscreen Metal, scripted input. No physical window, display, IME, acoustic or human visual acceptance claim."
+}

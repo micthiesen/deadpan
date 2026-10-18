@@ -11,6 +11,9 @@ use deadpan_plan::RenderPlan;
 
 use super::*;
 
+#[path = "framing/scoped.rs"]
+mod scoped;
+
 #[cfg(all(target_os = "macos", feature = "synthetic-worker"))]
 #[allow(dead_code)]
 #[path = "../../preview_export/recipes.rs"]

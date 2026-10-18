@@ -17,6 +17,14 @@ impl super::DeadpanApp {
             .snapshot()?
             .edit_for(self.workspace.as_ref()?)
             .ok()?;
+        if self.scoped.is_some()
+            && !matches!(
+                edit.operation,
+                RepeatableEdit::Parameter(deadpan_core::SemanticInstruction::Zoom { .. })
+            )
+        {
+            return Some("repeat unavailable: frame this play first".into());
+        }
         let selected_repeat = matches!(edit.operation, RepeatableEdit::SetRepeatPlays { .. })
             && self.workspace.as_ref().is_some_and(|workspace| {
                 self.selected_beat.as_ref().is_some_and(|selected| {
@@ -198,6 +206,9 @@ pub(super) fn applied_summary(
 ) -> Option<String> {
     use deadpan_core::SemanticInstruction as I;
     let text = applied_text(instruction)?;
+    if context.scoped.is_some() {
+        return Some(format!("{text} in this play"));
+    }
     let Some(deadpan_core::SemanticVisualSelection::Time { anchor, head, .. }) =
         &context.visual_selection
     else {
@@ -347,6 +358,30 @@ pub(super) fn applied_text(instruction: &deadpan_core::SemanticInstruction) -> O
             return Some(format!("Added a {} tail", effect.name()));
         }
         I::SetFraming { .. } => return Some("Framed the beat".into()),
+        I::Zoom { kind, center } => {
+            use deadpan_core::framing_zoom::{ZoomCurve, ZoomKind};
+            let scale = |value: deadpan_core::ExactRatio| {
+                format!("{}/{}×", value.numerator(), value.denominator())
+            };
+            let center = match center {
+                deadpan_core::SemanticZoomCenter::Keep => "keep center",
+                deadpan_core::SemanticZoomCenter::OriginalCenter => "Original center",
+            };
+            return Some(match kind {
+                ZoomKind::Off => "Remove framing".into(),
+                ZoomKind::Smash { scale: value } => format!("Zoom {} · {center}", scale(*value)),
+                ZoomKind::Creep { from, to, curve } => {
+                    let from =
+                        from.map_or_else(String::new, |value| format!(" from {}", scale(value)));
+                    let curve = match curve {
+                        ZoomCurve::Step => "step",
+                        ZoomCurve::Linear => "linear",
+                        ZoomCurve::Smoothstep => "smoothstep",
+                    };
+                    format!("Creep{from} to {} · {curve} · {center}", scale(*to))
+                }
+            });
+        }
         I::Retime { speed, pitch, wrap } => {
             let pitch = match pitch {
                 deadpan_core::PitchPolicy::Preserve => "preserve pitch".to_owned(),

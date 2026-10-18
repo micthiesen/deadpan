@@ -71,6 +71,9 @@ pub struct SemanticContext {
     /// Invocation on the measured Original clock. Edit state below remains
     /// independent and is retained by Original navigation and mark operations.
     pub original: Option<SemanticOriginalContext>,
+    /// Explicit current single-play framing authority, independent of ordinary
+    /// navigation. This runtime address never belongs to a saved program.
+    pub scoped: Option<SemanticScopedContext>,
     pub parent: NodeId,
     /// Absolute Edit boundary, including either endpoint of the ordinary scope.
     pub cursor: ProjectFrame,
@@ -86,6 +89,16 @@ pub struct SemanticOriginalContext {
     pub asset: crate::AssetId,
     pub qualification: crate::SourceQualificationId,
     pub ordinal: crate::SourceFrameId,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SemanticScopedContext {
+    /// The inspected Repeat/Retime, a direct child of the ordinary parent.
+    pub root: NodeId,
+    pub target: crate::ScopedNodeTarget,
+    /// Separately captured visible occurrence. Authoring scope is insufficient.
+    pub presentation: crate::InstancePath,
 }
 
 /// Frozen register contents and the version the host must admit at commit.
@@ -399,6 +412,8 @@ pub struct PauseProvider {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SemanticFramingSite {
     pub node: NodeId,
+    /// Scoped invocation requires this exact concrete plan layer.
+    pub presentation: Option<crate::InstancePath>,
     pub frame: ProjectFrame,
     pub original_center: bool,
 }
@@ -406,6 +421,9 @@ pub struct SemanticFramingSite {
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SemanticFramingState {
     pub current: crate::FramingPose,
+    /// Intrinsic owner extent from the sampled PictureFraming layer, before
+    /// projection through any ancestor Retime.
+    pub duration: crate::FrameDuration,
     /// Original picture center projected into this owner's input canvas.
     pub original_center: Option<[crate::ExactRatio; 2]>,
 }
@@ -713,6 +731,16 @@ where
                 }
                 self.trace[index].after = self.context.clone();
                 continue;
+            }
+            if self.context.scoped.is_some()
+                && !matches!(
+                    instruction,
+                    SemanticInstruction::Zoom { .. } | SemanticInstruction::Call { .. }
+                )
+            {
+                return Err(invalid(
+                    "single-play macro authority supports only Zoom intent and named calls",
+                ));
             }
             if instruction.uses_speech() {
                 self.ensure_speech()?;
@@ -1295,6 +1323,7 @@ pub(super) fn validate_context(
     let bounds = scope_bounds(document, &context.parent)?;
     validate_selection(document, context)?;
     selection::validate_context(document, context, bounds)?;
+    framing::validate_scoped_context(document, context)?;
     Ok(bounds)
 }
 

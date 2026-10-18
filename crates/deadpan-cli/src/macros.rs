@@ -7,8 +7,8 @@ use deadpan_core::{
     OccurrenceIdentities, ProjectDocument, ProjectFrame, ProjectId, RegisterName, RegisterValue,
     RevisionId, SemanticAllocation, SemanticAllocationRequest, SemanticContext,
     SemanticInstruction, SemanticOriginalContext, SemanticPlan, SemanticProgram,
-    SemanticRegisterBank, SemanticVisualSelection, SlicePasteIdentities, SourceNode,
-    SplitIdentities,
+    SemanticRegisterBank, SemanticScopedContext, SemanticVisualSelection, SlicePasteIdentities,
+    SourceNode, SplitIdentities,
 };
 use deadpan_store::{AccessMode, CompoundPreview, ProjectStore, registers::RegisterBank};
 use serde::{Deserialize, Serialize};
@@ -17,7 +17,22 @@ use serde_json::{Value, json};
 use crate::live_project::{LiveError, ShortOperation};
 
 pub const PROTOCOL_VERSION: u32 = 1;
-pub const MAX_REQUEST_BYTES: usize = deadpan_core::MAX_SEMANTIC_PROGRAM_BYTES + 4096;
+/// Largest compact one-play authority admitted by the shared identity/depth
+/// grammar. Identities are unescaped ASCII: three fixed IDs, four per Repeat
+/// pair (authoring + presentation), and at most ten decimal digits per ordinal.
+/// Fixed JSON syntax is 85 bytes; the two nonempty arrays share two fewer commas
+/// than their per-pair allowance of 153 bytes. A wire regression checks this
+/// accounting against the actual serde types.
+pub const MAX_SCOPED_CONTEXT_BYTES: usize = 3 * deadpan_core::MAX_IDENTITY_BYTES
+    + 83
+    + deadpan_core::MAX_DOCUMENT_DEPTH * (4 * deadpan_core::MAX_IDENTITY_BYTES + 153);
+/// The program retains its independent 128 KiB limit. The runtime authority
+/// has its own bounded allowance; 4 KiB covers the remaining request fields.
+pub const MAX_REQUEST_BYTES: usize =
+    deadpan_core::MAX_SEMANTIC_PROGRAM_BYTES + MAX_SCOPED_CONTEXT_BYTES + 4096;
+
+#[cfg(test)]
+mod tests;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -48,6 +63,8 @@ pub enum Operation {
         visual_selection: Option<SemanticVisualSelection>,
         #[serde(default)]
         original: Option<SemanticOriginalContext>,
+        #[serde(default)]
+        scoped: Option<SemanticScopedContext>,
         count: NonZeroU32,
         #[serde(default)]
         new_revision: Option<RevisionId>,
@@ -66,6 +83,8 @@ pub enum Operation {
         visual_selection: Option<SemanticVisualSelection>,
         #[serde(default)]
         original: Option<SemanticOriginalContext>,
+        #[serde(default)]
+        scoped: Option<SemanticScopedContext>,
         #[serde(default)]
         new_revision: Option<RevisionId>,
     },
@@ -231,6 +250,7 @@ pub fn prepare(store: &ProjectStore, request: &Request) -> Result<Prepared, Live
             selected_child,
             visual_selection,
             original,
+            scoped,
             count,
             new_revision,
         } => {
@@ -249,6 +269,7 @@ pub fn prepare(store: &ProjectStore, request: &Request) -> Result<Prepared, Live
                     selected_child: selected_child.clone(),
                     visual_selection: visual_selection.clone(),
                     original: original.clone(),
+                    scoped: scoped.clone(),
                 },
                 &program,
                 new_revision.as_ref(),
@@ -278,6 +299,7 @@ pub fn prepare(store: &ProjectStore, request: &Request) -> Result<Prepared, Live
             selected_child,
             visual_selection,
             original,
+            scoped,
             new_revision,
         } => plan_and_preview(
             store,
@@ -289,6 +311,7 @@ pub fn prepare(store: &ProjectStore, request: &Request) -> Result<Prepared, Live
                 selected_child: selected_child.clone(),
                 visual_selection: visual_selection.clone(),
                 original: original.clone(),
+                scoped: scoped.clone(),
             },
             program,
             new_revision.as_ref(),
@@ -1037,7 +1060,8 @@ impl Prepared {
             );
             output["context"] = json!({"parent":plan.context.parent,"cursor":plan.context.cursor,
                         "selected_child":plan.selected_child,
-                        "visual_selection":plan.context.visual_selection,"original":plan.context.original});
+                        "visual_selection":plan.context.visual_selection,"original":plan.context.original,
+                        "scoped":plan.context.scoped});
             output["trace"] = Value::Array(plan.trace.iter().map(|row| json!({
                         "instruction":row.instruction,"before_revision":row.before_revision,
                         "before_scope":row.before_scope,"parent":row.before.parent,
@@ -1049,6 +1073,7 @@ impl Prepared {
                         "before_visual_selection":row.before.visual_selection,
                         "after_visual_selection":row.after.visual_selection,
                         "before_original":row.before.original,"after_original":row.after.original,
+                        "before_scoped":row.before.scoped,"after_scoped":row.after.scoped,
                         "captured_child_label":row.captured_child_label,
                         "resolved_selection":row.resolved_selection,
                         "resolved_range":row.resolved_range,"removed_range":row.removed_range,"depth":row.depth,
