@@ -17,6 +17,49 @@ pub(super) struct Inspector {
 }
 
 impl Inspector {
+    /// Derived clocks are authoritative; integral recipes only cover them.
+    pub fn with_clock(
+        mut self,
+        clock: Option<&deadpan_core::DerivedRetimeClock>,
+        retains_exact_timing: bool,
+    ) -> Self {
+        for (name, value) in &mut self.fields {
+            if *name == "Speed" && retains_exact_timing {
+                self.parameter = None;
+                self.note = "This stage retains exact pause timing. Changing its speed is not available yet.";
+            }
+            let Some(clock) = clock else {
+                continue;
+            };
+            match *name {
+                "Speed" => {
+                    *value = clock
+                        .child_end
+                        .checked_sub(clock.child_start)
+                        .and_then(|span| span.checked_div(clock.extent))
+                        .map(|speed| format!("{}/{}×", speed.numerator(), speed.denominator()))
+                        .unwrap_or_else(|_| "Unavailable".into());
+                }
+                "From full beat" => {
+                    let coordinate = |at: deadpan_core::ExactRatio| {
+                        if at.denominator() == 1 {
+                            at.numerator().to_string()
+                        } else {
+                            format!("{}/{}", at.numerator(), at.denominator())
+                        }
+                    };
+                    *value = format!(
+                        "{}–{} f",
+                        coordinate(clock.child_start),
+                        coordinate(clock.child_end)
+                    );
+                }
+                _ => {}
+            }
+        }
+        self
+    }
+
     pub fn describe(node: &BeatNode, start: u64, frames: u64) -> Self {
         let mut fields = Vec::new();
         let (kind, glyph, parameter, note) = match &node.kind {
@@ -527,6 +570,20 @@ mod tests {
         let command = inspector.parameter.unwrap().1;
         assert_eq!(command, "retime 10/3 pitch=tape");
         assert!(inspector.fields.contains(&("Speed", "10/3×".into())));
+        let clock = deadpan_core::DerivedRetimeClock {
+            extent: deadpan_core::ExactRatio::integer(163),
+            child_start: deadpan_core::ExactRatio::ZERO,
+            child_end: deadpan_core::ExactRatio::new(489, 2).unwrap(),
+            preserve_input: None,
+        };
+        let exact = Inspector::describe(&node, 0, 163).with_clock(Some(&clock), true);
+        assert!(exact.fields.contains(&("Speed", "3/2×".into())));
+        assert!(exact.parameter.is_none());
+        assert!(exact.note.contains("exact pause timing"));
+        let descendant = Inspector::describe(&node, 0, 163).with_clock(None, true);
+        assert!(descendant.parameter.is_none());
+        assert!(descendant.note.contains("exact pause timing"));
+        assert!(descendant.fields.contains(&("Speed", "10/3×".into())));
         assert_eq!(
             crate::navigation::command::parse(&command),
             Ok(crate::navigation::command::Entry::Action(
@@ -547,6 +604,12 @@ mod tests {
         assert!(
             fragment.parameter.is_none(),
             "partition clocks are never edited in place"
+        );
+        let fragment = fragment.with_clock(Some(&clock), true);
+        assert!(
+            fragment
+                .fields
+                .contains(&("From full beat", "0–489/2 f".into()))
         );
     }
 }

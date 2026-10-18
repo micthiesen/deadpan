@@ -4484,7 +4484,11 @@ impl DeadpanApp {
             .iter()
             .find(|row| Some(&row.id) == self.selected_beat.as_ref())?;
         let node = workspace.document.nodes().get(&row.id)?;
-        let mut description = inspector::Inspector::describe(node, row.start, row.frames);
+        let mut description = inspector::Inspector::describe(node, row.start, row.frames)
+            .with_clock(
+                workspace.document.derived_clocks().get(&row.id),
+                workspace.clocked_retimes.contains(&row.id),
+            );
         // A split fragment shows its Source's sound offset (`:audio-lag`).
         if !matches!(node.kind, deadpan_core::NodeKind::Source { .. })
             && let Some((host, _)) = deadpan_core::cutaway_host(&workspace.document, &row.id)

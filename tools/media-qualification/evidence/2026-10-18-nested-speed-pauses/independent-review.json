@@ -1,0 +1,20 @@
+{
+  "scope": "Current nested FollowSpeed pause diff, independent read-only review",
+  "finding": {
+    "issue": "Integral own clock could restore a speed action while fractional descendant clocks still sealed the stage",
+    "resolution": "Cache all Retimes with own/descendant clocks per immutable workspace; use it independently of numeric clock display for inspector and preview eligibility",
+    "regressions": [
+      "core integral owner with clocked child and unrelated editable sibling",
+      "native service second pause canonicalizes own clock yet preview refuses",
+      "native replay integral outer clock retains restriction"
+    ]
+  },
+  "final_review": "No findings; classification shares the original core ancestry walk, snapshot/cache Arcs remain paired, inspector and command preview match the retained timing restriction",
+  "unqualified": [
+    "physical keyboard and pointer delivery",
+    "listening and VoiceOver speech",
+    "long-clip performance",
+    "nested pitch-processing stages",
+    "speed updates of stages retaining exact pause clocks"
+  ]
+}

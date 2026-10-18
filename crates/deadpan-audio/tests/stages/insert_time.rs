@@ -539,6 +539,217 @@ fn slowed_original() -> (ProjectDocument, FixtureProvider) {
     )
 }
 
+fn nested_follow_speed_document(outer_frames: i64) -> (ProjectDocument, FixtureProvider) {
+    let rate = FrameRate::new(30_000, 1001).unwrap();
+    let selected = 100..20_100;
+    let original = |frames| {
+        let mut node = source(rate, frames, selected.clone());
+        let NodeKind::Source { source } = &mut node.kind else {
+            unreachable!()
+        };
+        let audio = audio_at_rate(selected.start, selected.end, 44_100);
+        source.audio_mapping = SourceAudioMapping::natural_rate(audio.span, rate).unwrap();
+        source.audio = Some(audio);
+        node
+    };
+    let document = document_with_asset(
+        rate,
+        &["outer-speed", "root-tail"],
+        [
+            (
+                "outer-speed",
+                retime(
+                    "outer-sequence",
+                    outer_frames,
+                    0..16,
+                    PitchPolicy::FollowSpeed,
+                ),
+            ),
+            (
+                "outer-sequence",
+                BeatNode::sequence(
+                    "Outer",
+                    vec![id("outer-before"), id("inner-speed"), id("outer-after")],
+                ),
+            ),
+            ("outer-before", original(2)),
+            (
+                "inner-speed",
+                retime("inner-sequence", 12, 0..18, PitchPolicy::FollowSpeed),
+            ),
+            (
+                "inner-sequence",
+                BeatNode::sequence(
+                    "Inner",
+                    vec![id("inner-before"), id("center"), id("inner-after")],
+                ),
+            ),
+            ("inner-before", original(2)),
+            ("center", original(14)),
+            ("inner-after", original(2)),
+            ("outer-after", original(2)),
+            ("root-tail", original(4)),
+        ],
+        BTreeMap::new(),
+        audio_at_rate(0, 44_117, 44_100).span,
+    );
+    let provider = FixtureProvider::from_fixture(
+        "pcm-mono-44100.wav",
+        AudioChannelLayout::Native {
+            channels: 1,
+            mask: 4,
+        },
+    );
+    (document, provider)
+}
+
+#[test]
+fn nested_follow_speed_pauses_keep_all_samples_across_unity_and_fractional_rate_products() {
+    // Inner maps 18 child frames to 12. The outer stage maps 16 child frames
+    // to 24 (the two stages' net rate is unity), 18 (net 4/3), or 12 (net twice).
+    // Sequence siblings on both sides of both stages and after the outer
+    // stage make the oracle cover every later owner clock, not just the crop.
+    for (outer_frames, expected_frames, name) in [
+        (24, 28, "nested-follow-unity"),
+        (18, 22, "nested-follow-fractional"),
+        (12, 16, "nested-follow-double"),
+    ] {
+        let (original, mut provider) = nested_follow_speed_document(outer_frames);
+        for faded in [false, true] {
+            let mut current = original.clone();
+            // Physical Source entries have independent origin-rounded sample
+            // clocks. In the unity case their root boundaries are 0,3,5,19,
+            // 21,24,28. Scale only the outer subtree for the other two rates.
+            let mut owners = [0, 3, 5, 19, 21, 24]
+                .map(|frame| ratio(frame * i128::from(outer_frames), 24))
+                .to_vec();
+            owners.push(ExactRatio::integer(expected_frames));
+            let mut pieces = owners
+                .windows(2)
+                .map(|window| RetainedPiece {
+                    start: window[0],
+                    end: window[1],
+                    original: Some(exact_ntsc_boundary(window[0])..exact_ntsc_boundary(window[1])),
+                })
+                .collect::<Vec<_>>();
+            let original_audio = record(&original, &mut provider, faded, &[127, 3, 251]);
+            assert_eq!(original_audio.samples.len(), ntsc_boundary(expected_frames));
+            assert!(original_audio.samples.iter().any(|sample| sample[0] != 0.));
+
+            let mut inserted_frames = 0;
+            for (at, frames, suffix) in [(7, 1, "first"), (9, 2, "second")] {
+                let baseline = record(&current, &mut provider, faded, &[256]);
+                let pause = insert_pause(&current, at, frames, &format!("{name}-{suffix}"));
+                let actual = record(&pause, &mut provider, faded, &[127, 3, 251]);
+                assert_eq!(
+                    actual.samples.len(),
+                    ntsc_boundary(expected_frames + inserted_frames + frames)
+                );
+                assert_resumed(&actual, &baseline, 0..ntsc_boundary(at), 0);
+                assert_pause(&actual, ntsc_boundary(at)..ntsc_boundary(at + frames));
+                pieces = insert_retained_pause(pieces, at, frames);
+                assert_retained_pieces(&actual, &original_audio, &pieces);
+                assert_eq!(record(&pause, &mut provider, faded, &[1, 239]), actual);
+                current = pause;
+                inserted_frames += frames;
+            }
+
+            // This pause is in the later root sibling, after the nested stages.
+            // It catches a stale outer resume that might otherwise only show up
+            // after leaving the retimed subtree.
+            let at = outer_frames + inserted_frames + 1;
+            let baseline = record(&current, &mut provider, faded, &[256]);
+            let pause = insert_pause(&current, at, 1, &format!("{name}-root-tail"));
+            let actual = record(&pause, &mut provider, faded, &[97, 256]);
+            assert_resumed(&actual, &baseline, 0..ntsc_boundary(at), 0);
+            assert_pause(&actual, ntsc_boundary(at)..ntsc_boundary(at + 1));
+            pieces = insert_retained_pause(pieces, at, 1);
+            assert_retained_pieces(&actual, &original_audio, &pieces);
+            assert_eq!(
+                actual.samples.len(),
+                ntsc_boundary(expected_frames + inserted_frames + 1)
+            );
+            assert_eq!(record(&pause, &mut provider, faded, &[1, 239]), actual);
+        }
+    }
+}
+
+fn exact_ntsc_boundary(frame: ExactRatio) -> usize {
+    usize::try_from(
+        frame
+            .checked_mul(ratio(8008, 5))
+            .unwrap()
+            .round_even()
+            .unwrap(),
+    )
+    .unwrap()
+}
+
+#[derive(Clone)]
+struct RetainedPiece {
+    start: ExactRatio,
+    end: ExactRatio,
+    /// Immutable original render support, retained even when a current rounded
+    /// owner endpoint temporarily hides its last sample.
+    original: Option<Range<usize>>,
+}
+
+fn insert_retained_pause(pieces: Vec<RetainedPiece>, at: i64, frames: i64) -> Vec<RetainedPiece> {
+    let cut = ExactRatio::integer(at);
+    let delta = ExactRatio::integer(frames);
+    let mut changed = Vec::new();
+    for mut piece in pieces {
+        if !piece.end.compare(cut).is_gt() {
+            changed.push(piece);
+        } else if !piece.start.compare(cut).is_lt() {
+            piece.start = piece.start.checked_add(delta).unwrap();
+            piece.end = piece.end.checked_add(delta).unwrap();
+            changed.push(piece);
+        } else {
+            let offset = exact_ntsc_boundary(cut) - exact_ntsc_boundary(piece.start);
+            let left_original = piece
+                .original
+                .as_ref()
+                .map(|old| old.start..old.end.min(old.start + offset));
+            let right_original = piece
+                .original
+                .map(|old| old.start.checked_add(offset).unwrap().min(old.end)..old.end);
+            changed.push(RetainedPiece {
+                start: piece.start,
+                end: cut,
+                original: left_original,
+            });
+            changed.push(RetainedPiece {
+                start: cut.checked_add(delta).unwrap(),
+                end: piece.end.checked_add(delta).unwrap(),
+                original: right_original,
+            });
+        }
+    }
+    changed.push(RetainedPiece {
+        start: cut,
+        end: cut.checked_add(delta).unwrap(),
+        original: None,
+    });
+    changed.sort_by(|a, b| a.start.compare(b.start));
+    changed
+}
+
+fn assert_retained_pieces(actual: &Recorded, original: &Recorded, pieces: &[RetainedPiece]) {
+    for piece in pieces {
+        let current = exact_ntsc_boundary(piece.start)..exact_ntsc_boundary(piece.end);
+        if let Some(support) = &piece.original {
+            let retained = Recorded {
+                samples: original.samples[support.clone()].to_vec(),
+                suppressed: original.suppressed[support.clone()].to_vec(),
+            };
+            assert_resumed(actual, &retained, current, 0);
+        } else {
+            assert_pause(actual, current);
+        }
+    }
+}
+
 #[test]
 fn pauses_inside_follow_speed_resume_the_old_samples_at_integral_and_fractional_cuts() {
     let (original, mut provider) = slowed_original();

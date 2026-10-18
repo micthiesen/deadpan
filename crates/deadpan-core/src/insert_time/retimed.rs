@@ -182,6 +182,7 @@ pub(crate) fn pause_target(
         picture_parent,
         required_ids: plan.required_ids(document)?,
         slope: plan.slope,
+        stage_slopes: plan.stages.iter().map(|stage| stage.input_slope).collect(),
         exact: !document.derived_clocks().is_empty()
             || matches!(plan.site, Site::Leaf { cut, .. } if cut.denominator() != 1),
     }))
@@ -192,10 +193,9 @@ pub(crate) fn pause_target(
 /// when the leaf's parent is not a Sequence, then the speed adapter when the
 /// Retime is not unity. Unused identities are not persisted.
 struct Plan {
-    retime: NodeId,
-    window: (ExactRatio, ExactRatio),
-    extent: ExactRatio,
-    /// Child frames per output frame.
+    /// Enclosing speed stages, from outermost to innermost.
+    stages: Vec<Stage>,
+    /// Frames at the insertion site per project frame.
     slope: ExactRatio,
     site: Site,
     /// Ordinary Sequences from the root through the Retime's ancestors, each
@@ -206,6 +206,26 @@ struct Plan {
     /// Transparent windows above the Retime, innermost first. Each shows the
     /// pause, so each grows by its length.
     windows: Vec<NodeId>,
+}
+
+struct Stage {
+    id: NodeId,
+    clock: DerivedRetimeClock,
+    /// Stage output and input frames per project frame, respectively.
+    output_slope: ExactRatio,
+    input_slope: ExactRatio,
+}
+
+fn nested_stage(document: &ProjectDocument, id: &NodeId) -> bool {
+    let node = &document.nodes()[id];
+    follow_speed_edit(node)
+        || (matches!(
+            node.kind,
+            NodeKind::Retime {
+                purpose: RetimePurpose::Partition,
+                ..
+            }
+        ) && super::physical_context(document, id, true).is_err())
 }
 
 fn clock_of(document: &ProjectDocument, id: &NodeId) -> Result<DerivedRetimeClock, EditError> {
@@ -276,7 +296,7 @@ impl Plan {
             .child_end
             .checked_sub(clock.child_start)
             .map_err(DocumentError::from)?;
-        let slope = selected
+        let mut slope = selected
             .checked_div(clock.extent)
             .map_err(DocumentError::from)?;
         let cut = clock
@@ -294,9 +314,47 @@ impl Plan {
         let mut parent = target.retime.clone();
         let mut node = child.clone();
         let mut position = cut;
+        let mut stages = vec![Stage {
+            id: target.retime.clone(),
+            clock,
+            output_slope: ExactRatio::ONE,
+            input_slope: slope,
+        }];
         let site = loop {
-            if inner.len() > crate::MAX_DOCUMENT_DEPTH {
+            if inner.len() + stages.len() > crate::MAX_DOCUMENT_DEPTH {
                 return Err(super::limit("pause Sequence depth"));
+            }
+            if nested_stage(document, &node) {
+                let clock = clock_of(document, &node)?;
+                let stage_slope = clock
+                    .child_end
+                    .checked_sub(clock.child_start)
+                    .and_then(|span| span.checked_div(clock.extent))
+                    .map_err(DocumentError::from)?;
+                let output_slope = slope;
+                slope = slope
+                    .checked_mul(stage_slope)
+                    .map_err(DocumentError::from)?;
+                position = clock
+                    .child_start
+                    .checked_add(
+                        position
+                            .checked_mul(stage_slope)
+                            .map_err(DocumentError::from)?,
+                    )
+                    .map_err(DocumentError::from)?;
+                let NodeKind::Retime { child, .. } = &document.nodes()[&node].kind else {
+                    unreachable!("nested stages are Retimes")
+                };
+                stages.push(Stage {
+                    id: node.clone(),
+                    clock,
+                    output_slope,
+                    input_slope: slope,
+                });
+                parent = node;
+                node = child.clone();
+                continue;
             }
             let NodeKind::Sequence { children } = &document.nodes()[&node].kind else {
                 super::physical_context(document, &node, true)?;
@@ -334,7 +392,9 @@ impl Plan {
                 None => break Site::Seam { parent: node, slot },
                 Some(local) => {
                     let child = children[slot].clone();
-                    if !matches!(document.nodes()[&child].kind, NodeKind::Sequence { .. }) {
+                    if !matches!(document.nodes()[&child].kind, NodeKind::Sequence { .. })
+                        && !nested_stage(document, &child)
+                    {
                         super::physical_context(document, &child, true)?;
                         break Site::Leaf {
                             parent: node,
@@ -350,9 +410,7 @@ impl Plan {
             }
         };
         Ok(Self {
-            retime: target.retime.clone(),
-            window: (clock.child_start, clock.child_end),
-            extent: clock.extent,
+            stages,
             slope,
             site,
             outer,
@@ -561,7 +619,7 @@ pub(crate) fn apply(
     working.audio_bindings =
         crate::audio_binding_lifecycle::capture_unbound_audio_bindings(document, timing.clone())?;
     let mut supplied = identities.nodes.iter().cloned();
-    let mut clocked = vec![plan.retime.clone()];
+    let mut clocked: Vec<_> = plan.stages.iter().map(|stage| stage.id.clone()).collect();
     // The Sequence that receives the pause, its slot, and the owners whose
     // allocation moves later.
     let (parent, slot, mut moved) = match &plan.site {
@@ -740,7 +798,7 @@ pub(crate) fn apply(
     // insertion and the clocks it changes detach their owners.
     let clocked: Vec<NodeId> = clocked
         .into_iter()
-        .filter(|id| id == &plan.retime || id == &root)
+        .filter(|id| plan.stages.iter().any(|stage| &stage.id == id) || id == &root)
         .collect();
     let mut result = working.clone();
     crate::command::reduce(
@@ -766,18 +824,31 @@ pub(crate) fn apply(
             hold_frames,
         )?;
     }
-    set_clock(
-        &mut result,
-        &plan.retime,
-        plan.extent
-            .checked_add(hold_frames)
-            .map_err(DocumentError::from)?,
-        plan.window.0,
-        plan.window
-            .1
-            .checked_add(child_span)
-            .map_err(DocumentError::from)?,
-    )?;
+    for stage in plan.stages.iter().rev() {
+        set_clock(
+            &mut result,
+            &stage.id,
+            stage
+                .clock
+                .extent
+                .checked_add(
+                    hold_frames
+                        .checked_mul(stage.output_slope)
+                        .map_err(DocumentError::from)?,
+                )
+                .map_err(DocumentError::from)?,
+            stage.clock.child_start,
+            stage
+                .clock
+                .child_end
+                .checked_add(
+                    hold_frames
+                        .checked_mul(stage.input_slope)
+                        .map_err(DocumentError::from)?,
+                )
+                .map_err(DocumentError::from)?,
+        )?;
+    }
     for window in &plan.windows {
         let clock = clock_of(&result, window)?;
         set_clock(

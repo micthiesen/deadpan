@@ -23,8 +23,10 @@ pub struct RetimedPauseTarget {
     pub picture_parent: NodeId,
     /// Fresh node identities the command consumes besides the pause itself.
     pub required_ids: usize,
-    /// Child frames per output frame of the speed change.
+    /// Insertion-site frames per project frame across every enclosing stage.
     pub slope: ExactRatio,
+    /// Intermediate input clocks matter even when the net speed is unity.
+    pub(crate) stage_slopes: Vec<ExactRatio>,
     /// Whether the cut or the document already needs exact derived clocks.
     pub(crate) exact: bool,
 }
@@ -35,9 +37,11 @@ impl RetimedPauseTarget {
     /// document that already has them.
     pub fn needs_exact_clocks(&self, frames: FrameDuration) -> bool {
         self.exact
-            || ExactRatio::integer(frames.frames())
-                .checked_mul(self.slope)
-                .map_or(true, |span| span.denominator() != 1)
+            || self.stage_slopes.iter().any(|slope| {
+                ExactRatio::integer(frames.frames())
+                    .checked_mul(*slope)
+                    .map_or(true, |span| span.denominator() != 1)
+            })
     }
 }
 

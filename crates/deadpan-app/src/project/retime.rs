@@ -25,6 +25,12 @@ pub fn resolve(
         .nodes()
         .get(node)
         .ok_or("The selected beat no longer exists.")?;
+    if !wrap && workspace.clocked_retimes.contains(node) {
+        return Err(
+            "This stage retains exact pause timing; changing its speed is not available yet."
+                .into(),
+        );
+    }
     let before = workspace
         .plan
         .node_duration(node)

@@ -287,3 +287,128 @@ fn pauses_inside_follow_speed_commit_reopen_and_navigate_history_exactly() {
     undone = store.snapshot_at(&revision("undo-one")).unwrap();
     assert_eq!(undone.nodes(), initial.nodes());
 }
+
+#[test]
+fn nested_follow_speed_pauses_reopen_and_restore_the_complete_snapshot() {
+    let hold = |frames| {
+        BeatNode::hold(
+            "Silence",
+            HoldRecipe {
+                duration: duration(frames),
+                video: HoldVideo::Background,
+                audio: HoldAudio::Silence,
+                picture_context: None,
+            },
+        )
+    };
+    let speed = |child, frames, end| {
+        let mut node = BeatNode::sequence("Speed", vec![]);
+        node.kind = NodeKind::Retime {
+            child: id(child),
+            duration: duration(frames),
+            mapping: FrameRange::new(ProjectFrame(0), ProjectFrame(end)).unwrap(),
+            pitch: PitchPolicy::FollowSpeed,
+            purpose: RetimePurpose::Edit,
+        };
+        node
+    };
+    let same_contents = |actual: &ProjectDocument, expected: &ProjectDocument| {
+        let mut wire = serde_json::to_value(actual).unwrap();
+        wire["revision_id"] = serde_json::to_value(expected.revision_id()).unwrap();
+        assert_eq!(
+            ProjectDocument::from_json(&wire.to_string()).unwrap(),
+            *expected
+        );
+    };
+    for outer_frames in [24, 18, 12] {
+        let mut wire = serde_json::to_value(document()).unwrap();
+        wire["derived_clocks"] = serde_json::json!({});
+        wire["nodes"] = serde_json::to_value(BTreeMap::from([
+            (
+                id("root"),
+                BeatNode::sequence("Root", vec![id("outer"), id("tail")]),
+            ),
+            (id("outer"), speed("outer-group", outer_frames, 16)),
+            (
+                id("outer-group"),
+                BeatNode::sequence("Outer", vec![id("a"), id("inner"), id("b")]),
+            ),
+            (id("a"), hold(2)),
+            (id("inner"), speed("inner-group", 12, 18)),
+            (
+                id("inner-group"),
+                BeatNode::sequence("Inner", vec![id("c"), id("middle"), id("d")]),
+            ),
+            (id("c"), hold(2)),
+            (id("middle"), hold(14)),
+            (id("d"), hold(2)),
+            (id("b"), hold(2)),
+            (id("tail"), hold(4)),
+        ]))
+        .unwrap();
+        let initial = ProjectDocument::from_json(&wire.to_string()).unwrap();
+        let scratch = tempfile::tempdir().unwrap();
+        let path = scratch.path().join("nested-pauses.deadpan");
+        let mut store = ProjectStore::create(&path, &initial).unwrap();
+        let mut snapshots = vec![initial];
+        for (at, frames, name) in [(7, 1, "one"), (9, 2, "two"), (outer_frames + 4, 1, "three")] {
+            let before = snapshots.last().unwrap();
+            let request = CommandRequest {
+                project_id: before.project_id().clone(),
+                expected_revision: before.revision_id().clone(),
+                new_revision: revision(name),
+                command: Command::InsertTime {
+                    at: ProjectFrame(at),
+                    hold: HoldRecipe {
+                        duration: duration(frames),
+                        video: HoldVideo::Background,
+                        audio: HoldAudio::Silence,
+                        picture_context: None,
+                    },
+                    id: id(&format!("{name}-pause")),
+                    identities: SplitIdentities {
+                        nodes: (0..before.nodes().len() + 4)
+                            .map(|n| id(&format!("{name}-{n}")))
+                            .collect(),
+                    },
+                    timing: AudioTimingId {
+                        allocation: revision(name),
+                        ordinal: 0,
+                    },
+                },
+            };
+            let expected = apply(before, &request)
+                .unwrap()
+                .forward
+                .apply(before)
+                .unwrap();
+            store.commit(&request).unwrap();
+            drop(store);
+            store = ProjectStore::open(&path, AccessMode::ReadWrite).unwrap();
+            assert_eq!(store.snapshot().unwrap(), expected);
+            assert_eq!(store.snapshot_at(before.revision_id()).unwrap(), *before);
+            snapshots.push(expected);
+        }
+        assert_eq!(snapshots[3].duration().unwrap(), duration(outer_frames + 8));
+        let mut head = revision("three");
+        for index in (0..3).rev() {
+            let next = revision(&format!("undo-{index}"));
+            store.undo(&head, next.clone()).unwrap();
+            drop(store);
+            store = ProjectStore::open(&path, AccessMode::ReadWrite).unwrap();
+            same_contents(&store.snapshot().unwrap(), &snapshots[index]);
+            head = next;
+        }
+        for (index, expected) in snapshots.iter().enumerate().skip(1) {
+            let next = revision(&format!("redo-{index}"));
+            store.redo(&head, next.clone()).unwrap();
+            drop(store);
+            store = ProjectStore::open(&path, AccessMode::ReadWrite).unwrap();
+            same_contents(&store.snapshot().unwrap(), expected);
+            head = next;
+        }
+        for expected in snapshots {
+            assert_eq!(store.snapshot_at(expected.revision_id()).unwrap(), expected);
+        }
+    }
+}

@@ -527,3 +527,142 @@ fn moving_framing_on_a_group_inside_a_pitch_preserving_speed_change_refuses() {
         .message;
     assert!(message.contains("moving framing"), "{message}");
 }
+
+fn nested_fixture() -> ProjectDocument {
+    let mut wire = serde_json::to_value(fixture()).unwrap();
+    wire["nodes"]["slow"]["kind"]["child"] = json!("nested");
+    wire["nodes"]["slow"]["kind"]["duration"] = json!(36);
+    wire["nodes"]["slow"]["kind"]["mapping"] =
+        serde_json::to_value(FrameRange::new(ProjectFrame(0), ProjectFrame(18)).unwrap()).unwrap();
+    let mut nested = fixture().nodes()[&id("slow")].clone();
+    let NodeKind::Retime {
+        duration: frames, ..
+    } = &mut nested.kind
+    else {
+        unreachable!()
+    };
+    *frames = duration(18);
+    wire["nodes"]["nested"] = serde_json::to_value(nested).unwrap();
+    ProjectDocument::from_json(&wire.to_string()).unwrap()
+}
+
+#[test]
+fn nested_follow_speed_pauses_keep_each_live_clock_and_report_intermediate_fractions() {
+    let before = nested_fixture();
+    let target = retimed_target(&before, 8);
+    assert_eq!(target.slope, ratio(1, 3));
+    assert_eq!(target.picture_parent, id("nested"));
+    assert_eq!(target.navigation_parent, id("root"));
+    // The leaf cut/span are whole, but the inner stage's output grows by 3/2.
+    assert!(target.needs_exact_clocks(duration(3)));
+    assert!(!target.needs_exact_clocks(duration(6)));
+    let after = edit(
+        &before,
+        pause(&before, "nested-first", 8, 3, target.required_ids),
+    );
+    assert_eq!(after.exact_durations().unwrap()[after.root()], ratio(43, 1));
+    let outer = &after.derived_clocks()[&id("slow")];
+    let inner = &after.derived_clocks()[&id("nested")];
+    assert_eq!(
+        (outer.extent, outer.child_end),
+        (ratio(39, 1), ratio(39, 2))
+    );
+    assert_eq!(
+        (inner.extent, inner.child_end),
+        (ratio(39, 2), ratio(13, 1))
+    );
+    assert_eq!(
+        outer.child_end.checked_div(outer.extent).unwrap(),
+        ratio(1, 2)
+    );
+    assert_eq!(
+        inner.child_end.checked_div(inner.extent).unwrap(),
+        ratio(2, 3)
+    );
+    // A new pause inside the first pause descends through its speed adapter.
+    let target = retimed_target(&after, 9);
+    let second = edit(
+        &after,
+        pause(&after, "nested-second", 9, 2, target.required_ids),
+    );
+    assert_eq!(
+        second.exact_durations().unwrap()[second.root()],
+        ratio(45, 1)
+    );
+    assert_eq!(
+        second.exact_durations().unwrap()[&id("pause-nested-second")],
+        ratio(2, 1)
+    );
+    assert_eq!(second.derived_clocks()[&id("slow")].extent, ratio(41, 1));
+}
+
+#[test]
+fn nested_follow_speed_pauses_refuse_processing_stages_and_insufficient_identities_atomically() {
+    let before = nested_fixture();
+    let target = retimed_target(&before, 8);
+    let snapshot = before.clone();
+    assert!(
+        apply(
+            &before,
+            &pause(&before, "short-pool", 8, 3, target.required_ids - 1)
+        )
+        .is_err()
+    );
+    assert_eq!(before, snapshot);
+    let mut wire = serde_json::to_value(&before).unwrap();
+    wire["nodes"]["nested"]["kind"]["pitch"] = json!("preserve");
+    let processed = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    assert!(processed.pause_insertion_target(ProjectFrame(8)).is_err());
+    assert!(apply(&processed, &pause(&processed, "processed", 8, 3, 20)).is_err());
+}
+
+#[test]
+fn nested_follow_speed_pauses_keep_nonzero_partition_windows_live() {
+    let mut wire = serde_json::to_value(nested_fixture()).unwrap();
+    wire["nodes"]["slow"]["kind"]["child"] = json!("cropped");
+    wire["nodes"]["slow"]["kind"]["duration"] = json!(24);
+    wire["nodes"]["slow"]["kind"]["mapping"] =
+        serde_json::to_value(FrameRange::new(ProjectFrame(0), ProjectFrame(12)).unwrap()).unwrap();
+    let mut cropped = nested_fixture().nodes()[&id("nested")].clone();
+    let NodeKind::Retime {
+        child,
+        duration: frames,
+        mapping,
+        purpose,
+        ..
+    } = &mut cropped.kind
+    else {
+        unreachable!()
+    };
+    *child = id("nested");
+    *frames = duration(12);
+    *mapping = FrameRange::new(ProjectFrame(3), ProjectFrame(15)).unwrap();
+    *purpose = RetimePurpose::Partition;
+    wire["nodes"]["cropped"] = serde_json::to_value(cropped).unwrap();
+    let before = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    let target = retimed_target(&before, 8);
+    assert_eq!(target.slope, ratio(1, 3));
+    assert_eq!(target.picture_parent, id("nested"));
+    let after = edit(
+        &before,
+        pause(&before, "cropped-pause", 8, 3, target.required_ids),
+    );
+    assert_eq!(after.exact_durations().unwrap()[after.root()], ratio(31, 1));
+    let window = &after.derived_clocks()[&id("cropped")];
+    assert_eq!(
+        (window.extent, window.child_start, window.child_end),
+        (ratio(27, 2), ratio(3, 1), ratio(33, 2))
+    );
+    let nested = &after.derived_clocks()[&id("nested")];
+    assert_eq!(
+        (nested.extent, nested.child_start, nested.child_end),
+        (ratio(39, 2), ratio(0, 1), ratio(13, 1))
+    );
+    // The site is child frame (3 + 6/2) * 2/3 = 4, not frame 2.
+    let container = retime(&after, "nested").2;
+    let left = after.children(&container).next().unwrap();
+    let NodeKind::Retime { mapping, .. } = &after.nodes()[left].kind else {
+        panic!("left partition")
+    };
+    assert_eq!(mapping.end(), ProjectFrame(4));
+}

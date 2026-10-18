@@ -1,0 +1,146 @@
+{
+  "ui_frame_cpu_ms": {
+    "n": 303,
+    "median": 0.237,
+    "p95": 1.0540829999999999,
+    "max": 6.746292,
+    "outcomes": [
+      "completed"
+    ]
+  },
+  "ui_composition_submit_cpu_ms": {
+    "n": 303,
+    "median": 0.097333,
+    "p95": 0.137875,
+    "max": 0.625708,
+    "outcomes": [
+      "completed"
+    ]
+  },
+  "ui_composition_complete_ms": {
+    "n": 303,
+    "median": 0.373542,
+    "p95": 0.574875,
+    "max": 9.283417,
+    "outcomes": [
+      "completed"
+    ]
+  },
+  "input_to_state_ms": {
+    "n": 49,
+    "median": 0.487833,
+    "p95": 1.259708,
+    "max": 1.3877080000000002,
+    "outcomes": [
+      "completed"
+    ]
+  },
+  "input_to_commit_ms": {
+    "n": 8,
+    "median": 6.1586669999999994,
+    "p95": 79.717167,
+    "max": 79.717167,
+    "outcomes": [
+      "completed"
+    ]
+  },
+  "request_to_decode_delivery_ms": {
+    "n": 19,
+    "median": 0.945166,
+    "p95": 7.826167,
+    "max": 7.826167,
+    "outcomes": [
+      "completed"
+    ]
+  },
+  "request_to_worker_start_ms": {
+    "n": 19,
+    "median": 0.004792,
+    "p95": 0.010083,
+    "max": 0.010083,
+    "outcomes": [
+      "completed"
+    ]
+  },
+  "worker_execution_ms": {
+    "n": 19,
+    "median": 0.06966699999999999,
+    "p95": 2.6407499999999997,
+    "max": 2.6407499999999997,
+    "outcomes": [
+      "completed"
+    ]
+  },
+  "worker_publication_delay_ms": {
+    "n": 19,
+    "median": 8.3e-05,
+    "p95": 0.000375,
+    "max": 0.000375,
+    "outcomes": [
+      "completed"
+    ]
+  },
+  "publication_to_decode_delivery_ms": {
+    "n": 19,
+    "median": 0.8499169999999999,
+    "p95": 5.174958999999999,
+    "max": 5.174958999999999,
+    "outcomes": [
+      "completed"
+    ]
+  },
+  "request_to_picture_submission_ms": {
+    "n": 19,
+    "median": 1.214041,
+    "p95": 8.629625,
+    "max": 8.629625,
+    "outcomes": [
+      "completed"
+    ]
+  },
+  "request_to_picture_complete_ms": {
+    "n": 19,
+    "median": 1.7237500000000001,
+    "p95": 9.543958,
+    "max": 9.543958,
+    "outcomes": [
+      "completed"
+    ]
+  },
+  "input_to_picture_complete_ms": {
+    "n": 14,
+    "median": 7.6254165,
+    "p95": 89.2675,
+    "max": 89.2675,
+    "outcomes": [
+      "completed"
+    ]
+  },
+  "Original initialized and displayed": {
+    "n": 1,
+    "median": 88.616708,
+    "p95": 88.616708,
+    "max": 88.616708,
+    "outcomes": [
+      "completed"
+    ]
+  },
+  "Project and picture settled": {
+    "n": 18,
+    "median": 0.7709165,
+    "p95": 1.045125,
+    "max": 1.045125,
+    "outcomes": [
+      "completed"
+    ]
+  },
+  "Committed revision changed": {
+    "n": 12,
+    "median": 5.776896,
+    "p95": 7.740333000000001,
+    "max": 7.740333000000001,
+    "outcomes": [
+      "completed"
+    ]
+  }
+}

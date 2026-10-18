@@ -1379,3 +1379,105 @@ fn audio_changes_set_trim_steps_and_saturation_on_the_selected_beat_in_order() {
     });
     assert!(plan_pauses(&document, selected, vec![too_hot]).is_err());
 }
+
+#[test]
+fn nested_follow_speed_semantic_pauses_refresh_exact_scope_and_replay_as_one_edit() {
+    let speed = |child, frames, end| {
+        let mut stage = hold(frames);
+        stage.kind = NodeKind::Retime {
+            child: node(child),
+            duration: FrameDuration::new(frames).unwrap(),
+            mapping: range(0, end),
+            pitch: crate::PitchPolicy::FollowSpeed,
+            purpose: crate::RetimePurpose::Edit,
+        };
+        stage
+    };
+    let document = tree(
+        &["outer-speed"],
+        vec![
+            ("outer-speed", speed("inner-speed", 160, 240)),
+            ("inner-speed", speed("body-group", 240, 120)),
+            ("body-group", BeatNode::sequence("Body", vec![node("body")])),
+            ("body", hold(120)),
+        ],
+    );
+    let planned = plan_pauses(
+        &document,
+        context("root", 17),
+        vec![pause(3), motion(true, 12), pause(1)],
+    )
+    .unwrap();
+    assert_eq!(
+        planned.document.exact_durations().unwrap()[document.root()],
+        ExactRatio::integer(164)
+    );
+    assert_eq!(planned.context.cursor, ProjectFrame(29));
+    assert_eq!(planned.context.selected_child, Some(node("outer-speed")));
+    let request = planned.request.as_ref().unwrap();
+    let replay = crate::replay_compound::<EditError>(&document, request, |_| Ok(())).unwrap();
+    assert_eq!(replay.document, planned.document);
+    assert_eq!(
+        replay.edit.inverse.apply(&replay.document).unwrap(),
+        document
+    );
+    // A later invocation can inspect the exact outer scope, while an inner
+    // Sequence below a speed stage still has no ordinary project clock.
+    assert_eq!(
+        scope_bounds(&planned.document, document.root()).unwrap(),
+        (ProjectFrame(0), ProjectFrame(164))
+    );
+    assert!(scope_bounds(&planned.document, &node("body-group")).is_err());
+    let later = plan_semantic_with_speech(
+        &planned.document,
+        &context("root", 30),
+        &program(vec![pause(2)]),
+        SemanticRegisterBank {
+            entries: &BTreeMap::new(),
+            version: 7,
+        },
+        revision("later-run"),
+        |request| {
+            let SemanticAllocationRequest::InsertPause {
+                required_split_ids, ..
+            } = request
+            else {
+                panic!("pause allocation")
+            };
+            Ok(SemanticAllocation::InsertPause {
+                new_revision: revision("later-leaf"),
+                id: node("later-pause"),
+                split: SplitIdentities {
+                    nodes: (0..required_split_ids)
+                        .map(|n| node(&format!("later-split-{n}")))
+                        .collect(),
+                },
+            })
+        },
+        no_original,
+        |_| Err(crate::speech_unavailable()),
+        |_, _| {
+            Ok(PauseProvider {
+                video: HoldVideo::Background,
+                picture_context: None,
+                audio: crate::HoldAudio::Silence,
+            })
+        },
+    )
+    .unwrap();
+    assert_eq!(
+        later.document.exact_durations().unwrap()[document.root()],
+        ExactRatio::integer(166)
+    );
+    let replay = crate::replay_compound::<EditError>(
+        &planned.document,
+        later.request.as_ref().unwrap(),
+        |_| Ok(()),
+    )
+    .unwrap();
+    assert_eq!(replay.document, later.document);
+    assert_eq!(
+        replay.edit.inverse.apply(&replay.document).unwrap(),
+        planned.document
+    );
+}

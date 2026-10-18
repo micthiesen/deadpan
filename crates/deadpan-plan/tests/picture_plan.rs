@@ -2381,6 +2381,93 @@ fn pauses_inside_follow_speed_shift_later_pictures_without_changing_their_source
 }
 
 #[test]
+fn nested_follow_speed_pauses_preserve_every_old_picture_through_both_stage_boundaries() {
+    let speed = |child, frames, end| {
+        let mut node = retime(child, frames, 0, end);
+        let NodeKind::Retime { pitch, .. } = &mut node.kind else {
+            unreachable!()
+        };
+        *pitch = PitchPolicy::FollowSpeed;
+        node
+    };
+    for outer_frames in [24, 18, 12] {
+        let mut current = document(
+            &["outer", "tail"],
+            vec![
+                ("outer", speed("outer-group", outer_frames, 16)),
+                (
+                    "outer-group",
+                    BeatNode::sequence("Outer", vec![id("a"), id("inner"), id("b")]),
+                ),
+                ("a", source(2, 0, 2002)),
+                ("inner", speed("inner-group", 12, 18)),
+                (
+                    "inner-group",
+                    BeatNode::sequence("Inner", vec![id("c"), id("middle"), id("d")]),
+                ),
+                ("c", source(2, 3003, 5005)),
+                ("middle", source(14, 6006, 20020)),
+                ("d", source(2, 21021, 23023)),
+                ("b", source(2, 24024, 26026)),
+                ("tail", source(4, 27027, 31031)),
+            ],
+        );
+        for (at, frames, name) in [
+            (7, 1, "nested-first"),
+            (9, 2, "nested-second"),
+            (outer_frames + 4, 1, "after-stages"),
+        ] {
+            let old = RenderPlan::compile(&current).unwrap();
+            let request = CommandRequest {
+                project_id: current.project_id().clone(),
+                expected_revision: current.revision_id().clone(),
+                new_revision: revision(name),
+                command: Command::InsertTime {
+                    at: ProjectFrame(at),
+                    hold: background(frames),
+                    id: id(&format!("{name}-pause")),
+                    identities: SplitIdentities {
+                        nodes: (0..current.nodes().len() + 4)
+                            .map(|n| id(&format!("{name}-{n}")))
+                            .collect(),
+                    },
+                    timing: AudioTimingId {
+                        allocation: revision(name),
+                        ordinal: 0,
+                    },
+                },
+            };
+            let edit = apply(&current, &request).unwrap();
+            let changed = edit.forward.apply(&current).unwrap();
+            assert_eq!(edit.inverse.apply(&changed).unwrap(), current);
+            let new = RenderPlan::compile(&changed).unwrap();
+            assert_eq!(new.duration().frames(), old.duration().frames() + frames);
+            for frame in 0..new.duration().frames() {
+                let actual = new.picture(ProjectFrame(frame)).unwrap().picture;
+                if (at..at + frames).contains(&frame) {
+                    assert_eq!(actual, Picture::Background, "{outer_frames}/{name}/{frame}");
+                } else {
+                    let prior = frame - if frame >= at + frames { frames } else { 0 };
+                    let expected = old.picture(ProjectFrame(prior)).unwrap().picture;
+                    match (&actual, &expected) {
+                        (
+                            Picture::Source {
+                                asset: a, point: p, ..
+                            },
+                            Picture::Source {
+                                asset: b, point: q, ..
+                            },
+                        ) => assert_eq!((a, p), (b, q), "{outer_frames}/{name}/{frame}"),
+                        _ => assert_eq!(actual, expected, "{outer_frames}/{name}/{frame}"),
+                    }
+                }
+            }
+            current = changed;
+        }
+    }
+}
+
+#[test]
 fn ungrouping_a_framed_group_moves_its_camera_path_onto_its_children_unchanged() {
     let pose = |x: i128, scale: i128| {
         FramingPose::new(

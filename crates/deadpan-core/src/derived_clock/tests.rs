@@ -70,6 +70,37 @@ fn document(derived: bool) -> ProjectDocument {
 }
 
 #[test]
+fn integral_retime_owners_still_retain_descendant_clocks() {
+    let mut doc = document(true);
+    doc.derived_clocks.remove(&id("last"));
+    doc.derived_clocks.get_mut(&id("first")).unwrap().extent = ratio(5, 2);
+    let NodeKind::Retime { duration, .. } = &mut doc.nodes.get_mut(&id("first")).unwrap().kind
+    else {
+        unreachable!()
+    };
+    *duration = frames(3);
+    doc.nodes.get_mut(&id("root")).unwrap().kind = NodeKind::Sequence {
+        children: vec![id("outer"), id("last")],
+    };
+    let mut outer = BeatNode::sequence("Outer", vec![]);
+    outer.kind = NodeKind::Retime {
+        child: id("first"),
+        duration: frames(1),
+        mapping: FrameRange::new(ProjectFrame(0), ProjectFrame(2)).unwrap(),
+        pitch: PitchPolicy::FollowSpeed,
+        purpose: RetimePurpose::Edit,
+    };
+    doc.nodes.insert(id("outer"), outer);
+    doc.validate().unwrap();
+    assert!(!doc.derived_clocks.contains_key(&id("outer")));
+    assert_eq!(
+        doc.retimes_with_derived_clocks(),
+        BTreeSet::from([id("outer"), id("first")])
+    );
+    assert_eq!(clocked_owners(&doc), BTreeSet::from([id("outer")]));
+}
+
+#[test]
 fn persisted_clocks_keep_recipe_counts_and_exact_root_separate() {
     let doc = document(true);
     let wire = doc.to_compact_json().unwrap();

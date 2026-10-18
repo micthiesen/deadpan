@@ -1,0 +1,8 @@
+{
+  "deadpan-transcribe": "4369d0f1917b3ac2e7692dad72b29ebaf55521dc75369a4be7200a2a9bbafe2e",
+  "deadpan-app": "e246de39832c1c188759884a14bd8162eb4ba881dcf7df8a3bebd8d666ebbae4",
+  "deadpan-media-worker": "a072f82a294153361e548eefc6e2a00ec239d8abefde127b8f9381f1a4db6944",
+  "deadpan-track": "63f95135ade0dbb4438a73549a0d5a632f976c13b7c7c037c7902c5b29e41aa5",
+  "deadpan-cli": "212d3b4ca4cb440a3bb659023cfef15a7ced68ebab3029b34754294bf1ce5bc8",
+  "export-target-deadpan-cli": "90337e4e4f6b0526b99e97888d7490570418328294e3f66b09530d2ab6aa592c"
+}

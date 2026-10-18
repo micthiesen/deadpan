@@ -1,0 +1,27 @@
+{
+  "base_revision": "a15638e12b7b2519eabb1a48a263233213e630de",
+  "files": {
+    "crates/deadpan-app/src/preview.rs": "08cfaade2d05345585185bb2562d043e5a630389357cc7863290b2bb26458dd2",
+    "crates/deadpan-app/src/preview/harness/retime.rs": "b10553a1c93a1ee7564c0d07f51cadb0fa349d54e3fbdef8b5bcaac22353c2d0",
+    "crates/deadpan-app/src/preview/inspector.rs": "bdfdf32737468075e49a0dad5a422c6e1018c46feecb4389d30d2b3729c5e740",
+    "crates/deadpan-app/src/project.rs": "3ab91a096f1d23bcee14dcf11fd6958e4fe1922f69d533e3ef0e22468619c8e4",
+    "crates/deadpan-app/src/project/retime.rs": "d828679124171d97301e5b600996737c26ebb78d33abd1e6284e2de9f9738150",
+    "crates/deadpan-app/src/project/service.rs": "7258fa2a0f31256db9f4d1f181f00c1f72ef1ea982836d9c5faa58d60141bd64",
+    "crates/deadpan-app/src/project/tests/retime.rs": "9b5d519a39ac0f8f93a7f410d91a7065049544591168032235afe428c1c46283",
+    "crates/deadpan-app/src/worker/project_tests.rs": "41256e739c26450fdeff1f1db6b543569f29ebb60ee5167cc68678d5c562e708",
+    "crates/deadpan-audio/tests/stages/insert_time.rs": "a231d4eabcd1a0e4fec42dbdbae80089a538b95954c197a9e8073142ac9e2dac",
+    "crates/deadpan-cli/tests/preview_export/section8.rs": "563e6d5c82c2a62c6a3fdf75ef13debece65680efd2c6361884963bda34681a8",
+    "crates/deadpan-core/src/derived_clock.rs": "cd6b50d2cfbc2e29de3dec5be7dc9fb8ed9fe5d2e9bef2b15a2d6ed76b366225",
+    "crates/deadpan-core/src/derived_clock/tests.rs": "1e26dcfa2d9edbaebc535b13e899139a54874f56b531f2e3620b9226f4ff301b",
+    "crates/deadpan-core/src/insert_time/occurrence/target.rs": "2b3c58a67e4e35f31fc69ba4992d1447014657f170833bed56be82a2294d2668",
+    "crates/deadpan-core/src/insert_time/retimed.rs": "82cfd7546d0459b817326cf1a4e56b37340086d558906788c8515358e09b88ca",
+    "crates/deadpan-core/src/semantic/planner.rs": "71545efa483561dd6e8835f2a95fbad0322e117b34414ba1ef8f4a19c4bf93d5",
+    "crates/deadpan-core/src/semantic/planner/tests/pause.rs": "37678abf1e3cfbbd71056a9757956db598a85ba884bbb44d908a7131405e63d4",
+    "crates/deadpan-core/tests/insert_time/retimed.rs": "34f2164766cb43e1036bd10a097faeba96d19b634826e5f2a1e9058c0c23b294",
+    "crates/deadpan-plan/tests/picture_plan.rs": "36e286801a8514f5889f0783ab3b2b7ca14d78bb91669c687eb41cc7ae5d1d3f",
+    "crates/deadpan-store/tests/derived_clocks.rs": "a430eeff5198666b9fa37621edc32f6887b882c996aa888b18466cbe89b9beee"
+  },
+  "cargo_lock_sha256": "cb6aeba21bb9ae6e0bdcf97642e75b4f3185643654269c10d4e004f8ec401af8",
+  "rust_toolchain_sha256": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc",
+  "export_scope": "Export ran before final inspector eligibility/cache correction. Pause timing and render/export algorithms are unchanged by that correction; publication records the actual export helper hash."
+}

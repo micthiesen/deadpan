@@ -393,4 +393,29 @@ fn native_pause_inside_a_tape_speed_change_keeps_exact_clocks_and_one_undo() {
         matches!(held, deadpan_plan::Picture::Freeze { .. }),
         "{held:?}"
     );
+    let stage = slowed
+        .document
+        .nodes()
+        .iter()
+        .find_map(|(id, beat)| matches!(beat.kind, NodeKind::Retime { .. }).then_some(id))
+        .unwrap();
+    assert!(frozen.clocked_retimes.contains(stage));
+    let second = edited(
+        &service,
+        &frozen,
+        ProjectEdit::InsertBlack {
+            at: ProjectFrame(40),
+            duration: FrameDuration::new(1).unwrap(),
+        },
+    );
+    assert!(second.error.is_none(), "{:?}", second.error);
+    let second = second.workspace.unwrap();
+    assert!(!second.document.derived_clocks().contains_key(stage));
+    assert!(!second.document.derived_clocks().is_empty());
+    assert!(second.clocked_retimes.contains(stage));
+    assert!(
+        super::super::retime::resolve(&second, stage, ExactRatio::ONE, false)
+            .unwrap_err()
+            .contains("exact pause timing")
+    );
 }

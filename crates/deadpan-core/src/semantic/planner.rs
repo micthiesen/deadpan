@@ -1143,12 +1143,16 @@ pub(super) fn scope_bounds(
     document: &ProjectDocument,
     parent: &NodeId,
 ) -> Result<(ProjectFrame, ProjectFrame), EditError> {
-    let start = document.source_splice_boundary(parent, 0)?;
-    let NodeKind::Sequence { children } = &document.nodes()[parent].kind else {
-        unreachable!("source_splice_boundary admitted an ordinary Sequence")
-    };
-    let end = document.source_splice_boundary(parent, children.len())?;
-    Ok((start, end))
+    // Ordinary Sequence scopes lie outside clocked Retimes. Their recipes
+    // equal exact extents; the boundary query still rejects a Retime ancestor.
+    crate::derived_clock::with_sealed(|| {
+        let start = document.source_splice_boundary(parent, 0)?;
+        let NodeKind::Sequence { children } = &document.nodes()[parent].kind else {
+            unreachable!("source_splice_boundary admitted an ordinary Sequence")
+        };
+        let end = document.source_splice_boundary(parent, children.len())?;
+        Ok((start, end))
+    })
 }
 
 pub(super) fn validate_context(
@@ -1209,7 +1213,7 @@ fn child_ends(
     let NodeKind::Sequence { children } = &document.nodes()[parent].kind else {
         unreachable!("the ordinary Sequence scope was already admitted")
     };
-    let durations = document.durations()?;
+    let durations = crate::derived_clock::with_sealed(|| document.durations())?;
     let mut start = bounds.0.0;
     let mut result = Vec::with_capacity(children.len());
     for child in children {

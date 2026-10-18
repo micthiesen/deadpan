@@ -1,0 +1,31 @@
+[
+  {
+    "audio_windows": 1,
+    "blocks_compared": 1,
+    "declared_audio_priming": 2048,
+    "failures": [],
+    "fixture": "nested-tape-pause",
+    "frames": 37,
+    "max_block_level_db": 0.02322470092652651,
+    "max_thumbnail_mad": 0.05022078804347826,
+    "min_block_snr_db": 33.506803406779724,
+    "min_chroma_psnr_db": 53.44486901527713,
+    "min_luma_psnr_db": 56.454656378842394,
+    "min_neighbor_margin_db": 0.0,
+    "offsets": [
+      [
+        "verified_zero",
+        0
+      ]
+    ],
+    "passed": true,
+    "pictures": 37,
+    "render_seconds": 1.403225458,
+    "rows": [
+      "Hold (insert time)",
+      "Slow delivery"
+    ],
+    "signal_windows": 1,
+    "verify_seconds": 0.568723042
+  }
+]

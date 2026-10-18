@@ -406,6 +406,7 @@ pub(super) fn workspace_of(store: &ProjectStore, session: u64, path: PathBuf) ->
         session,
         path,
         plan: Arc::new(RenderPlan::compile(&document).unwrap()),
+        clocked_retimes: Arc::new(document.retimes_with_derived_clocks()),
         document,
         sources,
         originals: store.original_import_handle().unwrap(),

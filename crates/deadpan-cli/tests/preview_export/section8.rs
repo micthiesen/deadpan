@@ -1116,6 +1116,71 @@ pub fn preserve_slowed_pause(dir: &Path) -> Result<Fixture> {
     slowed_pause(dir, "preserve-slowed-pause", PitchPolicy::Preserve)
 }
 
+/// Two live tape stages compose to 3/4 speed over Original [24, 36).
+/// Each expectation comes from the authored source window and the exact
+/// center-sample rule, including every picture at both sides of the pause.
+pub fn nested_tape_pause(dir: &Path) -> Result<Fixture> {
+    let mut project = Project::create(dir, "nested-tape-pause")?;
+    project.shorten()?;
+    project.split_root(12)?;
+    let document = project.split_root(24)?;
+    let target = root_child_at(&document, 12)?.0;
+    project.apply(|_, _, _| {
+        Ok(Command::WrapRetime {
+            node: target.clone(),
+            id: node("inner-tape")?,
+            duration: FrameDuration::new(24)?,
+            pitch: PitchPolicy::FollowSpeed,
+        })
+    })?;
+    project.apply(|_, _, _| {
+        Ok(Command::WrapRetime {
+            node: node("inner-tape")?,
+            id: node("outer-tape")?,
+            duration: FrameDuration::new(16)?,
+            pitch: PitchPolicy::FollowSpeed,
+        })
+    })?;
+    project.apply(|project, document, revision| {
+        let at = ProjectFrame(17);
+        let PauseInsertionTarget::Retimed(target) = document.pause_insertion_target(at)? else {
+            return Err("nested tape pause must retain both live stages".into());
+        };
+        Ok(Command::InsertTime {
+            at,
+            hold: silent(3, HoldVideo::Background)?,
+            id: node("nested-pause")?,
+            identities: SplitIdentities {
+                nodes: project.fresh(target.required_ids)?,
+            },
+            timing: AudioTimingId {
+                allocation: revision.clone(),
+                ordinal: 0,
+            },
+        })
+    })?;
+    let expectations = (0..37)
+        .map(|frame| {
+            let expected = if frame < 12 {
+                base(frame)
+            } else if (17..20).contains(&frame) {
+                Expected::Background
+            } else if frame < 31 {
+                let local = frame - if frame < 17 { 12 } else { 15 };
+                original(24 + (2 * local + 1) * 3 / 8)
+            } else {
+                original(36 + frame - 31)
+            };
+            (frame, expected)
+        })
+        .collect();
+    project.finish(
+        vec!["Hold (insert time)", "Slow delivery"],
+        expectations,
+        Vec::new(),
+    )
+}
+
 /// `:repeat 4 role=audio extend=hold` over Edit [15, 20) of the 30-frame
 /// base: the four plays need [15, 35), so a five-frame silent freeze of Edit
 /// 29 follows the beat. The click at Edit sample 28,781 sounds again 5, 10
@@ -1160,10 +1225,11 @@ pub fn role_repeat_extend(dir: &Path) -> Result<Fixture> {
     Ok(fixture)
 }
 
-pub const BUILDERS: [(&str, Builder); 23] = [
+pub const BUILDERS: [(&str, Builder); 24] = [
     ("role-repeat-extend", role_repeat_extend),
     ("tape-slowed-pause", tape_slowed_pause),
     ("preserve-slowed-pause", preserve_slowed_pause),
+    ("nested-tape-pause", nested_tape_pause),
     ("false-start", false_start),
     ("interrupted-answer", interrupted_answer),
     ("callback-register", callback_register),

@@ -2360,6 +2360,7 @@ fn snapshot(
         color,
         session,
         path,
+        clocked_retimes: Arc::new(document.retimes_with_derived_clocks()),
         document: Arc::new(document),
         plan: Arc::new(plan),
         sources,

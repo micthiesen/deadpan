@@ -68,16 +68,7 @@ fn parents(document: &ProjectDocument) -> BTreeMap<&NodeId, &NodeId> {
 /// descendants are [`ProjectDocument::sealed_nodes`].
 fn clocked_owners(document: &ProjectDocument) -> BTreeSet<NodeId> {
     let parents = parents(document);
-    let mut clocked = BTreeSet::new();
-    for id in document.derived_clocks.keys() {
-        let mut current = Some(id);
-        while let Some(id) = current {
-            if !clocked.insert(id.clone()) {
-                break;
-            }
-            current = parents.get(id).copied();
-        }
-    }
+    let clocked = clocked_ancestors(document, &parents);
     clocked
         .iter()
         .filter(|id| matches!(document.nodes[*id].kind, NodeKind::Retime { .. }))
@@ -95,6 +86,23 @@ fn clocked_owners(document: &ProjectDocument) -> BTreeSet<NodeId> {
         })
         .cloned()
         .collect()
+}
+
+fn clocked_ancestors(
+    document: &ProjectDocument,
+    parents: &BTreeMap<&NodeId, &NodeId>,
+) -> BTreeSet<NodeId> {
+    let mut clocked = BTreeSet::new();
+    for id in document.derived_clocks.keys() {
+        let mut current = Some(id);
+        while let Some(id) = current {
+            if !clocked.insert(id.clone()) {
+                break;
+            }
+            current = parents.get(id).copied();
+        }
+    }
+    clocked
 }
 
 /// The timing structure of `id` with child identities replaced by their own
@@ -290,6 +298,19 @@ pub(crate) fn integral(value: ExactRatio) -> Result<FrameDuration, DocumentError
 impl ProjectDocument {
     pub fn derived_clocks(&self) -> &BTreeMap<NodeId, DerivedRetimeClock> {
         &self.derived_clocks
+    }
+
+    /// Retimes whose own clock or a descendant's clock retains exact timing.
+    /// Their ordinary speed updates remain sealed even if their own recipe
+    /// becomes integral again. Compute once per validated revision, off the UI.
+    pub fn retimes_with_derived_clocks(&self) -> BTreeSet<NodeId> {
+        if self.derived_clocks.is_empty() {
+            return BTreeSet::new();
+        }
+        clocked_ancestors(self, &parents(self))
+            .into_iter()
+            .filter(|id| matches!(self.nodes[id].kind, NodeKind::Retime { .. }))
+            .collect()
     }
 
     /// Integral queries refuse derived clocks, except inside a sealed command

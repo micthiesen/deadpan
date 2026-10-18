@@ -202,8 +202,20 @@ at whole and fractional child cuts and after a second pause.
 picture parent, the identity count and `needs_exact_clocks(frames)`. The
 semantic planner, CLI and native `,h`/black pauses use it. Transparent windows
 above the speed change (a split slowed beat) pass their unity selection through
-and grow with the pause. Repeat ancestors, nested Retimes inside the speed
-change, AI pauses, pauses other than a silent freeze or black picture, marks and
+and grow with the pause. Nested FollowSpeed stages and transparent windows
+between them also retain their live ownership. Planning maps the cut through
+each stage's exact child window and multiplies its slope into the insertion-site
+clock. A pause of `h` project frames grows each stage's output by `h` times its
+enclosing slope, and its child window by `h` times its cumulative input slope.
+Intermediate fractions remain exact even when the net speed is unity. The Hold
+keeps its authored `h` frames through one adapter at the insertion site. Later
+siblings at every enclosing Sequence keep their individual pre-edit sample
+entries; one rounded sample offset for the whole suffix would be incorrect.
+Further pauses may enter the resulting windows or the first pause's adapter.
+See [nested-speed qualification](qualification/nested-speed-pauses-2026-10-18.md).
+
+Repeat ancestors, nested pitch-processing stages, AI pauses, pauses other than
+a silent freeze or black picture, marks and
 placed sounds still refuse, the latter two already in the target query.
 
 ## Pauses inside pitch-preserving speed changes
