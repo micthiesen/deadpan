@@ -1486,7 +1486,7 @@ Verification that needs anything unavailable to the agent here is recorded as **
 
 ## 29.2 Persistent progress dashboard
 
-Maintain the [Deadpan progress Shared Artifact](https://artifacts.syas.workers.dev/a/a3ysikxugbmr4),
+Maintain the [Deadpan progress artifact](https://artifacts.boo/a/a3ysikxugbmr4),
 identifier **`a3ysikxugbmr4`**, during any goal against this specification.
 The owner must not need to request updates. It shows a large overall progress
 bar, high-level feature completion stages, current work, dated milestones and
@@ -1520,7 +1520,7 @@ retrospective baselines; never fabricate intermediate observations or a finish
 date from the rate.
 
 If the dashboard layout needs changing, edit `app.tsx` in the existing artifact
-with the Shared Artifacts `artifact_edit` tool (`id: "a3ysikxugbmr4"`, exact
+with the Artifacts `artifact_edit` tool (`id: "a3ysikxugbmr4"`, exact
 `oldText`/`newText` replacements), or `artifact_write_files` for a rewrite, and
 keep `tools/progress/app.tsx` in sync. Call `artifact_guide` first; fix any
 failed render check. Never create a duplicate dashboard for this goal.

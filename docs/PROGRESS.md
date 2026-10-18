@@ -1,6 +1,6 @@
 # Progress reporting
 
-[Open the dashboard](https://artifacts.syas.workers.dev/a/a3ysikxugbmr4).
+[Open the dashboard](https://artifacts.boo/a/a3ysikxugbmr4).
 Shared Artifact ID: **`a3ysikxugbmr4`**.
 
 [Spec §29.2](spec/DEADPAN_SPEC.md#292-persistent-progress-dashboard) requires
@@ -55,12 +55,12 @@ between observations and is not a completion forecast.
 
 ## How the dashboard gets its data
 
-The artifact (Shared Artifacts, https://artifacts.syas.workers.dev) contains
+The artifact (Artifacts, https://artifacts.boo) contains
 `app.tsx` and `data/progress.json`. Its live data source replaces
 `data/progress.json` with
 `https://raw.githubusercontent.com/micthiesen/deadpan/main/docs/progress.json`
 every 15 minutes; the owner approved `raw.githubusercontent.com` for this.
-Check or refresh it with the Shared Artifacts `artifact_source` tool
+Check or refresh it with the Artifacts `artifact_source` tool
 (`{"id": "a3ysikxugbmr4"}` lists it; add `"path": "data/progress.json",
 "refresh": true` to fetch now).
 
@@ -69,7 +69,7 @@ Check or refresh it with the Shared Artifacts `artifact_source` tool
 The checked-in component is [app.tsx](../tools/progress/app.tsx). It reads the
 report with `useData("progress.json")` and uses the `@a/ui` kit.
 
-Use the Shared Artifacts MCP tools (through Executor as `shared_artifacts`, or
+Use the Artifacts MCP tools (through Executor as `artifacts`, or
 directly), not Executor's built-in artifacts. Call `artifact_guide` once. For a
 small change, call `artifact_edit` with `id: "a3ysikxugbmr4"`, `path: "app.tsx"`
 and exact `oldText`/`newText` edits; for a rewrite, `artifact_write_files` with
