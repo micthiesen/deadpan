@@ -134,6 +134,14 @@ fn a_future_preserve_finishes_before_its_audio_is_heard_and_delivery_is_canonica
             observed.fetch_add(1, Ordering::Release);
         }
     }));
+    // Park the controller as it starts the device, before it moves more than
+    // the prefill out of the prepared FIFO; parking only after observing the
+    // start lets it fill the four-second device queue first.
+    engine
+        .shared
+        .controller_hooks
+        .stall_at_activation
+        .store(true, Ordering::Release);
     engine.play(1, edited, AudioSample(0), 0.25).unwrap();
     let device = playing_device(&engine, &devices, 0);
     let parked = Park::new(&engine);
@@ -151,10 +159,25 @@ fn a_future_preserve_finishes_before_its_audio_is_heard_and_delivery_is_canonica
         .store(128 * 1_000_000_000 / 48_000, Ordering::Release);
     drop(parked);
     update(&engine, Phase::Playing);
+    let submitted = || {
+        engine
+            .shared
+            .controller_hooks
+            .submitted_frames
+            .load(Ordering::Acquire)
+    };
     let mut actual = first;
     let mut frames = 256_i64;
     while frames < end {
         let count = (end - frames).min(256) as usize;
+        // These callbacks run several times faster than a device's playback
+        // rate, starting from only the prefill. Give the controller, which
+        // each report wakes, a bounded moment to submit this callback's frames,
+        // well inside its one-second stopped-clock watchdog.
+        let deadline = Instant::now() + Duration::from_millis(250);
+        while submitted() < (frames as u64 + count as u64) && Instant::now() < deadline {
+            thread::sleep(Duration::from_millis(1));
+        }
         let now = frames as u64 * 1_000_000_000 / 48_000;
         assert!(
             device.started.load(Ordering::Acquire),

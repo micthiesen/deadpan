@@ -212,11 +212,13 @@ pub(crate) struct Shared {
 
 /// Test-only controller instrumentation. `stall` parks the controller thread
 /// at the top of its loop, standing in for descheduling under CPU load while
-/// the device callback keeps running.
+/// the device callback keeps running. `stall_at_activation` sets `stall` when
+/// the controller starts the device, so it supplies nothing beyond the prefill.
 #[cfg(test)]
 #[derive(Default)]
 pub(crate) struct ControllerHooks {
     pub stall: AtomicBool,
+    pub stall_at_activation: AtomicBool,
     pub stalled: AtomicBool,
     pub submitted_frames: AtomicU64,
 }
@@ -963,6 +965,14 @@ impl Active {
             self.activated = true;
             shared.counters.generations.fetch_add(1, Ordering::Relaxed);
             self.last_report = Instant::now();
+            #[cfg(test)]
+            if shared
+                .controller_hooks
+                .stall_at_activation
+                .swap(false, Ordering::AcqRel)
+            {
+                shared.controller_hooks.stall.store(true, Ordering::Release);
+            }
         }
         Ok(())
     }
