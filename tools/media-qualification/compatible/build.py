@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 from datetime import datetime, timezone
 import hashlib
+import http.client
 import json
 import os
 from pathlib import Path
@@ -16,15 +17,41 @@ import subprocess
 import tarfile
 import tempfile
 import time
+import urllib.error
 import urllib.request
 
 ROOT = Path(__file__).resolve().parent
 USER_AGENT = "OpenAI File Downloader, XaiImageApiFetch/1.0"
+DOWNLOAD_ATTEMPTS = 4
 
 
 def digest(path: Path) -> str:
     with path.open("rb") as file:
         return hashlib.file_digest(file, "sha256").hexdigest()
+
+
+def download(url: str, target: Path) -> None:
+    """Fetch one pinned file, retrying connection and server failures.
+
+    The caller verifies the SHA-256, so a retried download is as trusted as a
+    first one. Client errors such as 404 fail at once.
+    """
+    for attempt in range(1, DOWNLOAD_ATTEMPTS + 1):
+        try:
+            request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+            with urllib.request.urlopen(request, timeout=120) as response, target.open("wb") as output:
+                shutil.copyfileobj(response, output)
+            return
+        except urllib.error.HTTPError as error:
+            if error.code < 500 or attempt == DOWNLOAD_ATTEMPTS:
+                raise RuntimeError(f"download {url}: {error}") from error
+            failure = error
+        except (OSError, http.client.HTTPException) as error:
+            if attempt == DOWNLOAD_ATTEMPTS:
+                raise RuntimeError(f"download {url} failed {attempt} times: {error}") from error
+            failure = error
+        print(f"download {url} attempt {attempt} failed ({failure}); retrying", flush=True)
+        time.sleep(5 * attempt)
 
 
 def main() -> None:
@@ -82,9 +109,7 @@ def main() -> None:
             if cached and cached.is_file():
                 shutil.copyfile(cached, target)
             else:
-                request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-                with urllib.request.urlopen(request, timeout=120) as response, target.open("wb") as output:
-                    shutil.copyfileobj(response, output)
+                download(url, target)
             if digest(target) != expected:
                 raise RuntimeError(f"SHA-256 mismatch: {name}")
         keyring = work / "gnupg"
