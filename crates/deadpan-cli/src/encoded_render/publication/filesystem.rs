@@ -17,7 +17,7 @@ use std::{
         Arc,
         atomic::{AtomicBool, Ordering},
     },
-    time::Instant,
+    time::{Duration, Instant},
 };
 
 use rustix::fs::{
@@ -843,15 +843,34 @@ fn check_control(cancelled: &AtomicBool, deadline: Instant) -> Result<()> {
     Ok(())
 }
 
+/// A child launched while a publication file is open shares that open file
+/// until its exec closes the descriptor, so a lock its owner just released
+/// can briefly look held. Retry for that window before reporting the file in
+/// use; an actual owner holds the lock far longer.
 fn lock_file(file: &File) -> Result<()> {
-    file.try_lock().map_err(|error| match error {
-        std::fs::TryLockError::WouldBlock => {
-            FsError::invalid("publication_locked", "publication file is in use")
+    const LAUNCH_WINDOW: Duration = Duration::from_secs(2);
+    let deadline = Instant::now() + LAUNCH_WINDOW;
+    loop {
+        match file.try_lock() {
+            Ok(()) => return Ok(()),
+            Err(std::fs::TryLockError::WouldBlock) if Instant::now() < deadline => {
+                std::thread::sleep(Duration::from_millis(2));
+            }
+            Err(std::fs::TryLockError::WouldBlock) => {
+                return Err(FsError::invalid(
+                    "publication_locked",
+                    "publication file is in use",
+                ));
+            }
+            Err(std::fs::TryLockError::Error(error)) => {
+                return Err(FsError::new(
+                    "destination_io",
+                    "lock publication file",
+                    error,
+                ));
+            }
         }
-        std::fs::TryLockError::Error(error) => {
-            FsError::new("destination_io", "lock publication file", error)
-        }
-    })
+    }
 }
 
 fn inspect(file: &File) -> Result<Stat> {

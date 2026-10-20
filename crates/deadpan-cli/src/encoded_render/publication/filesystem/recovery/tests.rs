@@ -295,6 +295,50 @@ fn unchanged_partial_and_renamed_file_reopen_with_original_evidence() {
 
 #[cfg(target_os = "macos")]
 #[test]
+fn a_released_file_still_shared_with_a_child_is_awaited_not_in_use() {
+    let folder = tempfile::tempdir().unwrap();
+    let destination = Destination::pin(folder.path(), OsStr::new("movie.mp4")).unwrap();
+    let partial = staged(&destination, ".recorded.partial", b"owned movie");
+    let directory = destination.evidence().unwrap();
+    let evidence = partial.evidence().unwrap();
+    let recovered = RecoveredDirectory::open(&directory).unwrap();
+    // Long enough that a scheduling stall cannot release it before the probe,
+    // yet well inside the two-second launch window.
+    let mut command = std::process::Command::new("/bin/sleep");
+    command.arg("1").stdin(partial.file.try_clone().unwrap());
+    let mut child = deadpan_native_process::spawn(&mut command).unwrap();
+    // The command retains its configured stdin descriptor.
+    drop(command);
+    let released = Instant::now();
+    drop(partial);
+    let probe = File::open(folder.path().join(".recorded.partial")).unwrap();
+    assert!(
+        matches!(probe.try_lock(), Err(std::fs::TryLockError::WouldBlock)),
+        "the child still shares the released lock"
+    );
+    drop(probe);
+    let file = recovered
+        .open_file(OsStr::new(".recorded.partial"), &evidence)
+        .unwrap()
+        .unwrap();
+    assert!(
+        released.elapsed() >= Duration::from_millis(100),
+        "opened only once the child closed its reference"
+    );
+    assert_eq!(
+        recovered
+            .open_file(OsStr::new(".recorded.partial"), &evidence)
+            .err()
+            .unwrap()
+            .code(),
+        "publication_locked"
+    );
+    drop(file);
+    child.wait().unwrap();
+}
+
+#[cfg(target_os = "macos")]
+#[test]
 fn byte_identical_replacement_is_rejected_even_with_restored_mtime() {
     let folder = tempfile::tempdir().unwrap();
     let destination = Destination::pin(folder.path(), OsStr::new("movie.mp4")).unwrap();
