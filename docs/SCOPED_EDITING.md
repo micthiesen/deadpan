@@ -72,13 +72,17 @@ the selected insertion parent; black pauses need no sampled picture. Other
 timing edits, copy/paste and general macros inside these contents remain required work;
 their native actions refuse without editing the retained outer beat.
 
-Whole-owner Zoom and Creep with Keep or OriginalCenter intent support recording
-and dot when This play is explicit at every enclosing Repeat. Saved programs
-retain framing intent; invocation captures the current play and maps its
-authoring and presentation addresses through isolation. Only Zoom and nested
-named framing calls are admitted. Scope navigation cancels recording and
+Freeze/black pauses and whole-owner Zoom and Creep with Keep or OriginalCenter
+intent support recording and dot when This play is explicit at every enclosing
+Repeat. Saved programs retain length/picture or framing intent; invocation
+captures the current play and maps its authoring and presentation addresses
+through isolation. A pause continues from its actual new Hold, keeping the
+ordinary cursor and enclosing selection. Only InsertPause, Zoom and nested
+named calls are admitted. Scope navigation cancels recording and
 permanently revokes any queued macro's inspector continuation. See
 [one-play framing macros](SEMANTIC_MACROS.md#one-play-zoom-and-creep).
+See [one-play pause intent](SEMANTIC_MACROS.md#one-play-pause-intent) for pause
+recording, dot and unsupported-scope behavior.
 
 The [This play pause qualification](qualification/scoped-pauses-2026-10-12.md)
 records exact-boundary, PCM, durable-history and offscreen keyboard verification,
@@ -165,5 +169,5 @@ Implicit default gaps have no authored node, so neither `j` nor `]r` selects
 them; they need their own recipe controls. Multi-play selection is chosen only
 by command; the inspector shows it but has no pointer control for it. This boundary does not implement occurrence-local cuts, replacement, Repeat
 count changes, Retime changes, implicit gap recipe editing, semantic recording
-inside occurrences beyond whole-owner Zoom intent, or complete definition previews. Those remain part of the
+inside occurrences beyond freeze/black pauses and whole-owner Zoom intent, or complete definition previews. Those remain part of the
 normative specification. No full-product requirement or gate is complete.

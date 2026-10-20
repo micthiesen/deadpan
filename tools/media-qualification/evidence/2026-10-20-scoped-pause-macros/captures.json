@@ -1,0 +1,14 @@
+{
+  "freeze-continuation.png": {
+    "label": "A replayed freeze retains the exact Hold for another pause and Zoom",
+    "frame": 517
+  },
+  "black-dot.png": {
+    "label": "Dot inserts the black pause into the newly selected third play",
+    "frame": 676
+  },
+  "delayed-recording.png": {
+    "label": "A saved pause preserves newer play navigation and cancels abandoned recording",
+    "frame": 780
+  }
+}

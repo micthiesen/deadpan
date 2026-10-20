@@ -12,14 +12,14 @@ pub(super) fn validate_scoped_context(
     };
     if context.original.is_some() || context.visual_selection.is_some() {
         return Err(unavailable(
-            "single-play framing requires Your edit with no Visual selection",
+            "single-play editing requires Your edit with no Visual selection",
         ));
     }
     let Some(NodeKind::Sequence { children }) =
         document.nodes().get(&context.parent).map(|node| &node.kind)
     else {
         return Err(unavailable(
-            "single-play framing requires an ordinary Sequence parent",
+            "single-play editing requires an ordinary Sequence parent",
         ));
     };
     if !children.contains(&scoped.root)
@@ -29,7 +29,7 @@ pub(super) fn validate_scoped_context(
         )
     {
         return Err(unavailable(
-            "single-play framing root must be a direct Repeat or Retime child",
+            "single-play editing root must be a direct Repeat or Retime child",
         ));
     }
     if scoped.target.repeats.is_empty()
@@ -40,7 +40,7 @@ pub(super) fn validate_scoped_context(
             .any(|step| !matches!(step.branch, crate::RepeatEditBranch::Play { .. }))
     {
         return Err(unavailable(
-            "single-play framing requires every Repeat ancestor to name one explicit Play",
+            "single-play editing requires every Repeat ancestor to name one explicit Play",
         ));
     }
     if !scoped
@@ -48,7 +48,7 @@ pub(super) fn validate_scoped_context(
         .matches_instance(document, &scoped.presentation)?
     {
         return Err(unavailable(
-            "single-play framing presentation differs from its authoring target",
+            "single-play editing presentation differs from its authoring target",
         ));
     }
     let mut node = scoped.target.node.clone();
@@ -62,7 +62,7 @@ pub(super) fn validate_scoped_context(
         node = parent;
     }
     Err(unavailable(
-        "single-play framing target lies outside its captured inspector root",
+        "single-play editing target lies outside its captured inspector root",
     ))
 }
 

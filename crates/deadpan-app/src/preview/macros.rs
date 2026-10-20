@@ -29,6 +29,10 @@ impl Capture {
         self.context.scoped.is_some()
     }
 
+    pub(super) fn captures_scope(&self, target: &crate::project::scoped::Target) -> bool {
+        self.context.scoped.is_some() && self.scoped.as_ref() == Some(target)
+    }
+
     /// The selected direct child as it was when the command was entered.
     pub(super) fn selected_node(&self) -> Option<&deadpan_core::BeatNode> {
         self.context
@@ -40,7 +44,15 @@ impl Capture {
         self.base.document.presentation_basis().frame_rate
     }
     pub(super) fn check_pause(&self) -> Result<(), String> {
-        self.scope.check_pause(&self.base, self.context.cursor)
+        if let Some(scoped) = &self.context.scoped {
+            self.base
+                .document
+                .pause_insertion_scoped(self.context.cursor, &scoped.target, &scoped.presentation)
+                .map(|_| ())
+                .map_err(|error| error.to_string())
+        } else {
+            self.scope.check_pause(&self.base, self.context.cursor)
+        }
     }
     fn object_selected(&self) -> bool {
         matches!(
@@ -302,6 +314,16 @@ impl State {
             .is_some_and(|recording| recording.expected.context.original.is_some())
     }
 
+    /// Navigation may abandon a queued scoped receipt without retargeting its
+    /// authored edit. Recording and new project writes still wait for it.
+    fn permits_scoped_navigation(&self) -> bool {
+        !self.recording()
+            && self
+                .pending
+                .as_ref()
+                .is_some_and(|pending| pending.capture.is_scoped())
+    }
+
     /// Replace the pending action's success message.
     pub fn set_summary(&mut self, summary: String) {
         if let Some(pending) = &mut self.pending {
@@ -427,7 +449,10 @@ impl DeadpanApp {
         let mut context = context;
         if let Some(target) = &scoped {
             if context.visual_selection.is_some() || self.view != View::Sequence {
-                return Err("Clear the Visual selection and focus Your edit before using one-play framing macros.".into());
+                return Err(
+                    "Clear the Visual selection and focus Your edit before using one-play macros."
+                        .into(),
+                );
             }
             context.scoped = Some(target.semantic_framing(&base)?);
         }
@@ -509,6 +534,24 @@ impl DeadpanApp {
             self.error = Some(PENDING_FRAMING.into());
             return false;
         }
+        if self.macros.permits_scoped_navigation()
+            && matches!(
+                action,
+                Action::Command
+                    | Action::Pane { .. }
+                    | Action::Search
+                    | Action::SearchStep { .. }
+                    | Action::Word { .. }
+                    | Action::Sentence { .. }
+                    | Action::Pause { .. }
+                    | Action::Shot { .. }
+                    | Action::SelectSpeech(_)
+                    | Action::Sound(crate::navigation::SoundAction::Focus)
+                    | Action::Help
+            )
+        {
+            return true;
+        }
         if self.macros.is_pending()
             && !matches!(
                 action,
@@ -527,7 +570,8 @@ impl DeadpanApp {
                 Action::Framing(
                     crate::navigation::FramingAction::PunchIn
                         | crate::navigation::FramingAction::Creep
-                ) | Action::RepeatLast
+                ) | Action::Edit(BeatEdit::InsertHold(_) | BeatEdit::InsertBlack(_))
+                    | Action::RepeatLast
                     | Action::MacroExecute { .. }
                     | Action::MacroStop
                     | Action::MacroCancel
@@ -537,7 +581,7 @@ impl DeadpanApp {
                     | Action::OfferInsert
             )
         {
-            self.error = Some("A one-play framing macro records zooms, creeps and named calls. Save or cancel recording before another action.".into());
+            self.error = Some("A one-play macro records freeze and black pauses, zooms, creeps and named calls. Save or cancel recording before another action.".into());
             return false;
         }
         if self.macros.recording_original()
@@ -714,6 +758,12 @@ impl DeadpanApp {
             return false;
         }
         match command {
+            Ok(
+                navigation::command::Entry::Source
+                | navigation::command::Entry::Sequence
+                | navigation::command::Entry::Scope(_)
+                | navigation::command::Entry::Help,
+            ) if self.macros.permits_scoped_navigation() => true,
             Ok(navigation::command::Entry::Splice) => {
                 self.macro_action_allowed(Action::PasteMoment { before: false })
             }
@@ -838,7 +888,7 @@ impl DeadpanApp {
                         )
                     } else if self.scoped.is_some() {
                         format!(
-                            "Recording @{name} in this play: zooms, creeps and named framing calls. {} saves; Esc cancels.",
+                            "Recording @{name} in this play: freeze/black pauses, zooms, creeps and named calls. {} saves; Esc cancels.",
                             self.editor_key(EditorKey::MacroRecord)
                         )
                     } else {
@@ -1327,10 +1377,12 @@ impl DeadpanApp {
             if captured.context.scoped.is_some()
                 && !matches!(
                     instruction,
-                    SemanticInstruction::Zoom { .. } | SemanticInstruction::Call { .. }
+                    SemanticInstruction::Zoom { .. }
+                        | SemanticInstruction::InsertPause { .. }
+                        | SemanticInstruction::Call { .. }
                 )
             {
-                return Err("This play supports semantic Zoom, Creep and named framing calls only. Return to the parent for other macro edits.".into());
+                return Err("This play supports freeze and black pauses, Zoom, Creep and named calls only. Return to the parent for other macro edits.".into());
             }
             if !captured.matches(self)
                 || self

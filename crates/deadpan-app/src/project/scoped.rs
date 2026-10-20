@@ -30,22 +30,26 @@ pub struct Target {
 }
 
 impl Target {
-    /// A semantic framing invocation needs explicit authority for exactly one
+    /// Structural admission only; callers must still validate the captured target.
+    pub fn has_single_play_authority(&self) -> bool {
+        self.also.is_empty()
+            && !self.target.repeats.is_empty()
+            && self
+                .target
+                .repeats
+                .iter()
+                .all(|step| matches!(step.branch, RepeatEditBranch::Play { .. }))
+    }
+
+    /// A semantic invocation needs explicit authority for exactly one
     /// visible play at every Repeat level, independently of its presentation.
     pub fn semantic_framing(
         &self,
         workspace: &Workspace,
     ) -> Result<deadpan_core::SemanticScopedContext, String> {
         self.validate(workspace)?;
-        if !self.also.is_empty()
-            || self.target.repeats.is_empty()
-            || self
-                .target
-                .repeats
-                .iter()
-                .any(|step| !matches!(step.branch, RepeatEditBranch::Play { .. }))
-        {
-            return Err("Choose This play at every Repeat level before using a framing macro or dot. All plays, mixed choices and several plays are not available for semantic framing.".into());
+        if !self.has_single_play_authority() {
+            return Err("Choose This play at every Repeat level before using a macro or dot. All plays, mixed choices and several plays are not available for semantic edits.".into());
         }
         Ok(deadpan_core::SemanticScopedContext {
             root: self.root.clone(),
@@ -53,7 +57,7 @@ impl Target {
             presentation: self
                 .presentation
                 .clone()
-                .ok_or("This play has no visible occurrence for semantic framing.")?,
+                .ok_or("This play has no visible occurrence for semantic editing.")?,
         })
     }
 

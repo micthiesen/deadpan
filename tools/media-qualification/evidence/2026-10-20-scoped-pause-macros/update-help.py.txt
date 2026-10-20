@@ -1,0 +1,13 @@
+from pathlib import Path
+p=Path('crates/deadpan-app/src/navigation/registry/entries.rs')
+s=p.read_text()
+changes=[
+('Inside Repeat contents, choose This play at every level; the new pause stays selected. All plays, multiple plays, Retime ancestors and scoped macros are unavailable.', 'Inside Repeat contents, freeze and black pauses follow each level\'s All plays, This play or selected plays choice; the actual new pauses stay selected. With This play at every level, freeze and black pauses also record and dot-repeat at the new invocation. AI pauses still require one play at every level and cannot record there. Retime ancestors remain unavailable.'),
+('only Keep-center or target=center zooms, creeps and named framing calls record there.', 'freeze and black pauses, Keep-center or target=center zooms, creeps and named calls record there. Saved pauses retain only their length and picture choice; each invocation resolves its current boundary.'),
+('run a program containing only Zoom intent and named framing calls; it resolves the newly chosen play and isolates only that play.', 'run a program containing freeze/black pause intent, Zoom intent and named calls; it resolves the newly chosen play and exact current boundary, then retains the actual inserted pause or framed owner for the next instruction.'),
+('dot accepts only Keep-center or target=center Zoom intent and uses the play explicitly chosen at every level.', 'dot accepts freeze/black pause or Keep-center/target=center Zoom intent and uses the play explicitly chosen at every level. Pauses resolve the current boundary and retain their actual new Hold; mixed and multiple-play dot remains unavailable.'),
+]
+for old,new in changes:
+ assert s.count(old)==1,old
+ s=s.replace(old,new)
+p.write_text(s)

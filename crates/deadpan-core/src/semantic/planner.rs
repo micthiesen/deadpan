@@ -71,7 +71,7 @@ pub struct SemanticContext {
     /// Invocation on the measured Original clock. Edit state below remains
     /// independent and is retained by Original navigation and mark operations.
     pub original: Option<SemanticOriginalContext>,
-    /// Explicit current single-play framing authority, independent of ordinary
+    /// Explicit current single-play editing authority, independent of ordinary
     /// navigation. This runtime address never belongs to a saved program.
     pub scoped: Option<SemanticScopedContext>,
     pub parent: NodeId,
@@ -375,6 +375,12 @@ pub fn pause_unavailable() -> EditError {
 pub enum PauseSite {
     /// A pause inserted at an Edit boundary holds the picture before it.
     Boundary { at: ProjectFrame },
+    /// An explicitly inspected occurrence owns this boundary, including its
+    /// edges. Its insertion parent determines which framing stays live.
+    ScopedBoundary {
+        at: ProjectFrame,
+        within: crate::InstancePath,
+    },
     /// A gap of `repeat` holds the last picture of its first play, shown at
     /// `frame`. Composition at and above the Repeat stays live on the gap and
     /// must not be captured again.
@@ -735,11 +741,13 @@ where
             if self.context.scoped.is_some()
                 && !matches!(
                     instruction,
-                    SemanticInstruction::Zoom { .. } | SemanticInstruction::Call { .. }
+                    SemanticInstruction::Zoom { .. }
+                        | SemanticInstruction::InsertPause { .. }
+                        | SemanticInstruction::Call { .. }
                 )
             {
                 return Err(invalid(
-                    "single-play macro authority supports only Zoom intent and named calls",
+                    "single-play macro authority supports only Zoom, freeze or black pause intent and named calls",
                 ));
             }
             if instruction.uses_speech() {

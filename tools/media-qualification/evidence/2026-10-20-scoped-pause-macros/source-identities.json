@@ -1,0 +1,27 @@
+{
+  "base": "2b8a27de",
+  "sha256": {
+    "Cargo.lock": "cd446a35ada5574e1ac17f6028e29aa09cec64bfd91d84d47b924cbb9f0ae175",
+    "crates/deadpan-app/src/navigation/registry/entries.rs": "416a2a64929b1e0d33158510c8ea49fc4c0ac32563ccdb89678d54db4a09aeca",
+    "crates/deadpan-app/src/preview.rs": "ebb5938915f3b398dabd2152d5647f3a46359075c0c4edbafdcc8fb7e87418bc",
+    "crates/deadpan-app/src/preview/harness/scoped_plays.rs": "90741e838002e4557e3c22bee0be0754ab114e9ff20afbfba94db635cf0d4fe7",
+    "crates/deadpan-app/src/preview/harness/scoped_plays/framing_macros.rs": "290c0f0bf742f412b7c63427eddf8ad71c5888d182416589139e186d03678970",
+    "crates/deadpan-app/src/preview/harness/scoped_plays/pause_macros.rs": "ca7482fe079b1de37a34c28c3500e3d492823f06a2313a3206684a7237e8b3cf",
+    "crates/deadpan-app/src/preview/macros.rs": "30c50787a27bc754b38754a61083633930531af65138330506528629ad9eb31a",
+    "crates/deadpan-app/src/preview/semantic.rs": "e3a53b3ae3f4c68589d1e659693be34f3ae4e256b0cf49625b81833446b02d95",
+    "crates/deadpan-app/src/project/scoped.rs": "c99231f888f09b2e449131d80ec789309095937f67d8d02046cf6caec5824216",
+    "crates/deadpan-app/src/project/service/macros.rs": "00de3a203dab9bf2deab043ac270622cf2a08becdce69aaa0a4b15314e00fd3b",
+    "crates/deadpan-app/src/project/tests/macros/scoped.rs": "3a8f6b7a195eb3a21243705da53bcaaab3b5b0ef04867f474ec0aa2e3cc750fa",
+    "crates/deadpan-app/src/project/tests/macros/scoped/pauses.rs": "4b3fa0e0f799f5b26af7b9e55cfc44b6ee9b09527abd66c47cdcab832b16bfb2",
+    "crates/deadpan-cli/src/pause.rs": "d55578b81fc4339af35f11e33f7807cab8c206ca14f6a5fcd5cc04b67888c0f3",
+    "crates/deadpan-cli/tests/project_commands/macros/framing/scoped.rs": "8a9706f82331a766d40b82334bd75457823c29e6f7ba4d52206b72a0295a5f37",
+    "crates/deadpan-cli/tests/project_commands/macros/framing/scoped_pause.rs": "642f55e2235061d8f2feac091798960751aac91c73f2724a6a23a7ac594e7dae",
+    "crates/deadpan-core/src/semantic/planner.rs": "77737f1c8f6a8a470f7307628ecd3ec8349a02b229f4926c888aed0da374e4f9",
+    "crates/deadpan-core/src/semantic/planner/framing.rs": "800fe65d177db7e1ea48ce4b2acbb1a4df58590950c03ef761d32dbaea68a2bd",
+    "crates/deadpan-core/src/semantic/planner/pause.rs": "418c90ee872cf9277d5340e0312052eff62a8b8b76574465e0e19291507e88dc",
+    "crates/deadpan-core/src/semantic/planner/tests/scoped_framing.rs": "688e7ddcc65cad00e2dafd17c059963d60431d94bb9d329ae0e4e9404e6ab1b6",
+    "crates/deadpan-core/src/semantic/planner/tests/scoped_pause.rs": "210e7d876ad259e701bcd57ff74df8209b7d601b243013241a3e9311fbcbb71c",
+    "rust-toolchain.toml": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc"
+  },
+  "source_delta": "source.diff plus new-source.json"
+}

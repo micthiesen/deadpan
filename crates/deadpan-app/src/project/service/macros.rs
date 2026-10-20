@@ -24,7 +24,7 @@ fn scoped_macro_target(
         return Ok(None);
     };
     if context.original.is_some() || context.visual_selection.is_some() {
-        return Err("One-play framing requires Your edit with no Visual selection.".into());
+        return Err("One-play macros require Your edit with no Visual selection.".into());
     }
     let target = crate::project::scoped::Target {
         session: id.session,
@@ -40,7 +40,7 @@ fn scoped_macro_target(
     };
     target.validate_request(workspace, id.session, &id.revision, scope, context.cursor)?;
     if target.semantic_framing(workspace)? != *scoped {
-        return Err("The framing authority differs from its captured native scope.".into());
+        return Err("The macro authority differs from its captured native scope.".into());
     }
     Ok(Some(target))
 }
@@ -63,7 +63,8 @@ fn scoped_macro_receipt(
                     .map_err(display)?
             {
                 return Err(
-                    "Scoped framing changed its ordinary context or lost its concrete play.".into(),
+                    "The scoped macro changed its ordinary context or lost its concrete play."
+                        .into(),
                 );
             }
             Ok(Some(crate::project::scoped::Commit {
@@ -74,7 +75,7 @@ fn scoped_macro_receipt(
                 also: None,
             }))
         }
-        _ => Err("Scoped framing did not preserve its invocation authority.".into()),
+        _ => Err("The scoped macro did not preserve its invocation authority.".into()),
     }
 }
 

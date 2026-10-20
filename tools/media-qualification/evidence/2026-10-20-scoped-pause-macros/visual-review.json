@@ -1,0 +1,23 @@
+{
+  "reviewer": "root",
+  "method": "view_image of final release offscreen Metal PNGs",
+  "viewport_pixels": [
+    960,
+    640
+  ],
+  "captures": [
+    128,
+    129,
+    130
+  ],
+  "result": "pass",
+  "observations": [
+    "The replayed freeze remains selected through another pause and Zoom; the visible crop matches the authored 2x framing.",
+    "Dot selects the new black Hold in the newly chosen third play and shows the exact Edit boundary.",
+    "Delayed recording keeps the newer cursor, closes expired scope, cancels recording and truthfully reports that the saved edit remains.",
+    "Independent clocks, focus cues, active scope, key-label pairs and bottom footer remain visible."
+  ],
+  "limits": [
+    "No physical keyboard/IME, VoiceOver speech, display latency or acoustic claim."
+  ]
+}

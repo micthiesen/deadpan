@@ -20,10 +20,13 @@ impl super::DeadpanApp {
         if self.scoped.is_some()
             && !matches!(
                 edit.operation,
-                RepeatableEdit::Parameter(deadpan_core::SemanticInstruction::Zoom { .. })
+                RepeatableEdit::Parameter(
+                    deadpan_core::SemanticInstruction::Zoom { .. }
+                        | deadpan_core::SemanticInstruction::InsertPause { .. }
+                )
             )
         {
-            return Some("repeat unavailable: frame this play first".into());
+            return Some("repeat unavailable: use a pause or framing edit first".into());
         }
         let selected_repeat = matches!(edit.operation, RepeatableEdit::SetRepeatPlays { .. })
             && self.workspace.as_ref().is_some_and(|workspace| {

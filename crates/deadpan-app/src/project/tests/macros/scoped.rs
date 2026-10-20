@@ -1,5 +1,7 @@
 //! Real qualified pictures through one-play semantic service receipts.
 
+mod pauses;
+
 use super::*;
 use crate::project::scoped::Target;
 use crate::project::semantic::RepeatableEdit;

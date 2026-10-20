@@ -1,0 +1,8 @@
+#!/bin/sh
+set -eu
+export DEADPAN_FFMPEG_PREFIX=/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix
+export CARGO_PROFILE_DEV_OPT_LEVEL=2
+export DEADPAN_REQUIRE_PHYSICAL_MAC=1
+cargo xtask check --since 2b8a27de --filter 'test(scoped) or test(macros) or test(completion)' > /tmp/deadpan-scoped-pause-macros-2026-10-20/check.log 2>&1
+cargo nextest run -p deadpan-app --features ui-harness --locked -E 'test(scoped) or test(macros) or test(completion)' > /tmp/deadpan-scoped-pause-macros-2026-10-20/ui.log 2>&1
+cargo build -p deadpan-app -p deadpan-cli --release --features ui-harness --locked --bins > /tmp/deadpan-scoped-pause-macros-2026-10-20/release.log 2>&1

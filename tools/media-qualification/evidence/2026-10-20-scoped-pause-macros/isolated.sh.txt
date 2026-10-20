@@ -1,0 +1,12 @@
+#!/bin/sh
+set -eu
+export DEADPAN_FFMPEG_PREFIX=/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix
+export CARGO_PROFILE_DEV_OPT_LEVEL=2
+export DEADPAN_REQUIRE_PHYSICAL_MAC=1
+cargo nextest run -p deadpan-app --locked --test-threads 1 -E 'test(a_bank_only_named_call_uses_the_same_receipt_admission_as_a_recorded_yank)' > /tmp/deadpan-scoped-pause-macros-2026-10-20/isolated-normal.log 2>&1
+cargo nextest run -p deadpan-app --features ui-harness --locked --test-threads 1 -E 'test(completion_before_new_input_keeps_its_admitted_origin)' > /tmp/deadpan-scoped-pause-macros-2026-10-20/isolated-ui.log 2>&1
+if rg -q 'LEAK' /tmp/deadpan-scoped-pause-macros-2026-10-20/isolated-normal.log /tmp/deadpan-scoped-pause-macros-2026-10-20/isolated-ui.log; then
+    exit 1
+fi
+python3 /tmp/deadpan-scoped-pause-macros-2026-10-20/identity.py check
+sh /tmp/deadpan-scoped-pause-macros-2026-10-20/replay.sh

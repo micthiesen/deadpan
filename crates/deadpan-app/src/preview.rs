@@ -1756,8 +1756,19 @@ impl DeadpanApp {
     ) {
         match scoped {
             Ok(Some(scoped)) => {
-                self.insert_scoped_pause(input, black, ai, scoped);
-                return;
+                if ai || !scoped.has_single_play_authority() {
+                    self.insert_scoped_pause(input, black, ai, scoped);
+                    return;
+                }
+                if !target
+                    .as_ref()
+                    .is_ok_and(|capture| capture.captures_scope(&scoped))
+                {
+                    self.error = Some(target.err().unwrap_or_else(|| {
+                        "The pause scope changed. Enter the command again; no edit was made.".into()
+                    }));
+                    return;
+                }
             }
             Ok(None) if self.scoped.is_none() => {}
             Ok(None) => {
@@ -3930,11 +3941,12 @@ impl DeadpanApp {
                     let group_entry = self.command.trim_start().trim_start_matches(':').split_whitespace().next().is_some_and(|verb| verb.eq_ignore_ascii_case("group"));
                     ui.weak(if group_entry { "Name the selection · use quotes, for example name=\"the answer\"" } else { sound_events::command_hint(&self.command).unwrap_or("Whole project frames: 11f · repeat count: total plays") });
                     if let (Ok(navigation::command::Entry::Action(Action::Edit(edit))), Some(workspace)) = (navigation::command::parse(&self.command), &self.workspace)
-                        && let BeatEdit::InsertHold(input) | BeatEdit::InsertAiHold(input) = edit
+                        && let BeatEdit::InsertHold(input) | BeatEdit::InsertBlack(input) | BeatEdit::InsertAiHold(input) = edit
                         && let Ok(duration) = input.resolve(workspace.document.presentation_basis().frame_rate)
                     {
                         let ai = if matches!(edit, BeatEdit::InsertAiHold(_)) { " · AI request after saving" } else { "" };
-                        ui.colored_label(style::LAVENDER, format!("{} frames · freeze + silence · at boundary {}{ai}", duration.frames(), self.sequence_cursor));
+                        let picture = if matches!(edit, BeatEdit::InsertBlack(_)) { "black" } else { "freeze" };
+                        ui.colored_label(style::LAVENDER, format!("{} frames · {picture} + silence · at boundary {}{ai}", duration.frames(), self.sequence_cursor));
                     }
                 });
                 if let Some(hint) = self.retime_hint() {
@@ -3960,6 +3972,7 @@ impl DeadpanApp {
                         hints.push(("Esc".into(), if visual && !self.macros.is_pending() { "clear selection".into() } else { "cancel recording".into() }));
                         self.add_editor_hint(&mut hints, EditorKey::MacroRecord, "save macro");
                         if scoped {
+                            self.add_editor_hint(&mut hints, EditorKey::Hold, "pause");
                             self.add_editor_pair_hint(&mut hints, EditorKey::PunchIn, EditorKey::Creep, " / ", "punch in / creep");
                             if let Some(label) = self.repeat_hint() { self.add_editor_hint(&mut hints, EditorKey::RepeatLast, &label); }
                         } else {
@@ -4002,8 +4015,8 @@ impl DeadpanApp {
                         self.add_editor_hint(&mut hints, EditorKey::Camera, "camera");
                         self.add_editor_pair_hint(&mut hints, EditorKey::PunchIn, EditorKey::Creep, " / ", "punch in / creep");
                         if let Some(label) = self.repeat_hint() { self.add_editor_hint(&mut hints, EditorKey::RepeatLast, &label); }
-                        self.add_editor_hint(&mut hints, EditorKey::MacroRecord, "+ letter: record framing");
-                        self.add_editor_hint(&mut hints, EditorKey::MacroExecute, "+ letter: framing macro");
+                        self.add_editor_hint(&mut hints, EditorKey::MacroRecord, "+ letter: record pause / framing");
+                        self.add_editor_hint(&mut hints, EditorKey::MacroExecute, "+ letter: pause / framing macro");
                         hints.push((":scope".into(), "all / play N / plays 2-3".into()));
                         self.add_editor_hint(&mut hints, EditorKey::Undo, "undo");
                     } else if self.view == View::Sequence {

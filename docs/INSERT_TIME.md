@@ -111,6 +111,20 @@ root positions are resolved again from local anchors. The receipt retains every
 mapped Hold, including differing child slots, with one durable history step and
 one Undo. Shared and multiple-play AI insertion remains unavailable.
 
+With This play explicit at every Repeat level, native freeze/black insertion
+uses `InsertPause { length, black }` semantic intent for recording and dot.
+Each invocation resolves its own exact boundary; the saved program retains no
+node, play or sampled picture. `PauseSite::ScopedBoundary` carries the concrete
+presentation to qualified freeze capture. Black bypasses that provider.
+The planner uses `prepare_occurrence_time`'s actual Hold continuation for a
+following pause, Zoom or named call, while preserving the ordinary cursor and
+enclosing selection. A late refusal rolls back the complete run.
+
+Mixed choices and multiple selected plays retain their direct native path;
+they cannot supply semantic invocation authority. Scoped AI, reverse/tail
+recording, Retime ancestors and Visual selection remain unsupported on this
+path. See [one-play pause intent](SEMANTIC_MACROS.md#one-play-pause-intent).
+
 With `all_plays: true` the same command inserts into the Repeat's shared
 definition instead (specification §5.2: default edits affect every iteration),
 so every default play grows and overridden plays keep their own branches. It

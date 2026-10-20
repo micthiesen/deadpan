@@ -6,6 +6,9 @@ use crate::{
     framing_zoom::{ZoomCurve, ZoomKind},
 };
 
+#[path = "scoped_pause.rs"]
+mod scoped_pause;
+
 fn repeated(id: &str, child: &str, plays: u32) -> BeatNode {
     let mut result = BeatNode::sequence(id, vec![]);
     result.kind = NodeKind::Repeat {

@@ -15,7 +15,7 @@ Visual yank, typed operator motions and group objects, Repeat wraps (optionally
 escalating) and count setters, named Group, neutral Ungroup, register paste or
 Visual replacement, pauses (`InsertPause`, exact frames or milliseconds with a
 host-resolved freeze), framing of the selected beat and invocation-relative
-ranged zooms and creeps, explicitly scoped one-play framing, built-in
+ranged zooms and creeps, explicitly scoped one-play freeze/black pauses and framing, built-in
 [gag recipes](GAGS.md), gain trims and steps and saturation of the selected
 beat (`SetAudio`, from `+`/`-`, `:gain` and `:saturate`), J- and L-cuts
 (`SplitEdit`), role-only deletes (`DeleteRole`) and audio-only or video-only repeats (`RoleRepeat`, see
@@ -40,7 +40,7 @@ Motions and cuts retain their requested counts, including when they
 clamp at a group boundary. Copy, cut and paste retain the selected register name.
 The planner resolves each instruction against the preceding staged edit in
 its checked ordinary Sequence context, including the scope returned by `ig/ag`.
-Temporal occurrence scopes, beat text objects, additional edits and broader
+General temporal occurrence scopes, beat text objects, additional edits and broader
 semantic dot-repeat remain required.
 This is partial DP-06 implementation, not full macro acceptance.
 See [Repeat selections](REPEAT_SELECTION.md) for total-play versus motion counts,
@@ -142,7 +142,7 @@ The native receipt retains the mapped inspector. Any scope navigation revokes
 its cursor ownership permanently, including moving away and back in one event
 batch before a delayed receipt arrives.
 
-Only Zoom and named Call instructions are admitted under one-play authority,
+Zoom, freeze/black InsertPause and named Call instructions are admitted under one-play authority,
 including every expanded nested call. An unsupported later instruction refuses
 the complete run without history or bank writes. All plays, mixed choices,
 several plays, absent or mismatched presentations, Original invocation and
@@ -159,6 +159,33 @@ mapped authority. Request bytes have a depth/identity-derived allowance while
 saved programs retain their independent 128 KiB limit.
 See [one-play qualification](qualification/one-play-framing-macros-2026-10-18.md)
 for real-media, durable-history, native replay, review and timing evidence.
+
+### One-play pause intent
+
+With This play explicit at every enclosing Repeat, `,h` and freeze/black
+`:hold` commands use the same `InsertPause { length, black }` intent as ordinary
+editing. A successful Apply supplies dot-repeat and enters an active recording
+only after its durable receipt. The saved program contains no owner, play,
+picture, PTS or invocation boundary. Run and dot resolve the newly chosen
+play's exact current boundary against the staged document.
+
+Each insertion retains the actual new Hold's authoring address and concrete
+presentation for the next instruction. A following pause, Zoom or named call
+therefore acts on that Hold, including after isolation or splitting. The
+ordinary cursor and visible enclosing selection stay at the insertion boundary.
+Freeze capture uses the qualified Original picture and captured framing; black
+samples no picture. Both insert silent time and preserve subsequent source
+clocks. Unsupported provider content refuses before allocation.
+Zoom still requires qualified picture geometry. A black pause has no such
+picture; a later Zoom on it refuses the complete run without writes.
+
+Mixed Default/Play choices and selected-play batches keep their direct editing
+path but cannot supply macro or dot authority. AI pauses, reverse/tail intent,
+Retime ancestors and Visual ranges remain unsupported on this semantic path.
+An unsupported later instruction rolls back the entire run. Navigation during
+a non-recording queued scoped action may continue; it revokes the delayed
+inspector continuation without retargeting or discarding the saved edit.
+Recording still waits for each action, and scope navigation cancels it.
 
 ### Place slice Apply
 

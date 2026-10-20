@@ -1,0 +1,21 @@
+{
+  "core": {
+    "passed": 13
+  },
+  "native_cli": {
+    "passed": 8,
+    "failed": 2
+  },
+  "failures": [
+    {
+      "test": "native_scoped_pause_macro_selects_actual_hold_keeps_clocks_and_reopens_one_undo",
+      "cause": "Reopen oracle compared with the original pre-Undo revision instead of the Redo result; the preceding complete-content Undo/Redo checks passed.",
+      "fix": "Compare reopened document exactly with the Redo result."
+    },
+    {
+      "test": "headless_scoped_pause_macro_keeps_qualified_freeze_maps_calls_and_zoom_with_dry_run_and_history",
+      "cause": "Success recipe attempted Zoom after black, whose Background picture has no qualified framing geometry.",
+      "fix": "Zoom the inserted freeze before black insertion, and explicitly verify late background Zoom refusal is atomic."
+    }
+  ]
+}

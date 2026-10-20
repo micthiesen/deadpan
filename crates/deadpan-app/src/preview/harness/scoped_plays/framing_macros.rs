@@ -16,16 +16,13 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     let camera = format!("Camera…  {}", d.app().editor_key(EditorKey::Camera));
     d.click(&camera)?;
     d.check(
-        "The Camera button obeys the same framing-only recording gate as its key",
+        "The Camera button obeys the same one-play recording gate as its key",
         d.app().camera.is_none()
             && d.app().camera_pending.is_none()
             && d.app().macros.recording_name() == Some('j')
             && d.app().macros.instruction_count() == 0
             && d.revision() == revision
-            && d.app()
-                .error
-                .as_deref()
-                .is_some_and(|e| e.contains("one-play framing macro")),
+            && d.app().error.as_deref() == Some("A one-play macro records freeze and black pauses, zooms, creeps and named calls. Save or cancel recording before another action."),
         json!({"camera":"closed","instructions":0,"authored":"unchanged"}),
         d.snapshot(),
     )?;
@@ -219,7 +216,7 @@ fn saved(d: &Driver<'_>, name: char) -> Option<Vec<I>> {
 fn save(d: &mut Driver<'_>, name: char, instruction: I) -> Result<(), String> {
     d.key(Key::Q)?;
     d.wait_for(
-        "Save the framing-only macro without concrete play authority",
+        "Save the framing macro without concrete play authority",
         |app| !app.service.is_busy() && !app.macros.is_pending() && !app.macros.recording(),
     )?;
     d.settled()?;

@@ -7,6 +7,9 @@ use deadpan_core::{
 
 use super::*;
 
+#[path = "scoped_pause.rs"]
+mod scoped_pause;
+
 fn iteration(document: &ProjectDocument, owner: &str, ordinal: u32) -> IterationId {
     let NodeKind::Repeat { iterations, .. } = &document.nodes()[&node(owner)].kind else {
         panic!("Repeat");

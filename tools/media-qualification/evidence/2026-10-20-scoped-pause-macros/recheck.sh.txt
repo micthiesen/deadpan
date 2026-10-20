@@ -1,0 +1,7 @@
+#!/bin/sh
+set -eu
+export DEADPAN_FFMPEG_PREFIX=/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix
+export CARGO_PROFILE_DEV_OPT_LEVEL=2
+export DEADPAN_REQUIRE_PHYSICAL_MAC=1
+cargo nextest run -p deadpan-app -p deadpan-cli --locked -E 'test(scoped_pause) or test(native_scoped_)' > /tmp/deadpan-scoped-pause-macros-2026-10-20/native-cli-recheck.log 2>&1
+DEADPAN_UPDATE_COMMANDS_MD=1 cargo test -p deadpan-app --locked --bin deadpan-app commands_reference -- --nocapture > /tmp/deadpan-scoped-pause-macros-2026-10-20/commands.log 2>&1

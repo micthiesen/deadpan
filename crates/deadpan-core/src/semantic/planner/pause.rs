@@ -47,7 +47,14 @@ where
                     audio: HoldAudio::Silence,
                 })
             } else {
-                (planner.resolve_pause)(&planner.current, super::PauseSite::Boundary { at })
+                let site = planner.context.scoped.as_ref().map_or(
+                    super::PauseSite::Boundary { at },
+                    |scoped| super::PauseSite::ScopedBoundary {
+                        at,
+                        within: scoped.presentation.clone(),
+                    },
+                );
+                (planner.resolve_pause)(&planner.current, site)
             }
         })
     }
@@ -285,7 +292,22 @@ where
             ));
         }
         let at = self.context.cursor;
-        let target = self.current.pause_insertion_target(at)?;
+        let scoped = self.context.scoped.clone();
+        let target = if let Some(scoped) = &scoped {
+            super::framing::validate_scoped_context(&self.current, &self.context)?;
+            if request_ai {
+                return Err(invalid(
+                    "single-play macro pauses support freeze or black intent only",
+                ));
+            }
+            crate::PauseInsertionTarget::Occurrence(self.current.pause_insertion_scoped(
+                at,
+                &scoped.target,
+                &scoped.presentation,
+            )?)
+        } else {
+            self.current.pause_insertion_target(at)?
+        };
         if !self.within_scope(target.navigation_parent()) {
             return Err(EditError::new(
                 EditErrorCode::SelectionUnavailable,
@@ -293,6 +315,16 @@ where
             ));
         }
         let provider = provider(self)?;
+        if scoped.is_some()
+            && (!matches!(
+                provider.video,
+                crate::HoldVideo::Background | crate::HoldVideo::Freeze { .. }
+            ) || provider.audio != HoldAudio::Silence)
+        {
+            return Err(invalid(
+                "a single-play macro pause needs a silent freeze or background provider",
+            ));
+        }
         self.charge_step(false)?;
         let (new_revision, id, split, occurrence) = match target {
             crate::PauseInsertionTarget::Retimed(_) if request_ai => {
@@ -381,8 +413,8 @@ where
         let command = if let Some(identities) = occurrence {
             Command::InsertOccurrenceTime {
                 at,
-                within: None,
-                target: None,
+                within: scoped.as_ref().map(|scoped| scoped.presentation.clone()),
+                target: scoped.as_ref().map(|scoped| scoped.target.clone()),
                 hold,
                 id: id.clone(),
                 identities,
@@ -408,13 +440,42 @@ where
             }
         };
         let edit = LeafEdit::new(new_revision, command)?;
+        let continuation = scoped
+            .as_ref()
+            .map(|scoped| {
+                let prepared =
+                    crate::prepare_occurrence_time(&self.current, &edit.request(&self.current))?;
+                if prepared.boundary.frame != at {
+                    return Err(invalid(
+                        "a single-play pause changed its captured absolute boundary",
+                    ));
+                }
+                Ok::<_, EditError>((
+                    SemanticScopedContext {
+                        root: scoped.root.clone(),
+                        target: prepared.target,
+                        presentation: prepared.presentation,
+                    },
+                    prepared.boundary.frame,
+                ))
+            })
+            .transpose()?;
+        let selected_before = self.context.selected_child.clone();
         self.commit_leaf(edit)?;
         let resolved_parent = self.current.parent_of(&id);
         // The cursor stays at the pause; a hidden Hold selects its visible
         // enclosing child, as natively.
+        let at = if let Some((scoped, boundary)) = continuation {
+            self.context.scoped = Some(scoped);
+            boundary
+        } else {
+            at
+        };
         self.context.cursor = at;
-        self.context.selected_child = if self.child_indices.contains_key(&id) {
-            Some(id)
+        self.context.selected_child = if scoped.is_some() {
+            selected_before
+        } else if self.child_indices.contains_key(&id) {
+            Some(id.clone())
         } else {
             selected_child(&self.child_ends, at, self.bounds)
         };
@@ -423,6 +484,11 @@ where
                 EditError::new(EditErrorCode::TimingOverflow, "pause end overflows")
             })?);
         self.trace[trace_index].resolved_parent = resolved_parent;
+        if self.context.scoped.is_some() {
+            super::framing::validate_scoped_context(&self.current, &self.context)?;
+            self.trace[trace_index].resolved_selection =
+                Some(SliceCaptureSelection::Child { node: id });
+        }
         self.trace[trace_index].resolved_range =
             Some(FrameRange::new(at, end).map_err(crate::DocumentError::from)?);
         Ok(())

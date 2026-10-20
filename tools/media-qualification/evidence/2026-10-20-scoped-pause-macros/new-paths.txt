@@ -1,0 +1,4 @@
+crates/deadpan-app/src/preview/harness/scoped_plays/pause_macros.rs
+crates/deadpan-app/src/project/tests/macros/scoped/pauses.rs
+crates/deadpan-cli/tests/project_commands/macros/framing/scoped_pause.rs
+crates/deadpan-core/src/semantic/planner/tests/scoped_pause.rs

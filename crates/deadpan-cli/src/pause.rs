@@ -26,6 +26,9 @@ pub fn site_provider(
 ) -> Result<PauseProvider, String> {
     match site {
         PauseSite::Boundary { at } => pause_provider(document, plan, *at, index),
+        PauseSite::ScopedBoundary { at, within } => {
+            pause_provider_within(document, plan, *at, Some(within), index)
+        }
         PauseSite::RepeatGap { repeat, frame } => {
             gap_provider(document, plan, repeat, *frame, index)
         }

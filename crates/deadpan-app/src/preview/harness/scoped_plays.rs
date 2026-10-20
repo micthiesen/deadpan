@@ -7,6 +7,7 @@ use egui::Key;
 mod analysis_navigation;
 mod framing_macros;
 mod heterogeneous_pauses;
+mod pause_macros;
 mod pauses;
 
 pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
@@ -234,6 +235,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     )?;
     d.app_mut().feedback.simulate_playback = false;
     framing_macros::run(d)?;
+    pause_macros::run(d)?;
     pauses::run(d)?;
     analysis_navigation::run(d)?;
     heterogeneous_pauses::run(d)?;
