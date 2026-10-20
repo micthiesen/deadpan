@@ -77,8 +77,23 @@ otherwise `cargo test`). CI runs the same commands individually:
 ```sh
 cargo fmt --all -- --check
 cargo clippy --workspace --all-targets --locked -- -D warnings
-cargo test --workspace --locked
+cargo test --workspace --locked --no-fail-fast
 ```
+
+`cargo xtask check`, `cargo xtask gate` and CI set
+`CARGO_PROFILE_DEV_OPT_LEVEL=2`: tests run optimized code with the dev
+profile's debug assertions (including the store failpoints behind them) and
+overflow checks. Audio stage preparation, limiting, wet effects, CLI
+inspection and export bound their work with wall-clock deadlines that
+unoptimized Rust misses, especially on CI's three-core runner; the DSP C++ is
+already built at `-O2` in every profile. When running such tests directly,
+use the same variable, for example
+`CARGO_PROFILE_DEV_OPT_LEVEL=2 cargo test -p deadpan-audio --locked --test stages`.
+Unprefixed `cargo test` remains unoptimized for quick iteration. Cargo compiles
+the two levels separately within `target/debug`, so switching between them
+rebuilds neither level's crates; only the top-level executables are refreshed.
+`--no-fail-fast` keeps one failing target from hiding the results of every
+later crate.
 
 Locally, `cargo nextest run --workspace --locked` followed by
 `cargo test --workspace --locked --doc` replaces the last command with the

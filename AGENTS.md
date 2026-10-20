@@ -1609,6 +1609,11 @@ choose the cheapest one that covers the change:
 
 1. While editing (seconds to a few minutes): the new or changed tests by name,
    `cargo test -p <crate> --locked --lib <filter>` or `--test <file> <filter>`.
+   Tests with wall-clock preparation deadlines (audio stages, limiting, wet
+   effects, CLI inspection and export) need the optimized test build that
+   check, gate and CI use: prefix the command with
+   `CARGO_PROFILE_DEV_OPT_LEVEL=2`. Debug assertions and overflow checks stay
+   on, and Cargo compiles the two levels separately within `target/debug`.
 2. Before each commit (minutes): `cargo xtask check`, which formats, lints with
    `-D warnings` and runs nextest for only the packages changed since
    `origin/main` (`--since REV`, `--no-test`, `--filter EXPR`). Add one named

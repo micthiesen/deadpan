@@ -67,6 +67,13 @@ fn main() -> ExitCode {
 /// only keeps those targets from being skipped if that unification goes away.
 const SYNTHETIC_WORKER: &str = "deadpan-cli/synthetic-worker";
 
+/// Check and gate builds optimize the dev profile, which keeps its debug
+/// assertions (and the store failpoints behind them) and overflow checks.
+/// Audio preparation, limiting, wet effects and exports bound their work with
+/// wall-clock deadlines that unoptimized builds miss. CI sets the same value in
+/// `.github/workflows/ci.yml`; ordinary `cargo test -p` stays unoptimized.
+const TEST_OPT_LEVEL: &str = "2";
+
 /// Formatting, lints and tests for the workspace and the replay harness
 /// feature set. Tests use nextest when installed, then doc tests.
 fn gate() -> target_hygiene::Result<()> {
@@ -158,6 +165,7 @@ fn run(arguments: &[&str]) -> target_hygiene::Result<()> {
         // Synthetic-worker tests fail instead of skipping when their ffmpeg
         // or deadpan-media-worker is missing (crates/deadpan-cli/tests/generated_joins.rs).
         .env("DEADPAN_REQUIRE_SYNTHETIC_WORKER", "1")
+        .env("CARGO_PROFILE_DEV_OPT_LEVEL", TEST_OPT_LEVEL)
         .status()
         .map_err(|error| format!("failed to start cargo: {error}"))?;
     if status.success() {

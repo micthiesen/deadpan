@@ -16,7 +16,15 @@ jobs:
   check:
     name: macOS workspace
     runs-on: macos-15
-    timeout-minutes: 40
+    timeout-minutes: 300
+    env:
+      # Optimized dev-profile code keeps debug assertions and overflow checks.
+      # Audio preparation and export tests bound their work with wall-clock
+      # deadlines that unoptimized builds miss; `cargo xtask check` and
+      # `cargo xtask gate` use the same level.
+      CARGO_PROFILE_DEV_OPT_LEVEL: "2"
+      # Every run builds from scratch; incremental state only costs time.
+      CARGO_INCREMENTAL: "0"
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -42,11 +50,11 @@ jobs:
       - name: Lint
         run: cargo clippy --workspace --all-targets --locked -- -D warnings
       - name: Test
-        run: cargo test --workspace --locked
+        run: cargo test --workspace --locked --no-fail-fast
       - name: UI feedback and shortcut contracts
         run: |
           cargo clippy -p deadpan-app --features ui-harness --all-targets --locked -- -D warnings
-          cargo test -p deadpan-app --features ui-harness --locked
+          cargo test -p deadpan-app --features ui-harness --locked --no-fail-fast
       - name: Source audio fixture reproducibility
         run: python3 native/deadpan-source/tests/generate_audio_fixtures.py --verify
       - name: Audio measurement regression tests
