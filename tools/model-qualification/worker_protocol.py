@@ -24,6 +24,10 @@ PROTOCOL_VERSION = 1
 BRIDGE_PROTOCOL_VERSION = 2
 EXTENSION_PROTOCOL_VERSION = 3
 MAX_FRAME_BYTES = 256 * 1024
+# The deepest nesting the Rust host's serde_json recursion limit (128) accepts.
+# Python's own limit follows the available C stack, so it cannot bound nesting
+# deterministically.
+MAX_JSON_DEPTH = 127
 MAX_PROTOCOL_ID_BYTES = 128
 MAX_WORKSPACE_REF_BYTES = 1_024
 MAX_DIAGNOSTIC_BYTES = 4_096
@@ -53,6 +57,31 @@ def _reject_duplicate_keys(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
 
 def _reject_constant(value: str) -> Any:
     raise ProtocolError(f"non-finite JSON number is not allowed: {value}")
+
+
+def _check_depth(text: str) -> None:
+    """Reject arrays and objects nested deeper than ``MAX_JSON_DEPTH``."""
+
+    depth = 0
+    in_string = escaped = False
+    for character in text:
+        if in_string:
+            if escaped:
+                escaped = False
+            elif character == "\\":
+                escaped = True
+            elif character == '"':
+                in_string = False
+        elif character == '"':
+            in_string = True
+        elif character in "[{":
+            depth += 1
+            if depth > MAX_JSON_DEPTH:
+                raise ProtocolError(
+                    f"JSON frame nests deeper than {MAX_JSON_DEPTH} levels"
+                )
+        elif character in "]}":
+            depth -= 1
 
 
 def _read_exact(stream: BinaryIO, length: int) -> bytes:
@@ -102,8 +131,10 @@ def read_frame(stream: BinaryIO) -> dict[str, Any] | None:
             f"truncated frame body: read {len(payload)} of {declared} bytes"
         )
     try:
+        text = payload.decode("utf-8")
+        _check_depth(text)
         value = json.loads(
-            payload.decode("utf-8"),
+            text,
             object_pairs_hook=_reject_duplicate_keys,
             parse_constant=_reject_constant,
         )

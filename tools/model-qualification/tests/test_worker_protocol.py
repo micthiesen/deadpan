@@ -159,6 +159,19 @@ class FramingTests(unittest.TestCase):
                     BytesIO(struct.pack(">I", len(payload)) + payload)
                 )
 
+    def test_nesting_is_bounded_like_the_host_regardless_of_stack(self):
+        def frame(depth, key="nested"):
+            inner = b"[" * (depth - 1) + b"]" * (depth - 1)
+            payload = b'{"' + key.encode() + b'":' + inner + b"}"
+            return BytesIO(struct.pack(">I", len(payload)) + payload)
+
+        limit = worker_protocol.MAX_JSON_DEPTH
+        self.assertIn("nested", worker_protocol.read_frame(frame(limit)))
+        # Brackets after an escaped quote are still inside the string.
+        self.assertIn('"[[', worker_protocol.read_frame(frame(limit, '\\"[[')))
+        with self.assertRaisesRegex(worker_protocol.ProtocolError, "nests deeper"):
+            worker_protocol.read_frame(frame(limit + 1))
+
     def test_json_duplicate_unknown_nonfinite_and_nonobject_are_rejected(self):
         duplicate = b'{"operation":"cancel","operation":"cancel"}'
         for payload in [
