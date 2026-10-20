@@ -2,6 +2,10 @@
 //! Progressive admission serves receipt-verified pictures while a background
 //! decoder completes the fresh full index measurement.
 
+#[cfg(target_os = "macos")]
+#[path = "../../../crates/deadpan-cli/tests/support/physical_mac.rs"]
+mod physical_mac;
+
 use std::io::Cursor;
 use std::path::PathBuf;
 use std::sync::Arc;
@@ -227,6 +231,9 @@ fn measured_indexes_do_not_depend_on_the_serving_thread_count() {
 #[test]
 #[cfg(target_os = "macos")]
 fn hardware_serving_preserves_software_receipts_and_rejects_bad_indexes() {
+    if physical_mac::skip_without_physical_mac("VideoToolbox picture exactness") {
+        return;
+    }
     use deadpan_source::DecodeAcceleration;
     let cancelled = AtomicBool::new(false);
     for name in [

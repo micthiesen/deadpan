@@ -14,6 +14,10 @@
 
 #![cfg(target_os = "macos")]
 
+#[path = "support/physical_mac.rs"]
+mod physical_mac;
+
+use physical_mac::skip_without_physical_mac;
 use std::collections::BTreeMap;
 use std::error::Error;
 use std::fs;
@@ -646,6 +650,9 @@ fn reframe_is_reported(fixture: &Fixture, movie: &Path) -> Result<Value> {
     ignore = "slow in debug builds; run with --release (see docs/PREVIEW_EXPORT_VERIFICATION.md)"
 )]
 fn hdr_worker_exports_match_their_committed_previews() -> Result {
+    if skip_without_physical_mac("encoded Render") {
+        return Ok(());
+    }
     let (root, _guard) = keep_or(tempfile::tempdir()?);
     let mut rows = Vec::new();
     let mut failed = Vec::new();
@@ -711,6 +718,9 @@ fn hdr_public_render_matches_its_committed_preview() -> Result {
     let mut rows = Vec::new();
     for (name, media, transfer) in HDR_FIXTURES {
         let fixture = hdr_recipe(&root.join(name), name, media)?;
+        if skip_without_physical_mac("encoded Render") {
+            continue;
+        }
         let movie = public_render(
             &fixture.package,
             &fixture.revision,
@@ -736,6 +746,9 @@ fn sdr_original_renders_sdr_h264() -> Result {
         ColorPolicy::SdrRec709
     );
     let revision = document.revision_id().to_string();
+    if skip_without_physical_mac("encoded Render") {
+        return Ok(());
+    }
     let movie = public_render(
         &project.package,
         &revision,

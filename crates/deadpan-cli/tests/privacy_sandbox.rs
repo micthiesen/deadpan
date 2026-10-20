@@ -12,6 +12,10 @@
 //! commands must fail promptly with their typed errors instead of hanging,
 //! and nothing may be written to `HOME`.
 
+#[path = "support/physical_mac.rs"]
+mod physical_mac;
+
+use physical_mac::skip_without_physical_mac;
 use std::fs::{self, File};
 use std::net::TcpListener;
 use std::os::unix::process::CommandExt;
@@ -307,60 +311,62 @@ fn local_workflows_succeed_and_downloads_fail_truthfully_without_network() -> Re
     sandbox.success(&["project", "validate", text(&copy)])?;
 
     // Render and verify the published movie.
-    let exports = root.join("exports");
-    fs::create_dir(&exports)?;
-    let finished = sandbox.success(&[
-        "render",
-        &package,
-        "--output",
-        text(&exports),
-        "--name",
-        "offline.mp4",
-        "--expected",
-        &revision,
-    ])?;
-    assert_eq!(finished["event"], "finished");
-    assert_eq!(finished["status"]["outcome"], "published", "{finished}");
-    let movie = finished["status"]["receipt"]["movie"]
-        .as_str()
-        .ok_or("published movie")?
-        .to_owned();
-    let report = fs::read_to_string(
-        finished["status"]["receipt"]["report"]
+    if !skip_without_physical_mac("encoded Render") {
+        let exports = root.join("exports");
+        fs::create_dir(&exports)?;
+        let finished = sandbox.success(&[
+            "render",
+            &package,
+            "--output",
+            text(&exports),
+            "--name",
+            "offline.mp4",
+            "--expected",
+            &revision,
+        ])?;
+        assert_eq!(finished["event"], "finished");
+        assert_eq!(finished["status"]["outcome"], "published", "{finished}");
+        let movie = finished["status"]["receipt"]["movie"]
             .as_str()
-            .ok_or("published report")?,
-    )?;
-    // RENDER_PUBLICATION.md: source paths, labels and URLs are not copied
-    // into report metadata, nor is the package's location.
-    for private in [
-        text(&root),
-        text(&video),
-        "Original clip",
-        "Offline.deadpan",
-        "Offline pause",
-    ] {
+            .ok_or("published movie")?
+            .to_owned();
+        let report = fs::read_to_string(
+            finished["status"]["receipt"]["report"]
+                .as_str()
+                .ok_or("published report")?,
+        )?;
+        // RENDER_PUBLICATION.md: source paths, labels and URLs are not copied
+        // into report metadata, nor is the package's location.
+        for private in [
+            text(&root),
+            text(&video),
+            "Original clip",
+            "Offline.deadpan",
+            "Offline pause",
+        ] {
+            assert!(
+                !report.contains(private),
+                "the render report contains {private:?}"
+            );
+        }
+        let verified = sandbox.cli(&[
+            "verify-export",
+            &package,
+            "--movie",
+            &movie,
+            "--revision",
+            &revision,
+            "--frames",
+            "0,20,40",
+            "--no-audio",
+        ])?;
         assert!(
-            !report.contains(private),
-            "the render report contains {private:?}"
+            verified.status.success(),
+            "verify-export offline: {}\n{}",
+            verified.stdout,
+            verified.stderr
         );
     }
-    let verified = sandbox.cli(&[
-        "verify-export",
-        &package,
-        "--movie",
-        &movie,
-        "--revision",
-        &revision,
-        "--frames",
-        "0,20,40",
-        "--no-audio",
-    ])?;
-    assert!(
-        verified.status.success(),
-        "verify-export offline: {}\n{}",
-        verified.stdout,
-        verified.stderr
-    );
 
     // Explicit downloads fail with typed errors, promptly, and install
     // nothing.

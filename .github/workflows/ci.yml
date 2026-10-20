@@ -29,6 +29,10 @@ jobs:
       # As in `cargo xtask gate`: synthetic-worker tests fail rather than skip
       # when their development ffmpeg is missing.
       DEADPAN_REQUIRE_SYNTHETIC_WORKER: "1"
+      # Unlike the gate, CI leaves DEADPAN_REQUIRE_PHYSICAL_MAC unset: this
+      # runner is a virtual machine, so encoded Render, VideoToolbox and GPU
+      # exactness checks skip here and run on a physical Mac
+      # (docs/DEVELOPMENT.md).
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:

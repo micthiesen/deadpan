@@ -1,3 +1,7 @@
+#[cfg(target_os = "macos")]
+#[path = "../../../crates/deadpan-cli/tests/support/physical_mac.rs"]
+mod physical_mac;
+
 use deadpan_encode::runtime::{
     MappedImageIdentity, RuntimeFileTime, RuntimeImageKind, RuntimePlatform,
 };
@@ -107,7 +111,9 @@ fn fresh_loaded_images_match_pinned_descriptors_without_changing_their_cursor() 
     use std::io::{Seek, SeekFrom};
     use std::os::unix::fs::MetadataExt;
 
-    observe_platform().unwrap().validate().unwrap();
+    if !physical_mac::skip_without_physical_mac("CPU family identity") {
+        observe_platform().unwrap().validate().unwrap();
+    }
     // Swscale is required by capture_current for the real helper. This encoder
     // crate's test executable need not link the source decoder's swscale.
     for kind in [

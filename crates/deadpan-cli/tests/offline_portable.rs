@@ -12,10 +12,13 @@
 //! variable pointing nowhere and outbound IP networking denied by the
 //! sandbox.
 
+#[path = "support/physical_mac.rs"]
+mod physical_mac;
 #[allow(dead_code)]
 #[path = "preview_export/recipes.rs"]
 mod recipes;
 
+use physical_mac::skip_without_physical_mac;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output, Stdio};
 use std::sync::atomic::AtomicBool;
@@ -283,13 +286,16 @@ fn accepted_ai_pause_renders_offline_and_from_a_portable_copy() -> Result {
     assert_eq!(cleanup["variant_expiry"]["expired"], serde_json::json!([]));
 
     // Render with no model anywhere, after cleanup.
-    let movie = render(
-        &package,
-        accepted.as_str(),
-        &root.join("exports"),
-        &empty_home,
-    )?;
-    verify(&package, &movie, accepted.as_str(), &empty_home)?;
+    let renders = !skip_without_physical_mac("encoded Render");
+    if renders {
+        let movie = render(
+            &package,
+            accepted.as_str(),
+            &root.join("exports"),
+            &empty_home,
+        )?;
+        verify(&package, &movie, accepted.as_str(), &empty_home)?;
+    }
 
     // A portable copy elsewhere renders after the source package is gone.
     let elsewhere = root.join("elsewhere");
@@ -319,13 +325,15 @@ fn accepted_ai_pause_renders_offline_and_from_a_portable_copy() -> Result {
         &offline(&["project", "validate", copy_path], &empty_home)?,
         "validate copy",
     )?;
-    let movie = render(
-        &copy,
-        accepted.as_str(),
-        &root.join("exports-copy"),
-        &empty_home,
-    )?;
-    verify(&copy, &movie, accepted.as_str(), &empty_home)?;
+    if renders {
+        let movie = render(
+            &copy,
+            accepted.as_str(),
+            &root.join("exports-copy"),
+            &empty_home,
+        )?;
+        verify(&copy, &movie, accepted.as_str(), &empty_home)?;
+    }
 
     // Source-clock evidence: the copy alone re-derives the exact retained
     // conditioning. Its boundary pictures, decoded from the request's origin

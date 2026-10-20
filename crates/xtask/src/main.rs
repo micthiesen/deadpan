@@ -165,6 +165,9 @@ fn run(arguments: &[&str]) -> target_hygiene::Result<()> {
         // Synthetic-worker tests fail instead of skipping when their ffmpeg
         // or deadpan-media-worker is missing (crates/deadpan-cli/tests/generated_joins.rs).
         .env("DEADPAN_REQUIRE_SYNTHETIC_WORKER", "1")
+        // Encoded Render, VideoToolbox and GPU exactness checks fail instead of
+        // skipping on a virtual machine (crates/deadpan-cli/tests/support/physical_mac.rs).
+        .env("DEADPAN_REQUIRE_PHYSICAL_MAC", "1")
         .env("CARGO_PROFILE_DEV_OPT_LEVEL", TEST_OPT_LEVEL)
         .status()
         .map_err(|error| format!("failed to start cargo: {error}"))?;

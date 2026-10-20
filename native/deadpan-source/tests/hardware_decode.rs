@@ -2,6 +2,9 @@
 //! source observations. These are real macOS decoder tests, not mocked frames.
 #![cfg(target_os = "macos")]
 
+#[path = "../../../crates/deadpan-cli/tests/support/physical_mac.rs"]
+mod physical_mac;
+
 use deadpan_source::{
     DecodeAcceleration, DecodeControl, DecodeLimits, SourceDecodeError, SourceDecoder,
 };
@@ -71,6 +74,9 @@ fn reference(name: &str) -> (deadpan_source::SourceStreamInfo, Vec<Picture>) {
 
 #[test]
 fn videotoolbox_preserves_pixels_clocks_crop_and_color_at_both_thread_limits() {
+    if physical_mac::skip_without_physical_mac("VideoToolbox picture exactness") {
+        return;
+    }
     for name in [
         "cfr-bframes.mp4",
         "offset-bframes.mp4",
@@ -136,6 +142,9 @@ fn videotoolbox_preserves_pixels_clocks_crop_and_color_at_both_thread_limits() {
 
 #[test]
 fn hardware_metadata_preroll_seeks_and_following_steps_preserve_exact_pictures() {
+    if physical_mac::skip_without_physical_mac("VideoToolbox picture exactness") {
+        return;
+    }
     for name in [
         "cfr-bframes.mp4",
         "pyramid-bframes.mp4",

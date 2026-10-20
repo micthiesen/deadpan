@@ -4,6 +4,9 @@
 //! targets of RGBA8 SDR sources under the default SDR color pipeline.
 #![cfg(target_os = "macos")]
 
+#[path = "../../../crates/deadpan-cli/tests/support/physical_mac.rs"]
+mod physical_mac;
+
 use std::sync::atomic::AtomicBool;
 use std::time::{Duration, Instant};
 
@@ -127,6 +130,9 @@ fn hashes(
 
 #[test]
 fn sdr_rgba8_working_and_display_bytes_are_unchanged() {
+    if physical_mac::skip_without_physical_mac("GPU picture bytes") {
+        return;
+    }
     let (device, queue) = device();
     let mut renderer = PictureRenderer::new(&device, &queue);
     let cases = [

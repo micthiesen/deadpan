@@ -95,6 +95,15 @@ rebuilds neither level's crates; only the top-level executables are refreshed.
 `--no-fail-fast` keeps one failing target from hiding the results of every
 later crate.
 
+Encoded Render, VideoToolbox picture and GPU byte checks need a physical Mac.
+GitHub's macOS runners are virtual machines that report no CPU family, which
+the encoder runtime identity requires, and paravirtualize VideoToolbox and
+Metal. On a hypervisor guest (`sysctl kern.hv_vmm_present` is 1) those checks
+print `skipped: ... needs a physical Mac` and the rest of each test still runs,
+so CI covers everything else. `cargo xtask check` and `cargo xtask gate` set
+`DEADPAN_REQUIRE_PHYSICAL_MAC=1`, which makes a virtual machine a failure; run
+them on a physical Mac for complete coverage.
+
 Locally, `cargo nextest run --workspace --locked` followed by
 `cargo test --workspace --locked --doc` replaces the last command with the
 same tests. Nextest runs each test in its own process across all test binaries

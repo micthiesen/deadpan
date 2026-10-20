@@ -1646,6 +1646,13 @@ base-app and optional `ui-harness` coverage when the app changes; their runtime
 branches differ. CI runs both. Pure backend changes do not require repeating
 unchanged app-feature tests or painted replay.
 
+CI's macOS runners are virtual machines, so checks needing a physical Mac
+(encoded Render, VideoToolbox pictures, GPU bytes) call
+`skip_without_physical_mac` from `crates/deadpan-cli/tests/support/physical_mac.rs`
+just before that step, keeping the rest of the test running.
+`cargo xtask check`/`gate` set `DEADPAN_REQUIRE_PHYSICAL_MAC=1`, so on this Mac
+they always run. Guard only genuine hardware dependence, never a flaky check.
+
 Keep `--no-fail-fast` on full milestone runs so one failed target does not
 prevent independent targets and doctests from producing their results. The
 command still fails if any target fails; fix and recheck the affected scope.

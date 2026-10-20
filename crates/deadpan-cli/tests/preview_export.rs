@@ -1,8 +1,11 @@
 #![cfg(target_os = "macos")]
 
+#[path = "support/physical_mac.rs"]
+mod physical_mac;
 #[path = "preview_export/recipes.rs"]
 mod recipes;
 
+use physical_mac::skip_without_physical_mac;
 use recipes::{Expected, Fixture, Result, success};
 use serde_json::{Value, json};
 use std::{
@@ -214,6 +217,9 @@ fn stereo_balance_keeps_channels_through_limited_preview_and_render() -> Result 
         assert!((measured - peak).abs() < 0.002, "{measured}");
     }
     check(&fixture)?;
+    if skip_without_physical_mac("encoded Render") {
+        return Ok(());
+    }
     let movie = render(&fixture, &root.join("exports"))?;
     let (report, passed) = verify(&fixture, &movie, &fixture.revision, &[])?;
     assert!(passed, "{report}");
@@ -257,6 +263,9 @@ fn stored_equalizer_changes_preview_and_matches_verified_export() -> Result {
             (measured - peak).abs() < 0.001,
             "EQ tone amplitude {measured}, expected {peak}"
         );
+    }
+    if skip_without_physical_mac("encoded Render") {
+        return Ok(());
     }
     let movie = render(&fixture, &root.join("exports"))?;
     let (report, passed) = verify(&fixture, &movie, &fixture.revision, &[])?;
@@ -317,6 +326,9 @@ fn group_saturation_matches_summed_voice_oracle_and_verified_export() -> Result 
         "shared bus oracle error: {maximum_error}"
     );
     check(&fixture)?;
+    if skip_without_physical_mac("encoded Render") {
+        return Ok(());
+    }
     let movie = render(&fixture, &root.join("exports"))?;
     let (report, passed) = verify(&fixture, &movie, &fixture.revision, &[])?;
     assert!(passed, "{report}");
@@ -339,6 +351,9 @@ fn shared_equalizer_preserves_mixed_preview_and_verified_export() -> Result {
     let (root, _guard) = keep_or(tempfile::tempdir()?);
     let fixture = recipes::shared_equalizer(&root.join("shared-equalizer"))?;
     check(&fixture)?;
+    if skip_without_physical_mac("encoded Render") {
+        return Ok(());
+    }
     let movie = render(&fixture, &root.join("exports"))?;
     let (report, passed) = verify(&fixture, &movie, &fixture.revision, &[])?;
     assert!(passed, "{report}");
@@ -360,6 +375,9 @@ fn post_shared_automation_preserves_preview_and_verified_export() -> Result {
     let (root, _guard) = keep_or(tempfile::tempdir()?);
     let fixture = recipes::post_shared_automation(&root.join("post-shared-automation"))?;
     check(&fixture)?;
+    if skip_without_physical_mac("encoded Render") {
+        return Ok(());
+    }
     let movie = render(&fixture, &root.join("exports"))?;
     let (report, passed) = verify(&fixture, &movie, &fixture.revision, &[])?;
     assert!(passed, "{report}");
@@ -381,6 +399,9 @@ fn selected_tail_send_preserves_preview_and_verified_export() -> Result {
     let (root, _guard) = keep_or(tempfile::tempdir()?);
     let fixture = recipes::selected_tail_send(&root.join("selected-tail-send"))?;
     check(&fixture)?;
+    if skip_without_physical_mac("encoded Render") {
+        return Ok(());
+    }
     let movie = render(&fixture, &root.join("exports"))?;
     let (report, passed) = verify(&fixture, &movie, &fixture.revision, &[])?;
     assert!(passed, "{report}");
@@ -402,6 +423,9 @@ fn continuous_event_return_preserves_preview_and_verified_export() -> Result {
     let (root, _guard) = keep_or(tempfile::tempdir()?);
     let fixture = recipes::continuous_event_return(&root.join("continuous-event-return"))?;
     check(&fixture)?;
+    if skip_without_physical_mac("encoded Render") {
+        return Ok(());
+    }
     let movie = render(&fixture, &root.join("exports"))?;
     let (report, passed) = verify(&fixture, &movie, &fixture.revision, &[])?;
     assert!(passed, "{report}");
@@ -455,6 +479,9 @@ fn occurrence_pause_preserves_attached_pcm_and_verified_export() -> Result {
     let (root, _guard) = keep_or(tempfile::tempdir()?);
     let fixture = recipes::partial_sounds::occurrence_pauses(&root.join("occurrence-pauses"))?;
     check(&fixture)?;
+    if skip_without_physical_mac("encoded Render") {
+        return Ok(());
+    }
     let movie = render(&fixture, &root.join("exports"))?;
     let (report, passed) = verify(&fixture, &movie, &fixture.revision, &["--every", "1"])?;
     assert!(passed, "{report}");
@@ -482,6 +509,9 @@ fn partial_repeat_export(existing: bool) -> Result {
     };
     let fixture = factory(&root.join("partial-repeat-sounds"))?;
     check(&fixture)?;
+    if skip_without_physical_mac("encoded Render") {
+        return Ok(());
+    }
     let movie = render(&fixture, &root.join("exports"))?;
     let (report, passed) = verify(&fixture, &movie, &fixture.revision, &[])?;
     assert!(passed, "{report}");
@@ -512,6 +542,9 @@ fn split_attached_sounds_preserve_preview_and_verified_export() -> Result {
     let (root, _guard) = keep_or(tempfile::tempdir()?);
     let fixture = recipes::partial_sounds::split_attached_sounds(&root.join("split-sounds"))?;
     check(&fixture)?;
+    if skip_without_physical_mac("encoded Render") {
+        return Ok(());
+    }
     let movie = render(&fixture, &root.join("exports"))?;
     let (report, passed) = verify(&fixture, &movie, &fixture.revision, &[])?;
     assert!(passed, "{report}");
@@ -534,6 +567,9 @@ fn partial_attached_sound_copies_preserve_preview_and_verified_export() -> Resul
     let fixture =
         recipes::partial_sounds::partial_attached_sound_copies(&root.join("partial-sounds"))?;
     check(&fixture)?;
+    if skip_without_physical_mac("encoded Render") {
+        return Ok(());
+    }
     let movie = render(&fixture, &root.join("exports"))?;
     let (report, passed) = verify(&fixture, &movie, &fixture.revision, &[])?;
     assert!(passed, "{report}");
@@ -555,6 +591,9 @@ fn treated_event_preserves_preview_and_verified_export() -> Result {
     let (root, _guard) = keep_or(tempfile::tempdir()?);
     let fixture = recipes::treated_event(&root.join("treated-event"))?;
     check(&fixture)?;
+    if skip_without_physical_mac("encoded Render") {
+        return Ok(());
+    }
     let movie = render(&fixture, &root.join("exports"))?;
     let (report, passed) = verify(&fixture, &movie, &fixture.revision, &[])?;
     assert!(passed, "{report}");
@@ -576,6 +615,9 @@ fn continuous_owner_return_preserves_preview_and_verified_export() -> Result {
     let (root, _guard) = keep_or(tempfile::tempdir()?);
     let fixture = recipes::continuous_owner_return(&root.join("continuous-owner-return"))?;
     check(&fixture)?;
+    if skip_without_physical_mac("encoded Render") {
+        return Ok(());
+    }
     let movie = render(&fixture, &root.join("exports"))?;
     let (report, passed) = verify(&fixture, &movie, &fixture.revision, &[])?;
     assert!(passed, "{report}");
@@ -792,6 +834,9 @@ fn aperture_render(fractional: bool) -> Result {
         recipes::aperture_original(&root.join("fixture"))?
     };
     check(&fixture)?;
+    if skip_without_physical_mac("encoded Render") {
+        return Ok(());
+    }
     let movie = render(&fixture, &root.join("exports"))?;
     let (report, passed) = verify(&fixture, &movie, &fixture.revision, &[])?;
     std::fs::write(
@@ -827,6 +872,9 @@ fn interlaced_originals_render_progressive_at_the_automatic_field_cadence() -> R
         ("telecine-single", 3, 1, [60000, 1001], 2402),
     ] {
         let fixture = recipes::interlaced_original(&root.join(name), name, frames, step)?;
+        if skip_without_physical_mac("encoded Render") {
+            continue;
+        }
         let movie = render(&fixture, &root.join(name).join("exports"))?;
         let (report, passed) = verify(&fixture, &movie, &fixture.revision, &[])?;
         std::fs::write(
@@ -878,6 +926,9 @@ fn sdr_codec_originals_render_sdr_with_exact_picture_and_audio_timing() -> Resul
         "vp9-sdr-10-full",
     ] {
         let fixture = recipes::sdr_codec_original(&root.join(name), name)?;
+        if skip_without_physical_mac("encoded Render") {
+            continue;
+        }
         let movie = render(&fixture, &root.join(name).join("exports"))?;
         let (report, passed) = verify(&fixture, &movie, &fixture.revision, &[])?;
         std::fs::write(
@@ -937,6 +988,9 @@ fn check_source_format_partition(partition: usize) -> Result {
             let directory = root.join(case.name).join(policy);
             let fixture = recipes::formats::build(&directory, *case, pitch)?;
             check_with_picture(&fixture, |picture| case.plan_picture(picture))?;
+            if skip_without_physical_mac("encoded Render") {
+                continue;
+            }
             let movie = render(&fixture, &directory.join("exports"))?;
             let (report, passed) = verify(&fixture, &movie, &fixture.revision, &["--every", "1"])?;
             std::fs::write(
@@ -972,6 +1026,9 @@ fn webm_originals_render_the_measured_clock_and_sample_aspect() -> Result {
         ("vp9-vfr.webm", 12),
     ] {
         let fixture = recipes::webm_original(&root.join(name), name, count)?;
+        if skip_without_physical_mac("encoded Render") {
+            continue;
+        }
         let movie = render(&fixture, &root.join(name).join("exports"))?;
         let (report, passed) = verify(&fixture, &movie, &fixture.revision, &[])?;
         std::fs::write(
@@ -1012,6 +1069,9 @@ fn prores_originals_render_ten_bit_422_vfr_aspect_and_both_field_orders() -> Res
         "apple-hq",
     ] {
         let fixture = recipes::prores_original(&root.join(name), name)?;
+        if skip_without_physical_mac("encoded Render") {
+            continue;
+        }
         let movie = render(&fixture, &root.join(name).join("exports"))?;
         let (report, passed) = verify(&fixture, &movie, &fixture.revision, &[])?;
         std::fs::write(
@@ -1057,6 +1117,9 @@ fn av1_originals_render_sdr_hdr_grain_superres_and_variable_timing() -> Result {
         "av1-pq.webm",
     ] {
         let fixture = recipes::av1_original(&root.join(name), name)?;
+        if skip_without_physical_mac("encoded Render") {
+            continue;
+        }
         let movie = render(&fixture, &root.join(name).join("exports"))?;
         let (report, passed) = verify(&fixture, &movie, &fixture.revision, &[])?;
         std::fs::write(
@@ -1088,6 +1151,9 @@ fn opus_webm_originals_render_with_exact_source_samples_and_verified_encoded_aud
         "opus-av-multi",
     ] {
         let fixture = recipes::opus_original(&root.join(name), name)?;
+        if skip_without_physical_mac("encoded Render") {
+            continue;
+        }
         let movie = render(&fixture, &root.join(name).join("exports"))?;
         let (report, passed) = verify(&fixture, &movie, &fixture.revision, &[])?;
         std::fs::write(
@@ -1115,6 +1181,9 @@ fn vp9_reference_pictures_render_without_adding_or_losing_timeline_frames() -> R
         ("vp9-existing-10", 2),
     ] {
         let fixture = recipes::sdr_source_original(&root.join(name), name, frames)?;
+        if skip_without_physical_mac("encoded Render") {
+            continue;
+        }
         let movie = render(&fixture, &root.join(name).join("exports"))?;
         let (report, passed) = verify(&fixture, &movie, &fixture.revision, &[])?;
         std::fs::write(
@@ -1145,6 +1214,9 @@ fn vfr_recipe_exports_match_independent_provenance_and_committed_preview() -> Re
     for fixture in recipes::vfr::matrix(&root.join("fixtures"))? {
         check_with_picture(&fixture, recipes::vfr::plan_picture)?;
         let started = std::time::Instant::now();
+        if skip_without_physical_mac("encoded Render") {
+            continue;
+        }
         let movie = render(&fixture, &root.join("exports"))?;
         let (report, passed) = verify(&fixture, &movie, &fixture.revision, &[])?;
         std::fs::write(
@@ -1180,6 +1252,9 @@ fn source_interpretation_exports_are_revision_bound_and_undo_restores_picture_se
     let (root, _guard) = keep_or(tempfile::tempdir()?);
     eprintln!("source interpretation export evidence: {}", root.display());
     let automatic = recipes::black_pause(&root.join("fixture"))?;
+    if skip_without_physical_mac("encoded Render") {
+        return Ok(());
+    }
     let old_movie = render(&automatic, &root.join("automatic"))?;
     let mut corrected = automatic.clone();
     corrected.revision = "interpreted".into();
@@ -1268,6 +1343,9 @@ fn source_interpretation_exports_are_revision_bound_and_undo_restores_picture_se
 fn black_pause_export_matches_preview_and_later_edits_are_reported() -> Result {
     let (root, _guard) = keep_or(tempfile::tempdir()?);
     let fixture = recipes::black_pause(&root.join("fixture"))?;
+    if skip_without_physical_mac("encoded Render") {
+        return Ok(());
+    }
     let movie = render(&fixture, &root.join("exports"))?;
     let (report, passed) = verify(&fixture, &movie, &fixture.revision, &[])?;
     assert!(passed, "{}", report["failures"]);
@@ -1448,6 +1526,9 @@ fn every_recipe_export_matches_its_committed_preview() -> Result {
     }
     for fixture in fixtures {
         let started = std::time::Instant::now();
+        if skip_without_physical_mac("encoded Render") {
+            continue;
+        }
         let movie = render(&fixture, &root.join("exports"))?;
         let rendered = started.elapsed();
         let (report, passed) = verify(&fixture, &movie, &fixture.revision, &[])?;
@@ -1572,6 +1653,9 @@ fn disk_prepared_preserve_export_matches_its_committed_preview() -> Result {
     eprintln!("disk Preserve export evidence: {}", root.display());
     let fixture = recipes::disk_preserve(&root.join("fixtures"))?;
     check(&fixture)?;
+    if skip_without_physical_mac("encoded Render") {
+        return Ok(());
+    }
     let movie = render(&fixture, &root.join("exports"))?;
     let (report, passed) = verify(&fixture, &movie, &fixture.revision, &["--every", "1"])?;
     if let Some(path) = std::env::var_os("DEADPAN_PREVIEW_EXPORT_RESULTS") {
