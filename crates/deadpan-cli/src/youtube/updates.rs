@@ -476,7 +476,9 @@ fn write_state(root: &Path, state: &UpdateState) -> Result<(), CliError> {
     Ok(())
 }
 
-/// One updater per root, across the app and the CLI.
+/// One updater per root, across the app and the CLI. A launching child can
+/// briefly share a released lock, so this waits out that window before
+/// reporting another updater.
 fn lock(root: &Path) -> Result<File, CliError> {
     let directory = updates_directory(root);
     create_private(&directory)?;
@@ -485,13 +487,15 @@ fn lock(root: &Path) -> Result<File, CliError> {
         .truncate(false)
         .write(true)
         .open(directory.join(".lock"))?;
-    match rustix::fs::flock(&file, rustix::fs::FlockOperation::NonBlockingLockExclusive) {
-        Ok(()) => Ok(file),
-        Err(rustix::io::Errno::WOULDBLOCK) => Err(helper_error(
+    if deadpan_native_process::lock_exclusive_after_launches(&file, None)?
+        == deadpan_native_process::LaunchLock::Acquired
+    {
+        Ok(file)
+    } else {
+        Err(helper_error(
             "DownloaderUpdateBusy",
             "another downloader update or rollback is running",
-        )),
-        Err(error) => Err(io::Error::from(error).into()),
+        ))
     }
 }
 

@@ -21,6 +21,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc;
 use std::time::{Duration, Instant};
 
+use deadpan_native_process::LaunchLock;
 use serde::{Deserialize, Serialize};
 use sha2::Digest;
 use thiserror::Error;
@@ -606,16 +607,13 @@ impl PackStore {
     /// Serialize installers of one pack version across processes. The lock
     /// lives beside staging, so it never moves into an installed pack.
     ///
-    /// A child that this process launches while the lock is held shares its
-    /// open file until the child's exec closes it, so a released lock can
-    /// briefly look held. Retry for that window before reporting `Busy`; an
-    /// actual installer holds the lock far longer. Cancellation ends the wait.
+    /// A launching child can briefly share a released lock, so this waits out
+    /// that window before reporting `Busy`. Cancellation ends the wait.
     fn lock(
         &self,
         manifest: &PackManifest,
         cancelled: Option<&AtomicBool>,
     ) -> Result<File, PackError> {
-        const LAUNCH_WINDOW: Duration = Duration::from_secs(2);
         let directory = self.root.join(".staging");
         std::fs::create_dir_all(&directory)?;
         let file = OpenOptions::new()
@@ -626,21 +624,10 @@ impl PackStore {
                 "{}-{}.lock",
                 manifest.pack_id, manifest.pack_version
             )))?;
-        let deadline = Instant::now() + LAUNCH_WINDOW;
-        loop {
-            match rustix::fs::flock(&file, rustix::fs::FlockOperation::NonBlockingLockExclusive) {
-                Ok(()) => return Ok(file),
-                Err(rustix::io::Errno::WOULDBLOCK)
-                    if cancelled.is_some_and(|cancelled| cancelled.load(Ordering::Acquire)) =>
-                {
-                    return Err(PackError::Cancelled);
-                }
-                Err(rustix::io::Errno::WOULDBLOCK) if Instant::now() < deadline => {
-                    std::thread::sleep(Duration::from_millis(2));
-                }
-                Err(rustix::io::Errno::WOULDBLOCK) => return Err(PackError::Busy),
-                Err(error) => return Err(io::Error::from(error).into()),
-            }
+        match deadpan_native_process::lock_exclusive_after_launches(&file, cancelled)? {
+            LaunchLock::Acquired => Ok(file),
+            LaunchLock::Held => Err(PackError::Busy),
+            LaunchLock::Cancelled => Err(PackError::Cancelled),
         }
     }
 

@@ -21,6 +21,7 @@ sha2.workspace = true
 tempfile.workspace = true
 image = { version = "=0.25.10", default-features = false, features = ["png"] }
 rustix = { workspace = true, features = ["fs"] }
+deadpan-native-process.workspace = true
 # HTTPS model-pack downloads only; rustls with the system trust store.
 # Ed25519 verification of signed update manifests (already linked by rustls).
 ring = "=0.17.14"

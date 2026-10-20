@@ -15,7 +15,9 @@ use rustix::process::{
     Pid, Signal, WaitId, WaitIdOptions, kill_process, kill_process_group, waitid,
 };
 
+mod launch_lock;
 mod spawn;
+pub use launch_lock::{LaunchLock, lock_exclusive_after_launches};
 pub use spawn::{spawn, try_with_descriptor_creation_guard, with_descriptor_creation_guard};
 
 /// Stop an owned worker group without reaping its leader.

@@ -133,6 +133,11 @@ Its cooperative macOS guard covers pipe creation through spawn return to prevent
 transient descriptor inheritance between participating launches. It does not
 cover foreign launches, serialize worker execution or permit `pre_exec` callbacks.
 Keep the deterministic raw/fixed pipe witness in `tools/process-qualification`.
+Any launch, including direct and foreign ones, briefly shares every open file
+until its exec, so a just-released `flock` can look held. Locks that report
+another owner (busy, in use) take it with
+`deadpan_native_process::lock_exclusive_after_launches`, which waits out that
+window.
 
 Owned macOS worker groups use `deadpan_native_process::terminate_owned_group`
 before reaping their leaders. A successful signal does not prove descendant
