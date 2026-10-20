@@ -1,0 +1,26 @@
+{
+  "input_to_state_ms": {
+    "completed": {
+      "max_ms": 1.7310839999999998,
+      "n": 511,
+      "p50_ms": 0.514625,
+      "p95_ms": 1.02625,
+      "p99_ms": 1.4681250000000001
+    },
+    "failed": 0,
+    "samples": 511,
+    "timed_out": 0
+  },
+  "input_to_picture_complete_ms": {
+    "completed": {
+      "max_ms": 93.84816699999999,
+      "n": 170,
+      "p50_ms": 2.058917,
+      "p95_ms": 13.827416,
+      "p99_ms": 18.818166
+    },
+    "failed": 0,
+    "samples": 170,
+    "timed_out": 0
+  }
+}

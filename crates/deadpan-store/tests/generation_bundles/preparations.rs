@@ -12,6 +12,8 @@ use deadpan_store::generation_preparations::{
 mod current_controls;
 #[path = "preparations/insertion.rs"]
 mod insertion;
+#[path = "preparations/scoped_duration.rs"]
+mod scoped_duration;
 
 struct Relevant;
 impl GenerationContextResolver for Relevant {

@@ -169,7 +169,7 @@ pub(super) fn occurrence_shifted_owners(
 /// The suffix after one concrete owner, including later ancestor plays/gaps.
 /// The supplied root window excludes the owner's own interior. In particular,
 /// a Repeat may directly own another Repeat without a Sequence seam between.
-pub(super) fn occurrence_owners_after(
+pub(crate) fn occurrence_owners_after(
     document: &ProjectDocument,
     owner: &NodeId,
 ) -> Result<BTreeSet<NodeId>, EditError> {

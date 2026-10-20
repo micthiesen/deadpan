@@ -1,0 +1,56 @@
+{
+  "base": "0dbc16e365089bb81b1be3b38cada482e1304d92",
+  "reviewers": [
+    {
+      "agent": "scoped_duration_pcm",
+      "independent_scope": "Core production preparation, semantic planner and allocation/refusal checks",
+      "result": "No concrete source finding; independently confirmed failing PCM oracle exposes real phase reset in existing reducer",
+      "tests_run_by_reviewer": false
+    },
+    {
+      "agent": "pause_selection_ui",
+      "independent_scope": "Native production capture, pending action, receipt and inspector integration",
+      "findings": [
+        "Pointer duration entry bypassed the Enter pending-action guard",
+        "Duration control was offered under unsupported Retime and sound-event contexts"
+      ],
+      "fixes": [
+        "Both entry paths now use open_inspector_parameter and its Command guard",
+        "Cached parent index and sound policy hide unavailable duration entry with an explanation"
+      ],
+      "followup": "Added pending recorded-action keyboard/pointer parity witness and a real qualified root-sound refusal fixture",
+      "tests_run_by_reviewer": false
+    }
+  ],
+  "fresh_general_spawn": "Unavailable: agent thread limit reached; existing workers reviewed production they did not author",
+  "PCM_fix_review": {
+    "reviewer": "scoped_duration_pcm",
+    "result": "No concrete issue found",
+    "checked": [
+      "Pure isolation precedes old-clock capture and reduction",
+      "Exact mapped occurrence oldEnd, integral root admission",
+      "Current Hold interior excluded, later Sources/gaps/plays included",
+      "Retained and initially unbound suffix handling",
+      "Unique leaf revision/ordinal0 timing identities",
+      "Terminal boundary and legacy no-Repeat behavior",
+      "Explicit Retime refusal",
+      "Partial-bound root-tail and direct Repeat ancestry regressions"
+    ],
+    "tests_run_by_reviewer": false
+  },
+  "visual_inspection_finding": {
+    "actual": "Dot changes Hold duration, but the scoped footer showed repeat unavailable",
+    "cause": "repeat_hint had not admitted SetHoldDuration alongside Zoom and InsertPause",
+    "fix": "Add SetHoldDuration to the hint allowlist and a replay assertion for repeat: pause length set to 7f"
+  },
+  "late_review": {
+    "reviewer": "pause_selection_ui",
+    "mode": "read-only; no Cargo or edits",
+    "result": "No correctness findings",
+    "checked": [
+      "SetHoldDuration repeat_hint admission and exact settled replay teaching",
+      "Canonical expected fixture package path retains open and idle requirements",
+      "Framing recording refusal exact sentence includes pause lengths"
+    ]
+  }
+}

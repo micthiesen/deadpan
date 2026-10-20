@@ -10,8 +10,10 @@ use crate::{
     MAX_DOCUMENT_DEPTH, NodeId, NodeKind, OccurrenceIdentities, ProjectDocument,
 };
 
+mod hold_duration;
 mod isolation;
 mod proof;
+pub use hold_duration::{PreparedOccurrenceHoldDuration, prepare_occurrence_hold_duration};
 pub use isolation::MAX_SCOPED_TARGETS;
 pub(crate) use isolation::{
     apply_many_mapped, apply_mapped, isolate_temporal, matches_prefix, occupied_node_ids,

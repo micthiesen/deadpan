@@ -23,6 +23,7 @@ impl super::DeadpanApp {
                 RepeatableEdit::Parameter(
                     deadpan_core::SemanticInstruction::Zoom { .. }
                         | deadpan_core::SemanticInstruction::InsertPause { .. }
+                        | deadpan_core::SemanticInstruction::SetHoldDuration { .. }
                 )
             )
         {

@@ -1,0 +1,10 @@
+#!/bin/sh
+set -eu
+export DEADPAN_FFMPEG_PREFIX=/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix
+export CARGO_PROFILE_DEV_OPT_LEVEL=2
+export DEADPAN_REQUIRE_PHYSICAL_MAC=1
+cargo nextest run -p deadpan-app -p deadpan-audio -p deadpan-cli -p deadpan-core -p deadpan-store --features deadpan-cli/synthetic-worker --locked -E 'binary(occurrence_edits) or test(preparations::) or test(a_pause_duration_changes_only_the_selected_hold)' > /tmp/deadpan-scoped-hold-duration-2026-10-20/existing-duration.log 2>&1
+sh /tmp/deadpan-scoped-hold-duration-2026-10-20/export.sh
+python3 /tmp/deadpan-scoped-hold-duration-2026-10-20/collect-export.py
+python3 /tmp/deadpan-scoped-hold-duration-2026-10-20/identity.py check
+sh /tmp/deadpan-scoped-hold-duration-2026-10-20/replay.sh

@@ -1,0 +1,6 @@
+#!/bin/sh
+set -eu
+export DEADPAN_FFMPEG_PREFIX=/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix
+export CARGO_PROFILE_DEV_OPT_LEVEL=2
+cargo nextest run -p deadpan-app -p deadpan-audio -p deadpan-cli -p deadpan-core -p deadpan-store --features deadpan-cli/synthetic-worker --locked --test-threads 1 -E 'test(a_bank_only_named_call_uses_the_same_receipt_admission_as_a_recorded_yank)' > /tmp/deadpan-scoped-hold-duration-2026-10-20/isolated-bank.log 2>&1
+cargo nextest run -p deadpan-app -p deadpan-audio -p deadpan-cli -p deadpan-core -p deadpan-store --features deadpan-cli/synthetic-worker --locked --test-threads 1 -E 'test(recorded_paste_requires_the_authored_receipt_revision_even_when_cursor_did_not_move)' > /tmp/deadpan-scoped-hold-duration-2026-10-20/isolated-paste.log 2>&1

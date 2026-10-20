@@ -570,8 +570,9 @@ impl DeadpanApp {
                 Action::Framing(
                     crate::navigation::FramingAction::PunchIn
                         | crate::navigation::FramingAction::Creep
-                ) | Action::Edit(BeatEdit::InsertHold(_) | BeatEdit::InsertBlack(_))
-                    | Action::RepeatLast
+                ) | Action::Edit(
+                    BeatEdit::InsertHold(_) | BeatEdit::InsertBlack(_) | BeatEdit::HoldDuration(_)
+                ) | Action::RepeatLast
                     | Action::MacroExecute { .. }
                     | Action::MacroStop
                     | Action::MacroCancel
@@ -581,7 +582,7 @@ impl DeadpanApp {
                     | Action::OfferInsert
             )
         {
-            self.error = Some("A one-play macro records freeze and black pauses, zooms, creeps and named calls. Save or cancel recording before another action.".into());
+            self.error = Some("A one-play macro records freeze and black pauses, pause lengths, zooms, creeps and named calls. Save or cancel recording before another action.".into());
             return false;
         }
         if self.macros.recording_original()
@@ -888,7 +889,7 @@ impl DeadpanApp {
                         )
                     } else if self.scoped.is_some() {
                         format!(
-                            "Recording @{name} in this play: freeze/black pauses, zooms, creeps and named calls. {} saves; Esc cancels.",
+                            "Recording @{name} in this play: freeze/black pauses, pause lengths, zooms, creeps and named calls. {} saves; Esc cancels.",
                             self.editor_key(EditorKey::MacroRecord)
                         )
                     } else {
@@ -1379,10 +1380,11 @@ impl DeadpanApp {
                     instruction,
                     SemanticInstruction::Zoom { .. }
                         | SemanticInstruction::InsertPause { .. }
+                        | SemanticInstruction::SetHoldDuration { .. }
                         | SemanticInstruction::Call { .. }
                 )
             {
-                return Err("This play supports freeze and black pauses, Zoom, Creep and named calls only. Return to the parent for other macro edits.".into());
+                return Err("This play supports freeze and black pauses, pause lengths, Zoom, Creep and named calls only. Return to the parent for other macro edits.".into());
             }
             if !captured.matches(self)
                 || self

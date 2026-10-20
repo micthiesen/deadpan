@@ -1,0 +1,33 @@
+{
+  "all_three_inspected": true,
+  "kind": "Offscreen release replay PNGs inspected with view_image; no live browser or native screenshot capture",
+  "viewport": [
+    960,
+    640
+  ],
+  "findings": [
+    {
+      "capture": "scoped-plays-131.png",
+      "result": "Exact Hold interval [241,248), selected This play 3/3, length control and Enter label legible; footer now teaches repeat: pause length set to 7f"
+    },
+    {
+      "capture": "scoped-plays-132.png",
+      "result": "Selected third-play freeze and six-frame duration visible; exact Edit start and repeat length hint legible; distinct black first-play provider is established by semantic checks"
+    },
+    {
+      "capture": "scoped-plays-133.png",
+      "result": "Saved nine-frame resize remains in root Repeat after recording continuation is abandoned; Edit boundary120, root focus and footer remain legible"
+    }
+  ],
+  "sha256": {
+    "scoped-plays-131.png": "ac50a9a78ab4a745c84cb78f4cf6151221d9ad2ffcafe27c1137e1d097a9f5ef",
+    "scoped-plays-132.png": "c66fbc3dc6ffa4a33ec8da2d42f634f8d22a4d3a78dfd3996c6f94b9353ca554",
+    "scoped-plays-133.png": "9f5f40783bb87ae3f1d73823420e071f939da596f6747d6c2f2ca6c9fc5aa64f"
+  },
+  "limits": [
+    "Physical display latency",
+    "Physical keyboard/IME",
+    "VoiceOver speech",
+    "Acoustic quality"
+  ]
+}

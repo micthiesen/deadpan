@@ -1,0 +1,10 @@
+crates/deadpan-app/src/preview/harness/scoped_plays/hold_duration.rs
+crates/deadpan-app/src/preview/harness/scoped_plays/hold_duration/refusals.rs
+crates/deadpan-app/src/project/tests/macros/scoped/duration.rs
+crates/deadpan-audio/tests/stages/occurrence_pause/duration.rs
+crates/deadpan-cli/tests/preview_export/scoped_duration.rs
+crates/deadpan-cli/tests/project_commands/macros/framing/scoped_duration.rs
+crates/deadpan-core/src/occurrence_edit/hold_duration.rs
+crates/deadpan-core/src/scoped_edit/hold_duration.rs
+crates/deadpan-core/src/semantic/planner/tests/scoped_hold_duration.rs
+crates/deadpan-store/tests/generation_bundles/preparations/scoped_duration.rs

@@ -1,9 +1,10 @@
 # Editing Repeat contents
 
 `Enter` opens a selected Repeat or Retime. Inside it, `j/k` selects children,
-`Enter` descends and `Backspace` returns to the parent. Pause insertion follows
-the explicit choice at each enclosing Repeat. Other temporal
-edits still use the ordinary Sequence timeline.
+`Enter` descends and `Backspace` returns to the parent. On an existing Hold with
+This play at every Repeat level, `Enter` opens its exact duration instead.
+Pause insertion follows the explicit choice at each enclosing Repeat. Other
+temporal edits still use the ordinary Sequence timeline.
 
 Choose `:scope all` to edit a Repeat's shared definition or `:scope play N` to
 edit one stable play by its current one-based number. These choices apply at the
@@ -69,20 +70,33 @@ one concrete play at every level; Retime ancestors refuse this occurrence path
 ([pause insertion](INSERT_TIME.md)). Freeze
 capture also refuses a boundary whose preceding picture does not pass through
 the selected insertion parent; black pauses need no sampled picture. Other
-timing edits, copy/paste and general macros inside these contents remain required work;
+timing edits beyond one-play Hold duration, copy/paste and general macros inside
+these contents remain required work;
 their native actions refuse without editing the retained outer beat.
 
-Freeze/black pauses and whole-owner Zoom and Creep with Keep or OriginalCenter
-intent support recording and dot when This play is explicit at every enclosing
+Freeze/black pauses, existing Hold duration and whole-owner Zoom and Creep with
+Keep or OriginalCenter intent support recording and dot when This play is explicit at every enclosing
 Repeat. Saved programs retain length/picture or framing intent; invocation
 captures the current play and maps its authoring and presentation addresses
 through isolation. A pause continues from its actual new Hold, keeping the
-ordinary cursor and enclosing selection. Only InsertPause, Zoom and nested
+ordinary cursor and enclosing selection. A duration setter continues at the
+resized Hold's exact start, even when shrinking past the old interior cursor.
+Only InsertPause, SetHoldDuration, Zoom and nested
 named calls are admitted. Scope navigation cancels recording and
 permanently revokes any queued macro's inspector continuation. See
 [one-play framing macros](SEMANTIC_MACROS.md#one-play-zoom-and-creep).
 See [one-play pause intent](SEMANTIC_MACROS.md#one-play-pause-intent) for pause
 recording, dot and unsupported-scope behavior.
+
+`:hold-duration Nf` resizes the selected Hold in one explicit play at every
+level. The inspector's Change duration control and Enter prefill its current
+length. A no-op refuses without history, isolation or cursor movement.
+All plays, mixed choices, multiple plays, Retime ancestry and root or attached
+sound events remain unavailable for this timing edit. Accepted generated
+picture shortening retains its provider; extension beyond accepted coverage
+saves the deterministic fallback and durable preparation for a new explicit
+candidate acceptance. The [Hold duration qualification](qualification/scoped-hold-duration-2026-10-20.md)
+retains the nested-play, real-PCM, history and native verification.
 
 The [This play pause qualification](qualification/scoped-pauses-2026-10-12.md)
 records exact-boundary, PCM, durable-history and offscreen keyboard verification,

@@ -66,6 +66,13 @@ wrapper becomes the selected beat and the cursor stays at its start. Evidence:
 `a_pause_duration_changes_only_the_selected_hold` (each replayed as a compound
 and inverted) and the `creative-dot` replay.
 
+An existing Hold inside Repeat contents also accepts `:hold-duration` when
+This play is explicit at every enclosing Repeat. It records the same length
+intent and continues at the actual resized Hold's start, preserving downstream
+sample clocks. This occurrence path still refuses Retime ancestry and external
+sound events. See [scoped editing](SCOPED_EDITING.md) and
+[one-play Hold length](SEMANTIC_MACROS.md#one-play-hold-length).
+
 ## Pitch shift
 
 `PitchPolicy::Shift { semitones }` is pitch-preserving processing with a fixed

@@ -1,0 +1,185 @@
+<ctx task="SetHoldDuration OccurrenceEdit::SetHoldDuration temporal_requirements scoped_macro_receipt State::reconcile_in semantic/planner/retime.rs project/scoped.rs hold-duration" route=" [routed: subtoken+body BM25 (--for&apos;s default) — no strong name hit, multi-word conceptual query]" bundle="auto" bodies="5"><!-- ripwire lens for "SetHoldDuration OccurrenceEdit::SetHoldDuration temporal_requirements scoped_macro_receipt State::reconcile_in semantic/planner/retime.rs project/scoped.rs hold-duration" [mention anchor: 2 files + 6 symbols named in the task lifted near the top] [doc mentions: 6 docs discussing 4 top-ranked symbols surfaced]: reusable building blocks + quality facts for what you're about to touch (cx=complexity ccx=cognitive in=reuse-count churn=recent-commits amp=change-amplification clone=1(duplicated) tested=1) — prefer composing/reusing these; watch the high-churn/high-amp/cloned ones; bundle=auto: the top-ranked FULL bodies ride inline after the signatures in a bodies section (bodies=N on this root counts them; bodies=0 reason=budget when none fit the remaining budget whole; the signatures-only flag opts out) — read them here instead of opening the files. The bodies element discloses the house way: total=requested, shown=printed, capped=1 when they differ; each body's calls child lists its callee signatures, total= always, shown=/capped= only when that list is cut est_tokens="3952" --><sigs capped="1"><f p="./crates/deadpan-store/src/generation_preparations/transitions.rs"><d l="29" n="duration_node" cx="4" ccx="1" in="1" churn="6" amp="1">fn duration_node(command: &amp;Command) -&gt; Option&lt;&amp;deadpan_core::NodeId&gt;</d></f><f p="./crates/deadpan-core/src/semantic/planner/retime.rs"><d l="54" n="resolve_speed" id="./crates/deadpan-core/src/semantic/planner/retime.rs::Planner::resolve_speed" cx="6" ccx="4" in="2" churn="1" amp="2"><doc>speed` against the selected beat: an ordinary Retime&apos;s own input unless `wrap`, otherwise the be…</doc>fn resolve_speed( &amp;self, node: &amp;NodeId, start: ProjectFrame, end: ProjectFrame, speed: ExactRatio, wrap: bool, ) -&gt; Result&lt;Resolved, EditError&gt;</d><d l="134" n="apply_retime" id="./crates/deadpan-core/src/semantic/planner/retime.rs::Planner::apply_retime" cx="4" ccx="4" in="2" churn="1" amp="2">fn apply_retime( &amp;mut self, trace_index: usize, selected: NodeId, start: ProjectFrame, resolved: Resolved, pitch: PitchPolicy, ) -&gt; Result&lt;(), EditError&gt;</d><d l="434" n="set_hold_duration" id="./crates/deadpan-core/src/semantic/planner/retime.rs::Planner::set_hold_duration" cx="2" ccx="1" in="1" churn="1" amp="1">pub(super) fn set_hold_duration( &amp;mut self, trace_index: usize, length: crate::PauseLength, ) -&gt; Result&lt;(), EditError&gt;</d></f></sigs><bodies shown="5" total="6" capped="1"><b t="fn" l="29" p="./crates/deadpan-store/src/generation_preparations/transitions.rs" n="duration_node"><![CDATA[fn duration_node(command: &Command) -> Option<&deadpan_core::NodeId> {
+    match command.base_command() {
+        Command::SetHoldDuration { node, .. } => Some(node),
+        Command::EditOccurrence {
+            instance,
+            edit: OccurrenceEdit::SetHoldDuration { .. },
+            ..
+        } => Some(&instance.node),
+        _ => None,
+    }
+}]]><calls total="1"><c n="base_command" l="611">pub fn base_command(&amp;self) -&gt; &amp;Self</c></calls></b><b t="method" l="54" p="./crates/deadpan-core/src/semantic/planner/retime.rs" n="resolve_speed"><![CDATA[fn resolve_speed(
+        &self,
+        node: &NodeId,
+        start: ProjectFrame,
+        end: ProjectFrame,
+        speed: ExactRatio,
+        wrap: bool,
+    ) -> Result<Resolved, EditError> {
+        if !speed.compare_integer(0).is_gt() {
+            return Err(invalid("a retime speed must be positive"));
+        }
+        let (input, update) = match &self.current.nodes()[node].kind {
+            NodeKind::Retime {
+                mapping,
+                purpose: RetimePurpose::Edit,
+                ..
+            } if !wrap => (mapping.duration(), true),
+            _ => (
+                FrameDuration::new(end.0 - start.0).map_err(crate::DocumentError::from)?,
+                false,
+            ),
+        };
+        if input == FrameDuration::ZERO {
+            return Err(invalid("an empty beat cannot be retimed"));
+        }
+        let overflow = |_| EditError::new(EditErrorCode::TimingOverflow, "retime overflows");
+        let frames = ExactRatio::integer(input.frames())
+            .checked_div(speed)
+            .and_then(ExactRatio::round_even)
+            .map_err(overflow)?;
+        let frames = i64::try_from(frames).map_err(|_| {
+            EditError::new(EditErrorCode::TimingOverflow, "retime duration overflows")
+        })?;
+        if frames == 0 {
+            return Err(EditError::new(
+                EditErrorCode::InvalidDuration,
+                "this speed resolves to 0 frames; choose a slower speed",
+            ));
+        }
+        Ok(Resolved {
+            duration: FrameDuration::new(frames).map_err(crate::DocumentError::from)?,
+            update,
+        })
+    }]]><calls total="6"><c n="new" l="3598">pub(crate) fn new(code: EditErrorCode, message: impl Into&lt;String&gt;) -&gt; Self</c><c n="integer" l="62">pub const fn integer(value: i64) -&gt; Self</c><c n="checked_div" l="130">pub fn checked_div(self, other: Self) -&gt; Result&lt;Self, TimeError&gt;</c><c n="compare_integer" l="146">pub fn compare_integer(self, value: i64) -&gt; std::cmp::Ordering</c><c n="new" l="37">pub fn new(frames: i64) -&gt; Result&lt;Self, TimeError&gt;</c><c n="Err" l="25">type Err = &amp;&apos;static str</c></calls></b><b t="method" l="134" p="./crates/deadpan-core/src/semantic/planner/retime.rs" n="apply_retime"><![CDATA[fn apply_retime(
+        &mut self,
+        trace_index: usize,
+        selected: NodeId,
+        start: ProjectFrame,
+        resolved: Resolved,
+        pitch: PitchPolicy,
+    ) -> Result<(), EditError> {
+        if resolved.update
+            && matches!(&self.current.nodes()[&selected].kind,
+                NodeKind::Retime { duration, pitch: current, .. }
+                    if *duration == resolved.duration && *current == pitch)
+        {
+            return Err(invalid(
+                "the beat already has that speed and pitch; no edit was made",
+            ));
+        }
+        self.charge_step(false)?;
+        let (new_revision, command, result) = if resolved.update {
+            let SemanticAllocation::ParameterEdit { new_revision } =
+                (self.allocate)(SemanticAllocationRequest::ParameterEdit {
+                    step_index: self.steps.len(),
+                })?
+            else {
+                return Err(invalid("a retime update requires a parameter allocation"));
+            };
+            (
+                new_revision,
+                Command::SetRetime {
+                    node: selected.clone(),
+                    duration: resolved.duration,
+                    pitch,
+                },
+                selected,
+            )
+        } else {
+            let SemanticAllocation::WrapRetime { new_revision, id } =
+                (self.allocate)(SemanticAllocationRequest::WrapRetime {
+                    step_index: self.steps.len(),
+                })?
+            else {
+                return Err(invalid("a retime wrap requires a WrapRetime allocation"));
+            };
+            self.reserve_node(&id)?;
+            (
+                new_revision,
+                Command::WrapRetime {
+                    node: selected,
+                    id: id.clone(),
+                    duration: resolved.duration,
+                    pitch,
+                },
+                id,
+            )
+        };
+        self.reserve_revision(&new_revision)?;
+        self.commit_leaf(LeafEdit::new(new_revision, command)?)?;
+        // The cursor stays at the beat's start, which the speed change keeps.
+        self.context.cursor = start;
+        self.context.selected_child = Some(result.clone());
+        let end = ProjectFrame(start.0.checked_add(resolved.duration.frames()).ok_or_else(
+            || EditError::new(EditErrorCode::TimingOverflow, "retime end overflows"),
+        )?);
+        self.trace[trace_index].resolved_parent = Some(self.context.parent.clone());
+        self.trace[trace_index].resolved_selection =
+            Some(SliceCaptureSelection::Child { node: result });
+        self.trace[trace_index].resolved_range =
+            Some(FrameRange::new(start, end).map_err(crate::DocumentError::from)?);
+        Ok(())
+    }]]><calls total="9"><c n="new" l="3598">pub(crate) fn new(code: EditErrorCode, message: impl Into&lt;String&gt;) -&gt; Self</c><c n="new" l="80">pub fn new(new_revision: RevisionId, command: Command) -&gt; Result&lt;Self, EditError&gt;</c><c n="charge_step" l="554">pub(super) fn charge_step(&amp;mut self, capture: bool) -&gt; Result&lt;(), EditError&gt;</c><c n="reserve_revision" l="576">pub(super) fn reserve_revision(&amp;mut self, revision: &amp;RevisionId) -&gt; Result&lt;(), EditError&gt;</c><c n="reserve_node" l="583">pub(super) fn reserve_node(&amp;mut self, node: &amp;NodeId) -&gt; Result&lt;(), EditError&gt;</c><c n="commit_leaf" l="951">pub(super) fn commit_leaf(&amp;mut self, edit: LeafEdit) -&gt; Result&lt;(), EditError&gt;</c><c n="ProjectFrame" l="9">pub struct ProjectFrame</c><c n="new" l="142">pub fn new(start: ProjectFrame, end: ProjectFrame) -&gt; Result&lt;Self, TimeError&gt;</c><c n="Err" l="25">type Err = &amp;&apos;static str</c></calls></b><b t="method" l="434" p="./crates/deadpan-core/src/semantic/planner/retime.rs" n="set_hold_duration"><![CDATA[pub(super) fn set_hold_duration(
+        &mut self,
+        trace_index: usize,
+        length: crate::PauseLength,
+    ) -> Result<(), EditError> {
+        let (selected, start, _) = self.selected_direct_child("pause duration")?;
+        let NodeKind::Hold { recipe } = &self.current.nodes()[&selected].kind else {
+            return Err(EditError::new(
+                EditErrorCode::WrongNodeKind,
+                "a duration change applies to a pause (Hold)",
+            ));
+        };
+        let duration = length.resolve(self.current.presentation_basis().frame_rate)?;
+        if recipe.duration == duration {
+            return Err(invalid(
+                "the pause already has that duration; no edit was made",
+            ));
+        }
+        self.charge_step(false)?;
+        let SemanticAllocation::ParameterEdit { new_revision } =
+            (self.allocate)(SemanticAllocationRequest::ParameterEdit {
+                step_index: self.steps.len(),
+            })?
+        else {
+            return Err(invalid("a pause duration requires a parameter allocation"));
+        };
+        self.reserve_revision(&new_revision)?;
+        self.commit_leaf(LeafEdit::new(
+            new_revision,
+            Command::SetHoldDuration {
+                node: selected.clone(),
+                duration,
+            },
+        )?)?;
+        self.context.cursor = start;
+        self.context.selected_child = Some(selected.clone());
+        let end =
+            ProjectFrame(start.0.checked_add(duration.frames()).ok_or_else(|| {
+                EditError::new(EditErrorCode::TimingOverflow, "pause end overflows")
+            })?);
+        self.trace[trace_index].resolved_parent = Some(self.context.parent.clone());
+        self.trace[trace_index].resolved_selection =
+            Some(SliceCaptureSelection::Child { node: selected });
+        self.trace[trace_index].resolved_range =
+            Some(FrameRange::new(start, end).map_err(crate::DocumentError::from)?);
+        Ok(())
+    }]]><calls total="9"><c n="new" l="3598">pub(crate) fn new(code: EditErrorCode, message: impl Into&lt;String&gt;) -&gt; Self</c><c n="new" l="80">pub fn new(new_revision: RevisionId, command: Command) -&gt; Result&lt;Self, EditError&gt;</c><c n="charge_step" l="554">pub(super) fn charge_step(&amp;mut self, capture: bool) -&gt; Result&lt;(), EditError&gt;</c><c n="reserve_revision" l="576">pub(super) fn reserve_revision(&amp;mut self, revision: &amp;RevisionId) -&gt; Result&lt;(), EditError&gt;</c><c n="commit_leaf" l="951">pub(super) fn commit_leaf(&amp;mut self, edit: LeafEdit) -&gt; Result&lt;(), EditError&gt;</c><c n="selected_direct_child" l="25">fn selected_direct_child( &amp;self, what: &amp;str, ) -&gt; Result&lt;(NodeId, ProjectFrame, ProjectFrame), EditError&gt;</c><c n="ProjectFrame" l="9">pub struct ProjectFrame</c><c n="new" l="142">pub fn new(start: ProjectFrame, end: ProjectFrame) -&gt; Result&lt;Self, TimeError&gt;</c><c n="Err" l="25">type Err = &amp;&apos;static str</c></calls></b><!-- body omitted (over budget): OccurrenceEdit --><b t="cls" l="14" p="./crates/deadpan-app/src/project/scoped.rs" n="Target"><![CDATA[pub struct Target {
+    pub session: u64,
+    /// Native navigation generation; never enters authored state or programs.
+    pub navigation: u64,
+    pub project: ProjectId,
+    pub revision: RevisionId,
+    pub scope: SequenceScope,
+    /// The inspected Repeat or Retime, a direct child of the ordinary scope.
+    pub root: NodeId,
+    pub target: ScopedNodeTarget,
+    /// None permits a dormant definition without inventing a rendered play.
+    pub presentation: Option<InstancePath>,
+    pub cursor: ProjectFrame,
+    /// `:scope plays 2-3`: the same node in each further selected play,
+    /// edited in the same transaction. Empty for All plays or one play.
+    pub also: Vec<ScopedNodeTarget>,
+}]]></b></bodies></ctx>

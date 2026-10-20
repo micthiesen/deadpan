@@ -1,0 +1,98 @@
+from pathlib import Path
+import json
+
+root = Path('/Users/michael/Code/deadpan')
+s = Path('/tmp/deadpan-scoped-hold-duration-2026-10-20')
+reports = {name: json.loads((s/name/'report.json').read_text()) for name in ['visual', 'performance']}
+assert all(not report['failed'] for report in reports.values())
+assert json.loads((s/'visual-review.json').read_text())['all_three_inspected']
+scenarios = {name: next(sc for sc in report['scenarios'] if sc['name'] == 'scoped-plays') for name, report in reports.items()}
+checks = {name: len(sc['checks']) for name, sc in scenarios.items()}
+assert len(set(checks.values())) == 1
+n = checks['visual']
+timings = {t['name']: t['summary'] for t in scenarios['performance']['timings']}
+peak = timings['input_to_picture_complete_ms']['completed']['max_ms']
+identity = json.loads((s/'binaries.json').read_text())['sha256']
+lines = []
+for label, key in [('Input to state', 'input_to_state_ms'), ('Input to completed picture', 'input_to_picture_complete_ms')]:
+    t = timings[key]
+    c = t['completed']
+    lines.append(f"| {label} | {c['n']} | {c['p50_ms']:.3f} ms | {c['p95_ms']:.3f} ms | {c['max_ms']:.3f} ms | {t['failed']} / {t['timed_out']} |")
+p = root/'docs/qualification/scoped-hold-duration-2026-10-20.md'
+text = p.read_text()
+assert '## Native replay and measurements' not in text
+text += f'''
+## Native replay and measurements
+
+The final release visual and separate performance replays each pass all {n}
+scoped checks plus Kestrel's 62 reserved bindings and 21,885,504 routing cases,
+with no source drift. Keyboard and pointer cases open the exact length field,
+grow and shrink an existing Hold, retain its provider and identity, reject
+no-ops without moving the cursor, and continue through Zoom and another pause.
+Recorded length intent replays on a different black Hold; direct Apply and dot
+resize a separate freeze. Pending recording blocks both entry paths, and newer
+navigation cannot be reclaimed by a withheld successful receipt. Explicit
+All/mixed/multiple-play, Retime and qualified root-sound refusals preserve the
+document. The full starting document and independent Original clock are restored.
+
+All three new 960×640 captures were inspected. They show the retained Hold,
+separate play durations/providers, actual start clock and the saved edit after
+recording continuation is abandoned. The compact controls and footer remain
+legible.
+
+| Measurement | Completed | Median | p95 | Maximum | Failed / timed out |
+| --- | ---: | ---: | ---: | ---: | ---: |
+{chr(10).join(lines)}
+
+The performance run submits GPU work without PNG readback. Its process check
+shows no Cargo, rustc or Deadpan app process before launch; the recorded power
+state accompanies the report. Thermal state, caches and unrelated system
+activity remain uncontrolled. The {peak:.3f} ms picture-completion tail is
+retained. Short fixtures and offscreen Metal do not establish physical-display
+latency, physical keyboard/IME behavior, VoiceOver speech or acoustic quality.
+Those owner-only checks remain on the requirements tracker.
+
+## Evidence
+
+The [evidence directory](../../tools/media-qualification/evidence/2026-10-20-scoped-hold-duration)
+retains failed and passing logs, replay reports, inspected captures, emitted
+movies and verification reports, independent review, collection scripts,
+source delta and executable identities, and the checked SHA-256 inventory.
+App SHA-256: `{identity['deadpan-app']}`;
+CLI: `{identity['deadpan-cli']}`. Qualified private helpers retain their
+recorded baseline hashes. No full product requirement or gate is completed by
+this slice.
+'''
+p.write_text(text)
+
+p = root/'docs/REQUIREMENTS.md'
+text = p.read_text()
+anchor = '## Single-play pause macros, 2026-10-20\n'
+assert text.count(anchor) == 1
+section = f'''## One-play Hold duration, 2026-10-20
+
+[Hold duration qualification](qualification/scoped-hold-duration-2026-10-20.md)
+adds exact existing-Hold lengths with explicit This play at every Repeat level.
+Enter and Change duration capture the same target; recording, dot and named
+calls continue through its actual isolation mapping at the resized Hold's
+start. A failing fractional-rate PCM witness exposed a downstream phase reset;
+old-clock capture now preserves later Sources, plays, gaps and unbound suffixes.
+Strict normal/UI checks pass 234 selected tests; separate UI and existing-path
+selections pass 103 and 57. Both real release exports verify all 120 pictures
+and four full-coverage audio windows at zero measured offset. Final visual and
+performance replays each pass {n} scoped checks plus Kestrel, and all three
+compact captures were inspected. The {peak:.3f} ms picture-completion tail
+remains recorded. DP-06 and DP-07 stay partial: broader occurrence edits,
+mixed/multiple-play macro authority, scoped AI and Retime timing remain open.
+
+'''
+text = text.replace(anchor, section + anchor, 1)
+old = 'preserving the ordinary context. They expand with bounded work'
+new = 'preserving the ordinary context. [One-play Hold lengths](qualification/scoped-hold-duration-2026-10-20.md) record exact resize intent and retain the actual mapped Hold at its start through dot, nested calls and subsequent edits. They expand with bounded work'
+assert text.count(old) == 1
+text = text.replace(old, new, 1)
+old = 'actual native, PCM and release-export checks pass. [Nested FollowSpeed pauses]'
+new = 'actual native, PCM and release-export checks pass. [One-play Hold duration](qualification/scoped-hold-duration-2026-10-20.md) resizes the existing Hold with exact isolation and downstream sample-clock preservation, including RoomTone and admitted generated-picture fallback/preparation. [Nested FollowSpeed pauses]'
+assert text.count(old) == 1
+text = text.replace(old, new, 1)
+p.write_text(text)

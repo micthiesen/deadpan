@@ -1,0 +1,10 @@
+#!/bin/sh
+set -u
+export DEADPAN_FFMPEG_PREFIX=/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix
+export CARGO_PROFILE_DEV_OPT_LEVEL=2
+export DEADPAN_REQUIRE_PHYSICAL_MAC=1
+DEADPAN_UPDATE_COMMANDS_MD=1 cargo test -p deadpan-app --locked --bin deadpan-app commands_reference -- --nocapture > /tmp/deadpan-scoped-hold-duration-2026-10-20/commands-generation.log 2>&1
+result=$?
+if test "$result" -ne 0; then
+    rg -q 'rewritten; review the diff, then rerun without DEADPAN_UPDATE_COMMANDS_MD' /tmp/deadpan-scoped-hold-duration-2026-10-20/commands-generation.log || exit "$result"
+fi

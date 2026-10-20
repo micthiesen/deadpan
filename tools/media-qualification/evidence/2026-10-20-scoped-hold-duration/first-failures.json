@@ -1,0 +1,39 @@
+{
+  "core-store-audio.log": {
+    "command": "cargo nextest run -p deadpan-core -p deadpan-store -p deadpan-audio --locked -E test(scoped_hold_duration) or test(nested_occurrence_duration) or test(explicit_nested_play_)",
+    "result": "5 passed, 2 failed",
+    "cause": "Existing occurrence duration reduction did not capture/reanchor downstream unbound audio clocks before changing root time",
+    "witness": "First nested Hold [3,5) shortens to [3,4); following Source [5,7) moves to [4,6). Old output sample 8008 has source phase 3100. The new unbound clock starts at rounded sample 6406 rather than exact 6406.4, resetting source phase by -147/400 sample at 44.1 kHz, 30000/1001 fps.",
+    "values": {
+      "actual": [
+        -0.06055708,
+        -0.06055708
+      ],
+      "expected": [
+        -0.09149733,
+        -0.09149733
+      ]
+    },
+    "affected_tests": [
+      "explicit_nested_play_hold_duration_keeps_44100_source_gap_and_unbound_suffix_pcm",
+      "explicit_nested_play_room_tone_duration_keeps_phase_and_current_endpoint_support"
+    ]
+  },
+  "check-first.log": {
+    "result": "Strict Clippy rejected a one-element Vec of Range initializer in the new PCM test fixture",
+    "lint": "clippy::single_range_in_vec_init",
+    "fix": "Use std::iter::once(0..1).collect() to state that the vector contains one Range. No assertion or production behavior changed."
+  },
+  "visual-first/report.json": {
+    "result": "Replay stopped at existing Camera recording gate assertion",
+    "actual": "Camera closed, recording retained, zero instructions and unchanged revision; expanded help now includes pause lengths",
+    "cause": "Existing assertion compared the complete old sentence exactly",
+    "fix": "Update the expected sentence to include pause lengths; behavior assertions remain unchanged"
+  },
+  "visual-second/report.json": {
+    "result": "337 checks passed; sound fixture open predicate timed out",
+    "actual": "Project opened, idle service, qualified source and persisted root sound, no UI error; existing duration interactions all passed",
+    "cause": "Fixture compared tempfile spelling to the service canonical path, which resolves macOS /var to /private/var",
+    "fix": "Canonicalize the expected path, as production service open already does; keep state and sound-policy assertions unchanged"
+  }
+}

@@ -120,6 +120,23 @@ The planner uses `prepare_occurrence_time`'s actual Hold continuation for a
 following pause, Zoom or named call, while preserving the ordinary cursor and
 enclosing selection. A late refusal rolls back the complete run.
 
+An existing Hold in one explicit Repeat play also accepts
+`SetHoldDuration { length }` semantic intent through `:hold-duration Nf`.
+`occurrence_hold_duration_requirements` queries exact temporal isolation pools;
+`prepare_occurrence_hold_duration` retains the actual execution proof, mapped
+Hold and concrete presentation. Its local-zero anchor supplies the final
+cursor. Resizing does not sample the old cursor to guess a new target, insert
+another pause or change the ordinary enclosing selection. Mixed/multiple
+scope choices, Retime ancestry and external sound events remain refused for
+this resize path.
+
+Repeated Hold resizing captures still-unbound downstream audio after occurrence
+isolation and before changing duration. The old concrete Hold end bounds the
+suffix reanchor, including later ancestor plays and gaps. Existing lattices
+retain their phase; previously unbound Sources keep their pre-edit origins.
+Rounding each new root position into a fresh Source clock would change samples
+at fractional frame/sample rates, even though the picture timing was correct.
+
 Mixed choices and multiple selected plays retain their direct native path;
 they cannot supply semantic invocation authority. Scoped AI, reverse/tail
 recording, Retime ancestors and Visual selection remain unsupported on this

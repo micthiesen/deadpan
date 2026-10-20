@@ -3,6 +3,9 @@ use super::*;
 #[path = "occurrence_pause/mixed.rs"]
 mod mixed;
 
+#[path = "occurrence_pause/duration.rs"]
+mod duration;
+
 fn repeated(child: &str, plays: u32, room: &SourceAudio) -> BeatNode {
     let NodeKind::Hold { recipe: gap } = room_tone(2, room.clone()).kind else {
         unreachable!()

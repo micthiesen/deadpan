@@ -918,8 +918,10 @@ impl DeadpanApp {
                 update
                     .committed
                     .as_ref()
-                    .and_then(|commit| commit.scoped.as_ref())
-                    .filter(|_| scoped_commit_selects),
+                    .filter(|_| scoped_commit_selects)
+                    .and_then(|commit| {
+                        commit.scoped.as_ref().map(|scoped| (scoped, commit.cursor))
+                    }),
                 update.marks.saved.as_ref(),
                 mark_metadata_save
                     .then_some(old_revision.as_ref())
@@ -1616,6 +1618,16 @@ impl DeadpanApp {
     }
 
     fn edit(&mut self, edit: BeatEdit) {
+        if matches!(edit, BeatEdit::HoldDuration(_)) {
+            self.bindings.clear();
+            self.cancel_repeats("a pause length change was requested");
+            self.apply_recorded_instruction(
+                self.capture_macro_target(),
+                self.semantic_beat_edit(&edit)
+                    .expect("Hold duration instruction"),
+            );
+            return;
+        }
         if let BeatEdit::InsertHold(input)
         | BeatEdit::InsertBlack(input)
         | BeatEdit::InsertAiHold(input) = edit
@@ -3262,6 +3274,18 @@ impl DeadpanApp {
                 self.ai_action(action, ai_target);
             }
             Ok(navigation::command::Entry::Action(Action::Edit(
+                edit @ BeatEdit::HoldDuration(_),
+            ))) => {
+                self.cancel_repeats("a pause length change was requested");
+                self.apply_recorded_instruction(
+                    macro_target.unwrap_or_else(|| {
+                        Err("Enter :hold-duration again to capture its pause.".into())
+                    }),
+                    self.semantic_beat_edit(&edit)
+                        .expect("Hold duration instruction"),
+                );
+            }
+            Ok(navigation::command::Entry::Action(Action::Edit(
                 edit @ (BeatEdit::InsertHold(input)
                 | BeatEdit::InsertBlack(input)
                 | BeatEdit::InsertAiHold(input)),
@@ -4008,7 +4032,7 @@ impl DeadpanApp {
                     } else if self.view == View::Sequence && self.scoped.is_some() {
                         self.add_editor_pair_hint(&mut hints, EditorKey::FramePrevious, EditorKey::FrameNext, " / ", "picture frame");
                         self.add_editor_pair_hint(&mut hints, EditorKey::BeatPrevious, EditorKey::BeatNext, " / ", "child");
-                        self.add_editor_hint(&mut hints, EditorKey::EnterGroup, "enter contents");
+                        self.add_editor_hint(&mut hints, EditorKey::EnterGroup, if self.scoped_hold_parameter().is_some() { "pause length" } else { "enter contents" });
                         self.add_editor_hint(&mut hints, EditorKey::LeaveGroup, "parent");
                         self.add_editor_pair_hint(&mut hints, EditorKey::PlayNext, EditorKey::PlayPrevious, " ", "Repeat play");
                         self.add_editor_pair_hint(&mut hints, EditorKey::GainUp, EditorKey::GainDown, " / ", "gain 3 dB");
@@ -4683,6 +4707,13 @@ impl DeadpanApp {
             return true;
         }
         if self.scoped.is_some() && self.view == View::Sequence && !self.event_focused() {
+            if let Some(command) = self.scoped_hold_parameter() {
+                if !self.macro_action_allowed(Action::Command) {
+                    return true;
+                }
+                self.open_command(command, context);
+                return true;
+            }
             return self.enter_scoped(context);
         }
         let Some((_, command)) = self.inspector_description().and_then(|data| data.parameter)

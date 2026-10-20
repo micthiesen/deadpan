@@ -436,6 +436,9 @@ where
         trace_index: usize,
         length: crate::PauseLength,
     ) -> Result<(), EditError> {
+        if let Some(scoped) = self.context.scoped.clone() {
+            return self.set_scoped_hold_duration(trace_index, length, scoped);
+        }
         let (selected, start, _) = self.selected_direct_child("pause duration")?;
         let NodeKind::Hold { recipe } = &self.current.nodes()[&selected].kind else {
             return Err(EditError::new(
@@ -476,6 +479,83 @@ where
             Some(SliceCaptureSelection::Child { node: selected });
         self.trace[trace_index].resolved_range =
             Some(FrameRange::new(start, end).map_err(crate::DocumentError::from)?);
+        Ok(())
+    }
+
+    fn set_scoped_hold_duration(
+        &mut self,
+        trace_index: usize,
+        length: crate::PauseLength,
+        scoped: SemanticScopedContext,
+    ) -> Result<(), EditError> {
+        super::framing::validate_scoped_context(&self.current, &self.context)?;
+        let duration = length.resolve(self.current.presentation_basis().frame_rate)?;
+        let requirements = self
+            .current
+            .occurrence_hold_duration_requirements(&scoped.presentation, duration)?;
+        self.charge_step(false)?;
+        let SemanticAllocation::Isolation {
+            new_revision,
+            identities,
+        } = (self.allocate)(SemanticAllocationRequest::Isolation {
+            step_index: self.steps.len(),
+            nodes: requirements.nodes,
+            marks: requirements.marks,
+        })?
+        else {
+            return Err(invalid(
+                "one-play Hold duration requires an Isolation allocation",
+            ));
+        };
+        self.reserve_revision(&new_revision)?;
+        for node in &identities.nodes {
+            self.reserve_node(node)?;
+        }
+        for mark in &identities.marks {
+            if !self.marks.insert(mark.clone()) {
+                return Err(identity(
+                    "macro reuses an authored or allocated mark identity",
+                ));
+            }
+        }
+        let leaf = LeafEdit::new(
+            new_revision,
+            Command::EditOccurrence {
+                instance: scoped.presentation,
+                edit: crate::OccurrenceEdit::SetHoldDuration { duration },
+                identities,
+            },
+        )?;
+        let prepared =
+            crate::prepare_occurrence_hold_duration(&self.current, &leaf.request(&self.current))?;
+        let start = prepared.boundary.frame;
+        let mapped = SemanticScopedContext {
+            root: scoped.root,
+            target: prepared.target,
+            presentation: prepared.presentation,
+        };
+        let selected = self.context.selected_child.clone();
+        self.commit_leaf(leaf)?;
+        self.context.scoped = Some(mapped.clone());
+        self.context.cursor = start;
+        self.context.selected_child = selected;
+        super::framing::validate_scoped_context(&self.current, &self.context)?;
+        self.trace[trace_index].resolved_parent = self.current.parent_of(&mapped.target.node);
+        self.trace[trace_index].resolved_selection = Some(SliceCaptureSelection::Child {
+            node: mapped.target.node,
+        });
+        self.trace[trace_index].resolved_range = Some(
+            FrameRange::new(
+                start,
+                ProjectFrame(
+                    start
+                        .0
+                        .checked_add(duration.frames())
+                        .ok_or_else(|| invalid("pause end overflows"))?,
+                ),
+            )
+            .map_err(crate::DocumentError::from)?,
+        );
         Ok(())
     }
 }

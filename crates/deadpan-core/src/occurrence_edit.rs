@@ -13,6 +13,8 @@ use crate::{
     SourceVideoMapping, Subtree, WrapAnchorPolicy,
 };
 
+mod hold_duration;
+
 /// A bounded pool supplied by the host. Unused identities do not enter the document.
 /// Nodes are consumed in structural preorder, marks in their current ID order.
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
@@ -427,6 +429,9 @@ pub(crate) fn apply_captured(
     }
     target.validate(&result)?;
     result.validate_isolated_context()?;
+    if let OccurrenceEdit::SetHoldDuration { duration } = edit {
+        result = hold_duration::prepare(&result, &target, *duration, allocation)?;
+    }
     let command = edit.command(target.node);
     if let Command::IsolateGap {
         node,

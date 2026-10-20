@@ -87,6 +87,29 @@ struct Index {
 }
 
 impl State {
+    /// Availability only. The core rechecks the captured occurrence on Apply.
+    /// Use the retained parent index so footer layout does not scan the graph.
+    pub fn hold_duration_available(&self) -> bool {
+        if !self.index.document.sounds().is_empty() || !self.index.document.beat_sounds().is_empty()
+        {
+            return false;
+        }
+        let mut node = &self.selected.node;
+        for _ in 0..=MAX_DOCUMENT_DEPTH {
+            let Some(parent) = self.index.parents.get(node) else {
+                return true;
+            };
+            if matches!(
+                self.index.document.nodes()[parent].kind,
+                NodeKind::Retime { .. }
+            ) {
+                return false;
+            }
+            node = parent;
+        }
+        false
+    }
+
     pub fn new(
         workspace: &Workspace,
         scope: SequenceScope,
@@ -772,20 +795,36 @@ impl State {
 
     /// The host separately checks its pending token and current cursor. An
     /// unrelated revision never rebuilds this state by positional coincidence.
-    pub fn reconcile(&mut self, workspace: &Workspace, commit: &Commit) -> Result<bool, String> {
+    pub fn reconcile(
+        &mut self,
+        workspace: &Workspace,
+        commit: &Commit,
+        cursor: Option<ProjectFrame>,
+    ) -> Result<bool, String> {
         if workspace.session != self.session
             || workspace.document.project_id() != &commit.before.project
             || workspace.document.revision_id() != &commit.revision
         {
             return Ok(false);
         }
-        self.reconcile_in(
+        self.reconcile_at(
             Index::new(workspace.document.clone(), workspace.plan.clone())?,
             commit,
+            cursor.unwrap_or(commit.before.cursor),
         )
     }
 
+    #[cfg(test)]
     fn reconcile_in(&mut self, index: Index, commit: &Commit) -> Result<bool, String> {
+        self.reconcile_at(index, commit, commit.before.cursor)
+    }
+
+    fn reconcile_at(
+        &mut self,
+        index: Index,
+        commit: &Commit,
+        cursor: ProjectFrame,
+    ) -> Result<bool, String> {
         let before = &commit.before;
         if before.session != self.session
             || &before.project != self.index.document.project_id()
@@ -926,7 +965,7 @@ impl State {
             return Ok(false);
         }
         next.preferred = commit.presentation.clone();
-        next.cursor = before.cursor;
+        next.cursor = cursor;
         next.refresh_selected()?;
         if next.selected != commit.target {
             return Ok(false);

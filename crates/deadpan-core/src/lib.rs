@@ -142,10 +142,10 @@ pub use repeat_escalation::*;
 pub use repeat_layout::*;
 pub use repeat_selection::{RepeatGapHold, RepeatSelectionIdentities, RepeatSelectionPlan};
 pub use scoped_edit::{
-    MAX_SCOPED_TARGETS, PreparedScopedEdit, RepeatEditBranch, RepeatEditStep,
-    ScopedEditRequirements, ScopedIsolationRecord, ScopedIsolationStep, ScopedNodeEdit,
-    ScopedNodeTarget, ScopedTargetEdit, ValidatedScopedIsolation, derive_scoped_isolation,
-    prepare_scoped_edit,
+    MAX_SCOPED_TARGETS, PreparedOccurrenceHoldDuration, PreparedScopedEdit, RepeatEditBranch,
+    RepeatEditStep, ScopedEditRequirements, ScopedIsolationRecord, ScopedIsolationStep,
+    ScopedNodeEdit, ScopedNodeTarget, ScopedTargetEdit, ValidatedScopedIsolation,
+    derive_scoped_isolation, prepare_occurrence_hold_duration, prepare_scoped_edit,
 };
 pub use semantic::*;
 pub use sound_allowance::*;

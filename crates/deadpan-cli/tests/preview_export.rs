@@ -536,6 +536,47 @@ fn mixed_repeat_pause_preview_and_encoded_output_keep_authored_source_clocks() -
     Ok(())
 }
 
+#[test]
+fn scoped_hold_duration_preview_and_encoded_output_keep_authored_source_clocks() -> Result {
+    let (root, _guard) = keep_or(tempfile::tempdir()?);
+    let mut results = Vec::new();
+    for (name, factory) in [
+        (
+            "grow",
+            recipes::scoped_duration::grow as fn(&Path) -> Result<Fixture>,
+        ),
+        (
+            "shrink",
+            recipes::scoped_duration::shrink as fn(&Path) -> Result<Fixture>,
+        ),
+    ] {
+        let fixture = factory(&root.join(name))?;
+        check(&fixture)?;
+        if skip_without_physical_mac("encoded Render") {
+            continue;
+        }
+        let movie = render(&fixture, &root.join(format!("exports-{name}")))?;
+        let (report, passed) = verify(&fixture, &movie, &fixture.revision, &["--every", "1"])?;
+        assert!(passed, "{name}: {report}");
+        assert_eq!(report["summary"]["pictures_checked"], fixture.frames);
+        assert_eq!(report["summary"]["pictures_failed"], 0);
+        assert_eq!(report["summary"]["nonzero_offsets"], 0);
+        assert_eq!(report["audio"][0]["flags"], json!([]));
+        assert_eq!(report["audio"][0]["blocks"]["low_snr_blocks"], 0);
+        assert_eq!(report["audio"][0]["offset_status"], "verified_zero");
+        assert_eq!(report["audio"][0]["measured_offset_samples"], 0);
+        check_provenance(&fixture, &report)?;
+        eprintln!("{}", summary_row(&fixture, &report));
+        results.push(
+            json!({"package":fixture.package,"movie":movie,"report":report,"notes":fixture.notes}),
+        );
+    }
+    if let Some(path) = std::env::var_os("DEADPAN_SCOPED_DURATION_RESULTS") {
+        std::fs::write(path, serde_json::to_vec_pretty(&results)?)?;
+    }
+    Ok(())
+}
+
 fn partial_repeat_export(existing: bool) -> Result {
     let (root, _guard) = keep_or(tempfile::tempdir()?);
     let factory = if existing {

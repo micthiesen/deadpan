@@ -1,0 +1,14 @@
+{
+  "duration-continuation.png": {
+    "label": "A lengthened scoped freeze retains its Hold and exact start",
+    "frame": 851
+  },
+  "duration-dot.png": {
+    "label": "Saved duration and dot preserve different Hold providers in separate plays",
+    "frame": 1209
+  },
+  "duration-delayed.png": {
+    "label": "A resized Hold stays saved while newer navigation abandons recording",
+    "frame": 1326
+  }
+}

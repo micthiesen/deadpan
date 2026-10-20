@@ -7,7 +7,7 @@ use crate::project::scoped::Target;
 
 pub(super) mod model;
 
-const STRUCTURE_UNAVAILABLE: &str = "Inside Repeat and Retime contents, gain, Camera, pause audio and AI pictures are available. Repeat pauses follow each level's All plays, This play or selected plays choice. AI pauses require one play at every level. Other timing edits and range copying require the parent.";
+const STRUCTURE_UNAVAILABLE: &str = "Inside Repeat and Retime contents, gain, Camera, pause audio and AI pictures are available. Repeat pauses follow each level's All plays, This play or selected plays choice. Pause length and AI pauses require one play at every level. Other timing edits and range copying require the parent.";
 
 impl DeadpanApp {
     pub(super) fn focus_scoped_pane(&mut self, pane: Pane) {
@@ -76,7 +76,7 @@ impl DeadpanApp {
     pub(super) fn reconcile_scoped(
         &mut self,
         before: Option<&Target>,
-        receipt: Option<&crate::project::scoped::Commit>,
+        receipt: Option<(&crate::project::scoped::Commit, Option<ProjectFrame>)>,
         saved_mark: Option<&crate::project::marks::Saved>,
         mark_metadata_from: Option<&RevisionId>,
         saved_target: Option<&crate::project::targets::Saved>,
@@ -95,10 +95,10 @@ impl DeadpanApp {
         }) {
             return;
         }
-        let result = match receipt.filter(|receipt| {
+        let result = match receipt.filter(|(receipt, _)| {
             Some(&receipt.before) == before && &receipt.revision == workspace.document.revision_id()
         }) {
-            Some(receipt) => state.reconcile(workspace, receipt),
+            Some((receipt, cursor)) => state.reconcile(workspace, receipt, cursor),
             None => Ok(mark_metadata_from
                 .is_some_and(|before| state.rebase_mark_metadata(workspace, before))
                 || saved_mark.is_some_and(|saved| state.rebase_mark(workspace, saved))
@@ -144,6 +144,24 @@ impl DeadpanApp {
             .as_ref()
             .map(|state| &state.selected_target().node)
             .or(self.selected_beat.as_ref())
+    }
+
+    /// Reuse ordinary Hold parameter entry, retaining the captured play when
+    /// command mode opens. Admission still runs against that exact snapshot.
+    pub(super) fn scoped_hold_parameter(&self) -> Option<String> {
+        let workspace = self.workspace.as_ref()?;
+        if !self.scoped.as_ref()?.hold_duration_available() {
+            return None;
+        }
+        let target = self.scoped_target().ok()??;
+        if !target.has_single_play_authority() {
+            return None;
+        }
+        let NodeKind::Hold { recipe } = &workspace.document.nodes().get(&target.target.node)?.kind
+        else {
+            return None;
+        };
+        Some(format!("hold-duration {}f", recipe.duration.frames()))
     }
 
     pub(super) fn inspected_target_matches(&self, node: &NodeId, target: Option<&Target>) -> bool {
@@ -414,7 +432,13 @@ impl DeadpanApp {
         if self.scoped.is_none() {
             return false;
         }
-        if self.macros.recording() && !self.macro_action_allowed(action) {
+        let duration_entry = action == Action::EnterGroup && self.scoped_hold_parameter().is_some();
+        let permission = if duration_entry {
+            Action::Command
+        } else {
+            action
+        };
+        if (self.macros.recording() || duration_entry) && !self.macro_action_allowed(permission) {
             return true;
         }
         if matches!(self.pane, Pane::Sources | Pane::Sounds)
@@ -428,7 +452,7 @@ impl DeadpanApp {
             return true;
         }
         match action {
-            Action::EnterGroup => { self.enter_scoped(context); }
+            Action::EnterGroup => { self.open_inspector_parameter(context); }
             Action::Play { forward, count } => self.scoped_play(forward, count, context),
             Action::LeaveGroup => self.scoped_leave(context),
             Action::Beat { forward, count } => {
@@ -655,6 +679,7 @@ impl DeadpanApp {
         };
         let label = node.label.clone();
         let hold = matches!(node.kind, NodeKind::Hold { .. });
+        let hold_parameter = self.scoped_hold_parameter();
         let composite = matches!(
             node.kind,
             NodeKind::Sequence { .. } | NodeKind::Repeat { .. } | NodeKind::Retime { .. }
@@ -691,6 +716,13 @@ impl DeadpanApp {
                     let ready = !self.service.is_busy() && !self.dialogs.is_open();
                     ui.add_space(4.0);
                     if composite && ui.add(style::row_action(ui, "Enter contents", self.editor_key(EditorKey::EnterGroup)).fill(style::SELECTED)).clicked() { self.enter_scoped(ui.ctx()); }
+                    if hold_parameter.is_some()
+                        && ui.add_enabled(ready, style::row_action(ui, "Change duration…", self.editor_key(EditorKey::EnterGroup))).clicked() {
+                        self.open_inspector_parameter(ui.ctx());
+                    }
+                    if hold && hold_parameter.is_none() {
+                        ui.small("Pause length needs This play at every level, with no Retime ancestor or attached sounds.");
+                    }
                     ui.add_space(8.0);
                     ui.label(style::section_title("EDIT", false));
                     if ui.add_enabled(ready, style::row_action(ui, "Camera…", self.editor_key(EditorKey::Camera))).clicked() {
@@ -721,7 +753,10 @@ fn scoped_structural_action(action: Action) -> bool {
     if matches!(
         action,
         Action::Edit(
-            BeatEdit::InsertHold(_) | BeatEdit::InsertBlack(_) | BeatEdit::InsertAiHold(_)
+            BeatEdit::InsertHold(_)
+                | BeatEdit::InsertBlack(_)
+                | BeatEdit::InsertAiHold(_)
+                | BeatEdit::HoldDuration(_)
         )
     ) {
         return false;

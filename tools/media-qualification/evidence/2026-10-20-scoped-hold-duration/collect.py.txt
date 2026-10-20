@@ -1,0 +1,54 @@
+from pathlib import Path
+import gzip,hashlib,json,shutil
+root=Path('/Users/michael/Code/deadpan')
+s=Path('/tmp/deadpan-scoped-hold-duration-2026-10-20')
+d=root/'tools/media-qualification/evidence/2026-10-20-scoped-hold-duration'
+d.mkdir(parents=True,exist_ok=True)
+sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
+identity=json.loads((s/'binaries.json').read_text())
+for name,digest in json.loads((s/'source-identities.json').read_text())['sha256'].items():
+ assert sha(root/name)==digest,name
+reports={}
+for previous in ['visual-first','visual-second']:
+ first=s/previous/'report.json'
+ if first.exists():
+  (d/(previous+'-report.json.gz')).write_bytes(gzip.compress(first.read_bytes(),mtime=0))
+old_footer=s/'visual-second'/'scoped-plays-131.png'
+if old_footer.exists():
+ shutil.copy2(old_footer,d/'duration-footer-first.png')
+for name in ['visual','performance']:
+ p=s/name/'report.json';r=json.loads(p.read_text())
+ assert not r['failed'],name
+ assert r['metadata']['binary_sha256']==identity['sha256']['deadpan-app'],name
+ reports[name]=r
+ (d/(name+'-report.json.gz')).write_bytes(gzip.compress(p.read_bytes(),mtime=0))
+for p in s.iterdir():
+ if not p.is_file():
+  continue
+ if p.suffix in ['.py','.sh']:
+  shutil.copy2(p,d/(p.name+'.txt'))
+ elif p.name in ['binaries.json','source-identities.json','review.json','first-failures.json','visual-review.json'] or p.suffix in ['.txt','.mp4']:
+  shutil.copy2(p,d/p.name)
+ elif p.suffix in ['.json','.log','.diff']:
+  (d/(p.name+'.gz')).write_bytes(gzip.compress(p.read_bytes(),mtime=0))
+labels={
+'A lengthened scoped freeze retains its Hold and exact start':'duration-continuation.png',
+'Saved duration and dot preserve different Hold providers in separate plays':'duration-dot.png',
+'A resized Hold stays saved while newer navigation abandons recording':'duration-delayed.png',
+}
+captures={}
+for scenario in reports['visual']['scenarios']:
+ for step in scenario['steps']:
+  if step['input'] in labels and step.get('screenshot'):
+   name=labels[step['input']]
+   shutil.copy2(s/'visual'/step['screenshot'],d/name)
+   captures[name]={'label':step['input'],'frame':step['frame']}
+assert len(captures)==3
+(d/'captures.json').write_text(json.dumps(captures,indent=2)+'\n')
+timings={t['name']:t['summary'] for sc in reports['performance']['scenarios'] if sc['name']=='scoped-plays' for t in sc['timings'] if t['name'] in ['input_to_state_ms','input_to_picture_complete_ms']}
+(d/'timings-summary.json').write_text(json.dumps(timings,indent=2)+'\n')
+inventory={p.name:{'bytes':p.stat().st_size,'sha256':sha(p)} for p in sorted(d.iterdir()) if p.is_file() and p.name!='inventory.json'}
+(d/'inventory.json').write_text(json.dumps(inventory,indent=2)+'\n')
+for name,record in inventory.items():
+ assert sha(d/name)==record['sha256'],name
+print(json.dumps({'files':len(inventory),'bytes':sum(r['bytes'] for r in inventory.values()),'checks':{n:{sc['name']:len(sc['checks']) for sc in r['scenarios']} for n,r in reports.items()},'timings':timings},indent=2))

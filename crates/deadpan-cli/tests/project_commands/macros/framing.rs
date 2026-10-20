@@ -14,6 +14,9 @@ use super::*;
 #[path = "framing/scoped.rs"]
 mod scoped;
 
+#[path = "framing/scoped_duration.rs"]
+mod scoped_duration;
+
 #[cfg(all(target_os = "macos", feature = "synthetic-worker"))]
 #[allow(dead_code)]
 #[path = "../../preview_export/recipes.rs"]

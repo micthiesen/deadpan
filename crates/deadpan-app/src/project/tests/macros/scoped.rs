@@ -1,5 +1,6 @@
 //! Real qualified pictures through one-play semantic service receipts.
 
+mod duration;
 mod pauses;
 
 use super::*;

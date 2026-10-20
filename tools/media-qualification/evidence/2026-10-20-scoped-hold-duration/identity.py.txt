@@ -1,0 +1,19 @@
+from pathlib import Path
+import hashlib,json,sys,shutil
+root=Path('/Users/michael/Code/deadpan')
+scratch=Path('/tmp/deadpan-scoped-hold-duration-2026-10-20')
+sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
+paths=sorted(set((scratch/'rust-paths.txt').read_text().splitlines()+(scratch/'new-paths.txt').read_text().splitlines()+['Cargo.lock','rust-toolchain.toml']))
+manifest={name:sha(root/name) for name in paths}
+p=scratch/'source-identities.json'
+if len(sys.argv)>1 and sys.argv[1]=='check':
+ assert manifest==json.loads(p.read_text())['sha256'],'source changed during verification/build'
+ (scratch/'bin').mkdir(exist_ok=True)
+ for name in ['deadpan-app','deadpan-cli']:
+  shutil.copy2(root/'target/release'/name,scratch/'bin'/name)
+ for name in ['deadpan-media-worker','deadpan-track','deadpan-transcribe']:
+  shutil.copy2(Path('/tmp/deadpan-mixed-pause-integration-2026-10-20/bin')/name,scratch/'bin'/name)
+ (scratch/'binaries.json').write_text(json.dumps({'sha256':{p.name:sha(p) for p in sorted((scratch/'bin').iterdir())},'builds':['cargo build -p deadpan-app -p deadpan-cli --release --features ui-harness --locked --bins','cargo test -p deadpan-cli --release --test preview_export --locked scoped_hold_duration_preview_and_encoded_output_keep_authored_source_clocks -- --nocapture','cargo build -p deadpan-app --release --features ui-harness --locked --bin deadpan-app'],'helpers':'Unchanged qualified private helper baseline retained by mixed-pause qualification.'},indent=2)+'\n')
+else:
+ p.write_text(json.dumps({'base':'0dbc16e3','sha256':manifest,'source_delta':'source.diff plus new-source.json'},indent=2)+'\n')
+ (scratch/'new-source.json').write_text(json.dumps({name:(root/name).read_text() for name in (scratch/'new-paths.txt').read_text().splitlines()},indent=2)+'\n')

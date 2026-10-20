@@ -15,7 +15,8 @@ Visual yank, typed operator motions and group objects, Repeat wraps (optionally
 escalating) and count setters, named Group, neutral Ungroup, register paste or
 Visual replacement, pauses (`InsertPause`, exact frames or milliseconds with a
 host-resolved freeze), framing of the selected beat and invocation-relative
-ranged zooms and creeps, explicitly scoped one-play freeze/black pauses and framing, built-in
+ranged zooms and creeps, explicitly scoped one-play freeze/black pauses, existing
+Hold lengths and framing, built-in
 [gag recipes](GAGS.md), gain trims and steps and saturation of the selected
 beat (`SetAudio`, from `+`/`-`, `:gain` and `:saturate`), J- and L-cuts
 (`SplitEdit`), role-only deletes (`DeleteRole`) and audio-only or video-only repeats (`RoleRepeat`, see
@@ -142,7 +143,8 @@ The native receipt retains the mapped inspector. Any scope navigation revokes
 its cursor ownership permanently, including moving away and back in one event
 batch before a delayed receipt arrives.
 
-Zoom, freeze/black InsertPause and named Call instructions are admitted under one-play authority,
+Zoom, freeze/black InsertPause, SetHoldDuration and named Call instructions are
+admitted under one-play authority,
 including every expanded nested call. An unsupported later instruction refuses
 the complete run without history or bank writes. All plays, mixed choices,
 several plays, absent or mismatched presentations, Original invocation and
@@ -186,6 +188,25 @@ An unsupported later instruction rolls back the entire run. Navigation during
 a non-recording queued scoped action may continue; it revokes the delayed
 inspector continuation without retargeting or discarding the saved edit.
 Recording still waits for each action, and scope navigation cancels it.
+
+### One-play Hold length
+
+With This play explicit at every Repeat level, `:hold-duration Nf` records
+`SetHoldDuration { length }` and supplies dot intent. Enter on the selected
+Hold or its Change duration control opens the same captured command, prefilled
+with the current length. Invocation captures that Hold and concrete play;
+the saved instruction contains only length intent.
+
+The planner executes `EditOccurrence::SetHoldDuration` with exact node and mark
+pools, then carries its actual isolation mapping forward. The final cursor is
+the resized Hold's exact start, while the ordinary enclosing selection remains
+unchanged. Another duration, Zoom, pause or named call uses that mapped Hold.
+No-op lengths and late unsupported instructions leave history and registers
+unchanged. All/mixed/multiple plays, Retime ancestry and attached or root sound
+events retain explicit refusals. Generated-picture shortening retains qualified
+accepted media; extension beyond its coverage commits fallback and durable
+preparation rather than stretching the accepted provider silently. See the
+[Hold duration qualification](qualification/scoped-hold-duration-2026-10-20.md).
 
 ### Place slice Apply
 

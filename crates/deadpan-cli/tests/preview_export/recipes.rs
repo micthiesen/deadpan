@@ -37,6 +37,9 @@ use serde_json::{Value, json};
 #[path = "mixed_pause.rs"]
 pub mod mixed_pause;
 
+#[path = "scoped_duration.rs"]
+pub mod scoped_duration;
+
 pub type Result<T = ()> = std::result::Result<T, Box<dyn Error>>;
 
 #[path = "vfr.rs"]

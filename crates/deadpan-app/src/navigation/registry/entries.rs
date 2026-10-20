@@ -891,10 +891,10 @@ pub static SPECS: &[Spec] = &[
         section: Section::Pauses,
         keys: &[],
         commands: &[verb("hold-duration", ":hold-duration 11f")],
-        contexts: C::EDIT,
+        contexts: C::EDIT.or(C::CONTENTS),
         replay: Replay::RecordedAndDot,
         headless: eq("set_hold_duration instruction", HOLDS),
-        help: "Set a selected Hold to exactly 11 project frames.",
+        help: "Set a selected Hold to exactly 11 project frames. Inside Repeat contents, choose This play at every level. The actual resized pause stays selected at its start; Enter opens its length. Records and dot-repeats at the new invocation. All plays, mixed choices, several selected plays, Retime ancestors and attached sounds remain unavailable for this timing change.",
     },
     Spec {
         id: "hold.silence",
