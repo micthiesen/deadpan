@@ -127,6 +127,7 @@ fn occurrence_pause(scoped: bool) {
         ProjectEdit::ScopedPause {
             target: Box::new(super::super::scoped::Target {
                 session: before.session,
+                navigation: 0,
                 project: before.document.project_id().clone(),
                 revision: before.document.revision_id().clone(),
                 scope: SequenceScope::default(),

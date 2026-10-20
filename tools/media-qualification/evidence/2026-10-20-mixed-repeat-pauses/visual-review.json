@@ -1,0 +1,21 @@
+{
+  "debug_review": {
+    "captures": ["scoped-plays-128.png", "scoped-plays-129.png", "scoped-plays-130.png", "scoped-plays-131.png", "scoped-plays-132.png"],
+    "viewport": [960, 640],
+    "findings": [],
+    "observations": [
+      "This play shows its 120..135 Hold interval and preceding measured picture 119, with separate Original/edit durations.",
+      "The selected-play pause retains its two-play badge and two selected Holds; action keys and footer remain visible.",
+      "The mixed outer-All/inner-Play label wraps cleanly and retains the expected 726-frame duration.",
+      "The revoked receipt view keeps the saved 732-frame document and closes the stale scoped inspector.",
+      "The unequal-inner-play fixture visibly says '2 captured pauses · shown:' in both inspector and footer, without claiming that the shown inner play describes both Holds."
+    ]
+  },
+  "final_release_review": {
+    "binary_sha256": "c32d97f6247dab878fc0437a6b64e939587f3e4e7c62125201042c11d61d2d62",
+    "captures": ["scoped-plays-128.png", "scoped-plays-129.png", "scoped-plays-130.png", "scoped-plays-131.png", "scoped-plays-132.png"],
+    "viewport": [960, 640],
+    "findings": [],
+    "result": "All five optimized captures were inspected separately. Scope labels, retained picture aspect, independent clocks, available actions and footer remain visible; the heterogeneous fixture labels the displayed inner play truthfully."
+  }
+}

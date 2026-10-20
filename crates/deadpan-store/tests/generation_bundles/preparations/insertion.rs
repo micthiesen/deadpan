@@ -77,6 +77,7 @@ fn occurrence_pause_ai_intent_keeps_one_owned_play_through_reopen_and_history() 
         Command::InsertOccurrenceTime {
             at,
             within: None,
+            target: None,
             hold: HoldRecipe {
                 duration: FrameDuration::new(3)?,
                 video: HoldVideo::Background,

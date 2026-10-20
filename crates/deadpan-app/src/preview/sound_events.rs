@@ -324,7 +324,7 @@ impl DeadpanApp {
         self.stop_playback();
         self.cancel_camera();
         self.bindings.clear();
-        self.pane = Pane::Sounds;
+        self.focus_scoped_pane(Pane::Sounds);
         self.view.set(View::Sequence, &mut self.message);
         self.reconcile_events();
         self.request_picture(false);

@@ -811,6 +811,7 @@ impl DeadpanApp {
         };
         self.transcription.current_match = Some(matched);
         if edit {
+            self.revoke_scoped_continuation();
             self.sequence_cursor = next as u64;
             self.edit_range.move_to(self.sequence_cursor);
             self.select_at_cursor();
@@ -1134,6 +1135,7 @@ impl DeadpanApp {
             .weak(),
         );
         if let Some(index) = clicked {
+            self.revoke_scoped_continuation();
             self.sequence_cursor = runs[index].range.start().0 as u64;
             self.edit_range.move_to(self.sequence_cursor);
             self.select_at_cursor();
@@ -1527,6 +1529,7 @@ impl DeadpanApp {
                     .and_then(|speech| target(&speech, cursor, bounds))
                 {
                     Ok(frame) => {
+                        self.revoke_scoped_continuation();
                         self.sequence_cursor = frame;
                         self.edit_range.move_to(self.sequence_cursor);
                         self.select_at_cursor();
@@ -1588,6 +1591,7 @@ impl DeadpanApp {
                     }
                 };
                 let cursor = self.sequence_cursor.clamp(self.scope_start, self.scope_end);
+                self.revoke_scoped_continuation();
                 self.sequence_cursor = speech
                     .motion_target(
                         ProjectFrame(cursor as i64),
@@ -1649,6 +1653,7 @@ impl DeadpanApp {
                     self.error = Some(error);
                     return;
                 }
+                self.revoke_scoped_continuation();
                 self.record_macro_local(deadpan_core::SemanticInstruction::SelectSpeech { object });
                 self.error = None;
                 self.message = Some(format!(

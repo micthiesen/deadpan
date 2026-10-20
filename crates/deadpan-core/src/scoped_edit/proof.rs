@@ -221,7 +221,7 @@ impl ScopedIsolationRecord {
         Ok(derived)
     }
 
-    pub(super) fn from_execution(
+    pub(crate) fn from_execution(
         before: &ProjectDocument,
         request: &CommandRequest,
         after: &ProjectDocument,
@@ -280,7 +280,7 @@ impl ScopedIsolationRecord {
 
     /// Only prepared execution may bypass replay; this is deliberately not a
     /// public capability on a deserializable record.
-    pub(super) fn bind_prepared<'a>(
+    pub(crate) fn bind_prepared<'a>(
         &self,
         before: &'a ProjectDocument,
         after: &'a ProjectDocument,

@@ -1433,7 +1433,23 @@ impl DeadpanApp {
                     )
                 });
                 if owned && visible && receipt.original().is_none() {
-                    update.committed = Some(commit.clone());
+                    let mut commit = commit.clone();
+                    // The service reconstructs semantic authority without UI
+                    // metadata. Restore only the exact owned runtime capture.
+                    if let Some(scoped) = &mut commit.scoped
+                        && let Some(captured) = self
+                            .macros
+                            .pending
+                            .as_ref()
+                            .and_then(|pending| pending.capture.scoped.as_ref())
+                    {
+                        scoped.before.navigation = captured.navigation;
+                        if &scoped.before != captured {
+                            update.committed = None;
+                            return;
+                        }
+                    }
+                    update.committed = Some(commit);
                 } else if update
                     .committed
                     .as_ref()

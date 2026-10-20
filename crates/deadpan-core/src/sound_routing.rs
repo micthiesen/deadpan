@@ -445,6 +445,9 @@ impl RootSoundEditCapture {
                 all_plays: true,
                 ..
             }
+        ) || matches!(command,
+            Command::InsertOccurrenceTime { target: Some(crate::ScopedNodeTarget { repeats, .. }), .. }
+                if repeats.iter().any(|step| matches!(step.branch, crate::RepeatEditBranch::Default))
         ) {
             let operation =
                 crate::insert_time::occurrence::all_plays_root_operation(document, command)?;

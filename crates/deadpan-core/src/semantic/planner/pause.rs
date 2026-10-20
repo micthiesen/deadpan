@@ -382,6 +382,7 @@ where
             Command::InsertOccurrenceTime {
                 at,
                 within: None,
+                target: None,
                 hold,
                 id: id.clone(),
                 identities,

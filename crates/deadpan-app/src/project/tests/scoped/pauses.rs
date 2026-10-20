@@ -1,8 +1,14 @@
 use super::*;
 
+mod batch;
+mod mixed;
+mod owner_batch;
+mod sequence_batch;
+
 fn simple(workspace: &Workspace, play_index: u32, at: i64) -> Target {
     Target {
         session: workspace.session,
+        navigation: 0,
         project: workspace.document.project_id().clone(),
         revision: workspace.document.revision_id().clone(),
         scope: SequenceScope::default(),
@@ -137,12 +143,15 @@ fn scoped_pause_rejects_broader_missing_stale_and_foreign_captures_without_write
     for case in 0..7 {
         let mut target = valid.clone();
         match case {
-            0 => target.target.repeats[0].branch = RepeatEditBranch::Default,
+            0 => {
+                target.target.repeats[0].branch = RepeatEditBranch::Default;
+                target.presentation.as_mut().unwrap().node = node("b");
+            }
             1 => target.presentation = None,
             2 => target.cursor = ProjectFrame(4),
             3 => target.session += 1,
             4 => target.revision = RevisionId::new("stale").unwrap(),
-            5 => target.also.push(simple(&before, 2, 24).target),
+            5 => target.also.push(target.target.clone()),
             _ => target.presentation.as_mut().unwrap().repeats[0].iteration = iteration("plays", 0),
         }
         let update = command(&service, pause(target, false, false));
@@ -150,5 +159,52 @@ fn scoped_pause_rejects_broader_missing_stale_and_foreign_captures_without_write
         assert!(update.committed.is_none());
         assert_eq!(*update.workspace.unwrap().document, *before.document);
         assert_eq!(counts(&path), original_counts);
+    }
+}
+
+#[test]
+fn scoped_all_default_pause_resolves_the_shifted_hold_in_each_captured_representative() {
+    let (_scratch, path, service, mut before) = setup();
+    for play_index in 0..3 {
+        let old_boundary = i64::from(play_index) * 10 + 4;
+        let new_boundary = i64::from(play_index) * 13 + 4;
+        let mut target = simple(&before, play_index, old_boundary);
+        target.target.repeats[0].branch = RepeatEditBranch::Default;
+        let rows = counts(&path);
+        let update = command(&service, pause(target.clone(), true, false));
+        assert!(
+            update.error.is_none(),
+            "play {play_index}: {:?}",
+            update.error
+        );
+        let commit = update.committed.unwrap();
+        let receipt = commit.scoped.unwrap();
+        let after = update.workspace.unwrap();
+        assert_eq!(receipt.before, target);
+        assert_eq!(commit.cursor, Some(ProjectFrame(new_boundary)));
+        assert_eq!(after.plan.duration().frames(), 49);
+        assert_eq!(receipt.target.repeats[0].branch, RepeatEditBranch::Default);
+        assert_eq!(
+            after
+                .plan
+                .picture(ProjectFrame(new_boundary))
+                .unwrap()
+                .instance,
+            receipt.presentation.clone().unwrap()
+        );
+        assert_eq!(counts(&path), (rows.0 + 1, rows.1 + 1));
+        let mut next = continued(&after, &receipt);
+        next.cursor = ProjectFrame(new_boundary);
+        next.pause_instance(&after).unwrap();
+        let undone = command(
+            &service,
+            ProjectRequest::Undo {
+                expected_revision: after.document.revision_id().clone(),
+            },
+        )
+        .workspace
+        .unwrap();
+        assert_same_content(&undone.document, &before.document);
+        before = undone;
     }
 }

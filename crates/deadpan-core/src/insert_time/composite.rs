@@ -166,6 +166,56 @@ pub(super) fn occurrence_shifted_owners(
     shifted_owners_with_repeats(document, parent, slot, true)
 }
 
+/// The suffix after one concrete owner, including later ancestor plays/gaps.
+/// The supplied root window excludes the owner's own interior. In particular,
+/// a Repeat may directly own another Repeat without a Sequence seam between.
+pub(super) fn occurrence_owners_after(
+    document: &ProjectDocument,
+    owner: &NodeId,
+) -> Result<BTreeSet<NodeId>, EditError> {
+    let mut child = owner;
+    let mut pending = Vec::new();
+    for _ in 0..=crate::MAX_DOCUMENT_DEPTH {
+        if child == document.root() {
+            let mut affected = BTreeSet::new();
+            for root in pending {
+                affected.extend(repeat_interior_owners(document, root)?);
+                if affected.len() > MAX_DOCUMENT_NODES {
+                    return Err(super::limit("occurrence suffix traversal"));
+                }
+            }
+            return Ok(affected);
+        }
+        let ancestor = document
+            .parent_of(child)
+            .ok_or_else(|| super::invalid("pause owner is outside the project"))?;
+        let (ancestor, node) = document
+            .nodes()
+            .get_key_value(&ancestor)
+            .expect("validated parent");
+        match &node.kind {
+            NodeKind::Repeat { .. } => {
+                pending.clear();
+                pending.push(ancestor);
+            }
+            NodeKind::Sequence { children } => {
+                let position = children
+                    .iter()
+                    .position(|candidate| candidate == child)
+                    .ok_or_else(|| super::invalid("pause owner lost its ancestor slot"))?;
+                pending.extend(children[position + 1..].iter());
+            }
+            _ => {
+                return Err(super::invalid(
+                    "pause insertion cannot change a Retime ancestor",
+                ));
+            }
+        }
+        child = ancestor;
+    }
+    Err(super::limit("occurrence suffix depth"))
+}
+
 fn shifted_owners_with_repeats(
     document: &ProjectDocument,
     parent: &NodeId,

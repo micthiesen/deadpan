@@ -419,7 +419,7 @@ pub static SPECS: &[Spec] = &[
             "edit_occurrence / edit_scoped carry the occurrence path",
             NAV,
         ),
-        help: "Inside a Repeat, choose the shared definition (all), one stable play by its current one-based number, or several plays together (plays 2-3, plays 1,3). Browsing never creates an override; a changed value isolates only the selected plays. With several plays, Gain, Camera and pause-audio changes apply to the same beat in every selected play in one Undo; a play whose recipe or structure differs refuses.",
+        help: "Inside a Repeat, choose the shared definition (all), one stable play by its current one-based number, or several plays together (plays 2-3, plays 1,3). Browsing never creates an override; a changed value isolates only the selected plays. Gain, Camera, pause insertion and pause-audio changes apply to every selected play in one Undo. Pause insertion retains each level's independent choice and captures each play's own freeze; AI insertion requires one concrete play at every level.",
     },
     Spec {
         id: "search",

@@ -366,7 +366,7 @@ impl super::DeadpanApp {
         else {
             return;
         };
-        self.pane = pane;
+        self.focus_scoped_pane(pane);
         context.memory_mut(|memory| memory.request_focus(super::pane_id(pane)));
     }
 

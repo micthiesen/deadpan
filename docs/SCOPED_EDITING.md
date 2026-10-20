@@ -1,8 +1,8 @@
 # Editing Repeat contents
 
 `Enter` opens a selected Repeat or Retime. Inside it, `j/k` selects children,
-`Enter` descends and `Backspace` returns to the parent. Choose This play at every
-enclosing Repeat to insert a pause in one concrete occurrence. Other temporal
+`Enter` descends and `Backspace` returns to the parent. Pause insertion follows
+the explicit choice at each enclosing Repeat. Other temporal
 edits still use the ordinary Sequence timeline.
 
 Choose `:scope all` to edit a Repeat's shared definition or `:scope play N` to
@@ -24,6 +24,13 @@ pause-audio values are set as chosen in each play. Nested contents entered
 below the multi-play level keep the choice; `:scope all`, `:scope play N` and
 `]r`/`[r` end it. The choice survives its own commit, because the Repeat keeps
 its identity and stable play IDs.
+
+Freeze and black pause insertion also apply to every selected play, as one
+Compound and one Undo. Each counterpart uses the same local boundary in its
+selected owner and captures its own picture and framing. The resulting Holds
+remain selected together even when their groups have different child durations
+and the new Holds occupy different child slots. Further insertion can use that
+retained set. Browsing another row or scope ends this exact Hold selection.
 
 `:gain +3dB range=4-10` adds a constant step over exactly those local frames of
 the selected beat, keeping its trim, other ranges and saturation. Inside Repeat
@@ -50,11 +57,16 @@ start of a later play. One transaction isolates the necessary branches and
 inserts time; the inspector keeps the new Hold selected. AI insertion saves its
 durable preparation with the fallback and still requires explicit acceptance.
 
-All plays (at every enclosing Repeat level) inserts the pause into the shared
-definition, so every default occurrence grows by it and overridden plays keep
-their own branches (one Undo; [pause insertion](INSERT_TIME.md)). Mixed play
-choices, several selected plays, AI pauses for all plays and Retime ancestors
-refuse pause insertion. Freeze
+All plays inserts the pause into the shared definition, so default occurrences
+grow and overridden plays keep their branches. Choices stay independent at each
+level: outer All plays plus inner This play grows that inner play in every
+default outer use; outer This play plus inner All plays grows every default
+inner use only in that outer play. Several selected plays vary one Repeat level
+under the same prefix. Each owner retains the concrete descendant reached by
+its own local cut, even when different timings reach different inner plays.
+AI pauses still need
+one concrete play at every level; Retime ancestors refuse this occurrence path
+([pause insertion](INSERT_TIME.md)). Freeze
 capture also refuses a boundary whose preceding picture does not pass through
 the selected insertion parent; black pauses need no sampled picture. Other
 timing edits, copy/paste and general macros inside these contents remain required work;
@@ -71,6 +83,10 @@ permanently revokes any queued macro's inspector continuation. See
 The [This play pause qualification](qualification/scoped-pauses-2026-10-12.md)
 records exact-boundary, PCM, durable-history and offscreen keyboard verification,
 including the compact inspector correction and retained failed runs.
+
+The [mixed and selected-play qualification](qualification/mixed-repeat-pauses-2026-10-20.md)
+adds complete per-level scope, exact mapped target sets, decoded PCM, real
+release exports and compact keyboard/pointer replay evidence.
 
 ## Authoring and presentation
 
@@ -113,7 +129,8 @@ Selective isolation preserves sparse overrides, retained clocks, concrete and
 definition marks, and per-play sound permissions. Default ancestors are
 wildcards only for actual uses of their shared definition. Duration and source
 coordinates do not change in the value-edit command family. Scoped pause
-insertion uses `InsertOccurrenceTime` with an explicit `within: InstancePath`;
+insertion uses `InsertOccurrenceTime` with explicit `target: ScopedNodeTarget`
+authority and a separate `within: InstancePath` presentation;
 its query checks the captured boundary and remaps that instance through
 outside-in isolation before the time insertion. Later allocations retain their
 pre-edit sampling clocks.
@@ -124,6 +141,9 @@ service retains the mapped receipt before refreshing the workspace. The UI
 consumes it only at its exact visible revision and cannot use a late receipt to
 reclaim a different play, cursor or focused view. Undo, Redo and unrelated head
 changes close stale nested navigation.
+Navigation permanently revokes a pending edit's continuation, including moving
+away and back to equal coordinates before its receipt arrives. The durable edit
+and refreshed workspace remain valid.
 
 Saving or deleting a mark preserves the current play, child, cursor and view.
 Only the typed mark receipt's exact old-to-new revision transition permits that

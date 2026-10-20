@@ -57,6 +57,7 @@ fn iteration(revision: &str, ordinal: u32) -> IterationId {
 fn capture(workspace: &Workspace, outer: RepeatEditBranch, inner: RepeatEditBranch) -> Target {
     Target {
         session: workspace.session,
+        navigation: 0,
         project: workspace.document.project_id().clone(),
         revision: workspace.document.revision_id().clone(),
         scope: SequenceScope::default(),

@@ -1,0 +1,26 @@
+from pathlib import Path
+import gzip
+import hashlib
+import json
+import shutil
+
+root = Path('/Users/michael/Code/deadpan')
+scratch = Path('/tmp/deadpan-mixed-pause-2026-10-20')
+for name in ('binaries.json', 'source-identities.json'):
+    shutil.copy2(scratch / name, scratch / ('initial-' + name))
+manifest = json.loads((scratch / 'initial-source-identities.json').read_text())
+sources = {}
+for name, digest in manifest['sha256'].items():
+    if not name.endswith('.rs'):
+        continue
+    text = (root / name).read_text()
+    if name.endswith('scoped_plays/pauses.rs'):
+        before = '    let captured = d.app().scoped_target()?;\n    let revision = d.revision();\n    let cursor = d.app().sequence_cursor;'
+        assert text.count(before) == 1
+        text = text.replace(before, before.replace('    let revision = d.revision();\n', ''), 1)
+        before = '    d.app_mut().feedback.hold_project_updates = false;\n    d.changed(&revision)?;\n    idle(d)?;\n    d.check(\n        "A selected-pause receipt cannot reclaim revoked navigation",'
+        assert text.count(before) == 1
+        text = text.replace(before, before.replace('    d.changed(&revision)?;\n', ''), 1)
+    assert hashlib.sha256(text.encode()).hexdigest() == digest, name
+    sources[name] = text
+(scratch / 'initial-rust-source-snapshot.json.gz').write_bytes(gzip.compress(json.dumps(sources, indent=2).encode(), mtime=0))

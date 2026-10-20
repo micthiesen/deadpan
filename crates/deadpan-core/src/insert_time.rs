@@ -15,7 +15,8 @@ pub(crate) mod composite;
 pub(crate) mod occurrence;
 pub(crate) mod retimed;
 pub use occurrence::{
-    OccurrencePauseIdentities, OccurrencePauseTarget, PauseInsertionTarget, RetimedPauseTarget,
+    OccurrencePauseIdentities, OccurrencePauseTarget, PauseInsertionTarget, PreparedOccurrenceTime,
+    RetimedPauseTarget, prepare_occurrence_time,
 };
 mod delete;
 mod delete_children;

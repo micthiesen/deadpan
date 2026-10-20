@@ -1,6 +1,7 @@
 use super::*;
 use crate::*;
 
+mod mixed;
 mod scoped;
 
 fn id(name: &str) -> NodeId {
@@ -91,6 +92,7 @@ fn request_within(
         command: Command::InsertOccurrenceTime {
             at,
             within,
+            target: None,
             hold: hold(1),
             id: id(&format!("{name}-pause")),
             ai: false,

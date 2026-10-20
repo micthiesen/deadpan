@@ -88,6 +88,7 @@ fn capture_scope(update: &ProjectUpdate, root: &NodeId, frame: i64) -> Target {
     assert_eq!(layer.instance.repeats.len(), 2);
     let target = Target {
         session: workspace.session,
+        navigation: 0,
         project: workspace.document.project_id().clone(),
         revision: workspace.document.revision_id().clone(),
         scope: SequenceScope::default(),

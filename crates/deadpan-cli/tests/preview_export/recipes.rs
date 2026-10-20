@@ -34,6 +34,9 @@ use deadpan_core::{
 use deadpan_store::{AccessMode, ProjectStore};
 use serde_json::{Value, json};
 
+#[path = "mixed_pause.rs"]
+pub mod mixed_pause;
+
 pub type Result<T = ()> = std::result::Result<T, Box<dyn Error>>;
 
 #[path = "vfr.rs"]

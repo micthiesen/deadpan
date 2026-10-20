@@ -1,4 +1,5 @@
 use super::*;
+mod pause_continuation;
 use deadpan_core::{
     BeatNode, ColorPolicy, Command, CommandRequest, FrameRange, FrameRate, HoldAudio, HoldRecipe,
     HoldVideo, IterationOrder, MarkId, OccurrenceIdentities, PitchPolicy, PlayOverride,
@@ -540,6 +541,7 @@ fn unrelated_revision_rejects_and_exact_receipt_rebases_without_entry_cursor_equ
     assert!(!state.matches_identity(18, &document));
     let before = Target {
         session: 17,
+        navigation: 0,
         project: document.project_id().clone(),
         revision: document.revision_id().clone(),
         scope: SequenceScope::default(),
@@ -554,6 +556,7 @@ fn unrelated_revision_rejects_and_exact_receipt_rebases_without_entry_cursor_equ
         revision: after.revision_id().clone(),
         target: state.selected.clone(),
         presentation: Some(presentation(&state).instance.clone()),
+        also: None,
     };
     let mut wrong = commit.clone();
     wrong.before.presentation.as_mut().unwrap().repeats[0]
@@ -618,6 +621,7 @@ fn nested_play_isolation_receipt_rebuilds_only_the_mapped_authored_path() {
     state.enter_in().unwrap();
     let before = Target {
         session: 17,
+        navigation: 0,
         project: document.project_id().clone(),
         revision: document.revision_id().clone(),
         scope: SequenceScope::default(),
@@ -662,6 +666,7 @@ fn nested_play_isolation_receipt_rebuilds_only_the_mapped_authored_path() {
         revision: prepared.document.revision_id().clone(),
         target: prepared.target.clone(),
         presentation: Some(mapped.clone()),
+        also: None,
     };
     assert_ne!(commit.target.node, node("leaf"));
     assert_ne!(commit.target.repeats[1].repeat, node("inner"));

@@ -1,0 +1,21 @@
+from pathlib import Path
+import hashlib
+import json
+import shutil
+
+root = Path('/Users/michael/Code/deadpan')
+scratch = Path('/tmp/deadpan-mixed-pause-2026-10-20')
+rows = json.loads((scratch / 'export-results.json').read_text())
+files = [root / 'target/release/deadpan-cli', root / 'target/release/deps/preview_export-3c82540c5a7a2034']
+identity = {p.name: hashlib.sha256(p.read_bytes()).hexdigest() for p in files}
+(scratch / 'export-binaries.json').write_text(json.dumps(identity, indent=2) + '\n')
+out = scratch / 'exports'
+out.mkdir(exist_ok=True)
+for row in rows:
+    movie = Path(row['movie'])
+    assert movie.is_file()
+    shutil.copy2(movie, out / movie.name)
+    row['emitted_sha256'] = hashlib.sha256(movie.read_bytes()).hexdigest()
+    row['retained_movie'] = movie.name
+(scratch / 'export-results.json').write_text(json.dumps(rows, indent=2) + '\n')
+print(json.dumps({'binaries': identity, 'exports': [{'name': r['retained_movie'], 'pictures': r['report']['summary']['pictures_checked'], 'offsets': r['report']['summary']['nonzero_offsets']} for r in rows]}, indent=2))

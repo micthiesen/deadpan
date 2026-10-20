@@ -13,6 +13,8 @@ use super::{SequenceScope, Workspace};
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Target {
     pub session: u64,
+    /// Native navigation generation; never enters authored state or programs.
+    pub navigation: u64,
     pub project: ProjectId,
     pub revision: RevisionId,
     pub scope: SequenceScope,
@@ -55,29 +57,13 @@ impl Target {
         })
     }
 
-    /// A temporal edit must name exactly one concrete branch at every Repeat
-    /// level. A displayed representative of All plays is not that authority.
-    /// The concrete play a pause resolves in, and whether it goes into the
-    /// shared definition for all plays: All plays at every Repeat level,
-    /// shown through its representative play.
+    /// Retain per-level authoring choices separately from the concrete picture.
+    /// The boolean reports shared definition work for provider admission only;
+    /// it must never replace those choices in the authored command.
     pub fn pause_instance(&self, workspace: &Workspace) -> Result<(&InstancePath, bool), String> {
         self.validate(workspace)?;
-        let all_plays = !self.target.repeats.is_empty()
-            && self
-                .target
-                .repeats
-                .iter()
-                .all(|step| matches!(step.branch, RepeatEditBranch::Default));
-        if !self.also.is_empty()
-            || self.target.repeats.is_empty()
-            || (!all_plays
-                && self
-                    .target
-                    .repeats
-                    .iter()
-                    .any(|step| matches!(step.branch, RepeatEditBranch::Default)))
-        {
-            return Err("Choose This play at every enclosing Repeat, or All plays at every level, before inserting a pause. Several selected plays and mixed play choices are not available yet.".into());
+        if !self.also.is_empty() || self.target.repeats.is_empty() {
+            return Err("Choose a visible Repeat scope before inserting a pause. Several selected plays need a captured batch.".into());
         }
         let instance = self
             .presentation
@@ -85,9 +71,14 @@ impl Target {
             .ok_or("This play has no visible occurrence for a pause.")?;
         workspace
             .document
-            .pause_insertion_within(self.cursor, instance)
+            .pause_insertion_scoped(self.cursor, &self.target, instance)
             .map_err(|error| error.to_string())?;
-        Ok((instance, all_plays))
+        let shared = self
+            .target
+            .repeats
+            .iter()
+            .any(|step| matches!(step.branch, RepeatEditBranch::Default));
+        Ok((instance, shared))
     }
 
     pub fn validate(&self, workspace: &Workspace) -> Result<(), String> {
@@ -132,7 +123,7 @@ impl Target {
         }
         for also in &self.also {
             also.validate(document).map_err(|error| error.to_string())?;
-            if also.repeats.len() != self.target.repeats.len() || also == &self.target {
+            if also == &self.target {
                 return Err("A further selected play does not mirror the scoped owner.".into());
             }
         }
@@ -172,6 +163,8 @@ pub struct Commit {
     pub revision: RevisionId,
     pub target: ScopedNodeTarget,
     pub presentation: Option<InstancePath>,
+    /// Exact mapped counterparts when temporal edits create different paths.
+    pub also: Option<Vec<ScopedNodeTarget>>,
 }
 
 /// The node at `target`'s structural position in another play of the Repeat

@@ -205,6 +205,7 @@ pub struct DeadpanApp {
     sound_cursor: u64,
     selected_beat: Option<NodeId>,
     scoped: Option<scoped::model::State>,
+    scoped_navigation: u64,
     scoped_command_target: Option<Result<Option<crate::project::scoped::Target>, String>>,
     sequence_scope: SequenceScope,
     scope_start: u64,
@@ -417,6 +418,7 @@ impl DeadpanApp {
             sound_cursor: 0,
             selected_beat: None,
             scoped: None,
+            scoped_navigation: 0,
             scoped_command_target: None,
             sequence_scope: SequenceScope::default(),
             scope_start: 0,
@@ -772,6 +774,7 @@ impl DeadpanApp {
                 update.message = Some(error.clone());
             }
             let scoped_before = self.scoped_target().ok().flatten();
+            self.prepare_macro_update(&mut update);
             let scoped_commit_selects = update
                 .committed
                 .as_ref()
@@ -784,7 +787,6 @@ impl DeadpanApp {
                         && scoped_before.as_ref() == Some(&receipt.before)
                 });
             self.reconcile_repeat_prefix();
-            self.prepare_macro_update(&mut update);
             let mark_metadata_save = update.marks.metadata.as_ref().is_some_and(|proof| {
                 self.workspace
                     .as_ref()
@@ -916,7 +918,8 @@ impl DeadpanApp {
                 update
                     .committed
                     .as_ref()
-                    .and_then(|commit| commit.scoped.as_ref()),
+                    .and_then(|commit| commit.scoped.as_ref())
+                    .filter(|_| scoped_commit_selects),
                 update.marks.saved.as_ref(),
                 mark_metadata_save
                     .then_some(old_revision.as_ref())
@@ -1855,6 +1858,8 @@ impl DeadpanApp {
         {
             return;
         }
+        self.revoke_scoped_continuation();
+        self.scoped = None;
         self.bindings.clear();
         self.stop_playback();
         let same_source = self.raw_source.is_none() && self.selected_source.as_ref() == Some(&id);
@@ -1887,7 +1892,7 @@ impl DeadpanApp {
         self.selected_event = None;
         self.reveal_source = true;
         self.sound_cursor = 0;
-        self.pane = Pane::Sources;
+        self.focus_scoped_pane(Pane::Sources);
         self.error = None;
     }
 
@@ -2234,6 +2239,7 @@ impl DeadpanApp {
             Action::Edit(edit) => self.edit(edit),
             Action::Invalid(error) => self.error = Some(error.into()),
             Action::Pane { reverse } => {
+                self.revoke_scoped_continuation();
                 if self.sound_focused() {
                     self.stop_playback();
                 }
@@ -3526,6 +3532,7 @@ impl DeadpanApp {
 
     /// Browse the unchanged Original, as `:source` and the View menu do.
     fn show_original(&mut self, context: &egui::Context) {
+        self.revoke_scoped_continuation();
         self.scoped = None;
         self.stop_playback();
         let leaving_event = self.pane == Pane::Sounds || self.event_focused();
@@ -3544,6 +3551,7 @@ impl DeadpanApp {
 
     /// Return to Your edit, as `:sequence` and the View menu do.
     fn show_edit(&mut self, context: &egui::Context) {
+        self.revoke_scoped_continuation();
         self.stop_playback();
         let leaving_event = self.pane == Pane::Sounds || self.event_focused();
         self.selected_sound = None;
@@ -4235,7 +4243,7 @@ impl DeadpanApp {
             .show(ui, |ui| {
                 let heading = pane_heading(ui, if focused { "ORIGINAL" } else { "SOURCES" }, self.pane == Pane::Sources);
                 if pane_focus(ui, Pane::Sources, heading.rect, if focused { "Original and sounds pane" } else { "Legacy sources pane" }).has_focus() {
-                    self.pane = Pane::Sources;
+                    self.focus_scoped_pane(Pane::Sources);
                 }
                 ui.separator();
                 self.sound_preview_controls(ui);
@@ -4281,7 +4289,7 @@ impl DeadpanApp {
                         let search_hint = format!("Find source  {}", self.editor_key(EditorKey::Search));
                         let search = ui.add(egui::TextEdit::singleline(&mut self.source_search).id(egui::Id::new(SEARCH_ID)).hint_text(search_hint).desired_width(f32::INFINITY));
                         accessibility::name(&search, "Find source");
-                        if search.has_focus() { self.pane = Pane::Sources; }
+                        if search.has_focus() { self.focus_scoped_pane(Pane::Sources); }
                         retain_text_escape(ui, SEARCH_ID);
                         if search.changed() { self.filter_sources(); }
                         let sources = Arc::clone(&self.source_rows);
@@ -4304,7 +4312,7 @@ impl DeadpanApp {
                         let search_hint = format!("Find sound  {}", self.editor_key(EditorKey::Search));
                         let search = ui.add(egui::TextEdit::singleline(&mut self.source_search).id(egui::Id::new(SEARCH_ID)).hint_text(search_hint).desired_width(f32::INFINITY));
                         accessibility::name(&search, "Find sound");
-                        if search.has_focus() { self.pane = Pane::Sources; }
+                        if search.has_focus() { self.focus_scoped_pane(Pane::Sources); }
                         retain_text_escape(ui, SEARCH_ID);
                         if search.changed() { self.filter_sources(); }
                         let sounds = Arc::clone(&self.sound_rows);
@@ -4419,7 +4427,7 @@ impl DeadpanApp {
             )
             .has_focus()
             {
-                self.pane = Pane::Sequence;
+                self.focus_scoped_pane(Pane::Sequence);
             }
             if beats.is_empty() {
                 ui.add_space(16.0);
@@ -4483,7 +4491,7 @@ impl DeadpanApp {
                 self.sequence_cursor = beat.start;
                 self.view.set(View::Sequence, &mut self.message);
                 self.edit_range.move_to(self.sequence_cursor);
-                self.pane = Pane::Sequence;
+                self.focus_scoped_pane(Pane::Sequence);
                 self.request_picture(true);
                 ui.memory_mut(|m| m.request_focus(pane_id(Pane::Sequence)));
             }
@@ -4508,7 +4516,7 @@ impl DeadpanApp {
     fn ensure_visible_pane(&mut self, context: &egui::Context) {
         let pane = self.pane.visible(self.inspector_visible());
         if pane != self.pane {
-            self.pane = pane;
+            self.focus_scoped_pane(pane);
             self.bindings.clear();
             context.memory_mut(|memory| memory.request_focus(pane_id(pane)));
         }
@@ -4718,7 +4726,7 @@ impl DeadpanApp {
                 )
                 .has_focus()
                 {
-                    self.pane = Pane::Inspector;
+                    self.focus_scoped_pane(Pane::Inspector);
                 }
                 ui.separator();
                 // Focus reveals set the offset at once: an animated reveal is
@@ -4766,7 +4774,7 @@ impl DeadpanApp {
                         if let Some((label, command)) = &data.parameter
                             && ui.add_enabled(ready, style::row_action(ui, *label, "Enter").fill(style::SELECTED)).clicked()
                         {
-                            self.pane = Pane::Inspector;
+                            self.focus_scoped_pane(Pane::Inspector);
                             self.open_command(command.clone(), ui.ctx());
                         }
                         ui.add_space(4.0);
@@ -4800,7 +4808,7 @@ impl DeadpanApp {
                                     .on_hover_text("Choose an exact playback speed and preserve or tape pitch. Enter applies one undoable edit; Escape cancels entry.")
                                     .clicked()
                             {
-                                self.pane = Pane::Inspector;
+                                self.focus_scoped_pane(Pane::Inspector);
                                 self.open_command("retime 0.75 pitch=preserve".into(), ui.ctx());
                             }
                             if ui.add(style::row_action(ui, "Camera…", self.editor_key(EditorKey::Camera))).clicked() {
@@ -4822,7 +4830,7 @@ impl DeadpanApp {
                                 .on_hover_text("Choose the pause duration before inserting it.")
                                 .clicked()
                             {
-                                self.pane = Pane::Inspector;
+                                self.focus_scoped_pane(Pane::Inspector);
                                 self.open_command("hold 0.5s".into(), ui.ctx());
                             }
                             let can_split = self.selected_beat.as_ref().is_some_and(|node| {
@@ -4906,8 +4914,8 @@ impl DeadpanApp {
                         self.selected_event = None;
                         self.sound_inspection = None;
                         self.bindings.clear();
-                        if self.view != view { self.view.set(view, &mut self.message); if view == View::Sequence { self.reconcile_beat_selection(); } self.request_picture(true); }
-                        self.pane = Pane::Viewer;
+                        if self.view != view { match view { View::Source => self.show_original(ui.ctx()), View::Sequence => self.show_edit(ui.ctx()) } }
+                        self.focus_scoped_pane(Pane::Viewer);
                         ui.memory_mut(|m| m.request_focus(pane_id(Pane::Viewer)));
                     }
                 }
@@ -4918,7 +4926,7 @@ impl DeadpanApp {
                         if ui.add(style::action(label, key).frame_when_inactive(false).min_size(egui::vec2(0.0, 28.0))).clicked() {
                             self.selected_event = None;
                             self.sound_inspection = None;
-                            self.pane = Pane::Viewer;
+                            self.focus_scoped_pane(Pane::Viewer);
                             ui.memory_mut(|m| m.request_focus(pane_id(Pane::Viewer)));
                             self.action(action, ui.ctx());
                         }
@@ -4966,7 +4974,7 @@ impl DeadpanApp {
             let available = egui::vec2(ui.available_width().max(1.0), (ui.available_height() - controls_height).max(50.0));
             let (_, rect) = ui.allocate_space(available);
             let response = pane_focus(ui, Pane::Viewer, rect, "Picture viewer pane");
-            if response.has_focus() { self.pane = Pane::Viewer; }
+            if response.has_focus() { self.focus_scoped_pane(Pane::Viewer); }
             ui.painter().rect_filled(rect, 2.0, egui::Color32::BLACK);
             let aspect = self.presentation.canvas().map(|(w, h)| w as f32 / h as f32);
             let canvas = aspect.map_or(rect, |aspect| fit_rect(rect, aspect));

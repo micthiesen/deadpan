@@ -1,0 +1,19 @@
+{
+  "cwd": "/Users/michael/Code/deadpan",
+  "environment": {
+    "DEADPAN_FFMPEG_PREFIX": "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix"
+  },
+  "passing_commands": [
+    "cargo xtask check --since HEAD -E 'test(scoped) or test(native_mixed_pause_) or test(native_selected_play_pause) or test(native_sequence_pause_batch) or test(native_owner_pause_batch) or test(headless_mixed_pause) or test(selected_pause_batch)'",
+    "cargo nextest run -p deadpan-core -p deadpan-store --locked --no-fail-fast",
+    "cargo nextest run -p deadpan-store --locked -E 'test(expiry_does_not_treat_shared_inputs_as_accepted_and_missing_input_refuses_portable_copy)'",
+    "DEADPAN_PREVIEW_EXPORT_KEEP=1 DEADPAN_MIXED_PAUSE_RESULTS=/tmp/deadpan-mixed-pause-2026-10-20/export-results.json cargo test -p deadpan-cli --test preview_export --release --locked mixed_repeat_pause_preview_and_encoded_output_keep_authored_source_clocks -- --nocapture --test-threads=1",
+    "cargo nextest run -p deadpan-app --features ui-harness --locked --no-fail-fast",
+    "cargo xtask check --since HEAD --no-test",
+    "cargo build -p deadpan-app -p deadpan-cli --release --features ui-harness --locked --bins",
+    "/tmp/deadpan-mixed-pause-2026-10-20/bin/deadpan-app --ui-check --scenario scoped-plays --mode visual --output /tmp/deadpan-mixed-pause-2026-10-20/visual --kestrel-source /Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+    "/tmp/deadpan-mixed-pause-2026-10-20/bin/deadpan-app --ui-check --scenario scoped-plays --mode performance --output /tmp/deadpan-mixed-pause-2026-10-20/performance --kestrel-source /Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+  ],
+  "additional_replays": "regression-replays.sh.txt runs original-layout and sound-playback separately with the final optimized executable.",
+  "performance_conditions": "No Cargo/rustc/deadpan-app process was observed immediately before launch; other task agents were idle. AC attached, battery 80 percent. Thermal state, caches and unrelated system activity uncontrolled. GPU submission without PNG readback."
+}

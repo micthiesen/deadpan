@@ -85,8 +85,31 @@ occurrence. `pause_insertion_within` starts there and admits both its edges,
 so insertion at the beginning of play two cannot fall into play one. The
 command remaps the address through its own isolation before resolving the
 insertion again. Native requests retain the session, revision, scope and cursor;
-the saved receipt selects the new Hold within the same stable play. Several
-selected plays and Retime ancestors are refused for this operation.
+the saved receipt selects the new Hold within the same stable play. Retime
+ancestors are refused for this occurrence path.
+
+Explicit `target: ScopedNodeTarget` authority keeps each ancestor's Default or
+Play choice independently of the concrete `within` presentation. The command
+rejects competing legacy `all_plays: true` authority. The first Default ancestor
+is the shared edit root, qualified by any concrete Play prefix. Only Default
+levels multiply inserted time, excluding overridden uses; Play levels contribute
+one. An outer three-play Default with an inner two-play Play adds three pause
+lengths; outer Play with inner Default adds two. Root sound ripple occurs at the
+shared root's old concrete end. Every moved owner keeps its own sample clock.
+
+`pause_insertion_scoped` returns exact fresh identity needs for that authority.
+`prepare_occurrence_time` returns the actual mapped inserted Hold, its concrete
+presentation and exact final start, plus revision-bound address mapping methods.
+It resolves the new Hold's local zero; looking for it at the old root cursor
+would fail when earlier default occurrences have already grown.
+
+Native `:scope plays` prepares one bounded Compound for distinct plays at one
+Repeat level under the same prefix. Each selected owner gets
+its own qualified freeze or black recipe at the retained local boundary. Later
+addresses and earlier inserted Holds map through each actual isolation stage;
+root positions are resolved again from local anchors. The receipt retains every
+mapped Hold, including differing child slots, with one durable history step and
+one Undo. Shared and multiple-play AI insertion remains unavailable.
 
 With `all_plays: true` the same command inserts into the Repeat's shared
 definition instead (specification §5.2: default edits affect every iteration),

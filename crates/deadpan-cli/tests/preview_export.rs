@@ -500,6 +500,39 @@ fn occurrence_pause_preserves_attached_pcm_and_verified_export() -> Result {
     Ok(())
 }
 
+#[test]
+fn mixed_repeat_pause_preview_and_encoded_output_keep_authored_source_clocks() -> Result {
+    let (root, _guard) = keep_or(tempfile::tempdir()?);
+    let mut results = Vec::new();
+    for (name, factory) in [
+        (
+            "default-play",
+            recipes::mixed_pause::default_play as fn(&Path) -> Result<Fixture>,
+        ),
+        (
+            "play-default",
+            recipes::mixed_pause::play_default as fn(&Path) -> Result<Fixture>,
+        ),
+    ] {
+        let fixture = factory(&root.join(name))?;
+        check(&fixture)?;
+        let movie = render(&fixture, &root.join(format!("exports-{name}")))?;
+        let (report, passed) = verify(&fixture, &movie, &fixture.revision, &["--every", "1"])?;
+        assert!(passed, "{name}: {report}");
+        assert_eq!(report["summary"]["pictures_checked"], fixture.frames);
+        assert_eq!(report["summary"]["nonzero_offsets"], 0);
+        check_provenance(&fixture, &report)?;
+        eprintln!("{}", summary_row(&fixture, &report));
+        results.push(
+            json!({"package":fixture.package,"movie":movie,"report":report,"notes":fixture.notes}),
+        );
+    }
+    if let Some(path) = std::env::var_os("DEADPAN_MIXED_PAUSE_RESULTS") {
+        std::fs::write(path, serde_json::to_vec_pretty(&results)?)?;
+    }
+    Ok(())
+}
+
 fn partial_repeat_export(existing: bool) -> Result {
     let (root, _guard) = keep_or(tempfile::tempdir()?);
     let factory = if existing {

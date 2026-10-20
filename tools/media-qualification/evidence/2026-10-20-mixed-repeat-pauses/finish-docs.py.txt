@@ -1,0 +1,104 @@
+from pathlib import Path
+import json
+
+root = Path('/Users/michael/Code/deadpan')
+scratch = Path('/tmp/deadpan-mixed-pause-2026-10-20')
+reports = {name: json.loads((scratch / name / 'report.json').read_text()) for name in ('visual', 'performance')}
+scenarios = {name: next(s for s in report['scenarios'] if s['name'] == 'scoped-plays') for name, report in reports.items()}
+assert all(not report['failed'] for report in reports.values())
+assert all(not s['failed'] for s in scenarios.values())
+counts = {name: len(s['checks']) for name, s in scenarios.items()}
+regression_counts = {}
+for name in ('original-layout', 'sound-playback'):
+    report = json.loads((scratch / name / 'report.json').read_text())
+    assert not report['failed'], name
+    regression_counts[name] = len(next(s for s in report['scenarios'] if s['name'] == name)['checks'])
+timings = {t['name']: t['summary'] for t in scenarios['performance']['timings']}
+identity = json.loads((scratch / 'binaries.json').read_text())['sha256']
+text = (scratch / 'qualification.md').read_text()
+table = '| Measurement | Completed | Median | p95 | Maximum | Failed / timed out |\n| --- | ---: | ---: | ---: | ---: | ---: |\n'
+for name, label in [('input_to_state_ms', 'Input to state'), ('input_to_picture_complete_ms', 'Input to completed picture')]:
+    t = timings[name]
+    c = t['completed']
+    table += f"| {label} | {c['n']} | {c['p50_ms']:.3f} ms | {c['p95_ms']:.3f} ms | {c['max_ms']:.3f} ms | {t['failed']} / {t['timed_out']} |\n"
+replay = f"""The final optimized visual and separate performance replays pass {counts['visual']}
+and {counts['performance']} scoped-play checks respectively, plus the live Kestrel
+audit. The audit retains 62 reserved bindings, 21,885,504 routing cases and no
+conflict or source drift. Existing gain, framing macro and Camera paths remain
+covered alongside new mixed, selected-play, unequal-inner-play and delayed
+receipt paths.
+
+All five new 960×640 captures were inspected: This play, selected plays, mixed
+authority, revoked delayed continuation and independently inferred inner plays.
+Scope labels, available actions, independent clocks and the footer remain
+visible. The synthetic transcript witnesses explicitly exercise stored
+annotations and input routing, not recognition inference.
+
+Separate optimized Original-layout and sound-playback regressions pass
+{regression_counts['original-layout']} and {regression_counts['sound-playback']} checks, plus their Kestrel audits.
+They retain same-Original cursor/picture behavior and independent sound focus
+after the shared navigation changes.
+
+{table}
+The 100.915 ms picture-completion tail remains recorded. These measurements do
+not assert that every picture completed within one display interval.
+"""
+text = text.replace('REPLAY_RESULTS', replay)
+text = text.replace('RELEASE_WARNING_RESULT', 'The final optimized app and CLI build without that warning.')
+text = text.replace('EVIDENCE_RESULTS', f"""The [evidence directory](../../tools/media-qualification/evidence/2026-10-20-mixed-repeat-pauses)
+retains failed and passing logs, final visual/performance reports, inspected
+captures, both emitted movies and complete verifier reports, source snapshots
+and hashes, binary and fixture identities, independent review, collection
+scripts and the checked SHA-256 inventory. Final app SHA-256:
+`{identity['deadpan-app']}`; final CLI:
+`{identity['deadpan-cli']}`. The export test's executable identities are retained
+separately. Unchanged private media, tracking and transcription helpers retain
+their recorded hashes. The source manifest binds the executable to this base
+revision plus its retained changes.""")
+assert not any(token in text for token in ['REPLAY_RESULTS', 'EVIDENCE_RESULTS', 'RELEASE_WARNING_RESULT'])
+(root / 'docs/qualification/mixed-repeat-pauses-2026-10-20.md').write_text(text)
+
+path = root / 'docs/REQUIREMENTS.md'
+doc = path.read_text()
+heading = '## Mixed and selected-play pauses, 2026-10-20'
+assert heading not in doc
+entry = f"""{heading}
+
+[Mixed pause qualification](qualification/mixed-repeat-pauses-2026-10-20.md)
+adds independent Default/Play choices at each Repeat level and atomic pause
+insertion across selected plays. Each play retains its own sampled picture,
+framing and exact suffix clocks. Native receipts preserve the actual new Holds
+across unequal child slots and independently inferred inner plays, including
+subsequent pause and gain edits. Navigation generations revoke delayed
+continuations through keyboard, pointer, pane, view and analyzed-word/search
+round trips. All 1,874 core/store and 1,220 app UI tests pass; a store output-handle
+diagnostic has a clean isolated rerun. Strict normal/UI lint and 136 selected
+tests pass. Two real release exports verify all 135 pictures and four zero-offset
+audio windows. Visual/performance replays pass {counts['visual']}/{counts['performance']} scoped checks plus Kestrel;
+all five new compact captures were inspected. DP-07 remains partial; broader
+occurrence edits, AI batches, Retime scopes and payloads remain open.
+
+"""
+anchor = '## One-play framing macros, 2026-10-18'
+assert doc.count(anchor) == 1
+doc = doc.replace(anchor, entry + anchor, 1)
+old = 'updating speed stages with retained exact pause clocks, Hold insertion across several selected plays or with mixed play choices, beneath nested pitch-processing stages, and with Original-moment payloads'
+new = 'updating speed stages with retained exact pause clocks, Hold insertion beneath nested pitch-processing stages or with Original-moment payloads'
+assert doc.count(old) == 1
+doc = doc.replace(old, new, 1)
+old = ' [Nested FollowSpeed pauses]('
+new = ' [Mixed and selected-play pauses](qualification/mixed-repeat-pauses-2026-10-20.md) retain each explicit Repeat choice, exact per-play clocks and independently captured Holds through one atomic edit and one Undo; actual native, PCM and release-export checks pass. [Nested FollowSpeed pauses]('
+assert doc.count(old) == 1
+doc = doc.replace(old, new, 1)
+anchor = '| Native EQ listening and physical input |'
+assert doc.count(anchor) == 1
+owner = '| Mixed Repeat pauses: physical input and listening | 1. In a disposable speech project, wrap the selected Source with `:wrap-repeat 2`, then wrap the selected Repeat with `:wrap-repeat 3`. Enter the outer contents, choose `:scope all`, enter the inner contents and choose `:scope play 2`. Move three frames into the Source and run `:hold 3f` physically. Duration must grow by 9 frames, with the preceding picture frozen only in inner play 2 of each default outer use. 2. Listen across all six source plays; each affected cut must add silence and resume the same speech. Undo once. 3. At the inner level choose `:scope plays 1,2`, then `:hold 3f video=black`; all six uses must grow by 3 frames each, with one Undo restoring the complete batch. Compare the rendered result. [Qualification](qualification/mixed-repeat-pauses-2026-10-20.md) covers injected input, exact PCM, history and emitted files; physical delivery, speech announcements and listening remain unverified. | DP-07, DP-09, DP-20 |\n'
+doc = doc.replace(anchor, owner + anchor, 1)
+path.write_text(doc)
+
+path = root / 'docs/SCOPED_EDITING.md'
+doc = path.read_text()
+anchor = '## Authoring and presentation'
+assert doc.count(anchor) == 1
+doc = doc.replace(anchor, 'The [mixed and selected-play qualification](qualification/mixed-repeat-pauses-2026-10-20.md)\nadds complete per-level scope, exact mapped target sets, decoded PCM, real\nrelease exports and compact keyboard/pointer replay evidence.\n\n' + anchor, 1)
+path.write_text(doc)

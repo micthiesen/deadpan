@@ -1,6 +1,6 @@
 use super::*;
 
-fn instance(node: &str, plays: &[(&str, u32)]) -> InstancePath {
+pub(super) fn instance(node: &str, plays: &[(&str, u32)]) -> InstancePath {
     InstancePath {
         node: id(node),
         repeats: plays

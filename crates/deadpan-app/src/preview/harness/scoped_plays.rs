@@ -4,7 +4,9 @@ use super::*;
 use deadpan_core::{GainDb, NodeId, NodeKind, ProjectDocument};
 use egui::Key;
 
+mod analysis_navigation;
 mod framing_macros;
+mod heterogeneous_pauses;
 mod pauses;
 
 pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
@@ -65,9 +67,15 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     d.command("sounds")?;
     d.key(Key::J)?;
     d.key(Key::H)?;
+    let mut sound_target = d
+        .app()
+        .scoped_target()?
+        .ok_or("No retained sound-pane scope")?;
+    let changed_navigation = sound_target.navigation != old_target.navigation;
+    sound_target.navigation = old_target.navigation;
     d.check(
         "Placed sounds focus keeps nested picture navigation untouched",
-        d.app().pane == Pane::Sounds && d.app().scoped_target()?.as_ref() == Some(&old_target),
+        d.app().pane == Pane::Sounds && sound_target == old_target && changed_navigation,
         json!({"pane":"Sounds","scoped_target":"unchanged"}),
         d.snapshot(),
     )?;
@@ -227,6 +235,8 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     d.app_mut().feedback.simulate_playback = false;
     framing_macros::run(d)?;
     pauses::run(d)?;
+    analysis_navigation::run(d)?;
+    heterogeneous_pauses::run(d)?;
     d.report.skipped.push("This replay uses real native widgets, project service and Metal with scripted keyboard delivery. Its final Escape check simulates playback preparation; physical keyboard/IME and acoustic playback are separate checks.".into());
     Ok(())
 }

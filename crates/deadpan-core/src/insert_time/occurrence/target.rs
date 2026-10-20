@@ -80,6 +80,7 @@ pub struct OccurrencePauseTarget {
     pub container: bool,
     pub gap: bool,
     pub(crate) site: Site,
+    scope: Option<ScopedNodeTarget>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -103,6 +104,9 @@ pub(crate) enum Site {
 
 impl OccurrencePauseTarget {
     pub(crate) fn scope(&self) -> ScopedNodeTarget {
+        if let Some(scope) = &self.scope {
+            return scope.clone();
+        }
         let instance = match &self.site {
             Site::Sequence { instance, .. } | Site::Physical { instance, .. } => instance,
             Site::Gap { repeat, .. } => repeat,
@@ -128,7 +132,7 @@ impl ProjectDocument {
         &self,
         at: ProjectFrame,
     ) -> Result<PauseInsertionTarget, EditError> {
-        resolve(self, at, None)
+        resolve(self, at, None, true)
     }
 
     /// Resolve a pause within one inspected occurrence. Its start and end
@@ -141,6 +145,72 @@ impl ProjectDocument {
     ) -> Result<OccurrencePauseTarget, EditError> {
         for_command(self, at, Some(within))
     }
+
+    /// Resolve one concrete cut while retaining explicit default/play authority.
+    pub fn pause_insertion_scoped(
+        &self,
+        at: ProjectFrame,
+        target: &ScopedNodeTarget,
+        within: &InstancePath,
+    ) -> Result<OccurrencePauseTarget, EditError> {
+        for_authority(self, at, Some(within), Some(target), false)
+    }
+}
+
+pub(super) fn for_authority(
+    document: &ProjectDocument,
+    at: ProjectFrame,
+    within: Option<&InstancePath>,
+    authority: Option<&ScopedNodeTarget>,
+    all_plays: bool,
+) -> Result<OccurrencePauseTarget, EditError> {
+    if authority.is_some() && (within.is_none() || all_plays) {
+        return Err(invalid(
+            "explicit pause authority requires within and excludes all_plays",
+        ));
+    }
+    if let Some(authority) = authority
+        && !authority.matches_instance(document, within.expect("checked within"))?
+    {
+        return Err(invalid(
+            "pause authority does not match its inspected occurrence",
+        ));
+    }
+    let mut target = match resolve(document, at, within, false)? {
+        PauseInsertionTarget::Occurrence(target) => target,
+        _ => {
+            return Err(invalid(
+                "occurrence pause requires a concrete Repeat branch",
+            ));
+        }
+    };
+    let mut scope = target.scope();
+    if let Some(authority) = authority {
+        if scope.repeats.len() < authority.repeats.len()
+            || !scope
+                .repeats
+                .iter()
+                .zip(&authority.repeats)
+                .all(|(actual, supplied)| actual.repeat == supplied.repeat)
+        {
+            return Err(invalid("pause site is outside its explicit authority"));
+        }
+        scope.repeats[..authority.repeats.len()].clone_from_slice(&authority.repeats);
+    } else if all_plays {
+        for step in &mut scope.repeats {
+            step.branch = crate::RepeatEditBranch::Default;
+        }
+    }
+    scope.validate(document)?;
+    let isolation = crate::scoped_edit::temporal_requirements(document, &scope)?;
+    target.isolation_nodes = isolation.nodes;
+    target.isolation_marks = isolation.marks;
+    target.scope = Some(scope);
+    check_node_count(document, &target)?;
+    if super::is_shared(&target) {
+        super::all_plays_site(document, &target, at)?;
+    }
+    Ok(target)
 }
 
 pub(super) fn for_command(
@@ -148,7 +218,7 @@ pub(super) fn for_command(
     at: ProjectFrame,
     within: Option<&InstancePath>,
 ) -> Result<OccurrencePauseTarget, EditError> {
-    match resolve(document, at, within)? {
+    match resolve(document, at, within, true)? {
         PauseInsertionTarget::Occurrence(target) => Ok(target),
         PauseInsertionTarget::Ordinary(_) | PauseInsertionTarget::Retimed(_) => Err(invalid(
             "occurrence pause requires a concrete Repeat branch",
@@ -160,6 +230,7 @@ fn resolve(
     document: &ProjectDocument,
     at: ProjectFrame,
     within: Option<&InstancePath>,
+    check_growth: bool,
 ) -> Result<PauseInsertionTarget, EditError> {
     if within.is_none()
         && let Some(target) = super::super::retimed::pause_target(document, at)?
@@ -169,7 +240,7 @@ fn resolve(
     // Outside a FollowSpeed interior, clocked speed changes are moved whole,
     // and their integral recipes are exact (see `with_sealed`).
     if !document.derived_clocks().is_empty() && !crate::derived_clock::sealed_active() {
-        return crate::derived_clock::with_sealed(|| resolve(document, at, within));
+        return crate::derived_clock::with_sealed(|| resolve(document, at, within, check_growth));
     }
     let durations = document.durations()?;
     if at.0 < 0 || at.0 > durations[document.root()].frames() {
@@ -299,7 +370,16 @@ fn resolve(
                         },
                         index: index + usize::from(position != 0),
                     };
-                    return finish(document, navigation_parent, parent, site, 0, false, false);
+                    return finish(
+                        document,
+                        navigation_parent,
+                        parent,
+                        site,
+                        0,
+                        false,
+                        false,
+                        check_growth,
+                    );
                 }
                 let split_nodes = if interior {
                     super::super::split_node_count(document, &instance.node)?
@@ -333,11 +413,16 @@ fn resolve(
             split_nodes,
             container,
             gap,
+            check_growth,
         );
     }
     Err(limit("pause insertion exceeds the document depth limit"))
 }
 
+#[expect(
+    clippy::too_many_arguments,
+    reason = "one resolved site and its exact allocation policy"
+)]
 fn finish(
     document: &ProjectDocument,
     navigation_parent: NodeId,
@@ -346,6 +431,7 @@ fn finish(
     split_nodes: usize,
     container: bool,
     gap: bool,
+    check_growth: bool,
 ) -> Result<PauseInsertionTarget, EditError> {
     let mut target = OccurrencePauseTarget {
         navigation_parent,
@@ -356,14 +442,27 @@ fn finish(
         container,
         gap,
         site,
+        scope: None,
     };
-    let isolation = crate::scoped_edit::temporal_requirements(document, &target.scope())?;
-    target.isolation_nodes = isolation.nodes;
-    target.isolation_marks = isolation.marks;
-    let required = isolation
-        .nodes
-        .checked_add(split_nodes)
-        .and_then(|count| count.checked_add(usize::from(container) + usize::from(gap) + 1))
+    if check_growth {
+        let isolation = crate::scoped_edit::temporal_requirements(document, &target.scope())?;
+        target.isolation_nodes = isolation.nodes;
+        target.isolation_marks = isolation.marks;
+        check_node_count(document, &target)?;
+    }
+    Ok(PauseInsertionTarget::Occurrence(target))
+}
+
+fn check_node_count(
+    document: &ProjectDocument,
+    target: &OccurrencePauseTarget,
+) -> Result<(), EditError> {
+    let required = target
+        .isolation_nodes
+        .checked_add(target.split_nodes)
+        .and_then(|count| {
+            count.checked_add(usize::from(target.container) + usize::from(target.gap) + 1)
+        })
         .ok_or_else(|| limit("pause identity count"))?;
     if document
         .nodes()
@@ -373,7 +472,7 @@ fn finish(
     {
         return Err(limit("pause insertion exceeds the document node limit"));
     }
-    Ok(PauseInsertionTarget::Occurrence(target))
+    Ok(())
 }
 
 struct ScopedStart {
@@ -393,6 +492,11 @@ fn scoped_start(
     let outer = within
         .repeats
         .first()
+        .map(|step| &step.node)
+        .or_else(|| {
+            matches!(document.nodes()[&within.node].kind, NodeKind::Repeat { .. })
+                .then_some(&within.node)
+        })
         .ok_or_else(|| invalid("scoped pause requires an explicitly selected Repeat play"))?;
     let index = crate::AnchorIndex::from_durations(document, durations.clone())?;
     let mut ancestor = &within.node;
@@ -446,6 +550,6 @@ fn scoped_start(
         position,
         parent,
         sequence,
-        navigation_parent: index.parents[&outer.node].0.clone(),
+        navigation_parent: index.parents[outer].0.clone(),
     })
 }

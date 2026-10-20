@@ -124,8 +124,8 @@ pub use group_selection::{GroupSelectionIdentities, GroupSelectionPlan, validate
 pub use hdr::*;
 pub use insert_time::{
     InsertTimeSplit, InsertTimeTarget, OccurrencePauseIdentities, OccurrencePauseTarget,
-    PauseInsertionTarget, RetimedPauseTarget, SequenceRangeEdit, SourceReplacement,
-    SourceSpliceInterior,
+    PauseInsertionTarget, PreparedOccurrenceTime, RetimedPauseTarget, SequenceRangeEdit,
+    SourceReplacement, SourceSpliceInterior, prepare_occurrence_time,
 };
 pub use marks::*;
 pub use move_range::{MoveRangeDestination, SequenceRangeMove};

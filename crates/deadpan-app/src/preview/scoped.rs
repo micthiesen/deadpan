@@ -7,9 +7,24 @@ use crate::project::scoped::Target;
 
 pub(super) mod model;
 
-const STRUCTURE_UNAVAILABLE: &str = "Inside Repeat and Retime contents, gain, Camera, pause audio and AI pictures are available. Choose This play at every Repeat level, or All plays at every level, to insert a pause. Other timing edits and range copying require the parent.";
+const STRUCTURE_UNAVAILABLE: &str = "Inside Repeat and Retime contents, gain, Camera, pause audio and AI pictures are available. Repeat pauses follow each level's All plays, This play or selected plays choice. AI pauses require one play at every level. Other timing edits and range copying require the parent.";
 
 impl DeadpanApp {
+    pub(super) fn focus_scoped_pane(&mut self, pane: Pane) {
+        if self.pane != pane {
+            self.revoke_scoped_continuation();
+            self.pane = pane;
+        }
+    }
+    pub(super) fn revoke_scoped_continuation(&mut self) {
+        if let Some(next) = self.scoped_navigation.checked_add(1) {
+            self.scoped_navigation = next;
+        } else {
+            // Exhaustion must never make an old receipt current again.
+            self.scoped = None;
+            self.error = Some("Scoped navigation generation exhausted; restart Deadpan.".into());
+        }
+    }
     pub(super) fn insert_scoped_pause(
         &mut self,
         input: navigation::duration::DurationInput,
@@ -31,7 +46,11 @@ impl DeadpanApp {
                 return Err("Finish the macro before inserting a scoped pause.".into());
             }
             let workspace = self.workspace.as_ref().ok_or("Open a project first.")?;
-            target.pause_instance(workspace)?;
+            if target.also.is_empty() {
+                target.pause_instance(workspace)?;
+            } else {
+                target.validate(workspace)?;
+            }
             let duration = input.resolve(workspace.document.presentation_basis().frame_rate)?;
             Ok(ProjectRequest::Edit {
                 expected_session: target.session,
@@ -105,7 +124,9 @@ impl DeadpanApp {
                 let cursor = ProjectFrame(
                     i64::try_from(self.sequence_cursor).map_err(|error| error.to_string())?,
                 );
-                state.target(workspace, cursor)
+                let mut target = state.target(workspace, cursor)?;
+                target.navigation = self.scoped_navigation;
+                Ok(target)
             })
             .transpose()
     }
@@ -227,7 +248,7 @@ impl DeadpanApp {
                 self.stop_playback();
                 self.scoped = None;
                 self.bindings.clear();
-                self.pane = Pane::Sequence;
+                self.focus_scoped_pane(Pane::Sequence);
                 self.message = Some("Returned to the parent beat.".into());
                 context.memory_mut(|memory| memory.request_focus(pane_id(Pane::Sequence)));
             }
@@ -236,6 +257,7 @@ impl DeadpanApp {
     }
 
     fn scoped_changed(&mut self, context: &egui::Context) {
+        self.revoke_scoped_continuation();
         self.macros.revoke_cursor();
         if self.macros.recording() {
             self.cancel_macro_recording();
@@ -417,6 +439,7 @@ impl DeadpanApp {
             Action::Step { .. } | Action::First | Action::Last => {
                 match self.scoped_presentation() {
                     Ok(Some(presentation)) => {
+                        self.revoke_scoped_continuation();
                         self.cancel_camera(); self.stop_playback(); self.bindings.clear();
                         let end = presentation.frames.end.saturating_sub(1);
                         self.sequence_cursor = match action {
@@ -433,6 +456,7 @@ impl DeadpanApp {
                 }
             }
             Action::Escape if !self.help_open => {
+                self.revoke_scoped_continuation();
                 if self.macros.recording() {
                     self.cancel_macro_recording();
                 }
@@ -511,7 +535,7 @@ impl DeadpanApp {
             )
             .has_focus()
             {
-                self.pane = Pane::Sequence;
+                self.focus_scoped_pane(Pane::Sequence);
             }
             if let Some(choice) = choice {
                 if let Some(plays) = choice.label.strip_prefix("plays ") {
@@ -523,7 +547,7 @@ impl DeadpanApp {
                         .strong(),
                     )
                     .on_hover_text(
-                        "Gain, Camera and pause-audio changes apply to this beat in every selected play, in one Undo.",
+                        "Gain, Camera, pause insertion and pause-audio changes apply to this beat in every selected play, in one Undo.",
                     );
                 }
                 ui.horizontal_wrapped(|ui| {
@@ -656,7 +680,7 @@ impl DeadpanApp {
             .default_size(layout.inspector).min_size(layout.inspector).max_size(layout.inspector)
             .frame(style::panel()).show(ui, |ui| {
                 let heading = pane_heading(ui, "INSPECTOR", self.pane == Pane::Inspector);
-                if pane_focus(ui, Pane::Inspector, heading.rect, "Nested beat inspector pane").has_focus() { self.pane = Pane::Inspector; }
+                if pane_focus(ui, Pane::Inspector, heading.rect, "Nested beat inspector pane").has_focus() { self.focus_scoped_pane(Pane::Inspector); }
                 ui.separator();
                 style::side_scroll(ui, egui::ScrollArea::vertical().id_salt("scoped-inspector-details").animated(false), |ui| {
                     style::ink_padded_label(ui, style::semibold(label).size(16.0), None);
@@ -673,7 +697,7 @@ impl DeadpanApp {
                         self.framing_action(navigation::FramingAction::EnterCamera, ui.ctx());
                     }
                     if ui.add_enabled(ready, style::row_action(ui, "Insert pause", self.editor_key(EditorKey::Hold)))
-                        .on_hover_text("Insert 0.5 s in This play at the cursor. Each enclosing Repeat must name one play.").clicked() {
+                        .on_hover_text("Insert 0.5 s at the cursor in the selected Repeat scopes. Each selected play captures its own freeze picture.").clicked() {
                         self.edit(BeatEdit::InsertHold(navigation::duration::DurationInput::half_seconds(1)));
                     }
                     if ui.add_enabled(ready, style::row_action(ui, "Insert AI pause", self.editor_key(EditorKey::GenerateAi)))

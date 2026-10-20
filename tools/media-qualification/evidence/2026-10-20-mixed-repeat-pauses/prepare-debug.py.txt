@@ -1,0 +1,9 @@
+from pathlib import Path
+import shutil
+
+scratch = Path('/tmp/deadpan-mixed-pause-2026-10-20')
+binary = scratch / 'debug-bin'
+binary.mkdir(exist_ok=True)
+for source in (scratch / 'bin').iterdir():
+    shutil.copy2(source, binary / source.name)
+shutil.copy2(Path('/Users/michael/Code/deadpan/target/debug/deadpan-app'), binary / 'deadpan-app')

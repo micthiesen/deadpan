@@ -2640,6 +2640,7 @@ fn scoped_capture(
 ) -> crate::project::scoped::Target {
     crate::project::scoped::Target {
         session: fixture.workspace.session,
+        navigation: 0,
         project: fixture.workspace.document.project_id().clone(),
         revision: fixture.workspace.document.revision_id().clone(),
         scope: SequenceScope::default(),

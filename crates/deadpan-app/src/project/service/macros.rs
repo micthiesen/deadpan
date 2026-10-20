@@ -28,6 +28,7 @@ fn scoped_macro_target(
     }
     let target = crate::project::scoped::Target {
         session: id.session,
+        navigation: 0,
         project: id.project.clone(),
         revision: id.revision.clone(),
         scope: scope.clone(),
@@ -70,6 +71,7 @@ fn scoped_macro_receipt(
                 revision: plan.document.revision_id().clone(),
                 target: after.target.clone(),
                 presentation: Some(after.presentation.clone()),
+                also: None,
             }))
         }
         _ => Err("Scoped framing did not preserve its invocation authority.".into()),

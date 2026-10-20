@@ -7,6 +7,8 @@ use deadpan_core::{
 
 use super::Workspace;
 
+pub(super) mod batch;
+
 pub(super) fn prepare(
     workspace: &Workspace,
     at: ProjectFrame,
@@ -26,7 +28,7 @@ pub(super) fn prepare(
             black,
             ai: false,
             within: None,
-            all_plays: false,
+            target: None,
         },
         allocate,
     )
@@ -39,8 +41,8 @@ pub(super) fn prepare_scoped(
     black: bool,
     ai: bool,
 ) -> Result<CommandRequest, String> {
-    let (within, all_plays) = target.pause_instance(workspace)?;
-    if all_plays && ai {
+    let (within, shared) = target.pause_instance(workspace)?;
+    if shared && ai {
         return Err(
             "An AI pause needs one play. Choose This play (:scope play N), then insert it.".into(),
         );
@@ -56,7 +58,7 @@ pub(super) fn prepare_scoped(
             black,
             ai,
             within: Some(within),
-            all_plays,
+            target: Some(target.target.clone()),
         },
         super::service::node,
     )
@@ -67,8 +69,7 @@ struct Selection {
     black: bool,
     ai: bool,
     within: Option<deadpan_core::InstancePath>,
-    /// Into the Repeat's shared definition: no play is isolated.
-    all_plays: bool,
+    target: Option<deadpan_core::ScopedNodeTarget>,
 }
 
 fn prepare_selected(
@@ -84,7 +85,7 @@ fn prepare_selected(
         black,
         ai,
         within,
-        all_plays,
+        target: authored,
     } = selection;
     let document = &workspace.document;
     let total = workspace.plan.duration().frames();
@@ -95,11 +96,17 @@ fn prepare_selected(
         return Err("Pause resolves to 0 frames; no edit was made.".into());
     }
     // Resolve ownership before sampling a fallback or allocating an edit.
-    let target = match &within {
-        Some(within) => document
+    let target = match (&authored, &within) {
+        (Some(authored), Some(within)) => document
+            .pause_insertion_scoped(at, authored, within)
+            .map(deadpan_core::PauseInsertionTarget::Occurrence),
+        (Some(_), None) => {
+            return Err("A scoped pause needs its captured visible occurrence.".into());
+        }
+        (None, Some(within)) => document
             .pause_insertion_within(at, within)
             .map(deadpan_core::PauseInsertionTarget::Occurrence),
-        None => document.pause_insertion_target(at),
+        (None, None) => document.pause_insertion_target(at),
     }
     .map_err(|error| error.to_string())?;
     // Black punctuation shows the project background: no picture is sampled
@@ -150,19 +157,16 @@ fn prepare_selected(
         deadpan_core::PauseInsertionTarget::Occurrence(target) => Command::InsertOccurrenceTime {
             at,
             within,
+            target: authored,
             hold,
             id,
             timing,
             ai,
-            all_plays,
+            all_plays: false,
             identities: deadpan_core::OccurrencePauseIdentities {
                 isolation: deadpan_core::OccurrenceIdentities {
-                    nodes: (0..target.isolation_nodes)
-                        .filter(|_| !all_plays)
-                        .map(|_| allocate())
-                        .collect(),
+                    nodes: (0..target.isolation_nodes).map(|_| allocate()).collect(),
                     marks: (0..target.isolation_marks)
-                        .filter(|_| !all_plays)
                         .map(|_| {
                             deadpan_core::MarkId::new(uuid::Uuid::new_v4().to_string())
                                 .expect("UUID is a mark identity")
@@ -173,7 +177,7 @@ fn prepare_selected(
                     nodes: (0..target.split_nodes).map(|_| allocate()).collect(),
                 },
                 container: target.container.then(&mut allocate),
-                gap: (target.gap && !all_plays).then(&mut allocate),
+                gap: target.gap.then(&mut allocate),
             },
         },
     };

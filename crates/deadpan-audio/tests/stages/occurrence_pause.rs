@@ -1,5 +1,8 @@
 use super::*;
 
+#[path = "occurrence_pause/mixed.rs"]
+mod mixed;
+
 fn repeated(child: &str, plays: u32, room: &SourceAudio) -> BeatNode {
     let NodeKind::Hold { recipe: gap } = room_tone(2, room.clone()).kind else {
         unreachable!()
@@ -80,6 +83,7 @@ fn pause_within(
         command: Command::InsertOccurrenceTime {
             at: ProjectFrame(at),
             within,
+            target: None,
             hold: HoldRecipe {
                 duration: duration(1),
                 video: HoldVideo::Background,
@@ -322,6 +326,7 @@ fn all_plays_pause(document: &ProjectDocument, at: i64) -> ProjectDocument {
         command: Command::InsertOccurrenceTime {
             at: ProjectFrame(at),
             within: None,
+            target: None,
             hold: HoldRecipe {
                 duration: duration(1),
                 video: HoldVideo::Background,
@@ -459,6 +464,7 @@ fn an_all_plays_pause_in_nested_repeats_keeps_every_occurrence_on_its_own_clock(
             command: Command::InsertOccurrenceTime {
                 at: ProjectFrame(at),
                 within: None,
+                target: None,
                 hold: HoldRecipe {
                     duration: duration(1),
                     video: HoldVideo::Background,

@@ -624,9 +624,8 @@ impl DeadpanApp {
                             ui.weak(format!("Return to Your edit, choose a beat, then {} after or {} before. One paste, one undo.", self.editor_key(EditorKey::PasteAfter), self.editor_key(EditorKey::PasteBefore)));
                         }
                         if ui.button("Your edit  :sequence").clicked() {
-                            self.view.set(View::Sequence, &mut self.message);
-                            self.pane = Pane::Sequence;
-                            self.request_picture(false);
+                            self.show_edit(ui.ctx());
+                            self.focus_scoped_pane(Pane::Sequence);
                             ui.memory_mut(|memory| memory.request_focus(pane_id(Pane::Sequence)));
                         }
                     }

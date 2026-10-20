@@ -180,6 +180,9 @@ define_commands! {
         /// None keeps ordinary project-boundary descent and its left bias.
         #[serde(default, skip_serializing_if = "Option::is_none")]
         within: Option<InstancePath>,
+        /// Explicit default/play authority, independent of its concrete presentation.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        target: Option<crate::ScopedNodeTarget>,
         hold: HoldRecipe,
         id: NodeId,
         identities: crate::OccurrencePauseIdentities,

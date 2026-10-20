@@ -282,6 +282,7 @@ impl ProjectDocument {
 pub struct PreparedScopedEdit {
     pub transaction: EditTransaction,
     pub document: ProjectDocument,
+    /// The mapped single target, or the first target of EditScopedMany.
     pub target: ScopedNodeTarget,
     isolation: ScopedIsolationRecord,
 }
@@ -327,8 +328,11 @@ impl PreparedScopedEdit {
     }
 }
 
-/// Preview precisely the same EditScoped command that the host will commit.
-/// The mapped target is provisional until that command's receipt is observed.
+/// Preview precisely the same EditScoped or EditScopedMany command that the
+/// host will commit. Many-target execution retains every isolation step; the
+/// primary target is the first requested target, and map_target/map_instance
+/// carry the others through that complete execution. These mappings remain
+/// provisional until the command's receipt is observed.
 pub fn prepare_scoped_edit(
     document: &ProjectDocument,
     request: &CommandRequest,
@@ -339,8 +343,19 @@ pub fn prepare_scoped_edit(
         &request.expected_revision,
         &request.new_revision,
     )?;
-    let Command::EditScoped { target, .. } = &request.command else {
-        return Err(invalid("scoped preparation requires an EditScoped command"));
+    let target = match &request.command {
+        Command::EditScoped { target, .. } => target,
+        Command::EditScopedMany { edits, .. } => {
+            &edits
+                .first()
+                .ok_or_else(|| invalid("scoped preparation requires at least one target"))?
+                .target
+        }
+        _ => {
+            return Err(invalid(
+                "scoped preparation requires an EditScoped or EditScopedMany command",
+            ));
+        }
     };
     let (transaction, after, steps) = crate::command::apply_with_isolation(document, request)?;
     let isolation = ScopedIsolationRecord::from_execution(document, request, &after, steps)?;

@@ -758,3 +758,105 @@ fn invalid_scoped_acceptance_cannot_admit_assets_or_isolate() {
     assert!(before.overrides().is_empty());
     assert_eq!(before, fixture());
 }
+
+#[test]
+fn prepared_many_maps_primary_and_other_presentations_through_complete_common_prefix_isolation() {
+    let before = fixture();
+    let originals = [target(Some(1), Some(0)), target(Some(1), Some(1))];
+    let command = many_request(
+        &before,
+        originals
+            .iter()
+            .enumerate()
+            .map(|(index, target)| ScopedTargetEdit {
+                target: target.clone(),
+                edit: rename(&format!("selected-{index}")),
+            })
+            .collect(),
+    );
+    let prepared = prepare_scoped_edit(&before, &command).unwrap();
+    assert_eq!(prepared.isolation().steps().len(), 3);
+    let proof = prepared
+        .isolation()
+        .validate(&before, &command, &prepared.document)
+        .unwrap();
+    for (index, original) in originals.iter().enumerate() {
+        let mapped = prepared.map_target(&before, original).unwrap();
+        assert_eq!(mapped, proof.map_forward(original).unwrap());
+        assert_eq!(
+            prepared.document.nodes()[&mapped.node].label,
+            format!("selected-{index}")
+        );
+        if index == 0 {
+            assert_eq!(prepared.target, mapped);
+        }
+        // Both targets share the outer clone, but their inner plays own
+        // different clones. A first-target-only receipt would miss the second.
+        assert_ne!(mapped.node, original.node);
+        assert_ne!(mapped.repeats[1].repeat, node("inner"));
+        for name in ["a", "b"] {
+            let original_target = ScopedNodeTarget {
+                node: node(name),
+                ..original.clone()
+            };
+            let original_instance = InstancePath {
+                node: node(name),
+                ..instance(1, u32::try_from(index).unwrap())
+            };
+            let mapped_target = prepared.map_target(&before, &original_target).unwrap();
+            let mapped_instance = prepared.map_instance(&before, &original_instance).unwrap();
+            assert!(
+                mapped_target
+                    .matches_instance(&prepared.document, &mapped_instance)
+                    .unwrap()
+            );
+            assert_eq!(proof.map_backward(&mapped_target).unwrap(), original_target);
+        }
+    }
+    let untouched = target(Some(2), Some(1));
+    assert_eq!(prepared.map_target(&before, &untouched).unwrap(), untouched);
+    assert_eq!(
+        prepared.map_instance(&before, &instance(2, 1)).unwrap(),
+        instance(2, 1)
+    );
+    assert!(
+        prepared
+            .map_target(&prepared.document, &originals[0])
+            .is_err()
+    );
+    assert!(
+        prepared
+            .map_instance(&prepared.document, &instance(1, 0))
+            .is_err()
+    );
+    assert_eq!(
+        prepared
+            .transaction
+            .inverse
+            .apply(&prepared.document)
+            .unwrap(),
+        before
+    );
+    assert_eq!(
+        prepared.transaction.forward.apply(&before).unwrap(),
+        prepared.document
+    );
+}
+
+#[test]
+fn prepared_many_rejects_an_empty_target_set_without_a_primary_target() {
+    let before = fixture();
+    let command = CommandRequest {
+        project_id: before.project_id().clone(),
+        expected_revision: before.revision_id().clone(),
+        new_revision: revision("empty-many"),
+        command: Command::EditScopedMany {
+            edits: vec![],
+            identities: vec![],
+        },
+    };
+    assert_eq!(
+        prepare_scoped_edit(&before, &command).unwrap_err().code,
+        EditErrorCode::InvalidCommand
+    );
+}

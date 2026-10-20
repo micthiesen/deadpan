@@ -25,6 +25,8 @@ mod edited_slice;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 #[path = "project_commands/macros.rs"]
 mod macros;
+#[path = "project_commands/mixed_pause.rs"]
+mod mixed_pause;
 #[path = "project_commands/move_range.rs"]
 mod move_range;
 #[path = "project_commands/nested_pause.rs"]

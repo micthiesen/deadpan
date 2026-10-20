@@ -62,6 +62,9 @@ pub(in crate::preview) struct State {
     index: Arc<Index>,
     levels: Vec<Level>,
     selected: ScopedNodeTarget,
+    /// A structural edit can put counterpart Holds at different child indices.
+    /// Keep its checked receipt only while this exact primary remains selected.
+    mapped_also: Option<(ScopedNodeTarget, Vec<ScopedNodeTarget>)>,
     cursor: ProjectFrame,
     preferred: Option<InstancePath>,
     rows: Arc<Vec<Row>>,
@@ -128,6 +131,7 @@ impl State {
             root,
             index: Arc::new(index),
             selected: owner.clone(),
+            mapped_also: None,
             cursor,
             preferred: None,
             rows: Arc::default(),
@@ -289,6 +293,7 @@ impl State {
         }
         let target = Target {
             session: self.session,
+            navigation: 0,
             project: self.index.document.project_id().clone(),
             revision: self.index.document.revision_id().clone(),
             scope: self.scope.clone(),
@@ -307,6 +312,11 @@ impl State {
 
     /// The selected node in every further selected play, by structure.
     fn also_targets(&self) -> Result<Vec<ScopedNodeTarget>, String> {
+        if let Some((primary, also)) = &self.mapped_also
+            && primary == &self.selected
+        {
+            return Ok(also.clone());
+        }
         let Some(level) = self.levels.iter().find(|level| !level.also.is_empty()) else {
             return Ok(Vec::new());
         };
@@ -328,6 +338,18 @@ impl State {
                 )
             })
             .collect()
+    }
+
+    fn revoke_mapped_selection(&mut self) -> bool {
+        if self.mapped_also.take().is_none() {
+            return false;
+        }
+        // A fresh navigation cannot recreate non-positional counterparts from
+        // row indices. The user can explicitly choose a new play set there.
+        for level in &mut self.levels {
+            level.also.clear();
+        }
+        true
     }
 
     pub fn rows(&self, workspace: &Workspace) -> Result<Arc<Vec<Row>>, String> {
@@ -380,8 +402,12 @@ impl State {
         rows[previous].selected = false;
         rows[index].selected = true;
         self.levels.last_mut().expect("level").selected = index;
+        let revoked = self.revoke_mapped_selection();
         self.selected = selected;
         self.projection = projection;
+        if revoked {
+            self.refresh_labels()?;
+        }
         Ok(())
     }
     pub fn step(&mut self, workspace: &Workspace, forward: bool, count: u32) -> Result<(), String> {
@@ -415,6 +441,7 @@ impl State {
             return Err("Inspector depth limit reached.".into());
         }
         let mut next = self.clone();
+        next.revoke_mapped_selection();
         next.levels.push(Level {
             owner: self.selected.clone(),
             branch: RepeatEditBranch::Default,
@@ -434,6 +461,7 @@ impl State {
             return Ok(false);
         }
         let mut next = self.clone();
+        next.revoke_mapped_selection();
         next.levels.pop();
         next.refresh_selected()?;
         *self = next;
@@ -553,6 +581,7 @@ impl State {
             .repeat_level()
             .ok_or("This level has no Repeat scope")?;
         let mut next = self.clone();
+        next.mapped_also = None;
         next.levels.truncate(level + 1);
         for level in &mut next.levels {
             level.also.clear();
@@ -655,6 +684,7 @@ impl State {
     fn refresh_labels(&mut self) -> Result<(), String> {
         let mut breadcrumbs = Vec::with_capacity(self.levels.len());
         let mut scopes = Vec::new();
+        let mut shown_scopes = Vec::new();
         let mut nearest = None;
         for level in &self.levels {
             let node = &self.index.document.nodes()[&level.owner.node];
@@ -697,6 +727,11 @@ impl State {
             };
             breadcrumbs.push(format!("{} [{}]", choice.owner_label, choice.label));
             scopes.push(format!("{} · {}", choice.owner_label, choice.label));
+            shown_scopes.push(format!(
+                "{} · {}",
+                choice.owner_label,
+                one_based.map_or_else(|| "all plays".into(), |play| format!("play {play}/{plays}"))
+            ));
             nearest = Some(choice);
         }
         self.breadcrumbs = Arc::new(breadcrumbs);
@@ -705,6 +740,32 @@ impl State {
         } else {
             scopes.join(" › ")
         };
+        if let Some((primary, also)) = &self.mapped_also {
+            let varied = self
+                .levels
+                .iter()
+                .find(|level| !level.also.is_empty())
+                .and_then(|level| {
+                    primary
+                        .repeats
+                        .iter()
+                        .position(|step| step.repeat == level.owner.node)
+                });
+            if also.iter().any(|other| {
+                other.repeats.len() != primary.repeats.len()
+                    || other.repeats.iter().zip(&primary.repeats).enumerate().any(
+                        |(index, (other, primary))| {
+                            Some(index) != varied && other.branch != primary.branch
+                        },
+                    )
+            }) {
+                self.scope_label = format!(
+                    "{} captured pauses · shown: {}",
+                    also.len() + 1,
+                    shown_scopes.join(" › ")
+                );
+            }
+        }
         self.repeat_choice = nearest;
         Ok(())
     }
@@ -732,6 +793,7 @@ impl State {
             || before.scope != self.scope
             || before.root != self.root
             || before.target != self.selected
+            || before.also != self.also_targets()?
             || before.presentation
                 != self
                     .projection
@@ -743,14 +805,23 @@ impl State {
         {
             return Ok(false);
         }
-        // A multi-play choice survives the edit it made: its Repeat keeps its
-        // identity and stable play IDs while its plays gain owned branches.
+        // Common outer Play isolation can clone the multi-play Repeat itself.
+        // Its checked ancestry position and stable branch choices survive that
+        // operation; comparing its old owner ID to the new path loses the set.
         let carried = self
             .levels
             .iter()
             .find(|level| !level.also.is_empty())
-            .map(|level| (level.owner.node.clone(), level.also.clone()));
+            .and_then(|level| {
+                before
+                    .target
+                    .repeats
+                    .iter()
+                    .position(|step| step.repeat == level.owner.node)
+                    .map(|step| (step, level.branch.clone(), level.also.clone()))
+            });
         let mut next = self.clone();
+        next.mapped_also = None;
         next.index = Arc::new(index);
         if !next
             .scope
@@ -768,6 +839,54 @@ impl State {
         let Some(start) = path.iter().position(|node| node == &next.root) else {
             return Ok(false);
         };
+        let carried = carried.and_then(|(step, branch, also)| {
+            commit
+                .target
+                .repeats
+                .get(step)
+                .filter(|mapped| mapped.branch == branch)
+                .map(|mapped| (step, mapped.repeat.clone(), also))
+        });
+        if let Some(also) = &commit.also {
+            let Some((step, _, iterations)) = &carried else {
+                return Ok(false);
+            };
+            if also.len() != before.also.len() || also.len() != iterations.len() {
+                return Ok(false);
+            }
+            if commit.target.repeats.len() < before.target.repeats.len()
+                || commit
+                    .target
+                    .repeats
+                    .iter()
+                    .zip(&before.target.repeats)
+                    .any(|(mapped, original)| mapped.branch != original.branch)
+            {
+                return Ok(false);
+            }
+            for ((mapped, original), iteration) in also.iter().zip(&before.also).zip(iterations) {
+                mapped
+                    .validate(&next.index.document)
+                    .map_err(|error| error.to_string())?;
+                if !next.index.path(&mapped.node)?.contains(&next.root)
+                    || mapped.repeats.len() < original.repeats.len()
+                    || mapped
+                        .repeats
+                        .iter()
+                        .zip(&original.repeats)
+                        .any(|(mapped, original)| mapped.branch != original.branch)
+                    || mapped.repeats[..*step] != commit.target.repeats[..*step]
+                    || mapped.repeats[*step].repeat != commit.target.repeats[*step].repeat
+                    || mapped.repeats[*step].branch
+                        != (RepeatEditBranch::Play {
+                            iteration: iteration.clone(),
+                        })
+                {
+                    return Ok(false);
+                }
+            }
+            next.mapped_also = Some((commit.target.clone(), also.clone()));
+        }
         next.levels.clear();
         for (depth, pair) in path[start..].windows(2).enumerate() {
             let repeats = commit
@@ -792,8 +911,8 @@ impl State {
                 selected: 0,
                 also: carried
                     .as_ref()
-                    .filter(|(repeat, _)| repeat == &pair[0])
-                    .map(|(_, also)| also.clone())
+                    .filter(|(_, repeat, _)| repeat == &pair[0])
+                    .map(|(_, _, also)| also.clone())
                     .unwrap_or_default(),
             });
             let row = next

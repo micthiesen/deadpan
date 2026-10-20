@@ -1,0 +1,27 @@
+{
+  "this-play-pause.png": {
+    "label": "The inserted Hold remains selected within This play",
+    "frame": 442,
+    "source": "scoped-plays-128.png"
+  },
+  "selected-play-pauses.png": {
+    "label": "The new pauses remain selected across both chosen plays",
+    "frame": 505,
+    "source": "scoped-plays-129.png"
+  },
+  "mixed-pause.png": {
+    "label": "Outer All plays and inner This play remain distinct after pause insertion",
+    "frame": 684,
+    "source": "scoped-plays-130.png"
+  },
+  "delayed-round-trip.png": {
+    "label": "Returning to equal coordinates cannot revive the selected-pause continuation",
+    "frame": 723,
+    "source": "scoped-plays-131.png"
+  },
+  "different-inner-plays.png": {
+    "label": "Two captured pauses show the displayed play without claiming a shared inner choice",
+    "frame": 910,
+    "source": "scoped-plays-132.png"
+  }
+}

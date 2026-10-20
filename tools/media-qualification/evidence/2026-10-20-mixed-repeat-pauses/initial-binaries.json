@@ -1,0 +1,11 @@
+{
+  "sha256": {
+    "deadpan-app": "c15cae3538d09242d563427ac9cf3cdfea49d7038b3020a0fb298f0e6c98264d",
+    "deadpan-cli": "bb6f07de5fea7198ea6a25f85ba94590aefc73a836449b4202380ea6a2e427ec",
+    "deadpan-media-worker": "a072f82a294153361e548eefc6e2a00ec239d8abefde127b8f9381f1a4db6944",
+    "deadpan-track": "63f95135ade0dbb4438a73549a0d5a632f976c13b7c7c037c7902c5b29e41aa5",
+    "deadpan-transcribe": "4369d0f1917b3ac2e7692dad72b29ebaf55521dc75369a4be7200a2a9bbafe2e"
+  },
+  "app_and_cli_source": "8d226bb5 plus retained source diff",
+  "helpers": "Unchanged private release helpers from one-play framing qualification."
+}

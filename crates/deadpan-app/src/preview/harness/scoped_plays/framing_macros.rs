@@ -333,9 +333,14 @@ fn late_round_trip(d: &mut Driver<'_>, baseline: &ProjectDocument) -> Result<(),
         "Visit another play and return in one native event batch",
         events,
     )?;
+    let returned = d.app().scoped_target()?;
+    let mut same_address = target.clone();
+    if let (Some(expected), Some(actual)) = (&mut same_address, &returned) {
+        expected.navigation = actual.navigation;
+    }
     d.check(
         "Same-batch play navigation returns to the old address before the receipt arrives",
-        d.app().scoped_target()? == target && d.app().sequence_cursor == 240,
+        returned == same_address && returned != target && d.app().sequence_cursor == 240,
         json!({"Edit":240,"target":"same address"}),
         d.snapshot(),
     )?;

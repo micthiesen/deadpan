@@ -1,0 +1,5 @@
+#!/bin/sh
+set -eu
+export DEADPAN_FFMPEG_PREFIX=/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix
+cargo xtask check --since HEAD --no-test > /tmp/deadpan-mixed-pause-check-10.log 2>&1
+cargo build -p deadpan-app -p deadpan-cli --release --features ui-harness --locked --bins > /tmp/deadpan-mixed-pause-release-build-2.log 2>&1

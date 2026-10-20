@@ -1,0 +1,4 @@
+#!/bin/sh
+set -eu
+/tmp/deadpan-mixed-pause-2026-10-20/bin/deadpan-app --ui-check --scenario original-layout --mode visual --output /tmp/deadpan-mixed-pause-2026-10-20/original-layout --kestrel-source /Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift > /tmp/deadpan-mixed-pause-2026-10-20/original-layout.log 2>&1
+/tmp/deadpan-mixed-pause-2026-10-20/bin/deadpan-app --ui-check --scenario sound-playback --mode visual --output /tmp/deadpan-mixed-pause-2026-10-20/sound-playback --kestrel-source /Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift > /tmp/deadpan-mixed-pause-2026-10-20/sound-playback.log 2>&1

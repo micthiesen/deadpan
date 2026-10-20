@@ -539,6 +539,7 @@ fn scoped_render_preview_validates_captured_context_and_retains_mapped_commit_af
         .unwrap();
     let target = crate::project::scoped::Target {
         session: initial.session,
+        navigation: 0,
         project: initial.document.project_id().clone(),
         revision: initial.document.revision_id().clone(),
         scope: SequenceScope::default(),

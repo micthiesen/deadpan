@@ -103,45 +103,34 @@ fn prepare_many(workspace: &Workspace, target: &Target, edit: &ScopedNodeEdit) -
         })
         .collect();
     let new_revision = revision();
-    // The inspected play is edited first with its own pool, exactly as a
-    // single scoped edit would be, so its mapped target is the receipt's.
-    let (mapped, presentation) = if needs[0].unchanged {
-        (target.target.clone(), target.presentation.clone())
-    } else {
-        let single = CommandRequest {
-            project_id: target.project.clone(),
-            expected_revision: target.revision.clone(),
-            new_revision: new_revision.clone(),
-            command: Command::EditScoped {
-                target: target.target.clone(),
-                edit: edit.clone(),
-                identities: identities[0].clone(),
-            },
-        };
-        let prepared =
-            deadpan_core::prepare_scoped_edit(&workspace.document, &single).map_err(display)?;
-        let presentation = target
-            .presentation
-            .as_ref()
-            .map(|instance| prepared.map_instance(&workspace.document, instance))
-            .transpose()
-            .map_err(display)?;
-        (prepared.target, presentation)
-    };
     let request = CommandRequest {
         project_id: target.project.clone(),
         expected_revision: target.revision.clone(),
         new_revision: new_revision.clone(),
         command: Command::EditScopedMany { edits, identities },
     };
-    deadpan_core::apply(&workspace.document, &request).map_err(display)?;
+    let prepared =
+        deadpan_core::prepare_scoped_edit(&workspace.document, &request).map_err(display)?;
+    let presentation = target
+        .presentation
+        .as_ref()
+        .map(|instance| prepared.map_instance(&workspace.document, instance))
+        .transpose()
+        .map_err(display)?;
+    let also = target
+        .also
+        .iter()
+        .map(|other| prepared.map_target(&workspace.document, other))
+        .collect::<std::result::Result<Vec<_>, _>>()
+        .map_err(display)?;
     Ok(Prepared {
         request,
         receipt: Commit {
             before: target.clone(),
             revision: new_revision,
-            target: mapped,
+            target: prepared.target,
             presentation,
+            also: Some(also),
         },
     })
 }
@@ -198,6 +187,7 @@ pub(super) fn prepare(
         revision: request.new_revision.clone(),
         target: prepared.target.clone(),
         presentation,
+        also: None,
     };
     Ok(Prepared { request, receipt })
 }
@@ -211,8 +201,18 @@ impl Service {
         ai: bool,
     ) -> Result<()> {
         self.check_scoped_head(&target)?;
+        let bank = if target.also.is_empty() {
+            None
+        } else {
+            Some(self.writer()?.register_version().map_err(display)?)
+        };
         let workspace = self.workspace.as_ref().ok_or("Open a project first")?;
-        let (_, all_plays) = target.pause_instance(workspace)?;
+        target.validate(workspace)?;
+        let shared = target
+            .target
+            .repeats
+            .iter()
+            .any(|step| matches!(step.branch, deadpan_core::RepeatEditBranch::Default));
         if black && ai {
             return Err("An AI pause requires its captured freeze fallback.".into());
         }
@@ -220,61 +220,64 @@ impl Service {
             self.message = Some("Pause resolves to 0 frames; no edit was made.".into());
             return Ok(());
         }
-        let request =
-            crate::project::pause::prepare_scoped(workspace, &target, duration, black, ai)?;
-        let (_, after) =
-            deadpan_core::apply_with_result(&workspace.document, &request).map_err(display)?;
-        let plan = deadpan_plan::RenderPlan::compile(&after).map_err(display)?;
-        let instance = plan.picture(target.cursor).map_err(display)?.instance;
-        let Command::InsertOccurrenceTime { id, .. } = &request.command else {
-            return Err("Scoped pause did not retain its concrete occurrence.".into());
+        let (request, document, mapped, presentation, boundary, also) = if let Some(bank) = bank {
+            let prepared = crate::project::pause::batch::prepare(
+                workspace, &target, duration, black, ai, bank,
+            )?;
+            (
+                prepared.request,
+                prepared.document,
+                prepared.target,
+                prepared.presentation,
+                prepared.boundary.frame,
+                Some(prepared.also),
+            )
+        } else {
+            let request =
+                crate::project::pause::prepare_scoped(workspace, &target, duration, black, ai)?;
+            let prepared = deadpan_core::prepare_occurrence_time(&workspace.document, &request)
+                .map_err(display)?;
+            (
+                request,
+                prepared.document,
+                prepared.target,
+                prepared.presentation,
+                prepared.boundary.frame,
+                None,
+            )
         };
-        if &instance.node != id {
-            return Err("Scoped pause is not visible at its captured insertion boundary.".into());
-        }
         let receipt = Commit {
             before: target.clone(),
             revision: request.new_revision.clone(),
-            target: deadpan_core::ScopedNodeTarget {
-                node: instance.node.clone(),
-                repeats: instance
-                    .repeats
-                    .iter()
-                    .map(|step| deadpan_core::RepeatEditStep {
-                        repeat: step.node.clone(),
-                        // All plays keeps the inspector on the shared definition.
-                        branch: if all_plays {
-                            deadpan_core::RepeatEditBranch::Default
-                        } else {
-                            deadpan_core::RepeatEditBranch::Play {
-                                iteration: step.iteration.clone(),
-                            }
-                        },
-                    })
-                    .collect(),
-            },
-            presentation: Some(instance),
+            target: mapped,
+            presentation: Some(presentation),
+            also,
         };
-        receipt.target.validate(&after).map_err(display)?;
+        receipt.target.validate(&document).map_err(display)?;
         let outcome = self.writer()?.commit(&request).map_err(display)?;
         self.capture_preparation_notices(&outcome.generation_preparation_notices);
         self.committed = Some(CommittedEdit {
             revision: outcome.revision_id,
             selected_node: Some(target.root),
             preserve_cursor: true,
-            cursor: Some(target.cursor),
+            cursor: Some(boundary),
             scope: target.scope,
             sound: None,
             range_selection: None,
             scoped: Some(receipt),
         });
-        let saved = if all_plays {
-            "Pause inserted in all plays and saved"
+        let saved = if !target.also.is_empty() {
+            format!(
+                "Pause inserted in {} selected plays and saved",
+                target.also.len() + 1
+            )
+        } else if shared {
+            "Pause inserted in the selected shared scope and saved".into()
         } else {
-            "Pause inserted in This play and saved"
+            "Pause inserted in This play and saved".into()
         };
-        self.refresh_saved(saved)?;
-        self.message = Some(saved.into());
+        self.refresh_saved(&saved)?;
+        self.message = Some(saved);
         Ok(())
     }
 
