@@ -682,6 +682,53 @@ fn unexpected_resume_offsets_keep_the_partial_and_installs_are_exclusive() {
     assert!(store.installed(&manifest).unwrap().is_some());
 }
 
+/// A child launched while the install lock is held shares its open file until
+/// its exec closes it. Here a child keeps that reference for a known time
+/// after this process releases the lock: the next installer waits for it
+/// instead of reporting another one. An actually held lock stays `Busy`, and
+/// cancellation ends the wait.
+#[test]
+fn a_released_lock_still_shared_with_a_child_is_awaited_not_busy() {
+    let root = tempfile::tempdir().unwrap();
+    let store = PackStore::new(root.path().to_path_buf());
+    let manifest = manifest(b"model");
+    let lock = store.lock(&manifest, None).unwrap();
+    // Long enough that a scheduling stall cannot release it before the probe,
+    // yet well inside the two-second launch window.
+    let mut child = std::process::Command::new("/bin/sleep")
+        .arg("1")
+        .stdin(lock.try_clone().unwrap())
+        .spawn()
+        .unwrap();
+    let released = Instant::now();
+    drop(lock);
+    let probe = File::open(root.path().join(".staging").join(format!(
+        "{}-{}.lock",
+        manifest.pack_id, manifest.pack_version
+    )))
+    .unwrap();
+    assert_eq!(
+        rustix::fs::flock(&probe, rustix::fs::FlockOperation::NonBlockingLockExclusive),
+        Err(rustix::io::Errno::WOULDBLOCK),
+        "the child still shares the released lock"
+    );
+    drop(probe);
+    let reacquired = store.lock(&manifest, None).unwrap();
+    assert!(
+        released.elapsed() >= Duration::from_millis(100),
+        "acquired only once the child closed its reference"
+    );
+    assert!(matches!(store.lock(&manifest, None), Err(PackError::Busy)));
+    let started = Instant::now();
+    assert!(matches!(
+        store.lock(&manifest, Some(&AtomicBool::new(true))),
+        Err(PackError::Cancelled)
+    ));
+    assert!(started.elapsed() < Duration::from_millis(500));
+    drop(reacquired);
+    child.wait().unwrap();
+}
+
 #[test]
 fn a_new_version_copies_identical_files_from_an_installed_one() {
     let root = tempfile::tempdir().unwrap();

@@ -605,7 +605,17 @@ impl PackStore {
 
     /// Serialize installers of one pack version across processes. The lock
     /// lives beside staging, so it never moves into an installed pack.
-    fn lock(&self, manifest: &PackManifest) -> Result<File, PackError> {
+    ///
+    /// A child that this process launches while the lock is held shares its
+    /// open file until the child's exec closes it, so a released lock can
+    /// briefly look held. Retry for that window before reporting `Busy`; an
+    /// actual installer holds the lock far longer. Cancellation ends the wait.
+    fn lock(
+        &self,
+        manifest: &PackManifest,
+        cancelled: Option<&AtomicBool>,
+    ) -> Result<File, PackError> {
+        const LAUNCH_WINDOW: Duration = Duration::from_secs(2);
         let directory = self.root.join(".staging");
         std::fs::create_dir_all(&directory)?;
         let file = OpenOptions::new()
@@ -616,10 +626,21 @@ impl PackStore {
                 "{}-{}.lock",
                 manifest.pack_id, manifest.pack_version
             )))?;
-        match rustix::fs::flock(&file, rustix::fs::FlockOperation::NonBlockingLockExclusive) {
-            Ok(()) => Ok(file),
-            Err(rustix::io::Errno::WOULDBLOCK) => Err(PackError::Busy),
-            Err(error) => Err(io::Error::from(error).into()),
+        let deadline = Instant::now() + LAUNCH_WINDOW;
+        loop {
+            match rustix::fs::flock(&file, rustix::fs::FlockOperation::NonBlockingLockExclusive) {
+                Ok(()) => return Ok(file),
+                Err(rustix::io::Errno::WOULDBLOCK)
+                    if cancelled.is_some_and(|cancelled| cancelled.load(Ordering::Acquire)) =>
+                {
+                    return Err(PackError::Cancelled);
+                }
+                Err(rustix::io::Errno::WOULDBLOCK) if Instant::now() < deadline => {
+                    std::thread::sleep(Duration::from_millis(2));
+                }
+                Err(rustix::io::Errno::WOULDBLOCK) => return Err(PackError::Busy),
+                Err(error) => return Err(io::Error::from(error).into()),
+            }
         }
     }
 
@@ -670,7 +691,7 @@ impl PackStore {
         mut progress: impl FnMut(InstallProgress),
     ) -> Result<Option<VerifiedInstalledPack>, PackError> {
         manifest.validate()?;
-        let lock = self.lock(manifest)?;
+        let lock = self.lock(manifest, Some(cancelled))?;
         let Some(installed) = self.installed(manifest)? else {
             return Ok(None);
         };
@@ -707,7 +728,7 @@ impl PackStore {
     ) -> Result<StagedPack, PackError> {
         manifest.validate()?;
         manifest.check_acceptance(accepted_licenses)?;
-        let lock = self.lock(manifest)?;
+        let lock = self.lock(manifest, Some(cancelled))?;
         let staging = self.staging(manifest);
         std::fs::create_dir_all(&staging)?;
         let downloaded: u64 = manifest
@@ -818,7 +839,7 @@ impl PackStore {
     ) -> Result<StagedPack, PackError> {
         manifest.validate()?;
         manifest.check_acceptance(accepted_licenses)?;
-        let lock = self.lock(manifest)?;
+        let lock = self.lock(manifest, Some(cancelled))?;
         let staging = self.staging(manifest);
         std::fs::create_dir_all(&staging)?;
         let total = manifest.total_bytes();
@@ -1072,7 +1093,7 @@ impl PackStore {
     /// Discard staged and partially downloaded bytes of one version.
     pub fn discard_partial(&self, manifest: &PackManifest) -> Result<(), PackError> {
         manifest.validate()?;
-        let _lock = self.lock(manifest)?;
+        let _lock = self.lock(manifest, None)?;
         match std::fs::remove_dir_all(self.staging(manifest)) {
             Err(error) if error.kind() == io::ErrorKind::NotFound => Ok(()),
             result => Ok(result?),
@@ -1083,7 +1104,7 @@ impl PackStore {
     /// version an update selected stays until it is rolled back.
     pub fn remove(&self, manifest: &PackManifest) -> Result<(), PackError> {
         manifest.validate()?;
-        let _lock = self.lock(manifest)?;
+        let _lock = self.lock(manifest, None)?;
         if self
             .pointer(&manifest.pack_id)?
             .is_some_and(|pointer| pointer.version == manifest.pack_version)
