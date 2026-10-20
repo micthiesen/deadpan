@@ -18,7 +18,9 @@ fn opened(harness: &Harness, path: &Path) -> Arc<Workspace> {
     drop(seed_holds(path, &["a"]));
     let update = command(&harness.service, ProjectRequest::Open(path.into()));
     assert!(update.error.is_none(), "{:?}", update.error);
-    update.workspace.unwrap()
+    settle_backup_settings(&harness.service, update)
+        .workspace
+        .unwrap()
 }
 
 fn client(path: &Path) -> Client {
@@ -273,9 +275,9 @@ fn dry_run_and_malformed_requests_leave_native_state_unchanged() {
             .unwrap(),
         *initial.document
     );
-    assert!(
-        harness.service.take_update().is_none(),
-        "read-only and malformed requests changed UI feedback"
+    assert_no_update(
+        &harness.service,
+        "read-only and malformed requests changed UI feedback",
     );
     assert!(!harness.service.is_busy());
     shutdown(&harness);
@@ -694,7 +696,7 @@ fn a_remote_edit_during_the_automatic_retention_check_is_not_refused() {
         .store(false, Ordering::Release);
     // The check finishes having done nothing: no update is published.
     std::thread::sleep(Duration::from_millis(200));
-    assert!(harness.service.take_update().is_none());
+    assert_no_update(&harness.service, "unexpected UI update");
     // And a later remote edit is still admitted.
     let later = Operation::Execute {
         project_id: initial.document.project_id().clone(),

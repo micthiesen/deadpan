@@ -460,6 +460,7 @@ impl ProjectUpdate {
     }
 }
 
+#[cfg_attr(test, derive(Clone))]
 pub struct ProjectUpdate {
     pub workspace: Option<Arc<Workspace>>,
     pub import: Option<ImportStatus>,
@@ -543,6 +544,83 @@ pub struct ProjectUpdate {
     pub storage_retention: Option<RetentionPassStatus>,
     /// Automatic and explicit backups and restores of this session.
     pub backups: backups::Update,
+    /// Tests: this update's position in the service's publish order.
+    #[cfg(test)]
+    publication: u64,
+}
+
+/// Tests: the request lane whose completion a test waits for.
+#[cfg(test)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum Lane {
+    User,
+    Annotation,
+}
+
+#[cfg(test)]
+impl Lane {
+    pub(crate) fn of(request: &ProjectRequest) -> Self {
+        if request.is_annotation_save() {
+            Self::Annotation
+        } else {
+            Self::User
+        }
+    }
+}
+
+/// Tests: each lane's result for its latest completed request. A background
+/// publish can precede that result after the lane is idle, or replace it in
+/// the mailbox before a test reads it; neither is the request's result.
+#[cfg(test)]
+#[derive(Default)]
+struct Completions {
+    /// Publishes so far; numbers each update.
+    publications: u64,
+    user: Completion,
+    annotation: Completion,
+}
+
+#[cfg(test)]
+#[derive(Default)]
+struct Completion {
+    /// Counted before the lane is released, so an idle lane's count already
+    /// includes its last request.
+    completed: u64,
+    /// Completed requests whose result is in the mailbox.
+    published: u64,
+    /// The result of the latest published completion.
+    update: Option<ProjectUpdate>,
+}
+
+#[cfg(test)]
+impl Completions {
+    fn lane(&mut self, lane: Lane) -> &mut Completion {
+        match lane {
+            Lane::User => &mut self.user,
+            Lane::Annotation => &mut self.annotation,
+        }
+    }
+
+    /// Numbers a publish, returning a copy when it is a completed request's
+    /// result.
+    fn number(&mut self, update: &mut ProjectUpdate) -> Option<ProjectUpdate> {
+        self.publications += 1;
+        update.publication = self.publications;
+        [&self.user, &self.annotation]
+            .iter()
+            .any(|completion| completion.published < completion.completed)
+            .then(|| update.clone())
+    }
+
+    /// Records that result once it is in the mailbox.
+    fn complete(&mut self, update: ProjectUpdate) {
+        for completion in [&mut self.user, &mut self.annotation] {
+            if completion.published < completion.completed {
+                completion.published = completion.completed;
+                completion.update = Some(update.clone());
+            }
+        }
+    }
 }
 
 /// The outcome of one explicit `:storage` cleanup request. Operational; it
@@ -1240,6 +1318,8 @@ struct Shared {
     /// not published.
     #[cfg(test)]
     retention_status: Mutex<Option<RetentionPassStatus>>,
+    #[cfg(test)]
+    completions: Mutex<Completions>,
     update: Mutex<Option<ProjectUpdate>>,
     /// The native continuations the UI has already taken once. The service
     /// re-sends its current receipts with every update so they survive
@@ -1248,6 +1328,45 @@ struct Shared {
     wake: Arc<dyn Fn() + Send + Sync>,
     /// The app's background job coordinator, shared with the UI's jobs.
     job_board: crate::jobs::Jobs,
+}
+
+impl Shared {
+    /// Replace the pending update. Tests number it and retain it as a
+    /// completed request's result once it is in the mailbox.
+    fn store_update(&self, update: ProjectUpdate) {
+        #[cfg(test)]
+        let (update, completed) = {
+            let mut update = update;
+            let completed = self
+                .completions
+                .lock()
+                .unwrap_or_else(|error| error.into_inner())
+                .number(&mut update);
+            (update, completed)
+        };
+        *self
+            .update
+            .lock()
+            .unwrap_or_else(|error| error.into_inner()) = Some(update);
+        #[cfg(test)]
+        if let Some(update) = completed {
+            self.completions
+                .lock()
+                .unwrap_or_else(|error| error.into_inner())
+                .complete(update);
+        }
+    }
+
+    /// Tests: `lane` completed its request; the next publish is its result.
+    /// Call before releasing the lane.
+    #[cfg(test)]
+    fn request_completed(&self, lane: Lane) {
+        self.completions
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
+            .lane(lane)
+            .completed += 1;
+    }
 }
 
 pub struct ProjectService {
@@ -1328,6 +1447,8 @@ impl ProjectService {
             restore_show_failure: AtomicBool::new(false),
             #[cfg(test)]
             retention_status: Mutex::new(None),
+            #[cfg(test)]
+            completions: Mutex::default(),
             update: Mutex::new(None),
             delivered: Mutex::new(ContinuationKey::default()),
             wake,
@@ -1405,6 +1526,55 @@ impl ProjectService {
     /// An analysis save is pending or in flight.
     pub fn annotation_busy(&self) -> bool {
         self.shared.annotation.load(Ordering::Acquire)
+    }
+
+    /// Tests: requests `lane` has completed so far, including an idle lane's
+    /// last request whose result is not published yet.
+    #[cfg(test)]
+    pub(crate) fn completed_for_check(&self, lane: Lane) -> u64 {
+        self.shared
+            .completions
+            .lock()
+            .unwrap_or_else(|error| error.into_inner())
+            .lane(lane)
+            .completed
+    }
+
+    /// Tests: once results of more than `completed` requests on `lane` are
+    /// published, the latest one. Takes it from the mailbox as `take_update`
+    /// does, unless a later publish already replaced it there; that update
+    /// stays for the test to read.
+    #[cfg(test)]
+    pub(crate) fn take_completion(&self, lane: Lane, completed: u64) -> Option<ProjectUpdate> {
+        let update = {
+            let mut completions = self
+                .shared
+                .completions
+                .lock()
+                .unwrap_or_else(|error| error.into_inner());
+            let completion = completions.lane(lane);
+            if completion.published <= completed {
+                return None;
+            }
+            completion.update.clone()?
+        };
+        let mut pending = self
+            .shared
+            .update
+            .lock()
+            .unwrap_or_else(|error| error.into_inner());
+        if pending
+            .as_ref()
+            .is_some_and(|pending| pending.publication == update.publication)
+        {
+            *pending = None;
+        }
+        *self
+            .shared
+            .delivered
+            .lock()
+            .unwrap_or_else(|error| error.into_inner()) = update.continuation_key();
+        Some(update)
     }
 
     /// Leave newly admitted requests in the mailbox, creating a deterministic

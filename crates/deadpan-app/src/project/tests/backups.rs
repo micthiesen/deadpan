@@ -37,6 +37,9 @@ fn edits_are_backed_up_periodically_and_when_the_project_closes() {
     let path = path.canonicalize().unwrap();
     let service = ProjectService::new(Arc::new(|| {})).unwrap();
     service.set_backup_interval_for_check(Duration::from_millis(50));
+    // The automatic retention check records its pass in the database, a
+    // commit that is backed up whenever it lands after the first backup.
+    service.set_automatic_retention(false);
     let opened = command(&service, ProjectRequest::Open(path.clone()));
     let workspace = opened.workspace.unwrap();
     // A project without backups gets its first one after the interval.

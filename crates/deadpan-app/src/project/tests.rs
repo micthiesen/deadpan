@@ -756,6 +756,7 @@ fn shutdown_finishes_an_admitted_command_before_releasing_the_store() {
         retired_drain_paused: AtomicBool::new(false),
         restore_show_failure: AtomicBool::new(false),
         retention_status: Mutex::new(None),
+        completions: Mutex::default(),
         update: Mutex::new(None),
         delivered: Mutex::new(ContinuationKey::default()),
         wake: Arc::new(|| {}),
@@ -846,6 +847,7 @@ fn held_shared() -> Arc<Shared> {
         retired_drain_paused: AtomicBool::new(false),
         restore_show_failure: AtomicBool::new(false),
         retention_status: Mutex::new(None),
+        completions: Mutex::default(),
         update: Mutex::new(None),
         delivered: Mutex::new(ContinuationKey::default()),
         wake: Arc::new(|| {}),
@@ -1033,6 +1035,49 @@ fn unsupported_native_open_retains_the_current_project_and_its_active_preparatio
     assert_unsupported_native_project_untouched(&path, &database);
 }
 
+/// Background state as well as command feedback, for failure messages.
+fn describe(update: &ProjectUpdate) -> String {
+    format!(
+        "publication={}, error={:?}, import={:?}, message={:?}, session={:?}, committed={:?}, \
+         render={:?}, relink={:?}, storage_retention={:?}, backups={:?}, generation={:?}",
+        update.publication,
+        update.error,
+        update.import,
+        update.message,
+        update.workspace.as_ref().map(|workspace| workspace.session),
+        update.committed,
+        update.render,
+        update.relink,
+        update.storage_retention,
+        update.backups,
+        update.generation,
+    )
+}
+
+/// Service construction loads global backup settings asynchronously, and the
+/// service reports it after the first request completes. Read that update
+/// before asserting that later requests publish nothing.
+fn settle_backup_settings(service: &ProjectService, update: ProjectUpdate) -> ProjectUpdate {
+    let loading = |update: &ProjectUpdate| {
+        matches!(
+            update.backups.settings.status,
+            crate::project::backups::SettingsStatus::Loading
+        )
+    };
+    if loading(&update) {
+        wait(service, |update| !loading(update))
+    } else {
+        update
+    }
+}
+
+/// Nothing published since the test last read the mailbox.
+fn assert_no_update(service: &ProjectService, context: &str) {
+    if let Some(update) = service.take_update() {
+        panic!("{context}: {}", describe(&update));
+    }
+}
+
 fn wait(service: &ProjectService, predicate: impl Fn(&ProjectUpdate) -> bool) -> ProjectUpdate {
     let deadline = Instant::now() + TIMEOUT;
     let mut last = None;
@@ -1041,15 +1086,7 @@ fn wait(service: &ProjectService, predicate: impl Fn(&ProjectUpdate) -> bool) ->
             if predicate(&update) {
                 return update;
             }
-            last = Some(format!(
-                "error={:?}, import={:?}, message={:?}, session={:?}, committed={:?}, render={:?}",
-                update.error,
-                update.import,
-                update.message,
-                update.workspace.as_ref().map(|workspace| workspace.session),
-                update.committed,
-                update.render,
-            ));
+            last = Some(describe(&update));
         }
         assert!(
             Instant::now() < deadline,
@@ -1062,11 +1099,29 @@ fn wait(service: &ProjectService, predicate: impl Fn(&ProjectUpdate) -> bool) ->
     }
 }
 
+/// The update this request's completion published. A background publish read
+/// once the lane is idle may predate it, and a later one may replace it in
+/// the mailbox; that later update stays for the next `wait`.
 fn command(service: &ProjectService, request: ProjectRequest) -> ProjectUpdate {
     assert!(!service.is_busy());
     let _ = service.take_update();
+    let lane = crate::project::Lane::of(&request);
+    let completed = service.completed_for_check(lane);
     service.submit(request).unwrap();
-    wait(service, |_| !service.is_busy())
+    let deadline = Instant::now() + TIMEOUT;
+    loop {
+        if let Some(update) = service.take_completion(lane, completed) {
+            return update;
+        }
+        assert!(
+            Instant::now() < deadline,
+            "project command timed out: busy={}, stopping={}, shutdown_complete={}",
+            service.is_busy(),
+            service.shared.stopping.load(Ordering::Acquire),
+            service.is_shutdown_complete(),
+        );
+        std::thread::sleep(Duration::from_millis(2));
+    }
 }
 
 fn create(service: &ProjectService, path: &Path) -> Arc<Workspace> {
@@ -1159,6 +1214,7 @@ impl Harness {
             retired_drain_paused: AtomicBool::new(false),
             restore_show_failure: AtomicBool::new(false),
             retention_status: Mutex::new(None),
+            completions: Mutex::default(),
             update: Mutex::new(None),
             delivered: Mutex::new(ContinuationKey::default()),
             wake: Arc::new(|| {}),

@@ -629,6 +629,8 @@ impl Service {
             self.set_scoped_error(Some(error), session);
             self.message = None;
         }
+        #[cfg(test)]
+        self.shared.request_completed(crate::project::Lane::User);
         self.shared.busy.store(false, Ordering::Release);
         true
     }

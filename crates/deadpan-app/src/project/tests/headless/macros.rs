@@ -35,23 +35,10 @@ fn cut(count: u32) -> SemanticInstruction {
 fn setup(path: &Path) -> (Harness, ProjectUpdate) {
     drop(seed_holds(path, &["a", "b", "c"]));
     let harness = Harness::new();
-    let mut update = command(&harness.service, ProjectRequest::Open(path.into()));
+    let update = command(&harness.service, ProjectRequest::Open(path.into()));
     assert!(update.error.is_none(), "{:?}", update.error);
-    // Service construction loads global backup settings asynchronously. Its
-    // completion publishes a status update independently of remote macros.
-    // Consume that initial reply before asserting that a dry run publishes
-    // nothing; keep the strict no-publication assertions on the commands.
-    if matches!(
-        update.backups.settings.status,
-        crate::project::backups::SettingsStatus::Loading
-    ) {
-        update = wait(&harness.service, |update| {
-            !matches!(
-                update.backups.settings.status,
-                crate::project::backups::SettingsStatus::Loading
-            )
-        });
-    }
+    // Keep the strict no-publication assertions on the remote commands.
+    let update = settle_backup_settings(&harness.service, update);
     assert!(update.error.is_none(), "{:?}", update.error);
     assert!(update.committed.is_none() && update.macros.is_none() && update.saved_macro.is_none());
     (harness, update)
@@ -230,7 +217,7 @@ fn remote_visual_yank_previews_oriented_selection_and_keeps_bank_receipt_on_refr
     assert_eq!(output["context"]["visual_selection"], selection);
     assert_eq!(output["context"]["cursor"], 9);
     assert_eq!(durable(&path), before);
-    assert!(harness.service.take_update().is_none());
+    assert_no_update(&harness.service, "unexpected UI update");
     let Operation::Execute { command, .. } = &mut operation else {
         unreachable!()
     };
@@ -610,7 +597,7 @@ fn authenticated_dry_runs_and_motion_only_run_do_not_write_or_publish_native_int
     assert_eq!(output["instruction_count"], 1);
     assert_eq!(output["bank_version"], before.1.version + 1);
     assert_eq!(durable(&path), before);
-    assert!(harness.service.take_update().is_none());
+    assert_no_update(&harness.service, "unexpected UI update");
     live_project::request(&mut client, save(&opened, program(vec![cut(2)]), false)).unwrap();
     let saved = remote_update(&harness);
     let before = durable(&path);
@@ -634,7 +621,7 @@ fn authenticated_dry_runs_and_motion_only_run_do_not_write_or_publish_native_int
     assert_eq!(output["edit"]["duration_delta"], -4);
     assert_eq!(output["edit"]["new_revision"], "preview");
     assert_eq!(durable(&path), before);
-    assert!(harness.service.take_update().is_none());
+    assert_no_update(&harness.service, "unexpected UI update");
     live_project::request(&mut client, save(&saved, program(vec![movement(3)]), false)).unwrap();
     let saved = remote_update(&harness);
     let before = durable(&path);
@@ -654,9 +641,9 @@ fn authenticated_dry_runs_and_motion_only_run_do_not_write_or_publish_native_int
     assert_eq!(output["context"]["parent"], "root");
     assert_eq!(output["edit"], Value::Null);
     assert_eq!(durable(&path), before);
-    assert!(
-        harness.service.take_update().is_none(),
-        "remote motion must not move the native cursor"
+    assert_no_update(
+        &harness.service,
+        "remote motion must not move the native cursor",
     );
     shutdown(&harness);
 }
@@ -718,7 +705,7 @@ fn authenticated_macro_failures_leave_document_bank_and_history_exactly_unchange
             before,
             "a rejected request cannot leave staged cuts or registers"
         );
-        assert!(harness.service.take_update().is_none());
+        assert_no_update(&harness.service, "unexpected UI update");
     }
     shutdown(&harness);
 }

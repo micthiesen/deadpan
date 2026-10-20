@@ -329,6 +329,10 @@ pub(super) fn run(
                 // Independent feedback: each save reports only through its
                 // own receipt, never a user command's error or completion.
                 service.annotation_command(request);
+                #[cfg(test)]
+                service
+                    .shared
+                    .request_completed(crate::project::Lane::Annotation);
                 service.shared.annotation.store(false, Ordering::Release);
                 service.invalidate_changed_splice();
                 service.reconcile_slip();
@@ -337,6 +341,8 @@ pub(super) fn run(
             }
             Ok(request) => {
                 if service.dispatch_request(request) {
+                    #[cfg(test)]
+                    service.shared.request_completed(crate::project::Lane::User);
                     service.shared.busy.store(false, Ordering::Release);
                 }
                 service.invalidate_changed_splice();
@@ -474,12 +480,10 @@ impl Service {
             storage_cleanup: self.storage_cleanup.clone(),
             storage_retention: self.retention.status(self.session),
             backups: self.backups.update(),
+            #[cfg(test)]
+            publication: 0,
         };
-        *self
-            .shared
-            .update
-            .lock()
-            .unwrap_or_else(|error| error.into_inner()) = Some(update);
+        self.shared.store_update(update);
         (self.shared.wake)();
     }
 
