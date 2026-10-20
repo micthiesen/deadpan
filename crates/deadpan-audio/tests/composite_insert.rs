@@ -21,6 +21,9 @@ use deadpan_plan::RenderPlan;
 use sha2::{Digest, Sha256};
 
 const TIMEOUT: Duration = Duration::from_secs(10);
+/// A limited read prepares a whole cold limiter tile with its halo; this is
+/// the budget limited inspection gives it (`deadpan-cli` audio inspection).
+const LIMITED_TIMEOUT: Duration = Duration::from_secs(60);
 
 #[path = "composite_insert/bound_preserve.rs"]
 mod bound_preserve;

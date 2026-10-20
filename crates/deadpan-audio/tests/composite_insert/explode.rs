@@ -57,7 +57,13 @@ pub(super) fn whole(document: &ProjectDocument, provider: &mut Provider) -> [Vec
         );
         output[2].extend(
             limited
-                .read(provider, AudioSample(start), count, TIMEOUT, &cancelled)
+                .read(
+                    provider,
+                    AudioSample(start),
+                    count,
+                    LIMITED_TIMEOUT,
+                    &cancelled,
+                )
                 .unwrap_or_else(|error| {
                     panic!(
                         "{} limited read at {start}: {error:?}",
