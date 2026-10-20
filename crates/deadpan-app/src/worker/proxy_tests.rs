@@ -349,11 +349,18 @@ fn affordable_playback_pictures_and_thumbnails_stay_exact() {
     let workspace = fixture.workspace(1);
     let (_directory, cache) = cache();
     publish_proxy(&fixture, &workspace, &cache);
+    // Record this worker's exact seeks as costing nothing, so they fit the
+    // picture budget however loaded the machine is: one seek measured during a
+    // busy full test run can exceed it on its own. The opposite test scales
+    // them up instead. An unmeasured multi-ordinal seek would still be served
+    // by the proxy, so an exact reply below needs the recorded measurement.
+    tests_support::SEEK_COST_SCALE.set(0);
     let worker = proxy_worker(&cache);
+    tests_support::SEEK_COST_SCALE.set(1);
     let mut serial = 0;
     until_proxy(&worker, &workspace, &mut serial);
     // With the proxy open, an audition picture whose measured exact decode
-    // fits its picture budget (this small fixture's seeks) is exact.
+    // fits its picture budget is exact.
     let (mut feed, _callback) = deadpan_output::channel().unwrap();
     let mut playing = request(&workspace, sequence(50), serial + 1);
     playing.ticket.transport = Some(feed.restart(0).unwrap());

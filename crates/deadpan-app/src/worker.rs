@@ -1712,9 +1712,10 @@ pub(crate) mod tests_support {
         pub static ADMISSIONS: Cell<u32> = const { Cell::new(0) };
         /// Admit with the receipt index's last duration changed by one tick.
         pub static TAMPER_INDEX: Cell<bool> = const { Cell::new(false) };
-        /// Scale recorded exact keyframe-seek costs, standing in for a
-        /// long-GOP Original whose seeks exceed a picture period. A preview
-        /// worker inherits its creating thread's value.
+        /// Scale recorded exact keyframe-seek costs: large values stand in for
+        /// a long-GOP Original whose seeks exceed a picture period, and 0 for
+        /// seeks that fit it regardless of machine load. A preview worker
+        /// inherits its creating thread's value.
         pub static SEEK_COST_SCALE: Cell<u32> = const { Cell::new(1) };
     }
 
