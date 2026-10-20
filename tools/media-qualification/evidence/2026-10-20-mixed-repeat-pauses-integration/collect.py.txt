@@ -1,0 +1,62 @@
+from pathlib import Path
+import gzip
+import hashlib
+import json
+import shutil
+
+root = Path('/Users/michael/Code/deadpan')
+scratch = Path('/tmp/deadpan-mixed-pause-integration-2026-10-20')
+dest = root / 'tools/media-qualification/evidence/2026-10-20-mixed-repeat-pauses-integration'
+dest.mkdir(parents=True, exist_ok=True)
+sha = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
+identity = json.loads((scratch / 'binaries.json').read_text())
+sources = json.loads((scratch / 'source-identities.json').read_text())
+for name, digest in sources['sha256'].items():
+    assert sha(root / name) == digest, name
+reports = {}
+for name in ('visual', 'performance'):
+    source = scratch / name / 'report.json'
+    report = json.loads(source.read_text())
+    assert not report['failed'], name
+    assert report['metadata']['binary_sha256'] == identity['sha256']['deadpan-app'], name
+    reports[name] = report
+    (dest / (name + '-report.json.gz')).write_bytes(gzip.compress(source.read_bytes(), mtime=0))
+for source in scratch.iterdir():
+    if not source.is_file():
+        continue
+    if source.suffix in ('.py', '.sh'):
+        shutil.copy2(source, dest / (source.name + '.txt'))
+    elif source.suffix in ('.json', '.diff', '.log'):
+        if source.name in ('binaries.json', 'source-identities.json', 'review.json', 'visual-review.json'):
+            shutil.copy2(source, dest / source.name)
+        else:
+            (dest / (source.name + '.gz')).write_bytes(gzip.compress(source.read_bytes(), mtime=0))
+    elif source.suffix in ('.mp4', '.txt'):
+        shutil.copy2(source, dest / source.name)
+for source in Path('/tmp').glob('deadpan-mixed-pause-integration-*.log'):
+    (dest / (source.name.removeprefix('deadpan-mixed-pause-integration-') + '.gz')).write_bytes(gzip.compress(source.read_bytes(), mtime=0))
+snapshot = {name: (root / name).read_text() for name in sources['sha256'] if name.endswith('.rs')}
+(dest / 'rust-source-snapshot.json.gz').write_bytes(gzip.compress(json.dumps(snapshot, indent=2).encode(), mtime=0))
+labels = {
+    'The inserted Hold remains selected within This play': 'this-play-pause.png',
+    'The new pauses remain selected across both chosen plays': 'selected-play-pauses.png',
+    'Outer All plays and inner This play remain distinct after pause insertion': 'mixed-pause.png',
+    'Returning to equal coordinates cannot revive the selected-pause continuation': 'delayed-round-trip.png',
+    'Two captured pauses show the displayed play without claiming a shared inner choice': 'different-inner-plays.png',
+}
+captures = {}
+for scenario in reports['visual']['scenarios']:
+    for step in scenario['steps']:
+        if step['input'] in labels and step.get('screenshot'):
+            name = labels[step['input']]
+            shutil.copy2(scratch / 'visual' / step['screenshot'], dest / name)
+            captures[name] = {'label': step['input'], 'frame': step['frame']}
+assert len(captures) == 5
+(dest / 'captures.json').write_text(json.dumps(captures, indent=2) + '\n')
+timings = {t['name']: t['summary'] for s in reports['performance']['scenarios'] if s['name'] == 'scoped-plays' for t in s['timings']}
+(dest / 'timings-summary.json').write_text(json.dumps(timings, indent=2) + '\n')
+inventory = {p.name: {'bytes': p.stat().st_size, 'sha256': sha(p)} for p in sorted(dest.iterdir()) if p.is_file() and p.name != 'inventory.json'}
+(dest / 'inventory.json').write_text(json.dumps(inventory, indent=2) + '\n')
+for name, item in inventory.items():
+    assert sha(dest / name) == item['sha256']
+print(json.dumps({'files': len(inventory), 'bytes': sum(x['bytes'] for x in inventory.values()), 'checks': {name: {s['name']: len(s['checks']) for s in r['scenarios']} for name, r in reports.items()}, 'timings': {key: timings[key] for key in ('input_to_state_ms', 'input_to_picture_complete_ms')}}, indent=2))

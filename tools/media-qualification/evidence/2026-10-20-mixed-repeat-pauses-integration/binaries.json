@@ -1,0 +1,11 @@
+{
+  "sha256": {
+    "deadpan-app": "f20731dbb5f620d990166ebf257074c6bdd499ce4d35695f55ef626650542689",
+    "deadpan-cli": "319727ff20ed8ba4db384da5519a3d2896e89427e536afbe7dd7980c7e895e3c",
+    "deadpan-media-worker": "a072f82a294153361e548eefc6e2a00ec239d8abefde127b8f9381f1a4db6944",
+    "deadpan-track": "63f95135ade0dbb4438a73549a0d5a632f976c13b7c7c037c7902c5b29e41aa5",
+    "deadpan-transcribe": "4369d0f1917b3ac2e7692dad72b29ebaf55521dc75369a4be7200a2a9bbafe2e"
+  },
+  "build": "cargo build -p deadpan-app -p deadpan-cli --release --features ui-harness --locked --bins",
+  "helpers": "Unchanged qualified helper baseline, retained by original mixed-pause qualification."
+}

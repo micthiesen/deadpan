@@ -11,12 +11,20 @@ framing and exact suffix clocks. Native receipts preserve the actual new Holds
 across unequal child slots and independently inferred inner plays, including
 subsequent pause and gain edits. Navigation generations revoke delayed
 continuations through keyboard, pointer, pane, view and analyzed-word/search
-round trips. All 1,874 core/store and 1,220 app UI tests pass; a store output-handle
-diagnostic has a clean isolated rerun. Strict normal/UI lint and 136 selected
+round trips. Initial qualification passes all 1,874 core/store and 1,220 app UI
+tests; a store output-handle diagnostic has a clean isolated rerun. Strict normal/UI lint and 136 selected
 tests pass. Two real release exports verify all 135 pictures and four zero-offset
 audio windows. Visual/performance replays pass 226/226 scoped checks plus Kestrel;
 all five new compact captures were inspected. DP-07 remains partial; broader
 occurrence edits, AI batches, Retime scopes and payloads remain open.
+
+After integration with concurrent main `8a6aeb43`, strict normal/UI checks and
+161 selected normal tests pass, as do 98 selected UI tests. One UI output-handle
+diagnostic has a clean isolated rerun. Both real exports again verify all 135
+pictures and four zero-offset audio windows. Final release visual/performance
+replays each pass 226 scoped checks plus Kestrel, with all five compact captures
+inspected. Separate integration evidence preserves the source and binary hashes
+and the recorded 99.188 ms picture-completion tail.
 
 ## One-play framing macros, 2026-10-18
 

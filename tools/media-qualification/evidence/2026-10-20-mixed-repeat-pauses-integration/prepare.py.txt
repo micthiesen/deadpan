@@ -1,0 +1,23 @@
+from pathlib import Path
+import hashlib
+import json
+import shutil
+
+root = Path('/Users/michael/Code/deadpan')
+scratch = Path('/tmp/deadpan-mixed-pause-integration-2026-10-20')
+sha = lambda path: hashlib.sha256(path.read_bytes()).hexdigest()
+for name in ('deadpan-app', 'deadpan-cli'):
+    shutil.copy2(root / 'target/release' / name, scratch / 'bin' / name)
+for name in ('deadpan-media-worker', 'deadpan-track', 'deadpan-transcribe'):
+    shutil.copy2(Path('/tmp/deadpan-mixed-pause-2026-10-20/bin') / name, scratch / 'bin' / name)
+paths = sorted(set((scratch / 'rust-paths.txt').read_text().splitlines() + ['Cargo.lock', 'rust-toolchain.toml']))
+(scratch / 'source-identities.json').write_text(json.dumps({
+    'base_revision': '8a6aeb4353632baf2bcb130a310d0732623bb40c',
+    'description': 'Remote main plus the retained mixed-pause diff and physical-Mac guard; source.diff records the delta.',
+    'sha256': {name: sha(root / name) for name in paths},
+}, indent=2) + '\n')
+(scratch / 'binaries.json').write_text(json.dumps({
+    'sha256': {path.name: sha(path) for path in sorted((scratch / 'bin').iterdir())},
+    'build': 'cargo build -p deadpan-app -p deadpan-cli --release --features ui-harness --locked --bins',
+    'helpers': 'Unchanged qualified helper baseline, retained by original mixed-pause qualification.',
+}, indent=2) + '\n')

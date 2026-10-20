@@ -1,0 +1,26 @@
+{
+  "reviewer": "root",
+  "method": "view_image on all five final release offscreen Metal captures",
+  "viewport_pixels": [
+    960,
+    640
+  ],
+  "captures": [
+    128,
+    129,
+    130,
+    131,
+    132
+  ],
+  "result": "pass",
+  "observations": [
+    "This play and selected-play scopes retain the actual Pause selection.",
+    "Mixed authority remains readable at each Repeat level.",
+    "Revoked continuation returns to the root Repeat inspector.",
+    "Different inner choices say 2 captured pauses and distinguish the displayed occurrence.",
+    "Viewer aspect, independent clock labels, focus cues and keyboard footer remain legible; the synthetic legacy package retains its legacy labels."
+  ],
+  "limits": [
+    "No physical display, keyboard, IME, VoiceOver speech or acoustic claim."
+  ]
+}

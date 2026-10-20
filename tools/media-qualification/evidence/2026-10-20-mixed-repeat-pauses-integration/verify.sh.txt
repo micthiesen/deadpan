@@ -1,0 +1,10 @@
+#!/bin/sh
+set -eu
+export DEADPAN_FFMPEG_PREFIX=/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix
+export DEADPAN_REQUIRE_PHYSICAL_MAC=1
+export CARGO_PROFILE_DEV_OPT_LEVEL=2
+cargo nextest run -p deadpan-app --features ui-harness --locked -E 'test(scoped) or test(macros) or test(completion)' > /tmp/deadpan-mixed-pause-integration-ui.log 2>&1
+DEADPAN_PREVIEW_EXPORT_KEEP=1 DEADPAN_MIXED_PAUSE_RESULTS=/tmp/deadpan-mixed-pause-integration-2026-10-20/export-results.json cargo test -p deadpan-cli --test preview_export --release --locked mixed_repeat_pause_preview_and_encoded_output_keep_authored_source_clocks -- --nocapture --test-threads=1 > /tmp/deadpan-mixed-pause-integration-export.log 2>&1
+python3 /tmp/deadpan-mixed-pause-integration-2026-10-20/collect-export.py
+cargo build -p deadpan-app -p deadpan-cli --release --features ui-harness --locked --bins > /tmp/deadpan-mixed-pause-integration-release.log 2>&1
+python3 /tmp/deadpan-mixed-pause-integration-2026-10-20/prepare.py

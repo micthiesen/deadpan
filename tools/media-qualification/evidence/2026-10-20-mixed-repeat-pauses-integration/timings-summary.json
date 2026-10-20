@@ -1,0 +1,446 @@
+{
+  "ui_frame_cpu_ms": {
+    "completed": {
+      "max_ms": 6.441083,
+      "n": 1217,
+      "p50_ms": 0.203583,
+      "p95_ms": 0.97125,
+      "p99_ms": 1.4495
+    },
+    "failed": 0,
+    "samples": 1217,
+    "timed_out": 0
+  },
+  "ui_composition_submit_cpu_ms": {
+    "completed": {
+      "max_ms": 0.622375,
+      "n": 1217,
+      "p50_ms": 0.09225000000000001,
+      "p95_ms": 0.13020800000000002,
+      "p99_ms": 0.16329100000000002
+    },
+    "failed": 0,
+    "samples": 1217,
+    "timed_out": 0
+  },
+  "ui_composition_complete_ms": {
+    "completed": {
+      "max_ms": 8.670375,
+      "n": 1217,
+      "p50_ms": 0.355583,
+      "p95_ms": 0.49712499999999993,
+      "p99_ms": 0.769791
+    },
+    "failed": 0,
+    "samples": 1217,
+    "timed_out": 0
+  },
+  "input_to_state_ms": {
+    "completed": {
+      "max_ms": 1.7085,
+      "n": 261,
+      "p50_ms": 0.5006659999999999,
+      "p95_ms": 1.0975,
+      "p99_ms": 1.493917
+    },
+    "failed": 0,
+    "samples": 261,
+    "timed_out": 0
+  },
+  "input_to_commit_ms": {
+    "completed": {
+      "max_ms": 90.237167,
+      "n": 18,
+      "p50_ms": 7.021333,
+      "p95_ms": 90.237167,
+      "p99_ms": 90.237167
+    },
+    "failed": 0,
+    "samples": 18,
+    "timed_out": 0
+  },
+  "request_to_decode_delivery_ms": {
+    "completed": {
+      "max_ms": 7.486084,
+      "n": 129,
+      "p50_ms": 1.130042,
+      "p95_ms": 2.328959,
+      "p99_ms": 2.733375
+    },
+    "failed": 0,
+    "samples": 129,
+    "timed_out": 0
+  },
+  "request_to_worker_start_ms": {
+    "completed": {
+      "max_ms": 0.328042,
+      "n": 129,
+      "p50_ms": 0.006334,
+      "p95_ms": 0.007500000000000001,
+      "p99_ms": 0.010499999999999999
+    },
+    "failed": 0,
+    "samples": 129,
+    "timed_out": 0
+  },
+  "worker_execution_ms": {
+    "completed": {
+      "max_ms": 2.314292,
+      "n": 129,
+      "p50_ms": 0.06945799999999999,
+      "p95_ms": 0.457375,
+      "p99_ms": 1.451875
+    },
+    "failed": 0,
+    "samples": 129,
+    "timed_out": 0
+  },
+  "worker_publication_delay_ms": {
+    "completed": {
+      "max_ms": 0.000292,
+      "n": 129,
+      "p50_ms": 4.2e-05,
+      "p95_ms": 0.000125,
+      "p99_ms": 0.000167
+    },
+    "failed": 0,
+    "samples": 129,
+    "timed_out": 0
+  },
+  "publication_to_decode_delivery_ms": {
+    "completed": {
+      "max_ms": 5.161,
+      "n": 129,
+      "p50_ms": 1.042667,
+      "p95_ms": 1.8891660000000001,
+      "p99_ms": 2.4764589999999997
+    },
+    "failed": 0,
+    "samples": 129,
+    "timed_out": 0
+  },
+  "request_to_picture_submission_ms": {
+    "completed": {
+      "max_ms": 8.138334,
+      "n": 116,
+      "p50_ms": 1.448959,
+      "p95_ms": 2.5687499999999996,
+      "p99_ms": 3.001084
+    },
+    "failed": 0,
+    "samples": 116,
+    "timed_out": 0
+  },
+  "request_to_picture_complete_ms": {
+    "completed": {
+      "max_ms": 8.9445,
+      "n": 116,
+      "p50_ms": 1.904167,
+      "p95_ms": 3.034208,
+      "p99_ms": 3.541584
+    },
+    "failed": 0,
+    "samples": 116,
+    "timed_out": 0
+  },
+  "input_to_picture_complete_ms": {
+    "completed": {
+      "max_ms": 99.18795800000001,
+      "n": 82,
+      "p50_ms": 2.05425,
+      "p95_ms": 9.042,
+      "p99_ms": 99.18795800000001
+    },
+    "failed": 0,
+    "samples": 82,
+    "timed_out": 0
+  },
+  "Original initialized and displayed": {
+    "completed": {
+      "max_ms": 98.537167,
+      "n": 1,
+      "p50_ms": 98.537167,
+      "p95_ms": 98.537167,
+      "p99_ms": 98.537167
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Project and picture settled": {
+    "completed": {
+      "max_ms": 2.1909170000000002,
+      "n": 132,
+      "p50_ms": 0.637042,
+      "p95_ms": 0.869209,
+      "p99_ms": 1.412083
+    },
+    "failed": 0,
+    "samples": 132,
+    "timed_out": 0
+  },
+  "Scoped edit receipt is admitted": {
+    "completed": {
+      "max_ms": 8.4e-05,
+      "n": 53,
+      "p50_ms": 4.1e-05,
+      "p95_ms": 8.3e-05,
+      "p99_ms": 8.4e-05
+    },
+    "failed": 0,
+    "samples": 53,
+    "timed_out": 0
+  },
+  "Committed revision changed": {
+    "completed": {
+      "max_ms": 20.764333,
+      "n": 48,
+      "p50_ms": 6.343999999999999,
+      "p95_ms": 7.698625,
+      "p99_ms": 20.764333
+    },
+    "failed": 0,
+    "samples": 48,
+    "timed_out": 0
+  },
+  "Unchanged scoped gain proposal is ready": {
+    "completed": {
+      "max_ms": 0.8799170000000001,
+      "n": 1,
+      "p50_ms": 0.8799170000000001,
+      "p95_ms": 0.8799170000000001,
+      "p99_ms": 0.8799170000000001
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Mark is saved while its UI receipt is withheld": {
+    "completed": {
+      "max_ms": 4.319166999999999,
+      "n": 1,
+      "p50_ms": 4.319166999999999,
+      "p95_ms": 4.319166999999999,
+      "p99_ms": 4.319166999999999
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Scoped Camera opens on the selected play picture": {
+    "completed": {
+      "max_ms": 0.0,
+      "n": 1,
+      "p50_ms": 0.0,
+      "p95_ms": 0.0,
+      "p99_ms": 0.0
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Scoped edit is durable while its UI receipt is withheld": {
+    "completed": {
+      "max_ms": 3.8915,
+      "n": 1,
+      "p50_ms": 3.8915,
+      "p95_ms": 3.8915,
+      "p99_ms": 3.8915
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "One-play semantic receipt is admitted": {
+    "completed": {
+      "max_ms": 2.453125,
+      "n": 28,
+      "p50_ms": 4.1e-05,
+      "p95_ms": 2.102708,
+      "p99_ms": 2.453125
+    },
+    "failed": 0,
+    "samples": 28,
+    "timed_out": 0
+  },
+  "Save the framing-only macro without concrete play authority": {
+    "completed": {
+      "max_ms": 4.004584,
+      "n": 2,
+      "p50_ms": 3.9541250000000003,
+      "p95_ms": 4.004584,
+      "p99_ms": 4.004584
+    },
+    "failed": 0,
+    "samples": 2,
+    "timed_out": 0
+  },
+  "The scoped macro edit commits while its continuation is withheld": {
+    "completed": {
+      "max_ms": 5.373832999999999,
+      "n": 1,
+      "p50_ms": 5.373832999999999,
+      "p95_ms": 5.373832999999999,
+      "p99_ms": 5.373832999999999
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "A non-recording framing macro commits before its receipt arrives": {
+    "completed": {
+      "max_ms": 5.708875000000001,
+      "n": 1,
+      "p50_ms": 5.708875000000001,
+      "p95_ms": 5.708875000000001,
+      "p99_ms": 5.708875000000001
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Pause is saved before changing to Placed sounds": {
+    "completed": {
+      "max_ms": 3.388625,
+      "n": 1,
+      "p50_ms": 3.388625,
+      "p95_ms": 3.388625,
+      "p99_ms": 3.388625
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Pause is saved before pointer view navigation": {
+    "completed": {
+      "max_ms": 3.309917,
+      "n": 1,
+      "p50_ms": 3.309917,
+      "p95_ms": 3.309917,
+      "p99_ms": 3.309917
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Pause is saved before selecting its Original card": {
+    "completed": {
+      "max_ms": 4.551167,
+      "n": 1,
+      "p50_ms": 4.551167,
+      "p95_ms": 4.551167,
+      "p99_ms": 4.551167
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Undo completes with the scoped command open": {
+    "completed": {
+      "max_ms": 4.503375,
+      "n": 1,
+      "p50_ms": 4.503375,
+      "p95_ms": 4.503375,
+      "p99_ms": 4.503375
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Selected pauses are durable before their receipt arrives": {
+    "completed": {
+      "max_ms": 7.053333,
+      "n": 1,
+      "p50_ms": 7.053333,
+      "p95_ms": 7.053333,
+      "p99_ms": 7.053333
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Annotation lane ready for navigation witness": {
+    "completed": {
+      "max_ms": 0.0,
+      "n": 1,
+      "p50_ms": 0.0,
+      "p95_ms": 0.0,
+      "p99_ms": 0.0
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Stored navigation words are available": {
+    "completed": {
+      "max_ms": 5.863333,
+      "n": 1,
+      "p50_ms": 5.863333,
+      "p95_ms": 5.863333,
+      "p99_ms": 5.863333
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Pause is durable before the w/b roundtrip": {
+    "completed": {
+      "max_ms": 3.7324580000000003,
+      "n": 1,
+      "p50_ms": 3.7324580000000003,
+      "p95_ms": 3.7324580000000003,
+      "p99_ms": 3.7324580000000003
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Pause is durable before the n/N roundtrip": {
+    "completed": {
+      "max_ms": 3.4605,
+      "n": 1,
+      "p50_ms": 3.4605,
+      "p95_ms": 3.4605,
+      "p99_ms": 3.4605
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Open the independent queried-owner pause fixture": {
+    "completed": {
+      "max_ms": 27.330541999999998,
+      "n": 1,
+      "p50_ms": 27.330541999999998,
+      "p95_ms": 27.330541999999998,
+      "p99_ms": 27.330541999999998
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Close the heterogeneous pause fixture": {
+    "completed": {
+      "max_ms": 16.552708,
+      "n": 1,
+      "p50_ms": 16.552708,
+      "p95_ms": 16.552708,
+      "p99_ms": 16.552708
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  },
+  "Restore the preceding scoped replay workspace": {
+    "completed": {
+      "max_ms": 34.802042,
+      "n": 1,
+      "p50_ms": 34.802042,
+      "p95_ms": 34.802042,
+      "p99_ms": 34.802042
+    },
+    "failed": 0,
+    "samples": 1,
+    "timed_out": 0
+  }
+}

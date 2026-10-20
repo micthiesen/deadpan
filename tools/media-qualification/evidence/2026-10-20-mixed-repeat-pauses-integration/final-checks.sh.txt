@@ -1,0 +1,10 @@
+#!/bin/sh
+set -eu
+export DEADPAN_FFMPEG_PREFIX=/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix
+export DEADPAN_REQUIRE_PHYSICAL_MAC=1
+export CARGO_PROFILE_DEV_OPT_LEVEL=2
+cargo nextest run -p deadpan-app --features ui-harness --locked --test-threads 1 -E 'test(remote_visual_yank_previews_oriented_selection_and_keeps_bank_receipt_on_refresh_failure)' > /tmp/deadpan-mixed-pause-integration-isolated-ui.log 2>&1
+if rg -q 'LEAK' /tmp/deadpan-mixed-pause-integration-isolated-ui.log; then
+    exit 1
+fi
+sh /tmp/deadpan-mixed-pause-integration-2026-10-20/replay.sh

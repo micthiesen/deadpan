@@ -1,0 +1,146 @@
+{
+  "binaries.json": {
+    "bytes": 679,
+    "sha256": "329463a600516728348d539114bc3f58e481678278f2d9154feedf9c169e8258"
+  },
+  "captures.json": {
+    "bytes": 680,
+    "sha256": "b7fa5ada4c3c86a2115347de2d5c9b3423e90caf79bfda7dfd0c4fd1087d889c"
+  },
+  "check.log.gz": {
+    "bytes": 9860,
+    "sha256": "cef24bd9ce5f2e27ed3282356f05d153554851c25696f7842b63bb8b2fdcf8e9"
+  },
+  "collect-export.py.txt": {
+    "bytes": 999,
+    "sha256": "4b08c7d385195d4d0ba482950d363724e30da6f859aaf103175a4a7ae9b3af02"
+  },
+  "collect.py.txt": {
+    "bytes": 3841,
+    "sha256": "75712b8ab68789d2dc4c1d25b7ce21f3c3c13ad10bd2670bfd798669a6c93949"
+  },
+  "delayed-round-trip.png": {
+    "bytes": 272415,
+    "sha256": "2a93e8048a9619020d3d7d359b54ce7253f7b0f633fceef1213056feb35492ce"
+  },
+  "different-inner-plays.png": {
+    "bytes": 251546,
+    "sha256": "93a89328652b6fbcb9306c4805c0ac0fa1db6b51daf1a2c2df50563b2112e46a"
+  },
+  "export-binaries.json.gz": {
+    "bytes": 181,
+    "sha256": "2c33928b48b9553789ec715a76185ad535f84e6e58a91fc104c8eb9e24d388f0"
+  },
+  "export-results.json.gz": {
+    "bytes": 17960,
+    "sha256": "07055be8fa477edea90d116982f9522daa6e50c9d470431be0f38434421a6143"
+  },
+  "export.log.gz": {
+    "bytes": 776,
+    "sha256": "8814dbca2c5e8409173146b19d8702a6fc815e0b146eae26573f4d35927ee3d8"
+  },
+  "final-checks.sh.txt": {
+    "bytes": 609,
+    "sha256": "ae9a9c735765be2ba418e115bad33b4398bddc8d0b94919784fc3183d71ac2f0"
+  },
+  "isolated-ui.log.gz": {
+    "bytes": 346,
+    "sha256": "54226c2f140299d888c97d1882bd548ba7b6e4dcb01b6c0857a119b34e4c11a8"
+  },
+  "kestrel-source.txt": {
+    "bytes": 131,
+    "sha256": "9c15aa1b3e01d67ca98503c8b57c72b75cff79554d831712082fecddf361a588"
+  },
+  "mixed-default-play-pause.mp4": {
+    "bytes": 31400,
+    "sha256": "f1fa85597a1229525e4afacf3b5661da8f8e73a7648e37582d96ee3ce26f9fb5"
+  },
+  "mixed-pause.png": {
+    "bytes": 292607,
+    "sha256": "1f17931d8565b073607cda68777545f7455940f6a8f295e4c966cb1bc56f2db6"
+  },
+  "mixed-play-default-pause.mp4": {
+    "bytes": 31349,
+    "sha256": "b42f3fb6c611f8d6eeb946a001c8ec045a405f33bed315c8a72186fbaf5cd47a"
+  },
+  "performance-report.json.gz": {
+    "bytes": 186365,
+    "sha256": "788c71455114babfe557455076a1445c48af241b8845d82f77c14bfaff5631fe"
+  },
+  "performance.log.gz": {
+    "bytes": 119,
+    "sha256": "45da50852d1d98a056ada5cbaab00f3a2bb73205dd676f96072504017e7d0c21"
+  },
+  "power.txt": {
+    "bytes": 106,
+    "sha256": "3926f72bc85d469fcbd52dd727b682d949c24e0b1439d2ad61c95a0432182884"
+  },
+  "pre-performance-processes.txt": {
+    "bytes": 0,
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "prepare.py.txt": {
+    "bytes": 1344,
+    "sha256": "d8a2dd938070870fcba3ad184102a3cea6fe75fdb8d4c8a03f717cc641be34ea"
+  },
+  "release.log.gz": {
+    "bytes": 263,
+    "sha256": "facb4c18bd4ee30cbe5a14b8c66f10803a3393dacdf154237ad3ffbd626f665d"
+  },
+  "replay.sh.txt": {
+    "bytes": 799,
+    "sha256": "f4474bb60264f0b23cb6609bff506ab506002cec9a40b3e92e3039d253f65f74"
+  },
+  "review.json": {
+    "bytes": 468,
+    "sha256": "feb6608b8da259cc035aa22b118658b3cce03edfe225c49d672ec00b12ca0baa"
+  },
+  "rust-paths.txt": {
+    "bytes": 3044,
+    "sha256": "1ddb6f10a4bf17e043c6088b1808e562d4d27830e3bbc44ea8d431e77e552140"
+  },
+  "rust-source-snapshot.json.gz": {
+    "bytes": 434345,
+    "sha256": "84a40fea9c1bbb54835ef31041354364f13fa951e02f751ed08fa3b1c46ab5fb"
+  },
+  "selected-play-pauses.png": {
+    "bytes": 282667,
+    "sha256": "b788788f35f60bb08777fb52986ef5f8503e8226cbdcb003a14b3de42e98b4e3"
+  },
+  "source-identities.json": {
+    "bytes": 7781,
+    "sha256": "0dac07207041015c6ae4c6da927ccaae3083b3d63e8bcc956ff2aabe5890f4a3"
+  },
+  "source.diff.gz": {
+    "bytes": 57594,
+    "sha256": "bbaa407f0bf8ac0b93cd6d00e6654c0fccba15cefb2e957c060d5f43be98db58"
+  },
+  "this-play-pause.png": {
+    "bytes": 275143,
+    "sha256": "36c51a2ec9a5d8f15256297b6d1959e75d44e946fa1598e410d6df59bc067dbb"
+  },
+  "timings-summary.json": {
+    "bytes": 9561,
+    "sha256": "95ad4f468aa7a7174ae6d135e43b963400e44a8d9f716c82c7dad1188e528757"
+  },
+  "ui.log.gz": {
+    "bytes": 4423,
+    "sha256": "3bda0a3654d9aca0ca112390af3c439f24e2b691f685ab0a6a59579341dedf10"
+  },
+  "verify.sh.txt": {
+    "bytes": 1028,
+    "sha256": "bfaf3bf62e4c7f1804da6226ab0bb7860d29b050b0b565868e7012698b4f0f7d"
+  },
+  "visual-report.json.gz": {
+    "bytes": 921537,
+    "sha256": "c1af8a2478982faac84e10d2f7eaea4a76420bda9d367cfa37309a60851fd3d2"
+  },
+  "visual-review.json": {
+    "bytes": 804,
+    "sha256": "72402686069291caff76113ba9d5bc166f641572b8d4f6ac0354d31d539f441e"
+  },
+  "visual.log.gz": {
+    "bytes": 115,
+    "sha256": "ef01e8df410a55d9de94b77a8e7f9ed3d5ea8c30c879b41dac1ed33b318ce639"
+  }
+}

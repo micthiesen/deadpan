@@ -516,6 +516,9 @@ fn mixed_repeat_pause_preview_and_encoded_output_keep_authored_source_clocks() -
     ] {
         let fixture = factory(&root.join(name))?;
         check(&fixture)?;
+        if skip_without_physical_mac("encoded Render") {
+            continue;
+        }
         let movie = render(&fixture, &root.join(format!("exports-{name}")))?;
         let (report, passed) = verify(&fixture, &movie, &fixture.revision, &["--every", "1"])?;
         assert!(passed, "{name}: {report}");

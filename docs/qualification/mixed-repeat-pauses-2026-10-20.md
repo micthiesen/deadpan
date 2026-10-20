@@ -5,7 +5,8 @@ This play or selected-plays choice. Selected plays commit together and retain
 the actual inserted Holds for subsequent edits. This advances DP-07; broader
 occurrence editing remains open.
 
-Base revision `8d226bb5846db502718b59d5ed7075b84e958d1e`, Apple M5 Max,
+Initial qualification base revision `8d226bb5846db502718b59d5ed7075b84e958d1e`,
+Apple M5 Max,
 macOS 26.5.2 (25F84), Rust 1.97.1 and the qualified FFmpeg 8.0.3 prefix.
 
 ## Explicit scope and exact clocks
@@ -105,8 +106,8 @@ resumptions, pause/gap silence, owned sounds and root-sound ripple. Origin-based
 sample allocation stays exact; no event alignment or AAC-block tolerance is
 introduced.
 
-The final targeted gate passes 136 selected tests, format and strict normal/UI
-Clippy. The broader core/store run passes all 1,874 tests; one generation-copy
+The initial qualification's targeted gate passes 136 selected tests, format
+and strict normal/UI Clippy. The broader core/store run passes all 1,874 tests; one generation-copy
 test reports an output-handle leak in that concurrent run, then passes its
 isolated rerun without a leak. The full native app UI configuration passes
 1,220 tests with 11 existing skips and no output-handle diagnostics. These
@@ -129,8 +130,8 @@ Debug app linking retains the existing `__eh_frame section too large (max
 
 ## Native replay and responsiveness
 
-The final optimized visual and separate performance replays pass 226
-and 226 scoped-play checks respectively, plus the live Kestrel
+The initial qualification's optimized visual and separate performance replays
+pass 226 and 226 scoped-play checks respectively, plus the live Kestrel
 audit. The audit retains 62 reserved bindings, 21,885,504 routing cases and no
 conflict or source drift. Existing gain, framing macro and Camera paths remain
 covered alongside new mixed, selected-play, unequal-inner-play and delayed
@@ -164,14 +165,61 @@ the battery at 80%; caches, thermal state and unrelated system activity remain
 uncontrolled. Short fixture measurements do not establish full-resolution or
 physical-display latency.
 
+## Integration with concurrent main
+
+The feature rebased cleanly onto concurrent main
+`8a6aeb4353632baf2bcb130a310d0732623bb40c`. Independent integration review found
+no supported incompatibility with the new test completion receipts, subprocess
+launch locks or physical-Mac test convention. The new export test now guards
+only encoded Render on virtual CI; both fixtures still run their picture-plan
+and decoded-PCM checks there. Local qualification sets
+`DEADPAN_REQUIRE_PHYSICAL_MAC=1`, so both encoded outputs remain required.
+
+On the integrated source, `cargo xtask check --since origin/main` with the
+retained scoped/pause/completion filter passes format, strict normal/UI Clippy
+and all 161 selected tests. The separate UI feature configuration passes all
+98 selected scoped/macro/completion tests. One existing remote Visual-yank
+test reports an output-handle leak in that concurrent run; its isolated rerun
+passes in 0.248 seconds without the diagnostic. Both results remain in the
+evidence. These focused runs do not repeat the earlier full core/store or app
+suites. Tests use the updated optimized debug profile with assertions and
+overflow checks retained.
+
+The integrated release CLI regenerates both H.264/AAC files. All 135 pictures
+and four zero-offset audio windows pass again, with the same minimum luma PSNR
+56.455 dB and block SNR 31.359 dB. The final integrated release app passes
+226 visual and 226 separate performance checks plus both Kestrel audits.
+All five final 960×640 captures were inspected. The unchanged Kestrel source
+retains 62 reserved bindings and 21,885,504 routing cases without drift.
+
+| Integrated measurement | Completed | Median | p95 | Maximum | Failed / timed out |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Input to state | 261 | 0.501 ms | 1.098 ms | 1.709 ms | 0 / 0 |
+| Input to completed picture | 82 | 2.054 ms | 9.042 ms | 99.188 ms | 0 / 0 |
+
+The separate performance run starts with no rustc, cargo-nextest or Deadpan app
+process in the recorded process check, on AC power at 79% battery. Thermal state,
+caches and unrelated system activity remain uncontrolled. The 99.188 ms tail
+is retained; these short-fixture measurements do not establish physical-display
+latency or a one-display-interval bound.
+
+The [integration evidence](../../tools/media-qualification/evidence/2026-10-20-mixed-repeat-pauses-integration)
+retains the new logs, both exports and complete verifier reports, final replay
+reports and inspected captures, source and executable identities, independent
+review, scripts and checked SHA-256 inventory. Final integrated app SHA-256:
+`f20731dbb5f620d990166ebf257074c6bdd499ce4d35695f55ef626650542689`;
+CLI: `319727ff20ed8ba4db384da5519a3d2896e89427e536afbe7dd7980c7e895e3c`.
+The export test's default-feature CLI and test executable identities are
+recorded separately. The qualified private helper baseline remains unchanged.
+
 ## Evidence and remaining work
 
 The [evidence directory](../../tools/media-qualification/evidence/2026-10-20-mixed-repeat-pauses)
 retains failed and passing logs, final visual/performance reports, inspected
 captures, both emitted movies and complete verifier reports, source snapshots
 and hashes, binary and fixture identities, independent review, collection
-scripts and the checked SHA-256 inventory. Final app SHA-256:
-`c32d97f6247dab878fc0437a6b64e939587f3e4e7c62125201042c11d61d2d62`; final CLI:
+scripts and the checked SHA-256 inventory. Initial qualified app SHA-256:
+`c32d97f6247dab878fc0437a6b64e939587f3e4e7c62125201042c11d61d2d62`; CLI:
 `bb6f07de5fea7198ea6a25f85ba94590aefc73a836449b4202380ea6a2e427ec`. The export test's executable identities are retained
 separately. Unchanged private media, tracking and transcription helpers retain
 their recorded hashes. The source manifest binds the executable to this base
