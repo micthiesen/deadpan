@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-21T04:56:00Z",
+  "updated_at": "2026-10-21T05:58:39Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Finish verification of selected-audio crop carriers and silent Holds, then extend exact speed changes to inner Repeats. Continue remaining semantic editing, audio mastering, renderer and full-workflow qualification.",
+  "focus": "Make gain steps recordable and dot-repeatable in explicit Repeat plays, then continue remaining semantic editing, audio mastering, renderer and full-workflow qualification.",
   "features": [
     {
       "id": "editing",
@@ -16,7 +16,7 @@
         "DP-07",
         "DP-21"
       ],
-      "note": "Slices, registers, repeats and semantic macros work, including Original navigation, ranged and per-play framing, selected-play pauses, Hold duration/sound edits and exact-pause tape-speed changes. Inner-Repeat speed updates and wider operator/selector coverage remain."
+      "note": "Slices, registers, repeats and semantic macros work, including Original navigation, ranged and per-play framing, selected-play pauses, Hold duration/sound edits, and exact-pause tape-speed updates around one inner Repeat level. Wider operator/selector coverage and remaining timing families stay open."
     },
     {
       "id": "projects",
@@ -725,6 +725,14 @@
       "revision": "d0f675a5",
       "retrospective": false,
       "summary": "Verified model-memory admission, cooperative inference/playback and sleep interruption, expanded semantic macros, mixed Repeat pauses and per-play Hold edits. Exact-pause tape-speed changes retain audio clocks; 2,807 regressions, 53 exported pictures with zero-offset audio, and native replays pass for the latest milestone. No new requirement section is complete."
+    },
+    {
+      "date": "2026-10-21",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "3086f7df",
+      "retrospective": false,
+      "summary": "Verified exact speed changes around one inner Repeat level, preserving default/owned play and gap clocks. Core and PCM checks, 2,726 broad passes plus two repaired or isolated follow-ups, strict lint and a 22-picture zero-offset release export pass. Selected crop and silent-Hold fixes are also verified; DP-07 remains partial."
     }
   ]
 }
