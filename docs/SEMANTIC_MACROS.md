@@ -255,8 +255,26 @@ enclosing selection. One Undo restores the whole run, including isolation.
 Zero steps allocate nothing; out-of-range gain, stale authority, mismatched
 captures or a later failing instruction leave document, history and registers
 unchanged. All/mixed/several-play nonrecording gain retains its direct workflow.
-Other audio-change variants and Visual ranges cannot supply one-play gain macro
-authority. See the [one-play gain qualification](qualification/scoped-gain-macros-2026-10-20.md).
+Visual ranges cannot supply one-play gain macro authority. Other audio-change
+variants remain refused except for the explicit mute state described below.
+See the [one-play gain qualification](qualification/scoped-gain-macros-2026-10-20.md).
+
+### One-play mute state
+
+With This play explicit at every enclosing Repeat and no Visual range, the mute
+key and `:gain-mute` capture the inverse of the selected owner's current mute
+state as `SetAudio { change: Mute { muted } }`. Recording retains that Boolean.
+Saved calls and dot apply the retained state to the newly chosen play; they do
+not toggle it. Gain, envelopes, mute ranges, saturation and stage order stay
+intact, as do picture timing and both editor cursors.
+
+The planner uses the same exact isolation and mapped continuation as gain steps.
+Counted runs and nested calls use the staged target. Applying an already chosen
+state refuses before allocating another isolation; a late refusal rolls back the
+whole run. Native same-state preflight adds no instruction or history. Stale or
+mixed authority, Visual selection and mismatched captures cannot fall back to a
+shared edit. Ordinary nonrecording All/several-play controls retain their direct
+workflow. See the [one-play mute qualification](qualification/scoped-mute-macros-2026-10-21.md).
 
 ### Place slice Apply
 

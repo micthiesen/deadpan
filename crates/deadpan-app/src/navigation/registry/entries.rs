@@ -1087,10 +1087,10 @@ pub static SPECS: &[Spec] = &[
         section: Section::Audio,
         keys: &[Keys::Editor(B::Mute)],
         commands: &[verb("gain-mute", ":gain-mute  mute or unmute the beat")],
-        contexts: C::YOUR_EDIT,
+        contexts: C::YOUR_EDIT.or(C::CONTENTS),
         replay: Replay::RecordedAndDot,
         headless: eq("set_audio instruction (mute)", AUDIO),
-        help: "Mute the Visual range inside the selected beat as a mute range, or toggle the whole beat's true mute without a range. The beat keeps its timing; one Undo.",
+        help: "The key mutes a Visual range inside the selected beat, or toggles the whole beat's mute without a range. :gain-mute always toggles the whole beat. Recording and dot in Repeat contents require This play at every level and no Visual range; they retain the chosen mute or unmute state and apply it without toggling. The beat keeps its timing; one Undo.",
     },
     Spec {
         id: "saturate",
@@ -1638,7 +1638,7 @@ pub static SPECS: &[Spec] = &[
         contexts: C::TIMELINE.or(C::CONTENTS),
         replay: Replay::Ignored,
         headless: eq("macro <p> --json save with an explicit program", MACROS),
-        help: "{macro.record} + letter records motions, Visual selections, cuts, copies, Repeat wraps and count changes, grouping, register pastes, pauses, framing, gain, gags and named calls in the current ordinary Sequence group. On Original it records frame and start/end motions, letter marks, jumps and named calls, keeping the Edit cursor and selection independent. Inside Repeat contents, choose This play at every level; freeze and black pauses, Keep-center or target=center zooms, creeps and named calls record there. Saved pauses retain only their length and picture choice; each invocation resolves its current boundary. Scope navigation is not recorded. {macro.record} again (or :record-stop) saves the named Macro. Recording performs each action and adds it only after success. Saving adds no Undo and preserves the default copy. In Your edit, Esc clears and records a Visual selection; otherwise it cancels recording.",
+        help: "{macro.record} + letter records motions, Visual selections, cuts, copies, Repeat wraps and count changes, grouping, register pastes, pauses, framing, gain, gags and named calls in the current ordinary Sequence group. On Original it records frame and start/end motions, letter marks, jumps and named calls, keeping the Edit cursor and selection independent. Inside Repeat contents, choose This play at every level; freeze and black pauses, Hold length and sound, whole-beat gain steps and mute, Keep-center or target=center zooms, creeps and named calls record there. Gain steps retain a relative amount; mute retains its explicit on/off state. Saved pauses retain only their length and picture choice; each invocation resolves its current boundary. Scope navigation is not recorded. {macro.record} again (or :record-stop) saves the named Macro. Recording performs each action and adds it only after success. Saving adds no Undo and preserves the default copy. In Your edit, Esc clears and records a Visual selection; otherwise it cancels recording.",
     },
     Spec {
         id: "macro.cancel",
@@ -1660,7 +1660,7 @@ pub static SPECS: &[Spec] = &[
         contexts: C::TIMELINE.or(C::CONTENTS),
         replay: Replay::Recorded,
         headless: eq("macro run", MACROS),
-        help: "{macro.execute} + letter runs a named Macro on the active Original or Your edit clock; a positive count repeats the call (3{macro.execute!}a, :macro a 3). Original runs support frame and start/end motions, letter marks, jumps and calls without moving Edit. Your edit uses its current cursor, beat and Visual selection in an ordinary Sequence. Inside Repeat contents, choose This play at every level and run a program containing freeze/black pause intent, Zoom intent and named calls; it resolves the newly chosen play and exact current boundary, then retains the actual inserted pause or framed owner for the next instruction. Authored edits share one Undo; a failed instruction rolls back the whole run, including registers. Recursive calls and oversized runs are refused.",
+        help: "{macro.execute} + letter runs a named Macro on the active Original or Your edit clock; a positive count repeats the call (3{macro.execute!}a, :macro a 3). Original runs support frame and start/end motions, letter marks, jumps and calls without moving Edit. Your edit uses its current cursor, beat and Visual selection in an ordinary Sequence. Inside Repeat contents, choose This play at every level and run a program containing freeze/black pauses, Hold length or sound, whole-beat gain steps or mute, Zoom intent and named calls. It resolves the newly chosen play, applies gain steps to its current value and preserves explicit mute on/off intent, then retains the actual mapped owner for the next instruction. Authored edits share one Undo; a failed instruction rolls back the whole run, including registers. Recursive calls and oversized runs are refused.",
     },
     Spec {
         id: "edit.repeat-last",
@@ -1671,7 +1671,7 @@ pub static SPECS: &[Spec] = &[
         contexts: C::YOUR_EDIT.or(C::CONTENTS),
         replay: Replay::NotRecorded,
         headless: eq("resubmit the same apply instruction", STRUCT),
-        help: "Repeat the last committed picture cut, Repeat wrap or play-count change, Group, Ungroup or creative edit at the current target. Cuts, wraps and Group use the current Visual range or their retained selector. Creative edits repeat with their exact parameters: pauses, speed and pitch, gain steps, saturation, framing, cutaways, captions, reverses, tails, split edits, role edits and gags. Inside Repeat contents, dot accepts freeze/black pauses, Hold length or sound, gain steps without a Visual range, or Keep-center/target=center Zoom intent, using the play explicitly chosen at every level. Gain steps resolve the new play's current gain. Pauses resolve the current boundary and retain their actual new Hold; mixed and multiple-play dot remains unavailable. Undo/Redo, marks and copies preserve the last edit; unsupported edits clear it. No count or held repeat.",
+        help: "Repeat the last committed picture cut, Repeat wrap or play-count change, Group, Ungroup or creative edit at the current target. Cuts, wraps and Group use the current Visual range or their retained selector. Creative edits repeat with their exact parameters: pauses, speed and pitch, gain steps, saturation, framing, cutaways, captions, reverses, tails, split edits, role edits and gags. Inside Repeat contents, dot accepts freeze/black pauses, Hold length or sound, gain steps or whole-beat mute without a Visual range, or Keep-center/target=center Zoom intent, using the play explicitly chosen at every level. Gain steps resolve the new play's current gain; mute applies its saved on/off state without toggling. Pauses resolve the current boundary and retain their actual new Hold; mixed and multiple-play dot remains unavailable. Undo/Redo, marks and copies preserve the last edit; unsupported edits clear it. No count or held repeat.",
     },
     // PROJECT, RENDER & PANELS
     Spec {

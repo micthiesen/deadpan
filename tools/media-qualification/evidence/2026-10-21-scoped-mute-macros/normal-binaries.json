@@ -1,0 +1,9 @@
+[
+  {
+    "path": "target/debug/deps/deadpan_app-1665fcaccc742208",
+    "sha256": "ca7de3ce26b630ce75fd9a56f3b5a2420a34040d9d8fb4a8e6942f55a6a01ac2",
+    "modified_unix": 1792624140.619558,
+    "contains_mute_tests": true,
+    "contains_registry_test": true
+  }
+]

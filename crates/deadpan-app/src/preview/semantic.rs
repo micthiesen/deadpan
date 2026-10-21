@@ -22,6 +22,7 @@ impl super::DeadpanApp {
                 edit.operation,
                 RepeatableEdit::Parameter(deadpan_core::SemanticInstruction::SetAudio {
                     change: deadpan_core::AudioChange::Step { .. }
+                        | deadpan_core::AudioChange::Mute { .. }
                 })
             )
         {
@@ -46,11 +47,14 @@ impl super::DeadpanApp {
                         | deadpan_core::SemanticInstruction::SetRoomTone { .. }
                         | deadpan_core::SemanticInstruction::SetAudio {
                             change: deadpan_core::AudioChange::Step { .. }
+                                | deadpan_core::AudioChange::Mute { .. }
                         }
                 )
             )
         {
-            return Some("repeat unavailable: use a gain step, pause or framing edit first".into());
+            return Some(
+                "repeat unavailable: use a gain step, mute, pause or framing edit first".into(),
+            );
         }
         let selected_repeat = matches!(edit.operation, RepeatableEdit::SetRepeatPlays { .. })
             && self.workspace.as_ref().is_some_and(|workspace| {

@@ -105,8 +105,8 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         json!({"gain_delta_mdb":[3000,0,3000],"Edit":240,"Original":original}),
         d.snapshot(),
     )?;
-    painted(d, "+ letter: record gain / pause / framing")?;
-    painted(d, "+ letter: gain / pause / framing macro")?;
+    painted(d, "+ letter: record macro")?;
+    painted(d, "+ letter: run macro")?;
     scenarios::footer_anchored(d, "Gain macro and dot keys fit the minimum workspace")?;
     d.capture("Relative gain dot retains the selected play and its independent peers")?;
     undo(d, &first)?;
@@ -149,7 +149,6 @@ fn refuse_audio_treatments(d: &mut Driver<'_>) -> Result<(), String> {
         .as_ref()
         .map(|workspace| (workspace.can_undo, workspace.can_redo));
     for command in [
-        "gain-mute",
         "gain -6dB",
         "saturate 6dB",
         "balance left",
@@ -174,10 +173,9 @@ fn refuse_audio_treatments(d: &mut Driver<'_>) -> Result<(), String> {
                 && d.app().macros.instruction_count() == 0
                 && !d.app().macros.is_pending()
                 && !d.app().service.is_busy()
-                && d.app()
-                    .error
-                    .as_deref()
-                    .is_some_and(|error| error.contains("relative gain steps only")),
+                && d.app().error.as_deref().is_some_and(|error| {
+                    error.contains("relative gain steps and whole-beat mute only")
+                }),
             json!({"document":"unchanged","history":"unchanged","instructions":0,"pending":false}),
             d.snapshot(),
         )?;

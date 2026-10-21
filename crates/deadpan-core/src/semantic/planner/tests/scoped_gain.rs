@@ -2,6 +2,9 @@
 use super::*;
 use crate::AudioChange;
 
+#[path = "scoped_mute.rs"]
+mod scoped_mute;
+
 fn step(millidecibels: i32) -> SemanticInstruction {
     SemanticInstruction::SetAudio {
         change: AudioChange::Step { millidecibels },
@@ -399,7 +402,6 @@ fn scoped_gain_rejects_other_audio_changes_noop_and_malformed_authority_without_
         AudioChange::RangeStep {
             millidecibels: 3000,
         },
-        AudioChange::Mute { muted: true },
         AudioChange::Saturation {
             drive: Some(crate::GainDb::new(3000).unwrap()),
         },

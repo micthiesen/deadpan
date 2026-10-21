@@ -54,9 +54,13 @@ and installs dot intent:
   deletes (`DeleteRole`) and role repeats (`RoleRepeat`) over a new Visual
   range, reverse and ping-pong pauses, tails and gags.
 
-The dot hint names the edit ("repeat: speed 2/1× · preserve pitch"). A Repeat
-play scope (`:scope play N`) supplies dot intent for eligible whole-owner Zoom
-and Creep commands; other direct play edits clear it. Ranged zooms that sample
+The dot hint names the edit ("repeat: speed 2/1× · preserve pitch"). Explicit This
+play at every enclosing Repeat supplies dot intent for whole-owner Zoom/Creep,
+freeze/black pauses, Hold length/sound, relative gain steps and whole-owner mute.
+Gain steps use the newly selected owner's gain; mute applies its retained on/off
+state without toggling. Gain and mute require no Visual range. Other direct play
+edits clear dot intent. See [one-play intent](SEMANTIC_MACROS.md#one-play-mute-state).
+Ranged zooms that sample
 a target, face-target zooms that also save a target, clearing cutaways or
 captions, the Camera editor and Trim/Slip edits also clear dot intent.
 `s`/`:split` uses semantic `Split` intent since 2026-10-15. Each split fragment keeps

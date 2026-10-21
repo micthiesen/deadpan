@@ -1,4 +1,4 @@
-//! Whole-owner gain steps resolve against each staged explicit Play target.
+//! Whole-owner gain steps and explicit mute state use each staged Play target.
 
 use super::*;
 
@@ -15,9 +15,12 @@ where
         change: crate::AudioChange,
         scoped: SemanticScopedContext,
     ) -> Result<(), EditError> {
-        if !matches!(change, crate::AudioChange::Step { .. }) {
+        if !matches!(
+            change,
+            crate::AudioChange::Step { .. } | crate::AudioChange::Mute { .. }
+        ) {
             return Err(invalid(
-                "single-play audio macros support only whole-owner gain steps",
+                "single-play audio macros support only whole-owner gain steps and mute state",
             ));
         }
         framing::validate_scoped_context(&self.current, &self.context)?;
@@ -25,14 +28,22 @@ where
         let treatments = change.apply(current).map_err(crate::audio_gain::invalid)?;
         if &treatments == current {
             return Err(invalid(
-                "the beat already has that gain and saturation; no edit was made",
+                if matches!(change, crate::AudioChange::Mute { .. }) {
+                    "the beat already has that mute state; no edit was made"
+                } else {
+                    "the beat already has that gain and saturation; no edit was made"
+                },
             ));
         }
         self.set_scoped_value_edit(
             trace_index,
             crate::ScopedNodeEdit::SetAudioTreatments { treatments },
             scoped,
-            "single-play gain",
+            if matches!(change, crate::AudioChange::Mute { .. }) {
+                "single-play mute"
+            } else {
+                "single-play gain"
+            },
         )
     }
 }

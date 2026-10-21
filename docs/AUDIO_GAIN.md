@@ -37,10 +37,14 @@ persisted treatment and PCM increment's review, verification and remaining limit
 Relative whole-owner gain steps also support recording and dot with explicit
 This play at every enclosing Repeat. Each invocation uses the selected play's
 current gain, preserves its other treatments and isolates only that play.
-Counted macros commit once and undo once. No Visual range or other audio-change
-variant is admitted by this scoped semantic path; ordinary All/several-play
-gain controls retain their existing direct behavior. See
-[one-play gain intent](SEMANTIC_MACROS.md#one-play-gain-steps).
+Counted macros commit once and undo once. Whole-owner mute also records the
+chosen on/off state in these scopes; saved macros and dot apply that state
+without toggling it. Same-state requests make no edit. Both operations preserve
+all other treatments and use exact scoped isolation. Visual ranges and other
+audio-change variants remain refused by this semantic path; ordinary
+All/several-play controls retain their direct behavior. See
+[one-play gain intent](SEMANTIC_MACROS.md#one-play-gain-steps) and
+[one-play mute intent](SEMANTIC_MACROS.md#one-play-mute-state).
 
 ## Recipe and numerical contract
 

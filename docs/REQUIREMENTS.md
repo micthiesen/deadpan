@@ -2,6 +2,22 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
+## One-play mute macros, 2026-10-21
+
+[Mute qualification](qualification/scoped-mute-macros-2026-10-21.md) adds
+explicit whole-owner mute state to recording, calls and dot with This play at
+every Repeat level and no Visual range. Saved actions apply their chosen on/off
+state without toggling, preserving other treatments, picture timing and cursors.
+Six new core tests and two real-package native tests pass. The normal selection
+passes 490 cases plus the refreshed command-reference check; all 202 UI-feature
+tests pass. Two output-handle diagnostics have clean serial reruns, with their
+cause unproven. Final strict lint and release builds pass. Both release replays
+pass 735 scoped checks plus Kestrel. Compact captures exposed and then verified
+the footer-hint fix. Input-to-state p99 is 1.379 ms; maximum picture completion
+is 92.858 ms. Initial failures and exact evidence are retained. DP-06, DP-09 and
+DP-24 remain partial; wider scoped audio, Visual and mixed/multiple-play macro
+authority remain open.
+
 ## One-play gain macros, 2026-10-20
 
 [Gain macro qualification](qualification/scoped-gain-macros-2026-10-20.md)

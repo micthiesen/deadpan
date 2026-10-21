@@ -1,0 +1,22 @@
+[
+  {
+    "file": "visual-first-scoped-plays-129.png",
+    "inspected_by": "root",
+    "result": "Long record hint prunes macro execute hint at 960x640; fixed with concise record/run labels."
+  },
+  {
+    "file": "visual-scoped-plays-131.png",
+    "checkpoint": "One-play mute macros retain explicit true and false intent",
+    "inspected_by": "root"
+  },
+  {
+    "file": "visual-scoped-plays-130.png",
+    "checkpoint": "One-play mute recording retains visible keys at minimum size",
+    "inspected_by": "root"
+  },
+  {
+    "file": "visual-scoped-plays-128.png",
+    "checkpoint": "One-play gain recording retains visible keys at minimum size",
+    "inspected_by": "root"
+  }
+]

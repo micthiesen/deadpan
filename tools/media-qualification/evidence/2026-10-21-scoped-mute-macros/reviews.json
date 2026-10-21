@@ -1,0 +1,45 @@
+{
+  "base": "a669539d",
+  "method": "Fresh general reviewer plus scope and verification lenses; read-only, root owns runtime checks.",
+  "reviews": [
+    {
+      "agent": "mute_general_review",
+      "result": "No actionable findings; explicit Boolean, same-state preallocation refusal."
+    },
+    {
+      "agent": "mute_scope_review",
+      "result": "No findings; authority, mapped owner, treatments, exact pools and native route coverage."
+    },
+    {
+      "agent": "mute_verification_review",
+      "finding": {
+        "severity": "Minor",
+        "file": "crates/deadpan-app/src/navigation/registry/entries.rs",
+        "description": "gain.mute omitted Repeat contents context and one-play behavior from Help/palette metadata.",
+        "fix": "Added CONTENTS and accurate key/command, recording and Boolean-replay description."
+      },
+      "independent_recheck": "Finding addressed; CONTENTS and key/command/Boolean replay help verified; no further issue."
+    }
+  ],
+  "harness_compile_correction": "Two json! assertions used Rust array repetition syntax. Replaced with explicit arrays without changing conditions.",
+  "output_handle_diagnostics": {
+    "tests": [
+      "unobserved_transition_cannot_be_hidden_by_later_mark_or_cut_proof",
+      "completion_waits_for_native_receipt_and_retains_operational_success_on_refresh_failure"
+    ],
+    "initial": "Assertions pass with nextest LEAK diagnostics in parallel normal selection.",
+    "rerun": "Both pass cleanly serially, unchanged source and timeout. Cause remains unproven; no owning process or descriptor was captured."
+  },
+  "final_ui": {
+    "finding": "First release replay passed Kestrel but failed at scoped check167 because the long record hint caused the execute hint to be pruned at960x640.",
+    "fix": "Concise record/run macro labels; both full painted assertions retained. Added compact mute-recording capture.",
+    "independent_recheck": "mute_verification_review found no issue; full action detail remains in Help and live recording message.",
+    "root_inspection": [
+      "visual-first/scoped-plays-129.png",
+      "visual/scoped-plays-128.png",
+      "visual/scoped-plays-130.png",
+      "visual/scoped-plays-131.png"
+    ],
+    "capture_context": "Mute recording capture retains the preceding deliberate mismatched-capture refusal. The later capture shows the expected same-state refusal; neither is an unexpected runtime failure."
+  }
+}

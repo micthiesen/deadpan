@@ -1,0 +1,73 @@
+{
+  "visual": {
+    "failed": false,
+    "checks": 735,
+    "warnings": [
+      "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+      "The \"Room tone\u2026  :room-tone\" action needs inspector scrolling at 960\u00d7640 before its full button is clickable. The replay includes this extra user step.",
+      "217 frame(s) settled their layout only on a second retry: [{\"frame\":48,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5564)\",\"pass 0",
+      "egui discard warning: 41 run(s) of 3+ consecutive retrying frames, each frame with its own cause: [[{\"frame\":47,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text"
+    ],
+    "timings": {
+      "input_to_state_ms": {
+        "completed": {
+          "max_ms": 1.758667,
+          "n": 988,
+          "p50_ms": 0.484125,
+          "p95_ms": 0.9872500000000001,
+          "p99_ms": 1.4815
+        },
+        "failed": 0,
+        "samples": 988,
+        "timed_out": 0
+      },
+      "input_to_picture_complete_ms": {
+        "completed": {
+          "max_ms": 108.92391699999999,
+          "n": 296,
+          "p50_ms": 2.073291,
+          "p95_ms": 15.870624999999999,
+          "p99_ms": 20.967791
+        },
+        "failed": 0,
+        "samples": 296,
+        "timed_out": 0
+      }
+    }
+  },
+  "performance": {
+    "failed": false,
+    "checks": 735,
+    "warnings": [
+      "The \"Room tone\u2026  :room-tone\" action needs inspector scrolling at 960\u00d7640 before its full button is clickable. The replay includes this extra user step.",
+      "217 frame(s) settled their layout only on a second retry: [{\"frame\":131,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5564)\",\"pass ",
+      "egui discard warning: 40 run(s) of 3+ consecutive retrying frames, each frame with its own cause: [[{\"frame\":130,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize tex"
+    ],
+    "timings": {
+      "input_to_state_ms": {
+        "completed": {
+          "max_ms": 1.723166,
+          "n": 988,
+          "p50_ms": 0.477209,
+          "p95_ms": 0.9724170000000001,
+          "p99_ms": 1.378792
+        },
+        "failed": 0,
+        "samples": 988,
+        "timed_out": 0
+      },
+      "input_to_picture_complete_ms": {
+        "completed": {
+          "max_ms": 92.85825,
+          "n": 293,
+          "p50_ms": 2.052125,
+          "p95_ms": 14.838000000000001,
+          "p99_ms": 21.476417
+        },
+        "failed": 0,
+        "samples": 293,
+        "timed_out": 0
+      }
+    }
+  }
+}

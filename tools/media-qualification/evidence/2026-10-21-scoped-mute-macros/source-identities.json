@@ -1,0 +1,21 @@
+{
+  "crates/deadpan-core/src/semantic/planner.rs": "4bf41cf703479e8d89c3579cfa8daf5181c1fc419cb4177789adbdb277f06107",
+  "crates/deadpan-core/src/semantic/planner/pause.rs": "ed609a132d3aa1bd202dbf358d084d6f253a759afaf7e3dad84e626b8144e972",
+  "crates/deadpan-core/src/semantic/planner/scoped_gain.rs": "446682b272f4be8f3651014cb4c857a5aedff7a7d0a5e0f25c02dc8e084856e9",
+  "crates/deadpan-core/src/semantic/planner/tests/scoped_framing.rs": "218f6ad7864c6ed69dd932cc548bccc11df18fc546feea268b38be0f6db88977",
+  "crates/deadpan-core/src/semantic/planner/tests/scoped_gain.rs": "ce22cd41920a4e2c2247f9325f55d3a2ffaddb3aa751e522b245563ef71fc721",
+  "crates/deadpan-app/src/navigation/registry/entries.rs": "99c0dc7f237109df520faa5a70011cbfe66bcfdcdf7def231005e83029f6bd36",
+  "crates/deadpan-app/src/preview.rs": "ce6fb8aca62a4b1ca2d69f968d82f5ffd7d3985cdddcfd2844212f3f13f3fb9d",
+  "crates/deadpan-app/src/preview/gain.rs": "c7ced58ce95209b43e645de83050aa87321511e0a48fd44bc3d4ddbbe18afc6a",
+  "crates/deadpan-app/src/preview/macros.rs": "38154181acd03420cd8de526c62540ecfa8f82c7f64b01d0e8a237219c56b0ed",
+  "crates/deadpan-app/src/preview/semantic.rs": "ac41a071568db4302252a463b9996007dab6e93d3bf027b881231ee966beadeb",
+  "crates/deadpan-app/src/preview/harness/scoped_plays.rs": "2deb17ba8884f76954e1f489b4d846c443c853395d92608a19a24598e03d6e7f",
+  "crates/deadpan-app/src/preview/harness/scoped_plays/framing_macros.rs": "e31119ec6a5071100b7ad2b359759e4940fd235702937c914faab6975db5687c",
+  "crates/deadpan-app/src/preview/harness/scoped_plays/gain_macros.rs": "1a6345eca3721214f752992f801fadffea07debc17529ded16c3ff76db996d98",
+  "crates/deadpan-app/src/project/tests/macros/scoped.rs": "a8e8e0bfe0a7948adda02dd70fabc9e5be534d60e802b94009216f2c0538abdc",
+  "crates/deadpan-app/src/project/tests/macros/scoped/gain.rs": "eff41a2e6797120fdf70b4b4d55110277128b6fdef3b327e3ee03e66cd098849",
+  "crates/deadpan-core/src/semantic/planner/tests/scoped_mute.rs": "089cebf92d381980e2870f7b65d410d4b413d885a4a4c2d5a43a399a8467cdb7",
+  "crates/deadpan-app/src/project/tests/macros/scoped/mute.rs": "1e6384340e42a8a85261fc91102438995f2a08e3b16f709f92c02d9e89efc950",
+  "crates/deadpan-app/src/preview/harness/scoped_plays/mute_macros.rs": "1ff61d2e5715eb00f22154e20446b93f62e4f304fa6fc16eda98b688a203ec97",
+  "Cargo.lock": "1e39d18ae4de6c7b898edad39eb7104235fb3ffe3af84521ca94df2b6c25b71b"
+}

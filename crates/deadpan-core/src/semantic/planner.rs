@@ -744,7 +744,8 @@ where
                     instruction,
                     SemanticInstruction::Zoom { .. }
                         | SemanticInstruction::SetAudio {
-                            change: crate::AudioChange::Step { .. },
+                            change: crate::AudioChange::Step { .. }
+                                | crate::AudioChange::Mute { .. },
                         }
                         | SemanticInstruction::InsertPause { .. }
                         | SemanticInstruction::SetHoldDuration { .. }
@@ -754,7 +755,7 @@ where
                 )
             {
                 return Err(invalid(
-                    "single-play macro authority supports only Zoom, whole-owner gain steps, freeze or black pause intent, Hold duration or sound and named calls",
+                    "single-play macro authority supports only Zoom, whole-owner gain steps and mute state, freeze or black pause intent, Hold duration or sound and named calls",
                 ));
             }
             if instruction.uses_speech() {

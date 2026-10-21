@@ -2,6 +2,7 @@
 
 mod duration;
 mod gain;
+mod mute;
 mod pauses;
 
 use super::*;
