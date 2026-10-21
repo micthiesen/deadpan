@@ -1,0 +1,9 @@
+#!/bin/sh
+set -eu
+export DEADPAN_FFMPEG_PREFIX=/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix
+export CARGO_PROFILE_DEV_OPT_LEVEL=2
+export DEADPAN_REQUIRE_PHYSICAL_MAC=1
+cargo xtask check --since 114823c1 --no-test > /tmp/deadpan-hold-duration-clocks-2026-10-20/fixture-check.log 2>&1
+export DEADPAN_PREVIEW_EXPORT_KEEP=1
+export DEADPAN_ORDINARY_DURATION_RESULTS=/tmp/deadpan-hold-duration-clocks-2026-10-20/export-results.json
+cargo test -p deadpan-cli --release --test preview_export --locked ordinary_hold_duration_preview_and_encoded_output_keep_shared_source_clocks -- --nocapture > /tmp/deadpan-hold-duration-clocks-2026-10-20/export.log 2>&1

@@ -1,0 +1,5 @@
+crates/deadpan-audio/tests/stages/insert_time.rs
+crates/deadpan-cli/tests/preview_export.rs
+crates/deadpan-cli/tests/preview_export/recipes.rs
+crates/deadpan-core/src/command.rs
+crates/deadpan-core/src/insert_time.rs

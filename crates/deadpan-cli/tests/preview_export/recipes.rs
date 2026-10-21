@@ -40,6 +40,9 @@ pub mod mixed_pause;
 #[path = "scoped_duration.rs"]
 pub mod scoped_duration;
 
+#[path = "ordinary_duration.rs"]
+pub mod ordinary_duration;
+
 pub type Result<T = ()> = std::result::Result<T, Box<dyn Error>>;
 
 #[path = "vfr.rs"]

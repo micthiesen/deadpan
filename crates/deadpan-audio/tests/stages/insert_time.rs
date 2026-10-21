@@ -5,6 +5,9 @@ use super::*;
 #[path = "occurrence_pause.rs"]
 mod occurrence_pause;
 
+#[path = "ordinary_duration.rs"]
+mod ordinary_duration;
+
 fn insert_pause(document: &ProjectDocument, at: i64, frames: i64, name: &str) -> ProjectDocument {
     let revision = RevisionId::new(name).unwrap();
     let request = CommandRequest {
@@ -447,7 +450,23 @@ fn extending_a_captured_repeat_hold_keeps_each_surviving_play_clock() {
     let edit = apply(&captured, &request).unwrap();
     let extended = edit.forward.apply(&captured).unwrap();
     assert_eq!(edit.inverse.apply(&extended).unwrap(), captured);
-    assert_eq!(extended.audio_bindings(), captured.audio_bindings());
+    // The new output placement may append a conservative Repeat reanchor,
+    // while its sampling lattice and existing phase must remain unchanged.
+    // The independent per-play PCM oracle below checks the audible result.
+    let old_bindings = captured.audio_bindings();
+    let new_bindings = extended.audio_bindings();
+    assert_eq!(
+        new_bindings.bindings()[&id("quiet")],
+        old_bindings.bindings()[&id("quiet")]
+    );
+    let old_room = &old_bindings.bindings()[&id("room")];
+    let new_room = &new_bindings.bindings()[&id("room")];
+    assert_eq!(new_room.lattice, old_room.lattice);
+    assert_eq!(new_room.resume, old_room.resume);
+    assert!(new_room.reanchors.starts_with(&old_room.reanchors));
+    for (timing, old_layout) in old_bindings.timings() {
+        assert_eq!(&new_bindings.timings()[timing], old_layout);
+    }
     let mut provider = FixtureProvider::new();
     for faded in [false, true] {
         let actual = record(&extended, &mut provider, faded, &[181, 23]);

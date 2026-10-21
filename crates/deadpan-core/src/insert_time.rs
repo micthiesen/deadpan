@@ -12,6 +12,7 @@ use crate::{
 };
 
 pub(crate) mod composite;
+pub(crate) mod hold_duration;
 pub(crate) mod occurrence;
 pub(crate) mod retimed;
 pub use occurrence::{

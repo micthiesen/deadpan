@@ -1,0 +1,17 @@
+{
+  "base": "114823c1",
+  "sha256": {
+    "Cargo.lock": "cd446a35ada5574e1ac17f6028e29aa09cec64bfd91d84d47b924cbb9f0ae175",
+    "crates/deadpan-audio/tests/stages/insert_time.rs": "4ca37d0fa0dd71233bdaa8315d1dc6a47619f94b5d6ba336614da75a20cf0062",
+    "crates/deadpan-audio/tests/stages/ordinary_duration.rs": "3b355b971d86f4efa2114f60dcf54c0de95b9045bba4bcfbd50d9b7840788bdb",
+    "crates/deadpan-cli/tests/preview_export.rs": "b7d0d513e89914df83013f223ba12079a0618bd93ac11d1fcad9023177801ec6",
+    "crates/deadpan-cli/tests/preview_export/ordinary_duration.rs": "e0b4f0cc1e9072a436837a6bae3f1b9ee606fbc89d8e1f9efb151ae515f4a269",
+    "crates/deadpan-cli/tests/preview_export/recipes.rs": "289e9a300cfe81c54d05e5092051a07882cba8d987c3f01a285c70321d10a029",
+    "crates/deadpan-core/src/command.rs": "aaff793a0f4749aa5a4b50bac1d07a3333128a3ddf0389cfc3d77113ea8ac36f",
+    "crates/deadpan-core/src/insert_time.rs": "0233854e6489ba9a082b6d5baeb5d5471f2e6f92d8b00c164ca47b0a6240cc58",
+    "crates/deadpan-core/src/insert_time/hold_duration.rs": "74741aee796e7242221c0f7b27a388e596903365bec4d117f636c4cfde0df723",
+    "crates/deadpan-core/src/insert_time/hold_duration/tests.rs": "f1df92eaa90f8bb4bb7da4c5f91842c88f65fc3bfa8b3ab4b1b51d1cf31ff652",
+    "crates/deadpan-store/tests/hold_duration_clocks.rs": "07750087c74ca786f4eb0f7ad5cdcdf7a693418cd65ddb4aea35484e50333b8e",
+    "rust-toolchain.toml": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc"
+  }
+}

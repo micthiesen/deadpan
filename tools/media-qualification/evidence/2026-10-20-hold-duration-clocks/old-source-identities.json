@@ -1,0 +1,13 @@
+{
+  "base": "114823c1",
+  "production": "Unchanged before production fix; new tests only",
+  "sha256": {
+    "Cargo.lock": "cd446a35ada5574e1ac17f6028e29aa09cec64bfd91d84d47b924cbb9f0ae175",
+    "rust-toolchain.toml": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc",
+    "crates/deadpan-core/src/command.rs": "2c33aef36ab0a847d7bb95fe1fab24c2e2ec0be0fbe7244362ecb9828be14765",
+    "crates/deadpan-core/src/insert_time/composite.rs": "8311188cec4a636395d1caf4497bfece3336626aabff128a8304cf41916542b7",
+    "crates/deadpan-core/src/occurrence_edit/hold_duration.rs": "d536cf76668aa39ca378b4cf6c5bfccb398601e2e267ffcb036edd06e6a0da1e",
+    "crates/deadpan-audio/tests/stages/ordinary_duration.rs": "2457f7caa788cd2bfc13ac2a3677a4efe9dcf561f72d45a21f796d04f72bd985",
+    "crates/deadpan-store/tests/hold_duration_clocks.rs": "07750087c74ca786f4eb0f7ad5cdcdf7a693418cd65ddb4aea35484e50333b8e"
+  }
+}

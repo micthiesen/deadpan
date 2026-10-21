@@ -1,0 +1,200 @@
+<ctx task="Command::SetHoldDuration SoundClockEditCapture::prepare RootSoundEditCapture prepare_owners occurrence_owners_after command.rs insert_time/composite.rs" route=" [routed: subtoken+body BM25 (--for&apos;s default) — no strong name hit, multi-word conceptual query]" bundle="auto" bodies="4"><!-- ripwire lens for "Command::SetHoldDuration SoundClockEditCapture::prepare RootSoundEditCapture prepare_owners occurrence_owners_after command.rs insert_time/composite.rs" [mention anchor: 1 file + 3 symbols named in the task lifted near the top] [doc mentions: 5 docs discussing 3 top-ranked symbols surfaced]: reusable building blocks + quality facts for what you're about to touch (cx=complexity ccx=cognitive in=reuse-count churn=recent-commits amp=change-amplification clone=1(duplicated) tested=1) — prefer composing/reusing these; watch the high-churn/high-amp/cloned ones; bundle=auto: the top-ranked FULL bodies ride inline after the signatures in a bodies section (bodies=N on this root counts them; bodies=0 reason=budget when none fit the remaining budget whole; the signatures-only flag opts out) — read them here instead of opening the files. The bodies element discloses the house way: total=requested, shown=printed, capped=1 when they differ; each body's calls child lists its callee signatures, total= always, shown=/capped= only when that list is cut est_tokens="4102" --><sigs capped="1"><f p="./crates/deadpan-core/src/sound_events.rs"><d l="307" n="validate_command" cx="8" ccx="4" in="2" churn="46" amp="35" tested="1">pub(crate) fn validate_command( document: &amp;ProjectDocument, command: &amp;Command, ) -&gt; Result&lt;(), EditError&gt;</d><d l="432" n="preserves_sound_clocks" cx="12" ccx="4" in="1" churn="46" amp="34" tested="1">fn preserves_sound_clocks(command: &amp;Command) -&gt; bool</d></f><f p="./crates/deadpan-core/src/sound_clock/edit.rs"><d l="47" n="transports" cx="2" ccx="1" in="1" churn="13" amp="74" tested="1">pub(crate) fn transports(command: &amp;Command) -&gt; bool</d><d l="59" n="capture_timing" cx="4" ccx="1" in="1" churn="13" amp="74" tested="1">fn capture_timing(command: &amp;Command, allocation: &amp;RevisionId) -&gt; Option&lt;AudioTimingId&gt;</d><d l="76" n="SoundClockEditCapture" cx="0" ccx="0" in="0" churn="13" amp="73">pub(crate) struct SoundClockEditCapture</d><d l="94" n="prepare" id="./crates/deadpan-core/src/sound_clock/edit.rs::SoundClockEditCapture::prepare" cx="9" ccx="10" in="1" churn="13" amp="74" tested="1">pub(crate) fn prepare( document: &amp;ProjectDocument, command: &amp;Command, allocation: &amp;RevisionId, ) -&gt; Result&lt;Option&lt;Self&gt;, EditError&gt;</d></f><f p="./crates/deadpan-core/src/occurrence_edit/hold_duration.rs"><d l="8" n="prepare" cx="5" ccx="4" in="1" churn="1" amp="1" tested="1">pub(super) fn prepare( document: &amp;ProjectDocument, instance: &amp;InstancePath, duration: FrameDuration, allocation: &amp;RevisionId, ) -&gt; Result&lt;ProjectDocument, EditE…</d></f><f p="./crates/deadpan-core/src/insert_time/composite.rs"><d l="55" n="prepare_suffix" cx="1" ccx="0" in="10" churn="13" amp="10" tested="1"><doc>Capture each retained suffix owner&apos;s old entry before changing the tree. Replacement uses this o…</doc>pub(crate) fn prepare_suffix( document: &amp;ProjectDocument, parent: &amp;NodeId, slot: usize, at: ProjectFrame, total: i64, timing: &amp;AudioTimingId, ) -&gt; Result&lt;Projec…</d></f></sigs><bodies shown="4" total="6" capped="1"><b t="fn" l="432" p="./crates/deadpan-core/src/sound_events.rs" n="preserves_sound_clocks"><![CDATA[fn preserves_sound_clocks(command: &Command) -> bool {
+    match command {
+        Command::RestoreSnapshot { .. } => false,
+        Command::Compound { .. } | Command::WithBoundaryReplacements { .. } => false,
+        Command::SetSound { .. }
+        | Command::SetBeatSound { .. }
+        | Command::DeleteBeatSound { .. }
+        | Command::ReplaceSound { .. }
+        | Command::DeleteSound { .. }
+        | Command::SetTarget { .. }
+        | Command::SetSourceInterpretation { .. }
+        | Command::DeleteTarget { .. }
+        | Command::SetSoundAllowance { .. }
+        | Command::SlipSource { .. }
+        | Command::SetSourceVideoMapping { .. }
+        | Command::SetSourceAudioMapping { .. }
+        | Command::SetHoldAudio { .. }
+        | Command::SetHoldProvider { .. }
+        | Command::SetHoldPictureContext { .. }
+        | Command::AcceptGeneratedHold { .. }
+        | Command::RevertGeneratedHold { .. }
+        | Command::Rename { .. }
+        | Command::SetAudioEdge { .. }
+        | Command::SetEditorialEdges { .. }
+        | Command::SetFraming { .. }
+        | Command::SetRepeatEscalation { .. }
+        | Command::SetCutaways { .. }
+        | Command::SetCaptions { .. }
+        | Command::SetAudioTreatments { .. }
+        | Command::AddAsset { .. }
+        | Command::SetCanvas { .. }
+        | Command::AdoptPrimaryGeometry { .. }
+        | Command::SetMark { .. }
+        | Command::DeleteMark { .. }
+        | Command::EditScoped { .. }
+        | Command::EditScopedMany { .. }
+        | Command::KeepFirstPlayAttachments { .. }
+        | Command::Group { .. }
+        | Command::GroupSelection { .. }
+        | Command::Ungroup { .. } => true,
+        Command::ImportSource {
+            insertion, primary, ..
+        } => insertion.is_none() && primary.is_none(),
+        Command::EditOccurrence { edit, .. } => match edit {
+            OccurrenceEdit::SetSourceVideoMapping { .. }
+            | OccurrenceEdit::SetSourceAudioMapping { .. }
+            | OccurrenceEdit::SetHoldAudio { .. }
+            | OccurrenceEdit::SetHoldProvider { .. }
+            | OccurrenceEdit::SetHoldPictureContext { .. }
+            | OccurrenceEdit::AcceptGeneratedHold { .. }
+            | OccurrenceEdit::RevertGeneratedHold
+            | OccurrenceEdit::Rename { .. }
+            | OccurrenceEdit::SetAudioEdge { .. }
+            | OccurrenceEdit::SetAudioTreatments { .. }
+            | OccurrenceEdit::SetFraming { .. } => true,
+            OccurrenceEdit::Split { .. }
+            | OccurrenceEdit::Insert { .. }
+            | OccurrenceEdit::Delete
+            | OccurrenceEdit::Group { .. }
+            | OccurrenceEdit::Ungroup
+            | OccurrenceEdit::WrapRepeat { .. }
+            | OccurrenceEdit::SetRepeat { .. }
+            | OccurrenceEdit::WrapRetime { .. }
+            | OccurrenceEdit::SetRetime { .. }
+            | OccurrenceEdit::InsertPlays { .. }
+            | OccurrenceEdit::MovePlays { .. }
+            | OccurrenceEdit::SetHoldDuration { .. }
+            | OccurrenceEdit::SetPlayOverride { .. }
+            | OccurrenceEdit::ClearPlayOverride { .. }
+            | OccurrenceEdit::SetGapOverride { .. }
+            | OccurrenceEdit::IsolateGap { .. }
+            | OccurrenceEdit::ClearGapOverride { .. } => false,
+        },
+        Command::InsertTime { .. }
+        | Command::InsertAiTime { .. }
+        | Command::InsertOccurrenceTime { .. }
+        | Command::ApplySourceTrim { .. }
+        | Command::TrimSource { .. }
+        | Command::RollSources { .. }
+        | Command::SpliceSource { .. }
+        | Command::SpliceSlice { .. }
+        | Command::SpliceSliceAt { .. }
+        | Command::ReplaceSlice { .. }
+        | Command::ReplaceSliceChildren { .. }
+        | Command::SpliceSourceAt { .. }
+        | Command::ReplaceSource { .. }
+        | Command::ReplaceSourceChildren { .. }
+        | Command::DeleteRipple { .. }
+        | Command::DeleteChildren { .. }
+        | Command::DeleteRange { .. }
+        | Command::MoveRange { .. }
+        | Command::Split { .. }
+        | Command::Insert { .. }
+        | Command::Delete { .. }
+        | Command::Move { .. }
+        | Command::WrapRepeat { .. }
+        | Command::SetRepeat { .. }
+        | Command::RepeatSelection { .. }
+        | Command::SetRepeatPlays { .. }
+        | Command::SetRepeatGaps { .. }
+        | Command::WrapRetime { .. }
+        | Command::SetRetime { .. }
+        | Command::InsertPlays { .. }
+        | Command::MovePlays { .. }
+        | Command::SetHoldDuration { .. }
+        | Command::SetPlayOverride { .. }
+        | Command::ClearPlayOverride { .. }
+        | Command::SetGapOverride { .. }
+        | Command::IsolateGap { .. }
+        | Command::ClearGapOverride { .. } => false,
+        // Explode keeps every play at its root time; a change inside a
+        // retained beat sound scope refuses before this point.
+        Command::Explode { .. } => true,
+        // Duplicate resolves to its exact placement command before this check.
+        Command::Duplicate { .. } => false,
+    }
+}]]></b><b t="method" l="94" p="./crates/deadpan-core/src/sound_clock/edit.rs" n="prepare"><![CDATA[pub(crate) fn prepare(
+        document: &ProjectDocument,
+        command: &Command,
+        allocation: &RevisionId,
+    ) -> Result<Option<Self>, EditError> {
+        let Some(timing) =
+            capture_timing(command, allocation).filter(|_| !document.beat_sounds.is_empty())
+        else {
+            return Ok(None);
+        };
+        let timing = &timing;
+        if &timing.allocation != allocation {
+            return Err(invalid(
+                "sound clock allocation must equal the new revision",
+            ));
+        }
+        if document.audio_bindings.timings.contains_key(timing) {
+            return Err(invalid("sound clock capture identity already exists"));
+        }
+        let before = FrozenAudioLayout::capture(document)?;
+        if document.beat_sounds.contains_key(document.root()) {
+            return Err(invalid("root-owned beat sounds cannot yet be transported"));
+        }
+        let journals = document.audio_bindings.sound_clocks.clone();
+        let mut retained = BTreeMap::new();
+        for events in journals.values() {
+            for journal in events.values() {
+                for reference in journal.clocks() {
+                    retained
+                        .entry(reference.timing().clone())
+                        .or_insert_with(|| {
+                            document.audio_bindings.timings[reference.timing()].clone()
+                        });
+                }
+            }
+        }
+        Ok(Some(Self {
+            events: document.beat_sounds.clone(),
+            journals,
+            retained,
+            before,
+            timing: timing.clone(),
+            removed: removed_owners(document, command)?,
+            repeat_edit: matches!(
+                command,
+                Command::RepeatSelection { .. }
+                    | Command::InsertOccurrenceTime { .. }
+                    | Command::SetRepeatPlays { .. }
+                    | Command::SetRepeatGaps { .. }
+            ),
+            introduced: match command {
+                Command::RepeatSelection { identities, .. } => Some(identities.repeat.clone()),
+                _ => None,
+            },
+            owners: document
+                .beat_sounds
+                .keys()
+                .map(|id| (id.clone(), id.clone()))
+                .collect(),
+            repeat_aliases: document
+                .nodes
+                .iter()
+                .filter(|(_, node)| matches!(node.kind, NodeKind::Repeat { .. }))
+                .map(|(id, _)| (id.clone(), id.clone()))
+                .collect(),
+            split_owners: BTreeSet::new(),
+        }))
+    }]]><calls total="8"><c n="filter" l="30">pub fn filter(&amp;mut self, events: Vec&lt;Event&gt;) -&gt; Vec&lt;Event&gt;</c><c n="capture" l="507">pub fn capture(document: &amp;ProjectDocument) -&gt; Result&lt;Self, DocumentError&gt;</c><c n="timing" l="14">pub(crate) fn timing(command: &amp;Command) -&gt; Option&lt;&amp;AudioTimingId&gt;</c><c n="capture_timing" l="59">fn capture_timing(command: &amp;Command, allocation: &amp;RevisionId) -&gt; Option&lt;AudioTimingId&gt;</c><c n="removed_owners" l="552">fn removed_owners( document: &amp;ProjectDocument, command: &amp;Command, ) -&gt; Result&lt;BTreeSet&lt;NodeId&gt;, EditError&gt;</c><c n="invalid" l="680">fn invalid(message: &amp;str) -&gt; EditError</c><c n="clocks" l="125">fn clocks(ids: Vec&lt;AudioTimingId&gt;) -&gt; SoundClocks</c><c n="Err" l="25">type Err = &amp;&apos;static str</c></calls></b><!-- body omitted (over budget): prepare --><b t="fn" l="55" p="./crates/deadpan-core/src/insert_time/composite.rs" n="prepare_suffix"><![CDATA[pub(crate) fn prepare_suffix(
+    document: &ProjectDocument,
+    parent: &NodeId,
+    slot: usize,
+    at: ProjectFrame,
+    total: i64,
+    timing: &AudioTimingId,
+) -> Result<ProjectDocument, EditError> {
+    let affected = shifted_owners(document, parent, slot)?;
+    prepare_owners(document, &affected, at, total, timing)
+}]]><calls total="2"><c n="prepare_owners" l="69">pub(crate) fn prepare_owners( document: &amp;ProjectDocument, affected: &amp;BTreeSet&lt;NodeId&gt;, at: ProjectFrame, total: i64, timing: &amp;AudioTimingId, ) -&gt; Result&lt;ProjectDocument, EditError&gt;</c><c n="shifted_owners" l="153">pub(crate) fn shifted_owners( document: &amp;ProjectDocument, parent: &amp;NodeId, slot: usize, ) -&gt; Result&lt;BTreeSet&lt;NodeId&gt;, EditError&gt;</c></calls></b><!-- body omitted (over budget): prepare_owners --><b t="fn" l="161" p="./crates/deadpan-core/src/insert_time/composite.rs" n="occurrence_shifted_owners"><![CDATA[pub(super) fn occurrence_shifted_owners(
+    document: &ProjectDocument,
+    parent: &NodeId,
+    slot: usize,
+) -> Result<BTreeSet<NodeId>, EditError> {
+    shifted_owners_with_repeats(document, parent, slot, true)
+}]]><calls total="1"><c n="shifted_owners_with_repeats" l="219">fn shifted_owners_with_repeats( document: &amp;ProjectDocument, parent: &amp;NodeId, slot: usize, repeat_ancestors: bool, ) -&gt; Result&lt;BTreeSet&lt;NodeId&gt;, EditError&gt;</c></calls></b></bodies></ctx>

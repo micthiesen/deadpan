@@ -1393,6 +1393,9 @@ fn apply_with_durations_captured(
                 &request.new_revision,
             )?
         }
+        Command::SetHoldDuration { node, duration } => {
+            crate::insert_time::hold_duration::apply(input, node, *duration, &request.new_revision)?
+        }
         Command::SpliceSource {
             parent,
             index,

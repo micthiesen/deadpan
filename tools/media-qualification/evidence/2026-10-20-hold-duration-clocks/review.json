@@ -1,0 +1,45 @@
+{
+  "base": "114823c1",
+  "reviewer": "/root/pause_selection_ui",
+  "mode": "independent read-only",
+  "findings": [],
+  "scope": [
+    "ordinary SetHoldDuration dispatch and helper",
+    "compact affected-owner capture",
+    "binding lifecycle",
+    "lineage and mark transforms",
+    "attached-sound journal timing identity",
+    "shared/default/owned Repeat targets",
+    "partial bindings",
+    "no-op, terminal and dormant targets",
+    "unchanged ordinary Retime behavior"
+  ],
+  "conclusion": "No concrete correctness concern. The full old timing layout remains intact until sound restoration; physical bindings and sound journals use the same timing ordinal 0 layout. EditOccurrence retains its separate preparation path.",
+  "execution": "Reviewer ran no Cargo and made no edits. Root owns verification.",
+  "followup": [
+    {
+      "reviewer": "/root/mixed_pause_core",
+      "scope": "independent review of new canonical PCM and real-media export tests",
+      "findings": [],
+      "conclusion": "Literal independent resampling origin, retained allocation, shared/default/owned play origins and fresh unbound export preconditions are correct. Every-picture and zero-offset audio/provenance checks do not use alignment to mask phase errors."
+    },
+    {
+      "reviewer": "/root/pause_selection_ui",
+      "scope": "independent review after silent-owner filtering and older metadata assertion correction",
+      "findings": [],
+      "conclusion": "No concrete bug. Existing silent bindings survive later SetHoldAudio; owned audible gap overrides remain traversed. Source/Retime capture is conservative. Sound journal transport and complete old layout remain separate. Revised audio assertion preserves lattice/resume/prior timing and reanchor prefixes with unchanged independent PCM oracle."
+    },
+    {
+      "reviewer": "/root/scoped_duration_pcm",
+      "scope": "read-only output-handle diagnostic investigation",
+      "findings": [],
+      "conclusion": "The metadata-only legacy/bridge wrapper test has no worker, subprocess, intentional sleep or hidden create/drop thread startup. Synchronous SQLite and descriptor handling only. Diagnostic owner/cause unproven; no evidence of generation-worker cleanup bug. Isolated root run passes cleanly in 0.098 seconds."
+    },
+    {
+      "reviewer": "/root/scoped_duration_pcm",
+      "scope": "independent review of real-media fixture oracle correction",
+      "findings": [],
+      "conclusion": "Faithful correction: four literal nonzero finite authored pre/post 256-sample waveform comparisons within 1e-6 remain. Generic limited peak > 0.5 is not an absolute gain oracle for independently rounded unbound phases. Explicit limited quiet windows, complete encoded SNR/level/silence/verified_zero offset 0, every-picture and provenance checks remain. No independent absolute limiter-gain qualification claimed."
+    }
+  ]
+}

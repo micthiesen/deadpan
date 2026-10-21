@@ -1,0 +1,6 @@
+#!/bin/sh
+set -eu
+export DEADPAN_FFMPEG_PREFIX=/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix
+export CARGO_PROFILE_DEV_OPT_LEVEL=2
+export DEADPAN_REQUIRE_PHYSICAL_MAC=1
+cargo nextest run -p deadpan-core -p deadpan-audio -p deadpan-store --locked --no-fail-fast -E 'test(ordinary_hold) or test(ordinary_shared) or test(extending_a_captured_repeat_hold) or test(compacted_terminal_preparation) or test(legacy_and_bridge_wrappers_preserve_their_explicit_protocol_contracts)' > /tmp/deadpan-hold-duration-clocks-2026-10-20/focused-final.log 2>&1

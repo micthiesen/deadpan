@@ -34,6 +34,14 @@ its new tail without resetting phase or moving captured Repeat origins. Current
 authored crop constraints and source placement still constrain raw reads.
 Creative fade geometry follows the current body on the retained clock.
 
+Ordinary `SetHoldDuration` also captures affected physical owners on their old
+root clocks when resizing moves output time. Shared Repeat definitions stay
+compact, and existing partial bindings retain their phase. No-op, terminal and
+dormant-definition changes avoid unnecessary captures. The separate
+clocked-Retime path is unchanged; this does not qualify ordinary Retime edits
+whose root duration stays fixed. See the
+[ordinary Hold-duration clock qualification](qualification/hold-duration-clocks-2026-10-20.md).
+
 Core 24 adds existing root Sequence seams before composite suffixes: Sequence,
 Repeat, Retime, owned gap branches and generated Hold owners can move together.
 Each physical or default-gap owner receives one compact chronological reanchor

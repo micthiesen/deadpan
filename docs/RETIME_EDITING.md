@@ -73,6 +73,12 @@ sample clocks. This occurrence path still refuses Retime ancestry and external
 sound events. See [scoped editing](SCOPED_EDITING.md) and
 [one-play Hold length](SEMANTIC_MACROS.md#one-play-hold-length).
 
+The ordinary `SetHoldDuration` path also retains old downstream Source, Repeat
+gap and owned-play sample clocks when the root duration changes, including
+initially unbound owners. Undo restores the complete binding state. See the
+[clock qualification](qualification/hold-duration-clocks-2026-10-20.md).
+This does not qualify ordinary Retime windows whose root duration stays fixed.
+
 ## Pitch shift
 
 `PitchPolicy::Shift { semitones }` is pitch-preserving processing with a fixed
