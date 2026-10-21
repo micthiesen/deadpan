@@ -89,6 +89,8 @@ impl RepeatableEdit {
                 | SemanticInstruction::Retime { .. }
                 | SemanticInstruction::Pitch { .. }
                 | SemanticInstruction::SetHoldDuration { .. }
+                | SemanticInstruction::SetHoldAudio { .. }
+                | SemanticInstruction::SetRoomTone { .. }
                 | SemanticInstruction::Split
                 | SemanticInstruction::Trim { .. }
                 | SemanticInstruction::Slip { .. }

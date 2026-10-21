@@ -5,6 +5,9 @@ use deadpan_core::{
     SourceTimestamp, SplitIdentities,
 };
 
+#[path = "hold_audio/scoped_semantic.rs"]
+mod scoped_semantic;
+
 fn edit(document: &ProjectDocument, next: &str, command: Command) -> CommandRequest {
     CommandRequest {
         project_id: document.project_id().clone(),

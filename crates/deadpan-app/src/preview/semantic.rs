@@ -24,6 +24,8 @@ impl super::DeadpanApp {
                     deadpan_core::SemanticInstruction::Zoom { .. }
                         | deadpan_core::SemanticInstruction::InsertPause { .. }
                         | deadpan_core::SemanticInstruction::SetHoldDuration { .. }
+                        | deadpan_core::SemanticInstruction::SetHoldAudio { .. }
+                        | deadpan_core::SemanticInstruction::SetRoomTone { .. }
                 )
             )
         {
@@ -333,6 +335,16 @@ pub(super) fn applied_text(instruction: &deadpan_core::SemanticInstruction) -> O
             return Some(format!("Repeat set: {}", parts.join("; ")));
         }
         I::SetRoomTone { .. } => return Some("Room tone applied".into()),
+        I::SetHoldAudio { audio } => {
+            return match audio {
+                deadpan_core::HoldAudio::Silence => Some("Pause sound set to silence".into()),
+                deadpan_core::HoldAudio::RoomTone { .. } => Some("Room tone applied".into()),
+                // Program validation permits only Silence and RoomTone here.
+                deadpan_core::HoldAudio::Tail { .. }
+                | deadpan_core::HoldAudio::Reverse { .. }
+                | deadpan_core::HoldAudio::Tone { .. } => None,
+            };
+        }
         I::Bleep { frequency_hz, .. } => {
             return Some(format!("Bleeped the range with a {frequency_hz} Hz tone"));
         }

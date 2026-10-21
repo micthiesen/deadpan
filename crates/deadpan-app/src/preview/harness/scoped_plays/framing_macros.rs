@@ -22,7 +22,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
             && d.app().macros.recording_name() == Some('j')
             && d.app().macros.instruction_count() == 0
             && d.revision() == revision
-            && d.app().error.as_deref() == Some("A one-play macro records freeze and black pauses, pause lengths, zooms, creeps and named calls. Save or cancel recording before another action."),
+            && d.app().error.as_deref() == Some("A one-play macro records freeze and black pauses, pause lengths, silence and room tone, zooms, creeps and named calls. Save or cancel recording before another action."),
         json!({"camera":"closed","instructions":0,"authored":"unchanged"}),
         d.snapshot(),
     )?;

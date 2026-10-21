@@ -1,0 +1,176 @@
+<ctx task="Scoped Hold Silence RoomTone semantic macros SetHoldAudio SetRoomTone planner/pause.rs preview/room_tone.rs RepeatableEdit" route=" [routed: subtoken+body BM25 (--for&apos;s default) — no strong name hit, multi-word conceptual query]" bundle="auto" bodies="4"><!-- ripwire lens for "Scoped Hold Silence RoomTone semantic macros SetHoldAudio SetRoomTone planner/pause.rs preview/room_tone.rs RepeatableEdit" [mention anchor: 2 files + 6 symbols named in the task lifted near the top] [doc mentions: 6 docs discussing 3 top-ranked symbols surfaced]: reusable building blocks + quality facts for what you're about to touch (cx=complexity ccx=cognitive in=reuse-count churn=recent-commits amp=change-amplification clone=1(duplicated) tested=1) — prefer composing/reusing these; watch the high-churn/high-amp/cloned ones; bundle=auto: the top-ranked FULL bodies ride inline after the signatures in a bodies section (bodies=N on this root counts them; bodies=0 reason=budget when none fit the remaining budget whole; the signatures-only flag opts out) — read them here instead of opening the files. The bodies element discloses the house way: total=requested, shown=printed, capped=1 when they differ; each body's calls child lists its callee signatures, total= always, shown=/capped= only when that list is cut est_tokens="4603" --><sigs capped="1"><f p="./crates/deadpan-app/src/preview/harness/room_tone.rs"><d l="275" n="recorded_pause_sound" cx="4" ccx="3" in="1" churn="11" amp="30"><doc>While a macro records, `:hold-silence` and the room-tone sheet&apos;s Apply commit as one recorded `S…</doc>fn recorded_pause_sound( d: &amp;mut Driver&lt;&apos;_&gt;, target: &amp;NodeId, silent: &amp;HoldRecipe, toned: &amp;HoldRecipe, ) -&gt; Result&lt;(), String&gt;</d><d l="360" n="prepared" cx="1" ccx="0" in="3" churn="11" amp="32">fn prepared&lt;&apos;a&gt;(d: &amp;&apos;a Driver&lt;&apos;_&gt;) -&gt; Result&lt;&amp;&apos;a crate::project::PreparedRoomTone, String&gt;</d><d l="1240" n="stale_target" cx="5" ccx="3" in="1" churn="11" amp="30">fn stale_target(d: &amp;mut Driver&lt;&apos;_&gt;, target: &amp;NodeId) -&gt; Result&lt;(), String&gt;</d></f><f p="./crates/deadpan-core/src/semantic/planner/pause.rs"><d l="32" n="insert_pause_with_intent" id="./crates/deadpan-core/src/semantic/planner/pause.rs::Planner::insert_pause_with_intent" cx="2" ccx="3" in="2" churn="16" amp="55" tested="1">fn insert_pause_with_intent( &amp;mut self, trace_index: usize, length: crate::PauseLength, black: bool, request_ai: bool, ) -&gt; Result&lt;(), EditError&gt;</d><d l="611" n="set_hold_audio" id="./crates/deadpan-core/src/semantic/planner/pause.rs::Planner::set_hold_audio" cx="4" ccx="3" in="1" churn="16" amp="54" tested="1"><doc>Silence or an explicit room-tone span for the selected pause</doc>pub(super) fn set_hold_audio( &amp;mut self, trace_index: usize, audio: HoldAudio, ) -&gt; Result&lt;(), EditError&gt;</d><d l="663" n="set_room_tone" id="./crates/deadpan-core/src/semantic/planner/pause.rs::Planner::set_room_tone" cx="6" ccx="6" in="2" churn="16" amp="55" tested="1"><doc>SetRoomTone`: the selected Hold loops the exact audio of an Original moment from a register, as …</doc>pub(super) fn set_room_tone( &amp;mut self, trace_index: usize, register: crate::RegisterName, ) -&gt; Result&lt;(), EditError&gt;</d></f><f p="./crates/deadpan-app/src/preview/room_tone.rs"><d l="115" n="room_tone_render_edit" id="./crates/deadpan-app/src/preview/room_tone.rs::DeadpanApp::room_tone_render_edit" cx="3" ccx="2" in="1" churn="15" amp="42">pub(super) fn room_tone_render_edit( &amp;self, ) -&gt; Result&lt;Option&lt;super::render::PreviewEdit&gt;, String&gt;</d><d l="235" n="open_room_tone" id="./crates/deadpan-app/src/preview/room_tone.rs::DeadpanApp::open_room_tone" cx="3" ccx="1" in="2" churn="15" amp="43">pub(super) fn open_room_tone( &amp;mut self, captured: Option&lt;CommandTarget&gt;, context: &amp;egui::Context, )</d><d l="276" n="prepare_room_tone" id="./crates/deadpan-app/src/preview/room_tone.rs::DeadpanApp::prepare_room_tone" cx="3" ccx="1" in="2" churn="15" amp="43">fn prepare_room_tone(&amp;mut self, selection: RoomToneSelection)</d><d l="331" n="reconcile_room_tone" id="./crates/deadpan-app/src/preview/room_tone.rs::DeadpanApp::reconcile_room_tone" cx="2" ccx="1" in="1" churn="15" amp="42">pub(super) fn reconcile_room_tone(&amp;mut self, context: &amp;egui::Context)</d><d l="560" n="room_tone_action" id="./crates/deadpan-app/src/preview/room_tone.rs::DeadpanApp::room_tone_action" cx="22" ccx="32" in="1" churn="15" amp="42">fn room_tone_action(&amp;mut self, action: SheetAction, context: &amp;egui::Context)</d><d l="698" n="hold_audio_controls" id="./crates/deadpan-app/src/preview/room_tone.rs::DeadpanApp::hold_audio_controls" cx="4" ccx="3" in="2" churn="15" amp="43">pub(super) fn hold_audio_controls(&amp;mut self, ui: &amp;mut egui::Ui, ready: bool)</d></f><f p="./crates/deadpan-core/src/audio_reference.rs"><d l="139" n="from" id="./crates/deadpan-core/src/audio_reference.rs::ReferenceAudibility::from" cx="6" ccx="1" in="0" churn="21" amp="58">fn from(audio: &amp;HoldAudio) -&gt; Self</d></f><f p="./crates/deadpan-plan/src/audio.rs"><d l="146" n="from_hold" id="./crates/deadpan-plan/src/audio.rs::AudioContent::from_hold" cx="6" ccx="1" in="2" churn="25" amp="152" tested="1">pub(super) fn from_hold(value: &amp;HoldAudio, duration: FrameDuration) -&gt; Self</d></f><f p="./crates/deadpan-core/src/audio_context.rs"><d l="617" n="hold_source" cx="3" ccx="1" in="1" churn="15" amp="42" tested="1">fn hold_source(audio: &amp;HoldAudio) -&gt; Option&lt;&amp;SourceAudio&gt;</d></f></sigs><bodies shown="4" total="6" capped="1"><b t="fn" l="275" p="./crates/deadpan-app/src/preview/harness/room_tone.rs" n="recorded_pause_sound"><![CDATA[fn recorded_pause_sound(
+    d: &mut Driver<'_>,
+    target: &NodeId,
+    silent: &HoldRecipe,
+    toned: &HoldRecipe,
+) -> Result<(), String> {
+    use deadpan_core::SemanticInstruction as I;
+    d.command("record w")?;
+    let before = d.revision();
+    d.command("hold-silence")?;
+    d.changed(&before)?;
+    macro_settled(d)?;
+    d.command("record-stop")?;
+    let silence = saved_macro(d, 'w')?;
+    d.check(
+        "Recording :hold-silence saves one SetHoldAudio and silences the pause",
+        silence
+            == [I::SetHoldAudio {
+                audio: HoldAudio::Silence,
+            }]
+            && hold(d, target)? == *silent,
+        json!({"instructions":["set_hold_audio silence"]}),
+        json!({"recorded":silence}),
+    )?;
+    let before = d.revision();
+    d.key(Key::U)?;
+    d.changed(&before)?;
+    d.command("record x")?;
+    open(d)?;
+    let before = d.revision();
+    d.key(Key::Enter)?;
+    d.changed(&before)?;
+    macro_settled(d)?;
+    d.command("record-stop")?;
+    let toned_program = saved_macro(d, 'x')?;
+    let HoldAudio::RoomTone { source } = &toned.audio else {
+        return Err("The approved pause has no room tone".into());
+    };
+    d.check(
+        "Recording the room-tone sheet's Apply saves its exact source span",
+        toned_program
+            == [I::SetHoldAudio {
+                audio: HoldAudio::RoomTone {
+                    source: source.clone(),
+                },
+            }]
+            && hold(d, target)? == *toned,
+        json!({"source":source}),
+        json!({"recorded":toned_program}),
+    )?;
+    let before = d.revision();
+    d.command("macro w")?;
+    d.changed(&before)?;
+    macro_settled(d)?;
+    let silenced = hold(d, target)? == *silent;
+    let before = d.revision();
+    d.command("macro x")?;
+    d.changed(&before)?;
+    macro_settled(d)?;
+    d.check(
+        "Running the macros silences the pause and gives back its exact room tone",
+        silenced && hold(d, target)? == *toned,
+        json!({"silenced":true,"restored":source}),
+        json!({"silenced":silenced,"hold":hold(d, target)?}),
+    )
+}]]><calls total="5"><c n="saved_macro" l="243">fn saved_macro( d: &amp;mut Driver&lt;&apos;_&gt;, name: char, ) -&gt; Result&lt;Vec&lt;deadpan_core::SemanticInstruction&gt;, String&gt;</c><c n="macro_settled" l="266">fn macro_settled(d: &amp;mut Driver&lt;&apos;_&gt;) -&gt; Result&lt;(), String&gt;</c><c n="hold" l="349">fn hold(d: &amp;Driver&lt;&apos;_&gt;, target: &amp;NodeId) -&gt; Result&lt;HoldRecipe, String&gt;</c><c n="open" l="376">fn open(d: &amp;mut Driver&lt;&apos;_&gt;) -&gt; Result&lt;(), String&gt;</c><c n="Err" l="25">type Err = &amp;&apos;static str</c></calls></b><b t="method" l="32" p="./crates/deadpan-core/src/semantic/planner/pause.rs" n="insert_pause_with_intent"><![CDATA[fn insert_pause_with_intent(
+        &mut self,
+        trace_index: usize,
+        length: crate::PauseLength,
+        black: bool,
+        request_ai: bool,
+    ) -> Result<(), EditError> {
+        let duration = length.resolve(self.current.presentation_basis().frame_rate)?;
+        let at = self.context.cursor;
+        self.insert_hold_with_intent(trace_index, duration, request_ai, |planner| {
+            // Black punctuation samples no picture and captures no framing.
+            if black {
+                Ok(super::PauseProvider {
+                    video: crate::HoldVideo::Background,
+                    picture_context: None,
+                    audio: HoldAudio::Silence,
+                })
+            } else {
+                let site = planner.context.scoped.as_ref().map_or(
+                    super::PauseSite::Boundary { at },
+                    |scoped| super::PauseSite::ScopedBoundary {
+                        at,
+                        within: scoped.presentation.clone(),
+                    },
+                );
+                (planner.resolve_pause)(&planner.current, site)
+            }
+        })
+    }]]><calls total="1"><c n="insert_hold_with_intent" l="282">fn insert_hold_with_intent( &amp;mut self, trace_index: usize, duration: FrameDuration, request_ai: bool, provider: impl FnOnce(&amp;mut Self) -&gt; Result&lt;super::PauseProvider, EditError&gt;, ) -&gt; Result&lt;(), EditError&gt;</c></calls></b><b t="method" l="611" p="./crates/deadpan-core/src/semantic/planner/pause.rs" n="set_hold_audio"><![CDATA[pub(super) fn set_hold_audio(
+        &mut self,
+        trace_index: usize,
+        audio: HoldAudio,
+    ) -> Result<(), EditError> {
+        if self.context.visual_selection.is_some() {
+            return Err(invalid(
+                "clear the Visual selection before changing a pause's sound",
+            ));
+        }
+        let selected = self.context.selected_child.clone().ok_or_else(|| {
+            EditError::new(
+                EditErrorCode::SelectionUnavailable,
+                "select a pause before changing its sound",
+            )
+        })?;
+        if !self.child_indices.contains_key(&selected) {
+            return Err(EditError::new(
+                EditErrorCode::SelectionUnavailable,
+                "the pause must be a direct child of the current Sequence",
+            ));
+        }
+        if !matches!(self.current.nodes()[&selected].kind, NodeKind::Hold { .. }) {
+            return Err(EditError::new(
+                EditErrorCode::WrongNodeKind,
+                "a pause sound applies to a pause (Hold)",
+            ));
+        }
+        self.charge_step(false)?;
+        let SemanticAllocation::ParameterEdit { new_revision } =
+            (self.allocate)(SemanticAllocationRequest::ParameterEdit {
+                step_index: self.steps.len(),
+            })?
+        else {
+            return Err(invalid("a pause sound requires a parameter allocation"));
+        };
+        self.reserve_revision(&new_revision)?;
+        self.commit_leaf(LeafEdit::new(
+            new_revision,
+            Command::SetHoldAudio {
+                node: selected.clone(),
+                audio,
+            },
+        )?)?;
+        self.trace[trace_index].resolved_parent = Some(self.context.parent.clone());
+        self.trace[trace_index].resolved_selection =
+            Some(SliceCaptureSelection::Child { node: selected });
+        Ok(())
+    }]]><calls total="6"><c n="new" l="3601">pub(crate) fn new(code: EditErrorCode, message: impl Into&lt;String&gt;) -&gt; Self</c><c n="new" l="80">pub fn new(new_revision: RevisionId, command: Command) -&gt; Result&lt;Self, EditError&gt;</c><c n="charge_step" l="554">pub(super) fn charge_step(&amp;mut self, capture: bool) -&gt; Result&lt;(), EditError&gt;</c><c n="reserve_revision" l="576">pub(super) fn reserve_revision(&amp;mut self, revision: &amp;RevisionId) -&gt; Result&lt;(), EditError&gt;</c><c n="commit_leaf" l="951">pub(super) fn commit_leaf(&amp;mut self, edit: LeafEdit) -&gt; Result&lt;(), EditError&gt;</c><c n="Err" l="25">type Err = &amp;&apos;static str</c></calls></b><!-- body omitted (over budget): set_room_tone --><b t="method" l="115" p="./crates/deadpan-app/src/preview/room_tone.rs" n="room_tone_render_edit"><![CDATA[pub(super) fn room_tone_render_edit(
+        &self,
+    ) -> Result<Option<super::render::PreviewEdit>, String> {
+        let draft = self
+            .room_tone
+            .as_ref()
+            .ok_or("Room tone preview is no longer open.")?;
+        self.check_hold_target(&draft.target)?;
+        if !draft.ready() {
+            return Err(draft
+                .error
+                .clone()
+                .unwrap_or_else(|| "Prepare the room tone range before committing it.".into()));
+        }
+        let audio = HoldAudio::RoomTone {
+            source: draft.prepared.as_ref().expect("ready draft").source.clone(),
+        };
+        if self
+            .workspace
+            .as_ref()
+            .and_then(|workspace| workspace.document.nodes().get(&draft.target.node))
+            .is_some_and(
+                |node| matches!(&node.kind, NodeKind::Hold { recipe } if recipe.audio == audio),
+            )
+        {
+            return Ok(None);
+        }
+        Ok(Some(super::render::PreviewEdit {
+            session: draft.target.session,
+            revision: draft.target.revision.clone(),
+            cursor: draft.target.cursor,
+            scope: draft.target.scope.clone(),
+            edit: draft.target.edit(audio),
+        }))
+    }]]><calls total="9" shown="2" capped="1"><c n="get" l="176">fn get( &amp;self, workspace: &amp;Workspace, candidate: &amp;Candidate, variant: &amp;crate::project::generation::Variant, context: &amp;egui::Context, ) -&gt; Option&lt;Reading&gt;</c><c n="expect" l="250">pub fn expect(&amp;mut self, request: slice::CaptureRequest, selection: edit_range::Selection)</c></calls></b></bodies></ctx>

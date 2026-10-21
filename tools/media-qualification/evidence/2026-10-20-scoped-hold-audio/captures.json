@@ -1,0 +1,10 @@
+{
+  "audio-prepare.png": {
+    "label": "Exact Original sample endpoints prepare before nested-play recording applies",
+    "frame": 1803
+  },
+  "audio-dot.png": {
+    "label": "RoomTone dot applies the same exact samples to the newly chosen nested play",
+    "frame": 2026
+  }
+}

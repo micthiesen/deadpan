@@ -1,0 +1,20 @@
+from pathlib import Path
+import hashlib,json,sys,shutil
+root=Path('/Users/michael/Code/deadpan')
+s=Path('/tmp/deadpan-scoped-hold-audio-2026-10-20')
+sha=lambda p:hashlib.sha256(p.read_bytes()).hexdigest()
+paths=sorted(set((s/'rust-paths.txt').read_text().splitlines()+(s/'new-paths.txt').read_text().splitlines()+['Cargo.lock','rust-toolchain.toml']))
+manifest={name:sha(root/name) for name in paths}
+p=s/'source-identities.json'
+if len(sys.argv)>1 and sys.argv[1]=='check':
+ assert manifest==json.loads(p.read_text())['sha256'],'source changed during verification/build'
+ (s/'bin').mkdir(exist_ok=True)
+ for name in ['deadpan-app','deadpan-cli']:
+  shutil.copy2(root/'target/release'/name,s/'bin'/name)
+ for name in ['deadpan-media-worker','deadpan-track','deadpan-transcribe']:
+  shutil.copy2(Path('/tmp/deadpan-mixed-pause-integration-2026-10-20/bin')/name,s/'bin'/name)
+ (s/'binaries.json').write_text(json.dumps({'sha256':{p.name:sha(p) for p in sorted((s/'bin').iterdir())},'builds':['cargo build -p deadpan-app -p deadpan-cli --release --features ui-harness --locked --bins','cargo build -p deadpan-app --release --features ui-harness --locked --bin deadpan-app'],'helpers':'Unchanged qualified private helper baseline retained by mixed-pause qualification.'},indent=2)+'\n')
+else:
+ if p.exists() and not (s/'source-identities-first.json').exists(): shutil.copy2(p,s/'source-identities-first.json')
+ p.write_text(json.dumps({'base':'7b03bba1','sha256':manifest,'source_delta':'source.diff plus new-source.json'},indent=2)+'\n')
+ (s/'new-source.json').write_text(json.dumps({name:(root/name).read_text() for name in (s/'new-paths.txt').read_text().splitlines()},indent=2)+'\n')

@@ -74,19 +74,22 @@ timing edits beyond one-play Hold duration, copy/paste and general macros inside
 these contents remain required work;
 their native actions refuse without editing the retained outer beat.
 
-Freeze/black pauses, existing Hold duration and whole-owner Zoom and Creep with
+Freeze/black pauses, existing Hold duration and sound, and whole-owner Zoom and Creep with
 Keep or OriginalCenter intent support recording and dot when This play is explicit at every enclosing
 Repeat. Saved programs retain length/picture or framing intent; invocation
 captures the current play and maps its authoring and presentation addresses
 through isolation. A pause continues from its actual new Hold, keeping the
 ordinary cursor and enclosing selection. A duration setter continues at the
 resized Hold's exact start, even when shrinking past the old interior cursor.
-Only InsertPause, SetHoldDuration, Zoom and nested
+Hold sound changes retain the absolute cursor and preserve picture and timing.
+Only InsertPause, SetHoldDuration, SetHoldAudio, SetRoomTone, Zoom and nested
 named calls are admitted. Scope navigation cancels recording and
 permanently revokes any queued macro's inspector continuation. See
 [one-play framing macros](SEMANTIC_MACROS.md#one-play-zoom-and-creep).
 See [one-play pause intent](SEMANTIC_MACROS.md#one-play-pause-intent) for pause
 recording, dot and unsupported-scope behavior.
+See [one-play Hold sound](SEMANTIC_MACROS.md#one-play-hold-sound) for exact
+prepared samples, Silence, RoomTone and unchanged direct scope workflows.
 
 `:hold-duration Nf` resizes the selected Hold in one explicit play at every
 level. The inspector's Change duration control and Enter prefill its current

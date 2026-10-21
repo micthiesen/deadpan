@@ -1,0 +1,48 @@
+{
+  "base": "7b03bba1",
+  "mode": "independent read-only review, root owns Cargo",
+  "reviews": [
+    {
+      "reviewer": "/root/mixed_pause_core",
+      "scope": "native recording and modal lifecycle, pending/stale guards, dot and scoped service receipts",
+      "findings": [
+        {
+          "problem": "RoomTone Apply attempted fresh macro capture with its preview modal still open; the existing capture gate would refuse every semantic Apply.",
+          "fix": "Classify the dispatch path without capture, close the modal, then revalidate the same target and capture before semantic dispatch.",
+          "followup": "Confirmed fixed. No remaining findings."
+        }
+      ],
+      "conclusion": "Staged value edits use actual prepare_scoped_edit mapping and the same authored leaf. Only context.scoped changes. Service receipt validates unchanged cursor and ordinary context plus final presentation; navigation revokes ownership. Dot retains Parameter instruction intent and resolves current authority. Tail remains rejected by SemanticProgram validation."
+    },
+    {
+      "reviewer": "/root/mixed_pause_core",
+      "scope": "independent canonical PCM and qualified store regression review before execution",
+      "findings": [],
+      "conclusion": "PCM uses independent absolute fractional origins, finite RoomTone source support and unchanged Source/gap comparisons. Store test must reach qualified admission after successful isolation; initial fractional-clock assumption failed during execution and is corrected separately in retained evidence."
+    },
+    {
+      "reviewer": "/root",
+      "scope": "new native replay harness written by /root/pause_selection_ui",
+      "findings": [],
+      "conclusion": "Private portable real-media fixture, production commands/pointer controls and exact sample inputs. Saved intent, per-play recipe, independent cursors, real withheld completions and Undo checked. Scope/recording is not fabricated by directly setting production state. Existing harness-only delivery hold is restored during cleanup."
+    },
+    {
+      "reviewer": "/root/mixed_pause_core",
+      "scope": "corrected late store qualification test",
+      "findings": [],
+      "conclusion": "Both steps change state and the first admits under corruption. Full Compound specifically fails SourceRegistration without partial document/bank/history/transaction_steps writes. Fractional/outside checks accurately pin core refusal with the native 1/sample_rate precondition."
+    },
+    {
+      "reviewer": "/root/mixed_pause_core",
+      "scope": "UI-feature output-handle LEAK diagnostic",
+      "findings": [],
+      "conclusion": "Flagged test seeds silent Background Holds, makes synchronous authenticated socket requests, and explicitly waits for actor/host/no-op worker shutdown. No decoder/import/render/generation/preparation subprocess is requested; current scoped audio branches are not reached. Backup/retention threads perform local filesystem/SQLite work. No retained PID/fd identifies a handle owner. Cause remains unproven; no assertion/timeout changes."
+    },
+    {
+      "reviewer": "/root",
+      "scope": "replay pointer visibility correction",
+      "findings": [],
+      "conclusion": "RoomTone and Silence exist enabled below compact inspector clip. Local adapter uses existing wheel/settle pattern for actual Nested beat inspector pane, checks complete paint visibility, revision/both cursors/exact scoped target, then clicks. No production availability or test state fabricated."
+    }
+  ]
+}

@@ -744,11 +744,13 @@ where
                     SemanticInstruction::Zoom { .. }
                         | SemanticInstruction::InsertPause { .. }
                         | SemanticInstruction::SetHoldDuration { .. }
+                        | SemanticInstruction::SetHoldAudio { .. }
+                        | SemanticInstruction::SetRoomTone { .. }
                         | SemanticInstruction::Call { .. }
                 )
             {
                 return Err(invalid(
-                    "single-play macro authority supports only Zoom, freeze or black pause intent, Hold duration and named calls",
+                    "single-play macro authority supports only Zoom, freeze or black pause intent, Hold duration or sound and named calls",
                 ));
             }
             if instruction.uses_speech() {

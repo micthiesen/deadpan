@@ -1,0 +1,24 @@
+{
+  "base": "7b03bba1",
+  "sha256": {
+    "Cargo.lock": "cd446a35ada5574e1ac17f6028e29aa09cec64bfd91d84d47b924cbb9f0ae175",
+    "crates/deadpan-app/src/preview/harness/scoped_plays.rs": "40a41965aa775160226e3f3ce718ae96d528e9f7faf12dc41f90474d10fb49ba",
+    "crates/deadpan-app/src/preview/harness/scoped_plays/framing_macros.rs": "0243cbfb46586c607bc4a01b14f805ab5e66f12e40e870127d778d4a113ce981",
+    "crates/deadpan-app/src/preview/harness/scoped_plays/hold_audio.rs": "a5dc59b750d37db8c8076dfd01627387fd7a0b9b7b0db5d7b0a7b334f16b8a40",
+    "crates/deadpan-app/src/preview/macros.rs": "ceb79fd4644b27c97504084b39ea0f01975e06394f114b870f897e0338d48243",
+    "crates/deadpan-app/src/preview/room_tone.rs": "e8c518dd9fd4e171a16946d3d74f62a372e33e222fe3fc22368d22bc4e385dd9",
+    "crates/deadpan-app/src/preview/semantic.rs": "7768ef0ca5d8e9630e08660b3aa7ffb2dfe3e61de94e6638294ce23364c6fb99",
+    "crates/deadpan-app/src/project/semantic.rs": "9c5ed30fdef7d1bb6620ec0f231c39231fe35ba4a4531960ad7f644755972cfe",
+    "crates/deadpan-app/src/project/service/macros.rs": "1a50c38b8544d8fedd9d2048c8c26fb6cb6d6a1d42e338fe7ebcd79f2f2193d1",
+    "crates/deadpan-audio/tests/stages.rs": "d662dd316207ba10e575cdb45237c1cb74c024a38e13a5a27153b8960eea9c0b",
+    "crates/deadpan-audio/tests/stages/scoped_hold_audio.rs": "3d4aeb4fcc900426589c3bd13b7d8188d62f22f84bff27249eae7381a90c711b",
+    "crates/deadpan-core/src/semantic/planner.rs": "b518578d6b9cea7f4351f6a7ecc34ee3badaf6efc39ba817d0b71e4df6d373c8",
+    "crates/deadpan-core/src/semantic/planner/pause.rs": "7d88d645e4a417f90884852831530c305a78668df4760829f30c832acdaab0fc",
+    "crates/deadpan-core/src/semantic/planner/tests/scoped_framing.rs": "e4e7e1adc92f5615641d274524b3c6f79019cc054b0695089a5603f89e8aa12c",
+    "crates/deadpan-core/src/semantic/planner/tests/scoped_hold_audio.rs": "cb94c9a0065172318641f8f0802ed2c676457b1b1add984ca00c4e5f2eb5ad06",
+    "crates/deadpan-store/tests/source_registration/hold_audio.rs": "6afc2a8ac10161bf66b5c00b9052caf539bfe72025510b859719ceea5ab511d9",
+    "crates/deadpan-store/tests/source_registration/hold_audio/scoped_semantic.rs": "8311833ab4d69050d99c338535618e311d0a73bdc3d9c76503866c0c954b99bd",
+    "rust-toolchain.toml": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc"
+  },
+  "source_delta": "source.diff plus new-source.json"
+}

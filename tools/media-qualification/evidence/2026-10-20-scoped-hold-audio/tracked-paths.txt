@@ -1,0 +1,14 @@
+crates/deadpan-app/src/preview/harness/scoped_plays.rs
+crates/deadpan-app/src/preview/harness/scoped_plays/framing_macros.rs
+crates/deadpan-app/src/preview/macros.rs
+crates/deadpan-app/src/preview/room_tone.rs
+crates/deadpan-app/src/preview/semantic.rs
+crates/deadpan-app/src/project/semantic.rs
+crates/deadpan-app/src/project/service/macros.rs
+crates/deadpan-audio/tests/stages.rs
+crates/deadpan-core/src/semantic/planner.rs
+crates/deadpan-core/src/semantic/planner/pause.rs
+crates/deadpan-core/src/semantic/planner/tests/scoped_framing.rs
+crates/deadpan-store/tests/source_registration/hold_audio.rs
+docs/SCOPED_EDITING.md
+docs/SEMANTIC_MACROS.md

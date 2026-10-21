@@ -1,0 +1,15 @@
+{
+  "reviewer": "/root",
+  "mode": "direct inspection of final offscreen release PNGs using view_image",
+  "captures": {
+    "scoped-plays-134.png": {
+      "sha256": "a2459bd0341316ee66327d268c4f2bd2cb24d47c3677341520845733ed79ca19",
+      "assessment": "960x640 modal fits. Both exact sample fields, prepared state, full Apply/Cancel and keyboard labels are legible; retained recording/context footer is visible behind modal."
+    },
+    "scoped-plays-135.png": {
+      "sha256": "9392f79ea5b248e6c717703961b36f49ec03e0a3507c5b26f2480f2c9ba6ad2b",
+      "assessment": "960x640 selected inner play and outer breadcrumb, Hold row, RoomTone source/range and complete dot hint are legible. Black picture is the authored Background Hold fixture. Footer remains anchored."
+    }
+  },
+  "limitations": "Offscreen injected-input UI evidence; physical input, VoiceOver speech, real device listening and display delivery are owner checks."
+}

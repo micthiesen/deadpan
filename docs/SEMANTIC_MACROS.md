@@ -143,7 +143,7 @@ The native receipt retains the mapped inspector. Any scope navigation revokes
 its cursor ownership permanently, including moving away and back in one event
 batch before a delayed receipt arrives.
 
-Zoom, freeze/black InsertPause, SetHoldDuration and named Call instructions are
+Zoom, freeze/black InsertPause, SetHoldDuration, SetHoldAudio, SetRoomTone and named Call instructions are
 admitted under one-play authority,
 including every expanded nested call. An unsupported later instruction refuses
 the complete run without history or bank writes. All plays, mixed choices,
@@ -207,6 +207,31 @@ events retain explicit refusals. Generated-picture shortening retains qualified
 accepted media; extension beyond its coverage commits fallback and durable
 preparation rather than stretching the accepted provider silently. See the
 [Hold duration qualification](qualification/scoped-hold-duration-2026-10-20.md).
+
+### One-play Hold sound
+
+With This play explicit at every enclosing Repeat, `:hold-silence` and the
+RoomTone sheet's Apply record `SetHoldAudio`. A prepared RoomTone instruction
+keeps the exact approved Original sample span. Preparing or cancelling the
+sheet records nothing. Headless `SetRoomTone { register }` instead resolves
+the current Original moment in that register against each staged document.
+Both forms use the same source qualification at preview and commit.
+
+An invocation isolates only the selected branches and retains the mapped Hold
+and concrete presentation for later instructions or named calls. Its absolute
+Edit cursor, ordinary enclosing selection, picture provider and duration stay
+unchanged. A successful direct one-play edit also supplies dot; choose another
+explicit play to apply the same sound intent there. Existing All/mixed and
+ordinary nonrecording controls keep their direct workflow.
+
+These are value changes, so they retain the existing Retime and sound-event
+admission instead of the Hold-duration path's timing restrictions. Choosing
+RoomTone retires only the selected Hold's obsolete silent-issuer allowance;
+returning to Silence does not grant it again. No-op policies allocate no
+isolation. Unsupported authority, stale targets and late failures refuse the
+whole run without history or register writes. A delayed saved result cannot
+reclaim newer navigation or append to an abandoned recording.
+See the [one-play Hold sound qualification](qualification/scoped-hold-audio-2026-10-20.md).
 
 ### Place slice Apply
 

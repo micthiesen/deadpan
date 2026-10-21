@@ -1,0 +1,4 @@
+crates/deadpan-app/src/preview/harness/scoped_plays/hold_audio.rs
+crates/deadpan-audio/tests/stages/scoped_hold_audio.rs
+crates/deadpan-core/src/semantic/planner/tests/scoped_hold_audio.rs
+crates/deadpan-store/tests/source_registration/hold_audio/scoped_semantic.rs

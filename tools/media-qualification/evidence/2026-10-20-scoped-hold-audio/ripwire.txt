@@ -1,0 +1,205 @@
+<ctx task="SetHoldAudio SetRoomTone ScopedNodeEdit::SetHoldAudio capture_hold_command check_hold_target semantic/planner/pause.rs preview/room_tone.rs" route=" [routed: subtoken+body BM25 (--for&apos;s default) — no strong name hit, multi-word conceptual query]" bundle="auto" bodies="4"><!-- ripwire lens for "SetHoldAudio SetRoomTone ScopedNodeEdit::SetHoldAudio capture_hold_command check_hold_target semantic/planner/pause.rs preview/room_tone.rs" [mention anchor: 2 files + 6 symbols named in the task lifted near the top] [doc mentions: 6 docs discussing 4 top-ranked symbols surfaced]: reusable building blocks + quality facts for what you're about to touch (cx=complexity ccx=cognitive in=reuse-count churn=recent-commits amp=change-amplification clone=1(duplicated) tested=1) — prefer composing/reusing these; watch the high-churn/high-amp/cloned ones; bundle=auto: the top-ranked FULL bodies ride inline after the signatures in a bodies section (bodies=N on this root counts them; bodies=0 reason=budget when none fit the remaining budget whole; the signatures-only flag opts out) — read them here instead of opening the files. The bodies element discloses the house way: total=requested, shown=printed, capped=1 when they differ; each body's calls child lists its callee signatures, total= always, shown=/capped= only when that list is cut est_tokens="4165" --><sigs capped="1"><f p="./crates/deadpan-app/src/preview/harness/room_tone.rs"><d l="275" n="recorded_pause_sound" cx="4" ccx="3" in="1" churn="11" amp="30"><doc>While a macro records, `:hold-silence` and the room-tone sheet&apos;s Apply commit as one recorded `S…</doc>fn recorded_pause_sound( d: &amp;mut Driver&lt;&apos;_&gt;, target: &amp;NodeId, silent: &amp;HoldRecipe, toned: &amp;HoldRecipe, ) -&gt; Result&lt;(), String&gt;</d><d l="349" n="hold" cx="3" ccx="1" in="4" churn="11" amp="33">fn hold(d: &amp;Driver&lt;&apos;_&gt;, target: &amp;NodeId) -&gt; Result&lt;HoldRecipe, String&gt;</d><d l="1240" n="stale_target" cx="5" ccx="3" in="1" churn="11" amp="30">fn stale_target(d: &amp;mut Driver&lt;&apos;_&gt;, target: &amp;NodeId) -&gt; Result&lt;(), String&gt;</d></f><f p="./crates/deadpan-core/src/semantic/planner/pause.rs"><d l="189" n="tail" id="./crates/deadpan-core/src/semantic/planner/pause.rs::Planner::tail" cx="5" ccx="4" in="1" churn="16" amp="54"><doc>t` / `:tail`: a hanging tail on the selected Hold, or a new freeze pause carrying one at the cur…</doc>pub(super) fn tail( &amp;mut self, trace_index: usize, length: Option&lt;crate::PauseLength&gt;, effect: crate::TailEffect, input: crate::TailInput, ) -&gt; Result&lt;(), EditE…</d><d l="611" n="set_hold_audio" id="./crates/deadpan-core/src/semantic/planner/pause.rs::Planner::set_hold_audio" cx="4" ccx="3" in="1" churn="16" amp="54" tested="1"><doc>Silence or an explicit room-tone span for the selected pause</doc>pub(super) fn set_hold_audio( &amp;mut self, trace_index: usize, audio: HoldAudio, ) -&gt; Result&lt;(), EditError&gt;</d><d l="663" n="set_room_tone" id="./crates/deadpan-core/src/semantic/planner/pause.rs::Planner::set_room_tone" cx="6" ccx="6" in="2" churn="16" amp="55" tested="1"><doc>SetRoomTone`: the selected Hold loops the exact audio of an Original moment from a register, as …</doc>pub(super) fn set_room_tone( &amp;mut self, trace_index: usize, register: crate::RegisterName, ) -&gt; Result&lt;(), EditError&gt;</d></f></sigs><bodies shown="4" total="6" capped="1"><b t="fn" l="275" p="./crates/deadpan-app/src/preview/harness/room_tone.rs" n="recorded_pause_sound"><![CDATA[fn recorded_pause_sound(
+    d: &mut Driver<'_>,
+    target: &NodeId,
+    silent: &HoldRecipe,
+    toned: &HoldRecipe,
+) -> Result<(), String> {
+    use deadpan_core::SemanticInstruction as I;
+    d.command("record w")?;
+    let before = d.revision();
+    d.command("hold-silence")?;
+    d.changed(&before)?;
+    macro_settled(d)?;
+    d.command("record-stop")?;
+    let silence = saved_macro(d, 'w')?;
+    d.check(
+        "Recording :hold-silence saves one SetHoldAudio and silences the pause",
+        silence
+            == [I::SetHoldAudio {
+                audio: HoldAudio::Silence,
+            }]
+            && hold(d, target)? == *silent,
+        json!({"instructions":["set_hold_audio silence"]}),
+        json!({"recorded":silence}),
+    )?;
+    let before = d.revision();
+    d.key(Key::U)?;
+    d.changed(&before)?;
+    d.command("record x")?;
+    open(d)?;
+    let before = d.revision();
+    d.key(Key::Enter)?;
+    d.changed(&before)?;
+    macro_settled(d)?;
+    d.command("record-stop")?;
+    let toned_program = saved_macro(d, 'x')?;
+    let HoldAudio::RoomTone { source } = &toned.audio else {
+        return Err("The approved pause has no room tone".into());
+    };
+    d.check(
+        "Recording the room-tone sheet's Apply saves its exact source span",
+        toned_program
+            == [I::SetHoldAudio {
+                audio: HoldAudio::RoomTone {
+                    source: source.clone(),
+                },
+            }]
+            && hold(d, target)? == *toned,
+        json!({"source":source}),
+        json!({"recorded":toned_program}),
+    )?;
+    let before = d.revision();
+    d.command("macro w")?;
+    d.changed(&before)?;
+    macro_settled(d)?;
+    let silenced = hold(d, target)? == *silent;
+    let before = d.revision();
+    d.command("macro x")?;
+    d.changed(&before)?;
+    macro_settled(d)?;
+    d.check(
+        "Running the macros silences the pause and gives back its exact room tone",
+        silenced && hold(d, target)? == *toned,
+        json!({"silenced":true,"restored":source}),
+        json!({"silenced":silenced,"hold":hold(d, target)?}),
+    )
+}]]><calls total="5"><c n="saved_macro" l="243">fn saved_macro( d: &amp;mut Driver&lt;&apos;_&gt;, name: char, ) -&gt; Result&lt;Vec&lt;deadpan_core::SemanticInstruction&gt;, String&gt;</c><c n="macro_settled" l="266">fn macro_settled(d: &amp;mut Driver&lt;&apos;_&gt;) -&gt; Result&lt;(), String&gt;</c><c n="hold" l="349">fn hold(d: &amp;Driver&lt;&apos;_&gt;, target: &amp;NodeId) -&gt; Result&lt;HoldRecipe, String&gt;</c><c n="open" l="376">fn open(d: &amp;mut Driver&lt;&apos;_&gt;) -&gt; Result&lt;(), String&gt;</c><c n="Err" l="25">type Err = &amp;&apos;static str</c></calls></b><b t="method" l="189" p="./crates/deadpan-core/src/semantic/planner/pause.rs" n="tail"><![CDATA[pub(super) fn tail(
+        &mut self,
+        trace_index: usize,
+        length: Option<crate::PauseLength>,
+        effect: crate::TailEffect,
+        input: crate::TailInput,
+    ) -> Result<(), EditError> {
+        let rate = self.current.presentation_basis().frame_rate;
+        let length = length.map(|length| length.resolve(rate)).transpose()?;
+        let selected_hold = self.context.selected_child.as_ref().and_then(|selected| {
+            let index = *self.child_indices.get(selected)?;
+            match &self.current.nodes()[selected].kind {
+                NodeKind::Hold { recipe } => Some((
+                    selected.clone(),
+                    index
+                        .checked_sub(1)
+                        .map_or(self.bounds.0, |previous| self.child_ends[previous].1),
+                    recipe.duration,
+                )),
+                _ => None,
+            }
+        });
+        if self.context.visual_selection.is_some() {
+            return Err(invalid("clear the Visual selection before adding a tail"));
+        }
+        let Some((hold, start, hold_duration)) = selected_hold else {
+            let duration = length.ok_or_else(|| {
+                EditError::new(
+                    EditErrorCode::InvalidCommand,
+                    "give the new tail pause a length, for example :tail 400ms",
+                )
+            })?;
+            let at = self.context.cursor;
+            // The picture is the ordinary freeze; the tail is a live
+            // reference to what precedes the pause, so it needs no media.
+            return self.insert_hold(trace_index, duration, |planner| {
+                let mut provider =
+                    (planner.resolve_pause)(&planner.current, super::PauseSite::Boundary { at })?;
+                provider.audio = HoldAudio::Tail {
+                    input,
+                    maximum: duration,
+                    effect,
+                };
+                Ok(provider)
+            });
+        };
+        if start.0 == 0 {
+            return Err(EditError::new(
+                EditErrorCode::SelectionUnavailable,
+                "nothing plays before this pause to ring into it",
+            ));
+        }
+        let maximum = length.map_or(hold_duration, |length| length.min(hold_duration));
+        // Only the sound changes: no picture is resolved, so any provider
+        // (accepted, still or black) keeps its picture.
+        self.charge_step(false)?;
+        let SemanticAllocation::ParameterEdit { new_revision } =
+            (self.allocate)(SemanticAllocationRequest::ParameterEdit {
+                step_index: self.steps.len(),
+            })?
+        else {
+            return Err(invalid("a tail requires a parameter allocation"));
+        };
+        self.reserve_revision(&new_revision)?;
+        let edit = LeafEdit::new(
+            new_revision,
+            Command::SetHoldAudio {
+                node: hold.clone(),
+                audio: HoldAudio::Tail {
+                    input,
+                    maximum,
+                    effect,
+                },
+            },
+        )?;
+        self.commit_leaf(edit)?;
+        self.trace[trace_index].resolved_parent = Some(self.context.parent.clone());
+        self.trace[trace_index].resolved_selection =
+            Some(SliceCaptureSelection::Child { node: hold });
+        Ok(())
+    }]]><calls total="8"><c n="new" l="3598">pub(crate) fn new(code: EditErrorCode, message: impl Into&lt;String&gt;) -&gt; Self</c><c n="new" l="80">pub fn new(new_revision: RevisionId, command: Command) -&gt; Result&lt;Self, EditError&gt;</c><c n="checked_sub" l="112">pub fn checked_sub(self, other: Self) -&gt; Result&lt;Self, TimeError&gt;</c><c n="charge_step" l="554">pub(super) fn charge_step(&amp;mut self, capture: bool) -&gt; Result&lt;(), EditError&gt;</c><c n="reserve_revision" l="576">pub(super) fn reserve_revision(&amp;mut self, revision: &amp;RevisionId) -&gt; Result&lt;(), EditError&gt;</c><c n="insert_hold" l="273">fn insert_hold( &amp;mut self, trace_index: usize, duration: FrameDuration, provider: impl FnOnce(&amp;mut Self) -&gt; Result&lt;super::PauseProvider, EditError&gt;, ) -&gt; Result&lt;(), EditError&gt;</c><c n="commit_leaf" l="951">pub(super) fn commit_leaf(&amp;mut self, edit: LeafEdit) -&gt; Result&lt;(), EditError&gt;</c><c n="Err" l="25">type Err = &amp;&apos;static str</c></calls></b><b t="method" l="611" p="./crates/deadpan-core/src/semantic/planner/pause.rs" n="set_hold_audio"><![CDATA[pub(super) fn set_hold_audio(
+        &mut self,
+        trace_index: usize,
+        audio: HoldAudio,
+    ) -> Result<(), EditError> {
+        if self.context.visual_selection.is_some() {
+            return Err(invalid(
+                "clear the Visual selection before changing a pause's sound",
+            ));
+        }
+        let selected = self.context.selected_child.clone().ok_or_else(|| {
+            EditError::new(
+                EditErrorCode::SelectionUnavailable,
+                "select a pause before changing its sound",
+            )
+        })?;
+        if !self.child_indices.contains_key(&selected) {
+            return Err(EditError::new(
+                EditErrorCode::SelectionUnavailable,
+                "the pause must be a direct child of the current Sequence",
+            ));
+        }
+        if !matches!(self.current.nodes()[&selected].kind, NodeKind::Hold { .. }) {
+            return Err(EditError::new(
+                EditErrorCode::WrongNodeKind,
+                "a pause sound applies to a pause (Hold)",
+            ));
+        }
+        self.charge_step(false)?;
+        let SemanticAllocation::ParameterEdit { new_revision } =
+            (self.allocate)(SemanticAllocationRequest::ParameterEdit {
+                step_index: self.steps.len(),
+            })?
+        else {
+            return Err(invalid("a pause sound requires a parameter allocation"));
+        };
+        self.reserve_revision(&new_revision)?;
+        self.commit_leaf(LeafEdit::new(
+            new_revision,
+            Command::SetHoldAudio {
+                node: selected.clone(),
+                audio,
+            },
+        )?)?;
+        self.trace[trace_index].resolved_parent = Some(self.context.parent.clone());
+        self.trace[trace_index].resolved_selection =
+            Some(SliceCaptureSelection::Child { node: selected });
+        Ok(())
+    }]]><calls total="6"><c n="new" l="3598">pub(crate) fn new(code: EditErrorCode, message: impl Into&lt;String&gt;) -&gt; Self</c><c n="new" l="80">pub fn new(new_revision: RevisionId, command: Command) -&gt; Result&lt;Self, EditError&gt;</c><c n="charge_step" l="554">pub(super) fn charge_step(&amp;mut self, capture: bool) -&gt; Result&lt;(), EditError&gt;</c><c n="reserve_revision" l="576">pub(super) fn reserve_revision(&amp;mut self, revision: &amp;RevisionId) -&gt; Result&lt;(), EditError&gt;</c><c n="commit_leaf" l="951">pub(super) fn commit_leaf(&amp;mut self, edit: LeafEdit) -&gt; Result&lt;(), EditError&gt;</c><c n="Err" l="25">type Err = &amp;&apos;static str</c></calls></b><!-- body omitted (over budget): set_room_tone --><b t="method" l="26" p="./crates/deadpan-app/src/preview/room_tone.rs" n="edit"><![CDATA[fn edit(&self, audio: HoldAudio) -> ProjectEdit {
+        match &self.scoped {
+            Some(target) => ProjectEdit::Scoped {
+                target: Box::new(target.clone()),
+                edit: deadpan_core::ScopedNodeEdit::SetHoldAudio { audio },
+            },
+            None => ProjectEdit::HoldAudio {
+                node: self.node.clone(),
+                audio,
+            },
+        }
+    }]]></b><!-- body omitted (over budget): room_tone_render_edit --></bodies></ctx>

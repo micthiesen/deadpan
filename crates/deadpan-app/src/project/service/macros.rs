@@ -290,6 +290,7 @@ impl Service {
                             SemanticInstruction::SetRepeatPlays { .. } => "Set Repeat plays",
                             SemanticInstruction::SetRepeat { .. } => "Change Repeat",
                             SemanticInstruction::SetRoomTone { .. } => "Set room tone",
+                            SemanticInstruction::SetHoldAudio { .. } => "Change pause sound",
                             SemanticInstruction::SetCutaway { .. } => "Place cutaway",
                             SemanticInstruction::SetCaption { .. } => "Add caption",
                             SemanticInstruction::Group { .. } => "Group beats",

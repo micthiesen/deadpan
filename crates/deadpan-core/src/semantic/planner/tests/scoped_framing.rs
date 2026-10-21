@@ -12,6 +12,9 @@ mod scoped_pause;
 #[path = "scoped_hold_duration.rs"]
 mod scoped_hold_duration;
 
+#[path = "scoped_hold_audio.rs"]
+mod scoped_hold_audio;
+
 fn repeated(id: &str, child: &str, plays: u32) -> BeatNode {
     let mut result = BeatNode::sequence(id, vec![]);
     result.kind = NodeKind::Repeat {

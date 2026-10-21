@@ -1,0 +1,4 @@
+#!/bin/sh
+set -eu
+export CARGO_PROFILE_DEV_OPT_LEVEL=2
+cargo nextest run -p deadpan-core --locked --no-fail-fast -E 'test(scoped_hold_audio) or test(scoped_room_tone_snapshots_original)' > /tmp/deadpan-scoped-hold-audio-2026-10-20/core.log 2>&1

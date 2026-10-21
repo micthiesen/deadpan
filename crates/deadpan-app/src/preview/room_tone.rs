@@ -152,8 +152,7 @@ impl DeadpanApp {
         let target = (|| {
             if self.view != View::Sequence || self.event_focused() || self.sound_focused() {
                 return Err(
-                    "Select an ordinary pause in Your edit before opening its audio controls."
-                        .into(),
+                    "Select a pause in Your edit before opening its audio controls.".into(),
                 );
             }
             let workspace = self.workspace.as_ref().ok_or("Open a project first.")?;
@@ -232,15 +231,73 @@ impl DeadpanApp {
         Ok(())
     }
 
+    /// Commands and inspector buttons share the same recording/pending guard.
+    /// Command entry alone permits navigation away from a pending scoped edit;
+    /// opening or applying an audio draft must still wait for that edit.
+    pub(super) fn hold_audio_entry_allowed(&mut self) -> bool {
+        let recording = self.macros.recording();
+        if !self.macro_action_allowed(Action::Command) {
+            return false;
+        }
+        if self.macros.is_pending() {
+            self.error = Some("Wait for the pending macro action to finish.".into());
+            return false;
+        }
+        if recording && !self.macros.recording() {
+            self.error = Some("Recording stopped because its context changed. Start the command again; no action was performed.".into());
+            return false;
+        }
+        true
+    }
+
+    fn uses_semantic_hold_audio(&self, target: &Target) -> bool {
+        self.macros.recording()
+            || target.scoped.as_ref().is_some_and(|scoped| {
+                scoped.has_single_play_authority()
+                    && self.edit_selection() == navigation::EditSelection::None
+                    && !matches!(self.pane, Pane::Sources | Pane::Sounds)
+                    && !self.sound_focused()
+                    && !self.event_focused()
+            })
+    }
+
+    fn hold_audio_capture(&self, target: &Target) -> Result<Option<macros::Capture>, String> {
+        self.check_hold_target(target)?;
+        // Existing All/mixed, Visual and unfocused nonrecording contexts
+        // retain their direct captured-target workflow.
+        if !self.uses_semantic_hold_audio(target) {
+            return Ok(None);
+        }
+        let captured = self.capture_macro_target()?;
+        if let Some(scoped) = &target.scoped {
+            if !captured.captures_scope(scoped) {
+                return Err(
+                    "The pause's captured play changed; open its audio controls again.".into(),
+                );
+            }
+        } else {
+            self.recorded_context(
+                target.session,
+                &target.revision,
+                &target.node,
+                target.cursor,
+            )?;
+        }
+        Ok(Some(captured))
+    }
+
     pub(super) fn open_room_tone(
         &mut self,
         captured: Option<CommandTarget>,
         context: &egui::Context,
     ) {
+        if !self.hold_audio_entry_allowed() {
+            return;
+        }
         let result = (|| {
             let captured = captured.ok_or("No pause was captured when command entry opened.")?;
             let target = captured.target?;
-            self.check_hold_target(&target)?;
+            self.hold_audio_capture(&target)?;
             let selection = captured.selection.ok_or_else(|| format!("Copy a quiet Original range first: :source, {}. Return to Your edit and select a pause, then :room-tone.", self.editor_copy_recipe()))?;
             Ok::<_, String>((target, selection, captured.copied))
         })();
@@ -350,42 +407,25 @@ impl DeadpanApp {
     }
 
     pub(super) fn silence_hold(&mut self, captured: Option<CommandTarget>) {
-        if self.macros.recording() {
-            // The pause captured on command entry must still be the selection.
-            let checked = match captured.as_ref().map(|captured| &captured.target) {
-                Some(Ok(target)) if target.scoped.is_none() => self.recorded_context(
-                    target.session,
-                    &target.revision,
-                    &target.node,
-                    target.cursor,
-                ),
-                _ => Err(
-                    "Select an ordinary pause in Your edit when recording :hold-silence.".into(),
-                ),
-            };
-            if let Err(error) = checked {
-                self.error = Some(error);
-                return;
-            }
-            let capture = self.capture_macro_target();
-            self.apply_recorded_instruction(
-                capture,
-                Ok(deadpan_core::SemanticInstruction::SetHoldAudio {
-                    audio: HoldAudio::Silence,
-                }),
-            );
+        if !self.hold_audio_entry_allowed() {
             return;
         }
         let result = (|| {
             let target = captured
                 .ok_or("No pause was captured when command entry opened.")?
                 .target?;
-            self.check_hold_target(&target)?;
-            Ok::<_, String>(hold_request(target, HoldAudio::Silence))
+            let capture = self.hold_audio_capture(&target)?;
+            Ok::<_, String>((target, capture))
         })();
         match result {
-            Ok(request) => {
-                self.submit(request);
+            Ok((_, Some(capture))) => self.apply_recorded_instruction(
+                Ok(capture),
+                Ok(deadpan_core::SemanticInstruction::SetHoldAudio {
+                    audio: HoldAudio::Silence,
+                }),
+            ),
+            Ok((target, None)) => {
+                self.submit(hold_request(target, HoldAudio::Silence));
             }
             Err(error) => self.error = Some(error),
         }
@@ -615,26 +655,20 @@ impl DeadpanApp {
             SheetAction::Apply => {
                 let target = draft.target.clone();
                 let source = draft.prepared.as_ref().expect("ready draft").source.clone();
-                // While a macro records, the exact span commits as one
-                // recorded instruction on the restored selection.
-                if self.macros.recording() {
-                    if target.scoped.is_some() {
-                        if let Some(draft) = &mut self.room_tone {
-                            draft.error = Some("Room tone inside Repeat or speed-change contents cannot be recorded yet; save or cancel the macro first.".into());
-                        }
-                        return;
-                    }
+                if !self.hold_audio_entry_allowed() {
+                    return;
+                }
+                // Record only the exact prepared span. Closing the modal must
+                // restore the same captured Hold before capture and dispatch:
+                // ordinary capture correctly refuses an open preview modal.
+                if self.uses_semantic_hold_audio(&target) {
                     self.close_room_tone(context);
-                    if let Err(error) = self.recorded_context(
-                        target.session,
-                        &target.revision,
-                        &target.node,
-                        target.cursor,
-                    ) {
-                        self.error = Some(error);
-                        return;
-                    }
-                    let capture = self.capture_macro_target();
+                    let capture = self.hold_audio_capture(&target).and_then(|capture| {
+                        capture.ok_or_else(|| {
+                            "The pause's captured play changed; open its audio controls again."
+                                .to_owned()
+                        })
+                    });
                     self.apply_recorded_instruction(
                         capture,
                         Ok(deadpan_core::SemanticInstruction::SetHoldAudio {

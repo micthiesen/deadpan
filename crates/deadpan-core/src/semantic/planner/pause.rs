@@ -613,6 +613,9 @@ where
         trace_index: usize,
         audio: HoldAudio,
     ) -> Result<(), EditError> {
+        if let Some(scoped) = self.context.scoped.clone() {
+            return self.set_scoped_hold_audio(trace_index, audio, scoped);
+        }
         if self.context.visual_selection.is_some() {
             return Err(invalid(
                 "clear the Visual selection before changing a pause's sound",
@@ -670,13 +673,19 @@ where
                 "clear the Visual selection before choosing room tone",
             ));
         }
-        let selected = self.context.selected_child.clone().ok_or_else(|| {
-            EditError::new(
-                EditErrorCode::SelectionUnavailable,
-                "select a pause before choosing its room tone",
-            )
-        })?;
-        if !self.child_indices.contains_key(&selected) {
+        let scoped = self.context.scoped.clone();
+        let selected = if let Some(scoped) = &scoped {
+            framing::validate_scoped_context(&self.current, &self.context)?;
+            scoped.target.node.clone()
+        } else {
+            self.context.selected_child.clone().ok_or_else(|| {
+                EditError::new(
+                    EditErrorCode::SelectionUnavailable,
+                    "select a pause before choosing its room tone",
+                )
+            })?
+        };
+        if scoped.is_none() && !self.child_indices.contains_key(&selected) {
             return Err(EditError::new(
                 EditErrorCode::SelectionUnavailable,
                 "the pause must be a direct child of the current Sequence",
@@ -702,6 +711,13 @@ where
         }
         let source = (self.resolve_original)(&self.current, value.as_ref())?;
         let audio = copied_moment_audio(&source)?;
+        if let Some(scoped) = scoped {
+            return self.set_scoped_hold_audio(
+                trace_index,
+                HoldAudio::RoomTone { source: audio },
+                scoped,
+            );
+        }
         self.charge_step(false)?;
         let SemanticAllocation::ParameterEdit { new_revision } =
             (self.allocate)(SemanticAllocationRequest::ParameterEdit {
@@ -723,6 +739,88 @@ where
         self.trace[trace_index].resolved_selection =
             Some(SliceCaptureSelection::Child { node: selected });
         Ok(())
+    }
+
+    /// A value edit retains the captured absolute cursor and ordinary selection.
+    /// Isolation supplies the final Hold address for later staged instructions.
+    fn set_scoped_hold_audio(
+        &mut self,
+        trace_index: usize,
+        audio: HoldAudio,
+        scoped: SemanticScopedContext,
+    ) -> Result<(), EditError> {
+        framing::validate_scoped_context(&self.current, &self.context)?;
+        let edit = crate::ScopedNodeEdit::SetHoldAudio { audio };
+        let requirements = self
+            .current
+            .scoped_edit_requirements(&scoped.target, &edit)?;
+        self.trace[trace_index].resolved_parent = Some(self.context.parent.clone());
+        self.trace[trace_index].resolved_selection = Some(SliceCaptureSelection::Child {
+            node: scoped.target.node.clone(),
+        });
+        if requirements.unchanged {
+            return Ok(());
+        }
+        self.charge_step(false)?;
+        let SemanticAllocation::Isolation {
+            new_revision,
+            identities,
+        } = (self.allocate)(SemanticAllocationRequest::Isolation {
+            step_index: self.steps.len(),
+            nodes: requirements.nodes,
+            marks: requirements.marks,
+        })?
+        else {
+            return Err(invalid(
+                "single-play pause sound requires an Isolation allocation",
+            ));
+        };
+        if identities.nodes.len() != requirements.nodes
+            || identities.marks.len() != requirements.marks
+        {
+            return Err(invalid(
+                "single-play pause sound requires its exact isolation identity pools",
+            ));
+        }
+        self.reserve_revision(&new_revision)?;
+        for node in &identities.nodes {
+            self.reserve_node(node)?;
+        }
+        for mark in &identities.marks {
+            if !self.marks.insert(mark.clone()) {
+                return Err(identity(
+                    "macro reuses an authored or allocated mark identity",
+                ));
+            }
+        }
+        let leaf = LeafEdit::new(
+            new_revision,
+            Command::EditScoped {
+                target: scoped.target.clone(),
+                edit,
+                identities,
+            },
+        )?;
+        let prepared = crate::prepare_scoped_edit(&self.current, &leaf.request(&self.current))?;
+        let mapped = SemanticScopedContext {
+            root: scoped.root,
+            target: prepared.map_target(&self.current, &scoped.target)?,
+            presentation: prepared.map_instance(&self.current, &scoped.presentation)?,
+        };
+        if !mapped
+            .target
+            .matches_instance(&prepared.document, &mapped.presentation)?
+        {
+            return Err(invalid(
+                "single-play pause sound lost its concrete presentation during isolation",
+            ));
+        }
+        self.commit_leaf(leaf)?;
+        self.trace[trace_index].resolved_selection = Some(SliceCaptureSelection::Child {
+            node: mapped.target.node.clone(),
+        });
+        self.context.scoped = Some(mapped);
+        framing::validate_scoped_context(&self.current, &self.context)
     }
 
     /// `SetCutaway`: the Original moment in `register` over the whole

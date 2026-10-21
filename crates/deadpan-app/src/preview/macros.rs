@@ -582,7 +582,7 @@ impl DeadpanApp {
                     | Action::OfferInsert
             )
         {
-            self.error = Some("A one-play macro records freeze and black pauses, pause lengths, zooms, creeps and named calls. Save or cancel recording before another action.".into());
+            self.error = Some("A one-play macro records freeze and black pauses, pause lengths, silence and room tone, zooms, creeps and named calls. Save or cancel recording before another action.".into());
             return false;
         }
         if self.macros.recording_original()
@@ -797,12 +797,12 @@ impl DeadpanApp {
                 self.macro_action_allowed(Action::DeleteSelection)
             }
             Ok(navigation::command::Entry::SelectRole(_)) => true,
-            Ok(
-                navigation::command::Entry::Trim(_)
-                | navigation::command::Entry::Slip(_)
-                | navigation::command::Entry::RoomTone
-                | navigation::command::Entry::HoldSilence,
-            ) => self.macro_action_allowed(Action::Trim),
+            Ok(navigation::command::Entry::Trim(_) | navigation::command::Entry::Slip(_)) => {
+                self.macro_action_allowed(Action::Trim)
+            }
+            Ok(navigation::command::Entry::RoomTone | navigation::command::Entry::HoldSilence) => {
+                self.hold_audio_entry_allowed()
+            }
             // Recorded as one semantic audio-treatment change.
             Ok(
                 navigation::command::Entry::Gain(Some(_))
@@ -1381,10 +1381,12 @@ impl DeadpanApp {
                     SemanticInstruction::Zoom { .. }
                         | SemanticInstruction::InsertPause { .. }
                         | SemanticInstruction::SetHoldDuration { .. }
+                        | SemanticInstruction::SetHoldAudio { .. }
+                        | SemanticInstruction::SetRoomTone { .. }
                         | SemanticInstruction::Call { .. }
                 )
             {
-                return Err("This play supports freeze and black pauses, pause lengths, Zoom, Creep and named calls only. Return to the parent for other macro edits.".into());
+                return Err("This play supports freeze and black pauses, pause lengths, silence and room tone, Zoom, Creep and named calls only. Return to the parent for other macro edits.".into());
             }
             if !captured.matches(self)
                 || self
