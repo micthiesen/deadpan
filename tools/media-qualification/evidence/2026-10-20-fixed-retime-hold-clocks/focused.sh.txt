@@ -1,0 +1,9 @@
+#!/bin/sh
+set -eu
+export DEADPAN_FFMPEG_PREFIX=/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix
+export CARGO_PROFILE_DEV_OPT_LEVEL=2
+export DEADPAN_REQUIRE_PHYSICAL_MAC=1
+s=/tmp/deadpan-retime-hold-clocks-2026-10-20
+cargo nextest run -p deadpan-core --locked -E 'test(ordinary_hold_duration_fixed)' > "$s/core.log" 2>&1
+cargo nextest run -p deadpan-audio --test stages --locked -E 'test(ordinary_hold_growth_inside_fixed_retime) or test(ordinary_hold_shrink_inside_fixed_retime) or test(ordinary_hold_growth_inside_nested_nonzero_affine) or test(ordinary_shared_hold_inside_fixed_retime)' > "$s/pcm.log" 2>&1
+cargo nextest run -p deadpan-store --test hold_duration_clocks --locked -E 'test(fixed_retime_hold_duration_clocks)' > "$s/store.log" 2>&1

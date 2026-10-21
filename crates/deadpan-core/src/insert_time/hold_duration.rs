@@ -1,5 +1,7 @@
 //! Resize an ordinary Hold while retaining every surviving allocation's clock.
 
+use std::collections::{BTreeMap, BTreeSet};
+
 use crate::{
     AudioTimingId, Command, EditError, FrameDuration, HoldAudio, NodeId, NodeKind, ProjectDocument,
     ProjectFrame, RevisionId,
@@ -21,8 +23,15 @@ pub(crate) fn apply(
     crate::command::reduce(&mut result, &command, allocation)?;
     let before_total = document.structural_duration()?.frames();
     let after_total = result.structural_duration()?.frames();
-    if before_total != after_total {
-        let mut affected = super::composite::occurrence_owners_after(document, node)?;
+    let affected = if before_total != after_total {
+        Some(super::composite::occurrence_owners_after(document, node)?)
+    } else if matches!(&document.nodes()[node].kind, NodeKind::Hold { recipe } if recipe.duration != duration)
+    {
+        fixed_affine_window_owners(document, node)?
+    } else {
+        None
+    };
+    if let Some(mut affected) = affected {
         // Silence has no surviving sample phase to transport. Keep any older
         // bindings intact, including for a later explicit provider change, but
         // do not append clocks to every silent owner after each resize. In a
@@ -62,15 +71,105 @@ pub(crate) fn apply(
             result.audio_bindings = working.audio_bindings;
         }
     }
-    // Same no-op, terminal and dormant-definition behavior as the old reducer:
-    // without moved live output no new physical timing identities are retained.
-    // Ordinary unclocked Retime windows keep their existing reducer behavior;
+    // Exact no-op and empty-suffix edits need no physical timing capture.
+    // Processing-ancestor edits retain their existing, unqualified behavior;
     // the dedicated clocked-Retime path is dispatched before this helper.
     let mut structure = None;
     crate::audio_lineage::reconcile_shared(document, &mut result, &command, &mut structure)?;
     result.marks =
         crate::marks::transform_marks_shared(document, &result, &command, &mut structure)?;
     Ok(result)
+}
+
+/// A fixed Retime can hide root ripple while its child suffix still moves.
+/// Collect only that interior ripple, and inspect the complete ancestor path:
+/// an outer Preserve/Shift is an opaque input clock even above an affine window.
+/// That processing-ancestor path is not changed or newly refused here.
+fn fixed_affine_window_owners(
+    document: &ProjectDocument,
+    owner: &NodeId,
+) -> Result<Option<BTreeSet<NodeId>>, EditError> {
+    let mut parents = BTreeMap::new();
+    for id in document.nodes().keys() {
+        for child in document.children(id) {
+            parents.insert(child, id);
+        }
+    }
+    let mut child = owner;
+    let mut pending = Vec::new();
+    let mut fixed_window = false;
+    let mut live = true;
+    for _ in 0..=crate::MAX_DOCUMENT_DEPTH {
+        if child == document.root() {
+            if !fixed_window || !live {
+                return Ok(None);
+            }
+            let mut affected = BTreeSet::new();
+            for root in pending {
+                affected.extend(super::composite::repeat_interior_owners(document, root)?);
+                if affected.len() > crate::MAX_DOCUMENT_NODES {
+                    return Err(super::limit("Hold duration window traversal"));
+                }
+            }
+            return Ok(Some(affected));
+        }
+        let ancestor = parents
+            .get(child)
+            .copied()
+            .ok_or_else(|| super::invalid("Hold duration owner is outside the project"))?;
+        match &document.nodes()[ancestor].kind {
+            NodeKind::Retime {
+                duration,
+                mapping,
+                pitch,
+                ..
+            } => {
+                if pitch.processes(mapping.duration() == *duration) {
+                    return Ok(None);
+                }
+                // SetHoldDuration never changes this stage's selected window
+                // or output extent. Its outer siblings and plays stay put.
+                fixed_window = true;
+            }
+            NodeKind::Repeat {
+                child: default,
+                iterations,
+                ..
+            } => {
+                // All override keys are distinct current plays in a validated
+                // tree. Equal counts prove that the default has no live use,
+                // without expanding the Repeat. Check above fixed windows too:
+                // a dormant enclosing branch hides their entire interior.
+                if child == default
+                    && document.overrides().get(ancestor).is_some_and(|overrides| {
+                        usize::try_from(iterations.len())
+                            .is_ok_and(|plays| overrides.len() == plays)
+                    })
+                {
+                    live = false;
+                }
+                if !fixed_window {
+                    pending.clear();
+                    pending.push(ancestor);
+                }
+            }
+            NodeKind::Sequence { children } if !fixed_window => {
+                let position = children
+                    .iter()
+                    .position(|candidate| candidate == child)
+                    .ok_or_else(|| super::invalid("Hold duration owner lost its ancestor slot"))?;
+                pending.extend(children[position + 1..].iter());
+            }
+            NodeKind::Sequence { .. } => {}
+            NodeKind::Source { .. } | NodeKind::Hold { .. } => {
+                return Err(super::invalid(
+                    "Hold duration owner has a physical ancestor",
+                ));
+            }
+        }
+        child = ancestor;
+    }
+    Err(super::limit("Hold duration window depth"))
 }
 
 #[cfg(test)]

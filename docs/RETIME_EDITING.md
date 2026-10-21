@@ -77,7 +77,12 @@ The ordinary `SetHoldDuration` path also retains old downstream Source, Repeat
 gap and owned-play sample clocks when the root duration changes, including
 initially unbound owners. Undo restores the complete binding state. See the
 [clock qualification](qualification/hold-duration-clocks-2026-10-20.md).
-This does not qualify ordinary Retime windows whose root duration stays fixed.
+For fixed affine windows, movement capture stays inside the window; the Retime
+recipe, outer siblings and outer Repeat placements stay fixed.
+Unused Repeat defaults preserve the entire binding state without captures.
+See the [fixed-window qualification](qualification/fixed-retime-hold-clocks-2026-10-20.md).
+Ordinary Hold resizing beneath Preserve/Shift processing ancestors remains
+unqualified; this differs from the dedicated clocked-Retime duration path.
 
 ## Pitch shift
 

@@ -1,0 +1,41 @@
+{
+  "reviewer": "/root/pause_selection_ui",
+  "scope": [
+    "fixed_retime_duration.rs export fixtures",
+    "hold_duration.rs fixed_affine_window_owners",
+    "hold_duration/tests/fixed_retime.rs"
+  ],
+  "findings": [],
+  "notes": [
+    "No Cargo or writes by reviewer.",
+    "Dormant-default guard checked above/below affine window; six-test fixture exercises below-window dormant default.",
+    "Export literal Source origins and every-picture/audio gates checked."
+  ],
+  "earlier_finding": {
+    "issue": "Fully overridden default Hold duration could capture unchanged owned branches and exhaust binding terms.",
+    "resolution": "Validated override counts skip capture for dormant default below or above first affine window; 258-resize exact binding-state regression added."
+  },
+  "oracle_review": {
+    "findings": [],
+    "historical_live_lengths": {
+      "nested": [
+        2402,
+        2403
+      ],
+      "owned_outer_0": [
+        1601,
+        1602
+      ],
+      "owned_outer_1": [
+        1602,
+        1601
+      ]
+    },
+    "contract": "raw_domain maps current support on retained lattice; RootSignalTransfer zeros and suppresses points outside half-open support. No production DSP change."
+  },
+  "fixture_correction_review": {
+    "findings": [],
+    "initial_review_miss": "Direct split children were incorrectly treated as Sources; failed r07 proved unity Partition wrappers with omitted descendants.",
+    "resolution": "Complete fresh fragment cloning, separate outside clone, preserved qualification and all phase/picture gates."
+  }
+}

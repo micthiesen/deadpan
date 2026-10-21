@@ -1,0 +1,6 @@
+ProductName:		macOS
+ProductVersion:		26.5.2
+BuildVersion:		25F84
+Mac17,7
+137438953472
+Apple M5 Max

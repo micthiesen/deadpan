@@ -1,0 +1,101 @@
+// Append to crates/deadpan-audio/tests/stages/ordinary_duration.rs.
+// Uses that module's voice() and the existing insert_time canonical PCM helpers.
+#[test]
+fn ordinary_hold_growth_inside_fixed_retime_retains_44100_source_phase_with_unchanged_root_duration()
+ {
+    let before = document_with_asset(
+        FrameRate::new(30_000, 1001).unwrap(),
+        &["lead", "rate"],
+        [
+            ("lead", hold(3)),
+            ("rate", retime("body", 4, 0..4, PitchPolicy::FollowSpeed)),
+            (
+                "body",
+                BeatNode::sequence("Hold then Source", vec![id("pause"), id("speech")]),
+            ),
+            ("pause", hold(2)),
+            ("speech", voice(3100, 2)),
+        ],
+        BTreeMap::new(),
+        audio_at_rate(0, 44_117, 44_100).span,
+    );
+    // This is an admitted ordinary Edit Retime, with a fixed four-frame input
+    // window and four-frame output. No prior physical timing capture exists.
+    before.validate().unwrap();
+    assert_eq!(before.duration().unwrap().frames(), 7);
+    assert_eq!(before.audio_bindings(), &AudioBindingState::default());
+    let (_, mut provider) = mono_original(2);
+    // B(5)=8008 exactly, and the Source's literal first phase is 3100.
+    // Resolve only the first 256 samples independently, far from the finite
+    // Source endpoint. The old StageAudio output supplies the complete finite
+    // source context for the surviving prefix comparison below.
+    let expected = provider
+        .source
+        .prepare(
+            ResampleRecipe::new(
+                3100..23_100,
+                ratio(3100, 1),
+                AudioSample(8008),
+                ratio(147, 160),
+                AudioSample(8008)..AudioSample(11211),
+            )
+            .unwrap(),
+            AudioSample(8008),
+            256,
+            TIMEOUT,
+            &AtomicBool::new(false),
+        )
+        .unwrap()
+        .samples;
+    let old = record(&before, &mut provider, false, &[256]);
+    assert_eq!(old.samples.len(), 11211);
+    assert_pause(&old, 0..8008);
+    assert_eq!(old.samples[8008], expected[0]);
+    assert_eq!(old.samples[8008..8264], expected);
+    assert!(expected.iter().flatten().any(|sample| sample.abs() > 0.01));
+
+    let transaction = apply(
+        &before,
+        &CommandRequest {
+            project_id: before.project_id().clone(),
+            expected_revision: before.revision_id().clone(),
+            new_revision: RevisionId::new("ordinary-fixed-retime-duration").unwrap(),
+            command: Command::SetHoldDuration {
+                node: id("pause"),
+                duration: duration(3),
+            },
+        },
+    )
+    .unwrap();
+    assert_eq!(transaction.duration_delta, 0);
+    let changed = transaction.forward.apply(&before).unwrap();
+    assert_eq!(transaction.inverse.apply(&changed).unwrap(), before);
+    let after = ProjectDocument::from_json(&changed.to_json().unwrap()).unwrap();
+    assert_eq!(after.duration().unwrap().frames(), 7);
+    assert_policy_only_duration(&before, &after, "pause", 3);
+    assert_eq!(after.nodes()[&id("rate")], before.nodes()[&id("rate")]);
+    assert_eq!(after.nodes()[&id("speech")], before.nodes()[&id("speech")]);
+    let actual = record(&after, &mut provider, false, &[127, 3, 251]);
+    // The child is now five frames, but the Retime still selects [0,4).
+    // The visible Source moves from root [5,7) to [6,7), retaining exactly
+    // its old audible prefix. B(6)=roundEven(9609.6)=9610. A new sampling
+    // origin here would reset phase by +147/400 of a 44.1 kHz source sample.
+    assert_eq!(actual.samples.len(), 11211);
+    assert_pause(&actual, 0..9610);
+    assert_eq!(actual.samples[9610], expected[0]);
+    assert_eq!(actual.samples[9610..9866], expected);
+    for offset in 0..1601 {
+        assert_eq!(
+            actual.samples[9610 + offset],
+            old.samples[8008 + offset],
+            "fixed Retime new sample {} must retain old Source prefix at {}",
+            9610 + offset,
+            8008 + offset,
+        );
+        assert_eq!(
+            actual.suppressed[9610 + offset],
+            old.suppressed[8008 + offset]
+        );
+    }
+    assert_eq!(record(&after, &mut provider, false, &[1, 239]), actual);
+}

@@ -38,9 +38,12 @@ Ordinary `SetHoldDuration` also captures affected physical owners on their old
 root clocks when resizing moves output time. Shared Repeat definitions stay
 compact, and existing partial bindings retain their phase. No-op, terminal and
 dormant-definition changes avoid unnecessary captures. The separate
-clocked-Retime path is unchanged; this does not qualify ordinary Retime edits
-whose root duration stays fixed. See the
+clocked-Retime path is unchanged. Ordinary Holds inside fixed affine Retime
+windows also retain moved interior clocks while outer placements stay fixed;
+processing Preserve/Shift ancestors remain outside that qualification. See the
 [ordinary Hold-duration clock qualification](qualification/hold-duration-clocks-2026-10-20.md).
+The [fixed-window qualification](qualification/fixed-retime-hold-clocks-2026-10-20.md)
+records exact nested slopes, cropped support and retained allocation endpoints.
 
 Core 24 adds existing root Sequence seams before composite suffixes: Sequence,
 Repeat, Retime, owned gap branches and generated Hold owners can move together.

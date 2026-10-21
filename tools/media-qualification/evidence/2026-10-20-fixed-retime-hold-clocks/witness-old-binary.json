@@ -1,0 +1,9 @@
+{
+  "base": "93f2b4d6",
+  "binary": "target/debug/deps/stages-860e1e3b5939ebc2",
+  "sha256": "f0f39567397dfe09a5fdc005ff4012989b9062ad685be1aca03046b64e0c8ed0",
+  "retained_copy": "stages-old",
+  "test": "ordinary_hold_growth_inside_fixed_retime_retains_44100_source_phase_with_unchanged_root_duration",
+  "proposal_sha256": "6fb8d236af6e321b6a2b45b1997e787f19d44bd5cf3f7e85868344bedf9cc2b3",
+  "observed": "new sample9610 actual stereo[-0.10523279,-0.10523279], expected[-0.09149733,-0.09149733]; independently verified old first256 samples pass."
+}

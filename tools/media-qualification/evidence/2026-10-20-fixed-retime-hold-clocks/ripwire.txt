@@ -1,0 +1,111 @@
+<ctx task="SetHoldDuration fixed Retime window unchanged root duration insert_time/hold_duration.rs composite::occurrence_owners_after ordinary_duration.rs" route=" [routed: subtoken+body BM25 — name-exact declined: anchor &apos;fixed&apos; is a common name (213 name-carriers, 7 defs); conceptual ranker used]" bundle="auto" bodies="2"><!-- ripwire lens for "SetHoldDuration fixed Retime window unchanged root duration insert_time/hold_duration.rs composite::occurrence_owners_after ordinary_duration.rs" [mention anchor: 1 file + 2 symbols named in the task lifted near the top] [doc mentions: 6 docs discussing 4 top-ranked symbols surfaced]: reusable building blocks + quality facts for what you're about to touch (cx=complexity ccx=cognitive in=reuse-count churn=recent-commits amp=change-amplification clone=1(duplicated) tested=1) — prefer composing/reusing these; watch the high-churn/high-amp/cloned ones; bundle=auto: the top-ranked FULL bodies ride inline after the signatures in a bodies section (bodies=N on this root counts them; bodies=0 reason=budget when none fit the remaining budget whole; the signatures-only flag opts out) — read them here instead of opening the files. The bodies element discloses the house way: total=requested, shown=printed, capped=1 when they differ; each body's calls child lists its callee signatures, total= always, shown=/capped= only when that list is cut est_tokens="4743" --><sigs capped="1"><f p="./crates/deadpan-core/src/scoped_edit/hold_duration.rs"><d l="12" n="occurrence_hold_duration_requirements" id="./crates/deadpan-core/src/scoped_edit/hold_duration.rs::ProjectDocument::occurrence_hold_duration_requirements" cx="7" ccx="7" in="5" churn="1" amp="5" tested="1">pub fn occurrence_hold_duration_requirements( &amp;self, instance: &amp;InstancePath, duration: FrameDuration, ) -&gt; Result&lt;ScopedEditRequirements, EditError&gt;</d><d l="85" n="PreparedOccurrenceHoldDuration" cx="0" ccx="0" in="0" churn="1">pub struct PreparedOccurrenceHoldDuration</d><d l="124" n="prepare_occurrence_hold_duration" cx="4" ccx="3" in="0" churn="1"><doc>Execute precisely one EditOccurrence::SetHoldDuration and retain its actual isolation plus the r…</doc>pub fn prepare_occurrence_hold_duration( document: &amp;ProjectDocument, request: &amp;CommandRequest, ) -&gt; Result&lt;PreparedOccurrenceHoldDuration, EditError&gt;</d></f><f p="./crates/deadpan-store/src/generation_preparations/transitions.rs"><d l="29" n="duration_node" cx="4" ccx="1" in="1" churn="6" amp="1">fn duration_node(command: &amp;Command) -&gt; Option&lt;&amp;deadpan_core::NodeId&gt;</d><d l="78" n="has_birth" cx="5" ccx="1" in="1" churn="6" amp="1">fn has_birth(command: &amp;Command) -&gt; bool</d></f><f p="./crates/deadpan-core/src/occurrence_edit/hold_duration.rs"><d l="8" n="prepare" cx="5" ccx="4" in="1" churn="1" amp="1" tested="1">pub(super) fn prepare( document: &amp;ProjectDocument, instance: &amp;InstancePath, duration: FrameDuration, allocation: &amp;RevisionId, ) -&gt; Result&lt;ProjectDocument, EditE…</d></f><f p="./crates/deadpan-core/src/insert_time/hold_duration.rs"><d l="8" n="apply" cx="7" ccx="6" in="1" churn="1" amp="20" tested="1">pub(crate) fn apply( document: &amp;ProjectDocument, node: &amp;NodeId, duration: FrameDuration, allocation: &amp;RevisionId, ) -&gt; Result&lt;ProjectDocument, EditError&gt;</d><d l="77" n="tests" cx="0" ccx="0" in="0" churn="1" amp="19">mod tests</d></f><f p="./crates/deadpan-core/src/occurrence_edit.rs"><d l="16" n="hold_duration" cx="0" ccx="0" in="0" churn="24" amp="70">mod hold_duration</d><d l="31" n="OccurrenceEdit" cx="0" ccx="0" in="0" churn="24" amp="70">pub enum OccurrenceEdit</d><d l="137" n="command" id="./crates/deadpan-core/src/occurrence_edit.rs::OccurrenceEdit::command" cx="29" ccx="1" in="4" churn="24" amp="74" tested="1">fn command(&amp;self, node: NodeId) -&gt; Command</d></f><f p="./crates/deadpan-app/src/navigation.rs"><d l="69" n="BeatEdit" cx="0" ccx="0" in="0" churn="56" amp="96">pub enum BeatEdit</d></f><f p="./crates/deadpan-app/src/preview/harness/scoped_plays.rs"><d l="11" n="hold_duration" cx="0" ccx="0" in="0" churn="8" amp="26">mod hold_duration</d></f><f p="./crates/deadpan-core/src/scoped_edit.rs"><d l="13" n="hold_duration" cx="0" ccx="0" in="0" churn="7">mod hold_duration</d></f><f p="./crates/deadpan-core/src/insert_time/hold_duration/tests.rs"><d l="335" n="ordinary_hold_duration_exact_noop_terminal_and_dormant_definition_keep_bindings_unchanged" cx="1" ccx="0" in="0" churn="1" amp="19">fn ordinary_hold_duration_exact_noop_terminal_and_dormant_definition_keep_bindings_unchanged()</d><d l="388" n="ordinary_hold_duration_shared_million_play_clock_work_stays_compact" cx="2" ccx="1" in="0" churn="1" amp="19">fn ordinary_hold_duration_shared_million_play_clock_work_stays_compact()</d><d l="453" n="ordinary_hold_duration_retains_tail_clamp_and_invalid_request_admission" cx="1" ccx="0" in="0" churn="1" amp="19">fn ordinary_hold_duration_retains_tail_clamp_and_invalid_request_admission()</d><d l="476" n="ordinary_hold_duration_shortening_transforms_marks_after_structural_preflight" cx="1" ccx="0" in="0" churn="1" amp="19">fn ordinary_hold_duration_shortening_transforms_marks_after_structural_preflight()</d></f><f p="./tools/media-qualification/evidence/2026-09-27-retime-editing/finish-doc-links.py"><d l="3" n="changes" cx="0" ccx="0" in="0" churn="1">changes=</d></f><f p="./crates/deadpan-core/src/insert_time.rs"><d l="15" n="hold_duration" cx="0" ccx="0" in="0" churn="27" amp="52">pub(crate) mod hold_duration</d></f><f p="./crates/deadpan-app/src/navigation/command.rs"><d l="1798" n="hold_duration_requires_exact_frame_units_without_lowercasing_arguments" id="./crates/deadpan-app/src/navigation/command.rs::tests::hold_duration_requires_exact_frame_units_without_lowercasing_arguments" cx="2" ccx="1" in="0" churn="54" amp="88">fn hold_duration_requires_exact_frame_units_without_lowercasing_arguments()</d></f><f p="./crates/deadpan-plan/src/audio.rs"><d l="102" n="AudioContent" cx="0" ccx="0" in="0" churn="25" amp="150">pub enum AudioContent</d><d l="146" n="from_hold" id="./crates/deadpan-plan/src/audio.rs::AudioContent::from_hold" cx="6" ccx="1" in="2" churn="25" amp="152" tested="1">pub(super) fn from_hold(value: &amp;HoldAudio, duration: FrameDuration) -&gt; Self</d></f><f p="./crates/deadpan-core/src/semantic/planner/pause.rs"><d l="273" n="insert_hold" id="./crates/deadpan-core/src/semantic/planner/pause.rs::Planner::insert_hold" cx="1" ccx="0" in="4" churn="17" amp="77" tested="1">fn insert_hold( &amp;mut self, trace_index: usize, duration: FrameDuration, provider: impl FnOnce(&amp;mut Self) -&gt; Result&lt;super::PauseProvider, EditError&gt;, ) -&gt; Result&lt;(), EditError&gt;</d></f><f p="./crates/deadpan-core/src/semantic/planner/retime.rs"><d l="434" n="set_hold_duration" id="./crates/deadpan-core/src/semantic/planner/retime.rs::Planner::set_hold_duration" cx="3" ccx="2" in="1" churn="2" amp="1">pub(super) fn set_hold_duration( &amp;mut self, trace_index: usize, length: crate::PauseLength, ) -&gt;…</d></f></sigs><bodies shown="2" total="6" capped="1"><b t="fn" l="124" p="./crates/deadpan-core/src/scoped_edit/hold_duration.rs" n="prepare_occurrence_hold_duration"><![CDATA[pub fn prepare_occurrence_hold_duration(
+    document: &ProjectDocument,
+    request: &CommandRequest,
+) -> Result<PreparedOccurrenceHoldDuration, EditError> {
+    crate::command::check_revision(
+        document,
+        &request.project_id,
+        &request.expected_revision,
+        &request.new_revision,
+    )?;
+    let Command::EditOccurrence {
+        instance,
+        edit: OccurrenceEdit::SetHoldDuration { duration },
+        identities,
+    } = &request.command
+    else {
+        return Err(invalid(
+            "Hold duration preparation requires an EditOccurrence duration command",
+        ));
+    };
+    let requirements = document.occurrence_hold_duration_requirements(instance, *duration)?;
+    if identities.nodes.len() != requirements.nodes || identities.marks.len() != requirements.marks
+    {
+        return Err(invalid(
+            "one-play Hold duration requires its exact node and mark identity pools",
+        ));
+    }
+    let (transaction, after, steps) = crate::command::apply_with_isolation(document, request)?;
+    let isolation = ScopedIsolationRecord::from_execution(document, request, &after, steps)?;
+    let mapped = isolation
+        .bind_prepared(document, &after)?
+        .map_forward(&target(instance))?;
+    let presentation = map_instance(instance, isolation.steps());
+    if !mapped.matches_instance(&after, &presentation)? {
+        return Err(invalid("resized Hold lost its concrete presentation"));
+    }
+    let boundary = AnchorIndex::new(&after)
+        .map_err(|error| invalid(&error.to_string()))?
+        .resolve_target(&AnchorTarget {
+            boundary: BoundaryAnchor {
+                coordinate: Anchor::Occurrence {
+                    instance: presentation.clone(),
+                    position: crate::ExactRatio::ZERO,
+                },
+                bias: InsertionBias::Right,
+            },
+            occurrence: None,
+        })
+        .map_err(|error| invalid(&error.to_string()))?;
+    Ok(PreparedOccurrenceHoldDuration {
+        transaction,
+        document: after,
+        target: mapped,
+        presentation,
+        boundary,
+        isolation,
+    })
+}]]><calls total="13"><c n="new" l="255">pub fn new(document: &amp;&apos;a ProjectDocument) -&gt; Result&lt;Self, AnchorError&gt;</c><c n="apply_with_isolation" l="1128">pub(crate) fn apply_with_isolation( document: &amp;ProjectDocument, request: &amp;CommandRequest, ) -&gt; Result&lt; ( EditTransaction, ProjectDocument, Vec&lt;crate::ScopedIsolationStep&gt;, ), EditError, &gt;</c><c n="check_revision" l="1974">pub(crate) fn check_revision( document: &amp;ProjectDocument, project: &amp;ProjectId, expected: &amp;RevisionId, next: &amp;RevisionId, ) -&gt; Result&lt;(), EditError&gt;</c><c n="matches_instance" l="99">pub fn matches_instance( &amp;self, document: &amp;ProjectDocument, instance: &amp;InstancePath, ) -&gt; Result&lt;bool, EditError&gt;</c><c n="occurrence_hold_duration_requirements" l="12">pub fn occurrence_hold_duration_requirements( &amp;self, instance: &amp;InstancePath, duration: FrameDuration, ) -&gt; Result&lt;ScopedEditRequirements, EditError&gt;</c><c n="target" l="68">fn target(instance: &amp;InstancePath) -&gt; ScopedNodeTarget</c><c n="map_instance" l="109">pub fn map_instance( &amp;self, before: &amp;ProjectDocument, instance: &amp;InstancePath, ) -&gt; Result&lt;InstancePath, EditError&gt;</c><c n="map_instance" l="183">fn map_instance(instance: &amp;InstancePath, steps: &amp;[ScopedIsolationStep]) -&gt; InstancePath</c><c n="steps" l="201">pub fn steps(&amp;self) -&gt; &amp;[ScopedIsolationStep]</c><c n="from_execution" l="224">pub(crate) fn from_execution( before: &amp;ProjectDocument, request: &amp;CommandRequest, after: &amp;ProjectDocument, steps: Vec&lt;ScopedIsolationStep&gt;, ) -&gt; Result&lt;Self, EditError&gt;</c><c n="bind_prepared" l="283">pub(crate) fn bind_prepared&lt;&apos;a&gt;( &amp;self, before: &amp;&apos;a ProjectDocument, after: &amp;&apos;a ProjectDocument, ) -&gt; Result&lt;ValidatedScopedIsolation&lt;&apos;a&gt;, EditError&gt;</c><c n="map_forward" l="347">pub fn map_forward(&amp;self, target: &amp;ScopedNodeTarget) -&gt; Result&lt;ScopedNodeTarget, EditError&gt;</c><c n="Err" l="25">type Err = &amp;&apos;static str</c></calls></b><b t="method" l="12" p="./crates/deadpan-core/src/scoped_edit/hold_duration.rs" n="occurrence_hold_duration_requirements"><![CDATA[pub fn occurrence_hold_duration_requirements(
+        &self,
+        instance: &InstancePath,
+        duration: FrameDuration,
+    ) -> Result<ScopedEditRequirements, EditError> {
+        let target = target(instance);
+        if target.repeats.is_empty() {
+            return Err(invalid(
+                "a one-play Hold duration needs explicit Repeat ancestry",
+            ));
+        }
+        if !target.matches_instance(self, instance)? {
+            return Err(invalid(
+                "Hold duration presentation differs from its target",
+            ));
+        }
+        let NodeKind::Hold { recipe } = &self.nodes()[&instance.node].kind else {
+            return Err(EditError::new(
+                EditErrorCode::WrongNodeKind,
+                "a duration change applies to a pause (Hold)",
+            ));
+        };
+        if duration == FrameDuration::ZERO {
+            return Err(invalid("a pause needs positive duration"));
+        }
+        if recipe.duration == duration {
+            return Err(invalid(
+                "the pause already has that duration; no edit was made",
+            ));
+        }
+        let mut node = instance.node.clone();
+        for _ in 0..=MAX_DOCUMENT_DEPTH {
+            let Some(parent) = self.parent_of(&node) else {
+                break;
+            };
+            if matches!(self.nodes()[&parent].kind, NodeKind::Retime { .. }) {
+                return Err(invalid(
+                    "changing one play's Hold duration beneath Retime is not available yet",
+                ));
+            }
+            node = parent;
+        }
+        // An occurrence wrapper does not yet transport duration-specific root
+        // or attached sound intervals. Keep that existing refusal explicit.
+        crate::sound_events::validate_command(
+            self,
+            &Command::EditOccurrence {
+                instance: instance.clone(),
+                edit: OccurrenceEdit::SetHoldDuration { duration },
+                identities: OccurrenceIdentities::default(),
+            },
+        )?;
+        isolation::temporal_requirements(self, &target)
+    }]]><calls total="9" shown="4" capped="1"><c n="new" l="3601">pub(crate) fn new(code: EditErrorCode, message: impl Into&lt;String&gt;) -&gt; Self</c><c n="parent_of" l="1002">pub(crate) fn parent_of(&amp;self, id: &amp;NodeId) -&gt; Option&lt;NodeId&gt;</c><c n="matches_instance" l="99">pub fn matches_instance( &amp;self, document: &amp;ProjectDocument, instance: &amp;InstancePath, ) -&gt; Result&lt;bool, EditError&gt;</c><c n="target" l="68">fn target(instance: &amp;InstancePath) -&gt; ScopedNodeTarget</c></calls></b></bodies></ctx>

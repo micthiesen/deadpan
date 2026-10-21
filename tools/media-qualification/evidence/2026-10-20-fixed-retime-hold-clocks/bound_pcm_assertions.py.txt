@@ -1,0 +1,73 @@
+from pathlib import Path
+p = Path('/Users/michael/Code/deadpan/crates/deadpan-audio/tests/stages/ordinary_duration.rs')
+s = p.read_text()
+marker = '#[test]\nfn ordinary_hold_growth_inside_fixed_retime_retains_44100_source_phase_with_unchanged_root_duration()'
+a,b = s.split(marker, 1)
+helper = '''fn assert_fixed_pcm(actual: &[[f32; 2]], expected: &[[f32; 2]], start: usize, label: &str) {
+    assert_eq!(actual.len(), expected.len(), "{label} PCM length at {start}");
+    for (offset, (actual, expected)) in actual.iter().zip(expected).enumerate() {
+        for channel in 0..2 {
+            assert_eq!(actual[channel], expected[channel],
+                "{label} output sample {} channel {channel}", start + offset);
+        }
+    }
+}
+
+fn assert_fixed_mask(actual: &[bool], expected: &[bool], start: usize, label: &str) {
+    assert_eq!(actual.len(), expected.len(), "{label} mask length at {start}");
+    for (offset, (actual, expected)) in actual.iter().zip(expected).enumerate() {
+        assert_eq!(actual, expected, "{label} suppression at output sample {}", start + offset);
+    }
+}
+
+fn assert_fixed_recorded(actual: &Recorded, expected: &Recorded, label: &str) {
+    assert_fixed_pcm(&actual.samples, &expected.samples, 0, label);
+    assert_fixed_mask(&actual.suppressed, &expected.suppressed, 0, label);
+}
+
+'''
+def replace(old,new):
+    global b
+    assert b.count(old)==1, (old,b.count(old))
+    b=b.replace(old,new,1)
+replace('assert_eq!(old.samples[8008..8264], expected);', 'assert_fixed_pcm(&old.samples[8008..8264], &expected, 8008, "old literal phase");')
+replace('assert_eq!(actual.samples[9610..9866], expected);', 'assert_fixed_pcm(&actual.samples[9610..9866], &expected, 9610, "new literal phase");')
+replace('assert_eq!(actual.samples[9610..11211], current);', 'assert_fixed_pcm(&actual.samples[9610..11211], &current, 9610, "minimal current crop");')
+replace('assert_eq!(old.samples[8008..11211], old_crop);', 'assert_fixed_pcm(&old.samples[8008..11211], &old_crop, 8008, "old shrink crop");')
+replace('assert_eq!(actual.samples[6406..11211], current);', 'assert_fixed_pcm(&actual.samples[6406..11211], &current, 6406, "current shrink crop");')
+replace('assert_eq!(actual.samples[6406..9470], old.samples[8008..11072]);', 'assert_fixed_pcm(&actual.samples[6406..9470], &old.samples[8008..11072], 6406, "shrink unchanged prefix");')
+replace('assert_eq!(actual.samples[11211..], old.samples[11211..]);', 'assert_fixed_pcm(&actual.samples[11211..], &old.samples[11211..], 11211, "shrink outside suffix");')
+replace('assert_eq!(actual.suppressed[11211..], old.suppressed[11211..]);', 'assert_fixed_mask(&actual.suppressed[11211..], &old.suppressed[11211..], 11211, "shrink outside suffix");')
+replace('assert_eq!(old.samples[6006..6262], expected);', 'assert_fixed_pcm(&old.samples[6006..6262], &expected, 6006, "old affine literal phase");')
+replace('assert_eq!(actual.samples[7207..7463], expected);', 'assert_fixed_pcm(&actual.samples[7207..7463], &expected, 7207, "new affine literal phase");')
+replace('assert_eq!(actual.samples[7207..9482], old.samples[6006..8281]);', 'assert_fixed_pcm(&actual.samples[7207..9482], &old.samples[6006..8281], 7207, "affine unchanged prefix");')
+replace('assert_eq!(actual.suppressed[7207..9482], old.suppressed[6006..8281]);', 'assert_fixed_mask(&actual.suppressed[7207..9482], &old.suppressed[6006..8281], 7207, "affine unchanged prefix");')
+replace('assert_eq!(actual.samples[7207..9610], current);', 'assert_fixed_pcm(&actual.samples[7207..9610], &current, 7207, "affine current crop");')
+replace('assert_eq!(actual.samples[9610..], old.samples[9610..]);', 'assert_fixed_pcm(&actual.samples[9610..], &old.samples[9610..], 9610, "affine outside suffix");')
+replace('assert_eq!(actual.suppressed[9610..], old.suppressed[9610..]);', 'assert_fixed_mask(&actual.suppressed[9610..], &old.suppressed[9610..], 9610, "affine outside suffix");')
+replace('''assert_eq!(
+                actual.samples[new_range.start..new_range.start + 1463],
+                old.samples[old_start..old_start + 1463],
+                "{label}"
+            );''', '''assert_fixed_pcm(
+                &actual.samples[new_range.start..new_range.start + 1463],
+                &old.samples[old_start..old_start + 1463], new_range.start, &label
+            );''')
+replace('assert_eq!(actual.samples[new_range.clone()], current, "{label}");', 'assert_fixed_pcm(&actual.samples[new_range.clone()], &current, new_range.start, &label);')
+replace('''assert_eq!(
+                actual.suppressed[new_range.start..new_range.start + 1463],
+                old.suppressed[old_start..old_start + 1463],
+                "{label}"
+            );''', '''assert_fixed_mask(
+                &actual.suppressed[new_range.start..new_range.start + 1463],
+                &old.suppressed[old_start..old_start + 1463], new_range.start, &label
+            );''')
+replace('''assert_eq!(
+                actual.samples[samples.clone()],
+                old.samples[samples.clone()]
+            );''','''assert_fixed_pcm(&actual.samples[samples.clone()], &old.samples[samples.clone()], samples.start, "Repeat outside suffix");''')
+replace('assert_eq!(actual.suppressed[samples.clone()], old.suppressed[samples]);', 'assert_fixed_mask(&actual.suppressed[samples.clone()], &old.suppressed[samples.clone()], samples.start, "Repeat outside suffix");')
+old='assert_eq!(record(&after, &mut provider, false, &[1, 239]), actual);'
+assert b.count(old)==4
+b=b.replace(old, 'assert_fixed_recorded(&record(&after, &mut provider, false, &[1, 239]), &actual, "alternate chunk schedule");')
+p.write_text(a+helper+marker+b)

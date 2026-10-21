@@ -43,6 +43,9 @@ pub mod scoped_duration;
 #[path = "ordinary_duration.rs"]
 pub mod ordinary_duration;
 
+#[path = "fixed_retime_duration.rs"]
+pub mod fixed_retime_duration;
+
 pub type Result<T = ()> = std::result::Result<T, Box<dyn Error>>;
 
 #[path = "vfr.rs"]

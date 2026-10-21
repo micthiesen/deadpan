@@ -1,0 +1,10 @@
+#!/bin/sh
+set -eu
+export DEADPAN_FFMPEG_PREFIX=/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix
+export CARGO_PROFILE_DEV_OPT_LEVEL=2
+export DEADPAN_REQUIRE_PHYSICAL_MAC=1
+s=/tmp/deadpan-retime-hold-clocks-2026-10-20
+cargo xtask check --since 93f2b4d6 --no-test > "$s/fixture-lint.log" 2>&1
+export DEADPAN_PREVIEW_EXPORT_KEEP=1
+export DEADPAN_FIXED_RETIME_DURATION_RESULTS=/tmp/deadpan-retime-hold-clocks-2026-10-20/export-results.json
+cargo test -p deadpan-cli --release --test preview_export --locked fixed_retime_hold_duration_preview_and_encoded_output_keep_interior_source_clocks -- --nocapture > "$s/export.log" 2>&1

@@ -1,0 +1,15 @@
+{
+  "base": "93f2b4d6",
+  "sha256": {
+    "crates/deadpan-audio/tests/stages/ordinary_duration.rs": "f38940b4cbd0e25d505b22925c4e2b4d6bcc7e37f66a8a0b7f9146af32a1a119",
+    "crates/deadpan-core/src/insert_time/hold_duration.rs": "7a31baa09547d07eca9e6e086fc7698a014f70683ac2271467da0d4e4353c88b",
+    "crates/deadpan-core/src/insert_time/hold_duration/tests.rs": "d88550a6d11cdbbd9fa9d5f33d2f02029f776260edb87eca528db08cd6526363",
+    "crates/deadpan-core/src/insert_time/hold_duration/tests/fixed_retime.rs": "27e418835af17e83543af50a4ccc6ccdc22679a8359ed8bb174150fc90717042",
+    "crates/deadpan-store/tests/hold_duration_clocks.rs": "0bd9a16a280849cfecc196e0961d90d445aee01cddbfae1dd34388fcf235fa4b",
+    "crates/deadpan-cli/tests/preview_export.rs": "e33c7f2091efc7166cab62cd174d4ab9fc90f75c38e6c5059a84735228f94458",
+    "crates/deadpan-cli/tests/preview_export/recipes.rs": "ae013dcc78a577cbf44aa71d6b6acfe440b8f152853caf929a88fdae61f7430a",
+    "crates/deadpan-cli/tests/preview_export/fixed_retime_duration.rs": "3c468bb611358f8c829765854abf90d8a5226563638ca0cb4f2b9fb999d73720",
+    "Cargo.lock": "cd446a35ada5574e1ac17f6028e29aa09cec64bfd91d84d47b924cbb9f0ae175",
+    "rust-toolchain.toml": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc"
+  }
+}
