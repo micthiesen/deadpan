@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-21T23:20:58Z",
+  "updated_at": "2026-10-21T23:58:18Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Extend explicit-play semantic audio editing to absolute trim, saturation, balance and typed EQ together, then continue remaining editing, audio mastering, renderer and full-workflow qualification.",
+  "focus": "Preserve independent sounds owned by a fixed Retime output while resizing its interior Hold, then continue remaining editing, audio mastering, renderer and full-workflow qualification.",
   "features": [
     {
       "id": "editing",
@@ -16,7 +16,7 @@
         "DP-07",
         "DP-21"
       ],
-      "note": "Slices, registers, repeats and semantic macros work, including Original navigation, ranged and per-play framing, selected-play pauses, Hold duration/sound edits, relative gain and explicit mute in one play, and exact-pause tape-speed updates around one inner Repeat level. Wider operator/selector coverage and remaining timing families stay open."
+      "note": "Slices, registers, repeats and semantic macros work, including Original navigation, ranged and per-play framing, selected-play pauses, Hold duration/sound edits, whole-owner gain/mute/saturation/balance/typed EQ in one play, and exact-pause tape-speed updates around one inner Repeat level. Wider operator/selector coverage and remaining timing families stay open."
     },
     {
       "id": "projects",
@@ -749,6 +749,14 @@
       "revision": "4894754c",
       "retrospective": false,
       "summary": "Verified explicit one-play mute recording and Boolean dot/call replay, preserving treatments, timing and history. Six new core and two real-package tests pass; 202 UI tests and final strict lint pass. Both release replays pass 735 scoped checks plus Kestrel. Fixed compact footer pruning; retained failures, diagnostics and inspected captures. Wider scoped audio and macro authority remain open."
+    },
+    {
+      "date": "2026-10-21",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "6fe84afc",
+      "retrospective": false,
+      "summary": "Verified literal one-play trim, saturation, balance and typed EQ recording, calls and dot, including stage removal and exact history. All 23 focused core, 514 normal and 207 UI tests pass; strict lint and both 846-check release replays pass. Independent PCM and complete 72-picture/115,315-sample encoded verification pass at offset zero. Repaired two replay setup assumptions and retained failures, reviews and inspected captures. Broader macro authority stays open."
     }
   ]
 }
