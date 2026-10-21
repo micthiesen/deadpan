@@ -1,0 +1,51 @@
+from pathlib import Path
+import re
+
+root = Path('/Users/michael/Code/deadpan')
+scratch = Path('/tmp/deadpan-processing-hold-clocks-2026-10-20')
+log = (scratch / 'check.log').read_text()
+summary = re.findall(r'Summary \[\s*([\d.]+)s\] (\d+) tests run: (\d+) passed, (\d+) skipped', log)
+assert summary, 'a completed all-passing nextest summary is required'
+seconds, count, passed, skipped = summary[-1]
+assert count == passed
+assert not re.search(r'\bFAIL\b|\bLEAK\b|\bWARN\b|warning:|error:', log)
+formatted = f'{int(count):,}'
+
+def change(path, old, new):
+    text = path.read_text()
+    assert text.count(old) == 1, (str(path), old, text.count(old))
+    path.write_text(text.replace(old, new))
+
+qualification = root / 'docs/qualification/processing-hold-clocks-2026-10-20.md'
+change(qualification,
+       '## Remaining verification and limits\n\nFormatting, strict Clippy and the broad regression selection are pending.\nTheir measured results and retained inventory will be recorded here.',
+       f'## Broad checks and retained record\n\nFormatting and strict Clippy pass. All {formatted} selected core, audio, store\nand CLI macro/scope/completion tests pass in {seconds} seconds, with {skipped}\nskipped by the retained filter. No warnings or leak diagnostics are reported.\nThe separate focused and history runs, failed old-code witnesses, test-only\ncompile and journal failures, independent review, source and executable\nidentities, four MP4s and complete verification reports are retained in the\n[evidence](../../tools/media-qualification/evidence/2026-10-20-processing-hold-clocks).\n`inventory.json` hashes every retained file.\n\n## Limits')
+
+requirements = root / 'docs/REQUIREMENTS.md'
+anchor = '## Hold clocks inside fixed Retime windows, 2026-10-20'
+new = f'''## Hold clocks inside processing inputs, 2026-10-20
+
+[Processing-input qualification](qualification/processing-hold-clocks-2026-10-20.md)
+retains moved Source, Repeat-play and RoomTone-gap clocks when an ordinary Hold
+resize changes the operand of a fixed Preserve/Shift stage. Existing output
+bindings remain unchanged while canonical DSP rebuilds the current input.
+Seven core tests, 18 exact PCM tests, six affine controls and a durable-history
+matrix pass. Formatting, strict Clippy and all {formatted} selected regressions
+pass. Four release exports verify all 100 pictures and four complete audio
+windows at measured offset zero, without verification flags. The wrong journal
+fixture and its atomic-refusal boundary remain recorded. DP-07 stays partial;
+changed-processing-subtree sound transport, general speed-stage updates and
+broader Section 8 work remain open.
+
+'''
+change(requirements, anchor, new + anchor)
+change(requirements,
+       'partial; Hold resizing beneath ordinary Preserve/Shift processing ancestors,\ngeneral speed-stage updates and broader Section 8 work remain open.',
+       'partial. Ordinary Preserve/Shift input clocks are now covered by the\n[processing-input qualification](qualification/processing-hold-clocks-2026-10-20.md);\ngeneral speed-stage updates and broader Section 8 work remain open.')
+change(requirements,
+       'preserving outer placements and dormant default bindings. [Atomic linked range moves]',
+       'preserving outer placements and dormant default bindings. [Processing-input Hold clocks](qualification/processing-hold-clocks-2026-10-20.md) retain per-owner PointCeil phases through Preserve/Shift, including historical output bindings, default/owned plays and RoomTone gaps, while rebuilding current canonical DSP. [Atomic linked range moves]')
+change(requirements,
+       'Hold resizing beneath ordinary Preserve/Shift processing ancestors, updating speed stages',
+       'attached-sound transport when a processing subtree changes, updating speed stages')
+print(f'Updated qualification and DP-07 with {formatted} passing tests, {skipped} skipped, {seconds}s')

@@ -1,0 +1,8 @@
+#!/bin/sh
+set -eu
+export DEADPAN_FFMPEG_PREFIX=/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix
+export CARGO_PROFILE_DEV_OPT_LEVEL=2
+export DEADPAN_REQUIRE_PHYSICAL_MAC=1
+s=/tmp/deadpan-processing-hold-clocks-2026-10-20
+cargo nextest run -p deadpan-core -p deadpan-audio --locked -E 'test(ordinary_hold_duration_processing) or test(ordinary_hold_duration_fixed) or test(processing_hold_duration)' > "$s/focused.log" 2>&1
+cargo xtask check --since eddb16c9 --filter '(package(deadpan-core) or package(deadpan-audio) or package(deadpan-store) or test(macros) or test(scoped) or test(completion)) and not binary(preview_export)' > "$s/check.log" 2>&1

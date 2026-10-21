@@ -8,6 +8,9 @@ mod occurrence_pause;
 #[path = "ordinary_duration.rs"]
 mod ordinary_duration;
 
+#[path = "processing_hold_duration.rs"]
+mod processing_hold_duration;
+
 fn insert_pause(document: &ProjectDocument, at: i64, frames: i64, name: &str) -> ProjectDocument {
     let revision = RevisionId::new(name).unwrap();
     let request = CommandRequest {

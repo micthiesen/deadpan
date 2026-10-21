@@ -27,7 +27,7 @@ pub(crate) fn apply(
         Some(super::composite::occurrence_owners_after(document, node)?)
     } else if matches!(&document.nodes()[node].kind, NodeKind::Hold { recipe } if recipe.duration != duration)
     {
-        fixed_affine_window_owners(document, node)?
+        fixed_window_owners(document, node)?
     } else {
         None
     };
@@ -51,29 +51,39 @@ pub(crate) fn apply(
             // A raw Hold may be a shared definition, including nested defaults
             // and owned branches. Capture each physical owner once over the old
             // root window: its compact Repeat arguments select every concrete
-            // old entry without enumerating plays. Unmoved entries reanchor to
-            // themselves; moved entries retain their old sample phase.
+            // old entry without enumerating plays. Fixed-window interior edits
+            // use each owner's own clock, including processing inputs. Unmoved
+            // entries reanchor to themselves; moved entries retain old phase.
             //
             // Attached sounds share this leaf's timing identity at restoration,
             // so retain the complete old layout until that restore has run.
             let working = crate::command_work::with_scoped_timing_captures(false, || {
-                super::composite::prepare_owners(
-                    document,
-                    &affected,
-                    ProjectFrame(0),
-                    before_total,
-                    &AudioTimingId {
-                        allocation: allocation.clone(),
-                        ordinal: 0,
-                    },
-                )
+                let timing = AudioTimingId {
+                    allocation: allocation.clone(),
+                    ordinal: 0,
+                };
+                if before_total == after_total {
+                    super::composite::prepare_hold_duration_owners(
+                        document,
+                        &affected,
+                        before_total,
+                        &timing,
+                    )
+                } else {
+                    super::composite::prepare_owners(
+                        document,
+                        &affected,
+                        ProjectFrame(0),
+                        before_total,
+                        &timing,
+                    )
+                }
             })?;
             result.audio_bindings = working.audio_bindings;
         }
     }
     // Exact no-op and empty-suffix edits need no physical timing capture.
-    // Processing-ancestor edits retain their existing, unqualified behavior;
-    // the dedicated clocked-Retime path is dispatched before this helper.
+    // The dedicated clocked-Retime path is dispatched before this helper.
     let mut structure = None;
     crate::audio_lineage::reconcile_shared(document, &mut result, &command, &mut structure)?;
     result.marks =
@@ -82,10 +92,10 @@ pub(crate) fn apply(
 }
 
 /// A fixed Retime can hide root ripple while its child suffix still moves.
-/// Collect only that interior ripple, and inspect the complete ancestor path:
-/// an outer Preserve/Shift is an opaque input clock even above an affine window.
-/// That processing-ancestor path is not changed or newly refused here.
-fn fixed_affine_window_owners(
+/// Collect only that interior ripple, and inspect the complete ancestor path.
+/// Each collected recipe is captured on its own enclosing clock, including
+/// processing inputs above affine windows.
+fn fixed_window_owners(
     document: &ProjectDocument,
     owner: &NodeId,
 ) -> Result<Option<BTreeSet<NodeId>>, EditError> {
@@ -118,15 +128,7 @@ fn fixed_affine_window_owners(
             .copied()
             .ok_or_else(|| super::invalid("Hold duration owner is outside the project"))?;
         match &document.nodes()[ancestor].kind {
-            NodeKind::Retime {
-                duration,
-                mapping,
-                pitch,
-                ..
-            } => {
-                if pitch.processes(mapping.duration() == *duration) {
-                    return Ok(None);
-                }
+            NodeKind::Retime { .. } => {
                 // SetHoldDuration never changes this stage's selected window
                 // or output extent. Its outer siblings and plays stay put.
                 fixed_window = true;

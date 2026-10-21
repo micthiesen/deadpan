@@ -76,7 +76,7 @@ pub(crate) fn capture_for_insertion_scoped(
         document,
         timing,
         true,
-        false,
+        PlacementCapture::None,
         Some(LayoutScope {
             aliases,
             placement_owners: None,
@@ -91,7 +91,7 @@ pub(crate) fn capture_for_insertion_scoped(
 /// complete layout is captured as before.
 pub(crate) struct LayoutScope<'a> {
     pub(crate) aliases: BTreeSet<NodeId>,
-    /// Owners whose captured root placements will become reanchor steps.
+    /// Owners whose captured placements will become reanchor steps.
     pub(crate) placement_owners: Option<&'a BTreeSet<NodeId>>,
 }
 
@@ -194,7 +194,7 @@ pub(crate) fn capture_for_composite_insertion(
     document: &ProjectDocument,
     timing: AudioTimingId,
 ) -> Result<CompositeInsertionCapture, DocumentError> {
-    capture_with_placements(document, timing, true, true, None)
+    capture_with_placements(document, timing, true, PlacementCapture::Root, None)
 }
 
 /// [`capture_for_composite_insertion`] for a caller that appends reanchor
@@ -210,7 +210,7 @@ pub(crate) fn capture_for_composite_insertion_scoped(
         document,
         timing,
         true,
-        true,
+        PlacementCapture::Root,
         Some(LayoutScope {
             aliases: BTreeSet::new(),
             placement_owners: Some(affected),
@@ -218,12 +218,45 @@ pub(crate) fn capture_for_composite_insertion_scoped(
     )
 }
 
+/// Capture affected physical recipes on their current clocks, including a
+/// processing stage's selected input clock. Existing insertion callers retain
+/// their root-only movement policy.
+pub(crate) fn capture_for_hold_duration_edit(
+    document: &ProjectDocument,
+    timing: AudioTimingId,
+    affected: &BTreeSet<NodeId>,
+) -> Result<CompositeInsertionCapture, DocumentError> {
+    capture_with_placements(
+        document,
+        timing,
+        true,
+        PlacementCapture::RecipeClocks(affected),
+        Some(LayoutScope {
+            aliases: BTreeSet::new(),
+            placement_owners: Some(affected),
+        }),
+    )
+}
+
+#[derive(Clone, Copy)]
+enum PlacementCapture<'a> {
+    None,
+    Root,
+    RecipeClocks(&'a BTreeSet<NodeId>),
+}
+
 fn capture(
     document: &ProjectDocument,
     timing: AudioTimingId,
     retain_timing: bool,
 ) -> Result<(AudioBindingState, Option<FrozenAudioLayout>), DocumentError> {
-    let capture = capture_with_placements(document, timing, retain_timing, false, None)?;
+    let capture = capture_with_placements(
+        document,
+        timing,
+        retain_timing,
+        PlacementCapture::None,
+        None,
+    )?;
     Ok((capture.state, capture.phase_only_layout))
 }
 
@@ -231,7 +264,7 @@ fn capture_with_placements(
     document: &ProjectDocument,
     timing: AudioTimingId,
     retain_timing: bool,
-    collect_root_placements: bool,
+    placements: PlacementCapture<'_>,
     scope: Option<LayoutScope<'_>>,
 ) -> Result<CompositeInsertionCapture, DocumentError> {
     document.validate()?;
@@ -249,7 +282,7 @@ fn capture_with_placements(
         births: Vec::new(),
         bindings: BTreeMap::new(),
         gap_bindings: BTreeMap::new(),
-        collect_root_placements,
+        placements,
         node_placements: BTreeMap::new(),
         gap_placements: BTreeMap::new(),
         entries: 0,
@@ -398,7 +431,7 @@ struct Capture<'a> {
     births: Vec<AudioBirthClause>,
     bindings: BTreeMap<NodeId, OwnedAudioBinding>,
     gap_bindings: BTreeMap<NodeId, OwnedAudioBinding>,
-    collect_root_placements: bool,
+    placements: PlacementCapture<'a>,
     node_placements: BTreeMap<NodeId, AudioPlacementTemplate>,
     gap_placements: BTreeMap<NodeId, AudioPlacementTemplate>,
     entries: usize,
@@ -577,11 +610,15 @@ impl Capture<'_> {
             AudioRecipeKind::RepeatGap => self.document.audio_bindings().gap_bindings(),
         };
         let unbound = !existing.contains_key(id);
-        let current =
-            self.collect_root_placements && self.clock == AudioClockRoot::ProjectRootRoundEven;
+        let current = match self.placements {
+            PlacementCapture::None => false,
+            PlacementCapture::Root => self.clock == AudioClockRoot::ProjectRootRoundEven,
+            PlacementCapture::RecipeClocks(owners) => owners.contains(id),
+        };
         // Charge both retained copies before cloning any lexical path. A
         // Preserve output moves on its enclosing clock; its intrinsic recipes
-        // retain their input clock and never receive root-movement placements.
+        // retain their input clock. Only the Hold-duration selector collects
+        // movement placements in that input coordinate system.
         let entries = 1
             + self.arguments.len()
             + self.births.len()

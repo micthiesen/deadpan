@@ -1,0 +1,10 @@
+from pathlib import Path
+import hashlib
+import json
+import sys
+
+root = Path('/Users/michael/Code/deadpan')
+scratch = Path('/tmp/deadpan-processing-hold-clocks-2026-10-20')
+paths = (scratch / 'tracked-paths.txt').read_text().splitlines()
+record = {'base': 'eddb16c9', 'sha256': {name: hashlib.sha256((root / name).read_bytes()).hexdigest() for name in paths}}
+(scratch / sys.argv[1]).write_text(json.dumps(record, indent=2) + '\n')

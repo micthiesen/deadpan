@@ -1,0 +1,76 @@
+from pathlib import Path
+import gzip
+import hashlib
+import json
+import re
+import shutil
+
+root = Path('/Users/michael/Code/deadpan')
+scratch = Path('/tmp/deadpan-processing-hold-clocks-2026-10-20')
+dest = root / 'tools/media-qualification/evidence/2026-10-20-processing-hold-clocks'
+
+def sha(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+for name, digest in json.loads((scratch / 'source-identities.json').read_text())['sha256'].items():
+    assert sha(root / name) == digest, name
+
+# Later work changed only test modules not compiled into the release harness.
+# Pin every production and release-fixture input against its launch snapshot.
+exported = json.loads((scratch / 'source-identities-export.json').read_text())['sha256']
+for name in [
+    'crates/deadpan-core/src/audio_binding_lifecycle.rs',
+    'crates/deadpan-core/src/insert_time/composite.rs',
+    'crates/deadpan-core/src/insert_time/hold_duration.rs',
+    'crates/deadpan-cli/tests/preview_export.rs',
+    'crates/deadpan-cli/tests/preview_export/recipes.rs',
+    'crates/deadpan-cli/tests/preview_export/fixed_retime_duration.rs',
+    'crates/deadpan-cli/tests/preview_export/processing_duration.rs',
+    'Cargo.lock', 'rust-toolchain.toml',
+]:
+    assert sha(root / name) == exported[name], name
+
+log = (scratch / 'export.log').read_text()
+test = re.search(r'target/release/deps/preview_export-[0-9a-f]+', log).group()
+paths = [root / 'target/release/deadpan-cli', root / test]
+(scratch / 'export-binaries.json').write_text(json.dumps({str(path.relative_to(root)): sha(path) for path in paths}, indent=2) + '\n')
+helpers = ['deadpan-media-worker', 'deadpan-track', 'deadpan-transcribe']
+(scratch / 'available-helper-baseline.json').write_text(json.dumps({name: sha(root / 'target/release' / name) for name in helpers}, indent=2) + '\n')
+rows = json.loads((scratch / 'export-results.json').read_text())
+assert len(rows) == 4
+for row in rows:
+    movie = Path(row['movie'])
+    name = row['name'] + '.mp4'
+    shutil.copy2(movie, scratch / name)
+    row['retained_movie'] = name
+    row['emitted_sha256'] = sha(movie)
+    report = row['report']
+    assert not report['failures']
+    assert report['summary']['pictures_checked'] == (23 if 'preserve' in row['name'] else 27)
+    assert report['summary']['pictures_failed'] == 0
+    assert report['summary']['nonzero_offsets'] == 0
+    for audio in report['audio']:
+        assert audio['passed'] and not audio['flags']
+        assert audio['uncovered_samples'] == 0
+        assert audio['offset_status'] == 'verified_zero'
+        assert audio['measured_offset_samples'] == 0
+        for key in ['low_snr_blocks', 'level_blocks', 'sound_in_silence_blocks']:
+            assert audio['blocks'][key] == 0
+(scratch / 'export-results.json').write_text(json.dumps(rows, indent=2) + '\n')
+
+dest.mkdir(parents=True, exist_ok=True)
+for path in scratch.iterdir():
+    if not path.is_file() or path.name == 'collection-summary.json':
+        continue
+    if path.suffix in ['.py', '.sh', '.rs']:
+        shutil.copy2(path, dest / (path.name + '.txt'))
+    elif path.suffix in ['.txt', '.md', '.mp4'] or path.name in ['source-identities.json', 'old-binary.json', 'export-binaries.json', 'review.json']:
+        shutil.copy2(path, dest / path.name)
+    elif path.suffix in ['.json', '.log', '.diff']:
+        (dest / (path.name + '.gz')).write_bytes(gzip.compress(path.read_bytes(), mtime=0))
+
+inventory = {path.name: {'bytes': path.stat().st_size, 'sha256': sha(path)} for path in sorted(dest.iterdir()) if path.is_file() and path.name != 'inventory.json'}
+(dest / 'inventory.json').write_text(json.dumps(inventory, indent=2) + '\n')
+for name, record in inventory.items():
+    assert sha(dest / name) == record['sha256'], name
+print(json.dumps({'files': len(inventory), 'bytes': sum(record['bytes'] for record in inventory.values()), 'exports': [{'name': row['retained_movie'], 'summary': row['report']['summary']} for row in rows]}, indent=2))

@@ -58,7 +58,7 @@ fn layout(hold_frames: i64) -> Vec<Expected> {
 /// Splitting the qualified Original can leave Partition wrappers around the
 /// raw Source. Copy the complete owned fragment, including those mappings,
 /// into fresh identities; a root-only copy would name deleted descendants.
-fn clone_fragment(
+pub(super) fn clone_fragment(
     project: &mut Project,
     document: &ProjectDocument,
     root: &NodeId,

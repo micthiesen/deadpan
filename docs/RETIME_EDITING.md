@@ -81,8 +81,13 @@ For fixed affine windows, movement capture stays inside the window; the Retime
 recipe, outer siblings and outer Repeat placements stay fixed.
 Unused Repeat defaults preserve the entire binding state without captures.
 See the [fixed-window qualification](qualification/fixed-retime-hold-clocks-2026-10-20.md).
-Ordinary Hold resizing beneath Preserve/Shift processing ancestors remains
-unqualified; this differs from the dedicated clocked-Retime duration path.
+Ordinary Hold resizing also retains moved physical owners beneath Preserve/Shift
+on the correct processing-input PointCeil clock. Its current operand rebuilds
+DSP while existing output bindings and fractional resumes remain unchanged.
+See the [processing-input qualification](qualification/processing-hold-clocks-2026-10-20.md).
+Attachments whose processing subtree changes retain their explicit refusal.
+This remains separate from the dedicated clocked-Retime duration path and
+general updates to a speed stage that already owns exact pause clocks.
 
 ## Pitch shift
 

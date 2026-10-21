@@ -2,6 +2,8 @@ use crate::*;
 
 #[path = "tests/fixed_retime.rs"]
 mod fixed_retime;
+#[path = "tests/processing.rs"]
+mod processing;
 
 fn id(value: &str) -> NodeId {
     NodeId::new(value).unwrap()

@@ -1,0 +1,7 @@
+{
+  "base": "eddb16c9",
+  "binary": "target/debug/deps/stages-860e1e3b5939ebc2",
+  "sha256": "16064b4550d2258d1cec09c2aab164a48bf98dddfe52ccd818fa44faa63feafc",
+  "copy": "/tmp/deadpan-processing-hold-clocks-2026-10-20/stages-old",
+  "witness": "Actual input tape old phase3100 versus new9610 fresh-phase3100+147/400; all256 actual samples match fresh recipe; first actual-.10523279 expected-.09149733."
+}

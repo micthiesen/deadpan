@@ -1,0 +1,211 @@
+<ctx task="SetHoldDuration under Preserve Shift processing input clocks; audio_binding_lifecycle.rs capture_recipe and insert_time/composite.rs append_anchored_steps; AudioBound::raw_domain and AudioStage::input_signal" route=" [routed: subtoken+body BM25 (--for&apos;s default) — no strong name hit, multi-word conceptual query]" bundle="auto" bodies="5"><!-- ripwire lens for "SetHoldDuration under Preserve Shift processing input clocks; audio_binding_lifecycle.rs capture_recipe and insert_time/composite.rs append_anchored_steps; AudioBound::raw_domain and AudioStage::input_signal" [mention anchor: 1 file + 2 symbols named in the task lifted near the top] [doc mentions: 6 docs discussing 3 top-ranked symbols surfaced]: reusable building blocks + quality facts for what you're about to touch (cx=complexity ccx=cognitive in=reuse-count churn=recent-commits amp=change-amplification clone=1(duplicated) tested=1) — prefer composing/reusing these; watch the high-churn/high-amp/cloned ones; bundle=auto: the top-ranked FULL bodies ride inline after the signatures in a bodies section (bodies=N on this root counts them; bodies=0 reason=budget when none fit the remaining budget whole; the signatures-only flag opts out) — read them here instead of opening the files. The bodies element discloses the house way: total=requested, shown=printed, capped=1 when they differ; each body's calls child lists its callee signatures, total= always, shown=/capped= only when that list is cut est_tokens="4289" --><sigs capped="1"><f p="./crates/deadpan-core/src/insert_time/composite.rs"><d l="69" n="prepare_owners" cx="5" ccx="7" in="7" churn="13" amp="7" tested="1"><doc>Capture the old entries of `affected` owners in the pre-edit root window `[at, total)` before ch…</doc>pub(crate) fn prepare_owners( document: &amp;ProjectDocument, affected: &amp;BTreeSet&lt;NodeId&gt;, at: ProjectFrame, total: i64, timing: &amp;AudioTimingId, ) -&gt; Result&lt;Project…</d><d l="285" n="append_steps" cx="1" ccx="0" in="4" churn="13" amp="4" tested="1">pub(crate) fn append_steps( state: &amp;mut AudioBindingState, kind: AudioRecipeKind, placements: BTreeMap&lt;NodeId, AudioPlacementTemplate&gt;, affected: &amp;BTreeSet&lt;Node…</d><d l="312" n="append_anchored_steps" cx="13" ccx="14" in="2" churn="13" amp="2" tested="1"><doc>Shared bounded chronological append. Source endpoints keep window=None; validation of the comple…</doc>pub(crate) fn append_anchored_steps( state: &amp;mut AudioBindingState, kind: AudioRecipeKind, placements: BTreeMap&lt;NodeId, AudioPlacementTemplate&gt;, affected: &amp;BTre…</d></f><f p="./crates/deadpan-plan/src/audio_projection.rs"><d l="74" n="AudioStageProjection" cx="0" ccx="0" in="0" churn="3" amp="29"><doc>A checked intrinsic projection of one live Preserve stage. The input and output-policy views use…</doc>pub struct AudioStageProjection&lt;&apos;plan&gt;</d></f></sigs><bodies shown="5" total="6" capped="1"><b t="fn" l="285" p="./crates/deadpan-core/src/insert_time/composite.rs" n="append_steps"><![CDATA[pub(crate) fn append_steps(
+    state: &mut AudioBindingState,
+    kind: AudioRecipeKind,
+    placements: BTreeMap<NodeId, AudioPlacementTemplate>,
+    affected: &BTreeSet<NodeId>,
+    window: ExactFrameRange,
+    entries: &mut usize,
+) -> Result<(), EditError> {
+    append_anchored_steps(
+        state,
+        kind,
+        placements,
+        affected,
+        Default::default(),
+        Some(window),
+        entries,
+    )
+}]]><calls total="1"><c n="append_anchored_steps" l="312">pub(crate) fn append_anchored_steps( state: &amp;mut AudioBindingState, kind: AudioRecipeKind, placements: BTreeMap&lt;NodeId, AudioPlacementTemplate&gt;, affected: &amp;BTreeSet&lt;NodeId&gt;, anchor: crate::AudioReanchorAnchor, window: Option&lt;ExactFrameRange</c></calls></b><b t="fn" l="69" p="./crates/deadpan-core/src/insert_time/composite.rs" n="prepare_owners"><![CDATA[pub(crate) fn prepare_owners(
+    document: &ProjectDocument,
+    affected: &BTreeSet<NodeId>,
+    at: ProjectFrame,
+    total: i64,
+    timing: &AudioTimingId,
+) -> Result<ProjectDocument, EditError> {
+    // Only the new bindings and the affected owners' steps read the new
+    // table, so it may be a provisional slice (see `capture_scoped`).
+    let captured = crate::audio_binding_lifecycle::capture_for_composite_insertion_scoped(
+        document,
+        timing.clone(),
+        affected,
+    )?;
+    let mut working = document.clone();
+    working.audio_bindings = captured.state;
+    if let Some(layout) = captured.phase_only_layout {
+        working
+            .audio_bindings
+            .timings
+            .insert(timing.clone(), layout);
+    }
+    // A terminal zero-duration Sequence has no physical output to reanchor.
+    if at.0 < total {
+        let window = ExactFrameRange::new(ExactRatio::integer(at.0), ExactRatio::integer(total))?;
+        let mut entries = 0usize;
+        for (_, _, binding) in working.audio_bindings.owners() {
+            for placement in binding.placements() {
+                entries = entries
+                    .checked_add(placement.entry_count())
+                    .filter(|count| *count <= MAX_AUDIO_BINDING_ENTRIES)
+                    .ok_or_else(|| super::limit("composite pause binding entries"))?;
+            }
+        }
+        append_steps(
+            &mut working.audio_bindings,
+            AudioRecipeKind::Node,
+            captured.node_placements,
+            affected,
+            window,
+            &mut entries,
+        )?;
+        append_steps(
+            &mut working.audio_bindings,
+            AudioRecipeKind::RepeatGap,
+            captured.gap_placements,
+            affected,
+            window,
+            &mut entries,
+        )?;
+    }
+    crate::audio_binding_lifecycle::prune(&mut working);
+    // The steps above name only captured aliases; extend the table anyway if
+    // any template reads one it does not project.
+    crate::audio_binding_lifecycle::rescope_timing(document, &mut working.audio_bindings, timing)?;
+    working.audio_bindings.validate_for(&working)?;
+    Ok(working)
+}]]><calls total="8"><c n="filter" l="30">pub fn filter(&amp;mut self, events: Vec&lt;Event&gt;) -&gt; Vec&lt;Event&gt;</c><c n="entry_count" l="831">pub(crate) fn entry_count(&amp;self) -&gt; usize</c><c n="rescope_timing" l="149">pub(crate) fn rescope_timing( document: &amp;ProjectDocument, state: &amp;mut AudioBindingState, timing: &amp;AudioTimingId, ) -&gt; Result&lt;(), DocumentError&gt;</c><c n="capture_for_composite_insertion_scoped" l="204">pub(crate) fn capture_for_composite_insertion_scoped( document: &amp;ProjectDocument, timing: AudioTimingId, affected: &amp;BTreeSet&lt;NodeId&gt;, ) -&gt; Result&lt;CompositeInsertionCapture, DocumentError&gt;</c><c n="prune" l="791">pub(crate) fn prune(document: &amp;mut ProjectDocument)</c><c n="new" l="37">pub fn new(start: ExactRatio, end: ExactRatio) -&gt; Result&lt;Self, DocumentError&gt;</c><c n="integer" l="62">pub const fn integer(value: i64) -&gt; Self</c><c n="append_steps" l="285">pub(crate) fn append_steps( state: &amp;mut AudioBindingState, kind: AudioRecipeKind, placements: BTreeMap&lt;NodeId, AudioPlacementTemplate&gt;, affected: &amp;BTreeSet&lt;NodeId&gt;, window: ExactFrameRange, entries: &amp;mut usize, ) -&gt; Result&lt;(), EditError&gt;</c></calls></b><b t="fn" l="312" p="./crates/deadpan-core/src/insert_time/composite.rs" n="append_anchored_steps"><![CDATA[pub(crate) fn append_anchored_steps(
+    state: &mut AudioBindingState,
+    kind: AudioRecipeKind,
+    placements: BTreeMap<NodeId, AudioPlacementTemplate>,
+    affected: &BTreeSet<NodeId>,
+    anchor: crate::AudioReanchorAnchor,
+    window: Option<ExactFrameRange>,
+    entries: &mut usize,
+) -> Result<(), EditError> {
+    if !anchor.is_allocation_entry() && window.is_some() {
+        return Err(super::invalid(
+            "Source endpoint cannot carry an allocation window",
+        ));
+    }
+    for (owner, placement) in placements {
+        if !affected.contains(&owner) {
+            continue;
+        }
+        let bindings = match kind {
+            AudioRecipeKind::Node => &state.bindings,
+            AudioRecipeKind::RepeatGap => &state.gap_bindings,
+        };
+        let binding = bindings.get(&owner).ok_or_else(|| {
+            super::invalid("composite pause is missing a captured physical binding")
+        })?;
+        let terms = binding
+            .resume
+            .as_ref()
+            .map_or(0, |resume| resume.phase.terms.len());
+        if terms + binding.reanchors.len() >= MAX_AUDIO_BINDING_TERMS {
+            return Err(super::limit("composite pause exceeds the reanchor limit"));
+        }
+        let step = AudioReanchorStep {
+            anchor,
+            placement,
+            window,
+        };
+        if kind == AudioRecipeKind::Node
+            && crate::audio_binding_lifecycle::compact_representation()
+            && state.reanchor_step_is_inert(&owner, binding, &step)
+        {
+            continue;
+        }
+        *entries = entries
+            .checked_add(step.placement.entry_count())
+            .filter(|count| *count <= MAX_AUDIO_BINDING_ENTRIES)
+            .ok_or_else(|| super::limit("composite pause binding entries"))?;
+        let bindings = match kind {
+            AudioRecipeKind::Node => &mut state.bindings,
+            AudioRecipeKind::RepeatGap => &mut state.gap_bindings,
+        };
+        bindings
+            .get_mut(&owner)
+            .expect("binding was found above")
+            .reanchors
+            .push(step);
+    }
+    Ok(())
+}]]><calls total="6"><c n="filter" l="30">pub fn filter(&amp;mut self, events: Vec&lt;Event&gt;) -&gt; Vec&lt;Event&gt;</c><c n="is_allocation_entry" l="197">pub fn is_allocation_entry(&amp;self) -&gt; bool</c><c n="entry_count" l="831">pub(crate) fn entry_count(&amp;self) -&gt; usize</c><c n="reanchor_step_is_inert" l="1697">pub(crate) fn reanchor_step_is_inert( &amp;self, owner: &amp;NodeId, binding: &amp;OwnedAudioBinding, step: &amp;AudioReanchorStep, ) -&gt; bool</c><c n="compact_representation" l="718">pub(crate) fn compact_representation() -&gt; bool</c><c n="Err" l="25">type Err = &amp;&apos;static str</c></calls></b><b t="cls" l="74" p="./crates/deadpan-plan/src/audio_projection.rs" n="AudioStageProjection"><![CDATA[pub struct AudioStageProjection<'plan> {
+    stage: AudioStage<'plan>,
+    input: ProjectionInput<'plan>,
+    output_policy: AudioSignalTape<'plan>,
+    duration: FrameDuration,
+    identity: AudioProjectionIdentity,
+    source_key: Option<Arc<AudioSourceProjectionKey>>,
+    owned_key: Option<Arc<AudioOwnedProjectionKey>>,
+}]]></b><b t="method" l="4296" p="./crates/deadpan-audio/src/stages.rs" n="prepared_and_source_recipe_steps_come_from_sampling_not_structure"><![CDATA[fn prepared_and_source_recipe_steps_come_from_sampling_not_structure() {
+        let plan = fixture_plan(false);
+        let rate = plan.metadata().presentation_basis.frame_rate;
+        let mut root = plan
+            .audio_processing(AudioSample(0)..AudioSample(1), Default::default())
+            .unwrap()
+            .spans
+            .remove(0);
+        let mut signal = plan
+            .audio_signal()
+            .query(SignalSample(0)..SignalSample(1), Default::default())
+            .unwrap()
+            .spans
+            .remove(0);
+        let step = ratio(15, 16016); // 3/2 prepared samples per output sample.
+        root.sampling = AudioSampleMap::new(AudioSample(0), ExactRatio::ZERO, step)
+            .unwrap()
+            .resume(AudioSample(1602), AudioSample(3203))
+            .unwrap();
+        signal.sampling = AudioSampleMap::new(SignalSample(0), ExactRatio::ZERO, step)
+            .unwrap()
+            .resume(SignalSample(1602), SignalSample(3204))
+            .unwrap();
+        root.allocated_samples.start = AudioSample(3203);
+        signal.allocated_samples.start = SignalSample(3204);
+        assert_eq!(
+            root_source_recipe(&root, 44_100)
+                .unwrap()
+                .unwrap()
+                .source_step(),
+            ratio(441, 320)
+        );
+        assert_eq!(
+            signal_source_recipe(&signal, 44_100)
+                .unwrap()
+                .unwrap()
+                .source_step(),
+            ratio(441, 320)
+        );
+        let input = generated_pcm(48_000);
+        for (recipe, anchor) in [
+            (root_stage_recipe(&root, input.len(), rate).unwrap(), 3203),
+            (
+                signal_stage_recipe(&signal, input.len(), rate).unwrap(),
+                3204,
+            ),
+        ] {
+            assert_eq!(recipe.source_origin(), ExactRatio::integer(2403));
+            assert_eq!(recipe.source_step(), ratio(3, 2));
+            assert_eq!(recipe.selection(), 0..48_000);
+            let expected = ResampleRecipe::new(
+                0..48_000,
+                ExactRatio::integer(2403),
+                AudioSample(anchor),
+                ratio(3, 2),
+                recipe.output_range(),
+            )
+            .unwrap();
+            assert_eq!(
+                sample_prepared(
+                    &input,
+                    recipe,
+                    AudioSample(anchor),
+                    256,
+                    &AtomicBool::new(false)
+                )
+                .unwrap(),
+                render(&input, &expected, anchor, 256)
+            );
+        }
+    }]]><calls total="17" shown="11" capped="1"><c n="ratio" l="20">fn ratio(n: i128, d: i128) -&gt; ExactRatio</c><c n="len" l="22">pub(super) fn len(&amp;self) -&gt; usize</c><c n="len" l="164">pub(super) fn len(&amp;self) -&gt; usize</c><c n="new" l="23">pub fn new( selection: Range&lt;i64&gt;, source_origin: ExactRatio, output_origin: AudioSample, source_step: ExactRatio, output_range: Range&lt;AudioSample&gt;, ) -&gt; Result&lt;Self, PreparationError&gt;</c><c n="output_range" l="99">pub fn output_range(&amp;self) -&gt; Range&lt;AudioSample&gt;</c><c n="fixture_plan" l="16">pub(crate) fn fixture_plan(preserve: bool) -&gt; RenderPlan</c><c n="generated_pcm" l="116">pub(crate) fn generated_pcm(length: usize) -&gt; Vec&lt;[f32</c><c n="query" l="50">pub(super) fn query( &amp;self, samples: Range&lt;SignalSample&gt;, limits: AudioQueryLimits, ) -&gt; Result&lt;AudioSignalQuery&lt;&apos;plan&gt;, PlanError&gt;</c><c n="default" l="133">fn default() -&gt; Self</c><c n="root_stage_recipe" l="3153">fn root_stage_recipe( span: &amp;AudioProcessingSpan&lt;&apos;_&gt;, length: usize, rate: FrameRate, ) -&gt; Result&lt;ResampleRecipe, StageAudioError&gt;</c><c n="signal_stage_recipe" l="3167">fn signal_stage_recipe( span: &amp;AudioSignalSpan&lt;&apos;_&gt;, length: usize, rate: FrameRate, ) -&gt; Result&lt;ResampleRecipe, StageAudioError&gt;</c></calls></b></bodies></ctx>

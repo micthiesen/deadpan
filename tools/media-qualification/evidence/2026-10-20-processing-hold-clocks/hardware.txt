@@ -1,0 +1,6 @@
+hw.model: Mac17,7
+hw.memsize: 137438953472
+machdep.cpu.brand_string: Apple M5 Max
+ProductName:		macOS
+ProductVersion:		26.5.2
+BuildVersion:		25F84

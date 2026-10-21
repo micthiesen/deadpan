@@ -144,8 +144,8 @@ fn ordinary_hold_duration_fixed_window_crop_noop_invalid_shrink_and_processing_a
     assert!(apply(&before, &request(&before, "hold", 1)).is_err());
     assert_eq!(before.audio_bindings, AudioBindingState::default());
 
-    // An opaque processing ancestor above an affine window is deliberately
-    // outside this fix. Preserve its previous accepted recipe-only behavior.
+    // A processing ancestor above the affine window retains that window while
+    // its physical descendants now retain their selected input clocks.
     let mut processing = fixed();
     let mut outer = rate("rate", 3, 0, 4);
     let NodeKind::Retime { pitch, .. } = &mut outer.kind else {
@@ -159,7 +159,20 @@ fn ordinary_hold_duration_fixed_window_crop_noop_invalid_shrink_and_processing_a
     );
     processing.validate().unwrap();
     let after = resized(&processing, "hold", 3);
-    assert_eq!(after.audio_bindings, processing.audio_bindings);
+    assert_eq!(
+        after.audio_bindings.bindings()[&id("after")]
+            .lattice
+            .reference
+            .root,
+        AudioClockRoot::PreserveInputPointCeil {
+            stage: id("processing")
+        }
+    );
+    assert!(
+        after.audio_bindings.bindings()[&id("processing")]
+            .reanchors
+            .is_empty()
+    );
     assert_eq!(after.duration().unwrap(), processing.duration().unwrap());
 }
 
@@ -224,7 +237,7 @@ fn ordinary_hold_duration_fixed_window_repeats_inside_and_outside_keep_only_inte
     let mut before = repeated_window();
     before.audio_bindings = captured(&before);
     before.validate().unwrap();
-    let affected = super::super::fixed_affine_window_owners(&before, &id("hold"))
+    let affected = super::super::fixed_window_owners(&before, &id("hold"))
         .unwrap()
         .unwrap();
     assert!(affected.contains(&id("inner")) && affected.contains(&id("owned-after")));

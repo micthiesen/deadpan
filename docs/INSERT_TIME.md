@@ -39,11 +39,17 @@ root clocks when resizing moves output time. Shared Repeat definitions stay
 compact, and existing partial bindings retain their phase. No-op, terminal and
 dormant-definition changes avoid unnecessary captures. The separate
 clocked-Retime path is unchanged. Ordinary Holds inside fixed affine Retime
-windows also retain moved interior clocks while outer placements stay fixed;
-processing Preserve/Shift ancestors remain outside that qualification. See the
+windows also retain moved interior clocks while outer placements stay fixed.
+Preserve/Shift input windows retain those owners on their own PointCeil clocks
+while keeping the processor's output binding and rebuilding its current DSP.
+Attached sounds whose processing subtree changes retain their explicit refusal.
+See the
 [ordinary Hold-duration clock qualification](qualification/hold-duration-clocks-2026-10-20.md).
 The [fixed-window qualification](qualification/fixed-retime-hold-clocks-2026-10-20.md)
 records exact nested slopes, cropped support and retained allocation endpoints.
+The [processing-input qualification](qualification/processing-hold-clocks-2026-10-20.md)
+extends that coverage to Preserve/Shift, historical input and output bindings,
+default and owned plays, and RoomTone gaps.
 
 Core 24 adds existing root Sequence seams before composite suffixes: Sequence,
 Repeat, Retime, owned gap branches and generated Hold owners can move together.

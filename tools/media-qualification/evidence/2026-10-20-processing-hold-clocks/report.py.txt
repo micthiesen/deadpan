@@ -1,0 +1,10 @@
+from pathlib import Path
+import json
+
+scratch = Path('/tmp/deadpan-processing-hold-clocks-2026-10-20')
+for row in json.loads((scratch / 'export-results.json').read_text()):
+    report = row['report']
+    print(row['name'], json.dumps(report['summary']))
+    print('notes', json.dumps(row['notes']))
+    for audio in report['audio']:
+        print('audio', json.dumps(audio))

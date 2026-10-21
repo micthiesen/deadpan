@@ -1,0 +1,264 @@
+//! Proposed canonical PCM regression: inspect the actual processor INPUT tape.
+//! Register under stages/insert_time.rs to reuse its existing fixture helpers.
+use super::*;
+use deadpan_plan::{
+    AudioQueryLimits, AudioSignalContent, AudioSignalTape, AudioSignalTapeRun, AudioStage,
+};
+
+fn voice() -> BeatNode {
+    let rate = FrameRate::new(30_000, 1001).unwrap();
+    let mut node = source(rate, 4, 0..1);
+    let NodeKind::Source { source } = &mut node.kind else {
+        panic!()
+    };
+    let audio = audio_at_rate(3100, 23_100, 44_100);
+    source.audio_mapping = SourceAudioMapping::natural_rate(audio.span, rate).unwrap();
+    source.audio = Some(audio);
+    node
+}
+
+fn fixture(pitch: PitchPolicy, crop: i64, prebound: bool) -> ProjectDocument {
+    let output = if pitch == PitchPolicy::Preserve {
+        4
+    } else {
+        8 - crop
+    };
+    let document = document_with_asset(
+        FrameRate::new(30_000, 1001).unwrap(),
+        &["processor"],
+        [
+            ("processor", retime("body", output, crop..8, pitch)),
+            (
+                "body",
+                BeatNode::sequence(
+                    "Processor operand",
+                    vec![id("lead"), id("pause"), id("speech")],
+                ),
+            ),
+            ("lead", hold(3)),
+            ("pause", hold(2)),
+            ("speech", voice()),
+        ],
+        BTreeMap::new(),
+        audio_at_rate(0, 44_117, 44_100).span,
+    );
+    if !prebound {
+        assert!(document.audio_bindings().is_empty());
+        return document;
+    }
+    let bindings = capture_unbound_audio_bindings(
+        &document,
+        AudioTimingId {
+            allocation: RevisionId::new("processing-old-input-clock").unwrap(),
+            ordinal: 0,
+        },
+    )
+    .unwrap();
+    let mut wire = serde_json::to_value(&document).unwrap();
+    wire["audio_bindings"] = serde_json::to_value(bindings).unwrap();
+    ProjectDocument::from_json(&wire.to_string()).unwrap()
+}
+
+fn processing_stage(plan: &RenderPlan) -> AudioStage<'_> {
+    let query = plan
+        .audio_signal()
+        .query(
+            SignalSample(0)..SignalSample(1),
+            AudioQueryLimits::default(),
+        )
+        .unwrap();
+    match query.spans.into_iter().next().unwrap().content {
+        AudioSignalContent::Stage(stage) => stage,
+        // Capturing the old fixture also retains the processing output. This
+        // asks that live bound owner for its actual intrinsic processing stage;
+        // descendants keep their bindings. No descriptor is reconstructed.
+        AudioSignalContent::Bound(bound) => bound.intrinsic_stage().unwrap().expect("processor"),
+        other => panic!("expected actual processing stage, got {other:?}"),
+    }
+}
+
+fn input_pcm(
+    plan: &Arc<RenderPlan>,
+    provider: &mut FixtureProvider,
+    crop: i64,
+    start: i64,
+    chunks: &[u32],
+) -> Vec<[f32; 2]> {
+    provider
+        .revisions
+        .insert(plan.metadata().revision_id.clone());
+    let stage = processing_stage(plan);
+    let signal = stage.input_signal();
+    let support = ratio(crop.into(), 1)..ratio(8, 1);
+    assert_eq!(signal.support(), support);
+    let tape = AudioSignalTape::new(
+        plan,
+        support.clone(),
+        vec![AudioSignalTapeRun::new(support.clone(), support, signal)],
+    )
+    .unwrap();
+    assert_eq!(
+        tape.sample_count().unwrap(),
+        SignalSample(if crop == 0 { 12813 } else { 11212 })
+    );
+    let mut renderer = StageAudio::new(Arc::clone(plan));
+    let mut result = Vec::new();
+    for count in chunks.iter().copied().cycle() {
+        if result.len() == 256 {
+            break;
+        }
+        let count = count.min((256 - result.len()) as u32);
+        let block = renderer
+            .read_tape(
+                provider,
+                &tape,
+                SignalSample(start + result.len() as i64),
+                count,
+                TIMEOUT,
+                &AtomicBool::new(false),
+            )
+            .unwrap();
+        assert_eq!(&block.revision_id, &plan.metadata().revision_id);
+        assert_eq!(block.stage, "projected_preparation_pcm_before_effects");
+        assert!(
+            block.suppressed.is_empty(),
+            "the interior Source window must remain audible"
+        );
+        result.extend(block.samples);
+    }
+    result
+}
+
+fn literal_pcm(provider: &FixtureProvider, phase: ExactRatio, origin: i64) -> Vec<[f32; 2]> {
+    provider
+        .source
+        .prepare(
+            ResampleRecipe::new(
+                3100..23_100,
+                phase,
+                AudioSample(origin),
+                ratio(147, 160),
+                AudioSample(origin)..AudioSample(origin + 256),
+            )
+            .unwrap(),
+            AudioSample(origin),
+            256,
+            TIMEOUT,
+            &AtomicBool::new(false),
+        )
+        .unwrap()
+        .samples
+}
+
+fn same_pcm(actual: &[[f32; 2]], expected: &[[f32; 2]], start: i64, label: &str) {
+    assert_eq!(actual.len(), expected.len(), "{label} length");
+    for (offset, (actual, expected)) in actual.iter().zip(expected).enumerate() {
+        for channel in 0..2 {
+            assert_eq!(
+                actual[channel],
+                expected[channel],
+                "{label} input sample {} channel {channel}",
+                start + offset as i64
+            );
+        }
+    }
+}
+
+fn witness(pitch: PitchPolicy, crop: i64, prebound: bool) {
+    let before = fixture(pitch, crop, prebound);
+    before.validate().unwrap();
+    let before_plan = Arc::new(RenderPlan::compile(&before).unwrap());
+    let (_, mut provider) = mono_original(2);
+    // PointCeil uses the selected input's start as its grid origin.
+    // crop0: old frame5 ->8008, phase3100; new frame6 ->9610,
+    // freshly sampled phase3100+147/400.
+    // crop1: old frame5 ->ceil(4*1601.6)=6407, phase3100+441/800;
+    // new frame6 ->8008, fresh phase3100. All constants are literal, and
+    // the Source windows are far from either old/current finite crop end.
+    let (old_start, new_start, old_phase, fresh_phase) = if crop == 0 {
+        (8008, 9610, ratio(3100, 1), ratio(1_240_147, 400))
+    } else {
+        (6407, 8008, ratio(2_480_441, 800), ratio(3100, 1))
+    };
+    let label = format!("pitch={pitch:?} crop={crop} prebound={prebound}");
+    let expected = literal_pcm(&provider, old_phase, old_start);
+    let fresh = literal_pcm(&provider, fresh_phase, new_start);
+    assert!(expected.iter().flatten().any(|value| value.abs() > 0.01));
+    assert!(
+        expected != fresh,
+        "the chosen canonical PCM detects this phase difference"
+    );
+    let old = input_pcm(&before_plan, &mut provider, crop, old_start, &[256]);
+    same_pcm(
+        &old,
+        &expected,
+        old_start,
+        &format!("old literal input {label}"),
+    );
+    same_pcm(
+        &input_pcm(&before_plan, &mut provider, crop, old_start, &[1, 127, 3]),
+        &old,
+        old_start,
+        &format!("old chunk parity {label}"),
+    );
+    let transaction = apply(
+        &before,
+        &CommandRequest {
+            project_id: before.project_id().clone(),
+            expected_revision: before.revision_id().clone(),
+            new_revision: RevisionId::new("processing-hold-duration").unwrap(),
+            command: Command::SetHoldDuration {
+                node: id("pause"),
+                duration: duration(3),
+            },
+        },
+    )
+    .unwrap();
+    assert_eq!(transaction.duration_delta, 0);
+    let after = transaction.forward.apply(&before).unwrap();
+    assert_eq!(transaction.inverse.apply(&after).unwrap(), before);
+    assert_eq!(after.duration().unwrap(), before.duration().unwrap());
+    assert_eq!(
+        after.nodes()[&id("processor")],
+        before.nodes()[&id("processor")]
+    );
+    assert_eq!(after.nodes()[&id("speech")], before.nodes()[&id("speech")]);
+    let after = ProjectDocument::from_json(&after.to_json().unwrap()).unwrap();
+    let after_plan = Arc::new(RenderPlan::compile(&after).unwrap());
+    let actual = input_pcm(&after_plan, &mut provider, crop, new_start, &[127, 3, 251]);
+    // If the regression is present, this diagnostic proves it is exactly the
+    // independently predicted fresh phase, not just an arbitrary difference.
+    let reset_to_fresh_phase = actual == fresh;
+    same_pcm(
+        &actual,
+        &expected,
+        new_start,
+        &format!("retained OLD input phase {label}; reset_to_fresh_phase={reset_to_fresh_phase}"),
+    );
+    same_pcm(
+        &input_pcm(&after_plan, &mut provider, crop, new_start, &[1, 239]),
+        &actual,
+        new_start,
+        &format!("new chunk parity {label}"),
+    );
+}
+
+#[test]
+fn ordinary_hold_growth_under_preserve_retains_44100_phase_on_actual_input_tape() {
+    witness(PitchPolicy::Preserve, 0, false);
+}
+
+#[test]
+fn ordinary_hold_growth_under_shift_retains_44100_phase_on_actual_input_tape() {
+    witness(PitchPolicy::Shift { semitones: 3 }, 0, false);
+}
+
+#[test]
+fn ordinary_hold_growth_under_processing_preserves_prebound_and_cropped_input_clocks() {
+    for pitch in [PitchPolicy::Preserve, PitchPolicy::Shift { semitones: 3 }] {
+        for crop in [0, 1] {
+            witness(pitch, crop, true);
+        }
+        witness(pitch, 1, false);
+    }
+}

@@ -1,0 +1,25 @@
+{
+  "production": {
+    "reviewer": "/root/pause_selection_ui",
+    "findings": [],
+    "checked": ["clock selector preserves existing callers", "PointCeil reanchors omit root-frame window", "complete layout retained for shared sound-journal timing", "no new global derived-clock refusal"]
+  },
+  "journal_fixture": {
+    "finding": "An unmoved outer tail does not receive a new sound-clock journal; original test failed with no entry found for key.",
+    "correction": "Accepted existing root-ripple path moves an unchanged attached processor and shares the complete layout. Separate fresh/historical fixed-input cases retain exact changed-processing-subtree refusal atomically.",
+    "limit": "Attachments whose processing subtree changes remain refused; no new sound lifecycle is claimed."
+  },
+  "pcm_oracles": {
+    "reviewer": "/root/pause_selection_ui",
+    "findings": [],
+    "checked": ["literal PointCeil/crop phases and finite endpoints", "exhausted masks", "fractional output resume exactly one-third sample", "current independent input rebuilt through real CanonicalStretch", "exact PCM and suppression over alternate chunks", "nested input clock retained"],
+    "limit": "Output oracle deliberately reuses unchanged transfer primitive with literal coordinates; it checks new wiring, not independent kernel qualification."
+  },
+  "repeat_pcm_oracles": {
+    "reviewer": "/root/pause_selection_ui",
+    "findings": [],
+    "checked": ["literal layouts and per-play PointCeil phases", "current finite Source crops", "RoomTone fractional extent", "terminal-exhaustion masks", "old baselines independently precede each edit", "complete PCM/masks across both chunk schedules"],
+    "runtime": "Reviewer did not execute tests; root owns Cargo."
+  },
+  "store_export_fixtures": {"reviewer": "/root/pause_selection_ui", "findings": []}
+}

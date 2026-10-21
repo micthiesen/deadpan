@@ -659,6 +659,58 @@ fn fixed_retime_hold_duration_preview_and_encoded_output_keep_interior_source_cl
     Ok(())
 }
 
+#[test]
+fn processing_hold_duration_preview_and_encoded_output_keep_input_clocks() -> Result {
+    let (root, _guard) = keep_or(tempfile::tempdir()?);
+    let mut results = Vec::new();
+    for (name, factory) in [
+        (
+            "preserve-grow",
+            recipes::processing_duration::preserve_grow as fn(&Path) -> Result<Fixture>,
+        ),
+        (
+            "preserve-shrink",
+            recipes::processing_duration::preserve_shrink as fn(&Path) -> Result<Fixture>,
+        ),
+        (
+            "shift-grow",
+            recipes::processing_duration::shift_grow as fn(&Path) -> Result<Fixture>,
+        ),
+        (
+            "shift-shrink",
+            recipes::processing_duration::shift_shrink as fn(&Path) -> Result<Fixture>,
+        ),
+    ] {
+        let fixture = factory(&root.join(name))?;
+        check(&fixture)?;
+        if skip_without_physical_mac("encoded Render") {
+            continue;
+        }
+        let movie = render(&fixture, &root.join(format!("exports-{name}")))?;
+        let (report, passed) = verify(&fixture, &movie, &fixture.revision, &["--every", "1"])?;
+        assert!(passed, "{name}: {report}");
+        assert_eq!(report["summary"]["pictures_checked"], fixture.frames);
+        assert_eq!(report["summary"]["pictures_failed"], 0);
+        assert_eq!(report["summary"]["nonzero_offsets"], 0);
+        assert!(
+            report["summary"]["signal_windows"]
+                .as_u64()
+                .is_some_and(|count| count > 0)
+        );
+        assert_eq!(report["audio"][0]["flags"], json!([]));
+        assert_eq!(report["audio"][0]["blocks"]["low_snr_blocks"], 0);
+        assert_eq!(report["audio"][0]["offset_status"], "verified_zero");
+        assert_eq!(report["audio"][0]["measured_offset_samples"], 0);
+        check_provenance(&fixture, &report)?;
+        eprintln!("{}", summary_row(&fixture, &report));
+        results.push(json!({"name":name,"package":fixture.package,"movie":movie,"report":report,"notes":fixture.notes}));
+    }
+    if let Some(path) = std::env::var_os("DEADPAN_PROCESSING_HOLD_DURATION_RESULTS") {
+        std::fs::write(path, serde_json::to_vec_pretty(&results)?)?;
+    }
+    Ok(())
+}
+
 fn partial_repeat_export(existing: bool) -> Result {
     let (root, _guard) = keep_or(tempfile::tempdir()?);
     let factory = if existing {

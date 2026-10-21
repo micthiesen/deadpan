@@ -5,8 +5,8 @@
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::{
-    AudioBindingState, AudioPlacementTemplate, AudioReanchorStep, AudioRecipeKind, AudioTimingId,
-    BeatNode, EditError, ExactFrameRange, ExactRatio, MAX_AUDIO_BINDING_ENTRIES,
+    AudioBindingState, AudioClockRoot, AudioPlacementTemplate, AudioReanchorStep, AudioRecipeKind,
+    AudioTimingId, BeatNode, EditError, ExactFrameRange, ExactRatio, MAX_AUDIO_BINDING_ENTRIES,
     MAX_AUDIO_BINDING_TERMS, MAX_DOCUMENT_NODES, NodeId, NodeKind, ProjectDocument, ProjectFrame,
     RevisionId,
 };
@@ -120,6 +120,71 @@ pub(crate) fn prepare_owners(
     crate::audio_binding_lifecycle::prune(&mut working);
     // The steps above name only captured aliases; extend the table anyway if
     // any template reads one it does not project.
+    crate::audio_binding_lifecycle::rescope_timing(document, &mut working.audio_bindings, timing)?;
+    working.audio_bindings.validate_for(&working)?;
+    Ok(working)
+}
+
+/// Retain a fixed-window Hold edit's affected recipes on each recipe's actual
+/// clock. A processing input uses its selected PointCeil window; applying the
+/// root window to that coordinate system would discard or offset its entries.
+pub(crate) fn prepare_hold_duration_owners(
+    document: &ProjectDocument,
+    affected: &BTreeSet<NodeId>,
+    total: i64,
+    timing: &AudioTimingId,
+) -> Result<ProjectDocument, EditError> {
+    let captured = crate::audio_binding_lifecycle::capture_for_hold_duration_edit(
+        document,
+        timing.clone(),
+        affected,
+    )?;
+    let mut working = document.clone();
+    working.audio_bindings = captured.state;
+    if let Some(layout) = captured.phase_only_layout {
+        working
+            .audio_bindings
+            .timings
+            .insert(timing.clone(), layout);
+    }
+    let mut entries = 0usize;
+    for (_, _, binding) in working.audio_bindings.owners() {
+        for placement in binding.placements() {
+            entries = entries
+                .checked_add(placement.entry_count())
+                .filter(|count| *count <= MAX_AUDIO_BINDING_ENTRIES)
+                .ok_or_else(|| super::limit("Hold duration binding entries"))?;
+        }
+    }
+    let root_window = ExactFrameRange::new(ExactRatio::ZERO, ExactRatio::integer(total))?;
+    for (kind, placements) in [
+        (AudioRecipeKind::Node, captured.node_placements),
+        (AudioRecipeKind::RepeatGap, captured.gap_placements),
+    ] {
+        let (root, input): (BTreeMap<_, _>, BTreeMap<_, _>) =
+            placements.into_iter().partition(|(_, placement)| {
+                placement.reference.root == AudioClockRoot::ProjectRootRoundEven
+            });
+        append_anchored_steps(
+            &mut working.audio_bindings,
+            kind,
+            root,
+            affected,
+            crate::AudioReanchorAnchor::AllocationEntry,
+            Some(root_window),
+            &mut entries,
+        )?;
+        append_anchored_steps(
+            &mut working.audio_bindings,
+            kind,
+            input,
+            affected,
+            crate::AudioReanchorAnchor::AllocationEntry,
+            None,
+            &mut entries,
+        )?;
+    }
+    crate::audio_binding_lifecycle::prune(&mut working);
     crate::audio_binding_lifecycle::rescope_timing(document, &mut working.audio_bindings, timing)?;
     working.audio_bindings.validate_for(&working)?;
     Ok(working)
