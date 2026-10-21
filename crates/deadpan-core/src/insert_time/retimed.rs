@@ -14,6 +14,9 @@ use crate::{
     ProjectFrame, RetimePurpose, Subtree,
 };
 
+mod speed_update;
+pub(crate) use speed_update::{clocked_retime_target, set_retime};
+
 /// A strict interior of one FollowSpeed Retime reached through ordinary
 /// Sequences from the project root.
 #[derive(Debug, Clone, PartialEq, Eq)]

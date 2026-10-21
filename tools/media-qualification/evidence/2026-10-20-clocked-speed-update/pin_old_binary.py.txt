@@ -1,0 +1,18 @@
+from pathlib import Path
+import hashlib
+import json
+import re
+import shutil
+
+root = Path('/Users/michael/Code/deadpan')
+scratch = Path('/tmp/deadpan-speed-update-clocks-2026-10-20')
+log = (scratch / 'witness-old.log').read_text()
+name = re.search(r'target/debug/deps/insert_time-[0-9a-f]+', log).group()
+binary = root / name
+digest = hashlib.sha256(binary.read_bytes()).hexdigest()
+shutil.copy2(binary, scratch / 'insert-time-old')
+record = {'base': (scratch / 'base.txt').read_text().strip(), 'binary': name,
+          'sha256': digest, 'copy': str(scratch / 'insert-time-old'),
+          'outcome': json.loads((scratch / 'old-witness/observed.json').read_text())}
+(scratch / 'old-binary.json').write_text(json.dumps(record, indent=2) + '\n')
+print(json.dumps(record, indent=2))

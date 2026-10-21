@@ -1,5 +1,8 @@
 use super::*;
 
+#[path = "retimed/speed_update.rs"]
+mod speed_update;
+
 fn ratio(numerator: i128, denominator: i128) -> ExactRatio {
     ExactRatio::new(numerator, denominator).unwrap()
 }

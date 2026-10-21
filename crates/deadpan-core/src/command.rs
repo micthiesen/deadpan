@@ -1189,7 +1189,9 @@ fn apply_with_durations_captured(
     // must not operate on a shadow integral timeline. Exact snapshot restore
     // and guarded reversible patches retain the complete clocks above.
     // A pause inside a FollowSpeed speed change authors exact clocks itself.
-    if !matches!(request.command, Command::InsertTime { .. }) {
+    let exact_retime = matches!(&request.command, Command::SetRetime { node, .. }
+        if crate::insert_time::retimed::clocked_retime_target(document, node));
+    if !matches!(request.command, Command::InsertTime { .. }) && !exact_retime {
         document.require_integral_clocks()?;
     }
     if let Command::WithBoundaryReplacements { edit } = &request.command {
@@ -1382,6 +1384,19 @@ fn apply_with_durations_captured(
                 known = KnownValidation::Structure(structure);
             }
             result
+        }
+        Command::SetRetime {
+            node,
+            duration,
+            pitch,
+        } if crate::insert_time::retimed::clocked_retime_target(input, node) => {
+            crate::insert_time::retimed::set_retime(
+                input,
+                node,
+                *duration,
+                *pitch,
+                &request.new_revision,
+            )?
         }
         Command::SetHoldDuration { node, duration }
             if crate::insert_time::retimed::inside_clocked(input, node) =>
@@ -3643,7 +3658,7 @@ pub const MAX_PRESERVE_WORK_SAMPLES: i128 = 134_217_728;
 
 /// Refuse a pitch-preserving or pitch-shifting stage the processor cannot
 /// prepare, at edit time rather than at playback or export.
-fn check_preserve_bound(
+pub(crate) fn check_preserve_bound(
     document: &ProjectDocument,
     input: crate::FrameDuration,
     output: crate::FrameDuration,

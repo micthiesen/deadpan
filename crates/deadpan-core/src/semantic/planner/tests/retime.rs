@@ -4,6 +4,8 @@
 use super::*;
 use crate::{AudioChange, ExactRatio, GainDb, PauseLength, PitchPolicy, SemanticVisualSelection};
 
+mod exact_clock;
+
 fn selected(child: &str, cursor: i64) -> SemanticContext {
     SemanticContext {
         selected_child: Some(node(child)),

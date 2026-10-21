@@ -1,0 +1,9 @@
+.claude/worktrees/fix-ci/
+crates/deadpan-audio/tests/stages/clocked_speed_update.rs
+crates/deadpan-audio/tests/stages/rate_bound_pcm.rs
+crates/deadpan-cli/tests/preview_export/clocked_speed_update.rs
+crates/deadpan-core/src/insert_time/retimed/speed_update.rs
+crates/deadpan-core/src/semantic/planner/tests/retime/exact_clock.rs
+crates/deadpan-core/tests/insert_time/retimed/speed_update.rs
+crates/deadpan-store/tests/hold_duration_clocks/speed_update.rs
+docs/qualification/clocked-speed-update-2026-10-20.md

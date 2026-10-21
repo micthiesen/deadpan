@@ -1,0 +1,17 @@
+# Normal clocked speed PCM regression derivation
+
+Source frozen for root-owned Cargo; author ran rustfmt and diff checks only. Files: NEW stages/clocked_speed_update.rs and registration from insert_time.rs. Rate diagnostic module not changed.
+
+Fixture uses native44.1k natural Source12 span3100..23100, outer lead2, FollowSpeed output24/input0..12, and audible native44.1k tailSource2 span9000..29000. Public pause root5 length3 gives stage output27/exactinput27/2, root31. Input Source splits retain full12-frame raw physical recipes. Covering recipe mapping0..14 remains separate from exact selected0..13.5.
+
+RoundEven root grid is8008/5 samples/frame. Complete before root length49650 atframe31. After public SetRetime15 root19 ends30430. Allocations: beforeleft3203..8008, Hold8008..12813, right12813..46446, tail46446..49650; afterleft3203..5873, Hold5873..8542, right8542..27227, tail27227..30430. Hold endpoints are11/3 and16/3 rootframes. Transfer step27/15=9/5 for both fragments; outside tail staysstep1.
+
+Independent oracle TWO stages: prepare complete finite native Source on retained full historical carrier, then sinc-transfer this sampled PCM at explicit saved reference/grid into live allocation; reapply current half-open pause policy. Never flatten native and retained-transfer filters to one native ResampleRecipe.
+
+Original retained Source carrier: root[2,26), root samples[3203,41642). First native phase3100+(3203-3203.2)*147/320=4959853/1600=3099.908125. Native step147/320. Full12frame current native endpointceil(3100+12*1471.47)=20758. Left current first ref3203; existing right first ref8008.
+
+Partial case removes right copied Source and outside tail bindings after public pause, retaining original left binding and full old clock inventory. Right unbound CURRENT fullSource originroot5, carrier[8008,46446), firstphase3100 at8008, step147/320; visible oldright starts12813, nativephase5307.296875. Capturing on SetRetime must use that current carrier/reference12813, not the original pre-pause Source lattice. Full native selectedspan remains3100..20758.
+
+Existing tail carrier came from pre-pause root26..28: [41642,44845),3203cells. Native firstphase9000+(41642-41641.6)*147/160=9000+147/400. Current BEFORE live29..31 allocates3204cells, so finalsample49649 is explicitly exhausted zero/suppressed. Current AFTER live17..19 allocates3203, exactly its carrier length. Partial unbound tail startsCURRENT root29 with carrier[46446,49650),3204cells, firstphase9000+(46446-46446.4)*147/160=9000-147/400. AFTER live3203 consumes only admitted prefix. Tail full2frame native endpointceil(9000+2*1471.47)=11943. No additional native endpoint mask is invented; physical carrier exhaustion owns explicit terminal suppression.
+
+Tests independently compare complete OLD PCM/mask before command, then complete NEW PCM/mask and alternatechunks[127,3,251]/[1,239], preserving source contexts even near cut/terminal filter edges. Query checks actual Bound allocation/ref/step/full rawcarrier, but never constructs oracle from them. Inside original and previously bound copiedSource bindings staybyte-exact. Outside existing binding lattice/resume and chronologicalprefix stay, with movement appended. New partial binding is required by actual Bound query. Public15->27 update then compares full output to the independently constructed before oracle, with inverse and JSON roundtrip on both updates.

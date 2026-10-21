@@ -1,0 +1,202 @@
+//! Scratch diagnostic: public pause construction, then a validated TEST-ONLY
+//! proposed output extent. This does not bypass any production command guard.
+use super::*;
+use deadpan_audio::SignalTransferError;
+use deadpan_plan::{AudioBoundDomain, AudioSignalContent};
+
+fn proposed_rate_fixture() -> ProjectDocument {
+    let rate = FrameRate::new(30_000, 1001).unwrap();
+    let audio = audio_at_rate(3100, 23_100, 44_100);
+    let mut spoken = source(rate, 12, 0..1);
+    let NodeKind::Source { source } = &mut spoken.kind else {
+        unreachable!()
+    };
+    source.audio_mapping = SourceAudioMapping::natural_rate(audio.span, rate).unwrap();
+    source.audio = Some(audio);
+    document_with_asset(
+        rate,
+        &["lead", "slow"],
+        [
+            ("lead", hold(2)),
+            (
+                "slow",
+                retime("inner", 100, 0..12, PitchPolicy::FollowSpeed),
+            ),
+            ("inner", spoken),
+        ],
+        BTreeMap::new(),
+        audio_at_rate(0, 44_117, 44_100).span,
+    )
+}
+
+fn literal_left_pcm(provider: &FixtureProvider) -> Vec<[f32; 2]> {
+    // Old Source origin root2 ->3203.2; RoundEven allocates first sample3203.
+    // Native step (12/100)*(44100/48000)=441/4000. Therefore first native
+    // phase3100-(1/5)*(441/4000)=61999559/20000. The pause's left cut is
+    // child9/25, whose current finite native end ceil(3100+529.7292)=3630.
+    let recipe = ResampleRecipe::new(
+        3100..3630,
+        ratio(61_999_559, 20_000),
+        AudioSample(3203),
+        ratio(441, 4000),
+        AudioSample(3203)..AudioSample(8008),
+    )
+    .unwrap();
+    let mut result = Vec::new();
+    while result.len() < 256 {
+        let count = (256 - result.len()).min(127) as u32;
+        result.extend(
+            provider
+                .source
+                .prepare(
+                    recipe.clone(),
+                    AudioSample(3203 + result.len() as i64),
+                    count,
+                    TIMEOUT,
+                    &AtomicBool::new(false),
+                )
+                .unwrap()
+                .samples,
+        );
+    }
+    result
+}
+
+#[test]
+fn validated_clocked_speed_candidate_exposes_retained_transfer_103_before_native_step_limit() {
+    let initial = proposed_rate_fixture();
+    initial.validate().unwrap();
+    let before = insert_pause(&initial, 5, 3, "rate-bound-public-pause");
+    before.validate().unwrap();
+    assert_eq!(before.duration().unwrap(), duration(105));
+    let old_clock = &before.derived_clocks()[&id("slow")];
+    assert_eq!(old_clock.extent, ratio(103, 1));
+    assert_eq!(
+        (old_clock.child_start, old_clock.child_end),
+        (ExactRatio::ZERO, ratio(309, 25))
+    );
+    let NodeKind::Retime {
+        duration: old_cover,
+        mapping,
+        ..
+    } = before.nodes()[&id("slow")].kind
+    else {
+        unreachable!()
+    };
+    assert_eq!(old_cover, duration(103));
+    assert_eq!(mapping.end(), ProjectFrame(13));
+    let (_, mut provider) = mono_original(2);
+    provider.revisions.insert(before.revision_id().clone());
+    let mut renderer = StageAudio::new(Arc::new(RenderPlan::compile(&before).unwrap()));
+    let old = renderer
+        .read(
+            &mut provider,
+            AudioSample(3203),
+            256,
+            TIMEOUT,
+            &AtomicBool::new(false),
+        )
+        .unwrap();
+    assert!(
+        old.suppressed.is_empty(),
+        "the retained left fragment is audible"
+    );
+    let expected = literal_left_pcm(&provider);
+    assert!(expected.iter().flatten().any(|sample| sample.abs() > 0.01));
+    for (offset, (actual, expected)) in old.samples.iter().zip(&expected).enumerate() {
+        for channel in 0..2 {
+            assert_eq!(
+                actual[channel],
+                expected[channel],
+                "literal old PCM sample{} channel{channel}",
+                3203 + offset
+            );
+        }
+    }
+
+    // TEST-ONLY proposed candidate: change only exact owner extent and its
+    // integral covering output recipe. Keep exact child selection, all
+    // descendant clocks, bindings, Source snapshots and authored Hold intact.
+    // Public SetRetime currently rejects this earlier; this diagnostic must
+    // reach actual plan/audio admission before choosing production policy.
+    let mut wire = serde_json::to_value(&before).unwrap();
+    wire["nodes"]["slow"]["kind"]["duration"] = serde_json::to_value(duration(1)).unwrap();
+    wire["derived_clocks"]["slow"]["extent"] = serde_json::to_value(ratio(1, 1)).unwrap();
+    let candidate =
+        ProjectDocument::from_json(&wire.to_string()).expect("admitted TEST-ONLY extent candidate");
+    candidate.validate().unwrap();
+    assert_eq!(candidate.duration().unwrap(), duration(3));
+    assert_eq!(candidate.audio_bindings(), before.audio_bindings());
+    assert_eq!(candidate.audio_lineage(), before.audio_lineage());
+    assert_eq!(
+        candidate.derived_clocks()[&id("slow")].child_start,
+        old_clock.child_start
+    );
+    assert_eq!(
+        candidate.derived_clocks()[&id("slow")].child_end,
+        old_clock.child_end
+    );
+    for (node, old) in before.nodes() {
+        if node != &id("slow") {
+            assert_eq!(candidate.nodes()[node], *old);
+        }
+    }
+    for (node, clock) in before.derived_clocks() {
+        if node != &id("slow") {
+            assert_eq!(candidate.derived_clocks()[node], *clock);
+        }
+    }
+    let plan = Arc::new(RenderPlan::compile(&candidate).unwrap());
+    let query = plan
+        .audio_processing(AudioSample(3203)..AudioSample(3204), Default::default())
+        .unwrap();
+    assert_eq!(query.spans.len(), 1);
+    // Left allocation root[2,209/103): RoundEven samples[3203,3250).
+    assert_eq!(
+        query.spans[0].allocated_samples,
+        AudioSample(3203)..AudioSample(3250)
+    );
+    let AudioSignalContent::Bound(bound) = &query.spans[0].content else {
+        panic!("candidate must retain the original Source's physical domain")
+    };
+    assert_eq!(bound.reference_at_offset(0).unwrap(), ratio(3203, 1));
+    assert_eq!(bound.reference_samples_per_output_sample(), ratio(103, 1));
+    let AudioBoundDomain::Root(domain) = bound.raw_domain().unwrap() else {
+        panic!("retained root lattice")
+    };
+    // The alias retains the complete original Source's historical root
+    // allocation [2,102), not just the current left partition [2,5).
+    // B(102) = round_even(102 * 8008/5) = 163363. Current finite Source
+    // support is a separate constraint and must not shrink the carrier grid.
+    assert_eq!(
+        domain.root_samples(),
+        AudioSample(3203)..AudioSample(163363)
+    );
+    assert_eq!(
+        ratio(441, 4000).checked_mul(ratio(103, 1)).unwrap(),
+        ratio(45423, 4000)
+    );
+    assert!(ratio(45423, 4000).compare_integer(64).is_lt());
+    let mut renderer = StageAudio::new(plan);
+    let outcome = renderer.read(
+        &mut provider,
+        AudioSample(3203),
+        1,
+        TIMEOUT,
+        &AtomicBool::new(false),
+    );
+    let error = outcome.expect_err("retained transfer103 is outside the supported1/64..64, despite admissible final native step");
+    assert_eq!(
+        error.to_string(),
+        "invalid source preparation recipe: source step outside 1/64..64"
+    );
+    assert!(
+        matches!(
+            error,
+            StageAudioError::Transfer(SignalTransferError::Preparation(
+                PreparationError::InvalidRecipe("source step outside 1/64..64")
+            ))
+        ),
+        "must fail the actual retained transfer, not substitute silent PCM or fail source admission"
+    );
+}

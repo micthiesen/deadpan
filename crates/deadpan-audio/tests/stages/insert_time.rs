@@ -11,6 +11,12 @@ mod ordinary_duration;
 #[path = "processing_hold_duration.rs"]
 mod processing_hold_duration;
 
+#[path = "rate_bound_pcm.rs"]
+mod rate_bound_pcm;
+
+#[path = "clocked_speed_update.rs"]
+mod clocked_speed_update;
+
 fn insert_pause(document: &ProjectDocument, at: i64, frames: i64, name: &str) -> ProjectDocument {
     let revision = RevisionId::new(name).unwrap();
     let request = CommandRequest {

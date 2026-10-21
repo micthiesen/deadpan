@@ -1514,7 +1514,7 @@ impl Service {
                 pitch,
                 wrap,
             } => {
-                let change = super::retime::resolve(workspace, &target, speed, wrap)?;
+                let change = super::retime::resolve(workspace, &target, speed, pitch, wrap)?;
                 if change.update {
                     if matches!(&document.nodes()[&target].kind, NodeKind::Retime { duration, pitch: current, .. }
                         if *duration == change.after && *current == pitch)

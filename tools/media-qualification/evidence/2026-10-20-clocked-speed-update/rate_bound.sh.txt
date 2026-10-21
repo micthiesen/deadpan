@@ -1,0 +1,6 @@
+#!/bin/sh
+set -eu
+export DEADPAN_FFMPEG_PREFIX=/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix
+export CARGO_PROFILE_DEV_OPT_LEVEL=2
+export DEADPAN_REQUIRE_PHYSICAL_MAC=1
+cargo test --locked -p deadpan-audio --test stages insert_time::rate_bound_pcm::validated_clocked_speed_candidate_exposes_retained_transfer_103_before_native_step_limit -- --exact --nocapture > /tmp/deadpan-speed-update-clocks-2026-10-20/rate-bound.log 2>&1

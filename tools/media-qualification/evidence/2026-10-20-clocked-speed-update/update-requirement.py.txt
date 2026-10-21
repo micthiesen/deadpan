@@ -1,0 +1,19 @@
+from pathlib import Path
+
+path = Path('/Users/michael/Code/deadpan/docs/REQUIREMENTS.md')
+text = path.read_text()
+old = 'while rebuilding current canonical DSP. [Atomic linked range moves]'
+new = ('while rebuilding current canonical DSP. '
+       '[Exact-pause speed updates](qualification/clocked-speed-update-2026-10-20.md) '
+       'let an eligible ordinary tape-speed stage change output duration while retaining '
+       'its exact selected input, descendant clocks and historical audio carriers; '
+       'native preview, inspector and semantic macros share that resolution, and both '
+       'shorter and longer release exports pass all picture and complete-audio checks. '
+       '[Atomic linked range moves]')
+assert text.count(old) == 1
+text = text.replace(old, new)
+old = 'updating speed stages with retained exact pause clocks, Hold insertion'
+new = 'speed updates outside the qualified exact-pause affine family, Hold insertion'
+assert text.count(old) == 1
+text = text.replace(old, new)
+path.write_text(text)

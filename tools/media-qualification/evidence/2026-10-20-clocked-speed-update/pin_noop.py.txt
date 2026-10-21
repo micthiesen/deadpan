@@ -1,0 +1,14 @@
+from pathlib import Path
+import hashlib
+import json
+import re
+
+root = Path('/Users/michael/Code/deadpan')
+scratch = Path('/tmp/deadpan-speed-update-clocks-2026-10-20')
+name = re.search(r'target/debug/deps/insert_time-[0-9a-f]+', (scratch / 'noop-old.log').read_text()).group()
+(scratch / 'noop-binary.json').write_text(json.dumps({
+    'base': (scratch / 'base.txt').read_text().strip(), 'binary': name,
+    'sha256': hashlib.sha256((root / name).read_bytes()).hexdigest(),
+    'source_identities': 'noop-source-identities.json',
+    'outcome': 'raw no-op passed with nodes/clocks/bindings unchanged and exact inverse'
+}, indent=2) + '\n')

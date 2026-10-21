@@ -1,0 +1,10 @@
+#!/bin/sh
+set -eu
+s=/tmp/deadpan-speed-update-clocks-2026-10-20
+ps -axo pid,ppid,etime,pcpu,comm | rg 'cargo|rustc|deadpan-app' > "$s/pre-performance-processes.txt" || test "$?" -eq 1
+if test -s "$s/pre-performance-processes.txt"; then
+    exit 75
+fi
+pmset -g batt > "$s/power.txt"
+shasum -a 256 /Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift > "$s/kestrel-source.txt"
+"$s/bin/deadpan-app" --ui-check --scenario retime --mode performance --output "$s/performance" --kestrel-source /Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift > "$s/performance.log" 2>&1

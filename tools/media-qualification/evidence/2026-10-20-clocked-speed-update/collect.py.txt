@@ -1,0 +1,104 @@
+from pathlib import Path
+import gzip
+import hashlib
+import json
+import re
+import shutil
+
+root = Path('/Users/michael/Code/deadpan')
+scratch = Path('/tmp/deadpan-speed-update-clocks-2026-10-20')
+dest = root / 'tools/media-qualification/evidence/2026-10-20-clocked-speed-update'
+
+def sha(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+for name, expected in json.loads((scratch / 'source-identities.json').read_text())['sha256'].items():
+    assert sha(root / name) == expected, name
+
+rows = json.loads((scratch / 'export-results.json').read_text())
+assert len(rows) == 2
+for row in rows:
+    report = row['report']
+    assert not report['failures']
+    assert report['summary']['pictures_checked'] == (19 if row['name'] == 'shrink' else 34)
+    assert report['summary']['pictures_failed'] == 0
+    assert report['summary']['nonzero_offsets'] == 0
+    for audio in report['audio']:
+        assert audio['passed'] and not audio['flags']
+        assert audio['uncovered_samples'] == 0
+        assert audio['offset_status'] == 'verified_zero'
+        assert audio['measured_offset_samples'] == 0
+        for key in ['low_snr_blocks', 'level_blocks', 'sound_in_silence_blocks']:
+            assert audio['blocks'][key] == 0
+    movie = Path(row['movie'])
+    row['retained_movie'] = 'clocked-speed-' + row['name'] + '.mp4'
+    row['emitted_sha256'] = sha(movie)
+    shutil.copy2(movie, scratch / row['retained_movie'])
+(scratch / 'export-results.json').write_text(json.dumps(rows, indent=2) + '\n')
+
+exported = json.loads((scratch / 'export-binaries.json').read_text())
+assert sha(scratch / 'export-cli') == exported['target/release/deadpan-cli']
+for name, digest in exported.items():
+    if name != 'target/release/deadpan-cli':
+        assert sha(root / name) == digest, name
+
+replays = {}
+for mode in ['visual', 'performance']:
+    report = json.loads((scratch / mode / 'report.json').read_text())
+    assert not report['failed'], mode
+    scenarios = []
+    for scenario in report['scenarios']:
+        assert not scenario['failed']
+        assert not any(finding['severity'] == 'failure' for finding in scenario['findings'])
+        assert all(check['passed'] for check in scenario['checks'])
+        scenarios.append({'name': scenario['name'], 'checks': len(scenario['checks']),
+                          'findings': scenario['findings'],
+                          'timings': {t['name']: t['summary'] for t in scenario['timings']}})
+    replays[mode] = {'metadata': report['metadata'], 'scenarios': scenarios}
+(scratch / 'replay-summary.json').write_text(json.dumps(replays, indent=2) + '\n')
+
+dest.mkdir(parents=True, exist_ok=True)
+def retain(path, relative):
+    out = dest / relative
+    out.parent.mkdir(parents=True, exist_ok=True)
+    if (path.suffix in ['.json', '.log', '.diff']
+            or path.name in ['dependency-lock-original.txt', 'dependency-lock-current.txt']):
+        out.with_name(out.name + '.gz').write_bytes(gzip.compress(path.read_bytes(), mtime=0))
+    elif path.suffix in ['.sh', '.py', '.rs', '.patch']:
+        shutil.copy2(path, out.with_name(out.name + '.txt'))
+    else:
+        shutil.copy2(path, out)
+
+extensions = {'.txt', '.md', '.json', '.log', '.diff', '.patch', '.sh', '.py', '.rs', '.mp4'}
+for path in scratch.iterdir():
+    if (path.is_file() and path.suffix in extensions
+            and path.name != 'collection-summary.json'
+            and not path.name.startswith('next-')):
+        retain(path, Path(path.name))
+for directory in ['old-witness', 'empty-old-witness', 'fresh-empty-witness']:
+    for path in sorted((scratch / directory).glob('*.json')):
+        retain(path, Path(directory) / path.name)
+for mode in ['visual', 'performance']:
+    retain(scratch / mode / 'report.json', Path(mode) / 'report.json')
+for mode in ['visual-first', 'visual-before-security', 'performance-before-security']:
+    retain(scratch / mode / 'report.json', Path(mode) / 'report.json')
+report = json.loads((scratch / 'visual/report.json').read_text())
+selected = []
+for scenario in report['scenarios']:
+    for step in scenario['steps']:
+        if 'Exact tape-speed update keeps its pause and retained child interval' in step['input']:
+            capture = Path(step['screenshot'])
+            if not capture.is_absolute():
+                capture = scratch / 'visual' / capture
+            retain(capture, Path('visual') / capture.name)
+            selected.append(capture.name)
+assert selected, 'the final compact speed-update capture must be retained'
+
+inventory = {str(path.relative_to(dest)): {'bytes': path.stat().st_size, 'sha256': sha(path)}
+             for path in sorted(dest.rglob('*')) if path.is_file() and path.name != 'inventory.json'}
+(dest / 'inventory.json').write_text(json.dumps(inventory, indent=2) + '\n')
+for name, entry in inventory.items():
+    assert sha(dest / name) == entry['sha256'], name
+print(json.dumps({'files': len(inventory), 'bytes': sum(v['bytes'] for v in inventory.values()),
+                  'captures': selected,
+                  'exports': [{'name': row['name'], 'summary': row['report']['summary']} for row in rows]}, indent=2))

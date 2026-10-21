@@ -63,6 +63,12 @@ records the explicit whole-beat mute state (`SetAudio { change: mute }`) or, ove
 a range, the role-only sound delete; `:audio-lag` records `SetAudioLag`;
 `:edge` records `SetAudioEdges` ([audio edges](AUDIO_EDGES.md#native-edge-command));
 and `:gag-set` records `SetGag` ([gags](GAGS.md#changing-parameters-after-insertion)).
+Eligible tape-speed stages retaining exact pause clocks use their exact
+selected child interval on every staged invocation, including named calls and
+successive speed instructions. They preserve the existing pause structure and
+refuse unsupported pitch processing atomically. An unchanged effective speed
+still refuses without a revision or bank change. See
+[speed changes after a pause](RETIME_EDITING.md#speed-changes-after-an-exact-pause).
 [Named grouping](GROUP_EDITING.md) retains the exact name and selector. Ungroup
 requires a selected neutral Sequence with no Visual selection. Both preserve the
 copy bank and pending register choice, and use one atomic history entry per run.

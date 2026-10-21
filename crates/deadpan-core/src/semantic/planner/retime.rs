@@ -57,6 +57,7 @@ where
         start: ProjectFrame,
         end: ProjectFrame,
         speed: ExactRatio,
+        pitch: PitchPolicy,
         wrap: bool,
     ) -> Result<Resolved, EditError> {
         if !speed.compare_integer(0).is_gt() {
@@ -64,20 +65,16 @@ where
         }
         let (input, update) = match &self.current.nodes()[node].kind {
             NodeKind::Retime {
-                mapping,
                 purpose: RetimePurpose::Edit,
                 ..
-            } if !wrap => (mapping.duration(), true),
-            _ => (
-                FrameDuration::new(end.0 - start.0).map_err(crate::DocumentError::from)?,
-                false,
-            ),
+            } if !wrap => (self.current.retime_update_input(node, pitch)?, true),
+            _ => (ExactRatio::integer(end.0 - start.0), false),
         };
-        if input == FrameDuration::ZERO {
+        if input == ExactRatio::ZERO {
             return Err(invalid("an empty beat cannot be retimed"));
         }
         let overflow = |_| EditError::new(EditErrorCode::TimingOverflow, "retime overflows");
-        let frames = ExactRatio::integer(input.frames())
+        let frames = input
             .checked_div(speed)
             .and_then(ExactRatio::round_even)
             .map_err(overflow)?;
@@ -90,10 +87,11 @@ where
                 "this speed resolves to 0 frames; choose a slower speed",
             ));
         }
-        Ok(Resolved {
-            duration: FrameDuration::new(frames).map_err(crate::DocumentError::from)?,
-            update,
-        })
+        let duration = FrameDuration::new(frames).map_err(crate::DocumentError::from)?;
+        if update {
+            self.current.validate_retime_update(node, duration, pitch)?;
+        }
+        Ok(Resolved { duration, update })
     }
 
     pub(super) fn retime(
@@ -104,7 +102,7 @@ where
         wrap: bool,
     ) -> Result<(), EditError> {
         let (selected, start, end) = self.selected_direct_child("speed")?;
-        let resolved = self.resolve_speed(&selected, start, end, speed, wrap)?;
+        let resolved = self.resolve_speed(&selected, start, end, speed, pitch, wrap)?;
         self.apply_retime(trace_index, selected, start, resolved, pitch)
     }
 
@@ -113,21 +111,20 @@ where
         let pitch = PitchPolicy::shifted(semitones)?;
         let speed = match &self.current.nodes()[&selected].kind {
             NodeKind::Retime {
-                mapping,
                 duration,
                 purpose: RetimePurpose::Edit,
                 ..
-            } => ExactRatio::new(
-                i128::from(mapping.duration().frames()),
-                i128::from(duration.frames()),
-            )
-            .map_err(|_| invalid("the Retime has no speed"))?,
+            } => self
+                .current
+                .retime_update_input(&selected, pitch)?
+                .checked_div(ExactRatio::integer(duration.frames()))
+                .map_err(|_| invalid("the Retime has no speed"))?,
             _ if semitones == 0 => {
                 return Err(invalid("this beat has no pitch shift to remove"));
             }
             _ => ExactRatio::ONE,
         };
-        let resolved = self.resolve_speed(&selected, start, end, speed, false)?;
+        let resolved = self.resolve_speed(&selected, start, end, speed, pitch, false)?;
         self.apply_retime(trace_index, selected, start, resolved, pitch)
     }
 

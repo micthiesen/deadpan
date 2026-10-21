@@ -1,0 +1,7 @@
+#!/bin/sh
+set -eu
+export DEADPAN_FFMPEG_PREFIX=/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix
+export CARGO_PROFILE_DEV_OPT_LEVEL=2
+export DEADPAN_REQUIRE_PHYSICAL_MAC=1
+export DEADPAN_SPEED_UPDATE_WITNESS_DIR=/tmp/deadpan-speed-update-clocks-2026-10-20/old-witness
+cargo test --locked -p deadpan-core --test insert_time retimed::speed_update::set_retime_updates_a_stage_with_retained_exact_pause_clocks -- --exact --nocapture > /tmp/deadpan-speed-update-clocks-2026-10-20/witness-old.log 2>&1

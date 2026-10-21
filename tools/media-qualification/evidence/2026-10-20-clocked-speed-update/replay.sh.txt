@@ -1,0 +1,4 @@
+#!/bin/sh
+set -eu
+s=/tmp/deadpan-speed-update-clocks-2026-10-20
+"$s/bin/deadpan-app" --ui-check --scenario retime --mode visual --output "$s/visual" --kestrel-source /Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift > "$s/visual.log" 2>&1

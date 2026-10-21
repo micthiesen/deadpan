@@ -413,9 +413,253 @@ fn native_pause_inside_a_tape_speed_change_keeps_exact_clocks_and_one_undo() {
     assert!(!second.document.derived_clocks().contains_key(stage));
     assert!(!second.document.derived_clocks().is_empty());
     assert!(second.clocked_retimes.contains(stage));
+    let resolution = super::super::retime::resolve(
+        &second,
+        stage,
+        ExactRatio::ONE,
+        PitchPolicy::FollowSpeed,
+        false,
+    )
+    .unwrap();
+    assert!(resolution.update);
+    let descendants = second.document.derived_clocks().clone();
+    let updated = edited(
+        &service,
+        &second,
+        change(stage, ExactRatio::ONE, PitchPolicy::FollowSpeed, false),
+    )
+    .workspace
+    .unwrap();
+    assert_eq!(updated.document.derived_clocks(), &descendants);
+    assert_eq!(updated.plan.duration().frames(), resolution.after.frames());
+    assert!(updated.clocked_retimes.contains(stage));
+}
+
+#[test]
+fn native_clocked_speed_uses_exact_input_and_preserves_history_and_policy_guards() {
+    let scratch = tempfile::tempdir().unwrap();
+    let path = scratch.path().join("exact-speed.deadpan");
+    let mut store = seed_holds(&path, &[]);
+    let slow = node("slow");
+    let stage = BeatNode {
+        kind: NodeKind::Retime {
+            child: node("input"),
+            duration: FrameDuration::new(24).unwrap(),
+            mapping: FrameRange::new(ProjectFrame(0), ProjectFrame(12)).unwrap(),
+            pitch: PitchPolicy::FollowSpeed,
+            purpose: RetimePurpose::Edit,
+        },
+        ..BeatNode::sequence("Slow", vec![])
+    };
+    seed_command(
+        &mut store,
+        Command::Insert {
+            parent: node("root"),
+            index: 0,
+            subtree: Subtree {
+                root: node("group"),
+                nodes: BTreeMap::from([
+                    (
+                        node("group"),
+                        BeatNode::sequence("Group", vec![node("a"), slow.clone(), node("b")]),
+                    ),
+                    (node("a"), BeatNode::hold("Before", hold(2))),
+                    (slow.clone(), stage),
+                    (node("input"), BeatNode::hold("Input", hold(12))),
+                    (node("b"), BeatNode::hold("After", hold(2))),
+                ]),
+                overrides: BTreeMap::new(),
+                gap_overrides: BTreeMap::new(),
+            },
+        },
+        "insert-speed-fixture",
+    );
+    drop(store);
+    let service = ProjectService::new(Arc::new(|| {})).unwrap();
+    let initial = command(&service, ProjectRequest::Open(path.clone()))
+        .workspace
+        .unwrap();
+    let scope = SequenceScope::default()
+        .descend(&initial, &node("group"))
+        .unwrap();
+    let paused = command(
+        &service,
+        edit_request_in(
+            &initial,
+            scope.clone(),
+            ProjectFrame(5),
+            ProjectEdit::InsertBlack {
+                at: ProjectFrame(5),
+                duration: FrameDuration::new(3).unwrap(),
+            },
+        ),
+    );
+    assert!(paused.error.is_none(), "{:?}", paused.error);
+    let paused = paused.workspace.unwrap();
+    let resolution = super::super::retime::resolve(
+        &paused,
+        &slow,
+        ExactRatio::new(7, 8).unwrap(),
+        PitchPolicy::FollowSpeed,
+        false,
+    )
+    .unwrap();
+    assert_eq!(resolution.input, ExactRatio::new(27, 2).unwrap());
+    assert_eq!(
+        (resolution.before.frames(), resolution.after.frames()),
+        (27, 15)
+    );
     assert!(
-        super::super::retime::resolve(&second, stage, ExactRatio::ONE, false)
-            .unwrap_err()
-            .contains("exact pause timing")
+        resolution
+            .describe(PitchPolicy::FollowSpeed)
+            .contains("9/10×")
+    );
+    for pitch in [PitchPolicy::Preserve, PitchPolicy::Shift { semitones: 3 }] {
+        assert!(
+            super::super::retime::resolve(
+                &paused,
+                &slow,
+                ExactRatio::new(7, 8).unwrap(),
+                pitch,
+                false
+            )
+            .is_err()
+        );
+        let refused = command(
+            &service,
+            edit_request_in(
+                &paused,
+                scope.clone(),
+                ProjectFrame(5),
+                change(&slow, ExactRatio::new(7, 8).unwrap(), pitch, false),
+            ),
+        );
+        assert!(refused.error.is_some());
+        assert!(refused.committed.is_none());
+        assert_eq!(*refused.workspace.unwrap().document, *paused.document);
+    }
+    let updated = command(
+        &service,
+        edit_request_in(
+            &paused,
+            scope.clone(),
+            ProjectFrame(5),
+            change(
+                &slow,
+                ExactRatio::new(7, 8).unwrap(),
+                PitchPolicy::FollowSpeed,
+                false,
+            ),
+        ),
+    );
+    assert!(updated.error.is_none(), "{:?}", updated.error);
+    let receipt = updated.committed.unwrap();
+    assert_eq!(receipt.scope, scope);
+    assert_eq!(receipt.selected_node, Some(slow.clone()));
+    let updated = updated.workspace.unwrap();
+    assert_eq!(updated.plan.duration().frames(), 19);
+    assert_eq!(
+        updated.document.derived_clocks()[&slow].child_end,
+        ExactRatio::new(27, 2).unwrap()
+    );
+    for (id, clock) in paused.document.derived_clocks() {
+        if id != &slow {
+            assert_eq!(updated.document.derived_clocks().get(id), Some(clock));
+        }
+    }
+    let unchanged = command(
+        &service,
+        edit_request_in(
+            &updated,
+            scope.clone(),
+            ProjectFrame(5),
+            change(
+                &slow,
+                ExactRatio::new(9, 10).unwrap(),
+                PitchPolicy::FollowSpeed,
+                false,
+            ),
+        ),
+    );
+    assert!(unchanged.error.is_none(), "{:?}", unchanged.error);
+    assert!(unchanged.committed.is_none());
+    assert_eq!(*unchanged.workspace.unwrap().document, *updated.document);
+    let stale = command(
+        &service,
+        edit_request_in(
+            &paused,
+            scope.clone(),
+            ProjectFrame(5),
+            change(&slow, ExactRatio::ONE, PitchPolicy::FollowSpeed, false),
+        ),
+    );
+    assert!(stale.error.is_some());
+    assert_eq!(*stale.workspace.unwrap().document, *updated.document);
+    let wrapped = command(
+        &service,
+        edit_request_in(
+            &updated,
+            scope.clone(),
+            ProjectFrame(5),
+            change(&slow, ExactRatio::ONE, PitchPolicy::FollowSpeed, true),
+        ),
+    );
+    assert!(wrapped.error.is_none(), "{:?}", wrapped.error);
+    assert_ne!(wrapped.committed.unwrap().selected_node, Some(slow.clone()));
+    let wrapped = wrapped.workspace.unwrap();
+    assert_eq!(
+        wrapped.document.nodes()[&slow],
+        updated.document.nodes()[&slow]
+    );
+    let unwrapped = command(
+        &service,
+        ProjectRequest::Undo {
+            expected_revision: wrapped.document.revision_id().clone(),
+        },
+    )
+    .workspace
+    .unwrap();
+    assert_eq!(unwrapped.document.nodes(), updated.document.nodes());
+    command(&service, ProjectRequest::Close);
+    let reopened = command(&service, ProjectRequest::Open(path))
+        .workspace
+        .unwrap();
+    assert_eq!(
+        reopened.document.derived_clocks(),
+        updated.document.derived_clocks()
+    );
+    let undone = command(
+        &service,
+        ProjectRequest::Undo {
+            expected_revision: reopened.document.revision_id().clone(),
+        },
+    )
+    .workspace
+    .unwrap();
+    assert_eq!(undone.document.nodes(), paused.document.nodes());
+    assert_eq!(
+        undone.document.derived_clocks(),
+        paused.document.derived_clocks()
+    );
+    assert_eq!(
+        undone.document.audio_bindings(),
+        paused.document.audio_bindings()
+    );
+    let redone = command(
+        &service,
+        ProjectRequest::Redo {
+            expected_revision: undone.document.revision_id().clone(),
+        },
+    )
+    .workspace
+    .unwrap();
+    assert_eq!(redone.document.nodes(), updated.document.nodes());
+    assert_eq!(
+        redone.document.derived_clocks(),
+        updated.document.derived_clocks()
+    );
+    assert_eq!(
+        redone.document.audio_bindings(),
+        updated.document.audio_bindings()
     );
 }

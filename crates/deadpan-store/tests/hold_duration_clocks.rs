@@ -8,6 +8,9 @@ type Result<T = ()> = std::result::Result<T, Box<dyn std::error::Error>>;
 #[path = "hold_duration_clocks/processing.rs"]
 mod processing;
 
+#[path = "hold_duration_clocks/speed_update.rs"]
+mod speed_update;
+
 fn node(value: &str) -> NodeId {
     NodeId::new(value).unwrap()
 }

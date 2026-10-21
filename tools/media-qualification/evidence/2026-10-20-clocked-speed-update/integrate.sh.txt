@@ -1,0 +1,10 @@
+#!/bin/sh
+set -eu
+s=/tmp/deadpan-speed-update-clocks-2026-10-20
+sh "$s/focused.sh"
+sh "$s/store-native.sh"
+sh "$s/check.sh"
+sh "$s/export.sh"
+sh "$s/build-ui.sh"
+sh "$s/replay.sh"
+sh "$s/performance.sh"

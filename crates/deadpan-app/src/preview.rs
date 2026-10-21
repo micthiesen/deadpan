@@ -4574,6 +4574,20 @@ impl DeadpanApp {
                 workspace.document.derived_clocks().get(&row.id),
                 workspace.clocked_retimes.contains(&row.id),
             );
+        if workspace.clocked_retimes.contains(&row.id)
+            && let deadpan_core::NodeKind::Retime {
+                pitch,
+                purpose: deadpan_core::RetimePurpose::Edit,
+                ..
+            } = &node.kind
+            && let Some(extent) = workspace.plan.node_exact_duration(&row.id)
+        {
+            description = description.with_retime_update(
+                workspace.document.retime_update_input(&row.id, *pitch),
+                extent,
+                *pitch,
+            );
+        }
         // A split fragment shows its Source's sound offset (`:audio-lag`).
         if !matches!(node.kind, deadpan_core::NodeKind::Source { .. })
             && let Some((host, _)) = deadpan_core::cutaway_host(&workspace.document, &row.id)
@@ -4697,7 +4711,7 @@ impl DeadpanApp {
             {
                 return Err("Select a direct child of the active Sequence before editing.".into());
             }
-            crate::project::retime::resolve(workspace, target, input.speed, input.wrap)
+            crate::project::retime::resolve(workspace, target, input.speed, input.pitch, input.wrap)
                 .map(|change| change.describe(input.pitch))
         })())
     }

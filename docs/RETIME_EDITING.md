@@ -86,8 +86,33 @@ on the correct processing-input PointCeil clock. Its current operand rebuilds
 DSP while existing output bindings and fractional resumes remain unchanged.
 See the [processing-input qualification](qualification/processing-hold-clocks-2026-10-20.md).
 Attachments whose processing subtree changes retain their explicit refusal.
-This remains separate from the dedicated clocked-Retime duration path and
-general updates to a speed stage that already owns exact pause clocks.
+This remains separate from the dedicated clocked-Retime duration path.
+
+## Speed changes after an exact pause
+
+An ordinary tape-speed stage that owns exact pause clocks can be adjusted in
+place under ordinary Sequence ancestors. Its exact selected input interval
+stays fixed, including fractional endpoints. Only its output extent changes;
+the retained fragment clocks and recipes stay intact. For example, a 12-frame
+input stretched to 24 frames and then given a three-frame pause has an exact
+13½-frame input. `:retime 7/8 pitch=tape` resolves that input to 15 output
+frames. The inspector then shows and pre-fills `9/10`, its effective speed.
+Macros resolve each staged update against the same exact input.
+
+Existing interior audio bindings remain unchanged. Missing bindings capture
+their visible entries on the pre-edit clock, and moved outside owners retain
+their own entry phases. Audio still uses native-source preparation followed by
+retained-domain transfer; multiplying the coordinate slopes does not replace
+these two filtering stages. Admission checks the actual historical lattice's
+transfer against the inclusive `1/64..64` range, including successive changes.
+An unused carrier with no allocated output samples imposes no transfer bound.
+
+This path requires an integral stage output extent and tape pitch on the
+updated stage. Inner Repeats, processing stages, and non-Sequence ancestors
+still refuse changed parameters. Explicit wrapping keeps its existing behavior.
+Identical raw `SetRetime` parameters preserve no-op admission; semantic and
+native unchanged commands create no revision. See the
+[qualification](qualification/clocked-speed-update-2026-10-20.md).
 
 ## Pitch shift
 

@@ -1,0 +1,170 @@
+//! Public-command regression proposal. Expected to fail on the retained old
+//! source at SetRetime's exact-clock refusal, after positive controls pass.
+use super::*;
+
+fn retain_witness(
+    before: &ProjectDocument,
+    update: &CommandRequest,
+    outcome: &Result<EditTransaction, EditError>,
+) {
+    let Some(directory) = std::env::var_os("DEADPAN_SPEED_UPDATE_WITNESS_DIR") else {
+        return;
+    };
+    let directory = std::path::PathBuf::from(directory);
+    std::fs::create_dir_all(&directory).expect("create explicit witness directory");
+    std::fs::write(directory.join("before.json"), before.to_json().unwrap())
+        .expect("retain pre-update document");
+    std::fs::write(
+        directory.join("request.json"),
+        serde_json::to_vec_pretty(update).unwrap(),
+    )
+    .expect("retain public SetRetime request");
+    let observation = match outcome {
+        Ok(transaction) => json!({ "status": "ok", "duration_delta": transaction.duration_delta }),
+        Err(error) => json!({ "status": "error", "error": error }),
+    };
+    std::fs::write(
+        directory.join("observed.json"),
+        serde_json::to_vec_pretty(&observation).unwrap(),
+    )
+    .expect("retain observed command outcome before assertion");
+}
+
+fn origin(document: &ProjectDocument, node: &str) -> ExactRatio {
+    FrozenAudioLayout::capture(document)
+        .unwrap()
+        .project(
+            &InstancePath {
+                node: id(node),
+                repeats: vec![],
+            },
+            ExactRatio::ZERO,
+            None,
+            MAX_DOCUMENT_NODES,
+        )
+        .unwrap()
+        .origin
+}
+
+#[test]
+fn set_retime_updates_a_stage_with_retained_exact_pause_clocks() {
+    let initial = fixture();
+    assert_eq!(
+        initial.exact_durations().unwrap()[initial.root()],
+        ratio(28, 1)
+    );
+    // Positive control: the same public parameter update is already supported
+    // before the pause gives this ordinary stage exact descendant clocks.
+    let ordinary = edit(
+        &initial,
+        request(
+            &initial,
+            "ordinary-speed",
+            Command::SetRetime {
+                node: id("slow"),
+                duration: duration(15),
+                pitch: PitchPolicy::FollowSpeed,
+            },
+        ),
+    );
+    assert!(ordinary.derived_clocks().is_empty());
+    assert_eq!(
+        ordinary.exact_durations().unwrap()[ordinary.root()],
+        ratio(19, 1)
+    );
+
+    // Reuse the admitted public pause construction and exact five-ID pool.
+    let before = edit(&initial, pause(&initial, "p", 5, 3, 5));
+    let before_json = before.to_json().unwrap();
+    let old_clocks = before.derived_clocks().clone();
+    let clock = &old_clocks[&id("slow")];
+    assert_eq!(clock.extent, ratio(27, 1));
+    assert_eq!(
+        (clock.child_start, clock.child_end),
+        (ExactRatio::ZERO, ratio(27, 2))
+    );
+    assert_eq!(
+        before.exact_durations().unwrap()[before.root()],
+        ratio(31, 1)
+    );
+    assert_eq!(old_clocks[&id("p-0")].extent, ratio(3, 2));
+    assert_eq!(old_clocks[&id("p-4")].extent, ratio(3, 2));
+    assert_eq!(old_clocks[&id("p-1")].extent, ratio(21, 2));
+    assert!(before.audio_bindings().bindings().contains_key(&id("p-2")));
+    // The rounded recipe is only a cover, not the selected input to use for
+    // a speed request. At 7/8 the exact13.5 input rounds to15 output, not16.
+    let (_, recipe_window, old_child) = retime(&before, "slow");
+    assert_eq!(recipe_window.end(), ProjectFrame(14));
+    let selected = clock.child_end.checked_sub(clock.child_start).unwrap();
+    assert_eq!(
+        selected
+            .checked_div(ratio(7, 8))
+            .unwrap()
+            .round_even()
+            .unwrap(),
+        15
+    );
+    assert_eq!(
+        ExactRatio::integer(recipe_window.duration().frames())
+            .checked_div(ratio(7, 8))
+            .unwrap()
+            .round_even()
+            .unwrap(),
+        16
+    );
+
+    let update = request(
+        &before,
+        "updated-clocked-speed",
+        Command::SetRetime {
+            node: id("slow"),
+            duration: duration(15),
+            pitch: PitchPolicy::FollowSpeed,
+        },
+    );
+    let outcome = apply(&before, &update);
+    // Optional bounded retained evidence is written before the intended old
+    // failure, without changing the authored document or relaxing assertions.
+    retain_witness(&before, &update, &outcome);
+    assert_eq!(before.to_json().unwrap(), before_json);
+    let transaction = outcome.unwrap_or_else(|error| panic!(
+        "public SetRetime must update the live stage while retaining its exact pause clocks; code={:?}; message={}",
+        error.code, error.message,
+    ));
+    let after = transaction.forward.apply(&before).unwrap();
+    assert_eq!(transaction.duration_delta, -12);
+    assert_eq!(transaction.inverse.apply(&after).unwrap(), before);
+    assert_eq!(
+        ProjectDocument::from_json(&after.to_json().unwrap()).unwrap(),
+        after
+    );
+    let updated = &after.derived_clocks()[&id("slow")];
+    assert_eq!(updated.extent, ratio(15, 1));
+    assert_eq!(
+        (updated.child_start, updated.child_end),
+        (clock.child_start, clock.child_end)
+    );
+    assert_eq!(after.exact_durations().unwrap()[after.root()], ratio(19, 1));
+    assert_eq!(retime(&after, "slow").2, old_child);
+    for (owner, historical) in &old_clocks {
+        if owner != &id("slow") {
+            assert_eq!(after.derived_clocks().get(owner), Some(historical));
+        }
+    }
+    for owner in ["inner", "p-2"] {
+        assert_eq!(
+            after.audio_bindings().bindings().get(&id(owner)),
+            before.audio_bindings().bindings().get(&id(owner))
+        );
+    }
+    // The old three-frame Hold now scales with its live containing stage. Its
+    // authored recipe remains3, its existing adapter remains extent3/2.
+    assert_eq!(
+        after.nodes()[&id("pause-p")],
+        before.nodes()[&id("pause-p")]
+    );
+    assert_eq!(origin(&after, "p-0"), ratio(2, 1));
+    assert_eq!(origin(&after, "p-4"), ratio(11, 3));
+    assert_eq!(origin(&after, "p-1"), ratio(16, 3));
+    assert_eq!(origin(&after, "b"), ratio(17, 1));
+}

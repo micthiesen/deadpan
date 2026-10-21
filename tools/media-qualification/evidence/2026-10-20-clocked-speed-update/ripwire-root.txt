@@ -1,0 +1,155 @@
+<ctx task="SetRetime exact pause clock updates: insert_time/retimed.rs set_clock, command.rs, semantic/planner/retime.rs resolve_speed, project/retime.rs resolve" route=" [routed: subtoken+body BM25 (--for&apos;s default) — no strong name hit, multi-word conceptual query]" bundle="auto" bodies="5"><!-- ripwire lens for "SetRetime exact pause clock updates: insert_time/retimed.rs set_clock, command.rs, semantic/planner/retime.rs resolve_speed, project/retime.rs resolve" [mention anchor: 4 files + 9 symbols named in the task lifted near the top] [doc mentions: 3 docs discussing 2 top-ranked symbols surfaced]: reusable building blocks + quality facts for what you're about to touch (cx=complexity ccx=cognitive in=reuse-count churn=recent-commits amp=change-amplification clone=1(duplicated) tested=1) — prefer composing/reusing these; watch the high-churn/high-amp/cloned ones; bundle=auto: the top-ranked FULL bodies ride inline after the signatures in a bodies section (bodies=N on this root counts them; bodies=0 reason=budget when none fit the remaining budget whole; the signatures-only flag opts out) — read them here instead of opening the files. The bodies element discloses the house way: total=requested, shown=printed, capped=1 when they differ; each body's calls child lists its callee signatures, total= always, shown=/capped= only when that list is cut est_tokens="3674" --><sigs capped="1"><f p="./crates/deadpan-core/src/semantic/planner/retime.rs"><d l="54" n="resolve_speed" id="./crates/deadpan-core/src/semantic/planner/retime.rs::Planner::resolve_speed" cx="6" ccx="4" in="2" churn="2" amp="2">fn resolve_speed( &amp;self, node: &amp;NodeId, start: ProjectFrame, end: ProjectFrame, speed: ExactRatio, wrap: bool, ) -&gt; Result&lt;Resolved, EditError&gt;</d><d l="99" n="retime" id="./crates/deadpan-core/src/semantic/planner/retime.rs::Planner::retime" cx="1" ccx="0" in="0" churn="2">pub(super) fn retime( &amp;mut self, trace_index: usize, speed: ExactRatio, pitch: PitchPolicy, wrap: bool, ) -&gt; Result&lt;(), EditError&gt;</d><d l="111" n="pitch" id="./crates/deadpan-core/src/semantic/planner/retime.rs::Planner::pitch" cx="4" ccx="1" in="0" churn="2">pub(super) fn pitch(&amp;mut self, trace_index: usize, semitones: i8) -&gt; Result&lt;(), EditError&gt;</d></f><f p="./crates/deadpan-core/src/insert_time/retimed.rs"><d l="211" n="Stage" cx="0" ccx="0" in="0" churn="4" amp="34">struct Stage</d><d l="231" n="clock_of" cx="1" ccx="0" in="4" churn="4" amp="38" tested="1">fn clock_of(document: &amp;ProjectDocument, id: &amp;NodeId) -&gt; Result&lt;DerivedRetimeClock, EditError&gt;</d><d l="499" n="set_clock" cx="2" ccx="2" in="2" churn="4" amp="36" tested="1"><doc>Set a Retime&apos;s effective output and child window, keeping an ordinary recipe when every value is…</doc>fn set_clock( document: &amp;mut ProjectDocument, id: &amp;NodeId, extent: ExactRatio, start: ExactRatio, end: ExactRatio, ) -&gt; Result&lt;(), EditError&gt;</d></f><f p="./crates/deadpan-cli/src/framing/tests.rs"><d l="325" n="semantic_framing_uses_live_follow_pose_at_retimed_source_clock_instead_of_fallback" cx="1" ccx="0" in="0" churn="2">fn semantic_framing_uses_live_follow_pose_at_retimed_source_clock_instead_of_fallback() -&gt; Result</d></f><f p="./crates/deadpan-app/src/preview/inspector.rs"><d l="21" n="with_clock" id="./crates/deadpan-app/src/preview/inspector.rs::Inspector::with_clock" cx="8" ccx="11" in="2" churn="21" amp="43" tested="1">pub fn with_clock( mut self, clock: Option&lt;&amp;deadpan_core::DerivedRetimeClock&gt;, retains_exact_tim…</d></f></sigs><bodies shown="5" total="6" capped="1"><b t="method" l="99" p="./crates/deadpan-core/src/semantic/planner/retime.rs" n="retime"><![CDATA[pub(super) fn retime(
+        &mut self,
+        trace_index: usize,
+        speed: ExactRatio,
+        pitch: PitchPolicy,
+        wrap: bool,
+    ) -> Result<(), EditError> {
+        let (selected, start, end) = self.selected_direct_child("speed")?;
+        let resolved = self.resolve_speed(&selected, start, end, speed, wrap)?;
+        self.apply_retime(trace_index, selected, start, resolved, pitch)
+    }]]><calls total="3"><c n="selected_direct_child" l="25">fn selected_direct_child( &amp;self, what: &amp;str, ) -&gt; Result&lt;(NodeId, ProjectFrame, ProjectFrame), EditError&gt;</c><c n="resolve_speed" l="54">fn resolve_speed( &amp;self, node: &amp;NodeId, start: ProjectFrame, end: ProjectFrame, speed: ExactRatio, wrap: bool, ) -&gt; Result&lt;Resolved, EditError&gt;</c><c n="apply_retime" l="134">fn apply_retime( &amp;mut self, trace_index: usize, selected: NodeId, start: ProjectFrame, resolved: Resolved, pitch: PitchPolicy, ) -&gt; Result&lt;(), EditError&gt;</c></calls></b><b t="cls" l="211" p="./crates/deadpan-core/src/insert_time/retimed.rs" n="Stage"><![CDATA[struct Stage {
+    id: NodeId,
+    clock: DerivedRetimeClock,
+    /// Stage output and input frames per project frame, respectively.
+    output_slope: ExactRatio,
+    input_slope: ExactRatio,
+}]]></b><b t="fn" l="231" p="./crates/deadpan-core/src/insert_time/retimed.rs" n="clock_of"><![CDATA[fn clock_of(document: &ProjectDocument, id: &NodeId) -> Result<DerivedRetimeClock, EditError> {
+    let NodeKind::Retime {
+        duration, mapping, ..
+    } = &document.nodes()[id].kind
+    else {
+        return Err(super::invalid("pause clock owner is not a Retime"));
+    };
+    Ok(document
+        .derived_clocks
+        .get(id)
+        .cloned()
+        .unwrap_or(DerivedRetimeClock {
+            extent: ExactRatio::integer(duration.frames()),
+            child_start: ExactRatio::integer(mapping.start().0),
+            child_end: ExactRatio::integer(mapping.end().0),
+            preserve_input: None,
+        }))
+}]]><calls total="2"><c n="integer" l="62">pub const fn integer(value: i64) -&gt; Self</c><c n="Err" l="25">type Err = &amp;&apos;static str</c></calls></b><b t="fn" l="499" p="./crates/deadpan-core/src/insert_time/retimed.rs" n="set_clock"><![CDATA[fn set_clock(
+    document: &mut ProjectDocument,
+    id: &NodeId,
+    extent: ExactRatio,
+    start: ExactRatio,
+    end: ExactRatio,
+) -> Result<(), EditError> {
+    let integral = [extent, start, end]
+        .iter()
+        .all(|value| value.denominator() == 1);
+    let node = document
+        .nodes
+        .get_mut(id)
+        .ok_or_else(|| super::invalid("pause clock owner is missing"))?;
+    let NodeKind::Retime {
+        duration, mapping, ..
+    } = &mut node.kind
+    else {
+        return Err(super::invalid("pause clock owner is not a Retime"));
+    };
+    if integral {
+        let frames =
+            |value: ExactRatio| i64::try_from(value.numerator()).map_err(|_| super::overflow());
+        *duration = FrameDuration::new(frames(extent)?).map_err(DocumentError::from)?;
+        *mapping = FrameRange::new(ProjectFrame(frames(start)?), ProjectFrame(frames(end)?))
+            .map_err(DocumentError::from)?;
+        document.derived_clocks.remove(id);
+    } else {
+        // Keep the integral recipe covering the effective clock, so recipe
+        // totals above this Retime match the exact ones. Its child recipe
+        // always covers the effective window here: new windows and adapters
+        // use recipes at least as long as their exact extents.
+        let frames = |value: i128| i64::try_from(value).map_err(|_| super::overflow());
+        let recipe_end = frames(end.ceil().map_err(DocumentError::from)?)?;
+        let recipe_start = frames(start.floor())?;
+        *duration = FrameDuration::new(frames(extent.ceil().map_err(DocumentError::from)?)?)
+            .map_err(DocumentError::from)?;
+        *mapping = FrameRange::new(ProjectFrame(recipe_start), ProjectFrame(recipe_end))
+            .map_err(DocumentError::from)?;
+        let preserve_input = document
+            .derived_clocks
+            .get(id)
+            .and_then(|clock| clock.preserve_input.clone());
+        document.derived_clocks.insert(
+            id.clone(),
+            DerivedRetimeClock {
+                extent,
+                child_start: start,
+                child_end: end,
+                preserve_input,
+            },
+        );
+    }
+    Ok(())
+}]]><calls total="5"><c n="ceil" l="77">pub fn ceil(self) -&gt; Result&lt;i128, TimeError&gt;</c><c n="ProjectFrame" l="9">pub struct ProjectFrame</c><c n="new" l="37">pub fn new(frames: i64) -&gt; Result&lt;Self, TimeError&gt;</c><c n="new" l="142">pub fn new(start: ProjectFrame, end: ProjectFrame) -&gt; Result&lt;Self, TimeError&gt;</c><c n="Err" l="25">type Err = &amp;&apos;static str</c></calls></b><b t="fn" l="325" p="./crates/deadpan-cli/src/framing/tests.rs" n="semantic_framing_uses_live_follow_pose_at_retimed_source_clock_instead_of_fallback"><![CDATA[fn semantic_framing_uses_live_follow_pose_at_retimed_source_clock_instead_of_fallback() -> Result {
+    let fixture = Fixture::source("cfr-bframes.mp4")?;
+    let document = fixture.store.snapshot()?;
+    let span = document.assets()[&asset("original")].video.unwrap();
+    let target = TargetId::new("subject")?;
+    let targeted = staged(
+        &document,
+        Command::SetTarget {
+            id: target.clone(),
+            target: AttentionTarget {
+                label: "Subject".into(),
+                asset: asset("original"),
+                span,
+                region: TargetRegion {
+                    center: [250_000, 500_000],
+                    size: [100_000, 100_000],
+                },
+                samples: vec![],
+                corrections: vec![],
+                provenance: None,
+                display_aspect: None,
+            },
+        },
+        "targeted",
+    );
+    let fallback = FramingPose::new(q(9, 10), q(1, 2), ExactRatio::integer(3))?;
+    let followed = staged(
+        &targeted,
+        Command::SetFraming {
+            node: node("source"),
+            framing: Some(Framing {
+                clock: FramingClock::OwnerOutput,
+                value: FramingValue::Follow {
+                    target,
+                    scale: ExactRatio::integer(2),
+                    fallback,
+                },
+            }),
+        },
+        "followed",
+    );
+    let retimed = staged(
+        &followed,
+        Command::WrapRetime {
+            node: node("source"),
+            id: node("retime"),
+            duration: frames(60),
+            pitch: PitchPolicy::Preserve,
+        },
+        "retimed",
+    );
+    std::fs::remove_file(&fixture.source)?;
+    let state = resolve(&fixture.store, &retimed, &site("source", 10, false))?;
+    assert_eq!(
+        state.current,
+        FramingPose::new(q(1, 4), q(1, 2), ExactRatio::integer(2))?
+    );
+    assert_ne!(state.current, fallback);
+    let sample = RenderPlan::compile(&retimed)?.picture(ProjectFrame(10))?;
+    let layer = sample
+        .framing
+        .iter()
+        .find(|layer| layer.instance.node == node("source"))
+        .unwrap();
+    assert_eq!(state.current, layer.pose.unwrap());
+    assert_ne!(layer.local_position, q(21, 2));
+    Ok(())
+}]]><calls total="11"><c n="node" l="31">fn node(value: &amp;str) -&gt; NodeId</c><c n="asset" l="34">fn asset(value: &amp;str) -&gt; AssetId</c><c n="frames" l="40">fn frames(value: i64) -&gt; FrameDuration</c><c n="q" l="43">fn q(n: i128, d: i128) -&gt; ExactRatio</c><c n="staged" l="63">fn staged(document: &amp;ProjectDocument, command: Command, name: &amp;str) -&gt; ProjectDocument</c><c n="site" l="76">fn site(owner: &amp;str, frame: i64, original_center: bool) -&gt; SemanticFramingSite</c><c n="source" l="95">fn source(name: &amp;str) -&gt; Result&lt;Self&gt;</c><c n="integer" l="62">pub const fn integer(value: i64) -&gt; Self</c><c n="new" l="76">pub fn new( center_x: ExactRatio, center_y: ExactRatio, scale: ExactRatio, ) -&gt; Result&lt;Self, FramingError&gt;</c><c n="ProjectFrame" l="9">pub struct ProjectFrame</c><c n="compile" l="688">pub fn compile(document: &amp;ProjectDocument) -&gt; Result&lt;Self, PlanError&gt;</c></calls></b><!-- body omitted (over budget): retime_entry_uses_the_exact_retained_input_speed_and_current_pitch --></bodies></ctx>

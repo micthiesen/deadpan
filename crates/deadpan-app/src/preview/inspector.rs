@@ -17,6 +17,33 @@ pub(super) struct Inspector {
 }
 
 impl Inspector {
+    /// Enable entry only for a core-qualified update, using the same exact
+    /// speed for its label and command. Covering recipe windows are not input.
+    pub fn with_retime_update(
+        mut self,
+        input: Result<deadpan_core::ExactRatio, deadpan_core::EditError>,
+        extent: deadpan_core::ExactRatio,
+        pitch: PitchPolicy,
+    ) -> Self {
+        if let Some(speed) = input.ok().and_then(|input| input.checked_div(extent).ok()) {
+            let ratio = format!("{}/{}", speed.numerator(), speed.denominator());
+            for (name, value) in &mut self.fields {
+                if *name == "Speed" {
+                    *value = format!("{ratio}×");
+                }
+            }
+            self.parameter = Some((
+                "Change speed…",
+                format!(
+                    "retime {ratio} pitch={}",
+                    crate::navigation::retime::pitch_name(pitch)
+                ),
+            ));
+            self.note = "Speed is relative to this Retime's exact input span. Changing tape speed preserves its input selection and scales its pauses. :wrap-retime adds another speed stage.";
+        }
+        self
+    }
+
     /// Derived clocks are authoritative; integral recipes only cover them.
     pub fn with_clock(
         mut self,
@@ -584,6 +611,26 @@ mod tests {
         assert!(descendant.parameter.is_none());
         assert!(descendant.note.contains("exact pause timing"));
         assert!(descendant.fields.contains(&("Speed", "10/3×".into())));
+        let exact_input = deadpan_core::ExactRatio::new(27, 2).unwrap();
+        let editable = Inspector::describe(&node, 2, 15)
+            .with_clock(Some(&clock), true)
+            .with_retime_update(
+                Ok(exact_input),
+                deadpan_core::ExactRatio::integer(15),
+                PitchPolicy::FollowSpeed,
+            );
+        assert!(editable.fields.contains(&("Speed", "9/10×".into())));
+        assert_eq!(editable.parameter.unwrap().1, "retime 9/10 pitch=tape");
+        assert!(editable.note.contains("exact input span"));
+        // A family remains editable when only descendants need exact records.
+        let editable = Inspector::describe(&node, 0, 163)
+            .with_clock(None, true)
+            .with_retime_update(
+                Ok(deadpan_core::ExactRatio::integer(15)),
+                deadpan_core::ExactRatio::integer(10),
+                PitchPolicy::FollowSpeed,
+            );
+        assert_eq!(editable.parameter.unwrap().1, "retime 3/2 pitch=tape");
         assert_eq!(
             crate::navigation::command::parse(&command),
             Ok(crate::navigation::command::Entry::Action(

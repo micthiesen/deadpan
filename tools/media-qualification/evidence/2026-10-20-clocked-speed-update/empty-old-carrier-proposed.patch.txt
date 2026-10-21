@@ -1,0 +1,26 @@
+*** Begin Patch
+*** Update File: crates/deadpan-core/src/insert_time/retimed/speed_update.rs
+@@
+                 work = work
+                     .checked_add(binding.work)
+                     .ok_or_else(|| super::super::limit("exact speed update transfer work"))?;
++                // The raw carrier uses current meaningful support, not the
++                // narrower allocation of a transparent Partition. An empty
++                // historical sample domain returns silence before transfer.
++                let maximum = MAX_DOCUMENT_NODES
++                    .checked_sub(work)
++                    .filter(|left| *left > 0)
++                    .ok_or_else(|| super::super::limit("exact speed update transfer work"))?;
++                let (raw, support) = frozen.project_scoped_with_support(
++                    frozen.root(), &path, None, maximum,
++                )?;
++                work = work
++                    .checked_add(raw.work)
++                    .ok_or_else(|| super::super::limit("exact speed update transfer work"))?;
++                if binding.lattice.sample_boundary(support.start).map_err(DocumentError::from)?
++                    == binding.lattice.sample_boundary(support.end).map_err(DocumentError::from)?
++                {
++                    continue;
++                }
+                 binding
+*** End Patch

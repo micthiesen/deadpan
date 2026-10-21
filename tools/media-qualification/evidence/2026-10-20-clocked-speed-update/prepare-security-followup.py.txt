@@ -1,0 +1,10 @@
+from pathlib import Path
+import shutil
+
+p = Path('/tmp/deadpan-speed-update-clocks-2026-10-20')
+for name in ['visual', 'performance']:
+    shutil.move(p / name, p / (name + '-before-security'))
+for name in ['export-results.json', 'export-binaries.json', 'export.log',
+             'followup-clippy.log', 'replay-binary.txt', 'source-identities.json']:
+    source = p / name
+    shutil.copy2(source, p / (source.stem + '-before-security' + source.suffix))

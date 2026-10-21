@@ -1,0 +1,22 @@
+from pathlib import Path
+import hashlib
+import json
+import sys
+
+root = Path('/Users/michael/Code/deadpan')
+scratch = Path('/tmp/deadpan-speed-update-clocks-2026-10-20')
+paths = [
+    'crates/deadpan-core/src/command.rs',
+    'crates/deadpan-core/src/derived_clock.rs',
+    'crates/deadpan-core/src/insert_time/retimed.rs',
+    'crates/deadpan-core/src/semantic/planner/retime.rs',
+    'crates/deadpan-core/tests/insert_time.rs',
+    'crates/deadpan-core/tests/insert_time/retimed.rs',
+    'crates/deadpan-core/tests/insert_time/retimed/speed_update.rs',
+    'crates/deadpan-app/src/project/retime.rs',
+    'crates/deadpan-app/src/preview/inspector.rs',
+    'Cargo.lock', 'rust-toolchain.toml',
+]
+record = {'base': (scratch / 'base.txt').read_text().strip(),
+          'sha256': {name: hashlib.sha256((root / name).read_bytes()).hexdigest() for name in paths}}
+(scratch / (sys.argv[1] if len(sys.argv) > 1 else 'old-source-identities.json')).write_text(json.dumps(record, indent=2) + '\n')

@@ -1,0 +1,18 @@
+from pathlib import Path
+import json
+import subprocess
+
+def read(*args):
+    return subprocess.check_output(args, text=True).strip()
+
+record = {
+    'model': read('sysctl', '-n', 'hw.model'),
+    'chip': read('sysctl', '-n', 'machdep.cpu.brand_string'),
+    'memory_bytes': int(read('sysctl', '-n', 'hw.memsize')),
+    'macos': read('sw_vers', '-productVersion'),
+    'build': read('sw_vers', '-buildVersion'),
+    'rust': read('rustc', '--version'),
+    'ffmpeg_prefix': '/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix',
+}
+Path('/tmp/deadpan-speed-update-clocks-2026-10-20/host.json').write_text(
+    json.dumps(record, indent=2) + '\n')

@@ -50,6 +50,10 @@ records exact nested slopes, cropped support and retained allocation endpoints.
 The [processing-input qualification](qualification/processing-hold-clocks-2026-10-20.md)
 extends that coverage to Preserve/Shift, historical input and output bindings,
 default and owned plays, and RoomTone gaps.
+An eligible tape-speed stage can subsequently change speed while preserving
+its exact selected input and descendant pause clocks. The stage's output scales
+those pauses; its inspector and macros use the exact input rather than the
+covering recipe range. See [speed changes after a pause](RETIME_EDITING.md#speed-changes-after-an-exact-pause).
 
 Core 24 adds existing root Sequence seams before composite suffixes: Sequence,
 Repeat, Retime, owned gap branches and generated Hold owners can move together.

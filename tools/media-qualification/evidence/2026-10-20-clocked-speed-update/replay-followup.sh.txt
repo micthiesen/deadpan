@@ -1,0 +1,11 @@
+#!/bin/sh
+set -eu
+export DEADPAN_FFMPEG_PREFIX=/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix
+export CARGO_PROFILE_DEV_OPT_LEVEL=2
+export DEADPAN_REQUIRE_PHYSICAL_MAC=1
+s=/tmp/deadpan-speed-update-clocks-2026-10-20
+cargo fmt --all -- --check > "$s/followup-format.log" 2>&1
+cargo clippy --locked -p deadpan-app --all-targets --features ui-harness -- -D warnings > "$s/followup-clippy.log" 2>&1
+sh "$s/build-ui.sh"
+sh "$s/replay.sh"
+sh "$s/performance.sh"
