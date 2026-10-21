@@ -238,6 +238,7 @@ fn encode(
     cache: &ProxyCache,
     worker: &Path,
     original: &Original,
+    mut first: Option<(ProxyStaging, File)>,
 ) -> std::result::Result<ProxyStaging, ConversionError> {
     let request = proxy_request(
         original.input.identity().byte_length(),
@@ -251,7 +252,10 @@ fn encode(
         worker,
         &original.input,
         &request,
-        || stage_output(cache),
+        || match first.take() {
+            Some(prepared) => Ok(prepared),
+            None => stage_output(cache),
+        },
         &AtomicBool::new(false),
         ProxyEncodeOptions {
             stall: Duration::from_secs(20),
@@ -320,10 +324,13 @@ fn a_full_cache_volume_fails_proxy_builds_truthfully_and_recovers() -> Result {
     let key = ProxyKey::new(&original.identity, original.index.stream_index())?;
     let nothing = (Vec::new(), Vec::new());
 
-    // 1. Too little room for the worker's movie (about 67 KB; 48 KB stay free): the worker's
-    // own write is refused by the kernel.
+    // 1. Prepare the first attempt before filling: APFS can refuse even the
+    // staging directory/movie metadata with a released 48 KiB reserve. That
+    // would exercise host staging, not the worker's movie write. The factory
+    // consumes this empty movie once; any retry still creates fresh staging.
+    let first = stage_output(&cache)?;
     let filler = image.fill_leaving(48 << 10)?;
-    let error = ProxyBuildError::from(match encode(&cache, &worker, &original) {
+    let error = ProxyBuildError::from(match encode(&cache, &worker, &original, Some(first)) {
         Err(error) => error,
         Ok(staging) => {
             return Err(format!(
@@ -355,7 +362,7 @@ fn a_full_cache_volume_fails_proxy_builds_truthfully_and_recovers() -> Result {
 
     // 2. The movie fits but the volume fills before publication: writing
     // the sidecar is refused and nothing becomes visible.
-    let staging = encode(&cache, &worker, &original)?;
+    let staging = encode(&cache, &worker, &original, None)?;
     let sidecar = verify(&staging, &original)?;
     let filler = image.fill()?;
     let error = cache
@@ -370,7 +377,7 @@ fn a_full_cache_volume_fails_proxy_builds_truthfully_and_recovers() -> Result {
     fs::remove_file(&filler)?;
 
     // 3. Once space returns, the same build publishes.
-    let staging = encode(&cache, &worker, &original)?;
+    let staging = encode(&cache, &worker, &original, None)?;
     let sidecar = verify(&staging, &original)?;
     let entry = cache.publish(&key, staging, &sidecar)?;
     assert_eq!(visible(&root)?, (vec![key.directory()], Vec::new()));
