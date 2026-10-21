@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-21T05:58:39Z",
+  "updated_at": "2026-10-21T06:52:20Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Make gain steps recordable and dot-repeatable in explicit Repeat plays, then continue remaining semantic editing, audio mastering, renderer and full-workflow qualification.",
+  "focus": "Extend explicit-play semantic audio editing to whole-owner mute intent, then continue remaining editing, audio mastering, renderer and full-workflow qualification.",
   "features": [
     {
       "id": "editing",
@@ -16,7 +16,7 @@
         "DP-07",
         "DP-21"
       ],
-      "note": "Slices, registers, repeats and semantic macros work, including Original navigation, ranged and per-play framing, selected-play pauses, Hold duration/sound edits, and exact-pause tape-speed updates around one inner Repeat level. Wider operator/selector coverage and remaining timing families stay open."
+      "note": "Slices, registers, repeats and semantic macros work, including Original navigation, ranged and per-play framing, selected-play pauses, Hold duration/sound edits, relative one-play gain steps, and exact-pause tape-speed updates around one inner Repeat level. Wider operator/selector coverage and remaining timing families stay open."
     },
     {
       "id": "projects",
@@ -733,6 +733,14 @@
       "revision": "3086f7df",
       "retrospective": false,
       "summary": "Verified exact speed changes around one inner Repeat level, preserving default/owned play and gap clocks. Core and PCM checks, 2,726 broad passes plus two repaired or isolated follow-ups, strict lint and a 22-picture zero-offset release export pass. Selected crop and silent-Hold fixes are also verified; DP-07 remains partial."
+    },
+    {
+      "date": "2026-10-21",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "0387b8c3",
+      "retrospective": false,
+      "summary": "Relative gain steps now record and dot-repeat in explicit Repeat plays, with exact isolation/history, strict lint, corrected refusal tests and 671-check release visual/performance replays."
     }
   ]
 }
