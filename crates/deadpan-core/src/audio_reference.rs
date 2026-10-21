@@ -3,6 +3,7 @@
 
 mod exact_clock;
 mod preflight;
+mod scale_projection;
 pub use exact_clock::FrozenRetimeClock;
 mod sound_placement;
 pub use sound_placement::FrozenSoundPlacement;

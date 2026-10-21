@@ -1,0 +1,125 @@
+from pathlib import Path
+import difflib
+
+repo = Path('/Users/michael/Code/deadpan')
+out = Path('/tmp/deadpan-inner-repeat-speed-2026-10-20/indexed-current')
+files = {}
+path = 'crates/deadpan-core/src/audio_binding/repeat_rates.rs'
+old = (repo / path).read_text()
+new = old.replace('type Cuts = BTreeMap<RevisionId, BTreeSet<u64>>;', '''/// Both references must describe the same pre-edit document. The caller builds
+/// this indexed snapshot once for the complete speed-update query.
+#[derive(Clone, Copy)]
+pub(crate) struct RepeatRateContext<'a> {
+    pub(crate) document: &'a ProjectDocument,
+    pub(crate) layout: &'a FrozenAudioLayout,
+}
+
+type Cuts = BTreeMap<RevisionId, BTreeSet<u64>>;''')
+new = new.replace('''pub(crate) fn repeated_lattice_classes(
+    document: &ProjectDocument,''', '''pub(crate) fn repeated_lattice_classes(
+    current: RepeatRateContext<'_>,''')
+new = new.replace('''    let mut work = Work::new(maximum_work)?;
+    work.spend(1)?;''', '''    let document = current.document;
+    let mut work = Work::new(maximum_work)?;
+    work.spend(1)?;''', 1)
+new = new.replace('validate_owner(document, repeat, owner, branch, is_gap, &mut work)?;', 'validate_owner(current, repeat, owner, branch, is_gap, &mut work)?;')
+new = new.replace('''|| !positive_subtree(document, branch, &mut work)?)''', '''|| !positive_subtree(current.layout, branch, &mut work)?)''')
+start = new.index('fn validate_owner(')
+end = new.index('\n#[cfg(test)]', start)
+new = new[:start] + '''fn validate_owner(
+    current: RepeatRateContext<'_>,
+    repeat: &NodeId,
+    owner: &NodeId,
+    branch: &NodeId,
+    gap: bool,
+    work: &mut Work,
+) -> Result<(), DocumentError> {
+    if current.layout.root() != current.document.root() {
+        return Err(invalid("audio rate current layout has another root"));
+    }
+    let (axes, used) = current.layout.scoped_repeats(
+        current.layout.root(), owner, work.remaining()?,
+    )?;
+    work.spend(used)?;
+    if gap {
+        if owner != repeat || !axes.is_empty() {
+            return Err(invalid("audio rate classes require one live Repeat axis"));
+        }
+    } else {
+        if axes.as_slice() != [repeat.clone()] {
+            return Err(invalid("audio rate classes require one live Repeat axis"));
+        }
+        // This indexed lookup proves the declared current branch contains the
+        // owner. It does not select a play or reuse historical branch aliases.
+        let (_, used) = current.layout.scale_in_scope(branch, owner, work.remaining()?)?;
+        work.spend(used)?;
+    }
+    Ok(())
+}
+
+fn positive_subtree(
+    current: &FrozenAudioLayout,
+    root: &NodeId,
+    work: &mut Work,
+) -> Result<bool, DocumentError> {
+    work.spend(1)?;
+    Ok(current.node_extent(root)?.compare_integer(0).is_gt())
+}
+''' + new[end:]
+assert 'find_path' not in new
+files[path] = (old, new)
+path = 'crates/deadpan-core/src/audio_binding.rs'
+old = (repo / path).read_text()
+new = old.replace('pub(crate) use repeat_rates::{RepeatOwnerUse, repeated_lattice_classes};', 'pub(crate) use repeat_rates::{RepeatOwnerUse, RepeatRateContext, repeated_lattice_classes};')
+assert old != new
+files[path] = (old, new)
+path = 'crates/deadpan-core/src/audio_binding/repeat_rates/tests.rs'
+old = (repo / path).read_text()
+new = old.replace('repeated_lattice_classes(', 'classes_with_current(')
+new += '''
+// Production passes its already-cached snapshot; each standalone test query
+// constructs one here. Snapshot construction is outside the helper's budget.
+#[expect(clippy::too_many_arguments, reason = "test adapter preserves the rate-query inputs")]
+fn classes_with_current(
+    document: &ProjectDocument,
+    repeat: &NodeId,
+    owner: &NodeId,
+    usage: &RepeatOwnerUse,
+    template: &AudioPlacementTemplate,
+    layout: &FrozenAudioLayout,
+    maximum_work: usize,
+) -> Result<(Vec<ResolvedAudioPlacement>, usize), DocumentError> {
+    let current = FrozenAudioLayout::capture(document)?;
+    repeated_lattice_classes(
+        RepeatRateContext { document, layout: &current },
+        repeat, owner, usage, template, layout, maximum_work,
+    )
+}
+
+#[test]
+fn indexed_current_ancestry_work_does_not_scan_unrelated_owners() {
+    let initial = fixture(3);
+    let state = captured(&initial);
+    let (_, initial_work) = classes(&initial, "body", RepeatOwnerUse::DefaultBody, &state);
+    let mut current = initial.clone();
+    let mut children = Vec::new();
+    for index in 0..1024 {
+        let owner = id(&format!("unrelated-{index}"));
+        current.nodes.insert(owner.clone(), hold(1));
+        children.push(owner);
+    }
+    children.push(id("stage"));
+    current.nodes.insert(id("root"), BeatNode::sequence("Root", children));
+    current.validate().unwrap();
+    let (resolved, current_work) = classes(&current, "body", RepeatOwnerUse::DefaultBody, &state);
+    assert_eq!(current_work, initial_work);
+    assert_eq!(resolved.len(), 1);
+    assert_eq!(resolved[0].frames_per_local_frame, ExactRatio::integer(2));
+}
+'''
+files[path] = (old, new)
+for path, (old, new) in files.items():
+    target = out / path
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text(new)
+(out / 'paths.txt').write_text('\n'.join(files) + '\n')

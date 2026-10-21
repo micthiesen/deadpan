@@ -755,6 +755,46 @@ fn clocked_speed_update_preview_and_encoded_output_keep_exact_pause_clocks() -> 
     Ok(())
 }
 
+#[test]
+fn inner_repeat_speed_update_preview_and_encoded_output_keep_physical_carriers() -> Result {
+    let (root, _guard) = keep_or(tempfile::tempdir()?);
+    let fixture = recipes::inner_repeat_speed::shrink(&root.join("inner-repeat-speed"))?;
+    check(&fixture)?;
+    if skip_without_physical_mac("encoded Render") {
+        return Ok(());
+    }
+    let movie = render(&fixture, &root.join("exports-inner-repeat-speed"))?;
+    let (report, passed) = verify(&fixture, &movie, &fixture.revision, &["--every", "1"])?;
+    assert!(passed, "{report}");
+    assert_eq!(report["summary"]["pictures_checked"], 22);
+    assert_eq!(report["summary"]["pictures_failed"], 0);
+    assert_eq!(report["summary"]["nonzero_offsets"], 0);
+    assert!(
+        report["summary"]["signal_windows"]
+            .as_u64()
+            .is_some_and(|count| count > 0)
+    );
+    assert_eq!(report["audio"][0]["flags"], json!([]));
+    assert_eq!(report["audio"][0]["blocks"]["low_snr_blocks"], 0);
+    assert_eq!(report["audio"][0]["offset_status"], "verified_zero");
+    assert_eq!(report["audio"][0]["measured_offset_samples"], 0);
+    check_provenance(&fixture, &report)?;
+    eprintln!("{}", summary_row(&fixture, &report));
+    if let Some(path) = std::env::var_os("DEADPAN_INNER_REPEAT_SPEED_RESULTS") {
+        std::fs::write(
+            path,
+            serde_json::to_vec_pretty(&json!({
+                "name": fixture.name,
+                "package": fixture.package,
+                "movie": movie,
+                "report": report,
+                "notes": fixture.notes,
+            }))?,
+        )?;
+    }
+    Ok(())
+}
+
 fn partial_repeat_export(existing: bool) -> Result {
     let (root, _guard) = keep_or(tempfile::tempdir()?);
     let factory = if existing {

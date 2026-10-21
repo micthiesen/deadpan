@@ -1,0 +1,8 @@
+#!/bin/sh
+set -eu
+export DEADPAN_FFMPEG_PREFIX=/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix
+export CARGO_PROFILE_DEV_OPT_LEVEL=2
+export DEADPAN_REQUIRE_PHYSICAL_MAC=1
+cp /tmp/deadpan-inner-repeat-speed-2026-10-20/check.log /tmp/deadpan-inner-repeat-speed-2026-10-20/check-broad.log
+cargo nextest list --locked -p deadpan-audio -p deadpan-cli -p deadpan-core --features deadpan-cli/synthetic-worker --message-format json --list-type binaries-only > /tmp/deadpan-inner-repeat-speed-2026-10-20/test-binaries.json 2> /tmp/deadpan-inner-repeat-speed-2026-10-20/test-binaries.log
+sh /tmp/deadpan-inner-repeat-speed-2026-10-20/export.sh

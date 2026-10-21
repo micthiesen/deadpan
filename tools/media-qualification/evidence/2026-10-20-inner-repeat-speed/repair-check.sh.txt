@@ -1,0 +1,8 @@
+#!/bin/sh
+set -eu
+export DEADPAN_FFMPEG_PREFIX=/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix
+export CARGO_PROFILE_DEV_OPT_LEVEL=2
+export DEADPAN_REQUIRE_PHYSICAL_MAC=1
+export DEADPAN_REQUIRE_SYNTHETIC_WORKER=1
+cargo xtask check --since 92907cb0 --no-test > /tmp/deadpan-inner-repeat-speed-2026-10-20/repair-lint.log 2>&1
+cargo nextest run --locked -p deadpan-audio -p deadpan-cli -p deadpan-core --features deadpan-cli/synthetic-worker --no-fail-fast --test-threads 1 -E 'test(=youtube::helpers::tests::bundled_baseline_binds_resigned_bytes_to_the_compiled_pin) or test(=a_full_cache_volume_fails_proxy_builds_truthfully_and_recovers)' > /tmp/deadpan-inner-repeat-speed-2026-10-20/repair-check.log 2>&1

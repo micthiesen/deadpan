@@ -1,0 +1,27 @@
+from pathlib import Path
+root=Path('/Users/michael/Code/deadpan')
+def replace(path,old,new):
+    p=root/path
+    s=p.read_text()
+    assert s.count(old)==1,(path,old,s.count(old))
+    p.write_text(s.replace(old,new))
+replace('docs/REQUIREMENTS.md','## Selected audio crops after exact speed changes, 2026-10-20', '''## Exact speed updates around an inner Repeat, 2026-10-20
+
+[Inner-Repeat qualification](qualification/inner-repeat-speed-2026-10-20.md)
+extends exact-pause tape-speed updates to one inner Repeat level, including
+owned plays and independent RoomTone gaps. Every physical carrier keeps its
+historical clock and filtering stage; bounded admission checks all old and
+born-play rate classes. Missing carriers capture their pre-edit entries once.
+Core, PCM, inverse and serialization checks pass. The broad run records 2,726
+passes and two unrelated failures; both pass serially after a disk-full fixture
+repair, with strict lint passing again. The release export passes all 22
+pictures and the complete 35,235-sample audio window at measured offset zero,
+without verification flags. The original failures and exact results remain
+retained. DP-07 stays partial: nested Repeat and processing families, fractional
+own extents, non-Sequence ancestors and broader Section 8 work remain open.
+
+## Selected audio crops after exact speed changes, 2026-10-20''')
+replace('docs/REQUIREMENTS.md','[Selected crop carriers](qualification/source-crop-carriers-2026-10-20.md) admit exactly empty historical audio support and return suppressed zeros for direct silent Holds while preserving nonempty Source/RoomTone transfer limits.', '[Selected crop carriers](qualification/source-crop-carriers-2026-10-20.md) admit exactly empty historical audio support and return suppressed zeros for direct silent Holds while preserving nonempty Source/RoomTone transfer limits. [One inner Repeat level](qualification/inner-repeat-speed-2026-10-20.md) also permits exact-pause speed updates around default/owned plays and independent gaps, checking every historical rate class without expanding plays; per-carrier PCM and a 22-picture complete-audio release export pass.')
+replace('docs/SECTION8_COVERAGE.md','eligible tape-speed updates after exact pauses retain the selected input and descendant clocks','eligible tape-speed updates after exact pauses retain the selected input and descendant clocks, including one inner Repeat level with owned plays and independent gaps')
+replace('docs/SECTION8_COVERAGE.md','(all 53 pictures and complete audio windows) |','(all 53 pictures and complete audio windows); [`inner-repeat-speed-update`](qualification/inner-repeat-speed-2026-10-20.md) (all 22 pictures and complete zero-offset audio) |')
+replace('docs/qualification/source-crop-carriers-2026-10-20.md','Physical input, listening and performance claims are\nunchanged. Inner Repeat/processing families, fractional own output extents,\nnon-Sequence ancestors and the remaining Section 8 work remain open.', 'Physical input, listening and performance claims are\nunchanged. A subsequent increment qualifies\n[one inner Repeat level](inner-repeat-speed-2026-10-20.md). Nested Repeat and\nprocessing families, fractional own output extents, non-Sequence ancestors\nand the remaining Section 8 work remain open.')

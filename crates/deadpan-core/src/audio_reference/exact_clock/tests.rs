@@ -336,3 +336,144 @@ fn bindings_accept_affine_exact_tables_and_refuse_processing_stages() {
     let message = state(preserve).validate().unwrap_err().message;
     assert!(message.contains("owned output route"), "{message}");
 }
+
+#[test]
+fn scope_scale_matches_exact_repeat_branches_without_occurrence_expansion() {
+    for count in [4, 1_000_000_000] {
+        let frozen = FrozenAudioLayout::capture(&repeated(count)).unwrap();
+        // The derived extent is 1/2 over two child frames, independently of
+        // the integral recipe's one-frame allocation.
+        let (default, work) = frozen.scale_in_scope(&id("root"), &id("left"), 4).unwrap();
+        assert_eq!(default, ratio(1, 4));
+        assert_eq!(work, 4); // leaf, Retime, Repeat, explicit scope root.
+        let first = frozen
+            .project(&occurrence("left", 0), ExactRatio::ZERO, None, 30)
+            .unwrap();
+        let last = frozen
+            .project(&occurrence("left", count - 1), ExactRatio::ZERO, None, 30)
+            .unwrap();
+        assert_eq!(first.frames_per_local_frame, default);
+        assert_eq!(last.frames_per_local_frame, default);
+        assert_ne!(first.origin, last.origin);
+
+        for (leaf, play_index, expected) in
+            [("right", 1, ratio(5, 4)), ("gap-leaf", 0, ratio(3, 4))]
+        {
+            let (scale, work) = frozen.scale_in_scope(&id("root"), &id(leaf), 4).unwrap();
+            assert_eq!((scale, work), (expected, 4));
+            assert_eq!(
+                frozen
+                    .project(&occurrence(leaf, play_index), ExactRatio::ZERO, None, 30)
+                    .unwrap()
+                    .frames_per_local_frame,
+                scale
+            );
+        }
+
+        // Synthetic gaps retain their existing projection path. The helper
+        // accepts only physical node aliases and returns the Repeat's scale.
+        let synthetic = frozen
+            .project_scoped(
+                &id("root"),
+                &instance("repeat"),
+                ExactRatio::ZERO,
+                Some(&play(2)),
+                30,
+            )
+            .unwrap();
+        assert_eq!(synthetic.frames_per_local_frame, ExactRatio::ONE);
+        assert_eq!(synthetic.gap_after, Some(play(2)));
+        assert_eq!(
+            frozen
+                .scale_in_scope(&id("root"), &id("repeat"), 2)
+                .unwrap(),
+            (ExactRatio::ONE, 2)
+        );
+    }
+}
+
+#[test]
+fn scope_scale_includes_explicit_retime_root_and_bounds_scope_work() {
+    let frozen = FrozenAudioLayout::capture(&repeated(4)).unwrap();
+    let (inside_definition, work) = frozen.scale_in_scope(&id("first"), &id("left"), 2).unwrap();
+    assert_eq!((inside_definition, work), (ratio(1, 4), 2));
+    assert_eq!(
+        frozen
+            .project_scoped(&id("first"), &instance("left"), ExactRatio::ZERO, None, 2)
+            .unwrap()
+            .frames_per_local_frame,
+        inside_definition
+    );
+    for name in ["root", "first", "left"] {
+        assert_eq!(
+            frozen.scale_in_scope(&id(name), &id(name), 1).unwrap(),
+            (ExactRatio::ONE, 1)
+        );
+    }
+    for (scope, target, budget) in [
+        ("missing", "left", 100),
+        ("root", "missing", 100),
+        ("last", "left", 100),
+        ("root", "left", 3),
+        ("root", "left", 0),
+        ("root", "left", MAX_DOCUMENT_NODES + 1),
+    ] {
+        assert!(
+            frozen
+                .scale_in_scope(&id(scope), &id(target), budget)
+                .is_err(),
+            "scope {scope}, target {target}, budget {budget}"
+        );
+    }
+}
+
+#[test]
+fn scope_scale_refuses_recipe_and_effective_pitch_processing() {
+    // A live document refuses opaque exact clocks without their owned input
+    // route. Historical timing tables omit that route, so exercise their own
+    // admitted wire form directly, as retained bindings do.
+    let baseline = serde_json::to_value(FrozenAudioLayout::capture(&document()).unwrap()).unwrap();
+    for (pitch, recipe_unity, effective_unity) in [
+        (PitchPolicy::Preserve, false, false),
+        (PitchPolicy::Preserve, true, false),
+        (PitchPolicy::Preserve, false, true),
+        (PitchPolicy::shifted(3).unwrap(), true, true),
+    ] {
+        let mut wire = baseline.clone();
+        wire["nodes"]["first"]["kind"]["pitch"] = serde_json::to_value(pitch).unwrap();
+        if recipe_unity {
+            wire["nodes"]["first"]["kind"]["mapping"]["end"] = serde_json::json!(1);
+        }
+        if effective_unity {
+            wire["derived_clocks"]["first"]["extent"] = serde_json::to_value(ratio(2, 1)).unwrap();
+            // Keep the root's effective duration integral.
+            wire["derived_clocks"]["last"]["extent"] = serde_json::to_value(ratio(2, 1)).unwrap();
+        }
+        let frozen = FrozenAudioLayout::from_json(&wire.to_string()).unwrap();
+        assert!(
+            frozen
+                .scale_in_scope(&id("root"), &id("left"), 100)
+                .is_err()
+        );
+    }
+
+    let mut unity = document();
+    let NodeKind::Retime { pitch, mapping, .. } =
+        &mut unity.nodes.get_mut(&id("first")).unwrap().kind
+    else {
+        panic!("fixture first must be a Retime");
+    };
+    *pitch = PitchPolicy::Preserve;
+    *mapping = FrameRange::new(ProjectFrame(0), ProjectFrame(1)).unwrap();
+    let first = unity.derived_clocks.get_mut(&id("first")).unwrap();
+    first.child_end = ExactRatio::ONE;
+    first.extent = ExactRatio::ONE;
+    unity.derived_clocks.get_mut(&id("last")).unwrap().extent = ratio(2, 1);
+    assert_eq!(
+        FrozenAudioLayout::capture(&unity)
+            .unwrap()
+            .scale_in_scope(&id("root"), &id("left"), 3)
+            .unwrap(),
+        (ExactRatio::ONE, 3)
+    );
+}

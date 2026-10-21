@@ -5,6 +5,9 @@ use super::*;
 #[path = "speed_update/source_crop.rs"]
 mod source_crop;
 
+#[path = "speed_update/inner_repeat.rs"]
+mod inner_repeat;
+
 fn retain_witness(
     before: &ProjectDocument,
     update: &CommandRequest,
@@ -442,7 +445,7 @@ fn speed_update_captures_missing_inner_entries_but_reanchors_existing_moved_suff
 }
 
 #[test]
-fn speed_update_refuses_inner_repeat_without_blocking_unrelated_ordinary_stage() {
+fn speed_update_refuses_nested_repeat_without_blocking_unrelated_ordinary_stage() {
     let original = clocked_with_output(24);
     let mut wire = serde_json::to_value(original).unwrap();
     wire["audio_bindings"] = serde_json::to_value(AudioBindingState::default()).unwrap();
@@ -450,12 +453,20 @@ fn speed_update_refuses_inner_repeat_without_blocking_unrelated_ordinary_stage()
     wire["nodes"]["p-0"]["kind"]["child"] = json!("inner-repeat");
     let mut repeated = BeatNode::sequence("Repeated", vec![]);
     repeated.kind = NodeKind::Repeat {
-        child: id("inner"),
+        child: id("nested-repeat"),
         iterations: IterationOrder::new(revision("repeated"), 1_000_000).unwrap(),
         gap: None,
         escalation: None,
     };
     wire["nodes"]["inner-repeat"] = serde_json::to_value(repeated).unwrap();
+    let mut nested = BeatNode::sequence("Nested", vec![]);
+    nested.kind = NodeKind::Repeat {
+        child: id("inner"),
+        iterations: IterationOrder::new(revision("nested"), 2).unwrap(),
+        gap: None,
+        escalation: None,
+    };
+    wire["nodes"]["nested-repeat"] = serde_json::to_value(nested).unwrap();
     let before = ProjectDocument::from_json(&wire.to_string()).unwrap();
     let snapshot = before.to_json().unwrap();
     assert!(
@@ -463,13 +474,13 @@ fn speed_update_refuses_inner_repeat_without_blocking_unrelated_ordinary_stage()
             .retime_update_input(&id("slow"), PitchPolicy::FollowSpeed)
             .unwrap_err()
             .message
-            .contains("repeated exact pause")
+            .contains("nested Repeat families")
     );
     assert!(
         apply(&before, &update(&before, "repeat-refused", 15))
             .unwrap_err()
             .message
-            .contains("repeated exact pause")
+            .contains("nested Repeat families")
     );
     assert_eq!(before.to_json().unwrap(), snapshot);
     assert_eq!(

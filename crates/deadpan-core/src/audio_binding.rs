@@ -18,6 +18,9 @@ use crate::{
     RevisionId, TimeError,
 };
 
+mod repeat_rates;
+pub(crate) use repeat_rates::{RepeatOwnerUse, RepeatRateContext, repeated_lattice_classes};
+
 pub const MAX_AUDIO_BINDING_TERMS: usize = 256;
 pub const MAX_AUDIO_BINDING_ENTRIES: usize = 100_000;
 const MAX_BINDING_WIRE_BYTES: usize = 1024 * 1024;

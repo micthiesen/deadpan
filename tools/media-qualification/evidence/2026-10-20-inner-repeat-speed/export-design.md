@@ -1,0 +1,13 @@
+# Inner Repeat real preview/export regression (written, not executed)
+
+Owner files: new deadpan-cli/tests/preview_export/inner_repeat_speed.rs, registration in recipes.rs, targeted preview_export.rs test.
+
+Start a real one-Original package from cfr-bframes.mp4, shorten to Original12..42, split through public commands, and clone complete admitted Partition/Source fragments into fresh subtree identities without copying any binding. Save Original28..31 before a further split prepares Original29..31. Use prefix12..14; group lead14..15, Repeat, tail31..32; suffix36..38. Shared default body is Original29..31 + RoomTone1; owned middle body Original28..31 + RoomTone1; first owned gap RoomTone2, middle default gap RoomTone1, three stable plays. RoomTone recipes explicitly use background video and clone the admitted Original audio selection. They are ordinary typed Hold recipes, not generated media or a silent placeholder.
+
+The group totals15. Public WrapRetime30 + InsertTime(root3,length3) gives owner33 and input33/2; public SetRetime18 gives final22. Before emitting the CLI command, the identical core request is applied/inverted and JSON round-tripped. The durable CLI store reopen must equal that predicted committed document. Interior node binding JSON bytes and complete gap-binding JSON bytes remain unchanged; repeated node, override maps and all descendant clocks remain unchanged. A whole-Repeat binding is forbidden.
+
+Independent picture oracle: selected input after exact pause is Original14 on[0,1/2); BG[1/2,2); Original14 on[2,5/2); default29..31 on[5/2,9/2); roomBG[9/2,11/2); ownedgapBG[11/2,15/2); owned28..31 on[15/2,21/2); roomBG[21/2,23/2); defaultgapBG[23/2,25/2); lastdefault29..31 on[25/2,29/2); roomBG[29/2,31/2); tail31[31/2,33/2). Stage18 input centers11*(2n+1)/24 give [14,BG,14,29,30,BG,BG,BG,28,29,30,BG,BG,BG,29,30,BG,31]. Prefix12,13 and suffix36,37 complete all22 literal expected pictures. No RenderPlan is used to derive expectations.
+
+Actual authored-bus PCM guard inspects only absolute samples7800..10800, strictly inside first default Source allocation7571..11066. Original29..31 contains the fixture click. Peak must exceed0.001; RoomTone gaps, other repeat plays or outside sources cannot satisfy the guard.
+
+Target test inner_repeat_speed_update_preview_and_encoded_output_keep_physical_carriers runs project/preview checking, physical-Mac H264/AAC Render, verify every picture, full audio/provenance, zero measured sync offset and no flags. DEADPAN_INNER_REPEAT_SPEED_RESULTS writes full report/package/movie/notes metadata; DEADPAN_PREVIEW_EXPORT_KEEP=1 retains the actual movie and package through existing keep_or behavior. No Cargo or Git executed by worker and no runtime claims.

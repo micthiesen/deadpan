@@ -1,5 +1,10 @@
 //! Audited parameter updates of an affine stage owning exact pause clocks.
-use std::collections::BTreeSet;
+use std::collections::BTreeMap;
+
+use crate::audio_binding::RepeatOwnerUse;
+
+mod repeated;
+use repeated::RepeatedOwner;
 
 use crate::{
     AudioBindingEnvironment, AudioTimingId, DocumentError, EditError, EditErrorCode, ExactRatio,
@@ -40,13 +45,13 @@ fn invalid(message: &str) -> EditError {
     EditError::new(EditErrorCode::InvalidCommand, message)
 }
 
-/// Current physical owners and ancestry of the bounded affine family. Each
-/// owner has one concrete path: no Repeat representatives are sampled.
+/// Current physical owners and ancestry of the bounded affine family.
+/// Repeated owners retain their exact current branch, not a sampled play.
 fn family(
     document: &ProjectDocument,
     node: &NodeId,
     pitch: PitchPolicy,
-) -> Result<BTreeSet<NodeId>, EditError> {
+) -> Result<BTreeMap<NodeId, Option<RepeatedOwner>>, EditError> {
     let (_, current_pitch) = ordinary(document, node)?;
     if current_pitch != PitchPolicy::FollowSpeed || pitch != PitchPolicy::FollowSpeed {
         return Err(invalid(
@@ -78,19 +83,54 @@ fn family(
             return Err(super::super::limit("exact speed update ancestry"));
         }
     }
-    let mut pending = vec![node];
-    let mut owners = BTreeSet::new();
+    let mut pending = vec![(node, None::<RepeatedOwner>)];
+    let mut owners = BTreeMap::new();
     let mut visited = 0usize;
-    while let Some(id) = pending.pop() {
+    while let Some((id, repeated)) = pending.pop() {
         visited += 1;
         if visited > MAX_DOCUMENT_NODES {
             return Err(super::super::limit("exact speed update family"));
         }
         match &document.nodes()[id].kind {
-            NodeKind::Repeat { .. } => {
-                return Err(invalid(
-                    "updating a stage with repeated exact pause contents is not available yet",
-                ));
+            NodeKind::Repeat { child, gap, .. } => {
+                if repeated.is_some() {
+                    return Err(invalid(
+                        "updating exact pause clocks cannot yet change nested Repeat families",
+                    ));
+                }
+                let member = |usage| {
+                    Some(RepeatedOwner {
+                        repeat: id.clone(),
+                        usage,
+                    })
+                };
+                pending.push((child, member(RepeatOwnerUse::DefaultBody)));
+                if gap.is_some() {
+                    owners.insert(id.clone(), member(RepeatOwnerUse::DefaultGap));
+                }
+                if let Some(overrides) = document.overrides().get(id) {
+                    for (iteration, root) in overrides.iter() {
+                        pending.push((
+                            root,
+                            member(RepeatOwnerUse::OwnedBody {
+                                iteration: iteration.clone(),
+                                root: root.clone(),
+                            }),
+                        ));
+                    }
+                }
+                if let Some(overrides) = document.gap_overrides().get(id) {
+                    for (iteration, root) in overrides.iter() {
+                        pending.push((
+                            root,
+                            member(RepeatOwnerUse::OwnedGap {
+                                iteration: iteration.clone(),
+                                root: root.clone(),
+                            }),
+                        ));
+                    }
+                }
+                continue;
             }
             NodeKind::Retime {
                 duration,
@@ -114,11 +154,11 @@ fn family(
                 }
             }
             NodeKind::Source { .. } | NodeKind::Hold { .. } => {
-                owners.insert(id.clone());
+                owners.insert(id.clone(), repeated.clone());
             }
             NodeKind::Sequence { .. } => {}
         }
-        pending.extend(document.children(id));
+        pending.extend(document.children(id).map(|child| (child, repeated.clone())));
     }
     Ok(owners)
 }
@@ -195,7 +235,26 @@ impl ProjectDocument {
             MAX_DOCUMENT_NODES,
         )?;
         let mut work = stage.work;
-        for owner in owners {
+        let mut prospective = None;
+        for (owner, repeated) in owners {
+            // Only direct authored silent Holds bypass transfer. Default
+            // Repeat gaps still use a retained-domain transfer, even Silence.
+            if let Some(repeated) = repeated {
+                if matches!(&self.nodes()[&owner].kind, NodeKind::Hold { recipe } if recipe.audio == HoldAudio::Silence)
+                {
+                    continue;
+                }
+                repeated::validate_owner(
+                    self,
+                    &frozen,
+                    &owner,
+                    &repeated,
+                    (factor, frame_per_sample),
+                    &mut prospective,
+                    &mut work,
+                )?;
+                continue;
+            }
             if !audible_owner(self, &owner) {
                 continue;
             }
@@ -375,8 +434,8 @@ pub(crate) fn set_retime(
     let mut affected = super::super::composite::occurrence_owners_after(document, node)?;
     affected.extend(
         inner
-            .iter()
-            .filter(|owner| !document.audio_bindings().bindings().contains_key(*owner))
+            .keys()
+            .filter(|owner| !repeated::has_binding(document, owner))
             .cloned(),
     );
     affected.retain(|owner| audible_owner(document, owner));

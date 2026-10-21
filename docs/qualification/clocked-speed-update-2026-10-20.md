@@ -165,3 +165,7 @@ empty carriers; the subsequent
 [crop-carrier qualification](source-crop-carriers-2026-10-20.md) resolves that
 limit and the retained silent-Hold transfer failure. It establishes no new acoustic,
 physical-input or latency claim.
+
+The subsequent [inner-Repeat qualification](inner-repeat-speed-2026-10-20.md)
+admits one inner Repeat level, including owned plays and gaps. Nested Repeat
+and processing families remain outside that extension.

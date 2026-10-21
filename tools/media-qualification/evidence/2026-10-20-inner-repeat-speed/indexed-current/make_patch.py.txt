@@ -1,0 +1,15 @@
+from pathlib import Path
+import difflib
+repo = Path('/Users/michael/Code/deadpan')
+base = Path('/tmp/deadpan-inner-repeat-speed-2026-10-20/indexed-current')
+patch = ''
+for path in (base / 'paths.txt').read_text().splitlines():
+    patch += ''.join(difflib.unified_diff((repo / path).read_text().splitlines(True), (base / path).read_text().splitlines(True), fromfile='a/' + path, tofile='b/' + path))
+(base / 'indexed-current.patch').write_text(patch)
+path = 'crates/deadpan-core/src/insert_time/retimed/speed_update/repeated.rs'
+old = (repo / path).read_text()
+new = old.replace('''crate::audio_binding::repeated_lattice_classes(
+        document,''', '''crate::audio_binding::repeated_lattice_classes(
+        crate::audio_binding::RepeatRateContext { document, layout: frozen },''')
+assert old != new
+(base / 'caller.patch').write_text(''.join(difflib.unified_diff(old.splitlines(True), new.splitlines(True), fromfile='a/' + path, tofile='b/' + path)))

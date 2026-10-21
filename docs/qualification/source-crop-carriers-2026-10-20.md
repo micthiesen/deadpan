@@ -98,8 +98,10 @@ constant for a fresh clock. Those failures and corrections are also retained.
 
 The million-frame candidate is exercised through bounded canonical PCM reads,
 not a full export. Physical input, listening and performance claims are
-unchanged. Inner Repeat/processing families, fractional own output extents,
-non-Sequence ancestors and the remaining Section 8 work remain open.
+unchanged. A subsequent increment qualifies
+[one inner Repeat level](inner-repeat-speed-2026-10-20.md). Nested Repeat and
+processing families, fractional own output extents, non-Sequence ancestors
+and the remaining Section 8 work remain open.
 
 [Retained evidence](../../tools/media-qualification/evidence/2026-10-20-source-crop-carriers)
 records commands, failures, final results, source/binary hashes and independent

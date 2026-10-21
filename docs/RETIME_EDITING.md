@@ -105,16 +105,26 @@ their own entry phases. Audio still uses native-source preparation followed by
 retained-domain transfer; multiplying the coordinate slopes does not replace
 these two filtering stages. Admission checks the actual historical lattice's
 transfer against the inclusive `1/64..64` range, including successive changes.
-An unused carrier with no allocated output samples imposes no transfer bound.
+For an ordinary nonrepeated carrier, no allocated output samples imposes no
+transfer bound.
 For SelectedPlacement audio, an empty historical domain is tested after
 intersecting the selected crop with current meaningful Source support. Direct
 silent Holds return suppressed zeros without resampling a hidden carrier;
 nonempty Source and RoomTone domains keep the transfer bound. See the
 [crop-carrier qualification](qualification/source-crop-carriers-2026-10-20.md).
 
+One inner Repeat level is also supported, including owned plays and independent
+gaps. Every physical carrier retains its own clock and filtering stage. Admission
+checks all historical rate classes, including born PointCeil plays beside older
+root-clock plays, with bounded work over authored runs and sparse overrides.
+Missing carriers capture their pre-edit entries once. A representative play
+cannot prove its whole class empty, so repeated classes receive no empty-carrier
+exception. Default gaps, including silent gaps, retain transfer checks. See the
+[inner-Repeat qualification](qualification/inner-repeat-speed-2026-10-20.md).
+
 This path requires an integral stage output extent and tape pitch on the
-updated stage. Inner Repeats, processing stages, and non-Sequence ancestors
-still refuse changed parameters. Explicit wrapping keeps its existing behavior.
+updated stage. Nested inner Repeats, processing stages, and non-Sequence
+ancestors still refuse changed parameters. Explicit wrapping keeps its existing behavior.
 Identical raw `SetRetime` parameters preserve no-op admission; semantic and
 native unchanged commands create no revision. See the
 [qualification](qualification/clocked-speed-update-2026-10-20.md).

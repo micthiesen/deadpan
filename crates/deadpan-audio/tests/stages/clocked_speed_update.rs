@@ -825,3 +825,6 @@ fn clocked_speed_update_keeps_empty_old_room_tone_carrier_suppressed_without_sou
 
 #[path = "clocked_speed_update/source_crop_pcm.rs"]
 mod source_crop_pcm;
+
+#[path = "clocked_speed_update/inner_repeat_pcm.rs"]
+mod inner_repeat_pcm;

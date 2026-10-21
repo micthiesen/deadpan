@@ -1,0 +1,1 @@
+After removing Clippy's useless .into_iter() from children(id), an immediate check rerun stopped at rustfmt: pending.extend needed collapsing to a single line (speed_update.rs line161). rustfmt was then applied and the check relaunched. No tests ran in that formatting-only failed attempt.

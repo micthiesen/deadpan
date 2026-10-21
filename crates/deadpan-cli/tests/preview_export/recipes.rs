@@ -52,6 +52,9 @@ pub mod processing_duration;
 #[path = "clocked_speed_update.rs"]
 pub mod clocked_speed_update;
 
+#[path = "inner_repeat_speed.rs"]
+pub mod inner_repeat_speed;
+
 pub type Result<T = ()> = std::result::Result<T, Box<dyn Error>>;
 
 #[path = "vfr.rs"]

@@ -1,0 +1,20 @@
+from pathlib import Path
+import difflib
+base = Path('/tmp/deadpan-inner-repeat-speed-2026-10-20/indexed-current')
+production = base / 'crates/deadpan-core/src/audio_binding/repeat_rates.rs'
+s = production.read_text()
+s = s.replace('''#[expect(
+    clippy::too_many_arguments,
+    reason = "explicit current owner use and historical lattice form one rate query"
+)]
+''', '')
+s = s.replace('if axes.as_slice() != [repeat.clone()] {', 'if axes.len() != 1 || axes.first() != Some(repeat) {')
+production.write_text(s)
+test = base / 'crates/deadpan-core/src/audio_binding/repeat_rates/tests.rs'
+s = test.read_text()
+s = s.replace('''#[expect(
+    clippy::too_many_arguments,
+    reason = "test adapter preserves the rate-query inputs"
+)]
+''', '')
+test.write_text(s)

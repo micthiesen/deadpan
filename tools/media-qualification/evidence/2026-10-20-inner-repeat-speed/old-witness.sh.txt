@@ -1,0 +1,8 @@
+#!/bin/sh
+set -u
+export DEADPAN_FFMPEG_PREFIX=/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix
+export CARGO_PROFILE_DEV_OPT_LEVEL=2
+export DEADPAN_REQUIRE_PHYSICAL_MAC=1
+export DEADPAN_SPEED_UPDATE_WITNESS_DIR=/tmp/deadpan-inner-repeat-speed-2026-10-20/old-witness
+cargo nextest run --locked -p deadpan-audio -p deadpan-core -p deadpan-plan -E 'test(set_retime_updates_exact_stage_with_inner_repeat_default_owned_plays_and_gaps)' > /tmp/deadpan-inner-repeat-speed-2026-10-20/old-witness.log 2>&1
+printf '%s\n' "$?" > /tmp/deadpan-inner-repeat-speed-2026-10-20/old-witness.exit
