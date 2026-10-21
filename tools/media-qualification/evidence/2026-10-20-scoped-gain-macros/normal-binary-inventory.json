@@ -1,0 +1,15 @@
+{
+  "note": "Executable candidates after normal failure, before targeted native rerun completed. This inventory alone is not an execution claim.",
+  "binaries": [
+    {
+      "path": "target/debug/deps/deadpan_app-fb020fc470505229",
+      "mtime": 1792564094.6924226,
+      "sha256": "909dba655355bbaac76205befbba27619f941fd4f2f1d4a3eb6bc3c275083d75"
+    },
+    {
+      "path": "target/debug/deps/deadpan_app-1665fcaccc742208",
+      "mtime": 1792564127.282814,
+      "sha256": "6c3bfab01bbe4749712cc2cde685b797395984809d6ea9970bb94493ed94c7fa"
+    }
+  ]
+}

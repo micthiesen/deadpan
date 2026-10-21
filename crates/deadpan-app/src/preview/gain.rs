@@ -159,6 +159,12 @@ pub(super) fn whole_beat(target: &Option<Result<Target, String>>) -> bool {
     matches!(target, Some(Ok(target)) if target.scoped.is_none())
 }
 
+/// A whole-owner relative step may resolve one explicitly chosen play at
+/// every Repeat level. Callers must also require no Visual selection.
+pub(super) fn semantic_step_target(target: &Option<Result<Target, String>>) -> bool {
+    matches!(target, Some(Ok(target)) if target.scoped.as_ref().is_none_or(|scope| scope.has_single_play_authority()))
+}
+
 impl DeadpanApp {
     pub(super) fn gain_render_edit(&self) -> Result<Option<super::render::PreviewEdit>, String> {
         let draft = self
@@ -271,8 +277,22 @@ impl DeadpanApp {
         let checked = target
             .unwrap_or_else(|| Err("No beat was captured on command entry.".into()))
             .and_then(|target| {
-                if target.scoped.is_some() {
-                    return Err("Recording changes a whole beat's gain; leave the play scope with :scope all.".into());
+                if let Some(scoped) = &target.scoped {
+                    if !matches!(change, deadpan_core::AudioChange::Step { .. })
+                        || self.edit_selection() != navigation::EditSelection::None
+                        || !scoped.has_single_play_authority()
+                    {
+                        return Err("A one-play macro records a whole beat's relative gain step. Clear Visual selection and choose This play at every Repeat level.".into());
+                    }
+                    self.check_gain_target(&target)?;
+                    let capture = macro_target
+                        .as_ref()
+                        .ok_or("Open the command again to capture its selected play.")?
+                        .as_ref()
+                        .map_err(Clone::clone)?;
+                    if !capture.captures_scope(scoped) {
+                        return Err("The captured gain and macro plays differ. Start the command again; no edit was made.".into());
+                    }
                 }
                 // A range step changes the beat containing the range, which
                 // the planner resolves and checks exactly.
@@ -315,9 +335,13 @@ impl DeadpanApp {
         }
         // A beat (or the Edit range inside it) in the current group changes
         // through the semantic path, so `.` repeats it and a macro records it;
-        // one play inside a Repeat is edited directly.
+        // an explicit This-play step uses that same relative intent.
         let target = self.capture_gain_target();
-        if self.macros.recording() || matches!(&target, Ok(target) if target.scoped.is_none()) {
+        if self.macros.recording()
+            || matches!(&target, Ok(target) if target.scoped.is_none()
+                || (self.edit_selection() == navigation::EditSelection::None
+                    && target.scoped.as_ref().is_some_and(|scope| scope.has_single_play_authority())))
+        {
             let capture = Some(self.capture_macro_target());
             // A range step and a whole-beat step are different edits, so `.`
             // never turns one into the other.

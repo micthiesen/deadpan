@@ -1,0 +1,17 @@
+{
+  "crates/deadpan-core/src/semantic/planner.rs": "34e01debe3bec1eb41d17b9588a6251bae4530b9df00f66a006ecd19681cd55f",
+  "crates/deadpan-core/src/semantic/planner/pause.rs": "ed609a132d3aa1bd202dbf358d084d6f253a759afaf7e3dad84e626b8144e972",
+  "crates/deadpan-core/src/semantic/planner/scoped_gain.rs": "d76f0522802cd972a64a93243d95d4df28da2cae1cc6d9f3eb1d8b44f06e2a03",
+  "crates/deadpan-core/src/semantic/planner/tests/scoped_framing.rs": "218f6ad7864c6ed69dd932cc548bccc11df18fc546feea268b38be0f6db88977",
+  "crates/deadpan-core/src/semantic/planner/tests/scoped_gain.rs": "f2187b9ed374732d370530b3537a40e28efdabf9f6a8d365b8df63670c07ca14",
+  "crates/deadpan-app/src/navigation/registry/entries.rs": "af3bb73d712cbccacec9f88b311df595c4dbfdd012d7971dc0862c5c4e0fa622",
+  "crates/deadpan-app/src/preview.rs": "b9c46c5417679f3f605665768c28bb4f8625815125f999e6812688e860b66104",
+  "crates/deadpan-app/src/preview/gain.rs": "5180572a68fc6fd04dfe2c59723dc2cf030eb0b2f7a8d0ceba0359103f6c5717",
+  "crates/deadpan-app/src/preview/macros.rs": "28529fe6f59d905020e09bcd51dcc3f18015bcc3b38346f3cceacdb01e1cbbe7",
+  "crates/deadpan-app/src/preview/semantic.rs": "731979c71a85689d2b47fbd1af55f3c529401970f4ee274e94471fa563e4fa68",
+  "crates/deadpan-app/src/preview/harness/scoped_plays.rs": "5230b1bdb61eab472a51a52cd3d10d4ff01ee7943a252a8c9a57024b8583b913",
+  "crates/deadpan-app/src/preview/harness/scoped_plays/framing_macros.rs": "f0b956abde601b8c3398898d1f3c9f4f2b0fd7d3dffdbbec11738365e70bb29f",
+  "crates/deadpan-app/src/preview/harness/scoped_plays/gain_macros.rs": "8731b926194153795b720a68708b231a7f25b7b33a5bb3836a1aa900e6fed911",
+  "crates/deadpan-app/src/project/tests/macros/scoped.rs": "5d5aee2fb22b99786616dcfa73240289b6ceb3bf010d8939a8abd480458343c9",
+  "crates/deadpan-app/src/project/tests/macros/scoped/gain.rs": "3870fb2043e377940659ca41824ccc293e4355d781ef9c8095ae693482ee82f5"
+}

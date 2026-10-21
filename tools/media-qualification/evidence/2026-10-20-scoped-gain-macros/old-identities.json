@@ -1,0 +1,13 @@
+{
+  "base": "c111e8bf",
+  "sha256": {
+    "Cargo.lock": "1e39d18ae4de6c7b898edad39eb7104235fb3ffe3af84521ca94df2b6c25b71b",
+    "crates/deadpan-core/src/semantic/planner.rs": "b518578d6b9cea7f4351f6a7ecc34ee3badaf6efc39ba817d0b71e4df6d373c8",
+    "crates/deadpan-core/src/semantic/planner/pause.rs": "7d88d645e4a417f90884852831530c305a78668df4760829f30c832acdaab0fc",
+    "crates/deadpan-core/src/semantic/planner/tests/scoped_framing.rs": "218f6ad7864c6ed69dd932cc548bccc11df18fc546feea268b38be0f6db88977",
+    "crates/deadpan-core/src/semantic/planner/tests/scoped_gain.rs": "65d9791446baddc6057b442fe333506042808be61055ff50dc4808f049625073"
+  },
+  "binary": "target/debug/deps/deadpan_core-b3aaf031552acdd6",
+  "binary_sha256": "c47a3a87d582a5ba987ae27b13856ab41115a91708fea2b6f5152b8471223a25",
+  "selection": "newest executable deadpan_core-* built by sole Cargo owner for the --lib run"
+}

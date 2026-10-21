@@ -2,6 +2,23 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
+## One-play gain macros, 2026-10-20
+
+[Gain macro qualification](qualification/scoped-gain-macros-2026-10-20.md)
+adds relative whole-owner gain steps to recording, named calls and dot with
+explicit This play at every Repeat level. Each instruction reads its staged
+target's current gain, preserves other treatments and timing, and carries actual
+isolation into subsequent instructions. Thirty focused core tests pass. The
+normal selection passes 466 cases plus a corrected no-edit test's targeted
+rerun; all 186 UI-feature tests pass. Strict normal/UI lint passes. One
+output-handle diagnostic has a clean isolated rerun; its cause remains unproven.
+Final release visual/performance replays each pass 671 scoped checks plus
+Kestrel, and both 960×640 gain captures were inspected. The guard-bypass review
+finding, zero-step fixture failures and stale-footer correction remain retained.
+Input-to-state p99 is 1.319 ms; the 93.465 ms picture-completion maximum remains
+recorded. DP-06, DP-09 and DP-24 stay partial; broader occurrence audio changes,
+Visual and mixed/multiple-play macro authority remain open.
+
 ## Exact speed updates around an inner Repeat, 2026-10-20
 
 [Inner-Repeat qualification](qualification/inner-repeat-speed-2026-10-20.md)

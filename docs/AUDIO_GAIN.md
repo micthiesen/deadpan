@@ -34,6 +34,14 @@ later persistence and PCM integration.
 The [authored-gain record](qualification/authored-gain-2026-09-28.md) tracks the
 persisted treatment and PCM increment's review, verification and remaining limits.
 
+Relative whole-owner gain steps also support recording and dot with explicit
+This play at every enclosing Repeat. Each invocation uses the selected play's
+current gain, preserves its other treatments and isolates only that play.
+Counted macros commit once and undo once. No Visual range or other audio-change
+variant is admitted by this scoped semantic path; ordinary All/several-play
+gain controls retain their existing direct behavior. See
+[one-play gain intent](SEMANTIC_MACROS.md#one-play-gain-steps).
+
 ## Recipe and numerical contract
 
 The [equalizer processor](EQUALIZER.md) stores its validated static recipe as an

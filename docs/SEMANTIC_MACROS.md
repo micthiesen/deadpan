@@ -149,7 +149,8 @@ The native receipt retains the mapped inspector. Any scope navigation revokes
 its cursor ownership permanently, including moving away and back in one event
 batch before a delayed receipt arrives.
 
-Zoom, freeze/black InsertPause, SetHoldDuration, SetHoldAudio, SetRoomTone and named Call instructions are
+Zoom, whole-owner SetAudio Step, freeze/black InsertPause, SetHoldDuration,
+SetHoldAudio, SetRoomTone and named Call instructions are
 admitted under one-play authority,
 including every expanded nested call. An unsupported later instruction refuses
 the complete run without history or bank writes. All plays, mixed choices,
@@ -238,6 +239,24 @@ isolation. Unsupported authority, stale targets and late failures refuse the
 whole run without history or register writes. A delayed saved result cannot
 reclaim newer navigation or append to an abandoned recording.
 See the [one-play Hold sound qualification](qualification/scoped-hold-audio-2026-10-20.md).
+
+### One-play gain steps
+
+With This play explicit at every enclosing Repeat and no Visual range, `+`,
+`-` and relative `:gain` steps record `SetAudio { change: Step { millidecibels } }`.
+A successful Apply also supplies dot. The instruction retains only the relative
+amount; each invocation applies it to the newly selected play's current gain.
+Counted runs and named calls use each preceding instruction's staged result.
+
+The planner uses the existing scoped audio-treatment edit and exact isolation
+pools, then carries the actual mapped owner and presentation forward. Gain steps
+preserve other treatments, picture timing, the absolute Edit cursor and ordinary
+enclosing selection. One Undo restores the whole run, including isolation.
+Zero steps allocate nothing; out-of-range gain, stale authority, mismatched
+captures or a later failing instruction leave document, history and registers
+unchanged. All/mixed/several-play nonrecording gain retains its direct workflow.
+Other audio-change variants and Visual ranges cannot supply one-play gain macro
+authority. See the [one-play gain qualification](qualification/scoped-gain-macros-2026-10-20.md).
 
 ### Place slice Apply
 

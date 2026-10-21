@@ -1,0 +1,21 @@
+{
+  "base": "c111e8bf",
+  "reviewers": {
+    "gain_general_review": "No findings. Scoped Step preserves relative intent, explicit authority, matching captures, exact isolation pools, and All/Several direct behavior.",
+    "gain_scope_review": "No findings. Explicit Play at every level, active capture, staged relative application, exact Isolation pools and inverse reviewed.",
+    "gain_verification_review": "No findings. Reviewed nested isolation, pools, cursor/presentation, calls/dot on newly chosen plays, stale/no-op/late failures and Undo/Redo."
+  },
+  "execution": "read-only; no Cargo by reviewers; runtime verification pending",
+  "followup": {
+    "reviewer": "mixed_pause_core",
+    "finding": "Non-Step commands shared the newly admitted GainStep representative gate and GainMute could reach an unrecorded direct commit during scoped recording. Static source finding; no runtime reproduction claimed.",
+    "fix": "Separate Entry::GainStep and explicitly refuse the seven other audio command families during scoped recording after normal action/context checks. Added seven native replay refusal controls.",
+    "independent_recheck": "gain_general_review audited every GainStep representative caller and found no additional bypass; final gate reviewed without findings."
+  },
+  "final_ui": {
+    "root_finding": "First replay capture exposed stale pause/framing-only macro hints and missing gain recording key pair.",
+    "fix": "Updated scoped macro hints and added configured gain keys during recording, with painted-text/footer checks and two 960x640 captures.",
+    "independent_recheck": "gain_general_review found no concrete issue."
+  },
+  "test_fixture_recheck": "gain_verification_review found no success-unwrapping assumption remaining in expected-refusal paths."
+}

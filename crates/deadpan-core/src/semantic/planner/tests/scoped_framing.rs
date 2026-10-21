@@ -15,6 +15,9 @@ mod scoped_hold_duration;
 #[path = "scoped_hold_audio.rs"]
 mod scoped_hold_audio;
 
+#[path = "scoped_gain.rs"]
+mod scoped_gain;
+
 fn repeated(id: &str, child: &str, plays: u32) -> BeatNode {
     let mut result = BeatNode::sequence(id, vec![]);
     result.kind = NodeKind::Repeat {

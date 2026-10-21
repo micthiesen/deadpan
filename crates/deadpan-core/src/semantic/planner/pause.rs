@@ -544,6 +544,9 @@ where
         trace_index: usize,
         change: crate::AudioChange,
     ) -> Result<(), EditError> {
+        if let Some(scoped) = self.context.scoped.clone() {
+            return self.set_scoped_gain(trace_index, change, scoped);
+        }
         let ranged = self.context.visual_selection.is_some();
         let range_step = match change {
             crate::AudioChange::RangeStep { millidecibels } => Some(millidecibels),
@@ -749,8 +752,25 @@ where
         audio: HoldAudio,
         scoped: SemanticScopedContext,
     ) -> Result<(), EditError> {
+        self.set_scoped_value_edit(
+            trace_index,
+            crate::ScopedNodeEdit::SetHoldAudio { audio },
+            scoped,
+            "single-play pause sound",
+        )
+    }
+
+    /// One value-only edit, preserving the absolute cursor and ordinary
+    /// selection while mapping its exact target and presentation through the
+    /// actual isolation transaction.
+    pub(super) fn set_scoped_value_edit(
+        &mut self,
+        trace_index: usize,
+        edit: crate::ScopedNodeEdit,
+        scoped: SemanticScopedContext,
+        action: &str,
+    ) -> Result<(), EditError> {
         framing::validate_scoped_context(&self.current, &self.context)?;
-        let edit = crate::ScopedNodeEdit::SetHoldAudio { audio };
         let requirements = self
             .current
             .scoped_edit_requirements(&scoped.target, &edit)?;
@@ -771,16 +791,16 @@ where
             marks: requirements.marks,
         })?
         else {
-            return Err(invalid(
-                "single-play pause sound requires an Isolation allocation",
-            ));
+            return Err(invalid(&format!(
+                "{action} requires an Isolation allocation"
+            )));
         };
         if identities.nodes.len() != requirements.nodes
             || identities.marks.len() != requirements.marks
         {
-            return Err(invalid(
-                "single-play pause sound requires its exact isolation identity pools",
-            ));
+            return Err(invalid(&format!(
+                "{action} requires its exact isolation identity pools"
+            )));
         }
         self.reserve_revision(&new_revision)?;
         for node in &identities.nodes {
@@ -811,9 +831,9 @@ where
             .target
             .matches_instance(&prepared.document, &mapped.presentation)?
         {
-            return Err(invalid(
-                "single-play pause sound lost its concrete presentation during isolation",
-            ));
+            return Err(invalid(&format!(
+                "{action} lost its concrete presentation during isolation"
+            )));
         }
         self.commit_leaf(leaf)?;
         self.trace[trace_index].resolved_selection = Some(SliceCaptureSelection::Child {

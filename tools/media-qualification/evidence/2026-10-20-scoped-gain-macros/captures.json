@@ -1,0 +1,20 @@
+[
+  {
+    "file": "visual-first-scoped-plays-128.png",
+    "checkpoint": "Relative gain dot retains the selected play and its independent peers",
+    "inspected_by": "root",
+    "result": "Stale pause/framing-only macro hints; corrected in final UI."
+  },
+  {
+    "file": "visual-scoped-plays-128.png",
+    "checkpoint": "One-play gain recording retains visible keys at minimum size",
+    "inspected_by": "root",
+    "result": "960x640: selected play, clocks, gain controls, recording/dot and key hints legible."
+  },
+  {
+    "file": "visual-scoped-plays-129.png",
+    "checkpoint": "Relative gain dot retains the selected play and its independent peers",
+    "inspected_by": "root",
+    "result": "960x640: selected play, clocks, gain controls, recording/dot and key hints legible."
+  }
+]

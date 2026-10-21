@@ -1,0 +1,8 @@
+{
+  "path": "target/debug/deps/deadpan_core-b3aaf031552acdd6",
+  "sha256": "c4316b92710e325fd2a379042bb856ee4a3744d6b6bb7d4bbcb6c88ad93f33d7",
+  "source_manifest": "source-identities.json",
+  "tests": 30,
+  "passed": 30,
+  "skipped": 520
+}

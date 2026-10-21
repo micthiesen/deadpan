@@ -27,6 +27,7 @@ mod framing;
 mod gag_edit;
 mod group;
 mod pause;
+mod scoped_gain;
 pub use pause::copied_moment_audio;
 mod marks;
 mod original;
@@ -742,6 +743,9 @@ where
                 && !matches!(
                     instruction,
                     SemanticInstruction::Zoom { .. }
+                        | SemanticInstruction::SetAudio {
+                            change: crate::AudioChange::Step { .. },
+                        }
                         | SemanticInstruction::InsertPause { .. }
                         | SemanticInstruction::SetHoldDuration { .. }
                         | SemanticInstruction::SetHoldAudio { .. }
@@ -750,7 +754,7 @@ where
                 )
             {
                 return Err(invalid(
-                    "single-play macro authority supports only Zoom, freeze or black pause intent, Hold duration or sound and named calls",
+                    "single-play macro authority supports only Zoom, whole-owner gain steps, freeze or black pause intent, Hold duration or sound and named calls",
                 ));
             }
             if instruction.uses_speech() {

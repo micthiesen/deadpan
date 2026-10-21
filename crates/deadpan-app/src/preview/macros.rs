@@ -572,7 +572,8 @@ impl DeadpanApp {
                         | crate::navigation::FramingAction::Creep
                 ) | Action::Edit(
                     BeatEdit::InsertHold(_) | BeatEdit::InsertBlack(_) | BeatEdit::HoldDuration(_)
-                ) | Action::RepeatLast
+                ) | Action::GainStep(_)
+                    | Action::RepeatLast
                     | Action::MacroExecute { .. }
                     | Action::MacroStop
                     | Action::MacroCancel
@@ -582,7 +583,7 @@ impl DeadpanApp {
                     | Action::OfferInsert
             )
         {
-            self.error = Some("A one-play macro records freeze and black pauses, pause lengths, silence and room tone, zooms, creeps and named calls. Save or cancel recording before another action.".into());
+            self.error = Some("A one-play macro records whole-beat gain steps, freeze and black pauses, pause lengths, silence and room tone, zooms, creeps and named calls. Save or cancel recording before another action.".into());
             return false;
         }
         if self.macros.recording_original()
@@ -803,17 +804,30 @@ impl DeadpanApp {
             Ok(navigation::command::Entry::RoomTone | navigation::command::Entry::HoldSilence) => {
                 self.hold_audio_entry_allowed()
             }
-            // Recorded as one semantic audio-treatment change.
+            // A relative Step alone has one-play semantic admission.
+            Ok(navigation::command::Entry::GainStep(_)) => {
+                self.macro_action_allowed(Action::GainStep(0))
+            }
+            // Other audio commands retain ordinary whole-beat recording,
+            // but cannot bypass the one-play gate through a direct edit.
             Ok(
                 navigation::command::Entry::Gain(Some(_))
-                | navigation::command::Entry::GainStep(_)
                 | navigation::command::Entry::GainMute
                 | navigation::command::Entry::Saturate(_)
                 | navigation::command::Entry::Balance(_)
                 | navigation::command::Entry::Equalizer(_)
                 | navigation::command::Entry::TailSend { .. }
                 | navigation::command::Entry::WetSend { .. },
-            ) => self.macro_action_allowed(Action::GainStep(0)),
+            ) => {
+                if !self.macro_action_allowed(Action::GainStep(0)) {
+                    return false;
+                }
+                if self.macros.recording() && self.scoped.is_some() {
+                    self.error = Some("A one-play macro records relative gain steps only. Save or cancel recording before another audio treatment.".into());
+                    return false;
+                }
+                true
+            }
             // Recorded as one semantic caption, checked like a whole-beat cutaway.
             Ok(navigation::command::Entry::Caption(_)) => self.macro_action_allowed(Action::Edit(
                 BeatEdit::Cutaway(crate::navigation::cutaway::CutawayInput::Place {
@@ -889,7 +903,7 @@ impl DeadpanApp {
                         )
                     } else if self.scoped.is_some() {
                         format!(
-                            "Recording @{name} in this play: freeze/black pauses, pause lengths, zooms, creeps and named calls. {} saves; Esc cancels.",
+                            "Recording @{name} in this play: whole-beat gain steps, freeze/black pauses, pause lengths, zooms, creeps and named calls. {} saves; Esc cancels.",
                             self.editor_key(EditorKey::MacroRecord)
                         )
                     } else {
@@ -1383,10 +1397,13 @@ impl DeadpanApp {
                         | SemanticInstruction::SetHoldDuration { .. }
                         | SemanticInstruction::SetHoldAudio { .. }
                         | SemanticInstruction::SetRoomTone { .. }
+                        | SemanticInstruction::SetAudio {
+                            change: deadpan_core::AudioChange::Step { .. }
+                        }
                         | SemanticInstruction::Call { .. }
                 )
             {
-                return Err("This play supports freeze and black pauses, pause lengths, silence and room tone, Zoom, Creep and named calls only. Return to the parent for other macro edits.".into());
+                return Err("This play supports whole-beat gain steps, freeze and black pauses, pause lengths, silence and room tone, Zoom, Creep and named calls only. Return to the parent for other macro edits.".into());
             }
             if !captured.matches(self)
                 || self

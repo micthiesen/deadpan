@@ -3217,7 +3217,8 @@ impl DeadpanApp {
             Ok(navigation::command::Entry::GainMute) => self.gain_mute(gain_target, macro_target),
             Ok(navigation::command::Entry::GainStep(millidecibels))
                 if self.macros.recording()
-                    || (gain::whole_beat(&gain_target) && self.selected_edit_range().is_none()) =>
+                    || (gain::semantic_step_target(&gain_target)
+                        && self.edit_selection() == navigation::EditSelection::None) =>
             {
                 self.record_audio_change(
                     gain_target,
@@ -3997,6 +3998,7 @@ impl DeadpanApp {
                         self.add_editor_hint(&mut hints, EditorKey::MacroRecord, "save macro");
                         if scoped {
                             self.add_editor_hint(&mut hints, EditorKey::Hold, "pause");
+                            self.add_editor_pair_hint(&mut hints, EditorKey::GainUp, EditorKey::GainDown, " / ", "gain 3 dB");
                             self.add_editor_pair_hint(&mut hints, EditorKey::PunchIn, EditorKey::Creep, " / ", "punch in / creep");
                             if let Some(label) = self.repeat_hint() { self.add_editor_hint(&mut hints, EditorKey::RepeatLast, &label); }
                         } else {
@@ -4039,8 +4041,8 @@ impl DeadpanApp {
                         self.add_editor_hint(&mut hints, EditorKey::Camera, "camera");
                         self.add_editor_pair_hint(&mut hints, EditorKey::PunchIn, EditorKey::Creep, " / ", "punch in / creep");
                         if let Some(label) = self.repeat_hint() { self.add_editor_hint(&mut hints, EditorKey::RepeatLast, &label); }
-                        self.add_editor_hint(&mut hints, EditorKey::MacroRecord, "+ letter: record pause / framing");
-                        self.add_editor_hint(&mut hints, EditorKey::MacroExecute, "+ letter: pause / framing macro");
+                        self.add_editor_hint(&mut hints, EditorKey::MacroRecord, "+ letter: record gain / pause / framing");
+                        self.add_editor_hint(&mut hints, EditorKey::MacroExecute, "+ letter: gain / pause / framing macro");
                         hints.push((":scope".into(), "all / play N / plays 2-3".into()));
                         self.add_editor_hint(&mut hints, EditorKey::Undo, "undo");
                     } else if self.view == View::Sequence {
