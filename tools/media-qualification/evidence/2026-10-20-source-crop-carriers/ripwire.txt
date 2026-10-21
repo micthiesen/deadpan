@@ -1,0 +1,71 @@
+<ctx task="validate_retime_update speed_update.rs SourceAudioMapping::SelectedPlacement bound_at raw_domain selection_frames_with_offset" route=" [routed: name-exact BM25 — query names a symbol (validate_retime_update); anchors: validate_retime_update(/.../speed_update.rs) speed_update.rs(syntax) SourceAudioMapping::SelectedPlacement(syntax) bound_at(/.../audio_bound.rs) +2 more]" bundle="auto" bodies="3"><!-- ripwire lens for "validate_retime_update speed_update.rs SourceAudioMapping::SelectedPlacement bound_at raw_domain selection_frames_with_offset" [doc mentions: 5 docs discussing 3 top-ranked symbols surfaced]: reusable building blocks + quality facts for what you're about to touch (cx=complexity ccx=cognitive in=reuse-count churn=recent-commits amp=change-amplification clone=1(duplicated) tested=1) — prefer composing/reusing these; watch the high-churn/high-amp/cloned ones; bundle=auto: the top-ranked FULL bodies ride inline after the signatures in a bodies section (bodies=N on this root counts them; bodies=0 reason=budget when none fit the remaining budget whole; the signatures-only flag opts out) — read them here instead of opening the files. The bodies element discloses the house way: total=requested, shown=printed, capped=1 when they differ; each body's calls child lists its callee signatures, total= always, shown=/capped= only when that list is cut est_tokens="4811" --><sigs capped="1"><f p="/Users/michael/Code/deadpan/crates/deadpan-core/src/audio_mapping.rs"><d l="137" n="selection_frames_with_offset" id="/Users/michael/Code/deadpan/crates/deadpan-core/src/audio_mapping.rs::SourceAudioMapping::selection_frames_with_offset" cx="2" ccx="1" in="33" churn="5" amp="33" tested="1"><doc>Translate both endpoints by the same exact offset as the source clock</doc>pub fn selection_frames_with_offset( self, beat: FrameDuration, offset: AudioSample, rate: FrameRate, ) -&gt; Result&lt;ExactFrameRange, TimeError&gt;</d></f><f p="/Users/michael/Code/deadpan/crates/deadpan-core/src/insert_time/retimed/speed_update.rs"><d l="149" n="validate_retime_update" id="/Users/michael/Code/deadpan/crates/deadpan-core/src/insert_time/retimed/speed_update.rs::ProjectDocument::validate_retime_update" cx="13" ccx="21" in="10" churn="1" amp="10" tested="1"><doc>Preflight the actual retained reference transfer, including older lattices surviving successive …</doc>pub fn validate_retime_update( &amp;self, node: &amp;NodeId, duration: FrameDuration, requested_pitch: PitchPolicy, ) -&gt; Result&lt;(), EditError&gt;</d></f><f p="/Users/michael/Code/deadpan/crates/deadpan-plan/src/audio_bound.rs"><d l="105" n="bound_at" id="/Users/michael/Code/deadpan/crates/deadpan-plan/src/audio_bound.rs::RenderPlan::bound_at" cx="15" ccx="14" in="3" churn="6" amp="24" tested="1">pub(super) fn bound_at( &amp;self, node: usize, repeats: &amp;[RepeatInstance], definition: Option&lt;&amp;AudioDefinitionSelector&gt;, placement: BoundPlacement&lt;&apos;_&gt;, budget: &amp;mu…</d><d l="383" n="raw_domain" id="/Users/michael/Code/deadpan/crates/deadpan-plan/src/audio_bound.rs::AudioBound::raw_domain" cx="4" ccx="2" in="17" churn="6" amp="38" tested="1">pub fn raw_domain(&amp;self) -&gt; Result&lt;AudioBoundDomain&lt;&apos;plan&gt;, PlanError&gt;</d></f><f p="/Users/michael/Code/deadpan/docs/qualification/clocked-speed-update-2026-10-20.md"><d l="40" n="Ownership and admission" id="/Users/michael/Code/deadpan/docs/qualification/clocked-speed-update-2026-10-20.md::Speed changes after exact pauses, 2026-10-20::Ownership and admission" cx="0" ccx="0" in="0" churn="1">## Ownership and admission</d></f><f p="/Users/michael/Code/deadpan/docs/qualification/fixed-retime-hold-clocks-2026-10-20.md"><d l="65" n="Oracle failures retained" id="/Users/michael/Code/deadpan/docs/qualification/fixed-retime-hold-clocks-2026-10-20.md::Hold sound clocks inside fixed Retime windows, 2026-10-20::Oracle failures retained" cx="0" ccx="0" in="0" churn="1" amp="21">## Oracle failures retained</d></f><f p="/Users/michael/Code/deadpan/tools/media-qualification/evidence/2026-10-01-source-trim/design-audio-review.md"><d l="14" n="Why the binding path fits" id="/Users/michael/Code/deadpan/tools/media-qualification/evidence/2026-10-01-source-trim/design-audio-review.md::Ripple edge Trim: audio review::Why the binding path fits" cx="0" ccx="0" in="0" churn="1">## Why the binding path fits</d></f><f p="/Users/michael/Code/deadpan/tools/media-qualification/evidence/2026-10-01-source-trim/next-overwrite-design.md"><d l="165" n="Audio clocks, sounds and marks" id="/Users/michael/Code/deadpan/tools/media-qualification/evidence/2026-10-01-source-trim/next-overwrite-design.md::Overwrite Source edge Trim: proposed next contract::Audio clocks, sounds and marks" cx="0" ccx="0" in="0" churn="1">## Audio clocks, sounds and marks</d></f><f p="/Users/michael/Code/deadpan/tools/media-qualification/evidence/2026-10-20-fixed-retime-hold-clocks/oracle-audit.md"><d l="35" n="Retained discrete allocation endpoints (second focused run)" id="/Users/michael/Code/deadpan/tools/media-qualification/evidence/2026-10-20-fixed-retime-hold-clocks/oracle-audit.md::Fixed Retime finite-source oracle audit::Retained discrete allocation endpoints (second focused run)" cx="0" ccx="0" in="0" churn="1" amp="21">## Retained discrete allocation endpoints (second focused run)</d></f><f p="/Users/michael/Code/deadpan/.cargo/config.toml"><d l="1" n="env" cx="0" ccx="0" in="0" churn="2" amp="27">[env] MACOSX_DEPLOYMENT_TARGET = &quot;15.0&quot;</d><d l="2" n="MACOSX_DEPLOYMENT_TARGET" cx="0" ccx="0" in="0" churn="2" amp="27">MACOSX_DEPLOYMENT_TARGET = &quot;15.0&quot;</d><d l="4" n="alias" cx="0" ccx="0" in="0" churn="2" amp="27">[alias] xtask = &quot;run --locked --package xtask --&quot; doctor = &quot;run --locked --package deadpan-cli -- doctor&quot;</d><d l="5" n="xtask" cx="0" ccx="0" in="0" churn="2" amp="27">xtask = &quot;run --locked --package xtask --&quot;</d><d l="6" n="doctor" cx="0" ccx="0" in="0" churn="2" amp="27">doctor = &quot;run --locked --package deadpan-cli -- doctor&quot;</d></f><f p="/Users/michael/Code/deadpan/.config/nextest.toml"><d l="3" n="profile.default" cx="0" ccx="0" in="0" churn="3" amp="16">[profile.default] slow-timeout =</d><d l="4" n="slow-timeout" cx="0" ccx="0" in="0" churn="3" amp="16">slow-timeout =</d><d l="9" n="test-groups" cx="0" ccx="0" in="0" churn="3" amp="16">[test-groups] disk-images =</d><d l="10" n="disk-images" cx="0" ccx="0" in="0" churn="3" amp="16">disk-images =</d><d l="12" n="profile.default.overrides" cx="0" ccx="0" in="0" churn="3" amp="16">[[profile.default.overrides]] filter = &quot;&quot;&quot; binary(storage_failures) | binary(storage_failures_media) | binary(proxy_disk_full) | binary(model_pack_import_disk_full) | test(=packs::disk_full_tests::a_volume_that_fills_during_a_download_fails</d><d l="13" n="filter" cx="0" ccx="0" in="0" churn="3" amp="16">filter = &quot;&quot;&quot; binary(storage_failures) | binary(storage_failures_media) | binary(proxy_disk_full) | binary(model_pack_import_disk_full) | test(=packs::disk_full_tests::a_volume_that_fills_during_a_download_fails_truthfully_and_resumes) | tes</d><d l="20" n="test-group" cx="0" ccx="0" in="0" churn="3" amp="16">test-group = &quot;disk-images&quot;</d></f><f p="/Users/michael/Code/deadpan/.github/workflows/ci.yml"><d l="1" n="name" cx="0" ccx="0" in="0" churn="11" amp="47">name: Rust</d><d l="3" n="on" cx="0" ccx="0" in="0" churn="11" amp="47">on: push: branches: [main] pull_request:</d><d l="4" n="push" cx="0" ccx="0" in="0" churn="11" amp="47">push: branches: [main]</d><d l="6" n="pull_request" cx="0" ccx="0" in="0" churn="11" amp="47">pull_request:</d><d l="8" n="permissions" cx="0" ccx="0" in="0" churn="11" amp="47">permissions: contents: read</d><d l="9" n="contents" cx="0" ccx="0" in="0" churn="11" amp="47">contents: read</d><d l="11" n="concurrency" cx="0" ccx="0" in="0" churn="11" amp="47">concurrency: group: rust-$</d></f></sigs><bodies shown="3" total="6" capped="1"><b t="method" l="137" p="/Users/michael/Code/deadpan/crates/deadpan-core/src/audio_mapping.rs" n="selection_frames_with_offset"><![CDATA[pub fn selection_frames_with_offset(
+        self,
+        beat: FrameDuration,
+        offset: AudioSample,
+        rate: FrameRate,
+    ) -> Result<ExactFrameRange, TimeError> {
+        let selection = self.selection_frames(beat)?;
+        let shift = offset_frames(offset, rate)?;
+        if let Self::SelectedPlacement { start, frames, .. } = self {
+            // Unlike legacy placement, this new vocabulary also closes its
+            // offset-shifted signed frame endpoints before plan construction.
+            validate_placement(start.checked_add(shift)?, frames)?;
+        }
+        Ok(ExactFrameRange {
+            start: selection.start.checked_add(shift)?,
+            end: selection.end.checked_add(shift)?,
+        })
+    }]]><calls total="5"><c n="selection_frames" l="125">pub fn selection_frames(self, beat: FrameDuration) -&gt; Result&lt;ExactFrameRange, TimeError&gt;</c><c n="offset_frames" l="167">fn offset_frames(offset: AudioSample, rate: FrameRate) -&gt; Result&lt;ExactRatio, TimeError&gt;</c><c n="checked_add" l="91">pub fn checked_add(self, other: Self) -&gt; Result&lt;Self, TimeError&gt;</c><c n="validate_placement" l="30">pub(crate) fn validate_placement(start: ExactRatio, frames: ExactRatio) -&gt; Result&lt;(), TimeError&gt;</c><c n="checked_add" l="49">pub fn checked_add(self, other: Self) -&gt; Result&lt;Self, TimeError&gt;</c></calls></b><!-- body omitted (over budget): validate_retime_update --><!-- body omitted (over budget): bound_at --><b t="method" l="383" p="/Users/michael/Code/deadpan/crates/deadpan-plan/src/audio_bound.rs" n="raw_domain"><![CDATA[pub fn raw_domain(&self) -> Result<AudioBoundDomain<'plan>, PlanError> {
+        let lattice = &self.resolved.lattice;
+        let support = self.support.clone();
+        if !support
+            .end
+            .checked_sub(support.start)?
+            .compare_integer(0)
+            .is_gt()
+        {
+            return Ok(AudioBoundDomain::Empty);
+        }
+        let definition = self.definition_handle();
+        let placement =
+            AudioRootPlacement::new(lattice.origin, lattice.frames_per_local_frame, support)?;
+        Ok(match lattice.grid_rule {
+            AudioBindingGridRule::RootRoundEven => {
+                let mut domain = definition.in_root_clock(placement)?;
+                self.set_domain_evaluation(&mut domain);
+                AudioBoundDomain::Root(domain)
+            }
+            AudioBindingGridRule::PointCeil => {
+                let mut domain = definition.in_point_clock(placement, lattice.grid_origin)?;
+                domain.set_evaluation(
+                    self.definition.clone(),
+                    self.instance.repeats.clone(),
+                    Some(self.binding_target()),
+                );
+                AudioBoundDomain::Point(domain)
+            }
+        })
+    }]]><calls total="10"><c n="checked_sub" l="112">pub fn checked_sub(self, other: Self) -&gt; Result&lt;Self, TimeError&gt;</c><c n="compare_integer" l="146">pub fn compare_integer(self, value: i64) -&gt; std::cmp::Ordering</c><c n="definition_handle" l="347">fn definition_handle(&amp;self) -&gt; AudioDefinition&lt;&apos;plan&gt;</c><c n="binding_target" l="364">fn binding_target(&amp;self) -&gt; BindingTarget</c><c n="set_domain_evaluation" l="372">fn set_domain_evaluation(&amp;self, domain: &amp;mut AudioDomain&lt;&apos;plan&gt;)</c><c n="in_root_clock" l="132">pub fn in_root_clock( &amp;self, placement: AudioRootPlacement, ) -&gt; Result&lt;AudioDomain&lt;&apos;plan&gt;, PlanError&gt;</c><c n="in_point_clock" l="142">pub fn in_point_clock( &amp;self, placement: AudioRootPlacement, grid_origin: ExactRatio, ) -&gt; Result&lt;super::AudioPointDomain&lt;&apos;plan&gt;, PlanError&gt;</c><c n="new" l="50">pub fn new( origin: ExactRatio, root_frames_per_local_frame: ExactRatio, local_support: Range&lt;ExactRatio&gt;, ) -&gt; Result&lt;Self, PlanError&gt;</c><c n="set_evaluation" l="31">pub(super) fn set_evaluation( &amp;mut self, definition: Option&lt;AudioDefinitionSelector&gt;, repeats: Vec&lt;deadpan_core::RepeatInstance&gt;, bypass_binding: Option&lt;super::audio_bound::BindingTarget&gt;, )</c><c n="set_evaluation" l="678">pub(super) fn set_evaluation( &amp;mut self, definition: Option&lt;AudioDefinitionSelector&gt;, repeats: Vec&lt;RepeatInstance&gt;, bypass_binding: Option&lt;BindingTarget&gt;, )</c></calls></b><b t="sec" l="40" p="/Users/michael/Code/deadpan/docs/qualification/clocked-speed-update-2026-10-20.md" n="Ownership and admission"><![CDATA[## Ownership and admission
+
+The shared pure queries `retime_update_input` and `validate_retime_update`
+serve the native preview, inspector, semantic planner and command reducer.
+Identical raw parameters admit before changed-edit eligibility checks. Changed
+families require an integral own output extent, FollowSpeed on the updated
+stage and ordinary Sequence ancestors; inner Repeats and processing stages refuse.
+Unrelated ordinary stages keep their existing update path.
+
+Existing interior bindings stay byte-identical. Missing interior carriers
+capture their pre-edit visible entries. Moved outside owners receive their
+own pre-edit entry capture, including existing historical resumes; inert
+movement steps may be elided. The reducer updates the recipe and exact extent
+coherently, reconciles exact lineage and validates the resulting document.
+It does not pass an incoherent covering recipe through ordinary reconciliation
+or discard bindings to make an update succeed.
+
+Preflight checks the physical transfer against the actual retained lattice,
+including its older local frames per sample. Successive changes cannot reset
+this bound to the most recent output duration. The supported inclusive range
+is `1/64..64`; carriers with no allocated new output samples consume no
+transfer. No schema, DSP, primitive or keybinding changes are needed.
+
+]]></b><!-- body omitted (over budget): Oracle failures retained --></bodies></ctx>

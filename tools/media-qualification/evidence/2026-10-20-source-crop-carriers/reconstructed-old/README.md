@@ -1,0 +1,1 @@
+Reconstructed by reversing the support-boundary patches and restoring original leading comments. SHA-256 is verified against the pre-execution core-natural-old-identities.txt and pcm-natural-old-identities.txt. Production source is base d0f675a5. These files are the executed natural-rate old-code test sources; early proposed patches used superseded fixtures.

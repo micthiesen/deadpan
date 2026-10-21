@@ -247,11 +247,37 @@ impl ProjectDocument {
                 .checked_sub(work)
                 .filter(|left| *left > 0)
                 .ok_or_else(|| super::super::limit("exact speed update transfer work"))?;
-            let (raw, support) =
+            let (raw, mut support) =
                 frozen.project_scoped_with_support(frozen.root(), &path, None, maximum)?;
             work = work
                 .checked_add(raw.work)
                 .ok_or_else(|| super::super::limit("exact speed update transfer work"))?;
+            // Selected Source audio narrows the raw operand before transfer,
+            // just as AudioBound::raw_domain does. Its offset is already part
+            // of these physical-local endpoints; retained resumes add no shift.
+            if let NodeKind::Source { source } = &self.nodes()[&owner].kind
+                && source.audio.is_some()
+                && matches!(
+                    source.audio_mapping,
+                    crate::SourceAudioMapping::SelectedPlacement { .. }
+                )
+            {
+                let selected = source
+                    .audio_mapping
+                    .selection_frames_with_offset(source.duration, source.audio_offset, rate)
+                    .map_err(DocumentError::from)?;
+                let clipped = crate::source_edit::intersect(
+                    crate::ExactFrameRange {
+                        start: support.start,
+                        end: support.end,
+                    },
+                    selected,
+                );
+                if clipped.end.compare(clipped.start).is_le() {
+                    continue;
+                }
+                support = clipped.start..clipped.end;
+            }
             let historical_unit = if self.audio_bindings().bindings().contains_key(&owner) {
                 let maximum = MAX_DOCUMENT_NODES
                     .checked_sub(work)

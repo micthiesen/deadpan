@@ -106,6 +106,11 @@ retained-domain transfer; multiplying the coordinate slopes does not replace
 these two filtering stages. Admission checks the actual historical lattice's
 transfer against the inclusive `1/64..64` range, including successive changes.
 An unused carrier with no allocated output samples imposes no transfer bound.
+For SelectedPlacement audio, an empty historical domain is tested after
+intersecting the selected crop with current meaningful Source support. Direct
+silent Holds return suppressed zeros without resampling a hidden carrier;
+nonempty Source and RoomTone domains keep the transfer bound. See the
+[crop-carrier qualification](qualification/source-crop-carriers-2026-10-20.md).
 
 This path requires an integral stage output extent and tape pitch on the
 updated stage. Inner Repeats, processing stages, and non-Sequence ancestors

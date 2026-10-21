@@ -1,0 +1,14 @@
+from pathlib import Path
+import hashlib
+import json
+import re
+import shutil
+
+root = Path('/Users/michael/Code/deadpan')
+scratch = Path('/tmp/deadpan-source-crop-carriers-2026-10-20')
+test = re.search(r'target/release/deps/preview_export-[0-9a-f]+',
+                 (scratch / 'export.log').read_text()).group()
+paths = ['target/release/deadpan-cli', test]
+record = {name: hashlib.sha256((root / name).read_bytes()).hexdigest() for name in paths}
+(scratch / 'export-binaries.json').write_text(json.dumps(record, indent=2) + '\n')
+shutil.copy2(root / 'target/release/deadpan-cli', scratch / 'export-cli')

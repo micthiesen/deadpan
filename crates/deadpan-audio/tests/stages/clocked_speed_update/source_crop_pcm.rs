@@ -1,0 +1,795 @@
+//! Empty selected Source carriers bypass transfer without reading source PCM.
+use super::*;
+use deadpan_plan::{AudioBoundDomain, AudioSignalContent};
+
+fn crop_fixture(end: ExactRatio, offset: i64, fresh: bool) -> ProjectDocument {
+    crop_fixture_at(ratio(99, 200), ratio(1, 2), end, offset, fresh)
+}
+
+fn crop_fixture_at(
+    mapping_start: ExactRatio,
+    crop_start: ExactRatio,
+    crop_end: ExactRatio,
+    offset: i64,
+    fresh: bool,
+) -> ProjectDocument {
+    let rate = FrameRate::new(30_000, 1001).unwrap();
+    let mut stage = retime("crop-input", 2000, 0..100_001, PitchPolicy::FollowSpeed);
+    if let NodeKind::Retime { purpose, .. } = &mut stage.kind {
+        *purpose = RetimePurpose::Edit;
+    }
+    let mut selected = source(rate, 1, 0..1);
+    let NodeKind::Source {
+        source: selected_source,
+    } = &mut selected.kind
+    else {
+        unreachable!()
+    };
+    let span = SourceSpan::new(
+        SourceTimestamp {
+            ticks: 3100,
+            time_base: SourceTimeBase::new(1, 44_100).unwrap(),
+        },
+        SourceTimestamp {
+            ticks: 3260,
+            time_base: SourceTimeBase::new(1, 44_100).unwrap(),
+        },
+    )
+    .unwrap();
+    let shift = ratio(5, 8008).checked_mul(ratio(offset.into(), 1)).unwrap();
+    selected_source.audio = Some(SourceAudio {
+        asset: AssetId::new("media").unwrap(),
+        span,
+    });
+    selected_source.audio_mapping = SourceAudioMapping::SelectedPlacement {
+        start: mapping_start.checked_sub(shift).unwrap(),
+        frames: SourceAudioMapping::natural_rate(span, rate)
+            .unwrap()
+            .duration_frames(duration(1))
+            .unwrap(),
+        selection: ExactFrameRange::new(
+            crop_start.checked_sub(shift).unwrap(),
+            crop_end.checked_sub(shift).unwrap(),
+        )
+        .unwrap(),
+    };
+    selected_source.audio_offset = AudioSample(offset);
+    let initial = document_with_asset(
+        rate,
+        &["a", "slow", "b"],
+        [
+            ("a", hold(2)),
+            ("slow", stage),
+            (
+                "crop-input",
+                BeatNode::sequence("Input", vec![id("selected"), id("crop-silence")]),
+            ),
+            ("selected", selected),
+            ("crop-silence", hold(100_000)),
+            ("b", hold(2)),
+        ],
+        BTreeMap::new(),
+        span,
+    );
+    let NodeKind::Source { source } = &initial.nodes()[&id("selected")].kind else {
+        unreachable!()
+    };
+    assert_eq!(
+        source
+            .audio_mapping
+            .selection_frames_with_offset(source.duration, source.audio_offset, rate)
+            .unwrap(),
+        ExactFrameRange::new(crop_start, crop_end).unwrap()
+    );
+    let captured = insert_pause(&initial, 0, 1, "crop-capture");
+    assert!(
+        captured
+            .audio_bindings()
+            .bindings()
+            .contains_key(&id("selected"))
+    );
+    let clocked = insert_pause(&captured, 4, 3, "crop-exact");
+    assert_eq!(clocked.derived_clocks()[&id("slow")].extent, ratio(2003, 1));
+    if !fresh {
+        return clocked;
+    }
+
+    let mut wire = serde_json::to_value(clocked).unwrap();
+    wire["audio_bindings"]["bindings"]
+        .as_object_mut()
+        .unwrap()
+        .remove("selected")
+        .expect("public history captured the selected Source");
+    prune_unreferenced_fixture_timings(&mut wire);
+    ProjectDocument::from_json(&wire.to_string()).unwrap()
+}
+
+fn prune_unreferenced_fixture_timings(wire: &mut serde_json::Value) {
+    fn references(value: &serde_json::Value, used: &mut BTreeSet<AudioTimingId>) {
+        match value {
+            serde_json::Value::Object(fields) => {
+                for (key, value) in fields {
+                    if key == "timing" {
+                        used.insert(serde_json::from_value(value.clone()).unwrap());
+                    } else {
+                        references(value, used);
+                    }
+                }
+            }
+            serde_json::Value::Array(values) => {
+                for value in values {
+                    references(value, used);
+                }
+            }
+            _ => {}
+        }
+    }
+    let state = wire["audio_bindings"].as_object_mut().unwrap();
+    let mut used = BTreeSet::new();
+    for (key, value) in state.iter() {
+        if key != "timings" {
+            references(value, &mut used);
+        }
+    }
+    state
+        .get_mut("timings")
+        .unwrap()
+        .as_array_mut()
+        .unwrap()
+        .retain(|record| {
+            used.contains(&serde_json::from_value::<AudioTimingId>(record["id"].clone()).unwrap())
+        });
+}
+
+fn install_fresh_capture(before: &ProjectDocument) -> ProjectDocument {
+    let captured = capture_unbound_audio_bindings(
+        before,
+        AudioTimingId {
+            allocation: RevisionId::new("crop-fresh-probe").unwrap(),
+            ordinal: 0,
+        },
+    )
+    .unwrap();
+    assert!(captured.bindings().contains_key(&id("selected")));
+    let mut wire = serde_json::to_value(before).unwrap();
+    wire["audio_bindings"] = serde_json::to_value(captured).unwrap();
+    ProjectDocument::from_json(&wire.to_string()).unwrap()
+}
+
+fn test_only_candidate(before: &ProjectDocument, output: i64, fresh: bool) -> ProjectDocument {
+    let before = if fresh {
+        install_fresh_capture(before)
+    } else {
+        before.clone()
+    };
+    let mut wire = serde_json::to_value(&before).unwrap();
+    wire["nodes"]["slow"]["kind"]["duration"] = serde_json::to_value(duration(output)).unwrap();
+    wire["derived_clocks"]["slow"]["extent"] =
+        serde_json::to_value(ratio(output.into(), 1)).unwrap();
+    let candidate = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    candidate.validate().unwrap();
+    candidate
+}
+
+fn apply_public_speed_update(
+    before: &ProjectDocument,
+    output: i64,
+    revision: &str,
+) -> ProjectDocument {
+    let request = CommandRequest {
+        project_id: before.project_id().clone(),
+        expected_revision: before.revision_id().clone(),
+        new_revision: RevisionId::new(revision).unwrap(),
+        command: Command::SetRetime {
+            node: id("slow"),
+            duration: duration(output),
+            pitch: PitchPolicy::FollowSpeed,
+        },
+    };
+    let transaction = apply(before, &request).unwrap();
+    let after = transaction.forward.apply(before).unwrap();
+    assert_eq!(transaction.inverse.apply(&after).unwrap(), *before);
+    after
+}
+
+#[track_caller]
+fn read_bounded(
+    document: &ProjectDocument,
+    provider: &mut FixtureProvider,
+    start: i64,
+    frames: i64,
+    pieces: &[u32],
+) -> Recorded {
+    provider.revisions.insert(document.revision_id().clone());
+    let mut renderer = StageAudio::new(Arc::new(RenderPlan::compile(document).unwrap()));
+    let mut result = Recorded {
+        samples: Vec::with_capacity(frames as usize),
+        suppressed: vec![false; frames as usize],
+    };
+    for requested in pieces.iter().copied().cycle() {
+        if result.samples.len() == frames as usize {
+            break;
+        }
+        let offset = result.samples.len();
+        let count = requested.min((frames as usize - offset) as u32);
+        let at = start + offset as i64;
+        let block = renderer
+            .read(
+                provider,
+                AudioSample(at),
+                count,
+                TIMEOUT,
+                &AtomicBool::new(false),
+            )
+            .unwrap_or_else(|error| {
+                panic!(
+                    "PCM window {start}..{} chunk {at}+{count}, revision {:?}: {error:?}",
+                    start + frames,
+                    document.revision_id()
+                )
+            });
+        for sample in at..at + i64::from(count) {
+            result.suppressed[(sample - start) as usize] = block
+                .suppressed
+                .iter()
+                .any(|range| range.contains(&AudioSample(sample)));
+        }
+        result.samples.extend(block.samples);
+    }
+    assert_eq!(result.samples.len(), frames as usize);
+    result
+}
+
+fn verify_renderer_crop(before: &ProjectDocument, end: ExactRatio, fresh: bool, offset: i64) {
+    let candidate = test_only_candidate(before, 1_000_000, fresh);
+    let path = InstancePath {
+        node: id("selected"),
+        repeats: vec![],
+    };
+    let NodeKind::Source { source } = &candidate.nodes()[&id("selected")].kind else {
+        unreachable!()
+    };
+    let crop = source
+        .audio_mapping
+        .selection_frames_with_offset(
+            source.duration,
+            source.audio_offset,
+            candidate.presentation_basis().frame_rate,
+        )
+        .unwrap();
+    assert_eq!(crop, ExactFrameRange::new(ratio(1, 2), end).unwrap());
+    let binding = candidate
+        .audio_bindings()
+        .resolve_in(
+            &id("selected"),
+            AudioBindingEnvironment::Occurrence(&path),
+            MAX_DOCUMENT_NODES,
+        )
+        .unwrap();
+    let complete_old = binding.lattice.sample_boundary(ExactRatio::ZERO).unwrap()
+        ..binding.lattice.sample_boundary(ExactRatio::ONE).unwrap();
+    assert_eq!(
+        complete_old,
+        if fresh { 4_805..4_837 } else { 3_203..3_235 }
+    );
+    assert!(
+        !complete_old.is_empty(),
+        "the complete old Source carrier is nonempty"
+    );
+    assert_eq!(
+        binding.lattice.sample_boundary(crop.start).unwrap()
+            ..binding.lattice.sample_boundary(crop.end).unwrap(),
+        if fresh { 4_821..4_821 } else { 3_219..3_219 }
+    );
+    let plan = RenderPlan::compile(&candidate).unwrap();
+    let query = plan
+        .audio_processing(AudioSample(12_801)..AudioSample(12_802), Default::default())
+        .unwrap();
+    assert_eq!(query.spans.len(), 1);
+    assert_eq!(
+        query.spans[0].allocated_samples,
+        AudioSample(4_805)..AudioSample(20_797)
+    );
+    let AudioSignalContent::Bound(bound) = &query.spans[0].content else {
+        panic!("SelectedPlacement must retain the Source's physical domain")
+    };
+    let AudioBoundDomain::Root(domain) = bound.raw_domain().unwrap() else {
+        panic!("fixture uses the root round-even carrier")
+    };
+    let expected_old = if fresh { 4_821 } else { 3_219 };
+    let selected_end = if end == ratio(501, 1000) {
+        expected_old
+    } else if fresh {
+        4_824
+    } else {
+        3_222
+    };
+    assert_eq!(
+        domain.root_samples(),
+        AudioSample(expected_old)..AudioSample(selected_end)
+    );
+
+    let (_, mut provider) = mono_original(2);
+    provider.cancel_on_call = true;
+    let direct = read_bounded(&candidate, &mut provider, 12_801, 16, &[16]);
+    let direct_chunked = read_bounded(&candidate, &mut provider, 12_801, 16, &[1, 3, 12]);
+    assert_eq!(
+        direct_chunked, direct,
+        "request partition must not change PCM or masks"
+    );
+    let enclosing = read_bounded(&candidate, &mut provider, 12_792, 36, &[36]);
+    let enclosing_chunked = read_bounded(&candidate, &mut provider, 12_792, 36, &[5, 1, 13]);
+    assert_eq!(
+        enclosing_chunked, enclosing,
+        "enclosing read must be partition invariant"
+    );
+    for read in [&direct, &enclosing] {
+        assert!(
+            read.samples.iter().all(|sample| *sample == [0.; 2]),
+            "offset {offset}, fresh {fresh}: empty selected carrier must be digital zero"
+        );
+        let selected = if read.samples.len() == 16 {
+            0..16
+        } else {
+            9..25
+        };
+        assert!(
+            read.suppressed[selected].iter().all(|value| *value),
+            "offset {offset}, fresh {fresh}: every newly allocated selected sample is suppressed"
+        );
+    }
+    assert_eq!(
+        provider.calls, 0,
+        "empty selected raw domain resolves no source"
+    );
+
+    // The real public update must produce the same bounded result after core
+    // admission is changed. It also captures the current clock for fresh owners.
+    let updated = apply_public_speed_update(before, 1_000_000, "selected-empty-crop-speed");
+    assert_eq!(
+        updated.nodes()[&id("selected")],
+        before.nodes()[&id("selected")]
+    );
+    let selected_binding = updated.audio_bindings().bindings().get(&id("selected"));
+    assert!(selected_binding.is_some());
+    let (_, mut updated_provider) = mono_original(2);
+    updated_provider.cancel_on_call = true;
+    assert_eq!(
+        read_bounded(&updated, &mut updated_provider, 12_801, 16, &[1, 3, 12]),
+        direct
+    );
+    assert_eq!(
+        read_bounded(&updated, &mut updated_provider, 12_792, 36, &[5, 1, 13]),
+        enclosing
+    );
+    assert_eq!(updated_provider.calls, 0);
+}
+
+#[test]
+fn selected_source_crop_only_empty_old_carriers_render_suppressed_zeros() {
+    for fresh in [false, true] {
+        for offset in [1, -1] {
+            let before = crop_fixture(ratio(501, 1000), offset, fresh);
+            verify_renderer_crop(&before, ratio(501, 1000), fresh, offset);
+        }
+    }
+}
+
+#[test]
+fn selected_source_nonempty_neighbor_crop_keeps_transfer_refusal() {
+    for fresh in [false, true] {
+        for offset in [1, -1] {
+            let before = crop_fixture(ratio(3, 5), offset, fresh);
+            let candidate = test_only_candidate(&before, 1_000_000, fresh);
+            let plan = Arc::new(RenderPlan::compile(&candidate).unwrap());
+            let query = plan
+                .audio_processing(AudioSample(12_801)..AudioSample(12_802), Default::default())
+                .unwrap();
+            assert_eq!(query.spans.len(), 1);
+            let AudioSignalContent::Bound(bound) = &query.spans[0].content else {
+                panic!("neighbor must retain the physical Source")
+            };
+            let AudioBoundDomain::Root(domain) = bound.raw_domain().unwrap() else {
+                panic!("fixture uses root round-even")
+            };
+            assert_eq!(
+                domain.root_samples(),
+                if fresh {
+                    AudioSample(4_821)..AudioSample(4_824)
+                } else {
+                    AudioSample(3_219)..AudioSample(3_222)
+                }
+            );
+            let (_, mut provider) = mono_original(2);
+            provider.cancel_on_call = true;
+            let error = StageAudio::new(plan)
+                .read(
+                    &mut provider,
+                    AudioSample(12_801),
+                    1,
+                    TIMEOUT,
+                    &AtomicBool::new(false),
+                )
+                .expect_err("nonempty selected carrier still reaches transfer-rate refusal");
+            assert!(
+                error.to_string().contains("source step outside 1/64..64"),
+                "{error:?}"
+            );
+            assert_eq!(
+                provider.calls, 0,
+                "transfer admission precedes source reads"
+            );
+
+            let snapshot = before.to_json().unwrap();
+            let request = CommandRequest {
+                project_id: before.project_id().clone(),
+                expected_revision: before.revision_id().clone(),
+                new_revision: RevisionId::new("selected-nonempty-crop-refused").unwrap(),
+                command: Command::SetRetime {
+                    node: id("slow"),
+                    duration: duration(1_000_000),
+                    pitch: PitchPolicy::FollowSpeed,
+                },
+            };
+            let query_error = before
+                .validate_retime_update(&id("slow"), duration(1_000_000), PitchPolicy::FollowSpeed)
+                .unwrap_err();
+            assert!(query_error.message.contains("retained audio transfer"));
+            let edit_error = apply(&before, &request).unwrap_err();
+            assert!(edit_error.message.contains("retained audio transfer"));
+            assert_eq!(before.to_json().unwrap(), snapshot);
+        }
+    }
+}
+
+#[test]
+fn retained_room_tone_hold_keeps_transfer_refusal() {
+    let silent = crop_fixture(ratio(501, 1000), 1, false);
+    let edit = apply(
+        &silent,
+        &CommandRequest {
+            project_id: silent.project_id().clone(),
+            expected_revision: silent.revision_id().clone(),
+            new_revision: RevisionId::new("crop-room-tone").unwrap(),
+            command: Command::SetHoldAudio {
+                node: id("crop-silence"),
+                audio: HoldAudio::RoomTone {
+                    source: audio_at_rate(3100, 3260, 44_100),
+                },
+            },
+        },
+    )
+    .unwrap();
+    let before = edit.forward.apply(&silent).unwrap();
+    let candidate = test_only_candidate(&before, 1_000_000, false);
+    let plan = Arc::new(RenderPlan::compile(&candidate).unwrap());
+    let query = plan
+        .audio_processing(AudioSample(20_800)..AudioSample(20_801), Default::default())
+        .unwrap();
+    assert_eq!(query.spans.len(), 1);
+    assert_eq!(query.spans[0].instance.node, id("crop-silence"));
+    let AudioSignalContent::Bound(bound) = &query.spans[0].content else {
+        panic!("room-tone Hold retains its physical binding")
+    };
+    assert!(!bound.is_silent_hold());
+    assert_eq!(
+        bound.reference_samples_per_output_sample(),
+        ratio(2003, 1_000_000)
+    );
+    let AudioBoundDomain::Root(domain) = bound.raw_domain().unwrap() else {
+        panic!("room-tone Hold has a retained root carrier")
+    };
+    assert!(!domain.root_samples().is_empty());
+    let mut provider = mono_original(2).1;
+    provider.revisions.insert(candidate.revision_id().clone());
+    provider.cancel_on_call = true;
+    let error = StageAudio::new(plan)
+        .read(
+            &mut provider,
+            AudioSample(20_800),
+            1,
+            TIMEOUT,
+            &AtomicBool::new(false),
+        )
+        .expect_err("nonempty RoomTone still needs a valid transfer rate");
+    assert!(
+        error.to_string().contains("source step outside 1/64..64"),
+        "{error:?}"
+    );
+    assert_eq!(provider.calls, 0);
+    let snapshot = before.to_json().unwrap();
+    let error = before
+        .validate_retime_update(&id("slow"), duration(1_000_000), PitchPolicy::FollowSpeed)
+        .unwrap_err();
+    assert!(error.message.contains("retained audio transfer"));
+    assert_eq!(before.to_json().unwrap(), snapshot);
+}
+
+fn exact_intersection(a: ExactFrameRange, b: ExactFrameRange) -> ExactFrameRange {
+    ExactFrameRange {
+        start: if a.start.compare(b.start).is_gt() {
+            a.start
+        } else {
+            b.start
+        },
+        end: if a.end.compare(b.end).is_lt() {
+            a.end
+        } else {
+            b.end
+        },
+    }
+}
+
+fn verify_source_support_boundary(
+    mapping_start: ExactRatio,
+    crop_start: ExactRatio,
+    crop_end: ExactRatio,
+    fresh: bool,
+    offset: i64,
+    disjoint: bool,
+) {
+    let before = crop_fixture_at(mapping_start, crop_start, crop_end, offset, fresh);
+    let candidate = test_only_candidate(&before, 1_000_000, fresh);
+    let source_id = id("selected");
+    let path = InstancePath {
+        node: source_id.clone(),
+        repeats: vec![],
+    };
+    let NodeKind::Source { source } = &candidate.nodes()[&source_id].kind else {
+        unreachable!()
+    };
+    let crop = source
+        .audio_mapping
+        .selection_frames_with_offset(
+            source.duration,
+            source.audio_offset,
+            candidate.presentation_basis().frame_rate,
+        )
+        .unwrap();
+    assert_eq!(crop, ExactFrameRange::new(crop_start, crop_end).unwrap());
+    assert_eq!(source.audio_offset, AudioSample(offset));
+
+    let binding = candidate
+        .audio_bindings()
+        .resolve_in(
+            &source_id,
+            AudioBindingEnvironment::Occurrence(&path),
+            MAX_DOCUMENT_NODES,
+        )
+        .unwrap();
+    let full_old = binding.lattice.sample_boundary(ExactRatio::ZERO).unwrap()
+        ..binding.lattice.sample_boundary(ExactRatio::ONE).unwrap();
+    assert_eq!(full_old, if fresh { 4_805..4_837 } else { 3_203..3_235 });
+    assert!(!full_old.is_empty());
+
+    let intrinsic = ExactFrameRange::new(ExactRatio::ZERO, ExactRatio::ONE).unwrap();
+    let meaningful = exact_intersection(intrinsic, crop);
+    if disjoint {
+        assert_eq!(
+            meaningful,
+            ExactFrameRange {
+                start: crop_start,
+                end: ExactRatio::ONE,
+            }
+        );
+        assert!(meaningful.end.compare(meaningful.start).is_le());
+        assert_eq!(
+            binding.lattice.sample_boundary(crop.start).unwrap()
+                ..binding.lattice.sample_boundary(crop.end).unwrap(),
+            if fresh { 4_885..4_885 } else { 3_283..3_283 }
+        );
+    } else {
+        assert_eq!(
+            meaningful,
+            ExactFrameRange::new(ratio(999, 1000), ExactRatio::ONE).unwrap()
+        );
+        assert!(meaningful.end.compare(meaningful.start).is_gt());
+        assert_eq!(
+            binding.lattice.sample_boundary(crop.start).unwrap()
+                ..binding.lattice.sample_boundary(crop.end).unwrap(),
+            if fresh { 4_837..4_838 } else { 3_235..3_236 }
+        );
+        assert_eq!(
+            binding.lattice.sample_boundary(meaningful.start).unwrap()
+                ..binding.lattice.sample_boundary(meaningful.end).unwrap(),
+            if fresh { 4_837..4_837 } else { 3_235..3_235 }
+        );
+    }
+
+    let plan = RenderPlan::compile(&candidate).unwrap();
+    let (window_start, window_end) = if disjoint {
+        (12_801, 12_817)
+    } else {
+        (20_781, 20_797)
+    };
+    let query = plan
+        .audio_processing(
+            AudioSample(window_start)..AudioSample(window_start + 1),
+            Default::default(),
+        )
+        .unwrap();
+    assert_eq!(
+        query.spans.len(),
+        1,
+        "the Source plan span exists before the leaf empty-domain gate"
+    );
+    assert_eq!(
+        query.spans[0].allocated_samples,
+        AudioSample(4_805)..AudioSample(20_797)
+    );
+    let AudioSignalContent::Bound(bound) = &query.spans[0].content else {
+        panic!("SelectedPlacement must retain the physical Source span")
+    };
+    let domain = bound.raw_domain().unwrap();
+    if disjoint {
+        assert!(matches!(domain, AudioBoundDomain::Empty));
+    } else {
+        let AudioBoundDomain::Root(domain) = domain else {
+            panic!("positive intrinsic intersection has the retained root carrier")
+        };
+        assert_eq!(
+            domain.root_samples(),
+            if fresh {
+                AudioSample(4_837)..AudioSample(4_837)
+            } else {
+                AudioSample(3_235)..AudioSample(3_235)
+            }
+        );
+    }
+
+    let mut provider = mono_original(2).1;
+    provider.cancel_on_call = true;
+    let frames = window_end - window_start;
+    let direct = read_bounded(
+        &candidate,
+        &mut provider,
+        window_start,
+        frames,
+        &[frames as u32],
+    );
+    let chunked = read_bounded(&candidate, &mut provider, window_start, frames, &[1, 3, 5]);
+    assert_eq!(
+        direct, chunked,
+        "alternate partitions preserve exact samples and masks"
+    );
+    assert!(direct.samples.iter().all(|sample| *sample == [0.; 2]));
+    assert!(direct.suppressed.iter().all(|suppressed| *suppressed));
+    let enclosing = if disjoint {
+        None
+    } else {
+        let enclosing_start = 20_772;
+        let enclosing_frames = 36;
+        let crossing = plan
+            .audio_processing(
+                AudioSample(enclosing_start)..AudioSample(enclosing_start + enclosing_frames),
+                Default::default(),
+            )
+            .unwrap();
+        let silence = crossing
+            .spans
+            .iter()
+            .find(|span| span.instance.node == id("crop-silence"))
+            .expect("enclosing read crosses the retained silent Hold");
+        let AudioSignalContent::Bound(silence) = &silence.content else {
+            panic!("silent Hold retains its physical binding")
+        };
+        assert!(silence.is_silent_hold());
+        assert_eq!(
+            silence.reference_samples_per_output_sample(),
+            ratio(2003, 1_000_000)
+        );
+        let AudioBoundDomain::Root(domain) = silence.raw_domain().unwrap() else {
+            panic!("silent Hold has a nonempty retained carrier")
+        };
+        assert!(!domain.root_samples().is_empty());
+        let whole = read_bounded(
+            &candidate,
+            &mut provider,
+            enclosing_start,
+            enclosing_frames,
+            &[36],
+        );
+        let partitioned = read_bounded(
+            &candidate,
+            &mut provider,
+            enclosing_start,
+            enclosing_frames,
+            &[5, 1, 13],
+        );
+        assert_eq!(whole, partitioned, "enclosing read is partition invariant");
+        assert!(whole.samples.iter().all(|sample| *sample == [0.; 2]));
+        assert!(whole.suppressed.iter().all(|suppressed| *suppressed));
+        Some((enclosing_start, enclosing_frames, whole))
+    };
+    assert_eq!(
+        provider.calls, 0,
+        "empty raw support resolves no source PCM"
+    );
+
+    let before_json = before.to_json().unwrap();
+    let old_source = before.nodes()[&source_id].clone();
+    let old_binding = before.audio_bindings().bindings().get(&source_id).cloned();
+    let old_timings = before.audio_bindings().timings().clone();
+    let updated = apply_public_speed_update(
+        &before,
+        1_000_000,
+        if disjoint {
+            "source-disjoint-boundary-speed"
+        } else {
+            "source-partial-boundary-speed"
+        },
+    );
+    assert_eq!(updated.nodes()[&source_id], old_source);
+    if let Some(binding) = old_binding {
+        assert_eq!(
+            updated.audio_bindings().bindings().get(&source_id),
+            Some(&binding)
+        );
+    } else {
+        assert!(updated.audio_bindings().bindings().contains_key(&source_id));
+    }
+    for (key, timing) in &old_timings {
+        assert_eq!(updated.audio_bindings().timings().get(key), Some(timing));
+    }
+    assert_eq!(
+        ProjectDocument::from_json(&updated.to_json().unwrap()).unwrap(),
+        updated
+    );
+    let mut updated_provider = mono_original(2).1;
+    updated_provider.cancel_on_call = true;
+    let after = read_bounded(
+        &updated,
+        &mut updated_provider,
+        window_start,
+        frames,
+        &[1, 3, 5],
+    );
+    assert_eq!(
+        after, direct,
+        "public update preserves bounded PCM and masks"
+    );
+    if let Some((enclosing_start, enclosing_frames, expected)) = enclosing {
+        let after_enclosing = read_bounded(
+            &updated,
+            &mut updated_provider,
+            enclosing_start,
+            enclosing_frames,
+            &[5, 1, 13],
+        );
+        assert_eq!(after_enclosing, expected);
+    }
+    assert_eq!(updated_provider.calls, 0);
+    assert_eq!(before.to_json().unwrap(), before_json);
+}
+
+#[test]
+fn speed_update_selected_crop_is_clipped_to_intrinsic_source_before_raw_allocation() {
+    for fresh in [false, true] {
+        for offset in [1, -1] {
+            verify_source_support_boundary(
+                ratio(199, 200),
+                ratio(999, 1000),
+                ratio(103, 100),
+                fresh,
+                offset,
+                false,
+            );
+        }
+    }
+}
+
+#[test]
+fn speed_update_selected_crop_outside_intrinsic_source_keeps_empty_raw_domain() {
+    for fresh in [false, true] {
+        for offset in [1, -1] {
+            verify_source_support_boundary(
+                ratio(499, 200),
+                ratio(5, 2),
+                ratio(2501, 1000),
+                fresh,
+                offset,
+                true,
+            );
+        }
+    }
+}

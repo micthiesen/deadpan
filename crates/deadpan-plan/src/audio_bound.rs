@@ -266,6 +266,20 @@ impl<'plan> AudioBound<'plan> {
         self.resolved.work
     }
 
+    /// A directly authored silent Hold has no signal to transfer, regardless
+    /// of the retained physical clock. This does not classify sources whose
+    /// samples happen to be zero, or a composite containing silent children.
+    pub fn is_silent_hold(&self) -> bool {
+        self.gap.is_none()
+            && matches!(
+                &self.plan.nodes[self.node].kind,
+                CompiledKind::Hold {
+                    audio: deadpan_core::HoldAudio::Silence,
+                    ..
+                }
+            )
+    }
+
     /// The full current Preserve operand behind this physical binding, if any.
     /// Its own binding is bypassed, exactly as in `raw_domain`; descendants
     /// retain their bindings and scoped identities. This admits policy

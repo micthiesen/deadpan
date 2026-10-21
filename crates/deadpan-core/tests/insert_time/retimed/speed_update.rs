@@ -2,6 +2,9 @@
 //! source at SetRetime's exact-clock refusal, after positive controls pass.
 use super::*;
 
+#[path = "speed_update/source_crop.rs"]
+mod source_crop;
+
 fn retain_witness(
     before: &ProjectDocument,
     update: &CommandRequest,

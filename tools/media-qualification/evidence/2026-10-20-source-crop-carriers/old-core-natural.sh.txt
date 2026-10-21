@@ -1,0 +1,12 @@
+#!/bin/sh
+set -u
+export DEADPAN_FFMPEG_PREFIX=/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix
+export CARGO_PROFILE_DEV_OPT_LEVEL=2
+export DEADPAN_REQUIRE_PHYSICAL_MAC=1
+s=/tmp/deadpan-source-crop-carriers-2026-10-20
+DEADPAN_SPEED_UPDATE_WITNESS_DIR="$s/retained-natural-old" cargo test --locked -p deadpan-core --test insert_time speed_update_selected_source_empty_retained_crop_is_admitted -- --nocapture > "$s/retained-natural-old.log" 2>&1
+printf '%s\n' "$?" > "$s/retained-natural-old.exit"
+DEADPAN_SPEED_UPDATE_WITNESS_DIR="$s/fresh-natural-old" cargo test --locked -p deadpan-core --test insert_time speed_update_selected_source_empty_fresh_crop_is_admitted -- --nocapture > "$s/fresh-natural-old.log" 2>&1
+printf '%s\n' "$?" > "$s/fresh-natural-old.exit"
+cargo test --locked -p deadpan-core --test insert_time speed_update_selected_source_nonempty_neighbor_still_refuses_transfer -- --nocapture > "$s/neighbor-natural-old.log" 2>&1
+printf '%s\n' "$?" > "$s/neighbor-natural-old.exit"

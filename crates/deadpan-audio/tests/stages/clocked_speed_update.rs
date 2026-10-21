@@ -822,3 +822,6 @@ fn clocked_speed_update_keeps_empty_old_room_tone_carrier_suppressed_without_sou
     );
     assert_eq!(renderer.cached_stage_count(), 0);
 }
+
+#[path = "clocked_speed_update/source_crop_pcm.rs"]
+mod source_crop_pcm;

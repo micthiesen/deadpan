@@ -1585,6 +1585,9 @@ impl StageAudio {
         if frames == 0 || frames > MAX_OUTPUT_FRAMES {
             return Err(StageAudioError::Range);
         }
+        if bound.is_silent_hold() {
+            return Ok(empty_bound_block(frames));
+        }
         let step = bound.reference_samples_per_output_sample();
         let output = SignalSample(0)..SignalSample(i64::from(frames));
         match bound.raw_domain()? {

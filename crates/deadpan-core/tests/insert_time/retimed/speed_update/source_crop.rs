@@ -1,0 +1,559 @@
+//! Selected Source crops retain exact empty-carrier admission.
+use super::*;
+
+fn crop_history(end: ExactRatio, offset: i64, fresh: bool) -> ProjectDocument {
+    crop_history_window(ratio(99, 200), ratio(1, 2), end, offset, fresh)
+}
+
+fn crop_history_window(
+    mapping_start: ExactRatio,
+    crop_start: ExactRatio,
+    crop_end: ExactRatio,
+    offset: i64,
+    fresh: bool,
+) -> ProjectDocument {
+    let mut stage = BeatNode::sequence("Selected audio stage", vec![]);
+    stage.kind = NodeKind::Retime {
+        child: id("crop-input"),
+        duration: duration(2000),
+        mapping: FrameRange::new(ProjectFrame(0), ProjectFrame(100_001)).unwrap(),
+        pitch: PitchPolicy::FollowSpeed,
+        purpose: RetimePurpose::Edit,
+    };
+    // Admit the ordinary graph first; then install its audio-bearing Source
+    // and matching asset together as the initial fixture, before edit history.
+    let mut wire = serde_json::to_value(tree(
+        &["a", "slow", "b"],
+        vec![
+            ("a", source(2)),
+            ("slow", stage),
+            (
+                "crop-input",
+                BeatNode::sequence("Input", vec![id("selected"), id("crop-silence")]),
+            ),
+            ("selected", source(1)),
+            ("crop-silence", BeatNode::hold("Silence", recipe(100_000))),
+            ("b", source(2)),
+        ],
+    ))
+    .unwrap();
+    let span = SourceSpan::new(
+        SourceTimestamp {
+            ticks: 3100,
+            time_base: SourceTimeBase::new(1, 44_100).unwrap(),
+        },
+        SourceTimestamp {
+            ticks: 3260,
+            time_base: SourceTimeBase::new(1, 44_100).unwrap(),
+        },
+    )
+    .unwrap();
+    let shift = ratio(5, 8008)
+        .checked_mul(ExactRatio::integer(offset))
+        .unwrap();
+    let natural_frames =
+        SourceAudioMapping::natural_rate(span, FrameRate::new(30_000, 1001).unwrap())
+            .unwrap()
+            .duration_frames(duration(1))
+            .unwrap();
+    assert_eq!(natural_frames, ratio(16_000, 147_147));
+    let mapping = SourceAudioMapping::SelectedPlacement {
+        // The full mapping retains the natural rate. Both selected intervals
+        // lie inside it after shifting either signed mix-sample offset.
+        start: mapping_start.checked_sub(shift).unwrap(),
+        frames: natural_frames,
+        selection: ExactFrameRange::new(
+            crop_start.checked_sub(shift).unwrap(),
+            crop_end.checked_sub(shift).unwrap(),
+        )
+        .unwrap(),
+    };
+    wire["assets"]["media"]["audio"] = serde_json::to_value(span).unwrap();
+    wire["nodes"]["selected"]["kind"]["source"]["audio"] = serde_json::to_value(SourceAudio {
+        asset: AssetId::new("media").unwrap(),
+        span,
+    })
+    .unwrap();
+    wire["nodes"]["selected"]["kind"]["source"]["audio_mapping"] =
+        serde_json::to_value(mapping).unwrap();
+    wire["nodes"]["selected"]["kind"]["source"]["audio_offset"] = json!(offset);
+    let initial = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    // The retained case is entirely public command history after admission.
+    let captured = edit(&initial, pause(&initial, "crop-capture", 0, 1, 0));
+    assert!(
+        captured
+            .audio_bindings()
+            .bindings()
+            .contains_key(&id("selected"))
+    );
+    let required = retimed_target(&captured, 4).required_ids;
+    let clocked = edit(&captured, pause(&captured, "crop-exact", 4, 3, required));
+    assert_eq!(clocked.derived_clocks()[&id("slow")].extent, ratio(2003, 1));
+    if !fresh {
+        return clocked;
+    }
+    // Explicit partial-binding fixture, matching the existing core/PCM tests.
+    // No recipe, placement, crop, lineage, or derived clock is changed.
+    let mut wire = serde_json::to_value(clocked).unwrap();
+    wire["audio_bindings"]["bindings"]
+        .as_object_mut()
+        .unwrap()
+        .remove("selected")
+        .expect("public history retained the Source binding");
+    prune_unreferenced_fixture_timings(&mut wire);
+    ProjectDocument::from_json(&wire.to_string()).unwrap()
+}
+
+/// Distinguish the full physical allocation from the selected old raw domain.
+/// Only the latter can prove this historical carrier needs no transfer.
+fn prove_crop(
+    before: &ProjectDocument,
+    end: ExactRatio,
+    fresh: bool,
+    expected_old: std::ops::Range<i64>,
+    expected_candidate: std::ops::Range<i128>,
+) {
+    let path = InstancePath {
+        node: id("selected"),
+        repeats: vec![],
+    };
+    let frozen = FrozenAudioLayout::capture(before).unwrap();
+    let (current, full_support) = frozen
+        .project_scoped_with_support(frozen.root(), &path, None, MAX_DOCUMENT_NODES)
+        .unwrap();
+    assert_eq!(full_support, ExactRatio::ZERO..ExactRatio::ONE);
+    assert_eq!(current.origin, ratio(3, 1));
+    assert_eq!(current.frames_per_local_frame, ratio(2000, 100_001));
+    let NodeKind::Source { source } = &before.nodes()[&id("selected")].kind else {
+        panic!("selected owner must remain a physical Source");
+    };
+    assert!(matches!(
+        source.audio_mapping,
+        SourceAudioMapping::SelectedPlacement { .. }
+    ));
+    let crop = source
+        .audio_mapping
+        .selection_frames_with_offset(
+            source.duration,
+            source.audio_offset,
+            before.presentation_basis().frame_rate,
+        )
+        .unwrap();
+    assert_eq!(crop.start, ratio(1, 2));
+    assert_eq!(crop.end, end);
+    assert_eq!(
+        source
+            .audio_mapping
+            .start_frames_with_offset(source.audio_offset, before.presentation_basis().frame_rate,)
+            .unwrap(),
+        ratio(99, 200),
+    );
+    let mapping_frames = source
+        .audio_mapping
+        .duration_frames(source.duration)
+        .unwrap();
+    assert_eq!(mapping_frames, ratio(16_000, 147_147));
+    assert!(
+        ratio(99, 200)
+            .checked_add(mapping_frames)
+            .unwrap()
+            .compare(ratio(3, 5))
+            .is_gt()
+    );
+    // Both current meaningful support and the selected interval are inside
+    // the complete physical recipe; no Partition-clipping shortcut is used.
+    let (_, visible) = frozen
+        .project_scoped_with_allocation(frozen.root(), &path, None, MAX_DOCUMENT_NODES)
+        .unwrap();
+    assert_eq!(visible, Some(full_support.clone()));
+    let prospective;
+    let bindings = if fresh {
+        assert!(
+            !before
+                .audio_bindings()
+                .bindings()
+                .contains_key(&id("selected"))
+        );
+        prospective = capture_unbound_audio_bindings(
+            before,
+            AudioTimingId {
+                allocation: revision("crop-fresh-probe"),
+                ordinal: 0,
+            },
+        )
+        .unwrap();
+        &prospective
+    } else {
+        before.audio_bindings()
+    };
+    let bound = bindings
+        .resolve_in(
+            &id("selected"),
+            AudioBindingEnvironment::Occurrence(&path),
+            MAX_DOCUMENT_NODES,
+        )
+        .unwrap();
+    assert_eq!(bound.lattice.origin, ratio(if fresh { 3 } else { 2 }, 1));
+    assert_eq!(
+        bound.lattice.frames_per_local_frame,
+        current.frames_per_local_frame
+    );
+    let full_old = bound.lattice.sample_boundary(full_support.start).unwrap()
+        ..bound.lattice.sample_boundary(full_support.end).unwrap();
+    assert_eq!(full_old, if fresh { 4805..4837 } else { 3203..3235 });
+    assert!(
+        !full_old.is_empty(),
+        "only the Source crop makes the old raw carrier empty"
+    );
+    let selected_old = bound.lattice.sample_boundary(crop.start).unwrap()
+        ..bound.lattice.sample_boundary(crop.end).unwrap();
+    assert_eq!(selected_old, expected_old);
+    let factor = ratio(1_000_000, 2003);
+    let candidate_scale = current.frames_per_local_frame.checked_mul(factor).unwrap();
+    assert_eq!(candidate_scale, ratio(2_000_000_000, 200_302_003));
+    let candidate_boundary = |local: ExactRatio| {
+        current
+            .origin
+            .checked_add(local.checked_mul(candidate_scale).unwrap())
+            .unwrap()
+            .checked_div(ratio(5, 8008))
+            .unwrap()
+            .round_even()
+            .unwrap()
+    };
+    let candidate = candidate_boundary(crop.start)..candidate_boundary(crop.end);
+    assert_eq!(candidate, expected_candidate);
+    assert!(!candidate.is_empty());
+    let transfer = ratio(5, 8008)
+        .checked_div(current.frames_per_local_frame)
+        .unwrap()
+        .checked_div(factor)
+        .unwrap()
+        .checked_div(bound.lattice.local_frames_per_sample().unwrap())
+        .unwrap();
+    assert_eq!(transfer, ratio(2003, 1_000_000));
+    assert!(
+        transfer
+            .checked_mul(ratio(64, 1))
+            .unwrap()
+            .compare_integer(1)
+            .is_lt()
+    );
+    // The Source's actual160-sample natural mapping gives147/160 native
+    // samples per local mix sample. Apply the retained root slope once.
+    let local_native_step = ratio(160, 1)
+        .checked_div(mapping_frames)
+        .unwrap()
+        .checked_mul(ratio(5, 8008))
+        .unwrap();
+    assert_eq!(local_native_step, ratio(147, 160));
+    let native_step = local_native_step
+        .checked_div(current.frames_per_local_frame)
+        .unwrap();
+    assert_eq!(native_step, ratio(14_700_147, 320_000));
+    assert!(native_step.compare_integer(64).is_lt());
+}
+
+fn expect_empty_crop_admitted(fresh: bool) {
+    for offset in [1, -1] {
+        let before = crop_history(ratio(501, 1000), offset, fresh);
+        prove_crop(
+            &before,
+            ratio(501, 1000),
+            fresh,
+            if fresh { 4821..4821 } else { 3219..3219 },
+            12801..12817,
+        );
+        let snapshot = before.to_json().unwrap();
+        let command = update(&before, "selected-empty-crop-speed", 1_000_000);
+        let outcome = apply(&before, &command);
+        retain_witness(&before, &command, &outcome);
+        assert_eq!(before.to_json().unwrap(), snapshot);
+        // Expected old-code failure only after all geometry/factory controls.
+        before
+            .validate_retime_update(&id("slow"), duration(1_000_000), PitchPolicy::FollowSpeed)
+            .unwrap();
+        let transaction = outcome.unwrap();
+        let after = transaction.forward.apply(&before).unwrap();
+        assert_eq!(
+            after.nodes()[&id("selected")],
+            before.nodes()[&id("selected")]
+        );
+        if fresh {
+            assert!(
+                after
+                    .audio_bindings()
+                    .bindings()
+                    .contains_key(&id("selected"))
+            );
+        } else {
+            assert_eq!(
+                after.audio_bindings().bindings()[&id("selected")],
+                before.audio_bindings().bindings()[&id("selected")]
+            );
+        }
+        for (identity, layout) in before.audio_bindings().timings() {
+            assert_eq!(after.audio_bindings().timings().get(identity), Some(layout));
+        }
+        assert_eq!(
+            after.exact_durations().unwrap()[after.root()],
+            ratio(1_000_005, 1)
+        );
+        assert_eq!(
+            ProjectDocument::from_json(&after.to_json().unwrap()).unwrap(),
+            after
+        );
+        assert_eq!(transaction.inverse.apply(&after).unwrap(), before);
+    }
+}
+
+#[test]
+fn speed_update_selected_source_empty_retained_crop_is_admitted() {
+    expect_empty_crop_admitted(false);
+}
+
+#[test]
+fn speed_update_selected_source_empty_fresh_crop_is_admitted() {
+    expect_empty_crop_admitted(true);
+}
+
+#[test]
+fn speed_update_selected_source_nonempty_neighbor_still_refuses_transfer() {
+    for fresh in [false, true] {
+        for offset in [1, -1] {
+            let before = crop_history(ratio(3, 5), offset, fresh);
+            prove_crop(
+                &before,
+                ratio(3, 5),
+                fresh,
+                if fresh { 4821..4824 } else { 3219..3222 },
+                12801..14400,
+            );
+            let snapshot = before.to_json().unwrap();
+            let query = before
+                .validate_retime_update(&id("slow"), duration(1_000_000), PitchPolicy::FollowSpeed)
+                .unwrap_err();
+            assert_eq!(query.code, EditErrorCode::InvalidCommand);
+            assert!(
+                query.message.contains("retained audio transfer"),
+                "{query:?}"
+            );
+            let edit = apply(
+                &before,
+                &update(&before, "selected-nonempty-crop-refused", 1_000_000),
+            )
+            .unwrap_err();
+            assert_eq!(edit.code, EditErrorCode::InvalidCommand);
+            assert!(edit.message.contains("retained audio transfer"), "{edit:?}");
+            assert_eq!(before.to_json().unwrap(), snapshot);
+        }
+    }
+}
+
+fn expect_intrinsic_crop_boundary_admitted(
+    mapping_start: ExactRatio,
+    selection: std::ops::Range<ExactRatio>,
+    disjoint: bool,
+) {
+    for fresh in [false, true] {
+        for offset in [1, -1] {
+            let before =
+                crop_history_window(mapping_start, selection.start, selection.end, offset, fresh);
+            let path = InstancePath {
+                node: id("selected"),
+                repeats: vec![],
+            };
+            let frozen = FrozenAudioLayout::capture(&before).unwrap();
+            let (current, intrinsic) = frozen
+                .project_scoped_with_support(frozen.root(), &path, None, MAX_DOCUMENT_NODES)
+                .unwrap();
+            assert_eq!(intrinsic, ExactRatio::ZERO..ExactRatio::ONE);
+            assert_eq!(current.origin, ratio(3, 1));
+            assert_eq!(current.frames_per_local_frame, ratio(2000, 100_001));
+            let NodeKind::Source { source } = &before.nodes()[&id("selected")].kind else {
+                panic!("selected owner must remain a physical Source");
+            };
+            let actual = source
+                .audio_mapping
+                .selection_frames_with_offset(
+                    source.duration,
+                    source.audio_offset,
+                    before.presentation_basis().frame_rate,
+                )
+                .unwrap();
+            assert_eq!(actual.start..actual.end, selection);
+            let full_mapping_start = source
+                .audio_mapping
+                .start_frames_with_offset(
+                    source.audio_offset,
+                    before.presentation_basis().frame_rate,
+                )
+                .unwrap();
+            assert_eq!(full_mapping_start, mapping_start);
+            let natural = source
+                .audio_mapping
+                .duration_frames(source.duration)
+                .unwrap();
+            assert_eq!(natural, ratio(16_000, 147_147));
+            assert!(full_mapping_start.compare(actual.start).is_le());
+            assert!(
+                full_mapping_start
+                    .checked_add(natural)
+                    .unwrap()
+                    .compare(actual.end)
+                    .is_ge()
+            );
+            // Match bound_at's max-start/min-end intersection. A disjoint
+            // result is not normalized into a fabricated local endpoint.
+            let start = if actual.start.compare(intrinsic.start).is_gt() {
+                actual.start
+            } else {
+                intrinsic.start
+            };
+            let end = if actual.end.compare(intrinsic.end).is_lt() {
+                actual.end
+            } else {
+                intrinsic.end
+            };
+            let prospective;
+            let bindings = if fresh {
+                prospective = capture_unbound_audio_bindings(
+                    &before,
+                    AudioTimingId {
+                        allocation: revision("intrinsic-boundary-probe"),
+                        ordinal: 0,
+                    },
+                )
+                .unwrap();
+                &prospective
+            } else {
+                before.audio_bindings()
+            };
+            let bound = bindings
+                .resolve_in(
+                    &id("selected"),
+                    AudioBindingEnvironment::Occurrence(&path),
+                    MAX_DOCUMENT_NODES,
+                )
+                .unwrap();
+            assert_eq!(bound.lattice.origin, ratio(if fresh { 3 } else { 2 }, 1));
+            assert_eq!(
+                bound.lattice.frames_per_local_frame,
+                current.frames_per_local_frame
+            );
+            let historical = |local| bound.lattice.sample_boundary(local).unwrap();
+            assert_eq!(
+                historical(intrinsic.start)..historical(intrinsic.end),
+                if fresh { 4805..4837 } else { 3203..3235 }
+            );
+            let full_selected_old = historical(actual.start)..historical(actual.end);
+            let factor = ratio(1_000_000, 2003);
+            let candidate_scale = current.frames_per_local_frame.checked_mul(factor).unwrap();
+            assert_eq!(candidate_scale, ratio(2_000_000_000, 200_302_003));
+            let candidate = |local: ExactRatio| {
+                current
+                    .origin
+                    .checked_add(local.checked_mul(candidate_scale).unwrap())
+                    .unwrap()
+                    .checked_div(ratio(5, 8008))
+                    .unwrap()
+                    .round_even()
+                    .unwrap()
+            };
+            let intrinsic_new = candidate(intrinsic.start)..candidate(intrinsic.end);
+            assert_eq!(intrinsic_new, 4805..20797);
+            if disjoint {
+                assert_eq!(start, ratio(5, 2));
+                assert_eq!(end, ExactRatio::ONE);
+                assert!(!end.checked_sub(start).unwrap().compare_integer(0).is_gt());
+                assert_eq!(
+                    full_selected_old,
+                    if fresh { 4885..4885 } else { 3283..3283 }
+                );
+                assert_eq!(candidate(actual.start)..candidate(actual.end), 44784..44800);
+                assert!(candidate(actual.start) >= intrinsic_new.end);
+            } else {
+                assert_eq!(start, ratio(999, 1000));
+                assert_eq!(end, ExactRatio::ONE);
+                // Ignoring intrinsic support would see a NONEMPTY old raw
+                // selection and incorrectly refuse the same transfer.
+                assert_eq!(
+                    full_selected_old,
+                    if fresh { 4837..4838 } else { 3235..3236 }
+                );
+                assert!(!full_selected_old.is_empty());
+                assert_eq!(
+                    historical(start)..historical(end),
+                    if fresh { 4837..4837 } else { 3235..3235 }
+                );
+                assert_eq!(candidate(actual.start)..candidate(actual.end), 20781..21276);
+                assert_eq!(candidate(start)..candidate(end), 20781..20797);
+                assert_eq!(candidate(end) - candidate(start), 16);
+            }
+            let transfer = ratio(5, 8008)
+                .checked_div(current.frames_per_local_frame)
+                .unwrap()
+                .checked_div(factor)
+                .unwrap()
+                .checked_div(bound.lattice.local_frames_per_sample().unwrap())
+                .unwrap();
+            assert_eq!(transfer, ratio(2003, 1_000_000));
+            assert!(
+                transfer
+                    .checked_mul(ratio(64, 1))
+                    .unwrap()
+                    .compare_integer(1)
+                    .is_lt()
+            );
+            let snapshot = before.to_json().unwrap();
+            before
+                .validate_retime_update(&id("slow"), duration(1_000_000), PitchPolicy::FollowSpeed)
+                .unwrap();
+            let command = update(&before, "intrinsic-crop-boundary-speed", 1_000_000);
+            let outcome = apply(&before, &command);
+            retain_witness(&before, &command, &outcome);
+            assert_eq!(before.to_json().unwrap(), snapshot);
+            let transaction = outcome.unwrap();
+            let after = transaction.forward.apply(&before).unwrap();
+            assert_eq!(
+                after.nodes()[&id("selected")],
+                before.nodes()[&id("selected")]
+            );
+            if !fresh {
+                assert_eq!(
+                    after.audio_bindings().bindings()[&id("selected")],
+                    before.audio_bindings().bindings()[&id("selected")]
+                );
+            } else {
+                assert!(
+                    after
+                        .audio_bindings()
+                        .bindings()
+                        .contains_key(&id("selected"))
+                );
+            }
+            for (identity, layout) in before.audio_bindings().timings() {
+                assert_eq!(after.audio_bindings().timings().get(identity), Some(layout));
+            }
+            assert_eq!(
+                ProjectDocument::from_json(&after.to_json().unwrap()).unwrap(),
+                after
+            );
+            assert_eq!(transaction.inverse.apply(&after).unwrap(), before);
+        }
+    }
+}
+
+#[test]
+fn speed_update_selected_crop_is_clipped_to_intrinsic_source_before_raw_allocation() {
+    expect_intrinsic_crop_boundary_admitted(
+        ratio(199, 200),
+        ratio(999, 1000)..ratio(103, 100),
+        false,
+    );
+}
+
+#[test]
+fn speed_update_selected_crop_outside_intrinsic_source_keeps_empty_raw_domain() {
+    expect_intrinsic_crop_boundary_admitted(ratio(499, 200), ratio(5, 2)..ratio(2501, 1000), true);
+}

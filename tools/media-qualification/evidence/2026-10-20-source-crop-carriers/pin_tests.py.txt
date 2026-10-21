@@ -1,0 +1,11 @@
+from pathlib import Path
+import hashlib,json
+root=Path('/Users/michael/Code/deadpan')
+scratch=Path('/tmp/deadpan-source-crop-carriers-2026-10-20')
+info=json.loads((scratch/'test-binaries.json').read_text())
+rows={}
+for name,record in info['rust-binaries'].items():
+    path=Path(record['binary-path'])
+    rows[str(path.relative_to(root))]=hashlib.sha256(path.read_bytes()).hexdigest()
+(scratch/'test-binary-hashes.json').write_text(json.dumps(rows,indent=2)+'\n')
+print(len(rows),'test executables pinned')

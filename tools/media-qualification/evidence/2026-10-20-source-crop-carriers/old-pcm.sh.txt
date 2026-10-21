@@ -1,0 +1,8 @@
+#!/bin/sh
+set -u
+export DEADPAN_FFMPEG_PREFIX=/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix
+export CARGO_PROFILE_DEV_OPT_LEVEL=2
+export DEADPAN_REQUIRE_PHYSICAL_MAC=1
+s=/tmp/deadpan-source-crop-carriers-2026-10-20
+cargo test --locked -p deadpan-audio --test stages source_crop_pcm -- --nocapture > "$s/pcm-old.log" 2>&1
+printf '%s\n' "$?" > "$s/pcm-old.exit"

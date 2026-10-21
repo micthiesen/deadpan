@@ -160,7 +160,8 @@ the failed report and its binary/source identities remain retained.
 This does not admit changed parameters for a fractional own output extent,
 inner Repeat or processing family, or a Repeat/Retime ancestor. Attached-sound
 transport through a changed processing subtree and broader Section 8 work
-remain open. Source selected-crop-only empty carriers can still be refused
-conservatively: the preflight's meaningful-support superset must itself be
-empty to bypass the rate bound. It establishes no new acoustic,
+remain open. This increment conservatively refuses Source selected-crop-only
+empty carriers; the subsequent
+[crop-carrier qualification](source-crop-carriers-2026-10-20.md) resolves that
+limit and the retained silent-Hold transfer failure. It establishes no new acoustic,
 physical-input or latency claim.

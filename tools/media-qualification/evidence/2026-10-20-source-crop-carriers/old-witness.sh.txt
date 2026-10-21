@@ -1,0 +1,14 @@
+#!/bin/sh
+set -u
+export DEADPAN_FFMPEG_PREFIX=/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix
+export CARGO_PROFILE_DEV_OPT_LEVEL=2
+export DEADPAN_REQUIRE_PHYSICAL_MAC=1
+s=/tmp/deadpan-source-crop-carriers-2026-10-20
+DEADPAN_SPEED_UPDATE_WITNESS_DIR="$s/retained-old" cargo test --locked -p deadpan-core --test insert_time speed_update_selected_source_empty_retained_crop_is_admitted -- --nocapture > "$s/retained-old.log" 2>&1
+printf '%s\n' "$?" > "$s/retained-old.exit"
+DEADPAN_SPEED_UPDATE_WITNESS_DIR="$s/fresh-old" cargo test --locked -p deadpan-core --test insert_time speed_update_selected_source_empty_fresh_crop_is_admitted -- --nocapture > "$s/fresh-old.log" 2>&1
+printf '%s\n' "$?" > "$s/fresh-old.exit"
+cargo test --locked -p deadpan-core --test insert_time speed_update_selected_source_nonempty_neighbor_still_refuses_transfer -- --nocapture > "$s/neighbor-old.log" 2>&1
+printf '%s\n' "$?" > "$s/neighbor-old.exit"
+cargo test --locked -p deadpan-audio --test stages source_crop_pcm -- --nocapture > "$s/pcm-old.log" 2>&1
+printf '%s\n' "$?" > "$s/pcm-old.exit"
