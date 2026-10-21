@@ -1,0 +1,30 @@
+{
+  "executed_encoded_binaries": {
+    "cli": {
+      "path": "target/release/deadpan-cli",
+      "sha256": "aa877e6402db34495f53033191edfb51fee9f783875a5d70c9a9bf9f46888c89"
+    },
+    "test": {
+      "path": "target/release/deps/preview_export-8652fc5e7c449500",
+      "sha256": "d30137f0d1af9ddc3b25de676a59c04b71f86cfdd0ae2c60038e974019668014"
+    }
+  },
+  "original": {
+    "path": "native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+    "retained_copy": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmp9Kjitf/scoped-audio/original.mp4",
+    "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+    "bytes": 39157
+  },
+  "movie": {
+    "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmp9Kjitf/exports-scoped-audio/scoped-audio-chain.mp4",
+    "sha256": "5e139f0f18e319069fbfb301a413f1ef0d67ff4bfc6322224e6ff7ce4c56d2da",
+    "bytes": 98368
+  },
+  "project": {
+    "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmp9Kjitf/scoped-audio/scoped-audio-chain.deadpan",
+    "project_id": "2c20bb86-041d-48ad-96c5-4a07a9b25ced",
+    "revision_id": "bb8e7375-87ae-403c-bf76-1cdc7936aa3f",
+    "document_sha256": "732f11fea786246047406d455ef1505ed9d8937a7c26fca238627ecd3dd25995"
+  },
+  "policy": "Reports, PCM oracle and media identities retained; raw Original, movie, package and executables omitted."
+}

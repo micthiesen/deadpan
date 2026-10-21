@@ -5,6 +5,7 @@ use deadpan_core::{GainDb, NodeId, NodeKind, ProjectDocument};
 use egui::Key;
 
 mod analysis_navigation;
+mod audio_setters;
 mod framing_macros;
 mod gain_macros;
 mod heterogeneous_pauses;
@@ -241,6 +242,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     framing_macros::run(d)?;
     gain_macros::run(d)?;
     mute_macros::run(d)?;
+    audio_setters::run(d)?;
     pause_macros::run(d)?;
     hold_duration::run(d)?;
     hold_audio::run(d)?;

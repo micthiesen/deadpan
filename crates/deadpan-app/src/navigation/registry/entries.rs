@@ -1079,7 +1079,7 @@ pub static SPECS: &[Spec] = &[
         contexts: C::YOUR_EDIT.or(C::PLACED).or(C::CONTENTS),
         replay: Replay::RecordedAndDot,
         headless: eq("set_audio instruction", AUDIO),
-        help: "Change the selected beat by 3 dB per count, or only the Edit range inside it (a constant step over exactly that range), or enter an exact absolute trim with :gain +6dB or a signed change with :gain +=3dB. :gain +3dB range=4-10 steps exactly those local frames. Bare :gain opens the Gain draft. Existing envelopes stay intact. Placed sounds take precedence when focused; Original and catalog focus never change a beat.",
+        help: "Change the selected beat by 3 dB per count, or only the Edit range inside it (a constant step over exactly that range), or enter an exact absolute trim with :gain +6dB or a signed change with :gain +=3dB. :gain +3dB range=4-10 steps exactly those local frames. Bare :gain opens the Gain draft. Inside Repeat contents, recording and dot accept whole-beat steps and literal trims with This play at every level and no Visual range. Steps use the new owner's gain; trims retain their exact value. Existing envelopes stay intact. Placed sounds take precedence when focused; Original and catalog focus never change a beat.",
     },
     Spec {
         id: "gain.mute",
@@ -1098,10 +1098,10 @@ pub static SPECS: &[Spec] = &[
         section: Section::Audio,
         keys: &[],
         commands: &[verb("saturate", ":saturate 12dB | off")],
-        contexts: C::EDIT,
+        contexts: C::EDIT.or(C::CONTENTS),
         replay: Replay::RecordedAndDot,
         headless: eq("set_audio instruction (saturation)", AUDIO),
-        help: "Drive the selected beat's sound into a soft clipper (tanh, 0 to 24 dB of drive) after its clip gain and before the master limiter, as intentional distortion; off removes it. One Undo.",
+        help: "Drive the selected beat's sound into a soft clipper (tanh, 0 to 24 dB of drive), normally after its clip gain and before the master limiter, as intentional distortion; off removes it. Recording and dot inside Repeat contents require This play at every level and no Visual range, retaining the chosen drive or removal. Other treatments and authored stage order stay intact. One Undo.",
     },
     Spec {
         id: "balance",
@@ -1112,10 +1112,10 @@ pub static SPECS: &[Spec] = &[
             "balance",
             ":balance -50% | +50% | left | right | center",
         )],
-        contexts: C::EDIT,
+        contexts: C::EDIT.or(C::CONTENTS),
         replay: Replay::RecordedAndDot,
         headless: eq("set_audio instruction (balance)", AUDIO),
-        help: "Balance the selected beat's stereo sound: negative is left, positive is right, and center removes the stage. The favored channel stays unchanged; the opposite channel fades linearly to silence at 100%. Balance follows gain and saturation, before the master limiter. One Undo; dot and macros retain the chosen value.",
+        help: "Balance the selected beat's stereo sound: negative is left, positive is right, and center removes the stage. The favored channel stays unchanged; the opposite channel fades linearly to silence at 100%. Balance follows gain and saturation, before the master limiter. Recording and dot inside Repeat contents require This play at every level and no Visual range. Other treatments stay intact. One Undo; dot and macros retain the chosen value.",
     },
     Spec {
         id: "equalizer",
@@ -1126,10 +1126,10 @@ pub static SPECS: &[Spec] = &[
             "eq",
             ":eq | bass=3dB middle=-6dB treble=0dB [low-cut=80Hz] [high-cut=12000Hz] | off",
         )],
-        contexts: C::EDIT,
+        contexts: C::EDIT.or(C::CONTENTS),
         replay: Replay::RecordedAndDot,
         headless: eq("set_audio instruction (equalizer)", AUDIO),
-        help: "Bare :eq opens an unsaved EQ editor with Before/Draft audition. Set bass, middle and treble within -24 to +24 dB, and optional low/high cuts from 80 to 20000 Hz. A typed recipe supplies all three bands; omitted cuts are off. :eq off removes only EQ. Whole-beat typed recipes support dot and macros; a selected play is isolated. Time, other treatments and authored order stay intact. One Undo.",
+        help: "Bare :eq opens an unsaved EQ editor with Before/Draft audition. Set bass, middle and treble within -24 to +24 dB, and optional low/high cuts from 80 to 20000 Hz. A typed recipe supplies all three bands; omitted cuts are off. :eq off removes only EQ. Whole-beat typed recipes support dot and macros; inside Repeat contents they require This play at every level and no Visual range, retaining the complete chosen recipe or removal. The interactive draft is separate. Time, other treatments and authored order stay intact. One Undo.",
     },
     Spec {
         id: "wet-send",
@@ -1638,7 +1638,7 @@ pub static SPECS: &[Spec] = &[
         contexts: C::TIMELINE.or(C::CONTENTS),
         replay: Replay::Ignored,
         headless: eq("macro <p> --json save with an explicit program", MACROS),
-        help: "{macro.record} + letter records motions, Visual selections, cuts, copies, Repeat wraps and count changes, grouping, register pastes, pauses, framing, gain, gags and named calls in the current ordinary Sequence group. On Original it records frame and start/end motions, letter marks, jumps and named calls, keeping the Edit cursor and selection independent. Inside Repeat contents, choose This play at every level; freeze and black pauses, Hold length and sound, whole-beat gain steps and mute, Keep-center or target=center zooms, creeps and named calls record there. Gain steps retain a relative amount; mute retains its explicit on/off state. Saved pauses retain only their length and picture choice; each invocation resolves its current boundary. Scope navigation is not recorded. {macro.record} again (or :record-stop) saves the named Macro. Recording performs each action and adds it only after success. Saving adds no Undo and preserves the default copy. In Your edit, Esc clears and records a Visual selection; otherwise it cancels recording.",
+        help: "{macro.record} + letter records motions, Visual selections, cuts, copies, Repeat wraps and count changes, grouping, register pastes, pauses, framing, gain, gags and named calls in the current ordinary Sequence group. On Original it records frame and start/end motions, letter marks, jumps and named calls, keeping the Edit cursor and selection independent. Inside Repeat contents, choose This play at every level; freeze and black pauses, Hold length and sound, whole-beat gain steps, trim, mute, saturation, balance and typed EQ, Keep-center or target=center zooms, creeps and named calls record there. Gain steps retain a relative amount; mute retains its explicit on/off state; trim and other typed audio setters retain their literal value or removal. Saved pauses retain only their length and picture choice; each invocation resolves its current boundary. Scope navigation is not recorded. {macro.record} again (or :record-stop) saves the named Macro. Recording performs each action and adds it only after success. Saving adds no Undo and preserves the default copy. In Your edit, Esc clears and records a Visual selection; otherwise it cancels recording.",
     },
     Spec {
         id: "macro.cancel",
@@ -1660,7 +1660,7 @@ pub static SPECS: &[Spec] = &[
         contexts: C::TIMELINE.or(C::CONTENTS),
         replay: Replay::Recorded,
         headless: eq("macro run", MACROS),
-        help: "{macro.execute} + letter runs a named Macro on the active Original or Your edit clock; a positive count repeats the call (3{macro.execute!}a, :macro a 3). Original runs support frame and start/end motions, letter marks, jumps and calls without moving Edit. Your edit uses its current cursor, beat and Visual selection in an ordinary Sequence. Inside Repeat contents, choose This play at every level and run a program containing freeze/black pauses, Hold length or sound, whole-beat gain steps or mute, Zoom intent and named calls. It resolves the newly chosen play, applies gain steps to its current value and preserves explicit mute on/off intent, then retains the actual mapped owner for the next instruction. Authored edits share one Undo; a failed instruction rolls back the whole run, including registers. Recursive calls and oversized runs are refused.",
+        help: "{macro.execute} + letter runs a named Macro on the active Original or Your edit clock; a positive count repeats the call (3{macro.execute!}a, :macro a 3). Original runs support frame and start/end motions, letter marks, jumps and calls without moving Edit. Your edit uses its current cursor, beat and Visual selection in an ordinary Sequence. Inside Repeat contents, choose This play at every level and run a program containing freeze/black pauses, Hold length or sound, whole-beat gain steps, trim, mute, saturation, balance or typed EQ, Zoom intent and named calls. It resolves the newly chosen play, applies gain steps to its current value and other audio setters as written, then retains the actual mapped owner for the next instruction. Authored edits share one Undo; a failed instruction rolls back the whole run, including registers. Recursive calls and oversized runs are refused.",
     },
     Spec {
         id: "edit.repeat-last",
@@ -1671,7 +1671,7 @@ pub static SPECS: &[Spec] = &[
         contexts: C::YOUR_EDIT.or(C::CONTENTS),
         replay: Replay::NotRecorded,
         headless: eq("resubmit the same apply instruction", STRUCT),
-        help: "Repeat the last committed picture cut, Repeat wrap or play-count change, Group, Ungroup or creative edit at the current target. Cuts, wraps and Group use the current Visual range or their retained selector. Creative edits repeat with their exact parameters: pauses, speed and pitch, gain steps, saturation, framing, cutaways, captions, reverses, tails, split edits, role edits and gags. Inside Repeat contents, dot accepts freeze/black pauses, Hold length or sound, gain steps or whole-beat mute without a Visual range, or Keep-center/target=center Zoom intent, using the play explicitly chosen at every level. Gain steps resolve the new play's current gain; mute applies its saved on/off state without toggling. Pauses resolve the current boundary and retain their actual new Hold; mixed and multiple-play dot remains unavailable. Undo/Redo, marks and copies preserve the last edit; unsupported edits clear it. No count or held repeat.",
+        help: "Repeat the last committed picture cut, Repeat wrap or play-count change, Group, Ungroup or creative edit at the current target. Cuts, wraps and Group use the current Visual range or their retained selector. Creative edits repeat with their exact parameters: pauses, speed and pitch, gain steps, saturation, framing, cutaways, captions, reverses, tails, split edits, role edits and gags. Inside Repeat contents, dot accepts freeze/black pauses, Hold length or sound, whole-beat gain steps, trim, mute, saturation, balance or typed EQ without a Visual range, or Keep-center/target=center Zoom intent, using the play explicitly chosen at every level. Gain steps resolve the new play's current gain; other audio setters retain their literal value or removal, including mute on/off without toggling. Pauses resolve the current boundary and retain their actual new Hold; mixed and multiple-play dot remains unavailable. Undo/Redo, marks and copies preserve the last edit; unsupported edits clear it. No count or held repeat.",
     },
     // PROJECT, RENDER & PANELS
     Spec {

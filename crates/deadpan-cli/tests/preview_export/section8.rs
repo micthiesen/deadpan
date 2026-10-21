@@ -19,6 +19,9 @@ use deadpan_core::{
     SourceTrimResources,
 };
 
+#[path = "section8/scoped_audio.rs"]
+pub mod scoped_audio;
+
 /// Edit sample of project frame `frame` (exact rounding of 1601.6 · frame).
 fn boundary(frame: i64) -> i64 {
     (frame * 16_016 + 5) / 10
@@ -1225,7 +1228,8 @@ pub fn role_repeat_extend(dir: &Path) -> Result<Fixture> {
     Ok(fixture)
 }
 
-pub const BUILDERS: [(&str, Builder); 24] = [
+pub const BUILDERS: [(&str, Builder); 25] = [
+    ("scoped-audio-chain", scoped_audio::build),
     ("role-repeat-extend", role_repeat_extend),
     ("tape-slowed-pause", tape_slowed_pause),
     ("preserve-slowed-pause", preserve_slowed_pause),

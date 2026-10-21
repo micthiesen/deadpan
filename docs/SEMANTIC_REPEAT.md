@@ -56,10 +56,12 @@ and installs dot intent:
 
 The dot hint names the edit ("repeat: speed 2/1× · preserve pitch"). Explicit This
 play at every enclosing Repeat supplies dot intent for whole-owner Zoom/Creep,
-freeze/black pauses, Hold length/sound, relative gain steps and whole-owner mute.
-Gain steps use the newly selected owner's gain; mute applies its retained on/off
-state without toggling. Gain and mute require no Visual range. Other direct play
-edits clear dot intent. See [one-play intent](SEMANTIC_MACROS.md#one-play-mute-state).
+freeze/black pauses, Hold length/sound, gain steps, absolute trim, mute,
+saturation, balance and typed EQ. Gain steps use the newly selected owner's gain;
+other audio setters apply their literal value or stage removal, including mute
+on/off without toggling. Audio setters require no Visual range. Other direct
+play edits clear dot intent. See
+[one-play intent](SEMANTIC_MACROS.md#one-play-literal-audio-setters).
 Ranged zooms that sample
 a target, face-target zooms that also save a target, clearing cutaways or
 captions, the Camera editor and Trim/Slip edits also clear dot intent.

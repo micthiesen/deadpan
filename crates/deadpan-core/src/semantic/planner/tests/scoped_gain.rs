@@ -2,6 +2,9 @@
 use super::*;
 use crate::AudioChange;
 
+#[path = "scoped_audio_setters.rs"]
+mod scoped_audio_setters;
+
 #[path = "scoped_mute.rs"]
 mod scoped_mute;
 
@@ -396,19 +399,9 @@ fn scoped_gain_rejects_other_audio_changes_noop_and_malformed_authority_without_
     let before = fixture();
     let snapshot = before.to_json().unwrap();
     for change in [
-        AudioChange::Trim {
-            gain: crate::GainDb::new(3000).unwrap(),
-        },
         AudioChange::RangeStep {
             millidecibels: 3000,
         },
-        AudioChange::Saturation {
-            drive: Some(crate::GainDb::new(3000).unwrap()),
-        },
-        AudioChange::Balance {
-            balance: Some(crate::StereoBalance::new(50).unwrap()),
-        },
-        AudioChange::Equalizer { recipe: None },
         AudioChange::WetSend {
             effect: crate::TailEffect::Reverb,
             level: Some(crate::GainDb::UNITY),

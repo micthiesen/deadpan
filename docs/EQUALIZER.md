@@ -34,7 +34,13 @@ For a complete, recordable recipe:
 ```
 
 All three unit-bearing band values are required; omitted cutoffs mean off.
-Whole-beat typed commands support dot and macros. A selected Repeat play is
+Whole-beat typed commands support dot and macros. Recording or dot inside
+Repeat contents requires explicit This play at every enclosing Repeat and no
+Visual range. The instruction retains the complete recipe or removal and applies
+it to the newly selected owner while preserving other treatments and stage order.
+The interactive EQ draft keeps its separate Apply/Cancel lifecycle. See
+[one-play literal audio intent](SEMANTIC_MACROS.md#one-play-literal-audio-setters).
+A selected Repeat play is
 isolated through the same captured reversible edit path. Stale or absent targets
 cannot adopt a later selection. See [native EQ qualification](qualification/native-eq-2026-10-12.md).
 

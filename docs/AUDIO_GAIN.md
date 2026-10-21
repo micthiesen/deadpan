@@ -39,12 +39,15 @@ This play at every enclosing Repeat. Each invocation uses the selected play's
 current gain, preserves its other treatments and isolates only that play.
 Counted macros commit once and undo once. Whole-owner mute also records the
 chosen on/off state in these scopes; saved macros and dot apply that state
-without toggling it. Same-state requests make no edit. Both operations preserve
-all other treatments and use exact scoped isolation. Visual ranges and other
-audio-change variants remain refused by this semantic path; ordinary
-All/several-play controls retain their direct behavior. See
+without toggling it. Literal trim, saturation, balance and typed EQ setters
+also retain their complete value or stage removal in these scopes. Same-state
+requests make no edit. These operations preserve other treatments and use exact
+scoped isolation. Visual ranges, interactive Gain/EQ drafts and wet/tail sends
+remain outside this semantic path; ordinary All/several-play controls retain
+their direct behavior. See
 [one-play gain intent](SEMANTIC_MACROS.md#one-play-gain-steps) and
-[one-play mute intent](SEMANTIC_MACROS.md#one-play-mute-state).
+[one-play mute intent](SEMANTIC_MACROS.md#one-play-mute-state), plus
+[literal setters](SEMANTIC_MACROS.md#one-play-literal-audio-setters).
 
 ## Recipe and numerical contract
 

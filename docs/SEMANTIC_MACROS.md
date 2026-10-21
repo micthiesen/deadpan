@@ -255,8 +255,8 @@ enclosing selection. One Undo restores the whole run, including isolation.
 Zero steps allocate nothing; out-of-range gain, stale authority, mismatched
 captures or a later failing instruction leave document, history and registers
 unchanged. All/mixed/several-play nonrecording gain retains its direct workflow.
-Visual ranges cannot supply one-play gain macro authority. Other audio-change
-variants remain refused except for the explicit mute state described below.
+Visual ranges cannot supply one-play gain macro authority. Explicit mute and
+literal audio setters have the same authority requirements, described below.
 See the [one-play gain qualification](qualification/scoped-gain-macros-2026-10-20.md).
 
 ### One-play mute state
@@ -275,6 +275,28 @@ whole run. Native same-state preflight adds no instruction or history. Stale or
 mixed authority, Visual selection and mismatched captures cannot fall back to a
 shared edit. Ordinary nonrecording All/several-play controls retain their direct
 workflow. See the [one-play mute qualification](qualification/scoped-mute-macros-2026-10-21.md).
+
+### One-play literal audio setters
+
+Explicit This play at every enclosing Repeat and no Visual range also admit
+whole-owner absolute `:gain`, `:saturate`, `:balance` and typed `:eq` commands.
+Their existing `SetAudio` instructions retain the complete literal value or
+stage removal. Saved calls and dot apply that intent to the newly selected
+owner; absolute trim never becomes a relative step. Other treatments, authored
+order, gain automation, mute ranges and sends stay intact.
+
+Each instruction reads the preceding staged result and uses exact scoped
+isolation. The actual mapped owner and presentation continue through calls and
+later pause/framing edits. One Undo restores the entire run. A setter that
+already matches refuses before allocating; a later refusal rolls back the whole
+run. Native preflight appends no same-state instruction. All/mixed/several-play
+nonrecording controls keep their direct workflow.
+
+Visual-range steps, interactive Gain/EQ drafts and wet/tail sends do not gain
+scoped semantic admission here. Stale or mismatched captures, incomplete Play
+authority and delayed receipts cannot fall back to a shared edit or reclaim
+newer navigation. See the
+[literal-setter qualification](qualification/scoped-audio-setters-2026-10-21.md).
 
 ### Place slice Apply
 

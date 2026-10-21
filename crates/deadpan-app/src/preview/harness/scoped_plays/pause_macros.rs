@@ -239,6 +239,7 @@ fn refuse(d: &mut Driver<'_>, baseline: &ProjectDocument) -> Result<(), String> 
 fn delayed(d: &mut Driver<'_>, baseline: &ProjectDocument, root: &NodeId) -> Result<(), String> {
     choose(d, 3)?;
     let bank = d.app().copied.bank_version();
+    let previous_macro = saved(d, 't');
     d.chord(&[Key::Q, Key::T])?;
     d.app_mut().feedback.hold_project_updates = true;
     let result = (|| {
@@ -254,7 +255,7 @@ fn delayed(d: &mut Driver<'_>, baseline: &ProjectDocument, root: &NodeId) -> Res
         settled(d)?;
         d.check("A delayed pause cannot reclaim another play or append into an abandoned recording",
             d.app().scoped.is_none() && d.app().sequence_cursor == cursor && cursor == 120
-                && !d.app().macros.recording() && saved(d,'t').is_none()
+                && !d.app().macros.recording() && saved(d,'t') == previous_macro
                 && d.app().copied.bank_version() == bank && play_lengths(d,root)? == [120,120,123],
             json!({"Edit":120,"saved_third_play_frames":123,"inspector":"closed","recording":false,"bank":"unchanged"}),d.snapshot())?;
         scenarios::footer_anchored(d, "Delayed pause recording keeps the compact footer")?;

@@ -17,15 +17,10 @@ impl super::DeadpanApp {
             .snapshot()?
             .edit_for(self.workspace.as_ref()?)
             .ok()?;
-        if self.scoped.is_some()
-            && matches!(
-                edit.operation,
-                RepeatableEdit::Parameter(deadpan_core::SemanticInstruction::SetAudio {
-                    change: deadpan_core::AudioChange::Step { .. }
-                        | deadpan_core::AudioChange::Mute { .. }
-                })
-            )
-        {
+        let scoped_audio = matches!(&edit.operation,
+            RepeatableEdit::Parameter(deadpan_core::SemanticInstruction::SetAudio { change })
+                if super::gain::scoped_audio_change(change));
+        if self.scoped.is_some() && scoped_audio {
             if self.edit_selection() != crate::navigation::EditSelection::None {
                 return Some("repeat unavailable: clear Visual range".into());
             }
@@ -45,16 +40,11 @@ impl super::DeadpanApp {
                         | deadpan_core::SemanticInstruction::SetHoldDuration { .. }
                         | deadpan_core::SemanticInstruction::SetHoldAudio { .. }
                         | deadpan_core::SemanticInstruction::SetRoomTone { .. }
-                        | deadpan_core::SemanticInstruction::SetAudio {
-                            change: deadpan_core::AudioChange::Step { .. }
-                                | deadpan_core::AudioChange::Mute { .. }
-                        }
                 )
             )
+            && !scoped_audio
         {
-            return Some(
-                "repeat unavailable: use a gain step, mute, pause or framing edit first".into(),
-            );
+            return Some("repeat unavailable: use an audio, pause or framing edit first".into());
         }
         let selected_repeat = matches!(edit.operation, RepeatableEdit::SetRepeatPlays { .. })
             && self.workspace.as_ref().is_some_and(|workspace| {

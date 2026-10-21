@@ -3203,7 +3203,9 @@ impl DeadpanApp {
             }
             Ok(navigation::command::Entry::Gain(Some(gain)))
                 if self.macros.recording()
-                    || (gain::whole_beat(&gain_target) && self.selected_edit_range().is_none()) =>
+                    || (gain::whole_beat(&gain_target) && self.selected_edit_range().is_none())
+                    || (gain::semantic_step_target(&gain_target)
+                        && self.edit_selection() == navigation::EditSelection::None) =>
             {
                 self.record_audio_change(
                     gain_target,

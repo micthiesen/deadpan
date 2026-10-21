@@ -322,6 +322,10 @@ fn delayed_source(d: &mut Driver<'_>) -> Result<(), String> {
     d.key(Key::V)?;
     d.key(Key::L)?;
     d.key(Key::Y)?;
+    d.wait_for(
+        "Original moment copied before delayed pause navigation",
+        |app| !app.service.is_busy() && !app.copied.is_pending() && app.copied.original().is_some(),
+    )?;
     d.command("sequence")?;
     d.key(Key::Enter)?;
     d.command("scope play 2")?;

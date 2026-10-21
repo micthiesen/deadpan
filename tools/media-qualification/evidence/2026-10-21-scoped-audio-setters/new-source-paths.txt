@@ -1,0 +1,4 @@
+crates/deadpan-app/src/preview/harness/scoped_plays/audio_setters.rs
+crates/deadpan-app/src/project/tests/macros/scoped/audio_setters.rs
+crates/deadpan-cli/tests/preview_export/section8/scoped_audio.rs
+crates/deadpan-core/src/semantic/planner/tests/scoped_audio_setters.rs

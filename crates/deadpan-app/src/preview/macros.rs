@@ -584,7 +584,7 @@ impl DeadpanApp {
                     | Action::OfferInsert
             )
         {
-            self.error = Some("A one-play macro records whole-beat gain steps and mute, freeze and black pauses, pause lengths, silence and room tone, zooms, creeps and named calls. Save or cancel recording before another action.".into());
+            self.error = Some("A one-play macro records whole-beat gain, mute, saturation, balance and EQ, freeze and black pauses, pause lengths, silence and room tone, zooms, creeps and named calls. Save or cancel recording before another action.".into());
             return false;
         }
         if self.macros.recording_original()
@@ -810,21 +810,23 @@ impl DeadpanApp {
                 self.macro_action_allowed(Action::GainStep(0))
             }
             Ok(navigation::command::Entry::GainMute) => self.macro_action_allowed(Action::Mute),
-            // Other audio commands retain ordinary whole-beat recording,
-            // but cannot bypass the one-play gate through a direct edit.
+            // Typed whole-owner setters retain literal invocation intent.
             Ok(
                 navigation::command::Entry::Gain(Some(_))
                 | navigation::command::Entry::Saturate(_)
                 | navigation::command::Entry::Balance(_)
-                | navigation::command::Entry::Equalizer(_)
-                | navigation::command::Entry::TailSend { .. }
+                | navigation::command::Entry::Equalizer(_),
+            ) => self.macro_action_allowed(Action::GainStep(0)),
+            // Sends still have a separate scoped timing lifecycle.
+            Ok(
+                navigation::command::Entry::TailSend { .. }
                 | navigation::command::Entry::WetSend { .. },
             ) => {
                 if !self.macro_action_allowed(Action::GainStep(0)) {
                     return false;
                 }
                 if self.macros.recording() && self.scoped.is_some() {
-                    self.error = Some("A one-play macro records relative gain steps and whole-beat mute only. Save or cancel recording before another audio treatment.".into());
+                    self.error = Some("A one-play macro cannot record sends. Save or cancel recording before changing a send.".into());
                     return false;
                 }
                 true
@@ -904,7 +906,7 @@ impl DeadpanApp {
                         )
                     } else if self.scoped.is_some() {
                         format!(
-                            "Recording @{name} in this play: whole-beat gain steps and mute, freeze/black pauses, pause lengths, zooms, creeps and named calls. {} saves; Esc cancels.",
+                            "Recording @{name} in this play: gain, mute, saturation, balance and EQ, freeze/black pauses, pause lengths, zooms, creeps and named calls. {} saves; Esc cancels.",
                             self.editor_key(EditorKey::MacroRecord)
                         )
                     } else {
@@ -1398,14 +1400,11 @@ impl DeadpanApp {
                         | SemanticInstruction::SetHoldDuration { .. }
                         | SemanticInstruction::SetHoldAudio { .. }
                         | SemanticInstruction::SetRoomTone { .. }
-                        | SemanticInstruction::SetAudio {
-                            change: deadpan_core::AudioChange::Step { .. }
-                                | deadpan_core::AudioChange::Mute { .. }
-                        }
                         | SemanticInstruction::Call { .. }
                 )
+                && !matches!(&instruction, SemanticInstruction::SetAudio { change } if gain::scoped_audio_change(change))
             {
-                return Err("This play supports whole-beat gain steps and mute, freeze and black pauses, pause lengths, silence and room tone, Zoom, Creep and named calls only. Return to the parent for other macro edits.".into());
+                return Err("This play supports whole-beat gain, mute, saturation, balance and EQ, freeze and black pauses, pause lengths, silence and room tone, Zoom, Creep and named calls only. Return to the parent for other macro edits.".into());
             }
             if !captured.matches(self)
                 || self

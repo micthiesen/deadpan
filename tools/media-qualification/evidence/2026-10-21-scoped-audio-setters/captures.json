@@ -1,0 +1,37 @@
+[
+  {
+    "path": "/tmp/deadpan-scoped-audio-setters-2026-10-21/first-visual/scoped-plays-135.png",
+    "checkpoint": "First failed run: saved delayed pause at Edit120; incorrect empty-register assumption",
+    "sha256": "68a20e925687e05b98a4be413b440d3185a0df628a91beb6b8dee7b499b02568",
+    "inspected_by": "root",
+    "file": "first-visual-scoped-plays-135.png"
+  },
+  {
+    "path": "/tmp/deadpan-scoped-audio-setters-2026-10-21/second-visual/scoped-plays-143.png",
+    "checkpoint": "Second failed run: Original selection remained active while copy was pending; return control absent",
+    "sha256": "3efbaff291bfd55565d3a357c7d5a6a353bb5b084a0587e8aaa11dba452c734c",
+    "inspected_by": "root",
+    "file": "second-visual-scoped-plays-143.png"
+  },
+  {
+    "path": "/tmp/deadpan-scoped-audio-setters-2026-10-21/visual/scoped-plays-128.png",
+    "checkpoint": "One-play gain recording retains visible keys at minimum size",
+    "sha256": "af73397c286b2b6ed027ff0abf06ee7e02a5276c38b4376dfd961fb44ef92baa",
+    "inspected_by": "root",
+    "file": "visual-scoped-plays-128.png"
+  },
+  {
+    "path": "/tmp/deadpan-scoped-audio-setters-2026-10-21/visual/scoped-plays-130.png",
+    "checkpoint": "One-play mute recording retains visible keys at minimum size",
+    "sha256": "b712710cb7e8e6109dc284c81b8b8a8535733b6bdd88b6cf8920f0890c4c0b18",
+    "inspected_by": "root",
+    "file": "visual-scoped-plays-130.png"
+  },
+  {
+    "path": "/tmp/deadpan-scoped-audio-setters-2026-10-21/visual/scoped-plays-132.png",
+    "checkpoint": "One-play audio macros retain literal values and stage removals",
+    "sha256": "de30c824f18d457bf0eb2d90c67a2af45349ee2fe20a489b247868c9c64cbdae",
+    "inspected_by": "root",
+    "file": "visual-scoped-plays-132.png"
+  }
+]

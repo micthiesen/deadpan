@@ -1,0 +1,4 @@
+semantic::planner::tests::scoped_framing::scoped_gain::scoped_audio_setters::scoped_trim_literal_isolates_one_play_and_preserves_peer_treatments_and_timing
+semantic::planner::tests::scoped_framing::scoped_gain::scoped_audio_setters::scoped_saturation_literal_isolates_one_play_and_preserves_peer_treatments_and_timing
+semantic::planner::tests::scoped_framing::scoped_gain::scoped_audio_setters::scoped_balance_literal_isolates_one_play_and_preserves_peer_treatments_and_timing
+semantic::planner::tests::scoped_framing::scoped_gain::scoped_audio_setters::scoped_equalizer_literal_isolates_one_play_and_preserves_peer_treatments_and_timing

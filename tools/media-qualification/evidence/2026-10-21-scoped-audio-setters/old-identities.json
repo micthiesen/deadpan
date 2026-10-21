@@ -1,0 +1,18 @@
+{
+  "base": "8aff1938",
+  "started_unix": 1792624919.732544,
+  "sha256": {
+    "Cargo.lock": "1e39d18ae4de6c7b898edad39eb7104235fb3ffe3af84521ca94df2b6c25b71b",
+    "crates/deadpan-core/src/semantic/planner.rs": "4bf41cf703479e8d89c3579cfa8daf5181c1fc419cb4177789adbdb277f06107",
+    "crates/deadpan-core/src/semantic/planner/scoped_gain.rs": "446682b272f4be8f3651014cb4c857a5aedff7a7d0a5e0f25c02dc8e084856e9",
+    "crates/deadpan-core/src/semantic/planner/pause.rs": "ed609a132d3aa1bd202dbf358d084d6f253a759afaf7e3dad84e626b8144e972",
+    "crates/deadpan-core/src/semantic/planner/tests/scoped_framing.rs": "218f6ad7864c6ed69dd932cc548bccc11df18fc546feea268b38be0f6db88977",
+    "crates/deadpan-core/src/semantic/planner/tests/scoped_gain.rs": "be1d68807e3b47db1bafabe89cf260fc18ebf5c53999d6d07d91d6d648868cd4",
+    "crates/deadpan-core/src/semantic/planner/tests/scoped_audio_setters.rs": "b371494065c4027b9da86e489dac0a9003768fa26945da77a7f0786a02cba7a6"
+  },
+  "binary": {
+    "path": "target/debug/deps/deadpan_core-b3aaf031552acdd6",
+    "sha256": "900ef5e37ebdc48012e18327b1ee9961d0389d1b0b31c55e41c1fad0d25d43c0",
+    "selection": "sole Cargo owner; core --lib executable modified after marker; listing confirms all four literal witnesses"
+  }
+}

@@ -2,6 +2,25 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
+## One-play literal audio setters, 2026-10-21
+
+[Setter qualification](qualification/scoped-audio-setters-2026-10-21.md) adds
+absolute trim, saturation, balance and typed EQ to recording, calls and dot
+with explicit This play at every Repeat and no Visual range. Literal values
+and stage removals replace only their named treatment. Exact isolation,
+automation, nonempty sends, timing and durable history remain intact.
+Four valid old-code witnesses fail before implementation. All 23 focused core,
+514 normal and 207 UI-feature tests pass, with strict lint and release builds.
+The new release export verifies all 72 pictures and all 115,315 presented audio
+samples in six contiguous windows at measured offset zero; a separate numerical
+PCM oracle checks all six occurrences. Both final native replays pass 846
+scoped checks plus Kestrel. Three compact captures were inspected; input-to-state
+p99 is 1.388 ms and maximum picture completion is 93.165 ms in the quiet run.
+Two existing replay setup assumptions were repaired without changing production
+behavior; their failures and independent follow-up reviews are retained.
+DP-06, DP-09 and DP-24 stay partial. Visual ranges, interactive drafts, sends
+and mixed/multiple-play macro authority remain outside this scoped path.
+
 ## One-play mute macros, 2026-10-21
 
 [Mute qualification](qualification/scoped-mute-macros-2026-10-21.md) adds

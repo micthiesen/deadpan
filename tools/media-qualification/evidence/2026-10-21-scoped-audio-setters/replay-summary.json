@@ -1,0 +1,94 @@
+{
+  "visual": {
+    "failed": false,
+    "checks": 846,
+    "findings": [
+      {
+        "severity": "warning",
+        "message_prefix": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity."
+      },
+      {
+        "severity": "warning",
+        "message_prefix": "The \"Room tone\u2026  :room-tone\" action needs inspector scrolling at 960\u00d7640 before its full button is clickable. The replay includes this extra user step."
+      },
+      {
+        "severity": "warning",
+        "message_prefix": "238 frame(s) settled their layout only on a second retry: [{\"frame\":65,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5566)\",\"pass 0: workspace footer mode changed after in"
+      },
+      {
+        "severity": "warning",
+        "message_prefix": "egui discard warning: 43 run(s) of 3+ consecutive retrying frames, each frame with its own cause: [[{\"frame\":64,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/"
+      }
+    ],
+    "timings": {
+      "input_to_state_ms": {
+        "completed": {
+          "max_ms": 1.76375,
+          "n": 1064,
+          "p50_ms": 0.488458,
+          "p95_ms": 0.987334,
+          "p99_ms": 1.4402499999999998
+        },
+        "failed": 0,
+        "samples": 1064,
+        "timed_out": 0
+      },
+      "input_to_picture_complete_ms": {
+        "completed": {
+          "max_ms": 127.052792,
+          "n": 323,
+          "p50_ms": 2.1111250000000004,
+          "p95_ms": 15.360375000000001,
+          "p99_ms": 21.90975
+        },
+        "failed": 0,
+        "samples": 323,
+        "timed_out": 0
+      }
+    }
+  },
+  "performance": {
+    "failed": false,
+    "checks": 846,
+    "findings": [
+      {
+        "severity": "warning",
+        "message_prefix": "The \"Room tone\u2026  :room-tone\" action needs inspector scrolling at 960\u00d7640 before its full button is clickable. The replay includes this extra user step."
+      },
+      {
+        "severity": "warning",
+        "message_prefix": "238 frame(s) settled their layout only on a second retry: [{\"frame\":123,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5566)\",\"pass 0: workspace footer mode changed after i"
+      },
+      {
+        "severity": "warning",
+        "message_prefix": "egui discard warning: 42 run(s) of 3+ consecutive retrying frames, each frame with its own cause: [[{\"frame\":122,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app"
+      }
+    ],
+    "timings": {
+      "input_to_state_ms": {
+        "completed": {
+          "max_ms": 1.7138749999999998,
+          "n": 1064,
+          "p50_ms": 0.4795,
+          "p95_ms": 0.960334,
+          "p99_ms": 1.3877080000000002
+        },
+        "failed": 0,
+        "samples": 1064,
+        "timed_out": 0
+      },
+      "input_to_picture_complete_ms": {
+        "completed": {
+          "max_ms": 93.164917,
+          "n": 323,
+          "p50_ms": 2.0760829999999997,
+          "p95_ms": 15.062458000000001,
+          "p99_ms": 21.173958
+        },
+        "failed": 0,
+        "samples": 323,
+        "timed_out": 0
+      }
+    }
+  }
+}

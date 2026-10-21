@@ -159,10 +159,23 @@ pub(super) fn whole_beat(target: &Option<Result<Target, String>>) -> bool {
     matches!(target, Some(Ok(target)) if target.scoped.is_none())
 }
 
-/// A whole-owner relative step may resolve one explicitly chosen play at
+/// A whole-owner audio change may resolve one explicitly chosen play at
 /// every Repeat level. Callers must also require no Visual selection.
 pub(super) fn semantic_step_target(target: &Option<Result<Target, String>>) -> bool {
     matches!(target, Some(Ok(target)) if target.scoped.as_ref().is_none_or(|scope| scope.has_single_play_authority()))
+}
+
+/// Whole-owner setters share one-play authority; ranges and sends do not.
+pub(super) fn scoped_audio_change(change: &deadpan_core::AudioChange) -> bool {
+    matches!(
+        change,
+        deadpan_core::AudioChange::Step { .. }
+            | deadpan_core::AudioChange::Mute { .. }
+            | deadpan_core::AudioChange::Trim { .. }
+            | deadpan_core::AudioChange::Saturation { .. }
+            | deadpan_core::AudioChange::Balance { .. }
+            | deadpan_core::AudioChange::Equalizer { .. }
+    )
 }
 
 impl DeadpanApp {
@@ -278,11 +291,11 @@ impl DeadpanApp {
             .unwrap_or_else(|| Err("No beat was captured on command entry.".into()))
             .and_then(|target| {
                 if let Some(scoped) = &target.scoped {
-                    if !matches!(change, deadpan_core::AudioChange::Step { .. } | deadpan_core::AudioChange::Mute { .. })
+                    if !scoped_audio_change(&change)
                         || self.edit_selection() != navigation::EditSelection::None
                         || !scoped.has_single_play_authority()
                     {
-                        return Err("A one-play macro records whole-beat gain steps and mute states. Clear Visual selection and choose This play at every Repeat level.".into());
+                        return Err("A one-play macro records whole-beat gain, mute, saturation, balance and EQ. Clear Visual selection and choose This play at every Repeat level.".into());
                     }
                     self.check_gain_target(&target)?;
                     let capture = macro_target
@@ -531,29 +544,20 @@ impl DeadpanApp {
     /// `:saturate 12dB` / `:saturate off`: the captured beat's saturation
     /// stage, after its clip gain, as one Undo. A whole beat in the current
     /// group is changed through the semantic path, so `.` repeats it and a
-    /// macro records it; one play inside a Repeat is edited directly.
+    /// macro records it, including one explicitly chosen Repeat play.
     pub(super) fn saturate_command(
         &mut self,
         target: Option<Result<Target, String>>,
         macro_target: Option<Result<super::macros::Capture, String>>,
         stage: Option<deadpan_core::Saturation>,
     ) {
-        if let Some(Ok(captured)) = &target
-            && captured.scoped.is_none()
-        {
+        if self.semantic_audio_target(&target) {
             self.record_audio_change(
                 target,
                 macro_target,
                 deadpan_core::AudioChange::Saturation {
                     drive: stage.map(deadpan_core::Saturation::drive),
                 },
-            );
-            return;
-        }
-        if self.macros.recording() {
-            self.error = Some(
-                "Recording changes a whole beat's saturation; leave the play scope with :scope all."
-                    .into(),
             );
             return;
         }
@@ -581,20 +585,11 @@ impl DeadpanApp {
         macro_target: Option<Result<super::macros::Capture, String>>,
         balance: Option<deadpan_core::StereoBalance>,
     ) {
-        if let Some(Ok(captured)) = &target
-            && captured.scoped.is_none()
-        {
+        if self.semantic_audio_target(&target) {
             self.record_audio_change(
                 target,
                 macro_target,
                 deadpan_core::AudioChange::Balance { balance },
-            );
-            return;
-        }
-        if self.macros.recording() {
-            self.error = Some(
-                "Recording changes a whole beat's balance; leave the play scope with :scope all."
-                    .into(),
             );
             return;
         }
@@ -788,19 +783,11 @@ impl DeadpanApp {
         macro_target: Option<Result<super::macros::Capture, String>>,
         recipe: Option<deadpan_core::EqualizerRecipe>,
     ) {
-        if let Some(Ok(captured)) = &target
-            && captured.scoped.is_none()
-        {
+        if self.semantic_audio_target(&target) {
             self.record_audio_change(
                 target,
                 macro_target,
                 deadpan_core::AudioChange::Equalizer { recipe },
-            );
-            return;
-        }
-        if self.macros.recording() {
-            self.error = Some(
-                "Recording changes a whole beat's EQ; leave the play scope with :scope all.".into(),
             );
             return;
         }
@@ -817,6 +804,13 @@ impl DeadpanApp {
             Ok((target, treatments)) => self.commit_gain(target, treatments),
             Err(error) => self.error = Some(error),
         }
+    }
+
+    fn semantic_audio_target(&self, target: &Option<Result<Target, String>>) -> bool {
+        self.macros.recording()
+            || matches!(target, Some(Ok(target)) if target.scoped.is_none()
+                || (self.edit_selection() == navigation::EditSelection::None
+                    && target.scoped.as_ref().is_some_and(|scope| scope.has_single_play_authority())))
     }
 
     pub(super) fn receive_gain(&mut self, update: Option<ProposalUpdate>) {

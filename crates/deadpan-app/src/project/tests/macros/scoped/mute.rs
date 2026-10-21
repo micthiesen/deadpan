@@ -229,8 +229,9 @@ fn native_scoped_mute_program_keeps_boolean_intent_and_refuses_stale_or_invalid_
             program(vec![
                 mute(true),
                 SemanticInstruction::SetAudio {
-                    change: AudioChange::Trim {
-                        gain: deadpan_core::GainDb::UNITY,
+                    change: AudioChange::WetSend {
+                        effect: deadpan_core::TailEffect::Reverb,
+                        level: Some(deadpan_core::GainDb::UNITY),
                     },
                 },
             ]),

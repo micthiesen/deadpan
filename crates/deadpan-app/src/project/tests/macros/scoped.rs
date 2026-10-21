@@ -1,5 +1,6 @@
 //! Real qualified pictures through one-play semantic service receipts.
 
+mod audio_setters;
 mod duration;
 mod gain;
 mod mute;

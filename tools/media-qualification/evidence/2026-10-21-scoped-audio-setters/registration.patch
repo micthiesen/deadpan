@@ -1,0 +1,12 @@
+--- a/crates/deadpan-core/src/semantic/planner/tests/scoped_gain.rs
++++ b/crates/deadpan-core/src/semantic/planner/tests/scoped_gain.rs
+@@ -4,6 +4,9 @@
+ 
+ #[path = "scoped_mute.rs"]
+ mod scoped_mute;
++
++#[path = "scoped_audio_setters.rs"]
++mod scoped_audio_setters;
+ 
+ fn step(millidecibels: i32) -> SemanticInstruction {
+     SemanticInstruction::SetAudio {

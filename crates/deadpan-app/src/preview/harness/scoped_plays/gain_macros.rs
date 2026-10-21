@@ -148,14 +148,7 @@ fn refuse_audio_treatments(d: &mut Driver<'_>) -> Result<(), String> {
         .workspace
         .as_ref()
         .map(|workspace| (workspace.can_undo, workspace.can_redo));
-    for command in [
-        "gain -6dB",
-        "saturate 6dB",
-        "balance left",
-        "eq bass=3dB middle=0dB treble=0dB",
-        "tail-send reverb -6dB",
-        "wet-send delay -6dB",
-    ] {
+    for command in ["tail-send reverb -6dB", "wet-send delay -6dB"] {
         d.command(command)?;
         settled(d)?;
         d.check(
@@ -173,9 +166,10 @@ fn refuse_audio_treatments(d: &mut Driver<'_>) -> Result<(), String> {
                 && d.app().macros.instruction_count() == 0
                 && !d.app().macros.is_pending()
                 && !d.app().service.is_busy()
-                && d.app().error.as_deref().is_some_and(|error| {
-                    error.contains("relative gain steps and whole-beat mute only")
-                }),
+                && d.app()
+                    .error
+                    .as_deref()
+                    .is_some_and(|error| error.contains("cannot record sends")),
             json!({"document":"unchanged","history":"unchanged","instructions":0,"pending":false}),
             d.snapshot(),
         )?;

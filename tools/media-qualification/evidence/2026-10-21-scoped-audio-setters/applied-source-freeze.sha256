@@ -1,0 +1,4 @@
+3b2b4c005c1c25ea323d6cf0c59b285bab982724cc9645f6c1dcf58785a1e0a8  crates/deadpan-core/src/semantic/planner.rs
+6d865f01c4d53624908c76980e4cd7f17dbead22128c6c9aa1c9ebf013ab55e7  crates/deadpan-core/src/semantic/planner/scoped_gain.rs
+0860e713d0338e86ac493a7812c48306caa0b2d79d79e73b379de208cb2263d5  crates/deadpan-core/src/semantic/planner/tests/scoped_gain.rs
+d85afc8ccee5d3d03ec1ec2739d1e23851b1c23c995bf5c6929fcf8682b22c17  crates/deadpan-core/src/semantic/planner/tests/scoped_audio_setters.rs

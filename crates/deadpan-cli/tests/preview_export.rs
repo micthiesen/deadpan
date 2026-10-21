@@ -795,6 +795,85 @@ fn inner_repeat_speed_update_preview_and_encoded_output_keep_physical_carriers()
     Ok(())
 }
 
+#[test]
+fn scoped_audio_chain_preview_and_complete_encoded_output_isolate_one_nested_play() -> Result {
+    use recipes::section8::scoped_audio::{FRAMES, SAMPLES};
+    let (root, _guard) = keep_or(tempfile::tempdir()?);
+    let fixture = recipes::section8::scoped_audio::build(&root.join("scoped-audio"))?;
+    assert_eq!(fixture.frames, FRAMES);
+    check(&fixture)?;
+    if skip_without_physical_mac("encoded Render") {
+        return Ok(());
+    }
+    let movie = render(&fixture, &root.join("exports-scoped-audio"))?;
+    // Cover every presented sample, including both endpoints and all five seams.
+    // Six bounded contiguous windows stay far below the CLI's 64-window limit.
+    let windows: Vec<_> = (0..SAMPLES)
+        .step_by(19_220)
+        .map(|start| (start, (start + 19_220).min(SAMPLES)))
+        .collect();
+    assert_eq!(windows.len(), 6);
+    assert_eq!(windows[0].0, 0);
+    assert_eq!(windows.last().ok_or("last audio window")?.1, SAMPLES);
+    for pair in windows.windows(2) {
+        assert_eq!(pair[0].1, pair[1].0);
+    }
+    let selection = windows
+        .iter()
+        .map(|(start, end)| format!("{start}:{end}"))
+        .collect::<Vec<_>>()
+        .join(",");
+    let (report, passed) = verify(
+        &fixture,
+        &movie,
+        &fixture.revision,
+        &["--every", "1", "--samples", &selection],
+    )?;
+    assert!(passed, "{report}");
+    assert_eq!(report["movie"]["video_frames"], FRAMES);
+    assert_eq!(report["movie"]["expected_video_frames"], FRAMES);
+    assert_eq!(report["movie"]["expected_audio_samples"], SAMPLES);
+    assert_eq!(report["movie"]["audio"]["presented_end"], SAMPLES);
+    assert_eq!(
+        report["movie"]["audio_edits"]["presented_media_ticks"],
+        SAMPLES
+    );
+    assert_eq!(report["movie"]["picture_anomalies"], json!([]));
+    assert_eq!(report["movie"]["audio"]["gaps"], json!([]));
+    assert_eq!(report["summary"]["pictures_checked"], FRAMES);
+    assert_eq!(report["summary"]["pictures_failed"], 0);
+    assert_eq!(report["summary"]["audio_windows_checked"], windows.len());
+    assert_eq!(report["summary"]["signal_windows"], windows.len());
+    assert_eq!(report["summary"]["nonzero_offsets"], 0);
+    assert_eq!(
+        report["pictures"].as_array().ok_or("pictures")?.len(),
+        FRAMES as usize
+    );
+    check_provenance(&fixture, &report)?;
+    let audio = report["audio"].as_array().ok_or("complete audio windows")?;
+    assert_eq!(audio.len(), windows.len());
+    for (window, (start, end)) in audio.iter().zip(&windows) {
+        assert_eq!(window["window"], json!([start, end]));
+        assert_eq!(window["project_samples"], json!([start, end]));
+        assert_eq!(window["passed"], true);
+        assert_eq!(window["kind"], "signal");
+        assert_eq!(window["flags"], json!([]));
+        assert_eq!(window["blocks"]["low_snr_blocks"], 0);
+        assert_eq!(window["offset_status"], "verified_zero");
+        assert_eq!(window["measured_offset_samples"], 0);
+    }
+    if let Some(path) = std::env::var_os("DEADPAN_SCOPED_AUDIO_RESULTS") {
+        std::fs::write(
+            path,
+            serde_json::to_vec_pretty(&json!({
+                "package":fixture.package,"movie":movie,"report":report,"notes":fixture.notes,
+            }))?,
+        )?;
+    }
+    eprintln!("{}", summary_row(&fixture, &report));
+    Ok(())
+}
+
 fn partial_repeat_export(existing: bool) -> Result {
     let (root, _guard) = keep_or(tempfile::tempdir()?);
     let factory = if existing {
