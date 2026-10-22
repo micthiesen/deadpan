@@ -220,3 +220,10 @@ independent reviews and four inspected captures. The content-addressed archive
 also retains the old-audio workspace's non-Rust build inputs. Inventory and
 payload hashes are verified during collection. The final source-to-Git audit
 is recorded separately after the scoped code commit.
+
+The source audit binds code commit
+`6a7eed92e239add1d3a3b6522d8810826c6b52ac` to all 2,019 final Rust paths and
+six supplemental inputs. Each recorded SHA-256 matches its exact Git blob;
+the tracked Rust path set is complete. No runtime source changes follow the
+passing final strict/UI/release runs. Collection verifies 2,575 unique frozen
+payloads; the final inventory includes this audit and its code-commit identity.

@@ -365,6 +365,16 @@
     "sha256": "737684f0fbab743bb8e8535813b5ef1265d10125a21edf951063fb262ef1ce51"
   },
   {
+    "file": "code-commit.txt.gz",
+    "bytes": 59,
+    "sha256": "c710d9550208f2658068aa731ea1df91ff489fda1da23e641c6fd43a5f68db66"
+  },
+  {
+    "file": "code-source-git-audit.json.gz",
+    "bytes": 160140,
+    "sha256": "3c89816d6558b5409aa9e3e6208501ef53f1add55d16614e4879ee19d8a554fc"
+  },
+  {
     "file": "collect.py.gz",
     "bytes": 1835,
     "sha256": "af5f1c3f70d146a35c9797d3cb3708254a368dc2ba4c9773488aabe0f9bd8ae0"

@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-22T23:44:20Z",
+  "updated_at": "2026-10-22T23:51:00Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Sound-owner grouping: 4,904 broader and 1,292 UI-feature tests pass, with strict checks and formatting. Native debug replay and the full 121-picture/193,794-sample export preflight pass. Release qualification is running. Coverage remains 89%, with 8/24 requirement sections complete.",
+  "focus": "Sound-owner endpoint grouping verified and source-audited. Coverage stays at 89%, with 8/24 requirement sections complete. Next: aligned grouping within broad retained Sequence scopes, preserving actual processor-interior refusals.",
   "features": [
     {
       "id": "editing",
@@ -44,7 +44,7 @@
       "requirements": [
         "DP-09"
       ],
-      "note": "Playback, gain, sounds, native EQ, Tail sends, continuous returns and independent sound treatments work. Fixed Retime output sounds retain exact phase and history through ordinary interior Hold edits. Fractional retained owner support and the complete nonzero nonlinear master are verified. Partial sound copy, move, deletion and Repeat transport work. GroupSelection endpoint splits, retained processing-scope interiors, wider loop/tail qualification and persistent filtered caching remain."
+      "note": "Playback, gain, sounds, native EQ, Tail sends, continuous returns and independent sound treatments work. Fixed Retime output sounds retain exact phase and history through ordinary interior Hold edits. Fractional retained owner support and the complete nonzero nonlinear master are verified. Partial sound copy, move, deletion, Repeat and GroupSelection endpoint transport work outside retained processing scopes. Retained processing-scope interiors, root-owned BeatSound transport, wider loop/tail qualification and persistent filtered caching remain."
     },
     {
       "id": "analysis",
@@ -893,6 +893,14 @@
       "revision": "aef99a02d4c6cad1c1d3255e9ec1200076ff6fee",
       "retrospective": false,
       "summary": "Corrected transcript-search selectors preserve full forward phrases, raw query intent and separate intervals through recording, fresh calls/dot, atomic Cut and durable paste. Proposal/correction authority is checked inside publication; stale native geometry clears without disabling history. Verified 124 focused, all 13 provider, 4,872 broader and 1,292 UI-feature cases; a passing broader output-handle warning also passes an isolated same-binary run. Both release modes pass 103 checks plus Kestrel; all 120 pictures and 192,192 samples verify at zero offset. Extracted owner validation, source/blob audit and strict checks pass. No requirement or gate newly complete."
+    },
+    {
+      "date": "2026-10-22",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "6a7eed92e239add1d3a3b6522d8810826c6b52ac",
+      "retrospective": false,
+      "summary": "GroupSelection endpoint splits now retain complete attached-sound processing, exact phase and history outside retained scopes; aligned groups keep existing tables unchanged. Verified 14 focused, 4,904 broader and 1,292 UI-feature cases, strict checks and release visual/performance replays with 97/82 checks plus Kestrel each. Complete pre/post canonical PCM and limiter gain remain bit-identical; release export verifies all 121 pictures and 193,794 samples at zero offset. Extracted owner validation, source/blob audit and inspected captures pass. Failed fixtures, layout warnings, sparse timing and neighbor observability limits are retained. No requirement or gate newly complete."
     }
   ]
 }
