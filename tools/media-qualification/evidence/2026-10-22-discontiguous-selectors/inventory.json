@@ -925,6 +925,11 @@
     "sha256": "c83bc45cb62148ec434384480f9f03f5936aab4acb97a4b1215a1f2543a71bdd"
   },
   {
+    "file": "independent-postcommit-audit.json",
+    "bytes": 3472,
+    "sha256": "b96602078e6f6f41de8d3fbc0b1ca1dbbab61b9006a1153bbc25076f08880bcd"
+  },
+  {
     "file": "independent-source-audit.json.gz",
     "bytes": 457196,
     "sha256": "a93d6162049df629cb1855273944c618cc89d22cb13e8795116f10d21394ffd1"

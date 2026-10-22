@@ -1,0 +1,74 @@
+{
+  "audited_at_utc": "2026-10-22T19:38:29.864657+00:00",
+  "status": "passed",
+  "code_commit": "eea765a96929be926fd3def97c2de6844df7827d",
+  "git_method": "Independent bare git ls-tree exact-path blob listing plus complete recursive tree inventory in bounded subtrees, suffix-filtered in memory; bare git hash-object --no-filters over retained release files. Each retained file SHA-256 was independently recomputed against the frozen manifest. No writes to Git or repository.",
+  "complete_committed_rust_path_set": {
+    "count": 1990,
+    "matches_release_snapshot_exactly": true,
+    "canonical_paths_sha256": "4d981f9da058982a4d718a48a4cfd8a6469f9998eaa77ccf3fd5766aa8b60233"
+  },
+  "committed_blob_checks": {
+    "rust": 1990,
+    "supplemental_inputs": 6,
+    "total": 1996,
+    "every_git_blob_equals_retained_release_file": true,
+    "all_sha256_and_byte_counts_match_root_retained_blob_receipt": true,
+    "verified_git_record_map_sha256": "e136bed0de200d4fdea864bd15de899d483f4e085b535d7b344fbe6d03c36ef5",
+    "release_rust_map_sha256": "a22da25b7cd8f99c1059817ee26ae20c1ae87a7c05295eaccaef2214050b9044",
+    "release_six_input_map_sha256": "2b2a2eb18a6e9ba656bbdf86d8a19eb122c572afbad6d63d12b88addb729804f",
+    "root_receipt": {
+      "file": "code-source-git-audit.json.gz",
+      "sha256": "fedf7a0b76b136f161fa3111f695df6241e13f06e772f3051c85352c25d49d23",
+      "commit": "eea765a96929be926fd3def97c2de6844df7827d"
+    }
+  },
+  "inventory_audit": {
+    "entries": 321,
+    "bytes": 112590944,
+    "inventory_sha256": "49227cee601ba7b7a6604b9445d742fe89a2e1be1d92e55671c54e2d25b3c05b",
+    "every_entry_size_and_sha_matches": true,
+    "complete_path_membership_matches": true,
+    "no_duplicates": true,
+    "delta_from_code_commit_318_inventory": {
+      "added": [
+        {
+          "file": "code-commit.txt.gz",
+          "bytes": 58,
+          "sha256": "8f24009813f4a2d2a511ea1575f43efcbd0467b8b2075d264816baad8dca6230"
+        },
+        {
+          "file": "code-source-git-audit.json.gz",
+          "bytes": 157790,
+          "sha256": "fedf7a0b76b136f161fa3111f695df6241e13f06e772f3051c85352c25d49d23"
+        },
+        {
+          "file": "git_blob_audit.py.gz",
+          "bytes": 781,
+          "sha256": "e1a7dec0030a96cd935d1e160cbf062bff7d754ba4ba5ac836baef14d75db2a3"
+        }
+      ],
+      "removed": [],
+      "changed": []
+    }
+  },
+  "prior_initial_audit_scope": {
+    "retained_file": "independent-evidence-audit.json",
+    "uncompressed_sha256": "317b7e4143e527dd6a1a7f6d1ea00f671040edfbe0b46a4d1e102be274035a4a",
+    "entries": 315,
+    "bytes": 112333943,
+    "inventory_sha256": "d05c9ae20cc4dff6a01fafd57dc94ae908dc5827d6da22ef3cf2075db9f5a444",
+    "scope_preserved": "Initial315-file media/source/receipt audit remains scoped to that inventory; this321-file inventory check covers later retained additions separately. No media checks rerun."
+  },
+  "later_payload_review": {
+    "new_code_commit_note_matches": true,
+    "new_audit_payload": "Digest/byte/object identity JSON only; no raw Git blob payload retained.",
+    "new_script": "git_blob_audit.py.gz is a source recipe, not a binary. Its referenced scratch .raw files are absent from retained inventory.",
+    "excluded_payloads_absent_in_new_inventory_names": true
+  },
+  "pending": {
+    "root_will_append_this_report_and_rehash_inventory": true,
+    "this_receipt_does_not_claim_coverage_of_its_own_future_inventory_entry": true
+  },
+  "discrepancies": []
+}
