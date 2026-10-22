@@ -1,0 +1,7 @@
+{
+  "base_revision": "25646268e60830d9fae8be4e3b4d4e586aab39e2",
+  "system": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84\n",
+  "hardware": "Mac17,7\n137438953472\nApple M5 Max\n",
+  "cargo_lock_sha256": "1e39d18ae4de6c7b898edad39eb7104235fb3ffe3af84521ca94df2b6c25b71b",
+  "qualification_scope": "This Mac; no native interaction or UI behavior claimed"
+}

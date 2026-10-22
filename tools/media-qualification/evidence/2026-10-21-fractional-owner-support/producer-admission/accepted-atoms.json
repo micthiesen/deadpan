@@ -1,0 +1,296 @@
+[
+  {
+    "path": "/ftyp",
+    "offset": 0,
+    "size": 32,
+    "body_length": 24
+  },
+  {
+    "path": "/moov",
+    "offset": 32,
+    "size": 5796,
+    "body_length": 5788
+  },
+  {
+    "path": "/moov/mvhd",
+    "offset": 40,
+    "size": 108,
+    "body_length": 100,
+    "body_hex": "0000000000000000000000000000bb800002eec00001000001000000000000000000000000010000000000000000000000000000000100000000000000000000000000004000000000000000000000000000000000000000000000000000000000000003"
+  },
+  {
+    "path": "/moov/trak",
+    "offset": 148,
+    "size": 2570,
+    "body_length": 2562
+  },
+  {
+    "path": "/moov/trak/tkhd",
+    "offset": 156,
+    "size": 92,
+    "body_length": 84
+  },
+  {
+    "path": "/moov/trak/edts",
+    "offset": 248,
+    "size": 36,
+    "body_length": 28
+  },
+  {
+    "path": "/moov/trak/edts/elst",
+    "offset": 256,
+    "size": 28,
+    "body_length": 20,
+    "body_hex": "00000000000000010002eec0000003e900010000"
+  },
+  {
+    "path": "/moov/trak/mdia",
+    "offset": 284,
+    "size": 2434,
+    "body_length": 2426
+  },
+  {
+    "path": "/moov/trak/mdia/mdhd",
+    "offset": 292,
+    "size": 32,
+    "body_length": 24,
+    "body_hex": "000000000000000000000000000075300001d53855c40000"
+  },
+  {
+    "path": "/moov/trak/mdia/hdlr",
+    "offset": 324,
+    "size": 45,
+    "body_length": 37
+  },
+  {
+    "path": "/moov/trak/mdia/minf",
+    "offset": 369,
+    "size": 2349,
+    "body_length": 2341
+  },
+  {
+    "path": "/moov/trak/mdia/minf/vmhd",
+    "offset": 377,
+    "size": 20,
+    "body_length": 12
+  },
+  {
+    "path": "/moov/trak/mdia/minf/dinf",
+    "offset": 397,
+    "size": 36,
+    "body_length": 28
+  },
+  {
+    "path": "/moov/trak/mdia/minf/stbl",
+    "offset": 433,
+    "size": 2285,
+    "body_length": 2277
+  },
+  {
+    "path": "/moov/trak/mdia/minf/stbl/stsd",
+    "offset": 441,
+    "size": 205,
+    "body_length": 197
+  },
+  {
+    "path": "/moov/trak/mdia/minf/stbl/stsd/avc1",
+    "offset": 457,
+    "size": 189,
+    "body_length": 181
+  },
+  {
+    "path": "/moov/trak/mdia/minf/stbl/stsd/avc1/avcC",
+    "offset": 543,
+    "size": 48,
+    "body_length": 40
+  },
+  {
+    "path": "/moov/trak/mdia/minf/stbl/stsd/avc1/colr",
+    "offset": 591,
+    "size": 19,
+    "body_length": 11,
+    "body_hex": "6e636c7800010001000100"
+  },
+  {
+    "path": "/moov/trak/mdia/minf/stbl/stsd/avc1/pasp",
+    "offset": 610,
+    "size": 16,
+    "body_length": 8
+  },
+  {
+    "path": "/moov/trak/mdia/minf/stbl/stsd/avc1/btrt",
+    "offset": 626,
+    "size": 20,
+    "body_length": 12
+  },
+  {
+    "path": "/moov/trak/mdia/minf/stbl/stts",
+    "offset": 646,
+    "size": 24,
+    "body_length": 16
+  },
+  {
+    "path": "/moov/trak/mdia/minf/stbl/stss",
+    "offset": 670,
+    "size": 48,
+    "body_length": 40
+  },
+  {
+    "path": "/moov/trak/mdia/minf/stbl/ctts",
+    "offset": 718,
+    "size": 976,
+    "body_length": 968
+  },
+  {
+    "path": "/moov/trak/mdia/minf/stbl/stsc",
+    "offset": 1694,
+    "size": 28,
+    "body_length": 20
+  },
+  {
+    "path": "/moov/trak/mdia/minf/stbl/stsz",
+    "offset": 1722,
+    "size": 500,
+    "body_length": 492
+  },
+  {
+    "path": "/moov/trak/mdia/minf/stbl/stco",
+    "offset": 2222,
+    "size": 496,
+    "body_length": 488
+  },
+  {
+    "path": "/moov/trak",
+    "offset": 2718,
+    "size": 3049,
+    "body_length": 3041
+  },
+  {
+    "path": "/moov/trak/tkhd",
+    "offset": 2726,
+    "size": 92,
+    "body_length": 84
+  },
+  {
+    "path": "/moov/trak/edts",
+    "offset": 2818,
+    "size": 36,
+    "body_length": 28
+  },
+  {
+    "path": "/moov/trak/edts/elst",
+    "offset": 2826,
+    "size": 28,
+    "body_length": 20,
+    "body_hex": "00000000000000010002eec00000040000010000"
+  },
+  {
+    "path": "/moov/trak/mdia",
+    "offset": 2854,
+    "size": 2913,
+    "body_length": 2905
+  },
+  {
+    "path": "/moov/trak/mdia/mdhd",
+    "offset": 2862,
+    "size": 32,
+    "body_length": 24,
+    "body_hex": "0000000000000000000000000000bb800002f2c055c40000"
+  },
+  {
+    "path": "/moov/trak/mdia/hdlr",
+    "offset": 2894,
+    "size": 45,
+    "body_length": 37
+  },
+  {
+    "path": "/moov/trak/mdia/minf",
+    "offset": 2939,
+    "size": 2828,
+    "body_length": 2820
+  },
+  {
+    "path": "/moov/trak/mdia/minf/smhd",
+    "offset": 2947,
+    "size": 16,
+    "body_length": 8
+  },
+  {
+    "path": "/moov/trak/mdia/minf/dinf",
+    "offset": 2963,
+    "size": 36,
+    "body_length": 28
+  },
+  {
+    "path": "/moov/trak/mdia/minf/stbl",
+    "offset": 2999,
+    "size": 2768,
+    "body_length": 2760
+  },
+  {
+    "path": "/moov/trak/mdia/minf/stbl/stsd",
+    "offset": 3007,
+    "size": 126,
+    "body_length": 118
+  },
+  {
+    "path": "/moov/trak/mdia/minf/stbl/stsd/mp4a",
+    "offset": 3023,
+    "size": 110,
+    "body_length": 102
+  },
+  {
+    "path": "/moov/trak/mdia/minf/stbl/stts",
+    "offset": 3133,
+    "size": 32,
+    "body_length": 24
+  },
+  {
+    "path": "/moov/trak/mdia/minf/stbl/stsc",
+    "offset": 3165,
+    "size": 1276,
+    "body_length": 1268
+  },
+  {
+    "path": "/moov/trak/mdia/minf/stbl/stsz",
+    "offset": 4441,
+    "size": 776,
+    "body_length": 768
+  },
+  {
+    "path": "/moov/trak/mdia/minf/stbl/stco",
+    "offset": 5217,
+    "size": 496,
+    "body_length": 488
+  },
+  {
+    "path": "/moov/trak/mdia/minf/stbl/sgpd",
+    "offset": 5713,
+    "size": 26,
+    "body_length": 18
+  },
+  {
+    "path": "/moov/trak/mdia/minf/stbl/sbgp",
+    "offset": 5739,
+    "size": 28,
+    "body_length": 20
+  },
+  {
+    "path": "/moov/udta",
+    "offset": 5767,
+    "size": 61,
+    "body_length": 53
+  },
+  {
+    "path": "/free",
+    "offset": 5828,
+    "size": 8,
+    "body_length": 0
+  },
+  {
+    "path": "/mdat",
+    "offset": 5836,
+    "size": 125779,
+    "body_length": 125771
+  }
+]

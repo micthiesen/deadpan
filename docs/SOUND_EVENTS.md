@@ -88,6 +88,12 @@ Changed child-owned processing dependencies still reject atomically. Current
 source admission, suppression and owner/ancestor treatments apply to the
 current mixed bus. See the
 [output-sound qualification](qualification/fixed-retime-output-sound-2026-10-21.md).
+The subsequent
+[fractional owner-support qualification](qualification/fractional-owner-support-2026-10-21.md)
+repairs retained overlap at the following Hold's allocation without changing
+the independent event's phase or applying that Hold's gain to it. Its complete
+nonzero Original/event master and release export pass; genuine physical
+exhaustion remains silent and explicitly inactive.
 
 An explicitly declared aggregate processing stage may process a mixed input
 once. That is a different operation from independently processing voices and

@@ -1,0 +1,40 @@
+{
+  "path": "crates/deadpan-cli/tests/preview_export/fractional_owner_support.rs",
+  "sha256": "e6d199f7ccacc8f9c20938f081b2d833d738f0282371e2657eb12c687da3c417",
+  "bytes": 24361,
+  "producer_witness": "producer-admission/admission.json",
+  "audio_span": {
+    "start": {
+      "ticks": 0,
+      "time_base": {
+        "numerator": 1,
+        "denominator": 48000
+      }
+    },
+    "end": {
+      "ticks": 192192,
+      "time_base": {
+        "numerator": 1,
+        "denominator": 48000
+      }
+    }
+  },
+  "video_span": {
+    "start": {
+      "ticks": 0,
+      "time_base": {
+        "numerator": 1,
+        "denominator": 30000
+      }
+    },
+    "end": {
+      "ticks": 120120,
+      "time_base": {
+        "numerator": 1,
+        "denominator": 30000
+      }
+    }
+  },
+  "source_qualification": "d6fc1d39a3bc9d31b6178e59151739773bca0fe3056e787b735950accea7256b",
+  "source_content": "blake3:d08656c5cdf9601d6d72fbf637d0ce00dbc6f9dc9f0862f48e964056ae591eff"
+}

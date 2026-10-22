@@ -1,0 +1,32 @@
+Final positive PCM tests after both old-code failures were pinned by root.
+No expectedInactive/refusal remains at8236; historical Unsupported reproduction
+lives in pinned baseline sources/logs and old binaries.
+
+SHA25611e34ed89b079fe41b95c1a72fefca59bae7c87f86e115c0e9b6beade6b8fa42:
+crates/deadpan-audio/tests/stages/processing_hold_duration_output_sound.rs
+Registration unchanged a104e568a654f8c755679166e023006366cd5a44bfb87b9bded1877e266daf63.
+
+Recommended focused filter: fixed_retime_output_sound (8tests).
+Exact new success filters:
+fixed_retime_output_sound_fractional_owner_gap_complete_nonlinear_bus
+fixed_retime_output_sound_fractional_owner_gap_keeps_negative_hold_gain_clock
+Historical converted success filter:
+fixed_retime_output_sound_current_nonlinear_owners_shape_current_shared_bus
+
+Public query asserts8236followingHold Active,
+ancestorsroot/processor/z-body/pause,
+exactlocal-1/4576 andstep35/32032; next8237local1/1144.
+Queries do not derive expected gain or processing order.
+12812 remains genuine root-onlyInactive with zero physical PCM.
+
+Complete scalar Original+event ->processor saturation ->root saturation verifies
+every point0..17618 using<=256regular/irregular requests, plus cold event/seam/
+8235/8236/8237reads and exact complete masks. No missing-coordinate window.
+The two fractional-gap tests verify both before and after interior Hold growth.
+Childgain oracle uses literal oldHoldend10067 and currentHoldend10982;
+Sourcebefore-6dB stops8236, Holdtrim-12dB applies8236 with no envelope,
+envelope+3dB applies from8237 until each current Hold's allocated end.
+Independent processor-owned event bypasses childgain.
+Staleinput/pervoice/wrongchild/clampedclock/eventcontamination controls retained.
+
+No Cargo/Git invocation by audio worker; no runtime result claimed here.

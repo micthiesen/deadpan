@@ -1,0 +1,7 @@
+{
+  "cli_original": "/Users/michael/Code/deadpan/target/release/deadpan-cli",
+  "cli_retained": "/tmp/deadpan-fractional-owner-support-2026-10-21/producer-admission/admission-cli",
+  "cli_sha256": "ef68f69ad242c16cb4222150b5067512164bad42a5fb525266190ff789c15c8d",
+  "producer": "/opt/homebrew/bin/ffmpeg",
+  "producer_sha256": "768609fb3f463ff9272bebac61478515f19e43c5343b0c60dde2e6230c40013e"
+}

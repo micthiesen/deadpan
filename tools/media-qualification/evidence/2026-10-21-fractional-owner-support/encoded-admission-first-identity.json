@@ -1,0 +1,10 @@
+{
+  "exit_code": 100,
+  "tests": 1,
+  "passed": 0,
+  "failed": 1,
+  "stage": "generated MOV source admission, before owner query",
+  "binary_sha256": "6af352c495237248e7df73485f80d3e087bb1451936840dc7ce9c8d0625639a5",
+  "cli_sha256": "ef68f69ad242c16cb4222150b5067512164bad42a5fb525266190ff789c15c8d",
+  "source_sha256": "70ba85965346d0e13bb8285d394690f129be4fb9ed9f8fd70e88785dc61d33c1"
+}

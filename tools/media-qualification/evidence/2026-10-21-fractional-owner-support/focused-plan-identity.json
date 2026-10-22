@@ -1,0 +1,9 @@
+{
+  "binary": "target/debug/deps/deadpan_plan-526b4078b1f38665",
+  "sha256": "6212b3c67dd8869207a483982bc60ece74c233dac7ed2aef97f6136ca1800226",
+  "tests": 4,
+  "passed": 4,
+  "skipped": 53,
+  "production_sha256": "d8774faef9d8cace84d01745b7893a2c328c494c079215c2c166ceedb5c2c8af",
+  "witness_sha256": "14e848e33f4a5d1756092d1b5102009d4aa41268769b9c7da82c6b510e4854e6"
+}

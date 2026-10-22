@@ -515,9 +515,23 @@ fn fixed_retime_output_sound_journaled_shrink_pcm() {
 
 #[test]
 fn fixed_retime_output_sound_current_nonlinear_owners_shape_current_shared_bus() {
+    nonlinear_shared_bus_witness(false, false);
+}
+
+#[test]
+fn fixed_retime_output_sound_fractional_owner_gap_complete_nonlinear_bus() {
+    nonlinear_shared_bus_witness(true, false);
+}
+
+#[test]
+fn fixed_retime_output_sound_fractional_owner_gap_keeps_negative_hold_gain_clock() {
+    nonlinear_shared_bus_witness(true, true);
+}
+
+fn nonlinear_shared_bus_witness(include_before: bool, child_gain: bool) {
     let processor_drive = Saturation::new(GainDb::new(9000).unwrap()).unwrap();
     let root_drive = Saturation::new(GainDb::new(6000).unwrap()).unwrap();
-    let treatments = [
+    let mut treatments = vec![
         (
             "processor",
             AudioTreatments::default()
@@ -531,10 +545,47 @@ fn fixed_retime_output_sound_current_nonlinear_owners_shape_current_shared_bus()
                 .unwrap(),
         ),
     ];
+    if child_gain {
+        treatments.push((
+            "before",
+            AudioTreatments::from_clip_gain(
+                ClipGain::new(GainDb::new(-6000).unwrap(), false, vec![], vec![]).unwrap(),
+            ),
+        ));
+        treatments.push((
+            "pause",
+            AudioTreatments::from_clip_gain(
+                ClipGain::new(
+                    GainDb::new(-12_000).unwrap(),
+                    false,
+                    vec![
+                        GainEnvelope::new(
+                            GainClock::OwnerOutput,
+                            GainRange::new(ExactRatio::ZERO, ExactRatio::integer(3)).unwrap(),
+                            GainDb::new(3000).unwrap(),
+                            vec![
+                                GainSegment::new(
+                                    ExactRatio::integer(3),
+                                    GainDb::new(3000).unwrap(),
+                                    GainCurve::Step,
+                                )
+                                .unwrap(),
+                            ],
+                        )
+                        .unwrap(),
+                    ],
+                    vec![],
+                )
+                .unwrap(),
+            ),
+        ));
+    }
     // Both nonlinear owners are already present when the actual root-ripple
     // journal is captured; the target edit changes only the RoomTone duration.
     let before = output_fixture_with_treatments(true, false, &treatments);
     let after = resize(&before, 3, "nonlinear-current-input");
+    before.validate().unwrap();
+    after.validate().unwrap();
     assert_eq!(after.nodes()[&id("root")], before.nodes()[&id("root")]);
     assert_eq!(
         after.audio_bindings().sound_clocks(),
@@ -561,67 +612,133 @@ fn fixed_retime_output_sound_current_nonlinear_owners_shape_current_shared_bus()
         assert_eq!(component.suppressed, physical_suppression(true));
         physical.push(component.samples);
     }
-    // Existing limitation, independently present before the target edit: the
-    // retained owner walk declares [8236,8237) inactive even though canonical
-    // Preserve output is nonzero. Whole nonlinear-bus preparation must report
-    // that unsupported clock instead of inventing unity or suppressing PCM.
-    for (document, raw) in [(&before, &physical[0]), (&after, &physical[1])] {
-        let plan = Arc::new(RenderPlan::compile(document).unwrap());
-        let total = plan.audio_duration().unwrap().0;
-        let owners = plan
-            .audio_gain_owners(AudioSample(8236)..AudioSample(8237), Default::default())
-            .unwrap();
-        assert_eq!(owners.spans().len(), 1);
+    // Independently locate sample8236 in the retained output grid. Moving the
+    // stage translates its old root sample4805 to current6406, so this sample
+    // reads oldroot6635. The PCM coordinate maps to input13727/4576, but
+    // structural ownership uses the root n+1/2 probe: the old Source cut at
+    // 6635.2 rounds to6635, so following Hold owns this allocated sample.
+    // Its exact local clock is still -1/4576; ownership cannot clamp that
+    // coordinate to zero or substitute the preceding Source's treatments.
+    let historical_frame = ExactRatio::integer(8236 - 6406 + 4805)
+        .checked_mul(ratio(5, 8008))
+        .unwrap();
+    let input_frame = historical_frame
+        .checked_sub(ExactRatio::integer(3))
+        .unwrap()
+        .checked_mul(ratio(7, 4))
+        .unwrap()
+        .checked_add(ExactRatio::ONE)
+        .unwrap();
+    assert_eq!(input_frame, ratio(13_727, 4576));
+    let old_cut = ExactRatio::integer(3)
+        .checked_add(ratio(8, 7))
+        .unwrap()
+        .checked_mul(ratio(8008, 5))
+        .unwrap();
+    assert_eq!(old_cut, ratio(33_176, 5));
+    let old_cut_sample = old_cut.round_even().unwrap();
+    assert_eq!(old_cut_sample, 6635);
+    assert_eq!(old_cut_sample - 4805 + 6406, 8236);
+    let hold_local = input_frame.checked_sub(ExactRatio::integer(3)).unwrap();
+    assert_eq!(hold_local, ratio(-1, 4576));
+    assert_eq!(
+        hold_local.checked_add(ratio(35, 32_032)).unwrap(),
+        ratio(1, 1144)
+    );
+    if child_gain {
+        let gain = &after.nodes()[&id("pause")].audio_treatments;
         assert_eq!(
-            owners.spans()[0].support(),
+            gain.evaluate(hold_local).unwrap().millidecibels,
+            ExactRatio::integer(-12_000)
+        );
+        assert_eq!(
+            gain.evaluate(ratio(1, 1144)).unwrap().millidecibels,
+            ExactRatio::integer(-9000)
+        );
+        assert_eq!(
+            gain.evaluate(ExactRatio::ZERO).unwrap().millidecibels,
+            ExactRatio::integer(-9000)
+        );
+    }
+    for document in [&before, &after] {
+        assert!(
+            matches!(&document.nodes()[&id("root")].kind, NodeKind::Sequence { children } if children == &vec![id("prefix"), id("processor"), id("suffix")])
+        );
+        assert!(
+            matches!(&document.nodes()[&id("processor")].kind, NodeKind::Retime { child, .. } if child == &id("z-body"))
+        );
+        assert!(
+            matches!(&document.nodes()[&id("z-body")].kind, NodeKind::Sequence { children } if children == &vec![id("before"), id("pause"), id("after")])
+        );
+        assert!(
+            matches!(&document.nodes()[&id("pause")].kind, NodeKind::Hold { recipe } if matches!(recipe.audio, HoldAudio::RoomTone { .. }))
+        );
+    }
+    assert!(
+        physical
+            .iter()
+            .all(|raw| raw[8236].iter().any(|value| *value != 0.0))
+    );
+    // The structural probe chooses the following Hold. Its exact local clock
+    // stays signed; query results are checked against literals and never supply
+    // treatment values or processing order to the independent scalar oracle.
+    for (document, raw) in [(&before, &physical[0]), (&after, &physical[1])] {
+        let plan = RenderPlan::compile(document).unwrap();
+        for (at, local) in [(8236, ratio(-1, 4576)), (8237, ratio(1, 1144))] {
+            let owners = plan
+                .audio_gain_owners(AudioSample(at)..AudioSample(at + 1), Default::default())
+                .unwrap();
+            assert_eq!(owners.spans().len(), 1);
+            let span = &owners.spans()[0];
+            assert_eq!(span.support(), deadpan_plan::AudioOwnerSupport::Active);
+            assert_eq!(
+                span.owners()
+                    .iter()
+                    .map(|owner| owner.instance().node.clone())
+                    .collect::<Vec<_>>(),
+                vec![id("root"), id("processor"), id("z-body"), id("pause")]
+            );
+            let hold = span.owners().last().unwrap();
+            assert_eq!(hold.sampling().local_at(AudioSample(at)).unwrap(), local);
+            assert_eq!(hold.sampling().local_frames_per_sample(), ratio(35, 32_032));
+        }
+        let exhausted = plan
+            .audio_gain_owners(AudioSample(12812)..AudioSample(12813), Default::default())
+            .unwrap();
+        assert_eq!(exhausted.spans().len(), 1);
+        assert_eq!(
+            exhausted.spans()[0].support(),
             deadpan_plan::AudioOwnerSupport::Inactive
         );
         assert_eq!(
-            owners.spans()[0]
+            exhausted.spans()[0]
                 .owners()
                 .iter()
                 .map(|owner| owner.instance().node.clone())
                 .collect::<Vec<_>>(),
-            vec![id("root"), id("processor"), id("z-body")]
+            vec![id("root")]
         );
-        assert!(raw[8236].iter().any(|value| *value != 0.0));
-        let mut renderer = StageAudio::new(Arc::clone(&plan));
-        let first_error = (0..total).step_by(256).find_map(|start| {
-            renderer
-                .prepare_authored_bus(
-                    &mut provider,
-                    AudioSample(start),
-                    256.min((total - start) as u32),
-                    TIMEOUT,
-                    &AtomicBool::new(false),
-                )
-                .err()
-                .map(|error| (start, error))
-        });
-        assert!(matches!(
-            first_error,
-            Some((
-                8192,
-                StageAudioError::Unsupported(
-                    "nonzero Original outside meaningful owner-clock support"
-                )
-            ))
-        ));
-        assert!(matches!(
-            StageAudio::new(plan).prepare_authored_bus(
-                &mut provider,
-                AudioSample(8236),
-                1,
-                TIMEOUT,
-                &AtomicBool::new(false),
-            ),
-            Err(StageAudioError::Unsupported(
-                "nonzero Original outside meaningful owner-clock support"
-            ))
-        ));
+        assert_eq!(raw[12812], [0.0; 2]);
     }
     let processor = ntsc_boundary(4)..ntsc_boundary(8);
-    let shape = |component: &[[f32; 2]], shared: bool| {
+    // Literal retained structural allocations: Sourcebefore ends at8236;
+    // after growth the Hold runs through10981. At its first point only trim
+    // applies; its envelope starts at local0 and adds3dB from8237 onwards.
+    let original_gain = |at: usize, hold_end: usize| -> f64 {
+        let db = if !child_gain {
+            0.0
+        } else if (6406..8236).contains(&at) {
+            -6000.0
+        } else if at == 8236 {
+            -12_000.0
+        } else if (8237..hold_end).contains(&at) {
+            -9000.0
+        } else {
+            0.0
+        };
+        10.0_f64.powf(db / 20_000.0)
+    };
+    let shape = |component: &[[f32; 2]], shared: bool, hold_end: usize| {
         component
             .iter()
             .enumerate()
@@ -632,7 +749,7 @@ fn fixed_retime_output_sound_current_nonlinear_owners_shape_current_shared_bus()
                     } else {
                         0.0
                     };
-                    let value = f64::from(original[channel]);
+                    let value = f64::from(original[channel]) * original_gain(at, hold_end);
                     let owner = if processor.contains(&at) {
                         if shared {
                             processor_drive.shape(value + sound)
@@ -647,8 +764,36 @@ fn fixed_retime_output_sound_current_nonlinear_owners_shape_current_shared_bus()
             })
             .collect::<Vec<[f32; 2]>>()
     };
-    let expected = shape(&physical[1], true);
-    let stale = shape(&physical[0], true);
+    let expected = shape(&physical[1], true, 10_982);
+    if child_gain {
+        // These controls rule out the tempting fixes: retain only ancestors,
+        // reuse the preceding Source, or clamp the following Hold clock to0.
+        for db in [0.0, -6000.0, -9000.0] {
+            let wrong = physical[1][8236].map(|value| {
+                root_drive
+                    .shape(processor_drive.shape(f64::from(value) * 10.0_f64.powf(db / 20_000.0)))
+                    as f32
+            });
+            assert_ne!(
+                expected[8236], wrong,
+                "Hold's negative local clock must distinguish {db}milli-dB"
+            );
+        }
+        assert!(
+            (6443..6552).any(|at| {
+                let wrong: [f32; 2] = std::array::from_fn(|channel| {
+                    root_drive.shape(processor_drive.shape(
+                        (f64::from(physical[1][at][channel])
+                            + f64::from(event[at - 6443][channel]))
+                            * original_gain(at, 10_982),
+                    )) as f32
+                });
+                wrong != expected[at]
+            }),
+            "child gain must never scale the independent processor-owned event"
+        );
+    }
+    let stale = shape(&physical[0], true, 10_982);
     assert!(
         expected
             .iter()
@@ -657,7 +802,7 @@ fn fixed_retime_output_sound_current_nonlinear_owners_shape_current_shared_bus()
             .any(|(at, (a, b))| at != 8236 && a != b),
         "old mixed input is stale on meaningful support"
     );
-    let separated = shape(&physical[1], false);
+    let separated = shape(&physical[1], false, 10_982);
     assert!(
         expected
             .iter()
@@ -665,25 +810,31 @@ fn fixed_retime_output_sound_current_nonlinear_owners_shape_current_shared_bus()
             .any(|(a, b)| { a.iter().zip(b).any(|(a, b)| (a - b).abs() > 0.0001) }),
         "this witness must distinguish shared-owner saturation from per-voice processing"
     );
-    let plan = Arc::new(RenderPlan::compile(&after).unwrap());
+    let previous_expected = shape(&physical[0], true, 10_067);
+    let states = if include_before {
+        vec![(&before, &previous_expected), (&after, &expected)]
+    } else {
+        vec![(&after, &expected)]
+    };
     let mask = physical_suppression(true);
-    // Check every meaningful sample, with the one explicitly unsupported
-    // coordinate excluded as a request boundary, never altered or silenced.
-    for pieces in [&[256_u32][..], &[127, 3, 251][..]] {
-        let mut renderer = StageAudio::new(Arc::clone(&plan));
-        for window in [0..8236, 8237..17_618] {
-            let mut at = window.start;
+    for (document, expected) in states {
+        let plan = Arc::new(RenderPlan::compile(document).unwrap());
+        // Every sample is covered, including the former gap8236. The distinct
+        // exhausted output point12812 remains zero with its exact mask.
+        for pieces in [&[256_u32][..], &[127, 3, 251][..]] {
+            let mut renderer = StageAudio::new(Arc::clone(&plan));
+            let mut at = 0;
             for count in pieces.iter().copied().cycle() {
-                if at == window.end {
+                if at == 17_618 {
                     break;
                 }
-                let count = count.min((window.end - at) as u32);
+                let count = count.min((17_618 - at) as u32);
                 let actual = bus(&mut renderer, &mut provider, at, count);
                 same_pcm(
                     &actual.samples,
                     &expected[at as usize..at as usize + count as usize],
                     at,
-                    "current shared processor then root saturation on meaningful support",
+                    "complete shared processor then root saturation",
                 );
                 assert_eq!(
                     actual.suppressed,
@@ -692,25 +843,30 @@ fn fixed_retime_output_sound_current_nonlinear_owners_shape_current_shared_bus()
                 at += i64::from(count);
             }
         }
-    }
-    for (at, count) in [
-        (12_700, 114),
-        (6442, 111),
-        (9600, 256),
-        (6406, 37),
-        (8192, 44),
-        (8237, 128),
-    ] {
-        let mut cold = StageAudio::new(Arc::clone(&plan));
-        let actual = bus(&mut cold, &mut provider, at, count);
-        assert_eq!(
-            actual.samples,
-            expected[at as usize..at as usize + count as usize]
-        );
-        assert_eq!(
-            actual.suppressed,
-            mask[at as usize..at as usize + count as usize]
-        );
+        for (at, count) in [
+            (12_700, 114),
+            (6442, 111),
+            (9600, 256),
+            (6406, 37),
+            (8192, 44),
+            (8237, 128),
+            (8236, 1),
+            (8192, 128),
+            (8235, 3),
+            (10_066, 3),
+            (10_981, 3),
+        ] {
+            let mut cold = StageAudio::new(Arc::clone(&plan));
+            let actual = bus(&mut cold, &mut provider, at, count);
+            assert_eq!(
+                actual.samples,
+                expected[at as usize..at as usize + count as usize]
+            );
+            assert_eq!(
+                actual.suppressed,
+                mask[at as usize..at as usize + count as usize]
+            );
+        }
     }
 }
 

@@ -1,0 +1,9 @@
+{
+  "binary": "target/debug/deps/stages-4506359765072bfd",
+  "retained": "/tmp/deadpan-fractional-owner-support-2026-10-21/focused-pcm-final-test",
+  "sha256": "931b9e66671f2da775b3b5d56bd81935ed6e12ed4f4ec9c096beb3777a6b7906",
+  "tests": 8,
+  "passed": 8,
+  "skipped": 182,
+  "source_sha256": "5930d09d79d3175e933d1fdaf04b44e62a4a7a1f832ec1c6bb1af2b21810a2cb"
+}

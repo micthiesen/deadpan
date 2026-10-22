@@ -1,0 +1,100 @@
+Deadpan headless commands:
+  doctor
+  doctor --project <project.deadpan>   (macOS/Linux)
+  diagnostics export <new-report.json> [--project <project.deadpan>]
+  project create <project.deadpan> [--fps <N/D> --size <WIDTHxHEIGHT>]
+  project create-original <project.deadpan> <absolute-video> [--linked]
+  project create-from-url <project.deadpan> <https-youtube-url> [--cookies <file>] [--helpers <dir>]
+  project validate <project.deadpan> [--quick]
+  project dump <project.deadpan> --json
+  project undo <project.deadpan> --expected <revision> [--dry-run]
+  project redo <project.deadpan> --expected <revision> [--dry-run]
+  project takes <project.deadpan>
+  project take <project.deadpan> --json <request.json> [--dry-run]
+  project checkpoint <project.deadpan>
+  project migrate <project.deadpan>
+  project view <project.deadpan>
+  project backups <project.deadpan> [--verify]
+  project backup <project.deadpan>
+  backup-policy show | set --interval-minutes <1-1440> --max-count <8-256> --budget-mib <256-65536> | reset
+  project restore <project.deadpan> <backup-id> [--expected <revision>] [--dry-run]
+  project restore <project.deadpan> <backup-id> --damaged [--force-project <id>]
+  project storage <project.deadpan> [--clean [--files-only] [--dry-run]] [--grace-hours N]
+  project storage <project.deadpan> --confirm-clock [--dry-run]
+  project copy-portable <project.deadpan> <new-copy.deadpan>
+  cache status [--grace-hours N]
+  cache clean [--dry-run] [--grace-hours N]
+  project retain-original <project.deadpan> <absolute-source> [--linked]
+  project register-source <project.deadpan> --request-json <request.json> [--dry-run]
+  project insert-original <project.deadpan> --parent <node-id> --index <N> --expected <revision> [--dry-run]
+  project adopt-primary-geometry <project.deadpan> --request-json <request.json> [--dry-run]
+  project originals <project.deadpan> [--after <blake3-digest>]
+  project original-provenance <project.deadpan> <blake3-digest>
+  project verify-original <project.deadpan> <blake3-digest>
+  project relink-original <project.deadpan> <blake3-digest> <absolute-source> --expected-version <N>
+  project relink-moved <project.deadpan>
+  inspect-plan <project.deadpan> [--frame <N>]
+  inspect-plan <project.deadpan> --audio-samples <START> <END>
+  inspect-audio <project.deadpan> --samples <START> <END> [--time-mapped | --edge-faded | --authored-bus | --limited]
+  inspect-audio-domain <project.deadpan> --at <PROBE> --samples <START> <END>
+  inspect-audio-definition <project.deadpan> (--node <ID> | --repeat-default <ID> | --repeat-gap <ID>) --samples <START> <END> [--revision <ID>]
+  inspect-audio-placement <project.deadpan> (--node <ID> | --repeat-default <ID> | --repeat-gap <ID>) --clock <clock.json> --samples <START> <END> [--revision <ID>]
+  resolve-selection <project.deadpan> --json <selection.json>
+  locate-boundary <project.deadpan> --json <boundary.json>
+  command <project.deadpan> --json <request.json> [--dry-run]
+  macro inspect <project.deadpan> [--register a]
+  macro <project.deadpan> --json <request.json> [--dry-run]
+  sound <project.deadpan> --json <request.json> [--dry-run]
+  sound --write-sting <new.wav>
+  gag-inspect <project.deadpan> --json <recipe.json> [--visual]
+  render <project.deadpan> --output <directory> [--name <movie.mp4>] [--expected <revision>]
+  render <project.deadpan> --json <request.json>
+  verify-export <project.deadpan> --movie <movie.mp4> [--revision <id>] [--frames <N,N,...> | --every <N>] [--samples <START:END,...> | --no-audio] [--report <new.json>]
+  render retry <project.deadpan> --job <job> --checkpoint <encoding-attempt> --output <directory> [--name <movie.mp4>]
+  render reencode <project.deadpan> --job <job> --output <directory> [--name <movie.mp4>]
+  render reconcile <project.deadpan> --publication <publication>
+  render status <project.deadpan> [--after <job>]
+  render status <project.deadpan> --job <job> [--after-attempt <ordinal>]
+  render status <project.deadpan> --publications [--after <publication>]
+  render status <project.deadpan> --publication <publication>
+  downloader install [--root <dir>]
+  downloader status [--root <dir>] [--probe]
+  models list [--root <dir>]
+  models license <pack>
+  models install <pack> [--accept-license] [--root <dir>]
+  models import <pack> <folder-or-archive.tar> [--accept-license] [--root <dir>]
+  models export <pack> <archive.tar> [--root <dir>]
+  models remove <pack> [--partial] [--root <dir>]
+  transcribe <project.deadpan> [--model <ggml.bin> --sha256 <hex>] [--vad-model <ggml-silero.bin> --vad-sha256 <hex>] [--language <auto|xx>] [--asset <id>] [--again <start_cs>:<end_cs>]
+  transcript <project.deadpan> [--search <words>] [--asset <id>]
+  corrections <project.deadpan> [--asset <id>]
+  corrections <project.deadpan> --json <request.json> [--dry-run]
+  pauses <project.deadpan> [--asset <id>]
+  detect-shots <project.deadpan> [--asset <id>] [--decode-threads <1-16>]
+  shots <project.deadpan> [--asset <id>]
+  track <project.deadpan> --from <pts> --to <pts> --region <x,y,w,h> [--asset <id>] [--stride <n>] [--through-shots] [--save <target-id> [--label <text>] [--replace]]
+  track-correct <project.deadpan> --target <id> --at <pts> --region <x,y,w,h> [--stride <n>]
+  detect-faces <project.deadpan> --at <pts> [--asset <id>]
+  generate-hold <project.deadpan> --hold <node-id> [--seed N] [--variants 1-4] [--another]
+  accept-hold <project.deadpan> --request <request-id> [--attempt <attempt-id>]
+  ai-variants <project.deadpan> [--hold <node-id>] [--joins]
+  ai-replacements <project.deadpan> [--after <id> | --id <id> | --retry <id> --expected <revision> | --discard <id> --sequence <n> | --run [--limit 1-16]]
+  select-hold <project.deadpan> --request <request-id> --attempt <attempt-id>
+  discard-hold <project.deadpan> --request <request-id> --attempt <attempt-id>
+  keep-hold <project.deadpan> --request <request-id> --attempt <attempt-id> [--off]
+  dismiss-attempt <project.deadpan> --request <request-id> --attempt <attempt-id>
+
+Generic project creation defaults to a provisional 1920x1080, 30 fps presentation basis.
+Document dumps are inspection output; SQLite remains authoritative.
+Rendering uses automatic project policy and emits bounded JSON lines on qualified macOS/APFS. An open app owns Render through its authenticated endpoint; otherwise the CLI owns it. SIGINT/SIGTERM requests cancellation and drain.
+Original retention preserves complete bytes; stream qualification and authored import remain separate.
+While Deadpan.app has the project open, writes (command, macro, sound, corrections, undo/redo, register-source, insert-original, the AI hold commands, storage cleanup and restore) run through its live endpoint and refresh the app.
+create-original and create-from-url make a new one-Original project with its full-source baseline.
+create-from-url uses the pinned yt-dlp/Deno helpers bundled in Deadpan.app, else from `downloader install` (docs/YOUTUBE_IMPORT.md);
+cookies come only from an explicit file. You are responsible for having the rights to use imported videos.
+Audio inspection returns at most 256 stereo samples at the explicitly selected processing stage.
+Domain inspection reads raw physical context; signed START/END use its captured root grid.
+Definition inspection reads a local-zero point grid, not final timeline allocation.
+Offered AI variants that are neither kept (keep-hold), chosen nor accepted expire 7 days after they became Ready; project storage --clean applies that first.
+AI pauses use Deadpan.app's bundled runtime and the installed ltx-2.3-q4-bridge model pack (development builds: DEADPAN_BRIDGE_* variables; docs/AI_HOLDS.md); generation proposes pictures and only accept-hold edits the project.
+Placement inspection evaluates the selected revision's recipe on an explicit signed root clock.

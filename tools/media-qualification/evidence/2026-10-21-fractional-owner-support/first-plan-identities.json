@@ -1,0 +1,8 @@
+{
+  "binary": "target/debug/deps/deadpan_plan-526b4078b1f38665",
+  "sha256": "f03bd444c3ec709877964f0d0c54bd3da16d304092c7a1069539f42ae96aa0e1",
+  "tests": 4,
+  "passed": 3,
+  "fixture_setup_failed": 1,
+  "failure": "Source before has no media; use a Hold for blank time"
+}

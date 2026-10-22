@@ -1,0 +1,35 @@
+{
+  "source_base": "25646268",
+  "files": [
+    {
+      "path": "crates/deadpan-cli/tests/preview_export/fractional_owner_support.rs",
+      "sha256": "19fab06feecb14a21944afd5f1a429d815bbbf7070575bcb69a5cd50d169e779",
+      "bytes": 23457
+    },
+    {
+      "path": "crates/deadpan-cli/tests/preview_export/recipes.rs",
+      "sha256": "aa73dc05209cdb5e6326d59fe986b252429dd5838cb3e2d2f24c49aeb902d845",
+      "bytes": 149553
+    },
+    {
+      "path": "crates/deadpan-cli/tests/preview_export.rs",
+      "sha256": "54cff355ea328ccf8dc308c9fde9e30d337f0530ad6dc97551c6abe49bf89335",
+      "bytes": 88065
+    }
+  ],
+  "test_filter": "fractional_processed_owner_support_keeps_nonzero_shared_master_and_complete_export",
+  "expected_pictures": 11,
+  "expected_audio_samples": 17618,
+  "complete_verify_windows": [
+    [
+      0,
+      8809
+    ],
+    [
+      8809,
+      17618
+    ]
+  ],
+  "result_environment": "DEADPAN_FRACTIONAL_OWNER_SUPPORT_RESULTS",
+  "verification": "rustfmt --edition 2024 --config skip_children=true --check on all three owned files passed; no Cargo, Git, producer, render or native run by fixture owner"
+}

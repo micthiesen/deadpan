@@ -2,6 +2,21 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
+## Fractional retained audio-owner support, 2026-10-21
+
+[Owner-support qualification](qualification/fractional-owner-support-2026-10-21.md)
+repairs the nonzero nonlinear master refusal at sample8236. Retained intervals
+may cross more than one reference point before their owner's first allocation;
+the exact signed clock and rate remain unchanged. Four planner and eight PCM
+checks pass, including negative Hold gain/envelope clocks and genuine exhausted
+support. All 1,234 broader plan/audio/playback tests pass with zero skips.
+The complete real nonzero-Original master matches its independent equation
+within 3.01e-8; release export verifies all eleven pictures and all17,618 samples
+in two contiguous windows at offset zero, minimum block SNR31.05dB.
+Source admission remains strict; retained fixture/compiler/lint corrections do
+not change production media or DSP behavior. Native Retime Hold editing remains
+gated. DP-07 and DP-09 stay partial; no requirement or gate is newly complete.
+
 ## Fixed Retime output sounds through Hold edits, 2026-10-21
 
 [Output-sound qualification](qualification/fixed-retime-output-sound-2026-10-21.md)
@@ -13,12 +28,11 @@ core, six PCM and two real-package store tests pass; all 3,130 broader
 core/plan/audio/store tests and final strict lint pass. The release export
 verifies all eleven pictures and 17,618 presented samples in two contiguous
 windows at offset zero; its independent event oracle has zero numerical error.
-Native Hold editing under Retime remains gated. A separate pre-existing
-nonlinear owner-support hole at sample8236 is reproduced before and after the
-edit, with explicit full-bus refusal and positive checks for every other sample.
-Repairing that hole and qualifying the complete nonzero nonlinear master
-remain agent work. DP-07 and DP-09 stay partial; no requirement or gate is
-newly complete.
+Native Hold editing under Retime remains gated. That checkpoint retains a
+separate pre-existing nonlinear owner-support refusal at sample8236; the
+[subsequent owner-support qualification](qualification/fractional-owner-support-2026-10-21.md)
+repairs it and verifies the complete nonzero master. DP-07 and DP-09 stay
+partial; no requirement or gate is newly complete.
 
 ## One-play literal audio setters, 2026-10-21
 

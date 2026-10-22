@@ -7,6 +7,9 @@ use super::*;
 #[path = "input_tests.rs"]
 mod input;
 
+#[path = "fractional_support_tests.rs"]
+mod fractional_support;
+
 fn id(value: &str) -> NodeId {
     NodeId::new(value).unwrap()
 }

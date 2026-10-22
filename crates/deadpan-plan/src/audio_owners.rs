@@ -786,7 +786,8 @@ fn walk(
         // onto a Preserve input's PointCeil grid. That first output sample
         // still overlaps the allocation and belongs to its first sample, as on
         // the current clock; only a sample wholly before it is outside.
-        if probe_label.0.checked_add(1) == Some(allocated.start.0)
+        // A transferred interval can span more than one reference sample.
+        if probe_label < allocated.start
             && allocated.start < allocated.end
             && matches!(origin, AudioOwnerClockOrigin::Retained { .. })
             && position

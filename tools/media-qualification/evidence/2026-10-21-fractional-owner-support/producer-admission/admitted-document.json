@@ -1,0 +1,160 @@
+{
+  "schema_version": 55,
+  "project_id": "aa0fb067-9267-4e3a-9ead-80968abad741",
+  "revision_id": "1a431766-ecd9-4a9b-b150-51689e4d3f93",
+  "presentation_basis": {
+    "width": 320,
+    "height": 180,
+    "frame_rate": {
+      "numerator": 30000,
+      "denominator": 1001
+    },
+    "color_policy": "sdr_rec709"
+  },
+  "basis_state": {
+    "rate_origin": "primary_source",
+    "geometry_origin": "primary_source",
+    "primary": {
+      "asset": "ac7fa03f-10a1-4941-a348-170981320c24",
+      "qualification": "d6fc1d39a3bc9d31b6178e59151739773bca0fe3056e787b735950accea7256b"
+    }
+  },
+  "root": "4a48c840-1877-4fea-aa2d-07c8cd3cf872",
+  "nodes": {
+    "4a48c840-1877-4fea-aa2d-07c8cd3cf872": {
+      "label": "Sequence",
+      "kind": {
+        "type": "sequence",
+        "children": [
+          "ffd75f72-e4f6-492e-ac73-33868a714e41"
+        ]
+      }
+    },
+    "ffd75f72-e4f6-492e-ac73-33868a714e41": {
+      "label": "nonzero-original",
+      "kind": {
+        "type": "source",
+        "source": {
+          "duration": 120,
+          "edit_window": {
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "end": {
+              "numerator": "120",
+              "denominator": "1"
+            }
+          },
+          "video": {
+            "type": "stream",
+            "asset": "ac7fa03f-10a1-4941-a348-170981320c24",
+            "span": {
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 30000
+                }
+              },
+              "end": {
+                "ticks": 120120,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 30000
+                }
+              }
+            }
+          },
+          "video_mapping": {
+            "type": "placement",
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "frames": {
+              "numerator": "120",
+              "denominator": "1"
+            },
+            "endpoints": "hold_adjacent"
+          },
+          "audio": {
+            "asset": "ac7fa03f-10a1-4941-a348-170981320c24",
+            "span": {
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 48000
+                }
+              },
+              "end": {
+                "ticks": 192192,
+                "time_base": {
+                  "numerator": 1,
+                  "denominator": 48000
+                }
+              }
+            }
+          },
+          "audio_mapping": {
+            "type": "placement",
+            "start": {
+              "numerator": "0",
+              "denominator": "1"
+            },
+            "frames": {
+              "numerator": "120",
+              "denominator": "1"
+            }
+          },
+          "link": "linked",
+          "audio_offset": 0
+        }
+      }
+    }
+  },
+  "assets": {
+    "ac7fa03f-10a1-4941-a348-170981320c24": {
+      "label": "nonzero-original",
+      "content_hash": "blake3:d08656c5cdf9601d6d72fbf637d0ce00dbc6f9dc9f0862f48e964056ae591eff",
+      "video": {
+        "start": {
+          "ticks": 0,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 30000
+          }
+        },
+        "end": {
+          "ticks": 120120,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 30000
+          }
+        }
+      },
+      "audio": {
+        "start": {
+          "ticks": 0,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 48000
+          }
+        },
+        "end": {
+          "ticks": 192192,
+          "time_base": {
+            "numerator": 1,
+            "denominator": 48000
+          }
+        }
+      },
+      "still_image": false,
+      "frame_count": 120,
+      "source_qualification": "d6fc1d39a3bc9d31b6178e59151739773bca0fe3056e787b735950accea7256b"
+    }
+  },
+  "marks": {},
+  "overrides": {}
+}

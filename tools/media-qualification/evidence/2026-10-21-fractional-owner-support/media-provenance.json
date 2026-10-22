@@ -1,0 +1,38 @@
+{
+  "scope": "fractional retained processed-owner support; one planner predicate and comment; no DSP/schema/UI change or native interaction claim",
+  "source_base": "25646268",
+  "generated_original": {
+    "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmp8p1Iqz/fractional-owner-support/producer/nonzero-original.mp4",
+    "sha256": "ce1385932d079f1b1fc7f596ae11a2cdc80fe48bd0d2dbf6dbc9929fda6897f2",
+    "bytes": 131615
+  },
+  "generated_pcm": {
+    "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmp8p1Iqz/fractional-owner-support/producer/nonzero-original.wav",
+    "sha256": "6ba8da3e750f96e6f57f47bdc2d4731cb4a5bd4c52a723b46e1b1fe1dbfc541c",
+    "bytes": 768836
+  },
+  "repository_media": {
+    "video": {
+      "path": "native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+      "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+      "bytes": 39157
+    },
+    "event": {
+      "path": "native/deadpan-source/tests/audio-fixtures/pcm-mono-44100.wav",
+      "sha256": "b95b3debd2c83cf2590fddfaa98276c23c3b383b720fd96ac52c2c00c668318b",
+      "bytes": 88278
+    }
+  },
+  "movie": {
+    "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmp8p1Iqz/exports-fractional-owner/fractional-owner-support.mp4",
+    "sha256": "d22c3b04109f9780d5dc2cd8b50fcb4ab525326737f267dd289ea13cb17b2ae0",
+    "bytes": 22491
+  },
+  "project": {
+    "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmp8p1Iqz/fractional-owner-support/project/fractional-owner-support.deadpan",
+    "project_id": "785bda86-8b3c-404d-81d3-ad2d9b167d82",
+    "revision_id": "fractional-owner-support-r12",
+    "document_sha256": "24509907ca0bca4ae3075303aa4f11babf5f55ed4f21b2deb3671a68d84f5fdc"
+  },
+  "retention": "Reports, failures, source snapshots, literal phase/master oracle and generator recipe retained. Raw media, project package and executables omitted."
+}

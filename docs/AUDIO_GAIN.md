@@ -132,6 +132,16 @@ requires zero Original PCM under inactive support, while root sounds continue
 through their independently current root clock. An inspection query never
 constitutes media admission.
 
+A retained transferred interval can cross its first allocated reference point
+while starting more than one reference sample before it. The ownership probe
+recognizes that strict half-open overlap without clamping the exact signed
+lookup clock. The following Hold can therefore own an allocated sample at a
+negative local coordinate; an envelope beginning at zero does not apply there.
+Empty and genuinely exhausted support remain inactive, and nonzero Original
+PCM under inactive support still refuses. See the
+[fractional owner-support qualification](qualification/fractional-owner-support-2026-10-21.md)
+for independent gain, complete nonlinear master and emitted-file evidence.
+
 ## Structural and persistence behavior
 
 Fixed Sequence-local keys remain in that Sequence clock on an internal insertion.

@@ -1,0 +1,5 @@
+{
+  "crates/deadpan-plan/src/audio_owners.rs": "d8774faef9d8cace84d01745b7893a2c328c494c079215c2c166ceedb5c2c8af",
+  "crates/deadpan-plan/src/audio_owners/tests.rs": "099ec12583a13f2300ef6083467ecccc3e2259abcb377120d37a45359def0155",
+  "crates/deadpan-plan/src/audio_owners/fractional_support_tests.rs": "14e848e33f4a5d1756092d1b5102009d4aa41268769b9c7da82c6b510e4854e6"
+}

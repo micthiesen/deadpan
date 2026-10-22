@@ -1,0 +1,126 @@
+<ctx task="Fix AudioOwnerSupport::Inactive at sample 8236 in RenderPlan::audio_gain_owners through retained Preserve output; group_mix::GroupMix::original and authored_gain::original_samples_with_owners reject nonzero Original at fractional input-leaf boundaries" route=" [routed: subtoken+body BM25 (--for&apos;s default) — no strong name hit, multi-word conceptual query]" bundle="auto" bodies="4"><!-- ripwire lens for "Fix AudioOwnerSupport::Inactive at sample 8236 in RenderPlan::audio_gain_owners through retained Preserve output; group_mix::GroupMix::original and authored_gain::original_samples_with_owners reject nonzero Original at fractional input-leaf boundaries" [doc mentions: 6 docs discussing 4 top-ranked symbols surfaced]: reusable building blocks + quality facts for what you're about to touch (cx=complexity ccx=cognitive in=reuse-count churn=recent-commits amp=change-amplification clone=1(duplicated) tested=1) — prefer composing/reusing these; watch the high-churn/high-amp/cloned ones; bundle=auto: the top-ranked FULL bodies ride inline after the signatures in a bodies section (bodies=N on this root counts them; bodies=0 reason=budget when none fit the remaining budget whole; the signatures-only flag opts out) — read them here instead of opening the files. The bodies element discloses the house way: total=requested, shown=printed, capped=1 when they differ; each body's calls child lists its callee signatures, total= always, shown=/capped= only when that list is cut est_tokens="4633" --><sigs capped="1"><f p="/Users/michael/Code/deadpan/crates/deadpan-audio/src/authored_gain.rs"><d l="283" n="owners_at" cx="4" ccx="2" in="1" churn="15" amp="55" tested="1">pub(super) fn owners_at( plan: &amp;RenderPlan, at: AudioSample, control: WorkControl&lt;&apos;_&gt;, ) -&gt; Result&lt;Vec&lt;OwnerIdentity&gt;, StageAudioError&gt;</d><d l="312" n="original_samples_except" cx="3" ccx="2" in="2" churn="15" amp="56" tested="1"><doc>As `original_samples`, leaving out the owners in `shared`. A tail&apos;s input omits the owners that …</doc>pub(super) fn original_samples_except( plan: &amp;RenderPlan, original: &amp;ReadBlock, control: WorkControl&lt;&apos;_&gt;, authored: bool, shared: &amp;[OwnerIdentity], ) -&gt; Result&lt;…</d><d l="340" n="original_samples_with_owners" cx="9" ccx="16" in="2" churn="15" amp="56" tested="1"><doc>Reuse the same treatment evaluator on a checked context&apos;s consumer grid. A retained input exclud…</doc>pub(super) fn original_samples_with_owners( original: &amp;ReadBlock, query: &amp;deadpan_plan::AudioOwnerQuery&lt;&apos;_&gt;, control: WorkControl&lt;&apos;_&gt;, shared: &amp;[OwnerIdentity],…</d><d l="390" n="beat_sound_gain" cx="3" ccx="3" in="3" churn="15" amp="57" tested="1">pub(super) fn beat_sound_gain( owners: &amp;[deadpan_plan::AudioOwnerClock&lt;&apos;_&gt;], at: AudioSample, event_millidecibels: i32, control: WorkControl&lt;&apos;_&gt;, authored: bool, ) -&gt; Result&lt;GainSum, StageAudioError&gt;</d></f><f p="/Users/michael/Code/deadpan/crates/deadpan-audio/src/group_mix.rs"><d l="67" n="GroupMix" cx="0" ccx="0" in="0" churn="4" amp="21">pub(super) struct GroupMix&lt;&apos;plan&gt;</d><d l="82" n="plan" id="/Users/michael/Code/deadpan/crates/deadpan-audio/src/group_mix.rs::GroupMix::plan" cx="11" ccx="12" in="3" churn="4" amp="24" tested="1">pub(super) fn plan( plan: &amp;&apos;plan RenderPlan, start: AudioSample, frames: u32, authored: bool, control: WorkControl&lt;&apos;_&gt;, ) -&gt; Result&lt;Self, StageAudioError&gt;</d><d l="243" n="register_run" id="/Users/michael/Code/deadpan/crates/deadpan-audio/src/group_mix.rs::GroupMix::register_run" cx="21" ccx="37" in="1" churn="4" amp="22" tested="1">fn register_run( &amp;mut self, bus: usize, range: Range&lt;usize&gt;, owners: &amp;[Layer&lt;&apos;plan&gt;], control: W…</d><d l="347" n="original" id="/Users/michael/Code/deadpan/crates/deadpan-audio/src/group_mix.rs::GroupMix::original" cx="9" ccx="14" in="1" churn="4" amp="22" tested="1">pub(super) fn original( &amp;mut self, samples: &amp;[[f32</d></f><f p="/Users/michael/Code/deadpan/crates/deadpan-plan/src/audio_owners.rs"><d l="226" n="AudioOwnerSpan" cx="0" ccx="0" in="0" churn="16" amp="86">pub struct AudioOwnerSpan&lt;&apos;plan, S = AudioSample&gt;</d><d l="312" n="audio_gain_owners" id="/Users/michael/Code/deadpan/crates/deadpan-plan/src/audio_owners.rs::RenderPlan::audio_gain_owners" cx="3" ccx="2" in="23" churn="16" amp="109" tested="1"><doc>Gain evaluation may encounter an absent Original contribution beside independent sounds. Report …</doc>pub fn audio_gain_owners( &amp;self, samples: Range&lt;AudioSample&gt;, limits: AudioQueryLimits, ) -&gt; Result&lt;AudioOwnerQuery&lt;&apos;_&gt;, PlanError&gt;</d><d l="337" n="audio_owners" id="/Users/michael/Code/deadpan/crates/deadpan-plan/src/audio_owners.rs::RenderPlan::audio_owners" cx="3" ccx="2" in="16" churn="16" amp="102" tested="1">pub fn audio_owners( &amp;self, samples: Range&lt;AudioSample&gt;, limits: AudioQueryLimits, ) -&gt; Result&lt;AudioOwnerQuery&lt;&apos;_&gt;, PlanError&gt;</d></f></sigs><bodies shown="4" total="6" capped="1"><b t="fn" l="340" p="/Users/michael/Code/deadpan/crates/deadpan-audio/src/authored_gain.rs" n="original_samples_with_owners"><![CDATA[pub(super) fn original_samples_with_owners(
+    original: &ReadBlock,
+    query: &deadpan_plan::AudioOwnerQuery<'_>,
+    control: WorkControl<'_>,
+    shared: &[OwnerIdentity],
+) -> Result<Vec<[f64; 2]>, StageAudioError> {
+    let end = original
+        .start
+        .0
+        .checked_add(i64::try_from(original.samples.len()).map_err(|_| StageAudioError::Range)?)
+        .ok_or(StageAudioError::Range)?;
+    if query.samples() != (original.start..AudioSample(end)) {
+        return Err(PlanError::InvalidPlan("authored gain query does not cover input").into());
+    }
+    let mut result = Vec::with_capacity(original.samples.len());
+    for span in query.spans() {
+        control.check()?;
+        let treatments = span.owners().iter().filter_map(|owner| owner.treatments());
+        deadpan_core::validate_audio_treatment_layers(treatments)?;
+        for at in span.samples().start.0..span.samples().end.0 {
+            let index =
+                usize::try_from(at - original.start.0).map_err(|_| StageAudioError::Range)?;
+            let sample = original.samples[index];
+            if span.support() == AudioOwnerSupport::Inactive {
+                if sample.iter().any(|value| *value != 0.0) {
+                    return Err(StageAudioError::Unsupported(
+                        "nonzero Original outside meaningful owner-clock support",
+                    ));
+                }
+                result.push(sample.map(f64::from));
+                continue;
+            }
+            let mut gain = GainSum::default();
+            for owner in span
+                .owners()
+                .iter()
+                .rev()
+                .filter(|owner| shared.is_empty() || !shared.contains(&identity(owner)))
+            {
+                gain.owner(owner, AudioSample(at), control)?;
+            }
+            result.push(gain.apply(sample)?);
+        }
+    }
+    if result.len() != original.samples.len() {
+        return Err(PlanError::InvalidPlan("incomplete authored gain owners").into());
+    }
+    Ok(result)
+}]]><calls total="24" shown="16" capped="1"><c n="any" l="174">const fn any(self) -&gt; bool</c><c n="filter" l="30">pub fn filter(&amp;mut self, events: Vec&lt;Event&gt;) -&gt; Vec&lt;Event&gt;</c><c n="support" l="25">pub(super) fn support( &amp;self, plan: &amp;RenderPlan, range: Range&lt;AudioSample&gt;, ) -&gt; Result&lt;Range&lt;AudioSample&gt;, StageAudioError&gt;</c><c n="owners" l="38">pub(super) fn owners( &amp;self, plan: &amp;&apos;plan RenderPlan, range: Range&lt;AudioSample&gt;, control: WorkControl&lt;&apos;_&gt;, ) -&gt; Result&lt;AudioOwnerQuery&lt;&apos;plan&gt;, StageAudioError&gt;</c><c n="owner" l="158">pub(super) fn owner( &amp;mut self, owner: &amp;deadpan_plan::AudioOwnerClock&lt;&apos;_&gt;, at: AudioSample, control: WorkControl&lt;&apos;_&gt;, ) -&gt; Result&lt;(), StageAudioError&gt;</c><c n="apply" l="227">pub(super) fn apply(&amp;self, sample: [f32</c><c n="identity" l="274">pub(super) fn identity(owner: &amp;deadpan_plan::AudioOwnerClock&lt;&apos;_&gt;) -&gt; OwnerIdentity</c><c n="check" l="17">fn check(cancelled: &amp;AtomicBool) -&gt; Result&lt;(), FilterError&gt;</c><c n="check" l="40">fn check(cancelled: &amp;AtomicBool) -&gt; Result&lt;(), CausalFilterError&gt;</c><c n="check" l="223">fn check(&amp;self) -&gt; Result&lt;(), LimiterError&gt;</c><c n="push" l="118">pub fn push( &amp;mut self, samples: &amp;[[f32</c><c n="owners" l="178">fn owners( &amp;self, samples: Range&lt;AudioSample&gt;, control: WorkControl&lt;&apos;_&gt;, ) -&gt; Result&lt;AudioOwnerQuery&lt;&apos;plan&gt;, StageAudioError&gt;</c><c n="len" l="22">pub(super) fn len(&amp;self) -&gt; usize</c><c n="len" l="164">pub(super) fn len(&amp;self) -&gt; usize</c><c n="push" l="168">pub(super) fn push( &amp;mut self, samples: &amp;[[f32</c><c n="contains" l="50">pub(super) fn contains(&amp;self, voice: usize) -&gt; bool</c></calls></b><b t="fn" l="312" p="/Users/michael/Code/deadpan/crates/deadpan-audio/src/authored_gain.rs" n="original_samples_except"><![CDATA[pub(super) fn original_samples_except(
+    plan: &RenderPlan,
+    original: &ReadBlock,
+    control: WorkControl<'_>,
+    authored: bool,
+    shared: &[OwnerIdentity],
+) -> Result<Vec<[f64; 2]>, StageAudioError> {
+    if !authored || !plan.has_audio_treatments() {
+        return Ok(original
+            .samples
+            .iter()
+            .map(|frame| frame.map(f64::from))
+            .collect());
+    }
+    let end = original
+        .start
+        .0
+        .checked_add(i64::try_from(original.samples.len()).map_err(|_| StageAudioError::Range)?)
+        .ok_or(StageAudioError::Range)?;
+    let query =
+        plan.audio_gain_owners(original.start..AudioSample(end), control.query_limits()?)?;
+    control.spend_plan_work(query.work())?;
+    original_samples_with_owners(original, &query, control, shared)
+}]]><calls total="10"><c n="original_samples_with_owners" l="340">pub(super) fn original_samples_with_owners( original: &amp;ReadBlock, query: &amp;deadpan_plan::AudioOwnerQuery&lt;&apos;_&gt;, control: WorkControl&lt;&apos;_&gt;, shared: &amp;[OwnerIdentity], ) -&gt; Result&lt;Vec&lt;[f64</c><c n="len" l="22">pub(super) fn len(&amp;self) -&gt; usize</c><c n="len" l="164">pub(super) fn len(&amp;self) -&gt; usize</c><c n="collect" l="254">fn collect(room: &amp;RoomTone&lt;&apos;_&gt;, count: u32, partitions: &amp;[u32]) -&gt; Vec&lt;[f32</c><c n="spend_plan_work" l="519">fn spend_plan_work(self, amount: usize) -&gt; Result&lt;(), StageAudioError&gt;</c><c n="query_limits" l="539">fn query_limits(self) -&gt; Result&lt;AudioQueryLimits, StageAudioError&gt;</c><c n="query_limits" l="2943">fn query_limits() -&gt; AudioQueryLimits</c><c n="AudioSample" l="13">pub struct AudioSample</c><c n="has_audio_treatments" l="283">pub fn has_audio_treatments(&amp;self) -&gt; bool</c><c n="audio_gain_owners" l="312">pub fn audio_gain_owners( &amp;self, samples: Range&lt;AudioSample&gt;, limits: AudioQueryLimits, ) -&gt; Result&lt;AudioOwnerQuery&lt;&apos;_&gt;, PlanError&gt;</c></calls></b><b t="method" l="347" p="/Users/michael/Code/deadpan/crates/deadpan-audio/src/group_mix.rs" n="original"><![CDATA[pub(super) fn original(
+        &mut self,
+        samples: &[[f32; 2]],
+        control: WorkControl<'_>,
+    ) -> Result<(), StageAudioError> {
+        if samples.len() != self.frames {
+            return Err(PlanError::InvalidPlan("incomplete Original mix PCM").into());
+        }
+        for (range, support, route) in &self.original {
+            for index in range.clone() {
+                let sample = samples[index];
+                let Some(route) = route else {
+                    if sample.iter().any(|value| *value != 0.0) {
+                        return Err(
+                            PlanError::InvalidPlan("nonzero Original in declared silence").into(),
+                        );
+                    }
+                    continue;
+                };
+                if *support == AudioOwnerSupport::Inactive
+                    && sample.iter().any(|value| *value != 0.0)
+                {
+                    return Err(StageAudioError::Unsupported(
+                        "nonzero Original outside meaningful owner-clock support",
+                    ));
+                }
+                let gain = route.gain(AudioSample(self.start.0 + index as i64), 0, control)?;
+                let value = gain.apply(sample)?;
+                // The Original is the first contribution and has one route at
+                // each sample. Assignment also retains signed zero exactly.
+                match route.target {
+                    Some(bus) => self.buses[bus].samples[index] = value,
+                    None => self.sum[index] = value,
+                }
+            }
+        }
+        Ok(())
+    }]]><calls total="7"><c n="any" l="174">const fn any(self) -&gt; bool</c><c n="apply" l="17">fn apply( &amp;self, gain: &amp;mut authored_gain::GainSum, at: AudioSample, control: WorkControl&lt;&apos;_&gt;, ) -&gt; Result&lt;(), StageAudioError&gt;</c><c n="gain" l="40">fn gain( &amp;self, at: AudioSample, event_gain: i32, control: WorkControl&lt;&apos;_&gt;, ) -&gt; Result&lt;authored_gain::GainSum, StageAudioError&gt;</c><c n="len" l="22">pub(super) fn len(&amp;self) -&gt; usize</c><c n="len" l="164">pub(super) fn len(&amp;self) -&gt; usize</c><c n="AudioSample" l="13">pub struct AudioSample</c><c n="Err" l="25">type Err = &amp;&apos;static str</c></calls></b><b t="method" l="312" p="/Users/michael/Code/deadpan/crates/deadpan-plan/src/audio_owners.rs" n="audio_gain_owners"><![CDATA[pub fn audio_gain_owners(
+        &self,
+        samples: Range<AudioSample>,
+        limits: AudioQueryLimits,
+    ) -> Result<AudioOwnerQuery<'_>, PlanError> {
+        if samples.start.0 < 0 || samples.end > self.audio_duration()? {
+            return Err(PlanError::AudioRangeOutOfRange);
+        }
+        let mut seed = Walk::root(self)?;
+        seed.allow_inactive = true;
+        query(
+            self,
+            samples.start.0..samples.end.0,
+            limits,
+            seed,
+            AudioSample,
+        )
+    }]]><calls total="4"><c n="Err" l="25">type Err = &amp;&apos;static str</c><c n="audio_duration" l="373">pub fn audio_duration(&amp;self) -&gt; Result&lt;AudioSample, PlanError&gt;</c><c n="root" l="546">fn root(plan: &amp;RenderPlan) -&gt; Result&lt;Self, PlanError&gt;</c><c n="query" l="628">fn query&lt;&apos;plan, S: Copy&gt;( plan: &amp;&apos;plan RenderPlan, samples: Range&lt;i64&gt;, limits: AudioQueryLimits, seed: Walk, label: impl Fn(i64) -&gt; S, ) -&gt; Result&lt;AudioOwnerQuery&lt;&apos;plan, S&gt;, PlanError&gt;</c></calls></b></bodies></ctx>

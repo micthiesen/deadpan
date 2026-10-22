@@ -1,0 +1,267 @@
+[
+  {
+    "path": "/ftyp",
+    "offset": 0,
+    "size": 20,
+    "body_length": 12
+  },
+  {
+    "path": "/moov",
+    "offset": 20,
+    "size": 3610,
+    "body_length": 3602
+  },
+  {
+    "path": "/moov/mvhd",
+    "offset": 28,
+    "size": 108,
+    "body_length": 100
+  },
+  {
+    "path": "/moov/trak",
+    "offset": 136,
+    "size": 2797,
+    "body_length": 2789
+  },
+  {
+    "path": "/moov/trak/tkhd",
+    "offset": 144,
+    "size": 92,
+    "body_length": 84
+  },
+  {
+    "path": "/moov/trak/edts",
+    "offset": 236,
+    "size": 36,
+    "body_length": 28
+  },
+  {
+    "path": "/moov/trak/mdia",
+    "offset": 272,
+    "size": 2661,
+    "body_length": 2653
+  },
+  {
+    "path": "/moov/trak/mdia/mdhd",
+    "offset": 280,
+    "size": 32,
+    "body_length": 24
+  },
+  {
+    "path": "/moov/trak/mdia/hdlr",
+    "offset": 312,
+    "size": 45,
+    "body_length": 37
+  },
+  {
+    "path": "/moov/trak/mdia/minf",
+    "offset": 357,
+    "size": 2576,
+    "body_length": 2568
+  },
+  {
+    "path": "/moov/trak/mdia/minf/vmhd",
+    "offset": 365,
+    "size": 20,
+    "body_length": 12
+  },
+  {
+    "path": "/moov/trak/mdia/minf/hdlr",
+    "offset": 385,
+    "size": 44,
+    "body_length": 36
+  },
+  {
+    "path": "/moov/trak/mdia/minf/dinf",
+    "offset": 429,
+    "size": 36,
+    "body_length": 28
+  },
+  {
+    "path": "/moov/trak/mdia/minf/stbl",
+    "offset": 465,
+    "size": 2468,
+    "body_length": 2460
+  },
+  {
+    "path": "/moov/trak/mdia/minf/stbl/stsd",
+    "offset": 473,
+    "size": 184,
+    "body_length": 176
+  },
+  {
+    "path": "/moov/trak/mdia/minf/stbl/stsd/avc1",
+    "offset": 489,
+    "size": 168,
+    "body_length": 160
+  },
+  {
+    "path": "/moov/trak/mdia/minf/stbl/stsd/avc1/avcC",
+    "offset": 575,
+    "size": 48,
+    "body_length": 40
+  },
+  {
+    "path": "/moov/trak/mdia/minf/stbl/stsd/avc1/colr",
+    "offset": 623,
+    "size": 18,
+    "body_length": 10,
+    "body_hex": "6e636c63000100010001"
+  },
+  {
+    "path": "/moov/trak/mdia/minf/stbl/stsd/avc1/pasp",
+    "offset": 641,
+    "size": 16,
+    "body_length": 8
+  },
+  {
+    "path": "/moov/trak/mdia/minf/stbl/stts",
+    "offset": 657,
+    "size": 24,
+    "body_length": 16
+  },
+  {
+    "path": "/moov/trak/mdia/minf/stbl/stss",
+    "offset": 681,
+    "size": 48,
+    "body_length": 40
+  },
+  {
+    "path": "/moov/trak/mdia/minf/stbl/ctts",
+    "offset": 729,
+    "size": 976,
+    "body_length": 968
+  },
+  {
+    "path": "/moov/trak/mdia/minf/stbl/stsc",
+    "offset": 1705,
+    "size": 520,
+    "body_length": 512
+  },
+  {
+    "path": "/moov/trak/mdia/minf/stbl/stsz",
+    "offset": 2225,
+    "size": 500,
+    "body_length": 492
+  },
+  {
+    "path": "/moov/trak/mdia/minf/stbl/stco",
+    "offset": 2725,
+    "size": 208,
+    "body_length": 200
+  },
+  {
+    "path": "/moov/trak",
+    "offset": 2933,
+    "size": 697,
+    "body_length": 689
+  },
+  {
+    "path": "/moov/trak/tkhd",
+    "offset": 2941,
+    "size": 92,
+    "body_length": 84
+  },
+  {
+    "path": "/moov/trak/edts",
+    "offset": 3033,
+    "size": 36,
+    "body_length": 28
+  },
+  {
+    "path": "/moov/trak/mdia",
+    "offset": 3069,
+    "size": 561,
+    "body_length": 553
+  },
+  {
+    "path": "/moov/trak/mdia/mdhd",
+    "offset": 3077,
+    "size": 32,
+    "body_length": 24
+  },
+  {
+    "path": "/moov/trak/mdia/hdlr",
+    "offset": 3109,
+    "size": 45,
+    "body_length": 37
+  },
+  {
+    "path": "/moov/trak/mdia/minf",
+    "offset": 3154,
+    "size": 476,
+    "body_length": 468
+  },
+  {
+    "path": "/moov/trak/mdia/minf/smhd",
+    "offset": 3162,
+    "size": 16,
+    "body_length": 8
+  },
+  {
+    "path": "/moov/trak/mdia/minf/hdlr",
+    "offset": 3178,
+    "size": 44,
+    "body_length": 36
+  },
+  {
+    "path": "/moov/trak/mdia/minf/dinf",
+    "offset": 3222,
+    "size": 36,
+    "body_length": 28
+  },
+  {
+    "path": "/moov/trak/mdia/minf/stbl",
+    "offset": 3258,
+    "size": 372,
+    "body_length": 364
+  },
+  {
+    "path": "/moov/trak/mdia/minf/stbl/stsd",
+    "offset": 3266,
+    "size": 76,
+    "body_length": 68
+  },
+  {
+    "path": "/moov/trak/mdia/minf/stbl/stsd/sowt",
+    "offset": 3282,
+    "size": 60,
+    "body_length": 52
+  },
+  {
+    "path": "/moov/trak/mdia/minf/stbl/stts",
+    "offset": 3342,
+    "size": 24,
+    "body_length": 16
+  },
+  {
+    "path": "/moov/trak/mdia/minf/stbl/stsc",
+    "offset": 3366,
+    "size": 40,
+    "body_length": 32
+  },
+  {
+    "path": "/moov/trak/mdia/minf/stbl/stsz",
+    "offset": 3406,
+    "size": 20,
+    "body_length": 12
+  },
+  {
+    "path": "/moov/trak/mdia/minf/stbl/stco",
+    "offset": 3426,
+    "size": 204,
+    "body_length": 196
+  },
+  {
+    "path": "/wide",
+    "offset": 3630,
+    "size": 8,
+    "body_length": 0
+  },
+  {
+    "path": "/mdat",
+    "offset": 3638,
+    "size": 798199,
+    "body_length": 798191
+  }
+]

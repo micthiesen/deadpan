@@ -1,0 +1,9 @@
+Read-only continuation: native ordinary Hold duration inside fixed unclocked Edit Retime.
+Do not relax semantic_framing or ThisPlay-under-Retime gates.
+Distinct ordinary duration-only captured authority needed across core context/planner, native capture, staged macro service and receipt.
+Validate no Repeat ancestry and only ordinary Sequences/fixed unclocked Edit Retime ancestors.
+Recompute exact visible clipped root interval and sampled frame range in core, not only app projection. Preserve intrinsic local0 separately from visible sample frame and current cursor; ordinary receipt's integral intrinsic-start assumption is invalid for crops/fractional positions.
+Native direct/record/call/dot share ParameterEdit + ordinary SetHoldDuration, no occurrence isolation.
+Capture/revalidate session/revision/navigation/inspected root/Hold/pane/cursor/scope and each staged step. Reject unsupported mixed macros atomically.
+Candidate test files: core insert_time/hold_duration/tests/fixed_retime.rs; semantic/planner/tests/retime.rs; app project/tests/macros/scoped/duration.rs; preview/scoped/model/tests; preview/harness/scoped_plays/hold_duration.rs.
+No implementation or runtime claim.

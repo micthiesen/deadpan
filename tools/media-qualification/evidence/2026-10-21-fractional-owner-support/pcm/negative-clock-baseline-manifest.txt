@@ -1,0 +1,32 @@
+Second old-code PCM success baseline; production held unchanged.
+Test exact filter:
+fixed_retime_output_sound_fractional_owner_gap_keeps_negative_hold_gain_clock
+First baseline success test remains separately callable:
+fixed_retime_output_sound_fractional_owner_gap_complete_nonlinear_bus
+Old explicitUnsupported scoped witness also remains separate.
+
+SHA256:
+68c3b8ab2d39d4a283927234885a479425722ddaa25de13824831ba5840b4b3d  crates/deadpan-audio/tests/stages/processing_hold_duration_output_sound.rs
+a104e568a654f8c755679166e023006366cd5a44bfb87b9bded1877e266daf63  registration
+Pinned source pcm/baseline-negative-clock-output-sound.rs.
+Firstbaseline pcm/baseline-output-sound.rs and root binarya660e058... remain intact.
+
+Correct existing sampling contract:
+Structural root allocation probes atn+1/2,tieparity; PCM coordinate usesn.
+Historical stageSource cut6635.2 rounds to6635, translated consumer8236.
+FollowingHold owns8236 while exact retained Hold-local coordinate is-1/4576
+and per-sample step35/32032; next8237local=1/1144. No clock clamping.
+Prior comment incorrectly inferring Source ownership from PCMposition<3 corrected.
+
+Second witness seeds Sourcebeforetrim-6dB and Holdtrim-12dB before rootjournal.
+Hold envelope has keys startinglocal0, constant+3dB over[0,3).
+Scalar original-only gain:
+[6406,8236): -6dB;8236:-12dB;[8237,10982):-9dB;else0dB.
+Known current untreated Original+RoomTone PCM supplies current physical component.
+Exact independent event is never multiplied by childgain. Sum enters processor
+saturation then root saturation, with fullboundedregular/irregular andcoldreads.
+Controls distinguish ancestor-onlyunity, wrongSource-6dB, wrongclamp-9dB at8236;
+independent event contamination, stale oldinput, and pervoice saturation.
+Complete masks retain separate12812outputexhaustion.
+No zeroed/mutedOriginal, no authoredSilence, no oversizedrequest.
+No Cargo/Git run by audio worker; root owns actual baseline result/binary hash.

@@ -1,0 +1,8 @@
+{
+  "binary": "target/debug/deps/stages-4506359765072bfd",
+  "sha256": "7f42acd547948a4d49907d4cefb44970358c1af641cd70605537737a00b76821",
+  "tests": 8,
+  "passed": 8,
+  "skipped": 182,
+  "source_sha256": "11e34ed89b079fe41b95c1a72fefca59bae7c87f86e115c0e9b6beade6b8fa42"
+}

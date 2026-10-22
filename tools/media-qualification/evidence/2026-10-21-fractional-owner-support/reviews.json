@@ -1,0 +1,55 @@
+{
+  "base": "25646268e60830d9fae8be4e3b4d4e586aab39e2",
+  "reviews": [
+    {
+      "agent": "fractional_owner_general_review",
+      "role": "check",
+      "findings": [],
+      "runtime_by_reviewer": false
+    },
+    {
+      "agent": "fractional_owner_clock_review",
+      "role": "check-focused",
+      "lens": "clock ownership, half-open boundaries, retained provenance and work",
+      "findings": [],
+      "runtime_by_reviewer": false
+    },
+    {
+      "agent": "fractional_owner_evidence_review",
+      "role": "check-focused",
+      "lens": "oracles, qualified sources and full emitted-file verification",
+      "findings": [],
+      "runtime_by_reviewer": false
+    }
+  ],
+  "root_findings": [
+    {
+      "finding": "Plan test grid type ambiguous",
+      "disposition": "Explicit AudioSampleGrid<AudioSample> annotation; earlier compile101 retained"
+    },
+    {
+      "finding": "Public pure-plan fixture used a Source with Blank picture and no audio",
+      "disposition": "Invalid setup classified separately from valid baseline regressions; replaced with a valid Hold of equal duration. No production admission changed."
+    },
+    {
+      "finding": "PCM lookup point had been mistaken for structural child ownership",
+      "disposition": "Corrected using documented n+1/2 root probe and tie parity; following Hold gets exact signed clock, preceding Source does not."
+    },
+    {
+      "finding": "Release fixture path shadowed picture helper",
+      "disposition": "Renamed local original_path; first E0618 compile101 retained"
+    },
+    {
+      "finding": "Generated QuickTime MOV color/PCM grammar outside source admission",
+      "disposition": "Source-only ISO MP4/AAC192k producer with explicit delay/padding; video packet identity and exact presented endpoint verified. Production admission unchanged."
+    },
+    {
+      "finding": "Fixture compared BLAKE3 content identity with SHA256",
+      "disposition": "Pre-run producer follow-up found algorithm mismatch; assertion uses actual BLAKE3 identity, separate SHA256 evidence retained."
+    },
+    {
+      "finding": "Literal arithmetic assertion triggered Clippy eq_op",
+      "disposition": "Use actual round_even result for translated sample assertion; earlier lint failure retained; focused eight PCM tests rerun passed."
+    }
+  ]
+}

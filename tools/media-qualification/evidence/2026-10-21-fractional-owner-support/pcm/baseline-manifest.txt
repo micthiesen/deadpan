@@ -1,0 +1,31 @@
+Milestone base25646268; baseline failing success regression, no production edit.
+Test:
+fixed_retime_output_sound_fractional_owner_gap_complete_nonlinear_bus
+Root command target:
+cargo test -p deadpan-audio --test stages fixed_retime_output_sound_fractional_owner_gap_complete_nonlinear_bus --locked
+Root owns all Cargo execution and executed binary identity.
+
+SHA256:
+c390fdaaf50962dea7966634a884176b2d9fff2af1f71ed9d08af44bdb134d6e  crates/deadpan-audio/tests/stages/processing_hold_duration_output_sound.rs
+a104e568a654f8c755679166e023006366cd5a44bfb87b9bded1877e266daf63  crates/deadpan-audio/tests/stages/processing_hold_duration.rs
+Pinned new baseline source: pcm/baseline-output-sound.rs.
+Registration unchanged.
+
+Existing explicit Unsupported scoped witness remains separate:
+fixed_retime_output_sound_current_nonlinear_owners_shape_current_shared_bus
+
+New regression uses same validated measured WAV provider, nonzero Original and
+RoomTone policies, explicit public root ripple and interior Hold resize. Before
+first demanded successful bus read, independently decoded untreated current
+Original component is nonzero at8236; direct retained output geometry maps this
+coordinate through authored Retime to input13727/4576, within first Source[0,3).
+The authored ancestors are root/processor/z-body/before. Expected scalar current
+Original+exact-phase independent event is summed before processor saturation,
+then root saturation. No owner query derives expected processing.
+
+All complete reads stay<=256. Regular and irregular partitions span0..17618
+including8236. Cold requests include8236,count1;8192,count128;8235,count3.
+Exact complete suppression mask retains separate12812 exhaustion point.
+Stale old input and per-voice saturation controls remain meaningful.
+
+No runtime result claimed. Worker invoked rustfmt only; no Cargo or Git.

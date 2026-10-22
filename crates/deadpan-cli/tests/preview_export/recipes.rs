@@ -49,6 +49,9 @@ pub mod fixed_retime_duration;
 #[path = "fixed_retime_output_sound.rs"]
 pub mod fixed_retime_output_sound;
 
+#[path = "fractional_owner_support.rs"]
+pub mod fractional_owner_support;
+
 #[path = "processing_duration.rs"]
 pub mod processing_duration;
 

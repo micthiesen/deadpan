@@ -1,0 +1,13 @@
+{
+  "base_revision": "25646268e60830d9fae8be4e3b4d4e586aab39e2",
+  "binary": "target/debug/deps/stages-4506359765072bfd",
+  "sha256": "a660e05818178706644d3413387a934e13209ad6486367965f469353ca1ee8c2",
+  "witness": "crates/deadpan-audio/tests/stages/processing_hold_duration_output_sound.rs",
+  "witness_sha256": "c390fdaaf50962dea7966634a884176b2d9fff2af1f71ed9d08af44bdb134d6e",
+  "tests": 1,
+  "failed": 1,
+  "skipped": 188,
+  "exit_code": 100,
+  "failure": "Unsupported nonzero Original outside meaningful owner-clock support",
+  "production_unchanged": true
+}

@@ -1,0 +1,14 @@
+{
+  "base_revision": "25646268",
+  "binary": "target/debug/deps/deadpan_plan-526b4078b1f38665",
+  "sha256": "7624f5a97fead15f6e02282855245ccd64dc9bd82dd3b9fe68f703f031a4c2b5",
+  "witness_sha256": "f51e39f4422e0461d92ccdd8847875f8a777205f44cb2c525f2efcab9db78f66",
+  "tests": 4,
+  "positive_failed": 2,
+  "negative_passed": 1,
+  "skipped": 53,
+  "exit_code": 100,
+  "earlier_compile_exit": 101,
+  "fixture_setup_failed": 1,
+  "fixture_setup_failure": "Public fixture cleared its only media, causing SourceRangeInvalid before target ownership query; not counted as a valid regression."
+}

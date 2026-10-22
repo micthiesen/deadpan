@@ -1,0 +1,12 @@
+{
+  "base_revision": "25646268",
+  "binary": "target/debug/deps/stages-4506359765072bfd",
+  "sha256": "2df57c18ac8177b58b25b40014f9d6cf29dc337a5cdf2307bd07af40efd649e5",
+  "witness_sha256": "68c3b8ab2d39d4a283927234885a479425722ddaa25de13824831ba5840b4b3d",
+  "tests": 1,
+  "failed": 1,
+  "skipped": 189,
+  "exit_code": 100,
+  "failure": "Unsupported nonzero Original outside owner support (shared_eq.rs)",
+  "production_predicate_unchanged": true
+}

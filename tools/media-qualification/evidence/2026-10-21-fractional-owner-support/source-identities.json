@@ -1,0 +1,10 @@
+{
+  "crates/deadpan-plan/src/audio_owners.rs": "d8774faef9d8cace84d01745b7893a2c328c494c079215c2c166ceedb5c2c8af",
+  "crates/deadpan-plan/src/audio_owners/tests.rs": "099ec12583a13f2300ef6083467ecccc3e2259abcb377120d37a45359def0155",
+  "crates/deadpan-plan/src/audio_owners/fractional_support_tests.rs": "14e848e33f4a5d1756092d1b5102009d4aa41268769b9c7da82c6b510e4854e6",
+  "crates/deadpan-audio/tests/stages/processing_hold_duration_output_sound.rs": "11e34ed89b079fe41b95c1a72fefca59bae7c87f86e115c0e9b6beade6b8fa42",
+  "crates/deadpan-cli/tests/preview_export.rs": "54cff355ea328ccf8dc308c9fde9e30d337f0530ad6dc97551c6abe49bf89335",
+  "crates/deadpan-cli/tests/preview_export/recipes.rs": "aa73dc05209cdb5e6326d59fe986b252429dd5838cb3e2d2f24c49aeb902d845",
+  "crates/deadpan-cli/tests/preview_export/fractional_owner_support.rs": "19fab06feecb14a21944afd5f1a429d815bbbf7070575bcb69a5cd50d169e779",
+  "Cargo.lock": "1e39d18ae4de6c7b898edad39eb7104235fb3ffe3af84521ca94df2b6c25b71b"
+}
