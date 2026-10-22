@@ -1,0 +1,155 @@
+<ctx task="fixed Retime SetHoldDuration source_registration/sounds/sound_clocks.rs preview_export/fixed_retime_duration.rs" route=" [routed: subtoken+body BM25 — name-exact declined: anchor &apos;fixed&apos; is a common name (248 name-carriers, 8 defs); conceptual ranker used]" bundle="auto" bodies="4"><!-- ripwire lens for "fixed Retime SetHoldDuration source_registration/sounds/sound_clocks.rs preview_export/fixed_retime_duration.rs" [mention anchor: 2 files + 6 symbols named in the task lifted near the top] [doc mentions: 1 doc discussing 1 top-ranked symbol surfaced]: reusable building blocks + quality facts for what you're about to touch (cx=complexity ccx=cognitive in=reuse-count churn=recent-commits amp=change-amplification clone=1(duplicated) tested=1) — prefer composing/reusing these; watch the high-churn/high-amp/cloned ones; bundle=auto: the top-ranked FULL bodies ride inline after the signatures in a bodies section (bodies=N on this root counts them; bodies=0 reason=budget when none fit the remaining budget whole; the signatures-only flag opts out) — read them here instead of opening the files. The bodies element discloses the house way: total=requested, shown=printed, capped=1 when they differ; each body's calls child lists its callee signatures, total= always, shown=/capped= only when that list is cut est_tokens="3355" --><sigs capped="1"><f p="./crates/deadpan-core/src/insert_time/hold_duration/tests.rs"><d l="4" n="fixed_retime" cx="0" ccx="0" in="0" churn="3" amp="49">mod fixed_retime</d><d l="415" n="ordinary_hold_duration_physical_capture_shares_the_complete_sound_journal_clock" cx="1" ccx="0" in="0" churn="3" amp="49">fn ordinary_hold_duration_physical_capture_shares_the_complete_sound_journal_clock()</d></f><f p="./crates/deadpan-store/tests/source_registration/sounds/sound_clocks.rs" layer="test"><d l="117" n="sound_clock_transports_are_atomic_durable_and_reversible_with_fresh_revisions" cx="1" ccx="0" in="0" churn="4" amp="24">fn sound_clock_transports_are_atomic_durable_and_reversible_with_fresh_revisions() -&gt; Result</d><d l="225" n="retained_beat_sound_clocks_survive_register_reopen_recapture_and_multiple_pastes" cx="3" ccx="2" in="0" churn="4" amp="24">fn retained_beat_sound_clocks_survive_register_reopen_recapture_and_multiple_pastes() -&gt; Result</d><d l="504" n="retained_sound_clock_register_rechecks_receipt_and_original_without_losing_copy" cx="10" ccx="5" in="0" churn="4" amp="24">fn retained_sound_clock_register_rechecks_receipt_and_original_without_losing_copy() -&gt; Result</d></f><f p="./crates/deadpan-cli/tests/preview_export/fixed_retime_duration.rs" layer="test"><d l="45" n="layout" cx="1" ccx="0" in="1" churn="2" amp="40">fn layout(hold_frames: i64) -&gt; Vec&lt;Expected&gt;</d><d l="61" n="clone_fragment" cx="10" ccx="9" in="4" churn="2" amp="43">pub(super) fn clone_fragment( project: &amp;mut Project, document: &amp;ProjectDocument, root: &amp;NodeId, nodes: &amp;mut std::collections::BTreeMap&lt;NodeId, BeatNode&gt;, ) -&gt; R…</d><d l="101" n="build" cx="10" ccx="11" in="4" churn="2" amp="43">fn build(dir: &amp;Path, grow: bool) -&gt; Result&lt;Fixture&gt;</d></f></sigs><bodies shown="4" total="6" capped="1"><b t="other" l="4" p="./crates/deadpan-core/src/insert_time/hold_duration/tests.rs" n="fixed_retime"><![CDATA[mod fixed_retime;]]></b><b t="fn" l="117" p="./crates/deadpan-store/tests/source_registration/sounds/sound_clocks.rs" n="sound_clock_transports_are_atomic_durable_and_reversible_with_fresh_revisions"><![CDATA[fn sound_clock_transports_are_atomic_durable_and_reversible_with_fresh_revisions() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let (path, mut store) = project(scratch.path())?;
+    let original = retain(&mut store, "offset-bframes.mp4")?;
+    let decoded = decode(&store, &original)?;
+    store.register_source(
+        &request(&store, &original, "import", "camera", Some("clip"))?,
+        &decoded,
+        None,
+        limits(),
+        &active(),
+    )?;
+    let before = store.snapshot()?;
+    let owner = NodeId::new("clip")?;
+    let local = SoundId::new("overlay")?;
+    store.commit(&edit(
+        &before,
+        "sound",
+        Command::SetBeatSound {
+            owner: owner.clone(),
+            id: local.clone(),
+            event: event(&before)?,
+        },
+    ))?;
+    let saved = store.snapshot()?;
+    let move_clock = AudioTimingId {
+        allocation: revision("moved"),
+        ordinal: 0,
+    };
+    let insert = edit(
+        &saved,
+        "moved",
+        Command::InsertTime {
+            at: ProjectFrame(0),
+            hold: HoldRecipe {
+                duration: FrameDuration::new(1)?,
+                video: HoldVideo::Background,
+                picture_context: None,
+                audio: HoldAudio::Silence,
+            },
+            id: NodeId::new("prefix")?,
+            identities: SplitIdentities::default(),
+            timing: move_clock.clone(),
+        },
+    );
+    let preview = store.preview(&insert)?;
+    assert_eq!(store.snapshot()?, saved);
+    let before_counts = counts(&path)?;
+    let database = Connection::open(path.join("project.sqlite"))?;
+    database.execute_batch("CREATE TRIGGER fail_sound_clock BEFORE INSERT ON history BEGIN SELECT RAISE(FAIL,'forced sound clock history failure'); END;")?;
+    assert!(store.commit(&insert).is_err());
+    assert_eq!(store.snapshot()?, saved);
+    assert_eq!(counts(&path)?, before_counts);
+    database.execute_batch("DROP TRIGGER fail_sound_clock")?;
+    assert_eq!(store.commit(&insert)?.edit, preview);
+    let moved = store.snapshot()?;
+    assert_eq!(
+        moved.audio_bindings().sound_clocks()[&owner][&local]
+            .clocks()
+            .iter()
+            .map(|reference| reference.timing().clone())
+            .collect::<Vec<_>>(),
+        vec![move_clock.clone()]
+    );
+    let return_clock = AudioTimingId {
+        allocation: revision("returned"),
+        ordinal: 0,
+    };
+    store.commit(&edit(
+        &moved,
+        "returned",
+        Command::DeleteRipple {
+            node: NodeId::new("prefix")?,
+            timing: return_clock.clone(),
+        },
+    ))?;
+    let returned = store.snapshot()?;
+    assert_eq!(
+        returned.audio_bindings().sound_clocks()[&owner][&local]
+            .clocks()
+            .iter()
+            .map(|reference| reference.timing().clone())
+            .collect::<Vec<_>>(),
+        vec![move_clock, return_clock]
+    );
+    assert_eq!(returned.duration()?, saved.duration()?);
+    drop(store);
+    let mut store = ProjectStore::open(&path, AccessMode::ReadWrite)?;
+    assert_eq!(store.snapshot()?, returned);
+    store.validate()?;
+    store.undo(returned.revision_id(), revision("undo-return"))?;
+    assert_authored(&store.snapshot()?, &moved)?;
+    store.undo(&revision("undo-return"), revision("undo-move"))?;
+    assert_authored(&store.snapshot()?, &saved)?;
+    store.redo(&revision("undo-move"), revision("redo-move"))?;
+    assert_authored(&store.snapshot()?, &moved)?;
+    store.redo(&revision("redo-move"), revision("redo-return"))?;
+    assert_authored(&store.snapshot()?, &returned)?;
+    assert_eq!(
+        store.commit(&insert).unwrap_err().code(),
+        "RevisionConflict"
+    );
+    drop(store);
+    ProjectStore::open(&path, AccessMode::ReadOnly)?.validate()?;
+    Ok(())
+}]]><calls total="7"><c n="ProjectFrame" l="9">pub struct ProjectFrame</c><c n="new" l="37">pub fn new(frames: i64) -&gt; Result&lt;Self, TimeError&gt;</c><c n="open" l="395">pub fn open(path: &amp;Path, mode: AccessMode) -&gt; Result&lt;Self, StoreError&gt;</c><c n="register_source" l="572">pub fn register_source( &amp;mut self, input: &amp;SourceRegistration, decoded: &amp;DecodedSourceQualification, relevance: Option&lt;&amp;RelevancePlan&gt;, limits: OriginalMediaLimits, cancelled: &amp;AtomicBool, ) -&gt; Result&lt;SourceRegistrationOutcome, StoreError&gt;</c><c n="event" l="13">fn event(document: &amp;ProjectDocument) -&gt; Result&lt;BeatSound&gt;</c><c n="assert_authored" l="76">fn assert_authored(actual: &amp;ProjectDocument, expected: &amp;ProjectDocument) -&gt; Result</c><c n="assert_authored" l="4">fn assert_authored(actual: &amp;ProjectDocument, expected: &amp;ProjectDocument) -&gt; Result</c></calls></b><!-- body omitted (over budget): retained_beat_sound_clocks_survive_register_reopen_recapture_and_multiple_pastes --><!-- body omitted (over budget): retained_sound_clock_register_rechecks_receipt_and_original_without_losing_copy --><b t="fn" l="45" p="./crates/deadpan-cli/tests/preview_export/fixed_retime_duration.rs" n="layout"><![CDATA[fn layout(hold_frames: i64) -> Vec<Expected> {
+    let mut pictures: Vec<_> = (12..28).map(original).collect();
+    let mut stage = vec![original(28)];
+    stage.extend(std::iter::repeat_n(original(28), hold_frames as usize));
+    stage.extend((29..32).map(original));
+    stage.extend([Expected::Background; 4]);
+    assert!(stage.len() >= 8);
+    pictures.extend(stage.into_iter().take(8));
+    pictures.extend((29..32).map(original));
+    assert_eq!(pictures.len(), 27);
+    pictures
+}]]><calls total="1"><c n="original" l="134">fn original(source_ordinal: u64) -&gt; Expected</c></calls></b><b t="fn" l="61" p="./crates/deadpan-cli/tests/preview_export/fixed_retime_duration.rs" n="clone_fragment"><![CDATA[pub(super) fn clone_fragment(
+    project: &mut Project,
+    document: &ProjectDocument,
+    root: &NodeId,
+    nodes: &mut std::collections::BTreeMap<NodeId, BeatNode>,
+) -> Result<NodeId> {
+    assert!(document.overrides().is_empty());
+    assert!(document.gap_overrides().is_empty());
+    let mut order = Vec::new();
+    let mut pending = vec![root.clone()];
+    while let Some(owner) = pending.pop() {
+        match &document.nodes()[&owner].kind {
+            NodeKind::Sequence { children } => pending.extend(children.iter().cloned()),
+            NodeKind::Repeat { child, .. } | NodeKind::Retime { child, .. } => {
+                pending.push(child.clone());
+            }
+            NodeKind::Source { .. } | NodeKind::Hold { .. } => {}
+        }
+        order.push(owner);
+    }
+    let fresh = project.fresh(order.len())?;
+    let mapping: std::collections::BTreeMap<_, _> = order.into_iter().zip(fresh).collect();
+    for (old, fresh) in &mapping {
+        let mut recipe = document.nodes()[old].clone();
+        match &mut recipe.kind {
+            NodeKind::Sequence { children } => {
+                for child in children {
+                    *child = mapping[child].clone();
+                }
+            }
+            NodeKind::Repeat { child, .. } | NodeKind::Retime { child, .. } => {
+                *child = mapping[child].clone();
+            }
+            NodeKind::Source { .. } | NodeKind::Hold { .. } => {}
+        }
+        assert!(nodes.insert(fresh.clone(), recipe).is_none());
+    }
+    Ok(mapping[root].clone())
+}]]><calls total="2"><c n="zip" l="1426">fn zip(name: &amp;str, payload: &amp;[u8]) -&gt; Vec&lt;u8&gt;</c><c n="fresh" l="451">fn fresh(&amp;mut self, count: usize) -&gt; Result&lt;Vec&lt;NodeId&gt;&gt;</c></calls></b></bodies></ctx>

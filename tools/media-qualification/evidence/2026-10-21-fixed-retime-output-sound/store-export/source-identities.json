@@ -1,0 +1,7 @@
+{
+  "crates/deadpan-store/tests/source_registration/sounds/sound_clocks.rs": "b878362d0c798babe259c6ebde28058b19499d5a00c69e9d7c813f42317f3fe8",
+  "crates/deadpan-store/tests/source_registration/sounds/sound_clocks/fixed_retime_output.rs": "e9703ef43b9aeaa50f279e106fa39a1a9cb0733b640ec3e70ddf1daf955bb4d8",
+  "crates/deadpan-cli/tests/preview_export.rs": "834e295402178c0fb82830e4b0f17035db197716c9147b3cc526dfc2ff8c5128",
+  "crates/deadpan-cli/tests/preview_export/recipes.rs": "8f6da842087a4d639a28ac6d77afa97d9f50fcd89c81bdfac32fb6d8796f855f",
+  "crates/deadpan-cli/tests/preview_export/fixed_retime_output_sound.rs": "3334476c3ba506d21772817ad846c24923e7a358d58bbbe59b7e82c4767c61e7"
+}

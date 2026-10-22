@@ -1,0 +1,12 @@
+{
+  "base_revision": "072f0d82",
+  "binary": "target/debug/deps/deadpan_core-b3aaf031552acdd6",
+  "sha256": "0ce77dde3a67df13925e3deefaff8b277c75872ce356430ef09571c236f089bf",
+  "tests": 7,
+  "positive_failed": 6,
+  "negative_passed": 1,
+  "skipped": 567,
+  "failure_line": 273,
+  "runtime_exit": 100,
+  "initial_compile_exit": 101
+}

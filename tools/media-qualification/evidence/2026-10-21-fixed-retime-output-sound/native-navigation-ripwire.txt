@@ -1,0 +1,111 @@
+<ctx task="Hold duration native Retime enter child capture_hold_target hold_duration" route=" [routed: subtoken+body BM25 — name-exact declined: anchor &apos;hold&apos; is a common name (2804 name-carriers, 126 defs); conceptual ranker used]" bundle="auto" bodies="6"><!-- ripwire lens for "Hold duration native Retime enter child capture_hold_target hold_duration" [doc mentions: 4 docs discussing 2 top-ranked symbols surfaced]: reusable building blocks + quality facts for what you're about to touch (cx=complexity ccx=cognitive in=reuse-count churn=recent-commits amp=change-amplification clone=1(duplicated) tested=1) — prefer composing/reusing these; watch the high-churn/high-amp/cloned ones; bundle=auto: the top-ranked FULL bodies ride inline after the signatures in a bodies section (bodies=N on this root counts them; bodies=0 reason=budget when none fit the remaining budget whole; the signatures-only flag opts out) — read them here instead of opening the files. The bodies element discloses the house way: total=requested, shown=printed, capped=1 when they differ; each body's calls child lists its callee signatures, total= always, shown=/capped= only when that list is cut est_tokens="4600" --><sigs capped="1"><f p="./crates/deadpan-core/src/audio_binding_lifecycle.rs"><d l="1027" n="capture_hold" id="./crates/deadpan-core/src/audio_binding_lifecycle.rs::tests::capture_hold" cx="1" ccx="0" in="3" churn="22" amp="44">fn capture_hold(duration: i64) -&gt; BeatNode</d><d l="1031" n="capture_gap" id="./crates/deadpan-core/src/audio_binding_lifecycle.rs::tests::capture_gap" cx="1" ccx="0" in="2" churn="22" amp="43">fn capture_gap(duration: i64) -&gt; HoldRecipe</d></f><f p="./crates/deadpan-plan/src/audio_owner_occurrences/tests.rs"><d l="16" n="hold" cx="1" ccx="0" in="2" churn="2" amp="23">fn hold(frames: i64) -&gt; BeatNode</d><d l="27" n="repeat" cx="1" ccx="0" in="0" churn="2" amp="21">fn repeat(child: &amp;str, count: u32, gap: i64) -&gt; BeatNode</d><d l="42" n="retime" cx="1" ccx="0" in="0" churn="2" amp="21">fn retime(child: &amp;str, duration: i64, range: Range&lt;i64&gt;, pitch: PitchPolicy) -&gt; BeatNode</d></f><f p="./crates/deadpan-plan/src/audio_owners/tests.rs"><d l="36" n="retime" cx="1" ccx="0" in="1" churn="10" amp="44">fn retime( child: &amp;str, duration: i64, range: Range&lt;i64&gt;, pitch: PitchPolicy, purpose: RetimePurpose, ) -&gt; BeatNode</d></f><f p="./crates/deadpan-app/src/preview/harness/scoped_plays/hold_duration/refusals.rs"><d l="69" n="exercise" cx="6" ccx="4" in="1" churn="1" amp="1">fn exercise(d: &amp;mut Driver&lt;&apos;_&gt;, path: &amp;Path) -&gt; Result&lt;(), String&gt;</d></f><f p="./tools/media-qualification/evidence/2026-09-27-retime-editing/finish-doc-links.py"><d l="3" n="changes" cx="0" ccx="0" in="0" churn="1">changes=</d></f><f p="./crates/deadpan-core/src/audio_reference/exact_clock/tests.rs"><d l="38" n="add_retime" cx="1" ccx="0" in="2" churn="3" amp="63">fn add_retime(doc: &amp;mut ProjectDocument, name: &amp;str, child: &amp;str, extent: ExactRatio)</d></f><f p="./crates/deadpan-app/src/preview/harness/scoped_plays.rs"><d l="13" n="hold_duration" cx="0" ccx="0" in="0" churn="11" amp="26">mod hold_duration</d></f><f p="./crates/deadpan-core/src/occurrence_edit.rs"><d l="16" n="hold_duration" cx="0" ccx="0" in="0" churn="24" amp="70">mod hold_duration</d></f><f p="./crates/deadpan-core/src/scoped_edit.rs"><d l="13" n="hold_duration" cx="0" ccx="0" in="0" churn="7">mod hold_duration</d></f><f p="./crates/deadpan-core/src/insert_time.rs"><d l="15" n="hold_duration" cx="0" ccx="0" in="0" churn="27" amp="52">pub(crate) mod hold_duration</d></f><f p="./crates/deadpan-core/src/scoped_edit/hold_duration.rs"><d l="12" n="occurrence_hold_duration_requirements" id="./crates/deadpan-core/src/scoped_edit/hold_duration.rs::ProjectDocument::occurrence_hold_duration_requirements" cx="7" ccx="7" in="5" churn="1" amp="5" tested="1">pub fn occurrence_hold_duration_requirements( &amp;self, instance: &amp;InstancePath, duration: FrameDuration, ) -&gt; Result&lt;ScopedEditRequirements, EditError&gt;</d><d l="85" n="PreparedOccurrenceHoldDuration" cx="0" ccx="0" in="0" churn="1">pub struct PreparedOccurrenceHoldDuration</d><d l="124" n="prepare_occurrence_hold_duration" cx="4" ccx="3" in="0" churn="1">pub fn prepare_occurrence_hold_duration( document: &amp;ProjectDocument, request: &amp;CommandRequest, )…</d></f><f p="./crates/deadpan-app/src/navigation/command.rs"><d l="1798" n="hold_duration_requires_exact_frame_units_without_lowercasing_arguments" id="./crates/deadpan-app/src/navigation/command.rs::tests::hold_duration_requires_exact_frame_units_without_lowercasing_arguments" cx="2" ccx="1" in="0" churn="54" amp="88">fn hold_duration_requires_exact_frame_units_without_lowercasing_arguments()</d></f><f p="./crates/deadpan-app/src/preview/harness/scoped_plays/hold_duration.rs"><d l="11" n="run" cx="13" ccx="6" in="1" churn="1" amp="1">pub(super) fn run(d: &amp;mut Driver&lt;&apos;_&gt;) -&gt; Result&lt;(), String&gt;</d><d l="311" n="same_hold" cx="6" ccx="1" in="2" churn="1" amp="2">fn same_hold( d: &amp;mut Driver&lt;&apos;_&gt;, prior: &amp;Target, recipe: &amp;HoldRecipe, frames: i64, start: u64, ) -&gt; Result&lt;(), String&gt;</d></f><f p="./crates/deadpan-core/src/boundary_replacement/tests.rs"><d l="18" n="hold" cx="1" ccx="0" in="2" churn="6" amp="16">fn hold(duration: i64) -&gt; HoldRecipe</d></f><f p="./tools/audio-qualification/evidence/2026-09-21-sequence/timing-review/review.rs"><d l="76" n="hold_recipe" cx="1" ccx="0" in="3" churn="1" amp="31">fn hold_recipe(frames: i64, audio: HoldAudio) -&gt; HoldRecipe</d></f><f p="./crates/deadpan-audio/src/bound_reads.rs"><d l="62" n="hold" cx="1" ccx="0" in="2" churn="13" amp="23">fn hold(duration: i64) -&gt; BeatNode</d></f><f p="./crates/deadpan-store/src/generation_inputs/tests.rs"><d l="55" n="hold" cx="1" ccx="0" in="3" churn="4" amp="21">fn hold(frames: i64) -&gt; BeatNode</d></f><f p="./crates/deadpan-app/src/preview/trim/inspection.rs"><d l="729" n="hold" id="./crates/deadpan-app/src/preview/trim/inspection.rs::tests::hold" cx="1" ccx="0" in="1" churn="1" amp="1">fn hold(name: &amp;str, frames: i64) -&gt; BeatNode</d></f><f p="./crates/deadpan-store/src/generation_intents.rs"><d l="220" n="matches_hold" id="./crates/deadpan-store/src/generation_intents.rs::IntentBirth::matches_hold" cx="2" ccx="1" in="4" churn="2" amp="4" tested="1">pub(crate) fn matches_hold( &amp;self, document: &amp;ProjectDocument, target: &amp;ScopedNodeTarget, ) -&gt; bool</d></f><f p="./crates/deadpan-app/src/preview/scoped.rs"><d l="151" n="scoped_hold_parameter" id="./crates/deadpan-app/src/preview/scoped.rs::DeadpanApp::scoped_hold_parameter" cx="3" ccx="2" in="4" churn="20" amp="81" tested="1">pub(super) fn scoped_hold_parameter(&amp;self) -&gt; Option&lt;String&gt;</d></f><f p="./crates/deadpan-core/src/command/patch_wire.rs"><d l="327" n="hold" id="./crates/deadpan-core/src/command/patch_wire.rs::tests::hold" cx="1" ccx="0" in="2" churn="3" amp="25">fn hold() -&gt; BeatNode</d></f></sigs><bodies shown="6" total="6" capped="0"><b t="method" l="1027" p="./crates/deadpan-core/src/audio_binding_lifecycle.rs" n="capture_hold"><![CDATA[fn capture_hold(duration: i64) -> BeatNode {
+        BeatNode::hold("hold", capture_gap(duration))
+    }]]><calls total="2"><c n="capture_gap" l="1031">fn capture_gap(duration: i64) -&gt; HoldRecipe</c><c n="hold" l="579">pub fn hold(label: impl Into&lt;String&gt;, recipe: HoldRecipe) -&gt; Self</c></calls></b><b t="method" l="1031" p="./crates/deadpan-core/src/audio_binding_lifecycle.rs" n="capture_gap"><![CDATA[fn capture_gap(duration: i64) -> HoldRecipe {
+        HoldRecipe {
+            picture_context: None,
+            duration: FrameDuration::new(duration).unwrap(),
+            video: HoldVideo::Background,
+            audio: HoldAudio::Silence,
+        }
+    }]]><calls total="1"><c n="new" l="37">pub fn new(frames: i64) -&gt; Result&lt;Self, TimeError&gt;</c></calls></b><b t="fn" l="42" p="./crates/deadpan-plan/src/audio_owner_occurrences/tests.rs" n="retime"><![CDATA[fn retime(child: &str, duration: i64, range: Range<i64>, pitch: PitchPolicy) -> BeatNode {
+    let mut node = hold(duration);
+    node.kind = NodeKind::Retime {
+        child: id(child),
+        duration: FrameDuration::new(duration).unwrap(),
+        mapping: FrameRange::new(ProjectFrame(range.start), ProjectFrame(range.end)).unwrap(),
+        pitch,
+        purpose: RetimePurpose::Edit,
+    };
+    node
+}]]><calls total="5"><c n="ProjectFrame" l="9">pub struct ProjectFrame</c><c n="new" l="37">pub fn new(frames: i64) -&gt; Result&lt;Self, TimeError&gt;</c><c n="new" l="142">pub fn new(start: ProjectFrame, end: ProjectFrame) -&gt; Result&lt;Self, TimeError&gt;</c><c n="id" l="7">fn id(value: &amp;str) -&gt; NodeId</c><c n="hold" l="16">fn hold(frames: i64) -&gt; BeatNode</c></calls></b><b t="fn" l="36" p="./crates/deadpan-plan/src/audio_owners/tests.rs" n="retime"><![CDATA[fn retime(
+    child: &str,
+    duration: i64,
+    range: Range<i64>,
+    pitch: PitchPolicy,
+    purpose: RetimePurpose,
+) -> BeatNode {
+    let mut node = hold(duration);
+    node.kind = NodeKind::Retime {
+        child: id(child),
+        duration: frames(duration),
+        mapping: FrameRange::new(ProjectFrame(range.start), ProjectFrame(range.end)).unwrap(),
+        pitch,
+        purpose,
+    };
+    node
+}]]><calls total="5"><c n="ProjectFrame" l="9">pub struct ProjectFrame</c><c n="new" l="142">pub fn new(start: ProjectFrame, end: ProjectFrame) -&gt; Result&lt;Self, TimeError&gt;</c><c n="id" l="10">fn id(value: &amp;str) -&gt; NodeId</c><c n="frames" l="19">fn frames(value: i64) -&gt; FrameDuration</c><c n="hold" l="22">fn hold(value: i64) -&gt; BeatNode</c></calls></b><b t="fn" l="69" p="./crates/deadpan-app/src/preview/harness/scoped_plays/hold_duration/refusals.rs" n="exercise"><![CDATA[fn exercise(d: &mut Driver<'_>, path: &Path) -> Result<(), String> {
+    d.app()
+        .service
+        .submit(ProjectRequest::Open(path.to_path_buf()))?;
+    d.wait_for("Open actual unsupported duration definitions", |app| {
+        app.workspace
+            .as_ref()
+            .is_some_and(|workspace| workspace.document.project_id().as_str() == PROJECT)
+            && !app.service.is_busy()
+    })?;
+    d.command("sequence")?;
+    super::super::super::transcript::focus_your_edit(d)?;
+    d.chord(&[Key::G, Key::G, Key::Enter, Key::Enter])?;
+    let all = target(d)?;
+    d.check(
+        "All-plays duration fixture selects a real nested Hold definition",
+        all.target.repeats.len() == 2
+            && all
+                .target
+                .repeats
+                .iter()
+                .all(|step| matches!(step.branch, deadpan_core::RepeatEditBranch::Default)),
+        json!("two explicit All plays choices"),
+        d.snapshot(),
+    )?;
+    refuse(d, "All-plays Hold duration")?;
+    d.key(Key::Escape)?;
+    d.chord(&[Key::G, Key::G, Key::Enter])?;
+    d.command("scope play 1")?;
+    d.key(Key::Enter)?;
+    let mixed = target(d)?;
+    d.check(
+        "Mixed duration fixture retains distinct outer Play and inner Default authority",
+        mixed.target.repeats.len() == 2
+            && matches!(
+                mixed.target.repeats[0].branch,
+                deadpan_core::RepeatEditBranch::Play { .. }
+            )
+            && matches!(
+                mixed.target.repeats[1].branch,
+                deadpan_core::RepeatEditBranch::Default
+            ),
+        json!("This play / All plays"),
+        d.snapshot(),
+    )?;
+    refuse(d, "Mixed-scope Hold duration")?;
+    d.key(Key::Escape)?;
+    d.chord(&[Key::G, Key::G, Key::J, Key::Enter])?;
+    d.command("scope plays 1,2")?;
+    d.check(
+        "Several-play duration fixture captures both concrete Hold targets",
+        target(d)?.also.len() == 1,
+        json!("two selected Holds"),
+        d.snapshot(),
+    )?;
+    refuse(d, "Several-play Hold duration")?;
+    d.key(Key::Escape)?;
+    d.chord(&[Key::G, Key::G, Key::J, Key::J, Key::Enter])?;
+    let retimed = target(d)?;
+    d.check(
+        "Retime duration fixture selects a Hold under a real Retime clock",
+        retimed.target.repeats.is_empty()
+            && matches!(
+                document(d)?.nodes()[&retimed.root].kind,
+                NodeKind::Retime { .. }
+            ),
+        json!("Retime ancestor"),
+        d.snapshot(),
+    )?;
+    refuse(d, "Retimed Hold duration")?;
+    Ok(())
+}]]><calls total="3"><c n="refuse" l="142">fn refuse(d: &amp;mut Driver&lt;&apos;_&gt;, name: &amp;str) -&gt; Result&lt;(), String&gt;</c><c n="focus_your_edit" l="551">pub(super) fn focus_your_edit(d: &amp;mut Driver&lt;&apos;_&gt;) -&gt; Result&lt;(), String&gt;</c><c n="is_busy" l="1522">pub fn is_busy(&amp;self) -&gt; bool</c></calls></b><b t="var" l="3" p="./tools/media-qualification/evidence/2026-09-27-retime-editing/finish-doc-links.py" n="changes"><![CDATA[changes={
+ 'README.md': [('repeat/delete/Hold-duration commands, durable undo/redo', 'repeat/delete/Hold-duration commands, [exact speed and pitch editing](docs/RETIME_EDITING.md), durable undo/redo')],
+ 'docs/ARCHITECTURE.md': [('root-beat Split/Repeat/delete/Hold-duration commands, atomic Source/Hold pause insertion', 'current-depth Split/Repeat/delete/Hold-duration and Retime commands, atomic Source/Hold pause insertion')],
+ 'docs/REQUIREMENTS.md': [('wrap/update structural repeats, and change Hold duration/provider.', 'wrap/update structural repeats and [Retimes](RETIME_EDITING.md), and change Hold duration/provider.'), ('Native current-depth Split/Repeat/delete/Hold-duration edits use that path', 'Native current-depth Split/Repeat/Retime/delete/Hold-duration edits use that path')],
+}]]></b></bodies></ctx>

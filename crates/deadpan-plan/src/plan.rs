@@ -169,9 +169,9 @@ pub struct RenderPlan {
     definition_index: Option<Arc<DefinitionIndex>>,
 }
 
-/// One journal reference paired with the live processing scope. The proof is
-/// constructed once per sound/reference, then reused to remap concrete Repeat
-/// occurrences without revisiting either complete subtree.
+/// One journal reference paired with the live sound owner's clock dependencies.
+/// The proof is constructed once per sound/reference, then reused to remap only
+/// proven concrete occurrences. An independent output owner proves no child.
 #[derive(Debug, Clone)]
 pub struct AudioSoundClockScope<'plan> {
     live_plan: &'plan RenderPlan,
@@ -1148,10 +1148,11 @@ impl RenderPlan {
                 .ok_or(PlanError::InvalidPlan(
                     "beat sound clock refers to a missing frozen layout",
                 ))?;
-            let correspondence = historical_layout.sound_clock_correspondence_with_repeats(
+            let correspondence = historical_layout.sound_owner_clock_correspondence_with_repeats(
                 current_layout,
                 reference.scope(),
                 journal.scope(),
+                (reference.owner(), owner),
                 reference.repeats(),
                 remaining_work,
             )?;

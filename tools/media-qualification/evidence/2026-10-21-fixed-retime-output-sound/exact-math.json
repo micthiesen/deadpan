@@ -1,0 +1,28 @@
+{
+  "samples_per_frame": "8008/5",
+  "offset_frames": "185/8008",
+  "natural_event_frames": "10000/147147",
+  "natural_event_mix_samples": "16000/147",
+  "source_phase_at_old_first_sample": "2480147/800",
+  "source_step": "147/160",
+  "cases": [
+    {
+      "owner_origin": 3,
+      "event_ideal_start": "24209/5",
+      "event_ideal_end": "3638723/735",
+      "allocation": [
+        4842,
+        4951
+      ]
+    },
+    {
+      "owner_origin": 4,
+      "event_ideal_start": "32217/5",
+      "event_ideal_end": "4815899/735",
+      "allocation": [
+        6443,
+        6552
+      ]
+    }
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "Cargo.lock": "1e39d18ae4de6c7b898edad39eb7104235fb3ffe3af84521ca94df2b6c25b71b",
+  "crates/deadpan-core/src/audio_reference.rs": "855b0fcc71b31a39ea8e892e8f08562554a614d68bd63917e2b866b295fcef89",
+  "crates/deadpan-core/src/audio_binding.rs": "df46de23adf466c66d80ad470d57ea56d614e22d60d5cee5334447cda2593a72",
+  "crates/deadpan-core/src/sound_clock/edit.rs": "a3e76a1cd0ca86679c78673295111e4a40fa7565e7200c9cf33315b8a3dc8b6c",
+  "crates/deadpan-plan/src/plan.rs": "a6daea184382dd9d79cc246a6a0e50163c7c83b4551f9ae4f376fe9fbf1548f6",
+  "crates/deadpan-core/src/edit_slice/sound_clocks.rs": "5b5bd6defe425222aae5d402d0a762e98613a5226768cf3dd441245bfc5dd382",
+  "crates/deadpan-core/src/edit_slice/rename.rs": "e8998e7e23dc7bedf8f407495970602a76a5e2ef559ec383555c63743d5c8a86"
+}

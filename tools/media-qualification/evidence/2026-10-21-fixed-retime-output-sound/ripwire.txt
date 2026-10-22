@@ -1,0 +1,199 @@
+<ctx task="SetHoldDuration output-owned BeatSound fixed Retime sound_clock/edit.rs audio_reference.rs audio_binding.rs beat_sound_clock_scopes" route=" [routed: subtoken+body BM25 (--for&apos;s default) — no strong name hit, multi-word conceptual query]" bundle="auto" bodies="6"><!-- ripwire lens for "SetHoldDuration output-owned BeatSound fixed Retime sound_clock/edit.rs audio_reference.rs audio_binding.rs beat_sound_clock_scopes" [mention anchor: 1 file + 3 symbols named in the task lifted near the top] [doc mentions: 2 docs discussing 1 top-ranked symbol surfaced]: reusable building blocks + quality facts for what you're about to touch (cx=complexity ccx=cognitive in=reuse-count churn=recent-commits amp=change-amplification clone=1(duplicated) tested=1) — prefer composing/reusing these; watch the high-churn/high-amp/cloned ones; bundle=auto: the top-ranked FULL bodies ride inline after the signatures in a bodies section (bodies=N on this root counts them; bodies=0 reason=budget when none fit the remaining budget whole; the signatures-only flag opts out) — read them here instead of opening the files. The bodies element discloses the house way: total=requested, shown=printed, capped=1 when they differ; each body's calls child lists its callee signatures, total= always, shown=/capped= only when that list is cut est_tokens="4085" --><sigs capped="1"><f p="./crates/deadpan-plan/src/plan.rs"><d l="1071" n="beat_sound_clock_layouts" id="./crates/deadpan-plan/src/plan.rs::RenderPlan::beat_sound_clock_layouts" cx="1" ccx="0" in="3" churn="61" amp="299" tested="1"><doc>Frozen layouts retained for one beat-owned sound, in chronological pre-edit order. The live plan…</doc>pub fn beat_sound_clock_layouts&lt;&apos;a&gt;( &amp;&apos;a self, owner: &amp;deadpan_core::NodeId, sound: &amp;deadpan_core::SoundId, ) -&gt; Result&lt; Vec&lt;( &amp;&apos;a deadpan_core::AudioTimingId, …</d></f><f p="./crates/deadpan-core/src/sound_clock/edit.rs"><d l="47" n="transports" cx="2" ccx="1" in="1" churn="13" amp="74" tested="1"><doc>The capture identity for one command leaf. A plain Split, Hold duration or speed change, and a T…</doc>pub(crate) fn transports(command: &amp;Command) -&gt; bool</d><d l="76" n="SoundClockEditCapture" cx="0" ccx="0" in="0" churn="13" amp="73">pub(crate) struct SoundClockEditCapture</d><d l="94" n="prepare" id="./crates/deadpan-core/src/sound_clock/edit.rs::SoundClockEditCapture::prepare" cx="9" ccx="10" in="1" churn="13" amp="74" tested="1">pub(crate) fn prepare( document: &amp;ProjectDocument, command: &amp;Command, allocation: &amp;RevisionId, ) -&gt; Result&lt;Option&lt;Self&gt;, EditError&gt;</d></f></sigs><bodies shown="6" total="6" capped="0"><b t="method" l="1071" p="./crates/deadpan-plan/src/plan.rs" n="beat_sound_clock_layouts"><![CDATA[pub fn beat_sound_clock_layouts<'a>(
+        &'a self,
+        owner: &deadpan_core::NodeId,
+        sound: &deadpan_core::SoundId,
+    ) -> Result<
+        Vec<(
+            &'a deadpan_core::AudioTimingId,
+            &'a deadpan_core::FrozenAudioLayout,
+        )>,
+        PlanError,
+    > {
+        let Some(journal) = self
+            .audio_bindings
+            .sound_clocks()
+            .get(owner)
+            .and_then(|sounds| sounds.get(sound))
+        else {
+            return Ok(Vec::new());
+        };
+        journal
+            .clocks()
+            .iter()
+            .map(|reference| {
+                let layout = self
+                    .audio_bindings
+                    .timings()
+                    .get(reference.timing())
+                    .ok_or(PlanError::InvalidPlan(
+                        "beat sound clock refers to a missing frozen layout",
+                    ))?;
+                Ok((reference.timing(), layout))
+            })
+            .collect()
+    }]]><calls total="3"><c n="sound_clocks" l="1187">pub fn sound_clocks( &amp;self, ) -&gt; &amp;BTreeMap&lt;NodeId, BTreeMap&lt;crate::SoundId, crate::SoundClockJournal&gt;&gt;</c><c n="collect" l="64">fn collect&lt;&apos;plan&gt;( plan: &amp;&apos;plan RenderPlan, owner: &amp;NodeId, recipe: AudioSourceVoiceRecipe, samples: Range&lt;AudioSample&gt;, limits: AudioQueryLimits, context: Option&lt;&amp;AudioSoundOwnerContext&lt;&apos;plan&gt;&gt;, ) -&gt; Result&lt;AudioSourceOccurrences&lt;&apos;plan&gt;, P</c><c n="timing" l="208">pub fn timing(&amp;self) -&gt; &amp;deadpan_core::AudioTimingId</c></calls></b><b t="method" l="1109" p="./crates/deadpan-plan/src/plan.rs" n="beat_sound_clock_scopes"><![CDATA[pub fn beat_sound_clock_scopes<'a>(
+        &'a self,
+        owner: &NodeId,
+        sound: &deadpan_core::SoundId,
+        maximum_work: usize,
+    ) -> Result<Vec<AudioSoundClockScope<'a>>, PlanError> {
+        let Some(journal) = self
+            .audio_bindings
+            .sound_clocks()
+            .get(owner)
+            .and_then(|sounds| sounds.get(sound))
+        else {
+            return Ok(Vec::new());
+        };
+        let current_layout = self
+            .sound_clock_layout
+            .as_deref()
+            .ok_or(PlanError::InvalidPlan(
+                "beat sound clock has no live frozen layout",
+            ))?;
+        let mut scopes = Vec::with_capacity(journal.clocks().len());
+        let event = self
+            .beat_sounds
+            .get(owner)
+            .and_then(|events| events.get(sound))
+            .ok_or(PlanError::InvalidPlan(
+                "sound clock has no matching live beat sound",
+            ))?;
+        let recipe = crate::AudioSourceVoiceRecipe {
+            source: event.source.clone(),
+            mapping: event.mapping,
+            offset: event.offset,
+        };
+        let mut remaining_work = maximum_work;
+        for reference in journal.clocks() {
+            let historical_layout = self
+                .audio_bindings
+                .timings()
+                .get(reference.timing())
+                .ok_or(PlanError::InvalidPlan(
+                    "beat sound clock refers to a missing frozen layout",
+                ))?;
+            let correspondence = historical_layout.sound_clock_correspondence_with_repeats(
+                current_layout,
+                reference.scope(),
+                journal.scope(),
+                reference.repeats(),
+                remaining_work,
+            )?;
+            remaining_work = remaining_work.checked_sub(correspondence.work()).ok_or(
+                PlanError::AudioQueryLimit("sound clock correspondence work"),
+            )?;
+            if correspondence.historical_node(owner) != Some(reference.owner()) {
+                return Err(PlanError::InvalidPlan(
+                    "beat sound clock owner is outside its proven scope",
+                ));
+            }
+            scopes.push(AudioSoundClockScope {
+                live_plan: self,
+                live_owner: owner.clone(),
+                timing: reference.timing(),
+                historical_scope: reference.scope(),
+                historical_owner: reference.owner(),
+                historical_layout,
+                correspondence,
+                recipe: recipe.clone(),
+            });
+        }
+        Ok(scopes)
+    }]]><calls total="18" shown="16" capped="1"><c n="sound_clocks" l="1187">pub fn sound_clocks( &amp;self, ) -&gt; &amp;BTreeMap&lt;NodeId, BTreeMap&lt;crate::SoundId, crate::SoundClockJournal&gt;&gt;</c><c n="historical_node" l="385">pub fn historical_node(&amp;self, live: &amp;NodeId) -&gt; Option&lt;&amp;NodeId&gt;</c><c n="sound_clock_correspondence_with_repeats" l="1155">pub fn sound_clock_correspondence_with_repeats( &amp;self, current: &amp;Self, historical_scope: &amp;NodeId, live_scope: &amp;NodeId, repeats: &amp;crate::SoundClockRepeatMap, maximum_work: usize, ) -&gt; Result&lt;SoundClockCorrespondence, DocumentError&gt;</c><c n="checked_sub" l="112">pub fn checked_sub(self, other: Self) -&gt; Result&lt;Self, TimeError&gt;</c><c n="Err" l="25">type Err = &amp;&apos;static str</c><c n="work" l="265">pub fn work(&amp;self) -&gt; usize</c><c n="owner" l="38">pub fn owner(&amp;self) -&gt; &amp;AudioOwnerClock&lt;&apos;plan&gt;</c><c n="scope" l="55">pub fn scope(&amp;self) -&gt; AudioOwnerInputScope</c><c n="work" l="58">pub fn work(&amp;self) -&gt; usize</c><c n="work" l="152">pub fn work(&amp;self) -&gt; usize</c><c n="work" l="59">pub fn work(&amp;self) -&gt; usize</c><c n="push" l="516">fn push( &amp;mut self, instance: InstancePath, visible_frames: Range&lt;ExactRatio&gt;, influence_frames: Range&lt;ExactRatio&gt;, map: AudioOwnerOccurrenceMap, ) -&gt; Result&lt;(), PlanError&gt;</c><c n="owner" l="130">pub fn owner(&amp;self) -&gt; &amp;AudioOwnerClock&lt;&apos;plan&gt;</c><c n="work" l="273">pub fn work(&amp;self) -&gt; usize</c><c n="owner" l="457">pub fn owner(&amp;self) -&gt; &amp;ReferenceClockOwner</c><c n="owner" l="148">pub fn owner(&amp;self) -&gt; &amp;InstancePath</c></calls></b><b t="cls" l="201" p="./crates/deadpan-plan/src/plan.rs" n="AudioSoundClockBinding"><![CDATA[pub struct AudioSoundClockBinding<'scope, 'plan> {
+    scope: &'scope AudioSoundClockScope<'plan>,
+    historical_plan: &'scope RenderPlan,
+    recipe: crate::AudioSourceVoiceRecipe,
+}]]></b><b t="fn" l="47" p="./crates/deadpan-core/src/sound_clock/edit.rs" n="transports"><![CDATA[pub(crate) fn transports(command: &Command) -> bool {
+    timing(command).is_some()
+        || matches!(
+            command,
+            Command::Split { .. }
+                | Command::SetHoldDuration { .. }
+                | Command::WrapRetime { .. }
+                | Command::SetRetime { .. }
+                | Command::ApplySourceTrim { .. }
+        )
+}]]><calls total="1"><c n="timing" l="14">pub(crate) fn timing(command: &amp;Command) -&gt; Option&lt;&amp;AudioTimingId&gt;</c></calls></b><b t="cls" l="76" p="./crates/deadpan-core/src/sound_clock/edit.rs" n="SoundClockEditCapture"><![CDATA[pub(crate) struct SoundClockEditCapture {
+    events: BTreeMap<NodeId, BTreeMap<SoundId, BeatSound>>,
+    journals: SoundClocks,
+    retained: BTreeMap<AudioTimingId, FrozenAudioLayout>,
+    before: FrozenAudioLayout,
+    timing: AudioTimingId,
+    removed: BTreeSet<NodeId>,
+    repeat_edit: bool,
+    introduced: Option<NodeId>,
+    /// Exact Split provenance, independent of labels or equal-shaped nodes.
+    owners: BTreeMap<NodeId, NodeId>,
+    /// External Repeat placements also acquire aliases when their full input
+    /// is cloned behind a Split delivery Partition.
+    repeat_aliases: BTreeMap<NodeId, NodeId>,
+    split_owners: BTreeSet<NodeId>,
+}]]></b><b t="method" l="94" p="./crates/deadpan-core/src/sound_clock/edit.rs" n="prepare"><![CDATA[pub(crate) fn prepare(
+        document: &ProjectDocument,
+        command: &Command,
+        allocation: &RevisionId,
+    ) -> Result<Option<Self>, EditError> {
+        let Some(timing) =
+            capture_timing(command, allocation).filter(|_| !document.beat_sounds.is_empty())
+        else {
+            return Ok(None);
+        };
+        let timing = &timing;
+        if &timing.allocation != allocation {
+            return Err(invalid(
+                "sound clock allocation must equal the new revision",
+            ));
+        }
+        if document.audio_bindings.timings.contains_key(timing) {
+            return Err(invalid("sound clock capture identity already exists"));
+        }
+        let before = FrozenAudioLayout::capture(document)?;
+        if document.beat_sounds.contains_key(document.root()) {
+            return Err(invalid("root-owned beat sounds cannot yet be transported"));
+        }
+        let journals = document.audio_bindings.sound_clocks.clone();
+        let mut retained = BTreeMap::new();
+        for events in journals.values() {
+            for journal in events.values() {
+                for reference in journal.clocks() {
+                    retained
+                        .entry(reference.timing().clone())
+                        .or_insert_with(|| {
+                            document.audio_bindings.timings[reference.timing()].clone()
+                        });
+                }
+            }
+        }
+        Ok(Some(Self {
+            events: document.beat_sounds.clone(),
+            journals,
+            retained,
+            before,
+            timing: timing.clone(),
+            removed: removed_owners(document, command)?,
+            repeat_edit: matches!(
+                command,
+                Command::RepeatSelection { .. }
+                    | Command::InsertOccurrenceTime { .. }
+                    | Command::SetRepeatPlays { .. }
+                    | Command::SetRepeatGaps { .. }
+            ),
+            introduced: match command {
+                Command::RepeatSelection { identities, .. } => Some(identities.repeat.clone()),
+                _ => None,
+            },
+            owners: document
+                .beat_sounds
+                .keys()
+                .map(|id| (id.clone(), id.clone()))
+                .collect(),
+            repeat_aliases: document
+                .nodes
+                .iter()
+                .filter(|(_, node)| matches!(node.kind, NodeKind::Repeat { .. }))
+                .map(|(id, _)| (id.clone(), id.clone()))
+                .collect(),
+            split_owners: BTreeSet::new(),
+        }))
+    }]]><calls total="8"><c n="filter" l="30">pub fn filter(&amp;mut self, events: Vec&lt;Event&gt;) -&gt; Vec&lt;Event&gt;</c><c n="capture" l="508">pub fn capture(document: &amp;ProjectDocument) -&gt; Result&lt;Self, DocumentError&gt;</c><c n="timing" l="14">pub(crate) fn timing(command: &amp;Command) -&gt; Option&lt;&amp;AudioTimingId&gt;</c><c n="capture_timing" l="59">fn capture_timing(command: &amp;Command, allocation: &amp;RevisionId) -&gt; Option&lt;AudioTimingId&gt;</c><c n="removed_owners" l="552">fn removed_owners( document: &amp;ProjectDocument, command: &amp;Command, ) -&gt; Result&lt;BTreeSet&lt;NodeId&gt;, EditError&gt;</c><c n="invalid" l="680">fn invalid(message: &amp;str) -&gt; EditError</c><c n="clocks" l="125">fn clocks(ids: Vec&lt;AudioTimingId&gt;) -&gt; SoundClocks</c><c n="Err" l="25">type Err = &amp;&apos;static str</c></calls></b></bodies></ctx>

@@ -1,0 +1,21 @@
+{
+  "event_native_samples": [
+    3100,
+    8005
+  ],
+  "event_samples": 5339,
+  "maximum_event_errors_before_grow_shrink": [
+    0.0,
+    0.0,
+    0.0
+  ],
+  "mix_support": [
+    6443,
+    11782
+  ],
+  "original_audio_policy": "measured quiet Original and RoomTone; no Silence or mute treatment",
+  "phase_control_max_difference": 1.1442310810089111,
+  "retained_native_phase": "2480147/800",
+  "source_step": "147/160",
+  "wrong_new_phase": "1239853/400"
+}

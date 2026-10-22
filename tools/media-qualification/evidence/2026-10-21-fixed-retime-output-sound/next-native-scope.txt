@@ -1,0 +1,6 @@
+Read-only follow-up from mixed_pause_core:
+preview.rs::edit routes every HoldDuration through semantic capture. Ordinary inspected Retime contents are rejected by capture_edit_target -> Target::semantic_framing -> has_single_play_authority, which requires nonempty Repeat steps. Inspector State::hold_duration_available separately rejects Retime ancestry and beat/placed sounds.
+
+Next supported slice: recordable/dot/named-call SetHoldDuration for a visible Hold beneath one ordinary fixed unclocked Edit Retime, with no Repeat ancestors. Use a command-specific typed native Hold capture and matching core empty-repeat validation; route all invocation paths through it. Do not broaden semantic_framing, general single-play admission or the existing ThisPlay/Retime occurrence gate. Plan ParameterEdit + ordinary SetHoldDuration, without occurrence isolation. Reject unsupported later instructions atomically.
+
+This is research for subsequent work, not a claim of implemented native support.

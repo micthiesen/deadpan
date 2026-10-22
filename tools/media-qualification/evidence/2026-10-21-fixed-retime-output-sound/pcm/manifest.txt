@@ -1,0 +1,75 @@
+Audio PCM regression source, frozen before root compilation:
+b856d94e77bb52be4ff934e594912a8ff23d4d2769fdf88a00505987ad2984ea  crates/deadpan-audio/tests/stages/processing_hold_duration_output_sound.rs
+a104e568a654f8c755679166e023006366cd5a44bfb87b9bded1877e266daf63  crates/deadpan-audio/tests/stages/processing_hold_duration.rs
+Intended exact test command:
+cargo test -p deadpan-audio --test stages fixed_retime_output_sound --locked
+No Cargo or Git was run by the audio worker.
+Positive tests: fresh growth/shrink and genuine-root-journal growth/shrink.
+Oracle: all109 event samples; known44100 WAV; source phase2480147/800,
+source step147/160, onset4842fresh or6443journal, hard edges.
+Full zeroOriginal/RoomTone PCM remains finite, with RoomTone authored policies.
+Checks continuous/irregular/cold/shuffled reads, complete support and suppression,
+source-readmission refusal on warm cache, inverse, JSON roundtrip.
+Nonzero current Original/RoomTone bus must equal its current no-event component
+plus explicit independent event oracle; old/current physical PCM must differ.
+Negative event is body-owned and at local2frames, within selected input[1,8).
+Combined output/input owners sort output first to expose scope-only proof cache.
+
+Superseding final freeze with current nonlinear-owner regression:
+a47cfd96847015c1852b18800b01fb9777e6e55ae9abe9380a174c9dcdedac03  crates/deadpan-audio/tests/stages/processing_hold_duration_output_sound.rs
+Registration SHA unchanged.
+Filter now selects6 tests.
+New current-policy regression installs processor+root saturation before journal,
+then changes Hold2->3. Oracle sums current untreated Original/RoomTone with
+explicit retained-phase event in f64, applies processor saturation to only its
+owner interval[6406,12813), then root saturation. Distinguishes stale old operand
+and incorrect per-voice saturation; checks complete output, chunks and cold reads.
+No EQ/send qualification claimed by this addition.
+No Cargo/Git run by audio worker.
+
+Event-admission strengthening authorized after root core pipeline ended:
+SeparateProvider denial now applies only to Event asset; Original availability
+is asserted under denial. Warm same109-sample event window must return exact
+StageAudioError::Preparation(SourceUnavailable(
+"revoked independent event qualification")).
+No Cargo/Git run; runtime remains root-owned.
+Final source freeze SHA256:
+86c3bd278eed33cf9b1ba289c8d9cb2ebcb49258c98867b7360473bbafa9783d  crates/deadpan-audio/tests/stages/processing_hold_duration_output_sound.rs
+a104e568a654f8c755679166e023006366cd5a44bfb87b9bded1877e266daf63  crates/deadpan-audio/tests/stages/processing_hold_duration.rs
+
+Setup qualification correction after root observed all6 setup failures:
+Event asset now has SourceQualificationId c*64, matching the existing
+audio_definition/sound_clocks qualified fixture convention. Event content_hash
+is SHA256 of actual pcm-mono-44100.wav bytes loaded by the verified provider,
+rather than a placeholder. Public SetBeatSound still performs qualification and
+exact natural-rate admission; context AssetRecord comparison remains in place.
+No runtime claim or Cargo/Git by worker.
+Freeze SHA256:
+3830e3c1a9c7dd0525ceb82bfd661adb72724242c85f6c2c180e8b0f1f56d97a  crates/deadpan-audio/tests/stages/processing_hold_duration_output_sound.rs
+Registration unchanged a104e568a654f8c755679166e023006366cd5a44bfb87b9bded1877e266daf63.
+
+Exact suppression-oracle correction after root3pass/3fail:
+See pcm/suppression-diagnosis.txt. Current retained physical processing output
+has one exhausted point[12812,12813) after genuine root ripple, independently
+derived from6406historical vs6407current RoundEven allocation widths. Whole
+masks remain asserted, including no-event/nonlinear current components and
+cold seam reads. Event support/phase109sample oracle unchanged.
+Freeze SHA256:
+85271c37e63b4e5f9b7a6505459d3457790cfbf7f6d4bd4333da352c68256c99  crates/deadpan-audio/tests/stages/processing_hold_duration_output_sound.rs
+Registration unchanged a104e568a654f8c755679166e023006366cd5a44bfb87b9bded1877e266daf63.
+
+Nonlinear scope corrected after exact pre/post diagnostic:
+Known preexisting nonzeroInactive coordinate8236 prevents whole authored
+nonlinear bus. Explicit before/after exactUnsupported assertion retained;
+scalar positive checks cover all accepted windows[0,8236),[8237,17618) without
+zeroing/muting source or event. Exact masks and current-vs-stale/pervoice controls
+remain. See nonlinear-support-scope.txt. TEMPprints removed.
+FreezeSHA2566f8e51e3d47db4e708cf5618c1f0beddfc9e3ea54b543b388fd9930b9a459e70.
+Registration unchanged a104e568a654f8c755679166e023006366cd5a44bfb87b9bded1877e266daf63.
+
+Bounded negative API correction:
+Before/after wholebus checks scan valid<=256sample preparation requests,
+assert first error at8192 is exact Unsupported owner-clock message, then assert
+same exact Unsupported for a cold onepoint request8236,count1. No oversized
+wholebus API request remains. Positive controls unchanged.
+Freeze SHA25676a8f616d448b66d15535e1fd502d24262c4701da6b5a6a311022d2e82418873.

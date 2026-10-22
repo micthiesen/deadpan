@@ -1,0 +1,10 @@
+{
+  "crates/deadpan-core/src/audio_reference.rs": "ff95db16c88dc850ef93cc62f1dd04349711eaa6e88d4ce151ec5286e258935c",
+  "crates/deadpan-core/src/sound_clock/edit.rs": "8edb1a2e9143e6f5a61fa7fd40b17edaf3c8b010ff9fcae1f385f61a6ef521dc",
+  "crates/deadpan-core/src/audio_binding.rs": "951ce2691e87caaf08e5a14d8a273a20bc4ad7ce066d8def95a6a7f447246d98",
+  "crates/deadpan-plan/src/plan.rs": "ed1b3af429b2c53479bd5883c39b92c0d9251d620bb5e5858276a596e405ad72",
+  "crates/deadpan-core/src/edit_slice/sound_clocks.rs": "db2b6b96719ba1361a4782be9b9c3e382604e09e1a9895bcd572836395da89cb",
+  "crates/deadpan-core/src/edit_slice/rename.rs": "97c8b4f4af2f53d247217830ae43df438a121891eaf00b46fd4e9959575e3b45",
+  "crates/deadpan-core/src/insert_time/hold_duration/tests/processing.rs": "6bc0d8cdbf7f2664b78f6c8d54dbb0137ba9f5b88e7f6881c971917b062fccd6",
+  "crates/deadpan-core/src/insert_time/hold_duration/tests/processing/output_owned.rs": "f213dcd983bde2be894e12622ba1b3ca3d777ca4bc28af0fec68d8f6ad83901a"
+}

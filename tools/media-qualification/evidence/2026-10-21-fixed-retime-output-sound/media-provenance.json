@@ -1,0 +1,27 @@
+{
+  "scope": "fixed Retime output-owned event; no DSP/schema/UI change or native interaction claim",
+  "measured_sources": {
+    "original": {
+      "path": "native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+      "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+      "bytes": 39157
+    },
+    "event": {
+      "path": "native/deadpan-source/tests/audio-fixtures/pcm-mono-44100.wav",
+      "sha256": "b95b3debd2c83cf2590fddfaa98276c23c3b383b720fd96ac52c2c00c668318b",
+      "bytes": 88278
+    }
+  },
+  "movie": {
+    "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpL2F4ek/exports-output-owned/fixed-retime-output-sound.mp4",
+    "sha256": "2f3593aab37f632a65b1748d2056c6393d42e9f486e499b275c7c1148f92b5e2",
+    "bytes": 9504
+  },
+  "project": {
+    "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpL2F4ek/output-owned-sound/fixed-retime-output-sound.deadpan",
+    "project_id": "973a4ac8-21d1-41bf-ad48-63bf99454884",
+    "revision_id": "fixed-retime-output-sound-r09",
+    "document_sha256": "961f2b071b9bbb6ba078af45176180f77d7bc810d0102a5e7bbb0455b2084729"
+  },
+  "policy": "Reports, literal phase oracle and measured media identities retained; raw media, package and executables omitted."
+}

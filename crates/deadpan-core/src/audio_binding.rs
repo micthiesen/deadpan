@@ -1466,13 +1466,21 @@ impl AudioBindingState {
                             reference.scope().clone(),
                             journal.scope().clone(),
                             reference.repeats().clone(),
+                            self.timings[timing]
+                                .sound_uses_output_owner_proof(
+                                    &live,
+                                    (reference.scope(), journal.scope()),
+                                    (reference.owner(), owner),
+                                )
+                                .then(|| (reference.owner().clone(), owner.clone())),
                         );
                         if !checked.contains_key(&key) {
                             let proof = self.timings[timing]
-                                .sound_clock_correspondence_with_repeats(
+                                .sound_owner_clock_correspondence_with_repeats(
                                     &live,
                                     reference.scope(),
                                     journal.scope(),
+                                    (reference.owner(), owner),
                                     reference.repeats(),
                                     work.remaining()?,
                                 )?;

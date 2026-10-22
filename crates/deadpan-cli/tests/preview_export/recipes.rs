@@ -46,6 +46,9 @@ pub mod ordinary_duration;
 #[path = "fixed_retime_duration.rs"]
 pub mod fixed_retime_duration;
 
+#[path = "fixed_retime_output_sound.rs"]
+pub mod fixed_retime_output_sound;
+
 #[path = "processing_duration.rs"]
 pub mod processing_duration;
 

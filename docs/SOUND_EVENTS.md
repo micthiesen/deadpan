@@ -80,6 +80,15 @@ complete continuous processing history; do not split it into independent
 per-beat processors. Distinct attached sounds retain their own complete voice
 history and scoped output gates before mixing.
 
+Ordinary interior Hold resizing preserves an independent event on an unchanged
+fixed Edit Retime output, including a retained root-ripple journal. Its clock
+proof may stop at that exact owner after checking the output contract and
+placement ancestry. It never supplies aliases for omitted input children.
+Changed child-owned processing dependencies still reject atomically. Current
+source admission, suppression and owner/ancestor treatments apply to the
+current mixed bus. See the
+[output-sound qualification](qualification/fixed-retime-output-sound-2026-10-21.md).
+
 An explicitly declared aggregate processing stage may process a mixed input
 once. That is a different operation from independently processing voices and
 summing their outputs. It must not become the default merely because the current

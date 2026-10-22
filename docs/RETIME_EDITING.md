@@ -85,7 +85,13 @@ Ordinary Hold resizing also retains moved physical owners beneath Preserve/Shift
 on the correct processing-input PointCeil clock. Its current operand rebuilds
 DSP while existing output bindings and fractional resumes remain unchanged.
 See the [processing-input qualification](qualification/processing-hold-clocks-2026-10-20.md).
-Attachments whose processing subtree changes retain their explicit refusal.
+An independent sound on the fixed Retime output keeps its exact source phase,
+sample offset and journal when an interior Hold changes. Its proof checks the
+unchanged output owner and placement ancestry; the current physical operand
+still rebuilds. Child-owned sounds whose processing subtree changes retain
+their explicit refusal. Native Hold editing beneath Retime ancestry remains
+outside the current UI timing gate. See the
+[output-sound qualification](qualification/fixed-retime-output-sound-2026-10-21.md).
 This remains separate from the dedicated clocked-Retime duration path.
 
 ## Speed changes after an exact pause

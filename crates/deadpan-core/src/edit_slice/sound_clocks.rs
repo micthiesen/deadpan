@@ -49,12 +49,20 @@ pub(super) fn capture(
                         reference.scope().clone(),
                         previous.scope().clone(),
                         reference.repeats().clone(),
+                        historical
+                            .sound_uses_output_owner_proof(
+                                &live,
+                                (reference.scope(), previous.scope()),
+                                (reference.owner(), &owner),
+                            )
+                            .then(|| (reference.owner().clone(), owner.clone())),
                     );
                     if !proofs.contains_key(&key) {
-                        let proof = historical.sound_clock_correspondence_with_repeats(
+                        let proof = historical.sound_owner_clock_correspondence_with_repeats(
                             &live,
                             reference.scope(),
                             previous.scope(),
+                            (reference.owner(), &owner),
                             reference.repeats(),
                             budget(work)?,
                         )?;

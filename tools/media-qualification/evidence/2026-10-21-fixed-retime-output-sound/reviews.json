@@ -1,0 +1,96 @@
+{
+  "base": "072f0d82",
+  "reviews": [
+    {
+      "agent": "output_sound_general_review",
+      "role": "check",
+      "finding": "none",
+      "runtime_tests_run": false
+    },
+    {
+      "agent": "output_sound_scope_review",
+      "role": "check-focused",
+      "lens": "authority, proof completeness, cache isolation and bounded work",
+      "finding": "none",
+      "runtime_tests_run": false
+    },
+    {
+      "agent": "output_sound_verification_review",
+      "role": "check-focused",
+      "lens": "literal phase oracles and core/PCM/store/encoded coverage",
+      "finding": "none",
+      "runtime_tests_run": false
+    }
+  ],
+  "preimplementation_review": [
+    {
+      "source": "root",
+      "change": "Preserve sharing of complete scope proofs; classify only exact independent output proofs by owner pair. Avoid per-owner complete rescans."
+    },
+    {
+      "source": "author",
+      "change": "Enable new reducer proof only for an actual Hold duration change; retain no-op grouped journal identity."
+    }
+  ],
+  "baseline_fixture_compile_correction": "Replace unsupported ExactRatio ordering operators with compare_integer; initial compile exit101 retained before actual runtime failure.",
+  "followups": [
+    {
+      "agent": "output_sound_scope_review",
+      "scope": "Hold-containing processing scope eligibility and outside-move capture preservation",
+      "finding": "none"
+    },
+    {
+      "agent": "output_sound_verification_review",
+      "scope": "group prior history and Event-only source revocation",
+      "finding": "minor sharing-fixture event count",
+      "disposition": "dismissed: 64 live events is intentional; 65 exceeded existing cap. Work-sharing stress is63*2000>100000, not crossing sound cap."
+    },
+    {
+      "agent": "output_sound_verification_review",
+      "scope": "exact independently derived physical suppression masks and retained store lattice/phase checks",
+      "finding": "none",
+      "runtime_tests_run": false
+    },
+    {
+      "agent": "output_sound_verification_review",
+      "scope": "strict Reject picture oracle and explicitly limited nonlinear meaningful-support coverage",
+      "finding": "none",
+      "runtime_tests_run": false
+    }
+  ],
+  "first_focused_run": {
+    "tests": 12,
+    "passed": 10,
+    "failed": 2,
+    "skipped": 567,
+    "fixes": [
+      "Limit partial routing to actual resized Hold containing processor; preserve outside group capture",
+      "Use63child-owned+1Sequence-owned events to obey64-live-event bound"
+    ]
+  },
+  "test_strengthening": "Event-only source revocation keeps Original available and requires exact warmed event SourceUnavailable error.",
+  "root_followups": [
+    {
+      "finding": "Full nonlinear negative request exceeded MAX_OUTPUT_FRAMES=256",
+      "disposition": "Caught before execution; replace total17618 request with bounded full-bus walk and exact valid failing chunk/control"
+    },
+    {
+      "finding": "Strict Reject picture oracle used fallible syntax for infallible ExactRatio.floor",
+      "disposition": "Release compilation exit101 retained; remove trailing ? without changing endpoint/containment checks"
+    }
+  ],
+  "nonlinear_scope": {
+    "preexisting_unsupported_sample": [
+      8236,
+      8237
+    ],
+    "before_and_after_same_error": true,
+    "diagnostic_log": "pcm-support-diagnostic.log",
+    "retained_zero_exhaustion": [
+      12812,
+      12813
+    ],
+    "positive_requests": "all samples except explicitly unsupported8236, complete exact masks and scalar mixing oracle",
+    "followup": "repair fractional retained processing owner support; full nonlinear master remains unqualified"
+  }
+}

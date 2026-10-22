@@ -1,0 +1,26 @@
+{
+  "core": {
+    "path": "target/debug/deps/deadpan_core-b3aaf031552acdd6",
+    "sha256": "94863968eb208f26366220365e2a8f9e78f96c33e1e2b9b128c20effa79bd3f0"
+  },
+  "pcm_first": {
+    "path": "target/debug/deps/stages-4506359765072bfd",
+    "sha256": "b0c37a7f8fc1a7cb146a47f7c6989c2b936c1acdd282250fdcb7481c62865c97"
+  },
+  "store_first": {
+    "path": "target/debug/deps/source_registration-9dc8c89f5f7a9079",
+    "sha256": "ced97115da04deae10ee23d73be63002e1af9c6475afae4ef1d6102a0ea26d32"
+  },
+  "pcm_fractional_seam": {
+    "path": "target/debug/deps/stages-4506359765072bfd",
+    "sha256": "68f6fcd678bf09143550f30b5d4f48ff45de4d9a3c0c4602c2b9bd5490c1bc9d"
+  },
+  "store_reanchor": {
+    "path": "target/debug/deps/source_registration-9dc8c89f5f7a9079",
+    "sha256": "cefffe00b294ff74b35cc273a7ecdcf962c3a1835faa3d34d81aea12a38b9c58"
+  },
+  "pcm_nonlinear": {
+    "path": "target/debug/deps/stages-4506359765072bfd",
+    "sha256": "b295e19d975b56ae2bd0151c6fffd71e2fd3705f4a79566599f3272f97f8ae93"
+  }
+}

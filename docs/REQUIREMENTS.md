@@ -2,6 +2,24 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
+## Fixed Retime output sounds through Hold edits, 2026-10-21
+
+[Output-sound qualification](qualification/fixed-retime-output-sound-2026-10-21.md)
+permits ordinary interior Hold resizing while an independent sound retains its
+fixed Retime output clock, exact phase, sample offset and durable journal.
+Child-owned changed-input dependencies still refuse atomically. Six valid
+positive old-code witnesses fail before implementation. All thirteen focused
+core, six PCM and two real-package store tests pass; all 3,130 broader
+core/plan/audio/store tests and final strict lint pass. The release export
+verifies all eleven pictures and 17,618 presented samples in two contiguous
+windows at offset zero; its independent event oracle has zero numerical error.
+Native Hold editing under Retime remains gated. A separate pre-existing
+nonlinear owner-support hole at sample8236 is reproduced before and after the
+edit, with explicit full-bus refusal and positive checks for every other sample.
+Repairing that hole and qualifying the complete nonzero nonlinear master
+remain agent work. DP-07 and DP-09 stay partial; no requirement or gate is
+newly complete.
+
 ## One-play literal audio setters, 2026-10-21
 
 [Setter qualification](qualification/scoped-audio-setters-2026-10-21.md) adds

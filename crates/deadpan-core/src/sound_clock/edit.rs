@@ -88,6 +88,9 @@ pub(crate) struct SoundClockEditCapture {
     /// is cloned behind a Split delivery Partition.
     repeat_aliases: BTreeMap<NodeId, NodeId>,
     split_owners: BTreeSet<NodeId>,
+    // Only the containing processor's output can ignore this changed input.
+    // Outside Hold moves retain their existing full-scope capture semantics.
+    resized_hold: Option<NodeId>,
 }
 
 impl SoundClockEditCapture {
@@ -157,6 +160,17 @@ impl SoundClockEditCapture {
                 .map(|(id, _)| (id.clone(), id.clone()))
                 .collect(),
             split_owners: BTreeSet::new(),
+            resized_hold: match command {
+                Command::SetHoldDuration { node, duration }
+                    if document.nodes.get(node).is_some_and(|node| {
+                        matches!(&node.kind,
+                        NodeKind::Hold { recipe } if recipe.duration != *duration)
+                    }) =>
+                {
+                    Some(node.clone())
+                }
+                _ => None,
+            },
         }))
     }
 
@@ -233,8 +247,16 @@ impl SoundClockEditCapture {
         let mut moved = BTreeMap::new();
         let mut historical = BTreeMap::new();
         let mut work = 0usize;
+        let output_owner = if let Some(hold) = &self.resized_hold {
+            let (scope, used) = self.before.sound_processing_scope(hold, budget(work)?)?;
+            work = work.checked_add(used).ok_or_else(exhausted)?;
+            Some(scope)
+        } else {
+            None
+        };
         for (owner, original) in self.owners {
             let split = self.split_owners.contains(&owner);
+            let output_owner_edit = output_owner.as_ref() == Some(&original);
             let events = &self.events[&original];
             if !document.nodes.contains_key(&owner) {
                 if self.removed.contains(&original) || split {
@@ -262,7 +284,39 @@ impl SoundClockEditCapture {
                     .journals
                     .get(&original)
                     .and_then(|events| events.get(id));
-                let (old_scope, live_scope) = if split {
+                // An output-owned sound under ordinary groups depends on
+                // its own fixed stage, not on the whole top root branch.
+                // Both bounded ancestry walks must keep that owner as scope;
+                // an enclosing Edit Retime leaves this case on the full path.
+                let output_scopes = if output_owner_edit
+                    && !split
+                    && matches!(
+                        &self.before.nodes()[&original].kind,
+                        crate::FrozenAudioKind::Retime {
+                            purpose: crate::RetimePurpose::Edit,
+                            ..
+                        }
+                    )
+                    && matches!(
+                        &current.nodes()[&owner].kind,
+                        crate::FrozenAudioKind::Retime {
+                            purpose: crate::RetimePurpose::Edit,
+                            ..
+                        }
+                    ) {
+                    let (old, used) = self
+                        .before
+                        .sound_processing_scope(&original, budget(work)?)?;
+                    work = work.checked_add(used).ok_or_else(exhausted)?;
+                    let (live, used) = current.sound_processing_scope(&owner, budget(work)?)?;
+                    work = work.checked_add(used).ok_or_else(exhausted)?;
+                    (old == original && live == owner).then_some((old, live))
+                } else {
+                    None
+                };
+                let (old_scope, live_scope) = if let Some(scopes) = output_scopes {
+                    scopes
+                } else if split {
                     let (old, used) = self
                         .before
                         .sound_processing_scope(&original, budget(work)?)?;
@@ -338,7 +392,19 @@ impl SoundClockEditCapture {
                         })
                         .collect::<Result<Vec<_>, EditError>>()?,
                 )?;
-                let key = (old_scope.clone(), live_scope.clone(), split);
+                let key = (
+                    old_scope.clone(),
+                    live_scope.clone(),
+                    split,
+                    (output_owner_edit
+                        && !split
+                        && self.before.sound_uses_output_owner_proof(
+                            &current,
+                            (&old_scope, &live_scope),
+                            (&original, &owner),
+                        ))
+                    .then(|| (original.clone(), owner.clone())),
+                );
                 let (proof, changed_placement) = if let Some((proof, changed)) = moved.get(&key) {
                     (crate::SoundClockCorrespondence::clone(proof), *changed)
                 } else {
@@ -356,13 +422,24 @@ impl SoundClockEditCapture {
                             ));
                         }
                     }
-                    let proof = self.before.sound_clock_correspondence_with_repeats(
-                        &current,
-                        &old_scope,
-                        &live_scope,
-                        &before_map,
-                        budget(work)?,
-                    )?;
+                    let proof = if output_owner_edit && !split {
+                        self.before.sound_owner_clock_correspondence_with_repeats(
+                            &current,
+                            &old_scope,
+                            &live_scope,
+                            (&original, &owner),
+                            &before_map,
+                            budget(work)?,
+                        )?
+                    } else {
+                        self.before.sound_clock_correspondence_with_repeats(
+                            &current,
+                            &old_scope,
+                            &live_scope,
+                            &before_map,
+                            budget(work)?,
+                        )?
+                    };
                     work = work.checked_add(proof.work()).ok_or_else(exhausted)?;
                     let changed = if split {
                         // Even an unmoved left fragment introduces a delivery
@@ -395,21 +472,30 @@ impl SoundClockEditCapture {
                 let mut references = Vec::new();
                 if let Some(previous) = &previous {
                     for reference in previous.clocks() {
+                        let layout = &self.retained[reference.timing()];
                         let key = (
                             reference.timing().clone(),
                             reference.scope().clone(),
                             previous.scope().clone(),
                             reference.repeats().clone(),
+                            layout
+                                .sound_uses_output_owner_proof(
+                                    &self.before,
+                                    (reference.scope(), previous.scope()),
+                                    (reference.owner(), &original),
+                                )
+                                .then(|| (reference.owner().clone(), original.clone())),
                         );
                         if !historical.contains_key(&key) {
-                            let layout = &self.retained[reference.timing()];
-                            let historical_proof = layout.sound_clock_correspondence_with_repeats(
-                                &self.before,
-                                reference.scope(),
-                                previous.scope(),
-                                reference.repeats(),
-                                budget(work)?,
-                            )?;
+                            let historical_proof = layout
+                                .sound_owner_clock_correspondence_with_repeats(
+                                    &self.before,
+                                    reference.scope(),
+                                    previous.scope(),
+                                    (reference.owner(), &original),
+                                    reference.repeats(),
+                                    budget(work)?,
+                                )?;
                             work = work
                                 .checked_add(historical_proof.work())
                                 .ok_or_else(exhausted)?;

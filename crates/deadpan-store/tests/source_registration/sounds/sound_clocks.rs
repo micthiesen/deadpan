@@ -3,6 +3,9 @@ use deadpan_core::{SliceCaptureSelection, SoundClockJournal};
 use deadpan_store::registers::{RegisterName, RegisterValue};
 use std::{collections::BTreeMap, sync::Arc};
 
+#[path = "sound_clocks/fixed_retime_output.rs"]
+mod fixed_retime_output;
+
 #[path = "sound_clocks/repeats.rs"]
 mod repeats;
 

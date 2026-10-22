@@ -1,0 +1,18 @@
+{
+  "crates/deadpan-core/src/audio_reference.rs": "ff95db16c88dc850ef93cc62f1dd04349711eaa6e88d4ce151ec5286e258935c",
+  "crates/deadpan-core/src/sound_clock/edit.rs": "b572621f53dbacdf5ef9a3d4a1bda9bdf7dadd534d9482e499b7a8fac18874ec",
+  "crates/deadpan-core/src/audio_binding.rs": "951ce2691e87caaf08e5a14d8a273a20bc4ad7ce066d8def95a6a7f447246d98",
+  "crates/deadpan-plan/src/plan.rs": "ed1b3af429b2c53479bd5883c39b92c0d9251d620bb5e5858276a596e405ad72",
+  "crates/deadpan-core/src/edit_slice/sound_clocks.rs": "db2b6b96719ba1361a4782be9b9c3e382604e09e1a9895bcd572836395da89cb",
+  "crates/deadpan-core/src/edit_slice/rename.rs": "97c8b4f4af2f53d247217830ae43df438a121891eaf00b46fd4e9959575e3b45",
+  "crates/deadpan-core/src/insert_time/hold_duration/tests/processing.rs": "6bc0d8cdbf7f2664b78f6c8d54dbb0137ba9f5b88e7f6881c971917b062fccd6",
+  "crates/deadpan-core/src/insert_time/hold_duration/tests/processing/output_owned.rs": "6362111cb2f3aafbc97eb70925eaf27c82df035b1d499aedf33fcad3844bd2ca",
+  "crates/deadpan-store/tests/source_registration/sounds/sound_clocks.rs": "b878362d0c798babe259c6ebde28058b19499d5a00c69e9d7c813f42317f3fe8",
+  "crates/deadpan-store/tests/source_registration/sounds/sound_clocks/fixed_retime_output.rs": "3c297ddeb9c201cacb66cec0373984b66a580bdf53deb55b0e7a6baee077bc54",
+  "crates/deadpan-cli/tests/preview_export.rs": "dec6ead2b880f30d7c1c080dd6a33843e6b24db76edf29780bd9d2d51417518e",
+  "crates/deadpan-cli/tests/preview_export/recipes.rs": "8f6da842087a4d639a28ac6d77afa97d9f50fcd89c81bdfac32fb6d8796f855f",
+  "crates/deadpan-cli/tests/preview_export/fixed_retime_output_sound.rs": "3855727d13d5202104b6b494eb597b14f26b4bb5d00c4abf205cf8d918312fc7",
+  "Cargo.lock": "1e39d18ae4de6c7b898edad39eb7104235fb3ffe3af84521ca94df2b6c25b71b",
+  "crates/deadpan-audio/tests/stages/processing_hold_duration.rs": "a104e568a654f8c755679166e023006366cd5a44bfb87b9bded1877e266daf63",
+  "crates/deadpan-audio/tests/stages/processing_hold_duration_output_sound.rs": "a47cfd96847015c1852b18800b01fb9777e6e55ae9abe9380a174c9dcdedac03"
+}

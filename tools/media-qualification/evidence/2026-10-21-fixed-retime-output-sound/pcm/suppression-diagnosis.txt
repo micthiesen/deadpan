@@ -1,0 +1,24 @@
+Root runtime observed 3pass/3fail after fixture qualification correction.
+Journaled PCM samples matched; failure was exact suppression mask at sample12812.
+The nonlinear test failed the same mistaken all-unsuppressed assumption.
+
+Independent geometry:
+C=8008/5mixsamples/frame.
+Historical processing interval frame3..7:
+RoundEven(3C)=4805, RoundEven(7C)=11211 =>6406points.
+Current root-ripple interval frame4..8:
+RoundEven(4C)=6406, RoundEven(8C)=12813 =>6407points.
+Translation preserves the captured6406point output; surviving end6406+6406=12812.
+Thus [12812,12813) exhausts the retained physical output. It is not a silent
+RoomTone policy; finite-zero physical PCM does not imply an all-false mask.
+Independent event support [6443,6552) does not intersect that exhausted point.
+The target interior Hold resize leaves stage output duration4/input[1,8) fixed,
+so the same mask applies before/after that edit. Fresh frame3origin has no
+allocation width change and no such exhaustion.
+
+Correction:
+physical_suppression() derives exactly this mask from literal frame geometry.
+All tests retain complete exact masks. Current nonzero no-event component mask
+must equal the independently derived mask; event and nonlinear outputs preserve
+it. Cold reads now include the exhausted point and suffix seam.
+No production edit; no Cargo/Git run by audio worker.

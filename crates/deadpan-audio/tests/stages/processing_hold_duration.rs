@@ -10,6 +10,9 @@ mod output;
 #[path = "processing_hold_duration_repeat.rs"]
 mod repeat;
 
+#[path = "processing_hold_duration_output_sound.rs"]
+mod output_sound;
+
 fn voice() -> BeatNode {
     let rate = FrameRate::new(30_000, 1001).unwrap();
     let mut node = source(rate, 4, 0..1);

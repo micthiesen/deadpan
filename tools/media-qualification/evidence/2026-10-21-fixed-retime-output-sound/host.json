@@ -1,0 +1,11 @@
+{
+  "captured_at": "2026-10-22T00:31:50.536692+00:00",
+  "host": {
+    "os": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84",
+    "hardware": "Mac17,7\n137438953472\nApple M5 Max",
+    "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+    "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+    "disk": "Filesystem      Size    Used   Avail Capacity iused ifree %iused  Mounted on\n/dev/disk3s5   1.8Ti   1.0Ti   772Gi    58%    9.2M  8.1G    0%   /System/Volumes/Data"
+  },
+  "cargo_lock_sha256": "1e39d18ae4de6c7b898edad39eb7104235fb3ffe3af84521ca94df2b6c25b71b"
+}

@@ -100,22 +100,30 @@ impl Inventory {
                                 }
                             }
                         }
+                        let historical = &slice.audio_bindings.timings[reference.timing()];
                         let key = (
                             reference.timing().clone(),
                             reference.scope().clone(),
                             journal.scope().clone(),
                             reference.repeats().clone(),
+                            historical
+                                .sound_uses_output_owner_proof(
+                                    &live,
+                                    (reference.scope(), journal.scope()),
+                                    (reference.owner(), owner),
+                                )
+                                .then(|| (reference.owner().clone(), owner.clone())),
                         );
                         if !proofs.contains_key(&key) {
-                            let historical = &slice.audio_bindings.timings[reference.timing()];
                             let remaining = MAX_AUDIO_BINDING_ENTRIES
                                 .checked_sub(result.work)
                                 .filter(|remaining| *remaining > 0)
                                 .ok_or_else(|| limit("slice sound clock identity work limit"))?;
-                            let proof = historical.sound_clock_correspondence_with_repeats(
+                            let proof = historical.sound_owner_clock_correspondence_with_repeats(
                                 &live,
                                 reference.scope(),
                                 journal.scope(),
+                                (reference.owner(), owner),
                                 reference.repeats(),
                                 remaining.min(MAX_DOCUMENT_NODES),
                             )?;

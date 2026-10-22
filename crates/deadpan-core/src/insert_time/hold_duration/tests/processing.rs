@@ -1,6 +1,9 @@
 //! Hold edits preserve physical processing-input clocks, not old DSP output.
 use super::*;
 
+#[path = "processing/output_owned.rs"]
+mod output_owned;
+
 fn rate(child: &str, length: i64, start: i64, end: i64, pitch: PitchPolicy) -> BeatNode {
     let mut node = BeatNode::sequence("Stage", vec![]);
     node.kind = NodeKind::Retime {
@@ -486,13 +489,12 @@ fn ordinary_hold_duration_processing_changed_attachment_scope_refuses_atomically
         if historical {
             before.audio_bindings = captured(&before, "attached-input");
         }
-        attach_effect(&mut before, "processing");
+        attach_effect(&mut before, "after");
         let snapshot = before.clone();
         let json = before.to_json().unwrap();
         let error = apply(&before, &request(&before, "hold", 3)).unwrap_err();
-        // The unpublished physical-input edit cannot transport an attachment
-        // whose processing operand itself changed. Keep this existing sound
-        // lifecycle boundary explicit rather than accepting a fresh phase.
+        // This descendant's sound enters the changed processing input. The
+        // output owner's narrower proof must never admit this dependency.
         assert_eq!(error.code, EditErrorCode::InvalidCommand);
         assert_eq!(error.message, "sound clock processing subtree changed");
         assert_eq!(before, snapshot);

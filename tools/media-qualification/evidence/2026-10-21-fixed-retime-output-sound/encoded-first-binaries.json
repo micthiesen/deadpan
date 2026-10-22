@@ -1,0 +1,10 @@
+{
+  "encoded_first_test": {
+    "path": "target/release/deps/preview_export-633f4b90e83a29ac",
+    "sha256": "e0dd28d606aeaf25e531a41b6612db2b5fac7acc11d7383d995d0cb3893ea09b"
+  },
+  "encoded_first_cli": {
+    "path": "target/release/deadpan-cli",
+    "sha256": "fe41efd48eba3d5a9b2f2e0de1ffd64f5e090a5942b72d8e4b1ae20c33d21826"
+  }
+}

@@ -1,0 +1,92 @@
+{
+  "encoded": {
+    "audio_windows_checked": 2,
+    "audio_windows_failed": 0,
+    "blocks_compared": 13,
+    "index_observable_comparisons": 14,
+    "index_unobservable_comparisons": 6,
+    "max_block_level_db": 0.11287076088907178,
+    "max_local_luma_error": 1.9375,
+    "max_thumbnail_mad": 0.051953125,
+    "min_block_snr_db": 30.970138788004103,
+    "min_chroma_psnr_db": 52.24341921598174,
+    "min_luma_psnr_db": 55.57933537861243,
+    "min_neighbor_margin_db": 0.0,
+    "nonzero_offsets": 0,
+    "offset_unobservable_windows": 0,
+    "offset_verified_windows": 2,
+    "pictures_checked": 11,
+    "pictures_failed": 0,
+    "pictures_without_index_neighbors": 0,
+    "signal_windows": 2
+  },
+  "presented_samples": 17618,
+  "pictures": 11,
+  "runtime": {
+    "passed": true,
+    "verified_by": "root",
+    "runs": {
+      "focused-core": {
+        "log": "focused-core.log",
+        "passed": 13
+      },
+      "focused-pcm": {
+        "log": "focused-pcm.log",
+        "passed": 6
+      },
+      "focused-store": {
+        "log": "focused-store.log",
+        "passed": 2
+      },
+      "broad": {
+        "log": "broad.log",
+        "passed": 1404
+      },
+      "broad-core-plan": {
+        "log": "broad-core-plan.log",
+        "passed": 1726
+      },
+      "encoded": {
+        "log": "encoded.log",
+        "passed": 1
+      }
+    },
+    "binaries": {
+      "encoded-cli": {
+        "path": "/tmp/deadpan-fixed-retime-owned-sound-2026-10-21/executed-encoded-cli",
+        "original_path": "target/release/deadpan-cli",
+        "sha256": "fe41efd48eba3d5a9b2f2e0de1ffd64f5e090a5942b72d8e4b1ae20c33d21826"
+      },
+      "encoded-test": {
+        "path": "/tmp/deadpan-fixed-retime-owned-sound-2026-10-21/executed-encoded-test",
+        "original_path": "target/release/deps/preview_export-633f4b90e83a29ac",
+        "sha256": "61cae3db0fa5e274c7fb71d1cca40b2d174fba08b6cb63cbb1ab95e60f335993"
+      },
+      "final-core": {
+        "path": "/tmp/deadpan-fixed-retime-owned-sound-2026-10-21/executed-final-core",
+        "original_path": "target/debug/deps/deadpan_core-b3aaf031552acdd6",
+        "sha256": "94863968eb208f26366220365e2a8f9e78f96c33e1e2b9b128c20effa79bd3f0"
+      },
+      "final-pcm": {
+        "path": "/tmp/deadpan-fixed-retime-owned-sound-2026-10-21/executed-final-pcm",
+        "original_path": "target/debug/deps/stages-4506359765072bfd",
+        "sha256": "7b485315549c4258a58c7548b5e0cee4e0e3d597184bf06025cc30b4a5dd03f8"
+      },
+      "final-store": {
+        "path": "/tmp/deadpan-fixed-retime-owned-sound-2026-10-21/executed-final-store",
+        "original_path": "target/debug/deps/source_registration-9dc8c89f5f7a9079",
+        "sha256": "de8b04a0d277e87ec5a54b09f700f94904dbb04c49ab94258621d37e7c0956a5"
+      }
+    },
+    "final_lint": {
+      "passed": true,
+      "log": "lint-final.log"
+    },
+    "limitations": [
+      "Pre-existing nonlinear whole-bus owner-support refusal at sample8236, reproduced before/after target edit",
+      "Native Hold editing under Retime remains gated"
+    ]
+  },
+  "old_binary": "0ce77dde3a67df13925e3deefaff8b277c75872ce356430ef09571c236f089bf",
+  "first_core_binary": "be72697af5825287937d4098dca2f78a7f28d5609f5e65f6470898d7e4de40cc"
+}

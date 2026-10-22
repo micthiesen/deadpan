@@ -1,0 +1,20 @@
+Runtime diagnosis (root-owned run):
+Before and after target Hold edit have owner-query Inactive[8236,8237),
+owners root/processor/z-body, with nonzero canonical untreated Original PCM.
+Both full authored nonlinear bus scans fail in chunk8192 with exact
+Unsupported("nonzero Original outside meaningful owner-clock support").
+This predates the target edit. The zero exhaustion at[12812,12813) is distinct.
+
+Final bounded nonlinear test:
+- Whole authored bus before and after target edit must return that exact refusal.
+- Owner query at8236 is explicitly Inactive with exact retained owner stack;
+  current physical PCM there remains nonzero. It is not zeroed or muted.
+- Scalar current physical+retained event ->processor saturation ->root saturation
+  oracle is checked over literal request windows[0,8236) and[8237,17618), both
+  regular and irregular partitions, plus cold reads adjacent to missing support,
+  event onset/end, and stage exhaustion/suffix seam.
+- Complete expected physical masks remain exact, including12812exhaustion.
+- Oracle differs from stale old physical input on accepted support and differs
+  from incorrect independent per-voice saturation.
+- No whole-bus nonlinear success or EQ/send completion is claimed.
+No production edit or Cargo/Git invocation by audio worker.

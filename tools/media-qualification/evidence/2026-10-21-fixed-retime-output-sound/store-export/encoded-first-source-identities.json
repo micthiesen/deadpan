@@ -1,0 +1,10 @@
+{
+  "crates/deadpan-cli/tests/preview_export.rs": {
+    "copy": "/tmp/deadpan-fixed-retime-owned-sound-2026-10-21/store-export/encoded-first-preview_export.rs",
+    "sha256": "dec6ead2b880f30d7c1c080dd6a33843e6b24db76edf29780bd9d2d51417518e"
+  },
+  "crates/deadpan-cli/tests/preview_export/fixed_retime_output_sound.rs": {
+    "copy": "/tmp/deadpan-fixed-retime-owned-sound-2026-10-21/store-export/encoded-first-fixed_retime_output_sound.rs",
+    "sha256": "d892a565ee3d01dd51d1565f91794cf699b0a606e248fc3c3aadea66db50e32e"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "source": "crates/deadpan-store/tests/source_registration/sounds/sound_clocks/fixed_retime_output.rs",
+  "copy": "/tmp/deadpan-fixed-retime-owned-sound-2026-10-21/store-export/store-reanchor-expectation-failed.rs",
+  "sha256": "d8e2bd9c2503342f744f032c339ae6e8a6c47ed63e7ca19a5efb2aaa135efdd9",
+  "failure": "unnecessarily required retained reanchor vector to be nonempty; current lattice assertion and inverse already passed"
+}

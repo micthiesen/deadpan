@@ -341,10 +341,10 @@ pub struct FrozenAudioProjection {
     pub work: usize,
 }
 
-/// A bounded, typed correspondence between two complete processing subtrees.
-/// Node identities may differ, but clocks, Repeat identities, and processing
-/// controls must agree. The proof owns only bounded scoped indexes, not either
-/// full layout.
+/// A bounded correspondence over a sound's proven clock dependencies.
+/// Complete-subtree queries pair every child; owner-aware queries may prove only
+/// an independent output owner and its placement ancestry. No omitted child is
+/// a proven alias. The proof owns bounded scoped indexes, not either layout.
 #[derive(Debug, Clone)]
 pub struct SoundClockCorrespondence {
     inner: Arc<SoundClockCorrespondenceInner>,
@@ -376,7 +376,7 @@ struct ScopedRepeat {
 }
 
 impl SoundClockCorrespondence {
-    /// Work charged while proving the two complete scoped subtrees.
+    /// Work charged while proving the paired clock dependencies.
     pub fn work(&self) -> usize {
         self.inner.work
     }
@@ -1160,6 +1160,76 @@ impl FrozenAudioLayout {
         repeats: &crate::SoundClockRepeatMap,
         maximum_work: usize,
     ) -> Result<SoundClockCorrespondence, DocumentError> {
+        self.sound_clock_correspondence_inner(
+            current,
+            historical_scope,
+            live_scope,
+            repeats,
+            None,
+            maximum_work,
+        )
+    }
+
+    // Cache the exact partial-proof mode by owner. Every complete proof keeps
+    // scope-level sharing, including a Sequence owner paired with its children.
+    pub(crate) fn sound_uses_output_owner_proof(
+        &self,
+        current: &Self,
+        scopes: (&NodeId, &NodeId),
+        owners: (&NodeId, &NodeId),
+    ) -> bool {
+        owners == scopes
+            && matches!(
+                self.nodes.get(scopes.0).map(|node| &node.kind),
+                Some(FrozenAudioKind::Retime {
+                    purpose: RetimePurpose::Edit,
+                    ..
+                })
+            )
+            && matches!(
+                current.nodes.get(scopes.1).map(|node| &node.kind),
+                Some(FrozenAudioKind::Retime {
+                    purpose: RetimePurpose::Edit,
+                    ..
+                })
+            )
+    }
+
+    /// Prove one independent event's clock, with an explicit historical/live
+    /// owner pair from that event's journal or the command's owner mapping.
+    /// Equal-looking nodes never discover an alias. A fixed Edit Retime's own
+    /// sound enters its output, so its changed child is not a dependency.
+    /// Descendant owners and scopes containing another processor retain the
+    /// complete-subtree contract. Current source admission and policy still
+    /// apply independently of this address/clock proof.
+    pub fn sound_owner_clock_correspondence_with_repeats(
+        &self,
+        current: &Self,
+        historical_scope: &NodeId,
+        live_scope: &NodeId,
+        owners: (&NodeId, &NodeId),
+        repeats: &crate::SoundClockRepeatMap,
+        maximum_work: usize,
+    ) -> Result<SoundClockCorrespondence, DocumentError> {
+        self.sound_clock_correspondence_inner(
+            current,
+            historical_scope,
+            live_scope,
+            repeats,
+            Some(owners),
+            maximum_work,
+        )
+    }
+
+    fn sound_clock_correspondence_inner(
+        &self,
+        current: &Self,
+        historical_scope: &NodeId,
+        live_scope: &NodeId,
+        repeats: &crate::SoundClockRepeatMap,
+        owners: Option<(&NodeId, &NodeId)>,
+        maximum_work: usize,
+    ) -> Result<SoundClockCorrespondence, DocumentError> {
         if maximum_work == 0 || maximum_work > MAX_DOCUMENT_NODES {
             return Err(limit("invalid sound clock comparison budget"));
         }
@@ -1264,7 +1334,24 @@ impl FrozenAudioLayout {
                 return Err(invalid("sound clock processing subtree changed"));
             }
 
-            let children = paired_sound_clock_children(self, current, &historical_id, &live_id)?;
+            // Only the explicitly paired event owner can terminate this
+            // dependency walk. placement_path above already forbids omitting
+            // an enclosing processor; the unchanged output duration, exact
+            // clock and stage controls were checked before reaching here.
+            let output_owner = historical_id == *historical_scope
+                && live_id == *live_scope
+                && owners.is_some_and(|owners| {
+                    self.sound_uses_output_owner_proof(
+                        current,
+                        (historical_scope, live_scope),
+                        owners,
+                    )
+                });
+            let children = if output_owner {
+                Vec::new()
+            } else {
+                paired_sound_clock_children(self, current, &historical_id, &live_id)?
+            };
             if let FrozenAudioKind::Repeat { iterations, .. } = &live_node.kind {
                 let historical_repeat = scoped_repeat(self, &historical_id)?;
                 let live_repeat = scoped_repeat(current, &live_id)?;
