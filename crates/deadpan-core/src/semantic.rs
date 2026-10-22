@@ -7,6 +7,7 @@ mod node_set;
 mod object;
 mod planner;
 mod program;
+mod range_set;
 mod speech;
 
 pub use gags::*;
@@ -15,6 +16,7 @@ pub use node_set::*;
 pub use object::*;
 pub use planner::*;
 pub use program::*;
+pub use range_set::*;
 pub use speech::*;
 
 /// The authored identity of a native letter mark (`native-mark-{letter}`).

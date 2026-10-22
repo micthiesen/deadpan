@@ -1,0 +1,10 @@
+{
+  "command": [
+    "python",
+    "/tmp/deadpan-range-selectors-2026-10-22/run_archive.py",
+    "media-preflight",
+    "test(=range_sets_export_preserves_same_source_windows_and_complete_audio)"
+  ],
+  "exit": 0,
+  "seconds": 3.038284999318421
+}

@@ -192,6 +192,10 @@ pub enum Entry {
     SelectNodes {
         nodes: Vec<deadpan_core::NodeId>,
     },
+    /// Strict signed frame offsets from the command-entry Edit cursor.
+    SelectRanges {
+        ranges: Vec<deadpan_core::SemanticRangeOffsets>,
+    },
     /// `:delete role=audio|video`: delete one role over the Visual range.
     DeleteRole(deadpan_core::MediaRole),
     /// `:recipe-save a`: keep the selected group, with its parts and
@@ -417,6 +421,27 @@ pub fn parse(input: &str) -> Result<Entry, String> {
             None => Ok(Entry::TrackCancel),
             Some(_) => Err("Use :track-cancel without arguments.".into()),
         };
+    }
+    if verb.eq_ignore_ascii_case("select")
+        && input[verb.len()..].trim_start().starts_with("ranges=")
+    {
+        const USAGE: &str = r#"Use :select ranges=[{"start":2,"end":6},{"start":10,"end":14}] with 1 to 64 positive half-open ranges in relative frames. Negative offsets select before the entry cursor."#;
+        let json = input[verb.len()..]
+            .trim_start()
+            .strip_prefix("ranges=")
+            .ok_or(USAGE)?;
+        if json.len() > 64 * 128 + 2 {
+            return Err(USAGE.into());
+        }
+        let ranges: Vec<deadpan_core::SemanticRangeOffsets> =
+            serde_json::from_str(json).map_err(|_| USAGE)?;
+        if ranges.is_empty()
+            || ranges.len() > 64
+            || ranges.iter().any(|range| range.start.0 >= range.end.0)
+        {
+            return Err(USAGE.into());
+        }
+        return Ok(Entry::SelectRanges { ranges });
     }
     if verb.eq_ignore_ascii_case("select") && input[verb.len()..].trim_start().starts_with("nodes=")
     {
@@ -1176,6 +1201,37 @@ fn monitor(argument: Option<&str>) -> Result<u16, String> {
 #[cfg(test)]
 mod track_tests {
     use super::*;
+
+    #[test]
+    fn explicit_range_set_is_strict_signed_relative_frame_json() {
+        let input =
+            r#":select ranges=[{"start":10,"end":14},{"start":-8,"end":-4},{"start":2,"end":6}]"#;
+        assert!(
+            matches!(parse(input), Ok(Entry::SelectRanges { ranges }) if ranges.iter().map(|range| (range.start.0, range.end.0)).collect::<Vec<_>>() == [(10,14),(-8,-4),(2,6)])
+        );
+        for invalid in [
+            r#":select ranges=[]"#,
+            r#":select ranges=[{"start":2,"end":2}]"#,
+            r#":select ranges=[{"start":6,"end":2}]"#,
+            r#":select ranges=[{"start":2.5,"end":6}]"#,
+            r#":select ranges=[{"start":"2","end":6}]"#,
+            r#":select ranges=[{"start":2,"end":6,"extra":1}]"#,
+            r#":select ranges=[{"start":2,"end":6}] extra"#,
+            r#":select ranges=[{"start":2,"end":9223372036854775808}]"#,
+        ] {
+            assert!(parse(invalid).is_err(), "{invalid}");
+        }
+        let excessive = vec![serde_json::json!({"start":2,"end":6}); 65];
+        assert!(
+            parse(&format!(
+                ":select ranges={}",
+                serde_json::to_string(&excessive).unwrap()
+            ))
+            .is_err()
+        );
+        // Duplicate/overlap normalization belongs to the revision-aware resolver.
+        assert!(parse(r#":select ranges=[{"start":2,"end":6},{"start":2,"end":6}]"#).is_ok());
+    }
 
     #[test]
     fn explicit_node_set_is_strict_bounded_json_and_preserves_exact_ids() {

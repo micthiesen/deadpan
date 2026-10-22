@@ -1,0 +1,18 @@
+{
+  "deadpan-core::range_set_counterfactual": {
+    "source": "/Users/michael/Code/deadpan/target/debug/deps/range_set_counterfactual-c4ecbc4da82d1b39",
+    "retained": "/tmp/deadpan-range-selectors-2026-10-22/baseline-first-bin/range_set_counterfactual-c4ecbc4da82d1b39",
+    "sha256": "cf41a1f4a5ce4feeaaa062719f2782dee71fa4c5cfb847ed47f05bc579206f7d",
+    "tests": [
+      "ranges_selector_admission_follows_same_source_capsule_and_separate_splice_controls"
+    ]
+  },
+  "deadpan-core::range_set_shared_mark": {
+    "source": "/Users/michael/Code/deadpan/target/debug/deps/range_set_shared_mark-3be4cdb04cdc928f",
+    "retained": "/tmp/deadpan-range-selectors-2026-10-22/baseline-first-bin/range_set_shared_mark-3be4cdb04cdc928f",
+    "sha256": "ee0c206ed59c6effe1668a31578c60e140a3d0cbddb91326a64c885ae16f308c",
+    "tests": [
+      "repeated_same_source_capsules_need_two_distinct_destination_bindings_of_one_logical_mark"
+    ]
+  }
+}

@@ -84,6 +84,9 @@ pub(super) fn validate_context(
         Some(SemanticVisualSelection::Nodes { nodes }) => {
             crate::semantic::node_set::resolve_in_scope(document, context, nodes)?;
         }
+        Some(SemanticVisualSelection::Ranges { ranges }) => {
+            crate::semantic::range_set::validate_geometry(document, context, ranges)?;
+        }
         None => {}
     }
     Ok(())
@@ -107,7 +110,8 @@ where
             | SemanticVisualSelection::Object { extending, .. } => *extending = false,
             SemanticVisualSelection::MarkRange { .. }
             | SemanticVisualSelection::Node { .. }
-            | SemanticVisualSelection::Nodes { .. } => {}
+            | SemanticVisualSelection::Nodes { .. }
+            | SemanticVisualSelection::Ranges { .. } => {}
         }
         Ok(())
     }
@@ -118,9 +122,9 @@ where
     ) -> Result<ResolvedTarget, EditError> {
         let selection = match selector {
             SemanticSelector::Node { node } => return self.node_target(node),
-            SemanticSelector::Nodes { .. } => {
+            SemanticSelector::Nodes { .. } | SemanticSelector::Ranges { .. } => {
                 return Err(unavailable(
-                    "this instruction does not accept a whole-node set",
+                    "this instruction does not accept a discontiguous set",
                 ));
             }
             SemanticSelector::SelectedBeat => {
@@ -151,9 +155,10 @@ where
                         return self.object_target(selection);
                     }
                     SemanticVisualSelection::Node { node } => return self.node_target(node),
-                    SemanticVisualSelection::Nodes { .. } => {
+                    SemanticVisualSelection::Nodes { .. }
+                    | SemanticVisualSelection::Ranges { .. } => {
                         return Err(unavailable(
-                            "this instruction does not accept a whole-node set",
+                            "this instruction does not accept a discontiguous set",
                         ));
                     }
                     SemanticVisualSelection::Time { anchor, head, .. } => {

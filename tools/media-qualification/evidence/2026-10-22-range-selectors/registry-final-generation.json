@@ -1,0 +1,15 @@
+{
+  "binary": "target/debug/deps/deadpan_app-7e20ea767f3f19d5",
+  "sha256": "577bea9686b3b149659418beebc9d4eeaa790e210a8286e700b51bcf2c536dd7",
+  "command": [
+    "target/debug/deps/deadpan_app-7e20ea767f3f19d5",
+    "--exact",
+    "navigation::registry::tests::routing_matches_the_pre_registry_baseline",
+    "--nocapture"
+  ],
+  "environment_override": "DEADPAN_UPDATE_ROUTING_BASELINE=1",
+  "exit": 101,
+  "expected_rewrite_refusal": true,
+  "seconds": 0.031048791483044624,
+  "note": "Third compiled candidate has updated usage rows; direct generator restores completion table after first generation read the old embedded usage. Final source checks run separately."
+}

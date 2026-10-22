@@ -1,0 +1,28 @@
+{
+  "exit": 1,
+  "source_and_retained_binaries_unchanged": true,
+  "failed": true,
+  "scenarios": [
+    {
+      "name": "kestrel-shortcuts",
+      "failed": false,
+      "checks": 1,
+      "frames": 0,
+      "failures": [],
+      "warnings": 0
+    },
+    {
+      "name": "range-set-selectors",
+      "failed": true,
+      "checks": 13,
+      "frames": 38,
+      "failures": [
+        {
+          "message": "Check failed: Yank stores one twelve-frame union without editing its gaps",
+          "severity": "failure"
+        }
+      ],
+      "warnings": 1
+    }
+  ]
+}

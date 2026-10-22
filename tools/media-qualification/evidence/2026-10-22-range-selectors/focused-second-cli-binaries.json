@@ -1,0 +1,12 @@
+{
+  "deadpan-cli::node_sets": {
+    "path": "/private/tmp/deadpan-range-selectors-2026-10-22/focused-second-cli-extracted/target/debug/deps/node_sets-1ec70759cb053542",
+    "sha256": "01c2a98c21a9489527b87c79ab8767ae7aada462c3dfa3d10e5f871988b95d25",
+    "tests": [
+      "nodes_cli_rejects_bad_members_and_late_failures_without_any_sql_publication",
+      "nodes_cli_reports_the_real_union_and_round_trips_one_cut_paste_transaction",
+      "ranges_cli_normalizes_relative_union_and_round_trips_one_cut_paste_transaction",
+      "ranges_cli_rejects_invalid_offsets_and_late_failures_without_sql_publication"
+    ]
+  }
+}

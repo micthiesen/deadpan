@@ -180,6 +180,17 @@ pub(super) fn selector_text(selector: &SemanticSelector) -> String {
         SemanticSelector::SelectedBeat => "beat".into(),
         SemanticSelector::VisualSelection => "range".into(),
         SemanticSelector::Nodes { nodes } => format!("node set ({} members)", nodes.len()),
+        SemanticSelector::Ranges { ranges } => {
+            let pairs = ranges
+                .iter()
+                .map(|range| format!("[{:+}..{:+})", range.start.0, range.end.0))
+                .collect::<Vec<_>>()
+                .join(", ");
+            format!(
+                "range set ({} relative pairs: {pairs} f from cursor)",
+                ranges.len()
+            )
+        }
         SemanticSelector::Node { node } => format!("node {}", node.as_str()),
         SemanticSelector::MarkRange { start, end } => {
             format!("marks {} to {}", start.id.as_str(), end.id.as_str())
@@ -597,6 +608,38 @@ mod tests {
     use super::*;
     use crate::project::semantic::LastEdit;
     use deadpan_core::{FrameCut, RevisionId};
+
+    #[test]
+    fn range_selector_hint_retains_signed_pairs_instead_of_a_hull() {
+        use deadpan_core::{SemanticFrameOffset as Offset, SemanticRangeOffsets as Pair};
+        let selector = SemanticSelector::Ranges {
+            ranges: vec![
+                Pair {
+                    start: Offset(2),
+                    end: Offset(6),
+                },
+                Pair {
+                    start: Offset(-8),
+                    end: Offset(-4),
+                },
+                Pair {
+                    start: Offset(2),
+                    end: Offset(6),
+                },
+            ],
+        };
+        let label = "range set (3 relative pairs: [+2..+6), [-8..-4), [+2..+6) f from cursor)";
+        assert_eq!(selector_text(&selector), label);
+        let operation = RepeatableEdit::Cut(RepeatableCut::Selector(selector));
+        assert_eq!(
+            repeat_instruction_hint(&operation, crate::navigation::EditSelection::None, false),
+            format!("repeat cut {label}")
+        );
+        assert_eq!(
+            repeat_instruction_hint(&operation, crate::navigation::EditSelection::Object, false),
+            "repeat cut selection"
+        );
+    }
 
     #[test]
     fn group_repeat_teaches_retained_label_and_current_visual_scope() {

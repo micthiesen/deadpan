@@ -160,16 +160,23 @@ pub(crate) fn apply(
         let pairs = collected
             .get(original_id)
             .ok_or_else(|| invalid("edit set omitted a logical mark while placing"))?;
-        let bindings = original
-            .bindings()
-            .map(|binding| {
-                pairs
-                    .iter()
-                    .find(|(old, _)| old == &binding)
-                    .map(|(_, copied)| copied.clone())
-                    .ok_or_else(|| invalid("edit set cannot map a shared physical mark binding"))
-            })
-            .collect::<Result<Vec<_>, EditError>>()?;
+        let mut bindings = Vec::new();
+        for binding in original.bindings() {
+            let mut found = false;
+            for (_, copied) in pairs.iter().filter(|(old, _)| old == &binding) {
+                found = true;
+                // Equal source bindings in distinct windows need distinct
+                // renamed owners. Deduplicate only destination fragments.
+                if !bindings.contains(copied) {
+                    bindings.push(copied.clone());
+                }
+            }
+            if !found {
+                return Err(invalid(
+                    "edit set cannot map a shared physical mark binding",
+                ));
+            }
+        }
         let mark = original
             .with_bindings(bindings)
             .ok_or_else(|| invalid("edit set copied an empty logical mark"))?;

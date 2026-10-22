@@ -1,6 +1,38 @@
 use super::*;
 
 #[test]
+fn range_selector_labels_keep_each_signed_offset_pair_and_operator_identity() {
+    use deadpan_core::{
+        SemanticFrameOffset as Offset, SemanticRangeOffsets as Pair, SemanticSelector,
+    };
+    let selector = SemanticSelector::Ranges {
+        ranges: vec![
+            Pair {
+                start: Offset(-8),
+                end: Offset(-4),
+            },
+            Pair {
+                start: Offset(2),
+                end: Offset(6),
+            },
+        ],
+    };
+    let plays = std::num::NonZeroU32::new(3).unwrap();
+    assert_eq!(
+        repeat_description(selector.clone(), plays),
+        "repeats the range set (2 relative pairs: [-8..-4), [+2..+6) f from cursor), 3 total plays"
+    );
+    let rule = Rule {
+        action: Action::Repeat { selector, plays },
+        count: CountPolicy::Repeat,
+        short: "range set",
+        repeatable: true,
+        interrupt: false,
+    };
+    assert_eq!(rule.id(), BindingId::RepeatOperator);
+}
+
+#[test]
 fn distinct_operator_families_cannot_overlap_at_either_prefix_depth() {
     let families = ["repeat.operator", "cut.operator", "yank.operator"];
     for mode in ["logical", "physical"] {

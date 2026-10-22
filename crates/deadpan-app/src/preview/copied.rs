@@ -55,7 +55,7 @@ impl Content {
                 )
             }
             Self::EditedSet(set) => format!(
-                "Copied node union · {} members · {} frames",
+                "Copied union · {} parts · {} frames",
                 set.components().len(),
                 set.duration().frames()
             ),
@@ -80,10 +80,12 @@ impl Content {
                 copied: copied.clone(),
                 range: copied.slice().range(),
             },
-            Self::EditedSet(_) => return Err(
-                "A copied node union uses p/P at an insertion seam; Place slice cannot refine it."
-                    .into(),
-            ),
+            Self::EditedSet(_) => {
+                return Err(
+                    "A copied union uses p/P at an insertion seam; Place slice cannot refine it."
+                        .into(),
+                );
+            }
             Self::Macro(_) => return Err(MACRO_PASTE_ERROR.into()),
         })
     }
@@ -115,12 +117,10 @@ impl Content {
             }
             Self::EditedSet(set) => {
                 if set.project_id() != workspace.document.project_id() {
-                    return Err("The copied node union belongs to another project.".into());
+                    return Err("The copied union belongs to another project.".into());
                 }
                 if set.presentation_basis() != workspace.document.presentation_basis() {
-                    return Err(
-                        "The copied node union uses a different canvas or frame rate.".into(),
-                    );
+                    return Err("The copied union uses a different canvas or frame rate.".into());
                 }
                 if set
                     .assets()
@@ -128,8 +128,7 @@ impl Content {
                     .any(|(id, asset)| workspace.document.assets().get(id) != Some(asset))
                 {
                     return Err(
-                        "The copied node union needs source assets unavailable in this revision."
-                            .into(),
+                        "The copied union needs source assets unavailable in this revision.".into(),
                     );
                 }
             }
@@ -465,7 +464,7 @@ impl DeadpanApp {
         let kind = match self.copied.selected_content() {
             Some(Content::Original(_)) => "Original",
             Some(Content::Edited(_)) => "Edit",
-            Some(Content::EditedSet(_)) => "Node union",
+            Some(Content::EditedSet(_)) => "Union",
             Some(content @ Content::Macro(_)) => {
                 return Some(format!("Register {name} · {}", content.label()));
             }

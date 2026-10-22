@@ -549,7 +549,7 @@ pub(in crate::preview::harness) fn run(d: &mut Driver<'_>) -> Result<(), String>
         document(d)? == &with_hold && bank(d)? == hold_bank
             && generation_state(d)? == before_jobs
             && d.app().capture_visual_selection()? == set_selection
-            && d.app().error.as_deref().is_some_and(|error| error.contains("node set")),
+            && d.app().error.as_deref().is_some_and(|error| error.contains("selection set")),
         json!({"hold":hold,"no_write":true,"no_generation_work":true}),
         state(d),
     )?;
@@ -567,7 +567,7 @@ pub(in crate::preview::harness) fn run(d: &mut Driver<'_>) -> Result<(), String>
             && d.app()
                 .error
                 .as_deref()
-                .is_some_and(|error| error.contains("node set")),
+                .is_some_and(|error| error.contains("selection set")),
         json!({"hold":hold,"captured_before_set":true,"no_write":true,"no_generation_work":true}),
         state(d),
     )?;

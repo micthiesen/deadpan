@@ -1,0 +1,1 @@
+{"command":{"command":"delete_range","identities":{"nodes":["range-sets-n4","range-sets-n5"]},"parent":"a923f941-5009-4b17-b750-348b5a9261e0","range":{"end":12,"start":0},"timing":{"allocation":"range-sets-r02","ordinal":0}},"expected_revision":"range-sets-r01","new_revision":"range-sets-r02","project_id":"eaf4ba84-31dc-47f1-8221-fdcb8817aef1","protocol":1}

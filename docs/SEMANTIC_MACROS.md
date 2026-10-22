@@ -194,8 +194,43 @@ Clear the set selection before choosing a paste seam. `p`/`P` inserts the union
 under one editable neutral Sequence, omitting the unselected gaps and allocating
 shared marks once for the union. Active-set replacement, Place slice, Group,
 Duplicate, Repeat, role-only and parameter consumers currently refuse sets.
-This whole-node branch does not implement arbitrary interval sets or
-transcript-search-result selectors.
+Whole-node sets retain structural identities. For temporal intervals, use the
+separate range selection below. Transcript-search-result selectors remain open.
+
+### Discontiguous interval sets
+
+`:select ranges=[{"start":2,"end":6},{"start":10,"end":14}]` selects
+half-open ranges in project frames relative to the captured Edit cursor.
+Negative offsets reach before that cursor. Each of the 1 through 64 supplied
+pairs must have positive duration and fit completely inside the current
+ordinary Sequence in Your edit with Linked role. Invalid members refuse the
+complete request. Checked arithmetic rejects overflow; endpoints never clamp.
+Duplicates, overlaps and touching inputs merge into a canonical maximal union.
+Partial endpoints retain the ordinary Source, Hold and supported-fragment
+contract. Enter a nested group before selecting its interior; a whole composite
+child can be included at its existing seams.
+
+Recording saves the original signed offsets in `SelectRanges`. It resolves
+all pairs from one entry cursor, then moves to the final canonical end. The
+finished selection retains its absolute geometry through later cursor motion.
+The inspector lists every interval, and the footer shows count and summed
+duration. There is no single enclosing range, even for a union that normalizes
+to one interval. Plain Visual selection replaces the set.
+
+Yank captures every component from one immutable entry snapshot. Cut captures
+once, then performs the exact partial deletions from right to left in one
+atomic transaction. Paste at an ordinary seam concatenates only the selected
+intervals under an editable group. Multiple windows of one Source retain its
+complete recipe independently; shared logical marks preserve every renamed
+physical binding. Historical capture validation reconstructs the complete set
+against its retained source revision.
+
+Native `y` and `d` use the finished Visual selection. Repeating that Cut with
+dot requires a new selection, as for ordinary Visual cuts. A typed
+`Ranges` selector instead retains its original offsets and resolves them anew
+at invocation. Active-set replacement, role-only editing, scalar parameter
+operations, Group, Duplicate, Repeat, Place slice, AI, saved framing and loop
+selection refuse range sets. Cursor playback retains its ordinary behavior.
 
 ### Ranged zoom and creep
 

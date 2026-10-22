@@ -1,0 +1,61 @@
+{
+  "deadpan-core::edit_set": {
+    "path": "/private/tmp/deadpan-range-selectors-2026-10-22/focused-second-core-extracted/target/debug/deps/edit_set-2a0935885b193057",
+    "sha256": "b27a142ab129653337df11aedd3b5aadbd85709a5fc5c9b235de342af80b7190",
+    "tests": [
+      "components_can_have_distinct_actual_parents_and_empty_equal_time_owners",
+      "copied_sequence_marks_are_finished_against_the_complete_union_once",
+      "invalid_addresses_forged_capsules_and_shared_mark_loss_are_rejected",
+      "placement_requires_exact_fresh_shared_identity_pools_without_mutating_input",
+      "semantic::invalid_or_unsupported_semantic_set_consumers_fail_before_allocations",
+      "semantic::semantic_union_cut_then_seam_paste_is_one_atomic_reversible_shared_mark_lifecycle",
+      "semantic::semantic_union_yank_is_one_canonical_value_and_preserves_unrelated_context",
+      "union_paste_omits_the_gap_and_preserves_one_logical_mark_with_both_bindings",
+      "unsupported_cross_component_coordinate_is_refused_instead_of_losing_the_binding"
+    ]
+  },
+  "deadpan-core::node_set_counterfactual": {
+    "path": "/private/tmp/deadpan-range-selectors-2026-10-22/focused-second-core-extracted/target/debug/deps/node_set_counterfactual-df64c1ae08f966d3",
+    "sha256": "becd543aedfcc2c15ee63a55131aef8ebeee2abe2b0fde3d4a0a33a8400d76f7",
+    "tests": [
+      "explicit_nodes_selector_admits_only_after_public_single_node_controls"
+    ]
+  },
+  "deadpan-core::node_set_shared_mark": {
+    "path": "/private/tmp/deadpan-range-selectors-2026-10-22/focused-second-core-extracted/target/debug/deps/node_set_shared_mark-21fe891677e0f16e",
+    "sha256": "43912dd5c3780e8198d76b20c4a95b00fe97121653a111793b82ad0fe0e3bcc4",
+    "tests": [
+      "separate_component_pastes_split_one_logical_mark_while_existing_whole_capture_preserves_it"
+    ]
+  },
+  "deadpan-core::range_set_counterfactual": {
+    "path": "/private/tmp/deadpan-range-selectors-2026-10-22/focused-second-core-extracted/target/debug/deps/range_set_counterfactual-c4ecbc4da82d1b39",
+    "sha256": "c931478d7e37b1b1ce58ad2969bf48bf378730afda3439af5cc1ee4c96208460",
+    "tests": [
+      "ranges_selector_admission_follows_same_source_capsule_and_separate_splice_controls"
+    ]
+  },
+  "deadpan-core::range_set_shared_mark": {
+    "path": "/private/tmp/deadpan-range-selectors-2026-10-22/focused-second-core-extracted/target/debug/deps/range_set_shared_mark-3be4cdb04cdc928f",
+    "sha256": "95ac5833ac36b0e4d40be4ee9232c6120a3a10aa76db1951b04f78b935e4668a",
+    "tests": [
+      "repeated_same_source_capsules_need_two_distinct_destination_bindings_of_one_logical_mark"
+    ]
+  },
+  "deadpan-core::range_sets": {
+    "path": "/private/tmp/deadpan-range-selectors-2026-10-22/focused-second-core-extracted/target/debug/deps/range_sets-b1a73e3380a4c5d2",
+    "sha256": "6bfef48ab8b4ce09e762035737a2d7ea4a5872464c6e2f7db9c592235c32d303",
+    "tests": [
+      "every_input_is_checked_before_merging_and_no_end_is_clamped",
+      "mixed_component_modes_and_stale_capture_sources_refuse",
+      "native_visual_copy_and_cut_dispatch_matches_explicit_visual_selectors",
+      "nested_scope_uses_absolute_boundaries_and_requires_entry_for_partial_groups",
+      "one_range_keeps_set_authority_and_unsupported_consumers_refuse",
+      "paste_rejects_under_or_overallocated_component_pool_without_publishing_any_member",
+      "range_wire_is_strict_and_forged_captures_cannot_change_shared_recipes_or_scope",
+      "relative_pairs_normalize_once_and_finished_selection_survives_motion",
+      "reverse_cuts_capture_entry_snapshot_and_one_compound_undo_restores_every_frame",
+      "under_or_overallocated_second_cut_discards_private_prior_cut_and_capture"
+    ]
+  }
+}

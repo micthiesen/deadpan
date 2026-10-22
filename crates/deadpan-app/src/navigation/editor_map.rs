@@ -634,7 +634,8 @@ impl Rule {
                 deadpan_core::SemanticSelector::VisualSelection => I::RepeatRange,
                 deadpan_core::SemanticSelector::MarkRange { .. }
                 | deadpan_core::SemanticSelector::Node { .. }
-                | deadpan_core::SemanticSelector::Nodes { .. } => I::RepeatOperator,
+                | deadpan_core::SemanticSelector::Nodes { .. }
+                | deadpan_core::SemanticSelector::Ranges { .. } => I::RepeatOperator,
                 deadpan_core::SemanticSelector::Motion { .. }
                 | deadpan_core::SemanticSelector::TextObject { .. }
                 | deadpan_core::SemanticSelector::Speech { .. } => I::RepeatOperator,
@@ -1035,7 +1036,8 @@ impl Compiled {
                     | deadpan_core::SemanticSelector::Speech { .. }
                     | deadpan_core::SemanticSelector::MarkRange { .. }
                     | deadpan_core::SemanticSelector::Node { .. }
-                    | deadpan_core::SemanticSelector::Nodes { .. } => {
+                    | deadpan_core::SemanticSelector::Nodes { .. }
+                    | deadpan_core::SemanticSelector::Ranges { .. } => {
                         RepeatPendingScope::TextObject
                     }
                 };
@@ -1293,6 +1295,17 @@ fn repeat_description(
         S::VisualSelection => "the selected range".into(),
         S::MarkRange { .. } => "the named-mark range".into(),
         S::Nodes { nodes } => format!("the {}-member node set", nodes.len()),
+        S::Ranges { ranges } => {
+            let pairs = ranges
+                .iter()
+                .map(|range| format!("[{:+}..{:+})", range.start.0, range.end.0))
+                .collect::<Vec<_>>()
+                .join(", ");
+            format!(
+                "the range set ({} relative pairs: {pairs} f from cursor)",
+                ranges.len()
+            )
+        }
         S::Node { node } => format!("node {}", node.as_str()),
         S::TextObject {
             object: deadpan_core::SemanticTextObject::InnerGroup,

@@ -582,7 +582,7 @@ impl DeadpanApp {
         if self.view != View::Sequence
             || self.event_focused()
             || self.sound_focused()
-            || self.edit_range.nodes().is_some()
+            || self.edit_range.has_set()
         {
             return None;
         }
@@ -669,8 +669,8 @@ impl DeadpanApp {
 
     /// Run an AI action with its captured context.
     pub(super) fn ai_action(&mut self, action: AiAction, target: Option<Result<Target, String>>) {
-        if self.edit_range.nodes().is_some() && action != AiAction::Cancel {
-            self.error = Some("AI actions need one pause. Clear the node set first.".into());
+        if self.edit_range.has_set() && action != AiAction::Cancel {
+            self.error = Some("AI actions need one pause. Clear the selection set first.".into());
             return;
         }
         let result = (|| {

@@ -70,6 +70,8 @@ pub mod explicit_node;
 pub mod named_mark_range;
 #[path = "node_sets.rs"]
 pub mod node_sets;
+#[path = "range_sets.rs"]
+pub mod range_sets;
 
 #[path = "fixed_retime_output_sound.rs"]
 pub mod fixed_retime_output_sound;

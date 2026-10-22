@@ -44,6 +44,7 @@ pub(super) fn run(name: &str, d: &mut Driver<'_>) -> Result<(), String> {
         "named-registers" => super::registers::run(d),
         "dot-repeat" => super::semantic::run(d),
         "node-set-selectors" => super::semantic::node_sets::run(d),
+        "range-set-selectors" => super::semantic::range_sets::run(d),
         "explicit-node-selectors" => super::semantic::explicit_nodes::run(d),
         "named-mark-selectors" => super::semantic::named_marks::run(d),
         "creative-dot" => super::creative_dot::run(d),

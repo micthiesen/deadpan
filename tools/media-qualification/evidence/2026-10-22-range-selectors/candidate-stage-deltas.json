@@ -1,0 +1,44 @@
+{
+  "focused-first to focused-second": {
+    "added": [],
+    "removed": [],
+    "changed": [
+      "crates/deadpan-core/src/semantic/planner.rs",
+      "crates/deadpan-core/tests/range_sets.rs"
+    ],
+    "inputs_equal": true
+  },
+  "focused-second to focused-third": {
+    "added": [
+      "crates/deadpan-app/src/project/service/macros/tests.rs"
+    ],
+    "removed": [],
+    "changed": [
+      "crates/deadpan-app/src/preview/copied.rs",
+      "crates/deadpan-app/src/preview/harness/semantic/range_sets.rs",
+      "crates/deadpan-app/src/preview/splice.rs",
+      "crates/deadpan-app/src/project/service/macros.rs"
+    ],
+    "inputs_equal": true
+  },
+  "focused-third to debug-third": {
+    "added": [],
+    "removed": [],
+    "changed": [],
+    "inputs_equal": true
+  },
+  "debug-third to debug-fourth": {
+    "added": [],
+    "removed": [],
+    "changed": [
+      "crates/deadpan-app/src/preview/harness/semantic/range_sets.rs"
+    ],
+    "inputs_equal": true
+  },
+  "debug-fourth to lint-final": {
+    "added": [],
+    "removed": [],
+    "changed": [],
+    "inputs_equal": true
+  }
+}

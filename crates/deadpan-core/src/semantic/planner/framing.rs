@@ -131,8 +131,10 @@ where
             Some(SemanticVisualSelection::Node { node }) => Some(
                 crate::semantic::node::resolve_in_scope(&self.current, &self.context, node)?.range,
             ),
-            Some(SemanticVisualSelection::Nodes { .. }) => {
-                return Err(unavailable("framing does not accept a whole-node set"));
+            Some(
+                SemanticVisualSelection::Nodes { .. } | SemanticVisualSelection::Ranges { .. },
+            ) => {
+                return Err(unavailable("framing does not accept a discontiguous set"));
             }
             None => None,
         };

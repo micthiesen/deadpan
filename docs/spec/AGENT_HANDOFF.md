@@ -4,6 +4,42 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Current continuation, 2026-10-22
 
+Discontiguous interval sets now join whole-node unions in the existing EditedSet
+register. `:select ranges=[{"start":2,"end":6},{"start":10,"end":14}]`
+resolves signed offsets once from the captured Edit cursor, validates all inputs,
+and merges overlaps or touching endpoints. Finished geometry retains separate
+absolute intervals without a hull. Recorded selection keeps the original pairs;
+named calls re-resolve them, while Visual Cut dot requires a newly selected set.
+One entry snapshot precedes reverse-order deletions in one Compound. Component
+identity pools and one logical mark pool retain all destination bindings when
+disjoint windows share a Source. Whole-node duplicate/ancestor rules stay strict.
+Partial endpoints keep existing Source/Hold/fragment limits; enter Groups before
+slicing their interiors. Unsupported consumers and Place slice refuse sets.
+
+All 106 focused, 4,596 broader and 1,281 complete UI-feature cases pass. Strict
+checks and formatting pass. Both release native modes pass 85 checks plus
+Kestrel; the compact three-range inspector was inspected. Quiet input-to-state
+p99 is 2.265ms over 79 samples. Release export verifies 30 pictures and the full
+48,048-sample canonical audio window at zero offset. The safely extracted
+nine-file owner project validates and passes doctor. See the
+[qualification](../qualification/discontiguous-range-selectors-2026-10-22.md)
+for failed candidates, exact source identities, warnings and audio limits.
+No requirement or gate is newly complete. Formats remain SQLite 84/core 55.
+
+Next: corrected transcript-search-result selectors. Pin proposal bytes and
+correction state inside the same publication transaction, including register-only
+Yank; a document revision cannot prove analysis freshness. Native entry and
+completion must retain the displayed analysis identity and its absence. Use the
+canonical plan walker with provider/leaf/gap provenance to prove full forward
+phrase coverage, including continuous split seams, sub-picture words and exact
+Original clocks. Picture-word navigation alone is not a complete phrase oracle.
+Read-only design notes are `/tmp/deadpan-range-selectors-2026-10-22/next-*`;
+they are not implementation or verification evidence. Qualify public controls
+against the completed interval baseline before adding the new wire. Remaining
+temporal families, sound owners, mastering, renderer and workflows remain open.
+
+## Discontiguous whole-node checkpoint, 2026-10-22
+
 Discontiguous whole authored nodes now use one genuine EditedSet register.
 `:select nodes=["id-a","id-b"]` resolves 1 through 64 distinct identities in
 canonical structural order beneath ordinary Sequences, including empty siblings
@@ -25,22 +61,8 @@ nine-file owner fixture validates and passes doctor. See the
 for failed candidates, audits, layout warnings, timing and audio limits.
 No requirement or gate is newly complete. Current formats are SQLite 84/core 55.
 
-Next: explicit arbitrary range sets, then transcript-search-result selectors.
-Use closed range components in the existing union, with component-qualified
-identities and mark remapping when disjoint windows share one original owner.
-Do not relax the whole-node duplicate/ancestor rules. Dot must retain semantic
-intent instead of resolved absolute endpoints; existing Visual cuts require a
-new Visual selection. Confirm the range intent and native recording contract
-before admitting it. Corrected transcript queries also require proposal identity
-and correction-version guards inside the publication transaction, beyond the
-document revision. Remaining temporal families, sound owners, mastering,
-renderer and complete workflows remain required.
-
-Draft public controls are in /tmp/deadpan-range-selectors-2026-10-22, with
-read-only design notes in the discontiguous checkpoint scratch directory.
-They are uncompiled and unexecuted, and their final range wire is tentative.
-Qualify them against the committed union baseline before production range
-admission. Keep the existing compact Nextest archive procedure and time limits.
+The interval continuation and its committed-baseline public controls are
+qualified above. Keep the compact Nextest archive procedure and time limits.
 
 ## Whole authored-node checkpoint, 2026-10-22
 

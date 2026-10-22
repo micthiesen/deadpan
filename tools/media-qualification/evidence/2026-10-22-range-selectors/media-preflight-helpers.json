@@ -1,0 +1,18 @@
+{
+  "deadpan-cli": {
+    "path": "/tmp/deadpan-range-selectors-2026-10-22/media-preflight-extracted/target/debug/deadpan-cli",
+    "sha256": "f58f2bee56477bc86df3dbfcd23b2d842dd4b99eb27f5a0edf7e430f61c87afe"
+  },
+  "deadpan-media-worker": {
+    "path": "/tmp/deadpan-range-selectors-2026-10-22/media-preflight-extracted/target/debug/deadpan-media-worker",
+    "sha256": "786672d36a58e024be1acb18f353c350c06a7c83dd88c84369e69a9512a13c5d"
+  },
+  "deadpan-transcribe": {
+    "path": "/tmp/deadpan-range-selectors-2026-10-22/media-preflight-extracted/target/debug/deadpan-transcribe",
+    "sha256": "473b69ac2024d691236637017ebea298a08e0f88de2ff3801a948bf866f71362"
+  },
+  "deadpan-track": {
+    "path": "/tmp/deadpan-range-selectors-2026-10-22/media-preflight-extracted/target/debug/deadpan-track",
+    "sha256": "18861c06d2d468b4e161c2b99110ffc1d5ea99a926e1685d5893437583760244"
+  }
+}

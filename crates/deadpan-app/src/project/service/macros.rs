@@ -14,6 +14,9 @@ use crate::project::macros::{Id, Operation, Outcome, Receipt, Update};
 use crate::project::registers::{Bank, Value};
 use crate::project::slice::{Captured, CopyId};
 
+#[cfg(test)]
+mod tests;
+
 fn scoped_macro_target(
     workspace: &Workspace,
     id: &Id,
@@ -1017,28 +1020,35 @@ fn prepare_runtime_bank(
             let trace = plan.trace.iter().find(|trace| {
                 trace.capture_set.as_ref().is_some_and(|capture| {
                     &capture.parent == set.scope() && &capture.timing == set.capture_timing()
+                        && capture.bounds == trace.before_scope
                 }) && &trace.before_revision == set.revision_id()
-                    && trace.resolved_nodes.len() == set.components().len()
+                    && &trace.before.parent == set.scope()
+                    && trace.capture.is_none()
+                    && trace.resolved_range.is_none()
+                    && trace.resolved_parent.is_none()
+                    && trace.resolved_selection.is_none()
+                    && trace.removed_range.is_none()
+                    && trace.captured_child_label.is_none()
                     && trace.resolved_ranges == set.components().iter().map(|component|component.range()).collect::<Vec<_>>()
-                    && trace.resolved_nodes.iter().zip(set.components()).all(|(member, component)| {
-                        component.parent() == &member.parent && component.range() == member.range
-                            && matches!(component.selection(), SliceCaptureSelection::Child { node } if node == &member.node)
-                    })
-            }).ok_or("Macro node-union copy has no matching staged capture provenance")?;
-            if set.project_id() != &id.project
-                || trace.resolved_range.is_some()
-                || trace.resolved_parent.is_some()
-                || trace.resolved_selection.is_some()
-            {
-                return Err(
-                    "Macro node-union copy has invalid project or single-range provenance".into(),
-                );
+                    && (
+                        (trace.resolved_nodes.len() == set.components().len()
+                            && trace.resolved_nodes.iter().zip(set.components()).all(|(member, component)| {
+                                component.parent() == &member.parent && component.range() == member.range
+                                    && matches!(component.selection(), SliceCaptureSelection::Child { node } if node == &member.node)
+                            }))
+                        || (trace.resolved_nodes.is_empty()
+                            && set.components().iter().all(|component| component.parent() == set.scope()
+                                && matches!(component.selection(), SliceCaptureSelection::Range { range } if *range == component.range())))
+                    )
+            }).ok_or("Macro edited-union copy has no matching staged capture provenance")?;
+            if set.project_id() != &id.project {
+                return Err("Macro edited-union copy has invalid project provenance".into());
             }
             SequenceScope::from_staged_capture(
                 trace
                     .capture_set
                     .as_ref()
-                    .ok_or("Missing node-union capture scope")?,
+                    .ok_or("Missing edited-union capture scope")?,
             )?;
             Value::EditedSet(set.clone())
         } else {

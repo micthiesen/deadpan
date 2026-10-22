@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/tmp/deadpan-range-selectors-2026-10-22/release-bin/deadpan-app",
+    "--ui-check",
+    "--scenario",
+    "range-set-selectors",
+    "--mode",
+    "performance",
+    "--output",
+    "/tmp/deadpan-range-selectors-2026-10-22/release-performance",
+    "--kestrel-source",
+    "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+  ],
+  "exit": 0,
+  "seconds": 13.272245832718909
+}

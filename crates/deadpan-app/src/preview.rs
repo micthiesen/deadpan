@@ -3342,6 +3342,9 @@ impl DeadpanApp {
                 self.set_gag(macro_target, &parameters)
             }
             Ok(navigation::command::Entry::SelectRole(role)) => self.select_role(role),
+            Ok(navigation::command::Entry::SelectRanges { ranges }) => {
+                self.select_explicit_ranges(macro_target, ranges)
+            }
             Ok(navigation::command::Entry::SelectNodes { nodes }) => {
                 self.select_explicit_nodes(macro_target, nodes)
             }
@@ -4058,7 +4061,7 @@ impl DeadpanApp {
                         self.add_editor_hint(&mut hints, EditorKey::MacroExecute, "+ letter: run macro");
                         hints.push((":scope".into(), "all / play N / plays 2-3".into()));
                         self.add_editor_hint(&mut hints, EditorKey::Undo, "undo");
-                    } else if self.view == View::Sequence && self.edit_range.nodes().is_some() {
+                    } else if self.view == View::Sequence && self.edit_range.has_set() {
                         hints.tier(key_labels::Tier::Core);
                         self.add_editor_hint(&mut hints, EditorKey::Copy, "copy union");
                         self.add_editor_hint(&mut hints, EditorKey::CutRange, "cut union");
@@ -4116,7 +4119,7 @@ impl DeadpanApp {
                         self.add_editor_hint(&mut hints, EditorKey::Command, "command");
                         if self.pane != Pane::Sources && let Some(label) = self.repeat_hint() { self.add_editor_hint(&mut hints, EditorKey::RepeatLast, &label); }
                         self.add_editor_hint(&mut hints, EditorKey::Copy, if self.copied.is_pending() { "copy pending…" } else if selection == navigation::EditSelection::None { "copy beat" } else if selection == navigation::EditSelection::Object { "copy object" } else { "copy range" });
-                        if self.copied.selected_content().is_some() { self.add_editor_pair_hint(&mut hints, EditorKey::PasteAfter, EditorKey::PasteBefore, " / ", if self.edit_range.nodes().is_some() { "clear set before paste" } else if selection == navigation::EditSelection::Object { "replace object" } else if self.selected_edit_range().is_some() { "replace range" } else { "paste after / before" }); }
+                        if self.copied.selected_content().is_some() { self.add_editor_pair_hint(&mut hints, EditorKey::PasteAfter, EditorKey::PasteBefore, " / ", if self.edit_range.has_set() { "clear set before paste" } else if selection == navigation::EditSelection::Object { "replace object" } else if self.selected_edit_range().is_some() { "replace range" } else { "paste after / before" }); }
                         hints.tier(key_labels::Tier::Context);
                         if self.selected_group() { self.add_editor_hint(&mut hints, EditorKey::EnterGroup, "open group"); }
                         if self.selected_repeat() { self.add_editor_pair_hint(&mut hints, EditorKey::PlayNext, EditorKey::PlayPrevious, " ", "open a play"); }
@@ -4532,7 +4535,7 @@ impl DeadpanApp {
                 None
             };
             let analysis = self.edit_analysis_marks();
-            let markers = cards::Markers { cursor: marker, frame: self.sequence_cursor, range: self.selected_edit_range().map(|range| range.start().0 as u64..range.end().0 as u64), members: self.selected_node_set().ok().flatten().map_or_else(Vec::new, |set|set.members), analysis };
+            let markers = cards::Markers { cursor: marker, frame: self.sequence_cursor, range: self.selected_edit_range().map(|range| range.start().0 as u64..range.end().0 as u64), members: self.selected_node_set().ok().flatten().map_or_else(Vec::new, |set|set.members), ranges: self.selected_range_set().ok().flatten().map_or_else(Vec::new, |set|set.ranges), analysis };
             let reveal = std::mem::take(&mut self.reveal_beat);
             let identity = self.workspace.as_ref().map(|workspace| (workspace.session, workspace.document.revision_id().clone()));
             let thumbnails = &mut self.thumbnails;
@@ -4597,6 +4600,39 @@ impl DeadpanApp {
             return None;
         }
         let workspace = self.workspace.as_ref()?;
+        if let Some(target) = self.selected_range_set().ok().flatten() {
+            let mut fields = vec![(
+                "Scope",
+                self.sequence_scope
+                    .resolve(workspace)
+                    .ok()?
+                    .owner
+                    .as_str()
+                    .to_owned(),
+            )];
+            for (index, range) in target.ranges.iter().enumerate() {
+                fields.push((
+                    "Selected range",
+                    format!(
+                        "Range {}\nEdit [{}..{}) · {} f",
+                        index + 1,
+                        range.start().0,
+                        range.end().0,
+                        range.duration().frames()
+                    ),
+                ));
+            }
+            return Some(inspector::Inspector {
+                label: format!("{} selected ranges", target.ranges.len()),
+                kind: "Range set",
+                glyph: "[]",
+                duration: format!("{} f selected", target.total_duration.frames()),
+                range: "Separate half-open Edit ranges".into(),
+                fields,
+                parameter: None,
+                note: "y copies one union; d cuts all ranges atomically. Clear the set before choosing an insertion seam for p/P. A repeated Visual cut needs a new selection.",
+            });
+        }
         if let Some(target) = self.selected_node_set().ok().flatten() {
             let mut fields = vec![(
                 "Scope",
@@ -4879,7 +4915,7 @@ impl DeadpanApp {
                             });
                         });
                         ui.add_space(8.0);
-                        if data.kind == "Node set" {
+                        if matches!(data.kind, "Node set" | "Range set") {
                             ui.add(egui::Label::new(format!("{} · {}", data.duration, self.beat_scope_label())).wrap());
                             ui.add(egui::Label::new(data.range.as_str()).wrap());
                             for (label, value) in &data.fields {

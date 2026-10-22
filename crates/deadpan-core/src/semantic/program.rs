@@ -125,6 +125,10 @@ pub enum SemanticSelector {
         #[serde(deserialize_with = "super::node_set::deserialize_nodes")]
         nodes: Vec<NodeId>,
     },
+    Ranges {
+        #[serde(deserialize_with = "super::range_set::deserialize_offsets")]
+        ranges: Vec<super::SemanticRangeOffsets>,
+    },
     /// Two named Edit boundaries, resolved anew against the staged revision.
     MarkRange {
         start: NamedMarkTarget,
@@ -153,6 +157,7 @@ impl SemanticSelector {
             | Self::TextObject { .. }
             | Self::Node { .. }
             | Self::Nodes { .. }
+            | Self::Ranges { .. }
             | Self::MarkRange { .. } => false,
         }
     }
@@ -216,6 +221,10 @@ pub enum SemanticInstruction {
     SelectNodes {
         #[serde(deserialize_with = "super::node_set::deserialize_nodes")]
         nodes: Vec<NodeId>,
+    },
+    SelectRanges {
+        #[serde(deserialize_with = "super::range_set::deserialize_offsets")]
+        ranges: Vec<super::SemanticRangeOffsets>,
     },
     #[serde(deserialize_with = "deserialize_empty")]
     BeginSelection,
@@ -756,6 +765,9 @@ impl SemanticProgram {
                 SemanticInstruction::SelectNodes { nodes } => {
                     super::node_set::validate_nodes(nodes)?
                 }
+                SemanticInstruction::SelectRanges { ranges } => {
+                    super::range_set::validate_offsets(ranges)?
+                }
                 SemanticInstruction::Yank { selector, .. }
                 | SemanticInstruction::Cut { selector, .. }
                 | SemanticInstruction::Group { selector, .. }
@@ -763,6 +775,9 @@ impl SemanticProgram {
                 | SemanticInstruction::Repeat { selector, .. } => {
                     if let SemanticSelector::Nodes { nodes } = selector {
                         super::node_set::validate_nodes(nodes)?;
+                    }
+                    if let SemanticSelector::Ranges { ranges } = selector {
+                        super::range_set::validate_offsets(ranges)?;
                     }
                 }
                 _ => {}

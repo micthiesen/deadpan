@@ -1,0 +1,11 @@
+{
+  "from": "focused-first",
+  "to": "focused-second",
+  "rust_paths": 1999,
+  "changed": [
+    "crates/deadpan-core/src/semantic/planner.rs",
+    "crates/deadpan-core/tests/range_sets.rs"
+  ],
+  "six_inputs_unchanged": true,
+  "change": "Active-set whitelist admits the two native Visual copy/cut variants; regression compares generic and native dispatch. No other Rust changes."
+}

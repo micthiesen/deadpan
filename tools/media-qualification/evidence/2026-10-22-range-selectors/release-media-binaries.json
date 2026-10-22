@@ -1,0 +1,9 @@
+{
+  "deadpan-cli::preview_export": {
+    "path": "/private/tmp/deadpan-range-selectors-2026-10-22/release-media-extracted/target/release/deps/preview_export-633f4b90e83a29ac",
+    "sha256": "1dcc60b462f4829a0a92fcfb1f791d9fc65aa945e3f1b363486a1088ca7cceba",
+    "tests": [
+      "range_sets_export_preserves_same_source_windows_and_complete_audio"
+    ]
+  }
+}

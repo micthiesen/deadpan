@@ -1,0 +1,62 @@
+{
+  "status": "draft_only_not_compiled_or_executed",
+  "source_observations": [
+    {
+      "path": "crates/deadpan-core/src/edit_slice.rs",
+      "sha256": "7762a1c5862829a9d3c0ae4d8f2e08575ead933251e394b2023eebe0c51abb00",
+      "bytes": 39549
+    },
+    {
+      "path": "crates/deadpan-core/src/edit_slice/set.rs",
+      "sha256": "5e1ae84d7241fc7b373ee53366d9ad5f2b574069b5cca8eb46150f37532a5540",
+      "bytes": 17373
+    },
+    {
+      "path": "crates/deadpan-core/src/edit_slice/rename.rs",
+      "sha256": "97c8b4f4af2f53d247217830ae43df438a121891eaf00b46fd4e9959575e3b45",
+      "bytes": 38535
+    },
+    {
+      "path": "crates/deadpan-core/src/marks.rs",
+      "sha256": "03fd1c3b88c7c0259180efa95c14eaf3112bf195cf5e5969dbf19cadab4fe9ce",
+      "bytes": 47368
+    },
+    {
+      "path": "crates/deadpan-core/src/semantic/program.rs",
+      "sha256": "9796e4f95c3c63a80dece5f5a0a5b937039e41a11e6d53cc671990d001a26501",
+      "bytes": 33594
+    },
+    {
+      "path": "crates/deadpan-core/tests/node_set_counterfactual.rs",
+      "sha256": "a864f44a6a680c94f3f0532ad0610c51cc81073fe2dcd0322f9cf2f213e646e5",
+      "bytes": 25477
+    },
+    {
+      "path": "crates/deadpan-core/tests/node_set_shared_mark.rs",
+      "sha256": "e8b9a633b9ee8bae59275aec22df50af83261d8c1b47a49d7991845acc3b27e1",
+      "bytes": 16614
+    },
+    {
+      "path": "crates/deadpan-core/tests/edit_set.rs",
+      "sha256": "d5ab0aae925d64290c7219cdd446ff1df51bed465015fb382ab3e415c000853a",
+      "bytes": 12597
+    }
+  ],
+  "controls": [
+    {
+      "path": "range_set_fixture.rs",
+      "sha256": "414afa373d341484ad7d8eab3a4c4c12a8ccc7058a81820545a2cc4c3b424f20",
+      "bytes": 8712
+    },
+    {
+      "path": "range_set_counterfactual.rs",
+      "sha256": "8026935084a6b725e47568509976e2ea7bf0666ea4337b6d9e31a18bc11dfdc0",
+      "bytes": 5663
+    },
+    {
+      "path": "range_set_shared_mark.rs",
+      "sha256": "1727506a01c1f4fc3e435e009699d0e0f115580a9295ad1426208a63a8265d96",
+      "bytes": 3274
+    }
+  ]
+}

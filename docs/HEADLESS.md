@@ -106,8 +106,16 @@ member and the common invocation scope; single-range fields stay absent.
 `macro inspect` reports `edited_set` with all component selections and ranges.
 See [whole-node sets](SEMANTIC_MACROS.md#discontiguous-whole-node-sets) for
 authority, shared-mark and unsupported-consumer rules.
-Still missing against spec section 6.2: transcript-search-result selectors and
-arbitrary discontiguous interval sets. Macro selectors are
+`Ranges { ranges: [{ start, end }, ...] }` and `SelectRanges { ranges }` use
+signed frame offsets from the invocation's Edit cursor. They admit 1 through
+64 positive half-open inputs, reject invalid or out-of-scope members, and
+normalize duplicates, overlaps and touching intervals to one exact union.
+The finished Visual stores canonical absolute ranges independently of later
+cursor movement. Yank and Cut retain one historical `EditedSet`; scalar
+consumers refuse rather than using a gap-spanning envelope. See
+[interval sets](SEMANTIC_MACROS.md#discontiguous-interval-sets).
+Still missing against spec section 6.2: transcript-search-result selectors.
+Macro selectors are
 `SemanticSelector` in `crates/deadpan-core/src/semantic/program.rs`;
 `resolve-selection` also resolves mark and mark_range selectors read-only.
 

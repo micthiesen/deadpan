@@ -1,4 +1,4 @@
-//! One immutable, source-validated collection of whole authored children.
+//! One immutable, source-validated union of authored children or Edit intervals.
 
 mod placement;
 pub(crate) use placement::apply;
@@ -78,7 +78,7 @@ fn bounded_components<'de, D: Deserializer<'de>>(
     impl<'de> serde::de::Visitor<'de> for Components {
         type Value = Vec<CapturedEditSlice>;
         fn expecting(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-            formatter.write_str("1..=64 whole-child capture components")
+            formatter.write_str("1..=64 owned capture components")
         }
         fn visit_seq<A: serde::de::SeqAccess<'de>>(
             self,
@@ -103,6 +103,76 @@ fn bounded_components<'de, D: Deserializer<'de>>(
 }
 
 impl CapturedEditSet {
+    /// Capture separated positive intervals from one immutable ordinary Edit
+    /// scope. Each capsule owns its complete recipe and independent window.
+    pub fn capture_ranges(
+        document: &ProjectDocument,
+        scope: &NodeId,
+        ranges: &[FrameRange],
+        timing: AudioTimingId,
+    ) -> Result<Self, EditError> {
+        document.validate()?;
+        document.source_splice_boundary(scope, 0)?;
+        if ranges.is_empty() || ranges.len() > MAX_EDIT_SET_COMPONENTS {
+            return Err(limit("edit set requires 1..=64 components"));
+        }
+        let mut components = Vec::with_capacity(ranges.len());
+        let mut marks: BTreeMap<MarkId, Mark> = BTreeMap::new();
+        let mut previous_end = None;
+        for (index, range) in ranges.iter().enumerate() {
+            if range.start() >= range.end() || previous_end.is_some_and(|end| end >= range.start())
+            {
+                return Err(invalid(
+                    "edit set ranges must be positive, separated and canonical",
+                ));
+            }
+            previous_end = Some(range.end());
+            let ordinal = u32::try_from(index)
+                .ok()
+                .and_then(|index| timing.ordinal.checked_add(index))
+                .ok_or_else(|| limit("edit set capture timing ordinal overflow"))?;
+            let component = CapturedEditSlice::capture(
+                document,
+                scope,
+                *range,
+                AudioTimingId {
+                    allocation: timing.allocation.clone(),
+                    ordinal,
+                },
+            )?;
+            // Capture separately: one owner may occur with different selected
+            // mappings, so an owner-to-single-part lookup across the union
+            // would silently discard windows.
+            for (id, mark) in &component.0.marks {
+                if let Some(existing) = marks.get_mut(id) {
+                    if existing.label != mark.label
+                        || existing.boundary.bias != mark.boundary.bias
+                        || existing.loss_policy != mark.loss_policy
+                    {
+                        return Err(invalid("edit set logical mark policies differ"));
+                    }
+                    let mut bindings = existing.bindings().collect::<Vec<_>>();
+                    for binding in mark.bindings() {
+                        if !bindings.contains(&binding) {
+                            bindings.push(binding);
+                        }
+                    }
+                    *existing = existing
+                        .with_bindings(bindings)
+                        .ok_or_else(|| invalid("empty edit set logical mark"))?;
+                } else {
+                    marks.insert(id.clone(), mark.clone());
+                }
+            }
+            components.push(component);
+        }
+        Self::from_wire(SetWire {
+            scope: scope.clone(),
+            components,
+            marks,
+        })
+    }
+
     /// Capture canonical structural order beneath one ordinary navigation
     /// scope. IDs must be distinct, non-overlapping whole descendants.
     pub fn capture(
@@ -170,12 +240,32 @@ impl CapturedEditSet {
                 "edit set capture source is another revision",
             ));
         }
+        if matches!(
+            self.components()[0].selection(),
+            SliceCaptureSelection::Range { .. }
+        ) {
+            let ranges = self
+                .components()
+                .iter()
+                .map(CapturedEditSlice::range)
+                .collect::<Vec<_>>();
+            let captured =
+                Self::capture_ranges(source, self.scope(), &ranges, self.capture_timing().clone())?;
+            if captured != *self {
+                return Err(invalid(
+                    "edit set payload differs from its immutable captured ranges",
+                ));
+            }
+            return Ok(());
+        }
         let nodes = self
             .components()
             .iter()
             .map(|component| match component.selection() {
                 SliceCaptureSelection::Child { node } => node.clone(),
-                _ => unreachable!("closed set admits only whole children"),
+                _ => unreachable!(
+                    "range sets handled above; closed structural sets admit whole children"
+                ),
             })
             .collect::<Vec<_>>();
         let captured = Self::capture(source, self.scope(), &nodes, self.capture_timing().clone())?;
@@ -272,18 +362,32 @@ impl CapturedEditSet {
             return Err(limit("edit set requires 1..=64 components"));
         }
         let first = &wire.components[0];
+        let range_mode = matches!(first.selection(), SliceCaptureSelection::Range { .. });
         let mut duration = 0i64;
-        let mut nodes = BTreeSet::new();
+        let mut nodes = BTreeMap::new();
+        let mut sounds = BTreeMap::new();
+        let mut overrides = BTreeMap::new();
+        let mut gap_overrides = BTreeMap::new();
+        let mut lineage = BTreeMap::new();
+        let mut historical_timings = BTreeMap::new();
         let mut assets = BTreeMap::new();
         let mut targets = BTreeMap::new();
         let mut interpretations = BTreeMap::new();
         let mut previous_end = None;
         for (index, component) in wire.components.iter().enumerate() {
             component.validate()?;
-            if !matches!(component.selection(), SliceCaptureSelection::Child { .. })
-                || !component.attachments().is_owned()
+            if !component.attachments().is_owned()
+                || if range_mode {
+                    !matches!(component.selection(), SliceCaptureSelection::Range { .. })
+                        || component.parent() != &wire.scope
+                        || component.duration() == FrameDuration::ZERO
+                } else {
+                    !matches!(component.selection(), SliceCaptureSelection::Child { .. })
+                }
             {
-                return Err(invalid("edit set requires whole-child owned components"));
+                return Err(invalid(
+                    "edit set requires all whole-child or all same-scope positive range owned components",
+                ));
             }
             let ordinal = u32::try_from(index)
                 .ok()
@@ -300,18 +404,49 @@ impl CapturedEditSet {
                     "edit set components do not share one capture snapshot and timing allocation",
                 ));
             }
-            if previous_end.is_some_and(|end| end > component.range().start()) {
+            if previous_end.is_some_and(|end| {
+                end > component.range().start() || (range_mode && end == component.range().start())
+            }) {
                 return Err(invalid("edit set component ranges overlap or are reversed"));
             }
             previous_end = Some(component.range().end());
             duration = duration
                 .checked_add(component.duration().frames())
                 .ok_or_else(overflow)?;
-            for id in component.0.nodes.keys() {
-                if !nodes.insert(id.clone()) {
+            for (id, node) in &component.0.nodes {
+                if nodes.contains_key(id) && !range_mode {
                     return Err(invalid("edit set components overlap an authored subtree"));
                 }
+                if nodes.get(id).is_some_and(|previous| previous != node) {
+                    return Err(invalid("edit set captured authored recipe conflict"));
+                }
+                nodes.insert(id.clone(), node.clone());
             }
+            merge_equal(
+                &mut sounds,
+                &component.0.beat_sounds,
+                "edit set captured sound conflict",
+            )?;
+            merge_equal(
+                &mut overrides,
+                &component.0.overrides,
+                "edit set captured override conflict",
+            )?;
+            merge_equal(
+                &mut gap_overrides,
+                &component.0.gap_overrides,
+                "edit set captured gap override conflict",
+            )?;
+            merge_equal(
+                &mut lineage,
+                &component.0.audio_lineage,
+                "edit set captured lineage conflict",
+            )?;
+            merge_equal(
+                &mut historical_timings,
+                &component.0.audio_bindings.timings,
+                "edit set captured historical timing conflict",
+            )?;
             merge_equal(
                 &mut assets,
                 &component.0.assets,
@@ -329,11 +464,11 @@ impl CapturedEditSet {
             )?;
         }
         if nodes.len() > MAX_DOCUMENT_NODES
-            || nodes.contains(&wire.scope)
+            || nodes.contains_key(&wire.scope)
             || wire
                 .components
                 .iter()
-                .any(|component| nodes.contains(component.parent()))
+                .any(|component| nodes.contains_key(component.parent()))
         {
             return Err(invalid(
                 "edit set scope or a component parent lies inside its selected forest",
@@ -394,16 +529,14 @@ fn validate_marks(wire: &SetWire) -> Result<(), EditError> {
         ));
     }
     for (id, mark) in &wire.marks {
-        let bindings = &component_marks[id];
+        let mut bindings = Vec::new();
+        for binding in &component_marks[id] {
+            if !bindings.contains(binding) {
+                bindings.push(binding.clone());
+            }
+        }
         let union = mark.bindings().collect::<Vec<_>>();
-        if union.len() != bindings.len()
-            || union.iter().any(|binding| {
-                bindings
-                    .iter()
-                    .filter(|candidate| *candidate == binding)
-                    .count()
-                    != 1
-            })
+        if union.len() != bindings.len() || union.iter().any(|binding| !bindings.contains(binding))
         {
             return Err(EditError::new(
                 EditErrorCode::SelectionUnavailable,

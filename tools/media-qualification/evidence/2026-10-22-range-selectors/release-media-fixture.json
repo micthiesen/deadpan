@@ -1,0 +1,34 @@
+{
+  "audio_windows": 1,
+  "blocks_compared": 1,
+  "declared_audio_priming": 2048,
+  "failures": [],
+  "fixture": "range-sets",
+  "frames": 30,
+  "max_block_level_db": 0.0010659656090901137,
+  "max_thumbnail_mad": 0.05022078804347826,
+  "min_block_snr_db": 61.120697877121415,
+  "min_chroma_psnr_db": 53.44486901527713,
+  "min_luma_psnr_db": 56.454656378842394,
+  "min_neighbor_margin_db": 32.345096666906215,
+  "movie": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpaFkPYX/exports/range-sets.mp4",
+  "notes": [
+    "Qualified Original cfr-bframes.mp4 A/V at 30000/1001. One macro resolves cursor-relative reversed and overlapping inputs to exact Edit [2,6), [10,14), [18,22) windows of the same retained Source context. One frozen 12f capture, descending partial deletions and paste at the ending seam preserve the other 18f. One Undo/Redo and reopened historical captures pass. All 30 pictures use a literal independent Original-ordinal oracle. Encoded audio compares the complete canonical preview bus; this is not an independent PCM or listening claim."
+  ],
+  "offsets": [
+    [
+      "verified_zero",
+      0
+    ]
+  ],
+  "package": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpaFkPYX/fixture/range-sets.deadpan",
+  "passed": true,
+  "pictures": 30,
+  "render_seconds": 1.229336875,
+  "revision": "9336ad9c-5cb3-4ec3-95fa-f8903259a952",
+  "rows": [
+    "Discontiguous interval union"
+  ],
+  "signal_windows": 1,
+  "verify_seconds": 0.352466958
+}

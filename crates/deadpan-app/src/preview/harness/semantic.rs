@@ -11,6 +11,7 @@ use egui::{Event, Key, Modifiers};
 pub(super) mod explicit_nodes;
 pub(super) mod named_marks;
 pub(super) mod node_sets;
+pub(super) mod range_sets;
 mod selectors;
 
 pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {

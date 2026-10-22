@@ -244,8 +244,7 @@ impl DeadpanApp {
     }
 
     fn selected_playback_range(&self) -> Option<std::ops::Range<u64>> {
-        if self.view == View::Sequence && self.edit_range.nodes().is_some() && !self.sound_focused()
-        {
+        if self.view == View::Sequence && self.edit_range.has_set() && !self.sound_focused() {
             return None;
         }
         if self.view == View::Sequence && self.scoped.is_some() && !self.sound_focused() {
@@ -282,10 +281,17 @@ impl DeadpanApp {
         };
         if selected
             && self.view == View::Sequence
-            && self.edit_range.nodes().is_some()
+            && self.edit_range.has_set()
             && !self.sound_focused()
         {
-            self.error = Some("Looping a node set is not supported. Clear the set before choosing a playback range.".into());
+            self.error = Some(format!(
+                "Looping a {} set is not supported. Clear the set before choosing a playback range.",
+                if self.edit_range.ranges().is_some() {
+                    "range"
+                } else {
+                    "node"
+                }
+            ));
             return;
         }
         // An open dialog owns input visibly. Playback of a revision that a

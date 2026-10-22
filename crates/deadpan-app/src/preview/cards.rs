@@ -66,6 +66,8 @@ pub(super) struct Markers {
     pub range: Option<std::ops::Range<u64>>,
     /// Individual structural selections; never their outer envelope.
     pub members: Vec<deadpan_core::SemanticNodeSetMember>,
+    /// Canonical disjoint time ranges; no outer envelope is selected.
+    pub ranges: Vec<deadpan_core::FrameRange>,
     /// Pause bands and shot starts on the Edit clock, sorted.
     pub analysis: std::sync::Arc<super::transcript::AnalysisMarks>,
 }
@@ -159,6 +161,12 @@ pub(super) fn strip(
                 .range
                 .iter()
                 .map(|range| (range.clone(), None))
+                .chain(
+                    markers
+                        .ranges
+                        .iter()
+                        .map(|range| ((range.start().0 as u64)..(range.end().0 as u64), None)),
+                )
                 .chain(
                     markers
                         .members

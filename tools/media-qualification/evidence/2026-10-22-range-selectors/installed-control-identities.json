@@ -1,0 +1,9 @@
+{
+  "drafts_unexecuted": true,
+  "change": "module path only for fixture subdirectory",
+  "files": {
+    "crates/deadpan-core/tests/range_set_counterfactual.rs": "34767139f3271ff707feec92348145958bbe25e363f0df557776e5b8cf101b09",
+    "crates/deadpan-core/tests/range_set_shared_mark.rs": "dd1d63f24b9debb9cffdc0b4de458d6c1173e04fb7c20e7e9c69dde0fda37299",
+    "crates/deadpan-core/tests/range_set/fixture.rs": "414afa373d341484ad7d8eab3a4c4c12a8ccc7058a81820545a2cc4c3b424f20"
+  }
+}

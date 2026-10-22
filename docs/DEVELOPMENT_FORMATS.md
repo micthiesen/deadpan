@@ -31,6 +31,10 @@ Schemas 78 through 83 extend effect sends, audio treatment and exact timing
 records, including current-tree Preserve input projections in core 55.
 Schema 84 adds the closed `edited_set` register kind with one immutable capture
 revision for all components of a [whole-node union](SEMANTIC_MACROS.md#discontiguous-whole-node-sets).
+The same kind also carries [interval unions](SEMANTIC_MACROS.md#discontiguous-interval-sets).
+Components must be uniformly whole-child or uniformly positive canonical Range
+captures. Range components can retain identical authored records from one
+Source; historical admission reconstructs every component against its source.
 
 Under the 2026-09-30 development-format authorization, this build refuses
 schemas 1 through 83 as `UnsupportedSchema` without changes. The retained

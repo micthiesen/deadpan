@@ -28,6 +28,7 @@ mod gag_edit;
 mod group;
 mod hold_duration;
 mod node_sets;
+mod range_sets;
 pub use hold_duration::{HoldDurationVisibility, SemanticHoldDurationContext};
 mod mixed_hold_duration;
 pub use mixed_hold_duration::SemanticMixedHoldDurationContext;
@@ -75,6 +76,12 @@ pub enum SemanticVisualSelection {
         #[serde(deserialize_with = "super::node_set::deserialize_nodes")]
         nodes: Vec<NodeId>,
     },
+    /// Finished absolute geometry. Recorded operators require a new Visual
+    /// selection; only SelectRanges retains cursor-relative intent.
+    Ranges {
+        #[serde(deserialize_with = "super::range_set::deserialize_geometry")]
+        ranges: Vec<FrameRange>,
+    },
 }
 
 impl SemanticVisualSelection {
@@ -89,7 +96,9 @@ impl SemanticVisualSelection {
             Self::Nodes { nodes } => SemanticSelector::Nodes {
                 nodes: nodes.clone(),
             },
-            Self::Time { .. } | Self::Object { .. } => SemanticSelector::VisualSelection,
+            Self::Time { .. } | Self::Object { .. } | Self::Ranges { .. } => {
+                SemanticSelector::VisualSelection
+            }
         }
     }
 }
@@ -159,6 +168,10 @@ pub struct SemanticRegisterBank<'a> {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SemanticAllocationRequest {
+    DeleteRange {
+        step_index: usize,
+        required_nodes: usize,
+    },
     /// Resolve the complete qualified source, independently of moment registers.
     InsertOriginal {
         step_index: usize,
@@ -263,6 +276,10 @@ pub enum SemanticAllocationRequest {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SemanticAllocation {
+    DeleteRange {
+        new_revision: RevisionId,
+        identities: SplitIdentities,
+    },
     InsertOriginal {
         new_revision: RevisionId,
         node: NodeId,
@@ -836,7 +853,9 @@ where
             }
             if matches!(
                 self.context.visual_selection,
-                Some(SemanticVisualSelection::Nodes { .. })
+                Some(
+                    SemanticVisualSelection::Nodes { .. } | SemanticVisualSelection::Ranges { .. }
+                )
             ) && !matches!(
                 instruction,
                 SemanticInstruction::MoveFrames { .. }
@@ -850,16 +869,19 @@ where
                     | SemanticInstruction::SelectObject { .. }
                     | SemanticInstruction::SelectNode { .. }
                     | SemanticInstruction::SelectNodes { .. }
+                    | SemanticInstruction::SelectRanges { .. }
                     | SemanticInstruction::SelectMarkRange { .. }
                     | SemanticInstruction::BeginSelection
                     | SemanticInstruction::FinishSelection
                     | SemanticInstruction::ClearSelection
                     | SemanticInstruction::Yank { .. }
                     | SemanticInstruction::Cut { .. }
+                    | SemanticInstruction::YankSelection { .. }
+                    | SemanticInstruction::CutSelection { .. }
                     | SemanticInstruction::Call { .. }
             ) {
                 return Err(unavailable(
-                    "this instruction does not accept a whole-node set; clear the selection first",
+                    "this instruction does not accept a discontiguous set; clear the selection first",
                 ));
             }
             if instruction.uses_speech() {
@@ -967,6 +989,18 @@ where
                     self.trace[index].resolved_ranges =
                         target.members.iter().map(|member| member.range).collect();
                     self.trace[index].resolved_nodes = target.members;
+                }
+                SemanticInstruction::SelectRanges { ranges } => {
+                    self.charge_resolution()?;
+                    self.context = self
+                        .current
+                        .select_semantic_ranges(&self.context, ranges.clone())?;
+                    let Some(SemanticVisualSelection::Ranges { ranges }) =
+                        &self.context.visual_selection
+                    else {
+                        unreachable!()
+                    };
+                    self.trace[index].resolved_ranges = ranges.clone();
                 }
                 SemanticInstruction::BeginSelection => {
                     self.context.visual_selection = Some(SemanticVisualSelection::Time {
@@ -1536,7 +1570,7 @@ fn occupied_nodes(document: &ProjectDocument) -> BTreeSet<NodeId> {
     nodes
 }
 
-fn child_ends(
+pub(super) fn child_ends(
     document: &ProjectDocument,
     parent: &NodeId,
     bounds: (ProjectFrame, ProjectFrame),
@@ -1562,7 +1596,7 @@ fn child_ends(
     Ok(result)
 }
 
-fn selected_child(
+pub(super) fn selected_child(
     child_ends: &[(NodeId, ProjectFrame)],
     cursor: ProjectFrame,
     bounds: (ProjectFrame, ProjectFrame),

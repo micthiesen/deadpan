@@ -7,8 +7,9 @@ including complete empty groups. The footer identifies the selected register
 and its content type. `:registers` opens the live inventory in Keys.
 
 Discontiguous [whole-node sets](SEMANTIC_MACROS.md#discontiguous-whole-node-sets)
-occupy one distinct EditedSet value. Every member comes from the same historical
-document, with its actual parent and whole-child selection. Copying does not
+and [interval sets](SEMANTIC_MACROS.md#discontiguous-interval-sets) occupy one
+distinct EditedSet value. Every member comes from the same historical
+document, with its actual parent and exact whole-child or interval selection. Copying does not
 overwrite the slot once per member. Seam paste creates one editable containing
 Sequence and preserves shared logical marks across the selected components;
 unselected gaps are omitted. Active-set replacement and Place slice refuse.

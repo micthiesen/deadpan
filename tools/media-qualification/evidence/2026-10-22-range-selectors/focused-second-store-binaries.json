@@ -1,0 +1,22 @@
+{
+  "deadpan-store::node_sets": {
+    "path": "/private/tmp/deadpan-range-selectors-2026-10-22/focused-second-store-extracted/target/debug/deps/node_sets-204a41fe134e190f",
+    "sha256": "ad95d0efe8e975e7252b884eab2f5025438c21e61ca5b7ea23d1f2bf84dc915c",
+    "tests": [
+      "equal_time_empty_union_cuts_and_pastes_both_structural_identities",
+      "union_capture_checkpoints_and_late_refusals_preserve_entire_bank_and_history",
+      "union_copy_cut_paste_reopens_with_one_logical_mark_and_exact_history",
+      "union_register_validates_a_later_closed_component_against_its_historical_snapshot"
+    ]
+  },
+  "deadpan-store::range_sets": {
+    "path": "/private/tmp/deadpan-range-selectors-2026-10-22/focused-second-store-extracted/target/debug/deps/range_sets-b5bc66f933cf883c",
+    "sha256": "468607f0fde340cef57f7f2885a3047b13de530d52245276ddbe0cbfa72c902f",
+    "tests": [
+      "range_union_copy_and_atomic_cut_paste_reopen_with_two_bindings_and_one_undo",
+      "range_union_forged_repeated_recipe_and_mixed_wire_publish_no_sql",
+      "range_union_late_failure_rolls_back_every_table_and_staged_capture_reopens",
+      "range_union_stale_guards_refuse_but_known_historical_captures_remain_valid"
+    ]
+  }
+}

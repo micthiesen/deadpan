@@ -1,0 +1,4 @@
+{
+  "non_app_rust_and_six_inputs_and_helpers_unchanged": true,
+  "app_rust_excluded_from_immutability_guard": "Concurrent app provenance fix; final release qualification will freeze the complete tree."
+}

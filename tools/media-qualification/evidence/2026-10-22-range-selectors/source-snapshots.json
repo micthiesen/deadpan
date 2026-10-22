@@ -1,0 +1,74 @@
+{
+  "baseline-first-source": {
+    "archive": "baseline-first-source.tar.gz",
+    "manifest": "baseline-first-source-identities.json.gz",
+    "files": 1993,
+    "content_sha256": "dc1ad0b65f25459bb02aa4310b07184d27bf089be597ce93b76ab6cecbb9a941"
+  },
+  "broad-first-source": {
+    "archive": "broad-first-source.tar.gz",
+    "manifest": "broad-first-source-identities.json.gz",
+    "files": 2000,
+    "content_sha256": "ae9c7157d1b94e13c1bf7d185db56225664b87c0ecc5b148e278b775ab55c16d"
+  },
+  "debug-first-source": {
+    "archive": "debug-first-source.tar.gz",
+    "manifest": "debug-first-source-identities.json.gz",
+    "files": 1999,
+    "content_sha256": "abd47aadfe20ecd8b0186d75a851c85e4289ed97934a81d85a6fd5750861cafc"
+  },
+  "debug-fourth-source": {
+    "archive": "broad-first-source.tar.gz",
+    "manifest": "debug-fourth-source-identities.json.gz",
+    "files": 2000,
+    "content_sha256": "ae9c7157d1b94e13c1bf7d185db56225664b87c0ecc5b148e278b775ab55c16d"
+  },
+  "debug-second-source": {
+    "archive": "debug-second-source.tar.gz",
+    "manifest": "debug-second-source-identities.json.gz",
+    "files": 1999,
+    "content_sha256": "469490e6ed4b3be9c73e23994258874d87a5f772ecc49a5496cb8372b7917ebf"
+  },
+  "debug-third-source": {
+    "archive": "debug-third-source.tar.gz",
+    "manifest": "debug-third-source-identities.json.gz",
+    "files": 2000,
+    "content_sha256": "7f2e6ba3476b9d1d45ed560caba60978390a92b0348dfe0384a5a296105619ad"
+  },
+  "focused-first-source": {
+    "archive": "debug-first-source.tar.gz",
+    "manifest": "focused-first-source-identities.json.gz",
+    "files": 1999,
+    "content_sha256": "abd47aadfe20ecd8b0186d75a851c85e4289ed97934a81d85a6fd5750861cafc"
+  },
+  "focused-second-source": {
+    "archive": "debug-second-source.tar.gz",
+    "manifest": "focused-second-source-identities.json.gz",
+    "files": 1999,
+    "content_sha256": "469490e6ed4b3be9c73e23994258874d87a5f772ecc49a5496cb8372b7917ebf"
+  },
+  "focused-third-source": {
+    "archive": "debug-third-source.tar.gz",
+    "manifest": "focused-third-source-identities.json.gz",
+    "files": 2000,
+    "content_sha256": "7f2e6ba3476b9d1d45ed560caba60978390a92b0348dfe0384a5a296105619ad"
+  },
+  "lint-final-source": {
+    "archive": "broad-first-source.tar.gz",
+    "manifest": "lint-final-source-identities.json.gz",
+    "files": 2000,
+    "content_sha256": "ae9c7157d1b94e13c1bf7d185db56225664b87c0ecc5b148e278b775ab55c16d"
+  },
+  "media-preflight-source": {
+    "archive": "debug-second-source.tar.gz",
+    "manifest": "media-preflight-source-identities.json.gz",
+    "files": 1999,
+    "content_sha256": "469490e6ed4b3be9c73e23994258874d87a5f772ecc49a5496cb8372b7917ebf"
+  },
+  "release-final-source": {
+    "archive": "broad-first-source.tar.gz",
+    "manifest": "release-final-source-identities.json.gz",
+    "files": 2000,
+    "content_sha256": "ae9c7157d1b94e13c1bf7d185db56225664b87c0ecc5b148e278b775ab55c16d"
+  }
+}

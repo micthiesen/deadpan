@@ -1,0 +1,77 @@
+{
+  "movie": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpaFkPYX/exports/range-sets.mp4",
+  "movie_bytes": 12421,
+  "movie_sha256": "834e79ce3eb09efeaabdf2539e8de8bba2c397ad48c38a53a9af84d9205d2898",
+  "package": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpaFkPYX/fixture/range-sets.deadpan",
+  "package_files": [
+    {
+      "path": ".render-candidates.lock",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".writer.lock",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+      "bytes": 39157,
+      "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918"
+    },
+    {
+      "path": "Media/RenderCandidates/blake3-2028283c463ec9b38c0008a424933a1dea1d90a203af28fb3882d002e74d4421",
+      "bytes": 15100,
+      "sha256": "48e76513afbe1f2074341dc74bb824b171226d4dc956062283b6a3527a9f9732"
+    },
+    {
+      "path": "Media/RenderCandidates/blake3-b5f687010c29d4eb15d54ffc1d59e50816d232589bd7b53336b84405f38bf931",
+      "bytes": 12421,
+      "sha256": "834e79ce3eb09efeaabdf2539e8de8bba2c397ad48c38a53a9af84d9205d2898"
+    },
+    {
+      "path": "manifest.json",
+      "bytes": 82,
+      "sha256": "8e3aaf49cc1da14da920499441ced523effc77e9b74eeed37453835d47bfb8a1"
+    },
+    {
+      "path": "project.sqlite",
+      "bytes": 790528,
+      "sha256": "c2d290c6e40ab642ce59ea120d290ac40016fdd0fe5cfbe192479972661d41b2"
+    },
+    {
+      "path": "project.sqlite-shm",
+      "bytes": 32768,
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+    },
+    {
+      "path": "project.sqlite-wal",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "summary": {
+    "audio_windows_checked": 1,
+    "audio_windows_failed": 0,
+    "blocks_compared": 1,
+    "index_observable_comparisons": 48,
+    "index_unobservable_comparisons": 10,
+    "max_block_level_db": 0.0010659656090901137,
+    "max_local_luma_error": 1.75,
+    "max_thumbnail_mad": 0.05022078804347826,
+    "min_block_snr_db": 61.120697877121415,
+    "min_chroma_psnr_db": 53.44486901527713,
+    "min_luma_psnr_db": 56.454656378842394,
+    "min_neighbor_margin_db": 32.345096666906215,
+    "nonzero_offsets": 0,
+    "offset_unobservable_windows": 0,
+    "offset_verified_windows": 1,
+    "pictures_checked": 30,
+    "pictures_failed": 0,
+    "pictures_without_index_neighbors": 0,
+    "signal_windows": 1
+  },
+  "windows": 1,
+  "presented_samples": 48048,
+  "qualification_limit": "Canonical preview versus encoded audio; no independent PCM oracle, listening or full mastering claim."
+}

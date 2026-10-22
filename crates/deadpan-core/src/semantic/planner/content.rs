@@ -116,6 +116,20 @@ where
         selector: &SemanticSelector,
         cut: bool,
     ) -> Result<(), EditError> {
+        let ranges = match selector {
+            SemanticSelector::Ranges { ranges } => Some(
+                crate::semantic::range_set::resolve_in_scope(&self.current, &self.context, ranges)?
+                    .ranges,
+            ),
+            SemanticSelector::VisualSelection => match &self.context.visual_selection {
+                Some(SemanticVisualSelection::Ranges { ranges }) => Some(ranges.clone()),
+                _ => None,
+            },
+            _ => None,
+        };
+        if let Some(ranges) = ranges {
+            return self.capture_ranges(trace_index, register, &ranges, cut);
+        }
         let nodes = match selector {
             SemanticSelector::Nodes { nodes } => Some(nodes.clone()),
             SemanticSelector::VisualSelection => match &self.context.visual_selection {
@@ -219,10 +233,10 @@ where
     ) -> Result<(), EditError> {
         if matches!(
             self.context.visual_selection,
-            Some(SemanticVisualSelection::Nodes { .. })
+            Some(SemanticVisualSelection::Nodes { .. } | SemanticVisualSelection::Ranges { .. })
         ) {
             return Err(unavailable(
-                "clear the node set selection before choosing a paste seam",
+                "clear the discontiguous set selection before choosing a paste seam",
             ));
         }
         if matches!(

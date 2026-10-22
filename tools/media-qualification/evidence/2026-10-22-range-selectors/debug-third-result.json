@@ -1,0 +1,28 @@
+{
+  "exit": 1,
+  "source_and_retained_binaries_unchanged": true,
+  "failed": true,
+  "scenarios": [
+    {
+      "name": "kestrel-shortcuts",
+      "failed": false,
+      "checks": 1,
+      "frames": 0,
+      "failures": [],
+      "warnings": 0
+    },
+    {
+      "name": "range-set-selectors",
+      "failed": true,
+      "checks": 77,
+      "frames": 137,
+      "failures": [
+        {
+          "message": "Check failed: Settled picture matches the current session, revision, context and cursor",
+          "severity": "failure"
+        }
+      ],
+      "warnings": 2
+    }
+  ]
+}

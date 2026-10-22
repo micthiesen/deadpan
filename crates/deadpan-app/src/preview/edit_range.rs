@@ -39,6 +39,9 @@ enum SelectionKind {
     Nodes {
         nodes: Vec<NodeId>,
     },
+    Ranges {
+        ranges: Vec<FrameRange>,
+    },
     MarkRange {
         start: deadpan_core::NamedMarkTarget,
         end: deadpan_core::NamedMarkTarget,
@@ -80,6 +83,18 @@ impl Selection {
     pub(super) fn has_bounds(&self) -> bool {
         self.kind.is_some()
     }
+    pub(super) fn ranges(&self) -> Option<&[FrameRange]> {
+        match &self.kind {
+            Some(SelectionKind::Ranges { ranges }) => Some(ranges),
+            _ => None,
+        }
+    }
+    pub(super) fn has_set(&self) -> bool {
+        matches!(
+            self.kind,
+            Some(SelectionKind::Nodes { .. } | SelectionKind::Ranges { .. })
+        )
+    }
 
     pub(super) fn semantic(&self) -> Result<Option<SemanticVisualSelection>, String> {
         self.kind
@@ -101,6 +116,9 @@ impl Selection {
                 }
                 SelectionKind::Nodes { nodes } => Ok(SemanticVisualSelection::Nodes {
                     nodes: nodes.clone(),
+                }),
+                SelectionKind::Ranges { ranges } => Ok(SemanticVisualSelection::Ranges {
+                    ranges: ranges.clone(),
                 }),
                 SelectionKind::MarkRange { start, end, .. } => {
                     Ok(SemanticVisualSelection::MarkRange {
@@ -165,6 +183,27 @@ impl Selection {
                 }
                 SemanticVisualSelection::Nodes { .. } => {
                     Err("A node set needs its complete resolved members.".into())
+                }
+                SemanticVisualSelection::Ranges { ranges } => {
+                    if ranges.is_empty()
+                        || ranges.len() > 64
+                        || ranges.iter().any(|range| {
+                            range.start().0 < start as i64
+                                || range.end().0 > end as i64
+                                || range.start() >= range.end()
+                        })
+                        || ranges
+                            .windows(2)
+                            .any(|pair| pair[0].end() >= pair[1].start())
+                    {
+                        return Err("The range set is not canonical inside this group.".into());
+                    }
+                    Ok((
+                        SelectionKind::Ranges {
+                            ranges: ranges.clone(),
+                        },
+                        false,
+                    ))
                 }
                 SemanticVisualSelection::MarkRange {
                     start: first,
@@ -250,7 +289,7 @@ impl Selection {
                         head: at,
                     });
                 }
-                Some(SelectionKind::Nodes { .. }) | None => {}
+                Some(SelectionKind::Nodes { .. } | SelectionKind::Ranges { .. }) | None => {}
             }
         }
     }
@@ -265,7 +304,7 @@ impl Selection {
             ) => {
                 return Some(*range);
             }
-            Some(SelectionKind::Nodes { .. }) | None => return None,
+            Some(SelectionKind::Nodes { .. } | SelectionKind::Ranges { .. }) | None => return None,
         };
         if anchor == head {
             return None;
@@ -293,6 +332,10 @@ impl DeadpanApp {
         let selection = self.edit_range.semantic()?;
         if let Some(SemanticVisualSelection::Nodes { nodes }) = &selection {
             self.resolve_native_node_set(nodes)?;
+            return Ok(selection);
+        }
+        if let Some(SemanticVisualSelection::Ranges { ranges }) = &selection {
+            self.resolve_native_range_set(ranges)?;
             return Ok(selection);
         }
         let object_range = self.object_range(selection.as_ref())?;
@@ -343,6 +386,9 @@ impl DeadpanApp {
             restored.identity = Some(identity);
             self.edit_range = restored;
             return Ok(());
+        }
+        if let Some(SemanticVisualSelection::Ranges { ranges }) = &selection {
+            self.resolve_native_range_set(ranges)?;
         }
         let object_range = self.object_range(selection.as_ref())?;
         restored.restore_semantic(selection, scope.start, scope.end, object_range)?;
@@ -420,6 +466,46 @@ impl DeadpanApp {
             return Err("The node set belongs to an earlier editing context.".into());
         }
         self.resolve_native_node_set(nodes).map(Some)
+    }
+
+    pub(super) fn selected_range_set(
+        &self,
+    ) -> Result<Option<deadpan_core::SemanticRangeSetTarget>, String> {
+        let Some(ranges) = self.edit_range.ranges() else {
+            return Ok(None);
+        };
+        if self.edit_range.identity != self.edit_range_identity() {
+            return Err("The range set belongs to an earlier editing context.".into());
+        }
+        self.resolve_native_range_set(ranges).map(Some)
+    }
+
+    fn resolve_native_range_set(
+        &self,
+        ranges: &[FrameRange],
+    ) -> Result<deadpan_core::SemanticRangeSetTarget, String> {
+        let workspace = self
+            .workspace
+            .as_ref()
+            .ok_or("The selected range set is no longer visible.")?;
+        let context = deadpan_core::SemanticContext {
+            original: None,
+            scoped: None,
+            hold_duration: None,
+            shared_hold_duration: None,
+            mixed_hold_duration: None,
+            selected_hold_duration: None,
+            parent: self.sequence_scope.resolve(workspace)?.owner.clone(),
+            cursor: ProjectFrame(
+                i64::try_from(self.sequence_cursor).map_err(|error| error.to_string())?,
+            ),
+            selected_child: self.selected_beat.clone(),
+            visual_selection: None,
+        };
+        workspace
+            .document
+            .resolve_semantic_range_selection(&context, ranges)
+            .map_err(|error| error.to_string())
     }
 
     fn resolve_native_node_set(
@@ -729,6 +815,46 @@ impl DeadpanApp {
         }
     }
 
+    pub(super) fn select_explicit_ranges(
+        &mut self,
+        target: Option<Result<macros::Capture, String>>,
+        ranges: Vec<deadpan_core::SemanticRangeOffsets>,
+    ) {
+        let result = (|| {
+            if self.view != View::Sequence || self.edit_role != deadpan_core::MediaRole::Linked {
+                return Err("Select range sets in Your edit with role=linked.".to_owned());
+            }
+            let capture = target.ok_or("Open :select again to capture its editing context.")??;
+            if !capture.matches(self) {
+                return Err(
+                    "The range-set selection context changed. Enter the command again.".into(),
+                );
+            }
+            capture.select_ranges(ranges.clone())
+        })();
+        match result {
+            Ok(context) => {
+                let prior = self.sequence_cursor;
+                self.sequence_cursor = context.cursor.0 as u64;
+                if let Err(error) = self.restore_macro_visual_selection(context.visual_selection) {
+                    self.sequence_cursor = prior;
+                    self.error = Some(error);
+                    return;
+                }
+                self.selected_beat = context.selected_child;
+                self.pause_playback();
+                self.revoke_scoped_continuation();
+                self.record_macro_local(deadpan_core::SemanticInstruction::SelectRanges { ranges });
+                self.error = None;
+                self.message = Some("Range set retained. y copies one union; d cuts it atomically. Inspector lists every range. Clear the set before choosing a paste seam.".into());
+                if prior != self.sequence_cursor {
+                    self.request_picture(false);
+                }
+            }
+            Err(error) => self.error = Some(error),
+        }
+    }
+
     pub(super) fn edit_selection(&self) -> navigation::EditSelection {
         if self.edit_range.identity != self.edit_range_identity() || self.edit_range.kind.is_none()
         {
@@ -739,6 +865,7 @@ impl DeadpanApp {
                 SelectionKind::Object { .. }
                     | SelectionKind::Node { .. }
                     | SelectionKind::Nodes { .. }
+                    | SelectionKind::Ranges { .. }
             )
         ) {
             navigation::EditSelection::Object
@@ -827,6 +954,15 @@ impl DeadpanApp {
     }
 
     pub(super) fn edit_range_label(&self) -> Option<String> {
+        if self.edit_range.ranges().is_some() {
+            let target = self.selected_range_set().ok()??;
+            return Some(format!(
+                "Range set · {} ranges · {} f selected · {} · Inspector: ranges",
+                target.ranges.len(),
+                target.total_duration.frames(),
+                self.beat_scope_label()
+            ));
+        }
         if self.edit_range.nodes().is_some() {
             let target = self.selected_node_set().ok()??;
             return Some(format!(
@@ -926,6 +1062,66 @@ mod tests {
             revision: RevisionId::new(revision).unwrap(),
             scope,
             parent: NodeId::new("sequence").unwrap(),
+        }
+    }
+
+    #[test]
+    fn range_sets_never_expose_a_hull_and_finished_motion_preserves_geometry() {
+        for ranges in [
+            vec![FrameRange::new(ProjectFrame(2), ProjectFrame(6)).unwrap()],
+            vec![
+                FrameRange::new(ProjectFrame(2), ProjectFrame(6)).unwrap(),
+                FrameRange::new(ProjectFrame(10), ProjectFrame(14)).unwrap(),
+            ],
+        ] {
+            let mut selected = Selection::default();
+            let semantic = Some(SemanticVisualSelection::Ranges {
+                ranges: ranges.clone(),
+            });
+            selected
+                .restore_semantic(semantic.clone(), 0, 20, None)
+                .unwrap();
+            assert_eq!(selected.range(), None);
+            assert!(selected.has_set());
+            assert!(!selected.active);
+            selected.move_to(19);
+            assert_eq!(selected.semantic().unwrap(), semantic);
+            selected.toggle(19);
+            assert!(!selected.has_set());
+            assert!(selected.active);
+        }
+    }
+
+    #[test]
+    fn range_set_restore_refuses_noncanonical_or_out_of_scope_geometry_atomically() {
+        let mut selected = Selection::default();
+        selected.toggle(12);
+        let prior = selected.clone();
+        for pairs in [
+            vec![],
+            vec![(2, 2)],
+            vec![(2, 7), (6, 9)],
+            vec![(2, 6), (6, 9)],
+            vec![(10, 14), (2, 6)],
+            vec![(2, 21)],
+        ] {
+            let ranges = pairs
+                .into_iter()
+                .map(|(start, end)| {
+                    FrameRange::new(ProjectFrame(start), ProjectFrame(end)).unwrap()
+                })
+                .collect();
+            assert!(
+                selected
+                    .restore_semantic(
+                        Some(SemanticVisualSelection::Ranges { ranges }),
+                        0,
+                        20,
+                        None
+                    )
+                    .is_err()
+            );
+            assert_eq!(selected, prior);
         }
     }
 

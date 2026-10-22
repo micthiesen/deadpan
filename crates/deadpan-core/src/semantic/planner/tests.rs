@@ -111,6 +111,17 @@ fn macro_value(instructions: Vec<SemanticInstruction>) -> Arc<RegisterValue> {
 }
 fn allocate(request: SemanticAllocationRequest) -> Result<SemanticAllocation, EditError> {
     Ok(match request {
+        SemanticAllocationRequest::DeleteRange {
+            step_index,
+            required_nodes,
+        } => SemanticAllocation::DeleteRange {
+            new_revision: revision(&format!("leaf-{step_index}")),
+            identities: SplitIdentities {
+                nodes: (0..required_nodes)
+                    .map(|n| node(&format!("split-{step_index}-{n}")))
+                    .collect(),
+            },
+        },
         SemanticAllocationRequest::InsertOriginal { .. } => {
             return Err(invalid("test requires a whole-Original source allocator"));
         }

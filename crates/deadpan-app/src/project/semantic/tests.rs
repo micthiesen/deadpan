@@ -1,5 +1,7 @@
 use super::*;
-use deadpan_core::{MarkId, NamedMarkTarget, NodeId, ProjectFrame, SemanticVisualSelection};
+use deadpan_core::{
+    FrameRange, MarkId, NamedMarkTarget, NodeId, ProjectFrame, SemanticVisualSelection,
+};
 
 fn named(a: &str, b: &str) -> SemanticSelector {
     SemanticSelector::MarkRange {
@@ -133,6 +135,36 @@ fn explicit_node_receipts_keep_identity_until_a_new_visual_selection_overrides_i
             serde_json::json!({"type":"visual_selection"})
         );
     }
+}
+
+#[test]
+fn native_visual_range_set_cut_retains_new_selection_requirement() {
+    let register = RegisterName::unnamed();
+    let instruction = SemanticInstruction::CutSelection { register };
+    let receipt = LastEdit::from_instruction(&instruction).unwrap();
+    assert_eq!(
+        receipt.operation,
+        RepeatableEdit::Cut(RepeatableCut::Selector(SemanticSelector::VisualSelection))
+    );
+    let ranges = vec![
+        FrameRange::new(ProjectFrame(2), ProjectFrame(6)).unwrap(),
+        FrameRange::new(ProjectFrame(10), ProjectFrame(14)).unwrap(),
+    ];
+    let selected = context(Some(SemanticVisualSelection::Ranges { ranges }));
+    assert!(matches!(
+        receipt.instruction(&selected, register),
+        SemanticInstruction::Cut {
+            selector: SemanticSelector::VisualSelection,
+            ..
+        }
+    ));
+    assert!(matches!(
+        receipt.instruction(&context(None), register),
+        SemanticInstruction::Cut {
+            selector: SemanticSelector::VisualSelection,
+            ..
+        }
+    ));
 }
 
 #[test]

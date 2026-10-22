@@ -1,0 +1,32 @@
+{
+  "command": [
+    "cargo",
+    "nextest",
+    "run",
+    "--locked",
+    "-p",
+    "deadpan-core",
+    "--test",
+    "range_sets",
+    "--test",
+    "range_set_counterfactual",
+    "--test",
+    "range_set_shared_mark",
+    "--test",
+    "edit_set",
+    "--test",
+    "node_set_counterfactual",
+    "--test",
+    "node_set_shared_mark",
+    "--test-threads",
+    "8",
+    "--status-level",
+    "fail",
+    "--final-status-level",
+    "fail"
+  ],
+  "exit": 0,
+  "seconds": 50.090763417072594,
+  "core_sources_unchanged": false,
+  "scope": "Core Rust source only; other owners active in App/Store"
+}

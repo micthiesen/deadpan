@@ -1,0 +1,21 @@
+{
+  "from": "focused-second",
+  "to": "focused-third",
+  "changed_files": [
+    "crates/deadpan-app/src/preview/copied.rs",
+    "crates/deadpan-app/src/preview/harness/semantic/range_sets.rs",
+    "crates/deadpan-app/src/preview/splice.rs",
+    "crates/deadpan-app/src/project/service/macros.rs"
+  ],
+  "added_files": [
+    "crates/deadpan-app/src/project/service/macros/tests.rs"
+  ],
+  "all_non_app_rust_and_six_inputs_unchanged": true,
+  "focused_attribution": {
+    "core": 23,
+    "store": 8,
+    "cli": 4,
+    "app_final": 71
+  },
+  "note": "Only App source changed after focused-second; native provenance, Place slice guard, generic union labels and replay coverage."
+}

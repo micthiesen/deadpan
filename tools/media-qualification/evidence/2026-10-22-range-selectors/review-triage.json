@@ -1,0 +1,66 @@
+{
+  "base": "9a2f04cb413d6d855aa3cdc329405d89f04ca6ee",
+  "reviews": [
+    {
+      "agent": "ranges_general_review",
+      "role": "check",
+      "scope": "general current range-set changes",
+      "findings": []
+    },
+    {
+      "agent": "ranges_capture_review",
+      "role": "check-focused",
+      "scope": "capture identity, shared mark multiplicity, atomic rollback",
+      "findings": []
+    },
+    {
+      "agent": "ranges_native_review",
+      "role": "check-focused",
+      "scope": "native authority, stale entry, recording/dot and test paths",
+      "findings": []
+    }
+  ],
+  "verification_note": "Read-only source reviews. Runtime tests remain separate. Subsequent CLI fixture correction uses public Ungroup and intended semantic refusal assertions.",
+  "followup": {
+    "agent": "ranges_general_review",
+    "scope": "CLI fixture Ungroup setup and intended refusal assertions",
+    "findings": []
+  },
+  "native_followup": {
+    "scope": "four omitted Ranges display/routing arms and two label/override regressions",
+    "findings": []
+  },
+  "integration_finding": {
+    "found_by": "debug-first production-router replay",
+    "failure": "native range-set YankSelection/CutSelection blocked by active-set whitelist",
+    "fix": "permit exactly YankSelection and CutSelection in the union whitelist; reuse existing Visual union dispatcher",
+    "regression": "native_visual_copy_and_cut_dispatch_matches_explicit_visual_selectors",
+    "independent_followup": "ranges_capture_review: no findings",
+    "status": "focused regression passed; second replay reached native bank admission"
+  },
+  "native_bridge_finding": {
+    "found_by": "debug-second native replay",
+    "failure": "EditedSet runtime guard assumed Child components",
+    "fix": "strict uniform Child or same-scope Range trace correspondence; 17 tampering cases",
+    "independent_followup": "ranges_native_review: no findings",
+    "status": "71 focused app cases passed including two provenance tests with 17 tampered traces; debug-fourth native replay passed"
+  },
+  "splice_finding": {
+    "found_by": "ranges_general_review follow-up sweep",
+    "failure": "open_captured_splice checked nodes() only; range selection ignored for ordinary copied source",
+    "fix": "has_set guard; replay first proves ordinary Edited source and then specific selection-set refusal",
+    "independent_followup": "ranges_native_review: no findings",
+    "status": "debug-fourth passed with ordinary Edited source and exact set refusal"
+  },
+  "replay_setup_finding": {
+    "found_by": "debug-third",
+    "failure": "stale-entry test assigned cursor without requesting matching picture",
+    "fix": "use production L navigation; also assert exact dot and shifted named-call captured ranges",
+    "status": "debug-fourth: 85 semantic checks, 145 frames, no failures"
+  },
+  "final_harness_followup": {
+    "agent": "ranges_native_review",
+    "scope": "exact persisted dot and shifted named-call endpoints; production stale-cursor navigation",
+    "findings": []
+  }
+}

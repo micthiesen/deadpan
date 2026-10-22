@@ -1,0 +1,20 @@
+[
+  {
+    "mode": "debug-fourth-visual",
+    "file": "range-set-selectors-022.png",
+    "sha256": "c50d64c91a739bf58ce3ad97aa663df4e74c7e0f65ad91c51c0795ebb6c46c9a",
+    "checkpoint": "Disjoint ranges show separate highlights and complete range inspector",
+    "frame": 43,
+    "visually_inspected_by": "root",
+    "inspection": "960x640: three exact range rows and total duration visible; separate beat highlights; compact footer and retained exact viewer readable."
+  },
+  {
+    "mode": "release-visual",
+    "file": "range-set-selectors-023.png",
+    "sha256": "1d98c43e4cb240ed66f484ed6b83177152214b670c68fecdbd8b88eb55a77e60",
+    "checkpoint": "Disjoint ranges show separate highlights and complete range inspector",
+    "frame": 61,
+    "visually_inspected_by": "root",
+    "inspection": "960x640: three exact range rows and total duration visible; separate beat highlights; compact footer and retained exact viewer readable."
+  }
+]

@@ -466,3 +466,205 @@ fn nodes_cli_rejects_bad_members_and_late_failures_without_any_sql_publication()
     );
     Ok(())
 }
+
+#[test]
+fn ranges_cli_normalizes_relative_union_and_round_trips_one_cut_paste_transaction() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let package = scratch.path().join("ranges.deadpan");
+    let input = scratch.path().join("ranges.json");
+    seed(&package, &input)?;
+    // Partial endpoints retain the existing direct-child boundary contract.
+    // Publicly enter that flat editing structure before selecting intervals.
+    for id in ["group-a", "group-b", "scope"] {
+        command(
+            &package,
+            &input,
+            &format!("ungroup-{id}"),
+            Command::Ungroup { node: node(id) },
+        )?;
+    }
+    let before = snapshot(&package)?;
+    let ranges = json!({"type":"ranges","ranges":[
+        {"start":8,"end":10},{"start":0,"end":2},{"start":1,"end":2}
+    ]});
+    let mut copy = invocation(
+        &package,
+        json!([{"type":"yank","selector":ranges,"register":"a"}]),
+        "copy-ranges-no-history",
+    )?;
+    copy["operation"]["cursor"] = json!(3);
+    copy["operation"]["selected_child"] = json!("a");
+    copy["operation"]["visual_selection"] =
+        json!({"type":"time","anchor":0,"head":1,"extending":false});
+    let unchanged = cells(&package)?;
+    let preview = invoke(&package, &input, &copy, true)?;
+    assert_eq!(cells(&package)?, unchanged);
+    let trace = &preview["trace"][0];
+    assert!(trace["resolved_range"].is_null());
+    assert!(trace["resolved_selection"].is_null());
+    assert_eq!(trace["resolved_nodes"], json!([]));
+    assert_eq!(
+        trace["resolved_ranges"],
+        json!([
+            {"start":3,"end":5},{"start":11,"end":13}
+        ])
+    );
+    assert_eq!(trace["capture_set"]["parent"], json!(before.root()));
+    let copied = invoke(&package, &input, &copy, false)?;
+    assert!(copied["committed_revision"].is_null());
+    assert_eq!(snapshot(&package)?, before);
+    let inspected = success(&[
+        "macro",
+        "inspect",
+        package.to_str().unwrap(),
+        "--register",
+        "a",
+    ])?;
+    let entry = &inspected["registers"][0];
+    assert_eq!(entry["type"], "edited_set");
+    assert_eq!(entry["duration"], 4);
+    assert_eq!(entry["components"].as_array().unwrap().len(), 2);
+    assert_eq!(
+        entry["components"][0]["selection"],
+        json!({"type":"range","range":{"start":3,"end":5}})
+    );
+    assert_eq!(
+        entry["components"][1]["selection"],
+        json!({"type":"range","range":{"start":11,"end":13}})
+    );
+    let mut edit = invocation(
+        &package,
+        json!([
+            {"type":"cut","selector":ranges,"register":"b"},
+            {"type":"move_frames","forward":true,"count":100},
+            {"type":"paste","register":"b","before":false}
+        ]),
+        "range-union-cut-paste",
+    )?;
+    edit["operation"]["cursor"] = json!(3);
+    edit["operation"]["selected_child"] = json!("a");
+    let unchanged = cells(&package)?;
+    let dry = invoke(&package, &input, &edit, true)?;
+    assert_eq!(cells(&package)?, unchanged);
+    assert_eq!(dry["edit"]["duration_delta"], 0);
+    let result = invoke(&package, &input, &edit, false)?;
+    assert_eq!(result["committed_revision"], "range-union-cut-paste");
+    let after = snapshot(&package)?;
+    assert_eq!(after.duration()?.frames(), 18);
+    assert_eq!(after.nodes()[&node("gap")], before.nodes()[&node("gap")]);
+    let NodeKind::Sequence { children } = &after.nodes()[after.root()].kind else {
+        panic!("ordinary root")
+    };
+    let copied_group = children.last().ok_or("pasted union")?;
+    let NodeKind::Sequence {
+        children: components,
+    } = &after.nodes()[copied_group].kind
+    else {
+        panic!("copied union group")
+    };
+    assert_eq!(components.len(), 2);
+    let store = ProjectStore::open(&package, AccessMode::ReadOnly)?;
+    let bank = store.registers()?;
+    let RegisterValue::EditedSet { set } = bank.entries[&name('b')].as_ref() else {
+        panic!("range union register")
+    };
+    assert_eq!(set.revision_id(), before.revision_id());
+    assert_eq!(set.duration().frames(), 4);
+    assert_eq!(set.components().len(), 2);
+    set.validate_capture(&store.capture_snapshot_at(set.revision_id())?)?;
+    let validation = store.validate_report(true)?;
+    assert_eq!(validation.verified_by_receipt, 0);
+    assert_eq!(validation.replayed + 1, validation.revisions);
+    drop(store);
+    success(&[
+        "project",
+        "undo",
+        package.to_str().unwrap(),
+        "--expected",
+        after.revision_id().as_str(),
+    ])?;
+    let undone = snapshot(&package)?;
+    same_authored(&undone, &before)?;
+    assert_eq!(
+        ProjectStore::open(&package, AccessMode::ReadOnly)?.registers()?,
+        bank
+    );
+    success(&[
+        "project",
+        "redo",
+        package.to_str().unwrap(),
+        "--expected",
+        undone.revision_id().as_str(),
+    ])?;
+    same_authored(&snapshot(&package)?, &after)?;
+    let reopened = ProjectStore::open(&package, AccessMode::ReadOnly)?;
+    assert_eq!(reopened.registers()?, bank);
+    assert_eq!(reopened.validate_report(true)?.verified_by_receipt, 0);
+    Ok(())
+}
+
+#[test]
+fn ranges_cli_rejects_invalid_offsets_and_late_failures_without_sql_publication() -> Result {
+    let scratch = tempfile::tempdir()?;
+    let package = scratch.path().join("range-refusals.deadpan");
+    let input = scratch.path().join("range-refusals.json");
+    seed(&package, &input)?;
+    let before = cells(&package)?;
+    for ranges in [
+        json!([]),
+        json!([{"start":0,"end":0}]),
+        json!([{"start":3,"end":2}]),
+        json!([{"start":-4,"end":1}]),
+        json!([{"start":0,"end":16}]),
+        json!([{"start":0,"end":i64::MAX}]),
+        json!([{"start":0,"end":1,"unexpected":true}]),
+        json!(vec![json!({"start":0,"end":1}); 65]),
+    ] {
+        let mut request = invocation(
+            &package,
+            json!([
+                {"type":"yank","selector":{"type":"ranges","ranges":[{"start":0,"end":1}]},"register":"c"},
+                {"type":"cut","selector":{"type":"ranges","ranges":ranges},"register":"b"}
+            ]),
+            "refused-range-offsets",
+        )?;
+        request["operation"]["cursor"] = json!(3);
+        request["operation"]["parent"] = json!("group-a");
+        request["operation"]["selected_child"] = json!("a");
+        rejected(&package, &input, &request)?;
+        assert_eq!(cells(&package)?, before);
+    }
+    let mut outside = invocation(
+        &package,
+        json!([
+            {"type":"yank","selector":{"type":"ranges","ranges":[{"start":0,"end":1}]},"register":"c"},
+            {"type":"cut","selector":{"type":"ranges","ranges":[{"start":0,"end":1},{"start":8,"end":9}]},"register":"b"}
+        ]),
+        "refused-range-scope",
+    )?;
+    outside["operation"]["parent"] = json!("group-a");
+    outside["operation"]["selected_child"] = json!("a");
+    outside["operation"]["cursor"] = json!(3);
+    rejected(&package, &input, &outside)?;
+    assert_eq!(cells(&package)?, before);
+    let mut no_scalar = invocation(
+        &package,
+        json!([
+            {"type":"select_ranges","ranges":[{"start":0,"end":1},{"start":3,"end":4}]},
+            {"type":"group","selector":{"type":"visual_selection"},"label":"Refused envelope"}
+        ]),
+        "refused-range-envelope",
+    )?;
+    no_scalar["operation"]["parent"] = json!("group-b");
+    no_scalar["operation"]["selected_child"] = json!("b");
+    no_scalar["operation"]["cursor"] = json!(9);
+    let error = rejected(&package, &input, &no_scalar)?;
+    assert!(
+        error["error"]["message"]
+            .as_str()
+            .unwrap()
+            .contains("does not accept a discontiguous set")
+    );
+    assert_eq!(cells(&package)?, before);
+    Ok(())
+}

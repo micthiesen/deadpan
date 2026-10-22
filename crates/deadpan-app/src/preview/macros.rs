@@ -119,6 +119,7 @@ impl Capture {
                     | deadpan_core::SemanticVisualSelection::MarkRange { .. }
                     | deadpan_core::SemanticVisualSelection::Node { .. }
                     | deadpan_core::SemanticVisualSelection::Nodes { .. }
+                    | deadpan_core::SemanticVisualSelection::Ranges { .. }
             )
         )
     }
@@ -151,6 +152,15 @@ impl Capture {
         self.base
             .document
             .select_semantic_nodes(&self.context, nodes)
+            .map_err(|error| error.to_string())
+    }
+    pub(super) fn select_ranges(
+        &self,
+        ranges: Vec<deadpan_core::SemanticRangeOffsets>,
+    ) -> Result<SemanticContext, String> {
+        self.base
+            .document
+            .select_semantic_ranges(&self.context, ranges)
             .map_err(|error| error.to_string())
     }
     /// A word or sentence object at the captured cursor, as a Visual range.
@@ -360,8 +370,13 @@ impl Capture {
                     .resolve_semantic_mark_range(&self.context, start, end)
                     .map_err(|error| error.to_string())?,
             ),
-            Some(deadpan_core::SemanticVisualSelection::Nodes { .. }) => {
-                return Err("Clear the node set before choosing a Place slice destination.".into());
+            Some(
+                deadpan_core::SemanticVisualSelection::Nodes { .. }
+                | deadpan_core::SemanticVisualSelection::Ranges { .. },
+            ) => {
+                return Err(
+                    "Clear the selection set before choosing a Place slice destination.".into(),
+                );
             }
             None => None,
         };
@@ -694,17 +709,18 @@ impl DeadpanApp {
 
     pub(super) fn macro_action_allowed(&mut self, action: Action) -> bool {
         self.reconcile_macro_recording();
-        if self.edit_range.nodes().is_some()
+        if self.edit_range.has_set()
             && matches!(action,
                 Action::Edit(edit) if edit != BeatEdit::Delete
             )
         {
             self.error = Some(
-                "This edit needs one beat or contiguous range. Clear the node set first.".into(),
+                "This edit needs one beat or contiguous range. Clear the selection set first."
+                    .into(),
             );
             return false;
         }
-        if self.edit_range.nodes().is_some()
+        if self.edit_range.has_set()
             && matches!(
                 action,
                 Action::Group
@@ -728,8 +744,9 @@ impl DeadpanApp {
                     | Action::TailPicker
             )
         {
-            self.error =
-                Some("This operation does not support a node set. Clear the set first.".into());
+            self.error = Some(
+                "This operation does not support a selection set. Clear the set first.".into(),
+            );
             return false;
         }
         if self.macros.recording()
@@ -968,7 +985,7 @@ impl DeadpanApp {
         &mut self,
         command: &Result<navigation::command::Entry, String>,
     ) -> bool {
-        if self.edit_range.nodes().is_some() {
+        if self.edit_range.has_set() {
             use navigation::command::Entry;
             let supported = matches!(
                 command,
@@ -976,6 +993,7 @@ impl DeadpanApp {
                     | Ok(Entry::Action(_)
                         | Entry::SelectNode { .. }
                         | Entry::SelectNodes { .. }
+                        | Entry::SelectRanges { .. }
                         | Entry::SelectMarkRange { .. }
                         | Entry::Splice
                         | Entry::Source
@@ -985,7 +1003,7 @@ impl DeadpanApp {
                     | Ok(Entry::SelectRole(deadpan_core::MediaRole::Linked))
             );
             if !supported {
-                self.error = Some("This command does not support a node set. Clear the set first; y and d operate on its complete union.".into());
+                self.error = Some("This command does not support a selection set. Clear the set first; y and d operate on its complete union.".into());
                 return false;
             }
         }
@@ -1050,7 +1068,8 @@ impl DeadpanApp {
             Ok(
                 navigation::command::Entry::SelectMarkRange { .. }
                 | navigation::command::Entry::SelectNode { .. }
-                | navigation::command::Entry::SelectNodes { .. },
+                | navigation::command::Entry::SelectNodes { .. }
+                | navigation::command::Entry::SelectRanges { .. },
             ) => self.macro_action_allowed(Action::SelectObject(
                 deadpan_core::SemanticTextObject::InnerGroup,
             )),
@@ -1378,6 +1397,7 @@ impl DeadpanApp {
                             | deadpan_core::SemanticVisualSelection::MarkRange { .. }
                             | deadpan_core::SemanticVisualSelection::Node { .. }
                             | deadpan_core::SemanticVisualSelection::Nodes { .. }
+                            | deadpan_core::SemanticVisualSelection::Ranges { .. }
                     ))
                 )
             },
@@ -1430,6 +1450,7 @@ impl DeadpanApp {
                             | deadpan_core::SemanticVisualSelection::MarkRange { .. }
                             | deadpan_core::SemanticVisualSelection::Node { .. }
                             | deadpan_core::SemanticVisualSelection::Nodes { .. }
+                            | deadpan_core::SemanticVisualSelection::Ranges { .. }
                     ))
                 )
             },
@@ -1474,9 +1495,9 @@ impl DeadpanApp {
     ) -> bool {
         if target
             .as_ref()
-            .is_ok_and(|target| target.selection.nodes().is_some())
+            .is_ok_and(|target| target.selection.has_set())
         {
-            self.error = Some("Node-set replacement is not supported. Clear the set and choose an insertion seam before pasting.".into());
+            self.error = Some("Selection-set replacement is not supported. Clear the set and choose an insertion seam before pasting.".into());
             return true;
         }
         let union = target

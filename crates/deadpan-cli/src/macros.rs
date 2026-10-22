@@ -674,6 +674,14 @@ fn allocate(request: SemanticAllocationRequest) -> Result<SemanticAllocation, Ed
                 nodes: nodes(count)?,
             },
         },
+        SemanticAllocationRequest::DeleteRange { required_nodes, .. } => {
+            SemanticAllocation::DeleteRange {
+                new_revision: crate::new_revision()?,
+                identities: SplitIdentities {
+                    nodes: nodes(required_nodes)?,
+                },
+            }
+        }
         SemanticAllocationRequest::Roll { needs_wrapper, .. } => SemanticAllocation::Roll {
             new_revision: crate::new_revision()?,
             wrapper: needs_wrapper

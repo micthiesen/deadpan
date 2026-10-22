@@ -395,9 +395,9 @@ impl DeadpanApp {
         let captured = (|| {
             let target = target?;
             self.check_placement_target(&target)?;
-            if target.selection.nodes().is_some() {
+            if target.selection.has_set() {
                 return Err(
-                    "Clear the node set and choose an insertion seam before placing a slice."
+                    "Clear the selection set and choose an insertion seam before placing a slice."
                         .to_owned(),
                 );
             }
