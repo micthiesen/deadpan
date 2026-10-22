@@ -16,6 +16,8 @@ pub struct Id {
     pub revision: RevisionId,
     pub bank_version: u64,
     pub request: u64,
+    /// Displayed analysis at command entry, including its captured absence.
+    pub transcript_guard: Option<Arc<deadpan_store::TranscriptSelectionGuard>>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -83,9 +85,20 @@ pub struct Receipt {
     pub id: Id,
     pub bank_version: u64,
     pub outcome: Outcome,
+    /// Authority actually consumed by planning; ordinary actions leave it absent.
+    pub transcript_guard: Option<deadpan_store::TranscriptSelectionGuard>,
 }
 
 impl Receipt {
+    pub fn matches_transcript(
+        &self,
+        displayed: Option<&deadpan_store::TranscriptSelectionGuard>,
+    ) -> bool {
+        self.transcript_guard
+            .as_ref()
+            .is_none_or(|consumed| displayed == Some(consumed))
+    }
+
     pub fn original(&self) -> Option<&SemanticOriginalContext> {
         match &self.outcome {
             Outcome::Executed { original, .. } | Outcome::Applied { original, .. } => {

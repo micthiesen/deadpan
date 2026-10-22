@@ -1,0 +1,5 @@
+{
+  "broad_build": "Finished test profile in 14m20s; archived 205 binaries, including 2 non-test binaries, and 260 files.",
+  "observation": "All other compiler jobs ended before the deadpan-core test binary; that last job remained CPU-active and its RSS reached about 14 GiB. It completed without error. A diagnostic sample attempt found the process had already exited; no sample was collected.",
+  "scope": "Development test compilation cost, not application latency. Release timing is run later with no Cargo/rustc processes."
+}

@@ -87,6 +87,7 @@ impl Fixture {
         };
         let prepared = deadpan_cli::macros::prepare(&store, &request).unwrap();
         let id = Id {
+            transcript_guard: None,
             session: 1,
             project: document.project_id().clone(),
             revision: document.revision_id().clone(),
@@ -233,8 +234,8 @@ fn range_union_runtime_preparation_rejects_tampered_trace_geometry_mode_and_meta
     ];
     for (name, change) in changes {
         let plan = fixture.prepared.plan.as_mut().unwrap();
-        plan.trace = original.clone();
-        change(&mut plan.trace[0]);
+        plan.plan.trace = original.clone();
+        change(&mut plan.plan.trace[0]);
         assert!(fixture.bank().is_err(), "accepted tampered {name}");
         assert_eq!(fixture.store.snapshot().unwrap(), before, "{name}");
         assert_eq!(fixture.store.registers().unwrap(), before_bank, "{name}");

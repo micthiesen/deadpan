@@ -1,0 +1,8 @@
+{
+  "files": {
+    "crates/deadpan-core/tests/transcript_search_counterfactual.rs": "16438415f871d4e4cee29f79e71339b1b962ff359ec655232ff3e4941b7aef7d",
+    "crates/deadpan-store/tests/transcript_search_freshness_control.rs": "c66cc0d2a7520545561692883bd19e9fe7f5d3d081ed4e6023bdd7b0fd896269"
+  },
+  "production_changes": false,
+  "source": "public controls from search_public_controls; root formatting completed before freeze"
+}

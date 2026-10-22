@@ -1,0 +1,20 @@
+[
+  {
+    "suite": "deadpan-store::transcript_search_freshness_control",
+    "test": "same_key_proposals_and_correction_apply_undo_redo_leave_head_and_bank_unchanged",
+    "exit": 0,
+    "seconds": 0.09237162489444017,
+    "expected_pass": true,
+    "expected_outcome": true,
+    "binary_sha256": "4d4ffecac6618c91ff4f6d80a8d2cb0a68ebd467e30dfc3640ec180fe12f039e"
+  },
+  {
+    "suite": "deadpan-core::transcript_search_counterfactual",
+    "test": "transcript_search_admission_follows_literal_ranges_cut_capture_and_paste_controls",
+    "exit": 101,
+    "seconds": 0.012560125440359116,
+    "expected_pass": false,
+    "expected_outcome": true,
+    "binary_sha256": "6af85b718f2a8e9b5dfccbba7645096c9f4a27bf3d7bfb4fd44a973e825cfd55"
+  }
+]

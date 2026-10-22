@@ -120,6 +120,7 @@ impl Capture {
                     | deadpan_core::SemanticVisualSelection::Node { .. }
                     | deadpan_core::SemanticVisualSelection::Nodes { .. }
                     | deadpan_core::SemanticVisualSelection::Ranges { .. }
+                    | deadpan_core::SemanticVisualSelection::TranscriptSearch { .. }
             )
         )
     }
@@ -372,7 +373,8 @@ impl Capture {
             ),
             Some(
                 deadpan_core::SemanticVisualSelection::Nodes { .. }
-                | deadpan_core::SemanticVisualSelection::Ranges { .. },
+                | deadpan_core::SemanticVisualSelection::Ranges { .. }
+                | deadpan_core::SemanticVisualSelection::TranscriptSearch { .. },
             ) => {
                 return Err(
                     "Clear the selection set before choosing a Place slice destination.".into(),
@@ -397,6 +399,12 @@ impl Capture {
             revision: self.base.document.revision_id().clone(),
             bank_version: self.bank_version,
             request,
+            transcript_guard: self
+                .base
+                .transcript
+                .as_ref()
+                .and_then(|transcript| transcript.selection_guard.clone())
+                .map(Arc::new),
         }
     }
 }
@@ -994,6 +1002,7 @@ impl DeadpanApp {
                         | Entry::SelectNode { .. }
                         | Entry::SelectNodes { .. }
                         | Entry::SelectRanges { .. }
+                        | Entry::SelectTranscriptSearch { .. }
                         | Entry::SelectMarkRange { .. }
                         | Entry::Splice
                         | Entry::Source
@@ -1069,7 +1078,8 @@ impl DeadpanApp {
                 navigation::command::Entry::SelectMarkRange { .. }
                 | navigation::command::Entry::SelectNode { .. }
                 | navigation::command::Entry::SelectNodes { .. }
-                | navigation::command::Entry::SelectRanges { .. },
+                | navigation::command::Entry::SelectRanges { .. }
+                | navigation::command::Entry::SelectTranscriptSearch { .. },
             ) => self.macro_action_allowed(Action::SelectObject(
                 deadpan_core::SemanticTextObject::InnerGroup,
             )),
@@ -1398,6 +1408,7 @@ impl DeadpanApp {
                             | deadpan_core::SemanticVisualSelection::Node { .. }
                             | deadpan_core::SemanticVisualSelection::Nodes { .. }
                             | deadpan_core::SemanticVisualSelection::Ranges { .. }
+                            | deadpan_core::SemanticVisualSelection::TranscriptSearch { .. }
                     ))
                 )
             },
@@ -1420,6 +1431,7 @@ impl DeadpanApp {
                     deadpan_core::SemanticVisualSelection::MarkRange { .. }
                         | deadpan_core::SemanticVisualSelection::Node { .. }
                         | deadpan_core::SemanticVisualSelection::Nodes { .. }
+                        | deadpan_core::SemanticVisualSelection::TranscriptSearch { .. }
                 ) {
                     SemanticInstruction::Yank {
                         selector: selection.effective_selector(),
@@ -1451,6 +1463,7 @@ impl DeadpanApp {
                             | deadpan_core::SemanticVisualSelection::Node { .. }
                             | deadpan_core::SemanticVisualSelection::Nodes { .. }
                             | deadpan_core::SemanticVisualSelection::Ranges { .. }
+                            | deadpan_core::SemanticVisualSelection::TranscriptSearch { .. }
                     ))
                 )
             },
@@ -1469,6 +1482,7 @@ impl DeadpanApp {
                     deadpan_core::SemanticVisualSelection::MarkRange { .. }
                         | deadpan_core::SemanticVisualSelection::Node { .. }
                         | deadpan_core::SemanticVisualSelection::Nodes { .. }
+                        | deadpan_core::SemanticVisualSelection::TranscriptSearch { .. }
                 ) {
                     SemanticInstruction::Cut {
                         selector: selection.effective_selector(),
@@ -1841,6 +1855,21 @@ impl DeadpanApp {
         }
         let saved = update.saved_macro.as_ref();
         if let Some(receipt) = saved {
+            let analysis_visible = receipt.matches_transcript(
+                self.workspace
+                    .as_ref()
+                    .and_then(|workspace| workspace.transcript.as_ref())
+                    .and_then(|transcript| transcript.selection_guard.as_ref()),
+            ) && receipt.matches_transcript(
+                update
+                    .workspace
+                    .as_ref()
+                    .and_then(|workspace| workspace.transcript.as_ref())
+                    .and_then(|transcript| transcript.selection_guard.as_ref()),
+            );
+            if !analysis_visible && let Some(pending) = &mut self.macros.pending {
+                pending.owns_cursor = false;
+            }
             let owned = self.macros.pending.as_ref().is_some_and(|pending| {
                 pending.operation.id() == &receipt.id && pending.owns_cursor
             });
@@ -1997,6 +2026,17 @@ impl DeadpanApp {
                 }
             }
             Ok(receipt) => {
+                let analysis_visible = receipt.matches_transcript(
+                    self.workspace
+                        .as_ref()
+                        .and_then(|workspace| workspace.transcript.as_ref())
+                        .and_then(|transcript| transcript.selection_guard.as_ref()),
+                );
+                if !analysis_visible {
+                    self.cancel_macro_recording();
+                    self.message = Some("The action completed, but the displayed transcript changed. Its final cursor and selection were not applied; recording stopped.".into());
+                    return;
+                }
                 let visible = completion_visible(
                     &receipt,
                     self.workspace.as_ref().map(|workspace| {

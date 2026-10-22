@@ -33,6 +33,17 @@ Bounds are clamped into their segment and the analysed duration and kept
 monotonic, so recognizer output always produces a valid transcript or a typed
 error. Stored transcripts are revalidated on deserialization.
 
+`:select search="hello world"` uses corrected words as a semantic Edit selector.
+It proves complete forward phrase coverage through the canonical provider
+clock, preserving pauses and exact Original timing across continuous Source
+splits. Its query survives recording and dot; copy and cut use separate ranges
+in one atomic transaction. Proposal replacement and correction Apply/Undo/Redo
+are independent of authored revisions, so editing carries an exact-key
+proposal/correction guard checked inside Store publication. Native commands
+also retain the displayed analysis identity and its absence. See
+[transcript-search sets](SEMANTIC_MACROS.md#transcript-search-sets) for bounds,
+unsupported authority and current verification status.
+
 ## Analysis audio
 
 `prepare_original_audio` decodes the Original's qualified audio stream from its

@@ -1,0 +1,10 @@
+{
+  "command": [
+    "python",
+    "/tmp/deadpan-transcript-selectors-2026-10-22/run_archive.py",
+    "media-preflight",
+    "test(transcript_search_export_preserves_exact_match_union_order_and_complete_audio)"
+  ],
+  "exit": 100,
+  "seconds": 6.302718874998391
+}

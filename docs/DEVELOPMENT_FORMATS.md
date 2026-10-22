@@ -35,6 +35,11 @@ The same kind also carries [interval unions](SEMANTIC_MACROS.md#discontiguous-in
 Components must be uniformly whole-child or uniformly positive canonical Range
 captures. Range components can retain identical authored records from one
 Source; historical admission reconstructs every component against its source.
+Corrected [transcript-search unions](SEMANTIC_MACROS.md#transcript-search-sets)
+use those same Range captures. Saved semantic programs retain the bounded query;
+the exact proposal/correction freshness guard belongs to the host invocation,
+not authored documents, history or capture payloads. This adds no SQLite or
+core document schema change.
 
 Under the 2026-09-30 development-format authorization, this build refuses
 schemas 1 through 83 as `UnsupportedSchema` without changes. The retained

@@ -129,6 +129,11 @@ pub enum SemanticSelector {
         #[serde(deserialize_with = "super::range_set::deserialize_offsets")]
         ranges: Vec<super::SemanticRangeOffsets>,
     },
+    /// Re-run the query against complete Original speech occurrences in the
+    /// current staged Edit scope.
+    TranscriptSearch {
+        query: super::SemanticTranscriptQuery,
+    },
     /// Two named Edit boundaries, resolved anew against the staged revision.
     MarkRange {
         start: NamedMarkTarget,
@@ -151,7 +156,7 @@ impl SemanticSelector {
     pub const fn uses_speech(&self) -> bool {
         match self {
             Self::Motion { motion } => motion.uses_speech(),
-            Self::Speech { .. } => true,
+            Self::Speech { .. } | Self::TranscriptSearch { .. } => true,
             Self::SelectedBeat
             | Self::VisualSelection
             | Self::TextObject { .. }
@@ -225,6 +230,9 @@ pub enum SemanticInstruction {
     SelectRanges {
         #[serde(deserialize_with = "super::range_set::deserialize_offsets")]
         ranges: Vec<super::SemanticRangeOffsets>,
+    },
+    SelectTranscriptSearch {
+        query: super::SemanticTranscriptQuery,
     },
     #[serde(deserialize_with = "deserialize_empty")]
     BeginSelection,
@@ -541,11 +549,70 @@ impl SemanticInstruction {
             | Self::MoveSentences { .. }
             | Self::MovePauses { .. }
             | Self::MoveShots { .. }
-            | Self::SelectSpeech { .. } => true,
+            | Self::SelectSpeech { .. }
+            | Self::SelectTranscriptSearch { .. } => true,
             Self::Yank { selector, .. }
             | Self::Cut { selector, .. }
             | Self::Group { selector, .. }
+            | Self::Duplicate { selector }
             | Self::Repeat { selector, .. } => selector.uses_speech(),
+            _ => false,
+        }
+    }
+
+    /// Search uses exact host coverage, independently of the per-picture word
+    /// timeline used by motions and text objects.
+    pub(super) fn uses_speech_timeline(&self) -> bool {
+        match self {
+            Self::SelectTranscriptSearch { .. } => false,
+            Self::Yank {
+                selector: SemanticSelector::TranscriptSearch { .. },
+                ..
+            }
+            | Self::Cut {
+                selector: SemanticSelector::TranscriptSearch { .. },
+                ..
+            }
+            | Self::Group {
+                selector: SemanticSelector::TranscriptSearch { .. },
+                ..
+            }
+            | Self::Duplicate {
+                selector: SemanticSelector::TranscriptSearch { .. },
+            }
+            | Self::Repeat {
+                selector: SemanticSelector::TranscriptSearch { .. },
+                ..
+            } => false,
+            _ => self.uses_speech(),
+        }
+    }
+
+    /// Only word and sentence operations consume the recognized transcript.
+    /// Pause and shot analyses have independent provenance. Exact search owns
+    /// its own transcript admission in the provider's search operation.
+    pub(super) fn uses_transcript_words(&self) -> bool {
+        let object_uses_words = |object: super::SpeechObject| {
+            matches!(
+                object.unit(),
+                crate::SpeechUnit::Word | crate::SpeechUnit::Sentence
+            )
+        };
+        match self {
+            Self::MoveWords { .. } | Self::MoveSentences { .. } => true,
+            Self::SelectSpeech { object } => object_uses_words(*object),
+            Self::Yank { selector, .. }
+            | Self::Cut { selector, .. }
+            | Self::Group { selector, .. }
+            | Self::Duplicate { selector }
+            | Self::Repeat { selector, .. } => match selector {
+                SemanticSelector::Speech { object } => object_uses_words(*object),
+                SemanticSelector::Motion { motion } => matches!(
+                    motion,
+                    SemanticMotion::Words { .. } | SemanticMotion::Sentences { .. }
+                ),
+                _ => false,
+            },
             _ => false,
         }
     }
@@ -570,6 +637,7 @@ impl SemanticInstruction {
             Self::Yank { selector, .. }
             | Self::Cut { selector, .. }
             | Self::Group { selector, .. }
+            | Self::Duplicate { selector }
             | Self::Repeat { selector, .. } => {
                 matches!(selector, SemanticSelector::Motion { motion } if backward_end(motion))
             }

@@ -1,0 +1,433 @@
+{
+  "bank_version": 2,
+  "before_bank_version": 1,
+  "before_revision": "27b7de0b-886b-4c06-923a-4d0c3c27f59c",
+  "committed": true,
+  "committed_registers": {
+    "bank_version": 2,
+    "project_id": "a07299a9-8e73-4712-9992-bbba547c5fd4",
+    "revision_id": "a7d1eeb8-6f06-4818-8a68-db923142f3f9"
+  },
+  "committed_revision": "a7d1eeb8-6f06-4818-8a68-db923142f3f9",
+  "context": {
+    "cursor": 99,
+    "original": null,
+    "parent": "3ff8aaf2-a9ff-4193-9ab2-695bce27ae14",
+    "scoped": null,
+    "selected_child": "93dcccbc-e7ad-4b81-881c-31c95ebfd16d",
+    "visual_selection": null
+  },
+  "edit": {
+    "changed_ids": [
+      "15d45c54-28aa-48f3-894a-a7d60e643ffc",
+      "35e8abc8-1c4b-497d-96f0-38cef7af4d2f",
+      "3825cb1c-4282-4ab9-a11a-d886f0c2b628",
+      "3e9f2aed-a21a-46b0-8814-60d267d48b90",
+      "3ff8aaf2-a9ff-4193-9ab2-695bce27ae14",
+      "46b9e2d8-b83a-4776-ba47-7ccfa0aeac68",
+      "4ab987fe-8c5d-42d9-b7d4-5247f511758b",
+      "74738b0d-b0c2-4adb-ba56-631a505d94ee",
+      "74aeb43c-2f83-4b4d-8aab-a80ed524dd75",
+      "81669cab-9f57-40cc-bfc4-45856d43cada",
+      "8b9e156c-7034-41c5-b43e-236d9772ecb3",
+      "93dcccbc-e7ad-4b81-881c-31c95ebfd16d",
+      "9c55666a-e2d0-4982-9bc5-dc9e382ed3bb",
+      "afe7ff00-f85f-4c54-bddd-984102bb3a17",
+      "c16f83a3-f76d-42d9-a55c-16ff35488fe1",
+      "c6fc98ce-ce14-469a-b078-e0e165be2644",
+      "cbe09c7e-ab0c-44db-ae1c-dce5a1e3cc8d",
+      "df74ab6e-7852-41f4-8025-8df5dc59e246",
+      "e1b7bf35-aaac-4dca-8c8a-b890eb2b724c"
+    ],
+    "description": "Apply resolved transaction",
+    "duration_delta": 0,
+    "new_revision": "a7d1eeb8-6f06-4818-8a68-db923142f3f9"
+  },
+  "generation_preparation_notices": [],
+  "generation_preparations": [],
+  "mark_changes": [],
+  "operation": "run",
+  "project_id": "a07299a9-8e73-4712-9992-bbba547c5fd4",
+  "protocol": 1,
+  "register": "m",
+  "register_writes": [
+    "\"",
+    "a",
+    "b"
+  ],
+  "trace": [
+    {
+      "after_cursor": 99,
+      "after_original": null,
+      "after_parent": "3ff8aaf2-a9ff-4193-9ab2-695bce27ae14",
+      "after_scoped": null,
+      "after_selected_child": "93dcccbc-e7ad-4b81-881c-31c95ebfd16d",
+      "after_visual_selection": null,
+      "before_cursor": 0,
+      "before_original": null,
+      "before_revision": "27b7de0b-886b-4c06-923a-4d0c3c27f59c",
+      "before_scope": {
+        "end": 120,
+        "start": 0
+      },
+      "before_scoped": null,
+      "before_selected_child": null,
+      "before_visual_selection": null,
+      "capture": null,
+      "capture_set": null,
+      "captured_child_label": null,
+      "depth": 0,
+      "instruction": {
+        "count": 1,
+        "register": "m",
+        "type": "call"
+      },
+      "parent": "3ff8aaf2-a9ff-4193-9ab2-695bce27ae14",
+      "removed_range": null,
+      "resolved_nodes": [],
+      "resolved_parent": null,
+      "resolved_range": null,
+      "resolved_ranges": [],
+      "resolved_selection": null
+    },
+    {
+      "after_cursor": 57,
+      "after_original": null,
+      "after_parent": "3ff8aaf2-a9ff-4193-9ab2-695bce27ae14",
+      "after_scoped": null,
+      "after_selected_child": "35e8abc8-1c4b-497d-96f0-38cef7af4d2f",
+      "after_visual_selection": {
+        "query": "needle",
+        "ranges": [
+          {
+            "end": 15,
+            "start": 8
+          },
+          {
+            "end": 36,
+            "start": 29
+          },
+          {
+            "end": 57,
+            "start": 50
+          }
+        ],
+        "type": "transcript_search"
+      },
+      "before_cursor": 0,
+      "before_original": null,
+      "before_revision": "27b7de0b-886b-4c06-923a-4d0c3c27f59c",
+      "before_scope": {
+        "end": 120,
+        "start": 0
+      },
+      "before_scoped": null,
+      "before_selected_child": null,
+      "before_visual_selection": null,
+      "capture": null,
+      "capture_set": null,
+      "captured_child_label": null,
+      "depth": 1,
+      "instruction": {
+        "query": "needle",
+        "type": "select_transcript_search"
+      },
+      "parent": "3ff8aaf2-a9ff-4193-9ab2-695bce27ae14",
+      "removed_range": null,
+      "resolved_nodes": [],
+      "resolved_parent": null,
+      "resolved_range": null,
+      "resolved_ranges": [
+        {
+          "end": 15,
+          "start": 8
+        },
+        {
+          "end": 36,
+          "start": 29
+        },
+        {
+          "end": 57,
+          "start": 50
+        }
+      ],
+      "resolved_selection": null
+    },
+    {
+      "after_cursor": 57,
+      "after_original": null,
+      "after_parent": "3ff8aaf2-a9ff-4193-9ab2-695bce27ae14",
+      "after_scoped": null,
+      "after_selected_child": "35e8abc8-1c4b-497d-96f0-38cef7af4d2f",
+      "after_visual_selection": {
+        "query": "needle",
+        "ranges": [
+          {
+            "end": 15,
+            "start": 8
+          },
+          {
+            "end": 36,
+            "start": 29
+          },
+          {
+            "end": 57,
+            "start": 50
+          }
+        ],
+        "type": "transcript_search"
+      },
+      "before_cursor": 57,
+      "before_original": null,
+      "before_revision": "27b7de0b-886b-4c06-923a-4d0c3c27f59c",
+      "before_scope": {
+        "end": 120,
+        "start": 0
+      },
+      "before_scoped": null,
+      "before_selected_child": "35e8abc8-1c4b-497d-96f0-38cef7af4d2f",
+      "before_visual_selection": {
+        "query": "needle",
+        "ranges": [
+          {
+            "end": 15,
+            "start": 8
+          },
+          {
+            "end": 36,
+            "start": 29
+          },
+          {
+            "end": 57,
+            "start": 50
+          }
+        ],
+        "type": "transcript_search"
+      },
+      "capture": null,
+      "capture_set": {
+        "bounds": {
+          "end": 120,
+          "start": 0
+        },
+        "parent": "3ff8aaf2-a9ff-4193-9ab2-695bce27ae14",
+        "scope": [],
+        "scope_labels": [],
+        "timing": {
+          "allocation": "60ccd86c-b667-4991-9ec1-3e03ddb23e6c",
+          "ordinal": 0
+        }
+      },
+      "captured_child_label": null,
+      "depth": 1,
+      "instruction": {
+        "register": "a",
+        "selector": {
+          "type": "visual_selection"
+        },
+        "type": "yank"
+      },
+      "parent": "3ff8aaf2-a9ff-4193-9ab2-695bce27ae14",
+      "removed_range": null,
+      "resolved_nodes": [],
+      "resolved_parent": null,
+      "resolved_range": null,
+      "resolved_ranges": [
+        {
+          "end": 15,
+          "start": 8
+        },
+        {
+          "end": 36,
+          "start": 29
+        },
+        {
+          "end": 57,
+          "start": 50
+        }
+      ],
+      "resolved_selection": null
+    },
+    {
+      "after_cursor": 8,
+      "after_original": null,
+      "after_parent": "3ff8aaf2-a9ff-4193-9ab2-695bce27ae14",
+      "after_scoped": null,
+      "after_selected_child": "cbe09c7e-ab0c-44db-ae1c-dce5a1e3cc8d",
+      "after_visual_selection": null,
+      "before_cursor": 57,
+      "before_original": null,
+      "before_revision": "27b7de0b-886b-4c06-923a-4d0c3c27f59c",
+      "before_scope": {
+        "end": 120,
+        "start": 0
+      },
+      "before_scoped": null,
+      "before_selected_child": "35e8abc8-1c4b-497d-96f0-38cef7af4d2f",
+      "before_visual_selection": {
+        "query": "needle",
+        "ranges": [
+          {
+            "end": 15,
+            "start": 8
+          },
+          {
+            "end": 36,
+            "start": 29
+          },
+          {
+            "end": 57,
+            "start": 50
+          }
+        ],
+        "type": "transcript_search"
+      },
+      "capture": null,
+      "capture_set": {
+        "bounds": {
+          "end": 120,
+          "start": 0
+        },
+        "parent": "3ff8aaf2-a9ff-4193-9ab2-695bce27ae14",
+        "scope": [],
+        "scope_labels": [],
+        "timing": {
+          "allocation": "c664114e-1702-478e-b742-88c196c0ffc1",
+          "ordinal": 0
+        }
+      },
+      "captured_child_label": null,
+      "depth": 1,
+      "instruction": {
+        "register": "b",
+        "selector": {
+          "type": "visual_selection"
+        },
+        "type": "cut"
+      },
+      "parent": "3ff8aaf2-a9ff-4193-9ab2-695bce27ae14",
+      "removed_range": null,
+      "resolved_nodes": [],
+      "resolved_parent": null,
+      "resolved_range": null,
+      "resolved_ranges": [
+        {
+          "end": 15,
+          "start": 8
+        },
+        {
+          "end": 36,
+          "start": 29
+        },
+        {
+          "end": 57,
+          "start": 50
+        }
+      ],
+      "resolved_selection": null
+    },
+    {
+      "after_cursor": 8,
+      "after_original": null,
+      "after_parent": "3ff8aaf2-a9ff-4193-9ab2-695bce27ae14",
+      "after_scoped": null,
+      "after_selected_child": "cbe09c7e-ab0c-44db-ae1c-dce5a1e3cc8d",
+      "after_visual_selection": null,
+      "before_cursor": 8,
+      "before_original": null,
+      "before_revision": "26da4004-9887-413a-a7b7-da11d0a400c9",
+      "before_scope": {
+        "end": 99,
+        "start": 0
+      },
+      "before_scoped": null,
+      "before_selected_child": "cbe09c7e-ab0c-44db-ae1c-dce5a1e3cc8d",
+      "before_visual_selection": null,
+      "capture": null,
+      "capture_set": null,
+      "captured_child_label": null,
+      "depth": 1,
+      "instruction": {
+        "type": "clear_selection"
+      },
+      "parent": "3ff8aaf2-a9ff-4193-9ab2-695bce27ae14",
+      "removed_range": null,
+      "resolved_nodes": [],
+      "resolved_parent": null,
+      "resolved_range": null,
+      "resolved_ranges": [],
+      "resolved_selection": null
+    },
+    {
+      "after_cursor": 99,
+      "after_original": null,
+      "after_parent": "3ff8aaf2-a9ff-4193-9ab2-695bce27ae14",
+      "after_scoped": null,
+      "after_selected_child": "e1b7bf35-aaac-4dca-8c8a-b890eb2b724c",
+      "after_visual_selection": null,
+      "before_cursor": 8,
+      "before_original": null,
+      "before_revision": "26da4004-9887-413a-a7b7-da11d0a400c9",
+      "before_scope": {
+        "end": 99,
+        "start": 0
+      },
+      "before_scoped": null,
+      "before_selected_child": "cbe09c7e-ab0c-44db-ae1c-dce5a1e3cc8d",
+      "before_visual_selection": null,
+      "capture": null,
+      "capture_set": null,
+      "captured_child_label": null,
+      "depth": 1,
+      "instruction": {
+        "count": 1000,
+        "forward": true,
+        "type": "move_frames"
+      },
+      "parent": "3ff8aaf2-a9ff-4193-9ab2-695bce27ae14",
+      "removed_range": null,
+      "resolved_nodes": [],
+      "resolved_parent": null,
+      "resolved_range": null,
+      "resolved_ranges": [],
+      "resolved_selection": null
+    },
+    {
+      "after_cursor": 99,
+      "after_original": null,
+      "after_parent": "3ff8aaf2-a9ff-4193-9ab2-695bce27ae14",
+      "after_scoped": null,
+      "after_selected_child": "93dcccbc-e7ad-4b81-881c-31c95ebfd16d",
+      "after_visual_selection": null,
+      "before_cursor": 99,
+      "before_original": null,
+      "before_revision": "26da4004-9887-413a-a7b7-da11d0a400c9",
+      "before_scope": {
+        "end": 99,
+        "start": 0
+      },
+      "before_scoped": null,
+      "before_selected_child": "e1b7bf35-aaac-4dca-8c8a-b890eb2b724c",
+      "before_visual_selection": null,
+      "capture": null,
+      "capture_set": null,
+      "captured_child_label": null,
+      "depth": 1,
+      "instruction": {
+        "before": false,
+        "register": "b",
+        "type": "paste"
+      },
+      "parent": "3ff8aaf2-a9ff-4193-9ab2-695bce27ae14",
+      "removed_range": null,
+      "resolved_nodes": [],
+      "resolved_parent": "3ff8aaf2-a9ff-4193-9ab2-695bce27ae14",
+      "resolved_range": {
+        "end": 120,
+        "start": 99
+      },
+      "resolved_ranges": [],
+      "resolved_selection": null
+    }
+  ]
+}

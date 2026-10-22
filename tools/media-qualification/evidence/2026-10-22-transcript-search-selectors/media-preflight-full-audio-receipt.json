@@ -1,0 +1,51 @@
+{
+  "command": [
+    "/tmp/deadpan-transcript-selectors-2026-10-22/media-preflight-extracted/target/debug/deadpan-cli",
+    "verify-export",
+    "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpX9fm4U/fixture/transcript-search-portable.deadpan",
+    "--movie",
+    "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpX9fm4U/exports/transcript-search.mp4",
+    "--revision",
+    "2f503ec3-2222-49cd-9a4e-2379a6cb004f",
+    "--every",
+    "1",
+    "--samples",
+    "0:192192"
+  ],
+  "exit": 0,
+  "seconds": 1.2268157498911023,
+  "binary_sha256": "c13d6b4e9995b9d33a82ea563dca574fc60ed3eaa750c803ee0d3098ef6c39b6",
+  "summary": {
+    "pictures_checked": 120,
+    "pictures_failed": 0,
+    "min_luma_psnr_db": 55.8077264033698,
+    "min_chroma_psnr_db": 53.59295014636673,
+    "max_thumbnail_mad": 0.06610054347826087,
+    "max_local_luma_error": 2.0625,
+    "min_neighbor_margin_db": 34.044035090742064,
+    "index_observable_comparisons": 180,
+    "index_unobservable_comparisons": 58,
+    "pictures_without_index_neighbors": 0,
+    "audio_windows_checked": 1,
+    "audio_windows_failed": 0,
+    "signal_windows": 1,
+    "blocks_compared": 4,
+    "min_block_snr_db": 29.534686653581982,
+    "max_block_level_db": 0.043817517907697834,
+    "offset_verified_windows": 1,
+    "offset_unobservable_windows": 0,
+    "nonzero_offsets": 0
+  },
+  "audio": [
+    {
+      "project_samples": [
+        0,
+        192192
+      ],
+      "uncovered_samples": 0,
+      "offset_status": "verified_zero",
+      "measured_offset_samples": 0,
+      "flags": []
+    }
+  ]
+}

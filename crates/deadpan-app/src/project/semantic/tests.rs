@@ -15,6 +15,50 @@ fn named(a: &str, b: &str) -> SemanticSelector {
         },
     }
 }
+
+#[test]
+fn transcript_search_dot_retains_query_and_accepts_an_explicit_new_visual_override() {
+    let query = deadpan_core::SemanticTranscriptQuery::new("hello world").unwrap();
+    let selector = SemanticSelector::TranscriptSearch {
+        query: query.clone(),
+    };
+    let register = RegisterName::new('a').unwrap();
+    let instruction = SemanticInstruction::Cut {
+        selector: selector.clone(),
+        register,
+    };
+    let receipt = LastEdit::from_instruction(&instruction).unwrap();
+    assert_eq!(receipt.instruction(&context(None), register), instruction);
+    let selection = context(Some(SemanticVisualSelection::TranscriptSearch {
+        query,
+        ranges: vec![FrameRange::new(ProjectFrame(1), ProjectFrame(4)).unwrap()],
+    }));
+    assert_eq!(receipt.instruction(&selection, register), instruction);
+    let manual = context(Some(SemanticVisualSelection::Time {
+        anchor: ProjectFrame(8),
+        head: ProjectFrame(11),
+        extending: false,
+    }));
+    assert!(matches!(
+        receipt.instruction(&manual, register),
+        SemanticInstruction::Cut {
+            selector: SemanticSelector::VisualSelection,
+            ..
+        }
+    ));
+    let another = deadpan_core::SemanticTranscriptQuery::new("another phrase").unwrap();
+    let new_search = context(Some(SemanticVisualSelection::TranscriptSearch {
+        query: another.clone(),
+        ranges: vec![FrameRange::new(ProjectFrame(12), ProjectFrame(15)).unwrap()],
+    }));
+    assert!(
+        matches!(receipt.instruction(&new_search, register), SemanticInstruction::Cut { selector: SemanticSelector::TranscriptSearch { query }, .. } if query == another)
+    );
+    assert_eq!(
+        serde_json::to_value(selector).unwrap(),
+        serde_json::json!({"type":"transcript_search","query":"hello world"})
+    );
+}
 fn context(selection: Option<SemanticVisualSelection>) -> SemanticContext {
     SemanticContext {
         original: None,

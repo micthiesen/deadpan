@@ -1,0 +1,18 @@
+{
+  "deadpan-core::transcript_search_counterfactual": {
+    "source": "/tmp/deadpan-transcript-selectors-2026-10-22/baseline-target/debug/deps/transcript_search_counterfactual-6934a6fd5b909b3b",
+    "retained": "/tmp/deadpan-transcript-selectors-2026-10-22/baseline-second-bin/transcript_search_counterfactual-6934a6fd5b909b3b",
+    "sha256": "6af85b718f2a8e9b5dfccbba7645096c9f4a27bf3d7bfb4fd44a973e825cfd55",
+    "tests": [
+      "transcript_search_admission_follows_literal_ranges_cut_capture_and_paste_controls"
+    ]
+  },
+  "deadpan-store::transcript_search_freshness_control": {
+    "source": "/tmp/deadpan-transcript-selectors-2026-10-22/baseline-target/debug/deps/transcript_search_freshness_control-bef40d66ef2116d7",
+    "retained": "/tmp/deadpan-transcript-selectors-2026-10-22/baseline-second-bin/transcript_search_freshness_control-bef40d66ef2116d7",
+    "sha256": "4d4ffecac6618c91ff4f6d80a8d2cb0a68ebd467e30dfc3640ec180fe12f039e",
+    "tests": [
+      "same_key_proposals_and_correction_apply_undo_redo_leave_head_and_bank_unchanged"
+    ]
+  }
+}

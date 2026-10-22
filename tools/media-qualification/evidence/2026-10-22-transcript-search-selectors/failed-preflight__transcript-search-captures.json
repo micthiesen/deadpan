@@ -1,0 +1,1667 @@
+{
+  "before_revision": "d18d70ea-7ca9-4525-a39d-c448fbb22d5e",
+  "captures": [
+    {
+      "capture": {
+        "components": [
+          {
+            "assets": {
+              "5ced4d7d-272f-46f0-a901-b0c82f67fd2b": {
+                "audio": {
+                  "end": {
+                    "ticks": 192192,
+                    "time_base": {
+                      "denominator": 48000,
+                      "numerator": 1
+                    }
+                  },
+                  "start": {
+                    "ticks": 0,
+                    "time_base": {
+                      "denominator": 48000,
+                      "numerator": 1
+                    }
+                  }
+                },
+                "content_hash": "blake3:16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+                "frame_count": 120,
+                "label": "original",
+                "source_qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6",
+                "still_image": false,
+                "video": {
+                  "end": {
+                    "ticks": 120120,
+                    "time_base": {
+                      "denominator": 30000,
+                      "numerator": 1
+                    }
+                  },
+                  "start": {
+                    "ticks": 0,
+                    "time_base": {
+                      "denominator": 30000,
+                      "numerator": 1
+                    }
+                  }
+                }
+              }
+            },
+            "audio_bindings": {
+              "bindings": {
+                "40c8beef-6a70-438f-8052-959743a0c505": {
+                  "lattice": {
+                    "arguments": [],
+                    "births": [],
+                    "reference": {
+                      "physical": "40c8beef-6a70-438f-8052-959743a0c505",
+                      "root": {
+                        "type": "project_root_round_even"
+                      },
+                      "timing": {
+                        "allocation": "4be5e298-1629-4777-80a8-66d6bb2bf1bf",
+                        "ordinal": 0
+                      }
+                    }
+                  },
+                  "reanchors": [
+                    {
+                      "placement": {
+                        "arguments": [],
+                        "births": [],
+                        "reference": {
+                          "physical": "40c8beef-6a70-438f-8052-959743a0c505",
+                          "root": {
+                            "type": "project_root_round_even"
+                          },
+                          "timing": {
+                            "allocation": "4be5e298-1629-4777-80a8-66d6bb2bf1bf",
+                            "ordinal": 0
+                          }
+                        }
+                      },
+                      "window": {
+                        "end": {
+                          "denominator": "1",
+                          "numerator": "15"
+                        },
+                        "start": {
+                          "denominator": "1",
+                          "numerator": "8"
+                        }
+                      }
+                    }
+                  ],
+                  "resume": null
+                }
+              },
+              "timings": [
+                {
+                  "id": {
+                    "allocation": "4be5e298-1629-4777-80a8-66d6bb2bf1bf",
+                    "ordinal": 0
+                  },
+                  "layout": {
+                    "nodes": {
+                      "40c8beef-6a70-438f-8052-959743a0c505": {
+                        "duration": 120,
+                        "edges": {
+                          "node_end": "automatic",
+                          "node_start": "automatic",
+                          "repeat_gap_end": "automatic",
+                          "repeat_gap_start": "automatic",
+                          "source_placement_end": "automatic",
+                          "source_placement_start": "automatic"
+                        },
+                        "kind": {
+                          "placement": {
+                            "end": {
+                              "denominator": "1",
+                              "numerator": "120"
+                            },
+                            "start": {
+                              "denominator": "1",
+                              "numerator": "0"
+                            }
+                          },
+                          "type": "source"
+                        }
+                      },
+                      "dfceaa75-b234-45b0-8a95-2f988d3a7e83": {
+                        "duration": 120,
+                        "edges": {
+                          "node_end": "automatic",
+                          "node_start": "automatic",
+                          "repeat_gap_end": "automatic",
+                          "repeat_gap_start": "automatic",
+                          "source_placement_end": "automatic",
+                          "source_placement_start": "automatic"
+                        },
+                        "kind": {
+                          "children": [
+                            "40c8beef-6a70-438f-8052-959743a0c505"
+                          ],
+                          "type": "sequence"
+                        }
+                      }
+                    },
+                    "overrides": {},
+                    "rate": {
+                      "denominator": 1001,
+                      "numerator": 30000
+                    },
+                    "root": "dfceaa75-b234-45b0-8a95-2f988d3a7e83"
+                  }
+                }
+              ]
+            },
+            "audio_lineage": {},
+            "beat_sounds": {},
+            "capture_timing": {
+              "allocation": "4be5e298-1629-4777-80a8-66d6bb2bf1bf",
+              "ordinal": 0
+            },
+            "gap_overrides": {},
+            "marks": {},
+            "nodes": {
+              "40c8beef-6a70-438f-8052-959743a0c505": {
+                "kind": {
+                  "source": {
+                    "audio": {
+                      "asset": "5ced4d7d-272f-46f0-a901-b0c82f67fd2b",
+                      "span": {
+                        "end": {
+                          "ticks": 192192,
+                          "time_base": {
+                            "denominator": 48000,
+                            "numerator": 1
+                          }
+                        },
+                        "start": {
+                          "ticks": 0,
+                          "time_base": {
+                            "denominator": 48000,
+                            "numerator": 1
+                          }
+                        }
+                      }
+                    },
+                    "audio_mapping": {
+                      "frames": {
+                        "denominator": "1",
+                        "numerator": "120"
+                      },
+                      "start": {
+                        "denominator": "1",
+                        "numerator": "0"
+                      },
+                      "type": "placement"
+                    },
+                    "audio_offset": 0,
+                    "duration": 120,
+                    "edit_window": {
+                      "end": {
+                        "denominator": "1",
+                        "numerator": "120"
+                      },
+                      "start": {
+                        "denominator": "1",
+                        "numerator": "0"
+                      }
+                    },
+                    "link": "linked",
+                    "video": {
+                      "asset": "5ced4d7d-272f-46f0-a901-b0c82f67fd2b",
+                      "span": {
+                        "end": {
+                          "ticks": 120120,
+                          "time_base": {
+                            "denominator": 30000,
+                            "numerator": 1
+                          }
+                        },
+                        "start": {
+                          "ticks": 0,
+                          "time_base": {
+                            "denominator": 30000,
+                            "numerator": 1
+                          }
+                        }
+                      },
+                      "type": "stream"
+                    },
+                    "video_mapping": {
+                      "endpoints": "hold_adjacent",
+                      "frames": {
+                        "denominator": "1",
+                        "numerator": "120"
+                      },
+                      "start": {
+                        "denominator": "1",
+                        "numerator": "0"
+                      },
+                      "type": "placement"
+                    }
+                  },
+                  "type": "source"
+                },
+                "label": "original"
+              }
+            },
+            "overrides": {},
+            "parent": "dfceaa75-b234-45b0-8a95-2f988d3a7e83",
+            "parts": [
+              {
+                "mapping": {
+                  "end": 15,
+                  "start": 8
+                },
+                "root": "40c8beef-6a70-438f-8052-959743a0c505",
+                "source_start": 0
+              }
+            ],
+            "presentation_basis": {
+              "color_policy": "sdr_rec709",
+              "frame_rate": {
+                "denominator": 1001,
+                "numerator": 30000
+              },
+              "height": 180,
+              "width": 320
+            },
+            "project_id": "d84025ca-6e34-4762-8981-86da37ebfbca",
+            "range": {
+              "end": 15,
+              "start": 8
+            },
+            "revision_id": "d18d70ea-7ca9-4525-a39d-c448fbb22d5e",
+            "source_duration": 120
+          },
+          {
+            "assets": {
+              "5ced4d7d-272f-46f0-a901-b0c82f67fd2b": {
+                "audio": {
+                  "end": {
+                    "ticks": 192192,
+                    "time_base": {
+                      "denominator": 48000,
+                      "numerator": 1
+                    }
+                  },
+                  "start": {
+                    "ticks": 0,
+                    "time_base": {
+                      "denominator": 48000,
+                      "numerator": 1
+                    }
+                  }
+                },
+                "content_hash": "blake3:16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+                "frame_count": 120,
+                "label": "original",
+                "source_qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6",
+                "still_image": false,
+                "video": {
+                  "end": {
+                    "ticks": 120120,
+                    "time_base": {
+                      "denominator": 30000,
+                      "numerator": 1
+                    }
+                  },
+                  "start": {
+                    "ticks": 0,
+                    "time_base": {
+                      "denominator": 30000,
+                      "numerator": 1
+                    }
+                  }
+                }
+              }
+            },
+            "audio_bindings": {
+              "bindings": {
+                "40c8beef-6a70-438f-8052-959743a0c505": {
+                  "lattice": {
+                    "arguments": [],
+                    "births": [],
+                    "reference": {
+                      "physical": "40c8beef-6a70-438f-8052-959743a0c505",
+                      "root": {
+                        "type": "project_root_round_even"
+                      },
+                      "timing": {
+                        "allocation": "4be5e298-1629-4777-80a8-66d6bb2bf1bf",
+                        "ordinal": 1
+                      }
+                    }
+                  },
+                  "reanchors": [
+                    {
+                      "placement": {
+                        "arguments": [],
+                        "births": [],
+                        "reference": {
+                          "physical": "40c8beef-6a70-438f-8052-959743a0c505",
+                          "root": {
+                            "type": "project_root_round_even"
+                          },
+                          "timing": {
+                            "allocation": "4be5e298-1629-4777-80a8-66d6bb2bf1bf",
+                            "ordinal": 1
+                          }
+                        }
+                      },
+                      "window": {
+                        "end": {
+                          "denominator": "1",
+                          "numerator": "36"
+                        },
+                        "start": {
+                          "denominator": "1",
+                          "numerator": "29"
+                        }
+                      }
+                    }
+                  ],
+                  "resume": null
+                }
+              },
+              "timings": [
+                {
+                  "id": {
+                    "allocation": "4be5e298-1629-4777-80a8-66d6bb2bf1bf",
+                    "ordinal": 1
+                  },
+                  "layout": {
+                    "nodes": {
+                      "40c8beef-6a70-438f-8052-959743a0c505": {
+                        "duration": 120,
+                        "edges": {
+                          "node_end": "automatic",
+                          "node_start": "automatic",
+                          "repeat_gap_end": "automatic",
+                          "repeat_gap_start": "automatic",
+                          "source_placement_end": "automatic",
+                          "source_placement_start": "automatic"
+                        },
+                        "kind": {
+                          "placement": {
+                            "end": {
+                              "denominator": "1",
+                              "numerator": "120"
+                            },
+                            "start": {
+                              "denominator": "1",
+                              "numerator": "0"
+                            }
+                          },
+                          "type": "source"
+                        }
+                      },
+                      "dfceaa75-b234-45b0-8a95-2f988d3a7e83": {
+                        "duration": 120,
+                        "edges": {
+                          "node_end": "automatic",
+                          "node_start": "automatic",
+                          "repeat_gap_end": "automatic",
+                          "repeat_gap_start": "automatic",
+                          "source_placement_end": "automatic",
+                          "source_placement_start": "automatic"
+                        },
+                        "kind": {
+                          "children": [
+                            "40c8beef-6a70-438f-8052-959743a0c505"
+                          ],
+                          "type": "sequence"
+                        }
+                      }
+                    },
+                    "overrides": {},
+                    "rate": {
+                      "denominator": 1001,
+                      "numerator": 30000
+                    },
+                    "root": "dfceaa75-b234-45b0-8a95-2f988d3a7e83"
+                  }
+                }
+              ]
+            },
+            "audio_lineage": {},
+            "beat_sounds": {},
+            "capture_timing": {
+              "allocation": "4be5e298-1629-4777-80a8-66d6bb2bf1bf",
+              "ordinal": 1
+            },
+            "gap_overrides": {},
+            "marks": {},
+            "nodes": {
+              "40c8beef-6a70-438f-8052-959743a0c505": {
+                "kind": {
+                  "source": {
+                    "audio": {
+                      "asset": "5ced4d7d-272f-46f0-a901-b0c82f67fd2b",
+                      "span": {
+                        "end": {
+                          "ticks": 192192,
+                          "time_base": {
+                            "denominator": 48000,
+                            "numerator": 1
+                          }
+                        },
+                        "start": {
+                          "ticks": 0,
+                          "time_base": {
+                            "denominator": 48000,
+                            "numerator": 1
+                          }
+                        }
+                      }
+                    },
+                    "audio_mapping": {
+                      "frames": {
+                        "denominator": "1",
+                        "numerator": "120"
+                      },
+                      "start": {
+                        "denominator": "1",
+                        "numerator": "0"
+                      },
+                      "type": "placement"
+                    },
+                    "audio_offset": 0,
+                    "duration": 120,
+                    "edit_window": {
+                      "end": {
+                        "denominator": "1",
+                        "numerator": "120"
+                      },
+                      "start": {
+                        "denominator": "1",
+                        "numerator": "0"
+                      }
+                    },
+                    "link": "linked",
+                    "video": {
+                      "asset": "5ced4d7d-272f-46f0-a901-b0c82f67fd2b",
+                      "span": {
+                        "end": {
+                          "ticks": 120120,
+                          "time_base": {
+                            "denominator": 30000,
+                            "numerator": 1
+                          }
+                        },
+                        "start": {
+                          "ticks": 0,
+                          "time_base": {
+                            "denominator": 30000,
+                            "numerator": 1
+                          }
+                        }
+                      },
+                      "type": "stream"
+                    },
+                    "video_mapping": {
+                      "endpoints": "hold_adjacent",
+                      "frames": {
+                        "denominator": "1",
+                        "numerator": "120"
+                      },
+                      "start": {
+                        "denominator": "1",
+                        "numerator": "0"
+                      },
+                      "type": "placement"
+                    }
+                  },
+                  "type": "source"
+                },
+                "label": "original"
+              }
+            },
+            "overrides": {},
+            "parent": "dfceaa75-b234-45b0-8a95-2f988d3a7e83",
+            "parts": [
+              {
+                "mapping": {
+                  "end": 36,
+                  "start": 29
+                },
+                "root": "40c8beef-6a70-438f-8052-959743a0c505",
+                "source_start": 0
+              }
+            ],
+            "presentation_basis": {
+              "color_policy": "sdr_rec709",
+              "frame_rate": {
+                "denominator": 1001,
+                "numerator": 30000
+              },
+              "height": 180,
+              "width": 320
+            },
+            "project_id": "d84025ca-6e34-4762-8981-86da37ebfbca",
+            "range": {
+              "end": 36,
+              "start": 29
+            },
+            "revision_id": "d18d70ea-7ca9-4525-a39d-c448fbb22d5e",
+            "source_duration": 120
+          },
+          {
+            "assets": {
+              "5ced4d7d-272f-46f0-a901-b0c82f67fd2b": {
+                "audio": {
+                  "end": {
+                    "ticks": 192192,
+                    "time_base": {
+                      "denominator": 48000,
+                      "numerator": 1
+                    }
+                  },
+                  "start": {
+                    "ticks": 0,
+                    "time_base": {
+                      "denominator": 48000,
+                      "numerator": 1
+                    }
+                  }
+                },
+                "content_hash": "blake3:16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+                "frame_count": 120,
+                "label": "original",
+                "source_qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6",
+                "still_image": false,
+                "video": {
+                  "end": {
+                    "ticks": 120120,
+                    "time_base": {
+                      "denominator": 30000,
+                      "numerator": 1
+                    }
+                  },
+                  "start": {
+                    "ticks": 0,
+                    "time_base": {
+                      "denominator": 30000,
+                      "numerator": 1
+                    }
+                  }
+                }
+              }
+            },
+            "audio_bindings": {
+              "bindings": {
+                "40c8beef-6a70-438f-8052-959743a0c505": {
+                  "lattice": {
+                    "arguments": [],
+                    "births": [],
+                    "reference": {
+                      "physical": "40c8beef-6a70-438f-8052-959743a0c505",
+                      "root": {
+                        "type": "project_root_round_even"
+                      },
+                      "timing": {
+                        "allocation": "4be5e298-1629-4777-80a8-66d6bb2bf1bf",
+                        "ordinal": 2
+                      }
+                    }
+                  },
+                  "reanchors": [
+                    {
+                      "placement": {
+                        "arguments": [],
+                        "births": [],
+                        "reference": {
+                          "physical": "40c8beef-6a70-438f-8052-959743a0c505",
+                          "root": {
+                            "type": "project_root_round_even"
+                          },
+                          "timing": {
+                            "allocation": "4be5e298-1629-4777-80a8-66d6bb2bf1bf",
+                            "ordinal": 2
+                          }
+                        }
+                      },
+                      "window": {
+                        "end": {
+                          "denominator": "1",
+                          "numerator": "57"
+                        },
+                        "start": {
+                          "denominator": "1",
+                          "numerator": "50"
+                        }
+                      }
+                    }
+                  ],
+                  "resume": null
+                }
+              },
+              "timings": [
+                {
+                  "id": {
+                    "allocation": "4be5e298-1629-4777-80a8-66d6bb2bf1bf",
+                    "ordinal": 2
+                  },
+                  "layout": {
+                    "nodes": {
+                      "40c8beef-6a70-438f-8052-959743a0c505": {
+                        "duration": 120,
+                        "edges": {
+                          "node_end": "automatic",
+                          "node_start": "automatic",
+                          "repeat_gap_end": "automatic",
+                          "repeat_gap_start": "automatic",
+                          "source_placement_end": "automatic",
+                          "source_placement_start": "automatic"
+                        },
+                        "kind": {
+                          "placement": {
+                            "end": {
+                              "denominator": "1",
+                              "numerator": "120"
+                            },
+                            "start": {
+                              "denominator": "1",
+                              "numerator": "0"
+                            }
+                          },
+                          "type": "source"
+                        }
+                      },
+                      "dfceaa75-b234-45b0-8a95-2f988d3a7e83": {
+                        "duration": 120,
+                        "edges": {
+                          "node_end": "automatic",
+                          "node_start": "automatic",
+                          "repeat_gap_end": "automatic",
+                          "repeat_gap_start": "automatic",
+                          "source_placement_end": "automatic",
+                          "source_placement_start": "automatic"
+                        },
+                        "kind": {
+                          "children": [
+                            "40c8beef-6a70-438f-8052-959743a0c505"
+                          ],
+                          "type": "sequence"
+                        }
+                      }
+                    },
+                    "overrides": {},
+                    "rate": {
+                      "denominator": 1001,
+                      "numerator": 30000
+                    },
+                    "root": "dfceaa75-b234-45b0-8a95-2f988d3a7e83"
+                  }
+                }
+              ]
+            },
+            "audio_lineage": {},
+            "beat_sounds": {},
+            "capture_timing": {
+              "allocation": "4be5e298-1629-4777-80a8-66d6bb2bf1bf",
+              "ordinal": 2
+            },
+            "gap_overrides": {},
+            "marks": {},
+            "nodes": {
+              "40c8beef-6a70-438f-8052-959743a0c505": {
+                "kind": {
+                  "source": {
+                    "audio": {
+                      "asset": "5ced4d7d-272f-46f0-a901-b0c82f67fd2b",
+                      "span": {
+                        "end": {
+                          "ticks": 192192,
+                          "time_base": {
+                            "denominator": 48000,
+                            "numerator": 1
+                          }
+                        },
+                        "start": {
+                          "ticks": 0,
+                          "time_base": {
+                            "denominator": 48000,
+                            "numerator": 1
+                          }
+                        }
+                      }
+                    },
+                    "audio_mapping": {
+                      "frames": {
+                        "denominator": "1",
+                        "numerator": "120"
+                      },
+                      "start": {
+                        "denominator": "1",
+                        "numerator": "0"
+                      },
+                      "type": "placement"
+                    },
+                    "audio_offset": 0,
+                    "duration": 120,
+                    "edit_window": {
+                      "end": {
+                        "denominator": "1",
+                        "numerator": "120"
+                      },
+                      "start": {
+                        "denominator": "1",
+                        "numerator": "0"
+                      }
+                    },
+                    "link": "linked",
+                    "video": {
+                      "asset": "5ced4d7d-272f-46f0-a901-b0c82f67fd2b",
+                      "span": {
+                        "end": {
+                          "ticks": 120120,
+                          "time_base": {
+                            "denominator": 30000,
+                            "numerator": 1
+                          }
+                        },
+                        "start": {
+                          "ticks": 0,
+                          "time_base": {
+                            "denominator": 30000,
+                            "numerator": 1
+                          }
+                        }
+                      },
+                      "type": "stream"
+                    },
+                    "video_mapping": {
+                      "endpoints": "hold_adjacent",
+                      "frames": {
+                        "denominator": "1",
+                        "numerator": "120"
+                      },
+                      "start": {
+                        "denominator": "1",
+                        "numerator": "0"
+                      },
+                      "type": "placement"
+                    }
+                  },
+                  "type": "source"
+                },
+                "label": "original"
+              }
+            },
+            "overrides": {},
+            "parent": "dfceaa75-b234-45b0-8a95-2f988d3a7e83",
+            "parts": [
+              {
+                "mapping": {
+                  "end": 57,
+                  "start": 50
+                },
+                "root": "40c8beef-6a70-438f-8052-959743a0c505",
+                "source_start": 0
+              }
+            ],
+            "presentation_basis": {
+              "color_policy": "sdr_rec709",
+              "frame_rate": {
+                "denominator": 1001,
+                "numerator": 30000
+              },
+              "height": 180,
+              "width": 320
+            },
+            "project_id": "d84025ca-6e34-4762-8981-86da37ebfbca",
+            "range": {
+              "end": 57,
+              "start": 50
+            },
+            "revision_id": "d18d70ea-7ca9-4525-a39d-c448fbb22d5e",
+            "source_duration": 120
+          }
+        ],
+        "marks": {},
+        "scope": "dfceaa75-b234-45b0-8a95-2f988d3a7e83"
+      },
+      "register": "a"
+    },
+    {
+      "capture": {
+        "components": [
+          {
+            "assets": {
+              "5ced4d7d-272f-46f0-a901-b0c82f67fd2b": {
+                "audio": {
+                  "end": {
+                    "ticks": 192192,
+                    "time_base": {
+                      "denominator": 48000,
+                      "numerator": 1
+                    }
+                  },
+                  "start": {
+                    "ticks": 0,
+                    "time_base": {
+                      "denominator": 48000,
+                      "numerator": 1
+                    }
+                  }
+                },
+                "content_hash": "blake3:16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+                "frame_count": 120,
+                "label": "original",
+                "source_qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6",
+                "still_image": false,
+                "video": {
+                  "end": {
+                    "ticks": 120120,
+                    "time_base": {
+                      "denominator": 30000,
+                      "numerator": 1
+                    }
+                  },
+                  "start": {
+                    "ticks": 0,
+                    "time_base": {
+                      "denominator": 30000,
+                      "numerator": 1
+                    }
+                  }
+                }
+              }
+            },
+            "audio_bindings": {
+              "bindings": {
+                "40c8beef-6a70-438f-8052-959743a0c505": {
+                  "lattice": {
+                    "arguments": [],
+                    "births": [],
+                    "reference": {
+                      "physical": "40c8beef-6a70-438f-8052-959743a0c505",
+                      "root": {
+                        "type": "project_root_round_even"
+                      },
+                      "timing": {
+                        "allocation": "10be98c4-66ac-4840-a481-dda4214bdbe5",
+                        "ordinal": 0
+                      }
+                    }
+                  },
+                  "reanchors": [
+                    {
+                      "placement": {
+                        "arguments": [],
+                        "births": [],
+                        "reference": {
+                          "physical": "40c8beef-6a70-438f-8052-959743a0c505",
+                          "root": {
+                            "type": "project_root_round_even"
+                          },
+                          "timing": {
+                            "allocation": "10be98c4-66ac-4840-a481-dda4214bdbe5",
+                            "ordinal": 0
+                          }
+                        }
+                      },
+                      "window": {
+                        "end": {
+                          "denominator": "1",
+                          "numerator": "15"
+                        },
+                        "start": {
+                          "denominator": "1",
+                          "numerator": "8"
+                        }
+                      }
+                    }
+                  ],
+                  "resume": null
+                }
+              },
+              "timings": [
+                {
+                  "id": {
+                    "allocation": "10be98c4-66ac-4840-a481-dda4214bdbe5",
+                    "ordinal": 0
+                  },
+                  "layout": {
+                    "nodes": {
+                      "40c8beef-6a70-438f-8052-959743a0c505": {
+                        "duration": 120,
+                        "edges": {
+                          "node_end": "automatic",
+                          "node_start": "automatic",
+                          "repeat_gap_end": "automatic",
+                          "repeat_gap_start": "automatic",
+                          "source_placement_end": "automatic",
+                          "source_placement_start": "automatic"
+                        },
+                        "kind": {
+                          "placement": {
+                            "end": {
+                              "denominator": "1",
+                              "numerator": "120"
+                            },
+                            "start": {
+                              "denominator": "1",
+                              "numerator": "0"
+                            }
+                          },
+                          "type": "source"
+                        }
+                      },
+                      "dfceaa75-b234-45b0-8a95-2f988d3a7e83": {
+                        "duration": 120,
+                        "edges": {
+                          "node_end": "automatic",
+                          "node_start": "automatic",
+                          "repeat_gap_end": "automatic",
+                          "repeat_gap_start": "automatic",
+                          "source_placement_end": "automatic",
+                          "source_placement_start": "automatic"
+                        },
+                        "kind": {
+                          "children": [
+                            "40c8beef-6a70-438f-8052-959743a0c505"
+                          ],
+                          "type": "sequence"
+                        }
+                      }
+                    },
+                    "overrides": {},
+                    "rate": {
+                      "denominator": 1001,
+                      "numerator": 30000
+                    },
+                    "root": "dfceaa75-b234-45b0-8a95-2f988d3a7e83"
+                  }
+                }
+              ]
+            },
+            "audio_lineage": {},
+            "beat_sounds": {},
+            "capture_timing": {
+              "allocation": "10be98c4-66ac-4840-a481-dda4214bdbe5",
+              "ordinal": 0
+            },
+            "gap_overrides": {},
+            "marks": {},
+            "nodes": {
+              "40c8beef-6a70-438f-8052-959743a0c505": {
+                "kind": {
+                  "source": {
+                    "audio": {
+                      "asset": "5ced4d7d-272f-46f0-a901-b0c82f67fd2b",
+                      "span": {
+                        "end": {
+                          "ticks": 192192,
+                          "time_base": {
+                            "denominator": 48000,
+                            "numerator": 1
+                          }
+                        },
+                        "start": {
+                          "ticks": 0,
+                          "time_base": {
+                            "denominator": 48000,
+                            "numerator": 1
+                          }
+                        }
+                      }
+                    },
+                    "audio_mapping": {
+                      "frames": {
+                        "denominator": "1",
+                        "numerator": "120"
+                      },
+                      "start": {
+                        "denominator": "1",
+                        "numerator": "0"
+                      },
+                      "type": "placement"
+                    },
+                    "audio_offset": 0,
+                    "duration": 120,
+                    "edit_window": {
+                      "end": {
+                        "denominator": "1",
+                        "numerator": "120"
+                      },
+                      "start": {
+                        "denominator": "1",
+                        "numerator": "0"
+                      }
+                    },
+                    "link": "linked",
+                    "video": {
+                      "asset": "5ced4d7d-272f-46f0-a901-b0c82f67fd2b",
+                      "span": {
+                        "end": {
+                          "ticks": 120120,
+                          "time_base": {
+                            "denominator": 30000,
+                            "numerator": 1
+                          }
+                        },
+                        "start": {
+                          "ticks": 0,
+                          "time_base": {
+                            "denominator": 30000,
+                            "numerator": 1
+                          }
+                        }
+                      },
+                      "type": "stream"
+                    },
+                    "video_mapping": {
+                      "endpoints": "hold_adjacent",
+                      "frames": {
+                        "denominator": "1",
+                        "numerator": "120"
+                      },
+                      "start": {
+                        "denominator": "1",
+                        "numerator": "0"
+                      },
+                      "type": "placement"
+                    }
+                  },
+                  "type": "source"
+                },
+                "label": "original"
+              }
+            },
+            "overrides": {},
+            "parent": "dfceaa75-b234-45b0-8a95-2f988d3a7e83",
+            "parts": [
+              {
+                "mapping": {
+                  "end": 15,
+                  "start": 8
+                },
+                "root": "40c8beef-6a70-438f-8052-959743a0c505",
+                "source_start": 0
+              }
+            ],
+            "presentation_basis": {
+              "color_policy": "sdr_rec709",
+              "frame_rate": {
+                "denominator": 1001,
+                "numerator": 30000
+              },
+              "height": 180,
+              "width": 320
+            },
+            "project_id": "d84025ca-6e34-4762-8981-86da37ebfbca",
+            "range": {
+              "end": 15,
+              "start": 8
+            },
+            "revision_id": "d18d70ea-7ca9-4525-a39d-c448fbb22d5e",
+            "source_duration": 120
+          },
+          {
+            "assets": {
+              "5ced4d7d-272f-46f0-a901-b0c82f67fd2b": {
+                "audio": {
+                  "end": {
+                    "ticks": 192192,
+                    "time_base": {
+                      "denominator": 48000,
+                      "numerator": 1
+                    }
+                  },
+                  "start": {
+                    "ticks": 0,
+                    "time_base": {
+                      "denominator": 48000,
+                      "numerator": 1
+                    }
+                  }
+                },
+                "content_hash": "blake3:16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+                "frame_count": 120,
+                "label": "original",
+                "source_qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6",
+                "still_image": false,
+                "video": {
+                  "end": {
+                    "ticks": 120120,
+                    "time_base": {
+                      "denominator": 30000,
+                      "numerator": 1
+                    }
+                  },
+                  "start": {
+                    "ticks": 0,
+                    "time_base": {
+                      "denominator": 30000,
+                      "numerator": 1
+                    }
+                  }
+                }
+              }
+            },
+            "audio_bindings": {
+              "bindings": {
+                "40c8beef-6a70-438f-8052-959743a0c505": {
+                  "lattice": {
+                    "arguments": [],
+                    "births": [],
+                    "reference": {
+                      "physical": "40c8beef-6a70-438f-8052-959743a0c505",
+                      "root": {
+                        "type": "project_root_round_even"
+                      },
+                      "timing": {
+                        "allocation": "10be98c4-66ac-4840-a481-dda4214bdbe5",
+                        "ordinal": 1
+                      }
+                    }
+                  },
+                  "reanchors": [
+                    {
+                      "placement": {
+                        "arguments": [],
+                        "births": [],
+                        "reference": {
+                          "physical": "40c8beef-6a70-438f-8052-959743a0c505",
+                          "root": {
+                            "type": "project_root_round_even"
+                          },
+                          "timing": {
+                            "allocation": "10be98c4-66ac-4840-a481-dda4214bdbe5",
+                            "ordinal": 1
+                          }
+                        }
+                      },
+                      "window": {
+                        "end": {
+                          "denominator": "1",
+                          "numerator": "36"
+                        },
+                        "start": {
+                          "denominator": "1",
+                          "numerator": "29"
+                        }
+                      }
+                    }
+                  ],
+                  "resume": null
+                }
+              },
+              "timings": [
+                {
+                  "id": {
+                    "allocation": "10be98c4-66ac-4840-a481-dda4214bdbe5",
+                    "ordinal": 1
+                  },
+                  "layout": {
+                    "nodes": {
+                      "40c8beef-6a70-438f-8052-959743a0c505": {
+                        "duration": 120,
+                        "edges": {
+                          "node_end": "automatic",
+                          "node_start": "automatic",
+                          "repeat_gap_end": "automatic",
+                          "repeat_gap_start": "automatic",
+                          "source_placement_end": "automatic",
+                          "source_placement_start": "automatic"
+                        },
+                        "kind": {
+                          "placement": {
+                            "end": {
+                              "denominator": "1",
+                              "numerator": "120"
+                            },
+                            "start": {
+                              "denominator": "1",
+                              "numerator": "0"
+                            }
+                          },
+                          "type": "source"
+                        }
+                      },
+                      "dfceaa75-b234-45b0-8a95-2f988d3a7e83": {
+                        "duration": 120,
+                        "edges": {
+                          "node_end": "automatic",
+                          "node_start": "automatic",
+                          "repeat_gap_end": "automatic",
+                          "repeat_gap_start": "automatic",
+                          "source_placement_end": "automatic",
+                          "source_placement_start": "automatic"
+                        },
+                        "kind": {
+                          "children": [
+                            "40c8beef-6a70-438f-8052-959743a0c505"
+                          ],
+                          "type": "sequence"
+                        }
+                      }
+                    },
+                    "overrides": {},
+                    "rate": {
+                      "denominator": 1001,
+                      "numerator": 30000
+                    },
+                    "root": "dfceaa75-b234-45b0-8a95-2f988d3a7e83"
+                  }
+                }
+              ]
+            },
+            "audio_lineage": {},
+            "beat_sounds": {},
+            "capture_timing": {
+              "allocation": "10be98c4-66ac-4840-a481-dda4214bdbe5",
+              "ordinal": 1
+            },
+            "gap_overrides": {},
+            "marks": {},
+            "nodes": {
+              "40c8beef-6a70-438f-8052-959743a0c505": {
+                "kind": {
+                  "source": {
+                    "audio": {
+                      "asset": "5ced4d7d-272f-46f0-a901-b0c82f67fd2b",
+                      "span": {
+                        "end": {
+                          "ticks": 192192,
+                          "time_base": {
+                            "denominator": 48000,
+                            "numerator": 1
+                          }
+                        },
+                        "start": {
+                          "ticks": 0,
+                          "time_base": {
+                            "denominator": 48000,
+                            "numerator": 1
+                          }
+                        }
+                      }
+                    },
+                    "audio_mapping": {
+                      "frames": {
+                        "denominator": "1",
+                        "numerator": "120"
+                      },
+                      "start": {
+                        "denominator": "1",
+                        "numerator": "0"
+                      },
+                      "type": "placement"
+                    },
+                    "audio_offset": 0,
+                    "duration": 120,
+                    "edit_window": {
+                      "end": {
+                        "denominator": "1",
+                        "numerator": "120"
+                      },
+                      "start": {
+                        "denominator": "1",
+                        "numerator": "0"
+                      }
+                    },
+                    "link": "linked",
+                    "video": {
+                      "asset": "5ced4d7d-272f-46f0-a901-b0c82f67fd2b",
+                      "span": {
+                        "end": {
+                          "ticks": 120120,
+                          "time_base": {
+                            "denominator": 30000,
+                            "numerator": 1
+                          }
+                        },
+                        "start": {
+                          "ticks": 0,
+                          "time_base": {
+                            "denominator": 30000,
+                            "numerator": 1
+                          }
+                        }
+                      },
+                      "type": "stream"
+                    },
+                    "video_mapping": {
+                      "endpoints": "hold_adjacent",
+                      "frames": {
+                        "denominator": "1",
+                        "numerator": "120"
+                      },
+                      "start": {
+                        "denominator": "1",
+                        "numerator": "0"
+                      },
+                      "type": "placement"
+                    }
+                  },
+                  "type": "source"
+                },
+                "label": "original"
+              }
+            },
+            "overrides": {},
+            "parent": "dfceaa75-b234-45b0-8a95-2f988d3a7e83",
+            "parts": [
+              {
+                "mapping": {
+                  "end": 36,
+                  "start": 29
+                },
+                "root": "40c8beef-6a70-438f-8052-959743a0c505",
+                "source_start": 0
+              }
+            ],
+            "presentation_basis": {
+              "color_policy": "sdr_rec709",
+              "frame_rate": {
+                "denominator": 1001,
+                "numerator": 30000
+              },
+              "height": 180,
+              "width": 320
+            },
+            "project_id": "d84025ca-6e34-4762-8981-86da37ebfbca",
+            "range": {
+              "end": 36,
+              "start": 29
+            },
+            "revision_id": "d18d70ea-7ca9-4525-a39d-c448fbb22d5e",
+            "source_duration": 120
+          },
+          {
+            "assets": {
+              "5ced4d7d-272f-46f0-a901-b0c82f67fd2b": {
+                "audio": {
+                  "end": {
+                    "ticks": 192192,
+                    "time_base": {
+                      "denominator": 48000,
+                      "numerator": 1
+                    }
+                  },
+                  "start": {
+                    "ticks": 0,
+                    "time_base": {
+                      "denominator": 48000,
+                      "numerator": 1
+                    }
+                  }
+                },
+                "content_hash": "blake3:16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+                "frame_count": 120,
+                "label": "original",
+                "source_qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6",
+                "still_image": false,
+                "video": {
+                  "end": {
+                    "ticks": 120120,
+                    "time_base": {
+                      "denominator": 30000,
+                      "numerator": 1
+                    }
+                  },
+                  "start": {
+                    "ticks": 0,
+                    "time_base": {
+                      "denominator": 30000,
+                      "numerator": 1
+                    }
+                  }
+                }
+              }
+            },
+            "audio_bindings": {
+              "bindings": {
+                "40c8beef-6a70-438f-8052-959743a0c505": {
+                  "lattice": {
+                    "arguments": [],
+                    "births": [],
+                    "reference": {
+                      "physical": "40c8beef-6a70-438f-8052-959743a0c505",
+                      "root": {
+                        "type": "project_root_round_even"
+                      },
+                      "timing": {
+                        "allocation": "10be98c4-66ac-4840-a481-dda4214bdbe5",
+                        "ordinal": 2
+                      }
+                    }
+                  },
+                  "reanchors": [
+                    {
+                      "placement": {
+                        "arguments": [],
+                        "births": [],
+                        "reference": {
+                          "physical": "40c8beef-6a70-438f-8052-959743a0c505",
+                          "root": {
+                            "type": "project_root_round_even"
+                          },
+                          "timing": {
+                            "allocation": "10be98c4-66ac-4840-a481-dda4214bdbe5",
+                            "ordinal": 2
+                          }
+                        }
+                      },
+                      "window": {
+                        "end": {
+                          "denominator": "1",
+                          "numerator": "57"
+                        },
+                        "start": {
+                          "denominator": "1",
+                          "numerator": "50"
+                        }
+                      }
+                    }
+                  ],
+                  "resume": null
+                }
+              },
+              "timings": [
+                {
+                  "id": {
+                    "allocation": "10be98c4-66ac-4840-a481-dda4214bdbe5",
+                    "ordinal": 2
+                  },
+                  "layout": {
+                    "nodes": {
+                      "40c8beef-6a70-438f-8052-959743a0c505": {
+                        "duration": 120,
+                        "edges": {
+                          "node_end": "automatic",
+                          "node_start": "automatic",
+                          "repeat_gap_end": "automatic",
+                          "repeat_gap_start": "automatic",
+                          "source_placement_end": "automatic",
+                          "source_placement_start": "automatic"
+                        },
+                        "kind": {
+                          "placement": {
+                            "end": {
+                              "denominator": "1",
+                              "numerator": "120"
+                            },
+                            "start": {
+                              "denominator": "1",
+                              "numerator": "0"
+                            }
+                          },
+                          "type": "source"
+                        }
+                      },
+                      "dfceaa75-b234-45b0-8a95-2f988d3a7e83": {
+                        "duration": 120,
+                        "edges": {
+                          "node_end": "automatic",
+                          "node_start": "automatic",
+                          "repeat_gap_end": "automatic",
+                          "repeat_gap_start": "automatic",
+                          "source_placement_end": "automatic",
+                          "source_placement_start": "automatic"
+                        },
+                        "kind": {
+                          "children": [
+                            "40c8beef-6a70-438f-8052-959743a0c505"
+                          ],
+                          "type": "sequence"
+                        }
+                      }
+                    },
+                    "overrides": {},
+                    "rate": {
+                      "denominator": 1001,
+                      "numerator": 30000
+                    },
+                    "root": "dfceaa75-b234-45b0-8a95-2f988d3a7e83"
+                  }
+                }
+              ]
+            },
+            "audio_lineage": {},
+            "beat_sounds": {},
+            "capture_timing": {
+              "allocation": "10be98c4-66ac-4840-a481-dda4214bdbe5",
+              "ordinal": 2
+            },
+            "gap_overrides": {},
+            "marks": {},
+            "nodes": {
+              "40c8beef-6a70-438f-8052-959743a0c505": {
+                "kind": {
+                  "source": {
+                    "audio": {
+                      "asset": "5ced4d7d-272f-46f0-a901-b0c82f67fd2b",
+                      "span": {
+                        "end": {
+                          "ticks": 192192,
+                          "time_base": {
+                            "denominator": 48000,
+                            "numerator": 1
+                          }
+                        },
+                        "start": {
+                          "ticks": 0,
+                          "time_base": {
+                            "denominator": 48000,
+                            "numerator": 1
+                          }
+                        }
+                      }
+                    },
+                    "audio_mapping": {
+                      "frames": {
+                        "denominator": "1",
+                        "numerator": "120"
+                      },
+                      "start": {
+                        "denominator": "1",
+                        "numerator": "0"
+                      },
+                      "type": "placement"
+                    },
+                    "audio_offset": 0,
+                    "duration": 120,
+                    "edit_window": {
+                      "end": {
+                        "denominator": "1",
+                        "numerator": "120"
+                      },
+                      "start": {
+                        "denominator": "1",
+                        "numerator": "0"
+                      }
+                    },
+                    "link": "linked",
+                    "video": {
+                      "asset": "5ced4d7d-272f-46f0-a901-b0c82f67fd2b",
+                      "span": {
+                        "end": {
+                          "ticks": 120120,
+                          "time_base": {
+                            "denominator": 30000,
+                            "numerator": 1
+                          }
+                        },
+                        "start": {
+                          "ticks": 0,
+                          "time_base": {
+                            "denominator": 30000,
+                            "numerator": 1
+                          }
+                        }
+                      },
+                      "type": "stream"
+                    },
+                    "video_mapping": {
+                      "endpoints": "hold_adjacent",
+                      "frames": {
+                        "denominator": "1",
+                        "numerator": "120"
+                      },
+                      "start": {
+                        "denominator": "1",
+                        "numerator": "0"
+                      },
+                      "type": "placement"
+                    }
+                  },
+                  "type": "source"
+                },
+                "label": "original"
+              }
+            },
+            "overrides": {},
+            "parent": "dfceaa75-b234-45b0-8a95-2f988d3a7e83",
+            "parts": [
+              {
+                "mapping": {
+                  "end": 57,
+                  "start": 50
+                },
+                "root": "40c8beef-6a70-438f-8052-959743a0c505",
+                "source_start": 0
+              }
+            ],
+            "presentation_basis": {
+              "color_policy": "sdr_rec709",
+              "frame_rate": {
+                "denominator": 1001,
+                "numerator": 30000
+              },
+              "height": 180,
+              "width": 320
+            },
+            "project_id": "d84025ca-6e34-4762-8981-86da37ebfbca",
+            "range": {
+              "end": 57,
+              "start": 50
+            },
+            "revision_id": "d18d70ea-7ca9-4525-a39d-c448fbb22d5e",
+            "source_duration": 120
+          }
+        ],
+        "marks": {},
+        "scope": "dfceaa75-b234-45b0-8a95-2f988d3a7e83"
+      },
+      "register": "b"
+    }
+  ],
+  "history_after_redo": {
+    "replayed": 4,
+    "revisions": 5,
+    "verified_by_receipt": 0
+  },
+  "history_before_navigation": {
+    "replayed": 2,
+    "revisions": 3,
+    "verified_by_receipt": 0
+  },
+  "macro_revision": "3cb51f77-5f90-4ba1-a449-3b751e197d18",
+  "render_revision": "2f503ec3-2222-49cd-9a4e-2379a6cb004f"
+}

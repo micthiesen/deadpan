@@ -23,8 +23,9 @@ mod picture_definition;
 pub use picture_definition::{
     DefinitionPictureCoverage, DefinitionPictureSample, DefinitionPictureSpan,
     HoldContextUnavailable, MAX_DEFINITION_PICTURE_SPANS, MAX_HOLD_CONTEXT_BATCH,
-    MAX_HOLD_CONTEXT_FRAMES, PictureClockSlope, ScopedHoldBoundaries, ScopedHoldContext,
-    ScopedHoldContextObservation, ScopedHoldContextRequest,
+    MAX_HOLD_CONTEXT_FRAMES, PictureClockSlope, ProviderClockCoverage, ProviderClockSpan,
+    ProviderLeafKind, ScopedHoldBoundaries, ScopedHoldContext, ScopedHoldContextObservation,
+    ScopedHoldContextRequest,
 };
 use picture_definition::{PictureBudget, PictureContinuity, PictureWalk};
 #[path = "picture_definition_index.rs"]
@@ -1556,6 +1557,9 @@ impl RenderPlan {
                     selection,
                     ..
                 } => {
+                    if let Some(continuity) = continuity.as_deref_mut() {
+                        continuity.leaf_kind = Some(ProviderLeafKind::Source);
+                    }
                     let picture = match video {
                         SourceVideo::Stream { asset, span } => {
                             let scale = ExactRatio::integer(span.end().ticks - span.start().ticks)
@@ -1602,6 +1606,7 @@ impl RenderPlan {
                     ..
                 } => {
                     if let Some(continuity) = continuity.as_deref_mut() {
+                        continuity.leaf_kind = Some(ProviderLeafKind::Hold);
                         video.picture_continuity(local, continuity)?;
                     }
                     break (video.picture(local)?, picture_context.clone(), None);
@@ -1695,6 +1700,9 @@ impl RenderPlan {
                         });
                     }
                     if location.in_gap {
+                        if let Some(continuity) = continuity.as_deref_mut() {
+                            continuity.in_repeat_gap = true;
+                        }
                         if let Some(child) = location.play.gap_child {
                             repeats.push(RepeatInstance {
                                 node: node.inspection.id.clone(),
@@ -1707,6 +1715,7 @@ impl RenderPlan {
                             .as_ref()
                             .ok_or(PlanError::InvalidPlan("repeat gap recipe is missing"))?;
                         if let Some(continuity) = continuity.as_deref_mut() {
+                            continuity.leaf_kind = Some(ProviderLeafKind::DefaultRepeatGap);
                             gap.picture_continuity(local, continuity)?;
                         }
                         break (

@@ -1,0 +1,8 @@
+{
+  "exit": 0,
+  "tests": 4872,
+  "binaries": 170,
+  "seconds": 261.81421274971217,
+  "sources_inputs_executable_hashes_unchanged": true,
+  "test_threads": 8
+}

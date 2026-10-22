@@ -16,6 +16,8 @@ mod definition_batch;
 mod follow;
 #[path = "picture_plan/generated_extension.rs"]
 mod generated_extension;
+#[path = "picture_plan/provider_clock_coverage.rs"]
+mod provider_clock_coverage;
 #[path = "picture_plan/retained_framing.rs"]
 mod retained_framing;
 

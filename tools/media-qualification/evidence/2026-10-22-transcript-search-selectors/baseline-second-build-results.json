@@ -1,0 +1,38 @@
+[
+  {
+    "command": [
+      "cargo",
+      "nextest",
+      "list",
+      "--locked",
+      "-p",
+      "deadpan-core",
+      "--test",
+      "transcript_search_counterfactual",
+      "--target-dir",
+      "/tmp/deadpan-transcript-selectors-2026-10-22/baseline-target",
+      "--message-format",
+      "json"
+    ],
+    "exit": 0,
+    "seconds": 0.23479499947279692
+  },
+  {
+    "command": [
+      "cargo",
+      "nextest",
+      "list",
+      "--locked",
+      "-p",
+      "deadpan-store",
+      "--test",
+      "transcript_search_freshness_control",
+      "--target-dir",
+      "/tmp/deadpan-transcript-selectors-2026-10-22/baseline-target",
+      "--message-format",
+      "json"
+    ],
+    "exit": 0,
+    "seconds": 2.2110940413549542
+  }
+]

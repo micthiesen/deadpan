@@ -496,6 +496,49 @@ impl Transcript {
             .map(|start| start..start + terms.len())
             .collect()
     }
+
+    /// Editing search refuses truncated queries or partial result lists. Display
+    /// search above keeps its historical typing behavior; authored selectors use
+    /// this bounded form so an exhausted budget cannot change their meaning.
+    pub fn search_for_selection(
+        &self,
+        query: &str,
+        max_matches: usize,
+    ) -> Result<Vec<Range<usize>>, TranscriptError> {
+        if query.len() > 4096 {
+            return Err(TranscriptError::Limit("search query bytes"));
+        }
+        let mut terms = Vec::new();
+        for term in query
+            .split_whitespace()
+            .map(normalize)
+            .filter(|term| !term.is_empty())
+        {
+            if terms.len() == MAX_QUERY_WORDS {
+                return Err(TranscriptError::Limit("search query words"));
+            }
+            terms.push(term);
+        }
+        let Some((last, rest)) = terms.split_last() else {
+            return Err(TranscriptError::Text("search needs a word"));
+        };
+        let normalized: Vec<String> = self.words.iter().map(Word::normalized).collect();
+        let mut matches = Vec::new();
+        for start in 0..normalized.len().saturating_sub(terms.len() - 1) {
+            if rest
+                .iter()
+                .enumerate()
+                .all(|(offset, term)| normalized[start + offset] == *term)
+                && normalized[start + rest.len()].starts_with(last.as_str())
+            {
+                if matches.len() == max_matches {
+                    return Err(TranscriptError::Limit("search matches"));
+                }
+                matches.push(start..start + terms.len());
+            }
+        }
+        Ok(matches)
+    }
 }
 
 /// The picture shown at a container time: the last frame whose presentation

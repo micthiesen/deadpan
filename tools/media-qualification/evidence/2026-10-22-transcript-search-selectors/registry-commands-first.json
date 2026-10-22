@@ -1,0 +1,13 @@
+{
+  "command": [
+    "/private/tmp/deadpan-transcript-selectors-2026-10-22/candidate-second-extracted/target/debug/deps/deadpan_app-8312450859b37009",
+    "--exact",
+    "navigation::registry::tests::commands_reference_is_current",
+    "--nocapture"
+  ],
+  "binary_sha256": "ebd01844c64bda776eb0517ec0387f440c81e73b83a08a4bd432d1eb1236f51a",
+  "environment": "DEADPAN_UPDATE_COMMANDS_MD=1",
+  "exit": 101,
+  "expected_rewrite_refusal": true,
+  "seconds": 0.04986458271741867
+}

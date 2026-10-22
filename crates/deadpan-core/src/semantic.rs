@@ -9,6 +9,7 @@ mod planner;
 mod program;
 mod range_set;
 mod speech;
+mod transcript_search;
 
 pub use gags::*;
 pub use node::*;
@@ -18,6 +19,7 @@ pub use planner::*;
 pub use program::*;
 pub use range_set::*;
 pub use speech::*;
+pub use transcript_search::*;
 
 /// The authored identity of a native letter mark (`native-mark-{letter}`).
 pub fn native_mark_id(letter: char) -> Result<crate::MarkId, crate::EditError> {

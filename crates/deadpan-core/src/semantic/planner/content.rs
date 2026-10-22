@@ -23,7 +23,7 @@ impl<F, R, S, P> Planner<'_, F, R, S, P>
 where
     F: FnMut(SemanticAllocationRequest) -> Result<SemanticAllocation, EditError>,
     R: FnMut(&ProjectDocument, &RegisterValue) -> Result<SourceNode, EditError>,
-    S: FnMut(&ProjectDocument) -> Result<Arc<SpeechTimeline>, EditError>,
+    S: crate::SemanticSpeechProvider,
     P: FnMut(&ProjectDocument, super::PauseSite) -> Result<super::PauseProvider, EditError>,
 {
     pub(super) fn insert_original(
@@ -116,6 +116,31 @@ where
         selector: &SemanticSelector,
         cut: bool,
     ) -> Result<(), EditError> {
+        let query = match selector {
+            SemanticSelector::TranscriptSearch { query } => Some(query.clone()),
+            SemanticSelector::VisualSelection => match &self.context.visual_selection {
+                Some(SemanticVisualSelection::TranscriptSearch { query, .. }) => {
+                    Some(query.clone())
+                }
+                _ => None,
+            },
+            _ => None,
+        };
+        if let Some(query) = query {
+            let ranges = self.transcript_ranges(&query)?;
+            // Keep finished display geometry consistent with the analysis
+            // used by this operator, including a capture-only continuation.
+            if matches!(
+                self.context.visual_selection,
+                Some(SemanticVisualSelection::TranscriptSearch { .. })
+            ) {
+                self.context.visual_selection = Some(SemanticVisualSelection::TranscriptSearch {
+                    query,
+                    ranges: ranges.clone(),
+                });
+            }
+            return self.capture_ranges(trace_index, register, &ranges, cut);
+        }
         let ranges = match selector {
             SemanticSelector::Ranges { ranges } => Some(
                 crate::semantic::range_set::resolve_in_scope(&self.current, &self.context, ranges)?
@@ -233,7 +258,11 @@ where
     ) -> Result<(), EditError> {
         if matches!(
             self.context.visual_selection,
-            Some(SemanticVisualSelection::Nodes { .. } | SemanticVisualSelection::Ranges { .. })
+            Some(
+                SemanticVisualSelection::Nodes { .. }
+                    | SemanticVisualSelection::Ranges { .. }
+                    | SemanticVisualSelection::TranscriptSearch { .. }
+            )
         ) {
             return Err(unavailable(
                 "clear the discontiguous set selection before choosing a paste seam",

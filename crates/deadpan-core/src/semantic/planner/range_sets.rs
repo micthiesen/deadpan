@@ -6,9 +6,19 @@ impl<F, R, S, P> Planner<'_, F, R, S, P>
 where
     F: FnMut(SemanticAllocationRequest) -> Result<SemanticAllocation, EditError>,
     R: FnMut(&ProjectDocument, &RegisterValue) -> Result<SourceNode, EditError>,
-    S: FnMut(&ProjectDocument) -> Result<Arc<SpeechTimeline>, EditError>,
+    S: crate::SemanticSpeechProvider,
     P: FnMut(&ProjectDocument, super::PauseSite) -> Result<super::PauseProvider, EditError>,
 {
+    pub(super) fn transcript_ranges(
+        &mut self,
+        query: &crate::SemanticTranscriptQuery,
+    ) -> Result<Vec<FrameRange>, EditError> {
+        crate::semantic::node::edit_authority(&self.context)?;
+        self.resolve_speech
+            .transcript_search(&self.current, &self.context, query)?
+            .resolve(&self.current, &self.context, query)
+    }
+
     pub(super) fn capture_ranges(
         &mut self,
         trace_index: usize,

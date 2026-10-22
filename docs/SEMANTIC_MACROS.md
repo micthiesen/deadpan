@@ -232,6 +232,46 @@ at invocation. Active-set replacement, role-only editing, scalar parameter
 operations, Group, Duplicate, Repeat, Place slice, AI, saved framing and loop
 selection refuse range sets. Cursor playback retains its ordinary behavior.
 
+### Transcript-search sets
+
+`:select search="hello world"` selects complete corrected transcript phrase
+occurrences in the current ordinary Sequence of Your edit with Linked role.
+The query is one strict JSON string, including spaces or escaped quotes.
+Matching uses the existing lowercase/punctuation normalization and treats the
+last word as a prefix. Empty normalized queries and queries beyond 32 terms
+or 4,096 bytes refuse.
+
+`SelectTranscriptSearch { query }` retains that raw query. Its finished Visual
+selection carries the query and separate canonical ranges. Native `y` and `d`
+retain the semantic search selector, so dot and named calls search their staged
+document afresh. A newly explicit Visual selection can override a repeated
+cut. No previous absolute hit timestamps become a macro's target.
+
+Each occurrence must retain its entire forward Original interval, including
+pauses between matching words. Continuous split Source seams and positive
+slope changes are supported. Deleted words or pauses, jumps, reverse mappings,
+Holds, Repeat gaps and play wraps break phrase coverage. Cutaways do not change
+the provider speech clock. Exact inverse mappings are enclosed in whole Edit
+frames, then overlaps and touching enclosures merge. No partial phrase or hull
+is returned. Source support comes from the authored selection and the measured
+picture interval; held endpoint slack cannot manufacture a hit.
+
+Yank and Cut use the same immutable union capture, atomic descending deletion
+and durable seam paste as explicit intervals. Scalar consumers and unsupported
+temporal interiors retain their existing refusals. Search is bounded to 4,096
+raw matches, 512 provider spans, one aggregate projection work budget and 64
+final components. Exceeding a bound refuses the whole operation.
+
+The host freezes one exact proposal and correction snapshot for the invocation.
+Publication validates it inside the same Store transaction for authored edits
+and register-only copies. Selection-only success validates the snapshot with
+the head and bank in a read transaction. Native command entry and completion
+also retain the displayed analysis identity, including absence. Guards do not
+enter history or copied content. See the
+[qualification record](qualification/transcript-search-selectors-2026-10-22.md)
+for verification status and limits. This proves logical Original speech carried
+by Source leaves, not audible PCM after independent audio treatments.
+
 ### Ranged zoom and creep
 
 On an ordinary selected direct child, `:zoom` and `:creep` over an Edit

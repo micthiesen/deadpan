@@ -1,0 +1,11 @@
+{
+  "earlier_candidate": "lint-before-provider-fixture",
+  "final_candidate": "lint-final",
+  "changed_rust_files": [
+    "crates/deadpan-core/tests/transcript_search_provider.rs"
+  ],
+  "all_production_rust_identical": true,
+  "all_app_and_cli_test_sources_identical": true,
+  "all_six_supplemental_inputs_identical": true,
+  "attribution": "The passing complete UI archive precedes only a Core integration-test cursor correction. Final broad run includes all thirteen provider cases; final strict checks qualify the complete final source."
+}

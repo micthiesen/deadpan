@@ -1,0 +1,235 @@
+{
+  "format": "sha256-content-addressed-tar-1",
+  "blob_archive": "frozen-source-and-input-blobs.tar.gz",
+  "unique_payloads": 2119,
+  "snapshots": {
+    "backend-first-source": {
+      "manifest": "backend-first-source-identities.json.gz",
+      "kind": "Rust",
+      "files": 1549,
+      "content_sha256": "568c04d67d63f9324ad051e125d899745157682b0d14b7cec300590557433b95"
+    },
+    "backend-second-source": {
+      "manifest": "backend-second-source-identities.json.gz",
+      "kind": "Rust",
+      "files": 1549,
+      "content_sha256": "94e9a93b9d74b97a0dc3337e2fc7f573b683ed8b9126cb3d925a526e6d0f94ec"
+    },
+    "baseline-first-source": {
+      "manifest": "baseline-first-source-identities.json.gz",
+      "kind": "Rust",
+      "files": 2002,
+      "content_sha256": "cf3cb54bc94776016c66a76881d38afca0c933f64c1a99abc57dba90454559f4"
+    },
+    "baseline-second-source": {
+      "manifest": "baseline-second-source-identities.json.gz",
+      "kind": "Rust",
+      "files": 2002,
+      "content_sha256": "d6d7ffaa194d8b010e2015e9b8f8b3d793248c9fa4315261a80caba8977239e8"
+    },
+    "broad-first-source": {
+      "manifest": "broad-first-source-identities.json.gz",
+      "kind": "Rust",
+      "files": 2012,
+      "content_sha256": "f409a0b4f28c4e720e1193742801899ace0a6e4f6635fd06dd03586e8aad9480"
+    },
+    "broad-second-source": {
+      "manifest": "broad-second-source-identities.json.gz",
+      "kind": "Rust",
+      "files": 2012,
+      "content_sha256": "9ef60ff1c0a7408e5d253b39c97fe590f400bf14628060c20ce81803ae6f182f"
+    },
+    "candidate-first-source": {
+      "manifest": "candidate-first-source-identities.json.gz",
+      "kind": "Rust",
+      "files": 2011,
+      "content_sha256": "6df7f60e7d3383c6d2330cf3658d0da5babe6469ad3ec7b4701a29e365ae9df6"
+    },
+    "candidate-second-source": {
+      "manifest": "candidate-second-source-identities.json.gz",
+      "kind": "Rust",
+      "files": 2012,
+      "content_sha256": "81fd210060a01d75b3cbc15b913dbbfe66c58dd5aed75abb988e4787cb15a721"
+    },
+    "candidate-third-source": {
+      "manifest": "candidate-third-source-identities.json.gz",
+      "kind": "Rust",
+      "files": 2012,
+      "content_sha256": "f4cf4c9abbdc0f3178f397ab20c671a785f2d945bb5f80440cfa092b325179c8"
+    },
+    "debug-first-source": {
+      "manifest": "debug-first-source-identities.json.gz",
+      "kind": "Rust",
+      "files": 2012,
+      "content_sha256": "f4cf4c9abbdc0f3178f397ab20c671a785f2d945bb5f80440cfa092b325179c8"
+    },
+    "debug-second-source": {
+      "manifest": "debug-second-source-identities.json.gz",
+      "kind": "Rust",
+      "files": 2012,
+      "content_sha256": "73c777822d5906edbb410e6b667e33a42ce4845b6ca31cc14e66a2b5b8bbb73a"
+    },
+    "lint-before-provider-fixture-source": {
+      "manifest": "lint-before-provider-fixture-source-identities.json.gz",
+      "kind": "Rust",
+      "files": 2012,
+      "content_sha256": "f409a0b4f28c4e720e1193742801899ace0a6e4f6635fd06dd03586e8aad9480"
+    },
+    "lint-final-source": {
+      "manifest": "lint-final-source-identities.json.gz",
+      "kind": "Rust",
+      "files": 2012,
+      "content_sha256": "9ef60ff1c0a7408e5d253b39c97fe590f400bf14628060c20ce81803ae6f182f"
+    },
+    "lint-first-source": {
+      "manifest": "lint-first-source-identities.json.gz",
+      "kind": "Rust",
+      "files": 2012,
+      "content_sha256": "73c777822d5906edbb410e6b667e33a42ce4845b6ca31cc14e66a2b5b8bbb73a"
+    },
+    "lint-second-source": {
+      "manifest": "lint-second-source-identities.json.gz",
+      "kind": "Rust",
+      "files": 2012,
+      "content_sha256": "d0a618c16e548990619d2d0df44d00b06c0ba4d3d658f36b9d91504c2c037f39"
+    },
+    "lint-third-source": {
+      "manifest": "lint-third-source-identities.json.gz",
+      "kind": "Rust",
+      "files": 2012,
+      "content_sha256": "54e09ee512bd4942bc555bf4ce2dbe074f156074c4f52eeff18813c3ae65b5d5"
+    },
+    "media-preflight-source": {
+      "manifest": "media-preflight-source-identities.json.gz",
+      "kind": "Rust",
+      "files": 2012,
+      "content_sha256": "f4cf4c9abbdc0f3178f397ab20c671a785f2d945bb5f80440cfa092b325179c8"
+    },
+    "provider-fixture-source": {
+      "manifest": "provider-fixture-source-identities.json.gz",
+      "kind": "Rust",
+      "files": 2012,
+      "content_sha256": "9ef60ff1c0a7408e5d253b39c97fe590f400bf14628060c20ce81803ae6f182f"
+    },
+    "release-final-source": {
+      "manifest": "release-final-source-identities.json.gz",
+      "kind": "Rust",
+      "files": 2012,
+      "content_sha256": "9ef60ff1c0a7408e5d253b39c97fe590f400bf14628060c20ce81803ae6f182f"
+    },
+    "baseline-first-inputs": {
+      "manifest": "baseline-first-lock.json",
+      "kind": "supplemental",
+      "files": 6,
+      "content_sha256": "c43409f41858ceceac0f54ab78120f61f6ff298fbfc3a1638f2e0f25bf6cb6f8"
+    },
+    "baseline-second-inputs": {
+      "manifest": "baseline-second-lock.json",
+      "kind": "supplemental",
+      "files": 6,
+      "content_sha256": "c43409f41858ceceac0f54ab78120f61f6ff298fbfc3a1638f2e0f25bf6cb6f8"
+    },
+    "broad-first-inputs": {
+      "manifest": "broad-first-lock.json",
+      "kind": "supplemental",
+      "files": 6,
+      "content_sha256": "b71b8c2e605953501b8721ab89203b524b97d29217575181605dffaec387b2f0"
+    },
+    "broad-second-inputs": {
+      "manifest": "broad-second-lock.json",
+      "kind": "supplemental",
+      "files": 6,
+      "content_sha256": "b71b8c2e605953501b8721ab89203b524b97d29217575181605dffaec387b2f0"
+    },
+    "candidate-first-inputs": {
+      "manifest": "candidate-first-lock.json",
+      "kind": "supplemental",
+      "files": 6,
+      "content_sha256": "c43409f41858ceceac0f54ab78120f61f6ff298fbfc3a1638f2e0f25bf6cb6f8"
+    },
+    "candidate-second-inputs": {
+      "manifest": "candidate-second-lock.json",
+      "kind": "supplemental",
+      "files": 6,
+      "content_sha256": "c43409f41858ceceac0f54ab78120f61f6ff298fbfc3a1638f2e0f25bf6cb6f8"
+    },
+    "candidate-third-inputs": {
+      "manifest": "candidate-third-lock.json",
+      "kind": "supplemental",
+      "files": 6,
+      "content_sha256": "daa5cc0fef3087a306166385f51fcd07f52a7d9d7f88aecd1b3bf903377e1ca4"
+    },
+    "debug-first-inputs": {
+      "manifest": "debug-first-lock.json",
+      "kind": "supplemental",
+      "files": 6,
+      "content_sha256": "daa5cc0fef3087a306166385f51fcd07f52a7d9d7f88aecd1b3bf903377e1ca4"
+    },
+    "debug-second-inputs": {
+      "manifest": "debug-second-lock.json",
+      "kind": "supplemental",
+      "files": 6,
+      "content_sha256": "b71b8c2e605953501b8721ab89203b524b97d29217575181605dffaec387b2f0"
+    },
+    "lint-before-provider-fixture-inputs": {
+      "manifest": "lint-before-provider-fixture-lock.json",
+      "kind": "supplemental",
+      "files": 6,
+      "content_sha256": "b71b8c2e605953501b8721ab89203b524b97d29217575181605dffaec387b2f0"
+    },
+    "lint-final-inputs": {
+      "manifest": "lint-final-lock.json",
+      "kind": "supplemental",
+      "files": 6,
+      "content_sha256": "b71b8c2e605953501b8721ab89203b524b97d29217575181605dffaec387b2f0"
+    },
+    "lint-first-inputs": {
+      "manifest": "lint-first-lock.json",
+      "kind": "supplemental",
+      "files": 6,
+      "content_sha256": "b71b8c2e605953501b8721ab89203b524b97d29217575181605dffaec387b2f0"
+    },
+    "lint-second-inputs": {
+      "manifest": "lint-second-lock.json",
+      "kind": "supplemental",
+      "files": 6,
+      "content_sha256": "b71b8c2e605953501b8721ab89203b524b97d29217575181605dffaec387b2f0"
+    },
+    "lint-third-inputs": {
+      "manifest": "lint-third-lock.json",
+      "kind": "supplemental",
+      "files": 6,
+      "content_sha256": "b71b8c2e605953501b8721ab89203b524b97d29217575181605dffaec387b2f0"
+    },
+    "media-preflight-inputs": {
+      "manifest": "media-preflight-lock.json",
+      "kind": "supplemental",
+      "files": 6,
+      "content_sha256": "daa5cc0fef3087a306166385f51fcd07f52a7d9d7f88aecd1b3bf903377e1ca4"
+    },
+    "provider-fixture-inputs": {
+      "manifest": "provider-fixture-lock.json",
+      "kind": "supplemental",
+      "files": 6,
+      "content_sha256": "b71b8c2e605953501b8721ab89203b524b97d29217575181605dffaec387b2f0"
+    },
+    "release-final-inputs": {
+      "manifest": "release-final-lock.json",
+      "kind": "supplemental",
+      "files": 6,
+      "content_sha256": "b71b8c2e605953501b8721ab89203b524b97d29217575181605dffaec387b2f0"
+    },
+    "backend-first-inputs": {
+      "manifest": "backend-first-inputs.json",
+      "kind": "supplemental",
+      "files": 4,
+      "content_sha256": "f5ede37ebf3250fb7a033b840960d790ef1cc79e3a045e438fbd293097da9e27"
+    },
+    "backend-second-inputs": {
+      "manifest": "backend-second-inputs.json",
+      "kind": "supplemental",
+      "files": 4,
+      "content_sha256": "f5ede37ebf3250fb7a033b840960d790ef1cc79e3a045e438fbd293097da9e27"
+    }
+  }
+}

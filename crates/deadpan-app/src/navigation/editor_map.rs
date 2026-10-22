@@ -635,7 +635,8 @@ impl Rule {
                 deadpan_core::SemanticSelector::MarkRange { .. }
                 | deadpan_core::SemanticSelector::Node { .. }
                 | deadpan_core::SemanticSelector::Nodes { .. }
-                | deadpan_core::SemanticSelector::Ranges { .. } => I::RepeatOperator,
+                | deadpan_core::SemanticSelector::Ranges { .. }
+                | deadpan_core::SemanticSelector::TranscriptSearch { .. } => I::RepeatOperator,
                 deadpan_core::SemanticSelector::Motion { .. }
                 | deadpan_core::SemanticSelector::TextObject { .. }
                 | deadpan_core::SemanticSelector::Speech { .. } => I::RepeatOperator,
@@ -1037,7 +1038,8 @@ impl Compiled {
                     | deadpan_core::SemanticSelector::MarkRange { .. }
                     | deadpan_core::SemanticSelector::Node { .. }
                     | deadpan_core::SemanticSelector::Nodes { .. }
-                    | deadpan_core::SemanticSelector::Ranges { .. } => {
+                    | deadpan_core::SemanticSelector::Ranges { .. }
+                    | deadpan_core::SemanticSelector::TranscriptSearch { .. } => {
                         RepeatPendingScope::TextObject
                     }
                 };
@@ -1295,6 +1297,7 @@ fn repeat_description(
         S::VisualSelection => "the selected range".into(),
         S::MarkRange { .. } => "the named-mark range".into(),
         S::Nodes { nodes } => format!("the {}-member node set", nodes.len()),
+        S::TranscriptSearch { .. } => "the transcript-search set".into(),
         S::Ranges { ranges } => {
             let pairs = ranges
                 .iter()

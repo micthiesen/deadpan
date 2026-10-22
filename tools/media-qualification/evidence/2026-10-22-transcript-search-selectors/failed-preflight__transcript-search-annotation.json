@@ -1,0 +1,74 @@
+{
+  "key": {
+    "audio_stream": 1,
+    "content": "blake3:16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+    "engine": "synthetic-export-annotation",
+    "language": "en",
+    "model_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  },
+  "literal_ranges": [
+    [
+      8,
+      15
+    ],
+    [
+      29,
+      36
+    ],
+    [
+      50,
+      57
+    ]
+  ],
+  "model_qualification_claim": false,
+  "pasted_pictures": 21,
+  "proposal": {
+    "audio": {
+      "duration_cs": 401,
+      "origin": 0,
+      "sample_rate": 48000
+    },
+    "words": [
+      {
+        "end_cs": 50,
+        "probability": 0.8999999761581421,
+        "segment": 0,
+        "start_cs": 30,
+        "text": "needle"
+      },
+      {
+        "end_cs": 120,
+        "probability": 0.8999999761581421,
+        "segment": 1,
+        "start_cs": 100,
+        "text": "needle"
+      },
+      {
+        "end_cs": 190,
+        "probability": 0.8999999761581421,
+        "segment": 2,
+        "start_cs": 170,
+        "text": "needle"
+      }
+    ]
+  },
+  "retained_pictures": 99,
+  "selection_guard": {
+    "asset": "5ced4d7d-272f-46f0-a901-b0c82f67fd2b",
+    "correction_rule": "deadpan-corrections-1",
+    "corrections": {
+      "state": "absent"
+    },
+    "format": "deadpan-transcript-selection-1",
+    "key": {
+      "audio_stream": 1,
+      "content": "blake3:16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+      "engine": "synthetic-export-annotation",
+      "language": "en",
+      "model_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "proposal_sha256": "fce978186e307b6996fa53e0292e8671d3c8929ef571deca6c37dfe1ea96cdd2",
+    "qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6"
+  },
+  "synthetic_annotation": true
+}

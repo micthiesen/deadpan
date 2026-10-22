@@ -1,0 +1,12 @@
+{
+  "command": [
+    "/private/tmp/deadpan-transcript-selectors-2026-10-22/candidate-third-extracted/target/debug/deps/deadpan_app-8312450859b37009",
+    "--exact",
+    "navigation::registry::tests::routing_matches_the_pre_registry_baseline",
+    "--nocapture"
+  ],
+  "binary_sha256": "52c1ddc85d38b933c9aafc7e5f4bf8c0a989a62ffe509589f345f5365fefbda3",
+  "environment": "DEADPAN_UPDATE_ROUTING_BASELINE=1",
+  "exit": 101,
+  "expected_rewrite_refusal": true
+}

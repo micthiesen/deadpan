@@ -28,6 +28,9 @@ use deadpan_core::{
 };
 use deadpan_plan::{Picture, RenderPlan};
 
+#[path = "speech/transcript_search.rs"]
+mod transcript_search;
+
 /// Speech runs for every frame of a compiled plan. A run continues while
 /// adjacent frames show one word with source pictures that do not go back, so
 /// a split or cut inside a word keeps one run and a replay starts another.
@@ -323,6 +326,48 @@ fn timed_words(transcript: &Transcript) -> Result<Vec<(ExactRatio, ExactRatio, u
         .map_err(|error| failed(&error.to_string()))
 }
 
+fn preferred_keys(keys: &mut [deadpan_store::TranscriptKey]) {
+    let approved = deadpan_models::packs::approved_packs()
+        .into_iter()
+        .flat_map(|pack| pack.files.into_iter().map(|file| file.sha256))
+        .collect::<Vec<_>>();
+    keys.sort_by_key(|key| (!approved.contains(&key.model_sha256), key.language != "en"));
+}
+
+/// Choose one exact qualified audio key, then read it strictly. A damaged
+/// preferred key must not silently select a different proposal for an edit.
+fn guarded_words(
+    store: &deadpan_store::ProjectStore,
+    content: &str,
+    audio_stream: u32,
+    pinned: Option<&deadpan_store::TranscriptKey>,
+) -> Result<Option<(Transcript, deadpan_store::TranscriptSelectionGuard)>, EditError> {
+    let mut keys = store
+        .transcript_keys_for_content(content)
+        .map_err(|error| failed(&error.to_string()))?;
+    keys.retain(|key| key.audio_stream == audio_stream);
+    preferred_keys(&mut keys);
+    let Some(key) = pinned.or_else(|| keys.first()) else {
+        return Ok(None);
+    };
+    if key.content != content || key.audio_stream != audio_stream {
+        return Err(failed(
+            "the pinned transcript belongs to another Original audio stream",
+        ));
+    }
+    let snapshot = store
+        .transcript_selection(key)
+        .map_err(|error| failed(&error.to_string()))?;
+    let corrected = match snapshot.corrections {
+        Some(stored) => stored
+            .corrections
+            .apply_to_transcript(&snapshot.proposal)
+            .map_err(|error| failed(&error.to_string()))?,
+        None => CorrectedTranscript::recognized(snapshot.proposal),
+    };
+    Ok(Some((corrected.transcript, snapshot.guard)))
+}
+
 /// The preferred stored recognizer transcript of one Original: an approved
 /// model's English transcript first. Transcripts are rebuildable annotations,
 /// so an unreadable one is skipped rather than failing its caller.
@@ -331,11 +376,17 @@ pub fn stored_proposal(
     content: &str,
 ) -> Option<(deadpan_store::TranscriptKey, Transcript)> {
     let mut keys = store.transcript_keys_for_content(content).ok()?;
-    let approved = deadpan_models::packs::approved_packs()
-        .into_iter()
-        .flat_map(|pack| pack.files.into_iter().map(|file| file.sha256))
-        .collect::<Vec<_>>();
-    keys.sort_by_key(|key| (!approved.contains(&key.model_sha256), key.language != "en"));
+    if let Ok(Some(deadpan_store::single_source::SingleSourceState::Ready {
+        qualification, ..
+    })) = store.single_source_state()
+    {
+        let receipt = store.source_qualification(&qualification).ok()?;
+        if receipt.original().content().to_string() == content {
+            let stream = receipt.snapshot().audio()?.stream().stream_index;
+            keys.retain(|key| key.audio_stream == stream);
+        }
+    }
+    preferred_keys(&mut keys);
     keys.into_iter()
         .find_map(|key| Some((key.clone(), store.transcript(&key).ok()??)))
 }
@@ -348,6 +399,8 @@ pub struct StoredWords {
     pub corrected: CorrectedTranscript,
     /// Why stored corrections could not be read or applied, if they could not.
     pub corrections_error: Option<String>,
+    /// Exact qualified snapshot used by editing consumers, when available.
+    pub selection_guard: Option<deadpan_store::TranscriptSelectionGuard>,
 }
 
 /// The preferred stored transcript with stored corrections applied. Damaged
@@ -355,6 +408,22 @@ pub struct StoredWords {
 /// shown uncorrected with the reason.
 pub fn stored_words(store: &deadpan_store::ProjectStore, content: &str) -> Option<StoredWords> {
     let (key, proposal) = stored_proposal(store, content)?;
+    if let Ok(snapshot) = store.transcript_selection(&key) {
+        let corrected = match &snapshot.corrections {
+            Some(stored) => stored
+                .corrections
+                .apply_to_transcript(&snapshot.proposal)
+                .ok()?,
+            None => CorrectedTranscript::recognized(snapshot.proposal.clone()),
+        };
+        return Some(StoredWords {
+            key: snapshot.key,
+            proposal: snapshot.proposal,
+            corrected,
+            corrections_error: None,
+            selection_guard: Some(snapshot.guard),
+        });
+    }
     let (corrected, corrections_error) =
         match store.analysis_corrections(&corrections_key(content, key.audio_stream)) {
             Ok(Some(stored)) => match stored.corrections.apply_to_transcript(&proposal) {
@@ -375,6 +444,7 @@ pub fn stored_words(store: &deadpan_store::ProjectStore, content: &str) -> Optio
         proposal,
         corrected,
         corrections_error,
+        selection_guard: None,
     })
 }
 
@@ -447,6 +517,7 @@ pub struct StoredSpeech {
     pub transcript: Option<Transcript>,
     /// Why the corrected words cannot be used, when corrections failed.
     pub words_problem: Option<String>,
+    pub transcript_guard: Option<deadpan_store::TranscriptSelectionGuard>,
     /// Detected pauses as exact container times.
     pub pauses: Option<Vec<(ExactRatio, ExactRatio)>>,
     /// Why the corrected pauses cannot be used, when corrections failed.
@@ -460,6 +531,13 @@ impl StoredSpeech {
     /// Why speech is unavailable when the project has no ready Original or
     /// qualified picture. Missing analyses are reported when a key needs them.
     pub fn load(store: &deadpan_store::ProjectStore) -> Result<Self, EditError> {
+        Self::load_with_key(store, None)
+    }
+
+    fn load_with_key(
+        store: &deadpan_store::ProjectStore,
+        pinned: Option<&deadpan_store::TranscriptKey>,
+    ) -> Result<Self, EditError> {
         use deadpan_store::single_source::SingleSourceState;
         let not_ready = |reason: &str| EditError {
             code: EditErrorCode::SelectionUnavailable,
@@ -489,15 +567,16 @@ impl StoredSpeech {
         )
         .map_err(|error| not_ready(&error.to_string()))?;
         let content = receipt.original().content().to_string();
-        let words = stored_words(store, &content);
-        let words_problem = words.as_ref().and_then(|words| {
-            correction_problem(
-                "words",
-                words.corrections_error.as_deref(),
-                words.corrected.skipped,
-            )
-        });
-        let transcript = words.map(|words| words.corrected.transcript);
+        let words = receipt
+            .snapshot()
+            .audio()
+            .map(|audio| guarded_words(store, &content, audio.stream().stream_index, pinned))
+            .unwrap_or(Ok(None));
+        let (transcript, transcript_guard, words_problem) = match words {
+            Ok(Some((transcript, guard))) => (Some(transcript), Some(guard), None),
+            Ok(None) => (None, None, None),
+            Err(error) => (None, None, Some(error.message)),
+        };
         let mut pauses_problem = None;
         let pauses = crate::activity::stored_activity(store, &content)
             .map(|(key, activity)| {
@@ -520,6 +599,7 @@ impl StoredSpeech {
             index,
             transcript,
             words_problem,
+            transcript_guard,
             pauses,
             pauses_problem,
             shots,
@@ -554,6 +634,83 @@ impl StoredSpeech {
                 "shots are not ready: the Original's pictures have not been analysed",
             ),
         }))
+    }
+}
+
+/// One planning invocation loads analysis once. Staged word motions and exact
+/// transcript selectors therefore consume the same proposal and corrections.
+pub(crate) struct PlanningSpeech<'a> {
+    store: &'a deadpan_store::ProjectStore,
+    loaded: Option<Result<StoredSpeech, EditError>>,
+    pinned: Option<&'a deadpan_store::TranscriptSelectionGuard>,
+    pub(crate) consumed_guard: Option<deadpan_store::TranscriptSelectionGuard>,
+}
+
+impl<'a> PlanningSpeech<'a> {
+    pub(crate) fn new(
+        store: &'a deadpan_store::ProjectStore,
+        pinned: Option<&'a deadpan_store::TranscriptSelectionGuard>,
+    ) -> Self {
+        Self {
+            store,
+            pinned,
+            loaded: None,
+            consumed_guard: None,
+        }
+    }
+
+    fn load(&mut self) -> Result<&StoredSpeech, EditError> {
+        self.loaded
+            .get_or_insert_with(|| {
+                StoredSpeech::load_with_key(self.store, self.pinned.map(|guard| &guard.key))
+            })
+            .as_ref()
+            .map_err(Clone::clone)
+    }
+}
+
+impl deadpan_core::SemanticSpeechProvider for PlanningSpeech<'_> {
+    fn require_words(&mut self) -> Result<(), EditError> {
+        let guard = self.load()?.transcript_guard.clone();
+        self.consumed_guard = guard;
+        Ok(())
+    }
+
+    fn timeline(&mut self, document: &ProjectDocument) -> Result<Arc<SpeechTimeline>, EditError> {
+        self.load()?.project(document)
+    }
+
+    fn transcript_search(
+        &mut self,
+        document: &ProjectDocument,
+        context: &deadpan_core::SemanticContext,
+        query: &deadpan_core::SemanticTranscriptQuery,
+    ) -> Result<deadpan_core::SemanticTranscriptMatches, EditError> {
+        if context.original.is_some() {
+            return Err(failed("transcript-search selections require Your edit"));
+        }
+        self.require_words()?;
+        let loaded = self.load()?;
+        if let Some(problem) = &loaded.words_problem {
+            return Err(failed(problem));
+        }
+        let transcript = loaded
+            .transcript
+            .as_ref()
+            .ok_or_else(deadpan_core::speech_unavailable)?;
+        if loaded.transcript_guard.is_none() {
+            return Err(failed("the transcript has no qualified selection snapshot"));
+        }
+        let plan = RenderPlan::compile(document).map_err(|error| failed(&error.to_string()))?;
+        let ranges = transcript_search::project_matches(
+            &plan,
+            &loaded.asset,
+            &loaded.index,
+            transcript,
+            &context.parent,
+            query.as_str(),
+        )?;
+        deadpan_core::SemanticTranscriptMatches::new(document, context, query, ranges)
     }
 }
 

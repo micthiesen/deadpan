@@ -3345,6 +3345,21 @@ impl DeadpanApp {
             Ok(navigation::command::Entry::SelectRanges { ranges }) => {
                 self.select_explicit_ranges(macro_target, ranges)
             }
+            Ok(navigation::command::Entry::SelectTranscriptSearch { query }) => {
+                if self.view != View::Sequence || self.edit_role != deadpan_core::MediaRole::Linked
+                {
+                    self.error =
+                        Some("Select transcript results in Your edit with role=linked.".into());
+                } else {
+                    let target = macro_target.unwrap_or_else(|| {
+                        Err("Open :select again to capture its editing context.".into())
+                    });
+                    self.apply_recorded_instruction(
+                        target,
+                        Ok(deadpan_core::SemanticInstruction::SelectTranscriptSearch { query }),
+                    );
+                }
+            }
             Ok(navigation::command::Entry::SelectNodes { nodes }) => {
                 self.select_explicit_nodes(macro_target, nodes)
             }
@@ -4622,15 +4637,33 @@ impl DeadpanApp {
                     ),
                 ));
             }
+            let search = self.edit_range.transcript_query();
+            if let Some(query) = search {
+                fields.insert(
+                    0,
+                    (
+                        "Transcript query",
+                        serde_json::to_string(query.as_str()).unwrap_or_default(),
+                    ),
+                );
+            }
             return Some(inspector::Inspector {
                 label: format!("{} selected ranges", target.ranges.len()),
-                kind: "Range set",
+                kind: if search.is_some() {
+                    "Transcript search"
+                } else {
+                    "Range set"
+                },
                 glyph: "[]",
                 duration: format!("{} f selected", target.total_duration.frames()),
                 range: "Separate half-open Edit ranges".into(),
                 fields,
                 parameter: None,
-                note: "y copies one union; d cuts all ranges atomically. Clear the set before choosing an insertion seam for p/P. A repeated Visual cut needs a new selection.",
+                note: if search.is_some() {
+                    "y copies one union; d cuts all matches atomically. Dot reruns the query against the current transcript. Clear the set before choosing an insertion seam for p/P."
+                } else {
+                    "y copies one union; d cuts all ranges atomically. Clear the set before choosing an insertion seam for p/P. A repeated Visual cut needs a new selection."
+                },
             });
         }
         if let Some(target) = self.selected_node_set().ok().flatten() {
@@ -4915,7 +4948,7 @@ impl DeadpanApp {
                             });
                         });
                         ui.add_space(8.0);
-                        if matches!(data.kind, "Node set" | "Range set") {
+                        if matches!(data.kind, "Node set" | "Range set" | "Transcript search") {
                             ui.add(egui::Label::new(format!("{} · {}", data.duration, self.beat_scope_label())).wrap());
                             ui.add(egui::Label::new(data.range.as_str()).wrap());
                             for (label, value) in &data.fields {

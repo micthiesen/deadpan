@@ -127,8 +127,65 @@ pub struct Prepared {
     pub document: ProjectDocument,
     pub bank: RegisterBank,
     pub final_bank: RegisterBank,
-    pub plan: Option<SemanticPlan>,
+    pub plan: Option<HostSemanticPlan>,
     pub preview: Option<CompoundPreview>,
+}
+
+/// A pure semantic plan and the external analysis it consumed. The guard is
+/// host authority only; it never enters the command, history or copied value.
+#[derive(Debug)]
+pub struct HostSemanticPlan {
+    pub plan: SemanticPlan,
+    pub transcript_guard: Option<deadpan_store::TranscriptSelectionGuard>,
+}
+
+impl std::ops::Deref for HostSemanticPlan {
+    type Target = SemanticPlan;
+    fn deref(&self) -> &Self::Target {
+        &self.plan
+    }
+}
+
+impl HostSemanticPlan {
+    pub fn preview(&self, store: &ProjectStore) -> Result<Option<CompoundPreview>, LiveError> {
+        self.request
+            .as_ref()
+            .map(|request| match &self.transcript_guard {
+                Some(guard) => store.preview_compound_with_transcript_guard(request, guard),
+                None => store.preview_compound(request),
+            })
+            .transpose()
+            .map_err(LiveError::store)
+    }
+
+    pub fn commit_compound(
+        &self,
+        store: &mut ProjectStore,
+    ) -> Result<deadpan_store::CompoundCommitOutcome, LiveError> {
+        let request = self.request.as_ref().ok_or_else(|| {
+            LiveError::new("InvalidCommand", "Selection-only plan has no Compound")
+        })?;
+        match &self.transcript_guard {
+            Some(guard) => store.commit_compound_with_transcript_guard(request, None, guard),
+            None => store.commit_compound(request, None),
+        }
+        .map_err(LiveError::store)
+    }
+
+    pub fn validate_selection_at(
+        &self,
+        store: &ProjectStore,
+        project: &ProjectId,
+        revision: &RevisionId,
+        bank_version: u64,
+    ) -> Result<(), LiveError> {
+        if let Some(guard) = &self.transcript_guard {
+            store
+                .validate_selection_at(project, revision, bank_version, guard)
+                .map_err(LiveError::store)?;
+        }
+        Ok(())
+    }
 }
 
 impl Request {
@@ -335,7 +392,11 @@ pub fn prepare(store: &ProjectStore, request: &Request) -> Result<Prepared, Live
     })
 }
 
-type PlannedPreview = (RegisterBank, Option<SemanticPlan>, Option<CompoundPreview>);
+type PlannedPreview = (
+    RegisterBank,
+    Option<HostSemanticPlan>,
+    Option<CompoundPreview>,
+);
 
 fn plan_and_preview(
     store: &ProjectStore,
@@ -351,12 +412,15 @@ fn plan_and_preview(
         .unwrap_or_else(crate::new_revision)
         .map_err(|error| edit_error(error.into()))?;
     let plan = plan_program(store, document, bank, &context, program, revision)?;
-    let preview = plan
-        .request
-        .as_ref()
-        .map(|command| store.preview_compound(command))
-        .transpose()
-        .map_err(LiveError::store)?;
+    let preview = plan.preview(store)?;
+    if preview.is_none() {
+        plan.validate_selection_at(
+            store,
+            document.project_id(),
+            document.revision_id(),
+            bank.version,
+        )?;
+    }
     let final_bank = preview
         .as_ref()
         .map_or_else(|| bank.clone(), |preview| preview.register_bank.clone());
@@ -373,14 +437,29 @@ pub fn plan_program(
     context: &SemanticContext,
     program: &SemanticProgram,
     new_revision: RevisionId,
-) -> Result<SemanticPlan, LiveError> {
+) -> Result<HostSemanticPlan, LiveError> {
+    plan_program_with_transcript_guard(store, document, bank, context, program, new_revision, None)
+}
+
+/// Native invocations retain the displayed key, even if another preferred
+/// transcript is stored while the command waits. Publication still compares
+/// the full consumed snapshot, including proposal and correction digests.
+pub fn plan_program_with_transcript_guard(
+    store: &ProjectStore,
+    document: &ProjectDocument,
+    bank: &RegisterBank,
+    context: &SemanticContext,
+    program: &SemanticProgram,
+    new_revision: RevisionId,
+    pinned: Option<&deadpan_store::TranscriptSelectionGuard>,
+) -> Result<HostSemanticPlan, LiveError> {
     let mut source_error = None;
     // Keep only derived mappings, not large qualification indexes. Repeated
     // pastes of one frozen Original value need one receipt read in this plan;
     // store preview and commit each perform their own independent admission.
     let mut originals: Vec<(RegisterValue, AssetRecord, FrameRate, SourceNode)> = Vec::new();
     // Loaded only when an instruction needs words.
-    let mut speech: Option<Result<crate::speech::StoredSpeech, EditError>> = None;
+    let mut speech = crate::speech::PlanningSpeech::new(store, pinned);
     // Measured picture indexes for pause pictures, loaded once per asset.
     let mut indexes: Vec<(deadpan_core::AssetId, Arc<deadpan_core::SourceFrameIndex>)> = Vec::new();
     let original_index = context
@@ -388,7 +467,7 @@ pub fn plan_program(
         .as_ref()
         .map(|original| qualified_original_index(store, document, original))
         .transpose()?;
-    let result = deadpan_core::plan_semantic_with_framing(
+    let result = deadpan_core::plan_semantic_with_provider(
         document,
         context,
         program,
@@ -423,13 +502,7 @@ pub fn plan_program(
             }
             Ok(source)
         },
-        |staged| {
-            speech
-                .get_or_insert_with(|| crate::speech::StoredSpeech::load(store))
-                .as_ref()
-                .map_err(Clone::clone)?
-                .project(staged)
-        },
+        &mut speech,
         |staged, site| {
             let plan = deadpan_plan::RenderPlan::compile(staged)
                 .map_err(|error| pause_error(&error.to_string()))?;
@@ -450,7 +523,12 @@ pub fn plan_program(
         original_index,
         |staged, site| crate::framing::resolve(store, staged, site),
     );
-    result.map_err(|error| source_error.unwrap_or_else(|| edit_error(error)))
+    result
+        .map(|plan| HostSemanticPlan {
+            plan,
+            transcript_guard: speech.consumed_guard,
+        })
+        .map_err(|error| source_error.unwrap_or_else(|| edit_error(error)))
 }
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
@@ -989,14 +1067,8 @@ pub fn commit(store: &mut ProjectStore, prepared: &Prepared) -> Result<Execution
             )
         }
         Operation::Run { .. } | Operation::Apply { .. } => {
-            if let Some(command) = prepared
-                .plan
-                .as_ref()
-                .and_then(|plan| plan.request.as_ref())
-            {
-                let result = store
-                    .commit_compound(command, None)
-                    .map_err(LiveError::store)?;
+            if let Some(plan) = prepared.plan.as_ref().filter(|plan| plan.request.is_some()) {
+                let result = plan.commit_compound(store)?;
                 if let Some(outcome) = &result.committed {
                     output["generation_preparations"] = json!(outcome.generation_preparations);
                     output["generation_preparation_notices"] =
@@ -1017,6 +1089,14 @@ pub fn commit(store: &mut ProjectStore, prepared: &Prepared) -> Result<Execution
             } else {
                 let (document, bank) = store.snapshot_with_registers().map_err(LiveError::store)?;
                 check_context(&prepared.request, &document, &bank)?;
+                if let Some(plan) = &prepared.plan {
+                    plan.validate_selection_at(
+                        store,
+                        &prepared.request.project_id,
+                        &prepared.request.expected_revision,
+                        prepared.request.expected_bank_version,
+                    )?;
+                }
                 (None, None)
             }
         }

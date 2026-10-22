@@ -1,0 +1,72 @@
+{
+  "deadpan-analysis": {
+    "path": "/private/tmp/deadpan-transcript-selectors-2026-10-22/backend-second-extracted/target/debug/deps/deadpan_analysis-43e831801594f1de",
+    "sha256": "ac3adf1f42b0cbadf2a5d24590fd6bb8bde55242f52486621add9b635271004c",
+    "tests": [
+      "transcript::tests::editing_search_never_truncates_query_or_returns_partial_matches"
+    ]
+  },
+  "deadpan-cli": {
+    "path": "/private/tmp/deadpan-transcript-selectors-2026-10-22/backend-second-extracted/target/debug/deps/deadpan_cli-ee708b082c234ee0",
+    "sha256": "ca1a34da6c6b63cc6df07fd26365d74be6f4e7e338d8cbd385e73d98b648dacc",
+    "tests": [
+      "speech::transcript_search::tests::complete_phrase_crosses_split_source_ids_and_changed_positive_slopes",
+      "speech::transcript_search::tests::cutaways_do_not_change_provider_results",
+      "speech::transcript_search::tests::fractional_terminal_is_proved_but_an_enclosure_outside_scope_is_not_admitted",
+      "speech::transcript_search::tests::held_selection_slack_and_unmeasured_picture_tail_do_not_manufacture_hits",
+      "speech::transcript_search::tests::hold_play_and_default_or_explicit_source_gaps_never_supply_phrase_coverage",
+      "speech::transcript_search::tests::nonzero_and_negative_audio_origins_share_container_time_with_video",
+      "speech::transcript_search::tests::overlapping_and_touching_enclosures_normalize_without_a_hull_over_gaps",
+      "speech::transcript_search::tests::removed_pause_or_middle_word_and_backtracking_cannot_complete_a_phrase",
+      "speech::transcript_search::tests::repeated_complete_occurrences_stay_separate_and_wraps_break_contiguous_overrides",
+      "speech::transcript_search::tests::scope_filters_complete_occurrences_without_clipping_partial_phrases",
+      "speech::transcript_search::tests::split_chains_continue_within_a_play_and_across_repeat_entry_and_exit",
+      "speech::transcript_search::tests::unavailable_words_zero_timing_alias_and_limits_return_no_partial_geometry",
+      "speech::transcript_search::tests::vfr_subpicture_words_and_fractional_retime_use_continuous_clock"
+    ]
+  },
+  "deadpan-core::transcript_search_counterfactual": {
+    "path": "/private/tmp/deadpan-transcript-selectors-2026-10-22/backend-second-extracted/target/debug/deps/transcript_search_counterfactual-c025518b9047ef2e",
+    "sha256": "90e05bd5c3aef2c2080243145f7ea54ea0600bf89613eea509e4a726b79b0965",
+    "tests": [
+      "transcript_search_admission_follows_literal_ranges_cut_capture_and_paste_controls"
+    ]
+  },
+  "deadpan-plan::picture_plan": {
+    "path": "/private/tmp/deadpan-transcript-selectors-2026-10-22/backend-second-extracted/target/debug/deps/picture_plan-91c4b3e14c589670",
+    "sha256": "fc7419ee789ab33848555dcfa91e9c193eb279bf2dcd77fd2cc6354b3ec003f5",
+    "tests": [
+      "provider_clock_coverage::actual_hold_leaf_is_retained_for_forward_reverse_freeze_and_accepted_pictures",
+      "provider_clock_coverage::aggregate_metadata_budget_is_enforced_before_span_cap",
+      "provider_clock_coverage::empty_reversed_negative_outside_and_arithmetic_overflow_fail_atomically",
+      "provider_clock_coverage::explicit_source_gap_and_nested_play_keep_ancestor_gap_provenance",
+      "provider_clock_coverage::fractional_root_terminal_is_covered_without_a_terminal_sample",
+      "provider_clock_coverage::held_source_edge_slack_stays_raw_with_its_selection",
+      "provider_clock_coverage::repeat_play_identity_and_default_gap_seams_remain_distinct",
+      "provider_clock_coverage::split_source_ids_and_positive_slopes_keep_exact_contiguous_source_limits",
+      "provider_clock_coverage::visible_and_removed_cutaways_are_ignored_without_adding_seams",
+      "provider_clock_coverage::work_limits_cover_the_whole_query_and_span_exhaustion_returns_no_result"
+    ]
+  },
+  "deadpan-store::transcript_search_freshness_control": {
+    "path": "/private/tmp/deadpan-transcript-selectors-2026-10-22/backend-second-extracted/target/debug/deps/transcript_search_freshness_control-321a8a045d90220b",
+    "sha256": "b414ba7f0afe6f1d3d88adbfab389524209c94c3d88cfdc1917188b32b5a72a2",
+    "tests": [
+      "same_key_proposals_and_correction_apply_undo_redo_leave_head_and_bank_unchanged"
+    ]
+  },
+  "deadpan-store::transcript_selection_guard": {
+    "path": "/private/tmp/deadpan-transcript-selectors-2026-10-22/backend-second-extracted/target/debug/deps/transcript_selection_guard-48175ff39f7be90b",
+    "sha256": "09d9c436a8d86b12e0399415cf4639d18ff413cbb4b78b4e38a566a43f665293",
+    "tests": [
+      "canonical_values_bind_digest_and_same_version_corruption_is_rejected",
+      "correction_apply_undo_redo_versions_and_present_empty_each_invalidate_guard",
+      "deleting_every_edit_beat_retains_the_protected_original_analysis_binding",
+      "qualified_original_stream_and_ready_workflow_are_required_only_for_guarded_paths",
+      "readonly_selection_receipt_checks_project_head_bank_and_analysis_together",
+      "same_key_replacement_rejects_both_compound_branches_without_any_sql_write",
+      "skipped_word_corrections_refuse_snapshot_and_recheck_without_partial_publication",
+      "unreadable_current_undo_redo_and_missing_proposal_never_become_absence"
+    ]
+  }
+}

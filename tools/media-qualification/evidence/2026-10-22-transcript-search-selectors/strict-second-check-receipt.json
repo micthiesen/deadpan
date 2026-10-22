@@ -1,0 +1,12 @@
+{
+  "command": [
+    "cargo",
+    "xtask",
+    "check",
+    "--since",
+    "565cb1e8227976e7889bb5506c8b9bfa2f27604e",
+    "--no-test"
+  ],
+  "exit": 1,
+  "seconds": 102.81550849974155
+}

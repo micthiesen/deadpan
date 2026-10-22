@@ -77,7 +77,7 @@ impl<F, R, S, P> Planner<'_, F, R, S, P>
 where
     F: FnMut(SemanticAllocationRequest) -> Result<SemanticAllocation, EditError>,
     R: FnMut(&ProjectDocument, &RegisterValue) -> Result<SourceNode, EditError>,
-    S: FnMut(&ProjectDocument) -> Result<Arc<SpeechTimeline>, EditError>,
+    S: crate::SemanticSpeechProvider,
     P: FnMut(&ProjectDocument, PauseSite) -> Result<PauseProvider, EditError>,
 {
     pub(super) fn zoom(
@@ -132,7 +132,9 @@ where
                 crate::semantic::node::resolve_in_scope(&self.current, &self.context, node)?.range,
             ),
             Some(
-                SemanticVisualSelection::Nodes { .. } | SemanticVisualSelection::Ranges { .. },
+                SemanticVisualSelection::Nodes { .. }
+                | SemanticVisualSelection::Ranges { .. }
+                | SemanticVisualSelection::TranscriptSearch { .. },
             ) => {
                 return Err(unavailable("framing does not accept a discontiguous set"));
             }

@@ -61,8 +61,28 @@ impl ProjectStore {
         &self,
         request: &CommandRequest,
     ) -> Result<CompoundPreview, StoreError> {
+        self.preview_compound_inner(request, None)
+    }
+
+    /// Early freshness check only; publication rechecks in its own transaction.
+    pub fn preview_compound_with_transcript_guard(
+        &self,
+        request: &CommandRequest,
+        guard: &crate::TranscriptSelectionGuard,
+    ) -> Result<CompoundPreview, StoreError> {
+        self.preview_compound_inner(request, Some(guard))
+    }
+
+    fn preview_compound_inner(
+        &self,
+        request: &CommandRequest,
+        guard: Option<&crate::TranscriptSelectionGuard>,
+    ) -> Result<CompoundPreview, StoreError> {
         require_compound(request)?;
         let transaction = self.connection.unchecked_transaction()?;
+        if let Some(guard) = guard {
+            crate::transcript_selection::check_guard(&transaction, &self.documents, guard)?;
+        }
         let plan = crate::prepare_command(&transaction, &self.documents, request)?;
         let prepared = plan.compound.as_ref().expect("compound plan");
         Ok(CompoundPreview {
@@ -77,12 +97,35 @@ impl ProjectStore {
         request: &CommandRequest,
         relevance: Option<&crate::generation::RelevancePlan>,
     ) -> Result<CompoundCommitOutcome, StoreError> {
+        self.commit_compound_inner(request, relevance, None)
+    }
+
+    /// Compare consumed analysis before preparing or publishing either branch
+    /// of the Compound, while the Immediate transaction excludes other writers.
+    pub fn commit_compound_with_transcript_guard(
+        &mut self,
+        request: &CommandRequest,
+        relevance: Option<&crate::generation::RelevancePlan>,
+        guard: &crate::TranscriptSelectionGuard,
+    ) -> Result<CompoundCommitOutcome, StoreError> {
+        self.commit_compound_inner(request, relevance, Some(guard))
+    }
+
+    fn commit_compound_inner(
+        &mut self,
+        request: &CommandRequest,
+        relevance: Option<&crate::generation::RelevancePlan>,
+        guard: Option<&crate::TranscriptSelectionGuard>,
+    ) -> Result<CompoundCommitOutcome, StoreError> {
         self.require_writer()?;
         require_compound(request)?;
         let documents = &self.documents;
         let transaction = self
             .connection
             .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+        if let Some(guard) = guard {
+            crate::transcript_selection::check_guard(&transaction, documents, guard)?;
+        }
         let plan = crate::prepare_command(&transaction, documents, request)?;
         let prepared = plan.compound.as_ref().expect("compound plan");
         let register_bank = prepared.registers.bank.clone();

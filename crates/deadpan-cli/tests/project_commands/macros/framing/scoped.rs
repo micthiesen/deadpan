@@ -57,7 +57,7 @@ fn scoped_invocation(
     request
 }
 
-fn prepared_plan(package: &Path, request: &Value) -> Result<deadpan_core::SemanticPlan> {
+fn prepared_plan(package: &Path, request: &Value) -> Result<deadpan_cli::macros::HostSemanticPlan> {
     let parsed = Request::from_json(&serde_json::to_vec(request)?)?;
     let store = ProjectStore::open(package, AccessMode::ReadOnly)?;
     deadpan_cli::macros::prepare(&store, &parsed)?

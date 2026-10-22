@@ -23,7 +23,7 @@ mod coverage;
 pub(super) use coverage::PictureContinuity;
 pub use coverage::{
     DefinitionPictureCoverage, DefinitionPictureSpan, MAX_DEFINITION_PICTURE_SPANS,
-    PictureClockSlope,
+    PictureClockSlope, ProviderClockCoverage, ProviderClockSpan, ProviderLeafKind,
 };
 
 /// A picture in `definition`'s complete intrinsic output, before outer Repeat,

@@ -1,0 +1,25 @@
+{
+  "deadpan-cli::transcript_search": {
+    "path": "/private/tmp/deadpan-transcript-selectors-2026-10-22/backend-second-extra-extracted/target/debug/deps/transcript_search-e582db7a9f28a6dc",
+    "sha256": "c3ae15fba2c16281e15520de94edcc01b4965fab3cf194bd4d27c109ba09e141",
+    "tests": [
+      "analysis_replacement_after_prepare_refuses_selection_yank_and_cut_without_writes",
+      "complete_corrected_phrase_shared_host_preview_cut_copy_reopen_and_history",
+      "native_pinned_key_survives_another_key_and_missing_phrase_never_falls_back"
+    ]
+  },
+  "deadpan-core::transcript_search_provider": {
+    "path": "/private/tmp/deadpan-transcript-selectors-2026-10-22/backend-second-extra-extracted/target/debug/deps/transcript_search_provider-b126296cf38f2395",
+    "sha256": "12a4416f07092f721878886fbb08b3cbcc8a3856190be529ed2554369c6d7e40",
+    "tests": [
+      "consuming_a_finished_search_resolves_query_again_instead_of_capturing_displayed_geometry",
+      "each_search_cut_uses_staged_document_and_one_reversible_union_transaction",
+      "legacy_timeline_closure_refuses_search_before_any_allocation_or_state_change",
+      "scalar_consumers_and_invalid_host_unions_refuse_without_using_hulls",
+      "search_selection_keeps_query_and_finished_union_while_cursor_moves_independently",
+      "transcript_query_preserves_raw_string_and_rejects_empty_or_oversize_wire",
+      "word_motions_and_search_share_one_provider_across_staged_edits",
+      "wrong_query_and_stale_revision_matches_refuse_without_partial_result"
+    ]
+  }
+}

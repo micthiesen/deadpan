@@ -84,7 +84,10 @@ pub(super) fn validate_context(
         Some(SemanticVisualSelection::Nodes { nodes }) => {
             crate::semantic::node_set::resolve_in_scope(document, context, nodes)?;
         }
-        Some(SemanticVisualSelection::Ranges { ranges }) => {
+        Some(
+            SemanticVisualSelection::Ranges { ranges }
+            | SemanticVisualSelection::TranscriptSearch { ranges, .. },
+        ) => {
             crate::semantic::range_set::validate_geometry(document, context, ranges)?;
         }
         None => {}
@@ -96,7 +99,7 @@ impl<F, R, S, P> Planner<'_, F, R, S, P>
 where
     F: FnMut(SemanticAllocationRequest) -> Result<SemanticAllocation, EditError>,
     R: FnMut(&ProjectDocument, &RegisterValue) -> Result<SourceNode, EditError>,
-    S: FnMut(&ProjectDocument) -> Result<Arc<SpeechTimeline>, EditError>,
+    S: crate::SemanticSpeechProvider,
     P: FnMut(&ProjectDocument, super::PauseSite) -> Result<super::PauseProvider, EditError>,
 {
     pub(super) fn finish_selection(&mut self) -> Result<(), EditError> {
@@ -111,7 +114,8 @@ where
             SemanticVisualSelection::MarkRange { .. }
             | SemanticVisualSelection::Node { .. }
             | SemanticVisualSelection::Nodes { .. }
-            | SemanticVisualSelection::Ranges { .. } => {}
+            | SemanticVisualSelection::Ranges { .. }
+            | SemanticVisualSelection::TranscriptSearch { .. } => {}
         }
         Ok(())
     }
@@ -122,7 +126,9 @@ where
     ) -> Result<ResolvedTarget, EditError> {
         let selection = match selector {
             SemanticSelector::Node { node } => return self.node_target(node),
-            SemanticSelector::Nodes { .. } | SemanticSelector::Ranges { .. } => {
+            SemanticSelector::Nodes { .. }
+            | SemanticSelector::Ranges { .. }
+            | SemanticSelector::TranscriptSearch { .. } => {
                 return Err(unavailable(
                     "this instruction does not accept a discontiguous set",
                 ));
@@ -156,7 +162,8 @@ where
                     }
                     SemanticVisualSelection::Node { node } => return self.node_target(node),
                     SemanticVisualSelection::Nodes { .. }
-                    | SemanticVisualSelection::Ranges { .. } => {
+                    | SemanticVisualSelection::Ranges { .. }
+                    | SemanticVisualSelection::TranscriptSearch { .. } => {
                         return Err(unavailable(
                             "this instruction does not accept a discontiguous set",
                         ));

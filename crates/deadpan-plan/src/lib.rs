@@ -76,8 +76,9 @@ pub use plan::{
 pub use plan::{
     DefinitionPictureCoverage, DefinitionPictureSample, DefinitionPictureSpan,
     HoldContextUnavailable, MAX_DEFINITION_PICTURE_SPANS, MAX_HOLD_CONTEXT_BATCH,
-    MAX_HOLD_CONTEXT_FRAMES, PictureClockSlope, ScopedHoldBoundaries, ScopedHoldContext,
-    ScopedHoldContextObservation, ScopedHoldContextRequest,
+    MAX_HOLD_CONTEXT_FRAMES, PictureClockSlope, ProviderClockCoverage, ProviderClockSpan,
+    ProviderLeafKind, ScopedHoldBoundaries, ScopedHoldContext, ScopedHoldContextObservation,
+    ScopedHoldContextRequest,
 };
 
 use deadpan_core::{

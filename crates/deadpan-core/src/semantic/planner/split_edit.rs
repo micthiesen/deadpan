@@ -20,7 +20,7 @@ impl<F, R, S, P> Planner<'_, F, R, S, P>
 where
     F: FnMut(SemanticAllocationRequest) -> Result<SemanticAllocation, EditError>,
     R: FnMut(&ProjectDocument, &RegisterValue) -> Result<SourceNode, EditError>,
-    S: FnMut(&ProjectDocument) -> Result<Arc<SpeechTimeline>, EditError>,
+    S: crate::SemanticSpeechProvider,
     P: FnMut(&ProjectDocument, super::PauseSite) -> Result<super::PauseProvider, EditError>,
 {
     pub(super) fn split_edit(
@@ -198,7 +198,7 @@ impl<F, R, S, P> Planner<'_, F, R, S, P>
 where
     F: FnMut(SemanticAllocationRequest) -> Result<SemanticAllocation, EditError>,
     R: FnMut(&ProjectDocument, &RegisterValue) -> Result<SourceNode, EditError>,
-    S: FnMut(&ProjectDocument) -> Result<Arc<SpeechTimeline>, EditError>,
+    S: crate::SemanticSpeechProvider,
     P: FnMut(&ProjectDocument, super::PauseSite) -> Result<super::PauseProvider, EditError>,
 {
     /// `:delete role=audio|video` over the Visual time range inside one
@@ -289,7 +289,7 @@ impl<F, R, S, P> Planner<'_, F, R, S, P>
 where
     F: FnMut(SemanticAllocationRequest) -> Result<SemanticAllocation, EditError>,
     R: FnMut(&ProjectDocument, &RegisterValue) -> Result<SourceNode, EditError>,
-    S: FnMut(&ProjectDocument) -> Result<Arc<SpeechTimeline>, EditError>,
+    S: crate::SemanticSpeechProvider,
     P: FnMut(&ProjectDocument, super::PauseSite) -> Result<super::PauseProvider, EditError>,
 {
     /// The nonempty Visual time range and the one direct child containing

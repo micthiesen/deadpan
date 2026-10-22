@@ -1,0 +1,34 @@
+{
+  "audio_windows": 1,
+  "blocks_compared": 4,
+  "declared_audio_priming": 2048,
+  "failures": [],
+  "fixture": "transcript-search",
+  "frames": 120,
+  "max_block_level_db": 0.043817517907697834,
+  "max_thumbnail_mad": 0.06610054347826087,
+  "min_block_snr_db": 29.534686653581982,
+  "min_chroma_psnr_db": 53.59295014636673,
+  "min_luma_psnr_db": 55.8077264033698,
+  "min_neighbor_margin_db": 34.044035090742064,
+  "movie": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpj6Ri6e/exports/transcript-search.mp4",
+  "notes": [
+    "Qualified full 120-picture cfr-bframes.mp4 Original at 30000/1001. Synthetic needle words at [30,50), [100,120), [170,190) centiseconds select literal Edit [8,15), [29,36), [50,57). One shared host macro selects, yanks, cuts, clears, moves and pastes: 99 retained + 21 copied pictures. One Undo/Redo, reopened historical captures and a portable owned-media copy pass. All 120 emitted pictures are compared to literal independent Original ordinals. Full encoded audio is compared to the canonical preview bus on the origin-based grid, without shifting PCM. This is not model accuracy, independent DSP or listening qualification."
+  ],
+  "offsets": [
+    [
+      "verified_zero",
+      0
+    ]
+  ],
+  "package": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpj6Ri6e/fixture/transcript-search-portable.deadpan",
+  "passed": true,
+  "pictures": 120,
+  "render_seconds": 1.7320818340000002,
+  "revision": "a48705cc-4cde-4c0f-b12b-7ebdb362c1e5",
+  "rows": [
+    "Discontiguous interval union"
+  ],
+  "signal_windows": 1,
+  "verify_seconds": 1.033465125
+}

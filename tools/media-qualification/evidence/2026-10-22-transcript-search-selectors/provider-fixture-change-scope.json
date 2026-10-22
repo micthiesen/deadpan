@@ -1,0 +1,7 @@
+{
+  "changed_from_broad_first": [
+    "crates/deadpan-core/tests/transcript_search_provider.rs"
+  ],
+  "production_Rust_unchanged": true,
+  "reason": "Forward MovePauses/MoveShots must start before the only interval; object selections still start within it. No admission or assertion weakening."
+}

@@ -14,6 +14,13 @@ overwrite the slot once per member. Seam paste creates one editable containing
 Sequence and preserves shared logical marks across the selected components;
 unselected gaps are omitted. Active-set replacement and Place slice refuse.
 
+[Transcript-search sets](SEMANTIC_MACROS.md#transcript-search-sets) use the same
+interval capture. Copy and Cut recheck the exact proposal and correction state
+inside their publication transaction. Once saved, the historical EditedSet
+remains usable after analysis changes; its content does not rerun the query.
+A recorded search instruction or search Cut dot retains the query and resolves
+new complete occurrences when invoked.
+
 In Normal Edit, `"ayy` copies the selected beat to **a**, and `"ay5l` copies
 the next five frames without moving the cursor. `"ad5l` cuts that interval.
 With a Visual range selected, `"ay` copies it immediately. Original ranges

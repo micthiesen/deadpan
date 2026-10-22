@@ -1,6 +1,45 @@
 use super::*;
 use proptest::prelude::*;
 
+#[test]
+fn editing_search_never_truncates_query_or_returns_partial_matches() {
+    let transcript = Transcript::from_segments(audio(), &recorded()).unwrap();
+    for query in [
+        "ABSOLUT",
+        "the interview",
+        "made, WEI",
+        "I think the answer is absol",
+    ] {
+        assert_eq!(
+            transcript.search_for_selection(query, 100).unwrap(),
+            transcript.search(query)
+        );
+    }
+    assert_eq!(transcript.search_for_selection("absent", 0).unwrap(), []);
+    assert!(matches!(
+        transcript.search_for_selection("absol", 2),
+        Err(TranscriptError::Limit("search matches"))
+    ));
+    assert_eq!(
+        transcript.search_for_selection("absol", 3).unwrap().len(),
+        3
+    );
+    assert!(matches!(
+        transcript.search_for_selection(&vec!["word"; MAX_QUERY_WORDS + 1].join(" "), 100),
+        Err(TranscriptError::Limit("search query words"))
+    ));
+    assert!(matches!(
+        transcript.search_for_selection(&"a".repeat(4097), 100),
+        Err(TranscriptError::Limit("search query bytes"))
+    ));
+    for query in ["", "  ", ",.!", "''"] {
+        assert!(matches!(
+            transcript.search_for_selection(query, 100),
+            Err(TranscriptError::Text(_))
+        ));
+    }
+}
+
 fn token(text: &str, t0: i64, t1: i64, p: f32) -> RawToken {
     RawToken {
         text: text.into(),

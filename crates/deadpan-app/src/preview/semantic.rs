@@ -174,12 +174,26 @@ fn repeat_instruction_hint(
     }
 }
 
+/// Keep compact status text bounded; the Inspector retains the exact query.
+pub(super) fn transcript_query_summary(query: &deadpan_core::SemanticTranscriptQuery) -> String {
+    let mut characters = query.as_str().chars();
+    let prefix: String = characters.by_ref().take(32).collect();
+    let mut label = serde_json::to_string(&prefix).unwrap_or_default();
+    if characters.next().is_some() {
+        label.push('…');
+    }
+    label
+}
+
 /// What a non-Visual selector selects, as a short phrase.
 pub(super) fn selector_text(selector: &SemanticSelector) -> String {
     match selector {
         SemanticSelector::SelectedBeat => "beat".into(),
         SemanticSelector::VisualSelection => "range".into(),
         SemanticSelector::Nodes { nodes } => format!("node set ({} members)", nodes.len()),
+        SemanticSelector::TranscriptSearch { query } => {
+            format!("transcript search {}", transcript_query_summary(query))
+        }
         SemanticSelector::Ranges { ranges } => {
             let pairs = ranges
                 .iter()
@@ -608,6 +622,26 @@ mod tests {
     use super::*;
     use crate::project::semantic::LastEdit;
     use deadpan_core::{FrameCut, RevisionId};
+
+    #[test]
+    fn transcript_query_summaries_are_bounded_without_changing_exact_intent() {
+        for text in [
+            format!("{}needle", "!".repeat(4000)),
+            format!("{}needle", "\0".repeat(4000)),
+            "字".repeat(1000),
+        ] {
+            let query = deadpan_core::SemanticTranscriptQuery::new(text.clone()).unwrap();
+            let label = transcript_query_summary(&query);
+            // JSON's longest scalar escape is six bytes; only 32 raw scalars
+            // reach a status label, plus quotes and the ellipsis.
+            assert!(label.len() <= 197, "{}", label.len());
+            assert!(label.ends_with('…'));
+            assert_eq!(query.as_str(), text);
+            assert!(selector_text(&SemanticSelector::TranscriptSearch { query }).len() <= 215);
+        }
+        let query = deadpan_core::SemanticTranscriptQuery::new("hello \"world\"").unwrap();
+        assert_eq!(transcript_query_summary(&query), "\"hello \\\"world\\\"\"");
+    }
 
     #[test]
     fn range_selector_hint_retains_signed_pairs_instead_of_a_hull() {

@@ -1,0 +1,7 @@
+{
+  "changed_content": [
+    "crates/deadpan-core/tests/transcript_search_provider.rs"
+  ],
+  "retouched_unchanged_files": [],
+  "observation": "Exactly one integration-test content changed and no unchanged Rust source timestamps were touched. No recompilation cause is inferred."
+}

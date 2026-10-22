@@ -17,6 +17,9 @@ pub(super) struct Identity {
 pub(super) struct Selection {
     identity: Option<Identity>,
     kind: Option<SelectionKind>,
+    /// Finished search geometry belongs to the displayed analysis as well as
+    /// the document revision. Ordinary selections need no analysis authority.
+    analysis_guard: Option<deadpan_store::TranscriptSelectionGuard>,
     pub active: bool,
 }
 
@@ -42,6 +45,10 @@ enum SelectionKind {
     Ranges {
         ranges: Vec<FrameRange>,
     },
+    TranscriptSearch {
+        query: deadpan_core::SemanticTranscriptQuery,
+        ranges: Vec<FrameRange>,
+    },
     MarkRange {
         start: deadpan_core::NamedMarkTarget,
         end: deadpan_core::NamedMarkTarget,
@@ -50,6 +57,23 @@ enum SelectionKind {
 }
 
 impl Selection {
+    fn matches_analysis(
+        &self,
+        displayed: Option<&deadpan_store::TranscriptSelectionGuard>,
+    ) -> bool {
+        !matches!(self.kind, Some(SelectionKind::TranscriptSearch { .. }))
+            || self
+                .analysis_guard
+                .as_ref()
+                .is_some_and(|guard| displayed == Some(guard))
+    }
+
+    fn reconcile_analysis(&mut self, displayed: Option<&deadpan_store::TranscriptSelectionGuard>) {
+        if !self.matches_analysis(displayed) {
+            self.clear();
+        }
+    }
+
     pub(super) fn rebase_source_interpretation(
         &mut self,
         saved: &crate::project::SourceInterpretationSaved,
@@ -85,14 +109,26 @@ impl Selection {
     }
     pub(super) fn ranges(&self) -> Option<&[FrameRange]> {
         match &self.kind {
-            Some(SelectionKind::Ranges { ranges }) => Some(ranges),
+            Some(
+                SelectionKind::Ranges { ranges } | SelectionKind::TranscriptSearch { ranges, .. },
+            ) => Some(ranges),
+            _ => None,
+        }
+    }
+    pub(super) fn transcript_query(&self) -> Option<&deadpan_core::SemanticTranscriptQuery> {
+        match &self.kind {
+            Some(SelectionKind::TranscriptSearch { query, .. }) => Some(query),
             _ => None,
         }
     }
     pub(super) fn has_set(&self) -> bool {
         matches!(
             self.kind,
-            Some(SelectionKind::Nodes { .. } | SelectionKind::Ranges { .. })
+            Some(
+                SelectionKind::Nodes { .. }
+                    | SelectionKind::Ranges { .. }
+                    | SelectionKind::TranscriptSearch { .. }
+            )
         )
     }
 
@@ -120,6 +156,12 @@ impl Selection {
                 SelectionKind::Ranges { ranges } => Ok(SemanticVisualSelection::Ranges {
                     ranges: ranges.clone(),
                 }),
+                SelectionKind::TranscriptSearch { query, ranges } => {
+                    Ok(SemanticVisualSelection::TranscriptSearch {
+                        query: query.clone(),
+                        ranges: ranges.clone(),
+                    })
+                }
                 SelectionKind::MarkRange { start, end, .. } => {
                     Ok(SemanticVisualSelection::MarkRange {
                         start: start.clone(),
@@ -184,7 +226,8 @@ impl Selection {
                 SemanticVisualSelection::Nodes { .. } => {
                     Err("A node set needs its complete resolved members.".into())
                 }
-                SemanticVisualSelection::Ranges { ranges } => {
+                SemanticVisualSelection::Ranges { ranges }
+                | SemanticVisualSelection::TranscriptSearch { ranges, .. } => {
                     if ranges.is_empty()
                         || ranges.len() > 64
                         || ranges.iter().any(|range| {
@@ -199,8 +242,16 @@ impl Selection {
                         return Err("The range set is not canonical inside this group.".into());
                     }
                     Ok((
-                        SelectionKind::Ranges {
-                            ranges: ranges.clone(),
+                        match selection {
+                            SemanticVisualSelection::TranscriptSearch { query, .. } => {
+                                SelectionKind::TranscriptSearch {
+                                    query: query.clone(),
+                                    ranges: ranges.clone(),
+                                }
+                            }
+                            _ => SelectionKind::Ranges {
+                                ranges: ranges.clone(),
+                            },
                         },
                         false,
                     ))
@@ -227,6 +278,7 @@ impl Selection {
             .transpose()?;
         self.active = restored.as_ref().is_some_and(|(_, active)| *active);
         self.kind = restored.map(|(kind, _)| kind);
+        self.analysis_guard = None;
         Ok(())
     }
 
@@ -267,6 +319,7 @@ impl Selection {
         if self.active {
             self.active = false;
         } else {
+            self.analysis_guard = None;
             self.kind = Some(SelectionKind::Time {
                 anchor: at,
                 head: at,
@@ -289,7 +342,12 @@ impl Selection {
                         head: at,
                     });
                 }
-                Some(SelectionKind::Nodes { .. } | SelectionKind::Ranges { .. }) | None => {}
+                Some(
+                    SelectionKind::Nodes { .. }
+                    | SelectionKind::Ranges { .. }
+                    | SelectionKind::TranscriptSearch { .. },
+                )
+                | None => {}
             }
         }
     }
@@ -304,7 +362,12 @@ impl Selection {
             ) => {
                 return Some(*range);
             }
-            Some(SelectionKind::Nodes { .. } | SelectionKind::Ranges { .. }) | None => return None,
+            Some(
+                SelectionKind::Nodes { .. }
+                | SelectionKind::Ranges { .. }
+                | SelectionKind::TranscriptSearch { .. },
+            )
+            | None => return None,
         };
         if anchor == head {
             return None;
@@ -319,6 +382,7 @@ impl Selection {
     pub fn clear(&mut self) {
         self.active = false;
         self.kind = None;
+        self.analysis_guard = None;
     }
 }
 
@@ -326,7 +390,7 @@ impl DeadpanApp {
     pub(super) fn capture_visual_selection(
         &self,
     ) -> Result<Option<SemanticVisualSelection>, String> {
-        if self.edit_range.has_bounds() && self.edit_range.identity != self.edit_range_identity() {
+        if self.edit_range.has_bounds() && !self.edit_range_is_current() {
             return Err("The Edit selection belongs to an earlier editing context.".into());
         }
         let selection = self.edit_range.semantic()?;
@@ -334,7 +398,11 @@ impl DeadpanApp {
             self.resolve_native_node_set(nodes)?;
             return Ok(selection);
         }
-        if let Some(SemanticVisualSelection::Ranges { ranges }) = &selection {
+        if let Some(
+            SemanticVisualSelection::Ranges { ranges }
+            | SemanticVisualSelection::TranscriptSearch { ranges, .. },
+        ) = &selection
+        {
             self.resolve_native_range_set(ranges)?;
             return Ok(selection);
         }
@@ -377,6 +445,15 @@ impl DeadpanApp {
             .as_ref()
             .ok_or("The edit is no longer visible.")?;
         let scope = self.sequence_scope.resolve(workspace)?;
+        let analysis_guard = if matches!(
+            &selection,
+            Some(SemanticVisualSelection::TranscriptSearch { .. })
+        ) {
+            Some(workspace.transcript.as_ref().and_then(|transcript| transcript.selection_guard.clone())
+                .ok_or("The displayed transcript is unavailable; the search selection was not installed.")?)
+        } else {
+            None
+        };
         let mut restored = Selection::default();
         if let Some(SemanticVisualSelection::Nodes { nodes }) = &selection {
             self.resolve_native_node_set(nodes)?;
@@ -387,11 +464,16 @@ impl DeadpanApp {
             self.edit_range = restored;
             return Ok(());
         }
-        if let Some(SemanticVisualSelection::Ranges { ranges }) = &selection {
+        if let Some(
+            SemanticVisualSelection::Ranges { ranges }
+            | SemanticVisualSelection::TranscriptSearch { ranges, .. },
+        ) = &selection
+        {
             self.resolve_native_range_set(ranges)?;
         }
         let object_range = self.object_range(selection.as_ref())?;
         restored.restore_semantic(selection, scope.start, scope.end, object_range)?;
+        restored.analysis_guard = analysis_guard;
         restored.identity = Some(identity);
         self.edit_range = restored;
         Ok(())
@@ -418,6 +500,7 @@ impl DeadpanApp {
             anchor: range.range.start().0 as u64,
             head: range.range.end().0 as u64,
         });
+        self.edit_range.analysis_guard = None;
         self.edit_range.active = false;
     }
 
@@ -433,15 +516,31 @@ impl DeadpanApp {
         })
     }
 
+    fn edit_range_is_current(&self) -> bool {
+        self.edit_range.identity == self.edit_range_identity()
+            && self.edit_range.matches_analysis(
+                self.workspace
+                    .as_ref()
+                    .and_then(|workspace| workspace.transcript.as_ref())
+                    .and_then(|transcript| transcript.selection_guard.as_ref()),
+            )
+    }
+
     pub(super) fn reconcile_edit_range(&mut self) {
         self.edit_range.reconcile(self.edit_range_identity());
+        let displayed = self
+            .workspace
+            .as_ref()
+            .and_then(|workspace| workspace.transcript.as_ref())
+            .and_then(|transcript| transcript.selection_guard.as_ref());
+        self.edit_range.reconcile_analysis(displayed);
         if self.view != View::Sequence {
             self.edit_range.active = false;
         }
     }
 
     pub(super) fn selected_edit_range(&self) -> Option<FrameRange> {
-        if self.edit_range.identity != self.edit_range_identity() {
+        if !self.edit_range_is_current() {
             return None;
         }
         if matches!(
@@ -462,7 +561,7 @@ impl DeadpanApp {
         let Some(nodes) = self.edit_range.nodes() else {
             return Ok(None);
         };
-        if self.edit_range.identity != self.edit_range_identity() {
+        if !self.edit_range_is_current() {
             return Err("The node set belongs to an earlier editing context.".into());
         }
         self.resolve_native_node_set(nodes).map(Some)
@@ -474,7 +573,7 @@ impl DeadpanApp {
         let Some(ranges) = self.edit_range.ranges() else {
             return Ok(None);
         };
-        if self.edit_range.identity != self.edit_range_identity() {
+        if !self.edit_range_is_current() {
             return Err("The range set belongs to an earlier editing context.".into());
         }
         self.resolve_native_range_set(ranges).map(Some)
@@ -856,8 +955,7 @@ impl DeadpanApp {
     }
 
     pub(super) fn edit_selection(&self) -> navigation::EditSelection {
-        if self.edit_range.identity != self.edit_range_identity() || self.edit_range.kind.is_none()
-        {
+        if !self.edit_range_is_current() || self.edit_range.kind.is_none() {
             navigation::EditSelection::None
         } else if matches!(
             self.edit_range.kind,
@@ -866,6 +964,7 @@ impl DeadpanApp {
                     | SelectionKind::Node { .. }
                     | SelectionKind::Nodes { .. }
                     | SelectionKind::Ranges { .. }
+                    | SelectionKind::TranscriptSearch { .. }
             )
         ) {
             navigation::EditSelection::Object
@@ -957,7 +1056,14 @@ impl DeadpanApp {
         if self.edit_range.ranges().is_some() {
             let target = self.selected_range_set().ok()??;
             return Some(format!(
-                "Range set · {} ranges · {} f selected · {} · Inspector: ranges",
+                "{} · {} ranges · {} f selected · {} · Inspector: ranges",
+                match &self.edit_range.kind {
+                    Some(SelectionKind::TranscriptSearch { query, .. }) => format!(
+                        "Transcript search {}",
+                        super::semantic::transcript_query_summary(query)
+                    ),
+                    _ => "Range set".into(),
+                },
                 target.ranges.len(),
                 target.total_duration.frames(),
                 self.beat_scope_label()
@@ -1065,6 +1171,117 @@ mod tests {
         }
     }
 
+    // An inert descriptor for host equality tests. This creates no media,
+    // qualification receipt or claim that a source was actually measured.
+    fn analysis_guard() -> deadpan_store::TranscriptSelectionGuard {
+        deadpan_store::TranscriptSelectionGuard {
+            format: deadpan_store::TranscriptSelectionFormat::V1,
+            asset: AssetId::new("original").unwrap(),
+            qualification: deadpan_core::SourceQualificationId::new("a".repeat(64)).unwrap(),
+            key: deadpan_store::TranscriptKey {
+                content: "blake3:selection-identity-test".into(),
+                audio_stream: 1,
+                model_sha256: "b".repeat(64),
+                language: "en".into(),
+                engine: "selection-test".into(),
+            },
+            proposal_sha256: "c".repeat(64),
+            correction_rule: deadpan_store::TranscriptSelectionCorrectionRule::V1,
+            corrections: deadpan_store::TranscriptSelectionCorrections::Present {
+                version: 1,
+                sha256: "d".repeat(64),
+            },
+        }
+    }
+
+    #[test]
+    fn finished_search_geometry_refuses_changed_analysis_before_reconciliation_and_then_clears() {
+        let guard = analysis_guard();
+        let mut selected = Selection::default();
+        selected
+            .restore_semantic(
+                Some(SemanticVisualSelection::TranscriptSearch {
+                    query: deadpan_core::SemanticTranscriptQuery::new("needle").unwrap(),
+                    ranges: vec![FrameRange::new(ProjectFrame(2), ProjectFrame(6)).unwrap()],
+                }),
+                0,
+                20,
+                None,
+            )
+            .unwrap();
+        selected.identity = Some(identity("base", SequenceScope::default()));
+        assert!(
+            !selected.matches_analysis(None),
+            "geometry alone grants no analysis authority"
+        );
+        assert!(!selected.matches_analysis(Some(&guard)));
+        selected.analysis_guard = Some(guard.clone());
+        assert!(selected.matches_analysis(Some(&guard)));
+        let retained = selected.clone();
+        selected.reconcile_analysis(Some(&guard));
+        assert_eq!(selected, retained);
+        let mut key_changed = guard.clone();
+        key_changed.key.model_sha256 = "e".repeat(64);
+        let mut proposal_changed = guard.clone();
+        proposal_changed.proposal_sha256 = "f".repeat(64);
+        let mut version_changed = guard.clone();
+        version_changed.corrections = deadpan_store::TranscriptSelectionCorrections::Present {
+            version: 2,
+            sha256: "d".repeat(64),
+        };
+        let mut correction_changed = guard.clone();
+        correction_changed.corrections = deadpan_store::TranscriptSelectionCorrections::Present {
+            version: 1,
+            sha256: "e".repeat(64),
+        };
+        let mut correction_absent = guard.clone();
+        correction_absent.corrections = deadpan_store::TranscriptSelectionCorrections::Absent;
+        for current in [
+            Some(key_changed),
+            Some(proposal_changed),
+            Some(version_changed),
+            Some(correction_changed),
+            Some(correction_absent),
+            None,
+        ] {
+            let mut stale = retained.clone();
+            assert!(
+                !stale.matches_analysis(current.as_ref()),
+                "stale search must refuse before a paint reconciliation"
+            );
+            stale.reconcile_analysis(current.as_ref());
+            assert!(!stale.has_bounds());
+            assert!(!stale.active);
+            assert_eq!(stale.analysis_guard, None);
+            assert_eq!(stale.identity, retained.identity);
+        }
+    }
+
+    #[test]
+    fn annotation_reconciliation_preserves_manual_ranges_and_node_sets() {
+        let guard = analysis_guard();
+        for kind in [
+            SelectionKind::Ranges {
+                ranges: vec![FrameRange::new(ProjectFrame(2), ProjectFrame(6)).unwrap()],
+            },
+            SelectionKind::Nodes {
+                nodes: vec![NodeId::new("selected").unwrap()],
+            },
+        ] {
+            let mut selected = Selection {
+                identity: Some(identity("base", SequenceScope::default())),
+                kind: Some(kind),
+                ..Selection::default()
+            };
+            let retained = selected.clone();
+            for current in [Some(&guard), None] {
+                assert!(selected.matches_analysis(current));
+                selected.reconcile_analysis(current);
+                assert_eq!(selected, retained);
+            }
+        }
+    }
+
     #[test]
     fn range_sets_never_expose_a_hull_and_finished_motion_preserves_geometry() {
         for ranges in [
@@ -1123,6 +1340,48 @@ mod tests {
             );
             assert_eq!(selected, prior);
         }
+    }
+
+    #[test]
+    fn transcript_search_restore_preserves_query_and_disjoint_geometry_without_a_hull() {
+        let query = deadpan_core::SemanticTranscriptQuery::new("Hello world").unwrap();
+        let ranges = [(2, 6), (12, 17)]
+            .into_iter()
+            .map(|(start, end)| FrameRange::new(ProjectFrame(start), ProjectFrame(end)).unwrap())
+            .collect::<Vec<_>>();
+        let semantic = Some(SemanticVisualSelection::TranscriptSearch {
+            query: query.clone(),
+            ranges: ranges.clone(),
+        });
+        let mut selection = Selection::default();
+        selection
+            .restore_semantic(semantic.clone(), 0, 20, None)
+            .unwrap();
+        assert!(selection.has_set());
+        assert!(!selection.active);
+        assert_eq!(selection.range(), None);
+        assert_eq!(selection.ranges(), Some(ranges.as_slice()));
+        assert_eq!(selection.transcript_query(), Some(&query));
+        selection.move_to(19);
+        assert_eq!(selection.semantic().unwrap(), semantic);
+        let retained = selection.clone();
+        assert!(
+            selection
+                .restore_semantic(
+                    Some(SemanticVisualSelection::TranscriptSearch {
+                        query,
+                        ranges: vec![FrameRange::new(ProjectFrame(19), ProjectFrame(21)).unwrap()]
+                    }),
+                    0,
+                    20,
+                    None
+                )
+                .is_err()
+        );
+        assert_eq!(selection, retained);
+        selection.toggle(10);
+        assert!(selection.active);
+        assert!(!selection.has_set());
     }
 
     #[test]

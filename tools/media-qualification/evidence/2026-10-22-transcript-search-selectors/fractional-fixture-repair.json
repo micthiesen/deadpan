@@ -1,0 +1,10 @@
+{
+  "reason": "The candidate-second fixtures authored a fractional root (3/2), refused by ProjectDocument effective duration validation. Public documents require an integral root; ordinary child Sequence scopes may have fractional extents.",
+  "authority": "crates/deadpan-core/src/derived_clock.rs effective_durations validates integral(extents[&self.root]); no production changes.",
+  "repair": "Each fixture now owns an ordinary Sequence scope of exact extent 3/2 and a separate FollowSpeed tail of extent 1/2, yielding a valid root extent 2. Provider coverage queries [0,3/2). CLI targets only the scope, selects the inside phrase as [0,1), and refuses a terminal phrase whose exact [6/5,3/2) enclosure [1,2) escapes the scope.",
+  "tests_run": "None; parent owns Cargo and rustfmt and will run the next frozen candidate.",
+  "files": {
+    "crates/deadpan-plan/tests/picture_plan/provider_clock_coverage.rs": "b37a787d5e5dfa9b075f5c7268968535267345e7423ed29e6c5c85bff0e60348",
+    "crates/deadpan-cli/src/speech/transcript_search.rs": "9cacf2d6be2458dcb6b66d8a4701f24b7111d53fe44cba3ae74fffebf6201cf0"
+  }
+}

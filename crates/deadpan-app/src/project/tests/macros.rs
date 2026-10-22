@@ -2,6 +2,7 @@
 
 mod original;
 mod scoped;
+mod transcript_search;
 
 use std::num::NonZeroU32;
 
@@ -110,6 +111,11 @@ fn id(update: &ProjectUpdate, request: u64) -> Id {
         revision: workspace.document.revision_id().clone(),
         bank_version: update.registers.as_ref().unwrap().version,
         request,
+        transcript_guard: workspace
+            .transcript
+            .as_ref()
+            .and_then(|transcript| transcript.selection_guard.clone())
+            .map(Arc::new),
     }
 }
 

@@ -82,6 +82,13 @@ pub enum SemanticVisualSelection {
         #[serde(deserialize_with = "super::range_set::deserialize_geometry")]
         ranges: Vec<FrameRange>,
     },
+    /// Finished displayed geometry with semantic query intent retained for
+    /// every consuming operator and repeated invocation.
+    TranscriptSearch {
+        query: crate::SemanticTranscriptQuery,
+        #[serde(deserialize_with = "super::range_set::deserialize_geometry")]
+        ranges: Vec<FrameRange>,
+    },
 }
 
 impl SemanticVisualSelection {
@@ -95,6 +102,9 @@ impl SemanticVisualSelection {
             Self::Node { node } => SemanticSelector::Node { node: node.clone() },
             Self::Nodes { nodes } => SemanticSelector::Nodes {
                 nodes: nodes.clone(),
+            },
+            Self::TranscriptSearch { query, .. } => SemanticSelector::TranscriptSearch {
+                query: query.clone(),
             },
             Self::Time { .. } | Self::Object { .. } | Self::Ranges { .. } => {
                 SemanticSelector::VisualSelection
@@ -602,6 +612,40 @@ pub fn plan_semantic_with_framing(
     resolve_speech: impl FnMut(&ProjectDocument) -> Result<Arc<SpeechTimeline>, EditError>,
     resolve_pause: impl FnMut(&ProjectDocument, PauseSite) -> Result<PauseProvider, EditError>,
     original_index: Option<Arc<crate::SourceFrameIndex>>,
+    resolve_framing: impl FnMut(
+        &ProjectDocument,
+        &SemanticFramingSite,
+    ) -> Result<SemanticFramingState, EditError>,
+) -> Result<SemanticPlan, EditError> {
+    plan_semantic_with_provider(
+        document,
+        context,
+        program,
+        registers,
+        new_revision,
+        allocate,
+        resolve_original,
+        super::transcript_search::TimelineProvider(resolve_speech),
+        resolve_pause,
+        original_index,
+        resolve_framing,
+    )
+}
+
+/// Full planning with one host speech provider. The provider retains one
+/// qualified transcript snapshot while projecting each staged document.
+#[allow(clippy::too_many_arguments)]
+pub fn plan_semantic_with_provider(
+    document: &ProjectDocument,
+    context: &SemanticContext,
+    program: &SemanticProgram,
+    registers: SemanticRegisterBank<'_>,
+    new_revision: RevisionId,
+    allocate: impl FnMut(SemanticAllocationRequest) -> Result<SemanticAllocation, EditError>,
+    resolve_original: impl FnMut(&ProjectDocument, &RegisterValue) -> Result<SourceNode, EditError>,
+    resolve_speech: impl crate::SemanticSpeechProvider,
+    resolve_pause: impl FnMut(&ProjectDocument, PauseSite) -> Result<PauseProvider, EditError>,
+    original_index: Option<Arc<crate::SourceFrameIndex>>,
     mut resolve_framing: impl FnMut(
         &ProjectDocument,
         &SemanticFramingSite,
@@ -741,7 +785,7 @@ impl<F, R, S, P> Planner<'_, F, R, S, P>
 where
     F: FnMut(SemanticAllocationRequest) -> Result<SemanticAllocation, EditError>,
     R: FnMut(&ProjectDocument, &RegisterValue) -> Result<SourceNode, EditError>,
-    S: FnMut(&ProjectDocument) -> Result<Arc<SpeechTimeline>, EditError>,
+    S: crate::SemanticSpeechProvider,
     P: FnMut(&ProjectDocument, PauseSite) -> Result<PauseProvider, EditError>,
 {
     /// Project speech through the current staged document once per change.
@@ -753,7 +797,7 @@ where
         {
             return Ok(());
         }
-        let speech = (self.resolve_speech)(&self.current)?;
+        let speech = self.resolve_speech.timeline(&self.current)?;
         self.speech = Some((self.steps.len(), speech));
         Ok(())
     }
@@ -854,7 +898,9 @@ where
             if matches!(
                 self.context.visual_selection,
                 Some(
-                    SemanticVisualSelection::Nodes { .. } | SemanticVisualSelection::Ranges { .. }
+                    SemanticVisualSelection::Nodes { .. }
+                        | SemanticVisualSelection::Ranges { .. }
+                        | SemanticVisualSelection::TranscriptSearch { .. }
                 )
             ) && !matches!(
                 instruction,
@@ -870,6 +916,7 @@ where
                     | SemanticInstruction::SelectNode { .. }
                     | SemanticInstruction::SelectNodes { .. }
                     | SemanticInstruction::SelectRanges { .. }
+                    | SemanticInstruction::SelectTranscriptSearch { .. }
                     | SemanticInstruction::SelectMarkRange { .. }
                     | SemanticInstruction::BeginSelection
                     | SemanticInstruction::FinishSelection
@@ -884,7 +931,10 @@ where
                     "this instruction does not accept a discontiguous set; clear the selection first",
                 ));
             }
-            if instruction.uses_speech() {
+            if instruction.uses_transcript_words() {
+                self.resolve_speech.require_words()?;
+            }
+            if instruction.uses_speech_timeline() {
                 self.ensure_speech()?;
             }
             match instruction {
@@ -1001,6 +1051,19 @@ where
                         unreachable!()
                     };
                     self.trace[index].resolved_ranges = ranges.clone();
+                }
+                SemanticInstruction::SelectTranscriptSearch { query } => {
+                    self.charge_resolution()?;
+                    let ranges = self.transcript_ranges(query)?;
+                    self.context.cursor = ranges.last().expect("checked nonempty matches").end();
+                    self.context.selected_child =
+                        selected_child(&self.child_ends, self.context.cursor, self.bounds);
+                    self.context.visual_selection =
+                        Some(SemanticVisualSelection::TranscriptSearch {
+                            query: query.clone(),
+                            ranges: ranges.clone(),
+                        });
+                    self.trace[index].resolved_ranges = ranges;
                 }
                 SemanticInstruction::BeginSelection => {
                     self.context.visual_selection = Some(SemanticVisualSelection::Time {

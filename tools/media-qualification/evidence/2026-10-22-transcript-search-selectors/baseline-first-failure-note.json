@@ -1,0 +1,9 @@
+{
+  "kind": "compile failure, no controls executed",
+  "core_build": 0,
+  "store_build": 101,
+  "failure": "RegisterBank imported from store root instead of public registers module",
+  "fix": "public import path only",
+  "production_changes": false,
+  "pre_fix_frozen_source_guard_passed": true
+}

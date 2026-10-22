@@ -196,6 +196,10 @@ pub enum Entry {
     SelectRanges {
         ranges: Vec<deadpan_core::SemanticRangeOffsets>,
     },
+    /// A strict JSON query retains semantic search intent through copy and dot.
+    SelectTranscriptSearch {
+        query: deadpan_core::SemanticTranscriptQuery,
+    },
     /// `:delete role=audio|video`: delete one role over the Visual range.
     DeleteRole(deadpan_core::MediaRole),
     /// `:recipe-save a`: keep the selected group, with its parts and
@@ -421,6 +425,21 @@ pub fn parse(input: &str) -> Result<Entry, String> {
             None => Ok(Entry::TrackCancel),
             Some(_) => Err("Use :track-cancel without arguments.".into()),
         };
+    }
+    if verb.eq_ignore_ascii_case("select")
+        && input[verb.len()..].trim_start().starts_with("search=")
+    {
+        const USAGE: &str = r#"Use :select search="hello world" with one nonempty JSON string."#;
+        let json = input[verb.len()..]
+            .trim_start()
+            .strip_prefix("search=")
+            .ok_or(USAGE)?;
+        if json.len() > deadpan_core::MAX_SEMANTIC_TRANSCRIPT_QUERY_BYTES * 6 + 2 {
+            return Err(USAGE.into());
+        }
+        let query: deadpan_core::SemanticTranscriptQuery =
+            serde_json::from_str(json).map_err(|error| format!("{USAGE} {error}"))?;
+        return Ok(Entry::SelectTranscriptSearch { query });
     }
     if verb.eq_ignore_ascii_case("select")
         && input[verb.len()..].trim_start().starts_with("ranges=")
@@ -2180,5 +2199,34 @@ mod tests {
                 "{unknown} must be refused as unknown"
             );
         }
+    }
+
+    #[test]
+    fn transcript_search_uses_one_strict_bounded_json_string() {
+        for query in ["hello world", " Hello, WOR ", "say \"hello\"", "こんにちは"] {
+            let input = format!(":select search={}", serde_json::to_string(query).unwrap());
+            assert!(
+                matches!(parse(&input), Ok(Entry::SelectTranscriptSearch { query: actual }) if actual.as_str() == query)
+            );
+        }
+        for input in [
+            r#":select search="""#,
+            r#":select search="   ""#,
+            ":select search=hello world",
+            r#":select search=["hello"]"#,
+            r#":select search={"query":"hello"}"#,
+            r#":select search="hello" extra"#,
+            r#":select search="hello" "world""#,
+        ] {
+            assert!(parse(input).is_err(), "{input}");
+        }
+        let oversized = format!(
+            ":select search={}",
+            serde_json::to_string(
+                &"a".repeat(deadpan_core::MAX_SEMANTIC_TRANSCRIPT_QUERY_BYTES + 1)
+            )
+            .unwrap()
+        );
+        assert!(parse(&oversized).is_err());
     }
 }

@@ -1,0 +1,10 @@
+{
+  "binary": "/private/tmp/deadpan-transcript-selectors-2026-10-22/backend-second-extra-extracted/target/debug/deps/transcript_search_provider-b126296cf38f2395",
+  "binary_sha256": "12a4416f07092f721878886fbb08b3cbcc8a3856190be529ed2554369c6d7e40",
+  "test": "each_search_cut_uses_staged_document_and_one_reversible_union_transaction",
+  "exit": 0,
+  "seconds": 0.022292625159025192,
+  "stdout_stderr_reached_eof": true,
+  "source_candidate": "backend-second",
+  "reason": "Resolve nextest concurrent leaky-output warning; no new source qualification"
+}

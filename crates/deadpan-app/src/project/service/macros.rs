@@ -486,6 +486,7 @@ impl Service {
             // Used only to prepare persisted runtime copies. No native request
             // or receipt is published for this remote operation.
             request: 1,
+            transcript_guard: None,
         };
         let runtime = self.macro_runtime_bank(&id)?;
         if runtime.entries.len() != prepared.bank.entries.len()
@@ -579,6 +580,7 @@ impl Service {
                 bank.version = saved.version;
                 self.registers = Some(Arc::new(bank));
                 let receipt = Receipt {
+                    transcript_guard: None,
                     id: id.clone(),
                     bank_version: saved.version,
                     outcome: Outcome::Saved {
@@ -708,15 +710,28 @@ impl Service {
                     context,
                 )?;
                 let invocation = SemanticProgram::new(vec![instruction]).map_err(display)?;
-                let plan = deadpan_cli::macros::plan_program(
+                let plan = deadpan_cli::macros::plan_program_with_transcript_guard(
                     self.store.as_ref().ok_or("Open a project first")?,
                     &document,
                     &stored,
                     context,
                     &invocation,
                     revision(),
+                    id.transcript_guard.as_deref(),
                 )
                 .map_err(display)?;
+                if let Some(consumed) = &plan.transcript_guard {
+                    let displayed = self
+                        .workspace
+                        .as_ref()
+                        .and_then(|workspace| workspace.transcript.as_ref())
+                        .and_then(|transcript| transcript.selection_guard.as_ref());
+                    if id.transcript_guard.as_deref() != Some(consumed)
+                        || displayed != Some(consumed)
+                    {
+                        return Err("The displayed transcript changed or was unavailable when this command was entered. Enter the command again.".into());
+                    }
+                }
                 let final_picture_plan = RenderPlan::compile(&plan.document).map_err(display)?;
                 let final_scope = SequenceScope::from_historical_parent(
                     &plan.document,
@@ -726,6 +741,7 @@ impl Service {
                 let scoped_receipt =
                     scoped_macro_receipt(&document, scoped_before, context, &plan)?;
                 let mut receipt = Receipt {
+                    transcript_guard: plan.transcript_guard.clone(),
                     id: id.clone(),
                     bank_version: stored.version,
                     outcome: match operation {
@@ -754,7 +770,14 @@ impl Service {
                         Operation::Save { .. } => unreachable!("save handled separately"),
                     },
                 };
-                let Some(request) = &plan.request else {
+                let Some(_) = &plan.request else {
+                    plan.validate_selection_at(
+                        self.store.as_ref().ok_or("Open a project first")?,
+                        &id.project,
+                        &id.revision,
+                        id.bank_version,
+                    )
+                    .map_err(display)?;
                     self.saved_macro = Some((operation.clone(), receipt.clone()));
                     self.message = Some(if plan.context.original.is_some() {
                         format!("{label} updated the Original cursor")
@@ -764,12 +787,10 @@ impl Service {
                     self.error = None;
                     return Ok(receipt);
                 };
-                let preview = self
-                    .store
-                    .as_ref()
-                    .ok_or("Open a project first")?
-                    .preview_compound(request)
-                    .map_err(display)?;
+                let preview = plan
+                    .preview(self.store.as_ref().ok_or("Open a project first")?)
+                    .map_err(display)?
+                    .ok_or("The planned Compound is missing.")?;
                 let bank = prepare_runtime_bank(
                     id,
                     self.macro_runtime_bank(id)?,
@@ -777,10 +798,7 @@ impl Service {
                     &preview.register_bank,
                     &plan,
                 )?;
-                let outcome = self
-                    .writer()?
-                    .commit_compound(request, None)
-                    .map_err(display)?;
+                let outcome = plan.commit_compound(self.writer()?).map_err(display)?;
                 if let Some(saved) = &outcome.committed {
                     self.capture_preparation_notices(&saved.generation_preparation_notices);
                     if plan.context.original.is_some() {

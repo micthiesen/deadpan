@@ -1,11 +1,14 @@
 //! Exact provider-clock neighborhoods from the canonical picture walker.
 
-use deadpan_core::{BoundaryQueryLimits, Cutaway, CutawayFit, ExactRatio, FrameRate, NodeId};
+use deadpan_core::{
+    BoundaryQueryLimits, Cutaway, CutawayFit, ExactFrameRange, ExactRatio, FrameRate, InstancePath,
+    IterationId, NodeId, ProjectId, RevisionId,
+};
 use serde::Serialize;
 use std::sync::Arc;
 
 use super::{DefinitionPictureSample, PictureBudget};
-use crate::{LookupStats, PlanError, RenderPlan};
+use crate::{LookupStats, Picture, PlanError, RenderPlan};
 
 #[path = "picture_coverage_selection.rs"]
 mod selection;
@@ -77,7 +80,125 @@ pub struct DefinitionPictureCoverage {
     pub lookup: LookupStats,
 }
 
+/// The actual structural provider. A forward-playing Hold can return a Source
+/// picture while its audio is silent, so the Picture discriminant is insufficient.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ProviderLeafKind {
+    Source,
+    Hold,
+    DefaultRepeatGap,
+}
+
+/// A nonempty half-open interval in the root project clock. The raw provider
+/// coordinate at `p` is `picture`'s coordinate plus `(p-range.start)*clock`.
+/// Selection and endpoint policy remain authoritative, including held-edge slack.
+/// No span crosses a provider, Repeat play/gap, or clock-slope seam. Cutaways,
+/// framing and captions do not affect this provider-only query.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct ProviderClockSpan {
+    pub range: ExactFrameRange,
+    pub instance: InstancePath,
+    pub gap_after: Option<IterationId>,
+    pub leaf_kind: ProviderLeafKind,
+    /// True for any enclosing explicit or default Repeat gap route.
+    pub in_repeat_gap: bool,
+    pub picture: Picture,
+    /// Provider ticks/frames per root project frame, before endpoint holding.
+    pub clock: PictureClockSlope,
+}
+
+/// Complete bounded picture-provider coverage, not proof of audible PCM.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct ProviderClockCoverage {
+    pub project_id: ProjectId,
+    pub revision_id: RevisionId,
+    pub range: ExactFrameRange,
+    pub spans: Vec<ProviderClockSpan>,
+    pub lookup: LookupStats,
+}
+
 impl RenderPlan {
+    /// Cover a nonempty half-open root interval using the canonical walker,
+    /// ignoring cutaways. The excluded endpoint may equal the exact root extent
+    /// (`node_exact_duration(&metadata().root)`), including a fractional terminal.
+    /// One aggregate budget bounds all work, retained metadata (64 MiB) and spans
+    /// (512). Exhaustion returns an error without partial coverage.
+    pub fn provider_clock_coverage(
+        &self,
+        range: ExactFrameRange,
+        limits: BoundaryQueryLimits,
+    ) -> Result<ProviderClockCoverage, PlanError> {
+        if self.audio_context {
+            return Err(PlanError::AudioOnlyContext);
+        }
+        if range.start.compare(ExactRatio::ZERO).is_lt()
+            || !range.start.compare(range.end).is_lt()
+            || range.end.compare(self.nodes[self.root].extent).is_gt()
+        {
+            return Err(PlanError::InvalidPlan(
+                "provider coverage interval is empty or out of range",
+            ));
+        }
+        let mut budget = PictureBudget::for_context(limits);
+        budget.reserve_metadata(
+            std::mem::size_of::<ProviderClockCoverage>()
+                .saturating_add(self.metadata.project_id.as_str().len())
+                .saturating_add(self.metadata.revision_id.as_str().len()),
+        )?;
+        let mut position = range.start;
+        let mut spans = Vec::new();
+        while position.compare(range.end).is_lt() {
+            let left = budget
+                .retained_spans_left
+                .as_mut()
+                .ok_or(PlanError::InvalidPlan(
+                    "provider coverage requires a retained-result budget",
+                ))?;
+            *left = left
+                .checked_sub(1)
+                .ok_or(PlanError::PictureQueryLimit("picture spans"))?;
+            budget.reserve_metadata(std::mem::size_of::<ProviderClockSpan>())?;
+            let mut continuity = PictureContinuity::new(position, range.end);
+            // This already charges the complete retained descriptor and paths,
+            // conservatively including framing/captions discarded below.
+            let sample = self.sample_definition_picture_with_continuity(
+                self.root,
+                position,
+                false,
+                &mut budget,
+                Some(&mut continuity),
+            )?;
+            if !continuity.end.compare(position).is_gt() {
+                return Err(PlanError::InvalidPlan("provider coverage did not advance"));
+            }
+            let leaf_kind = continuity.leaf_kind.ok_or(PlanError::InvalidPlan(
+                "provider coverage has no structural leaf",
+            ))?;
+            spans.reserve_exact(1);
+            spans.push(ProviderClockSpan {
+                range: ExactFrameRange {
+                    start: position,
+                    end: continuity.end,
+                },
+                instance: sample.instance,
+                gap_after: sample.gap_after,
+                leaf_kind,
+                in_repeat_gap: continuity.in_repeat_gap,
+                picture: sample.picture,
+                clock: continuity.clock,
+            });
+            position = continuity.end;
+        }
+        Ok(ProviderClockCoverage {
+            project_id: self.metadata.project_id.clone(),
+            revision_id: self.metadata.revision_id.clone(),
+            range,
+            spans,
+            lookup: budget.lookup,
+        })
+    }
+
     /// Substitute the saved deterministic provider for one complete canonical
     /// Generated Hold interval. The exact start, endpoint and affine clock must
     /// still match this plan's issued coverage. Cutaways, implicit gaps and other
@@ -213,6 +334,8 @@ pub(in crate::plan) struct PictureContinuity {
     pub(in crate::plan) end: ExactRatio,
     local_rate: ExactRatio,
     pub(in crate::plan) clock: PictureClockSlope,
+    pub(in crate::plan) leaf_kind: Option<ProviderLeafKind>,
+    pub(in crate::plan) in_repeat_gap: bool,
 }
 
 impl PictureContinuity {
@@ -222,6 +345,8 @@ impl PictureContinuity {
             end,
             local_rate: ExactRatio::integer(1),
             clock: PictureClockSlope::Constant,
+            leaf_kind: None,
+            in_repeat_gap: false,
         }
     }
 

@@ -933,7 +933,9 @@ fn cumulative_document_and_capture_budgets_refuse_before_another_leaf_allocation
                 panic!("exhausted work budget reached the leaf allocator")
             },
             resolve_original: no_original,
-            resolve_speech: |_: &ProjectDocument| Err(speech_unavailable()),
+            resolve_speech: super::super::transcript_search::TimelineProvider(
+                |_: &ProjectDocument| Err(speech_unavailable()),
+            ),
             original_index: None,
             resolve_pause: |_: &ProjectDocument, _: super::PauseSite| {
                 Err(super::pause_unavailable())

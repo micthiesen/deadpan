@@ -33,7 +33,7 @@ pub struct TranscriptKey {
 }
 
 impl TranscriptKey {
-    fn validate(&self) -> Result<(), StoreError> {
+    pub(crate) fn validate(&self) -> Result<(), StoreError> {
         let text_ok = |value: &str| {
             !value.is_empty()
                 && value.len() <= MAX_KEY_TEXT_BYTES
@@ -121,23 +121,7 @@ impl ProjectStore {
 
     /// The transcript stored for exactly this key, revalidated.
     pub fn transcript(&self, key: &TranscriptKey) -> Result<Option<Transcript>, StoreError> {
-        key.validate()?;
-        let value: Option<String> = self
-            .connection
-            .query_row(
-                "SELECT value FROM transcripts WHERE content=?1 AND audio_stream=?2
-                    AND model_sha256=?3 AND language=?4 AND engine=?5",
-                params![
-                    key.content,
-                    key.audio_stream,
-                    key.model_sha256,
-                    key.language,
-                    key.engine
-                ],
-                |row| row.get(0),
-            )
-            .optional()?;
-        value.map(|value| parse(&value)).transpose()
+        read(&self.connection, key)
     }
 
     /// The keys stored for one Original, ordered, without parsing transcripts.
@@ -196,6 +180,30 @@ impl ProjectStore {
         }
         Ok(transcripts)
     }
+}
+
+pub(crate) fn read(
+    connection: &Connection,
+    key: &TranscriptKey,
+) -> Result<Option<Transcript>, StoreError> {
+    key.validate()?;
+    let value: Option<String> = connection
+        .query_row(
+            "SELECT CASE WHEN length(CAST(value AS BLOB))<=?6 THEN value END
+            FROM transcripts WHERE content=?1 AND audio_stream=?2
+            AND model_sha256=?3 AND language=?4 AND engine=?5",
+            params![
+                key.content,
+                key.audio_stream,
+                key.model_sha256,
+                key.language,
+                key.engine,
+                MAX_TRANSCRIPT_JSON_BYTES as i64
+            ],
+            |row| row.get(0),
+        )
+        .optional()?;
+    value.map(|value| parse(&value)).transpose()
 }
 
 fn parse(value: &str) -> Result<Transcript, StoreError> {

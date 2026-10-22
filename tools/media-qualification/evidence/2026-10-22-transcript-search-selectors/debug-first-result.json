@@ -1,0 +1,28 @@
+{
+  "exit": 1,
+  "source_and_retained_binaries_unchanged": true,
+  "failed": true,
+  "scenarios": [
+    {
+      "name": "kestrel-shortcuts",
+      "failed": false,
+      "checks": 1,
+      "frames": 0,
+      "failures": [],
+      "warnings": 0
+    },
+    {
+      "name": "transcript-search-selectors",
+      "failed": true,
+      "checks": 66,
+      "frames": 139,
+      "failures": [
+        {
+          "message": "Check failed: Seam paste inserts the copied union in canonical component order with one Undo",
+          "severity": "failure"
+        }
+      ],
+      "warnings": 2
+    }
+  ]
+}

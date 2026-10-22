@@ -323,7 +323,7 @@ fn discard_unreadable(
     read(transaction, key)?.ok_or_else(|| invalid("corrections vanished while discarding"))
 }
 
-fn read(
+pub(crate) fn read(
     connection: &Connection,
     key: &CorrectionsKey,
 ) -> Result<Option<StoredCorrections>, StoreError> {
@@ -354,6 +354,36 @@ fn read(
         undo: label("undo")?,
         redo: label("redo")?,
     }))
+}
+
+/// Selection admission audits only the consumed stream, including every
+/// retained Undo/Redo value, within the caller's SQLite snapshot.
+pub(crate) fn audit_key(connection: &Connection, key: &CorrectionsKey) -> Result<(), StoreError> {
+    key.validate()?;
+    let mut statement = connection.prepare(
+        "SELECT CASE WHEN length(CAST(value AS BLOB))<=?3 THEN value END
+            FROM analysis_corrections WHERE content=?1 AND audio_stream=?2
+         UNION ALL
+         SELECT CASE WHEN length(CAST(value AS BLOB))<=?3 THEN value END
+            FROM analysis_correction_steps WHERE content=?1 AND audio_stream=?2 LIMIT ?4",
+    )?;
+    let bound = MAX_CORRECTION_UNDO * 2 + 1;
+    let rows = statement.query_map(
+        params![
+            key.content,
+            key.audio_stream,
+            MAX_CORRECTIONS_JSON_BYTES as i64,
+            bound + 1
+        ],
+        |row| row.get::<_, String>(0),
+    )?;
+    for (index, row) in rows.enumerate() {
+        if index as i64 >= bound {
+            return Err(invalid("too many stored correction values for selection"));
+        }
+        parse(&row?)?;
+    }
+    Ok(())
 }
 
 fn set(

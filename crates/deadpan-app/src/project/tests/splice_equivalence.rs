@@ -392,6 +392,7 @@ fn verify_equivalence_with(placement: Placement, semantic: bool) {
                     revision: before.document.revision_id().clone(),
                     bank_version,
                     request: 42,
+                    transcript_guard: None,
                 },
                 instruction: Box::new(instruction),
                 repeat_version: None,

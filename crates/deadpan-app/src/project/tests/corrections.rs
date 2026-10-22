@@ -184,6 +184,7 @@ fn corrections_are_published_undone_without_edit_history_and_reloaded() {
     let mut stale_basis = reopened.annotated();
     stale_basis.transcript = Some(Arc::new(crate::project::OriginalTranscript::new(
         deadpan_cli::speech::StoredWords {
+            selection_guard: None,
             key: reopened.transcript.as_ref().unwrap().key.clone(),
             proposal: transcript(),
             corrected: CorrectedTranscript::recognized(transcript()),
@@ -203,6 +204,7 @@ fn corrections_are_published_undone_without_edit_history_and_reloaded() {
 #[test]
 fn unreadable_corrections_refuse_word_operators_until_discarded() {
     let words = deadpan_cli::speech::StoredWords {
+        selection_guard: None,
         key: deadpan_store::TranscriptKey {
             content: "blake3:x".into(),
             audio_stream: 1,

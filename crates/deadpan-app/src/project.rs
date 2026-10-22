@@ -62,6 +62,8 @@ pub struct RegisteredSource {
 #[derive(Debug)]
 pub struct OriginalTranscript {
     pub key: deadpan_store::TranscriptKey,
+    /// Exact qualified analysis shown by this immutable display snapshot.
+    pub selection_guard: Option<deadpan_store::TranscriptSelectionGuard>,
     /// The words as people corrected them: what display, search, motions and
     /// objects use.
     pub transcript: deadpan_analysis::Transcript,
@@ -81,6 +83,7 @@ impl OriginalTranscript {
     pub fn new(words: deadpan_cli::speech::StoredWords) -> Self {
         Self {
             key: words.key,
+            selection_guard: words.selection_guard,
             transcript: words.corrected.transcript,
             proposal: Arc::new(words.proposal),
             origins: words.corrected.origins,

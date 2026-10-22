@@ -4,6 +4,46 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Current continuation, 2026-10-22
 
+Corrected transcript search now produces separate interval selections through
+`:select search="hello world"` in ordinary Your edit with Linked role. Saved
+queries resolve each staged document afresh. Canonical provider-clock coverage
+proves complete forward Source phrases, including split seams and positive
+slope changes; Holds, gaps, reverse segments and incomplete phrases refuse.
+One entry capture precedes atomic descending Cut and durable seam paste.
+
+The host pins one qualified proposal/correction snapshot per invocation and
+checks consumed authority inside Store publication, including register-only
+copies. Native entry, completion and installed geometry retain the displayed
+snapshot and its absence. New analysis clears stale highlights, while saved
+content and historical Undo/Redo remain usable. Pause/shot-only operations do
+not depend on unrelated word authority.
+
+All 124 focused cases, all 13 provider cases and 4,872 broader selected cases
+pass. One passing output-handle warning also passes an exact isolated run of
+the same retained executable. All 1,292 UI-feature cases pass; the only later
+Rust change is a Core provider-test cursor correction, with exact attribution.
+Strict ordinary/UI-feature Clippy and formatting pass. Both release native
+modes pass 103 checks plus Kestrel. All three compact captures were inspected;
+quiet input-to-state p99 is 1.580ms over 104 samples. Release export verifies
+120 pictures and the full 192,192-sample window at zero offset. The safely
+extracted nine-file owner project validates and passes doctor without changes.
+See [qualification](../qualification/transcript-search-selectors-2026-10-22.md)
+for failed candidates, layout warnings, source/executable audits and audio limits.
+No requirement or gate is newly complete. SQLite 84/core 55 stay unchanged.
+
+Next: ordinary GroupSelection endpoint Splits for attached-sound owners,
+reusing existing Split transport while keeping the group parent outside every
+retained processing scope. Partial copy, DeleteRange, MoveRange, pause insertion
+and RepeatSelection already work. Do not broaden their scope or remove the
+separate processing-interior refusal. Read-only design and uncompiled public,
+PCM and Store test drafts are under
+`/tmp/deadpan-sound-group-endpoints-2026-10-22/`; they are not runtime evidence.
+Start with committed-source public controls and the exact old endpoint refusal.
+Remaining temporal families, sound scopes, mastering, renderer and workflows
+remain open.
+
+## Discontiguous interval checkpoint, 2026-10-22
+
 Discontiguous interval sets now join whole-node unions in the existing EditedSet
 register. `:select ranges=[{"start":2,"end":6},{"start":10,"end":14}]`
 resolves signed offsets once from the captured Edit cursor, validates all inputs,
@@ -26,17 +66,8 @@ nine-file owner project validates and passes doctor. See the
 for failed candidates, exact source identities, warnings and audio limits.
 No requirement or gate is newly complete. Formats remain SQLite 84/core 55.
 
-Next: corrected transcript-search-result selectors. Pin proposal bytes and
-correction state inside the same publication transaction, including register-only
-Yank; a document revision cannot prove analysis freshness. Native entry and
-completion must retain the displayed analysis identity and its absence. Use the
-canonical plan walker with provider/leaf/gap provenance to prove full forward
-phrase coverage, including continuous split seams, sub-picture words and exact
-Original clocks. Picture-word navigation alone is not a complete phrase oracle.
-Read-only design notes are `/tmp/deadpan-range-selectors-2026-10-22/next-*`;
-they are not implementation or verification evidence. Qualify public controls
-against the completed interval baseline before adding the new wire. Remaining
-temporal families, sound owners, mastering, renderer and workflows remain open.
+The corrected transcript-search continuation is qualified above. Keep the
+complete-phrase and transactional analysis authority when extending consumers.
 
 ## Discontiguous whole-node checkpoint, 2026-10-22
 

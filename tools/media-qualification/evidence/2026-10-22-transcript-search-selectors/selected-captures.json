@@ -1,0 +1,44 @@
+[
+  {
+    "mode": "debug-second-visual",
+    "file": "transcript-search-selectors-023.png",
+    "sha256": "05c350b1230730ae44f6f16de30336f67d6e92ee74a4b34f94b60bcca0d3ed69",
+    "checkpoint": "Transcript query needle with three separate highlights and exact ranges",
+    "frame": 45
+  },
+  {
+    "mode": "debug-second-visual",
+    "file": "transcript-search-selectors-027.png",
+    "sha256": "21373e52176912ffd1c27041182749dc40d0014214836275ed29fc99d2cafff3",
+    "checkpoint": "Long raw transcript query keeps the compact picture and bounded status",
+    "frame": 49
+  },
+  {
+    "mode": "debug-second-visual",
+    "file": "transcript-search-selectors-121.png",
+    "sha256": "ee7093fefd17d169e640eea6ada705455e4c25e0ca474b9dd72603a83db32253",
+    "checkpoint": "Copied transcript union pasted in order at an explicit Edit seam",
+    "frame": 143
+  },
+  {
+    "mode": "release-visual",
+    "file": "transcript-search-selectors-023.png",
+    "sha256": "1a17d574c424abf5a56770fef2bc32a368d556bd9e199c92578f946e9c655fa8",
+    "checkpoint": "Transcript query needle with three separate highlights and exact ranges",
+    "frame": 52
+  },
+  {
+    "mode": "release-visual",
+    "file": "transcript-search-selectors-027.png",
+    "sha256": "21373e52176912ffd1c27041182749dc40d0014214836275ed29fc99d2cafff3",
+    "checkpoint": "Long raw transcript query keeps the compact picture and bounded status",
+    "frame": 56
+  },
+  {
+    "mode": "release-visual",
+    "file": "transcript-search-selectors-121.png",
+    "sha256": "ee7093fefd17d169e640eea6ada705455e4c25e0ca474b9dd72603a83db32253",
+    "checkpoint": "Copied transcript union pasted in order at an explicit Edit seam",
+    "frame": 167
+  }
+]

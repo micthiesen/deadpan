@@ -73,6 +73,11 @@ pub mod takes;
 pub use speech_activity::{MAX_SPEECH_ACTIVITY, SpeechActivityKey};
 mod transcripts;
 pub use transcripts::{MAX_TRANSCRIPT_JSON_BYTES, MAX_TRANSCRIPTS, TranscriptKey};
+mod transcript_selection;
+pub use transcript_selection::{
+    TranscriptSelectionCorrectionRule, TranscriptSelectionCorrections, TranscriptSelectionFormat,
+    TranscriptSelectionGuard, TranscriptSelectionSnapshot,
+};
 mod validation;
 
 use std::fs::{self, File, OpenOptions};

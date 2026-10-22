@@ -114,7 +114,16 @@ The finished Visual stores canonical absolute ranges independently of later
 cursor movement. Yank and Cut retain one historical `EditedSet`; scalar
 consumers refuse rather than using a gap-spanning envelope. See
 [interval sets](SEMANTIC_MACROS.md#discontiguous-interval-sets).
-Still missing against spec section 6.2: transcript-search-result selectors.
+`TranscriptSearch { query }` and `SelectTranscriptSearch { query }` resolve
+complete corrected phrase occurrences through exact forward Original provider
+clocks. Queries are bounded raw strings; matching normalizes words and prefixes
+the final term. Finished search selections retain query intent and separate
+ranges; staged copies and cuts search afresh. The host carries an exact-key
+analysis snapshot guard through preview and transactional publication, including
+register-only copies and selection-only receipts. Missing, stale, incomplete
+or unsupported matches refuse without fallback. See
+[transcript-search sets](SEMANTIC_MACROS.md#transcript-search-sets) and their
+[verification status](qualification/transcript-search-selectors-2026-10-22.md).
 Macro selectors are
 `SemanticSelector` in `crates/deadpan-core/src/semantic/program.rs`;
 `resolve-selection` also resolves mark and mark_range selectors read-only.

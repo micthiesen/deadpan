@@ -1,0 +1,10 @@
+{
+  "binary": "/private/tmp/deadpan-transcript-selectors-2026-10-22/broad-second-extracted/target/debug/deps/deadpan_app-1665fcaccc742208",
+  "binary_sha256": "0e875ecb8f3d92de855fd14177f8005da7a3874e9ff05d65862406b74b6791da",
+  "test": "project::tests::consecutive_cached_insertions_report_distinct_committed_nodes",
+  "exit": 0,
+  "seconds": 0.2436645831912756,
+  "stdout_stderr_reached_eof": true,
+  "source_candidate": "broad-second",
+  "reason": "Resolve passing nextest concurrent leaky-output warning using the same retained executable; no new source qualification"
+}

@@ -1,0 +1,9 @@
+{
+  "deadpan-cli::preview_export": {
+    "path": "/private/tmp/deadpan-transcript-selectors-2026-10-22/media-preflight-extracted/target/debug/deps/preview_export-5be7b5230efc93b6",
+    "sha256": "c04685704a516dbeab1e273693de3b5d517fd09ef9bb2a5ba3cec72a4ffcf2eb",
+    "tests": [
+      "transcript_search_export::transcript_search_export_preserves_exact_match_union_order_and_complete_audio"
+    ]
+  }
+}

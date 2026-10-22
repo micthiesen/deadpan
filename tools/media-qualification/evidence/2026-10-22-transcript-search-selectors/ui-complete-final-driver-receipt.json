@@ -1,0 +1,9 @@
+{
+  "command": [
+    "python",
+    "/tmp/deadpan-transcript-selectors-2026-10-22/run_archive.py",
+    "ui-complete-final"
+  ],
+  "exit": 0,
+  "seconds": 70.86909225024283
+}

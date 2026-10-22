@@ -1,0 +1,45 @@
+{
+  "expected_bank_version": 0,
+  "expected_revision": "27b7de0b-886b-4c06-923a-4d0c3c27f59c",
+  "operation": {
+    "program": {
+      "instructions": [
+        {
+          "query": "needle",
+          "type": "select_transcript_search"
+        },
+        {
+          "register": "a",
+          "selector": {
+            "type": "visual_selection"
+          },
+          "type": "yank"
+        },
+        {
+          "register": "b",
+          "selector": {
+            "type": "visual_selection"
+          },
+          "type": "cut"
+        },
+        {
+          "type": "clear_selection"
+        },
+        {
+          "count": 1000,
+          "forward": true,
+          "type": "move_frames"
+        },
+        {
+          "before": false,
+          "register": "b",
+          "type": "paste"
+        }
+      ]
+    },
+    "register": "m",
+    "type": "save"
+  },
+  "project_id": "a07299a9-8e73-4712-9992-bbba547c5fd4",
+  "protocol": 1
+}

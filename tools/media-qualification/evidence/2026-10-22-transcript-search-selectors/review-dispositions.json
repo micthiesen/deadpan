@@ -1,0 +1,29 @@
+{
+  "workflow": "check, general plus clock/projection and freshness focused reviews",
+  "scope": "Current transcript-search selector changes, with untracked feature files included and foreign fuzz/Cargo.lock and .claude excluded. No reviewer edits or Cargo runs.",
+  "findings": [
+    {
+      "finding": "Whole-root coverage can exhaust a small ordinary scope budget on unrelated spans",
+      "disposition": "Fixed by exact scope coverage, regression with 513 unrelated Repeat spans."
+    },
+    {
+      "finding": "Unconditional transcript consumption couples pause and shot requests to word analysis",
+      "disposition": "Fixed by explicit require_words hook and invocation-frozen analysis; qualified native pause and shot actor regressions."
+    },
+    {
+      "finding": "Unbounded query summaries can hide controls or picture",
+      "disposition": "Fixed with a Unicode-safe 32-character JSON-quoted summary; exact Inspector and saved query retained; long punctuation query replay."
+    },
+    {
+      "finding": "Installed search highlight can survive proposal or correction replacement",
+      "disposition": "Fixed by retained analysis guard, pre-reconciliation current checks, and clearing on workspace update; pure tests and native service replay."
+    },
+    {
+      "finding": "Allow forward Hold video as search phrase coverage",
+      "disposition": "Withdrawn by clock reviewer after reassessment of Source-only forward Original speech contract. Holds remain excluded."
+    }
+  ],
+  "rereview": "General and focused rereviews reported no open findings. CFR replay checks every expected PTS; root inspected all three debug and all three release compact captures, including the exact raw query and bounded footer.",
+  "execution": "124 focused cases, all 13 provider cases, 4,872 final broader cases and 1,292 UI-feature cases pass. The passing broader output-handle warning passes a same-binary isolated run with EOF on both pipes. Final ordinary/UI Clippy and formatting pass. Each release mode passes 103 workflow checks plus Kestrel; layout warnings retained. Release media verifies all 120 pictures and all 192,192 audio samples at zero offset; nine-file owner extraction validates and passes doctor unchanged.",
+  "representation_followup": "General reviewer reports no findings in native Arc guard capture, as_deref planning/comparison, owned consumed receipt guard, HostSemanticPlan return/helper changes or all native Id fixture sites. Read-only, no tests run by reviewer."
+}

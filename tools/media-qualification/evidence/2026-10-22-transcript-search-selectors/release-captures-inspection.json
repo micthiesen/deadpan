@@ -1,0 +1,25 @@
+{
+  "mode": "release-visual",
+  "inspected_by": "root using view_image at native 960x640 raster",
+  "captures": [
+    {
+      "file": "transcript-search-selectors-023.png",
+      "sha256": "1a17d574c424abf5a56770fef2bc32a368d556bd9e199c92578f946e9c655fa8"
+    },
+    {
+      "file": "transcript-search-selectors-027.png",
+      "sha256": "21373e52176912ffd1c27041182749dc40d0014214836275ed29fc99d2cafff3"
+    },
+    {
+      "file": "transcript-search-selectors-121.png",
+      "sha256": "ee7093fefd17d169e640eea6ada705455e4c25e0ca474b9dd72603a83db32253"
+    }
+  ],
+  "observations": [
+    "Picture, action keycaps and independent clocks remain visible in compact layout.",
+    "Normal query retains exact selected intervals in scrollable Inspector; footer names three ranges and 21 frames.",
+    "Long raw query remains complete in scrollable Inspector while footer is bounded.",
+    "Pasted union occupies [99,120); main viewer displays Original frame 8 at Edit boundary 99. New group thumbnail explicitly remains Loading in this capture."
+  ],
+  "limits": "Offscreen native captures do not establish physical input, display, listening or VoiceOver speech."
+}

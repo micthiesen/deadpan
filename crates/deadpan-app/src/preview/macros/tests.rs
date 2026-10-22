@@ -7,7 +7,9 @@ mod splice;
 fn applied(committed: bool) -> protocol::Receipt {
     let selected = Some(NodeId::new("selected-empty-group").unwrap());
     protocol::Receipt {
+        transcript_guard: None,
         id: protocol::Id {
+            transcript_guard: None,
             session: 7,
             project: ProjectId::new("project").unwrap(),
             revision: RevisionId::new("entry").unwrap(),

@@ -13,6 +13,7 @@ pub(super) mod named_marks;
 pub(super) mod node_sets;
 pub(super) mod range_sets;
 mod selectors;
+pub(super) mod transcript_search;
 
 pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     let rect = egui::Rect::from_min_size(egui::Pos2::ZERO, egui::vec2(960.0, 640.0));

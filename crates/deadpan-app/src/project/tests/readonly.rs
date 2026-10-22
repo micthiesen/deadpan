@@ -275,6 +275,11 @@ fn readonly_pending_channels_preserve_captured_identities_and_all_package_bytes(
         revision: RevisionId::new("captured-revision").unwrap(),
         bank_version: 7,
         request: 42,
+        transcript_guard: workspace
+            .transcript
+            .as_ref()
+            .and_then(|transcript| transcript.selection_guard.clone())
+            .map(Arc::new),
     };
     let update = refused(
         service,

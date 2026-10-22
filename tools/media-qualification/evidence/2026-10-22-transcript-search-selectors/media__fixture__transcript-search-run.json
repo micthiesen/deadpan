@@ -1,0 +1,13 @@
+{
+  "expected_bank_version": 1,
+  "expected_revision": "27b7de0b-886b-4c06-923a-4d0c3c27f59c",
+  "operation": {
+    "count": 1,
+    "cursor": 0,
+    "parent": "3ff8aaf2-a9ff-4193-9ab2-695bce27ae14",
+    "register": "m",
+    "type": "run"
+  },
+  "project_id": "a07299a9-8e73-4712-9992-bbba547c5fd4",
+  "protocol": 1
+}
