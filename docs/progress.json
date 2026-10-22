@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-22T21:45:38Z",
+  "updated_at": "2026-10-22T22:09:07Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Qualifying corrected transcript-search-result selectors and transactional analysis freshness. The current uncommitted candidate builds; 121 of 124 focused tests pass. Three failures are under investigation, and native UI and actual export checks remain. Coverage stays at 89%. Then remaining temporal families and sound owners, mastering, renderer and complete workflows.",
+  "focus": "Transcript-search selectors: 124 focused and 1,292 UI-feature tests pass, including analysis freshness. Strict checks and 103 native workflow checks pass. Broader regressions and release qualification are running. Coverage stays at 89%. Next: grouping endpoint splits for retained sound owners.",
   "features": [
     {
       "id": "editing",
