@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-22T23:09:32Z",
+  "updated_at": "2026-10-22T23:16:42Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Sound-owner grouping: 14 focused Core, complete-PCM and Store checks pass, including audible RoomTone, silent-Hold policy and independent root sounds. Native, real-export and broader qualification are in progress. Coverage remains 89%, with 8/24 requirement sections complete.",
+  "focus": "Sound-owner grouping passes 14 focused Core, complete-PCM and Store checks, 97 native workflow checks and a real-media preflight covering all 121 pictures and 193,794 samples at zero audio offset. Broader regressions and release qualification are running. Coverage remains 89%, with 8/24 requirement sections complete.",
   "features": [
     {
       "id": "editing",
