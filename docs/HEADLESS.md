@@ -90,8 +90,14 @@ Named-mark ranges also select and drive the existing range operators in an
 ordinary Edit Sequence. They retain mark addresses and resolve against each
 staged document; role-only consumers keep their one-child constraint. See
 [named-mark ranges](SEMANTIC_MACROS.md#named-mark-ranges).
-Still missing against spec section 6.2: explicit node and
-transcript-search-result selectors and discontiguous ranges. Macro selectors are
+Explicit `Node { node }` selectors address a whole authored child through
+ordinary Sequence ancestry inside the captured scope, including empty groups.
+Capture and edits use its actual immediate parent; navigation retains the
+invocation's scope. `SelectNode { node }` retains the ID as a finished selection.
+Missing, deleted, out-of-scope and occurrence-interior targets refuse without
+fallback. See [explicit authored nodes](SEMANTIC_MACROS.md#explicit-authored-nodes).
+Still missing against spec section 6.2: transcript-search-result selectors and
+discontiguous ranges. Macro selectors are
 `SemanticSelector` in `crates/deadpan-core/src/semantic/program.rs`;
 `resolve-selection` also resolves mark and mark_range selectors read-only.
 

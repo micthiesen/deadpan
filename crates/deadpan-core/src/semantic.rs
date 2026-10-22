@@ -2,12 +2,14 @@
 
 mod gags;
 mod mark_range;
+mod node;
 mod object;
 mod planner;
 mod program;
 mod speech;
 
 pub use gags::*;
+pub use node::*;
 pub use object::*;
 pub use planner::*;
 pub use program::*;

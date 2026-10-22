@@ -1,0 +1,178 @@
+{
+  "archives": {
+    "input_archives": {
+      "all_members_match_lock_manifests": true,
+      "count": 3,
+      "executable_mode_members": 0,
+      "files_per_archive": 6,
+      "symlinks_or_hardlinks": 0,
+      "unsafe_paths": 0
+    },
+    "owner_package": {
+      "all_sizes_and_sha256_values_match": true,
+      "archive": "explicit-node.deadpan.tar.gz",
+      "executable_mode_members": 0,
+      "members": 9,
+      "recorded_files": 9,
+      "symlinks_or_hardlinks": 0,
+      "unsafe_paths": 0
+    },
+    "source_snapshots": {
+      "all_archive_members_match_stage_sha256_manifests": true,
+      "all_canonical_manifest_digests_match_source_snapshot_records": true,
+      "executable_mode_members": 0,
+      "snapshot_records": 10,
+      "source_files_per_snapshot": {
+        "baseline": 1971,
+        "other_stages": 1977
+      },
+      "symlinks_or_hardlinks": 0,
+      "unique_source_archives": 6,
+      "unsafe_paths": 0
+    }
+  },
+  "audit": "explicit-node-selectors evidence audit",
+  "baseline_control": {
+    "base_revision": "bfb8b811d51c0f19448f8c23a5b5a1184e72636d",
+    "base_tracked_rust_files": 1970,
+    "changed": 0,
+    "elapsed_seconds": 0.009552582167088985,
+    "executed_binary_sha256": "850278378412d250f7d993c3067f39c76c6fe79d12ef6ecdccea7ae647a50340",
+    "exit": 101,
+    "new_witness": "crates/deadpan-core/tests/explicit_node_selectors.rs",
+    "public_controls_passed_before_final_admission_failure": true,
+    "sole_failure": "strict SemanticProgram admission rejects the unrecognized node selector variant",
+    "unchanged": 1970
+  },
+  "collection_safety": {
+    "archive_members_with_executable_mode": 0,
+    "claude_directory_content_collected": false,
+    "compiled_executables_in_evidence": false,
+    "fuzz_Cargo_lock_content_collected": false,
+    "note": "Some retained logs quote workspace git status paths, including a fuzz lock and .claude path; these paths are not archive members or collected file contents. Stage source archives contain only the declared Rust source snapshots, including the selector source under test.",
+    "sensitive_token_pattern_hits": 0
+  },
+  "date": "2026-10-22",
+  "documentation_reconciliation": {
+    "mismatch_remaining": false,
+    "relocated_duration_wording": "clarified to distinguish Nextest suite durations (70.048s/245.005s) from driver durations including post-run identity guards (70.655s/249.997s)"
+  },
+  "inventory": {
+    "bytes": 49833675,
+    "entries": 291,
+    "missing": 0,
+    "size_or_sha256_mismatches": 0,
+    "unlisted_files": 0,
+    "unsafe_paths": 0
+  },
+  "limits": [
+    "This audit does not establish completion of any product requirement or gate.",
+    "The retained media check compares encoded audio with canonical preview and does not provide an independent PCM oracle, listening assessment, or full mastering qualification.",
+    "The original broad/UI failures remain recorded as failures; isolated/relocated results do not retroactively make those executions pass."
+  ],
+  "release_media": {
+    "audio_samples": 59259,
+    "independent_pcm_oracle": false,
+    "low_snr_blocks": 0,
+    "measured_offset_samples": 0,
+    "minimum_block_snr_db": 39.57415929096763,
+    "offset_status": "verified_zero",
+    "owner_fixture_doctor_exit": 0,
+    "owner_fixture_validate_exit": 0,
+    "passed": true,
+    "pictures": 37,
+    "uncovered_samples": 0
+  },
+  "release_native": {
+    "kestrel_source_sha256_both_modes": "368c01df72ae4fab2efa4d38b235b56c02251f8b895f7e6402c77f6a151723c2",
+    "performance": {
+      "failed": false,
+      "frames": 391,
+      "kestrel_checks": 1,
+      "scenario_checks": 84,
+      "warnings_retained": [
+        "24 second-retry frames",
+        "5 consecutive distinct-cause retry runs"
+      ]
+    },
+    "performance_p99_ms": {
+      "input_to_commit": 83.432083,
+      "input_to_picture_complete": 92.519,
+      "input_to_state": 1.991542,
+      "ui_frame_cpu": 1.833291
+    },
+    "qualification_limit": "local replay measurements; not complete workflow or hardware-tier qualification",
+    "visual": {
+      "failed": false,
+      "frames": 211,
+      "kestrel_checks": 1,
+      "scenario_checks": 84,
+      "warnings_retained": [
+        "intermediate screenshot allowance reached",
+        "24 second-retry frames",
+        "5 consecutive distinct-cause retry runs"
+      ]
+    }
+  },
+  "scope": "read-only review of tools/media-qualification/evidence/2026-10-22-explicit-node-selectors and docs/qualification/explicit-node-selectors-2026-10-22.md",
+  "status": "verified_with_documented_limits",
+  "strict_checks": {
+    "all_exit_zero": true,
+    "checks": [
+      "affected-package strict check --no-test",
+      "deadpan-app UI-harness all-target Clippy with warnings denied",
+      "cargo fmt --check",
+      "git diff --check"
+    ],
+    "count": 4
+  },
+  "test_evidence": {
+    "broad_original_location": {
+      "failed_import_waits": 4,
+      "failed_run_retained": true,
+      "four_exact_cases_passed_isolated": true,
+      "location_diagnostic": {
+        "dependency_directory_entry_count_capped_at": 100000,
+        "import_stack": "Foundation bookmark creation / CFBundle main-bundle discovery and directory enumeration",
+        "normal_and_ui_each": {
+          "compact_copy": "4 passes of 4",
+          "original_dependency_path": "4 failures of 4"
+        },
+        "original_path_process_samples": 8,
+        "same_cases": 4
+      },
+      "passed": 4545,
+      "selected_cases": 4549
+    },
+    "focused": {
+      "composition": "core 10 + Store 1 + CLI 1 + native app executable 40",
+      "final_focused_cases_pass": true,
+      "initial_wrong_app_target": {
+        "counted_as_pass": false,
+        "exit": 4,
+        "tests": 0
+      },
+      "successful_cases": 52
+    },
+    "relocated": {
+      "broad_cases": 4549,
+      "broad_driver_seconds_including_identity_guards": 249.9968693749979,
+      "broad_nextest_seconds": 245.005,
+      "broad_passed": 4549,
+      "broad_test_executables": 155,
+      "driver_seconds_including_identity_guards": 70.65464470908046,
+      "helper_binaries": 5,
+      "nextest_seconds": 70.048,
+      "same_case_sets_and_executable_helper_hashes_as_original_runs": true,
+      "ui_cases": 1270,
+      "ui_passed": 1270
+    },
+    "ui_original_location": {
+      "cases": 1270,
+      "failed": 3,
+      "missing_automatic_sampler_files_counted_as_success": false,
+      "passed": 1267,
+      "sampled_repeat_same_failures": true
+    }
+  }
+}

@@ -395,6 +395,9 @@ impl DeadpanApp {
         let captured = (|| {
             let target = target?;
             self.check_placement_target(&target)?;
+            if target.selection.node().is_some() {
+                return Err("An explicit node selection replaces its complete structure with p/P. Clear it before choosing a Place slice destination.".to_owned());
+            }
             if self.splice.is_some()
                 || self.splice_abandon.is_some()
                 || self.camera.is_some()

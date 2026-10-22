@@ -1,0 +1,295 @@
+{
+  "bank_version": 2,
+  "before_bank_version": 1,
+  "before_revision": "explicit-node-r08",
+  "committed": true,
+  "committed_registers": {
+    "bank_version": 2,
+    "project_id": "f323beab-98b6-47f0-a6cb-3be13bf165fc",
+    "revision_id": "ec6e1f10-31a2-4a5d-b337-4f98fb41b2af"
+  },
+  "committed_revision": "ec6e1f10-31a2-4a5d-b337-4f98fb41b2af",
+  "context": {
+    "cursor": 9,
+    "original": null,
+    "parent": "f254e841-a230-44ab-ae43-3bc0ef06d6b9",
+    "scoped": null,
+    "selected_child": "explicit-node-group",
+    "visual_selection": null
+  },
+  "edit": {
+    "changed_ids": [
+      "6d6b33d3-ff72-4663-b3d8-458526720e53",
+      "explicit-node-group",
+      "explicit-node-held",
+      "explicit-node-n6",
+      "explicit-node-n7"
+    ],
+    "description": "Apply resolved transaction",
+    "duration_delta": 5,
+    "new_revision": "ec6e1f10-31a2-4a5d-b337-4f98fb41b2af"
+  },
+  "generation_preparation_notices": [],
+  "generation_preparations": [],
+  "mark_changes": [
+    {
+      "after": null,
+      "before": {
+        "boundary": {
+          "bias": "right",
+          "coordinate": {
+            "instance": {
+              "node": "explicit-node-n7",
+              "repeats": []
+            },
+            "position": {
+              "denominator": "1",
+              "numerator": "19"
+            },
+            "space": "occurrence"
+          }
+        },
+        "label": "Owned by captured node",
+        "loss_policy": "delete_owned",
+        "owner": "explicit-node-n7",
+        "state": {
+          "type": "bound"
+        }
+      },
+      "id": "explicit-node-owned-mark"
+    }
+  ],
+  "operation": "run",
+  "project_id": "f323beab-98b6-47f0-a6cb-3be13bf165fc",
+  "protocol": 1,
+  "register": "m",
+  "register_writes": [
+    "\"",
+    "a",
+    "b"
+  ],
+  "trace": [
+    {
+      "after_cursor": 9,
+      "after_original": null,
+      "after_parent": "f254e841-a230-44ab-ae43-3bc0ef06d6b9",
+      "after_scoped": null,
+      "after_selected_child": "explicit-node-group",
+      "after_visual_selection": null,
+      "before_cursor": 31,
+      "before_original": null,
+      "before_revision": "explicit-node-r08",
+      "before_scope": {
+        "end": 32,
+        "start": 0
+      },
+      "before_scoped": null,
+      "before_selected_child": "explicit-node-held",
+      "before_visual_selection": null,
+      "capture": null,
+      "captured_child_label": null,
+      "depth": 0,
+      "instruction": {
+        "count": 1,
+        "register": "m",
+        "type": "call"
+      },
+      "parent": "f254e841-a230-44ab-ae43-3bc0ef06d6b9",
+      "removed_range": null,
+      "resolved_parent": null,
+      "resolved_range": null,
+      "resolved_selection": null
+    },
+    {
+      "after_cursor": 6,
+      "after_original": null,
+      "after_parent": "f254e841-a230-44ab-ae43-3bc0ef06d6b9",
+      "after_scoped": null,
+      "after_selected_child": "explicit-node-held",
+      "after_visual_selection": null,
+      "before_cursor": 31,
+      "before_original": null,
+      "before_revision": "explicit-node-r08",
+      "before_scope": {
+        "end": 32,
+        "start": 0
+      },
+      "before_scoped": null,
+      "before_selected_child": "explicit-node-held",
+      "before_visual_selection": null,
+      "capture": null,
+      "captured_child_label": null,
+      "depth": 1,
+      "instruction": {
+        "length": {
+          "frames": 3,
+          "unit": "frames"
+        },
+        "type": "set_hold_duration"
+      },
+      "parent": "f254e841-a230-44ab-ae43-3bc0ef06d6b9",
+      "removed_range": null,
+      "resolved_parent": "f254e841-a230-44ab-ae43-3bc0ef06d6b9",
+      "resolved_range": {
+        "end": 9,
+        "start": 6
+      },
+      "resolved_selection": {
+        "node": "explicit-node-held",
+        "type": "child"
+      }
+    },
+    {
+      "after_cursor": 6,
+      "after_original": null,
+      "after_parent": "f254e841-a230-44ab-ae43-3bc0ef06d6b9",
+      "after_scoped": null,
+      "after_selected_child": "explicit-node-held",
+      "after_visual_selection": null,
+      "before_cursor": 6,
+      "before_original": null,
+      "before_revision": "c3664e68-7a06-404b-8171-dabbdd8c5ef1",
+      "before_scope": {
+        "end": 33,
+        "start": 0
+      },
+      "before_scoped": null,
+      "before_selected_child": "explicit-node-held",
+      "before_visual_selection": null,
+      "capture": {
+        "bounds": {
+          "end": 21,
+          "start": 9
+        },
+        "parent": "explicit-node-group",
+        "scope": [
+          "explicit-node-group"
+        ],
+        "scope_labels": [
+          "Explicit node targets"
+        ],
+        "timing": {
+          "allocation": "a2dbeae7-acd5-4134-bfb9-d6870487046e",
+          "ordinal": 0
+        }
+      },
+      "captured_child_label": "original",
+      "depth": 1,
+      "instruction": {
+        "register": "a",
+        "selector": {
+          "node": "explicit-node-n6",
+          "type": "node"
+        },
+        "type": "yank"
+      },
+      "parent": "f254e841-a230-44ab-ae43-3bc0ef06d6b9",
+      "removed_range": null,
+      "resolved_parent": "explicit-node-group",
+      "resolved_range": {
+        "end": 13,
+        "start": 9
+      },
+      "resolved_selection": {
+        "node": "explicit-node-n6",
+        "type": "child"
+      }
+    },
+    {
+      "after_cursor": 9,
+      "after_original": null,
+      "after_parent": "f254e841-a230-44ab-ae43-3bc0ef06d6b9",
+      "after_scoped": null,
+      "after_selected_child": "explicit-node-group",
+      "after_visual_selection": null,
+      "before_cursor": 6,
+      "before_original": null,
+      "before_revision": "c3664e68-7a06-404b-8171-dabbdd8c5ef1",
+      "before_scope": {
+        "end": 33,
+        "start": 0
+      },
+      "before_scoped": null,
+      "before_selected_child": "explicit-node-held",
+      "before_visual_selection": null,
+      "capture": {
+        "bounds": {
+          "end": 21,
+          "start": 9
+        },
+        "parent": "explicit-node-group",
+        "scope": [
+          "explicit-node-group"
+        ],
+        "scope_labels": [
+          "Explicit node targets"
+        ],
+        "timing": {
+          "allocation": "cf8aff8b-21b6-4bcd-81e2-37b304681ea8",
+          "ordinal": 0
+        }
+      },
+      "captured_child_label": "original",
+      "depth": 1,
+      "instruction": {
+        "register": "b",
+        "selector": {
+          "node": "explicit-node-n6",
+          "type": "node"
+        },
+        "type": "cut"
+      },
+      "parent": "f254e841-a230-44ab-ae43-3bc0ef06d6b9",
+      "removed_range": null,
+      "resolved_parent": "explicit-node-group",
+      "resolved_range": {
+        "end": 13,
+        "start": 9
+      },
+      "resolved_selection": {
+        "node": "explicit-node-n6",
+        "type": "child"
+      }
+    },
+    {
+      "after_cursor": 9,
+      "after_original": null,
+      "after_parent": "f254e841-a230-44ab-ae43-3bc0ef06d6b9",
+      "after_scoped": null,
+      "after_selected_child": "explicit-node-group",
+      "after_visual_selection": null,
+      "before_cursor": 9,
+      "before_original": null,
+      "before_revision": "0384367b-0c40-4b7a-b452-43b6e5da58e4",
+      "before_scope": {
+        "end": 29,
+        "start": 0
+      },
+      "before_scoped": null,
+      "before_selected_child": "explicit-node-group",
+      "before_visual_selection": null,
+      "capture": null,
+      "captured_child_label": null,
+      "depth": 1,
+      "instruction": {
+        "plays": 2,
+        "selector": {
+          "node": "explicit-node-n22",
+          "type": "node"
+        },
+        "type": "repeat"
+      },
+      "parent": "f254e841-a230-44ab-ae43-3bc0ef06d6b9",
+      "removed_range": null,
+      "resolved_parent": "explicit-node-group",
+      "resolved_range": {
+        "end": 17,
+        "start": 9
+      },
+      "resolved_selection": {
+        "node": "explicit-node-n22",
+        "type": "child"
+      }
+    }
+  ]
+}

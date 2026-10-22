@@ -1,0 +1,10 @@
+{
+  "deadpan-cli::project_commands": {
+    "path": "/Users/michael/Code/deadpan/target/debug/deps/project_commands-f2c949c8aca668e8",
+    "retained": "/tmp/deadpan-explicit-node-selectors-2026-10-22/focused-first-bin/project_commands-f2c949c8aca668e8",
+    "sha256": "2885552454fede3446d9de0b5a4556f6915f703e6b1e49f27c6021f2b626b61d",
+    "tests": [
+      "macros::node::explicit_node_named_calls_reresolve_staged_children_and_keep_durable_closed_captures"
+    ]
+  }
+}

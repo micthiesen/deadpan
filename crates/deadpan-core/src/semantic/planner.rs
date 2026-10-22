@@ -68,6 +68,8 @@ pub enum SemanticVisualSelection {
         start: crate::NamedMarkTarget,
         end: crate::NamedMarkTarget,
     },
+    /// Finished whole authored identity, re-resolved on each staged revision.
+    Node { node: NodeId },
 }
 
 impl SemanticVisualSelection {
@@ -78,6 +80,7 @@ impl SemanticVisualSelection {
                 start: start.clone(),
                 end: end.clone(),
             },
+            Self::Node { node } => SemanticSelector::Node { node: node.clone() },
             Self::Time { .. } | Self::Object { .. } => SemanticSelector::VisualSelection,
         }
     }
@@ -885,6 +888,16 @@ where
                         start.clone(),
                         end.clone(),
                     )?;
+                    let target = self.resolve_selector(&SemanticSelector::VisualSelection)?;
+                    self.trace[index].resolved_parent = Some(target.parent);
+                    self.trace[index].resolved_range = Some(target.range);
+                    self.trace[index].resolved_selection = target.selection;
+                }
+                SemanticInstruction::SelectNode { node } => {
+                    self.charge_resolution()?;
+                    self.context = self
+                        .current
+                        .select_semantic_node(&self.context, node.clone())?;
                     let target = self.resolve_selector(&SemanticSelector::VisualSelection)?;
                     self.trace[index].resolved_parent = Some(target.parent);
                     self.trace[index].resolved_range = Some(target.range);

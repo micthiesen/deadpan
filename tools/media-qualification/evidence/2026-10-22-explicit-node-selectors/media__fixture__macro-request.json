@@ -1,0 +1,1 @@
+{"dry_run":false,"expected_bank_version":1,"expected_revision":"explicit-node-r08","operation":{"count":1,"cursor":31,"parent":"f254e841-a230-44ab-ae43-3bc0ef06d6b9","register":"m","selected_child":"explicit-node-held","type":"run"},"project_id":"f323beab-98b6-47f0-a6cb-3be13bf165fc","protocol":1}

@@ -1,0 +1,42 @@
+[
+  {
+    "suite": "deadpan-app::bin/deadpan-app",
+    "case": "project::tests::backups::a_moved_linked_original_is_found_by_its_bookmark_and_relinked_on_open",
+    "retained": "/tmp/deadpan-explicit-node-selectors-2026-10-22/broad-isolated-bin/deadpan_app-1665fcaccc742208",
+    "sha256": "a0f5db87cf5694db05e647f19d310ce5ea60403d3a51f808c1434792c0f66358",
+    "exit": 0,
+    "passed": true,
+    "seconds": 0.15679354220628738,
+    "stdio_eof_within_seconds": 60
+  },
+  {
+    "suite": "deadpan-app::bin/deadpan-app",
+    "case": "project::tests::backups::a_moved_file_with_different_bytes_is_reported_missing_not_relinked",
+    "retained": "/tmp/deadpan-explicit-node-selectors-2026-10-22/broad-isolated-bin/deadpan_app-1665fcaccc742208",
+    "sha256": "a0f5db87cf5694db05e647f19d310ce5ea60403d3a51f808c1434792c0f66358",
+    "exit": 0,
+    "passed": true,
+    "seconds": 0.14156958274543285,
+    "stdio_eof_within_seconds": 60
+  },
+  {
+    "suite": "deadpan-app::bin/deadpan-app",
+    "case": "project::tests::native_new_starts_with_the_full_original_and_history_stops_at_that_baseline",
+    "retained": "/tmp/deadpan-explicit-node-selectors-2026-10-22/broad-isolated-bin/deadpan_app-1665fcaccc742208",
+    "sha256": "a0f5db87cf5694db05e647f19d310ce5ea60403d3a51f808c1434792c0f66358",
+    "exit": 0,
+    "passed": true,
+    "seconds": 0.3604913745075464,
+    "stdio_eof_within_seconds": 60
+  },
+  {
+    "suite": "deadpan-app::bin/deadpan-app",
+    "case": "project::tests::unavailable_linked_original_invalidates_cached_insertion_without_losing_registration",
+    "retained": "/tmp/deadpan-explicit-node-selectors-2026-10-22/broad-isolated-bin/deadpan_app-1665fcaccc742208",
+    "sha256": "a0f5db87cf5694db05e647f19d310ce5ea60403d3a51f808c1434792c0f66358",
+    "exit": 0,
+    "passed": true,
+    "seconds": 0.15517720859497786,
+    "stdio_eof_within_seconds": 60
+  }
+]

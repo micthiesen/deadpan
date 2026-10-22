@@ -1,0 +1,190 @@
+{
+  "sample_count": 8,
+  "all_original_location_import_samples_reach_linked_bookmark_main_bundle_discovery": true,
+  "samples": [
+    {
+      "sample": "normal-deps-1.sample.txt",
+      "sha256": "ce73232b878ea0b8dd309b7a95042b519394ef48777a55b51ec827052dd3a7e8",
+      "sample_exit": 0,
+      "test_pid": 99858,
+      "mode": "normal",
+      "case": "project::tests::backups::a_moved_linked_original_is_found_by_its_bookmark_and_relinked_on_open",
+      "call_graph": {
+        "worker_prepare": true,
+        "linked_at": true,
+        "bookmark_create": true,
+        "CFBundleGetMainBundle": true,
+        "directory_enumeration": true,
+        "__getdirentries64": true
+      }
+    },
+    {
+      "sample": "normal-deps-2.sample.txt",
+      "sha256": "51948c23f4807d0a2efb283e8da949ed9db1339915341fbb76e3c5527fd317eb",
+      "sample_exit": 0,
+      "test_pid": 99859,
+      "mode": "normal",
+      "case": "project::tests::backups::a_moved_file_with_different_bytes_is_reported_missing_not_relinked",
+      "call_graph": {
+        "worker_prepare": true,
+        "linked_at": true,
+        "bookmark_create": true,
+        "CFBundleGetMainBundle": true,
+        "directory_enumeration": true,
+        "__getdirentries64": true
+      }
+    },
+    {
+      "sample": "normal-deps-3.sample.txt",
+      "sha256": "8c2c8aafeb2bd0b969bba972bb89ba69f60d4386aca6e1f654910e06d4d6e1cd",
+      "sample_exit": 0,
+      "test_pid": 99860,
+      "mode": "normal",
+      "case": "project::tests::native_new_starts_with_the_full_original_and_history_stops_at_that_baseline",
+      "call_graph": {
+        "worker_prepare": true,
+        "linked_at": true,
+        "bookmark_create": true,
+        "CFBundleGetMainBundle": true,
+        "directory_enumeration": true,
+        "__getdirentries64": true
+      }
+    },
+    {
+      "sample": "normal-deps-4.sample.txt",
+      "sha256": "e44df9f73583bc5cc5153d394892a4406cff6f33ec04831396fa80941a2073c0",
+      "sample_exit": 0,
+      "test_pid": 99861,
+      "mode": "normal",
+      "case": "project::tests::unavailable_linked_original_invalidates_cached_insertion_without_losing_registration",
+      "call_graph": {
+        "worker_prepare": true,
+        "linked_at": true,
+        "bookmark_create": true,
+        "CFBundleGetMainBundle": true,
+        "directory_enumeration": true,
+        "__getdirentries64": true
+      }
+    },
+    {
+      "sample": "ui-deps-1.sample.txt",
+      "sha256": "4a50510a69c355d72ddfd9bc092103acfcb232c9c7eb029f2c6bf878c50d54ad",
+      "sample_exit": 0,
+      "test_pid": 357,
+      "mode": "ui",
+      "case": "project::tests::backups::a_moved_linked_original_is_found_by_its_bookmark_and_relinked_on_open",
+      "call_graph": {
+        "worker_prepare": true,
+        "linked_at": true,
+        "bookmark_create": true,
+        "CFBundleGetMainBundle": true,
+        "directory_enumeration": true,
+        "__getdirentries64": true
+      }
+    },
+    {
+      "sample": "ui-deps-2.sample.txt",
+      "sha256": "72148a4cc30505ff0ae7a9111554408323de47fe2be5c068b1f509fe69fc39ab",
+      "sample_exit": 0,
+      "test_pid": 359,
+      "mode": "ui",
+      "case": "project::tests::backups::a_moved_file_with_different_bytes_is_reported_missing_not_relinked",
+      "call_graph": {
+        "worker_prepare": true,
+        "linked_at": true,
+        "bookmark_create": true,
+        "CFBundleGetMainBundle": true,
+        "directory_enumeration": true,
+        "__getdirentries64": true
+      }
+    },
+    {
+      "sample": "ui-deps-3.sample.txt",
+      "sha256": "465a554a0b18d42a4355964837d0e3e08ee6919eab454cd92b02d2575466ccbf",
+      "sample_exit": 0,
+      "test_pid": 360,
+      "mode": "ui",
+      "case": "project::tests::native_new_starts_with_the_full_original_and_history_stops_at_that_baseline",
+      "call_graph": {
+        "worker_prepare": true,
+        "linked_at": true,
+        "bookmark_create": true,
+        "CFBundleGetMainBundle": true,
+        "directory_enumeration": true,
+        "__getdirentries64": true
+      }
+    },
+    {
+      "sample": "ui-deps-4.sample.txt",
+      "sha256": "d422b00c72c94bf95edf62354d62ba7c41a9ce1dfde09f415cd9f57cc2c2ffec",
+      "sample_exit": 0,
+      "test_pid": 361,
+      "mode": "ui",
+      "case": "project::tests::unavailable_linked_original_invalidates_cached_insertion_without_losing_registration",
+      "call_graph": {
+        "worker_prepare": true,
+        "linked_at": true,
+        "bookmark_create": true,
+        "CFBundleGetMainBundle": true,
+        "directory_enumeration": true,
+        "__getdirentries64": true
+      }
+    }
+  ],
+  "location_results": [
+    {
+      "mode": "normal",
+      "site": "deps",
+      "passed": 0,
+      "total": 4,
+      "min_seconds": 20.196056541986763,
+      "max_seconds": 20.348036999814212,
+      "all_failures_retaining": true
+    },
+    {
+      "mode": "normal",
+      "site": "compact",
+      "passed": 4,
+      "total": 4,
+      "min_seconds": 0.2904897080734372,
+      "max_seconds": 0.5575122497975826,
+      "all_failures_retaining": null
+    },
+    {
+      "mode": "ui",
+      "site": "deps",
+      "passed": 0,
+      "total": 4,
+      "min_seconds": 20.169240042567253,
+      "max_seconds": 20.331361792050302,
+      "all_failures_retaining": true
+    },
+    {
+      "mode": "ui",
+      "site": "compact",
+      "passed": 4,
+      "total": 4,
+      "min_seconds": 0.3464222503826022,
+      "max_seconds": 0.5366624994203448,
+      "all_failures_retaining": null
+    }
+  ],
+  "directory_counts": [
+    {
+      "path": "/Users/michael/Code/deadpan/target/debug/deps",
+      "entries": 100000,
+      "capped_at_100000": true
+    },
+    {
+      "path": "/tmp/deadpan-explicit-node-selectors-2026-10-22/import-location-diagnostic/compact-normal",
+      "entries": 1,
+      "capped_at_100000": false
+    },
+    {
+      "path": "/tmp/deadpan-explicit-node-selectors-2026-10-22/import-location-diagnostic/compact-ui",
+      "entries": 1,
+      "capped_at_100000": false
+    }
+  ],
+  "exact_enumerated_directory_path": "Not independently traced: sample stacks identify directory enumeration but do not name the opened directory. Executable-location contrast isolates causality."
+}

@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/tmp/deadpan-explicit-node-selectors-2026-10-22/release-bin/deadpan-app",
+    "--ui-check",
+    "--scenario",
+    "explicit-node-selectors",
+    "--mode",
+    "performance",
+    "--output",
+    "/tmp/deadpan-explicit-node-selectors-2026-10-22/release-performance",
+    "--kestrel-source",
+    "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+  ],
+  "exit": 0,
+  "seconds": 13.16236379276961
+}

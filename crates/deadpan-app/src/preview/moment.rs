@@ -523,7 +523,7 @@ impl DeadpanApp {
             && let Some(copied) = self.copied.selected_content()
         {
             let replacement_label = self.selected_edit_range().map(|_| {
-                if self.edit_range.object().is_some() {
+                if self.edit_range.object().is_some() || self.edit_range.node().is_some() {
                     "Replace object"
                 } else {
                     "Replace range"

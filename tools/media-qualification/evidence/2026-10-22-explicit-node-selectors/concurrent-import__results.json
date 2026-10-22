@@ -1,0 +1,211 @@
+{
+  "binary": "/tmp/deadpan-explicit-node-selectors-2026-10-22/broad-isolated-bin/deadpan_app-1665fcaccc742208",
+  "expected_sha256": "a0f5db87cf5694db05e647f19d310ce5ea60403d3a51f808c1434792c0f66358",
+  "cwd": "/Users/michael/Code/deadpan/crates/deadpan-app",
+  "environment_overrides": {
+    "DEADPAN_FFMPEG_PREFIX": "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix",
+    "DEADPAN_REQUIRE_PHYSICAL_MAC": "1",
+    "DEADPAN_REQUIRE_SYNTHETIC_WORKER": "1"
+  },
+  "batch_limit": 3,
+  "sample_after_seconds": 3,
+  "owned_test_deadline_seconds": 60,
+  "samples": [],
+  "tests": [
+    {
+      "batch": 1,
+      "case": "project::tests::backups::a_moved_linked_original_is_found_by_its_bookmark_and_relinked_on_open",
+      "command": [
+        "/tmp/deadpan-explicit-node-selectors-2026-10-22/broad-isolated-bin/deadpan_app-1665fcaccc742208",
+        "--exact",
+        "project::tests::backups::a_moved_linked_original_is_found_by_its_bookmark_and_relinked_on_open",
+        "--nocapture"
+      ],
+      "pid": 93864,
+      "binary_sha256_before": "a0f5db87cf5694db05e647f19d310ce5ea60403d3a51f808c1434792c0f66358",
+      "exit": 0,
+      "seconds": 0.5101404171437025,
+      "passed": true,
+      "binary_sha256_after": "a0f5db87cf5694db05e647f19d310ce5ea60403d3a51f808c1434792c0f66358"
+    },
+    {
+      "batch": 1,
+      "case": "project::tests::backups::a_moved_file_with_different_bytes_is_reported_missing_not_relinked",
+      "command": [
+        "/tmp/deadpan-explicit-node-selectors-2026-10-22/broad-isolated-bin/deadpan_app-1665fcaccc742208",
+        "--exact",
+        "project::tests::backups::a_moved_file_with_different_bytes_is_reported_missing_not_relinked",
+        "--nocapture"
+      ],
+      "pid": 93866,
+      "binary_sha256_before": "a0f5db87cf5694db05e647f19d310ce5ea60403d3a51f808c1434792c0f66358",
+      "exit": 0,
+      "seconds": 0.5989075424149632,
+      "passed": true,
+      "binary_sha256_after": "a0f5db87cf5694db05e647f19d310ce5ea60403d3a51f808c1434792c0f66358"
+    },
+    {
+      "batch": 1,
+      "case": "project::tests::unavailable_linked_original_invalidates_cached_insertion_without_losing_registration",
+      "command": [
+        "/tmp/deadpan-explicit-node-selectors-2026-10-22/broad-isolated-bin/deadpan_app-1665fcaccc742208",
+        "--exact",
+        "project::tests::unavailable_linked_original_invalidates_cached_insertion_without_losing_registration",
+        "--nocapture"
+      ],
+      "pid": 93870,
+      "binary_sha256_before": "a0f5db87cf5694db05e647f19d310ce5ea60403d3a51f808c1434792c0f66358",
+      "exit": 0,
+      "seconds": 0.6680228747427464,
+      "passed": true,
+      "binary_sha256_after": "a0f5db87cf5694db05e647f19d310ce5ea60403d3a51f808c1434792c0f66358"
+    },
+    {
+      "batch": 1,
+      "case": "project::tests::native_new_starts_with_the_full_original_and_history_stops_at_that_baseline",
+      "command": [
+        "/tmp/deadpan-explicit-node-selectors-2026-10-22/broad-isolated-bin/deadpan_app-1665fcaccc742208",
+        "--exact",
+        "project::tests::native_new_starts_with_the_full_original_and_history_stops_at_that_baseline",
+        "--nocapture"
+      ],
+      "pid": 93867,
+      "binary_sha256_before": "a0f5db87cf5694db05e647f19d310ce5ea60403d3a51f808c1434792c0f66358",
+      "exit": 0,
+      "seconds": 1.146697792224586,
+      "passed": true,
+      "binary_sha256_after": "a0f5db87cf5694db05e647f19d310ce5ea60403d3a51f808c1434792c0f66358"
+    },
+    {
+      "batch": 2,
+      "case": "project::tests::backups::a_moved_linked_original_is_found_by_its_bookmark_and_relinked_on_open",
+      "command": [
+        "/tmp/deadpan-explicit-node-selectors-2026-10-22/broad-isolated-bin/deadpan_app-1665fcaccc742208",
+        "--exact",
+        "project::tests::backups::a_moved_linked_original_is_found_by_its_bookmark_and_relinked_on_open",
+        "--nocapture"
+      ],
+      "pid": 93893,
+      "binary_sha256_before": "a0f5db87cf5694db05e647f19d310ce5ea60403d3a51f808c1434792c0f66358",
+      "exit": 0,
+      "seconds": 0.5686017917469144,
+      "passed": true,
+      "binary_sha256_after": "a0f5db87cf5694db05e647f19d310ce5ea60403d3a51f808c1434792c0f66358"
+    },
+    {
+      "batch": 2,
+      "case": "project::tests::backups::a_moved_file_with_different_bytes_is_reported_missing_not_relinked",
+      "command": [
+        "/tmp/deadpan-explicit-node-selectors-2026-10-22/broad-isolated-bin/deadpan_app-1665fcaccc742208",
+        "--exact",
+        "project::tests::backups::a_moved_file_with_different_bytes_is_reported_missing_not_relinked",
+        "--nocapture"
+      ],
+      "pid": 93894,
+      "binary_sha256_before": "a0f5db87cf5694db05e647f19d310ce5ea60403d3a51f808c1434792c0f66358",
+      "exit": 0,
+      "seconds": 0.8035423336550593,
+      "passed": true,
+      "binary_sha256_after": "a0f5db87cf5694db05e647f19d310ce5ea60403d3a51f808c1434792c0f66358"
+    },
+    {
+      "batch": 2,
+      "case": "project::tests::unavailable_linked_original_invalidates_cached_insertion_without_losing_registration",
+      "command": [
+        "/tmp/deadpan-explicit-node-selectors-2026-10-22/broad-isolated-bin/deadpan_app-1665fcaccc742208",
+        "--exact",
+        "project::tests::unavailable_linked_original_invalidates_cached_insertion_without_losing_registration",
+        "--nocapture"
+      ],
+      "pid": 93898,
+      "binary_sha256_before": "a0f5db87cf5694db05e647f19d310ce5ea60403d3a51f808c1434792c0f66358",
+      "exit": 0,
+      "seconds": 0.8450744999572635,
+      "passed": true,
+      "binary_sha256_after": "a0f5db87cf5694db05e647f19d310ce5ea60403d3a51f808c1434792c0f66358"
+    },
+    {
+      "batch": 2,
+      "case": "project::tests::native_new_starts_with_the_full_original_and_history_stops_at_that_baseline",
+      "command": [
+        "/tmp/deadpan-explicit-node-selectors-2026-10-22/broad-isolated-bin/deadpan_app-1665fcaccc742208",
+        "--exact",
+        "project::tests::native_new_starts_with_the_full_original_and_history_stops_at_that_baseline",
+        "--nocapture"
+      ],
+      "pid": 93895,
+      "binary_sha256_before": "a0f5db87cf5694db05e647f19d310ce5ea60403d3a51f808c1434792c0f66358",
+      "exit": 0,
+      "seconds": 1.1517013320699334,
+      "passed": true,
+      "binary_sha256_after": "a0f5db87cf5694db05e647f19d310ce5ea60403d3a51f808c1434792c0f66358"
+    },
+    {
+      "batch": 3,
+      "case": "project::tests::backups::a_moved_linked_original_is_found_by_its_bookmark_and_relinked_on_open",
+      "command": [
+        "/tmp/deadpan-explicit-node-selectors-2026-10-22/broad-isolated-bin/deadpan_app-1665fcaccc742208",
+        "--exact",
+        "project::tests::backups::a_moved_linked_original_is_found_by_its_bookmark_and_relinked_on_open",
+        "--nocapture"
+      ],
+      "pid": 93908,
+      "binary_sha256_before": "a0f5db87cf5694db05e647f19d310ce5ea60403d3a51f808c1434792c0f66358",
+      "exit": 0,
+      "seconds": 0.6275567086413503,
+      "passed": true,
+      "binary_sha256_after": "a0f5db87cf5694db05e647f19d310ce5ea60403d3a51f808c1434792c0f66358"
+    },
+    {
+      "batch": 3,
+      "case": "project::tests::backups::a_moved_file_with_different_bytes_is_reported_missing_not_relinked",
+      "command": [
+        "/tmp/deadpan-explicit-node-selectors-2026-10-22/broad-isolated-bin/deadpan_app-1665fcaccc742208",
+        "--exact",
+        "project::tests::backups::a_moved_file_with_different_bytes_is_reported_missing_not_relinked",
+        "--nocapture"
+      ],
+      "pid": 93910,
+      "binary_sha256_before": "a0f5db87cf5694db05e647f19d310ce5ea60403d3a51f808c1434792c0f66358",
+      "exit": 0,
+      "seconds": 0.6324936673045158,
+      "passed": true,
+      "binary_sha256_after": "a0f5db87cf5694db05e647f19d310ce5ea60403d3a51f808c1434792c0f66358"
+    },
+    {
+      "batch": 3,
+      "case": "project::tests::unavailable_linked_original_invalidates_cached_insertion_without_losing_registration",
+      "command": [
+        "/tmp/deadpan-explicit-node-selectors-2026-10-22/broad-isolated-bin/deadpan_app-1665fcaccc742208",
+        "--exact",
+        "project::tests::unavailable_linked_original_invalidates_cached_insertion_without_losing_registration",
+        "--nocapture"
+      ],
+      "pid": 93913,
+      "binary_sha256_before": "a0f5db87cf5694db05e647f19d310ce5ea60403d3a51f808c1434792c0f66358",
+      "exit": 0,
+      "seconds": 0.617494042031467,
+      "passed": true,
+      "binary_sha256_after": "a0f5db87cf5694db05e647f19d310ce5ea60403d3a51f808c1434792c0f66358"
+    },
+    {
+      "batch": 3,
+      "case": "project::tests::native_new_starts_with_the_full_original_and_history_stops_at_that_baseline",
+      "command": [
+        "/tmp/deadpan-explicit-node-selectors-2026-10-22/broad-isolated-bin/deadpan_app-1665fcaccc742208",
+        "--exact",
+        "project::tests::native_new_starts_with_the_full_original_and_history_stops_at_that_baseline",
+        "--nocapture"
+      ],
+      "pid": 93912,
+      "binary_sha256_before": "a0f5db87cf5694db05e647f19d310ce5ea60403d3a51f808c1434792c0f66358",
+      "exit": 0,
+      "seconds": 0.9230787493288517,
+      "passed": true,
+      "binary_sha256_after": "a0f5db87cf5694db05e647f19d310ce5ea60403d3a51f808c1434792c0f66358"
+    }
+  ],
+  "binary_sha256_final": "a0f5db87cf5694db05e647f19d310ce5ea60403d3a51f808c1434792c0f66358",
+  "all_passed": true,
+  "test_count": 12
+}

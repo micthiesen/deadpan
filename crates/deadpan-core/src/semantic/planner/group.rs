@@ -1,5 +1,6 @@
 //! Grouping changes only structural ownership. Semantic selectors are resolved
-//! once against the current staged Sequence and never retained as absolute IDs.
+//! once against the current staged Sequence. Explicit Node selectors retain
+//! requested authored identity; contextual selectors never freeze its result.
 
 use super::*;
 

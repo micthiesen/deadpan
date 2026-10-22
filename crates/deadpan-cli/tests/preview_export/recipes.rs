@@ -64,6 +64,8 @@ pub mod mixed_fixed_retime_duration;
 #[path = "selected_fixed_retime_duration.rs"]
 pub mod selected_fixed_retime_duration;
 
+#[path = "explicit_node.rs"]
+pub mod explicit_node;
 #[path = "named_mark_range.rs"]
 pub mod named_mark_range;
 

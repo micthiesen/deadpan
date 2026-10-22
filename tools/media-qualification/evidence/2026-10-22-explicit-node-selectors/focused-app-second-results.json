@@ -1,0 +1,9 @@
+[
+  {
+    "phase": "app",
+    "exit": 0,
+    "tests": 40,
+    "seconds": 0.5915651246905327,
+    "sources_inputs_binaries_unchanged": true
+  }
+]

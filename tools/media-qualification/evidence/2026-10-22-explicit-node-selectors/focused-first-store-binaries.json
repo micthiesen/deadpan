@@ -1,0 +1,10 @@
+{
+  "deadpan-store::source_registration": {
+    "path": "/Users/michael/Code/deadpan/target/debug/deps/source_registration-9dc8c89f5f7a9079",
+    "retained": "/tmp/deadpan-explicit-node-selectors-2026-10-22/focused-first-bin/source_registration-9dc8c89f5f7a9079",
+    "sha256": "d52a51f9d15d4280d1309dc2037de44f301bfd2cfe33249559f3f952aad12faa",
+    "tests": [
+      "node_selector::explicit_empty_node_selection_survives_reopen_without_bank_or_history_writes"
+    ]
+  }
+}

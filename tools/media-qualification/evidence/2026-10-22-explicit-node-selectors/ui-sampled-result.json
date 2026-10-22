@@ -1,0 +1,59 @@
+{
+  "exit": 100,
+  "seconds": 86.0707144998014,
+  "nextest_pid": 96061,
+  "command": [
+    "cargo",
+    "nextest",
+    "run",
+    "--locked",
+    "-p",
+    "deadpan-app",
+    "--features",
+    "ui-harness",
+    "--test-threads",
+    "8",
+    "--no-fail-fast"
+  ],
+  "seen": {
+    "97138": {
+      "case": "project::tests::backups::a_moved_file_with_different_bytes_is_reported_missing_not_relinked",
+      "first_seen_seconds": 18.784370416775346
+    },
+    "97139": {
+      "case": "project::tests::backups::a_moved_linked_original_is_found_by_its_bookmark_and_relinked_on_open",
+      "first_seen_seconds": 18.78437591716647
+    },
+    "97880": {
+      "case": "project::tests::native_new_starts_with_the_full_original_and_history_stops_at_that_baseline",
+      "first_seen_seconds": 44.896316916681826
+    },
+    "98583": {
+      "case": "project::tests::unavailable_linked_original_invalidates_cached_insertion_without_losing_registration",
+      "first_seen_seconds": 68.53547608386725
+    }
+  },
+  "samples": [
+    {
+      "pid": 97138,
+      "case": "project::tests::backups::a_moved_file_with_different_bytes_is_reported_missing_not_relinked",
+      "sample_timeout": true
+    },
+    {
+      "pid": 97139,
+      "case": "project::tests::backups::a_moved_linked_original_is_found_by_its_bookmark_and_relinked_on_open",
+      "sample_timeout": true
+    },
+    {
+      "pid": 97880,
+      "case": "project::tests::native_new_starts_with_the_full_original_and_history_stops_at_that_baseline",
+      "sample_timeout": true
+    },
+    {
+      "pid": 98583,
+      "case": "project::tests::unavailable_linked_original_invalidates_cached_insertion_without_losing_registration",
+      "sample_timeout": true
+    }
+  ],
+  "sources_inputs_binaries_unchanged": true
+}

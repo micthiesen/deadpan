@@ -32,6 +32,10 @@ enum SelectionKind {
         selection: SemanticObjectSelection,
         range: FrameRange,
     },
+    Node {
+        node: NodeId,
+        range: FrameRange,
+    },
     MarkRange {
         start: deadpan_core::NamedMarkTarget,
         end: deadpan_core::NamedMarkTarget,
@@ -58,6 +62,12 @@ impl Selection {
             _ => None,
         }
     }
+    pub(super) fn node(&self) -> Option<&NodeId> {
+        match &self.kind {
+            Some(SelectionKind::Node { node, .. }) => Some(node),
+            _ => None,
+        }
+    }
     pub(super) fn has_bounds(&self) -> bool {
         self.kind.is_some()
     }
@@ -77,6 +87,9 @@ impl Selection {
                     selection: selection.clone(),
                     extending: self.active,
                 }),
+                SelectionKind::Node { node, .. } => {
+                    Ok(SemanticVisualSelection::Node { node: node.clone() })
+                }
                 SelectionKind::MarkRange { start, end, .. } => {
                     Ok(SemanticVisualSelection::MarkRange {
                         start: start.clone(),
@@ -123,6 +136,19 @@ impl Selection {
                             range,
                         },
                         *extending,
+                    ))
+                }
+                SemanticVisualSelection::Node { node } => {
+                    let range = object_range.ok_or("The selected node is no longer available.")?;
+                    if range.start().0 < start as i64 || range.end().0 > end as i64 {
+                        return Err("The selected node is outside this group.".into());
+                    }
+                    Ok((
+                        SelectionKind::Node {
+                            node: node.clone(),
+                            range,
+                        },
+                        false,
                     ))
                 }
                 SemanticVisualSelection::MarkRange {
@@ -200,7 +226,9 @@ impl Selection {
             match &mut self.kind {
                 Some(SelectionKind::Time { head, .. }) => *head = at,
                 Some(
-                    SelectionKind::Object { range, .. } | SelectionKind::MarkRange { range, .. },
+                    SelectionKind::Object { range, .. }
+                    | SelectionKind::MarkRange { range, .. }
+                    | SelectionKind::Node { range, .. },
                 ) => {
                     self.kind = Some(SelectionKind::Time {
                         anchor: range.start().0 as u64,
@@ -215,7 +243,11 @@ impl Selection {
     fn range(&self) -> Option<FrameRange> {
         let (anchor, head) = match &self.kind {
             Some(SelectionKind::Time { anchor, head }) => (*anchor, *head),
-            Some(SelectionKind::Object { range, .. } | SelectionKind::MarkRange { range, .. }) => {
+            Some(
+                SelectionKind::Object { range, .. }
+                | SelectionKind::MarkRange { range, .. }
+                | SelectionKind::Node { range, .. },
+            ) => {
                 return Some(*range);
             }
             None => return None,
@@ -338,7 +370,10 @@ impl DeadpanApp {
         if self.edit_range.identity != self.edit_range_identity() {
             return None;
         }
-        if matches!(self.edit_range.kind, Some(SelectionKind::MarkRange { .. })) {
+        if matches!(
+            self.edit_range.kind,
+            Some(SelectionKind::MarkRange { .. } | SelectionKind::Node { .. })
+        ) {
             self.object_range(self.edit_range.semantic().ok()?.as_ref())
                 .ok()
                 .flatten()
@@ -354,7 +389,9 @@ impl DeadpanApp {
         if !matches!(
             selection,
             Some(
-                SemanticVisualSelection::Object { .. } | SemanticVisualSelection::MarkRange { .. }
+                SemanticVisualSelection::Object { .. }
+                    | SemanticVisualSelection::MarkRange { .. }
+                    | SemanticVisualSelection::Node { .. }
             )
         ) {
             return Ok(None);
@@ -370,6 +407,27 @@ impl DeadpanApp {
                 .resolve_object_selection(parent, selection)
                 .map(|target| Some(target.range))
                 .map_err(|error| error.to_string()),
+            Some(SemanticVisualSelection::Node { node }) => {
+                let context = deadpan_core::SemanticContext {
+                    original: None,
+                    scoped: None,
+                    hold_duration: None,
+                    shared_hold_duration: None,
+                    mixed_hold_duration: None,
+                    selected_hold_duration: None,
+                    parent: parent.clone(),
+                    cursor: ProjectFrame(
+                        i64::try_from(self.sequence_cursor).map_err(|error| error.to_string())?,
+                    ),
+                    selected_child: self.selected_beat.clone(),
+                    visual_selection: None,
+                };
+                workspace
+                    .document
+                    .resolve_semantic_node(&context, node)
+                    .map(|target| Some(target.range))
+                    .map_err(|error| error.to_string())
+            }
             Some(SemanticVisualSelection::MarkRange { start, end }) => {
                 let context = deadpan_core::SemanticContext {
                     original: None,
@@ -484,11 +542,60 @@ impl DeadpanApp {
         }
     }
 
+    pub(super) fn select_explicit_node(
+        &mut self,
+        target: Option<Result<macros::Capture, String>>,
+        node: NodeId,
+    ) {
+        let result = (|| {
+            if self.view != View::Sequence || self.edit_role != deadpan_core::MediaRole::Linked {
+                return Err("Select an authored node in Your edit with role=linked.".to_owned());
+            }
+            let capture = target.ok_or("Open :select again to capture its editing context.")??;
+            if !capture.matches(self) {
+                return Err("The node selection context changed. Enter the command again.".into());
+            }
+            capture.select_node(node.clone())
+        })();
+        match result {
+            Ok(context) => {
+                let prior = self.sequence_cursor;
+                self.sequence_cursor = context.cursor.0 as u64;
+                if let Err(error) = self.restore_macro_visual_selection(context.visual_selection) {
+                    self.sequence_cursor = prior;
+                    self.error = Some(error);
+                    return;
+                }
+                self.selected_beat = context.selected_child;
+                self.pause_playback();
+                self.revoke_scoped_continuation();
+                self.record_macro_local(deadpan_core::SemanticInstruction::SelectNode { node });
+                self.error = None;
+                self.message = self.edit_range_label().map(|label| {
+                    format!(
+                        "{label}. {} copies; {} cuts; {} repeats; {} replaces.",
+                        self.editor_key(EditorKey::Copy),
+                        self.editor_key(EditorKey::CutRange),
+                        self.editor_key(EditorKey::Repeat),
+                        self.editor_pair(EditorKey::PasteAfter, EditorKey::PasteBefore, "/")
+                    )
+                });
+                if prior != self.sequence_cursor {
+                    self.request_picture(false);
+                }
+            }
+            Err(error) => self.error = Some(error),
+        }
+    }
+
     pub(super) fn edit_selection(&self) -> navigation::EditSelection {
         if self.edit_range.identity != self.edit_range_identity() || self.edit_range.kind.is_none()
         {
             navigation::EditSelection::None
-        } else if matches!(self.edit_range.kind, Some(SelectionKind::Object { .. })) {
+        } else if matches!(
+            self.edit_range.kind,
+            Some(SelectionKind::Object { .. } | SelectionKind::Node { .. })
+        ) {
             navigation::EditSelection::Object
         } else if self.selected_edit_range().is_some() {
             navigation::EditSelection::Range
@@ -575,6 +682,25 @@ impl DeadpanApp {
     }
 
     pub(super) fn edit_range_label(&self) -> Option<String> {
+        if let Some(SelectionKind::Node { node, .. }) = &self.edit_range.kind {
+            let range = self.selected_edit_range()?;
+            let workspace = self.workspace.as_ref()?;
+            let label = &workspace.document.nodes().get(node)?.label;
+            let parent = self.sequence_scope.resolve(workspace).ok()?.owner;
+            return Some(format!(
+                "Node: {label} · {} · scope {} · [{}..{}) · {} f · {}",
+                node.as_str(),
+                parent.as_str(),
+                range.start().0,
+                range.end().0,
+                range.duration().frames(),
+                if range.start() == range.end() {
+                    "empty node retained"
+                } else {
+                    "whole node retained"
+                }
+            ));
+        }
         if let Some(SelectionKind::MarkRange { start, end, .. }) = &self.edit_range.kind {
             return self.selected_edit_range().map(|range| {
                 format!(
@@ -645,6 +771,55 @@ mod tests {
             revision: RevisionId::new(revision).unwrap(),
             scope,
             parent: NodeId::new("sequence").unwrap(),
+        }
+    }
+
+    #[test]
+    fn explicit_node_selection_retains_empty_identity_and_motion_but_v_starts_time() {
+        for end in [10, 40] {
+            let node = NodeId::new("exact-node").unwrap();
+            let range = FrameRange::new(ProjectFrame(10), ProjectFrame(end)).unwrap();
+            let semantic = Some(SemanticVisualSelection::Node { node: node.clone() });
+            let mut selected = Selection::default();
+            selected
+                .restore_semantic(semantic.clone(), 0, 50, Some(range))
+                .unwrap();
+            assert!(!selected.active);
+            assert_eq!(selected.range(), Some(range));
+            assert_eq!(selected.node(), Some(&node));
+            selected.move_to(49);
+            assert_eq!(selected.semantic().unwrap(), semantic);
+            selected.toggle(49);
+            assert_eq!(
+                selected.semantic().unwrap(),
+                Some(SemanticVisualSelection::Time {
+                    anchor: ProjectFrame(49),
+                    head: ProjectFrame(49),
+                    extending: true,
+                })
+            );
+        }
+    }
+
+    #[test]
+    fn explicit_node_restore_refuses_missing_or_out_of_scope_geometry_atomically() {
+        let mut selected = Selection::default();
+        selected.toggle(12);
+        let retained = selected.clone();
+        let semantic = Some(SemanticVisualSelection::Node {
+            node: NodeId::new("exact").unwrap(),
+        });
+        for range in [
+            None,
+            Some(FrameRange::new(ProjectFrame(9), ProjectFrame(10)).unwrap()),
+            Some(FrameRange::new(ProjectFrame(10), ProjectFrame(21)).unwrap()),
+        ] {
+            assert!(
+                selected
+                    .restore_semantic(semantic.clone(), 10, 20, range)
+                    .is_err()
+            );
+            assert_eq!(selected, retained);
         }
     }
 

@@ -32,6 +32,8 @@ mod hold_audio;
 mod interpretation;
 #[path = "source_registration/mark_range.rs"]
 mod mark_range;
+#[path = "source_registration/node_selector.rs"]
+mod node_selector;
 #[path = "source_registration/registers.rs"]
 mod registers;
 #[path = "source_registration/roll.rs"]

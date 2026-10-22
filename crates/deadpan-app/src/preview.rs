@@ -3342,6 +3342,9 @@ impl DeadpanApp {
                 self.set_gag(macro_target, &parameters)
             }
             Ok(navigation::command::Entry::SelectRole(role)) => self.select_role(role),
+            Ok(navigation::command::Entry::SelectNode { node }) => {
+                self.select_explicit_node(macro_target, node)
+            }
             Ok(navigation::command::Entry::SelectMarkRange { start, end }) => {
                 self.select_named_mark_range(macro_target, start, end)
             }

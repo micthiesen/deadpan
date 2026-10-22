@@ -10,6 +10,8 @@ mod framing;
 mod groups;
 #[path = "macros/mark_range.rs"]
 mod mark_range;
+#[path = "macros/node.rs"]
+mod node;
 #[path = "macros/original.rs"]
 mod original;
 

@@ -184,6 +184,10 @@ pub enum Entry {
         start: deadpan_core::NamedMarkTarget,
         end: deadpan_core::NamedMarkTarget,
     },
+    /// Select one complete authored node by its exact identity.
+    SelectNode {
+        node: deadpan_core::NodeId,
+    },
     /// `:delete role=audio|video`: delete one role over the Visual range.
     DeleteRole(deadpan_core::MediaRole),
     /// `:recipe-save a`: keep the selected group, with its parts and
@@ -409,6 +413,24 @@ pub fn parse(input: &str) -> Result<Entry, String> {
             None => Ok(Entry::TrackCancel),
             Some(_) => Err("Use :track-cancel without arguments.".into()),
         };
+    }
+    if verb.eq_ignore_ascii_case("select")
+        && words
+            .clone()
+            .next()
+            .is_some_and(|word| word.starts_with("node="))
+    {
+        const USAGE: &str = "Use :select node=<exactNodeId> with one authored node ID.";
+        let node = words
+            .next()
+            .and_then(|word| word.strip_prefix("node="))
+            .filter(|id| !id.is_empty())
+            .and_then(|id| deadpan_core::NodeId::new(id.to_owned()).ok())
+            .ok_or(USAGE)?;
+        if words.next().is_some() {
+            return Err(USAGE.into());
+        }
+        return Ok(Entry::SelectNode { node });
     }
     if verb.eq_ignore_ascii_case("select")
         && words
@@ -1116,6 +1138,21 @@ fn monitor(argument: Option<&str>) -> Result<u16, String> {
 #[cfg(test)]
 mod track_tests {
     use super::*;
+
+    #[test]
+    fn explicit_node_selection_requires_one_exact_identity() {
+        assert!(matches!(parse(":select node=Exact-Node_2"),
+            Ok(Entry::SelectNode { node }) if node.as_str() == "Exact-Node_2"));
+        for invalid in [
+            ":select node=",
+            ":select node=one extra",
+            ":select node=one node=two",
+            ":select node one",
+            ":select node=one role=linked",
+        ] {
+            assert!(parse(invalid).is_err(), "{invalid}");
+        }
+    }
 
     #[test]
     fn track_commands_name_a_target_and_explicit_shot_crossing() {

@@ -8,6 +8,7 @@ use deadpan_core::{FrameRange, ProjectDocument};
 use deadpan_store::{AccessMode, ProjectStore};
 use egui::{Event, Key, Modifiers};
 
+pub(super) mod explicit_nodes;
 pub(super) mod named_marks;
 mod selectors;
 

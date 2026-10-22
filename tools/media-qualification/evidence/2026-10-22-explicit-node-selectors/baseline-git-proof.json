@@ -1,0 +1,10 @@
+{
+  "base_revision": "bfb8b811d51c0f19448f8c23a5b5a1184e72636d",
+  "base_tracked_rust": 1970,
+  "unchanged": 1970,
+  "changed": [],
+  "new_rust": [
+    "crates/deadpan-core/tests/explicit_node_selectors.rs"
+  ],
+  "all_public_controls_passed_before_sole_final_admission_failure": true
+}

@@ -1,0 +1,30 @@
+[
+  {
+    "phase": "core",
+    "exit": 0,
+    "tests": 10,
+    "seconds": 0.39555162470787764,
+    "sources_inputs_binaries_unchanged": true
+  },
+  {
+    "phase": "store",
+    "exit": 0,
+    "tests": 1,
+    "seconds": 0.5365517912432551,
+    "sources_inputs_binaries_unchanged": true
+  },
+  {
+    "phase": "cli",
+    "exit": 0,
+    "tests": 1,
+    "seconds": 1.0925721665844321,
+    "sources_inputs_binaries_unchanged": true
+  },
+  {
+    "phase": "app",
+    "exit": 4,
+    "tests": 0,
+    "seconds": 0.4480077922344208,
+    "sources_inputs_binaries_unchanged": true
+  }
+]

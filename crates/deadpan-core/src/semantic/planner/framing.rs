@@ -128,6 +128,9 @@ where
                     end,
                 )?)
             }
+            Some(SemanticVisualSelection::Node { node }) => Some(
+                crate::semantic::node::resolve_in_scope(&self.current, &self.context, node)?.range,
+            ),
             None => None,
         };
         let local = range.map(|range| {

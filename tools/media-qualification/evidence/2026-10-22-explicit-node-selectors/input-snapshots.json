@@ -1,0 +1,62 @@
+{
+  "baseline-inputs": {
+    "archive": "baseline-inputs.tar.gz",
+    "manifest": "baseline-lock.json",
+    "files": 6,
+    "content_sha256": "99580cbea2512e61e641ebf3362a1bc08508b73bc7bd9360efa592542ecd435e"
+  },
+  "broad-first-inputs": {
+    "archive": "broad-first-inputs.tar.gz",
+    "manifest": "broad-first-lock.json",
+    "files": 6,
+    "content_sha256": "ffb258e87d06c0aaf338c032eb82b4eaeaa5c4e0dae6c83f273710411538e275"
+  },
+  "debug-first-inputs": {
+    "archive": "broad-first-inputs.tar.gz",
+    "manifest": "debug-first-lock.json",
+    "files": 6,
+    "content_sha256": "ffb258e87d06c0aaf338c032eb82b4eaeaa5c4e0dae6c83f273710411538e275"
+  },
+  "debug-second-inputs": {
+    "archive": "broad-first-inputs.tar.gz",
+    "manifest": "debug-second-lock.json",
+    "files": 6,
+    "content_sha256": "ffb258e87d06c0aaf338c032eb82b4eaeaa5c4e0dae6c83f273710411538e275"
+  },
+  "focused-app-second-inputs": {
+    "archive": "baseline-inputs.tar.gz",
+    "manifest": "focused-app-second-lock.json",
+    "files": 6,
+    "content_sha256": "99580cbea2512e61e641ebf3362a1bc08508b73bc7bd9360efa592542ecd435e"
+  },
+  "focused-first-inputs": {
+    "archive": "baseline-inputs.tar.gz",
+    "manifest": "focused-first-lock.json",
+    "files": 6,
+    "content_sha256": "99580cbea2512e61e641ebf3362a1bc08508b73bc7bd9360efa592542ecd435e"
+  },
+  "integrated-first-inputs": {
+    "archive": "baseline-inputs.tar.gz",
+    "manifest": "integrated-first-lock.json",
+    "files": 6,
+    "content_sha256": "99580cbea2512e61e641ebf3362a1bc08508b73bc7bd9360efa592542ecd435e"
+  },
+  "integrated-second-inputs": {
+    "archive": "baseline-inputs.tar.gz",
+    "manifest": "integrated-second-lock.json",
+    "files": 6,
+    "content_sha256": "99580cbea2512e61e641ebf3362a1bc08508b73bc7bd9360efa592542ecd435e"
+  },
+  "registry-second-inputs": {
+    "archive": "registry-second-inputs.tar.gz",
+    "manifest": "registry-second-lock.json",
+    "files": 6,
+    "content_sha256": "38cab3ebea45fd1e4f5d755bb3ecfb6d5e0175d71a5d4ac2eb1ca6b2081c499d"
+  },
+  "release-final-inputs": {
+    "archive": "broad-first-inputs.tar.gz",
+    "manifest": "release-final-lock.json",
+    "files": 6,
+    "content_sha256": "ffb258e87d06c0aaf338c032eb82b4eaeaa5c4e0dae6c83f273710411538e275"
+  }
+}

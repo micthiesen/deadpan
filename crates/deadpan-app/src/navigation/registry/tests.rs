@@ -147,8 +147,7 @@ fn every_configurable_action_and_verb_is_described_exactly_once() {
 #[test]
 fn select_help_and_completion_expose_exact_named_mark_range_syntax() {
     let spec = SPECS.iter().find(|spec| spec.id == "select.role").unwrap();
-    let usage =
-        ":select role=audio|video|linked  or :select marks start=<exactMarkId> end=<exactMarkId>";
+    let usage = ":select role=audio|video|linked  or :select marks start=<exactMarkId> end=<exactMarkId>  or :select node=<exactNodeId>";
     assert!(spec.commands.iter().any(|command| command.usage == usage));
     assert!(super::super::command::completions(":select").contains(&usage));
     assert!(spec.help.contains("native-mark-<letter>"));

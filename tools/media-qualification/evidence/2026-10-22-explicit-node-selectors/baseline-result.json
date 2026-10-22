@@ -1,0 +1,9 @@
+{
+  "returncode": 101,
+  "seconds": 0.009552582167088985,
+  "expected_sole_admission_failure": true,
+  "binary": {
+    "path": "/tmp/deadpan-explicit-node-selectors-2026-10-22/baseline-bin/explicit_node_selectors-60975d8d36b2b4bc",
+    "sha256": "850278378412d250f7d993c3067f39c76c6fe79d12ef6ecdccea7ae647a50340"
+  }
+}

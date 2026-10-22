@@ -1,0 +1,14 @@
+[
+  {
+    "test": "navigation::registry::tests::routing_matches_the_pre_registry_baseline",
+    "exit": 101,
+    "expected_rewrite_failure": true,
+    "binary_sha256": "6f3f14452bf535d3fdc2d272476c9535ca87ec19a87ec09a8d15685dd669f7ef"
+  },
+  {
+    "test": "navigation::registry::tests::commands_reference_is_current",
+    "exit": 101,
+    "expected_rewrite_failure": true,
+    "binary_sha256": "6f3f14452bf535d3fdc2d272476c9535ca87ec19a87ec09a8d15685dd669f7ef"
+  }
+]

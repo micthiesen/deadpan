@@ -1,0 +1,19 @@
+{
+  "deadpan-core::explicit_node_selectors": {
+    "path": "/Users/michael/Code/deadpan/target/debug/deps/explicit_node_selectors-60975d8d36b2b4bc",
+    "retained": "/tmp/deadpan-explicit-node-selectors-2026-10-22/focused-first-bin/explicit_node_selectors-60975d8d36b2b4bc",
+    "sha256": "d3aefa1476297e2adc79c6d46129f5122621ff4fda81baad7f2e5b87e77460a0",
+    "tests": [
+      "explicit_node_selector_admits_after_nested_child_and_empty_identity_controls",
+      "positive::empty_nodes_retain_distinct_identity_and_refuse_positive_repeat_before_allocation",
+      "positive::finished_node_paste_replaces_nested_whole_and_empty_children_at_actual_parent",
+      "positive::finished_node_survives_motion_and_explicit_replacement_discards_stale_visual",
+      "positive::identity_reresolves_after_staged_duration_rename_and_move_and_never_falls_back",
+      "positive::later_named_call_failure_does_not_publish_earlier_capture_or_cut",
+      "positive::node_cut_and_repeat_use_actual_parent_and_preserve_navigation_scope",
+      "positive::node_wire_is_strict_and_role_edits_do_not_convert_whole_identity_to_a_time_range",
+      "positive::scope_and_nonordinary_authority_refuse_without_allocations_or_fallback",
+      "positive::whole_composites_are_addressable_but_repeat_and_retime_interiors_are_not"
+    ]
+  }
+}

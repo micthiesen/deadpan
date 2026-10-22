@@ -1,0 +1,1 @@
+{"command":{"command":"delete_range","identities":{"nodes":["explicit-node-n4","explicit-node-n5"]},"parent":"f254e841-a230-44ab-ae43-3bc0ef06d6b9","range":{"end":12,"start":0},"timing":{"allocation":"explicit-node-r02","ordinal":0}},"expected_revision":"explicit-node-r01","new_revision":"explicit-node-r02","project_id":"f323beab-98b6-47f0-a6cb-3be13bf165fc","protocol":1}

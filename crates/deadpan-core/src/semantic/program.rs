@@ -1,11 +1,12 @@
-//! Closed semantic intent. No input events, absolute targets or process hooks.
+//! Closed semantic intent. Explicit authored IDs are intentional addresses;
+//! contextual selectors never cache resolved targets or input events.
 
 use std::num::NonZeroU32;
 
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    EditError, EditErrorCode, FrameCut, NamedMarkTarget, RegisterName, SemanticTextObject,
+    EditError, EditErrorCode, FrameCut, NamedMarkTarget, NodeId, RegisterName, SemanticTextObject,
 };
 
 pub const MAX_SEMANTIC_PROGRAM_INSTRUCTIONS: usize = 1024;
@@ -115,6 +116,10 @@ pub enum SemanticSelector {
     SelectedBeat,
     #[serde(deserialize_with = "deserialize_empty")]
     VisualSelection,
+    /// One whole live authored node beneath the captured ordinary Sequence.
+    Node {
+        node: NodeId,
+    },
     /// Two named Edit boundaries, resolved anew against the staged revision.
     MarkRange {
         start: NamedMarkTarget,
@@ -141,6 +146,7 @@ impl SemanticSelector {
             Self::SelectedBeat
             | Self::VisualSelection
             | Self::TextObject { .. }
+            | Self::Node { .. }
             | Self::MarkRange { .. } => false,
         }
     }
@@ -196,6 +202,10 @@ pub enum SemanticInstruction {
     SelectMarkRange {
         start: NamedMarkTarget,
         end: NamedMarkTarget,
+    },
+    /// Select a finished whole authored node without saving its resolved frames.
+    SelectNode {
+        node: NodeId,
     },
     #[serde(deserialize_with = "deserialize_empty")]
     BeginSelection,
@@ -491,9 +501,9 @@ pub enum SemanticInstruction {
     ReplaceSelection {
         register: RegisterName,
     },
-    /// Explicit seam insertion for absent or Time Visual selection. An Object
-    /// Visual replaces its exact owned target; ReplaceSelection handles both
-    /// Visual kinds explicitly, including empty group contents at slot zero.
+    /// Explicit seam insertion for absent or time Visual selection. An Object
+    /// or Node Visual replaces its exact owned target; ReplaceSelection handles
+    /// every Visual kind explicitly, including empty group contents at slot zero.
     Paste {
         register: RegisterName,
         before: bool,

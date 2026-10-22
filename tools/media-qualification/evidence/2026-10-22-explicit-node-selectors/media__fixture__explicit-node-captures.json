@@ -1,0 +1,1324 @@
+{
+  "actual_parent": "explicit-node-group",
+  "before_revision": "explicit-node-r08",
+  "captures": [
+    {
+      "capture": {
+        "assets": {
+          "c95e8ea6-c531-41bb-accd-93628204f70b": {
+            "audio": {
+              "end": {
+                "ticks": 192192,
+                "time_base": {
+                  "denominator": 48000,
+                  "numerator": 1
+                }
+              },
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "denominator": 48000,
+                  "numerator": 1
+                }
+              }
+            },
+            "content_hash": "blake3:16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+            "frame_count": 120,
+            "label": "original",
+            "source_qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6",
+            "still_image": false,
+            "video": {
+              "end": {
+                "ticks": 120120,
+                "time_base": {
+                  "denominator": 30000,
+                  "numerator": 1
+                }
+              },
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "denominator": 30000,
+                  "numerator": 1
+                }
+              }
+            }
+          }
+        },
+        "audio_bindings": {
+          "bindings": {
+            "explicit-node-n7": {
+              "lattice": {
+                "arguments": [],
+                "births": [],
+                "reference": {
+                  "physical": "a08dac8f-103f-4a12-94bb-1daea9a50cb2",
+                  "root": {
+                    "type": "project_root_round_even"
+                  },
+                  "timing": {
+                    "allocation": "explicit-node-r01",
+                    "ordinal": 0
+                  }
+                }
+              },
+              "reanchors": [
+                {
+                  "placement": {
+                    "arguments": [],
+                    "births": [],
+                    "reference": {
+                      "physical": "explicit-node-n5",
+                      "root": {
+                        "type": "project_root_round_even"
+                      },
+                      "timing": {
+                        "allocation": "explicit-node-r02",
+                        "ordinal": 1
+                      }
+                    }
+                  },
+                  "window": {
+                    "end": {
+                      "denominator": "1",
+                      "numerator": "42"
+                    },
+                    "start": {
+                      "denominator": "1",
+                      "numerator": "12"
+                    }
+                  }
+                },
+                {
+                  "placement": {
+                    "arguments": [],
+                    "births": [],
+                    "reference": {
+                      "physical": "explicit-node-n7",
+                      "root": {
+                        "type": "project_root_round_even"
+                      },
+                      "timing": {
+                        "allocation": "explicit-node-r06",
+                        "ordinal": 0
+                      }
+                    }
+                  },
+                  "window": {
+                    "end": {
+                      "denominator": "1",
+                      "numerator": "30"
+                    },
+                    "start": {
+                      "denominator": "1",
+                      "numerator": "6"
+                    }
+                  }
+                }
+              ],
+              "resume": null
+            }
+          },
+          "timings": [
+            {
+              "id": {
+                "allocation": "explicit-node-r01",
+                "ordinal": 0
+              },
+              "layout": {
+                "nodes": {
+                  "a08dac8f-103f-4a12-94bb-1daea9a50cb2": {
+                    "duration": 120,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "placement": {
+                        "end": {
+                          "denominator": "1",
+                          "numerator": "120"
+                        },
+                        "start": {
+                          "denominator": "1",
+                          "numerator": "0"
+                        }
+                      },
+                      "type": "source"
+                    }
+                  },
+                  "f254e841-a230-44ab-ae43-3bc0ef06d6b9": {
+                    "duration": 120,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "children": [
+                        "a08dac8f-103f-4a12-94bb-1daea9a50cb2"
+                      ],
+                      "type": "sequence"
+                    }
+                  }
+                },
+                "overrides": {},
+                "rate": {
+                  "denominator": 1001,
+                  "numerator": 30000
+                },
+                "root": "f254e841-a230-44ab-ae43-3bc0ef06d6b9"
+              }
+            },
+            {
+              "id": {
+                "allocation": "explicit-node-r02",
+                "ordinal": 1
+              },
+              "layout": {
+                "audio_lineage": {
+                  "explicit-node-n5": {
+                    "allocation": "explicit-node-r01",
+                    "origin": "a08dac8f-103f-4a12-94bb-1daea9a50cb2"
+                  }
+                },
+                "nodes": {
+                  "explicit-node-n1": {
+                    "duration": 12,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "audio": {
+                        "type": "silence"
+                      },
+                      "type": "hold"
+                    }
+                  },
+                  "explicit-node-n4": {
+                    "duration": 30,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "child": "explicit-node-n5",
+                      "mapping": {
+                        "end": 42,
+                        "start": 12
+                      },
+                      "pitch": "preserve",
+                      "purpose": "partition",
+                      "type": "retime"
+                    }
+                  },
+                  "explicit-node-n5": {
+                    "duration": 120,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "placement": {
+                        "end": {
+                          "denominator": "1",
+                          "numerator": "120"
+                        },
+                        "start": {
+                          "denominator": "1",
+                          "numerator": "0"
+                        }
+                      },
+                      "type": "source"
+                    }
+                  },
+                  "f254e841-a230-44ab-ae43-3bc0ef06d6b9": {
+                    "duration": 42,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "children": [
+                        "explicit-node-n1",
+                        "explicit-node-n4"
+                      ],
+                      "type": "sequence"
+                    }
+                  }
+                },
+                "overrides": {},
+                "rate": {
+                  "denominator": 1001,
+                  "numerator": 30000
+                },
+                "root": "f254e841-a230-44ab-ae43-3bc0ef06d6b9"
+              }
+            },
+            {
+              "id": {
+                "allocation": "explicit-node-r06",
+                "ordinal": 0
+              },
+              "layout": {
+                "audio_lineage": {
+                  "explicit-node-n23": {
+                    "allocation": "explicit-node-r01",
+                    "origin": "a08dac8f-103f-4a12-94bb-1daea9a50cb2"
+                  },
+                  "explicit-node-n39": {
+                    "allocation": "explicit-node-r01",
+                    "origin": "a08dac8f-103f-4a12-94bb-1daea9a50cb2"
+                  },
+                  "explicit-node-n7": {
+                    "allocation": "explicit-node-r01",
+                    "origin": "a08dac8f-103f-4a12-94bb-1daea9a50cb2"
+                  }
+                },
+                "nodes": {
+                  "explicit-node-n22": {
+                    "duration": 8,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "child": "explicit-node-n23",
+                      "mapping": {
+                        "end": 30,
+                        "start": 22
+                      },
+                      "pitch": "preserve",
+                      "purpose": "partition",
+                      "type": "retime"
+                    }
+                  },
+                  "explicit-node-n23": {
+                    "duration": 120,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "placement": {
+                        "end": {
+                          "denominator": "1",
+                          "numerator": "120"
+                        },
+                        "start": {
+                          "denominator": "1",
+                          "numerator": "0"
+                        }
+                      },
+                      "type": "source"
+                    }
+                  },
+                  "explicit-node-n38": {
+                    "duration": 12,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "child": "explicit-node-n39",
+                      "mapping": {
+                        "end": 42,
+                        "start": 30
+                      },
+                      "pitch": "preserve",
+                      "purpose": "partition",
+                      "type": "retime"
+                    }
+                  },
+                  "explicit-node-n39": {
+                    "duration": 120,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "placement": {
+                        "end": {
+                          "denominator": "1",
+                          "numerator": "120"
+                        },
+                        "start": {
+                          "denominator": "1",
+                          "numerator": "0"
+                        }
+                      },
+                      "type": "source"
+                    }
+                  },
+                  "explicit-node-n4": {
+                    "duration": 6,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "audio": {
+                        "type": "silence"
+                      },
+                      "type": "hold"
+                    }
+                  },
+                  "explicit-node-n6": {
+                    "duration": 4,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "child": "explicit-node-n7",
+                      "mapping": {
+                        "end": 22,
+                        "start": 18
+                      },
+                      "pitch": "preserve",
+                      "purpose": "partition",
+                      "type": "retime"
+                    }
+                  },
+                  "explicit-node-n7": {
+                    "duration": 120,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "placement": {
+                        "end": {
+                          "denominator": "1",
+                          "numerator": "120"
+                        },
+                        "start": {
+                          "denominator": "1",
+                          "numerator": "0"
+                        }
+                      },
+                      "type": "source"
+                    }
+                  },
+                  "f254e841-a230-44ab-ae43-3bc0ef06d6b9": {
+                    "duration": 30,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "children": [
+                        "explicit-node-n4",
+                        "explicit-node-n6",
+                        "explicit-node-n22",
+                        "explicit-node-n38"
+                      ],
+                      "type": "sequence"
+                    }
+                  }
+                },
+                "overrides": {},
+                "rate": {
+                  "denominator": 1001,
+                  "numerator": 30000
+                },
+                "root": "f254e841-a230-44ab-ae43-3bc0ef06d6b9"
+              }
+            }
+          ]
+        },
+        "audio_lineage": {
+          "explicit-node-n7": {
+            "allocation": "explicit-node-r01",
+            "origin": "a08dac8f-103f-4a12-94bb-1daea9a50cb2"
+          }
+        },
+        "beat_sounds": {},
+        "capture_timing": {
+          "allocation": "a2dbeae7-acd5-4134-bfb9-d6870487046e",
+          "ordinal": 0
+        },
+        "gap_overrides": {},
+        "marks": {
+          "explicit-node-owned-mark": {
+            "boundary": {
+              "bias": "right",
+              "coordinate": {
+                "instance": {
+                  "node": "explicit-node-n7",
+                  "repeats": []
+                },
+                "position": {
+                  "denominator": "1",
+                  "numerator": "19"
+                },
+                "space": "occurrence"
+              }
+            },
+            "label": "Owned by captured node",
+            "loss_policy": "delete_owned",
+            "owner": "explicit-node-n7",
+            "state": {
+              "type": "bound"
+            }
+          }
+        },
+        "nodes": {
+          "explicit-node-n6": {
+            "kind": {
+              "child": "explicit-node-n7",
+              "duration": 4,
+              "mapping": {
+                "end": 22,
+                "start": 18
+              },
+              "pitch": "preserve",
+              "purpose": "partition",
+              "type": "retime"
+            },
+            "label": "original"
+          },
+          "explicit-node-n7": {
+            "kind": {
+              "source": {
+                "audio": {
+                  "asset": "c95e8ea6-c531-41bb-accd-93628204f70b",
+                  "span": {
+                    "end": {
+                      "ticks": 192192,
+                      "time_base": {
+                        "denominator": 48000,
+                        "numerator": 1
+                      }
+                    },
+                    "start": {
+                      "ticks": 0,
+                      "time_base": {
+                        "denominator": 48000,
+                        "numerator": 1
+                      }
+                    }
+                  }
+                },
+                "audio_mapping": {
+                  "frames": {
+                    "denominator": "1",
+                    "numerator": "120"
+                  },
+                  "start": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "type": "placement"
+                },
+                "audio_offset": 0,
+                "duration": 120,
+                "edit_window": {
+                  "end": {
+                    "denominator": "1",
+                    "numerator": "120"
+                  },
+                  "start": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  }
+                },
+                "link": "linked",
+                "video": {
+                  "asset": "c95e8ea6-c531-41bb-accd-93628204f70b",
+                  "span": {
+                    "end": {
+                      "ticks": 120120,
+                      "time_base": {
+                        "denominator": 30000,
+                        "numerator": 1
+                      }
+                    },
+                    "start": {
+                      "ticks": 0,
+                      "time_base": {
+                        "denominator": 30000,
+                        "numerator": 1
+                      }
+                    }
+                  },
+                  "type": "stream"
+                },
+                "video_mapping": {
+                  "endpoints": "hold_adjacent",
+                  "frames": {
+                    "denominator": "1",
+                    "numerator": "120"
+                  },
+                  "start": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "type": "placement"
+                }
+              },
+              "type": "source"
+            },
+            "label": "original"
+          }
+        },
+        "overrides": {},
+        "parent": "explicit-node-group",
+        "parts": [
+          {
+            "mapping": {
+              "end": 4,
+              "start": 0
+            },
+            "root": "explicit-node-n6",
+            "source_start": 9
+          }
+        ],
+        "presentation_basis": {
+          "color_policy": "sdr_rec709",
+          "frame_rate": {
+            "denominator": 1001,
+            "numerator": 30000
+          },
+          "height": 180,
+          "width": 320
+        },
+        "project_id": "f323beab-98b6-47f0-a6cb-3be13bf165fc",
+        "range": {
+          "end": 13,
+          "start": 9
+        },
+        "revision_id": "c3664e68-7a06-404b-8171-dabbdd8c5ef1",
+        "selection": {
+          "node": "explicit-node-n6",
+          "type": "child"
+        },
+        "source_duration": 33
+      },
+      "capture_revision": "c3664e68-7a06-404b-8171-dabbdd8c5ef1",
+      "register": "a"
+    },
+    {
+      "capture": {
+        "assets": {
+          "c95e8ea6-c531-41bb-accd-93628204f70b": {
+            "audio": {
+              "end": {
+                "ticks": 192192,
+                "time_base": {
+                  "denominator": 48000,
+                  "numerator": 1
+                }
+              },
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "denominator": 48000,
+                  "numerator": 1
+                }
+              }
+            },
+            "content_hash": "blake3:16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+            "frame_count": 120,
+            "label": "original",
+            "source_qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6",
+            "still_image": false,
+            "video": {
+              "end": {
+                "ticks": 120120,
+                "time_base": {
+                  "denominator": 30000,
+                  "numerator": 1
+                }
+              },
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "denominator": 30000,
+                  "numerator": 1
+                }
+              }
+            }
+          }
+        },
+        "audio_bindings": {
+          "bindings": {
+            "explicit-node-n7": {
+              "lattice": {
+                "arguments": [],
+                "births": [],
+                "reference": {
+                  "physical": "a08dac8f-103f-4a12-94bb-1daea9a50cb2",
+                  "root": {
+                    "type": "project_root_round_even"
+                  },
+                  "timing": {
+                    "allocation": "explicit-node-r01",
+                    "ordinal": 0
+                  }
+                }
+              },
+              "reanchors": [
+                {
+                  "placement": {
+                    "arguments": [],
+                    "births": [],
+                    "reference": {
+                      "physical": "explicit-node-n5",
+                      "root": {
+                        "type": "project_root_round_even"
+                      },
+                      "timing": {
+                        "allocation": "explicit-node-r02",
+                        "ordinal": 1
+                      }
+                    }
+                  },
+                  "window": {
+                    "end": {
+                      "denominator": "1",
+                      "numerator": "42"
+                    },
+                    "start": {
+                      "denominator": "1",
+                      "numerator": "12"
+                    }
+                  }
+                },
+                {
+                  "placement": {
+                    "arguments": [],
+                    "births": [],
+                    "reference": {
+                      "physical": "explicit-node-n7",
+                      "root": {
+                        "type": "project_root_round_even"
+                      },
+                      "timing": {
+                        "allocation": "explicit-node-r06",
+                        "ordinal": 0
+                      }
+                    }
+                  },
+                  "window": {
+                    "end": {
+                      "denominator": "1",
+                      "numerator": "30"
+                    },
+                    "start": {
+                      "denominator": "1",
+                      "numerator": "6"
+                    }
+                  }
+                }
+              ],
+              "resume": null
+            }
+          },
+          "timings": [
+            {
+              "id": {
+                "allocation": "explicit-node-r01",
+                "ordinal": 0
+              },
+              "layout": {
+                "nodes": {
+                  "a08dac8f-103f-4a12-94bb-1daea9a50cb2": {
+                    "duration": 120,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "placement": {
+                        "end": {
+                          "denominator": "1",
+                          "numerator": "120"
+                        },
+                        "start": {
+                          "denominator": "1",
+                          "numerator": "0"
+                        }
+                      },
+                      "type": "source"
+                    }
+                  },
+                  "f254e841-a230-44ab-ae43-3bc0ef06d6b9": {
+                    "duration": 120,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "children": [
+                        "a08dac8f-103f-4a12-94bb-1daea9a50cb2"
+                      ],
+                      "type": "sequence"
+                    }
+                  }
+                },
+                "overrides": {},
+                "rate": {
+                  "denominator": 1001,
+                  "numerator": 30000
+                },
+                "root": "f254e841-a230-44ab-ae43-3bc0ef06d6b9"
+              }
+            },
+            {
+              "id": {
+                "allocation": "explicit-node-r02",
+                "ordinal": 1
+              },
+              "layout": {
+                "audio_lineage": {
+                  "explicit-node-n5": {
+                    "allocation": "explicit-node-r01",
+                    "origin": "a08dac8f-103f-4a12-94bb-1daea9a50cb2"
+                  }
+                },
+                "nodes": {
+                  "explicit-node-n1": {
+                    "duration": 12,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "audio": {
+                        "type": "silence"
+                      },
+                      "type": "hold"
+                    }
+                  },
+                  "explicit-node-n4": {
+                    "duration": 30,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "child": "explicit-node-n5",
+                      "mapping": {
+                        "end": 42,
+                        "start": 12
+                      },
+                      "pitch": "preserve",
+                      "purpose": "partition",
+                      "type": "retime"
+                    }
+                  },
+                  "explicit-node-n5": {
+                    "duration": 120,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "placement": {
+                        "end": {
+                          "denominator": "1",
+                          "numerator": "120"
+                        },
+                        "start": {
+                          "denominator": "1",
+                          "numerator": "0"
+                        }
+                      },
+                      "type": "source"
+                    }
+                  },
+                  "f254e841-a230-44ab-ae43-3bc0ef06d6b9": {
+                    "duration": 42,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "children": [
+                        "explicit-node-n1",
+                        "explicit-node-n4"
+                      ],
+                      "type": "sequence"
+                    }
+                  }
+                },
+                "overrides": {},
+                "rate": {
+                  "denominator": 1001,
+                  "numerator": 30000
+                },
+                "root": "f254e841-a230-44ab-ae43-3bc0ef06d6b9"
+              }
+            },
+            {
+              "id": {
+                "allocation": "explicit-node-r06",
+                "ordinal": 0
+              },
+              "layout": {
+                "audio_lineage": {
+                  "explicit-node-n23": {
+                    "allocation": "explicit-node-r01",
+                    "origin": "a08dac8f-103f-4a12-94bb-1daea9a50cb2"
+                  },
+                  "explicit-node-n39": {
+                    "allocation": "explicit-node-r01",
+                    "origin": "a08dac8f-103f-4a12-94bb-1daea9a50cb2"
+                  },
+                  "explicit-node-n7": {
+                    "allocation": "explicit-node-r01",
+                    "origin": "a08dac8f-103f-4a12-94bb-1daea9a50cb2"
+                  }
+                },
+                "nodes": {
+                  "explicit-node-n22": {
+                    "duration": 8,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "child": "explicit-node-n23",
+                      "mapping": {
+                        "end": 30,
+                        "start": 22
+                      },
+                      "pitch": "preserve",
+                      "purpose": "partition",
+                      "type": "retime"
+                    }
+                  },
+                  "explicit-node-n23": {
+                    "duration": 120,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "placement": {
+                        "end": {
+                          "denominator": "1",
+                          "numerator": "120"
+                        },
+                        "start": {
+                          "denominator": "1",
+                          "numerator": "0"
+                        }
+                      },
+                      "type": "source"
+                    }
+                  },
+                  "explicit-node-n38": {
+                    "duration": 12,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "child": "explicit-node-n39",
+                      "mapping": {
+                        "end": 42,
+                        "start": 30
+                      },
+                      "pitch": "preserve",
+                      "purpose": "partition",
+                      "type": "retime"
+                    }
+                  },
+                  "explicit-node-n39": {
+                    "duration": 120,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "placement": {
+                        "end": {
+                          "denominator": "1",
+                          "numerator": "120"
+                        },
+                        "start": {
+                          "denominator": "1",
+                          "numerator": "0"
+                        }
+                      },
+                      "type": "source"
+                    }
+                  },
+                  "explicit-node-n4": {
+                    "duration": 6,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "audio": {
+                        "type": "silence"
+                      },
+                      "type": "hold"
+                    }
+                  },
+                  "explicit-node-n6": {
+                    "duration": 4,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "child": "explicit-node-n7",
+                      "mapping": {
+                        "end": 22,
+                        "start": 18
+                      },
+                      "pitch": "preserve",
+                      "purpose": "partition",
+                      "type": "retime"
+                    }
+                  },
+                  "explicit-node-n7": {
+                    "duration": 120,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "placement": {
+                        "end": {
+                          "denominator": "1",
+                          "numerator": "120"
+                        },
+                        "start": {
+                          "denominator": "1",
+                          "numerator": "0"
+                        }
+                      },
+                      "type": "source"
+                    }
+                  },
+                  "f254e841-a230-44ab-ae43-3bc0ef06d6b9": {
+                    "duration": 30,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "children": [
+                        "explicit-node-n4",
+                        "explicit-node-n6",
+                        "explicit-node-n22",
+                        "explicit-node-n38"
+                      ],
+                      "type": "sequence"
+                    }
+                  }
+                },
+                "overrides": {},
+                "rate": {
+                  "denominator": 1001,
+                  "numerator": 30000
+                },
+                "root": "f254e841-a230-44ab-ae43-3bc0ef06d6b9"
+              }
+            }
+          ]
+        },
+        "audio_lineage": {
+          "explicit-node-n7": {
+            "allocation": "explicit-node-r01",
+            "origin": "a08dac8f-103f-4a12-94bb-1daea9a50cb2"
+          }
+        },
+        "beat_sounds": {},
+        "capture_timing": {
+          "allocation": "cf8aff8b-21b6-4bcd-81e2-37b304681ea8",
+          "ordinal": 0
+        },
+        "gap_overrides": {},
+        "marks": {
+          "explicit-node-owned-mark": {
+            "boundary": {
+              "bias": "right",
+              "coordinate": {
+                "instance": {
+                  "node": "explicit-node-n7",
+                  "repeats": []
+                },
+                "position": {
+                  "denominator": "1",
+                  "numerator": "19"
+                },
+                "space": "occurrence"
+              }
+            },
+            "label": "Owned by captured node",
+            "loss_policy": "delete_owned",
+            "owner": "explicit-node-n7",
+            "state": {
+              "type": "bound"
+            }
+          }
+        },
+        "nodes": {
+          "explicit-node-n6": {
+            "kind": {
+              "child": "explicit-node-n7",
+              "duration": 4,
+              "mapping": {
+                "end": 22,
+                "start": 18
+              },
+              "pitch": "preserve",
+              "purpose": "partition",
+              "type": "retime"
+            },
+            "label": "original"
+          },
+          "explicit-node-n7": {
+            "kind": {
+              "source": {
+                "audio": {
+                  "asset": "c95e8ea6-c531-41bb-accd-93628204f70b",
+                  "span": {
+                    "end": {
+                      "ticks": 192192,
+                      "time_base": {
+                        "denominator": 48000,
+                        "numerator": 1
+                      }
+                    },
+                    "start": {
+                      "ticks": 0,
+                      "time_base": {
+                        "denominator": 48000,
+                        "numerator": 1
+                      }
+                    }
+                  }
+                },
+                "audio_mapping": {
+                  "frames": {
+                    "denominator": "1",
+                    "numerator": "120"
+                  },
+                  "start": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "type": "placement"
+                },
+                "audio_offset": 0,
+                "duration": 120,
+                "edit_window": {
+                  "end": {
+                    "denominator": "1",
+                    "numerator": "120"
+                  },
+                  "start": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  }
+                },
+                "link": "linked",
+                "video": {
+                  "asset": "c95e8ea6-c531-41bb-accd-93628204f70b",
+                  "span": {
+                    "end": {
+                      "ticks": 120120,
+                      "time_base": {
+                        "denominator": 30000,
+                        "numerator": 1
+                      }
+                    },
+                    "start": {
+                      "ticks": 0,
+                      "time_base": {
+                        "denominator": 30000,
+                        "numerator": 1
+                      }
+                    }
+                  },
+                  "type": "stream"
+                },
+                "video_mapping": {
+                  "endpoints": "hold_adjacent",
+                  "frames": {
+                    "denominator": "1",
+                    "numerator": "120"
+                  },
+                  "start": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "type": "placement"
+                }
+              },
+              "type": "source"
+            },
+            "label": "original"
+          }
+        },
+        "overrides": {},
+        "parent": "explicit-node-group",
+        "parts": [
+          {
+            "mapping": {
+              "end": 4,
+              "start": 0
+            },
+            "root": "explicit-node-n6",
+            "source_start": 9
+          }
+        ],
+        "presentation_basis": {
+          "color_policy": "sdr_rec709",
+          "frame_rate": {
+            "denominator": 1001,
+            "numerator": 30000
+          },
+          "height": 180,
+          "width": 320
+        },
+        "project_id": "f323beab-98b6-47f0-a6cb-3be13bf165fc",
+        "range": {
+          "end": 13,
+          "start": 9
+        },
+        "revision_id": "c3664e68-7a06-404b-8171-dabbdd8c5ef1",
+        "selection": {
+          "node": "explicit-node-n6",
+          "type": "child"
+        },
+        "source_duration": 33
+      },
+      "capture_revision": "c3664e68-7a06-404b-8171-dabbdd8c5ef1",
+      "register": "b"
+    }
+  ],
+  "cut_node": "explicit-node-n6",
+  "history_after_redo": {
+    "replayed": 12,
+    "revisions": 13,
+    "verified_by_receipt": 0
+  },
+  "history_before_navigation": {
+    "replayed": 10,
+    "revisions": 11,
+    "verified_by_receipt": 0
+  },
+  "macro_revision": "ec6e1f10-31a2-4a5d-b337-4f98fb41b2af",
+  "render_revision": "b545f5c8-b4de-4030-8ccb-ca8a4b16c7aa",
+  "repeated_node": "explicit-node-n22"
+}

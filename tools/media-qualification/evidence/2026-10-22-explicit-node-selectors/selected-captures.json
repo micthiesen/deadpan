@@ -1,0 +1,30 @@
+[
+  {
+    "mode": "debug-second-visual",
+    "file": "explicit-node-selectors-032.png",
+    "frame": 46,
+    "checkpoint": "Explicit descendant selection shows exact identity and captured scope",
+    "sha256": "045365e81bb15b1a91228576159f46af7bc63988393c53b1921ee818a4a61e3b",
+    "root_inspected": true
+  },
+  {
+    "mode": "debug-second-visual",
+    "file": "explicit-node-selectors-105.png",
+    "frame": 119,
+    "checkpoint": "Empty node remains selectable by exact identity",
+    "sha256": "0950f09613d3590343e32b584a3a0f55ea21a5dd37b0d2d32d65f0568844a160",
+    "root_inspected": true
+  },
+  {
+    "mode": "release-visual",
+    "file": "explicit-node-selectors-032.png",
+    "sha256": "e3f9c3c2d46c0afe2efc3fb652bd08f20565afedd038116cbef61515eb9dbe5d",
+    "root_inspected": true
+  },
+  {
+    "mode": "release-visual",
+    "file": "explicit-node-selectors-108.png",
+    "sha256": "d6d26dfe74e05a1ce6aa34ded739f5c98c974293633b777a2428383c11046db5",
+    "root_inspected": true
+  }
+]

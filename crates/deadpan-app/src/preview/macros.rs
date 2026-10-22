@@ -117,6 +117,7 @@ impl Capture {
             Some(
                 deadpan_core::SemanticVisualSelection::Object { .. }
                     | deadpan_core::SemanticVisualSelection::MarkRange { .. }
+                    | deadpan_core::SemanticVisualSelection::Node { .. }
             )
         )
     }
@@ -137,6 +138,12 @@ impl Capture {
         self.base
             .document
             .select_semantic_mark_range(&self.context, start, end)
+            .map_err(|error| error.to_string())
+    }
+    pub(super) fn select_node(&self, node: NodeId) -> Result<SemanticContext, String> {
+        self.base
+            .document
+            .select_semantic_node(&self.context, node)
             .map_err(|error| error.to_string())
     }
     /// A word or sentence object at the captured cursor, as a Visual range.
@@ -296,6 +303,12 @@ impl Capture {
         initial_source: &crate::project::splice::Source,
         register: Option<char>,
     ) -> Result<SemanticInstruction, String> {
+        if matches!(
+            self.context.visual_selection,
+            Some(deadpan_core::SemanticVisualSelection::Node { .. })
+        ) {
+            return Err("Use p/P to replace the complete selected node; Place slice does not expose node destinations.".into());
+        }
         if self.context.original.is_some() || self.view != View::Sequence {
             return Err("Place slice can be recorded only in Your edit.".into());
         }
@@ -324,6 +337,13 @@ impl Capture {
                 self.base
                     .document
                     .resolve_object_selection(&self.context.parent, selection)
+                    .map_err(|error| error.to_string())?
+                    .range,
+            ),
+            Some(deadpan_core::SemanticVisualSelection::Node { node }) => Some(
+                self.base
+                    .document
+                    .resolve_semantic_node(&self.context, node)
                     .map_err(|error| error.to_string())?
                     .range,
             ),
@@ -958,9 +978,12 @@ impl DeadpanApp {
                 self.macro_action_allowed(Action::DeleteSelection)
             }
             Ok(navigation::command::Entry::SelectRole(_)) => true,
-            Ok(navigation::command::Entry::SelectMarkRange { .. }) => self.macro_action_allowed(
-                Action::SelectObject(deadpan_core::SemanticTextObject::InnerGroup),
-            ),
+            Ok(
+                navigation::command::Entry::SelectMarkRange { .. }
+                | navigation::command::Entry::SelectNode { .. },
+            ) => self.macro_action_allowed(Action::SelectObject(
+                deadpan_core::SemanticTextObject::InnerGroup,
+            )),
             Ok(navigation::command::Entry::Trim(_) | navigation::command::Entry::Slip(_)) => {
                 self.macro_action_allowed(Action::Trim)
             }
@@ -1283,6 +1306,7 @@ impl DeadpanApp {
                     Ok(Some(
                         deadpan_core::SemanticVisualSelection::Object { .. }
                             | deadpan_core::SemanticVisualSelection::MarkRange { .. }
+                            | deadpan_core::SemanticVisualSelection::Node { .. }
                     ))
                 )
             },
@@ -1303,6 +1327,7 @@ impl DeadpanApp {
                 if matches!(
                     selection,
                     deadpan_core::SemanticVisualSelection::MarkRange { .. }
+                        | deadpan_core::SemanticVisualSelection::Node { .. }
                 ) {
                     SemanticInstruction::Yank {
                         selector: selection.effective_selector(),
@@ -1331,6 +1356,7 @@ impl DeadpanApp {
                     Ok(Some(
                         deadpan_core::SemanticVisualSelection::Object { .. }
                             | deadpan_core::SemanticVisualSelection::MarkRange { .. }
+                            | deadpan_core::SemanticVisualSelection::Node { .. }
                     ))
                 )
             },
@@ -1347,6 +1373,7 @@ impl DeadpanApp {
                 if matches!(
                     selection,
                     deadpan_core::SemanticVisualSelection::MarkRange { .. }
+                        | deadpan_core::SemanticVisualSelection::Node { .. }
                 ) {
                     SemanticInstruction::Cut {
                         selector: selection.effective_selector(),
@@ -1373,9 +1400,9 @@ impl DeadpanApp {
     ) -> bool {
         // A captured context error must refuse an Object paste, never route its
         // derived geometry through the ordinary time-range replacement path.
-        let object = target
-            .as_ref()
-            .is_ok_and(|target| target.selection.object().is_some());
+        let object = target.as_ref().is_ok_and(|target| {
+            target.selection.object().is_some() || target.selection.node().is_some()
+        });
         if !self.macros.recording() && !self.macros.is_pending() && !object {
             return false;
         }

@@ -1,0 +1,8 @@
+{
+  "Cargo.lock": "1e39d18ae4de6c7b898edad39eb7104235fb3ffe3af84521ca94df2b6c25b71b",
+  "Cargo.toml": "121e4cfefb2227cf38d5c1758d6a2250ddc38465a1044dfe896368c7ac1b50f3",
+  "rust-toolchain.toml": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc",
+  ".cargo/config.toml": "b906738cab8f6f289180e1bcf32826d3e2996899cb5055dc7f0c6838655c340d",
+  "crates/deadpan-app/src/navigation/registry/baseline-routing.txt": "e404bfa072ceee1b1724ffb7f65cee5712c4d8233f006d65a7a527dd88129a4c",
+  "docs/COMMANDS.md": "b22fc28624f3811f00a37ec79cf5e621703d9f91021f3ecf7ef393813a90609a"
+}

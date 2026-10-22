@@ -1,0 +1,442 @@
+{
+  "environment_overrides": {
+    "DEADPAN_FFMPEG_PREFIX": "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix",
+    "CARGO_PROFILE_DEV_OPT_LEVEL": "2",
+    "DEADPAN_REQUIRE_PHYSICAL_MAC": "1",
+    "DEADPAN_REQUIRE_SYNTHETIC_WORKER": "1"
+  },
+  "cwd": "/Users/michael/Code/deadpan/crates/deadpan-app",
+  "directory_counts": [
+    {
+      "path": "/Users/michael/Code/deadpan/target/debug/deps",
+      "entries": 100000,
+      "capped_at_100000": true
+    },
+    {
+      "path": "/tmp/deadpan-explicit-node-selectors-2026-10-22/import-location-diagnostic/compact-normal",
+      "entries": 1,
+      "capped_at_100000": false
+    },
+    {
+      "path": "/tmp/deadpan-explicit-node-selectors-2026-10-22/import-location-diagnostic/compact-ui",
+      "entries": 1,
+      "capped_at_100000": false
+    }
+  ],
+  "tests": [
+    {
+      "mode": "normal",
+      "site": "deps",
+      "case": "project::tests::backups::a_moved_linked_original_is_found_by_its_bookmark_and_relinked_on_open",
+      "command": [
+        "/Users/michael/Code/deadpan/target/debug/deps/deadpan_app-1665fcaccc742208",
+        "--exact",
+        "project::tests::backups::a_moved_linked_original_is_found_by_its_bookmark_and_relinked_on_open",
+        "--nocapture"
+      ],
+      "pid": 99858,
+      "parent_pid": 99853,
+      "binary_sha256_before": "a0f5db87cf5694db05e647f19d310ce5ea60403d3a51f808c1434792c0f66358",
+      "exit": 101,
+      "seconds": 20.196056541986763,
+      "passed": false,
+      "binary_sha256_after": "a0f5db87cf5694db05e647f19d310ce5ea60403d3a51f808c1434792c0f66358"
+    },
+    {
+      "mode": "normal",
+      "site": "deps",
+      "case": "project::tests::backups::a_moved_file_with_different_bytes_is_reported_missing_not_relinked",
+      "command": [
+        "/Users/michael/Code/deadpan/target/debug/deps/deadpan_app-1665fcaccc742208",
+        "--exact",
+        "project::tests::backups::a_moved_file_with_different_bytes_is_reported_missing_not_relinked",
+        "--nocapture"
+      ],
+      "pid": 99859,
+      "parent_pid": 99853,
+      "binary_sha256_before": "a0f5db87cf5694db05e647f19d310ce5ea60403d3a51f808c1434792c0f66358",
+      "exit": 101,
+      "seconds": 20.237005250528455,
+      "passed": false,
+      "binary_sha256_after": "a0f5db87cf5694db05e647f19d310ce5ea60403d3a51f808c1434792c0f66358"
+    },
+    {
+      "mode": "normal",
+      "site": "deps",
+      "case": "project::tests::unavailable_linked_original_invalidates_cached_insertion_without_losing_registration",
+      "command": [
+        "/Users/michael/Code/deadpan/target/debug/deps/deadpan_app-1665fcaccc742208",
+        "--exact",
+        "project::tests::unavailable_linked_original_invalidates_cached_insertion_without_losing_registration",
+        "--nocapture"
+      ],
+      "pid": 99861,
+      "parent_pid": 99853,
+      "binary_sha256_before": "a0f5db87cf5694db05e647f19d310ce5ea60403d3a51f808c1434792c0f66358",
+      "exit": 101,
+      "seconds": 20.273573291487992,
+      "passed": false,
+      "binary_sha256_after": "a0f5db87cf5694db05e647f19d310ce5ea60403d3a51f808c1434792c0f66358"
+    },
+    {
+      "mode": "normal",
+      "site": "deps",
+      "case": "project::tests::native_new_starts_with_the_full_original_and_history_stops_at_that_baseline",
+      "command": [
+        "/Users/michael/Code/deadpan/target/debug/deps/deadpan_app-1665fcaccc742208",
+        "--exact",
+        "project::tests::native_new_starts_with_the_full_original_and_history_stops_at_that_baseline",
+        "--nocapture"
+      ],
+      "pid": 99860,
+      "parent_pid": 99853,
+      "binary_sha256_before": "a0f5db87cf5694db05e647f19d310ce5ea60403d3a51f808c1434792c0f66358",
+      "exit": 101,
+      "seconds": 20.348036999814212,
+      "passed": false,
+      "binary_sha256_after": "a0f5db87cf5694db05e647f19d310ce5ea60403d3a51f808c1434792c0f66358"
+    },
+    {
+      "mode": "normal",
+      "site": "compact",
+      "case": "project::tests::backups::a_moved_linked_original_is_found_by_its_bookmark_and_relinked_on_open",
+      "command": [
+        "/tmp/deadpan-explicit-node-selectors-2026-10-22/import-location-diagnostic/compact-normal/deadpan_app-1665fcaccc742208",
+        "--exact",
+        "project::tests::backups::a_moved_linked_original_is_found_by_its_bookmark_and_relinked_on_open",
+        "--nocapture"
+      ],
+      "pid": 340,
+      "parent_pid": 99853,
+      "binary_sha256_before": "a0f5db87cf5694db05e647f19d310ce5ea60403d3a51f808c1434792c0f66358",
+      "exit": 0,
+      "seconds": 0.2904897080734372,
+      "passed": true,
+      "binary_sha256_after": "a0f5db87cf5694db05e647f19d310ce5ea60403d3a51f808c1434792c0f66358"
+    },
+    {
+      "mode": "normal",
+      "site": "compact",
+      "case": "project::tests::backups::a_moved_file_with_different_bytes_is_reported_missing_not_relinked",
+      "command": [
+        "/tmp/deadpan-explicit-node-selectors-2026-10-22/import-location-diagnostic/compact-normal/deadpan_app-1665fcaccc742208",
+        "--exact",
+        "project::tests::backups::a_moved_file_with_different_bytes_is_reported_missing_not_relinked",
+        "--nocapture"
+      ],
+      "pid": 342,
+      "parent_pid": 99853,
+      "binary_sha256_before": "a0f5db87cf5694db05e647f19d310ce5ea60403d3a51f808c1434792c0f66358",
+      "exit": 0,
+      "seconds": 0.38520741648972034,
+      "passed": true,
+      "binary_sha256_after": "a0f5db87cf5694db05e647f19d310ce5ea60403d3a51f808c1434792c0f66358"
+    },
+    {
+      "mode": "normal",
+      "site": "compact",
+      "case": "project::tests::unavailable_linked_original_invalidates_cached_insertion_without_losing_registration",
+      "command": [
+        "/tmp/deadpan-explicit-node-selectors-2026-10-22/import-location-diagnostic/compact-normal/deadpan_app-1665fcaccc742208",
+        "--exact",
+        "project::tests::unavailable_linked_original_invalidates_cached_insertion_without_losing_registration",
+        "--nocapture"
+      ],
+      "pid": 351,
+      "parent_pid": 99853,
+      "binary_sha256_before": "a0f5db87cf5694db05e647f19d310ce5ea60403d3a51f808c1434792c0f66358",
+      "exit": 0,
+      "seconds": 0.4207533337175846,
+      "passed": true,
+      "binary_sha256_after": "a0f5db87cf5694db05e647f19d310ce5ea60403d3a51f808c1434792c0f66358"
+    },
+    {
+      "mode": "normal",
+      "site": "compact",
+      "case": "project::tests::native_new_starts_with_the_full_original_and_history_stops_at_that_baseline",
+      "command": [
+        "/tmp/deadpan-explicit-node-selectors-2026-10-22/import-location-diagnostic/compact-normal/deadpan_app-1665fcaccc742208",
+        "--exact",
+        "project::tests::native_new_starts_with_the_full_original_and_history_stops_at_that_baseline",
+        "--nocapture"
+      ],
+      "pid": 349,
+      "parent_pid": 99853,
+      "binary_sha256_before": "a0f5db87cf5694db05e647f19d310ce5ea60403d3a51f808c1434792c0f66358",
+      "exit": 0,
+      "seconds": 0.5575122497975826,
+      "passed": true,
+      "binary_sha256_after": "a0f5db87cf5694db05e647f19d310ce5ea60403d3a51f808c1434792c0f66358"
+    },
+    {
+      "mode": "ui",
+      "site": "deps",
+      "case": "project::tests::backups::a_moved_linked_original_is_found_by_its_bookmark_and_relinked_on_open",
+      "command": [
+        "/Users/michael/Code/deadpan/target/debug/deps/deadpan_app-7e20ea767f3f19d5",
+        "--exact",
+        "project::tests::backups::a_moved_linked_original_is_found_by_its_bookmark_and_relinked_on_open",
+        "--nocapture"
+      ],
+      "pid": 357,
+      "parent_pid": 99853,
+      "binary_sha256_before": "7055795cc7b97961acc219fb9d22d9c51086769ff5f6227e1ca96dd2861910ca",
+      "exit": 101,
+      "seconds": 20.169240042567253,
+      "passed": false,
+      "binary_sha256_after": "7055795cc7b97961acc219fb9d22d9c51086769ff5f6227e1ca96dd2861910ca"
+    },
+    {
+      "mode": "ui",
+      "site": "deps",
+      "case": "project::tests::backups::a_moved_file_with_different_bytes_is_reported_missing_not_relinked",
+      "command": [
+        "/Users/michael/Code/deadpan/target/debug/deps/deadpan_app-7e20ea767f3f19d5",
+        "--exact",
+        "project::tests::backups::a_moved_file_with_different_bytes_is_reported_missing_not_relinked",
+        "--nocapture"
+      ],
+      "pid": 359,
+      "parent_pid": 99853,
+      "binary_sha256_before": "7055795cc7b97961acc219fb9d22d9c51086769ff5f6227e1ca96dd2861910ca",
+      "exit": 101,
+      "seconds": 20.214517208747566,
+      "passed": false,
+      "binary_sha256_after": "7055795cc7b97961acc219fb9d22d9c51086769ff5f6227e1ca96dd2861910ca"
+    },
+    {
+      "mode": "ui",
+      "site": "deps",
+      "case": "project::tests::unavailable_linked_original_invalidates_cached_insertion_without_losing_registration",
+      "command": [
+        "/Users/michael/Code/deadpan/target/debug/deps/deadpan_app-7e20ea767f3f19d5",
+        "--exact",
+        "project::tests::unavailable_linked_original_invalidates_cached_insertion_without_losing_registration",
+        "--nocapture"
+      ],
+      "pid": 361,
+      "parent_pid": 99853,
+      "binary_sha256_before": "7055795cc7b97961acc219fb9d22d9c51086769ff5f6227e1ca96dd2861910ca",
+      "exit": 101,
+      "seconds": 20.256398749537766,
+      "passed": false,
+      "binary_sha256_after": "7055795cc7b97961acc219fb9d22d9c51086769ff5f6227e1ca96dd2861910ca"
+    },
+    {
+      "mode": "ui",
+      "site": "deps",
+      "case": "project::tests::native_new_starts_with_the_full_original_and_history_stops_at_that_baseline",
+      "command": [
+        "/Users/michael/Code/deadpan/target/debug/deps/deadpan_app-7e20ea767f3f19d5",
+        "--exact",
+        "project::tests::native_new_starts_with_the_full_original_and_history_stops_at_that_baseline",
+        "--nocapture"
+      ],
+      "pid": 360,
+      "parent_pid": 99853,
+      "binary_sha256_before": "7055795cc7b97961acc219fb9d22d9c51086769ff5f6227e1ca96dd2861910ca",
+      "exit": 101,
+      "seconds": 20.331361792050302,
+      "passed": false,
+      "binary_sha256_after": "7055795cc7b97961acc219fb9d22d9c51086769ff5f6227e1ca96dd2861910ca"
+    },
+    {
+      "mode": "ui",
+      "site": "compact",
+      "case": "project::tests::backups::a_moved_linked_original_is_found_by_its_bookmark_and_relinked_on_open",
+      "command": [
+        "/tmp/deadpan-explicit-node-selectors-2026-10-22/import-location-diagnostic/compact-ui/deadpan_app-7e20ea767f3f19d5",
+        "--exact",
+        "project::tests::backups::a_moved_linked_original_is_found_by_its_bookmark_and_relinked_on_open",
+        "--nocapture"
+      ],
+      "pid": 1473,
+      "parent_pid": 99853,
+      "binary_sha256_before": "7055795cc7b97961acc219fb9d22d9c51086769ff5f6227e1ca96dd2861910ca",
+      "exit": 0,
+      "seconds": 0.3464222503826022,
+      "passed": true,
+      "binary_sha256_after": "7055795cc7b97961acc219fb9d22d9c51086769ff5f6227e1ca96dd2861910ca"
+    },
+    {
+      "mode": "ui",
+      "site": "compact",
+      "case": "project::tests::backups::a_moved_file_with_different_bytes_is_reported_missing_not_relinked",
+      "command": [
+        "/tmp/deadpan-explicit-node-selectors-2026-10-22/import-location-diagnostic/compact-ui/deadpan_app-7e20ea767f3f19d5",
+        "--exact",
+        "project::tests::backups::a_moved_file_with_different_bytes_is_reported_missing_not_relinked",
+        "--nocapture"
+      ],
+      "pid": 1474,
+      "parent_pid": 99853,
+      "binary_sha256_before": "7055795cc7b97961acc219fb9d22d9c51086769ff5f6227e1ca96dd2861910ca",
+      "exit": 0,
+      "seconds": 0.38999054208397865,
+      "passed": true,
+      "binary_sha256_after": "7055795cc7b97961acc219fb9d22d9c51086769ff5f6227e1ca96dd2861910ca"
+    },
+    {
+      "mode": "ui",
+      "site": "compact",
+      "case": "project::tests::unavailable_linked_original_invalidates_cached_insertion_without_losing_registration",
+      "command": [
+        "/tmp/deadpan-explicit-node-selectors-2026-10-22/import-location-diagnostic/compact-ui/deadpan_app-7e20ea767f3f19d5",
+        "--exact",
+        "project::tests::unavailable_linked_original_invalidates_cached_insertion_without_losing_registration",
+        "--nocapture"
+      ],
+      "pid": 1476,
+      "parent_pid": 99853,
+      "binary_sha256_before": "7055795cc7b97961acc219fb9d22d9c51086769ff5f6227e1ca96dd2861910ca",
+      "exit": 0,
+      "seconds": 0.425777249969542,
+      "passed": true,
+      "binary_sha256_after": "7055795cc7b97961acc219fb9d22d9c51086769ff5f6227e1ca96dd2861910ca"
+    },
+    {
+      "mode": "ui",
+      "site": "compact",
+      "case": "project::tests::native_new_starts_with_the_full_original_and_history_stops_at_that_baseline",
+      "command": [
+        "/tmp/deadpan-explicit-node-selectors-2026-10-22/import-location-diagnostic/compact-ui/deadpan_app-7e20ea767f3f19d5",
+        "--exact",
+        "project::tests::native_new_starts_with_the_full_original_and_history_stops_at_that_baseline",
+        "--nocapture"
+      ],
+      "pid": 1475,
+      "parent_pid": 99853,
+      "binary_sha256_before": "7055795cc7b97961acc219fb9d22d9c51086769ff5f6227e1ca96dd2861910ca",
+      "exit": 0,
+      "seconds": 0.5366624994203448,
+      "passed": true,
+      "binary_sha256_after": "7055795cc7b97961acc219fb9d22d9c51086769ff5f6227e1ca96dd2861910ca"
+    }
+  ],
+  "samples": [
+    {
+      "owned_test_pid": 99858,
+      "mode": "normal",
+      "site": "deps",
+      "command": [
+        "sample",
+        "99858",
+        "2",
+        "1",
+        "-file",
+        "/tmp/deadpan-explicit-node-selectors-2026-10-22/import-location-diagnostic/normal-deps-1.sample.txt"
+      ],
+      "started_after_seconds": 3.0165936667472124,
+      "exit": 0
+    },
+    {
+      "owned_test_pid": 99859,
+      "mode": "normal",
+      "site": "deps",
+      "command": [
+        "sample",
+        "99859",
+        "2",
+        "1",
+        "-file",
+        "/tmp/deadpan-explicit-node-selectors-2026-10-22/import-location-diagnostic/normal-deps-2.sample.txt"
+      ],
+      "started_after_seconds": 3.0167377088218927,
+      "exit": 0
+    },
+    {
+      "owned_test_pid": 99860,
+      "mode": "normal",
+      "site": "deps",
+      "command": [
+        "sample",
+        "99860",
+        "2",
+        "1",
+        "-file",
+        "/tmp/deadpan-explicit-node-selectors-2026-10-22/import-location-diagnostic/normal-deps-3.sample.txt"
+      ],
+      "started_after_seconds": 3.0175837501883507,
+      "exit": 0
+    },
+    {
+      "owned_test_pid": 99861,
+      "mode": "normal",
+      "site": "deps",
+      "command": [
+        "sample",
+        "99861",
+        "2",
+        "1",
+        "-file",
+        "/tmp/deadpan-explicit-node-selectors-2026-10-22/import-location-diagnostic/normal-deps-4.sample.txt"
+      ],
+      "started_after_seconds": 3.0185348326340318,
+      "exit": 0
+    },
+    {
+      "owned_test_pid": 357,
+      "mode": "ui",
+      "site": "deps",
+      "command": [
+        "sample",
+        "357",
+        "2",
+        "1",
+        "-file",
+        "/tmp/deadpan-explicit-node-selectors-2026-10-22/import-location-diagnostic/ui-deps-1.sample.txt"
+      ],
+      "started_after_seconds": 3.0085229175165296,
+      "exit": 0
+    },
+    {
+      "owned_test_pid": 359,
+      "mode": "ui",
+      "site": "deps",
+      "command": [
+        "sample",
+        "359",
+        "2",
+        "1",
+        "-file",
+        "/tmp/deadpan-explicit-node-selectors-2026-10-22/import-location-diagnostic/ui-deps-2.sample.txt"
+      ],
+      "started_after_seconds": 3.008488416671753,
+      "exit": 0
+    },
+    {
+      "owned_test_pid": 360,
+      "mode": "ui",
+      "site": "deps",
+      "command": [
+        "sample",
+        "360",
+        "2",
+        "1",
+        "-file",
+        "/tmp/deadpan-explicit-node-selectors-2026-10-22/import-location-diagnostic/ui-deps-3.sample.txt"
+      ],
+      "started_after_seconds": 3.009159999899566,
+      "exit": 0
+    },
+    {
+      "owned_test_pid": 361,
+      "mode": "ui",
+      "site": "deps",
+      "command": [
+        "sample",
+        "361",
+        "2",
+        "1",
+        "-file",
+        "/tmp/deadpan-explicit-node-selectors-2026-10-22/import-location-diagnostic/ui-deps-4.sample.txt"
+      ],
+      "started_after_seconds": 3.010145790874958,
+      "exit": 0
+    }
+  ],
+  "test_timeout_seconds": 60,
+  "sampling_threshold_seconds": 3,
+  "sampler_timeout_seconds": 60,
+  "complete": true
+}

@@ -129,6 +129,38 @@ selected-beat/count command and refuses an active Visual range.
 See the [named-mark qualification](qualification/named-mark-selectors-2026-10-22.md)
 for the current verification state and retained failures.
 
+### Explicit authored nodes
+
+`:select node=<exactNodeId>` selects one whole authored node beneath the
+current ordinary Edit Sequence. The command requires the Linked role and
+uses the exact ID, independently of the cursor, selected beat or a time range.
+The status line shows its label, ID, scope and current range. An empty Sequence
+remains a distinct structural selection even when another empty node occupies
+the same time.
+
+Recording stores `SelectNode { node }`; the finished Visual selection and
+consuming copy, cut, Group, Duplicate and Repeat retain `Node { node }` intent.
+Named calls and dot-repeat resolve the ID against each staged revision.
+Renaming or moving it within the captured scope preserves identity. Deleting
+it or moving it outside the scope refuses without choosing another beat.
+Plain Visual selection overrides the saved selector through the existing rule.
+
+Capture and mutation use the node's actual immediate Sequence parent. Ordinary
+navigation retains the invocation's scope, including when the target is nested
+several groups deep. Paths through Repeat, Retime or partition owners refuse;
+selecting a whole composite child does not grant access to its interior. The
+root, the current scope itself, missing IDs and historical audio-only owners
+are unavailable. Original, occurrence and duration-only contexts cannot use
+this selection.
+
+Empty nodes can be copied and cut by identity. Repeat still needs positive
+duration. Native `p`/`P` replaces the whole selected child through the semantic
+replacement path; `:splice` currently refuses this selection with guidance to
+use `p`/`P`. Role-only consumers retain their range-only contract and refuse a
+whole-child Node selection. Selecting alone changes neither history nor
+registers. Command entry captures the existing session, revision, scope,
+cursor, selection and role guards.
+
 ### Ranged zoom and creep
 
 On an ordinary selected direct child, `:zoom` and `:creep` over an Edit

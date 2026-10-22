@@ -580,15 +580,15 @@ pub static SPECS: &[Spec] = &[
         keys: &[],
         commands: &[verb(
             "select",
-            ":select role=audio|video|linked  or :select marks start=<exactMarkId> end=<exactMarkId>",
+            ":select role=audio|video|linked  or :select marks start=<exactMarkId> end=<exactMarkId>  or :select node=<exactNodeId>",
         )],
         contexts: C::YOUR_EDIT,
         replay: Replay::RecordedAndDot,
         headless: eq(
-            "role parameter of delete_role / role_repeat; select_mark_range instruction",
+            "role parameter of delete_role / role_repeat; select_mark_range / select_node instructions",
             SEL,
         ),
-        help: "Choose the role a Visual {cut.range} deletes in Your edit: role=audio replaces the range's sound with silence, role=video removes its picture to show the background; neither moves later content or the other role. role=linked restores ordinary cuts; the status line shows the chosen role. With a role, Visual {repeat.range} repeats only that role with 2 plays. :select marks start=native-mark-a end=native-mark-b selects the half-open range between those exact mark IDs in the current ordinary Sequence. Native letter marks use native-mark-<letter>; IDs are exact, not labels or letter shorthand. Missing, ambiguous, reversed, or out-of-scope marks are refused. Bare :select starts or finishes a Visual range like {visual}.",
+        help: "Choose the role a Visual {cut.range} deletes in Your edit: role=audio replaces the range's sound with silence, role=video removes its picture to show the background; neither moves later content or the other role. role=linked restores ordinary cuts; the status line shows the chosen role. With a role, Visual {repeat.range} repeats only that role with 2 plays. :select marks start=native-mark-a end=native-mark-b selects the half-open range between those exact mark IDs in the current ordinary Sequence. Native letter marks use native-mark-<letter>; IDs are exact, not labels or letter shorthand. Missing, ambiguous, reversed, or out-of-scope marks are refused. With role=linked, :select node=<exactNodeId> selects one whole authored node beneath ordinary Sequences in the displayed scope, including an empty group. Its label, exact ID and scope remain visible; motion retains it and {visual} starts a time range. Copy, cut, Group, Duplicate, Repeat and p/P preserve node identity; empty Repeat is refused. Place slice asks you to use p/P for node replacement. Missing or out-of-scope IDs and paths through Repeat or Retime are refused. Bare :select starts or finishes a Visual range like {visual}.",
     },
     // COPY, CUT & PASTE
     Spec {

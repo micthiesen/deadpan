@@ -79,6 +79,8 @@ and write nothing. Headless requests carry an explicit `parent`, `cursor`,
 |---|---|---|---|
 | `v`, `ig`/`ag`, speech objects `iw aw is as ip ap iS aS` | `begin_selection`, `finish_selection`, `clear_selection`, `select_object`, `select_speech` instructions, or `visual_selection` in the request | R, D | Equivalent |
 | `:select role=audio|video|linked` | Role is a parameter of `delete_role` / `role_repeat` instructions | R, D | Equivalent |
+| `:select marks start=<id> end=<id>` | `select_mark_range` instruction or `mark_range` selector; exact mark addresses resolve against each staged ordinary Sequence scope | R, D | Equivalent |
+| `:select node=<id>` with Linked role | `select_node` instruction or `node` selector; exact whole-child identity beneath ordinary Sequence ancestry, including empty children; actual immediate parent retained for edits | R, D | Equivalent |
 | `"a`, `:register a` | Register named in each `yank`/`cut`/`paste` instruction | - | GUI-only |
 | `yy`, `y` + motion/object, Visual `y` in Your edit | `yank`, `yank_beat`, `yank_selection` instructions | R, D | Equivalent |
 | `y` in Original (copy a source moment, `CaptureOriginal`) | `macro <p> --json` with `{"type":"yank_original","register":"a","ordinals":{"start":S,"end":E}}` (optional `asset`): the same `RegisterValue::Original` into `"` and the named register, validated against the qualified index | R (revision and bank version), D | Equivalent |

@@ -78,6 +78,9 @@ pub(super) fn validate_context(
         Some(SemanticVisualSelection::MarkRange { start, end }) => {
             crate::semantic::mark_range::resolve_in_scope(document, context, start, end)?;
         }
+        Some(SemanticVisualSelection::Node { node }) => {
+            crate::semantic::node::resolve_in_scope(document, context, node)?;
+        }
         None => {}
     }
     Ok(())
@@ -99,7 +102,7 @@ where
         {
             SemanticVisualSelection::Time { extending, .. }
             | SemanticVisualSelection::Object { extending, .. } => *extending = false,
-            SemanticVisualSelection::MarkRange { .. } => {}
+            SemanticVisualSelection::MarkRange { .. } | SemanticVisualSelection::Node { .. } => {}
         }
         Ok(())
     }
@@ -109,6 +112,7 @@ where
         selector: &SemanticSelector,
     ) -> Result<ResolvedTarget, EditError> {
         let selection = match selector {
+            SemanticSelector::Node { node } => return self.node_target(node),
             SemanticSelector::SelectedBeat => {
                 let node =
                     self.context.selected_child.clone().ok_or_else(|| {
@@ -136,6 +140,7 @@ where
                     SemanticVisualSelection::Object { selection, .. } => {
                         return self.object_target(selection);
                     }
+                    SemanticVisualSelection::Node { node } => return self.node_target(node),
                     SemanticVisualSelection::Time { anchor, head, .. } => {
                         if anchor == head {
                             return Err(unavailable("the macro Visual selection is empty"));
@@ -217,6 +222,22 @@ where
             selection,
             range,
             attachments,
+        })
+    }
+
+    fn node_target(&self, node: &NodeId) -> Result<ResolvedTarget, EditError> {
+        let target = crate::semantic::node::resolve_in_scope(&self.current, &self.context, node)?;
+        let nested = target.parent != self.context.parent;
+        Ok(ResolvedTarget {
+            parent: target.parent,
+            selection: Some(SliceCaptureSelection::Child { node: node.clone() }),
+            range: target.range,
+            attachments: SliceAttachments::Owned,
+            navigation_parent: self.context.parent.clone(),
+            // A descendant's containing group survives a whole-child edit.
+            // A direct target may itself be removed, so use the reducer's next
+            // child rather than retaining the deleted identity.
+            retained_group: nested.then_some(target.navigation_child),
         })
     }
 

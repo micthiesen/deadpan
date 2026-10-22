@@ -1,0 +1,7 @@
+{
+  "exit": 101,
+  "expected_rewrite_failure": true,
+  "binary": "/Users/michael/Code/deadpan/target/debug/deps/deadpan_app-7e20ea767f3f19d5",
+  "sha256": "7b81099f06fe945d99714402f8f933a5264ab15da26c5a09512cec718c1feef6",
+  "reason": "Completion baseline filters against compiled-in previous verb usage; second generation includes the new select usage."
+}

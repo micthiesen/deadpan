@@ -1,0 +1,27 @@
+{
+  "exit": 0,
+  "tests": 4549,
+  "test_binaries": 155,
+  "seconds": 249.9968693749979,
+  "command": [
+    "cargo",
+    "nextest",
+    "run",
+    "--archive-file",
+    "/tmp/deadpan-explicit-node-selectors-2026-10-22/broad-tests.tar.zst",
+    "--extract-to",
+    "/tmp/deadpan-explicit-node-selectors-2026-10-22/broad-relocated",
+    "--extract-overwrite",
+    "--workspace-remap",
+    "/Users/michael/Code/deadpan",
+    "-E",
+    "package(deadpan-core) | package(deadpan-plan) | package(deadpan-audio) | package(deadpan-store) | package(deadpan-app) | test(macros) | test(semantic) | test(mark) | test(project_commands) | test(selection)",
+    "--test-threads",
+    "8",
+    "--no-fail-fast"
+  ],
+  "archive_sha256": "a1c3678a64180836bd1dc2eccbc639114aec73653dd57a267be9427c2d954c52",
+  "sources_inputs_binaries_unchanged": true,
+  "same_cases_and_test_executable_hashes_as_broad_first": true,
+  "test_threads": 8
+}

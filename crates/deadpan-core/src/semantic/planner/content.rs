@@ -208,7 +208,7 @@ where
     ) -> Result<(), EditError> {
         if matches!(
             self.context.visual_selection,
-            Some(SemanticVisualSelection::Object { .. })
+            Some(SemanticVisualSelection::Object { .. } | SemanticVisualSelection::Node { .. })
         ) {
             return self.replace_selection(index, register);
         }

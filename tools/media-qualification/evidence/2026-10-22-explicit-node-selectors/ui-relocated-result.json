@@ -1,0 +1,24 @@
+{
+  "exit": 0,
+  "tests": 1270,
+  "seconds": 70.65464470908046,
+  "command": [
+    "cargo",
+    "nextest",
+    "run",
+    "--archive-file",
+    "/tmp/deadpan-explicit-node-selectors-2026-10-22/ui-tests.tar.zst",
+    "--extract-to",
+    "/tmp/deadpan-explicit-node-selectors-2026-10-22/ui-relocated",
+    "--extract-overwrite",
+    "--workspace-remap",
+    "/Users/michael/Code/deadpan",
+    "--test-threads",
+    "8",
+    "--no-fail-fast"
+  ],
+  "archive_sha256": "280b15ec1a58222e3c7b2ec34cbe764bc5a993324399cced45993411581c4819",
+  "sources_inputs_binaries_unchanged": true,
+  "same_cases_and_executable_hashes_as_ui_final": true,
+  "test_threads": 8
+}

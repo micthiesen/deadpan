@@ -4,39 +4,42 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Current continuation, 2026-10-22
 
-Named-mark ranges now drive semantic editing through
-`:select marks start=<exactMarkId> end=<exactMarkId>` in ordinary Your edit.
-Selection, native operators, recording, named calls and dot retain mark
-addresses and resolve each staged revision. Exact ordering, quantization,
-scope, ambiguity and clock checks remain authoritative; missing marks cannot
-fall back to a selected beat. Existing one-child role consumers also accept a
-named selection without gaining cross-owner authority.
+Whole authored nodes now drive semantic editing through
+`:select node=<exactNodeId>` in ordinary Your edit with Linked role. Selection,
+recording, named calls and dot retain identity through staged revisions.
+Resolution crosses only ordinary Sequence ancestry inside the captured scope;
+capture and mutation use the actual immediate parent. Empty nodes remain
+structural identities. Missing, out-of-scope and temporal-interior targets
+refuse without fallback. Native p/P replaces a whole child; Place slice and
+role-only consumers retain explicit refusals.
 
-Eight core cases pass. The 4,532-case broad run retains one existing import
-timeout and one passing output-handle marker, both passing exact isolated runs
-of the same binaries. Native carrier boxing then passes all 1,220 normal app
-and 1,266 UI-feature checks without either anomaly. Three final test-only
-allocation cleanups pass the affected cases in both builds. Strict checks and
-formatting pass. Both release native modes pass 95 workflow checks plus Kestrel;
-the compact capture was inspected and quiet state p99 is 2.174ms over 94 samples.
-The release export verifies all 33 pictures and 52,853 samples at zero offset;
-the extracted nine-file owner package validates and passes doctor. See the
-[qualification](../qualification/named-mark-selectors-2026-10-22.md) for exact
-source/binary identities, retained failures, layout warnings and media limits.
+All 52 focused checks, 4,549 broader cases and 1,270 UI-feature cases pass.
+Original-location import timeouts are retained and diagnosed through sampled
+Foundation bookmark/bundle discovery and byte-identical executable-location
+contrasts. Verified Nextest archives preserve all cases, test/helper hashes,
+eight-thread concurrency and existing timeouts. Use that compact execution
+procedure when the Cargo deps directory is large; do not raise the timeout.
+Strict checks pass. Both release native modes pass 84 workflow checks plus
+Kestrel, with inspected nested/empty-node captures and state p99 1.992ms over
+79 samples. Export verifies all 37 pictures and 59,259 samples at zero offset;
+the extracted nine-file owner fixture validates and passes doctor. See the
+[qualification](../qualification/explicit-node-selectors-2026-10-22.md) for
+retained failed setups/runs, identities, layout warnings and media limits.
 No requirement or gate is newly complete.
 
-Next: explicit NodeId selectors for whole authored nodes beneath ordinary
-Sequence ancestry in the captured Edit scope, including empty sibling nodes.
-Keep identity separate from cursor, selected beat and time geometry; use the
-existing whole-child capture/delete path. Refuse absent or out-of-scope IDs and
-paths through temporal interiors without fallback. Start with public nested
-capture, equivalent SelectedBeat and zero-split Cut/inverse controls, plus
-distinct equal-time empty siblings, before the sole old-code positive Node
-wire-admission assertion. A future scratch draft has received read-only review
-but remains uncompiled and unqualified. Then cover staged resolution, native
-selection, recording/dot, durable failure atomicity and actual media.
-Search-result/discontiguous selectors, remaining temporal families, sound
-owners, mastering, renderer work and complete workflows remain required.
+Next: discontiguous whole-node sets, with one union register value, canonical
+structural ordering including equal-time empty siblings, and one atomic Cut
+through actual parents. Separate ordinary Yanks/Cuts overwrite a register and
+are not a union. Preserve one logical mark spanning multiple components when
+pasting; independent capsule pastes can split it into separate marks. Reject
+duplicate and ancestor-overlapping targets and unsupported consumers explicitly.
+Scratch public counterfactual and shared-mark control drafts have read-only
+review, but remain uncompiled and unexecuted. Install and qualify them against
+this completed single-Node baseline before production Nodes admission.
+Then implement durable union copy/cut/paste, native recording/dot and actual
+media. Transcript-search-result selectors also need corrected-analysis freshness
+beyond document revision. Remaining temporal families, sound owners, mastering,
+renderer work and complete workflows remain required.
 
 ## Selected fixed-Retime checkpoint, 2026-10-22
 

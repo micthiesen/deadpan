@@ -1,0 +1,35 @@
+{
+  "audio_windows": 1,
+  "blocks_compared": 2,
+  "declared_audio_priming": 2048,
+  "failures": [],
+  "fixture": "explicit-node",
+  "frames": 37,
+  "max_block_level_db": 0.01870422351586143,
+  "max_thumbnail_mad": 0.05022078804347826,
+  "min_block_snr_db": 39.57415929096763,
+  "min_chroma_psnr_db": 53.44486901527713,
+  "min_luma_psnr_db": 56.454656378842394,
+  "min_neighbor_margin_db": 0.0,
+  "movie": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpE5pnvn/exports/explicit-node.mp4",
+  "notes": [
+    "Real retained cfr-bframes.mp4 A/V at 30000/1001. A public macro grows a direct silent Hold 2 to 3 frames, then resolves explicit whole authored IDs beneath an ordinary nested Group while the cursor and selected beat target other content. It Yanks and Cuts Original18..22 at [9,13), then repeats the distinct Original22..30 node at its new [9,17) twice. Both closed Child captures retain their actual Group parent, qualified asset and owned mark. Full command-history replay, public Undo/Redo and register persistence are checked. All 37 pictures have independent ordinal/background expectations. Encoded audio is compared against canonical preview; no independent PCM oracle is claimed."
+  ],
+  "offsets": [
+    [
+      "verified_zero",
+      0
+    ]
+  ],
+  "package": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpE5pnvn/fixture/explicit-node.deadpan",
+  "passed": true,
+  "pictures": 37,
+  "render_seconds": 1.262570958,
+  "revision": "b545f5c8-b4de-4030-8ccb-ca8a4b16c7aa",
+  "rows": [
+    "Repeat operator",
+    "Hold (insert time)"
+  ],
+  "signal_windows": 1,
+  "verify_seconds": 0.44485625
+}

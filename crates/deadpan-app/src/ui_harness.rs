@@ -53,6 +53,7 @@ pub(crate) const SCENARIOS: &[&str] = &[
     "named-registers",
     "dot-repeat",
     "named-mark-selectors",
+    "explicit-node-selectors",
     "creative-dot",
     "repeat-operator",
     "repeat-setters",

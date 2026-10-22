@@ -127,6 +127,28 @@ in the dotfiles Brewfile); without it only incremental state is pruned. The dev
 profile keeps line tables for workspace crates and omits dependency debug info
 to slow the growth.
 
+Large artifact directories can also delay macOS main-bundle discovery during
+Foundation bookmark creation. The [Node selector qualification](qualification/explicit-node-selectors-2026-10-22.md)
+records identical normal/UI test binaries timing out during import at their
+Cargo deps location and passing from compact copies, with sampled import
+threads in CFBundle directory enumeration. Preserve the failure and diagnose
+the thread before changing a timeout. A standard Nextest archive provides a
+compact execution tree without recompiling or changing test concurrency:
+
+```sh
+cargo nextest archive --locked -p deadpan-app --features ui-harness \
+  --archive-file /tmp/deadpan-app-tests.tar.zst
+mkdir -p /tmp/deadpan-app-tests
+cargo nextest run --archive-file /tmp/deadpan-app-tests.tar.zst \
+  --extract-to /tmp/deadpan-app-tests --test-threads 8 --no-fail-fast
+```
+
+Keep the pinned FFmpeg prefix available. Retain any required sibling helpers
+that the archive does not include, and verify their hashes along with the
+test binaries and selected case inventory. This changes the test executable
+location; it does not qualify bookmark behavior for a bare executable in an
+arbitrary large directory or establish packaged-app performance.
+
 Workspace integration tests already build and exercise the normal application,
 CLI and media-worker executables, including doctor. A separate workspace build
 and doctor invocation add no required coverage after those tests. Use builds

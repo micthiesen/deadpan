@@ -1,0 +1,62 @@
+{
+  "baseline-source": {
+    "archive": "baseline-source.tar.gz",
+    "manifest": "baseline-source-identities.json.gz",
+    "files": 1971,
+    "content_sha256": "1af6ffb160acd2a889a0ae722360b4128b4cbf4b6289c216d8854fa6641da68c"
+  },
+  "broad-first-source": {
+    "archive": "broad-first-source.tar.gz",
+    "manifest": "broad-first-source-identities.json.gz",
+    "files": 1977,
+    "content_sha256": "f803b6af5311c7712c9e3857261c80035bc4eb3c4bb4b1582495dd8102886970"
+  },
+  "debug-first-source": {
+    "archive": "debug-first-source.tar.gz",
+    "manifest": "debug-first-source-identities.json.gz",
+    "files": 1977,
+    "content_sha256": "b87bd4057f4d37841c6da498122a85395d231a93ab03da6cea95f7ce9614b5d9"
+  },
+  "debug-second-source": {
+    "archive": "broad-first-source.tar.gz",
+    "manifest": "debug-second-source-identities.json.gz",
+    "files": 1977,
+    "content_sha256": "f803b6af5311c7712c9e3857261c80035bc4eb3c4bb4b1582495dd8102886970"
+  },
+  "focused-app-second-source": {
+    "archive": "debug-first-source.tar.gz",
+    "manifest": "focused-app-second-source-identities.json.gz",
+    "files": 1977,
+    "content_sha256": "b87bd4057f4d37841c6da498122a85395d231a93ab03da6cea95f7ce9614b5d9"
+  },
+  "focused-first-source": {
+    "archive": "focused-first-source.tar.gz",
+    "manifest": "focused-first-source-identities.json.gz",
+    "files": 1977,
+    "content_sha256": "9ab5f6f8f48aa59455e5c8f3f9eea501cfb046c69ff262bf749fbb480a28e6fa"
+  },
+  "integrated-first-source": {
+    "archive": "integrated-first-source.tar.gz",
+    "manifest": "integrated-first-source-identities.json.gz",
+    "files": 1977,
+    "content_sha256": "34a17ba7609c7a935c97ac6725c64866c00516da0aa36180bb1ff7bc86ffa08e"
+  },
+  "integrated-second-source": {
+    "archive": "integrated-second-source.tar.gz",
+    "manifest": "integrated-second-source-identities.json.gz",
+    "files": 1977,
+    "content_sha256": "ad4d24feb8f0d55ae95b6b58b8034c5662082098ed0e5b958bd2f58b2aa637e0"
+  },
+  "registry-second-source": {
+    "archive": "debug-first-source.tar.gz",
+    "manifest": "registry-second-source-identities.json.gz",
+    "files": 1977,
+    "content_sha256": "b87bd4057f4d37841c6da498122a85395d231a93ab03da6cea95f7ce9614b5d9"
+  },
+  "release-final-source": {
+    "archive": "broad-first-source.tar.gz",
+    "manifest": "release-final-source-identities.json.gz",
+    "files": 1977,
+    "content_sha256": "f803b6af5311c7712c9e3857261c80035bc4eb3c4bb4b1582495dd8102886970"
+  }
+}
