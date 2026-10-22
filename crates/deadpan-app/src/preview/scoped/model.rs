@@ -84,6 +84,7 @@ struct Index {
     plan: Arc<RenderPlan>,
     parents: BTreeMap<NodeId, NodeId>,
     clocked_retimes: BTreeSet<NodeId>,
+    gap_roots: BTreeSet<NodeId>,
     sequence_offsets: BTreeMap<NodeId, i64>,
     durations: BTreeMap<NodeId, FrameDuration>,
     repeats: BTreeMap<NodeId, RepeatLayout>,
@@ -106,16 +107,6 @@ impl State {
                 .mapped_also
                 .as_ref()
                 .is_some_and(|(primary, also)| primary == &self.selected && !also.is_empty())
-            || (!self
-                .selected
-                .repeats
-                .iter()
-                .all(|step| matches!(step.branch, RepeatEditBranch::Play { .. }))
-                && !self
-                    .selected
-                    .repeats
-                    .iter()
-                    .all(|step| step.branch == RepeatEditBranch::Default))
             || !self.hold_duration_available()
         {
             return None;
@@ -141,7 +132,7 @@ impl State {
             .selected
             .repeats
             .iter()
-            .all(|step| step.branch == RepeatEditBranch::Default)
+            .any(|step| step.branch == RepeatEditBranch::Default)
         {
             if !matches!(
                 self.index.document.nodes()[&self.selected.node].kind,
@@ -156,6 +147,9 @@ impl State {
             }
             let mut node = &self.selected.node;
             for _ in 0..=MAX_DOCUMENT_DEPTH {
+                if self.index.gap_roots.contains(node) {
+                    return false;
+                }
                 let Some(parent) = self.index.parents.get(node) else {
                     return true;
                 };
@@ -1211,11 +1205,17 @@ impl Index {
             }
         }
         let clocked_retimes = document.retimes_with_derived_clocks();
+        let gap_roots = document
+            .gap_overrides()
+            .values()
+            .flat_map(|entries| entries.iter().map(|(_, root)| root.clone()))
+            .collect();
         Ok(Self {
             document,
             plan,
             parents,
             clocked_retimes,
+            gap_roots,
             sequence_offsets,
             durations,
             repeats,

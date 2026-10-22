@@ -14,6 +14,8 @@ mod current_controls;
 mod insertion;
 #[path = "preparations/scoped_duration.rs"]
 mod scoped_duration;
+#[path = "preparations/scoped_mixed_duration.rs"]
+mod scoped_mixed_duration;
 
 struct Relevant;
 impl GenerationContextResolver for Relevant {

@@ -1,0 +1,452 @@
+{
+  "binaries": {
+    "deadpan-cli::preview_export": {
+      "path": "/Users/michael/Code/deadpan/target/release/deps/preview_export-633f4b90e83a29ac",
+      "retained": "/tmp/deadpan-mixed-hold-duration-next-2026-10-21/encoded-bin/preview_export-633f4b90e83a29ac",
+      "sha256": "267ec80322ba4a6d0c580204a507f8f3ccabf28e6a6bf6adc6b3c087fbc38bde",
+      "bytes": 25421968
+    },
+    "deadpan-cli": {
+      "path": "/Users/michael/Code/deadpan/target/release/deadpan-cli",
+      "retained": "/tmp/deadpan-mixed-hold-duration-next-2026-10-21/encoded-bin/deadpan-cli",
+      "sha256": "d5320851df16cd32dcd873e2dcaeca203032488a5403c09a5855dd46576f918a",
+      "bytes": 48612976
+    },
+    "deadpan-media-worker": {
+      "path": "/Users/michael/Code/deadpan/target/release/deadpan-media-worker",
+      "retained": "/tmp/deadpan-mixed-hold-duration-next-2026-10-21/encoded-bin/deadpan-media-worker",
+      "sha256": "70114641de62f0c9c839734f3dddab1221b01888661a43ed5583e40ca9ed90fe",
+      "bytes": 1169872
+    },
+    "deadpan-transcribe": {
+      "path": "/Users/michael/Code/deadpan/target/release/deadpan-transcribe",
+      "retained": "/tmp/deadpan-mixed-hold-duration-next-2026-10-21/encoded-bin/deadpan-transcribe",
+      "sha256": "a75e83e94c073fa7419fea1ffc4621ab56adba020d402435c65622dababbe8b3",
+      "bytes": 2603984
+    },
+    "deadpan-track": {
+      "path": "/Users/michael/Code/deadpan/target/release/deadpan-track",
+      "retained": "/tmp/deadpan-mixed-hold-duration-next-2026-10-21/encoded-bin/deadpan-track",
+      "sha256": "97564bc5d9aee093aa7e3fa5e8a89aa5da68134f92f34032a407f27778c1eab4",
+      "bytes": 1656592
+    }
+  },
+  "outputs": [
+    {
+      "movie": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpeMBNGu/exports-outer-grow/mixed-outer-play-hold-duration-grow.mp4",
+      "movie_bytes": 22405,
+      "movie_sha256": "8a5c0e3559f6ad0768398bd7d16fef7d1ed08965c3f37e7944c56c5bed067000",
+      "package": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpeMBNGu/outer-grow/mixed-outer-play-hold-duration-grow.deadpan",
+      "package_files": [
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpeMBNGu/outer-grow/mixed-outer-play-hold-duration-grow.deadpan/.render-candidates.lock",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpeMBNGu/outer-grow/mixed-outer-play-hold-duration-grow.deadpan/.writer.lock",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpeMBNGu/outer-grow/mixed-outer-play-hold-duration-grow.deadpan/Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+          "bytes": 39157,
+          "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpeMBNGu/outer-grow/mixed-outer-play-hold-duration-grow.deadpan/Media/RenderCandidates/blake3-52d40ae976396615ff170cfe3d3f6f5e219513e1cb02aebd3336ca7dd1a46204",
+          "bytes": 22405,
+          "sha256": "8a5c0e3559f6ad0768398bd7d16fef7d1ed08965c3f37e7944c56c5bed067000"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpeMBNGu/outer-grow/mixed-outer-play-hold-duration-grow.deadpan/Media/RenderCandidates/blake3-af3eeaed0a9bfa271b68b0edc54179071f31451fe01a95794ddea43908067e44",
+          "bytes": 15116,
+          "sha256": "47384df13f4c187b8e9479142fd925a17382238277df3111590ad81e14c623fd"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpeMBNGu/outer-grow/mixed-outer-play-hold-duration-grow.deadpan/manifest.json",
+          "bytes": 82,
+          "sha256": "ce2f60f2dde465e39c60f86316b70dc86a1c0ecbefdd4b92a830d14a9c73fdd8"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpeMBNGu/outer-grow/mixed-outer-play-hold-duration-grow.deadpan/project.sqlite",
+          "bytes": 667648,
+          "sha256": "367dedfad0e60f8c9d3a8a2dc56bda81a80b56002340804a11f820725a98dfea"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpeMBNGu/outer-grow/mixed-outer-play-hold-duration-grow.deadpan/project.sqlite-shm",
+          "bytes": 32768,
+          "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpeMBNGu/outer-grow/mixed-outer-play-hold-duration-grow.deadpan/project.sqlite-wal",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "summary": {
+        "audio_windows_checked": 2,
+        "audio_windows_failed": 0,
+        "blocks_compared": 5,
+        "index_observable_comparisons": 70,
+        "index_unobservable_comparisons": 56,
+        "max_block_level_db": 0.08858506135997857,
+        "max_local_luma_error": 2.125,
+        "max_thumbnail_mad": 0.05022078804347826,
+        "min_block_snr_db": 29.923751304193505,
+        "min_chroma_psnr_db": 53.44486901527713,
+        "min_luma_psnr_db": 56.454656378842394,
+        "min_neighbor_margin_db": 0.0,
+        "nonzero_offsets": 0,
+        "offset_unobservable_windows": 0,
+        "offset_verified_windows": 2,
+        "pictures_checked": 64,
+        "pictures_failed": 0,
+        "pictures_without_index_neighbors": 0,
+        "signal_windows": 2
+      },
+      "audio_windows": [
+        {
+          "window": [
+            0,
+            48000
+          ],
+          "project_samples": [
+            0,
+            48000
+          ],
+          "measured_offset_samples": 0,
+          "offset_status": "verified_zero",
+          "uncovered_samples": 0,
+          "flags": []
+        },
+        {
+          "window": [
+            48000,
+            102502
+          ],
+          "project_samples": [
+            48000,
+            102502
+          ],
+          "measured_offset_samples": 0,
+          "offset_status": "verified_zero",
+          "uncovered_samples": 0,
+          "flags": []
+        }
+      ]
+    },
+    {
+      "movie": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpeMBNGu/exports-outer-shrink/mixed-outer-play-hold-duration-shrink.mp4",
+      "movie_bytes": 23018,
+      "movie_sha256": "8d93467ca1ba5f9c97e4fa2cec7a1b1669588a28c70ce341e908e662a2abc793",
+      "package": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpeMBNGu/outer-shrink/mixed-outer-play-hold-duration-shrink.deadpan",
+      "package_files": [
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpeMBNGu/outer-shrink/mixed-outer-play-hold-duration-shrink.deadpan/.render-candidates.lock",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpeMBNGu/outer-shrink/mixed-outer-play-hold-duration-shrink.deadpan/.writer.lock",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpeMBNGu/outer-shrink/mixed-outer-play-hold-duration-shrink.deadpan/Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+          "bytes": 39157,
+          "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpeMBNGu/outer-shrink/mixed-outer-play-hold-duration-shrink.deadpan/Media/RenderCandidates/blake3-2ad7ab3b6b647c98cc926b57d32c1d0888050012356e3cb0d9d489d017b876f6",
+          "bytes": 15118,
+          "sha256": "4f68faadcd254d0f8ccad589e226accc5048fe6459971f96dbf656694f5fa3f9"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpeMBNGu/outer-shrink/mixed-outer-play-hold-duration-shrink.deadpan/Media/RenderCandidates/blake3-539acb1a8b7c9e8830616ea55348e4b6b52b421f54c113bd8b2a15d3b67c8f06",
+          "bytes": 23018,
+          "sha256": "8d93467ca1ba5f9c97e4fa2cec7a1b1669588a28c70ce341e908e662a2abc793"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpeMBNGu/outer-shrink/mixed-outer-play-hold-duration-shrink.deadpan/manifest.json",
+          "bytes": 82,
+          "sha256": "08a2602ed9c3bbbeb8b6a84a43b83ce84b5dcc3773edbaa471e1b52a7883b708"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpeMBNGu/outer-shrink/mixed-outer-play-hold-duration-shrink.deadpan/project.sqlite",
+          "bytes": 671744,
+          "sha256": "234d628f2c0c3e672cc8977687fe14331612d693fd3f26e412e8be1ace7781c5"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpeMBNGu/outer-shrink/mixed-outer-play-hold-duration-shrink.deadpan/project.sqlite-shm",
+          "bytes": 32768,
+          "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpeMBNGu/outer-shrink/mixed-outer-play-hold-duration-shrink.deadpan/project.sqlite-wal",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "summary": {
+        "audio_windows_checked": 2,
+        "audio_windows_failed": 0,
+        "blocks_compared": 5,
+        "index_observable_comparisons": 70,
+        "index_unobservable_comparisons": 40,
+        "max_block_level_db": 0.03457017888037228,
+        "max_local_luma_error": 2.125,
+        "max_thumbnail_mad": 0.05022078804347826,
+        "min_block_snr_db": 32.58932214202816,
+        "min_chroma_psnr_db": 53.44486901527713,
+        "min_luma_psnr_db": 56.454656378842394,
+        "min_neighbor_margin_db": 0.0,
+        "nonzero_offsets": 0,
+        "offset_unobservable_windows": 0,
+        "offset_verified_windows": 2,
+        "pictures_checked": 56,
+        "pictures_failed": 0,
+        "pictures_without_index_neighbors": 0,
+        "signal_windows": 2
+      },
+      "audio_windows": [
+        {
+          "window": [
+            0,
+            48000
+          ],
+          "project_samples": [
+            0,
+            48000
+          ],
+          "measured_offset_samples": 0,
+          "offset_status": "verified_zero",
+          "uncovered_samples": 0,
+          "flags": []
+        },
+        {
+          "window": [
+            48000,
+            89690
+          ],
+          "project_samples": [
+            48000,
+            89690
+          ],
+          "measured_offset_samples": 0,
+          "offset_status": "verified_zero",
+          "uncovered_samples": 0,
+          "flags": []
+        }
+      ]
+    },
+    {
+      "movie": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpeMBNGu/exports-inner-grow/mixed-inner-play-hold-duration-grow.mp4",
+      "movie_bytes": 22777,
+      "movie_sha256": "b823327733e26ff79d21b0c68131e667b578d622effb504b282461a139134c27",
+      "package": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpeMBNGu/inner-grow/mixed-inner-play-hold-duration-grow.deadpan",
+      "package_files": [
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpeMBNGu/inner-grow/mixed-inner-play-hold-duration-grow.deadpan/.render-candidates.lock",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpeMBNGu/inner-grow/mixed-inner-play-hold-duration-grow.deadpan/.writer.lock",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpeMBNGu/inner-grow/mixed-inner-play-hold-duration-grow.deadpan/Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+          "bytes": 39157,
+          "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpeMBNGu/inner-grow/mixed-inner-play-hold-duration-grow.deadpan/Media/RenderCandidates/blake3-65f14548b4563c5a09a8d217f77f00b173e2928495e92fd2a99e016c3854b3b8",
+          "bytes": 15116,
+          "sha256": "04950df14f1f17426872cdffa1716edadbb4855fe93ddd8b51e24d6b19f045f1"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpeMBNGu/inner-grow/mixed-inner-play-hold-duration-grow.deadpan/Media/RenderCandidates/blake3-84ffc2d6eede02a8e3b87e2ec3f58e02da35fbe3fbf95b7ecf7d951b27938753",
+          "bytes": 22777,
+          "sha256": "b823327733e26ff79d21b0c68131e667b578d622effb504b282461a139134c27"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpeMBNGu/inner-grow/mixed-inner-play-hold-duration-grow.deadpan/manifest.json",
+          "bytes": 82,
+          "sha256": "06ca9d90ddc7ec29ca657dbed0acb8abbafebd9d1ca6c3fd7f8ef83aad40a1a8"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpeMBNGu/inner-grow/mixed-inner-play-hold-duration-grow.deadpan/project.sqlite",
+          "bytes": 667648,
+          "sha256": "0ffed0352c41314c23c690c07ccabc77a36b16bff80a6768d104946de7088fc1"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpeMBNGu/inner-grow/mixed-inner-play-hold-duration-grow.deadpan/project.sqlite-shm",
+          "bytes": 32768,
+          "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpeMBNGu/inner-grow/mixed-inner-play-hold-duration-grow.deadpan/project.sqlite-wal",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "summary": {
+        "audio_windows_checked": 2,
+        "audio_windows_failed": 0,
+        "blocks_compared": 5,
+        "index_observable_comparisons": 70,
+        "index_unobservable_comparisons": 56,
+        "max_block_level_db": 0.08858506135997857,
+        "max_local_luma_error": 2.125,
+        "max_thumbnail_mad": 0.05022078804347826,
+        "min_block_snr_db": 29.923751304193505,
+        "min_chroma_psnr_db": 53.44486901527713,
+        "min_luma_psnr_db": 56.454656378842394,
+        "min_neighbor_margin_db": 0.0,
+        "nonzero_offsets": 0,
+        "offset_unobservable_windows": 0,
+        "offset_verified_windows": 2,
+        "pictures_checked": 64,
+        "pictures_failed": 0,
+        "pictures_without_index_neighbors": 0,
+        "signal_windows": 2
+      },
+      "audio_windows": [
+        {
+          "window": [
+            0,
+            48000
+          ],
+          "project_samples": [
+            0,
+            48000
+          ],
+          "measured_offset_samples": 0,
+          "offset_status": "verified_zero",
+          "uncovered_samples": 0,
+          "flags": []
+        },
+        {
+          "window": [
+            48000,
+            102502
+          ],
+          "project_samples": [
+            48000,
+            102502
+          ],
+          "measured_offset_samples": 0,
+          "offset_status": "verified_zero",
+          "uncovered_samples": 0,
+          "flags": []
+        }
+      ]
+    },
+    {
+      "movie": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpeMBNGu/exports-inner-shrink/mixed-inner-play-hold-duration-shrink.mp4",
+      "movie_bytes": 22577,
+      "movie_sha256": "1fa9a36f476ea61fa7eb61cfb2cf718ec887ad067beac1db037df84e62e0145f",
+      "package": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpeMBNGu/inner-shrink/mixed-inner-play-hold-duration-shrink.deadpan",
+      "package_files": [
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpeMBNGu/inner-shrink/mixed-inner-play-hold-duration-shrink.deadpan/.render-candidates.lock",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpeMBNGu/inner-shrink/mixed-inner-play-hold-duration-shrink.deadpan/.writer.lock",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpeMBNGu/inner-shrink/mixed-inner-play-hold-duration-shrink.deadpan/Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+          "bytes": 39157,
+          "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpeMBNGu/inner-shrink/mixed-inner-play-hold-duration-shrink.deadpan/Media/RenderCandidates/blake3-1fee9cbd96f46fe3bba6de680e5158941b4476a0dbbdd5e5784850c06be68d5a",
+          "bytes": 15118,
+          "sha256": "10925809ce67b252f5ead0243f54034a810941cde4051f22a4a55d4ef2dbf63a"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpeMBNGu/inner-shrink/mixed-inner-play-hold-duration-shrink.deadpan/Media/RenderCandidates/blake3-aa90f92f55d069b63d9f59490fe21101e156718494b5a6ee44cd05502ce650df",
+          "bytes": 22577,
+          "sha256": "1fa9a36f476ea61fa7eb61cfb2cf718ec887ad067beac1db037df84e62e0145f"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpeMBNGu/inner-shrink/mixed-inner-play-hold-duration-shrink.deadpan/manifest.json",
+          "bytes": 82,
+          "sha256": "2a9c1889a31f337517b7a60da5beadf0b5c4ead970354946f602d2f632cd8c25"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpeMBNGu/inner-shrink/mixed-inner-play-hold-duration-shrink.deadpan/project.sqlite",
+          "bytes": 667648,
+          "sha256": "20140cd83d7968f59534e759651d73617e3daa942f0f000bf89d5570b7233055"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpeMBNGu/inner-shrink/mixed-inner-play-hold-duration-shrink.deadpan/project.sqlite-shm",
+          "bytes": 32768,
+          "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpeMBNGu/inner-shrink/mixed-inner-play-hold-duration-shrink.deadpan/project.sqlite-wal",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "summary": {
+        "audio_windows_checked": 2,
+        "audio_windows_failed": 0,
+        "blocks_compared": 5,
+        "index_observable_comparisons": 70,
+        "index_unobservable_comparisons": 40,
+        "max_block_level_db": 0.03457017888037228,
+        "max_local_luma_error": 2.125,
+        "max_thumbnail_mad": 0.05022078804347826,
+        "min_block_snr_db": 32.58932214202816,
+        "min_chroma_psnr_db": 53.44486901527713,
+        "min_luma_psnr_db": 56.454656378842394,
+        "min_neighbor_margin_db": 0.0,
+        "nonzero_offsets": 0,
+        "offset_unobservable_windows": 0,
+        "offset_verified_windows": 2,
+        "pictures_checked": 56,
+        "pictures_failed": 0,
+        "pictures_without_index_neighbors": 0,
+        "signal_windows": 2
+      },
+      "audio_windows": [
+        {
+          "window": [
+            0,
+            48000
+          ],
+          "project_samples": [
+            0,
+            48000
+          ],
+          "measured_offset_samples": 0,
+          "offset_status": "verified_zero",
+          "uncovered_samples": 0,
+          "flags": []
+        },
+        {
+          "window": [
+            48000,
+            89690
+          ],
+          "project_samples": [
+            48000,
+            89690
+          ],
+          "measured_offset_samples": 0,
+          "offset_status": "verified_zero",
+          "uncovered_samples": 0,
+          "flags": []
+        }
+      ]
+    }
+  ]
+}

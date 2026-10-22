@@ -12,6 +12,7 @@ mod gain_macros;
 mod heterogeneous_pauses;
 mod hold_audio;
 mod hold_duration;
+mod mixed_hold_duration;
 mod mute_macros;
 mod pause_macros;
 mod pauses;
@@ -249,6 +250,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     hold_duration::run(d)?;
     fixed_hold_duration::run(d)?;
     shared_hold_duration::run(d)?;
+    mixed_hold_duration::run(d)?;
     hold_audio::run(d)?;
     pauses::run(d)?;
     analysis_navigation::run(d)?;

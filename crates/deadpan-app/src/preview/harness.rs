@@ -890,8 +890,9 @@ impl Driver<'_> {
         let frame_budget = if self.report.name == "ai-playback-interference" {
             24_000
         } else if self.report.name == "scoped-plays" {
-            // Shared and dormant duration cases extend the retained trace.
-            7000
+            // Both mixed directions, their isolation histories and dormant
+            // authoring extend the measured 6,742-frame shared-duration trace.
+            9000
         } else {
             6000
         };
@@ -1105,8 +1106,16 @@ impl Driver<'_> {
             .last()
             .is_some_and(|step| step.screenshot.is_none());
         if self.options.mode == RunMode::Visual && missing {
-            if self.captures >= 160 {
-                return Err("Named checkpoint capture exceeded the 160-image hard limit".into());
+            // The scoped trace also retains mixed-duration comparisons.
+            let hard_limit = if self.report.name == "scoped-plays" {
+                180
+            } else {
+                160
+            };
+            if self.captures >= hard_limit {
+                return Err(format!(
+                    "Named checkpoint capture exceeded the {hard_limit}-image hard limit"
+                ));
             }
             self.captures += 1;
             let name = format!("{}-{:03}.png", self.report.name, self.captures);

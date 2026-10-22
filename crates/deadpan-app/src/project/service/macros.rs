@@ -20,6 +20,36 @@ fn scoped_macro_target(
     scope: &SequenceScope,
     context: &deadpan_core::SemanticContext,
 ) -> Result<Option<crate::project::scoped::Target>> {
+    if let Some(authority) = &context.mixed_hold_duration {
+        if context.shared_hold_duration.is_some()
+            || context.hold_duration.is_some()
+            || context.scoped.is_some()
+            || context.original.is_some()
+            || context.visual_selection.is_some()
+            || context.selected_child.as_ref() != Some(&authority.root)
+        {
+            return Err(
+                "Mixed pause length requires its captured Hold without another selection.".into(),
+            );
+        }
+        let target = crate::project::scoped::Target {
+            session: id.session,
+            navigation: 0,
+            project: id.project.clone(),
+            revision: id.revision.clone(),
+            scope: scope.clone(),
+            root: authority.root.clone(),
+            target: authority.target.clone(),
+            presentation: authority.presentation.clone(),
+            cursor: context.cursor,
+            also: Vec::new(),
+        };
+        target.validate_request(workspace, id.session, &id.revision, scope, context.cursor)?;
+        if target.semantic_mixed_hold_duration(workspace)? != **authority {
+            return Err("Mixed pause length differs from its captured native authority.".into());
+        }
+        return Ok(Some(target));
+    }
     if let Some(authority) = &context.shared_hold_duration {
         if context.hold_duration.is_some()
             || context.scoped.is_some()
@@ -105,10 +135,70 @@ fn scoped_macro_target(
 }
 
 fn scoped_macro_receipt(
+    document: &deadpan_core::ProjectDocument,
     before: Option<crate::project::scoped::Target>,
     context: &deadpan_core::SemanticContext,
     plan: &SemanticPlan,
 ) -> Result<Option<crate::project::scoped::Commit>> {
+    if let Some(authority) = &context.mixed_hold_duration {
+        let before = before.ok_or("Mixed pause length lost its native capture.")?;
+        let request = plan
+            .request
+            .as_ref()
+            .ok_or("Mixed pause length has no executed edit.")?;
+        let proof = deadpan_core::derive_scoped_isolation(document, request, &plan.document)
+            .map_err(display)?;
+        let mapped = deadpan_core::SemanticMixedHoldDurationContext {
+            root: authority.root.clone(),
+            target: proof.map_forward(&authority.target).map_err(display)?,
+            presentation: authority
+                .presentation
+                .as_ref()
+                .map(|instance| proof.map_instance_forward(instance))
+                .transpose()
+                .map_err(display)?,
+        };
+        let visible = plan
+            .document
+            .mixed_hold_duration_visibility(&context.parent, &mapped)
+            .map_err(display)?;
+        let mut expected = context.clone();
+        expected.mixed_hold_duration = Some(Box::new(mapped.clone()));
+        if let Some(visible) = visible {
+            expected.cursor = visible.frames.start();
+            let instance = mapped
+                .presentation
+                .as_ref()
+                .ok_or("Mixed pause lost its presentation.")?;
+            let pictures = RenderPlan::compile(&plan.document).map_err(display)?;
+            for frame in [
+                visible.frames.start(),
+                deadpan_core::ProjectFrame(visible.frames.end().0 - 1),
+            ] {
+                if !pictures
+                    .picture(frame)
+                    .map_err(display)?
+                    .framing
+                    .iter()
+                    .any(|layer| &layer.instance == instance)
+                {
+                    return Err("Resized mixed pause no longer presents its captured Hold.".into());
+                }
+            }
+        }
+        if expected != plan.context {
+            return Err(
+                "Mixed pause length lost its executed isolation or exact continuation.".into(),
+            );
+        }
+        return Ok(Some(crate::project::scoped::Commit {
+            before,
+            revision: plan.document.revision_id().clone(),
+            target: mapped.target,
+            presentation: mapped.presentation,
+            also: None,
+        }));
+    }
     if let Some(authority) = &context.shared_hold_duration {
         let before = before.ok_or("Shared pause length lost its native capture.")?;
         let visible = plan
@@ -515,7 +605,8 @@ impl Service {
                     &final_picture_plan,
                     &plan.context.parent,
                 )?;
-                let scoped_receipt = scoped_macro_receipt(scoped_before, context, &plan)?;
+                let scoped_receipt =
+                    scoped_macro_receipt(&document, scoped_before, context, &plan)?;
                 let mut receipt = Receipt {
                     id: id.clone(),
                     bank_version: stored.version,

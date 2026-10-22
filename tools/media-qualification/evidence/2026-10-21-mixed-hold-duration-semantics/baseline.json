@@ -1,0 +1,17 @@
+{
+  "base": "bcbf8493",
+  "production_changes": false,
+  "run_exit": 100,
+  "tests": 2,
+  "failed": 2,
+  "filtered": 1207,
+  "seconds": 0.352,
+  "intended_assertion": "State::hold_parameter expected Some hold-duration2f, actual None, after qualified setup and raw mixed isolation controls",
+  "binary": "/Users/michael/Code/deadpan/target/debug/deps/deadpan_app-edbbed39ebf1d72f",
+  "binary_sha256": "c93dcf3a646945a7cabc9159a4aa32c7cb72624cbf07f70a75fa51998a03d638",
+  "sources": {
+    "crates/deadpan-app/src/preview/scoped/model/tests.rs": "72887b515832bf5c7d1864f2820806b8f82198a71758fd9470f244689f7f843c",
+    "crates/deadpan-app/src/preview/scoped/model/tests/mixed_duration.rs": "6c46620dba587bf86eb01592c59c0138e6a17a8b23c26ca5269637cadf73fa8b"
+  },
+  "setup_failure": "First --lib selection ran zero tests; corrected by selecting app binary tests. Preserved baseline-setup-no-tests.log."
+}

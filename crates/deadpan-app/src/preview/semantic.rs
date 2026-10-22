@@ -18,11 +18,12 @@ impl super::DeadpanApp {
             .edit_for(self.workspace.as_ref()?)
             .ok()?;
         if self.scoped.as_ref().is_some_and(|state| {
-            state
-                .selected_target()
-                .repeats
-                .iter()
-                .all(|step| step.branch == deadpan_core::RepeatEditBranch::Default)
+            state.selected_target().repeats.is_empty()
+                || state
+                    .selected_target()
+                    .repeats
+                    .iter()
+                    .any(|step| step.branch == deadpan_core::RepeatEditBranch::Default)
         }) && !matches!(
             edit.operation,
             RepeatableEdit::Parameter(deadpan_core::SemanticInstruction::SetHoldDuration { .. })

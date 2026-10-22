@@ -7,7 +7,7 @@ use crate::project::scoped::Target;
 
 pub(super) mod model;
 
-const STRUCTURE_UNAVAILABLE: &str = "Inside Repeat and Retime contents, gain, Camera, pause audio and AI pictures are available. Repeat pauses follow each level's All plays, This play or selected plays choice. Pause length supports All plays at every level or This play at every level; AI pauses require one play at every level. Other timing edits and range copying require the parent.";
+const STRUCTURE_UNAVAILABLE: &str = "Inside Repeat and Retime contents, gain, Camera, pause audio and AI pictures are available. Repeat pauses follow each level's All plays, This play or selected plays choice. Pause length follows each level's All plays or This play choice for one Hold; AI pauses require one play at every level. Other timing edits and range copying require the parent.";
 
 impl DeadpanApp {
     pub(super) fn focus_scoped_pane(&mut self, pane: Pane) {

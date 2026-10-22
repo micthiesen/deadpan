@@ -1,0 +1,85 @@
+{
+  "base": "bcbf8493cdf709a2321e616cb8b1b6b3edb3ddd0",
+  "tests": [
+    {
+      "log": "focused.log",
+      "source_snapshot": "final-source-before-boxing",
+      "summary": [
+        "Summary [  23.217s] 15 tests run: 15 passed, 5186 skipped"
+      ],
+      "leak_markers": []
+    },
+    {
+      "log": "normal.log",
+      "source_snapshot": "final-source-before-boxing",
+      "summary": [
+        "Summary [ 142.694s] 3431 tests run: 3431 passed (3 slow, 1 leaky), 1770 skipped"
+      ],
+      "leak_markers": [
+        "LEAK [   0.214s] (  90/3431) deadpan-app::bin/deadpan-app preview::scoped::model::tests::fixed_duration::ordinary_duration_availability_visits_only_selected_ancestry_beside_a_million_plays"
+      ]
+    },
+    {
+      "log": "ui.log",
+      "source_snapshot": "final-source-before-boxing",
+      "summary": [
+        "Summary [  15.090s] 197 tests run: 197 passed (2 leaky), 1060 skipped"
+      ],
+      "leak_markers": [
+        "LEAK [   0.218s] ( 91/197) deadpan-app::bin/deadpan-app preview::scoped::model::tests::exact_mark_transition_preserves_current_nested_navigation_and_repeated_receipt_is_noop",
+        "LEAK [   0.215s] ( 92/197) deadpan-app::bin/deadpan-app preview::scoped::model::tests::terminal_cursor_uses_a_visible_sample_instead_of_unsampled_first_plays"
+      ]
+    },
+    {
+      "log": "final-regression.log",
+      "source_snapshot": "final-source-before-dedup",
+      "summary": [
+        "Summary [  70.648s] 759 tests run: 759 passed (1 leaky), 4442 skipped"
+      ],
+      "leak_markers": [
+        "LEAK [   0.985s] (199/759) deadpan-audio::audio_definition mix::scoped_mix_sums_two_decoded_rates_and_keeps_exhaustion_and_gates_per_voice"
+      ]
+    },
+    {
+      "log": "final-ui.log",
+      "source_snapshot": "final-source-before-dedup",
+      "summary": [
+        "Summary [  15.255s] 197 tests run: 197 passed, 1060 skipped"
+      ],
+      "leak_markers": []
+    },
+    {
+      "log": "harness-ui-tests.log",
+      "source_snapshot": "final-source-first",
+      "summary": [
+        "Summary [  15.112s] 197 tests run: 197 passed, 1060 skipped"
+      ],
+      "leak_markers": []
+    },
+    {
+      "log": "quiet-tests.log",
+      "source_snapshot": "final-source-before-dedup",
+      "summary": [
+        "Summary [   0.030s] 3 tests run: 3 passed, 1250 skipped"
+      ],
+      "leak_markers": []
+    },
+    {
+      "log": "encoded.log",
+      "source_snapshot": "final-source",
+      "summary": [
+        "Summary [  20.443s] 1 test run: 1 passed, 49 skipped"
+      ],
+      "leak_markers": []
+    }
+  ],
+  "strict_checks": {
+    "command_reference": "commands_reference_is_current passes final regression; update-mode intentional rewrite failure retained",
+    "format": "harness-format.log",
+    "changed_packages_and_harness": "harness-lint.log,exit0",
+    "explicit_ui_clippy": "final-ui-lint.log,exit0",
+    "release_app": "harness-release-app.log,exit0"
+  },
+  "source_note": "The normal/UI/regression source snapshots precede only the documented subsequent fixes. Representation boxing is covered by759 regressions and197UI; later changes only share the replay fixture, fix canonical test-command spelling and provision scenario evidence capacity. Complete final native visual/performance replays exercise that final54-file source.",
+  "quiet_audio": "quiet-audio.json,one test PASS0.08s with bounded output EOF"
+}

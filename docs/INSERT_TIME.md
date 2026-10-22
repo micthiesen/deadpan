@@ -49,6 +49,11 @@ Visible defaults retain their captured stable presentation; positively proven
 dormant defaults change only their recipe and preserve the cursor. No occurrence
 is isolated to implement a shared change. See
 [All plays Hold length](SEMANTIC_MACROS.md#all-plays-hold-length).
+Mixed Default/Play body duration uses `SetScopedHoldDuration`: exact temporal
+isolation precedes this ordinary reducer once. Default branches remain shared;
+actual isolation proofs map the target, presentation and generation state.
+No-op and unsupported scopes refuse before requesting clone identities. See
+[mixed duration semantics](SEMANTIC_MACROS.md#mixed-all-plays-and-this-play-hold-length).
 See the
 [ordinary Hold-duration clock qualification](qualification/hold-duration-clocks-2026-10-20.md).
 The [fixed-window qualification](qualification/fixed-retime-hold-clocks-2026-10-20.md)

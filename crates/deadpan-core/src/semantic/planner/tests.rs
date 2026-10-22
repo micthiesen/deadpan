@@ -75,6 +75,7 @@ fn context(parent: &str, cursor: i64) -> SemanticContext {
         scoped: None,
         hold_duration: None,
         shared_hold_duration: None,
+        mixed_hold_duration: None,
         parent: node(parent),
         cursor: ProjectFrame(cursor),
         selected_child: None,

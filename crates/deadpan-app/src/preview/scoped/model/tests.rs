@@ -1,5 +1,6 @@
 use super::*;
 mod fixed_duration;
+mod mixed_duration;
 mod pause_continuation;
 mod shared_duration;
 use deadpan_core::{

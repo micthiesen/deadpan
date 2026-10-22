@@ -351,6 +351,23 @@ impl<'a> ValidatedScopedIsolation<'a> {
         Ok(result)
     }
 
+    /// Map a concrete presentation through the actual executed clones, while
+    /// retaining its stable play identities independently of authoring scope.
+    pub fn map_instance_forward(
+        &self,
+        instance: &crate::InstancePath,
+    ) -> Result<crate::InstancePath, EditError> {
+        instance.validate(self.before)?;
+        let mut result = instance.clone();
+        for step in &self.record.steps {
+            if super::isolation::matches_prefix(&result, &step.before_prefix) {
+                crate::occurrence_edit::remap_instance(&mut result, &step.nodes);
+            }
+        }
+        result.validate(self.after)?;
+        Ok(result)
+    }
+
     pub fn map_backward(&self, target: &ScopedNodeTarget) -> Result<ScopedNodeTarget, EditError> {
         target.validate(self.after)?;
         let result = self.map_retained_backward(target);

@@ -121,6 +121,7 @@ fn context(document: &ProjectDocument, outer: u32, inner: u32, owned: bool) -> S
     });
     SemanticContext {
         hold_duration: None,
+        mixed_hold_duration: None,
         shared_hold_duration: None,
         original: None,
         parent: id("root"),

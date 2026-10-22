@@ -12,12 +12,17 @@ use crate::{
 
 mod hold_duration;
 mod isolation;
+mod mixed_hold_duration;
 mod proof;
 pub use hold_duration::{PreparedOccurrenceHoldDuration, prepare_occurrence_hold_duration};
 pub use isolation::MAX_SCOPED_TARGETS;
 pub(crate) use isolation::{
     apply_many_mapped, apply_mapped, isolate_temporal, matches_prefix, occupied_node_ids,
     temporal_requirements,
+};
+pub use mixed_hold_duration::{PreparedScopedHoldDuration, prepare_scoped_hold_duration};
+pub(crate) use mixed_hold_duration::{
+    mixed_body_dormant, prepare_command as prepare_mixed_hold_duration_command,
 };
 pub use proof::{
     ScopedIsolationRecord, ScopedIsolationStep, ValidatedScopedIsolation, derive_scoped_isolation,

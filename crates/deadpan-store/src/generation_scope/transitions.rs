@@ -20,6 +20,7 @@ fn may_isolate(command: &Command) -> bool {
         Command::EditScoped { .. }
         | Command::EditScopedMany { .. }
         | Command::EditOccurrence { .. }
+        | Command::SetScopedHoldDuration { .. }
         | Command::KeepFirstPlayAttachments { .. } => true,
         Command::Compound { transaction } => transaction
             .steps()

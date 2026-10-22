@@ -28,6 +28,8 @@ mod gag_edit;
 mod group;
 mod hold_duration;
 pub use hold_duration::{HoldDurationVisibility, SemanticHoldDurationContext};
+mod mixed_hold_duration;
+pub use mixed_hold_duration::SemanticMixedHoldDurationContext;
 mod pause;
 mod scoped_gain;
 mod shared_hold_duration;
@@ -85,6 +87,8 @@ pub struct SemanticContext {
     /// Duration-only authority for literal All plays Repeat definitions.
     /// A dormant default has no fabricated concrete presentation.
     pub shared_hold_duration: Option<SemanticSharedHoldDurationContext>,
+    /// Duration-only authority preserving both Default and explicit Play steps.
+    pub mixed_hold_duration: Option<Box<SemanticMixedHoldDurationContext>>,
     pub parent: NodeId,
     /// Absolute Edit boundary, including either endpoint of the ordinary scope.
     pub cursor: ProjectFrame,
@@ -749,7 +753,9 @@ where
                 self.trace[index].after = self.context.clone();
                 continue;
             }
-            if (self.context.hold_duration.is_some() || self.context.shared_hold_duration.is_some())
+            if (self.context.hold_duration.is_some()
+                || self.context.shared_hold_duration.is_some()
+                || self.context.mixed_hold_duration.is_some())
                 && !matches!(
                     instruction,
                     SemanticInstruction::SetHoldDuration { .. } | SemanticInstruction::Call { .. }
@@ -1361,6 +1367,7 @@ pub(super) fn validate_context(
     selection::validate_context(document, context, bounds)?;
     hold_duration::validate_context(document, context)?;
     shared_hold_duration::validate_context(document, context)?;
+    mixed_hold_duration::validate_context(document, context)?;
     framing::validate_scoped_context(document, context)?;
     Ok(bounds)
 }

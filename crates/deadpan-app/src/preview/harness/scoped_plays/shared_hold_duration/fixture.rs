@@ -6,7 +6,7 @@ use deadpan_core::{
 };
 use deadpan_store::{AccessMode, ProjectStore};
 
-pub(super) fn id(name: &str) -> Result<NodeId, String> {
+pub(in super::super) fn id(name: &str) -> Result<NodeId, String> {
     NodeId::new(format!("ui-shared-duration-{name}")).map_err(|e| e.to_string())
 }
 fn revision(name: &str) -> Result<RevisionId, String> {
@@ -51,7 +51,7 @@ fn overrides(name: &str, entries: &[(u32, &str)]) -> Result<PlayOverrides, Strin
     )
     .map_err(|e| e.to_string())
 }
-pub(super) fn create(
+pub(in super::super) fn create(
     source: &Path,
     path: &Path,
     dormant: bool,

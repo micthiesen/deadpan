@@ -5,6 +5,13 @@ use deadpan_core::{BeatNode, Subtree};
 const BODY_STARTS: [i64; 4] = [16, 25, 34, 43];
 const CLICK_IN_SUFFIX: i64 = 1554;
 
+#[derive(Clone, Copy)]
+enum Route {
+    Raw,
+    Shared,
+    Mixed { outer_play: bool },
+}
+
 fn boundary(frame: i64) -> Result<i64> {
     Ok(i64::try_from(
         ExactRatio::new(i128::from(frame) * 8008, 5)?.round_even()?,
@@ -26,7 +33,7 @@ fn pcm(project: &Project, start: i64) -> Result<Vec<[f64; 2]>> {
 /// Authored layout: Original12..28, two outer plays of two bodies, then
 /// Original32..42. Every body is Original28 / freeze / Original29..32;
 /// inner and outer gaps are two silent background frames, never trailing.
-fn layout(frames: i64) -> (Vec<Expected>, Vec<i64>, Vec<i64>) {
+fn layout(frames: [i64; 4]) -> (Vec<Expected>, Vec<i64>, Vec<i64>) {
     let mut pictures: Vec<_> = (12..28).map(original).collect();
     let mut suffixes = Vec::new();
     let mut quiet = Vec::new();
@@ -34,7 +41,10 @@ fn layout(frames: i64) -> (Vec<Expected>, Vec<i64>, Vec<i64>) {
         for inner in 0..2 {
             pictures.push(original(28));
             quiet.push(pictures.len() as i64);
-            pictures.extend(std::iter::repeat_n(original(28), frames as usize));
+            pictures.extend(std::iter::repeat_n(
+                original(28),
+                frames[outer * 2 + inner] as usize,
+            ));
             suffixes.push(pictures.len() as i64);
             pictures.extend((29..32).map(original));
             if inner == 0 {
@@ -51,12 +61,16 @@ fn layout(frames: i64) -> (Vec<Expected>, Vec<i64>, Vec<i64>) {
     (pictures, suffixes, quiet)
 }
 
-fn build(dir: &Path, grow: bool, semantic: bool) -> Result<Fixture> {
-    let name = match (grow, semantic) {
-        (true, false) => "ordinary-hold-duration-grow",
-        (false, false) => "ordinary-hold-duration-shrink",
-        (true, true) => "shared-semantic-hold-duration-grow",
-        (false, true) => "shared-semantic-hold-duration-shrink",
+fn build(dir: &Path, grow: bool, route: Route) -> Result<Fixture> {
+    let name = match (grow, route) {
+        (true, Route::Raw) => "ordinary-hold-duration-grow",
+        (false, Route::Raw) => "ordinary-hold-duration-shrink",
+        (true, Route::Shared) => "shared-semantic-hold-duration-grow",
+        (false, Route::Shared) => "shared-semantic-hold-duration-shrink",
+        (true, Route::Mixed { outer_play: true }) => "mixed-outer-play-hold-duration-grow",
+        (false, Route::Mixed { outer_play: true }) => "mixed-outer-play-hold-duration-shrink",
+        (true, Route::Mixed { outer_play: false }) => "mixed-inner-play-hold-duration-grow",
+        (false, Route::Mixed { outer_play: false }) => "mixed-inner-play-hold-duration-shrink",
     };
     let mut project = Project::create(dir, name)?;
     project.shorten()?;
@@ -177,13 +191,14 @@ fn build(dir: &Path, grow: bool, semantic: bool) -> Result<Fixture> {
         return Err("Hold".into());
     };
     let frames = if grow { 5 } else { 1 };
-    let after = project.apply(|_, document, revision| {
-        if semantic {
+    let mut resized_node = target.clone();
+    let after = project.apply(|project, document, revision| {
+        if !matches!(route, Route::Raw) {
             use deadpan_core::{
                 InstancePath, PauseLength, RepeatEditBranch, RepeatEditStep, RepeatInstance,
                 ScopedNodeTarget, SemanticAllocation, SemanticAllocationRequest, SemanticContext,
-                SemanticInstruction, SemanticProgram, SemanticRegisterBank,
-                SemanticSharedHoldDurationContext, plan_semantic,
+                SemanticInstruction, SemanticMixedHoldDurationContext, SemanticProgram,
+                SemanticRegisterBank, SemanticSharedHoldDurationContext, plan_semantic,
             };
             let repeats = [&outer, &inner]
                 .into_iter()
@@ -197,27 +212,98 @@ fn build(dir: &Path, grow: bool, semantic: bool) -> Result<Fixture> {
                     }
                 })
                 .collect::<Vec<_>>();
+            let scoped_target = ScopedNodeTarget {
+                node: target.clone(),
+                repeats: repeats
+                    .iter()
+                    .enumerate()
+                    .map(|(index, step)| RepeatEditStep {
+                        repeat: step.node.clone(),
+                        branch: match route {
+                            Route::Mixed { outer_play } if (index == 0) == outer_play => {
+                                RepeatEditBranch::Play {
+                                    iteration: step.iteration.clone(),
+                                }
+                            }
+                            _ => RepeatEditBranch::Default,
+                        },
+                    })
+                    .collect(),
+            };
+            let presentation = Some(InstancePath {
+                node: target.clone(),
+                repeats,
+            });
+            if matches!(route, Route::Mixed { .. }) {
+                let NodeKind::Repeat { child: body, .. } = &document.nodes()[&inner].kind else {
+                    panic!("inner Repeat");
+                };
+                let NodeKind::Sequence { children } = &document.nodes()[body].kind else {
+                    panic!("body Sequence");
+                };
+                assert_eq!(children.len(), 3);
+                assert_eq!(children[1], target);
+                // The two speech pieces retain partition wrappers around their
+                // Source leaves. Body isolation copies six nodes; isolating an
+                // outer play additionally copies the inner Repeat itself.
+                for side in [&children[0], &children[2]] {
+                    let NodeKind::Retime {
+                        child,
+                        purpose: RetimePurpose::Partition,
+                        ..
+                    } = &document.nodes()[side].kind
+                    else {
+                        panic!("partitioned speech");
+                    };
+                    assert!(matches!(
+                        document.nodes()[child].kind,
+                        NodeKind::Source { .. }
+                    ));
+                }
+            }
+            let requirements = if matches!(route, Route::Mixed { .. }) {
+                Some(document.scoped_hold_duration_requirements(
+                    &scoped_target,
+                    FrameDuration::new(frames)?,
+                )?)
+            } else {
+                None
+            };
+            let identities = if let Some(requirements) = &requirements {
+                assert_eq!(
+                    requirements.nodes,
+                    if matches!(route, Route::Mixed { outer_play: true }) {
+                        7
+                    } else {
+                        6
+                    }
+                );
+                assert_eq!(requirements.marks, 0);
+                deadpan_core::OccurrenceIdentities {
+                    nodes: project.fresh(requirements.nodes)?,
+                    marks: Vec::new(),
+                }
+            } else {
+                Default::default()
+            };
             let context = SemanticContext {
                 original: None,
                 scoped: None,
                 hold_duration: None,
-                shared_hold_duration: Some(SemanticSharedHoldDurationContext {
-                    root: outer.clone(),
-                    target: ScopedNodeTarget {
-                        node: target.clone(),
-                        repeats: repeats
-                            .iter()
-                            .map(|step| RepeatEditStep {
-                                repeat: step.node.clone(),
-                                branch: RepeatEditBranch::Default,
-                            })
-                            .collect(),
-                    },
-                    presentation: Some(InstancePath {
-                        node: target.clone(),
-                        repeats,
-                    }),
+                mixed_hold_duration: matches!(route, Route::Mixed { .. }).then(|| {
+                    Box::new(SemanticMixedHoldDurationContext {
+                        root: outer.clone(),
+                        target: scoped_target.clone(),
+                        presentation: presentation.clone(),
+                    })
                 }),
+                shared_hold_duration: matches!(route, Route::Shared).then_some(
+                    SemanticSharedHoldDurationContext {
+                        root: outer.clone(),
+                        target: scoped_target,
+                        presentation,
+                    },
+                ),
                 parent: parent.clone(),
                 cursor: ProjectFrame(45),
                 selected_child: Some(outer.clone()),
@@ -239,22 +325,61 @@ fn build(dir: &Path, grow: bool, semantic: bool) -> Result<Fixture> {
                 },
                 revision.clone(),
                 |request| {
-                    assert!(matches!(
-                        request,
+                    let new_revision = RevisionId::new(format!("{revision}-parameter")).unwrap();
+                    match request {
+                        SemanticAllocationRequest::Isolation { nodes, marks, .. }
+                            if matches!(route, Route::Mixed { .. }) =>
+                        {
+                            assert_eq!(nodes, identities.nodes.len());
+                            assert_eq!(marks, identities.marks.len());
+                            Ok(SemanticAllocation::Isolation {
+                                new_revision,
+                                identities: identities.clone(),
+                            })
+                        }
                         SemanticAllocationRequest::ParameterEdit { .. }
-                    ));
-                    Ok(SemanticAllocation::ParameterEdit {
-                        new_revision: RevisionId::new(format!("{revision}-parameter")).unwrap(),
-                    })
+                            if matches!(route, Route::Shared) =>
+                        {
+                            Ok(SemanticAllocation::ParameterEdit { new_revision })
+                        }
+                        _ => panic!("unexpected duration allocation: {request:?}"),
+                    }
                 },
                 |_, _| panic!("shared duration needs no media resolver"),
             )?;
-            assert_eq!(plan.context.cursor, ProjectFrame(44 + 3 * (frames - 3)));
+            let prior_changed_uses = if matches!(route, Route::Shared) { 3 } else { 1 };
             assert_eq!(
-                plan.context.shared_hold_duration,
-                context.shared_hold_duration
+                plan.context.cursor,
+                ProjectFrame(44 + prior_changed_uses * (frames - 3))
             );
-            assert_eq!(plan.document.overrides(), document.overrides());
+            if let Some(mixed) = &plan.context.mixed_hold_duration {
+                resized_node = mixed.target.node.clone();
+                assert_ne!(resized_node, target);
+                assert_eq!(plan.document.nodes()[&target], document.nodes()[&target]);
+                assert_eq!(
+                    mixed
+                        .target
+                        .repeats
+                        .iter()
+                        .map(|s| s.branch.clone())
+                        .collect::<Vec<_>>(),
+                    context
+                        .mixed_hold_duration
+                        .as_ref()
+                        .unwrap()
+                        .target
+                        .repeats
+                        .iter()
+                        .map(|s| s.branch.clone())
+                        .collect::<Vec<_>>()
+                );
+            } else {
+                assert_eq!(
+                    plan.context.shared_hold_duration,
+                    context.shared_hold_duration
+                );
+                assert_eq!(plan.document.overrides(), document.overrides());
+            }
             let transaction = deadpan_core::apply(document, plan.request.as_ref().unwrap())?;
             assert_eq!(transaction.inverse.apply(&plan.document)?, *document);
             return Ok(plan
@@ -267,14 +392,24 @@ fn build(dir: &Path, grow: bool, semantic: bool) -> Result<Fixture> {
             duration: FrameDuration::new(frames)?,
         })
     })?;
-    let NodeKind::Hold { recipe: current } = &after.nodes()[&target].kind else {
+    let NodeKind::Hold { recipe: current } = &after.nodes()[&resized_node].kind else {
         return Err("Hold".into());
     };
     let mut changed_duration_only = old.clone();
     changed_duration_only.duration = FrameDuration::new(frames)?;
     assert_eq!(*current, changed_duration_only);
-    let (pictures, suffixes, quiet) = layout(frames);
-    let final_frames = if grow { 68 } else { 52 };
+    let lengths = match route {
+        Route::Mixed { outer_play: true } => [3, 3, frames, frames],
+        Route::Mixed { outer_play: false } => [3, frames, 3, frames],
+        _ => [frames; 4],
+    };
+    let (pictures, suffixes, quiet) = layout(lengths);
+    let changed_uses = if matches!(route, Route::Mixed { .. }) {
+        2
+    } else {
+        4
+    };
+    let final_frames = usize::try_from(60 + changed_uses * (frames - 3))?;
     assert_eq!(pictures.len(), final_frames);
     assert_eq!(after.duration()?.frames(), final_frames as i64);
     let mut clicks = Vec::new();
@@ -309,28 +444,48 @@ fn build(dir: &Path, grow: bool, semantic: bool) -> Result<Fixture> {
     for origin in quiet {
         audio.push((boundary(origin)? + 512, false));
     }
-    let route = if semantic {
-        "Duration-only All-Default semantic SetHoldDuration, committed through the headless command path"
-    } else {
-        "Ordinary SetHoldDuration"
+    let route = match route {
+        Route::Shared => {
+            "Duration-only All-Default semantic SetHoldDuration, committed through the headless command path"
+        }
+        Route::Raw => "Ordinary SetHoldDuration",
+        Route::Mixed { outer_play: true } => {
+            "Duration-only outer Play2 / inner Default semantic SetHoldDuration, committed through the headless command path"
+        }
+        Route::Mixed { outer_play: false } => {
+            "Duration-only outer Default / inner Play2 semantic SetHoldDuration, committed through the headless command path"
+        }
     };
     let mut fixture = project.finish(vec!["Hold (insert time)", "Repeat operator"],
         pictures.into_iter().enumerate().map(|(frame, expected)| (frame as u64, expected)).collect(),
-        vec![format!("Real cfr-bframes.mp4 A/V at 30000/1001. A fresh raw Subtree contains qualified Source recipes with no retained bindings before the edit: Source owners {source_owners:?}, gap owners {gap_owners:?}. {route} changes the shared Hold definition from 3 to {frames} frames in four nested 2x2 plays. Literal final picture layout {final_frames} frames. Each decoded Original click window retains the old per-owner origin at 20, 29, 38 or 47 plus 1554 samples, within 1e-6. Current click windows and their pre-edit authored peaks: {clicks:?}; silent windows: {audio:?}. The complete nonzero pre/post waveforms are checked directly, without assuming every rounded play has a limited peak above 0.5. Canonical PCM tests separately cover 44.1 kHz unbound and partially bound Sources.")])?;
+        vec![format!("Real cfr-bframes.mp4 A/V at 30000/1001. A fresh raw Subtree contains qualified Source recipes with no retained bindings before the edit: Source owners {source_owners:?}, gap owners {gap_owners:?}. {route} changes {changed_uses} uses of the three-frame Hold to {frames} frames; four nested 2x2 plays have literal Hold lengths {lengths:?}. Literal final picture layout {final_frames} frames. Each decoded Original click window retains the old per-owner origin at 20, 29, 38 or 47 plus 1554 samples, within 1e-6. Current click windows and their pre-edit authored peaks: {clicks:?}; silent windows: {audio:?}. The complete nonzero pre/post waveforms are checked directly, without assuming every rounded play has a limited peak above 0.5. Canonical PCM tests separately cover 44.1 kHz unbound and partially bound Sources.")])?;
     fixture.audio = audio;
     Ok(fixture)
 }
 
 pub fn grow(dir: &Path) -> Result<Fixture> {
-    build(dir, true, false)
+    build(dir, true, Route::Raw)
 }
 pub fn shrink(dir: &Path) -> Result<Fixture> {
-    build(dir, false, false)
+    build(dir, false, Route::Raw)
 }
 
 pub fn semantic_grow(dir: &Path) -> Result<Fixture> {
-    build(dir, true, true)
+    build(dir, true, Route::Shared)
 }
 pub fn semantic_shrink(dir: &Path) -> Result<Fixture> {
-    build(dir, false, true)
+    build(dir, false, Route::Shared)
+}
+
+pub fn mixed_outer_grow(dir: &Path) -> Result<Fixture> {
+    build(dir, true, Route::Mixed { outer_play: true })
+}
+pub fn mixed_outer_shrink(dir: &Path) -> Result<Fixture> {
+    build(dir, false, Route::Mixed { outer_play: true })
+}
+pub fn mixed_inner_grow(dir: &Path) -> Result<Fixture> {
+    build(dir, true, Route::Mixed { outer_play: false })
+}
+pub fn mixed_inner_shrink(dir: &Path) -> Result<Fixture> {
+    build(dir, false, Route::Mixed { outer_play: false })
 }

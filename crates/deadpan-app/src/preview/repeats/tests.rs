@@ -91,6 +91,7 @@ fn context(selected: Option<&str>) -> SemanticContext {
     SemanticContext {
         hold_duration: None,
         shared_hold_duration: None,
+        mixed_hold_duration: None,
         original: None,
         scoped: None,
         parent: node("group"),

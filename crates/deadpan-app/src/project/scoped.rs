@@ -30,6 +30,56 @@ pub struct Target {
 }
 
 impl Target {
+    /// Mixed duration captures preserve authoring choices independently of the
+    /// optional rendered representative. No framing authority is implied.
+    pub fn semantic_mixed_hold_duration(
+        &self,
+        workspace: &Workspace,
+    ) -> Result<deadpan_core::SemanticMixedHoldDurationContext, String> {
+        self.validate(workspace)?;
+        if !self.also.is_empty()
+            || !workspace.document.sounds().is_empty()
+            || !workspace.document.beat_sounds().is_empty()
+        {
+            return Err(
+                "Mixed pause length requires one captured Hold and no placed sounds.".into(),
+            );
+        }
+        let authority = deadpan_core::SemanticMixedHoldDurationContext {
+            root: self.root.clone(),
+            target: self.target.clone(),
+            presentation: self.presentation.clone(),
+        };
+        let owner = self.scope.resolve(workspace)?;
+        let visible = workspace
+            .document
+            .mixed_hold_duration_visibility(owner.owner, &authority)
+            .map_err(|error| error.to_string())?;
+        if let Some(visible) = visible {
+            let instance = authority
+                .presentation
+                .as_ref()
+                .ok_or("Mixed pause lost its presentation.")?;
+            for frame in [
+                visible.frames.start(),
+                ProjectFrame(visible.frames.end().0 - 1),
+            ] {
+                let picture = workspace
+                    .plan
+                    .picture(frame)
+                    .map_err(|error| error.to_string())?;
+                if !picture
+                    .framing
+                    .iter()
+                    .any(|layer| &layer.instance == instance)
+                {
+                    return Err("The mixed pause no longer presents its captured Hold.".into());
+                }
+            }
+        }
+        Ok(authority)
+    }
+
     /// Shared definition duration authority, including a proven dormant default.
     pub fn semantic_shared_hold_duration(
         &self,

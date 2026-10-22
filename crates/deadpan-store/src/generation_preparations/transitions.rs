@@ -29,6 +29,7 @@ pub(crate) struct Birth {
 fn duration_node(command: &Command) -> Option<&deadpan_core::NodeId> {
     match command.base_command() {
         Command::SetHoldDuration { node, .. } => Some(node),
+        Command::SetScopedHoldDuration { target, .. } => Some(&target.node),
         Command::EditOccurrence {
             instance,
             edit: OccurrenceEdit::SetHoldDuration { .. },
@@ -78,6 +79,7 @@ fn changes_provider(
 fn has_birth(command: &Command) -> bool {
     match command.base_command() {
         Command::SetHoldDuration { .. }
+        | Command::SetScopedHoldDuration { .. }
         | Command::InsertAiTime { .. }
         | Command::InsertOccurrenceTime { ai: true, .. } => true,
         Command::EditOccurrence {
@@ -143,34 +145,49 @@ fn leaf_births(
     // A duration leaf edits one retained identity. Follow that exact selected
     // occurrence through the core proof instead of materializing every Hold
     // in a potentially wide, deeply nested definition.
-    let mut mapped = edited_node.clone();
+    let mut mapped = match &request.command {
+        Command::SetScopedHoldDuration { target, .. } => target.clone(),
+        _ => ScopedNodeTarget {
+            node: edited_node.clone(),
+            repeats: Vec::new(),
+        },
+    };
     crate::generation_scope::with_command_proof(before, request, after, |proof| {
-        let Command::EditOccurrence { instance, .. } = &request.command else {
-            return Ok(());
+        let selected = match &request.command {
+            Command::SetScopedHoldDuration { target, .. } => target.clone(),
+            Command::EditOccurrence { instance, .. } => ScopedNodeTarget {
+                node: instance.node.clone(),
+                repeats: instance
+                    .repeats
+                    .iter()
+                    .map(|step| RepeatEditStep {
+                        repeat: step.node.clone(),
+                        branch: RepeatEditBranch::Play {
+                            iteration: step.iteration.clone(),
+                        },
+                    })
+                    .collect(),
+            },
+            _ => return Ok(()),
         };
-        budget.clone_steps(instance.repeats.len())?;
-        budget.clone_steps(instance.repeats.len())?;
-        let selected = ScopedNodeTarget {
-            node: instance.node.clone(),
-            repeats: instance
-                .repeats
-                .iter()
-                .map(|step| RepeatEditStep {
-                    repeat: step.node.clone(),
-                    branch: RepeatEditBranch::Play {
-                        iteration: step.iteration.clone(),
-                    },
-                })
-                .collect(),
-        };
-        mapped = proof.map_retained_forward(&selected).node;
+        budget.clone_steps(selected.repeats.len())?;
+        mapped = proof.map_retained_forward(&selected);
         Ok(())
     })?;
-    let Some(target) = targets.get(&mapped, budget)? else {
-        return Ok(Vec::new());
+    let target = if matches!(request.command, Command::SetScopedHoldDuration { .. }) {
+        if !targets.matches(&mapped, budget)? {
+            return Ok(Vec::new());
+        }
+        mapped
+    } else {
+        let Some(target) = targets.get(&mapped.node, budget)? else {
+            return Ok(Vec::new());
+        };
+        target
     };
-    let NodeKind::Hold { recipe } = &after.nodes()[&target.node].kind else {
-        unreachable!("indexed Hold")
+    let Some(NodeKind::Hold { recipe }) = after.nodes().get(&target.node).map(|node| &node.kind)
+    else {
+        return Ok(Vec::new());
     };
     let mut result = Vec::new();
     if recipe.duration > accepted.artifact.sampling.output_frame_count()

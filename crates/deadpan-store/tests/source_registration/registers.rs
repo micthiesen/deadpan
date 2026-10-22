@@ -42,6 +42,7 @@ fn qualified_range_repeat_stages_exact_wrapper_capture_and_reopens_with_one_undo
         &before,
         &SemanticContext {
             hold_duration: None,
+            mixed_hold_duration: None,
             shared_hold_duration: None,
             original: None,
             scoped: None,
@@ -434,6 +435,7 @@ fn typed_selectors_capture_qualified_source_and_staged_range_with_one_history_en
         &before,
         &SemanticContext {
             hold_duration: None,
+            mixed_hold_duration: None,
             shared_hold_duration: None,
             original: None,
             scoped: None,
@@ -581,6 +583,7 @@ fn counted_semantic_original_paste_keeps_exact_mapping_through_undo_and_reopen()
         &before,
         &SemanticContext {
             hold_duration: None,
+            mixed_hold_duration: None,
             shared_hold_duration: None,
             original: None,
             scoped: None,
@@ -658,6 +661,7 @@ fn counted_semantic_original_paste_keeps_exact_mapping_through_undo_and_reopen()
         &before_replace,
         &SemanticContext {
             hold_duration: None,
+            mixed_hold_duration: None,
             shared_hold_duration: None,
             original: None,
             scoped: None,

@@ -401,6 +401,7 @@ fn service_checks(
         scoped: None,
         hold_duration: None,
         shared_hold_duration: Some(target.semantic_shared_hold_duration(before).unwrap()),
+        mixed_hold_duration: None,
     };
     let rows = || {
         rusqlite::Connection::open(path.join("project.sqlite")).unwrap().query_row(
@@ -621,7 +622,7 @@ fn service_checks(
 }
 
 #[test]
-fn shared_duration_hint_reuses_compact_index_and_rejects_mixed_or_several_plays() {
+fn shared_duration_hint_reuses_compact_index_with_mixed_choices_but_not_several_plays() {
     let document = fixture(
         "hint-outer",
         vec![
@@ -643,10 +644,11 @@ fn shared_duration_hint_reuses_compact_index_and_rejects_mixed_or_several_plays(
         assert!(Arc::ptr_eq(&retained_index, &inspector.index));
     }
     inspector.switch_play_in(1).unwrap();
-    assert!(
-        inspector.hold_parameter_in().is_none(),
-        "mixed Default/Play stays unavailable"
+    assert_eq!(
+        inspector.hold_parameter_in().as_deref(),
+        Some("hold-duration 2f")
     );
+    assert!(Arc::ptr_eq(&retained_index, &inspector.index));
     inspector.switch_in(RepeatEditBranch::Default).unwrap();
     inspector.levels.last_mut().unwrap().also.push(
         match &inspector.index.document.nodes()[&node("hint-inner")].kind {

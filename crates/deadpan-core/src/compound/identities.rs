@@ -184,6 +184,7 @@ fn allocations<'a>(command: &'a Command, nodes: &mut Vec<&'a NodeId>, marks: &mu
             }
         }
         Command::EditScoped { identities, .. }
+        | Command::SetScopedHoldDuration { identities, .. }
         | Command::KeepFirstPlayAttachments { identities, .. }
         | Command::Explode { identities, .. } => {
             nodes.extend(&identities.nodes);

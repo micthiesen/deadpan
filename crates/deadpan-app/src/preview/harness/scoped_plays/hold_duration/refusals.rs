@@ -119,7 +119,19 @@ fn exercise(d: &mut Driver<'_>, path: &Path) -> Result<(), String> {
         json!("This play / All plays"),
         d.snapshot(),
     )?;
-    refuse(d, "Mixed-scope Hold duration")?;
+    let before = document(d)?.clone();
+    let revision = d.revision();
+    d.key(Key::Enter)?;
+    d.check(
+        "Mixed duration now offers the authored Hold length without isolation or writes",
+        d.app().command_open
+            && d.app().command == "hold-duration 4f"
+            && d.revision() == revision
+            && document(d)? == &before,
+        json!({"command":"hold-duration 4f","document":"unchanged","history":"unchanged"}),
+        d.snapshot(),
+    )?;
+    d.key(Key::Escape)?;
     d.key(Key::Escape)?;
     d.chord(&[Key::G, Key::G, Key::J, Key::Enter])?;
     d.command("scope plays 1,2")?;

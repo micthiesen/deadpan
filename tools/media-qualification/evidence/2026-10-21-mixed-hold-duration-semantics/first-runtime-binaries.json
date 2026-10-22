@@ -1,0 +1,47 @@
+{
+  "deadpan-app::bin/deadpan-app": {
+    "binary": "/Users/michael/Code/deadpan/target/debug/deps/deadpan_app-1665fcaccc742208",
+    "sha256": "31d8e86f3072f4b3c63161ee00ef3fc3bcfe175dcad7c86a44b64f5b955b710e",
+    "bytes": 104798448
+  },
+  "deadpan-cli::preview_export": {
+    "binary": "/Users/michael/Code/deadpan/target/debug/deps/preview_export-09f24f1122af7985",
+    "sha256": "7fba7204cf61d74fb6b755abc2ba162e15a9e69615a9410d8c6048eef191fd1c",
+    "bytes": 45416384
+  },
+  "deadpan-core": {
+    "binary": "/Users/michael/Code/deadpan/target/debug/deps/deadpan_core-99ef176a441abc2a",
+    "sha256": "a4993bc7d520018afe7d642e668d42ce5036f10607a9256b39e7b794bb1bf715",
+    "bytes": 61821440
+  },
+  "deadpan-store::generation": {
+    "binary": "/Users/michael/Code/deadpan/target/debug/deps/generation-6b1052d6b3314dac",
+    "sha256": "80d08e674df20269f75ced9c880d3f35638671410c206f7c24eeda565d850952",
+    "bytes": 28326728
+  },
+  "deadpan-store::generation_bundles": {
+    "binary": "/Users/michael/Code/deadpan/target/debug/deps/generation_bundles-8fe4e5fef16f185c",
+    "sha256": "1201dd51d2ae87202e31b822cf7be2b88630727ea4d327a726693bc012f5ec99",
+    "bytes": 37213040
+  },
+  "child-deadpan-media-worker": {
+    "binary": "/Users/michael/Code/deadpan/target/debug/deadpan-media-worker",
+    "sha256": "786672d36a58e024be1acb18f353c350c06a7c83dd88c84369e69a9512a13c5d",
+    "bytes": 3899480
+  },
+  "child-deadpan-transcribe": {
+    "binary": "/Users/michael/Code/deadpan/target/debug/deadpan-transcribe",
+    "sha256": "473b69ac2024d691236637017ebea298a08e0f88de2ff3801a948bf866f71362",
+    "bytes": 4025712
+  },
+  "child-deadpan-track": {
+    "binary": "/Users/michael/Code/deadpan/target/debug/deadpan-track",
+    "sha256": "18861c06d2d468b4e161c2b99110ffc1d5ea99a926e1685d5893437583760244",
+    "bytes": 10372544
+  },
+  "child-deadpan-cli": {
+    "binary": "/Users/michael/Code/deadpan/target/debug/deadpan-cli",
+    "sha256": "412f09fed433d0d57fab4c4e4bac1f738d76dafacfe7202d08c12684e29110f5",
+    "bytes": 71691680
+  }
+}

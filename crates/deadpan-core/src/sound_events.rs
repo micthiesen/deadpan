@@ -534,6 +534,7 @@ fn preserves_sound_clocks(command: &Command) -> bool {
         | Command::InsertPlays { .. }
         | Command::MovePlays { .. }
         | Command::SetHoldDuration { .. }
+        | Command::SetScopedHoldDuration { .. }
         | Command::SetPlayOverride { .. }
         | Command::ClearPlayOverride { .. }
         | Command::SetGapOverride { .. }

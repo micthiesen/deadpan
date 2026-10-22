@@ -1,0 +1,9 @@
+{
+  "binary": "/Users/michael/Code/deadpan/target/debug/deps/audio_definition-780c0c8be6058790",
+  "sha256": "6e9eebb99e11129eb6bf9032e0b2de3626e114f71241b05d3ace2bed3d0e9456",
+  "test": "mix::scoped_mix_sums_two_decoded_rates_and_keeps_exhaustion_and_gates_per_voice",
+  "exit": 0,
+  "stdout_and_stderr_reached_eof": true,
+  "timeout_seconds": 30,
+  "note": "Isolated direct execution; no other Deadpan tests run concurrently. Final native timing remains separate."
+}

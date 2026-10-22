@@ -127,6 +127,7 @@ fn context_for(update: &ProjectUpdate, target: &Target) -> SemanticContext {
         original: None,
         hold_duration: None,
         shared_hold_duration: None,
+        mixed_hold_duration: None,
         scoped: Some(
             target
                 .semantic_framing(update.workspace.as_ref().unwrap())

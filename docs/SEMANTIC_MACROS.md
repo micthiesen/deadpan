@@ -209,7 +209,7 @@ pools, then carries its actual isolation mapping forward. The final cursor is
 the resized Hold's exact start, while the ordinary enclosing selection remains
 unchanged. Another duration, Zoom, pause or named call uses that mapped Hold.
 No-op lengths and late unsupported instructions leave history and registers
-unchanged. Mixed/multiple plays, Retime ancestry and attached or root sound
+unchanged. Multiple plays, Retime ancestry and attached or root sound
 events retain explicit refusals. Generated-picture shortening retains qualified
 accepted media; extension beyond its coverage commits fallback and durable
 preparation rather than stretching the accepted provider silently. See the
@@ -237,6 +237,33 @@ Retime ancestry and unsupported later instructions refuse atomically. Direct
 Apply supplies dot intent; named Run and Undo retain their existing dot policy.
 Scope navigation revokes delayed inspector continuation even after away/back
 navigation. This path does not broaden one-play semantic framing.
+
+### Mixed All plays and This play Hold length
+
+A single Hold under mixed Default/Play Repeat bodies uses
+`SemanticMixedHoldDurationContext`, retaining the inspected root, complete
+authoring target and optional presentation. It admits duration setters and
+named calls only. Saved `SetHoldDuration { length }` intent has no captured
+node, play or presentation identities.
+
+The planner requests exact temporal isolation resources, including empty pools
+for already owned branches, and executes `SetScopedHoldDuration`. Only explicit
+Play branches that still use a default are cloned. The mapped Default branches
+remain shared; the established ordinary duration reducer then captures physical
+old-origin clocks and resizes the mapped Hold once. Actual execution proofs
+carry both addresses through staged calls and the final native receipt.
+
+A live continuation follows the same stable play to its mapped Hold's new
+start. Positively proven dormant definitions have no invented presentation:
+isolation preserves their authored Play meaning, while cursor and output stay
+unchanged. Direct Apply supplies dot intent; named Run and Undo retain their
+existing dot policies. Navigation permanently revokes delayed continuation.
+
+Several targets, owned-gap ancestry, Retime/Partition ancestry, root or attached
+sounds and unrelated instructions remain unavailable. Other duration families
+keep their existing paths and guards. See the
+[mixed duration qualification](qualification/mixed-hold-duration-semantics-2026-10-21.md)
+for implementation and verification status.
 
 ### Ordinary Hold length inside fixed Retime
 

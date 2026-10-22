@@ -413,6 +413,12 @@ define_commands! {
         node: NodeId,
         duration: FrameDuration,
     },
+    /// Resize one mixed Default/Play Hold definition after exact temporal isolation.
+    SetScopedHoldDuration {
+        target: crate::ScopedNodeTarget,
+        duration: FrameDuration,
+        identities: OccurrenceIdentities,
+    },
     /// Replace one Hold's audio recipe without changing its picture or timing.
     SetHoldAudio {
         node: NodeId,
@@ -1259,6 +1265,26 @@ fn apply_with_durations_captured(
     crate::picture_context::validate_command(&request.command)?;
     crate::audio_gain::validate_command(&request.command)?;
     crate::sound_events::validate_command(document, &request.command)?;
+    if let Some(prepared) =
+        crate::scoped_edit::prepare_mixed_hold_duration_command(document, request)?
+    {
+        if let Some(steps) = isolation.as_deref_mut() {
+            steps.extend(prepared.isolation);
+        }
+        let resolved = CommandRequest {
+            command: prepared.command,
+            ..request.clone()
+        };
+        let (_, result, _) =
+            apply_with_durations_captured(&prepared.document, &resolved, None, isolation)?;
+        let (transaction, validation) = net_transaction_with_durations(
+            document,
+            &result,
+            description(&request.command),
+            previous,
+        )?;
+        return Ok((transaction, result, validation));
+    }
     if let Some(prepared) = crate::insert_time::occurrence::prepare(document, request)? {
         if let Some(steps) = isolation.as_deref_mut() {
             steps.extend(prepared.isolation);
@@ -2023,6 +2049,12 @@ pub(crate) fn reduce(
     allocation: &RevisionId,
 ) -> Result<(), EditError> {
     match command {
+        Command::SetScopedHoldDuration { .. } => {
+            return Err(EditError::new(
+                EditErrorCode::InvalidCommand,
+                "mixed Hold duration requires the complete replay entrypoint",
+            ));
+        }
         Command::RestoreSnapshot { .. } => {
             return Err(EditError::new(
                 EditErrorCode::InvalidCommand,
@@ -3526,7 +3558,9 @@ fn description(command: &Command) -> &'static str {
         Command::SetRetime { .. } => "Set retime parameters",
         Command::InsertPlays { .. } => "Insert repeat plays",
         Command::MovePlays { .. } => "Move repeat plays",
-        Command::SetHoldDuration { .. } => "Change hold duration",
+        Command::SetHoldDuration { .. } | Command::SetScopedHoldDuration { .. } => {
+            "Change hold duration"
+        }
         Command::SetHoldAudio { .. } => "Change hold audio",
         Command::SetSourceAudioMapping { .. } => "Change source audio mapping",
         Command::SetSourceVideoMapping { .. } => "Change source video mapping",

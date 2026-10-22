@@ -60,6 +60,112 @@ fn fixture() -> Result<ProjectDocument> {
         .apply(&before)?)
 }
 
+fn mixed_fixture() -> Result<ProjectDocument> {
+    let mut before = document(&[])?;
+    let outer = NodeId::new("outer-repeat")?;
+    let outer_body = NodeId::new("outer-body")?;
+    let inner = NodeId::new("inner-repeat")?;
+    let inner_body = NodeId::new("inner-body")?;
+    let hold = NodeId::new("mixed-hold")?;
+    let mut outer_repeat = BeatNode::sequence("Outer", vec![]);
+    outer_repeat.kind = NodeKind::Repeat {
+        child: outer_body.clone(),
+        iterations: IterationOrder::new(RevisionId::new("outer-order")?, 2)?,
+        gap: None,
+        escalation: None,
+    };
+    let mut inner_repeat = BeatNode::sequence("Inner", vec![]);
+    inner_repeat.kind = NodeKind::Repeat {
+        child: inner_body.clone(),
+        iterations: IterationOrder::new(RevisionId::new("inner-order")?, 2)?,
+        gap: None,
+        escalation: None,
+    };
+    let command = CommandRequest {
+        project_id: before.project_id().clone(),
+        expected_revision: before.revision_id().clone(),
+        new_revision: RevisionId::new("mixed-fixture")?,
+        command: Command::Insert {
+            parent: before.root().clone(),
+            index: 0,
+            subtree: Subtree {
+                root: outer.clone(),
+                nodes: BTreeMap::from([
+                    (outer.clone(), outer_repeat),
+                    (
+                        outer_body.clone(),
+                        BeatNode::sequence("Outer body", vec![inner.clone()]),
+                    ),
+                    (inner.clone(), inner_repeat),
+                    (
+                        inner_body.clone(),
+                        BeatNode::sequence("Inner body", vec![hold.clone()]),
+                    ),
+                    (
+                        hold.clone(),
+                        BeatNode::hold(
+                            "Pause",
+                            HoldRecipe {
+                                picture_context: None,
+                                duration: FrameDuration::new(12)?,
+                                video: HoldVideo::Background,
+                                audio: HoldAudio::Silence,
+                            },
+                        ),
+                    ),
+                ]),
+                overrides: Default::default(),
+                gap_overrides: Default::default(),
+            },
+        },
+    };
+    before = deadpan_core::apply(&before, &command)?
+        .forward
+        .apply(&before)?;
+    Ok(before)
+}
+
+fn mixed_iteration(document: &ProjectDocument, id: &str) -> deadpan_core::IterationId {
+    let repeat = &document.nodes()[&NodeId::new(id).unwrap()];
+    let NodeKind::Repeat { iterations, .. } = &repeat.kind else {
+        panic!("{id} is a Repeat in the mixed fixture");
+    };
+    let iteration = iterations.at(0).expect("mixed fixture Repeat has a play");
+    assert_eq!(
+        iteration.allocation,
+        RevisionId::new("mixed-fixture").unwrap()
+    );
+    iteration
+}
+
+fn mixed_target(document: &ProjectDocument, outer_play: bool) -> ScopedNodeTarget {
+    ScopedNodeTarget {
+        node: NodeId::new("mixed-hold").unwrap(),
+        repeats: vec![
+            RepeatEditStep {
+                repeat: NodeId::new("outer-repeat").unwrap(),
+                branch: if outer_play {
+                    RepeatEditBranch::Play {
+                        iteration: mixed_iteration(document, "outer-repeat"),
+                    }
+                } else {
+                    RepeatEditBranch::Default
+                },
+            },
+            RepeatEditStep {
+                repeat: NodeId::new("inner-repeat").unwrap(),
+                branch: if outer_play {
+                    RepeatEditBranch::Default
+                } else {
+                    RepeatEditBranch::Play {
+                        iteration: mixed_iteration(document, "inner-repeat"),
+                    }
+                },
+            },
+        ],
+    }
+}
+
 fn target(play: Option<u32>) -> ScopedNodeTarget {
     ScopedNodeTarget {
         node: NodeId::new("hold").unwrap(),
@@ -223,6 +329,93 @@ fn sibling_isolation_maps_only_its_play_and_new_requests_follow_undo_redo() -> R
     store.validate_full()?;
     drop(store);
     ProjectStore::open(&path, AccessMode::ReadOnly)?.validate_full()?;
+    Ok(())
+}
+
+#[test]
+fn mixed_duration_isolation_maps_scoped_requests_and_history_in_both_branch_orders() -> Result {
+    for (suffix, outer_play) in [("outer-play", true), ("inner-play", false)] {
+        let scratch = tempfile::tempdir()?;
+        let path = scratch.path().join(format!("{suffix}.deadpan"));
+        let fixture = mixed_fixture()?;
+        let mut store = ProjectStore::create(&path, &fixture)?;
+        let original_target = mixed_target(&fixture, outer_play);
+        let request = scoped_request(
+            &mut store,
+            &format!("request-{suffix}"),
+            original_target.clone(),
+        )?;
+        let before = store.snapshot()?;
+        let duration = FrameDuration::new(13)?;
+        let required = before.scoped_hold_duration_requirements(&original_target, duration)?;
+        let command = edit(
+            &store,
+            &format!("duration-{suffix}"),
+            Command::SetScopedHoldDuration {
+                target: original_target.clone(),
+                duration,
+                identities: OccurrenceIdentities {
+                    nodes: (0..required.nodes)
+                        .map(|index| NodeId::new(format!("{suffix}-clone-{index}")))
+                        .collect::<std::result::Result<_, _>>()?,
+                    marks: (0..required.marks)
+                        .map(|index| deadpan_core::MarkId::new(format!("{suffix}-mark-{index}")))
+                        .collect::<std::result::Result<_, _>>()?,
+                },
+            },
+        )?;
+        let expected_after = store.preview(&command)?.forward.apply_stored(&before)?;
+        let proof = deadpan_core::derive_scoped_isolation(&before, &command, &expected_after)?;
+        let expected_target = proof.map_retained_forward(&original_target);
+        let (_, mapped) = store.preview_generation_contexts(&command)?;
+        store.commit_reconciled(&command, &plan(&command, unchanged(mapped)))?;
+        let isolated = store.generation_request(&request.request_id)?.unwrap();
+        assert_eq!(isolated.target, expected_target);
+        assert_eq!(isolated.binding, request.binding);
+        assert_eq!(isolated.origin_target, request.origin_target);
+
+        let undo_id = RevisionId::new(format!("undo-{suffix}"))?;
+        let (_, mapped) =
+            store.preview_undo_generation_contexts(&command.new_revision, undo_id.clone())?;
+        store.undo_reconciled(
+            &command.new_revision,
+            undo_id.clone(),
+            &RelevancePlan {
+                from_revision: command.new_revision.clone(),
+                to_revision: undo_id.clone(),
+                observations: unchanged(mapped),
+            },
+        )?;
+        assert_eq!(
+            store
+                .generation_request(&request.request_id)?
+                .unwrap()
+                .target,
+            original_target
+        );
+
+        let redo_id = RevisionId::new(format!("redo-{suffix}"))?;
+        let (_, mapped) = store.preview_redo_generation_contexts(&undo_id, redo_id.clone())?;
+        store.redo_reconciled(
+            &undo_id,
+            redo_id.clone(),
+            &RelevancePlan {
+                from_revision: undo_id.clone(),
+                to_revision: redo_id,
+                observations: unchanged(mapped),
+            },
+        )?;
+        assert_eq!(
+            store
+                .generation_request(&request.request_id)?
+                .unwrap()
+                .target,
+            expected_target
+        );
+        store.validate_full()?;
+        drop(store);
+        ProjectStore::open(&path, AccessMode::ReadOnly)?.validate_full()?;
+    }
     Ok(())
 }
 

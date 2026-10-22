@@ -4,6 +4,27 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Current continuation, 2026-10-21
 
+Mixed All plays/This play Hold duration now has a separate invocation-only
+authority and `SetScopedHoldDuration` wrapper. It retains literal Default
+choices while isolating unowned Play bodies, then runs the ordinary duration
+reducer once. Actual execution proofs map authoring and concrete presentation
+through staged calls and the final Compound receipt. Positively proven dormant
+definitions keep both cursors, picture and output duration while still isolating
+their authoring path. Generation requests and accepted-provider fallback births
+follow that same mapping through Undo/Redo/reopen. Generic framing remains
+separate; mixed gaps, Retime/Partition ancestry, sounds and several-play targets
+retain their guards.
+
+All 15 focused, 3,431 broader, 759 final affected and 197 UI-feature tests pass.
+Strict checks and the command reference pass. Both final release replays pass
+1,222 scoped checks plus Kestrel; all six compact captures were inspected.
+Quiet input-to-state p99 is 1.854ms. Release exports verify all 240 pictures and
+all 384,384 presented audio samples at measured offset zero.
+See [mixed qualification](../qualification/mixed-hold-duration-semantics-2026-10-21.md)
+for valid baselines, retained fixture/compiler/lint/replay corrections and
+captured-output warnings with their isolated passing checks. No requirement
+or gate is newly complete.
+
 All plays Hold durations now have a separate invocation-only semantic context
 that retains every Default choice and the optional concrete presentation.
 Visible defaults continue at the same stable representative's new start;
@@ -15,8 +36,8 @@ Both final native replays pass 1,069 scoped checks plus Kestrel; four compact
 captures were inspected. Release exports verify all 120 pictures and all
 192,192 presented audio samples at measured offset zero. Failed runs and their
 corrections remain in [the qualification](../qualification/shared-hold-duration-semantics-2026-10-21.md).
-Mixed choices, several-play timing and Repeat/Retime temporal combinations remain
-the next editing work. No requirement or gate is newly complete.
+Several-play durations, mixed gap timing and Repeat/Retime temporal combinations
+remain the next editing work. No requirement or gate is newly complete.
 
 Ordinary Hold lengths inside fixed unclocked Edit Retimes now use a captured
 duration-only semantic context, independently of This-play authority. Enter,

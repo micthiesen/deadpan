@@ -1,0 +1,40 @@
+{
+  "base": "bcbf8493cdf709a2321e616cb8b1b6b3edb3ddd0",
+  "previous_milestone": "3158c9ce4d6cab27c28001e2ce5d38f97a55662b",
+  "hardware": "Mac17,7",
+  "memory_bytes": 137438953472,
+  "os": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84\n",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+  "ffmpeg_prefix": "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix",
+  "profile_dev_opt_level": 2,
+  "physical_mac_required": true,
+  "synthetic_worker_required": true,
+  "baseline": {
+    "base": "bcbf8493",
+    "production_changes": false,
+    "run_exit": 100,
+    "tests": 2,
+    "failed": 2,
+    "filtered": 1207,
+    "seconds": 0.352,
+    "intended_assertion": "State::hold_parameter expected Some hold-duration2f, actual None, after qualified setup and raw mixed isolation controls",
+    "binary": "/Users/michael/Code/deadpan/target/debug/deps/deadpan_app-edbbed39ebf1d72f",
+    "binary_sha256": "c93dcf3a646945a7cabc9159a4aa32c7cb72624cbf07f70a75fa51998a03d638",
+    "sources": {
+      "crates/deadpan-app/src/preview/scoped/model/tests.rs": "72887b515832bf5c7d1864f2820806b8f82198a71758fd9470f244689f7f843c",
+      "crates/deadpan-app/src/preview/scoped/model/tests/mixed_duration.rs": "6c46620dba587bf86eb01592c59c0138e6a17a8b23c26ca5269637cadf73fa8b"
+    },
+    "setup_failure": "First --lib selection ran zero tests; corrected by selecting app binary tests. Preserved baseline-setup-no-tests.log."
+  },
+  "fixtures": {
+    "native/deadpan-source/tests/fixtures/offset-bframes.mp4": {
+      "bytes": 39181,
+      "sha256": "1504e8c41c2e8e33cf588bbe46e7c79f9fb507437533f5d6cd6f280b6bfdb120"
+    },
+    "native/deadpan-source/tests/fixtures/cfr-bframes.mp4": {
+      "bytes": 39157,
+      "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918"
+    }
+  }
+}

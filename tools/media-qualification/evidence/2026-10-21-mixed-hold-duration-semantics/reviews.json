@@ -1,0 +1,109 @@
+{
+  "base": "bcbf8493cdf709a2321e616cb8b1b6b3edb3ddd0",
+  "static_reviews": [
+    {
+      "agent": "mixed_duration_general_review",
+      "scope": "Core authority/planner, app capture/receipt, native model, store transitions and headless integration",
+      "result": "No actionable findings",
+      "runtime": false
+    },
+    {
+      "agent": "mixed_duration_clock_review",
+      "scope": "Literal isolation proof, dormant liveness, audio/marks/continuation/generation",
+      "result": "No actionable findings",
+      "runtime": false
+    },
+    {
+      "agent": "mixed_duration_verification_review",
+      "scope": "Core/native/store and real A/V oracles, branch identities, source continuity and history",
+      "result": "No actionable findings",
+      "runtime": false
+    }
+  ],
+  "runtime_corrections": [
+    {
+      "run": "first focused runtime",
+      "result": "15 tests:13 passed,2 failed",
+      "store": "Fixture target used pre-insertion play allocations outer-order/inner-order; prepare_subtree normalizes each Repeat to insertion revision mixed-fixture. Corrected helper reads actual stored IterationOrder.at(0), preserving both branch orders and ordinal zero. No production change.",
+      "media": "Exact node-pool expectation missed two Partition Retime siblings around Source leaves. Retained tree proves6-node inner body or7 with inner Repeat. Added shape assertions, corrected pools7/6; targeted real-media test passes21.268s. No change to production behavior or PCM/timing assertions."
+    },
+    {
+      "run": "strict lint after3431normal/197UI passes",
+      "result": "ProjectRequest::Macro688bytes vs Render424 triggers large_enum_variant",
+      "repair": "Box only optional new mixed duration context; final compile/behavior/lint verification pending. No suppression or broad request rewrite."
+    },
+    {
+      "run": "UI harness strict lint",
+      "result": "duplicate_mod: mixed replay loaded shared_hold_duration/fixture.rs as a second module",
+      "repair": "Reuse the one existing shared fixture module and give its two helpers visibility only through scoped_plays. Setup and all assertions unchanged. harness-lint exits0;197 UI tests pass15.112s."
+    },
+    {
+      "run": "first release visual replay",
+      "checks_reached": 885,
+      "frames": 4885,
+      "binary_sha256": "044785f3843676941e656f0b0fbeebb41b571d9a0e9dcd0c01be350e41e3b8c7",
+      "result": "Nonexistent harness command silence receives parser Unknown command instead of duration-only guard. All scope, grow/shrink, actual picture, no-op, Undo/Redo/reopen checks reached before recording pass.",
+      "repair": "Use canonical hold-silence; full immutable-state, draft, instruction, capture and exact duration-only error assertions remain. No production change. Final replay pending."
+    },
+    {
+      "run": "second release visual replay",
+      "checks_reached": 1145,
+      "frames": 7094,
+      "binary_sha256": "dade99ad206e9a6a3ac6e55eba8d9ab19df4e2d613733620a591e3d96d704293",
+      "result": "All1145 scoped checks passed, including new mixed recording/call/dot/stale/dormant cases. Later existing named checkpoint hits160-image hard limit. Final performance not run.",
+      "repair": "Bounded scoped-plays-only180-image allowance; other scenarios160 and intermediate image allowance, all assertions/waits/timing limits unchanged. Full rerun pending."
+    }
+  ],
+  "compiler_corrections": "Missing public export, test borrow clone, already-validated proof API and artifact.sampling fixture accesses were compile/setup fixes, not behavioral red witnesses.",
+  "verification_followup": "Read-only verification review agrees retained media tree independently proves7/6, with explicit Partition/Source shape assertions. No actionable concern.",
+  "boxing_followup": {
+    "agent": "mixed_duration_verification_review",
+    "runtime": false,
+    "result": "No findings. Option<Box<_>> preserves validation, dispatch, authority equality, actual proof mapping and full final context check. No guard weakened."
+  },
+  "leak_followup": {
+    "normal": "3431PASS142.694s,3slow,1Nextest captured-output marker",
+    "ui_initial": "197PASS15.090s,2captured-output markers",
+    "final_regression": "759PASS70.648s,1captured-output marker",
+    "final_ui": "197PASS15.255s,no markers",
+    "harness_ui": "197PASS15.112s,no markers",
+    "quiet_native": "3PASS0.030s serial Nextest,no markers",
+    "quiet_audio": "1PASS0.08s direct isolated binary,stdout/stderr EOF before30s deadline,hash pinned",
+    "cause": "Concurrent output descriptor inheritance is a possibility, not proven; assertion outcomes and warnings retained explicitly."
+  },
+  "replay_verb_followup": {
+    "agent": "mixed_duration_verification_review",
+    "runtime": false,
+    "result": "Only confirmed issue is nonexistent silence command. No other likely command, wait or exact Undo/Redo sequencing issue; unexecuted remainder still needs runtime verification."
+  },
+  "final_native": {
+    "visual": "1222 scoped checks plus Kestrel PASS;7631 frames",
+    "performance": "1222 scoped checks plus Kestrel PASS;7740 frames",
+    "frozen_rust_files": 54,
+    "captures": "Six960x640 final captures inspected by parent",
+    "input_to_state_p99_ms": 1.853625,
+    "input_to_commit_p99_ms": 31.978542,
+    "input_to_commit_max_ms": 82.201708,
+    "request_to_picture_p99_ms": 5.306542,
+    "request_to_picture_max_ms": 10.495834
+  },
+  "final_release_media": {
+    "test": "mixed_hold_duration_semantics_preview_and_encoded_output_keep_selected_source_clocks",
+    "nextest": "1PASS20.443s,49filtered",
+    "cases": 4,
+    "pictures": 240,
+    "presented_samples": 384384,
+    "windows": 8,
+    "offsets": "all verified_zero",
+    "flags": [],
+    "minimum_block_snr_db": {
+      "grow": 29.923751304193505,
+      "shrink": 32.58932214202816
+    },
+    "identities": "encoded-binaries.json and encoded-identities.json"
+  },
+  "final_evidence_audit": {
+    "agent": "mixed_duration_verification_review",
+    "result": "No unsupported completion claim. Metrics, source counts, remaining scopes, owner checks and all198 initial inventory entries verified. Minor documentation omission corrected: RoomTone scrolling,320second-retry frames in each run,53visual/51performance consecutive retry runs with distinct causes. Final inventory rehashed after adding this note."
+  }
+}

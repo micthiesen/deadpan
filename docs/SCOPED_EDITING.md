@@ -71,9 +71,9 @@ AI pauses still need
 one concrete play at every level; Retime ancestors refuse this occurrence path
 ([pause insertion](INSERT_TIME.md)). Freeze
 capture also refuses a boundary whose preceding picture does not pass through
-the selected insertion parent; black pauses need no sampled picture. Other
-timing edits beyond one-play Hold duration, copy/paste and general macros inside
-these contents remain required work;
+the selected insertion parent; black pauses need no sampled picture.
+Mixed gap and several-play Hold resizing, Retime timing combinations, copy/paste
+and general macros inside these contents remain required work;
 their native actions refuse without editing the retained outer beat.
 
 Freeze/black pauses, existing Hold duration and sound, and whole-owner Zoom and Creep with
@@ -96,7 +96,7 @@ prepared samples, Silence, RoomTone and unchanged direct scope workflows.
 `:hold-duration Nf` resizes the selected Hold in one explicit play at every
 level. The inspector's Change duration control and Enter prefill its current
 length. A no-op refuses without history, isolation or cursor movement.
-Mixed choices, multiple plays, Retime ancestry and root or attached
+Multiple plays, Retime ancestry and root or attached
 sound events remain unavailable for this timing edit. Accepted generated
 picture shortening retains its provider; extension beyond accepted coverage
 saves the deterministic fallback and durable preparation for a new explicit
@@ -110,8 +110,19 @@ stable play. A default whose body uses are all overridden remains editable
 without inventing a presentation; its cursor and rendered duration stay fixed.
 The core proves dormancy from complete body-override coverage, independently
 of gap overrides. Recording and named calls accept duration setters only.
-Mixed choices, several plays and Retime ancestry retain their timing guards.
+Several plays and Retime ancestry retain their timing guards.
 See [shared duration semantics](SEMANTIC_MACROS.md#all-plays-hold-length).
+
+Mixed All plays/This play body choices have their own duration-only context.
+An explicit This play branch is isolated only when it still uses the default;
+All plays choices stay shared. Already owned branches consume no new node IDs.
+The actual isolation proof maps both the authored target and its independent
+visible representative. A proven dormant definition may still need isolation
+to retain its selected Play meaning, while output and cursor stay fixed.
+Recording, calls and direct-edit dot retain those choices. Owned gaps,
+Retime/Partition ancestry, several plays and placed sounds remain unavailable
+on this mixed path. See [mixed duration semantics](SEMANTIC_MACROS.md#mixed-all-plays-and-this-play-hold-length)
+and its [qualification status](qualification/mixed-hold-duration-semantics-2026-10-21.md).
 
 An ordinary Hold inside fixed Edit Retime windows, without any Repeat ancestry,
 has a separate duration-only path through the same control, Enter and command.

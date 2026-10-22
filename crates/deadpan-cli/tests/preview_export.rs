@@ -587,6 +587,59 @@ fn shared_hold_duration_semantics_preview_and_encoded_output_keep_shared_source_
     verify_ordinary_hold_duration(true)
 }
 
+#[test]
+fn mixed_hold_duration_semantics_preview_and_encoded_output_keep_selected_source_clocks() -> Result
+{
+    let (root, _guard) = keep_or(tempfile::tempdir()?);
+    let mut results = Vec::new();
+    for (name, factory) in [
+        (
+            "outer-grow",
+            recipes::ordinary_duration::mixed_outer_grow as fn(&Path) -> Result<Fixture>,
+        ),
+        (
+            "outer-shrink",
+            recipes::ordinary_duration::mixed_outer_shrink as fn(&Path) -> Result<Fixture>,
+        ),
+        (
+            "inner-grow",
+            recipes::ordinary_duration::mixed_inner_grow as fn(&Path) -> Result<Fixture>,
+        ),
+        (
+            "inner-shrink",
+            recipes::ordinary_duration::mixed_inner_shrink as fn(&Path) -> Result<Fixture>,
+        ),
+    ] {
+        let fixture = factory(&root.join(name))?;
+        check(&fixture)?;
+        if skip_without_physical_mac("encoded Render") {
+            continue;
+        }
+        let movie = render(&fixture, &root.join(format!("exports-{name}")))?;
+        let (report, passed) = verify(&fixture, &movie, &fixture.revision, &["--every", "1"])?;
+        assert!(passed, "{name}: {report}");
+        assert_eq!(report["summary"]["pictures_checked"], fixture.frames);
+        assert_eq!(report["summary"]["pictures_failed"], 0);
+        assert_eq!(report["summary"]["nonzero_offsets"], 0);
+        for audio in report["audio"].as_array().ok_or("audio report")? {
+            assert_eq!(audio["flags"], json!([]));
+            assert_eq!(audio["uncovered_samples"], 0);
+            assert_eq!(audio["blocks"]["low_snr_blocks"], 0);
+            assert_eq!(audio["offset_status"], "verified_zero");
+            assert_eq!(audio["measured_offset_samples"], 0);
+        }
+        check_provenance(&fixture, &report)?;
+        eprintln!("{}", summary_row(&fixture, &report));
+        results.push(
+            json!({"package":fixture.package,"movie":movie,"report":report,"notes":fixture.notes}),
+        );
+    }
+    if let Some(path) = std::env::var_os("DEADPAN_MIXED_DURATION_RESULTS") {
+        std::fs::write(path, serde_json::to_vec_pretty(&results)?)?;
+    }
+    Ok(())
+}
+
 fn verify_ordinary_hold_duration(semantic: bool) -> Result {
     let (root, _guard) = keep_or(tempfile::tempdir()?);
     let mut results = Vec::new();

@@ -1,0 +1,83 @@
+{
+  "request": "/tmp/deadpan-mixed-hold-duration-next-2026-10-21/media-tree/.tmpakNpKt/outer-grow/request-mixed-outer-play-hold-duration-grow-r10.json",
+  "sha256": "5a7b17cdd872a6ebac6dc4adb506c02d85e4ae585505b6a311e4ceb5ce27cc87",
+  "root": "mixed-outer-play-hold-duration-grow-n52",
+  "nodes": {
+    "mixed-outer-play-hold-duration-grow-n40": {
+      "label": "Original and existing Hold",
+      "children": [
+        "mixed-outer-play-hold-duration-grow-n49",
+        "mixed-outer-play-hold-duration-grow-n41",
+        "mixed-outer-play-hold-duration-grow-n45"
+      ],
+      "type": "sequence"
+    },
+    "mixed-outer-play-hold-duration-grow-n41": {
+      "label": "Pause",
+      "type": "hold"
+    },
+    "mixed-outer-play-hold-duration-grow-n42": {
+      "label": "Repeat",
+      "child": "mixed-outer-play-hold-duration-grow-n40",
+      "type": "repeat"
+    },
+    "mixed-outer-play-hold-duration-grow-n43": {
+      "label": "original",
+      "child": "mixed-outer-play-hold-duration-grow-n44",
+      "duration": 10,
+      "purpose": "partition",
+      "type": "retime"
+    },
+    "mixed-outer-play-hold-duration-grow-n44": {
+      "label": "original",
+      "type": "source"
+    },
+    "mixed-outer-play-hold-duration-grow-n45": {
+      "label": "original",
+      "child": "mixed-outer-play-hold-duration-grow-n46",
+      "duration": 3,
+      "purpose": "partition",
+      "type": "retime"
+    },
+    "mixed-outer-play-hold-duration-grow-n46": {
+      "label": "original",
+      "type": "source"
+    },
+    "mixed-outer-play-hold-duration-grow-n47": {
+      "label": "original",
+      "child": "mixed-outer-play-hold-duration-grow-n48",
+      "duration": 16,
+      "purpose": "partition",
+      "type": "retime"
+    },
+    "mixed-outer-play-hold-duration-grow-n48": {
+      "label": "original",
+      "type": "source"
+    },
+    "mixed-outer-play-hold-duration-grow-n49": {
+      "label": "original",
+      "child": "mixed-outer-play-hold-duration-grow-n50",
+      "duration": 1,
+      "purpose": "partition",
+      "type": "retime"
+    },
+    "mixed-outer-play-hold-duration-grow-n50": {
+      "label": "original",
+      "type": "source"
+    },
+    "mixed-outer-play-hold-duration-grow-n51": {
+      "label": "Repeat",
+      "child": "mixed-outer-play-hold-duration-grow-n42",
+      "type": "repeat"
+    },
+    "mixed-outer-play-hold-duration-grow-n52": {
+      "label": "Fresh unbound layout",
+      "children": [
+        "mixed-outer-play-hold-duration-grow-n47",
+        "mixed-outer-play-hold-duration-grow-n51",
+        "mixed-outer-play-hold-duration-grow-n43"
+      ],
+      "type": "sequence"
+    }
+  }
+}

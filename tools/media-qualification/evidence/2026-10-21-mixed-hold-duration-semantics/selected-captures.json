@@ -1,0 +1,38 @@
+[
+  {
+    "mode": "visual",
+    "file": "scoped-plays-152.png",
+    "label": "This play then All plays duration entry at minimum size",
+    "frame": 4305
+  },
+  {
+    "mode": "visual",
+    "file": "scoped-plays-154.png",
+    "label": "All plays then This play duration entry at minimum size",
+    "frame": 4544
+  },
+  {
+    "mode": "visual",
+    "file": "scoped-plays-153.png",
+    "label": "Mixed outer This play isolates one body and preserves inner All plays",
+    "frame": 4402
+  },
+  {
+    "mode": "visual",
+    "file": "scoped-plays-155.png",
+    "label": "Mixed inner This play remains shared through outer All plays",
+    "frame": 4633
+  },
+  {
+    "mode": "visual",
+    "file": "scoped-plays-156.png",
+    "label": "Mixed duration recording Call and direct dot retain the current Default Play choices",
+    "frame": 5055
+  },
+  {
+    "mode": "visual",
+    "file": "scoped-plays-157.png",
+    "label": "Dormant mixed All plays This play duration isolates authoring without moving output",
+    "frame": 5271
+  }
+]

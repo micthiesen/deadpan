@@ -1,0 +1,12 @@
+{
+  "run": 15,
+  "passed": 13,
+  "failed": 2,
+  "filtered": 4041,
+  "seconds": 2.622,
+  "store_error": "scoped target names a retired Repeat play; exactstage pending diagnostic context",
+  "media_error": "expected5 outer clone nodes, actual7. Retained actual tree proves two Partition speech wrappers plus Source leaves: body6, inner Repeat1. Added structural oracle and corrected exact counts7/6; native9/4 sparse fixture unchanged.",
+  "test_source_snapshot": "first-runtime-source",
+  "binary_hashes": "first-runtime-binaries.json",
+  "production_change_for_media_failure": false
+}

@@ -6,7 +6,7 @@ use deadpan_core::{
 };
 use std::{collections::BTreeMap, num::NonZeroU32, path::Path};
 
-mod fixture;
+pub(super) mod fixture;
 
 const CHANGE: &str = "Change duration…  Enter";
 

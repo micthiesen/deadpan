@@ -1,0 +1,23 @@
+{
+  "mode": "visual",
+  "inspected": [
+    "scoped-plays-152.png",
+    "scoped-plays-154.png",
+    "scoped-plays-153.png",
+    "scoped-plays-155.png",
+    "scoped-plays-156.png",
+    "scoped-plays-157.png"
+  ],
+  "size": [
+    960,
+    640
+  ],
+  "result": "Parent inspected all six final native captures. Both literal mixed scope orders, duration entry, mapped interval, separate Original/Edit clocks, focus, action keycaps and footer are readable. Dormant definition explicitly reports no active picture and retains its previous image;49-frame dot checkpoint selects authored Background on Before shared pause, so black is intentional. No material clipping or overpainting in these captures.",
+  "claims_excluded": [
+    "physical display",
+    "physical keyboard",
+    "IME",
+    "VoiceOver speech",
+    "acoustic quality"
+  ]
+}
