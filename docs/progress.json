@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-22T09:44:50Z",
+  "updated_at": "2026-10-22T11:05:54Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Implement This play Hold lengths inside fixed Edit Retime windows using proven public isolation and exact visible continuation, then remaining mixed/selected temporal scopes, selectors, audio-owner routes, mastering, renderer and full-workflow qualification.",
+  "focus": "Extend This play fixed-Retime Hold lengths through bounded nested explicit Repeat bodies, then remaining mixed/selected temporal scopes, selectors, audio-owner routes, mastering, renderer and full-workflow qualification.",
   "features": [
     {
       "id": "editing",
@@ -16,7 +16,7 @@
         "DP-07",
         "DP-21"
       ],
-      "note": "Slices, registers, repeats and semantic macros work, including Original navigation, ranged and per-play framing, selected-play pauses, Hold duration/sound and audio treatments, and exact-pause tape-speed updates around one inner Repeat. Native Hold lengths support ordinary fixed Edit Retimes, explicit All plays/This play Repeat bodies, atomic selected-body batches and mixed/selected owned gaps, with history, recording, calls and duration-only dot. All plays lengths also cross fixed Edit Retimes beneath Repeats. This play/mixed/selected fixed-Retime lengths, wider selectors and remaining temporal combinations stay open."
+      "note": "Slices, registers, repeats and semantic macros work, including Original navigation, ranged and per-play framing, selected-play pauses, Hold duration/sound and audio treatments, and exact-pause tape-speed updates around one inner Repeat. Native Hold lengths support ordinary fixed Retimes, explicit Repeat choices, selected-body batches, mixed/selected owned gaps and All plays fixed Retimes. One explicit This play body also crosses one fixed unclocked Edit Retime, retaining isolation, visible continuation, audio phase and accepted-provider history. Nested/mixed/selected fixed-Retime lengths, wider selectors and remaining temporal combinations stay open."
     },
     {
       "id": "projects",
@@ -821,6 +821,14 @@
       "revision": "161c12037d82204c36c442414c83f66839098800",
       "retrospective": false,
       "summary": "All plays Hold lengths now cross fixed unclocked Edit Retime windows beneath Repeats. Exact cropped visibility, stable sparse play offsets, independent owned plays and atomic refusal are verified. Passed 23 focused, 3,480 broader and 202 UI tests, strict checks, two release native replays with 60 checks plus Kestrel each, and four exports covering 160 pictures and 256,256 audio samples at zero offset. Retained output-capture markers pass alone; layout warnings and owner checks remain documented. No requirement or gate newly complete."
+    },
+    {
+      "date": "2026-10-22",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "24cbec82e1c18368483ad87ba0e63ca60ce135eb",
+      "retrospective": false,
+      "summary": "One explicit This play Hold can change length through one fixed unclocked Edit Retime, preserving fixed output, exact audio phase, cropped visible continuation and accepted-provider history. All 39 focused and 3,496 broader tests pass; final normal/UI app runs pass 204/206 tests respectively. Both release native replays pass 56 checks plus Kestrel; state p99 is 1.828ms. Four release exports verify all 160 pictures and 256,256 samples at zero offset. Exact sources, binaries, MP4s and a validated owner fixture are retained. No requirement or gate is newly complete."
     }
   ]
 }
