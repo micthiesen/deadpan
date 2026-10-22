@@ -111,15 +111,42 @@ impl State {
         Some(format!("hold-duration {}f", recipe.duration.frames()))
     }
 
-    /// Availability only. The core rechecks the captured occurrence on Apply.
-    /// Use the retained parent index so footer layout does not scan the graph.
-    pub fn hold_duration_available(&self) -> bool {
-        let has_also = self.levels.iter().any(|level| !level.also.is_empty())
+    fn has_selected_plays(&self) -> bool {
+        self.levels.iter().any(|level| !level.also.is_empty())
             || self
                 .mapped_also
                 .as_ref()
-                .is_some_and(|(primary, also)| primary == &self.selected && !also.is_empty());
-        if has_also {
+                .is_some_and(|(primary, also)| primary == &self.selected && !also.is_empty())
+    }
+
+    pub fn edit_scope_hint(&self) -> &'static str {
+        if self.selected.repeats.is_empty() {
+            "Changes apply to this beat inside the Retime."
+        } else if self.has_selected_plays() {
+            "Changes apply to the selected plays."
+        } else if self
+            .selected
+            .repeats
+            .iter()
+            .all(|step| matches!(step.branch, RepeatEditBranch::Default))
+        {
+            "All plays changes the shared definition. Existing overrides keep their own changes."
+        } else if self
+            .selected
+            .repeats
+            .iter()
+            .all(|step| matches!(step.branch, RepeatEditBranch::Play { .. }))
+        {
+            "This play changes only the selected play."
+        } else {
+            "Changes follow each level's All plays or This play choice."
+        }
+    }
+
+    /// Availability only. The core rechecks the captured occurrence on Apply.
+    /// Use the retained parent index so footer layout does not scan the graph.
+    pub fn hold_duration_available(&self) -> bool {
+        if self.has_selected_plays() {
             return self.selected_duration_available();
         }
         if self.selected.repeats.is_empty() {
@@ -128,6 +155,13 @@ impl State {
         if !self.index.document.sounds().is_empty() || !self.index.document.beat_sounds().is_empty()
         {
             return false;
+        }
+        if self.this_play_fixed_retime_path_supported() {
+            return self
+                .projection
+                .presentation
+                .as_ref()
+                .is_some_and(|presentation| !presentation.frames.is_empty());
         }
         if self
             .selected
@@ -197,6 +231,61 @@ impl State {
                 _ => false,
             },
         }
+    }
+
+    /// One explicit live body under one fixed Edit Retime. This is a hint from
+    /// retained ancestry only; the core checks visibility and exact isolation
+    /// again when the duration command is prepared.
+    fn this_play_fixed_retime_path_supported(&self) -> bool {
+        let [step] = self.selected.repeats.as_slice() else {
+            return false;
+        };
+        let RepeatEditBranch::Play { iteration } = &step.branch else {
+            return false;
+        };
+        if step.repeat != self.root
+            || !matches!(
+                self.index.document.nodes()[&self.selected.node].kind,
+                NodeKind::Hold { .. }
+            )
+        {
+            return false;
+        }
+        let Ok(path) = self.index.path(&self.selected.node) else {
+            return false;
+        };
+        let Some(root_position) = path.iter().position(|node| node == &self.root) else {
+            return false;
+        };
+        let Some(play) = self
+            .index
+            .repeats
+            .get(&self.root)
+            .and_then(|layout| layout.play(iteration))
+        else {
+            return false;
+        };
+        let mut retimes = 0;
+        for (position, pair) in path.windows(2).enumerate() {
+            let parent = &pair[0];
+            let child = &pair[1];
+            match &self.index.document.nodes()[parent].kind {
+                NodeKind::Sequence { children } if children.contains(child) => {}
+                NodeKind::Repeat { .. } if parent == &self.root && &play.child == child => {}
+                NodeKind::Retime {
+                    child: retime_child,
+                    purpose: deadpan_core::RetimePurpose::Edit,
+                    ..
+                } if position > root_position
+                    && retime_child == child
+                    && !self.index.clocked_retimes.contains(parent) =>
+                {
+                    retimes += 1;
+                }
+                _ => return false,
+            }
+        }
+        retimes == 1
     }
 
     /// The narrow cached-hint exception for an All-Default Hold below the

@@ -1,0 +1,5 @@
+{
+  "stage": "focused-second",
+  "tests_executed": false,
+  "reason": "Audio fixture changed after source snapshot; pre-execution identity guard refused. Late four-node expectation confused this five-node fixture with the separate four-node store fixture. Restored five and documented actual subtree; no production changes."
+}

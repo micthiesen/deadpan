@@ -1,0 +1,20 @@
+[
+  {
+    "mode": "visual",
+    "file": "this-play-fixed-duration-041.png",
+    "label": "This play fixed Retime duration prefill",
+    "frame": 79,
+    "sha256": "39167247f2063559bcf0a98b22fba063773deae7a31caf98665e724ef929aec3",
+    "reviewed_by": "root via view_image",
+    "observations": "960x640; selected Play 2/3, correct scope explanation, fixed-Retime breadcrumb, separate Original/Edit clocks, focus, duration/keycaps and picture aspect readable. Prefill is 2f; post-dot history is 3f with fixed total24."
+  },
+  {
+    "mode": "visual",
+    "file": "this-play-fixed-duration-100.png",
+    "label": "This play fixed Retime duration history",
+    "frame": 154,
+    "sha256": "0e0728467c6afce352d40918c58ecac7e353b571bda319e857cdd684570655b8",
+    "reviewed_by": "root via view_image",
+    "observations": "960x640; selected Play 2/3, correct scope explanation, fixed-Retime breadcrumb, separate Original/Edit clocks, focus, duration/keycaps and picture aspect readable. Prefill is 2f; post-dot history is 3f with fixed total24."
+  }
+]

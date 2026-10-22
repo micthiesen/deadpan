@@ -1,5 +1,8 @@
 use super::*;
 
+#[path = "scoped_hold_duration/fixed_retime_duration.rs"]
+mod fixed_retime_duration;
+
 fn duration(frames: u32) -> SemanticInstruction {
     SemanticInstruction::SetHoldDuration {
         length: crate::PauseLength::Frames {
@@ -108,7 +111,10 @@ fn scoped_hold_duration_grow_shrink_first_last_plays_map_actual_hold_and_exact_s
                         .unwrap();
                 assert_eq!(prepared.target, mapped.target);
                 assert_eq!(prepared.presentation, mapped.presentation);
-                assert_eq!(prepared.boundary.frame, ProjectFrame(start));
+                assert_eq!(
+                    prepared.boundary.as_ref().unwrap().frame,
+                    ProjectFrame(start)
+                );
                 prepared
                     .isolation()
                     .validate(&before, &leaf.request(&before), &prepared.document)

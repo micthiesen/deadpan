@@ -94,6 +94,22 @@ impl Capture {
             self.scope.check_pause(&self.base, self.context.cursor)
         }
     }
+    fn check_fixed_duration(&self) -> Result<(), String> {
+        if let Some(scoped) = &self.context.scoped
+            && let Some(visible) = crate::project::scoped::fixed_duration_visibility(
+                &self.base.document,
+                &self.context.parent,
+                scoped,
+            )?
+        {
+            crate::project::scoped::verify_duration_pictures(
+                &self.base.plan,
+                &scoped.presentation,
+                visible,
+            )?;
+        }
+        Ok(())
+    }
     fn object_selected(&self) -> bool {
         matches!(
             self.context.visual_selection,
@@ -1517,6 +1533,9 @@ impl DeadpanApp {
             }
             let captured = target?;
             let instruction = instruction?;
+            if matches!(instruction, SemanticInstruction::SetHoldDuration { .. }) {
+                captured.check_fixed_duration()?;
+            }
             if captured.has_duration_authority()
                 && !matches!(
                     instruction,

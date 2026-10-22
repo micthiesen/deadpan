@@ -6,6 +6,7 @@ mod fixed_duration;
 mod gain;
 mod mute;
 mod pauses;
+mod this_play_fixed_duration;
 
 use super::*;
 use crate::project::scoped::Target;

@@ -1,0 +1,8 @@
+{
+  "test": "project::tests::macros::scoped::this_play_fixed_duration::native_this_play_fixed_retime_duration_service_retains_cropped_fractional_continuation",
+  "binary": "/tmp/deadpan-this-play-fixed-retime-duration-2026-10-22/focused-second-bin/deadpan_app-1665fcaccc742208",
+  "sha256": "2b7adaec6d937c186ae3df639b567d18171e8af90637ac67bc6ece43b8021f7f",
+  "exit": 0,
+  "seconds": 0.338535082526505,
+  "output_reached_eof": true
+}

@@ -1,0 +1,16 @@
+{
+  "tests": 31,
+  "passed": 27,
+  "failed": 4,
+  "filtered": 2549,
+  "seconds": 0.546,
+  "build_seconds": 388,
+  "sources": "core-app-runtime-source-identities.json",
+  "binaries": "core-app-binaries.json",
+  "repairs": [
+    "The one-frame output fixture totals9frames; cursor10 failed ordinary Sequence bounds before testing visibility. Its cursor now equals actual sampled frame4.",
+    "Prepared leaf document has leaf revision while semantic final document has outer Compound revision. Compare all content after setting only expected revision to leaf.new_revision.",
+    "Two native service fixtures captured provisional iteration allocation one-fixed-plays; Insert rehomes it to one-fixed-fixture. They now read the committed Repeat iteration."
+  ],
+  "production_changes_for_these_failures": false
+}

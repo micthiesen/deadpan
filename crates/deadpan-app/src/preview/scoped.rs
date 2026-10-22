@@ -675,7 +675,7 @@ impl DeadpanApp {
             NodeKind::Sequence { .. } | NodeKind::Repeat { .. } | NodeKind::Retime { .. }
         );
         let scope = state.scope_label(workspace).unwrap_or_else(|error| error);
-        let repeated = !state.selected_target().repeats.is_empty();
+        let scope_hint = state.edit_scope_hint();
         let reason = state.no_picture_reason(workspace).ok().flatten();
         let interval = state.visible_range(workspace).ok().flatten().map(|range| {
             let boundary = |value: deadpan_core::ExactRatio| {
@@ -702,11 +702,7 @@ impl DeadpanApp {
                     style::ink_padded_label(ui, style::semibold(label).size(16.0), None);
                     ui.colored_label(style::LAVENDER, scope);
                     if let Some(interval) = interval { ui.small(interval); }
-                    ui.small(if repeated {
-                        "All plays changes the shared definition. Existing overrides keep their own changes."
-                    } else {
-                        "Changes apply to this beat inside the Retime."
-                    });
+                    ui.small(scope_hint);
                     if let Some(reason) = reason { ui.add_space(8.0); ui.weak(reason); ui.small("The viewer retains its last displayed picture."); }
                     let ready = !self.service.is_busy() && !self.dialogs.is_open();
                     ui.add_space(4.0);

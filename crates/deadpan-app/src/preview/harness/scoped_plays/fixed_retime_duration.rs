@@ -388,7 +388,7 @@ fn scroll_top(d: &mut Driver<'_>) -> Result<(), String> {
 
 /// Parameter invocations allocate fresh timing IDs. Compare every frozen
 /// layout and placement exactly after a bijection of those IDs alone.
-fn same_audio_clock_intent(
+pub(super) fn same_audio_clock_intent(
     actual: &deadpan_core::AudioBindingState,
     expected: &deadpan_core::AudioBindingState,
 ) -> bool {

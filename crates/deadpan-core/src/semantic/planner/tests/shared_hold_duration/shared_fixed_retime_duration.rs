@@ -547,9 +547,16 @@ fn shared_fixed_retime_duration_forged_presentations_and_other_scopes_remain_ref
         d.ordinary_hold_duration_visibility(&node("root"), &ordinary)
             .is_err()
     );
-    let path = instance("held", 1, None);
+    // A second Repeat remains outside the one-play fixed-window increment.
+    let (nested_document, nested_context) = nested();
+    let path = nested_context
+        .shared_hold_duration
+        .unwrap()
+        .presentation
+        .unwrap();
     assert!(
-        d.occurrence_hold_duration_requirements(&path, FrameDuration::new(4).unwrap())
+        nested_document
+            .occurrence_hold_duration_requirements(&path, FrameDuration::new(4).unwrap())
             .is_err()
     );
     let selected = crate::SemanticSelectedHoldDurationContext {

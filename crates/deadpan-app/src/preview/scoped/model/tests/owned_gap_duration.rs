@@ -143,7 +143,7 @@ fn native_mixed_owned_gap_hold_duration_offers_entry_after_public_controls() {
     let prepared = prepare_occurrence_hold_duration(&document, &request).unwrap();
     assert_eq!(prepared.transaction.duration_delta, 1);
     assert_eq!(prepared.document.duration().unwrap().frames(), 15);
-    assert_eq!(prepared.boundary.frame, ProjectFrame(2));
+    assert_eq!(prepared.boundary.as_ref().unwrap().frame, ProjectFrame(2));
     assert_eq!(prepared.presentation.node, prepared.target.node);
     assert_ne!(prepared.target.node, node("owned-gap"));
     assert!(matches!(

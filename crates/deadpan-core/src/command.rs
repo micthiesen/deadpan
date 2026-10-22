@@ -1266,6 +1266,43 @@ fn apply_with_durations_captured(
     crate::audio_gain::validate_command(&request.command)?;
     crate::sound_events::validate_command(document, &request.command)?;
     if let Some(prepared) =
+        crate::scoped_edit::prepare_fixed_occurrence_hold_duration_command(document, request)?
+    {
+        if let Some(steps) = isolation.as_deref_mut() {
+            steps.extend(prepared.isolation);
+        }
+        let resolved = CommandRequest {
+            command: prepared.command,
+            ..request.clone()
+        };
+        let (_, result, _) =
+            apply_with_durations_captured(&prepared.document, &resolved, None, isolation)?;
+        let parent = result.parent_of(&prepared.root).ok_or_else(|| {
+            EditError::new(
+                EditErrorCode::InvalidCommand,
+                "fixed Hold duration lost its Repeat parent",
+            )
+        })?;
+        result.fixed_occurrence_hold_duration_visibility(
+            &parent,
+            &prepared.root,
+            &prepared.presentation,
+        )?;
+        if result.structural_duration()? != document.structural_duration()? {
+            return Err(EditError::new(
+                EditErrorCode::InvalidCommand,
+                "fixed Hold duration changed project duration",
+            ));
+        }
+        let (transaction, validation) = net_transaction_with_durations(
+            document,
+            &result,
+            description(&request.command),
+            previous,
+        )?;
+        return Ok((transaction, result, validation));
+    }
+    if let Some(prepared) =
         crate::scoped_edit::prepare_mixed_hold_duration_command(document, request)?
     {
         if let Some(steps) = isolation.as_deref_mut() {

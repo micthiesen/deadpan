@@ -75,7 +75,7 @@ impl ProjectDocument {
     /// Structural geometry shared by duration-only authorities. Callers retain
     /// their own authoring policy; this projects one independently validated
     /// stable presentation and does not select a substitute occurrence.
-    pub(super) fn hold_duration_visibility_for_instance(
+    pub(crate) fn hold_duration_visibility_for_instance(
         &self,
         inspector_root: &NodeId,
         instance: &InstancePath,
@@ -188,9 +188,9 @@ impl ProjectDocument {
                         .checked_sub(1)
                         .ok_or_else(|| unavailable("Hold presentation omits a Repeat ancestor"))?;
                     let step = &instance.repeats[remaining];
-                    if &step.node != ancestor || child != &current {
+                    if &step.node != ancestor {
                         return Err(unavailable(
-                            "Hold presentation must follow its captured literal Repeat body",
+                            "Hold presentation names the wrong Repeat ancestor",
                         ));
                     }
                     let layout = crate::ExactRepeatLayout::compile_with_gap_overrides(
@@ -208,7 +208,7 @@ impl ProjectDocument {
                     })?;
                     if play.child != current {
                         return Err(unavailable(
-                            "Hold presentation uses an overridden Repeat body",
+                            "Hold presentation must follow its captured effective Repeat body",
                         ));
                     }
                     visible = visible

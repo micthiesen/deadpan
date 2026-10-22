@@ -4,6 +4,34 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Current continuation, 2026-10-22
 
+One explicit This play body now supports Hold duration beneath one fixed,
+unclocked Edit Retime. Existing temporal isolation feeds the ordinary reducer;
+fixed extent, physical audio phase and actual mapped presentation remain intact.
+Visible continuation is separate from an intrinsic start removed by a crop.
+The inspector's explanation now follows Default, Play, mixed or selected scope.
+
+All 39 focused and 3,496 broader tests pass. All 204 normal app tests and 206
+UI-feature tests pass, with strict checks and formatting. Both release replays
+pass 56 checks plus Kestrel; two compact captures were inspected. Quiet state p99 is 1.828ms
+over 151 samples. Four release exports verify all 160 pictures and 256,256
+presented samples at zero offset. See the
+[qualification](../qualification/this-play-fixed-retime-hold-duration-2026-10-22.md)
+for accepted-artifact controls, exact source/binary identity, failed fixtures,
+source-freeze and script repairs, captured-output markers and layout warnings.
+No requirement or gate is newly complete.
+
+Next: extend this same fixed-window family through nested explicit Repeat body
+choices, retaining one Retime strictly below the innermost Repeat. Use the
+existing bounded vector, not an arbitrary two-level cap. First prove public
+Rename isolation, mapped raw duration, geometry and inverses; the sole old-code
+failure must be positive native availability. Then cover exact fresh/preowned
+pools, sparse stable offsets, cropped visibility, durable history, independent
+PCM and emitted files. Mixed/selected fixed-Retime durations follow separately.
+Single all-Play dormant gaps, implicit default-gap node targets, other temporal
+placements, processing clocks, Partition and unsupported sounds remain open.
+
+## All plays fixed-Retime checkpoint, 2026-10-22
+
 All plays Hold duration now crosses fixed unclocked Edit Retimes below its
 direct Repeat inspector root. Shared and ordinary duration visibility reuse
 one exact crop/scale/center projection with canonical stable Repeat offsets.
@@ -19,13 +47,9 @@ for retained fixture/replay corrections, timing-ID bijection checks, layout and
 captured-output warnings, exact sources and binaries. No requirement or gate
 is newly complete.
 
-Next: remaining temporal scopes and selectors, beginning with duration-only
-This play/mixed paths through fixed Retimes. First prove a public isolation and
-raw-duration control; do not merely remove old guards. The occurrence path
-still captures an integral root suffix and bypasses fixed-window reduction,
-and the shared geometry helper deliberately follows literal Default bodies.
-Single all-Play dormant gaps, implicit default-gap node targets, processing
-clocks, Partition and placed sounds retain their documented limits.
+The one-Repeat This play continuation from this checkpoint is qualified above.
+The common geometry helper now follows independently validated effective body
+presentations while shared authority separately retains literal Default policy.
 
 ## Owned-gap Hold duration checkpoint, 2026-10-22
 

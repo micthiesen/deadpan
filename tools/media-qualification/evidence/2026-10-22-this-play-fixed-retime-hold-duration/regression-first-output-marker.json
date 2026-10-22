@@ -1,0 +1,10 @@
+{
+  "test": "publication_durability::tests::barrier_failure_at_every_step_denies_acknowledgement",
+  "executed": "/tmp/deadpan-this-play-fixed-retime-duration-2026-10-22/regression-marker-bin/deadpan_store-a820d32debc45aae",
+  "original": "/Users/michael/Code/deadpan/target/debug/deps/deadpan_store-a820d32debc45aae",
+  "sha256": "bf7983b8224c99a8f327e1117f0503e46e8e54c7283be0eedeeb9b420204238d",
+  "exit": 0,
+  "seconds": 0.2403886253014207,
+  "output_reached_eof": true,
+  "identity_captured": "after broad run; store library source unchanged"
+}

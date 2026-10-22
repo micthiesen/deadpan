@@ -14,8 +14,11 @@ mod hold_duration;
 mod isolation;
 mod mixed_hold_duration;
 mod proof;
-pub(crate) use hold_duration::duration_target_dormant;
 pub use hold_duration::{PreparedOccurrenceHoldDuration, prepare_occurrence_hold_duration};
+pub(crate) use hold_duration::{
+    duration_target_dormant, fixed_occurrence_preflight,
+    prepare_fixed_command as prepare_fixed_occurrence_hold_duration_command,
+};
 pub use isolation::MAX_SCOPED_TARGETS;
 pub(crate) use isolation::{
     apply_many_mapped, apply_mapped, isolate_temporal, matches_prefix, occupied_node_ids,

@@ -19,6 +19,7 @@ pub(super) mod owned_gap_duration;
 mod pause_macros;
 mod pauses;
 mod shared_hold_duration;
+pub(super) mod this_play_fixed_duration;
 
 pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     idle(d)?;

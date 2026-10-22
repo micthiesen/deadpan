@@ -5,6 +5,8 @@ use super::*;
 mod owned_gap;
 #[path = "scoped_mixed_duration/shared_fixed.rs"]
 mod shared_fixed;
+#[path = "scoped_mixed_duration/this_play_fixed_retime.rs"]
+mod this_play_fixed_retime;
 use deadpan_core::{OccurrenceIdentities, RepeatEditBranch, RepeatEditStep, ScopedNodeTarget};
 
 fn accepted_for_duration(

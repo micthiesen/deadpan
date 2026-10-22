@@ -10,6 +10,69 @@ use deadpan_core::{
 
 use super::{SequenceScope, Workspace};
 
+/// Fixed-window duration visibility is independent of the intrinsic Hold
+/// boundary. Ordinary occurrence edits retain their existing continuation.
+pub(crate) fn fixed_duration_visibility(
+    document: &ProjectDocument,
+    parent: &NodeId,
+    scoped: &deadpan_core::SemanticScopedContext,
+) -> Result<Option<deadpan_core::HoldDurationVisibility>, String> {
+    let parents: BTreeMap<_, _> = document
+        .nodes()
+        .keys()
+        .flat_map(|owner| document.children(owner).map(move |child| (child, owner)))
+        .collect();
+    let mut node = &scoped.target.node;
+    let mut retimed = false;
+    for _ in 0..=MAX_DOCUMENT_DEPTH {
+        retimed |= matches!(
+            document.nodes().get(node).map(|beat| &beat.kind),
+            Some(NodeKind::Retime { .. })
+        );
+        if node == document.root() {
+            return if retimed {
+                document
+                    .fixed_occurrence_hold_duration_visibility(
+                        parent,
+                        &scoped.root,
+                        &scoped.presentation,
+                    )
+                    .map(Some)
+                    .map_err(|error| error.to_string())
+            } else {
+                Ok(None)
+            };
+        }
+        node = parents
+            .get(node)
+            .copied()
+            .ok_or("The duration target lost its project ancestry.")?;
+    }
+    Err("The duration target exceeds the document depth bound.".into())
+}
+
+pub(crate) fn verify_duration_pictures(
+    plan: &deadpan_plan::RenderPlan,
+    instance: &InstancePath,
+    visible: deadpan_core::HoldDurationVisibility,
+) -> Result<(), String> {
+    for frame in [
+        visible.frames.start(),
+        ProjectFrame(visible.frames.end().0 - 1),
+    ] {
+        if !plan
+            .picture(frame)
+            .map_err(|error| error.to_string())?
+            .framing
+            .iter()
+            .any(|layer| &layer.instance == instance)
+        {
+            return Err("The visible pause no longer presents its captured Hold.".into());
+        }
+    }
+    Ok(())
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct Target {
     pub session: u64,

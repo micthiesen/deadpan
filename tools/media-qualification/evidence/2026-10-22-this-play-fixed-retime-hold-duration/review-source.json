@@ -1,0 +1,47 @@
+{
+  "base": "5cd480c6e6a96db4922f6e4c366ea4eb81e7afd9",
+  "general": {
+    "agent": "this_play_duration_general",
+    "result": "No actionable production core/app findings; read-only, no tests run."
+  },
+  "clocks": {
+    "agent": "this_play_duration_clocks",
+    "result": "No timing/authority findings; read-only."
+  },
+  "verification": {
+    "agent": "this_play_duration_verification",
+    "finding": "CLI picture oracle treated copied Source29..32 as four rather than three frames, extending its expected interval one frame into padding.",
+    "resolution": "Upper bound corrected from5+Hold length to4+Hold length before test execution."
+  },
+  "root_repairs": [
+    "Initial native draft used a fixed default Hold ID for post-isolation navigation; it now admits the mapped Freeze Hold.",
+    "Initial native draft manually constructed BeatNode fields; constructor plus typed kind assignment replaces it before execution.",
+    "First core/app check failed only missing test revision helper; explicit RevisionId construction fixes it.",
+    "First all-package check failed store test imports; explicit imports and target validation fix it. That raw log was inadvertently overwritten; summary and failed source retained.",
+    "Second all-package check failed four audio helper paths with one extra super; corrected.",
+    "Third all-package check failed CLI BeatNode import, Result iterator collection and u32/usize mismatch; corrected.",
+    "Both all-package and UI all-target checks then passed in16.10s/17.05s.",
+    "Root requested audio strengthening from first-play origin0 to selected middle play with an explicit PointCeil stage query and physical identity assertion.",
+    "Strict lint corrected u32-to-i64 TryFrom to infallible From in the CLI fixture, then removed four redundant usize casts in the audio fixture. No test oracle changed.",
+    "Compact native capture exposed unconditional All plays inspector copy under This play; hint now follows captured scope, with a native fully-painted text check."
+  ],
+  "followup_reviews": [
+    {
+      "reviewer": "this_play_duration_verification",
+      "result": "No findings after corrected CLI literal oracle and exact selected-stage PCM query; final revision-only content equality reviewed."
+    },
+    {
+      "reviewer": "this_play_duration_clocks",
+      "finding": "Native dot comparison inspected only keys present in actual JSON, missing absent optional fields.",
+      "resolution": "Compare union of actual/expected keys, then require timing-ID bijection for audio_bindings only. Read-only follow-up confirms."
+    },
+    {
+      "reviewer": "selected_duration_verification_review",
+      "result": "Confirmed extension AcceptedArtifact provenance is correct for a newly isolated Play; shared Default request is a different scope. Root asserts same admitted artifact-backed origin through Redo."
+    },
+    {
+      "reviewer": "this_play_duration_clocks",
+      "result": "No UI scope findings. has_selected_plays exactly extracts existing predicate, availability guard order unchanged; hint distinguishes Default, Play, mixed and selected contexts, and replay checks actual painted text."
+    }
+  ]
+}

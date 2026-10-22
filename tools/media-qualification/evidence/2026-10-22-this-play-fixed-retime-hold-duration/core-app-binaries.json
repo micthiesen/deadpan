@@ -1,0 +1,51 @@
+[
+  {
+    "suite": "deadpan-app::bin/deadpan-app",
+    "executed": "/Users/michael/Code/deadpan/target/debug/deps/deadpan_app-1665fcaccc742208",
+    "retained": "/tmp/deadpan-this-play-fixed-retime-duration-2026-10-22/core-app-bin/deadpan_app-1665fcaccc742208",
+    "sha256": "e3140053fc2be2f8bf3167b60c4b89306a727c758d3fe2f2142068c94db3d0c0",
+    "bytes": 105435744,
+    "tests": [
+      "preview::scoped::model::tests::shared_fixed_retime_duration::native_all_default_fixed_retime_hold_duration_offers_entry_after_public_control",
+      "preview::scoped::model::tests::shared_fixed_retime_duration::native_this_play_fixed_retime_duration_hint_uses_retained_scope_and_clock_guards",
+      "preview::scoped::model::tests::shared_fixed_retime_duration::native_this_play_fixed_retime_hold_duration_offers_entry_after_public_isolation_control",
+      "project::tests::macros::scoped::duration::native_scoped_hold_duration_from_interior_retains_exact_start_history_and_macro_continuation",
+      "project::tests::macros::scoped::duration::native_scoped_hold_duration_noop_late_call_and_durable_retry_preserve_atomic_history",
+      "project::tests::macros::scoped::this_play_fixed_duration::native_this_play_fixed_retime_duration_service_retains_cropped_fractional_continuation",
+      "project::tests::macros::scoped::this_play_fixed_duration::native_this_play_fixed_retime_duration_service_retains_visible_continuation"
+    ]
+  },
+  {
+    "suite": "deadpan-core",
+    "executed": "/Users/michael/Code/deadpan/target/debug/deps/deadpan_core-99ef176a441abc2a",
+    "retained": "/tmp/deadpan-this-play-fixed-retime-duration-2026-10-22/core-app-bin/deadpan_core-99ef176a441abc2a",
+    "sha256": "3f1643cb3d380a93fb4c0b93e3cd4caef1cc152850c59e24a0edee13d7cf31fc",
+    "bytes": 69486368,
+    "tests": [
+      "semantic::planner::tests::scoped_framing::scoped_hold_duration::fixed_retime_duration::fixed_occurrence_duration_crop_and_intrinsic_boundary_remain_distinct",
+      "semantic::planner::tests::scoped_framing::scoped_hold_duration::fixed_retime_duration::fixed_occurrence_duration_derived_clock_refuses_before_isolation",
+      "semantic::planner::tests::scoped_framing::scoped_hold_duration::fixed_retime_duration::fixed_occurrence_duration_exact_pools_stale_and_wrong_root_refuse",
+      "semantic::planner::tests::scoped_framing::scoped_hold_duration::fixed_retime_duration::fixed_occurrence_duration_fresh_pools_affine_visibility_all_pitches_and_inverse",
+      "semantic::planner::tests::scoped_framing::scoped_hold_duration::fixed_retime_duration::fixed_occurrence_duration_hidden_unsampled_and_staged_disappearance_rollback",
+      "semantic::planner::tests::scoped_framing::scoped_hold_duration::fixed_retime_duration::fixed_occurrence_duration_owned_and_staged_setters_allocate_zero_nodes",
+      "semantic::planner::tests::scoped_framing::scoped_hold_duration::fixed_retime_duration::fixed_occurrence_duration_preserves_source_recipe_lattice_after_isolation",
+      "semantic::planner::tests::scoped_framing::scoped_hold_duration::fixed_retime_duration::fixed_occurrence_duration_shrink_cannot_rewrite_retained_input_end",
+      "semantic::planner::tests::scoped_framing::scoped_hold_duration::fixed_retime_duration::fixed_occurrence_duration_unsupported_ancestry_keeps_atomic_refusals",
+      "semantic::planner::tests::scoped_framing::scoped_hold_duration::scoped_hold_duration_direct_repeat_ancestry_reanchors_later_plays_and_root_tail",
+      "semantic::planner::tests::scoped_framing::scoped_hold_duration::scoped_hold_duration_exact_pools_late_failure_and_saved_intent_leave_no_partial_result",
+      "semantic::planner::tests::scoped_framing::scoped_hold_duration::scoped_hold_duration_grow_shrink_first_last_plays_map_actual_hold_and_exact_start_with_one_inverse",
+      "semantic::planner::tests::scoped_framing::scoped_hold_duration::scoped_hold_duration_noop_mixed_nonhold_and_retime_fail_before_allocation",
+      "semantic::planner::tests::scoped_framing::scoped_hold_duration::scoped_hold_duration_retains_old_suffix_lattices_and_captures_partially_unbound_root_tail",
+      "semantic::planner::tests::scoped_framing::scoped_hold_duration::scoped_hold_duration_reuses_existing_override_and_maps_duration_zoom_pause_nested_calls",
+      "semantic::planner::tests::shared_hold_duration::shared_fixed_retime_duration::shared_fixed_retime_duration_clocked_stage_is_refused_even_when_default_is_dormant",
+      "semantic::planner::tests::shared_hold_duration::shared_fixed_retime_duration::shared_fixed_retime_duration_dormant_defaults_and_million_plays_stay_compact",
+      "semantic::planner::tests::shared_hold_duration::shared_fixed_retime_duration::shared_fixed_retime_duration_forged_presentations_and_other_scopes_remain_refused",
+      "semantic::planner::tests::shared_hold_duration::shared_fixed_retime_duration::shared_fixed_retime_duration_fractional_half_center_ties_all_pitches_grow_shrink",
+      "semantic::planner::tests::shared_hold_duration::shared_fixed_retime_duration::shared_fixed_retime_duration_hidden_unsampled_and_late_disappearance_refuse_atomically",
+      "semantic::planner::tests::shared_hold_duration::shared_fixed_retime_duration::shared_fixed_retime_duration_named_counted_calls_keep_authority_after_clock_capture",
+      "semantic::planner::tests::shared_hold_duration::shared_fixed_retime_duration::shared_fixed_retime_duration_nested_repeat_offsets_include_sparse_gaps_and_reorder",
+      "semantic::planner::tests::shared_hold_duration::shared_fixed_retime_duration::shared_fixed_retime_duration_nonzero_crop_clips_before_picture_sampling",
+      "semantic::planner::tests::shared_hold_duration::shared_fixed_retime_duration::shared_fixed_retime_duration_root_sound_policy_is_unchanged"
+    ]
+  }
+]

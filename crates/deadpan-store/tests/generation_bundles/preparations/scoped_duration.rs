@@ -74,7 +74,7 @@ fn nested_occurrence_duration_maps_admitted_generated_hold_shortening_and_extens
         )?;
         assert_ne!(prepared.target.node, instance.node);
         assert_ne!(prepared.target.repeats[1].repeat, NodeId::new("inner")?);
-        assert_eq!(prepared.boundary.frame.0, 36);
+        assert_eq!(prepared.boundary.as_ref().unwrap().frame.0, 36);
         let outcome = store.commit(&request)?;
         let after = store.snapshot()?;
         assert_eq!(

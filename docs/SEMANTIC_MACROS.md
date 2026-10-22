@@ -199,21 +199,45 @@ Recording still waits for each action, and scope navigation cancels it.
 ### One-play Hold length
 
 With This play explicit at every Repeat level, `:hold-duration Nf` records
-`SetHoldDuration { length }` and supplies dot intent. Enter on the selected
-Hold or its Change duration control opens the same captured command, prefilled
-with the current length. Invocation captures that Hold and concrete play;
-the saved instruction contains only length intent.
+`SetHoldDuration { length }` and supplies dot intent when the target path uses
+only Repeat and Sequence ancestry. Enter on the selected Hold or its Change
+duration control opens the same captured command, prefilled with the current
+length. Invocation captures that Hold and concrete play; the saved instruction
+contains only length intent.
 
 The planner executes `EditOccurrence::SetHoldDuration` with exact node and mark
 pools, then carries its actual isolation mapping forward. The final cursor is
 the resized Hold's exact start, while the ordinary enclosing selection remains
 unchanged. Another duration, Zoom, pause or named call uses that mapped Hold.
 No-op lengths and late unsupported instructions leave history and registers
-unchanged. Multiple plays, Retime ancestry and attached or root sound
-events retain explicit refusals. Generated-picture shortening retains qualified
-accepted media; extension beyond its coverage commits fallback and durable
-preparation rather than stretching the accepted provider silently. See the
-[Hold duration qualification](qualification/scoped-hold-duration-2026-10-20.md).
+unchanged. Multiple plays and attached or root sound events retain explicit
+refusals. Retime ancestry remains refused except for the narrow one-Repeat
+fixed-Retime duration path below. Generated-picture shortening retains
+qualified accepted media; extension beyond its coverage commits fallback and
+durable preparation rather than stretching the accepted provider silently.
+See the [Hold duration qualification](qualification/scoped-hold-duration-2026-10-20.md).
+
+### This-play Hold length inside fixed Retime
+
+One explicit This play body supports `SetHoldDuration` through exactly one
+fixed, unclocked Edit Retime below the inspected Repeat. The target path may
+contain Sequence nodes around that Retime; a second Repeat, any other Retime,
+Partition or owned gap refuses. The runtime context retains the explicit play
+and concrete Hold, while saved programs still carry only the requested length.
+
+Each setter isolates the selected branch when needed and preserves the fixed
+Retime's source crop and output extent. It composes the Hold's visible interval
+through that crop and scale, then continues at the first sampled visible Hold
+picture. That frame may differ from the Hold's intrinsic start when the crop
+cuts it away. The target must remain visible in at least one sampled project
+picture after every staged setter. Hidden or unsampled Holds, derived pause
+clocks, root or attached sound events, mixed or selected-multiple-play
+contexts, and contexts with multiple Repeat ancestors refuse atomically.
+Already-owned branches can be edited without another isolation copy. Ordinary
+nested This play duration edits without Retime ancestry remain supported.
+Recording, named duration calls and dot use the same invocation authority.
+See the [This play fixed-Retime qualification](qualification/this-play-fixed-retime-hold-duration-2026-10-22.md)
+for retained scope and verification evidence.
 
 ### All plays Hold length
 

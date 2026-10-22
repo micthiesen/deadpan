@@ -2,6 +2,29 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
+## This play Hold length through one fixed Retime, 2026-10-22
+
+[Qualification](qualification/this-play-fixed-retime-hold-duration-2026-10-22.md)
+adds duration-only authority for one explicit Repeat body containing one fixed,
+unclocked Edit Retime. Actual temporal isolation maps the selected Hold and its
+presentation; the ordinary reducer preserves the fixed window and audio phase.
+Already-owned branches reuse identities. Cropped starts continue at the first
+sampled visible picture without inventing an intrinsic boundary. Hidden,
+unsampled, nested/mixed/selected, Partition, derived-clock and unsupported sound
+paths retain their guards. The inspector explanation follows the active scope.
+
+All 39 focused and 3,496 broader tests pass. All 204 affected normal app tests
+and 206 UI-feature tests pass, with strict lint and formatting. Both release native replays
+pass 56 workflow checks plus Kestrel; two compact captures were inspected.
+Quiet state p99 is 1.828ms over 151 samples. Four release exports verify every
+one of 160 pictures and 256,256 presented samples at zero offset. Retained
+evidence includes exact sources/binaries, actual MP4s, independent PCM,
+admitted-provider history, failed fixtures, source-freeze and script repairs,
+layout warnings and isolated passing checks for captured-output markers.
+DP-06 and DP-07 remain partial; no requirement or gate is newly complete.
+Nested This play, mixed and selected fixed-Retime durations, wider selectors,
+processing clocks, Partition and sound lifecycles remain open.
+
 ## All plays Hold length through fixed Retimes, 2026-10-22
 
 [Qualification](qualification/shared-fixed-retime-hold-duration-2026-10-22.md)
@@ -21,7 +44,7 @@ Quiet state p99 is 1.724ms across 134 samples. Four release exports verify all
 160 pictures and 256,256 presented samples at zero offset. The qualification
 retains failed fixtures/replays, exact clock-ID comparisons, warnings and
 source/binary identities. DP-06 and DP-07 remain partial; no requirement or gate
-is newly complete. This play, mixed and selected fixed-Retime durations,
+is newly complete. Further nested This play, mixed and selected fixed-Retime durations,
 processing clocks, Partition, wider selectors and sound lifecycles remain open.
 
 ## Owned-gap Hold duration semantics, 2026-10-22
@@ -3150,6 +3173,7 @@ exercised; the feature itself is implemented and verified as far as possible.
 
 | Area | What remains for the owner | Related |
 | --- | --- | --- |
+| This play Hold length through one fixed Retime: physical keys, speech and listening | 1. Extract the [retained owner fixture](../tools/media-qualification/evidence/2026-10-22-this-play-fixed-retime-hold-duration/this-play-fixed-unit-grow.deadpan.tar.gz) into a writable folder and open its 43-frame package. Open the three-play Repeat, choose `:scope play 2`, enter its fixed stage and body, then select the frozen Hold. Physical Enter must prefill `hold-duration 5f`, and the inspector must explain This play. 2. Set it to `3f`: total output stays 43 frames, and the first and third Plays keep their original 3f Holds. One Undo restores only the middle 5f Hold; Redo restores 3f. 3. Record a duration, save and run it, then explicitly reselect the Hold before dot. Check physical Enter/Escape, focus, breadcrumb and VoiceOver speech. Listen across the selected fixed stage and unchanged surrounding Plays, and compare the export with Original audio. Local scripted routing, exact PCM, history and emitted files are qualified; physical delivery, speech and acoustic judgement remain unverified. | [This play fixed-Retime qualification](qualification/this-play-fixed-retime-hold-duration-2026-10-22.md), DP-06, DP-07, DP-20 |
 | All plays Hold lengths through fixed Retimes: physical keys, speech and listening | 1. Copy the retained `shared-fixed-retime-unit-grow.deadpan` package identified in the qualification's encoded identities. It lasts 43 frames. Open the shared default fixed stage inside its three-play Repeat, select the frozen Hold and use physical Enter: it must prefill `hold-duration 5f`. 2. Set it to `3f`. Output stays 43 frames and the independent middle play keeps its own 3f Hold. One Undo restores both default 5f Holds; Redo restores their 3f lengths. 3. Record a duration, save it, run the named program and use dot after explicitly reselecting the Hold. Check focus, breadcrumb and VoiceOver speech. Listen across the fixed stage edges and compare the export with Original audio. Local routing, exact PCM, history and emitted files are qualified separately; physical delivery, speech and acoustic judgement remain unverified. | [Fixed-Retime shared duration qualification](qualification/shared-fixed-retime-hold-duration-2026-10-22.md), DP-06, DP-07, DP-20 |
 | Several selected Hold durations: physical input and listening | 1. In a disposable speech project, make one 2-frame Hold, wrap it with `:wrap-repeat 3`, then wrap that Repeat with `:wrap-repeat 2`. This outer Repeat lasts 12 frames. Enter both levels with All plays at the outer level, choose `:scope plays 1,3` at the inner level and select the Hold. Physical Enter must prefill `hold-duration 2f`. Set it to 3f: the outer Repeat becomes 16 frames, while each middle play remains 2f. One Undo restores 12; Redo restores 16. 2. Choose outer `:scope play 2`, retain inner `:scope plays 1,3` and set those Holds to 1f. Only that outer play changes, leaving the first outer play's selected Holds at 3f and both middle plays at 2f; the outer Repeat becomes 12 frames. Undo restores 16 and Redo restores 12. 3. Exercise physical Enter/Escape, recording, a saved duration Call and dot on a newly selected pair. Check the selection labels and VoiceOver speech, then listen to RoomTone and surviving speech and compare a render. Local scripted routing, clocks and encoded verification are recorded separately; physical input, speech and acoustic judgement remain unverified. | [Selected duration qualification](qualification/selected-hold-duration-semantics-2026-10-21.md), DP-06, DP-07, DP-20 |
 | Mixed All plays/This play Hold duration: physical input and listening | 1. In a disposable speech project, make one 2-frame Hold, wrap it with `:wrap-repeat 2`, then wrap the Repeat with `:wrap-repeat 3`. The outer Repeat lasts 12 frames. Enter the outer Repeat and choose `:scope play 2`; enter the inner Repeat and choose `:scope all`. Enter on the Hold must prefill `hold-duration 2f`. Set it to 3f: only the two Holds in outer play 2 change, so the outer Repeat lasts 14 frames. 2. Return to the outer level, choose `:scope all`, then enter the inner level and choose `:scope play 1`. Set its still-shared 2f Hold to 4f: the outer Repeat becomes 18 frames, while both independent 3f Holds in outer play 2 remain unchanged. One Undo must restore the exact 14-frame state; Redo restores 18. 3. Check physical Enter/Escape, recording, named duration Call and direct-edit dot in both mixed directions, including VoiceOver speech. Listen to the qualified Hold audio and unchanged speech after the Repeat, and compare a render. Scripted routing and local media checks are recorded separately; physical input, speech and acoustic judgement remain unverified. | [Mixed duration qualification](qualification/mixed-hold-duration-semantics-2026-10-21.md), DP-06, DP-07, DP-20 |

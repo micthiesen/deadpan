@@ -382,36 +382,50 @@ fn scoped_macro_receipt(
         (Some(before), Some(after)) => {
             let mut expected = context.clone();
             expected.scoped = Some(after.clone());
-            // A resize continues at the actual final Hold start, even when
-            // the invocation cursor was inside the old, longer pause. Keep
-            // every other ordinary context field strict, and prove the new
-            // cursor against the mapped occurrence rather than a picture.
+            // A fixed window continues at its first visible sampled picture;
+            // ordinary occurrence edits retain their intrinsic Hold start.
+            // Keep every other ordinary context field strict.
             if plan
                 .trace
                 .iter()
                 .any(|row| matches!(row.instruction, SemanticInstruction::SetHoldDuration { .. }))
             {
-                let start = deadpan_core::AnchorIndex::new(&plan.document)
-                    .map_err(display)?
-                    .resolve_target(&deadpan_core::AnchorTarget {
-                        boundary: deadpan_core::BoundaryAnchor {
-                            coordinate: deadpan_core::Anchor::Occurrence {
-                                instance: after.presentation.clone(),
-                                position: deadpan_core::ExactRatio::ZERO,
+                let fixed = crate::project::scoped::fixed_duration_visibility(
+                    &plan.document,
+                    &context.parent,
+                    after,
+                )?;
+                let valid_start = if let Some(visible) = fixed {
+                    let picture_plan = RenderPlan::compile(&plan.document).map_err(display)?;
+                    crate::project::scoped::verify_duration_pictures(
+                        &picture_plan,
+                        &after.presentation,
+                        visible,
+                    )?;
+                    visible.frames.start() == plan.context.cursor
+                } else {
+                    let start = deadpan_core::AnchorIndex::new(&plan.document)
+                        .map_err(display)?
+                        .resolve_target(&deadpan_core::AnchorTarget {
+                            boundary: deadpan_core::BoundaryAnchor {
+                                coordinate: deadpan_core::Anchor::Occurrence {
+                                    instance: after.presentation.clone(),
+                                    position: deadpan_core::ExactRatio::ZERO,
+                                },
+                                bias: deadpan_core::InsertionBias::Right,
                             },
-                            bias: deadpan_core::InsertionBias::Right,
-                        },
-                        occurrence: None,
-                    })
-                    .map_err(display)?;
+                            occurrence: None,
+                        })
+                        .map_err(display)?;
+                    start.exact_frame == deadpan_core::ExactRatio::integer(plan.context.cursor.0)
+                };
                 if !matches!(
                     plan.document
                         .nodes()
                         .get(&after.target.node)
                         .map(|node| &node.kind),
                     Some(deadpan_core::NodeKind::Hold { .. })
-                ) || start.exact_frame
-                    != deadpan_core::ExactRatio::integer(plan.context.cursor.0)
+                ) || !valid_start
                 {
                     return Err(
                         "The scoped pause length lost its exact Hold-start continuation.".into(),

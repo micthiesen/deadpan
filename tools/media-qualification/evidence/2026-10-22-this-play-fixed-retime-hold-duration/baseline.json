@@ -1,0 +1,9 @@
+{
+  "base": "5cd480c6e6a96db4922f6e4c366ea4eb81e7afd9",
+  "test": "native_this_play_fixed_retime_hold_duration_offers_entry_after_public_isolation_control",
+  "binary": "deadpan-app::bin/deadpan-app",
+  "executed": "/Users/michael/Code/deadpan/target/debug/deps/deadpan_app-edbbed39ebf1d72f",
+  "retained": "/tmp/deadpan-this-play-fixed-retime-duration-2026-10-22/baseline-bin/deadpan_app-edbbed39ebf1d72f",
+  "sha256": "7121eb4f39f448406a811f51696636c155bb09e111da76c5d97d4c47fae82a40",
+  "scope": "Silent Background Hold structural/availability witness, not real-media qualification."
+}

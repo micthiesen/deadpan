@@ -1,0 +1,53 @@
+{
+  "archive": "this-play-fixed-unit-grow.deadpan.tar.gz",
+  "sha256": "01fc5a0ca30502267e1bdeca745951e4e4f14f4e8cdd92317a010a21492bd450",
+  "bytes": 75029,
+  "files": [
+    {
+      "path": "this-play-fixed-unit-grow.deadpan/.render-candidates.lock",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "this-play-fixed-unit-grow.deadpan/.writer.lock",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "this-play-fixed-unit-grow.deadpan/Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+      "bytes": 39157,
+      "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918"
+    },
+    {
+      "path": "this-play-fixed-unit-grow.deadpan/Media/RenderCandidates/blake3-0c5ec0e75cd2eb3d0becad2e17b4a673f259ac4c1bf6e00afe8bc1d864fc3ced",
+      "bytes": 19045,
+      "sha256": "2edb482b1cf3a2edd121b545b1f50efeb96598442d9492f9c75d078c49258008"
+    },
+    {
+      "path": "this-play-fixed-unit-grow.deadpan/Media/RenderCandidates/blake3-27c9014d1f17640255ef7ffb8fed3cf3776ac1226197f73164721c94bed5c558",
+      "bytes": 15085,
+      "sha256": "2156cd27840c61755ad30ca0857570ab2b4f72a786e85df618a0f67345ba9363"
+    },
+    {
+      "path": "this-play-fixed-unit-grow.deadpan/manifest.json",
+      "bytes": 82,
+      "sha256": "55defdfa7d50372544aa60a3f0d99837a4e2c3323f5ae5bbf4cc9c4b2c2b59a1"
+    },
+    {
+      "path": "this-play-fixed-unit-grow.deadpan/project.sqlite",
+      "bytes": 651264,
+      "sha256": "29869637a76464664fda1dcef138a49c8338bf500e00d9368835acc8d83f271c"
+    },
+    {
+      "path": "this-play-fixed-unit-grow.deadpan/project.sqlite-shm",
+      "bytes": 32768,
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+    },
+    {
+      "path": "this-play-fixed-unit-grow.deadpan/project.sqlite-wal",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "extracted": "/tmp/deadpan-this-play-fixed-retime-duration-2026-10-22/owner-fixture-check/this-play-fixed-unit-grow.deadpan"
+}

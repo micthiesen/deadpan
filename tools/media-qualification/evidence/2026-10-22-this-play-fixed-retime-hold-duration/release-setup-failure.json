@@ -1,0 +1,5 @@
+{
+  "release_build": "passed 4m14s",
+  "native_tests_executed": false,
+  "failure": "Adapted scenario-name replacement also changed scratch directory substring, so identity.log redirection failed. Fixed only scratch script paths; reuse already-built release app."
+}

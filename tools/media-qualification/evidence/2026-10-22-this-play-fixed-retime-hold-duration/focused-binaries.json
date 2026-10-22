@@ -1,0 +1,95 @@
+[
+  {
+    "suite": "deadpan-app::bin/deadpan-app",
+    "executed": "/Users/michael/Code/deadpan/target/debug/deps/deadpan_app-1665fcaccc742208",
+    "retained": "/tmp/deadpan-this-play-fixed-retime-duration-2026-10-22/focused-bin/deadpan_app-1665fcaccc742208",
+    "sha256": "be547ee792648f60c2e3c33c3fc9a9994bc6772ea27173b3be2bcf5fd931078e",
+    "bytes": 105435744,
+    "tests": [
+      "preview::scoped::model::tests::shared_fixed_retime_duration::native_all_default_fixed_retime_hold_duration_offers_entry_after_public_control",
+      "preview::scoped::model::tests::shared_fixed_retime_duration::native_this_play_fixed_retime_duration_hint_uses_retained_scope_and_clock_guards",
+      "preview::scoped::model::tests::shared_fixed_retime_duration::native_this_play_fixed_retime_hold_duration_offers_entry_after_public_isolation_control",
+      "project::tests::macros::scoped::duration::native_scoped_hold_duration_from_interior_retains_exact_start_history_and_macro_continuation",
+      "project::tests::macros::scoped::duration::native_scoped_hold_duration_noop_late_call_and_durable_retry_preserve_atomic_history",
+      "project::tests::macros::scoped::this_play_fixed_duration::native_this_play_fixed_retime_duration_service_retains_cropped_fractional_continuation",
+      "project::tests::macros::scoped::this_play_fixed_duration::native_this_play_fixed_retime_duration_service_retains_visible_continuation"
+    ]
+  },
+  {
+    "suite": "deadpan-audio::stages",
+    "executed": "/Users/michael/Code/deadpan/target/debug/deps/stages-d575876438498380",
+    "retained": "/tmp/deadpan-this-play-fixed-retime-duration-2026-10-22/focused-bin/stages-d575876438498380",
+    "sha256": "53449a39d42e21999cc1aea17bd12dcc12a22251aba9ac75d8328adc14cad17d",
+    "bytes": 21677064,
+    "tests": [
+      "insert_time::processing_hold_duration::repeat::this_play_fixed_retime::this_play_fixed_retime_duration_preserves_fractional_input_phase_and_other_owners"
+    ]
+  },
+  {
+    "suite": "deadpan-cli::preview_export",
+    "executed": "/Users/michael/Code/deadpan/target/debug/deps/preview_export-09f24f1122af7985",
+    "retained": "/tmp/deadpan-this-play-fixed-retime-duration-2026-10-22/focused-bin/preview_export-09f24f1122af7985",
+    "sha256": "357b30e1ebd97e3173ecb057f1366721c097630053fa0c5a93f22349a65b2d1f",
+    "bytes": 46350656,
+    "tests": [
+      "scoped_hold_duration_preview_and_encoded_output_keep_authored_source_clocks",
+      "shared_fixed_retime_hold_duration_preview_and_encoded_output_keep_fixed_windows",
+      "this_play_fixed_retime_hold_duration_preview_and_encoded_output_keep_fixed_windows"
+    ]
+  },
+  {
+    "suite": "deadpan-cli::project_commands",
+    "executed": "/Users/michael/Code/deadpan/target/debug/deps/project_commands-6a0b3d2bc6481ebb",
+    "retained": "/tmp/deadpan-this-play-fixed-retime-duration-2026-10-22/focused-bin/project_commands-6a0b3d2bc6481ebb",
+    "sha256": "ea52609bf421f6a8b5caf5076aeca8ba99386279b405ef814060d335a3e16b73",
+    "bytes": 49984320,
+    "tests": [
+      "macros::framing::scoped_duration::headless_scoped_hold_duration_from_interior_maps_named_zoom_pause_and_durable_history",
+      "macros::framing::scoped_duration::headless_scoped_hold_duration_noop_and_late_unsupported_call_leave_history_and_bank_unchanged"
+    ]
+  },
+  {
+    "suite": "deadpan-core",
+    "executed": "/Users/michael/Code/deadpan/target/debug/deps/deadpan_core-99ef176a441abc2a",
+    "retained": "/tmp/deadpan-this-play-fixed-retime-duration-2026-10-22/focused-bin/deadpan_core-99ef176a441abc2a",
+    "sha256": "3dcbf79dbafb22df0c6625152e97a979396f879ef9b3f26a85ebd0c625fe865b",
+    "bytes": 69486368,
+    "tests": [
+      "semantic::planner::tests::scoped_framing::scoped_hold_duration::fixed_retime_duration::fixed_occurrence_duration_crop_and_intrinsic_boundary_remain_distinct",
+      "semantic::planner::tests::scoped_framing::scoped_hold_duration::fixed_retime_duration::fixed_occurrence_duration_derived_clock_refuses_before_isolation",
+      "semantic::planner::tests::scoped_framing::scoped_hold_duration::fixed_retime_duration::fixed_occurrence_duration_exact_pools_stale_and_wrong_root_refuse",
+      "semantic::planner::tests::scoped_framing::scoped_hold_duration::fixed_retime_duration::fixed_occurrence_duration_fresh_pools_affine_visibility_all_pitches_and_inverse",
+      "semantic::planner::tests::scoped_framing::scoped_hold_duration::fixed_retime_duration::fixed_occurrence_duration_hidden_unsampled_and_staged_disappearance_rollback",
+      "semantic::planner::tests::scoped_framing::scoped_hold_duration::fixed_retime_duration::fixed_occurrence_duration_owned_and_staged_setters_allocate_zero_nodes",
+      "semantic::planner::tests::scoped_framing::scoped_hold_duration::fixed_retime_duration::fixed_occurrence_duration_preserves_source_recipe_lattice_after_isolation",
+      "semantic::planner::tests::scoped_framing::scoped_hold_duration::fixed_retime_duration::fixed_occurrence_duration_shrink_cannot_rewrite_retained_input_end",
+      "semantic::planner::tests::scoped_framing::scoped_hold_duration::fixed_retime_duration::fixed_occurrence_duration_unsupported_ancestry_keeps_atomic_refusals",
+      "semantic::planner::tests::scoped_framing::scoped_hold_duration::scoped_hold_duration_direct_repeat_ancestry_reanchors_later_plays_and_root_tail",
+      "semantic::planner::tests::scoped_framing::scoped_hold_duration::scoped_hold_duration_exact_pools_late_failure_and_saved_intent_leave_no_partial_result",
+      "semantic::planner::tests::scoped_framing::scoped_hold_duration::scoped_hold_duration_grow_shrink_first_last_plays_map_actual_hold_and_exact_start_with_one_inverse",
+      "semantic::planner::tests::scoped_framing::scoped_hold_duration::scoped_hold_duration_noop_mixed_nonhold_and_retime_fail_before_allocation",
+      "semantic::planner::tests::scoped_framing::scoped_hold_duration::scoped_hold_duration_retains_old_suffix_lattices_and_captures_partially_unbound_root_tail",
+      "semantic::planner::tests::scoped_framing::scoped_hold_duration::scoped_hold_duration_reuses_existing_override_and_maps_duration_zoom_pause_nested_calls",
+      "semantic::planner::tests::shared_hold_duration::shared_fixed_retime_duration::shared_fixed_retime_duration_clocked_stage_is_refused_even_when_default_is_dormant",
+      "semantic::planner::tests::shared_hold_duration::shared_fixed_retime_duration::shared_fixed_retime_duration_dormant_defaults_and_million_plays_stay_compact",
+      "semantic::planner::tests::shared_hold_duration::shared_fixed_retime_duration::shared_fixed_retime_duration_forged_presentations_and_other_scopes_remain_refused",
+      "semantic::planner::tests::shared_hold_duration::shared_fixed_retime_duration::shared_fixed_retime_duration_fractional_half_center_ties_all_pitches_grow_shrink",
+      "semantic::planner::tests::shared_hold_duration::shared_fixed_retime_duration::shared_fixed_retime_duration_hidden_unsampled_and_late_disappearance_refuse_atomically",
+      "semantic::planner::tests::shared_hold_duration::shared_fixed_retime_duration::shared_fixed_retime_duration_named_counted_calls_keep_authority_after_clock_capture",
+      "semantic::planner::tests::shared_hold_duration::shared_fixed_retime_duration::shared_fixed_retime_duration_nested_repeat_offsets_include_sparse_gaps_and_reorder",
+      "semantic::planner::tests::shared_hold_duration::shared_fixed_retime_duration::shared_fixed_retime_duration_nonzero_crop_clips_before_picture_sampling",
+      "semantic::planner::tests::shared_hold_duration::shared_fixed_retime_duration::shared_fixed_retime_duration_root_sound_policy_is_unchanged"
+    ]
+  },
+  {
+    "suite": "deadpan-store::generation_bundles",
+    "executed": "/Users/michael/Code/deadpan/target/debug/deps/generation_bundles-8fe4e5fef16f185c",
+    "retained": "/tmp/deadpan-this-play-fixed-retime-duration-2026-10-22/focused-bin/generation_bundles-8fe4e5fef16f185c",
+    "sha256": "38d6545b5dd17b5a2ee731ba67969865dd4946ee951593d6b2af2d41115bd337",
+    "bytes": 39129024,
+    "tests": [
+      "preparations::scoped_mixed_duration::shared_fixed::shared_fixed_retime_duration_calls_retain_accepted_shortening_and_exact_extension_birth_through_history",
+      "preparations::scoped_mixed_duration::this_play_fixed_retime::this_play_fixed_retime_macro_compound_keeps_admitted_media_scope_and_history_atomic"
+    ]
+  }
+]

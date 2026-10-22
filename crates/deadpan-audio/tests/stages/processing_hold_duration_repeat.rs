@@ -2,6 +2,8 @@
 use super::*;
 #[path = "processing_hold_duration_repeat/shared_fixed.rs"]
 mod shared_fixed;
+#[path = "processing_hold_duration_repeat/this_play_fixed_retime.rs"]
+mod this_play_fixed_retime;
 use deadpan_audio::{RoomTone, RoomToneRecipe};
 
 fn repeated_fixture(pitch: PitchPolicy, partial: bool) -> ProjectDocument {

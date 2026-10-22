@@ -113,10 +113,21 @@ fn input_record(
     range: Range<i64>,
     chunks: &[u32],
 ) -> Recorded {
+    let stage = processing_stage(plan);
+    input_record_for_stage(plan, provider, stage, support, range, chunks)
+}
+
+fn input_record_for_stage(
+    plan: &Arc<RenderPlan>,
+    provider: &mut FixtureProvider,
+    stage: AudioStage<'_>,
+    support: Range<ExactRatio>,
+    range: Range<i64>,
+    chunks: &[u32],
+) -> Recorded {
     provider
         .revisions
         .insert(plan.metadata().revision_id.clone());
-    let stage = processing_stage(plan);
     let signal = stage.input_signal();
     assert_eq!(signal.support(), support);
     let tape = AudioSignalTape::new(

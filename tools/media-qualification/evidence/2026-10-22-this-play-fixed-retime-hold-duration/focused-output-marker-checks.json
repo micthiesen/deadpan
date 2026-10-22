@@ -1,0 +1,18 @@
+[
+  {
+    "test": "semantic::planner::tests::scoped_framing::scoped_hold_duration::fixed_retime_duration::fixed_occurrence_duration_exact_pools_stale_and_wrong_root_refuse",
+    "binary": "/tmp/deadpan-this-play-fixed-retime-duration-2026-10-22/focused-bin/deadpan_core-99ef176a441abc2a",
+    "sha256": "3dcbf79dbafb22df0c6625152e97a979396f879ef9b3f26a85ebd0c625fe865b",
+    "exit": 0,
+    "seconds": 0.012224750593304634,
+    "output_reached_eof": true
+  },
+  {
+    "test": "semantic::planner::tests::scoped_framing::scoped_hold_duration::fixed_retime_duration::fixed_occurrence_duration_derived_clock_refuses_before_isolation",
+    "binary": "/tmp/deadpan-this-play-fixed-retime-duration-2026-10-22/focused-bin/deadpan_core-99ef176a441abc2a",
+    "sha256": "3dcbf79dbafb22df0c6625152e97a979396f879ef9b3f26a85ebd0c625fe865b",
+    "exit": 0,
+    "seconds": 0.007871542125940323,
+    "output_reached_eof": true
+  }
+]

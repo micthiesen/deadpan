@@ -29,7 +29,7 @@ fn pcm(project: &Project, frame: i64) -> Result<Vec<[f64; 2]>> {
 
 /// Independently sample the authored [0,8) window at each output center.
 /// Child sequence is Original28 / freeze28 x length / Original29..32 / black4.
-fn layout(output: i64, lengths: [i64; 3]) -> Vec<Expected> {
+pub(super) fn layout(output: i64, lengths: [i64; 3]) -> Vec<Expected> {
     let mut pictures: Vec<_> = (12..28).map(original).collect();
     for length in lengths {
         for frame in 0..output {

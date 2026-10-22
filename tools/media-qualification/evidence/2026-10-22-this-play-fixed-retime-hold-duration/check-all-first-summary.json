@@ -1,0 +1,10 @@
+{
+  "result": "failed compilation before execution",
+  "errors": [
+    "store test missing imports PlayOverride, PlayOverrides and OccurrenceEdit"
+  ],
+  "warning": "unused document argument in store test presentation helper",
+  "repair": "Explicit imports and target.validate(document) in helper",
+  "source": "check-all-failed-store.rs",
+  "raw_log_status": "The initial check-all.log was inadvertently overwritten by the second check. Original diagnostics are retained in the session; this summary is not a raw log."
+}

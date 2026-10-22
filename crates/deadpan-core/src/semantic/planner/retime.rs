@@ -502,6 +502,15 @@ where
         let requirements = self
             .current
             .occurrence_hold_duration_requirements(&scoped.presentation, duration)?;
+        if crate::scoped_edit::fixed_occurrence_preflight(&self.current, &scoped.presentation)?
+            .is_some()
+        {
+            self.current.fixed_occurrence_hold_duration_visibility(
+                &self.context.parent,
+                &scoped.root,
+                &scoped.presentation,
+            )?;
+        }
         self.charge_step(false)?;
         let SemanticAllocation::Isolation {
             new_revision,
@@ -537,7 +546,19 @@ where
         )?;
         let prepared =
             crate::prepare_occurrence_hold_duration(&self.current, &leaf.request(&self.current))?;
-        let start = prepared.boundary.frame;
+        let fixed_visibility = prepared.fixed_visibility();
+        let start = match fixed_visibility {
+            Some(visible) => visible.frames.start(),
+            None => {
+                prepared
+                    .boundary
+                    .as_ref()
+                    .ok_or_else(|| {
+                        invalid("ordinary one-play duration lost its intrinsic boundary")
+                    })?
+                    .frame
+            }
+        };
         let mapped = SemanticScopedContext {
             root: scoped.root,
             target: prepared.target,
@@ -553,8 +574,9 @@ where
         self.trace[trace_index].resolved_selection = Some(SliceCaptureSelection::Child {
             node: mapped.target.node,
         });
-        self.trace[trace_index].resolved_range = Some(
-            FrameRange::new(
+        self.trace[trace_index].resolved_range = Some(match fixed_visibility {
+            Some(visible) => visible.frames,
+            None => FrameRange::new(
                 start,
                 ProjectFrame(
                     start
@@ -564,7 +586,7 @@ where
                 ),
             )
             .map_err(crate::DocumentError::from)?,
-        );
+        });
         Ok(())
     }
 }

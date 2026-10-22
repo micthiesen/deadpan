@@ -1,0 +1,22 @@
+[
+  {
+    "test": "scoped_acceptance_isolates_one_play_and_keeps_default_request_current",
+    "executed": "/tmp/deadpan-this-play-fixed-retime-duration-2026-10-22/regression-output-marker-bin/generation_bundles-8fe4e5fef16f185c",
+    "original": "/Users/michael/Code/deadpan/target/debug/deps/generation_bundles-8fe4e5fef16f185c",
+    "sha256": "5ec387ccab66e5b8361dc4da528d66217d6a5076d767ea8ee5e3ce88454f5e76",
+    "exit": 0,
+    "seconds": 0.20511450059711933,
+    "output_reached_eof": true,
+    "identity_captured": "after broad run, before these executables rebuilt"
+  },
+  {
+    "test": "registers::original_register_keeps_qualified_identity_across_undo_reopen_and_checkpoint",
+    "executed": "/tmp/deadpan-this-play-fixed-retime-duration-2026-10-22/regression-output-marker-bin/source_registration-3beb61075fc7a591",
+    "original": "/Users/michael/Code/deadpan/target/debug/deps/source_registration-3beb61075fc7a591",
+    "sha256": "9e01270e89199a888d1f37c3c7ff25dc1337f0384f7c29f3f60f58377d9e6b49",
+    "exit": 0,
+    "seconds": 0.13013979140669107,
+    "output_reached_eof": true,
+    "identity_captured": "after broad run, before these executables rebuilt"
+  }
+]
