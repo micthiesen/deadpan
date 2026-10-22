@@ -1,0 +1,532 @@
+{
+  "visual": {
+    "failed": false,
+    "metadata": {
+      "binary_sha256": "6e728a988c6804ea02dfa4d188dcb179c295f8557a1591108a9ddb66636ea06a",
+      "build_profile": "release",
+      "cache_state": "first import/index cold, subsequent operations warm; OS file cache uncontrolled",
+      "cargo_lock_sha256_at_run": "1e39d18ae4de6c7b898edad39eb7104235fb3ffe3af84521ca94df2b6c25b71b",
+      "fixture": "cfr-bframes.mp4",
+      "fixture_identity_file": "/Users/michael/Code/deadpan/native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+      "fixture_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+      "git_revision": "f4f7481ed804f8a5c25b39b76b7ecc8bc1529cc4",
+      "git_status": "M crates/deadpan-app/src/navigation/command.rs\n M crates/deadpan-app/src/navigation/editor_map.rs\n M crates/deadpan-app/src/navigation/registry/baseline-routing.txt\n M crates/deadpan-app/src/navigation/registry/entries.rs\n M crates/deadpan-app/src/navigation/registry/tests.rs\n M crates/deadpan-app/src/preview.rs\n M crates/deadpan-app/src/preview/ai_pause.rs\n M crates/deadpan-app/src/preview/cards.rs\n M crates/deadpan-app/src/preview/copied.rs\n M crates/deadpan-app/src/preview/edit_range.rs\n M crates/deadpan-app/src/preview/harness/registers.rs\n M crates/deadpan-app/src/preview/harness/scenarios.rs\n M crates/deadpan-app/src/preview/harness/semantic.rs\n M crates/deadpan-app/src/preview/macros.rs\n M crates/deadpan-app/src/preview/moment.rs\n M crates/deadpan-app/src/preview/playback.rs\n M crates/deadpan-app/src/preview/semantic.rs\n M crates/deadpan-app/src/preview/splice.rs\n M crates/deadpan-app/src/project/registers.rs\n M crates/deadpan-app/src/project/semantic/tests.rs\n M crates/deadpan-app/src/project/service/macros.rs\n M crates/deadpan-app/src/project/service/registers.rs\n M crates/deadpan-app/src/ui_harness.rs\n M crates/deadpan-cli/src/macros.rs\n M crates/deadpan-cli/tests/preview_export.rs\n M crates/deadpan-cli/tests/preview_export/recipes.rs\n M crates/deadpan-core/src/command.rs\n M crates/deadpan-core/src/compound.rs\n M crates/deadpan-core/src/compound/identities.rs\n M crates/deadpan-core/src/edit_slice.rs\n M crates/deadpan-core/src/edit_slice/placement.rs\n M crates/deadpan-core/src/lib.rs\n M crates/deadpan-core/src/register.rs\n M crates/deadpan-core/src/semantic.rs\n M crates/deadpan-core/src/semantic/node.rs\n M crates/deadpan-core/src/semantic/planner.rs\n M crates/deadpan-core/src/semantic/planner/content.rs\n M crates/deadpan-core/src/semantic/planner/framing.rs\n M crates/deadpan-core/src/semantic/planner/selection.rs\n M crates/deadpan-core/src/semantic/planner/tests.rs\n M crates/deadpan-core/src/semantic/program.rs\n M crates/deadpan-core/src/sound_clock/edit.rs\n M crates/deadpan-core/src/sound_events.rs\n M crates/deadpan-core/src/sound_routing.rs\n M crates/deadpan-core/src/sound_routing/tests.rs\n M crates/deadpan-store/src/compound.rs\n M crates/deadpan-store/src/lib.rs\n M crates/deadpan-store/src/registers.rs\n M crates/deadpan-store/src/schema.rs\n M crates/deadpan-store/src/slice_preview.rs\n M crates/deadpan-store/tests/migration/development_break.rs\n M docs/COMMANDS.md\n M docs/DEVELOPMENT_FORMATS.md\n M docs/HEADLESS.md\n M docs/NAMED_REGISTERS.md\n M docs/PARITY.md\n M docs/SEMANTIC_MACROS.md\n M fuzz/Cargo.lock\n?? .claude/\n?? crates/deadpan-app/src/preview/harness/semantic/node_sets.rs\n?? crates/deadpan-cli/tests/node_sets.rs\n?? crates/deadpan-cli/tests/preview_export/node_sets.rs\n?? crates/deadpan-core/src/edit_slice/set.rs\n?? crates/deadpan-core/src/edit_slice/set/\n?? crates/deadpan-core/src/semantic/node_set.rs\n?? crates/deadpan-core/src/semantic/planner/node_sets.rs\n?? crates/deadpan-core/tests/edit_set.rs\n?? crates/deadpan-core/tests/edit_set/\n?? crates/deadpan-core/tests/node_set_counterfactual.rs\n?? crates/deadpan-core/tests/node_set_shared_mark.rs\n?? crates/deadpan-store/tests/node_sets.rs",
+      "gpu_readback_in_timing_run": false,
+      "hardware": "Apple M5 Max",
+      "os": "26.5.2",
+      "physical_display_measured": false,
+      "picture_worker_timing": "request_start_finish_publication_receipt_v1",
+      "power_thermal_state": "uncontrolled; compare on the same idle machine and power mode",
+      "replay_hz": 60,
+      "replay_wall_ms": 1290.262542,
+      "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+      "source_identity_note": "Git metadata describes the checkout at replay start; binary_sha256 identifies the executed build even during concurrent edits.",
+      "started_unix_ms": 1792696830771,
+      "tracked_diff_sha256_at_run": "c690fff8f8bc0882af6056a26e659098e7abd248216872e24af268dd13d3c61b",
+      "viewport_points": [
+        1280,
+        820
+      ],
+      "wait_strategy": "egui_repaint_callback_v1"
+    },
+    "scenarios": [
+      {
+        "name": "kestrel-shortcuts",
+        "failed": false,
+        "checks": 1,
+        "frames": 0,
+        "findings": [],
+        "timings": {}
+      },
+      {
+        "name": "node-set-selectors",
+        "failed": false,
+        "checks": 143,
+        "frames": 546,
+        "findings": [
+          {
+            "message": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+            "severity": "warning"
+          },
+          {
+            "message": "39 frame(s) settled their layout only on a second retry: [{\"frame\":39,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":42,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":47,\"input\":\"Command group name=\\\"Set scope\\\"\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":53,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":61,\"input\":\"Command group name=\\\"Empty member\\\"\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":74,\"input\":\"Command select node=2eb2b516-bbb3-4a56-b3ac-a2c0fdd8fc1f\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":76,\"input\":\"Command duplicate\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":80,\"input\":\"Command ungroup\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":84,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":92,\"input\":\"Command group name=\\\"First selected owner\\\"\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":96,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":104,\"input\":\"Command group name=\\\"Second selected owner\\\"\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":111,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":116,\"input\":\"Command select nodes=[\\\"d53701c4-e107-40db-aed9-85aa0959a029\\\",\\\"71028744-ad5a-4754-9ad3-6427e79c52dc\\\",\\\"950f166f-f7a4-482e-a89b-9a92de224ef1\\\",\\\"2eb2b516-bbb3-4a56-b3ac-a2c0fdd8fc1f\\\"]\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":123,\"input\":\"Command group name=\\\"No hull\\\"\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":125,\"input\":\"Command duplicate\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":127,\"input\":\"Command wrap-repeat 2\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":129,\"input\":\"Command select role=audio\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":131,\"input\":\"Command gain -3\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":133,\"input\":\"Command splice\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":136,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":143,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":150,\"input\":\"Command select nodes=[\\\"d53701c4-e107-40db-aed9-85aa0959a029\\\",\\\"71028744-ad5a-4754-9ad3-6427e79c52dc\\\",\\\"950f166f-f7a4-482e-a89b-9a92de224ef1\\\",\\\"2eb2b516-bbb3-4a56-b3ac-a2c0fdd8fc1f\\\"]\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":155,\"input\":\"Command select nodes=[\\\"d53701c4-e107-40db-aed9-85aa0959a029\\\",\\\"71028744-ad5a-4754-9ad3-6427e79c52dc\\\",\\\"950f166f-f7a4-482e-a89b-9a92de224ef1\\\",\\\"2eb2b516-bbb3-4a56-b3ac-a2c0fdd8fc1f\\\"]\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":175,\"input\":\"Command framing-save a\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":178,\"input\":\"Command record u\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":180,\"input\":\"Command select nodes=[\\\"d53701c4-e107-40db-aed9-85aa0959a029\\\",\\\"71028744-ad5a-4754-9ad3-6427e79c52dc\\\",\\\"950f166f-f7a4-482e-a89b-9a92de224ef1\\\",\\\"2eb2b516-bbb3-4a56-b3ac-a2c0fdd8fc1f\\\"]\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":244,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":279,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":335,\"input\":\"Command macro u\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":352,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":357,\"input\":\"Command macro u\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":411,\"input\":\"Command select nodes=[\\\"d53701c4-e107-40db-aed9-85aa0959a029\\\",\\\"71028744-ad5a-4754-9ad3-6427e79c52dc\\\",\\\"950f166f-f7a4-482e-a89b-9a92de224ef1\\\",\\\"2eb2b516-bbb3-4a56-b3ac-a2c0fdd8fc1f\\\"]\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":414,\"input\":\"Key Modifiers::NONE Enter\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":417,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":422,\"input\":\"Command hold 2f\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":444,\"input\":\"Command select nodes=[\\\"23c9ea52-7b00-4f91-b0fb-202c11a372f5\\\"]\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":447,\"input\":\"Command generate-ai\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":457,\"input\":\"Command select nodes=[\\\"d53701c4-e107-40db-aed9-85aa0959a029\\\",\\\"71028744-ad5a-4754-9ad3-6427e79c52dc\\\",\\\"950f166f-f7a4-482e-a89b-9a92de224ef1\\\",\\\"2eb2b516-bbb3-4a56-b3ac-a2c0fdd8fc1f\\\"]\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]}]",
+            "severity": "warning"
+          },
+          {
+            "message": "egui discard warning: 3 run(s) of 3+ consecutive retrying frames, each frame with its own cause: [[{\"frame\":73,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:6081)\"]},{\"frame\":74,\"input\":\"Command select node=2eb2b516-bbb3-4a56-b3ac-a2c0fdd8fc1f\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":75,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:6081)\"]},{\"frame\":76,\"input\":\"Command duplicate\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":77,\"input\":\"Committed revision changed\",\"new_input\":false,\"reasons\":[\"pass 0: inline notice changed placement (crates/deadpan-app/src/preview.rs:6009)\",\"pass 0: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]}],[{\"frame\":122,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:6081)\"]},{\"frame\":123,\"input\":\"Command group name=\\\"No hull\\\"\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":124,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:6081)\"]},{\"frame\":125,\"input\":\"Command duplicate\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":126,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:6081)\"]},{\"frame\":127,\"input\":\"Command wrap-repeat 2\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":128,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:6081)\"]},{\"frame\":129,\"input\":\"Command select role=audio\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":130,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:6081)\"]},{\"frame\":131,\"input\":\"Command gain -3\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":132,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:6081)\"]},{\"frame\":133,\"input\":\"Command splice\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]}],[{\"frame\":177,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:6081)\"]},{\"frame\":178,\"input\":\"Command record u\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":179,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:6081)\",\"pass 0: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":180,\"input\":\"Command select nodes=[\\\"d53701c4-e107-40db-aed9-85aa0959a029\\\",\\\"71028744-ad5a-4754-9ad3-6427e79c52dc\\\",\\\"950f166f-f7a4-482e-a89b-9a92de224ef1\\\",\\\"2eb2b516-bbb3-4a56-b3ac-a2c0fdd8fc1f\\\"]\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]}]]",
+            "severity": "warning"
+          }
+        ],
+        "timings": {
+          "ui_frame_cpu_ms": {
+            "completed": {
+              "max_ms": 6.988416,
+              "n": 546,
+              "p50_ms": 0.33829200000000004,
+              "p95_ms": 1.252416,
+              "p99_ms": 1.7936670000000001
+            },
+            "failed": 0,
+            "samples": 546,
+            "timed_out": 0
+          },
+          "ui_composition_submit_cpu_ms": {
+            "completed": {
+              "max_ms": 0.728792,
+              "n": 546,
+              "p50_ms": 0.10450000000000001,
+              "p95_ms": 0.148292,
+              "p99_ms": 0.204958
+            },
+            "failed": 0,
+            "samples": 546,
+            "timed_out": 0
+          },
+          "ui_composition_complete_ms": {
+            "completed": {
+              "max_ms": 9.269082999999998,
+              "n": 546,
+              "p50_ms": 0.44983399999999996,
+              "p95_ms": 0.808042,
+              "p99_ms": 0.95475
+            },
+            "failed": 0,
+            "samples": 546,
+            "timed_out": 0
+          },
+          "input_to_state_ms": {
+            "completed": {
+              "max_ms": 2.532375,
+              "n": 147,
+              "p50_ms": 0.71825,
+              "p95_ms": 1.6876659999999999,
+              "p99_ms": 2.033417
+            },
+            "failed": 0,
+            "samples": 147,
+            "timed_out": 0
+          },
+          "input_to_commit_ms": {
+            "completed": {
+              "max_ms": 103.291666,
+              "n": 13,
+              "p50_ms": 12.866042,
+              "p95_ms": 103.291666,
+              "p99_ms": 103.291666
+            },
+            "failed": 0,
+            "samples": 13,
+            "timed_out": 0
+          },
+          "request_to_decode_delivery_ms": {
+            "completed": {
+              "max_ms": 8.028167,
+              "n": 55,
+              "p50_ms": 2.0985,
+              "p95_ms": 5.516417,
+              "p99_ms": 8.028167
+            },
+            "failed": 0,
+            "samples": 55,
+            "timed_out": 0
+          },
+          "request_to_worker_start_ms": {
+            "completed": {
+              "max_ms": 0.008334,
+              "n": 55,
+              "p50_ms": 0.004959,
+              "p95_ms": 0.008209000000000001,
+              "p99_ms": 0.008334
+            },
+            "failed": 0,
+            "samples": 55,
+            "timed_out": 0
+          },
+          "worker_execution_ms": {
+            "completed": {
+              "max_ms": 2.4697500000000003,
+              "n": 55,
+              "p50_ms": 0.30225,
+              "p95_ms": 1.458125,
+              "p99_ms": 2.4697500000000003
+            },
+            "failed": 0,
+            "samples": 55,
+            "timed_out": 0
+          },
+          "worker_publication_delay_ms": {
+            "completed": {
+              "max_ms": 0.00033299999999999996,
+              "n": 55,
+              "p50_ms": 0.000125,
+              "p95_ms": 0.00025,
+              "p99_ms": 0.00033299999999999996
+            },
+            "failed": 0,
+            "samples": 55,
+            "timed_out": 0
+          },
+          "publication_to_decode_delivery_ms": {
+            "completed": {
+              "max_ms": 5.550084,
+              "n": 55,
+              "p50_ms": 2.021125,
+              "p95_ms": 5.184958,
+              "p99_ms": 5.550084
+            },
+            "failed": 0,
+            "samples": 55,
+            "timed_out": 0
+          },
+          "request_to_picture_submission_ms": {
+            "completed": {
+              "max_ms": 8.888292000000002,
+              "n": 54,
+              "p50_ms": 2.457625,
+              "p95_ms": 5.834292,
+              "p99_ms": 8.888292000000002
+            },
+            "failed": 0,
+            "samples": 54,
+            "timed_out": 0
+          },
+          "request_to_picture_complete_ms": {
+            "completed": {
+              "max_ms": 9.935792000000001,
+              "n": 54,
+              "p50_ms": 3.088791,
+              "p95_ms": 6.563375,
+              "p99_ms": 9.935792000000001
+            },
+            "failed": 0,
+            "samples": 54,
+            "timed_out": 0
+          },
+          "input_to_picture_complete_ms": {
+            "completed": {
+              "max_ms": 113.232625,
+              "n": 40,
+              "p50_ms": 5.539167,
+              "p95_ms": 25.748875,
+              "p99_ms": 113.232625
+            },
+            "failed": 0,
+            "samples": 40,
+            "timed_out": 0
+          },
+          "Original initialized and displayed": {
+            "completed": {
+              "max_ms": 108.50999999999999,
+              "n": 1,
+              "p50_ms": 108.50999999999999,
+              "p95_ms": 108.50999999999999,
+              "p99_ms": 108.50999999999999
+            },
+            "failed": 0,
+            "samples": 1,
+            "timed_out": 0
+          },
+          "Project and picture settled": {
+            "completed": {
+              "max_ms": 4.684958,
+              "n": 96,
+              "p50_ms": 0.725292,
+              "p95_ms": 4.042042,
+              "p99_ms": 4.684958
+            },
+            "failed": 0,
+            "samples": 96,
+            "timed_out": 0
+          },
+          "Committed revision changed": {
+            "completed": {
+              "max_ms": 25.1065,
+              "n": 24,
+              "p50_ms": 6.3685,
+              "p95_ms": 23.954458000000002,
+              "p99_ms": 25.1065
+            },
+            "failed": 0,
+            "samples": 24,
+            "timed_out": 0
+          },
+          "Node-set service and bank receipts finish": {
+            "completed": {
+              "max_ms": 14.759125,
+              "n": 57,
+              "p50_ms": 8.3e-05,
+              "p95_ms": 8.087917000000001,
+              "p99_ms": 14.759125
+            },
+            "failed": 0,
+            "samples": 57,
+            "timed_out": 0
+          }
+        }
+      }
+    ]
+  },
+  "performance": {
+    "failed": false,
+    "metadata": {
+      "binary_sha256": "6e728a988c6804ea02dfa4d188dcb179c295f8557a1591108a9ddb66636ea06a",
+      "build_profile": "release",
+      "cache_state": "first import/index cold, subsequent operations warm; OS file cache uncontrolled",
+      "cargo_lock_sha256_at_run": "1e39d18ae4de6c7b898edad39eb7104235fb3ffe3af84521ca94df2b6c25b71b",
+      "fixture": "cfr-bframes.mp4",
+      "fixture_identity_file": "/Users/michael/Code/deadpan/native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+      "fixture_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+      "git_revision": "f4f7481ed804f8a5c25b39b76b7ecc8bc1529cc4",
+      "git_status": "M crates/deadpan-app/src/navigation/command.rs\n M crates/deadpan-app/src/navigation/editor_map.rs\n M crates/deadpan-app/src/navigation/registry/baseline-routing.txt\n M crates/deadpan-app/src/navigation/registry/entries.rs\n M crates/deadpan-app/src/navigation/registry/tests.rs\n M crates/deadpan-app/src/preview.rs\n M crates/deadpan-app/src/preview/ai_pause.rs\n M crates/deadpan-app/src/preview/cards.rs\n M crates/deadpan-app/src/preview/copied.rs\n M crates/deadpan-app/src/preview/edit_range.rs\n M crates/deadpan-app/src/preview/harness/registers.rs\n M crates/deadpan-app/src/preview/harness/scenarios.rs\n M crates/deadpan-app/src/preview/harness/semantic.rs\n M crates/deadpan-app/src/preview/macros.rs\n M crates/deadpan-app/src/preview/moment.rs\n M crates/deadpan-app/src/preview/playback.rs\n M crates/deadpan-app/src/preview/semantic.rs\n M crates/deadpan-app/src/preview/splice.rs\n M crates/deadpan-app/src/project/registers.rs\n M crates/deadpan-app/src/project/semantic/tests.rs\n M crates/deadpan-app/src/project/service/macros.rs\n M crates/deadpan-app/src/project/service/registers.rs\n M crates/deadpan-app/src/ui_harness.rs\n M crates/deadpan-cli/src/macros.rs\n M crates/deadpan-cli/tests/preview_export.rs\n M crates/deadpan-cli/tests/preview_export/recipes.rs\n M crates/deadpan-core/src/command.rs\n M crates/deadpan-core/src/compound.rs\n M crates/deadpan-core/src/compound/identities.rs\n M crates/deadpan-core/src/edit_slice.rs\n M crates/deadpan-core/src/edit_slice/placement.rs\n M crates/deadpan-core/src/lib.rs\n M crates/deadpan-core/src/register.rs\n M crates/deadpan-core/src/semantic.rs\n M crates/deadpan-core/src/semantic/node.rs\n M crates/deadpan-core/src/semantic/planner.rs\n M crates/deadpan-core/src/semantic/planner/content.rs\n M crates/deadpan-core/src/semantic/planner/framing.rs\n M crates/deadpan-core/src/semantic/planner/selection.rs\n M crates/deadpan-core/src/semantic/planner/tests.rs\n M crates/deadpan-core/src/semantic/program.rs\n M crates/deadpan-core/src/sound_clock/edit.rs\n M crates/deadpan-core/src/sound_events.rs\n M crates/deadpan-core/src/sound_routing.rs\n M crates/deadpan-core/src/sound_routing/tests.rs\n M crates/deadpan-store/src/compound.rs\n M crates/deadpan-store/src/lib.rs\n M crates/deadpan-store/src/registers.rs\n M crates/deadpan-store/src/schema.rs\n M crates/deadpan-store/src/slice_preview.rs\n M crates/deadpan-store/tests/migration/development_break.rs\n M docs/COMMANDS.md\n M docs/DEVELOPMENT_FORMATS.md\n M docs/HEADLESS.md\n M docs/NAMED_REGISTERS.md\n M docs/PARITY.md\n M docs/SEMANTIC_MACROS.md\n M fuzz/Cargo.lock\n?? .claude/\n?? crates/deadpan-app/src/preview/harness/semantic/node_sets.rs\n?? crates/deadpan-cli/tests/node_sets.rs\n?? crates/deadpan-cli/tests/preview_export/node_sets.rs\n?? crates/deadpan-core/src/edit_slice/set.rs\n?? crates/deadpan-core/src/edit_slice/set/\n?? crates/deadpan-core/src/semantic/node_set.rs\n?? crates/deadpan-core/src/semantic/planner/node_sets.rs\n?? crates/deadpan-core/tests/edit_set.rs\n?? crates/deadpan-core/tests/edit_set/\n?? crates/deadpan-core/tests/node_set_counterfactual.rs\n?? crates/deadpan-core/tests/node_set_shared_mark.rs\n?? crates/deadpan-store/tests/node_sets.rs",
+      "gpu_readback_in_timing_run": false,
+      "hardware": "Apple M5 Max",
+      "os": "26.5.2",
+      "physical_display_measured": false,
+      "picture_worker_timing": "request_start_finish_publication_receipt_v1",
+      "power_thermal_state": "uncontrolled; compare on the same idle machine and power mode",
+      "replay_hz": 60,
+      "replay_wall_ms": 878.424959,
+      "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+      "source_identity_note": "Git metadata describes the checkout at replay start; binary_sha256 identifies the executed build even during concurrent edits.",
+      "started_unix_ms": 1792696846719,
+      "tracked_diff_sha256_at_run": "c690fff8f8bc0882af6056a26e659098e7abd248216872e24af268dd13d3c61b",
+      "viewport_points": [
+        1280,
+        820
+      ],
+      "wait_strategy": "egui_repaint_callback_v1"
+    },
+    "scenarios": [
+      {
+        "name": "kestrel-shortcuts",
+        "failed": false,
+        "checks": 1,
+        "frames": 0,
+        "findings": [],
+        "timings": {}
+      },
+      {
+        "name": "node-set-selectors",
+        "failed": false,
+        "checks": 143,
+        "frames": 677,
+        "findings": [
+          {
+            "message": "39 frame(s) settled their layout only on a second retry: [{\"frame\":111,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":114,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":122,\"input\":\"Command group name=\\\"Set scope\\\"\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":135,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":143,\"input\":\"Command group name=\\\"Empty member\\\"\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":171,\"input\":\"Command select node=d81c8a00-6b3b-4ea7-9e25-93bf143c5e66\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":173,\"input\":\"Command duplicate\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":185,\"input\":\"Command ungroup\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":198,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":206,\"input\":\"Command group name=\\\"First selected owner\\\"\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":219,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":227,\"input\":\"Command group name=\\\"Second selected owner\\\"\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":242,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":247,\"input\":\"Command select nodes=[\\\"afe5bdf9-bba8-4e09-b95e-2db6aa1d70e6\\\",\\\"03895e6e-9e88-4115-9b69-dcc6a63ef123\\\",\\\"a13c3d8f-bfcb-4123-b3d7-f8fa06649a77\\\",\\\"d81c8a00-6b3b-4ea7-9e25-93bf143c5e66\\\"]\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":254,\"input\":\"Command group name=\\\"No hull\\\"\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":256,\"input\":\"Command duplicate\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":258,\"input\":\"Command wrap-repeat 2\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":260,\"input\":\"Command select role=audio\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":262,\"input\":\"Command gain -3\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":264,\"input\":\"Command splice\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":267,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":274,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":281,\"input\":\"Command select nodes=[\\\"afe5bdf9-bba8-4e09-b95e-2db6aa1d70e6\\\",\\\"03895e6e-9e88-4115-9b69-dcc6a63ef123\\\",\\\"a13c3d8f-bfcb-4123-b3d7-f8fa06649a77\\\",\\\"d81c8a00-6b3b-4ea7-9e25-93bf143c5e66\\\"]\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":286,\"input\":\"Command select nodes=[\\\"afe5bdf9-bba8-4e09-b95e-2db6aa1d70e6\\\",\\\"03895e6e-9e88-4115-9b69-dcc6a63ef123\\\",\\\"a13c3d8f-bfcb-4123-b3d7-f8fa06649a77\\\",\\\"d81c8a00-6b3b-4ea7-9e25-93bf143c5e66\\\"]\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":304,\"input\":\"Command framing-save a\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":307,\"input\":\"Command record u\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":309,\"input\":\"Command select nodes=[\\\"afe5bdf9-bba8-4e09-b95e-2db6aa1d70e6\\\",\\\"03895e6e-9e88-4115-9b69-dcc6a63ef123\\\",\\\"a13c3d8f-bfcb-4123-b3d7-f8fa06649a77\\\",\\\"d81c8a00-6b3b-4ea7-9e25-93bf143c5e66\\\"]\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":374,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":410,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":466,\"input\":\"Command macro u\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":482,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":487,\"input\":\"Command macro u\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":541,\"input\":\"Command select nodes=[\\\"afe5bdf9-bba8-4e09-b95e-2db6aa1d70e6\\\",\\\"03895e6e-9e88-4115-9b69-dcc6a63ef123\\\",\\\"a13c3d8f-bfcb-4123-b3d7-f8fa06649a77\\\",\\\"d81c8a00-6b3b-4ea7-9e25-93bf143c5e66\\\"]\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":544,\"input\":\"Key Modifiers::NONE Enter\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":547,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":552,\"input\":\"Command hold 2f\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":574,\"input\":\"Command select nodes=[\\\"35e56833-2f85-414b-b395-2ff633f9c45a\\\"]\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":577,\"input\":\"Command generate-ai\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":587,\"input\":\"Command select nodes=[\\\"afe5bdf9-bba8-4e09-b95e-2db6aa1d70e6\\\",\\\"03895e6e-9e88-4115-9b69-dcc6a63ef123\\\",\\\"a13c3d8f-bfcb-4123-b3d7-f8fa06649a77\\\",\\\"d81c8a00-6b3b-4ea7-9e25-93bf143c5e66\\\"]\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]}]",
+            "severity": "warning"
+          },
+          {
+            "message": "egui discard warning: 3 run(s) of 3+ consecutive retrying frames, each frame with its own cause: [[{\"frame\":170,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:6081)\"]},{\"frame\":171,\"input\":\"Command select node=d81c8a00-6b3b-4ea7-9e25-93bf143c5e66\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":172,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:6081)\"]},{\"frame\":173,\"input\":\"Command duplicate\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]}],[{\"frame\":253,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:6081)\"]},{\"frame\":254,\"input\":\"Command group name=\\\"No hull\\\"\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":255,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:6081)\"]},{\"frame\":256,\"input\":\"Command duplicate\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":257,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:6081)\"]},{\"frame\":258,\"input\":\"Command wrap-repeat 2\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":259,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:6081)\"]},{\"frame\":260,\"input\":\"Command select role=audio\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":261,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:6081)\"]},{\"frame\":262,\"input\":\"Command gain -3\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":263,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:6081)\"]},{\"frame\":264,\"input\":\"Command splice\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]}],[{\"frame\":306,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:6081)\"]},{\"frame\":307,\"input\":\"Command record u\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":308,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:6081)\",\"pass 0: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]},{\"frame\":309,\"input\":\"Command select nodes=[\\\"afe5bdf9-bba8-4e09-b95e-2db6aa1d70e6\\\",\\\"03895e6e-9e88-4115-9b69-dcc6a63ef123\\\",\\\"a13c3d8f-bfcb-4123-b3d7-f8fa06649a77\\\",\\\"d81c8a00-6b3b-4ea7-9e25-93bf143c5e66\\\"]\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5631)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5766)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4186)\"]}]]",
+            "severity": "warning"
+          }
+        ],
+        "timings": {
+          "ui_frame_cpu_ms": {
+            "completed": {
+              "max_ms": 6.0353330000000005,
+              "n": 677,
+              "p50_ms": 0.251625,
+              "p95_ms": 1.1955,
+              "p99_ms": 1.716791
+            },
+            "failed": 0,
+            "samples": 677,
+            "timed_out": 0
+          },
+          "ui_composition_submit_cpu_ms": {
+            "completed": {
+              "max_ms": 0.6128750000000001,
+              "n": 677,
+              "p50_ms": 0.103125,
+              "p95_ms": 0.135083,
+              "p99_ms": 0.19512500000000002
+            },
+            "failed": 0,
+            "samples": 677,
+            "timed_out": 0
+          },
+          "ui_composition_complete_ms": {
+            "completed": {
+              "max_ms": 8.627042,
+              "n": 677,
+              "p50_ms": 0.43558399999999997,
+              "p95_ms": 0.613625,
+              "p99_ms": 0.851208
+            },
+            "failed": 0,
+            "samples": 677,
+            "timed_out": 0
+          },
+          "input_to_state_ms": {
+            "completed": {
+              "max_ms": 2.403667,
+              "n": 147,
+              "p50_ms": 0.68525,
+              "p95_ms": 1.682958,
+              "p99_ms": 1.9772919999999998
+            },
+            "failed": 0,
+            "samples": 147,
+            "timed_out": 0
+          },
+          "input_to_commit_ms": {
+            "completed": {
+              "max_ms": 85.749541,
+              "n": 13,
+              "p50_ms": 8.209958,
+              "p95_ms": 85.749541,
+              "p99_ms": 85.749541
+            },
+            "failed": 0,
+            "samples": 13,
+            "timed_out": 0
+          },
+          "request_to_decode_delivery_ms": {
+            "completed": {
+              "max_ms": 7.0549159999999995,
+              "n": 55,
+              "p50_ms": 1.151542,
+              "p95_ms": 2.511208,
+              "p99_ms": 7.0549159999999995
+            },
+            "failed": 0,
+            "samples": 55,
+            "timed_out": 0
+          },
+          "request_to_worker_start_ms": {
+            "completed": {
+              "max_ms": 0.007375,
+              "n": 55,
+              "p50_ms": 0.004583,
+              "p95_ms": 0.00725,
+              "p99_ms": 0.007375
+            },
+            "failed": 0,
+            "samples": 55,
+            "timed_out": 0
+          },
+          "worker_execution_ms": {
+            "completed": {
+              "max_ms": 2.267708,
+              "n": 55,
+              "p50_ms": 0.291791,
+              "p95_ms": 0.57125,
+              "p99_ms": 2.267708
+            },
+            "failed": 0,
+            "samples": 55,
+            "timed_out": 0
+          },
+          "worker_publication_delay_ms": {
+            "completed": {
+              "max_ms": 0.00025,
+              "n": 55,
+              "p50_ms": 8.4e-05,
+              "p95_ms": 0.00025,
+              "p99_ms": 0.00025
+            },
+            "failed": 0,
+            "samples": 55,
+            "timed_out": 0
+          },
+          "publication_to_decode_delivery_ms": {
+            "completed": {
+              "max_ms": 4.779583,
+              "n": 55,
+              "p50_ms": 0.814292,
+              "p95_ms": 2.1931659999999997,
+              "p99_ms": 4.779583
+            },
+            "failed": 0,
+            "samples": 55,
+            "timed_out": 0
+          },
+          "request_to_picture_submission_ms": {
+            "completed": {
+              "max_ms": 7.732041000000001,
+              "n": 54,
+              "p50_ms": 1.4055,
+              "p95_ms": 2.857375,
+              "p99_ms": 7.732041000000001
+            },
+            "failed": 0,
+            "samples": 54,
+            "timed_out": 0
+          },
+          "request_to_picture_complete_ms": {
+            "completed": {
+              "max_ms": 8.742916,
+              "n": 54,
+              "p50_ms": 1.9463329999999999,
+              "p95_ms": 3.3622080000000003,
+              "p99_ms": 8.742916
+            },
+            "failed": 0,
+            "samples": 54,
+            "timed_out": 0
+          },
+          "input_to_picture_complete_ms": {
+            "completed": {
+              "max_ms": 94.499416,
+              "n": 40,
+              "p50_ms": 2.2326669999999997,
+              "p95_ms": 25.048208,
+              "p99_ms": 94.499416
+            },
+            "failed": 0,
+            "samples": 40,
+            "timed_out": 0
+          },
+          "Original initialized and displayed": {
+            "completed": {
+              "max_ms": 93.885584,
+              "n": 1,
+              "p50_ms": 93.885584,
+              "p95_ms": 93.885584,
+              "p99_ms": 93.885584
+            },
+            "failed": 0,
+            "samples": 1,
+            "timed_out": 0
+          },
+          "Project and picture settled": {
+            "completed": {
+              "max_ms": 3.749708,
+              "n": 96,
+              "p50_ms": 0.736625,
+              "p95_ms": 1.0149169999999998,
+              "p99_ms": 3.749708
+            },
+            "failed": 0,
+            "samples": 96,
+            "timed_out": 0
+          },
+          "Committed revision changed": {
+            "completed": {
+              "max_ms": 24.933542,
+              "n": 24,
+              "p50_ms": 7.551291,
+              "p95_ms": 23.300874999999998,
+              "p99_ms": 24.933542
+            },
+            "failed": 0,
+            "samples": 24,
+            "timed_out": 0
+          },
+          "Node-set service and bank receipts finish": {
+            "completed": {
+              "max_ms": 15.671166,
+              "n": 57,
+              "p50_ms": 4.2e-05,
+              "p95_ms": 7.907792000000001,
+              "p99_ms": 15.671166
+            },
+            "failed": 0,
+            "samples": 57,
+            "timed_out": 0
+          }
+        }
+      }
+    ]
+  }
+}

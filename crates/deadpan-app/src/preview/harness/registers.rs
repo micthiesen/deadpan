@@ -962,6 +962,7 @@ fn bank_contents(d: &Driver<'_>) -> Value {
         let value = match content {
             Content::Original(copied) => json!({"type":"original","asset":copied.identity.asset,"qualification":copied.identity.qualification,"ordinals":copied.ordinals}),
             Content::Edited(copied) => json!({"type":"edited","slice":copied.slice(),"groups":copied.scope().groups(),"bounds":copied.bounds(),"path":copied.source_path(),"child":copied.child_label()}),
+            Content::EditedSet(set) => json!({"type":"edited_set","set":set}),
             Content::Macro(program) => json!({"type":"macro","program":program}),
         };
         (name.to_string(), value)

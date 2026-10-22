@@ -374,6 +374,7 @@ fn validate_capture(document: &ProjectDocument, value: &RegisterValue) -> Result
     match value {
         RegisterValue::Macro { .. } => Err(invalid("a macro cannot be used as captured content")),
         RegisterValue::Edited { slice } => slice.validate_capture(document),
+        RegisterValue::EditedSet { set } => set.validate_capture(document),
         RegisterValue::Original {
             revision,
             asset,
@@ -448,6 +449,11 @@ pub(crate) fn validate_paste(
 ) -> Result<(), EditError> {
     match (value, command) {
         (RegisterValue::Macro { .. }, _) => Err(invalid("a macro cannot be pasted as content")),
+        (RegisterValue::EditedSet { set: selected }, Command::SpliceEditSet { set, .. })
+            if selected.as_ref() == set =>
+        {
+            Ok(())
+        }
         (
             RegisterValue::Edited { slice: selected },
             Command::SpliceSlice { slice, .. }

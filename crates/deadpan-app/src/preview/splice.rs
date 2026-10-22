@@ -395,6 +395,15 @@ impl DeadpanApp {
         let captured = (|| {
             let target = target?;
             self.check_placement_target(&target)?;
+            if target.selection.nodes().is_some() {
+                return Err(
+                    "Clear the node set and choose an insertion seam before placing a slice."
+                        .to_owned(),
+                );
+            }
+            if matches!(target.copied, Some(copied::Content::EditedSet(_))) {
+                return Err("Paste the complete copied union with p/P at an insertion seam; Place slice does not refine unions.".to_owned());
+            }
             if target.selection.node().is_some() {
                 return Err("An explicit node selection replaces its complete structure with p/P. Clear it before choosing a Place slice destination.".to_owned());
             }
@@ -468,6 +477,11 @@ impl DeadpanApp {
                     u64::try_from(copied.bounds().start().0).map_err(|_| "Negative source In")?
                         ..u64::try_from(copied.bounds().end().0)
                             .map_err(|_| "Negative source Out")?
+                }
+                copied::Content::EditedSet(_) => {
+                    return Err(
+                        "Paste the complete node union with p/P at an insertion seam.".into(),
+                    );
                 }
                 copied::Content::Macro(_) => return Err(copied::MACRO_PASTE_ERROR.into()),
             };

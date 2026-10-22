@@ -1,0 +1,36 @@
+[
+  {
+    "review": "semantic authority/atomicity",
+    "finding": "Minor: aliases counted against authored node limit",
+    "status": "fixed",
+    "path": "crates/deadpan-core/src/semantic/planner/node_sets.rs",
+    "resolution": "Only imported authored nodes plus outer group count toward MAX_DOCUMENT_NODES. CapturedEditSet identity_requirements separately bounds aggregate aliases."
+  },
+  {
+    "review": "union capture/placement/durability",
+    "findings": []
+  },
+  {
+    "review": "native authority/provenance",
+    "finding": "Minor: active set :framing-save a could save one selected/navigation beat",
+    "status": "fixed; debug-eighth native replay passes all 143 workflow checks",
+    "path": "crates/deadpan-app/src/preview/macros.rs",
+    "resolution": "Action::SaveFraming joins active-set refusal. Replay asserts no document or bank write."
+  },
+  {
+    "review": "native authority focused AI followup",
+    "finding": "Major: active Nodes ending in Hold allowed single-Hold AI target",
+    "status": "fixed; debug-eighth native replay passes all 143 workflow checks",
+    "paths": [
+      "crates/deadpan-app/src/preview/ai_pause.rs",
+      "crates/deadpan-app/src/preview/harness/semantic/node_sets.rs"
+    ],
+    "resolution": "ai_hold refuses Nodes; ai_action refuses non-Cancel actions under a visible set, including direct UI and old captured targets. Global Cancel remains available."
+  },
+  {
+    "review": "native AI/playback/inspector/selection follow-up",
+    "findings": [],
+    "source": "/root/node_set_native_review",
+    "limits": "Read-only review; runtime evidence is the separate debug/release replay reports."
+  }
+]

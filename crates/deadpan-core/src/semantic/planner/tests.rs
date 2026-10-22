@@ -295,6 +295,31 @@ fn allocate(request: SemanticAllocationRequest) -> Result<SemanticAllocation, Ed
         SemanticAllocationRequest::Yank { step_index } => SemanticAllocation::Yank {
             capture_revision: revision(&format!("capture-{step_index}")),
         },
+        SemanticAllocationRequest::PasteEditedSet {
+            step_index,
+            requirements,
+        } => SemanticAllocation::PasteEditedSet {
+            new_revision: revision(&format!("leaf-{step_index}")),
+            identities: crate::EditSetPasteIdentities {
+                group: node(&format!("paste-set-{step_index}")),
+                components: requirements
+                    .components
+                    .iter()
+                    .enumerate()
+                    .map(|(member, required)| crate::EditSetComponentIdentities {
+                        nodes: (0..required.nodes)
+                            .map(|n| node(&format!("paste-set-{step_index}-{member}-{n}")))
+                            .collect(),
+                        aliases: (0..required.aliases)
+                            .map(|n| node(&format!("alias-set-{step_index}-{member}-{n}")))
+                            .collect(),
+                    })
+                    .collect(),
+                marks: (0..requirements.marks)
+                    .map(|n| MarkId::new(format!("mark-set-{step_index}-{n}")).unwrap())
+                    .collect(),
+            },
+        },
         SemanticAllocationRequest::PasteEdited {
             step_index,
             requirements,

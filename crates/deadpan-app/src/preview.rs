@@ -3342,6 +3342,9 @@ impl DeadpanApp {
                 self.set_gag(macro_target, &parameters)
             }
             Ok(navigation::command::Entry::SelectRole(role)) => self.select_role(role),
+            Ok(navigation::command::Entry::SelectNodes { nodes }) => {
+                self.select_explicit_nodes(macro_target, nodes)
+            }
             Ok(navigation::command::Entry::SelectNode { node }) => {
                 self.select_explicit_node(macro_target, node)
             }
@@ -4055,6 +4058,24 @@ impl DeadpanApp {
                         self.add_editor_hint(&mut hints, EditorKey::MacroExecute, "+ letter: run macro");
                         hints.push((":scope".into(), "all / play N / plays 2-3".into()));
                         self.add_editor_hint(&mut hints, EditorKey::Undo, "undo");
+                    } else if self.view == View::Sequence && self.edit_range.nodes().is_some() {
+                        hints.tier(key_labels::Tier::Core);
+                        self.add_editor_hint(&mut hints, EditorKey::Copy, "copy union");
+                        self.add_editor_hint(&mut hints, EditorKey::CutRange, "cut union");
+                        self.add_editor_hint(&mut hints, EditorKey::Escape, "clear set");
+                        self.add_editor_hint(&mut hints, EditorKey::Visual, "select time");
+                        self.add_editor_hint(&mut hints, EditorKey::Undo, "undo");
+                        self.add_editor_hint(&mut hints, EditorKey::Command, "command");
+                        if self.semantic.snapshot().and_then(|snapshot| snapshot.edit.as_ref()).is_some_and(|edit| edit.uses_register()) {
+                            self.add_editor_hint(&mut hints, EditorKey::RepeatLast, "cut union again");
+                        }
+                        hints.tier(key_labels::Tier::Context);
+                        self.add_editor_pair_hint(&mut hints, EditorKey::FramePrevious, EditorKey::FrameNext, " / ", "frame");
+                        self.add_editor_pair_hint(&mut hints, EditorKey::BeatPrevious, EditorKey::BeatNext, " / ", "beat");
+                        if self.selected_group() { self.add_editor_hint(&mut hints, EditorKey::EnterGroup, "open group"); }
+                        if !self.sequence_scope.groups().is_empty() { self.add_editor_hint(&mut hints, EditorKey::LeaveGroup, "parent"); }
+                        self.add_editor_hint(&mut hints, EditorKey::RegisterSelect, "register");
+                        self.add_editor_pair_hint(&mut hints, EditorKey::MacroRecord, EditorKey::MacroExecute, " / ", "+ letter: record / run");
                     } else if self.view == View::Sequence {
                         // Tiers decide what survives the two rows (see
                         // key_labels::Tier); this order is the painted order.
@@ -4095,7 +4116,7 @@ impl DeadpanApp {
                         self.add_editor_hint(&mut hints, EditorKey::Command, "command");
                         if self.pane != Pane::Sources && let Some(label) = self.repeat_hint() { self.add_editor_hint(&mut hints, EditorKey::RepeatLast, &label); }
                         self.add_editor_hint(&mut hints, EditorKey::Copy, if self.copied.is_pending() { "copy pending…" } else if selection == navigation::EditSelection::None { "copy beat" } else if selection == navigation::EditSelection::Object { "copy object" } else { "copy range" });
-                        if self.copied.selected_content().is_some() { self.add_editor_pair_hint(&mut hints, EditorKey::PasteAfter, EditorKey::PasteBefore, " / ", if selection == navigation::EditSelection::Object { "replace object" } else if self.selected_edit_range().is_some() { "replace range" } else { "paste after / before" }); }
+                        if self.copied.selected_content().is_some() { self.add_editor_pair_hint(&mut hints, EditorKey::PasteAfter, EditorKey::PasteBefore, " / ", if self.edit_range.nodes().is_some() { "clear set before paste" } else if selection == navigation::EditSelection::Object { "replace object" } else if self.selected_edit_range().is_some() { "replace range" } else { "paste after / before" }); }
                         hints.tier(key_labels::Tier::Context);
                         if self.selected_group() { self.add_editor_hint(&mut hints, EditorKey::EnterGroup, "open group"); }
                         if self.selected_repeat() { self.add_editor_pair_hint(&mut hints, EditorKey::PlayNext, EditorKey::PlayPrevious, " ", "open a play"); }
@@ -4511,7 +4532,7 @@ impl DeadpanApp {
                 None
             };
             let analysis = self.edit_analysis_marks();
-            let markers = cards::Markers { cursor: marker, frame: self.sequence_cursor, range: self.selected_edit_range().map(|range| range.start().0 as u64..range.end().0 as u64), analysis };
+            let markers = cards::Markers { cursor: marker, frame: self.sequence_cursor, range: self.selected_edit_range().map(|range| range.start().0 as u64..range.end().0 as u64), members: self.selected_node_set().ok().flatten().map_or_else(Vec::new, |set|set.members), analysis };
             let reveal = std::mem::take(&mut self.reveal_beat);
             let identity = self.workspace.as_ref().map(|workspace| (workspace.session, workspace.document.revision_id().clone()));
             let thumbnails = &mut self.thumbnails;
@@ -4576,6 +4597,30 @@ impl DeadpanApp {
             return None;
         }
         let workspace = self.workspace.as_ref()?;
+        if let Some(target) = self.selected_node_set().ok().flatten() {
+            let mut fields = vec![(
+                "Scope",
+                self.sequence_scope
+                    .resolve(workspace)
+                    .ok()?
+                    .owner
+                    .as_str()
+                    .to_owned(),
+            )];
+            for detail in self.node_set_details()? {
+                fields.push(("Selected member", detail));
+            }
+            return Some(inspector::Inspector {
+                label: format!("{} selected nodes", target.members.len()),
+                kind: "Node set",
+                glyph: "[]",
+                duration: format!("{} f selected", target.total_duration.frames()),
+                range: "Separate whole-node ranges".into(),
+                fields,
+                parameter: None,
+                note: "y copies one union; d cuts all members atomically. Clear the set before choosing an insertion seam for p/P. Other edits need one beat or contiguous range.",
+            });
+        }
         let row = self
             .beat_rows
             .iter()
@@ -4834,6 +4879,20 @@ impl DeadpanApp {
                             });
                         });
                         ui.add_space(8.0);
+                        if data.kind == "Node set" {
+                            ui.add(egui::Label::new(format!("{} · {}", data.duration, self.beat_scope_label())).wrap());
+                            ui.add(egui::Label::new(data.range.as_str()).wrap());
+                            for (label, value) in &data.fields {
+                                ui.add_space(6.0);
+                                ui.label(egui::RichText::new(*label).size(12.0).weak());
+                                ui.add(egui::Label::new(value.as_str()).wrap());
+                            }
+                            ui.add_space(8.0);
+                            ui.add(egui::Label::new(egui::RichText::new(data.note).size(12.0).weak()).wrap());
+                            // Set members are read-only here. Single-beat
+                            // controls cannot borrow the navigation child.
+                            return;
+                        }
                         let ready = !self.service.is_busy() && !self.dialogs.is_open();
                         if self.selected_group()
                             && ui.add(style::row_action(ui, "Enter group", self.editor_key(EditorKey::EnterGroup)).fill(style::SELECTED)).clicked()

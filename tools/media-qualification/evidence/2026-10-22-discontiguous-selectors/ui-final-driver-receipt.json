@@ -1,0 +1,10 @@
+{
+  "name": "ui-final-driver",
+  "command": [
+    "python",
+    "/tmp/deadpan-discontiguous-selectors-2026-10-22/run_archive.py",
+    "ui-final"
+  ],
+  "exit": 0,
+  "seconds": 68.55929795932025
+}

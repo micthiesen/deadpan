@@ -1,0 +1,7 @@
+{
+  "executed_broad_driver": "broad_fourth.py",
+  "problem": "The initial delta receipt had a literal backslash-n terminator. An inline repair preserved its two validated paths and truth value.",
+  "unexecuted_draft": "repair_layout_receipt.py was saved but not executed; its nested escapes were incorrect.",
+  "verified_recipe": "repair_layout_receipt_v2.py tests literal terminator and valid JSON decoding and leaves the actual repaired receipt byte-identical.",
+  "runtime_or_source_result_changed": false
+}

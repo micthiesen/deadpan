@@ -365,7 +365,7 @@ fn execute(
         }
         if let Some(value) = step
             .edit()
-            .and_then(|edit| slice(edit.command.as_command()))
+            .and_then(|edit| captured_content(edit.command.as_command()))
         {
             capture_states.insert(value.revision_id().clone());
         }
@@ -404,7 +404,7 @@ fn execute(
                 {
                     return Err(invalid("compound leaf allocation is reused"));
                 }
-                let captured = match slice(&leaf.command) {
+                let captured = match captured_content(&leaf.command) {
                     Some(slice) => {
                         let document =
                             if slice.revision_id() == visit.before.revision_id() {
@@ -471,12 +471,37 @@ fn execute(
     Ok((outcome, steps))
 }
 
-fn slice(command: &Command) -> Option<&deadpan_core::CapturedEditSlice> {
+/// Both capture forms name one immutable entry snapshot. A set validates every
+/// component against that snapshot, including its distinct authored parent.
+pub(crate) enum CapturedContent<'a> {
+    Slice(&'a deadpan_core::CapturedEditSlice),
+    Set(&'a deadpan_core::CapturedEditSet),
+}
+
+impl CapturedContent<'_> {
+    pub(crate) fn revision_id(&self) -> &RevisionId {
+        match self {
+            Self::Slice(slice) => slice.revision_id(),
+            Self::Set(set) => set.revision_id(),
+        }
+    }
+
+    pub(crate) fn validate_capture(&self, document: &ProjectDocument) -> Result<(), StoreError> {
+        match self {
+            Self::Slice(slice) => slice.validate_capture(document)?,
+            Self::Set(set) => set.validate_capture(document)?,
+        }
+        Ok(())
+    }
+}
+
+pub(crate) fn captured_content(command: &Command) -> Option<CapturedContent<'_>> {
     match command {
         Command::SpliceSlice { slice, .. }
         | Command::SpliceSliceAt { slice, .. }
-        | Command::ReplaceSlice { slice, .. } => Some(slice),
-        Command::ReplaceSliceChildren { slice, .. } => Some(slice),
+        | Command::ReplaceSlice { slice, .. } => Some(CapturedContent::Slice(slice)),
+        Command::ReplaceSliceChildren { slice, .. } => Some(CapturedContent::Slice(slice)),
+        Command::SpliceEditSet { set, .. } => Some(CapturedContent::Set(set)),
         _ => None,
     }
 }
@@ -627,7 +652,7 @@ pub(crate) fn validate_ordinary_history(
     if crate::takes::restore_proof(connection, request.new_revision.as_str())?.is_some() {
         return Err(invalid("ordinary edit owns a snapshot restore proof"));
     }
-    let captured = if let Some(slice) = slice(&request.command) {
+    let captured = if let Some(slice) = captured_content(&request.command) {
         let captured = read_capture_before(connection, slice.revision_id(), Some(admitted))?;
         slice.validate_capture(&captured)?;
         crate::ensure_source_admission(Some(current), next, None, Some(&captured))?;

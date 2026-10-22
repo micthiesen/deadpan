@@ -1,0 +1,9 @@
+{
+  "deadpan-cli::preview_export": {
+    "path": "/private/tmp/deadpan-discontiguous-selectors-2026-10-22/release-media-extracted/target/release/deps/preview_export-633f4b90e83a29ac",
+    "sha256": "027a966c28f1a7aa952fefe64298704fb643d3cb42b233746aeba2e06172c294",
+    "tests": [
+      "node_sets_export_preserves_discontiguous_union_shared_mark_and_complete_audio"
+    ]
+  }
+}

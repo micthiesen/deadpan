@@ -179,6 +179,7 @@ pub(super) fn selector_text(selector: &SemanticSelector) -> String {
     match selector {
         SemanticSelector::SelectedBeat => "beat".into(),
         SemanticSelector::VisualSelection => "range".into(),
+        SemanticSelector::Nodes { nodes } => format!("node set ({} members)", nodes.len()),
         SemanticSelector::Node { node } => format!("node {}", node.as_str()),
         SemanticSelector::MarkRange { start, end } => {
             format!("marks {} to {}", start.id.as_str(), end.id.as_str())

@@ -1,0 +1,28 @@
+{
+  "exit": 1,
+  "source_and_retained_binaries_unchanged": true,
+  "failed": true,
+  "scenarios": [
+    {
+      "name": "kestrel-shortcuts",
+      "failed": false,
+      "checks": 1,
+      "frames": 0,
+      "failures": [],
+      "warnings": 0
+    },
+    {
+      "name": "node-set-selectors",
+      "failed": true,
+      "checks": 86,
+      "frames": 275,
+      "failures": [
+        {
+          "message": "Check failed: A named union call refuses deleted IDs without beat fallback or partial bank writes",
+          "severity": "failure"
+        }
+      ],
+      "warnings": 3
+    }
+  ]
+}

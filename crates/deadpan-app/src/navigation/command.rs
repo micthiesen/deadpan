@@ -188,6 +188,10 @@ pub enum Entry {
     SelectNode {
         node: deadpan_core::NodeId,
     },
+    /// A strict JSON array preserves each exact authored ID.
+    SelectNodes {
+        nodes: Vec<deadpan_core::NodeId>,
+    },
     /// `:delete role=audio|video`: delete one role over the Visual range.
     DeleteRole(deadpan_core::MediaRole),
     /// `:recipe-save a`: keep the selected group, with its parts and
@@ -413,6 +417,40 @@ pub fn parse(input: &str) -> Result<Entry, String> {
             None => Ok(Entry::TrackCancel),
             Some(_) => Err("Use :track-cancel without arguments.".into()),
         };
+    }
+    if verb.eq_ignore_ascii_case("select") && input[verb.len()..].trim_start().starts_with("nodes=")
+    {
+        const USAGE: &str =
+            r#"Use :select nodes=["id-a","id-b"] with 1 to 64 distinct exact node IDs."#;
+        let json = input[verb.len()..]
+            .trim_start()
+            .strip_prefix("nodes=")
+            .ok_or(USAGE)?;
+        // A JSON escape can use six bytes per identity byte. Bound before parsing.
+        if json.len()
+            > deadpan_core::MAX_SEMANTIC_NODES * (6 * deadpan_core::MAX_IDENTITY_BYTES + 4) + 2
+        {
+            return Err(USAGE.into());
+        }
+        let ids: Vec<String> = serde_json::from_str(json).map_err(|_| USAGE)?;
+        if ids.is_empty() || ids.len() > deadpan_core::MAX_SEMANTIC_NODES {
+            return Err(USAGE.into());
+        }
+        let nodes = ids
+            .into_iter()
+            .map(|id| deadpan_core::NodeId::new(id).map_err(|_| USAGE))
+            .collect::<Result<Vec<_>, _>>()?;
+        if nodes
+            .iter()
+            .collect::<std::collections::BTreeSet<_>>()
+            .len()
+            != nodes.len()
+        {
+            return Err(
+                "Node sets require distinct exact IDs; no duplicates are discarded.".into(),
+            );
+        }
+        return Ok(Entry::SelectNodes { nodes });
     }
     if verb.eq_ignore_ascii_case("select")
         && words
@@ -1138,6 +1176,42 @@ fn monitor(argument: Option<&str>) -> Result<u16, String> {
 #[cfg(test)]
 mod track_tests {
     use super::*;
+
+    #[test]
+    fn explicit_node_set_is_strict_bounded_json_and_preserves_exact_ids() {
+        let expected = vec![
+            deadpan_core::NodeId::new("A-Node_2").unwrap(),
+            deadpan_core::NodeId::new("other-node").unwrap(),
+        ];
+        assert!(
+            matches!(parse(r#":select nodes=["A-Node_2", "other-node"]"#),
+            Ok(Entry::SelectNodes { nodes }) if nodes == expected)
+        );
+        // JSON escaping is decoded before the same typed identity validator.
+        assert!(matches!(parse(r#":select nodes=["\u0041-Node_2"]"#),
+            Ok(Entry::SelectNodes { nodes }) if nodes == [expected[0].clone()]));
+        for invalid in [
+            r#":select nodes=[]"#,
+            r#":select nodes=["a","a"]"#,
+            r#":select nodes=["a"] extra"#,
+            r#":select nodes=["a",]"#,
+            r#":select nodes="a""#,
+            r#":select nodes=[1]"#,
+            r#":select nodes=[""]"#,
+            r#":select nodes=["a,b"]"#,
+            r#":select nodes=["quoted\\\"id"]"#,
+        ] {
+            assert!(parse(invalid).is_err(), "{invalid}");
+        }
+        let excessive = vec!["id"; deadpan_core::MAX_SEMANTIC_NODES + 1];
+        assert!(
+            parse(&format!(
+                ":select nodes={}",
+                serde_json::to_string(&excessive).unwrap()
+            ))
+            .is_err()
+        );
+    }
 
     #[test]
     fn explicit_node_selection_requires_one_exact_identity() {

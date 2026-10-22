@@ -1,0 +1,10 @@
+{
+  "deadpan-cli::node_sets": {
+    "path": "/private/tmp/deadpan-discontiguous-selectors-2026-10-22/cli-first-extracted/target/debug/deps/node_sets-1ec70759cb053542",
+    "sha256": "54cbf03bcf0e4e6319d7d1e88c834bc007f283cb698c946327b751220d6e066b",
+    "tests": [
+      "nodes_cli_rejects_bad_members_and_late_failures_without_any_sql_publication",
+      "nodes_cli_reports_the_real_union_and_round_trips_one_cut_paste_transaction"
+    ]
+  }
+}

@@ -27,6 +27,7 @@ mod framing;
 mod gag_edit;
 mod group;
 mod hold_duration;
+mod node_sets;
 pub use hold_duration::{HoldDurationVisibility, SemanticHoldDurationContext};
 mod mixed_hold_duration;
 pub use mixed_hold_duration::SemanticMixedHoldDurationContext;
@@ -70,6 +71,10 @@ pub enum SemanticVisualSelection {
     },
     /// Finished whole authored identity, re-resolved on each staged revision.
     Node { node: NodeId },
+    Nodes {
+        #[serde(deserialize_with = "super::node_set::deserialize_nodes")]
+        nodes: Vec<NodeId>,
+    },
 }
 
 impl SemanticVisualSelection {
@@ -81,6 +86,9 @@ impl SemanticVisualSelection {
                 end: end.clone(),
             },
             Self::Node { node } => SemanticSelector::Node { node: node.clone() },
+            Self::Nodes { nodes } => SemanticSelector::Nodes {
+                nodes: nodes.clone(),
+            },
             Self::Time { .. } | Self::Object { .. } => SemanticSelector::VisualSelection,
         }
     }
@@ -204,6 +212,10 @@ pub enum SemanticAllocationRequest {
         requirements: SliceIdentityRequirements,
         required_split_ids: usize,
     },
+    PasteEditedSet {
+        step_index: usize,
+        requirements: crate::EditSetIdentityRequirements,
+    },
     PasteOriginal {
         step_index: usize,
         required_split_ids: usize,
@@ -300,6 +312,10 @@ pub enum SemanticAllocation {
         identities: SlicePasteIdentities,
         split_identities: SplitIdentities,
     },
+    PasteEditedSet {
+        new_revision: RevisionId,
+        identities: crate::EditSetPasteIdentities,
+    },
     PasteOriginal {
         new_revision: RevisionId,
         node: NodeId,
@@ -351,6 +367,10 @@ pub struct SemanticTrace {
     pub resolved_range: Option<FrameRange>,
     pub resolved_parent: Option<NodeId>,
     pub capture: Option<SemanticCaptureProvenance>,
+    /// Common navigation scope of one union capture, never its convex hull.
+    pub capture_set: Option<SemanticCaptureProvenance>,
+    pub resolved_nodes: Vec<crate::SemanticNodeSetMember>,
+    pub resolved_ranges: Vec<FrameRange>,
     /// Exact staged capture target for Yank or Cut. Together with `resolved_parent`
     /// this distinguishes whole children, including empty ones, from ranges.
     pub resolved_selection: Option<SliceCaptureSelection>,
@@ -752,6 +772,9 @@ where
                 resolved_range: None,
                 resolved_parent: None,
                 capture: None,
+                capture_set: None,
+                resolved_nodes: Vec::new(),
+                resolved_ranges: Vec::new(),
                 resolved_selection: None,
                 removed_range: None,
                 captured_child_label: None,
@@ -809,6 +832,34 @@ where
             {
                 return Err(invalid(
                     "single-play macro authority supports only Zoom, whole-owner gain, mute, saturation, balance and EQ, freeze or black pause intent, Hold duration or sound and named calls",
+                ));
+            }
+            if matches!(
+                self.context.visual_selection,
+                Some(SemanticVisualSelection::Nodes { .. })
+            ) && !matches!(
+                instruction,
+                SemanticInstruction::MoveFrames { .. }
+                    | SemanticInstruction::MoveBeats { .. }
+                    | SemanticInstruction::MoveScope { .. }
+                    | SemanticInstruction::MoveWords { .. }
+                    | SemanticInstruction::MoveSentences { .. }
+                    | SemanticInstruction::MovePauses { .. }
+                    | SemanticInstruction::MoveShots { .. }
+                    | SemanticInstruction::SelectSpeech { .. }
+                    | SemanticInstruction::SelectObject { .. }
+                    | SemanticInstruction::SelectNode { .. }
+                    | SemanticInstruction::SelectNodes { .. }
+                    | SemanticInstruction::SelectMarkRange { .. }
+                    | SemanticInstruction::BeginSelection
+                    | SemanticInstruction::FinishSelection
+                    | SemanticInstruction::ClearSelection
+                    | SemanticInstruction::Yank { .. }
+                    | SemanticInstruction::Cut { .. }
+                    | SemanticInstruction::Call { .. }
+            ) {
+                return Err(unavailable(
+                    "this instruction does not accept a whole-node set; clear the selection first",
                 ));
             }
             if instruction.uses_speech() {
@@ -902,6 +953,20 @@ where
                     self.trace[index].resolved_parent = Some(target.parent);
                     self.trace[index].resolved_range = Some(target.range);
                     self.trace[index].resolved_selection = target.selection;
+                }
+                SemanticInstruction::SelectNodes { nodes } => {
+                    self.charge_resolution()?;
+                    self.context = self
+                        .current
+                        .select_semantic_nodes(&self.context, nodes.clone())?;
+                    let target = crate::semantic::node_set::resolve_in_scope(
+                        &self.current,
+                        &self.context,
+                        nodes,
+                    )?;
+                    self.trace[index].resolved_ranges =
+                        target.members.iter().map(|member| member.range).collect();
+                    self.trace[index].resolved_nodes = target.members;
                 }
                 SemanticInstruction::BeginSelection => {
                     self.context.visual_selection = Some(SemanticVisualSelection::Time {
@@ -1394,6 +1459,10 @@ fn child_indices(children: &[(NodeId, ProjectFrame)]) -> BTreeMap<NodeId, usize>
         .enumerate()
         .map(|(index, (node, _))| (node.clone(), index))
         .collect()
+}
+
+fn unavailable(message: &str) -> EditError {
+    EditError::new(EditErrorCode::SelectionUnavailable, message)
 }
 
 pub(super) fn scope_bounds(

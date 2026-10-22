@@ -745,6 +745,27 @@ fn allocate(request: SemanticAllocationRequest) -> Result<SemanticAllocation, Ed
         SemanticAllocationRequest::Yank { .. } => SemanticAllocation::Yank {
             capture_revision: crate::new_revision()?,
         },
+        SemanticAllocationRequest::PasteEditedSet { requirements, .. } => {
+            SemanticAllocation::PasteEditedSet {
+                new_revision: crate::new_revision()?,
+                identities: deadpan_core::EditSetPasteIdentities {
+                    group: NodeId::new(uuid::Uuid::new_v4().to_string())?,
+                    components: requirements
+                        .components
+                        .into_iter()
+                        .map(|component| {
+                            Ok(deadpan_core::EditSetComponentIdentities {
+                                nodes: nodes(component.nodes)?,
+                                aliases: nodes(component.aliases)?,
+                            })
+                        })
+                        .collect::<Result<_, EditError>>()?,
+                    marks: (0..requirements.marks)
+                        .map(|_| MarkId::new(uuid::Uuid::new_v4().to_string()))
+                        .collect::<Result<_, _>>()?,
+                },
+            }
+        }
         SemanticAllocationRequest::PasteEdited {
             requirements,
             required_split_ids,
@@ -1083,6 +1104,8 @@ impl Prepared {
                         "before_original":row.before.original,"after_original":row.after.original,
                         "before_scoped":row.before.scoped,"after_scoped":row.after.scoped,
                         "captured_child_label":row.captured_child_label,
+                        "capture_set":row.capture_set,
+                        "resolved_nodes":row.resolved_nodes,"resolved_ranges":row.resolved_ranges,
                         "resolved_selection":row.resolved_selection,
                         "resolved_range":row.resolved_range,"removed_range":row.removed_range,"depth":row.depth,
                     })).collect());
@@ -1114,6 +1137,10 @@ pub fn inspect(store: &ProjectStore, register: Option<RegisterName>) -> Result<V
             RegisterValue::Original { revision, asset, qualification, ordinals } => json!({
                 "register":name,"type":"original","capture_revision":revision,
                 "asset":asset,"qualification":qualification,"ordinals":ordinals}),
+            RegisterValue::EditedSet { set } => json!({"register":name,"type":"edited_set",
+                "capture_revision":set.revision_id(),"scope":set.scope(),"duration":set.duration(),
+                "components":set.components().iter().map(|slice| json!({"parent":slice.parent(),
+                    "range":slice.range(),"selection":slice.selection(),"outline":slice.outline()})).collect::<Vec<_>>()}),
             RegisterValue::Edited { slice } => json!({"register":name,"type":"edited",
                 "capture_revision":slice.revision_id(),"parent":slice.parent(),"selection":slice.selection(),
                 "outline":slice.outline()}),

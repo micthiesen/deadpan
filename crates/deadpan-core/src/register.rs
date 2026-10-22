@@ -5,8 +5,8 @@ use std::{ops::Range, sync::Arc};
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    AssetId, CapturedEditSlice, EditError, EditErrorCode, RevisionId, SemanticProgram,
-    SourceQualificationId,
+    AssetId, CapturedEditSet, CapturedEditSlice, EditError, EditErrorCode, RevisionId,
+    SemanticProgram, SourceQualificationId,
 };
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize)]
@@ -50,6 +50,9 @@ pub enum RegisterValue {
     Edited {
         slice: Arc<CapturedEditSlice>,
     },
+    EditedSet {
+        set: Arc<CapturedEditSet>,
+    },
     Macro {
         program: Arc<SemanticProgram>,
     },
@@ -61,6 +64,7 @@ impl RegisterValue {
         match self {
             Self::Original { revision, .. } => Some(revision),
             Self::Edited { slice } => Some(slice.revision_id()),
+            Self::EditedSet { set } => Some(set.revision_id()),
             Self::Macro { .. } => None,
         }
     }

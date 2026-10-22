@@ -1,0 +1,9 @@
+{
+  "command": [
+    "python",
+    "/tmp/deadpan-discontiguous-selectors-2026-10-22/run_archive.py",
+    "store-final"
+  ],
+  "exit": 0,
+  "seconds": 0.45917699951678514
+}

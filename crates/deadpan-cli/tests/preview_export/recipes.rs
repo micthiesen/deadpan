@@ -68,6 +68,8 @@ pub mod selected_fixed_retime_duration;
 pub mod explicit_node;
 #[path = "named_mark_range.rs"]
 pub mod named_mark_range;
+#[path = "node_sets.rs"]
+pub mod node_sets;
 
 #[path = "fixed_retime_output_sound.rs"]
 pub mod fixed_retime_output_sound;

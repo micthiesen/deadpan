@@ -118,6 +118,7 @@ impl Capture {
                 deadpan_core::SemanticVisualSelection::Object { .. }
                     | deadpan_core::SemanticVisualSelection::MarkRange { .. }
                     | deadpan_core::SemanticVisualSelection::Node { .. }
+                    | deadpan_core::SemanticVisualSelection::Nodes { .. }
             )
         )
     }
@@ -144,6 +145,12 @@ impl Capture {
         self.base
             .document
             .select_semantic_node(&self.context, node)
+            .map_err(|error| error.to_string())
+    }
+    pub(super) fn select_nodes(&self, nodes: Vec<NodeId>) -> Result<SemanticContext, String> {
+        self.base
+            .document
+            .select_semantic_nodes(&self.context, nodes)
             .map_err(|error| error.to_string())
     }
     /// A word or sentence object at the captured cursor, as a Visual range.
@@ -353,6 +360,9 @@ impl Capture {
                     .resolve_semantic_mark_range(&self.context, start, end)
                     .map_err(|error| error.to_string())?,
             ),
+            Some(deadpan_core::SemanticVisualSelection::Nodes { .. }) => {
+                return Err("Clear the node set before choosing a Place slice destination.".into());
+            }
             None => None,
         };
         splice_instruction(
@@ -684,6 +694,44 @@ impl DeadpanApp {
 
     pub(super) fn macro_action_allowed(&mut self, action: Action) -> bool {
         self.reconcile_macro_recording();
+        if self.edit_range.nodes().is_some()
+            && matches!(action,
+                Action::Edit(edit) if edit != BeatEdit::Delete
+            )
+        {
+            self.error = Some(
+                "This edit needs one beat or contiguous range. Clear the node set first.".into(),
+            );
+            return false;
+        }
+        if self.edit_range.nodes().is_some()
+            && matches!(
+                action,
+                Action::Group
+                    | Action::Ungroup
+                    | Action::Explode
+                    | Action::Duplicate
+                    | Action::Repeat { .. }
+                    | Action::EscalatingRepeat
+                    | Action::RoleRepeat { .. }
+                    | Action::GainStep(_)
+                    | Action::Mute
+                    | Action::Framing(_)
+                    | Action::SaveFraming(_)
+                    | Action::Gag(_)
+                    | Action::Reverse { .. }
+                    | Action::SplitEdit { .. }
+                    | Action::Tail { .. }
+                    | Action::Lift
+                    | Action::Bleep { .. }
+                    | Action::Trim
+                    | Action::TailPicker
+            )
+        {
+            self.error =
+                Some("This operation does not support a node set. Clear the set first.".into());
+            return false;
+        }
         if self.macros.recording()
             && self.camera_pending.is_some()
             && !matches!(
@@ -920,6 +968,27 @@ impl DeadpanApp {
         &mut self,
         command: &Result<navigation::command::Entry, String>,
     ) -> bool {
+        if self.edit_range.nodes().is_some() {
+            use navigation::command::Entry;
+            let supported = matches!(
+                command,
+                Err(_)
+                    | Ok(Entry::Action(_)
+                        | Entry::SelectNode { .. }
+                        | Entry::SelectNodes { .. }
+                        | Entry::SelectMarkRange { .. }
+                        | Entry::Splice
+                        | Entry::Source
+                        | Entry::Sequence
+                        | Entry::Help
+                        | Entry::Empty,)
+                    | Ok(Entry::SelectRole(deadpan_core::MediaRole::Linked))
+            );
+            if !supported {
+                self.error = Some("This command does not support a node set. Clear the set first; y and d operate on its complete union.".into());
+                return false;
+            }
+        }
         let was_recording = std::mem::take(&mut self.macros.command_recording);
         self.reconcile_macro_recording();
         if was_recording
@@ -980,7 +1049,8 @@ impl DeadpanApp {
             Ok(navigation::command::Entry::SelectRole(_)) => true,
             Ok(
                 navigation::command::Entry::SelectMarkRange { .. }
-                | navigation::command::Entry::SelectNode { .. },
+                | navigation::command::Entry::SelectNode { .. }
+                | navigation::command::Entry::SelectNodes { .. },
             ) => self.macro_action_allowed(Action::SelectObject(
                 deadpan_core::SemanticTextObject::InnerGroup,
             )),
@@ -1307,6 +1377,7 @@ impl DeadpanApp {
                         deadpan_core::SemanticVisualSelection::Object { .. }
                             | deadpan_core::SemanticVisualSelection::MarkRange { .. }
                             | deadpan_core::SemanticVisualSelection::Node { .. }
+                            | deadpan_core::SemanticVisualSelection::Nodes { .. }
                     ))
                 )
             },
@@ -1328,6 +1399,7 @@ impl DeadpanApp {
                     selection,
                     deadpan_core::SemanticVisualSelection::MarkRange { .. }
                         | deadpan_core::SemanticVisualSelection::Node { .. }
+                        | deadpan_core::SemanticVisualSelection::Nodes { .. }
                 ) {
                     SemanticInstruction::Yank {
                         selector: selection.effective_selector(),
@@ -1357,6 +1429,7 @@ impl DeadpanApp {
                         deadpan_core::SemanticVisualSelection::Object { .. }
                             | deadpan_core::SemanticVisualSelection::MarkRange { .. }
                             | deadpan_core::SemanticVisualSelection::Node { .. }
+                            | deadpan_core::SemanticVisualSelection::Nodes { .. }
                     ))
                 )
             },
@@ -1374,6 +1447,7 @@ impl DeadpanApp {
                     selection,
                     deadpan_core::SemanticVisualSelection::MarkRange { .. }
                         | deadpan_core::SemanticVisualSelection::Node { .. }
+                        | deadpan_core::SemanticVisualSelection::Nodes { .. }
                 ) {
                     SemanticInstruction::Cut {
                         selector: selection.effective_selector(),
@@ -1398,12 +1472,22 @@ impl DeadpanApp {
         before: bool,
         target: &Result<moment::PlacementTarget, String>,
     ) -> bool {
+        if target
+            .as_ref()
+            .is_ok_and(|target| target.selection.nodes().is_some())
+        {
+            self.error = Some("Node-set replacement is not supported. Clear the set and choose an insertion seam before pasting.".into());
+            return true;
+        }
+        let union = target
+            .as_ref()
+            .is_ok_and(|target| matches!(target.copied, Some(copied::Content::EditedSet(_))));
         // A captured context error must refuse an Object paste, never route its
         // derived geometry through the ordinary time-range replacement path.
         let object = target.as_ref().is_ok_and(|target| {
             target.selection.object().is_some() || target.selection.node().is_some()
         });
-        if !self.macros.recording() && !self.macros.is_pending() && !object {
+        if !self.macros.recording() && !self.macros.is_pending() && !object && !union {
             return false;
         }
         if self.macros.is_pending() {

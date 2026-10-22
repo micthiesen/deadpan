@@ -500,6 +500,20 @@ impl RootSoundEditCapture {
                     duration: slice.duration(),
                 }
             }
+            Command::SpliceEditSet {
+                parent, index, set, ..
+            } => {
+                let at = document.source_splice_boundary(parent, *index)?;
+                if set.duration() == FrameDuration::ZERO {
+                    return Ok(None);
+                }
+                // The typed union is one insertion. Private component staging
+                // cannot transport an independent root event more than once.
+                RootSoundOperation::Insert {
+                    at,
+                    duration: set.duration(),
+                }
+            }
             Command::SpliceSliceAt {
                 parent,
                 target,

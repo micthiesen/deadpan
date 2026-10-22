@@ -3,6 +3,7 @@
 mod gags;
 mod mark_range;
 mod node;
+mod node_set;
 mod object;
 mod planner;
 mod program;
@@ -10,6 +11,7 @@ mod speech;
 
 pub use gags::*;
 pub use node::*;
+pub use node_set::*;
 pub use object::*;
 pub use planner::*;
 pub use program::*;

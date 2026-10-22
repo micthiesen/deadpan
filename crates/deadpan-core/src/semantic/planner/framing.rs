@@ -131,6 +131,9 @@ where
             Some(SemanticVisualSelection::Node { node }) => Some(
                 crate::semantic::node::resolve_in_scope(&self.current, &self.context, node)?.range,
             ),
+            Some(SemanticVisualSelection::Nodes { .. }) => {
+                return Err(unavailable("framing does not accept a whole-node set"));
+            }
             None => None,
         };
         let local = range.map(|range| {

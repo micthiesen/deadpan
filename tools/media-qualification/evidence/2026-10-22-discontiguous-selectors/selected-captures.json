@@ -1,0 +1,9 @@
+[
+  {
+    "mode": "release-visual",
+    "file": "node-set-selectors-089.png",
+    "sha256": "c03c652d48da761480407cf29d91c330e370b95f3fb6d08ee6e4def209260735",
+    "inspected": true,
+    "notes": "960x640 four-member union with settled main viewer: full first member identity/parent/range including empty state, separate clocks, read-only inspector and union key hints. Beat thumbnail still visibly says Loading; this is not fully settled thumbnail evidence. Pending picture/spinner captures 087 and119 were inspected but not selected."
+  }
+]

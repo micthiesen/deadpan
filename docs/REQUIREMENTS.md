@@ -2,6 +2,38 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
+## Discontiguous whole-node unions, 2026-10-22
+
+[Qualification](qualification/discontiguous-node-selectors-2026-10-22.md) adds
+`:select nodes=["id-a","id-b"]` in ordinary Your edit with Linked role.
+One bounded structural traversal orders up to 64 distinct whole members,
+including empty siblings and different immediate parents. Copy captures one
+entry-document union; Cut deletes in reverse order in one Compound. Seam paste
+omits unselected gaps and allocates shared logical marks once. Immutable
+capture admission, durable registers, Undo/Redo and reopen preserve the union.
+Duplicate, ancestor-overlapping and unsupported temporal targets refuse.
+
+The inspector is read-only and lists actual member identities and ranges.
+Selection loops, saved framing, AI generation and unsupported consumers refuse
+set authority, including stale single-Hold AI targets. Global AI cancellation
+and independent sound audition remain available. SQLite 84 adds the closed
+register kind under the existing unused-development-format authorization.
+
+All 63 focused checks and 4,570 broader cases pass. Later Clippy cleanups have
+separate frozen evidence: four affected Store and 46 native cases pass again,
+with all 1,273 selected final UI-feature cases and strict checks. Both release
+native modes pass 143 checks plus Kestrel. The compact main-viewer/inspector
+capture was inspected, with its pending beat thumbnail explicit; quiet state
+p99 is 1.977ms over 147 samples. The release export
+verifies all 32 pictures and 51,251 samples at zero offset. The extracted
+nine-file owner package validates and passes doctor. Failed setups/builds,
+layout warnings, exact source/binary identities and canonical-audio limits are
+retained separately; no independent PCM or full-mastering claim is made.
+
+No requirement or gate is newly complete. Arbitrary positive half-open range
+sets, transcript-search-result freshness, remaining temporal/sound families,
+mastering, renderer and complete workflows remain open.
+
 ## Whole authored-node selectors, 2026-10-22
 
 [Qualification](qualification/explicit-node-selectors-2026-10-22.md) adds exact
@@ -22,9 +54,9 @@ The release export verifies 37 pictures and 59,259 samples at zero offset; the
 extracted nine-file owner fixture validates and passes doctor. Layout warnings,
 test setup failures and canonical-audio limitations remain explicit.
 
-No requirement or gate is newly complete. Next are discontiguous node sets
-with one real union register and preserved shared relationships, then
-transcript-search-result selectors and the remaining temporal/sound families.
+No requirement or gate is newly complete. Whole-node unions are qualified
+above; arbitrary range sets, transcript-search-result selectors and the
+remaining temporal/sound families remain open.
 
 ## Named-mark semantic range selectors, 2026-10-22
 

@@ -25,6 +25,7 @@ pub(crate) fn timing(command: &Command) -> Option<&AudioTimingId> {
         | Command::DeleteRange { timing, .. }
         | Command::MoveRange { timing, .. }
         | Command::SpliceSlice { timing, .. }
+        | Command::SpliceEditSet { timing, .. }
         | Command::SpliceSliceAt { timing, .. }
         | Command::ReplaceSlice { timing, .. }
         | Command::ReplaceSliceChildren { timing, .. }

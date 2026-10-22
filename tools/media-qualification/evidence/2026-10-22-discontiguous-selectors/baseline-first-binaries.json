@@ -1,0 +1,18 @@
+{
+  "deadpan-core::node_set_counterfactual": {
+    "source": "/Users/michael/Code/deadpan/target/debug/deps/node_set_counterfactual-df64c1ae08f966d3",
+    "retained": "/tmp/deadpan-discontiguous-selectors-2026-10-22/baseline-first-bin/node_set_counterfactual-df64c1ae08f966d3",
+    "sha256": "3c95f3074116bab08dc56ce24a86b46e8839cc682d3d9ee68a3b155d84c74ff4",
+    "tests": [
+      "explicit_nodes_selector_admits_only_after_public_single_node_controls"
+    ]
+  },
+  "deadpan-core::node_set_shared_mark": {
+    "source": "/Users/michael/Code/deadpan/target/debug/deps/node_set_shared_mark-21fe891677e0f16e",
+    "retained": "/tmp/deadpan-discontiguous-selectors-2026-10-22/baseline-first-bin/node_set_shared_mark-21fe891677e0f16e",
+    "sha256": "5c1dcc5b51c79557f98ca4707f8d70f941243ad68e45c6146e38351f922afc2e",
+    "tests": [
+      "separate_component_pastes_split_one_logical_mark_while_existing_whole_capture_preserves_it"
+    ]
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "command": [
+    "cargo",
+    "nextest",
+    "archive",
+    "--locked",
+    "-p",
+    "deadpan-app",
+    "--bin",
+    "deadpan-app",
+    "--archive-file",
+    "/tmp/deadpan-discontiguous-selectors-2026-10-22/app-lint-final.tar.zst",
+    "--zstd-level=-1"
+  ],
+  "exit": 0,
+  "seconds": 125.28214833326638
+}

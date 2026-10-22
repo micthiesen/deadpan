@@ -96,8 +96,18 @@ Capture and edits use its actual immediate parent; navigation retains the
 invocation's scope. `SelectNode { node }` retains the ID as a finished selection.
 Missing, deleted, out-of-scope and occurrence-interior targets refuse without
 fallback. See [explicit authored nodes](SEMANTIC_MACROS.md#explicit-authored-nodes).
+`Nodes { nodes }` and `SelectNodes { nodes }` add bounded discontiguous whole-node
+sets. They preserve canonical structural order, actual parents and equal-time
+empty identities. Yank captures one historical `EditedSet`; Cut captures once
+before reverse-order deletion leaves in one Compound. After clearing selection,
+Paste inserts that editable union at a Sequence seam through `splice_edit_set`.
+Trace fields `resolved_nodes`, `resolved_ranges` and `capture_set` preserve each
+member and the common invocation scope; single-range fields stay absent.
+`macro inspect` reports `edited_set` with all component selections and ranges.
+See [whole-node sets](SEMANTIC_MACROS.md#discontiguous-whole-node-sets) for
+authority, shared-mark and unsupported-consumer rules.
 Still missing against spec section 6.2: transcript-search-result selectors and
-discontiguous ranges. Macro selectors are
+arbitrary discontiguous interval sets. Macro selectors are
 `SemanticSelector` in `crates/deadpan-core/src/semantic/program.rs`;
 `resolve-selection` also resolves mark and mark_range selectors read-only.
 

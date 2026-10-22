@@ -1,0 +1,8 @@
+{
+  "original": {
+    "path": "Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+    "bytes": 39157,
+    "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918"
+  },
+  "qualified_cfr_fixture_bytes_present_inside_owner_archive": true
+}

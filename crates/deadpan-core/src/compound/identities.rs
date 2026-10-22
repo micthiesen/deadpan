@@ -136,6 +136,13 @@ fn allocations<'a>(command: &'a Command, nodes: &mut Vec<&'a NodeId>, marks: &mu
             nodes.extend(identities.authored.nodes.iter().chain(&identities.aliases));
             marks.extend(&identities.authored.marks);
         }
+        Command::SpliceEditSet { identities, .. } => {
+            nodes.push(&identities.group);
+            for component in &identities.components {
+                nodes.extend(component.nodes.iter().chain(&component.aliases));
+            }
+            marks.extend(&identities.marks);
+        }
         Command::SpliceSliceAt {
             identities,
             split_identities,

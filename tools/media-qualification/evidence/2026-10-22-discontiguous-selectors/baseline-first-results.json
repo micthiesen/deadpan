@@ -1,0 +1,20 @@
+[
+  {
+    "suite": "deadpan-core::node_set_shared_mark",
+    "test": "separate_component_pastes_split_one_logical_mark_while_existing_whole_capture_preserves_it",
+    "exit": 0,
+    "seconds": 0.011532125063240528,
+    "expected_pass": true,
+    "expected_outcome": true,
+    "binary_sha256": "5c1dcc5b51c79557f98ca4707f8d70f941243ad68e45c6146e38351f922afc2e"
+  },
+  {
+    "suite": "deadpan-core::node_set_counterfactual",
+    "test": "explicit_nodes_selector_admits_only_after_public_single_node_controls",
+    "exit": 101,
+    "seconds": 0.0099843330681324,
+    "expected_pass": false,
+    "expected_outcome": true,
+    "binary_sha256": "3c95f3074116bab08dc56ce24a86b46e8839cc682d3d9ee68a3b155d84c74ff4"
+  }
+]

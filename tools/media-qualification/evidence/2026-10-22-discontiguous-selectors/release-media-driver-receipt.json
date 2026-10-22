@@ -1,0 +1,10 @@
+{
+  "command": [
+    "python",
+    "/tmp/deadpan-discontiguous-selectors-2026-10-22/run_archive.py",
+    "release-media",
+    "test(node_sets_export_preserves_discontiguous_union_shared_mark_and_complete_audio)"
+  ],
+  "exit": 0,
+  "seconds": 3.1503915833309293
+}

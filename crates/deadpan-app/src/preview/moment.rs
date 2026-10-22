@@ -386,6 +386,11 @@ impl DeadpanApp {
                         destination,
                     })
                 }
+                copied::Content::EditedSet(_) => {
+                    return Err(
+                        "Paste the complete node union with p/P at an insertion seam.".into(),
+                    );
+                }
                 copied::Content::Macro(_) => return Err(copied::MACRO_PASTE_ERROR.into()),
             })
         })();

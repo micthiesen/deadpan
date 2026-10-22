@@ -1,0 +1,1 @@
+{"command":{"command":"insert","index":0,"parent":"node-sets-left-parent","subtree":{"nodes":{"node-sets-empty-a":{"kind":{"children":[],"type":"sequence"},"label":"Selected empty A"}},"overrides":{},"root":"node-sets-empty-a"}},"expected_revision":"node-sets-r08","new_revision":"node-sets-r09","project_id":"7a7ec184-44d9-4624-a0a0-5beeb1358fa6","protocol":1}

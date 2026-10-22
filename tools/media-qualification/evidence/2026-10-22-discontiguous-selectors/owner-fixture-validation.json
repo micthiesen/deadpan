@@ -1,0 +1,11 @@
+{
+  "checks": {
+    "validate": {
+      "exit": 0
+    },
+    "doctor": {
+      "exit": 0
+    }
+  },
+  "binary_sha256": "fb4c40a6d4a10931bba611aaa68ab12ed1967b83ff1d259b00a3f71348c5124d"
+}

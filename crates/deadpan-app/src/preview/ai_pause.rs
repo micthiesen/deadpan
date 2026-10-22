@@ -579,7 +579,11 @@ fn elapsed(job: &Job) -> String {
 impl DeadpanApp {
     /// The selected pause in Your edit, when AI pictures can target it.
     pub(super) fn ai_hold(&self) -> Option<NodeId> {
-        if self.view != View::Sequence || self.event_focused() || self.sound_focused() {
+        if self.view != View::Sequence
+            || self.event_focused()
+            || self.sound_focused()
+            || self.edit_range.nodes().is_some()
+        {
             return None;
         }
         let workspace = self.workspace.as_ref()?;
@@ -665,6 +669,10 @@ impl DeadpanApp {
 
     /// Run an AI action with its captured context.
     pub(super) fn ai_action(&mut self, action: AiAction, target: Option<Result<Target, String>>) {
+        if self.edit_range.nodes().is_some() && action != AiAction::Cancel {
+            self.error = Some("AI actions need one pause. Clear the node set first.".into());
+            return;
+        }
         let result = (|| {
             if action == AiAction::Cancel {
                 return self.ai_cancel();

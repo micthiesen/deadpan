@@ -1,0 +1,18 @@
+{
+  "command": [
+    "cargo",
+    "nextest",
+    "list",
+    "--locked",
+    "-p",
+    "deadpan-core",
+    "--test",
+    "node_set_counterfactual",
+    "--test",
+    "node_set_shared_mark",
+    "--message-format",
+    "json"
+  ],
+  "exit": 0,
+  "seconds": 23.561615790240467
+}

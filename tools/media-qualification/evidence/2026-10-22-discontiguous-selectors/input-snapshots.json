@@ -1,0 +1,110 @@
+{
+  "baseline-first-inputs": {
+    "archive": "baseline-first-inputs.tar.gz",
+    "manifest": "baseline-first-lock.json",
+    "files": 6,
+    "content_sha256": "ffb258e87d06c0aaf338c032eb82b4eaeaa5c4e0dae6c83f273710411538e275"
+  },
+  "broad-final-inputs": {
+    "archive": "broad-final-inputs.tar.gz",
+    "manifest": "broad-final-lock.json",
+    "files": 6,
+    "content_sha256": "2b2a2eb18a6e9ba656bbdf86d8a19eb122c572afbad6d63d12b88addb729804f"
+  },
+  "broad-fourth-inputs": {
+    "archive": "broad-final-inputs.tar.gz",
+    "manifest": "broad-fourth-lock.json",
+    "files": 6,
+    "content_sha256": "2b2a2eb18a6e9ba656bbdf86d8a19eb122c572afbad6d63d12b88addb729804f"
+  },
+  "broad-second-inputs": {
+    "archive": "broad-final-inputs.tar.gz",
+    "manifest": "broad-second-lock.json",
+    "files": 6,
+    "content_sha256": "2b2a2eb18a6e9ba656bbdf86d8a19eb122c572afbad6d63d12b88addb729804f"
+  },
+  "broad-third-inputs": {
+    "archive": "broad-final-inputs.tar.gz",
+    "manifest": "broad-third-lock.json",
+    "files": 6,
+    "content_sha256": "2b2a2eb18a6e9ba656bbdf86d8a19eb122c572afbad6d63d12b88addb729804f"
+  },
+  "debug-eighth-inputs": {
+    "archive": "broad-final-inputs.tar.gz",
+    "manifest": "debug-eighth-lock.json",
+    "files": 6,
+    "content_sha256": "2b2a2eb18a6e9ba656bbdf86d8a19eb122c572afbad6d63d12b88addb729804f"
+  },
+  "debug-fifth-inputs": {
+    "archive": "broad-final-inputs.tar.gz",
+    "manifest": "debug-fifth-lock.json",
+    "files": 6,
+    "content_sha256": "2b2a2eb18a6e9ba656bbdf86d8a19eb122c572afbad6d63d12b88addb729804f"
+  },
+  "debug-first-inputs": {
+    "archive": "broad-final-inputs.tar.gz",
+    "manifest": "debug-first-lock.json",
+    "files": 6,
+    "content_sha256": "2b2a2eb18a6e9ba656bbdf86d8a19eb122c572afbad6d63d12b88addb729804f"
+  },
+  "debug-fourth-inputs": {
+    "archive": "broad-final-inputs.tar.gz",
+    "manifest": "debug-fourth-lock.json",
+    "files": 6,
+    "content_sha256": "2b2a2eb18a6e9ba656bbdf86d8a19eb122c572afbad6d63d12b88addb729804f"
+  },
+  "debug-second-inputs": {
+    "archive": "broad-final-inputs.tar.gz",
+    "manifest": "debug-second-lock.json",
+    "files": 6,
+    "content_sha256": "2b2a2eb18a6e9ba656bbdf86d8a19eb122c572afbad6d63d12b88addb729804f"
+  },
+  "debug-seventh-inputs": {
+    "archive": "broad-final-inputs.tar.gz",
+    "manifest": "debug-seventh-lock.json",
+    "files": 6,
+    "content_sha256": "2b2a2eb18a6e9ba656bbdf86d8a19eb122c572afbad6d63d12b88addb729804f"
+  },
+  "debug-sixth-inputs": {
+    "archive": "broad-final-inputs.tar.gz",
+    "manifest": "debug-sixth-lock.json",
+    "files": 6,
+    "content_sha256": "2b2a2eb18a6e9ba656bbdf86d8a19eb122c572afbad6d63d12b88addb729804f"
+  },
+  "debug-third-inputs": {
+    "archive": "broad-final-inputs.tar.gz",
+    "manifest": "debug-third-lock.json",
+    "files": 6,
+    "content_sha256": "2b2a2eb18a6e9ba656bbdf86d8a19eb122c572afbad6d63d12b88addb729804f"
+  },
+  "focused-first-inputs": {
+    "archive": "baseline-first-inputs.tar.gz",
+    "manifest": "focused-first-lock.json",
+    "files": 6,
+    "content_sha256": "ffb258e87d06c0aaf338c032eb82b4eaeaa5c4e0dae6c83f273710411538e275"
+  },
+  "focused-second-inputs": {
+    "archive": "baseline-first-inputs.tar.gz",
+    "manifest": "focused-second-lock.json",
+    "files": 6,
+    "content_sha256": "ffb258e87d06c0aaf338c032eb82b4eaeaa5c4e0dae6c83f273710411538e275"
+  },
+  "lint-final-inputs": {
+    "archive": "broad-final-inputs.tar.gz",
+    "manifest": "lint-final-lock.json",
+    "files": 6,
+    "content_sha256": "2b2a2eb18a6e9ba656bbdf86d8a19eb122c572afbad6d63d12b88addb729804f"
+  },
+  "release-final-inputs": {
+    "archive": "broad-final-inputs.tar.gz",
+    "manifest": "release-final-lock.json",
+    "files": 6,
+    "content_sha256": "2b2a2eb18a6e9ba656bbdf86d8a19eb122c572afbad6d63d12b88addb729804f"
+  },
+  "strict-second-inputs": {
+    "archive": "broad-final-inputs.tar.gz",
+    "manifest": "strict-second-lock.json",
+    "files": 6,
+    "content_sha256": "2b2a2eb18a6e9ba656bbdf86d8a19eb122c572afbad6d63d12b88addb729804f"
+  }
+}

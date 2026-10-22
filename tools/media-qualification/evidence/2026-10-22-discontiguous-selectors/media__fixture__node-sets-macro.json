@@ -1,0 +1,600 @@
+{
+  "bank_version": 2,
+  "before_bank_version": 1,
+  "before_revision": "node-sets-r10",
+  "committed": true,
+  "committed_registers": {
+    "bank_version": 2,
+    "project_id": "7a7ec184-44d9-4624-a0a0-5beeb1358fa6",
+    "revision_id": "f9ac2e01-aa9a-4b08-a8d5-944f72d865cc"
+  },
+  "committed_revision": "f9ac2e01-aa9a-4b08-a8d5-944f72d865cc",
+  "context": {
+    "cursor": 0,
+    "original": null,
+    "parent": "43a42c1e-dc34-48fc-989b-0c7340997b8c",
+    "scoped": null,
+    "selected_child": "e27f2624-a96a-49dd-a291-51f6aa319f02",
+    "visual_selection": null
+  },
+  "edit": {
+    "changed_ids": [
+      "2d98afc1-db1a-4606-8b8f-afd537f87c62",
+      "43a42c1e-dc34-48fc-989b-0c7340997b8c",
+      "4e1a5deb-7ad7-4956-9b5d-b17294ea2721",
+      "8fee2bbe-d2fa-4eab-ab67-2d5a7670a4d5",
+      "96be97c3-ff0e-4247-9847-5566f487f3fe",
+      "a81ed45e-fa1a-4a1b-bebc-14ff93a0cfe6",
+      "af9b980e-a941-4e7d-a6f9-4c623e97008a",
+      "b52b8d72-e2f9-43f1-8f7f-4977f1afd3b5",
+      "c54d68a7-a9ac-4b8f-829f-65b154109a59",
+      "d9cf4555-9c3e-4704-a503-5b49ec4a194b",
+      "e27f2624-a96a-49dd-a291-51f6aa319f02",
+      "ef179ab0-4edf-467b-8ab0-4a131c2ae51d",
+      "node-sets-empty-a",
+      "node-sets-empty-b",
+      "node-sets-gap",
+      "node-sets-left-parent",
+      "node-sets-n22",
+      "node-sets-n23",
+      "node-sets-n4",
+      "node-sets-n5",
+      "node-sets-right-parent"
+    ],
+    "description": "Apply resolved transaction",
+    "duration_delta": 0,
+    "new_revision": "f9ac2e01-aa9a-4b08-a8d5-944f72d865cc"
+  },
+  "generation_preparation_notices": [],
+  "generation_preparations": [],
+  "mark_changes": [
+    {
+      "after": {
+        "boundary": {
+          "bias": "right",
+          "coordinate": {
+            "asset": "437a98fc-b3da-473b-82a7-c1e9a7faa3cb",
+            "moment": {
+              "stream": "video",
+              "timestamp": {
+                "ticks": 24,
+                "time_base": {
+                  "denominator": 30000,
+                  "numerator": 1001
+                }
+              },
+              "type": "timestamp"
+            },
+            "space": "source"
+          }
+        },
+        "fragments": [
+          {
+            "coordinate": {
+              "asset": "437a98fc-b3da-473b-82a7-c1e9a7faa3cb",
+              "moment": {
+                "stream": "video",
+                "timestamp": {
+                  "ticks": 24,
+                  "time_base": {
+                    "denominator": 30000,
+                    "numerator": 1001
+                  }
+                },
+                "type": "timestamp"
+              },
+              "space": "source"
+            },
+            "owner": "af9b980e-a941-4e7d-a6f9-4c623e97008a",
+            "state": {
+              "type": "bound"
+            }
+          }
+        ],
+        "label": "One shared Original cue",
+        "loss_policy": "delete_owned",
+        "owner": "b52b8d72-e2f9-43f1-8f7f-4977f1afd3b5",
+        "state": {
+          "type": "bound"
+        }
+      },
+      "before": null,
+      "id": "2874ba06-afe4-4a42-baed-962a14ea46f4"
+    },
+    {
+      "after": null,
+      "before": {
+        "boundary": {
+          "bias": "right",
+          "coordinate": {
+            "asset": "437a98fc-b3da-473b-82a7-c1e9a7faa3cb",
+            "moment": {
+              "stream": "video",
+              "timestamp": {
+                "ticks": 24,
+                "time_base": {
+                  "denominator": 30000,
+                  "numerator": 1001
+                }
+              },
+              "type": "timestamp"
+            },
+            "space": "source"
+          }
+        },
+        "fragments": [
+          {
+            "coordinate": {
+              "asset": "437a98fc-b3da-473b-82a7-c1e9a7faa3cb",
+              "moment": {
+                "stream": "video",
+                "timestamp": {
+                  "ticks": 24,
+                  "time_base": {
+                    "denominator": 30000,
+                    "numerator": 1001
+                  }
+                },
+                "type": "timestamp"
+              },
+              "space": "source"
+            },
+            "owner": "node-sets-n23",
+            "state": {
+              "type": "bound"
+            }
+          }
+        ],
+        "label": "One shared Original cue",
+        "loss_policy": "delete_owned",
+        "owner": "node-sets-n5",
+        "state": {
+          "type": "bound"
+        }
+      },
+      "id": "node-sets-shared-cue"
+    }
+  ],
+  "operation": "run",
+  "project_id": "7a7ec184-44d9-4624-a0a0-5beeb1358fa6",
+  "protocol": 1,
+  "register": "m",
+  "register_writes": [
+    "\"",
+    "a",
+    "b"
+  ],
+  "trace": [
+    {
+      "after_cursor": 0,
+      "after_original": null,
+      "after_parent": "43a42c1e-dc34-48fc-989b-0c7340997b8c",
+      "after_scoped": null,
+      "after_selected_child": "e27f2624-a96a-49dd-a291-51f6aa319f02",
+      "after_visual_selection": null,
+      "before_cursor": 31,
+      "before_original": null,
+      "before_revision": "node-sets-r10",
+      "before_scope": {
+        "end": 32,
+        "start": 0
+      },
+      "before_scoped": null,
+      "before_selected_child": "node-sets-right-parent",
+      "before_visual_selection": null,
+      "capture": null,
+      "capture_set": null,
+      "captured_child_label": null,
+      "depth": 0,
+      "instruction": {
+        "count": 1,
+        "register": "m",
+        "type": "call"
+      },
+      "parent": "43a42c1e-dc34-48fc-989b-0c7340997b8c",
+      "removed_range": null,
+      "resolved_nodes": [],
+      "resolved_parent": null,
+      "resolved_range": null,
+      "resolved_ranges": [],
+      "resolved_selection": null
+    },
+    {
+      "after_cursor": 20,
+      "after_original": null,
+      "after_parent": "43a42c1e-dc34-48fc-989b-0c7340997b8c",
+      "after_scoped": null,
+      "after_selected_child": "node-sets-right-parent",
+      "after_visual_selection": {
+        "nodes": [
+          "node-sets-empty-b",
+          "node-sets-n22",
+          "node-sets-empty-a",
+          "node-sets-n4"
+        ],
+        "type": "nodes"
+      },
+      "before_cursor": 31,
+      "before_original": null,
+      "before_revision": "node-sets-r10",
+      "before_scope": {
+        "end": 32,
+        "start": 0
+      },
+      "before_scoped": null,
+      "before_selected_child": "node-sets-right-parent",
+      "before_visual_selection": null,
+      "capture": null,
+      "capture_set": null,
+      "captured_child_label": null,
+      "depth": 1,
+      "instruction": {
+        "nodes": [
+          "node-sets-empty-b",
+          "node-sets-n22",
+          "node-sets-empty-a",
+          "node-sets-n4"
+        ],
+        "type": "select_nodes"
+      },
+      "parent": "43a42c1e-dc34-48fc-989b-0c7340997b8c",
+      "removed_range": null,
+      "resolved_nodes": [
+        {
+          "navigation_child": "node-sets-left-parent",
+          "node": "node-sets-empty-a",
+          "parent": "node-sets-left-parent",
+          "range": {
+            "end": 0,
+            "start": 0
+          }
+        },
+        {
+          "navigation_child": "node-sets-left-parent",
+          "node": "node-sets-n4",
+          "parent": "node-sets-left-parent",
+          "range": {
+            "end": 6,
+            "start": 0
+          }
+        },
+        {
+          "navigation_child": "node-sets-right-parent",
+          "node": "node-sets-n22",
+          "parent": "node-sets-right-parent",
+          "range": {
+            "end": 20,
+            "start": 8
+          }
+        },
+        {
+          "navigation_child": "node-sets-right-parent",
+          "node": "node-sets-empty-b",
+          "parent": "node-sets-right-parent",
+          "range": {
+            "end": 20,
+            "start": 20
+          }
+        }
+      ],
+      "resolved_parent": null,
+      "resolved_range": null,
+      "resolved_ranges": [
+        {
+          "end": 0,
+          "start": 0
+        },
+        {
+          "end": 6,
+          "start": 0
+        },
+        {
+          "end": 20,
+          "start": 8
+        },
+        {
+          "end": 20,
+          "start": 20
+        }
+      ],
+      "resolved_selection": null
+    },
+    {
+      "after_cursor": 20,
+      "after_original": null,
+      "after_parent": "43a42c1e-dc34-48fc-989b-0c7340997b8c",
+      "after_scoped": null,
+      "after_selected_child": "node-sets-right-parent",
+      "after_visual_selection": {
+        "nodes": [
+          "node-sets-empty-b",
+          "node-sets-n22",
+          "node-sets-empty-a",
+          "node-sets-n4"
+        ],
+        "type": "nodes"
+      },
+      "before_cursor": 20,
+      "before_original": null,
+      "before_revision": "node-sets-r10",
+      "before_scope": {
+        "end": 32,
+        "start": 0
+      },
+      "before_scoped": null,
+      "before_selected_child": "node-sets-right-parent",
+      "before_visual_selection": {
+        "nodes": [
+          "node-sets-empty-b",
+          "node-sets-n22",
+          "node-sets-empty-a",
+          "node-sets-n4"
+        ],
+        "type": "nodes"
+      },
+      "capture": null,
+      "capture_set": {
+        "bounds": {
+          "end": 32,
+          "start": 0
+        },
+        "parent": "43a42c1e-dc34-48fc-989b-0c7340997b8c",
+        "scope": [],
+        "scope_labels": [],
+        "timing": {
+          "allocation": "98b037a6-ecfb-4cdc-a039-2b26d539f262",
+          "ordinal": 0
+        }
+      },
+      "captured_child_label": null,
+      "depth": 1,
+      "instruction": {
+        "register": "a",
+        "selector": {
+          "type": "visual_selection"
+        },
+        "type": "yank"
+      },
+      "parent": "43a42c1e-dc34-48fc-989b-0c7340997b8c",
+      "removed_range": null,
+      "resolved_nodes": [
+        {
+          "navigation_child": "node-sets-left-parent",
+          "node": "node-sets-empty-a",
+          "parent": "node-sets-left-parent",
+          "range": {
+            "end": 0,
+            "start": 0
+          }
+        },
+        {
+          "navigation_child": "node-sets-left-parent",
+          "node": "node-sets-n4",
+          "parent": "node-sets-left-parent",
+          "range": {
+            "end": 6,
+            "start": 0
+          }
+        },
+        {
+          "navigation_child": "node-sets-right-parent",
+          "node": "node-sets-n22",
+          "parent": "node-sets-right-parent",
+          "range": {
+            "end": 20,
+            "start": 8
+          }
+        },
+        {
+          "navigation_child": "node-sets-right-parent",
+          "node": "node-sets-empty-b",
+          "parent": "node-sets-right-parent",
+          "range": {
+            "end": 20,
+            "start": 20
+          }
+        }
+      ],
+      "resolved_parent": null,
+      "resolved_range": null,
+      "resolved_ranges": [
+        {
+          "end": 0,
+          "start": 0
+        },
+        {
+          "end": 6,
+          "start": 0
+        },
+        {
+          "end": 20,
+          "start": 8
+        },
+        {
+          "end": 20,
+          "start": 20
+        }
+      ],
+      "resolved_selection": null
+    },
+    {
+      "after_cursor": 0,
+      "after_original": null,
+      "after_parent": "43a42c1e-dc34-48fc-989b-0c7340997b8c",
+      "after_scoped": null,
+      "after_selected_child": "node-sets-left-parent",
+      "after_visual_selection": null,
+      "before_cursor": 20,
+      "before_original": null,
+      "before_revision": "node-sets-r10",
+      "before_scope": {
+        "end": 32,
+        "start": 0
+      },
+      "before_scoped": null,
+      "before_selected_child": "node-sets-right-parent",
+      "before_visual_selection": {
+        "nodes": [
+          "node-sets-empty-b",
+          "node-sets-n22",
+          "node-sets-empty-a",
+          "node-sets-n4"
+        ],
+        "type": "nodes"
+      },
+      "capture": null,
+      "capture_set": {
+        "bounds": {
+          "end": 32,
+          "start": 0
+        },
+        "parent": "43a42c1e-dc34-48fc-989b-0c7340997b8c",
+        "scope": [],
+        "scope_labels": [],
+        "timing": {
+          "allocation": "81a234f4-1ceb-41df-bd46-74cde369c5b8",
+          "ordinal": 0
+        }
+      },
+      "captured_child_label": null,
+      "depth": 1,
+      "instruction": {
+        "register": "b",
+        "selector": {
+          "type": "visual_selection"
+        },
+        "type": "cut"
+      },
+      "parent": "43a42c1e-dc34-48fc-989b-0c7340997b8c",
+      "removed_range": null,
+      "resolved_nodes": [
+        {
+          "navigation_child": "node-sets-left-parent",
+          "node": "node-sets-empty-a",
+          "parent": "node-sets-left-parent",
+          "range": {
+            "end": 0,
+            "start": 0
+          }
+        },
+        {
+          "navigation_child": "node-sets-left-parent",
+          "node": "node-sets-n4",
+          "parent": "node-sets-left-parent",
+          "range": {
+            "end": 6,
+            "start": 0
+          }
+        },
+        {
+          "navigation_child": "node-sets-right-parent",
+          "node": "node-sets-n22",
+          "parent": "node-sets-right-parent",
+          "range": {
+            "end": 20,
+            "start": 8
+          }
+        },
+        {
+          "navigation_child": "node-sets-right-parent",
+          "node": "node-sets-empty-b",
+          "parent": "node-sets-right-parent",
+          "range": {
+            "end": 20,
+            "start": 20
+          }
+        }
+      ],
+      "resolved_parent": null,
+      "resolved_range": null,
+      "resolved_ranges": [
+        {
+          "end": 0,
+          "start": 0
+        },
+        {
+          "end": 6,
+          "start": 0
+        },
+        {
+          "end": 20,
+          "start": 8
+        },
+        {
+          "end": 20,
+          "start": 20
+        }
+      ],
+      "resolved_selection": null
+    },
+    {
+      "after_cursor": 0,
+      "after_original": null,
+      "after_parent": "43a42c1e-dc34-48fc-989b-0c7340997b8c",
+      "after_scoped": null,
+      "after_selected_child": "node-sets-left-parent",
+      "after_visual_selection": null,
+      "before_cursor": 0,
+      "before_original": null,
+      "before_revision": "3d09258c-5b95-4800-bac5-25b93f5289d5",
+      "before_scope": {
+        "end": 14,
+        "start": 0
+      },
+      "before_scoped": null,
+      "before_selected_child": "node-sets-left-parent",
+      "before_visual_selection": null,
+      "capture": null,
+      "capture_set": null,
+      "captured_child_label": null,
+      "depth": 1,
+      "instruction": {
+        "type": "clear_selection"
+      },
+      "parent": "43a42c1e-dc34-48fc-989b-0c7340997b8c",
+      "removed_range": null,
+      "resolved_nodes": [],
+      "resolved_parent": null,
+      "resolved_range": null,
+      "resolved_ranges": [],
+      "resolved_selection": null
+    },
+    {
+      "after_cursor": 0,
+      "after_original": null,
+      "after_parent": "43a42c1e-dc34-48fc-989b-0c7340997b8c",
+      "after_scoped": null,
+      "after_selected_child": "e27f2624-a96a-49dd-a291-51f6aa319f02",
+      "after_visual_selection": null,
+      "before_cursor": 0,
+      "before_original": null,
+      "before_revision": "3d09258c-5b95-4800-bac5-25b93f5289d5",
+      "before_scope": {
+        "end": 14,
+        "start": 0
+      },
+      "before_scoped": null,
+      "before_selected_child": "node-sets-left-parent",
+      "before_visual_selection": null,
+      "capture": null,
+      "capture_set": null,
+      "captured_child_label": null,
+      "depth": 1,
+      "instruction": {
+        "before": false,
+        "register": "b",
+        "type": "paste"
+      },
+      "parent": "43a42c1e-dc34-48fc-989b-0c7340997b8c",
+      "removed_range": null,
+      "resolved_nodes": [],
+      "resolved_parent": "43a42c1e-dc34-48fc-989b-0c7340997b8c",
+      "resolved_range": {
+        "end": 18,
+        "start": 0
+      },
+      "resolved_ranges": [],
+      "resolved_selection": null
+    }
+  ]
+}

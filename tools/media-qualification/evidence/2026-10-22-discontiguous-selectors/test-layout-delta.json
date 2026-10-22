@@ -1,0 +1,7 @@
+{
+  "debug_eighth_changed_files": [
+    "crates/deadpan-cli/tests/preview_export.rs",
+    "crates/deadpan-cli/tests/preview_export/node_sets.rs"
+  ],
+  "all_other_frozen_rust_identical": true
+}

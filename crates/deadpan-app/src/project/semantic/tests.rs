@@ -134,3 +134,41 @@ fn explicit_node_receipts_keep_identity_until_a_new_visual_selection_overrides_i
         );
     }
 }
+
+#[test]
+fn node_set_cut_receipt_keeps_the_requested_ids_and_allows_explicit_visual_override() {
+    let nodes = vec![
+        NodeId::new("later").unwrap(),
+        NodeId::new("empty").unwrap(),
+        NodeId::new("earlier").unwrap(),
+    ];
+    let register = RegisterName::unnamed();
+    let instruction = SemanticInstruction::Cut {
+        selector: SemanticSelector::Nodes {
+            nodes: nodes.clone(),
+        },
+        register,
+    };
+    let receipt = LastEdit::from_instruction(&instruction).unwrap();
+    assert_eq!(receipt.instruction(&context(None), register), instruction);
+    assert_eq!(
+        serde_json::to_value(&instruction).unwrap()["selector"],
+        serde_json::json!({"type":"nodes","nodes":["later","empty","earlier"]})
+    );
+    let set = context(Some(SemanticVisualSelection::Nodes {
+        nodes: vec![NodeId::new("new").unwrap()],
+    }));
+    assert_eq!(
+        serde_json::to_value(receipt.instruction(&set, register)).unwrap()["selector"],
+        serde_json::json!({"type":"nodes","nodes":["new"]})
+    );
+    let time = context(Some(SemanticVisualSelection::Time {
+        anchor: ProjectFrame(2),
+        head: ProjectFrame(4),
+        extending: false,
+    }));
+    assert_eq!(
+        serde_json::to_value(receipt.instruction(&time, register)).unwrap()["selector"],
+        serde_json::json!({"type":"visual_selection"})
+    );
+}

@@ -161,6 +161,42 @@ whole-child Node selection. Selecting alone changes neither history nor
 registers. Command entry captures the existing session, revision, scope,
 cursor, selection and role guards.
 
+### Discontiguous whole-node sets
+
+`:select nodes=["id-a","id-b"]` selects 1 through 64 distinct whole authored
+nodes in ordinary Your edit with Linked role. The suffix is a strict JSON
+array of exact IDs. Members may have different immediate Sequence parents;
+root, scope, missing, outside-scope, duplicate and ancestor-overlapping members
+refuse. Repeat, Retime and partition interiors retain the single-Node limit.
+Structural order determines member order, including equal-time empty siblings.
+
+Recording saves `SelectNodes { nodes }`; copy, cut, named calls and dot retain
+`Nodes { nodes }` addresses and resolve them on each staged revision. A finished
+set survives cursor motion. Plain Visual selection replaces it. The inspector
+lists each member's identity, actual parent and range; the footer shows count
+and summed duration. Cards highlight individual ranges and empty identities.
+There is no gap-spanning range for this selection.
+The inspector is read-only while a set is selected. Loop selection refuses the
+set instead of playing its navigation beat or unselected gaps; clear the set
+before choosing a playback range. AI generation and saved framing also refuse
+set authority, including a previously captured single-Hold AI target. Canceling
+an existing AI job remains available.
+
+Yank stores one `EditedSet` captured from one entry document. Cut first captures
+that same union, then deletes members in reverse structural order through one
+atomic Compound. Empty-only cuts change structure with zero duration delta.
+Undo restores the complete edit while retaining the union register. Captures,
+historical checkpoints, redo and reopening preserve every component and one
+logical copied mark when its Source-clock bindings span several components.
+Relationships that cannot close within the supported capsules refuse explicitly.
+
+Clear the set selection before choosing a paste seam. `p`/`P` inserts the union
+under one editable neutral Sequence, omitting the unselected gaps and allocating
+shared marks once for the union. Active-set replacement, Place slice, Group,
+Duplicate, Repeat, role-only and parameter consumers currently refuse sets.
+This whole-node branch does not implement arbitrary interval sets or
+transcript-search-result selectors.
+
 ### Ranged zoom and creep
 
 On an ordinary selected direct child, `:zoom` and `:creep` over an Edit

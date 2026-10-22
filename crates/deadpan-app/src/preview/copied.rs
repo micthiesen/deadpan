@@ -7,6 +7,7 @@ use crate::project::{registers, slice};
 pub(super) enum Content {
     Original(moment::Copied),
     Edited(Arc<slice::Captured>),
+    EditedSet(Arc<deadpan_core::CapturedEditSet>),
     Macro(Arc<deadpan_core::SemanticProgram>),
 }
 
@@ -53,6 +54,11 @@ impl Content {
                     range.duration().frames()
                 )
             }
+            Self::EditedSet(set) => format!(
+                "Copied node union · {} members · {} frames",
+                set.components().len(),
+                set.duration().frames()
+            ),
             Self::Macro(program) => {
                 let count = program.instructions().len();
                 format!(
@@ -74,6 +80,10 @@ impl Content {
                 copied: copied.clone(),
                 range: copied.slice().range(),
             },
+            Self::EditedSet(_) => return Err(
+                "A copied node union uses p/P at an insertion seam; Place slice cannot refine it."
+                    .into(),
+            ),
             Self::Macro(_) => return Err(MACRO_PASTE_ERROR.into()),
         })
     }
@@ -99,6 +109,26 @@ impl Content {
                 if copied.slice().presentation_basis() != workspace.document.presentation_basis() {
                     return Err(
                         "The copied edit uses a different canvas or frame rate. Copy it again."
+                            .into(),
+                    );
+                }
+            }
+            Self::EditedSet(set) => {
+                if set.project_id() != workspace.document.project_id() {
+                    return Err("The copied node union belongs to another project.".into());
+                }
+                if set.presentation_basis() != workspace.document.presentation_basis() {
+                    return Err(
+                        "The copied node union uses a different canvas or frame rate.".into(),
+                    );
+                }
+                if set
+                    .assets()
+                    .iter()
+                    .any(|(id, asset)| workspace.document.assets().get(id) != Some(asset))
+                {
+                    return Err(
+                        "The copied node union needs source assets unavailable in this revision."
                             .into(),
                     );
                 }
@@ -202,7 +232,7 @@ impl Register {
     pub fn original(&self) -> Option<&moment::Copied> {
         match self.content.as_ref()? {
             Content::Original(copied) => Some(copied),
-            Content::Edited(_) | Content::Macro(_) => None,
+            Content::Edited(_) | Content::EditedSet(_) | Content::Macro(_) => None,
         }
     }
 
@@ -312,6 +342,7 @@ impl Register {
                     ordinals: ordinals.clone(),
                 }),
                 registers::Value::Edited(copied) => Content::Edited(copied.clone()),
+                registers::Value::EditedSet(set) => Content::EditedSet(set.clone()),
                 registers::Value::Macro(program) => Content::Macro(program.clone()),
             };
             if name == '"' {
@@ -434,6 +465,7 @@ impl DeadpanApp {
         let kind = match self.copied.selected_content() {
             Some(Content::Original(_)) => "Original",
             Some(Content::Edited(_)) => "Edit",
+            Some(Content::EditedSet(_)) => "Node union",
             Some(content @ Content::Macro(_)) => {
                 return Some(format!("Register {name} · {}", content.label()));
             }

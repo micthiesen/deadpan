@@ -116,6 +116,17 @@ where
         selector: &SemanticSelector,
         cut: bool,
     ) -> Result<(), EditError> {
+        let nodes = match selector {
+            SemanticSelector::Nodes { nodes } => Some(nodes.clone()),
+            SemanticSelector::VisualSelection => match &self.context.visual_selection {
+                Some(SemanticVisualSelection::Nodes { nodes }) => Some(nodes.clone()),
+                _ => None,
+            },
+            _ => None,
+        };
+        if let Some(nodes) = nodes {
+            return self.capture_nodes(trace_index, register, &nodes, cut);
+        }
         let target = self.resolve_selector(selector)?;
         self.capture_instruction(trace_index, register, target, cut)?;
         if !cut && matches!(selector, SemanticSelector::VisualSelection) {
@@ -206,6 +217,14 @@ where
         register: RegisterName,
         before: bool,
     ) -> Result<(), EditError> {
+        if matches!(
+            self.context.visual_selection,
+            Some(SemanticVisualSelection::Nodes { .. })
+        ) {
+            return Err(unavailable(
+                "clear the node set selection before choosing a paste seam",
+            ));
+        }
         if matches!(
             self.context.visual_selection,
             Some(SemanticVisualSelection::Object { .. } | SemanticVisualSelection::Node { .. })
@@ -421,6 +440,14 @@ where
                     selected,
                     slice.duration(),
                 )
+            }
+            RegisterValue::EditedSet { set } => {
+                let Destination::Seam { index, .. } = destination else {
+                    return Err(unavailable(
+                        "node set contents support insertion at a Sequence seam only",
+                    ));
+                };
+                self.prepare_set_paste(parent, index, set)?
             }
             RegisterValue::Original {
                 asset, ordinals, ..

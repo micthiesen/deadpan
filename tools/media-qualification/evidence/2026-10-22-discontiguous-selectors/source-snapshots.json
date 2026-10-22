@@ -1,0 +1,110 @@
+{
+  "baseline-first-source": {
+    "archive": "baseline-first-source.tar.gz",
+    "manifest": "baseline-first-source-identities.json.gz",
+    "files": 1979,
+    "content_sha256": "17759751bc3b9bec6ea35c472cdc282f4fbd5a47152f97f61b4dab18801da6fc"
+  },
+  "broad-final-source": {
+    "archive": "broad-final-source.tar.gz",
+    "manifest": "broad-final-source-identities.json.gz",
+    "files": 1990,
+    "content_sha256": "96144d2e597fb56ad26102aac5a78768dc39578e4175697a0fb2a827159a3f65"
+  },
+  "broad-fourth-source": {
+    "archive": "broad-fourth-source.tar.gz",
+    "manifest": "broad-fourth-source-identities.json.gz",
+    "files": 1990,
+    "content_sha256": "8c810c90835388915f223c596c62cccb1dce6e79a779797a003622e1009787a3"
+  },
+  "broad-second-source": {
+    "archive": "broad-second-source.tar.gz",
+    "manifest": "broad-second-source-identities.json.gz",
+    "files": 1990,
+    "content_sha256": "bc9a32a6eb67d960c939d29142b8b1ae356b816620283134d7f017cda7c98451"
+  },
+  "broad-third-source": {
+    "archive": "broad-third-source.tar.gz",
+    "manifest": "broad-third-source-identities.json.gz",
+    "files": 1990,
+    "content_sha256": "9b3b11cfa40f6ec09614c2cd06dc0469432ea15580abe9609b25f1ac6b55d155"
+  },
+  "debug-eighth-source": {
+    "archive": "broad-second-source.tar.gz",
+    "manifest": "debug-eighth-source-identities.json.gz",
+    "files": 1990,
+    "content_sha256": "bc9a32a6eb67d960c939d29142b8b1ae356b816620283134d7f017cda7c98451"
+  },
+  "debug-fifth-source": {
+    "archive": "broad-final-source.tar.gz",
+    "manifest": "debug-fifth-source-identities.json.gz",
+    "files": 1990,
+    "content_sha256": "96144d2e597fb56ad26102aac5a78768dc39578e4175697a0fb2a827159a3f65"
+  },
+  "debug-first-source": {
+    "archive": "debug-first-source.tar.gz",
+    "manifest": "debug-first-source-identities.json.gz",
+    "files": 1990,
+    "content_sha256": "0f299a610e4b1453649a3ef60ef6d0f504c532bc2de9515a67dc91ca29c15277"
+  },
+  "debug-fourth-source": {
+    "archive": "debug-fourth-source.tar.gz",
+    "manifest": "debug-fourth-source-identities.json.gz",
+    "files": 1990,
+    "content_sha256": "1886fdf3cdf9441681e7c7aa6dbb9d1542936f6a8ead52dedf91b6b5e82b469e"
+  },
+  "debug-second-source": {
+    "archive": "debug-second-source.tar.gz",
+    "manifest": "debug-second-source-identities.json.gz",
+    "files": 1990,
+    "content_sha256": "3e35f89e33a8b9250e3ee5bb7829f3aa5a5ffa4b121e29cea5eab6f4b8ca3eaa"
+  },
+  "debug-seventh-source": {
+    "archive": "debug-seventh-source.tar.gz",
+    "manifest": "debug-seventh-source-identities.json.gz",
+    "files": 1990,
+    "content_sha256": "a14314cc66e1846318f32ced10dfa3a6333e038cad49464164fbe822800d4b44"
+  },
+  "debug-sixth-source": {
+    "archive": "debug-sixth-source.tar.gz",
+    "manifest": "debug-sixth-source-identities.json.gz",
+    "files": 1990,
+    "content_sha256": "14e78be368c2639e6f24ef91dc26b080abc2233ed32320f19cc642302e33a2c0"
+  },
+  "debug-third-source": {
+    "archive": "debug-third-source.tar.gz",
+    "manifest": "debug-third-source-identities.json.gz",
+    "files": 1990,
+    "content_sha256": "bc6c9e50e6756024db82f71aee0a0999d34f94c23f57be0d3ec3d3fe7a34bafe"
+  },
+  "focused-first-source": {
+    "archive": "focused-first-source.tar.gz",
+    "manifest": "focused-first-source-identities.json.gz",
+    "files": 1989,
+    "content_sha256": "f57fa0eefe3ca5fe7f87afbbcbb2f9e3fd12d4b4af17e376a1fa20e85be0a9f1"
+  },
+  "focused-second-source": {
+    "archive": "focused-first-source.tar.gz",
+    "manifest": "focused-second-source-identities.json.gz",
+    "files": 1989,
+    "content_sha256": "f57fa0eefe3ca5fe7f87afbbcbb2f9e3fd12d4b4af17e376a1fa20e85be0a9f1"
+  },
+  "lint-final-source": {
+    "archive": "lint-final-source.tar.gz",
+    "manifest": "lint-final-source-identities.json.gz",
+    "files": 1990,
+    "content_sha256": "a22da25b7cd8f99c1059817ee26ae20c1ae87a7c05295eaccaef2214050b9044"
+  },
+  "release-final-source": {
+    "archive": "lint-final-source.tar.gz",
+    "manifest": "release-final-source-identities.json.gz",
+    "files": 1990,
+    "content_sha256": "a22da25b7cd8f99c1059817ee26ae20c1ae87a7c05295eaccaef2214050b9044"
+  },
+  "strict-second-source": {
+    "archive": "strict-second-source.tar.gz",
+    "manifest": "strict-second-source-identities.json.gz",
+    "files": 1990,
+    "content_sha256": "91a9b164d8729de4613f716feb97099375d86b4f00e96cb5617cf638cd849e52"
+  }
+}

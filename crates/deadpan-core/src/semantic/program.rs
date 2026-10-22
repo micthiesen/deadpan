@@ -120,6 +120,11 @@ pub enum SemanticSelector {
     Node {
         node: NodeId,
     },
+    /// A bounded union of whole live authored descendants.
+    Nodes {
+        #[serde(deserialize_with = "super::node_set::deserialize_nodes")]
+        nodes: Vec<NodeId>,
+    },
     /// Two named Edit boundaries, resolved anew against the staged revision.
     MarkRange {
         start: NamedMarkTarget,
@@ -147,6 +152,7 @@ impl SemanticSelector {
             | Self::VisualSelection
             | Self::TextObject { .. }
             | Self::Node { .. }
+            | Self::Nodes { .. }
             | Self::MarkRange { .. } => false,
         }
     }
@@ -206,6 +212,10 @@ pub enum SemanticInstruction {
     /// Select a finished whole authored node without saving its resolved frames.
     SelectNode {
         node: NodeId,
+    },
+    SelectNodes {
+        #[serde(deserialize_with = "super::node_set::deserialize_nodes")]
+        nodes: Vec<NodeId>,
     },
     #[serde(deserialize_with = "deserialize_empty")]
     BeginSelection,
@@ -742,6 +752,21 @@ impl SemanticProgram {
             ));
         }
         for instruction in &self.instructions {
+            match instruction {
+                SemanticInstruction::SelectNodes { nodes } => {
+                    super::node_set::validate_nodes(nodes)?
+                }
+                SemanticInstruction::Yank { selector, .. }
+                | SemanticInstruction::Cut { selector, .. }
+                | SemanticInstruction::Group { selector, .. }
+                | SemanticInstruction::Duplicate { selector }
+                | SemanticInstruction::Repeat { selector, .. } => {
+                    if let SemanticSelector::Nodes { nodes } = selector {
+                        super::node_set::validate_nodes(nodes)?;
+                    }
+                }
+                _ => {}
+            }
             if let SemanticInstruction::Zoom { kind, .. } = instruction {
                 kind.validate()
                     .map_err(|message| EditError::new(EditErrorCode::InvalidCommand, message))?;

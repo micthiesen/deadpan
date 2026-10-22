@@ -1,0 +1,12 @@
+{
+  "deadpan-store::node_sets": {
+    "path": "/private/tmp/deadpan-discontiguous-selectors-2026-10-22/store-second-extracted/target/debug/deps/node_sets-204a41fe134e190f",
+    "sha256": "0e850e48f5b25eb8f138c8e7e81e1b56fca9f678ca96d6b4583c460ad156c957",
+    "tests": [
+      "equal_time_empty_union_cuts_and_pastes_both_structural_identities",
+      "union_capture_checkpoints_and_late_refusals_preserve_entire_bank_and_history",
+      "union_copy_cut_paste_reopens_with_one_logical_mark_and_exact_history",
+      "union_register_validates_a_later_closed_component_against_its_historical_snapshot"
+    ]
+  }
+}

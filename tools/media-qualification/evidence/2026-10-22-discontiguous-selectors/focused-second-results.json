@@ -1,0 +1,18 @@
+[
+  {
+    "phase": "core",
+    "exit": 0,
+    "tests": 11,
+    "run_seconds": 0.2595662083476782,
+    "total_seconds": 0.7603921256959438,
+    "source_inputs_binaries_unchanged": true
+  },
+  {
+    "phase": "store",
+    "exit": 100,
+    "tests": 4,
+    "run_seconds": 0.4398785000666976,
+    "total_seconds": 58.127351459115744,
+    "source_inputs_binaries_unchanged": true
+  }
+]

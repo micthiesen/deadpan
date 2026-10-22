@@ -1,0 +1,11 @@
+{
+  "changed_files": [
+    "crates/deadpan-app/src/preview/macros.rs",
+    "crates/deadpan-store/tests/node_sets.rs"
+  ],
+  "changes": [
+    "test-only borrowed slice cleanup",
+    "Equivalent boolean match converted to matches! for Clippy."
+  ],
+  "other_rust_and_six_inputs_unchanged": true
+}

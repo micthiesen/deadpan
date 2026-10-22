@@ -112,8 +112,9 @@ pub use derived_clock::DerivedRetimeClock;
 pub use document::*;
 pub use duplicate::DuplicateRequirements;
 pub use edit_slice::{
-    CapturedEditSlice, SequenceChildrenPlan, SliceAttachments, SliceCaptureSelection,
-    SliceIdentityRequirements, SlicePasteIdentities,
+    CapturedEditSet, CapturedEditSlice, EditSetComponentIdentities, EditSetIdentityRequirements,
+    EditSetPasteIdentities, MAX_EDIT_SET_COMPONENTS, SequenceChildrenPlan, SliceAttachments,
+    SliceCaptureSelection, SliceIdentityRequirements, SlicePasteIdentities,
 };
 pub use equalizer::*;
 pub use exact::ExactRatio;

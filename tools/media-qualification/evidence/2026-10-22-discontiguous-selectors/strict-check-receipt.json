@@ -1,0 +1,13 @@
+{
+  "name": "strict-check",
+  "command": [
+    "cargo",
+    "xtask",
+    "check",
+    "--since",
+    "f4f7481ed804f8a5c25b39b76b7ecc8bc1529cc4",
+    "--no-test"
+  ],
+  "exit": 1,
+  "seconds": 119.38758020848036
+}

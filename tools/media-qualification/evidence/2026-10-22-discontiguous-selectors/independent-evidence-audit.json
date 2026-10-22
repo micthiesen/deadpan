@@ -1,0 +1,2882 @@
+{
+  "audited_at_utc": "2026-10-22T19:33:08.583204+00:00",
+  "scope": "Read-only retained evidence audit and ffprobe inspection. No builds, formatter, Git writes or repository writes; this report is the sole written file.",
+  "status": "initial_inventory_verified_pending_recollection_and_post_commit_binding",
+  "integrity": {
+    "inventory": {
+      "entries": 315,
+      "bytes": 112333943,
+      "sha256": "d05c9ae20cc4dff6a01fafd57dc94ae908dc5827d6da22ef3cf2075db9f5a444",
+      "all_size_sha_and_path_membership_match": true
+    },
+    "snapshot_mappings": {
+      "source-snapshots.json": {
+        "baseline-first-source": {
+          "archive": "baseline-first-source.tar.gz",
+          "files": 1979,
+          "map_sha256": "17759751bc3b9bec6ea35c472cdc282f4fbd5a47152f97f61b4dab18801da6fc",
+          "matches_archive_and_table": true,
+          "mismatches": []
+        },
+        "broad-final-source": {
+          "archive": "broad-final-source.tar.gz",
+          "files": 1990,
+          "map_sha256": "96144d2e597fb56ad26102aac5a78768dc39578e4175697a0fb2a827159a3f65",
+          "matches_archive_and_table": true,
+          "mismatches": []
+        },
+        "broad-fourth-source": {
+          "archive": "broad-fourth-source.tar.gz",
+          "files": 1990,
+          "map_sha256": "8c810c90835388915f223c596c62cccb1dce6e79a779797a003622e1009787a3",
+          "matches_archive_and_table": true,
+          "mismatches": []
+        },
+        "broad-second-source": {
+          "archive": "broad-second-source.tar.gz",
+          "files": 1990,
+          "map_sha256": "bc9a32a6eb67d960c939d29142b8b1ae356b816620283134d7f017cda7c98451",
+          "matches_archive_and_table": true,
+          "mismatches": []
+        },
+        "broad-third-source": {
+          "archive": "broad-third-source.tar.gz",
+          "files": 1990,
+          "map_sha256": "9b3b11cfa40f6ec09614c2cd06dc0469432ea15580abe9609b25f1ac6b55d155",
+          "matches_archive_and_table": true,
+          "mismatches": []
+        },
+        "debug-eighth-source": {
+          "archive": "broad-second-source.tar.gz",
+          "files": 1990,
+          "map_sha256": "bc9a32a6eb67d960c939d29142b8b1ae356b816620283134d7f017cda7c98451",
+          "matches_archive_and_table": true,
+          "mismatches": []
+        },
+        "debug-fifth-source": {
+          "archive": "broad-final-source.tar.gz",
+          "files": 1990,
+          "map_sha256": "96144d2e597fb56ad26102aac5a78768dc39578e4175697a0fb2a827159a3f65",
+          "matches_archive_and_table": true,
+          "mismatches": []
+        },
+        "debug-first-source": {
+          "archive": "debug-first-source.tar.gz",
+          "files": 1990,
+          "map_sha256": "0f299a610e4b1453649a3ef60ef6d0f504c532bc2de9515a67dc91ca29c15277",
+          "matches_archive_and_table": true,
+          "mismatches": []
+        },
+        "debug-fourth-source": {
+          "archive": "debug-fourth-source.tar.gz",
+          "files": 1990,
+          "map_sha256": "1886fdf3cdf9441681e7c7aa6dbb9d1542936f6a8ead52dedf91b6b5e82b469e",
+          "matches_archive_and_table": true,
+          "mismatches": []
+        },
+        "debug-second-source": {
+          "archive": "debug-second-source.tar.gz",
+          "files": 1990,
+          "map_sha256": "3e35f89e33a8b9250e3ee5bb7829f3aa5a5ffa4b121e29cea5eab6f4b8ca3eaa",
+          "matches_archive_and_table": true,
+          "mismatches": []
+        },
+        "debug-seventh-source": {
+          "archive": "debug-seventh-source.tar.gz",
+          "files": 1990,
+          "map_sha256": "a14314cc66e1846318f32ced10dfa3a6333e038cad49464164fbe822800d4b44",
+          "matches_archive_and_table": true,
+          "mismatches": []
+        },
+        "debug-sixth-source": {
+          "archive": "debug-sixth-source.tar.gz",
+          "files": 1990,
+          "map_sha256": "14e78be368c2639e6f24ef91dc26b080abc2233ed32320f19cc642302e33a2c0",
+          "matches_archive_and_table": true,
+          "mismatches": []
+        },
+        "debug-third-source": {
+          "archive": "debug-third-source.tar.gz",
+          "files": 1990,
+          "map_sha256": "bc6c9e50e6756024db82f71aee0a0999d34f94c23f57be0d3ec3d3fe7a34bafe",
+          "matches_archive_and_table": true,
+          "mismatches": []
+        },
+        "focused-first-source": {
+          "archive": "focused-first-source.tar.gz",
+          "files": 1989,
+          "map_sha256": "f57fa0eefe3ca5fe7f87afbbcbb2f9e3fd12d4b4af17e376a1fa20e85be0a9f1",
+          "matches_archive_and_table": true,
+          "mismatches": []
+        },
+        "focused-second-source": {
+          "archive": "focused-first-source.tar.gz",
+          "files": 1989,
+          "map_sha256": "f57fa0eefe3ca5fe7f87afbbcbb2f9e3fd12d4b4af17e376a1fa20e85be0a9f1",
+          "matches_archive_and_table": true,
+          "mismatches": []
+        },
+        "lint-final-source": {
+          "archive": "lint-final-source.tar.gz",
+          "files": 1990,
+          "map_sha256": "a22da25b7cd8f99c1059817ee26ae20c1ae87a7c05295eaccaef2214050b9044",
+          "matches_archive_and_table": true,
+          "mismatches": []
+        },
+        "release-final-source": {
+          "archive": "lint-final-source.tar.gz",
+          "files": 1990,
+          "map_sha256": "a22da25b7cd8f99c1059817ee26ae20c1ae87a7c05295eaccaef2214050b9044",
+          "matches_archive_and_table": true,
+          "mismatches": []
+        },
+        "strict-second-source": {
+          "archive": "strict-second-source.tar.gz",
+          "files": 1990,
+          "map_sha256": "91a9b164d8729de4613f716feb97099375d86b4f00e96cb5617cf638cd849e52",
+          "matches_archive_and_table": true,
+          "mismatches": []
+        }
+      },
+      "input-snapshots.json": {
+        "baseline-first-inputs": {
+          "archive": "baseline-first-inputs.tar.gz",
+          "files": 6,
+          "map_sha256": "ffb258e87d06c0aaf338c032eb82b4eaeaa5c4e0dae6c83f273710411538e275",
+          "matches_archive_and_table": true,
+          "mismatches": []
+        },
+        "broad-final-inputs": {
+          "archive": "broad-final-inputs.tar.gz",
+          "files": 6,
+          "map_sha256": "2b2a2eb18a6e9ba656bbdf86d8a19eb122c572afbad6d63d12b88addb729804f",
+          "matches_archive_and_table": true,
+          "mismatches": []
+        },
+        "broad-fourth-inputs": {
+          "archive": "broad-final-inputs.tar.gz",
+          "files": 6,
+          "map_sha256": "2b2a2eb18a6e9ba656bbdf86d8a19eb122c572afbad6d63d12b88addb729804f",
+          "matches_archive_and_table": true,
+          "mismatches": []
+        },
+        "broad-second-inputs": {
+          "archive": "broad-final-inputs.tar.gz",
+          "files": 6,
+          "map_sha256": "2b2a2eb18a6e9ba656bbdf86d8a19eb122c572afbad6d63d12b88addb729804f",
+          "matches_archive_and_table": true,
+          "mismatches": []
+        },
+        "broad-third-inputs": {
+          "archive": "broad-final-inputs.tar.gz",
+          "files": 6,
+          "map_sha256": "2b2a2eb18a6e9ba656bbdf86d8a19eb122c572afbad6d63d12b88addb729804f",
+          "matches_archive_and_table": true,
+          "mismatches": []
+        },
+        "debug-eighth-inputs": {
+          "archive": "broad-final-inputs.tar.gz",
+          "files": 6,
+          "map_sha256": "2b2a2eb18a6e9ba656bbdf86d8a19eb122c572afbad6d63d12b88addb729804f",
+          "matches_archive_and_table": true,
+          "mismatches": []
+        },
+        "debug-fifth-inputs": {
+          "archive": "broad-final-inputs.tar.gz",
+          "files": 6,
+          "map_sha256": "2b2a2eb18a6e9ba656bbdf86d8a19eb122c572afbad6d63d12b88addb729804f",
+          "matches_archive_and_table": true,
+          "mismatches": []
+        },
+        "debug-first-inputs": {
+          "archive": "broad-final-inputs.tar.gz",
+          "files": 6,
+          "map_sha256": "2b2a2eb18a6e9ba656bbdf86d8a19eb122c572afbad6d63d12b88addb729804f",
+          "matches_archive_and_table": true,
+          "mismatches": []
+        },
+        "debug-fourth-inputs": {
+          "archive": "broad-final-inputs.tar.gz",
+          "files": 6,
+          "map_sha256": "2b2a2eb18a6e9ba656bbdf86d8a19eb122c572afbad6d63d12b88addb729804f",
+          "matches_archive_and_table": true,
+          "mismatches": []
+        },
+        "debug-second-inputs": {
+          "archive": "broad-final-inputs.tar.gz",
+          "files": 6,
+          "map_sha256": "2b2a2eb18a6e9ba656bbdf86d8a19eb122c572afbad6d63d12b88addb729804f",
+          "matches_archive_and_table": true,
+          "mismatches": []
+        },
+        "debug-seventh-inputs": {
+          "archive": "broad-final-inputs.tar.gz",
+          "files": 6,
+          "map_sha256": "2b2a2eb18a6e9ba656bbdf86d8a19eb122c572afbad6d63d12b88addb729804f",
+          "matches_archive_and_table": true,
+          "mismatches": []
+        },
+        "debug-sixth-inputs": {
+          "archive": "broad-final-inputs.tar.gz",
+          "files": 6,
+          "map_sha256": "2b2a2eb18a6e9ba656bbdf86d8a19eb122c572afbad6d63d12b88addb729804f",
+          "matches_archive_and_table": true,
+          "mismatches": []
+        },
+        "debug-third-inputs": {
+          "archive": "broad-final-inputs.tar.gz",
+          "files": 6,
+          "map_sha256": "2b2a2eb18a6e9ba656bbdf86d8a19eb122c572afbad6d63d12b88addb729804f",
+          "matches_archive_and_table": true,
+          "mismatches": []
+        },
+        "focused-first-inputs": {
+          "archive": "baseline-first-inputs.tar.gz",
+          "files": 6,
+          "map_sha256": "ffb258e87d06c0aaf338c032eb82b4eaeaa5c4e0dae6c83f273710411538e275",
+          "matches_archive_and_table": true,
+          "mismatches": []
+        },
+        "focused-second-inputs": {
+          "archive": "baseline-first-inputs.tar.gz",
+          "files": 6,
+          "map_sha256": "ffb258e87d06c0aaf338c032eb82b4eaeaa5c4e0dae6c83f273710411538e275",
+          "matches_archive_and_table": true,
+          "mismatches": []
+        },
+        "lint-final-inputs": {
+          "archive": "broad-final-inputs.tar.gz",
+          "files": 6,
+          "map_sha256": "2b2a2eb18a6e9ba656bbdf86d8a19eb122c572afbad6d63d12b88addb729804f",
+          "matches_archive_and_table": true,
+          "mismatches": []
+        },
+        "release-final-inputs": {
+          "archive": "broad-final-inputs.tar.gz",
+          "files": 6,
+          "map_sha256": "2b2a2eb18a6e9ba656bbdf86d8a19eb122c572afbad6d63d12b88addb729804f",
+          "matches_archive_and_table": true,
+          "mismatches": []
+        },
+        "strict-second-inputs": {
+          "archive": "broad-final-inputs.tar.gz",
+          "files": 6,
+          "map_sha256": "2b2a2eb18a6e9ba656bbdf86d8a19eb122c572afbad6d63d12b88addb729804f",
+          "matches_archive_and_table": true,
+          "mismatches": []
+        }
+      }
+    },
+    "archives": {
+      "baseline-first-source.tar.gz": {
+        "count": 1979,
+        "map_sha256": "17759751bc3b9bec6ea35c472cdc282f4fbd5a47152f97f61b4dab18801da6fc",
+        "unsafe_or_forbidden_members": [],
+        "archive_sha256": "1e4a4da6dce26a39bc7751e260540ca203d8ec8014317d0b1246be994e753c8a"
+      },
+      "broad-final-source.tar.gz": {
+        "count": 1990,
+        "map_sha256": "96144d2e597fb56ad26102aac5a78768dc39578e4175697a0fb2a827159a3f65",
+        "unsafe_or_forbidden_members": [],
+        "archive_sha256": "906f0703a96a6402d46c27187f027738abeecf22eb693bcddc45db83849bccdb"
+      },
+      "broad-fourth-source.tar.gz": {
+        "count": 1990,
+        "map_sha256": "8c810c90835388915f223c596c62cccb1dce6e79a779797a003622e1009787a3",
+        "unsafe_or_forbidden_members": [],
+        "archive_sha256": "b5d29d9d2ecb475d3a351c392c028f0d34ecd97e94db918e52c440a9362aa16a"
+      },
+      "broad-second-source.tar.gz": {
+        "count": 1990,
+        "map_sha256": "bc9a32a6eb67d960c939d29142b8b1ae356b816620283134d7f017cda7c98451",
+        "unsafe_or_forbidden_members": [],
+        "archive_sha256": "849c9fb615031bdcc968a9a16d993bc033df50de402601a6de84f02e6a798b5d"
+      },
+      "broad-third-source.tar.gz": {
+        "count": 1990,
+        "map_sha256": "9b3b11cfa40f6ec09614c2cd06dc0469432ea15580abe9609b25f1ac6b55d155",
+        "unsafe_or_forbidden_members": [],
+        "archive_sha256": "75249cbe7a45440541e72719f1a9814d5948e3eb84b37735588e4566d22788c4"
+      },
+      "debug-first-source.tar.gz": {
+        "count": 1990,
+        "map_sha256": "0f299a610e4b1453649a3ef60ef6d0f504c532bc2de9515a67dc91ca29c15277",
+        "unsafe_or_forbidden_members": [],
+        "archive_sha256": "cb262fc747bd7caaebb9f7926855fcc5cfbf788ca50b86aa4ee0f26a3bc0052a"
+      },
+      "debug-fourth-source.tar.gz": {
+        "count": 1990,
+        "map_sha256": "1886fdf3cdf9441681e7c7aa6dbb9d1542936f6a8ead52dedf91b6b5e82b469e",
+        "unsafe_or_forbidden_members": [],
+        "archive_sha256": "b79efc2aaca16c20d67ff5e45cd3dbb3727be8f413a9460b312c53654f35653c"
+      },
+      "debug-second-source.tar.gz": {
+        "count": 1990,
+        "map_sha256": "3e35f89e33a8b9250e3ee5bb7829f3aa5a5ffa4b121e29cea5eab6f4b8ca3eaa",
+        "unsafe_or_forbidden_members": [],
+        "archive_sha256": "79ff5e45053cfc1f40c12668f4ec39dd76f375fd6d1db65c2fbc134f7f2275bc"
+      },
+      "debug-seventh-source.tar.gz": {
+        "count": 1990,
+        "map_sha256": "a14314cc66e1846318f32ced10dfa3a6333e038cad49464164fbe822800d4b44",
+        "unsafe_or_forbidden_members": [],
+        "archive_sha256": "22ae10a997a652e1e42979a4887d82803b8977d7cfa5d796e4c19eb9ad37e814"
+      },
+      "debug-sixth-source.tar.gz": {
+        "count": 1990,
+        "map_sha256": "14e78be368c2639e6f24ef91dc26b080abc2233ed32320f19cc642302e33a2c0",
+        "unsafe_or_forbidden_members": [],
+        "archive_sha256": "2ccfc5cd6be7b6950ea59538963cface854057a3e1e415af5483765c70199de8"
+      },
+      "debug-third-source.tar.gz": {
+        "count": 1990,
+        "map_sha256": "bc6c9e50e6756024db82f71aee0a0999d34f94c23f57be0d3ec3d3fe7a34bafe",
+        "unsafe_or_forbidden_members": [],
+        "archive_sha256": "a94dcdd71f73a86398c35485bc014bfef2ccc5a41c6bb4951216cc007e19b7d7"
+      },
+      "focused-first-source.tar.gz": {
+        "count": 1989,
+        "map_sha256": "f57fa0eefe3ca5fe7f87afbbcbb2f9e3fd12d4b4af17e376a1fa20e85be0a9f1",
+        "unsafe_or_forbidden_members": [],
+        "archive_sha256": "f7284a01700275ddaa2ad79983f99791ad8e4f62c16572462df21498deb52cf3"
+      },
+      "lint-final-source.tar.gz": {
+        "count": 1990,
+        "map_sha256": "a22da25b7cd8f99c1059817ee26ae20c1ae87a7c05295eaccaef2214050b9044",
+        "unsafe_or_forbidden_members": [],
+        "archive_sha256": "a0bc608977cbf5b6564f450f7871936d11d27539704d7cedee24a65e21e12062"
+      },
+      "strict-second-source.tar.gz": {
+        "count": 1990,
+        "map_sha256": "91a9b164d8729de4613f716feb97099375d86b4f00e96cb5617cf638cd849e52",
+        "unsafe_or_forbidden_members": [],
+        "archive_sha256": "6822e7231f3e24e2706682c9e7951f82f8721da991ccff4e7388afa0a2182ddf"
+      },
+      "baseline-first-inputs.tar.gz": {
+        "count": 6,
+        "map_sha256": "ffb258e87d06c0aaf338c032eb82b4eaeaa5c4e0dae6c83f273710411538e275",
+        "unsafe_or_forbidden_members": [],
+        "archive_sha256": "b52de1d02e2728fe2dba3fd6d0eff2d999e4eed0f3ab799395b0b66d6c201d34"
+      },
+      "broad-final-inputs.tar.gz": {
+        "count": 6,
+        "map_sha256": "2b2a2eb18a6e9ba656bbdf86d8a19eb122c572afbad6d63d12b88addb729804f",
+        "unsafe_or_forbidden_members": [],
+        "archive_sha256": "e9d2a5612cc2c6fea2b8458b8f1578ea3f3cb499139bb19c1f24a7c5f518784d"
+      }
+    },
+    "errors": []
+  },
+  "baseline": {
+    "base_commit": "f4f7481ed804f8a5c25b39b76b7ecc8bc1529cc4",
+    "base_rust_count": 1977,
+    "baseline_rust_count": 1979,
+    "six_inputs": 6,
+    "new_public_controls": [
+      "crates/deadpan-core/tests/node_set_counterfactual.rs",
+      "crates/deadpan-core/tests/node_set_shared_mark.rs"
+    ],
+    "git_blob_rows": 1983,
+    "all_sha_match_archived_files_and_prior_independent_git_audit": true,
+    "expected_control_outcomes": true,
+    "results": [
+      {
+        "suite": "deadpan-core::node_set_shared_mark",
+        "test": "separate_component_pastes_split_one_logical_mark_while_existing_whole_capture_preserves_it",
+        "exit": 0,
+        "seconds": 0.011532125063240528,
+        "expected_pass": true,
+        "expected_outcome": true,
+        "binary_sha256": "5c1dcc5b51c79557f98ca4707f8d70f941243ad68e45c6146e38351f922afc2e"
+      },
+      {
+        "suite": "deadpan-core::node_set_counterfactual",
+        "test": "explicit_nodes_selector_admits_only_after_public_single_node_controls",
+        "exit": 101,
+        "seconds": 0.0099843330681324,
+        "expected_pass": false,
+        "expected_outcome": true,
+        "binary_sha256": "3c95f3074116bab08dc56ce24a86b46e8839cc682d3d9ee68a3b155d84c74ff4"
+      }
+    ]
+  },
+  "test_runs": {
+    "broad-fourth": {
+      "source_attribution": "broad-fourth",
+      "case_count": 4570,
+      "selected_binaries": 160,
+      "all_log_cases_exactly_match_listing_and_binary_inventories": true,
+      "nextest_summary": [
+        "Summary [ 240.381s] 4570 tests run: 4570 passed, 781 skipped"
+      ],
+      "result_receipt": {
+        "exit": 0,
+        "tests": 4570,
+        "binaries": 160,
+        "seconds": 245.1453602090478,
+        "sources_inputs_executable_hashes_unchanged": true,
+        "test_threads": 8
+      },
+      "binary_identities": [
+        {
+          "suite": "deadpan-app::headless",
+          "sha256": "0ff25f86b4b3556cd3edc0884b51957aa25185bf4a26a4db1bf4d6d8df3889fe",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-app::bin/deadpan-app",
+          "sha256": "79fde5382624b3896c4d9293dade089d161d199e3c7bcd3097095ab465c84033",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-audio",
+          "sha256": "af3e8124607f893583784f2645a5ab268ae2cbe83f0dd092a497ee71278a4297",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-audio::audio_context",
+          "sha256": "3d84110a2f5cacda72be38917e94b3adce42114201c0607bcf1344dc0a62005e",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-audio::audio_definition",
+          "sha256": "68b6cda49c1333af8f9e26dc4e90d5d86eb373042c8f69d42fb73e1c28ff4235",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-audio::audio_domain",
+          "sha256": "b3b452706ef2d0509289e1792df0965106b4b133e5dabab9b64526079860ed9e",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-audio::composite_insert",
+          "sha256": "e1dbcb3e5005b61c611d073f0f280d1a6ebcddf77baab6de8f5655f6a6bcb235",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-audio::dormant_source",
+          "sha256": "46ce9e9f4f6b92f0889cb6ab3dfa907a1895f0e7368972ffd029d0523ca428cb",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-audio::gap_bindings",
+          "sha256": "df1df5570fd8219d253fc32ff2ce2cbe47df62b3d02db506556938fc8fbac9cf",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-audio::gap_definition",
+          "sha256": "4ec938fd22cea5bc6e5efe725b01757569f4187f7d6e2df5151fa4d893000e76",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-audio::limiter",
+          "sha256": "a234c06e4962c0121f3a5d5db904aff73f627aa2f7197c30dd60631bb4f5ba39",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-audio::loudness",
+          "sha256": "dd33cf8f454aa51ba5391d9b07fbbc4ca5dc16d42183838ebe9c2ed60e51d4eb",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-audio::reanchors",
+          "sha256": "0bdf6d7ccfb3c0914caa950c19f33ce9fa12b48470d7858534a096b5f351ff2e",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-audio::reference_policy",
+          "sha256": "444e2a8b325acb867b9a451a5a8618747bac2d3f5e23271bc65ba40af2c0b38b",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-audio::resample",
+          "sha256": "fbbb6d166bba184a53b89704c7a64688f05baee18ccea7e27ed6836652cefb12",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-audio::root_sound_trim",
+          "sha256": "d8771e70f3c86a4b302dd804771691cb1941fd4996c7a13ded26d435230c839e",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-audio::sequence",
+          "sha256": "610f2780d5046394527bb5893766471f141eb4f21c8448f7be4ce9e67c31a3d2",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-audio::session",
+          "sha256": "80c342ae297ec53325e4d9876815b814597ca988e5bcd49e5617b51f6b9a4ffb",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-audio::signal_transfer",
+          "sha256": "21c861c3f1988d7fa910d54895eb55a396cda5b2bebe07af718cde80386d54c8",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-audio::sound_events",
+          "sha256": "042929de26e1234706a1f604b046d24523c756d5dffb25a97bcfaa5ea2d813cb",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-audio::stages",
+          "sha256": "a64b97e95e154c53e73375a981e17f2bf2c3387027216eb645b752bdd0c18aab",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-audio::timing_representation",
+          "sha256": "8f3d2cfc4d08bd455ba632c1f6515d934ad024c1f6bc2f8c32251d89f2af76da",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-audio::true_peak",
+          "sha256": "3efd4e5afe86bf621d591397d4f25551b6e1b333aee61beacf9269a6341cc9c5",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-cli",
+          "sha256": "370df430175667115c46d14dc76f3377b941252acb762feca4039a8b9680afbd",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-cli::boundary_location",
+          "sha256": "b9da9d96b7cf26682f3e5d9b0348783b48c88792542ff9c9a71a233e74289827",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-cli::encoder_admission",
+          "sha256": "2de55501105f2c5a32bd54c082121d34686930df9b002e5f9b6fb748932f3645",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-cli::headless_parity",
+          "sha256": "6f38fb4edbee21aa5412b0c046f48befb7a3867d5826955e32ec0231b45add1e",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-cli::node_sets",
+          "sha256": "81e9f77ba261c827b7e0ee977255f2d8ceeef26399cb890d522cac957fd44c4e",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-cli::preview_export",
+          "sha256": "a8f151d4d36ab22474d56ff72700d7a57eb7575f64c7e78bfdf0c32db0a13c58",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-cli::project_commands",
+          "sha256": "11da5bd27596edce27e9099dd4c3c71fbe882e0e6c1ae356a0b4b9abe44d7dfe",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-cli::relink_moved",
+          "sha256": "dc5e82b3fba4688f6fdfb49e08c3ab94e2972f2a2923899a74d70b8633664ddb",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-cli::source_registration",
+          "sha256": "e32b447548c868c694c5eb78da28642814e4c300be69b902790c9168dafa726f",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core",
+          "sha256": "2d4d1534eb72e3f4d2b3ae0f0046f91ca1ca15bccf90d0005b430000b5b4f784",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::adversarial",
+          "sha256": "833ee68e437f52ede528756c1c4bbbdfa9ba539e021e089d57ac2903848dd23e",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::allocation_projection",
+          "sha256": "0e5b5540f26991a64fa8d589fcca04f7e6c87a6de7c71980b0d870ff9d2bf1b9",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::anchors",
+          "sha256": "8b36839c126fdb6d214b86603b21e6f632889c0c59c461b45e58427f351c2c6e",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::audio_binding_capture",
+          "sha256": "dec3e879b8a465f80fef4941a222653d317eb300fd0a0729ccc8fe5856232df8",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::audio_bindings",
+          "sha256": "6b050aaf997e9fe84c6ed4b9f78ce92263e480d39619f6cffec934a56ccbf379",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::audio_context",
+          "sha256": "fe0e1b9add86beca5c9f44b222ee564e9c2b6b020b77124ab9ae9617e4c0a11c",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::audio_edges",
+          "sha256": "2d7b33cbfe6b3f584eff3e22ecffa0903f4c01f38a7eb1c97dfa4ad72ffd0cf9",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::audio_gain",
+          "sha256": "18f7b1d22bc77b7b4a48296f96730146fe6d6c6254e889c93562d4e0df00ad83",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::audio_gain_prefix",
+          "sha256": "87b905f1074883cc6b05c203f36d79b9a05ca9f50912a86f0d09ead591c9dbfe",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::audio_lineage",
+          "sha256": "6506c06634c1258105e80715ffaef6d07bfbd2d260c3a6ca48b9bd639ea04def",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::audio_reference",
+          "sha256": "2659158507916f88c1c91f476d791b0e8f93aede047167ecb73adeb944bd63f8",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::command_work",
+          "sha256": "04fd8045dc69d9e19a75ff5c325ac33395217a13b6401b5086985d99ea1a8040",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::document",
+          "sha256": "6e437f47bbe413003906ababb9b9e2e97d2882f55637f151673ab41a02d45f2b",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::edit_set",
+          "sha256": "07499b26d1133de8cc554eab2ef57b5e2fd7c23270a27f5fa3fdb1bca9366f84",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::edited_slice",
+          "sha256": "2c40a6551af9a9be3d4675586fe7975d11e00948ff00342da5eaa8bc587225a9",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::explicit_node_selectors",
+          "sha256": "c803261c2a6d2975aabbfa182a142705ceb94571119803ea6a480a6d6a57ecc1",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::explode",
+          "sha256": "19ba0e003c490df3e3e279e0e7a262e71987d70745e2b6f67c1d8a46b38d8960",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::framing",
+          "sha256": "94964b17e7cd5da7e97bbb4e4912aec630577f29bd8d7d700faad11b053c46ef",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::gap_overrides",
+          "sha256": "ae99b739048a067ff7793db06b4eed77be1852cfd29a92ba29c3b9b2b7ddc7c9",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::gap_projection",
+          "sha256": "3d5a6137df0007d7ec150ce4c2ede3a9ad5fc658954fa628740aaea54b0ddd2d",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::generated_holds",
+          "sha256": "e375e98c8fcd51048435a921450384761e903f14976e1770e332e2849c0a998e",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::hold_audio",
+          "sha256": "4946bcc4618f81b06374100985f821104fc6c8c5861dd727be6796a110f3630b",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::insert_time",
+          "sha256": "b6fe5c2c0aea9dbe16d54865a269a32866bb1e4fe2284e1370e61a3bb0c6c2c8",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::mark_fragments",
+          "sha256": "894a786ed9e875f65844c3c56c53bbeb765c1f2d023bb8ee394e38373fdb00f6",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::mark_resolution",
+          "sha256": "9752c6fe87f310c7a44aea7b406c44b3605b8b0bb176cbd7c56204c991bb7f85",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::marks",
+          "sha256": "ed0e34f3d125f64cdb8f132cb3fc3997d7b903694dee1659e2ae3ad0e2e10ade",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::move_range",
+          "sha256": "eaa5463570899f7a69b2737f91a2c52968c7f4d212b614c8a4cd365710fadeff",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::node_gain",
+          "sha256": "85a82f67c5e6210ded3d495c4996759cc7af6916da0e44ae40eca283d439c729",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::node_set_counterfactual",
+          "sha256": "46ab19d955f9c3fd9c90ea5b96be2a8e3358f136e25b9f7244c28f13434fc47c",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::node_set_shared_mark",
+          "sha256": "bab7f379a1f522ebb25a80908e66a26cf661db05914313770ffce51d3d43dccb",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::occurrence_edits",
+          "sha256": "499aca3a3c76468f57e160257a10686457213d950a21ceebffdb08ce5bf0be2d",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::partitions",
+          "sha256": "dfac423cda11e8d0ae0c43e24debe2a370231e441eee3ba4596964e607b12642",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::picture_context",
+          "sha256": "3d663051d0388d085ed505e688a1d30f79251de0a6d81e97e15a419aad31a6ef",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::play_overrides",
+          "sha256": "ffd337c1fe0776cbf28cd1317c5f00dd5582d20627cc5a59e250bc536c907271",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::presentation_basis",
+          "sha256": "bad772d040be74ab404876aaef4e51dea1c7390c1ec23545c4814b98d48b0a4a",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::repeat_exact_layout",
+          "sha256": "11ded3e784ea37b8ad8ce6dec1ece9aab5efc8668cbb055b1a54fa9553e5bbe2",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::repeat_gap_layout",
+          "sha256": "83898f0875f39f971493b1a8d1edb30b9bff66086a664fc03997aeb543b3a143",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::retime_edits",
+          "sha256": "0fca99a998177e4de265d7203d81a92cc4916a9f548f8167fda0f2777b1315bf",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::scoped_many",
+          "sha256": "63e2ace8fcd5b9b2a33b092738bd2b814ac0b501b3d2e8f325a2585d025f4e2b",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::semantic_trim",
+          "sha256": "01fa85c5b654d0b1c4bd1a9ff5d378810bcb5c5b0168738e962de4d21826c670",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::sound_allowances",
+          "sha256": "18f45c22de5038e1a941b1f1ef1c6a80119a7a1d7d4944de80c482f5dcbd8a70",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::sound_events",
+          "sha256": "0c3835bbfd2190c568461c86fbb690de1996ca0d32a6533129d362d19c860be0",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::sound_routes",
+          "sha256": "ddaaf70ffa404b9911d3a049cbeea9e1b9c1b9fca096b2bad47ad2bf3fa10098",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::sound_routing",
+          "sha256": "5c83da1bf08ef527c9cf781c449549eb00ec30fdbe0d5b100af841a94cacc316",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::source_edit_window",
+          "sha256": "8c26dfaa2f6941d35df43856a821d3ce35df793ab4e975faa0762d0f86d52f2c",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::source_import",
+          "sha256": "b7aa502f12e5b799f80e41abde973a97ca70629ba8e67e78cb46ea7c75a63935",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::source_interpretation",
+          "sha256": "220acabb117219001e99266ff00c83e407a7ac726e5e3d2eacc66ad53d6a4b3b",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::source_roll",
+          "sha256": "d35643dd9c2b769c5387a82c0b27fbdb77a175f365fc83fa2449d75444ffe481",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::source_slip",
+          "sha256": "91931315442334f8e48c5113eb6543772631f94d6238f06f34259d39c27b9b02",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::source_trim_command",
+          "sha256": "56e38aa65d3597db488f7249cda86e76e5f6c57040f3975540ea4cf74337df94",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::source_trim_edit",
+          "sha256": "02105636a8222f039ce1fbbbeb5070466a11152f736c359372dfa74570f90c19",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::source_trim_geometry",
+          "sha256": "fd1b2abf881697cf41e41d1173d19d41a7a9e360f6c7c1b9cf095e3f59e9f6ca",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::source_trim_resolution",
+          "sha256": "7c02e8857ba02d208b71d06f8504217f779b5a4432c47d6b322b5c9f1787da93",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::source_view",
+          "sha256": "9a03955c2606900474abe94fea03c5d81e0f3feaea13214d6570ae75ece36d79",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::split",
+          "sha256": "28b28dc1360ba9bf9c2d8694c0ba8121c6470c071591de3f3c0d0bbe693e964e",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::split_edit",
+          "sha256": "92bdc238069db7d911192e3023538a62074f6ab0bb4ce18ef50430dacc64cc7c",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-core::structural_properties",
+          "sha256": "55f6cc3cc6690c22de11948b182875a19a1b05d517d444f0b99c343b62131a10",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-plan",
+          "sha256": "be426742d5a06304ca416217f0d442d193629e8826ef7eeed26b1f5408e334ac",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-plan::audio_bindings",
+          "sha256": "4fe71c334b2e82de2a3dc4e65d09c5f4b4af42762f9382a3b90177fe9f4054af",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-plan::audio_context",
+          "sha256": "794c1efa7fe76ccdf2ba52906f1c5421fa9705a7517dde56f2fbd2377e6cd5c1",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-plan::audio_definition",
+          "sha256": "05897b74c90abfcecc3471eea0ff41cea7299972c92b479b3bda733f5a91c277",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-plan::audio_domain",
+          "sha256": "e40db24511afe581969fc450af139b0ebee188a557bfa0244099ecae0664d486",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-plan::audio_fades",
+          "sha256": "1c5c984485395f51e58d71f5971de3d61e5cb4c538702bd8598a6ed6526f35a5",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-plan::audio_plan",
+          "sha256": "807412f58a30d5ad7e748e64f266832c38690e49a42544b7828582a6663d8ae5",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-plan::audio_policy",
+          "sha256": "329c4fa392db108452720c3cc329a5524fd04e1b51dcba94282d17f85f5368ce",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-plan::audio_reference",
+          "sha256": "010d73bc0eb5bdf9e5e8852aeb9b0488cd2bf03e9662c0278345e27eac65f691",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-plan::audio_signal",
+          "sha256": "d1f89c0a7f4562d053e6c39b3a127664445e89a97bcde563433106c3a51dd747",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-plan::audio_tape",
+          "sha256": "e1a5d58887ba9cee5b079e568fee8f50ca8f98e65108deded86111a1332dc147",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-plan::edited_slice",
+          "sha256": "27695a73ec875236e3fda28d5f04c3c804b2f256f674d062975481f7184c3a16",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-plan::gap_bindings",
+          "sha256": "a6dd4a71f5143655f98f040373ee222469675e213d765bef0196d57af7b55b62",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-plan::gap_branches",
+          "sha256": "22a128a1ea9caea999ca902d6a486a7c50cefa90cad24cd973e79b614dc6eef7",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-plan::hold_policy",
+          "sha256": "28452be97e25df4aab3bfb8f7e2a9b75ac5677f1c62840f19be6c630b5236fe8",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-plan::occurrence_edits",
+          "sha256": "958e016334292fc3d365cd2b43ee11817f06a2da11f7dbf7109c0ce2b4342a2f",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-plan::picture_plan",
+          "sha256": "4f5680a70e214ad71a82a86f4fc92d93d343863d9336044f045d9f4427cadc91",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-plan::play_overrides",
+          "sha256": "cf0555fc9c2d8834d247e1c2b8f5fff5e470cfd9dcebd63e031b6fb277b61d40",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-plan::root_sound_routes",
+          "sha256": "f907460b4c673df450d7fbc119941f67707e12ac390bf0a5b321f66be01e5cb4",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-plan::routed_voice",
+          "sha256": "f80d646e72515e85cd344ec1ca2cacbe60f304f09839cad86a497146bd2d43c2",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-plan::selected_video_window",
+          "sha256": "9c6513ee1879362e6aa9d3cc57449db7e8c67a972627ea8d4fa66f3bcea2d6e4",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-plan::sound_event_fades",
+          "sha256": "7f74d2619ef912c2415b74438fa39cc06ab5d59172900d1433f91ab5f03afcf0",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-plan::sound_events",
+          "sha256": "1eb5567719e5247fd2780216eb641cce9cd7057c6cd329059ba34ed0ad7aef38",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-plan::sound_processing_layout",
+          "sha256": "4250f49851f32a0d78d9c748ed3493b71fc4d6f386a099a712610e2f4f75ba26",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-plan::sound_route_sampling",
+          "sha256": "edf084fb46e36f8332530435220817c00c5518a2e108fad1ddaf28d94d2c640a",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-plan::source_voice",
+          "sha256": "c6053e05c25899f9fa83ad838b36a0a7f8ebc5c13563747b4a83cbe63231e203",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-plan::source_voice_policy",
+          "sha256": "54a5273b09388169ed3d9c28962ab2dbfd86c0806439460bf69ab31cdf7e9626",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-store",
+          "sha256": "d6f69ccf0dce569eeba617c7a192ed5519a0e09d68d871594be9686330b3b361",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-store::adversarial",
+          "sha256": "1b2f4f83256c52ab875341f7912b35ab137b2903359bb3e5494f27fd3f7c410d",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-store::analysis_corrections",
+          "sha256": "76f80b1c2cd17b173a9acf269cc92e47a8a177febb5015b7efe753b4ab42ee3a",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-store::backups",
+          "sha256": "702ca744bb43f0c70cd981ece208bec8f81b7a09133610e9db67fb43e8df8bef",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-store::bookmarks",
+          "sha256": "6d4b044dbdf5ad8c4d14dda1fa5fd9f29fb3b73b72cc9acbe2656a7aad4d12c8",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-store::chaos_kills",
+          "sha256": "6933f6e9ee8928ee8c447371c7cd22e6c00bf7e20704df8ef60de9fc707870f5",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-store::delete_range",
+          "sha256": "5085735892688bf381498eb0d61e72059500aeeadbbb6909414226ee6c1b95ca",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-store::delete_ripple",
+          "sha256": "16e1f5617b1333d04ac63fa5546c201960428b12910c9cab33ac2999d1c9b6f1",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-store::derived_clocks",
+          "sha256": "8b2e61be5af7e15bdcc1a7c094d5d79d8ba1ba6620ecbab806f7570e4058c270",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-store::edited_slice",
+          "sha256": "b546878fa2a0f11d9e39b66f2e90cf2e18a174a4c14125b6f86f4d98894bf9d9",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-store::failpoints",
+          "sha256": "a52705f06775dcc5653559b61e4d924851a596f560e28363d23070e39ab66583",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-store::generated_admission",
+          "sha256": "dc6a86610fa908c9be637c288b746fa36734051c498200749dba007780e66f2b",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-store::generated_media",
+          "sha256": "cb08b62195fc35ab901df338eab2dc16f22179e32e45320599ba34d6f6381a08",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-store::generated_read_handle",
+          "sha256": "4a52fd51bb0e43f152bdd1c586fd6be5a1e8f643ef3ca9536c4451cb26fa1f72",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-store::generation",
+          "sha256": "d829e6040316fa29def05343635d51c4a1bc2623fc4ebf2bd84c83ed86577a64",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-store::generation_attempts",
+          "sha256": "4b49f379061cfee5f08bbee81636c10176f1cc081c09ade77c87365348ce711b",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-store::generation_bundles",
+          "sha256": "662eda6e66e852e41d7ef0ba2d06a61dd314d855d40b213b5e613b724739a91e",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-store::hold_duration_clocks",
+          "sha256": "21d5168ab920ff41a01530a1d27e70ee300ba8f15642c4efe61a06d8a0db9e3b",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-store::host_owner",
+          "sha256": "81eb88a1a9f82679f9d2c6d3b58d7f699893464c92cc4e2239cc66cd4f665558",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-store::long_project_stress",
+          "sha256": "a4258071700314a482d87415dbab0478887dd4d77a606d4abc0eec5a286572f0",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-store::migration",
+          "sha256": "1d35d8b9c1b3bf314fb40b7243d8a1631c3f815b1b30996e2fc06d1cf7965680",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-store::node_sets",
+          "sha256": "3dcc4e855da5c2a3ba0f33aede18edd0d92589bf259019b19f054c5fb4bb0b85",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-store::occurrence_edits",
+          "sha256": "b4d1b639077b97dc60dd2f50bb05ac58a281092c1f71072b1c4a4539e1a120d8",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-store::original_media",
+          "sha256": "5a75428789ba79736aa631961df1dd4d28ce6cfecf50a309e7b7080652242c83",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-store::original_preparation",
+          "sha256": "0399f29e2b30ba7b56c08c0a65fc9f19c0cf53df532a79a7ee19e8a4d3203991",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-store::original_provenance",
+          "sha256": "4b2492c0e43b0a2f0376c9d16a05645b5f0fa642ff7c0727efd0933ba801c4a1",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-store::persistence",
+          "sha256": "5873edb6b5d0079aaf444a57d0268ba30821bbcfeb6c532525497c5dd27eb028",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-store::prepared_checkpoint",
+          "sha256": "244f7f8b6439cec23dfeddc5bf1eee94872350d0f0bdd2df0d44facf45b59534",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-store::prepared_relink",
+          "sha256": "56f01789366f4a059f758ae9e4f0992e23e77e3ffec82b9c7ec9e09249063d46",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-store::prepared_source_registration",
+          "sha256": "0f54c2cde7242bda6748c4d5a17c829c11a6331f833831cd80aad2f3e651aac4",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-store::presentation_basis",
+          "sha256": "08193aba003275766c728c895eb7c7bd94d7326625d5a93af5ccfddfbe50fed9",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-store::recovery",
+          "sha256": "4840a3af525ce50c6de60debed09e79da2aa7ff94d366d5ecbee8c844d5f0679",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-store::render_jobs",
+          "sha256": "d57697c3440bb6875dcfea7bde173c26959445d6dce990e886bf5d25ad6bf9c3",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-store::revision_storage",
+          "sha256": "a4c3c3a6226fdca507ea6af95860655bf378e3d6232847a9266bd02f750d035c",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-store::shot_analysis",
+          "sha256": "e12fc3d6cc1c7143f69241ad3305a52ebdf9490c2908f86aa417ba56b0f23782",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-store::single_source",
+          "sha256": "b6cd7cd2d0b4a4ff5d6c523e7bdea2128b6df03869a09ebcb3942e15c5442680",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-store::source_effects",
+          "sha256": "657f6f1cab798e309921b6d91085c4464798287d2ede8cbb68bed6a05081d015",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-store::source_origin",
+          "sha256": "b43d35c603dd07097ee4ab7ef02dc73e46ba8d16e29e5dff4c99dffc3a1c9438",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-store::source_registration",
+          "sha256": "6f291128f145b383eb2bf3b5ad330afb4337e1d85d977b2fca0a4160aa1073a3",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-store::speech_activity",
+          "sha256": "8d8ba6c9085babb3fc064368ec391157919e8aca42eca63471a38961dbb346ca",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-store::storage_failures",
+          "sha256": "43b80a334fa6d0188810cdfdb84cc786b27ec463644ee6bb860e786d0761421f",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-store::storage_failures_media",
+          "sha256": "c5b32268f92a86af9a2421995ac03199fdcdb18c014232c72648834e9971d32d",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-store::transcripts",
+          "sha256": "a95165b9b972715be83ce51bbf4740a313b411babff330c65d023a0733e5bf74",
+          "present": true,
+          "matches": true
+        }
+      ],
+      "helper_identities": [
+        {
+          "name": "deadpan-app",
+          "sha256": "62486b0b2f2ac51236c9756195ed8de6ffca7b79e2ec5e68df0fc1ed298c6b6a",
+          "present": true,
+          "matches": true
+        },
+        {
+          "name": "deadpan-cli",
+          "sha256": "09a81766e655ed536bc1d013fa1a1284b50900d21d5abda82de4907a74fdb3f2",
+          "present": true,
+          "matches": true
+        },
+        {
+          "name": "deadpan-media-worker",
+          "sha256": "786672d36a58e024be1acb18f353c350c06a7c83dd88c84369e69a9512a13c5d",
+          "present": true,
+          "matches": true
+        },
+        {
+          "name": "deadpan-transcribe",
+          "sha256": "473b69ac2024d691236637017ebea298a08e0f88de2ff3801a948bf866f71362",
+          "present": true,
+          "matches": true
+        },
+        {
+          "name": "deadpan-track",
+          "sha256": "18861c06d2d468b4e161c2b99110ffc1d5ea99a926e1685d5893437583760244",
+          "present": true,
+          "matches": true
+        }
+      ]
+    },
+    "store-final": {
+      "source_attribution": "strict-second; Store source remains identical in lint-final",
+      "case_count": 4,
+      "selected_binaries": 1,
+      "all_log_cases_exactly_match_listing_and_binary_inventories": true,
+      "nextest_summary": [
+        "Summary [   0.250s] 4 tests run: 4 passed, 0 skipped"
+      ],
+      "result_receipt": {
+        "exit": 0,
+        "tests": 4,
+        "seconds": 0.3361625839024782,
+        "executable_hashes_unchanged": true
+      },
+      "binary_identities": [
+        {
+          "suite": "deadpan-store::node_sets",
+          "sha256": "385c3010eb4ea855ec9523b70220ff23338cca598dcc6b7761eb4b70d0033dd6",
+          "present": true,
+          "matches": true
+        }
+      ],
+      "helper_identities": []
+    },
+    "app-lint-final": {
+      "source_attribution": "lint-final",
+      "case_count": 46,
+      "selected_binaries": 1,
+      "all_log_cases_exactly_match_listing_and_binary_inventories": true,
+      "nextest_summary": [
+        "Summary [   0.211s] 46 tests run: 46 passed, 1188 skipped"
+      ],
+      "result_receipt": {
+        "exit": 0,
+        "tests": 46,
+        "seconds": 0.43295033276081085,
+        "executable_hashes_unchanged": true
+      },
+      "binary_identities": [
+        {
+          "suite": "deadpan-app::bin/deadpan-app",
+          "sha256": "7d85fce87d9ded3d8cab8799cab3d910d7c84c945c74f6781fb7e5f97dc638f0",
+          "present": true,
+          "matches": true
+        }
+      ],
+      "helper_identities": [
+        {
+          "name": "deadpan-app",
+          "sha256": "62486b0b2f2ac51236c9756195ed8de6ffca7b79e2ec5e68df0fc1ed298c6b6a",
+          "present": true,
+          "matches": true
+        },
+        {
+          "name": "deadpan-cli",
+          "sha256": "09a81766e655ed536bc1d013fa1a1284b50900d21d5abda82de4907a74fdb3f2",
+          "present": true,
+          "matches": true
+        },
+        {
+          "name": "deadpan-media-worker",
+          "sha256": "786672d36a58e024be1acb18f353c350c06a7c83dd88c84369e69a9512a13c5d",
+          "present": true,
+          "matches": true
+        },
+        {
+          "name": "deadpan-transcribe",
+          "sha256": "473b69ac2024d691236637017ebea298a08e0f88de2ff3801a948bf866f71362",
+          "present": true,
+          "matches": true
+        },
+        {
+          "name": "deadpan-track",
+          "sha256": "18861c06d2d468b4e161c2b99110ffc1d5ea99a926e1685d5893437583760244",
+          "present": true,
+          "matches": true
+        }
+      ]
+    },
+    "ui-complete-final": {
+      "source_attribution": "lint-final",
+      "case_count": 1273,
+      "selected_binaries": 2,
+      "all_log_cases_exactly_match_listing_and_binary_inventories": true,
+      "nextest_summary": [
+        "Summary [  69.326s] 1273 tests run: 1273 passed, 11 skipped"
+      ],
+      "result_receipt": {
+        "exit": 0,
+        "tests": 1273,
+        "seconds": 69.65703704208136,
+        "executable_hashes_unchanged": true
+      },
+      "binary_identities": [
+        {
+          "suite": "deadpan-app::headless",
+          "sha256": "cf3458e52b579d7a8704ce429c424745539a2be4760f494638f93bfbcd2a4d19",
+          "present": true,
+          "matches": true
+        },
+        {
+          "suite": "deadpan-app::bin/deadpan-app",
+          "sha256": "c0ad50a2e03d6ba709c122eabec6c946767664ad09d77dba95679369a0f186d1",
+          "present": true,
+          "matches": true
+        }
+      ],
+      "helper_identities": [
+        {
+          "name": "deadpan-app",
+          "sha256": "75ba9bba342616151f8117bc432a34c4fbbbe5fbf063582fc757543aee802c04",
+          "present": true,
+          "matches": true
+        },
+        {
+          "name": "deadpan-cli",
+          "sha256": "09a81766e655ed536bc1d013fa1a1284b50900d21d5abda82de4907a74fdb3f2",
+          "present": true,
+          "matches": true
+        },
+        {
+          "name": "deadpan-media-worker",
+          "sha256": "786672d36a58e024be1acb18f353c350c06a7c83dd88c84369e69a9512a13c5d",
+          "present": true,
+          "matches": true
+        },
+        {
+          "name": "deadpan-transcribe",
+          "sha256": "473b69ac2024d691236637017ebea298a08e0f88de2ff3801a948bf866f71362",
+          "present": true,
+          "matches": true
+        },
+        {
+          "name": "deadpan-track",
+          "sha256": "18861c06d2d468b4e161c2b99110ffc1d5ea99a926e1685d5893437583760244",
+          "present": true,
+          "matches": true
+        }
+      ],
+      "headless_cases": [
+        "headless_errors_keep_the_same_structured_protocol",
+        "native_binary_dispatches_private_render_workers_without_a_window_or_argument_wrapper",
+        "native_binary_inspects_saves_and_runs_macros_without_a_window",
+        "native_binary_runs_headless_without_initializing_a_window"
+      ]
+    },
+    "release-media": {
+      "source_attribution": "release-final = lint-final",
+      "case_count": 1,
+      "selected_binaries": 1,
+      "all_log_cases_exactly_match_listing_and_binary_inventories": true,
+      "nextest_summary": [
+        "Summary [   2.862s] 1 test run: 1 passed, 59 skipped"
+      ],
+      "result_receipt": {
+        "exit": 0,
+        "tests": 1,
+        "seconds": 2.99099824950099,
+        "executable_hashes_unchanged": true
+      },
+      "binary_identities": [
+        {
+          "suite": "deadpan-cli::preview_export",
+          "sha256": "027a966c28f1a7aa952fefe64298704fb643d3cb42b233746aeba2e06172c294",
+          "present": true,
+          "matches": true
+        }
+      ],
+      "helper_identities": [
+        {
+          "name": "deadpan-cli",
+          "sha256": "fb4c40a6d4a10931bba611aaa68ab12ed1967b83ff1d259b00a3f71348c5124d",
+          "present": true,
+          "matches": true
+        },
+        {
+          "name": "deadpan-media-worker",
+          "sha256": "70114641de62f0c9c839734f3dddab1221b01888661a43ed5583e40ca9ed90fe",
+          "present": true,
+          "matches": true
+        },
+        {
+          "name": "deadpan-transcribe",
+          "sha256": "a75e83e94c073fa7419fea1ffc4621ab56adba020d402435c65622dababbe8b3",
+          "present": true,
+          "matches": true
+        },
+        {
+          "name": "deadpan-track",
+          "sha256": "97564bc5d9aee093aa7e3fa5e8a89aa5da68134f92f34032a407f27778c1eab4",
+          "present": true,
+          "matches": true
+        }
+      ]
+    }
+  },
+  "strict_checks": {
+    "strict-passed-check": {
+      "receipt": {
+        "command": [
+          "cargo",
+          "xtask",
+          "check",
+          "--since",
+          "f4f7481ed804f8a5c25b39b76b7ecc8bc1529cc4",
+          "--no-test"
+        ],
+        "exit": 0,
+        "seconds": 100.89688399992883
+      },
+      "log": {
+        "file": "strict-passed-check.log.gz",
+        "bytes": 400,
+        "sha256": "40a1baeeee47bd73723d38355f3a042f86431cfc12ec42634532812b8a40fccf"
+      },
+      "source_attribution": "lint-final guarded after each command by retained strict_third.py"
+    },
+    "strict-passed-ui-clippy": {
+      "receipt": {
+        "command": [
+          "cargo",
+          "clippy",
+          "--locked",
+          "-p",
+          "deadpan-app",
+          "--features",
+          "ui-harness",
+          "--all-targets",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "exit": 0,
+        "seconds": 49.30232912488282
+      },
+      "log": {
+        "file": "strict-passed-ui-clippy.log.gz",
+        "bytes": 233,
+        "sha256": "25e509343ea1eefa7e9301d1c2387d7d1f25ce1d0fd865dae953a7e0ea3e5093"
+      },
+      "source_attribution": "lint-final guarded after each command by retained strict_third.py"
+    },
+    "strict-passed-format": {
+      "receipt": {
+        "command": [
+          "cargo",
+          "fmt",
+          "--all",
+          "--",
+          "--check"
+        ],
+        "exit": 0,
+        "seconds": 6.389823750592768
+      },
+      "log": {
+        "file": "strict-passed-format.log.gz",
+        "bytes": 20,
+        "sha256": "ac73670af3abed54ac6fb4695131f4099be9fbe39d6076c5d0264a6bbdae9d83"
+      },
+      "source_attribution": "lint-final guarded after each command by retained strict_third.py"
+    }
+  },
+  "final_source_binding": {
+    "lint_final_map_sha256": "a22da25b7cd8f99c1059817ee26ae20c1ae87a7c05295eaccaef2214050b9044",
+    "release_final_map_sha256": "a22da25b7cd8f99c1059817ee26ae20c1ae87a7c05295eaccaef2214050b9044",
+    "identical_source_maps": true,
+    "identical_six_input_maps": true,
+    "postrun_guard": {
+      "sources_inputs_native_and_media_binaries_unchanged": true
+    },
+    "prior_lint_audit_uncompressed_sha256": "94df95d1e2cf41dd49ebb10b641fddb890e9244ffa235522cbf2aa3fe830104a"
+  },
+  "release_native": {
+    "visual": {
+      "receipt": {
+        "command": [
+          "/tmp/deadpan-discontiguous-selectors-2026-10-22/release-bin/deadpan-app",
+          "--ui-check",
+          "--scenario",
+          "node-set-selectors",
+          "--mode",
+          "visual",
+          "--output",
+          "/tmp/deadpan-discontiguous-selectors-2026-10-22/release-visual",
+          "--kestrel-source",
+          "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+        ],
+        "exit": 0,
+        "seconds": 15.782260499894619
+      },
+      "source_attribution": "release-final = lint-final",
+      "scenarios": [
+        {
+          "name": "kestrel-shortcuts",
+          "checks": 1,
+          "passed": true,
+          "frames": 0,
+          "skipped": []
+        },
+        {
+          "name": "node-set-selectors",
+          "checks": 143,
+          "passed": true,
+          "frames": 546,
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        }
+      ],
+      "summary_matches_raw_report": true,
+      "binary_sha256": "6e728a988c6804ea02dfa4d188dcb179c295f8557a1591108a9ddb66636ea06a",
+      "cargo_lock_sha256_at_run": "1e39d18ae4de6c7b898edad39eb7104235fb3ffe3af84521ca94df2b6c25b71b",
+      "fixture_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+      "hardware": "Apple M5 Max",
+      "os": "26.5.2",
+      "gpu_readback_in_timing_run": false,
+      "physical_display_measured": false,
+      "findings": [
+        {
+          "severity": "warning",
+          "message_prefix": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity."
+        },
+        {
+          "severity": "warning",
+          "message_prefix": "39 frame(s) settled their layout only on a second retry"
+        },
+        {
+          "severity": "warning",
+          "message_prefix": "egui discard warning: 3 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+        }
+      ],
+      "timings": {
+        "ui_frame_cpu_ms": {
+          "summary": {
+            "completed": {
+              "max_ms": 6.988416,
+              "n": 546,
+              "p50_ms": 0.33829200000000004,
+              "p95_ms": 1.252416,
+              "p99_ms": 1.7936670000000001
+            },
+            "failed": 0,
+            "samples": 546,
+            "timed_out": 0
+          },
+          "recomputed_from_raw_samples": true
+        },
+        "ui_composition_submit_cpu_ms": {
+          "summary": {
+            "completed": {
+              "max_ms": 0.728792,
+              "n": 546,
+              "p50_ms": 0.10450000000000001,
+              "p95_ms": 0.148292,
+              "p99_ms": 0.204958
+            },
+            "failed": 0,
+            "samples": 546,
+            "timed_out": 0
+          },
+          "recomputed_from_raw_samples": true
+        },
+        "ui_composition_complete_ms": {
+          "summary": {
+            "completed": {
+              "max_ms": 9.269082999999998,
+              "n": 546,
+              "p50_ms": 0.44983399999999996,
+              "p95_ms": 0.808042,
+              "p99_ms": 0.95475
+            },
+            "failed": 0,
+            "samples": 546,
+            "timed_out": 0
+          },
+          "recomputed_from_raw_samples": true
+        },
+        "input_to_state_ms": {
+          "summary": {
+            "completed": {
+              "max_ms": 2.532375,
+              "n": 147,
+              "p50_ms": 0.71825,
+              "p95_ms": 1.6876659999999999,
+              "p99_ms": 2.033417
+            },
+            "failed": 0,
+            "samples": 147,
+            "timed_out": 0
+          },
+          "recomputed_from_raw_samples": true
+        },
+        "input_to_commit_ms": {
+          "summary": {
+            "completed": {
+              "max_ms": 103.291666,
+              "n": 13,
+              "p50_ms": 12.866042,
+              "p95_ms": 103.291666,
+              "p99_ms": 103.291666
+            },
+            "failed": 0,
+            "samples": 13,
+            "timed_out": 0
+          },
+          "recomputed_from_raw_samples": true
+        },
+        "request_to_decode_delivery_ms": {
+          "summary": {
+            "completed": {
+              "max_ms": 8.028167,
+              "n": 55,
+              "p50_ms": 2.0985,
+              "p95_ms": 5.516417,
+              "p99_ms": 8.028167
+            },
+            "failed": 0,
+            "samples": 55,
+            "timed_out": 0
+          },
+          "recomputed_from_raw_samples": true
+        },
+        "request_to_worker_start_ms": {
+          "summary": {
+            "completed": {
+              "max_ms": 0.008334,
+              "n": 55,
+              "p50_ms": 0.004959,
+              "p95_ms": 0.008209000000000001,
+              "p99_ms": 0.008334
+            },
+            "failed": 0,
+            "samples": 55,
+            "timed_out": 0
+          },
+          "recomputed_from_raw_samples": true
+        },
+        "worker_execution_ms": {
+          "summary": {
+            "completed": {
+              "max_ms": 2.4697500000000003,
+              "n": 55,
+              "p50_ms": 0.30225,
+              "p95_ms": 1.458125,
+              "p99_ms": 2.4697500000000003
+            },
+            "failed": 0,
+            "samples": 55,
+            "timed_out": 0
+          },
+          "recomputed_from_raw_samples": true
+        },
+        "worker_publication_delay_ms": {
+          "summary": {
+            "completed": {
+              "max_ms": 0.00033299999999999996,
+              "n": 55,
+              "p50_ms": 0.000125,
+              "p95_ms": 0.00025,
+              "p99_ms": 0.00033299999999999996
+            },
+            "failed": 0,
+            "samples": 55,
+            "timed_out": 0
+          },
+          "recomputed_from_raw_samples": true
+        },
+        "publication_to_decode_delivery_ms": {
+          "summary": {
+            "completed": {
+              "max_ms": 5.550084,
+              "n": 55,
+              "p50_ms": 2.021125,
+              "p95_ms": 5.184958,
+              "p99_ms": 5.550084
+            },
+            "failed": 0,
+            "samples": 55,
+            "timed_out": 0
+          },
+          "recomputed_from_raw_samples": true
+        },
+        "request_to_picture_submission_ms": {
+          "summary": {
+            "completed": {
+              "max_ms": 8.888292000000002,
+              "n": 54,
+              "p50_ms": 2.457625,
+              "p95_ms": 5.834292,
+              "p99_ms": 8.888292000000002
+            },
+            "failed": 0,
+            "samples": 54,
+            "timed_out": 0
+          },
+          "recomputed_from_raw_samples": true
+        },
+        "request_to_picture_complete_ms": {
+          "summary": {
+            "completed": {
+              "max_ms": 9.935792000000001,
+              "n": 54,
+              "p50_ms": 3.088791,
+              "p95_ms": 6.563375,
+              "p99_ms": 9.935792000000001
+            },
+            "failed": 0,
+            "samples": 54,
+            "timed_out": 0
+          },
+          "recomputed_from_raw_samples": true
+        },
+        "input_to_picture_complete_ms": {
+          "summary": {
+            "completed": {
+              "max_ms": 113.232625,
+              "n": 40,
+              "p50_ms": 5.539167,
+              "p95_ms": 25.748875,
+              "p99_ms": 113.232625
+            },
+            "failed": 0,
+            "samples": 40,
+            "timed_out": 0
+          },
+          "recomputed_from_raw_samples": true
+        },
+        "Original initialized and displayed": {
+          "summary": {
+            "completed": {
+              "max_ms": 108.50999999999999,
+              "n": 1,
+              "p50_ms": 108.50999999999999,
+              "p95_ms": 108.50999999999999,
+              "p99_ms": 108.50999999999999
+            },
+            "failed": 0,
+            "samples": 1,
+            "timed_out": 0
+          },
+          "recomputed_from_raw_samples": true
+        },
+        "Project and picture settled": {
+          "summary": {
+            "completed": {
+              "max_ms": 4.684958,
+              "n": 96,
+              "p50_ms": 0.725292,
+              "p95_ms": 4.042042,
+              "p99_ms": 4.684958
+            },
+            "failed": 0,
+            "samples": 96,
+            "timed_out": 0
+          },
+          "recomputed_from_raw_samples": true
+        },
+        "Committed revision changed": {
+          "summary": {
+            "completed": {
+              "max_ms": 25.1065,
+              "n": 24,
+              "p50_ms": 6.3685,
+              "p95_ms": 23.954458000000002,
+              "p99_ms": 25.1065
+            },
+            "failed": 0,
+            "samples": 24,
+            "timed_out": 0
+          },
+          "recomputed_from_raw_samples": true
+        },
+        "Node-set service and bank receipts finish": {
+          "summary": {
+            "completed": {
+              "max_ms": 14.759125,
+              "n": 57,
+              "p50_ms": 8.3e-05,
+              "p95_ms": 8.087917000000001,
+              "p99_ms": 14.759125
+            },
+            "failed": 0,
+            "samples": 57,
+            "timed_out": 0
+          },
+          "recomputed_from_raw_samples": true
+        }
+      }
+    },
+    "performance": {
+      "receipt": {
+        "command": [
+          "/tmp/deadpan-discontiguous-selectors-2026-10-22/release-bin/deadpan-app",
+          "--ui-check",
+          "--scenario",
+          "node-set-selectors",
+          "--mode",
+          "performance",
+          "--output",
+          "/tmp/deadpan-discontiguous-selectors-2026-10-22/release-performance",
+          "--kestrel-source",
+          "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+        ],
+        "exit": 0,
+        "seconds": 14.181019208393991
+      },
+      "source_attribution": "release-final = lint-final",
+      "scenarios": [
+        {
+          "name": "kestrel-shortcuts",
+          "checks": 1,
+          "passed": true,
+          "frames": 0,
+          "skipped": []
+        },
+        {
+          "name": "node-set-selectors",
+          "checks": 143,
+          "passed": true,
+          "frames": 677,
+          "skipped": [
+            "OS picker behavior: only its selected path is scripted",
+            "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+          ]
+        }
+      ],
+      "summary_matches_raw_report": true,
+      "binary_sha256": "6e728a988c6804ea02dfa4d188dcb179c295f8557a1591108a9ddb66636ea06a",
+      "cargo_lock_sha256_at_run": "1e39d18ae4de6c7b898edad39eb7104235fb3ffe3af84521ca94df2b6c25b71b",
+      "fixture_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+      "hardware": "Apple M5 Max",
+      "os": "26.5.2",
+      "gpu_readback_in_timing_run": false,
+      "physical_display_measured": false,
+      "findings": [
+        {
+          "severity": "warning",
+          "message_prefix": "39 frame(s) settled their layout only on a second retry"
+        },
+        {
+          "severity": "warning",
+          "message_prefix": "egui discard warning: 3 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+        }
+      ],
+      "timings": {
+        "ui_frame_cpu_ms": {
+          "summary": {
+            "completed": {
+              "max_ms": 6.0353330000000005,
+              "n": 677,
+              "p50_ms": 0.251625,
+              "p95_ms": 1.1955,
+              "p99_ms": 1.716791
+            },
+            "failed": 0,
+            "samples": 677,
+            "timed_out": 0
+          },
+          "recomputed_from_raw_samples": true
+        },
+        "ui_composition_submit_cpu_ms": {
+          "summary": {
+            "completed": {
+              "max_ms": 0.6128750000000001,
+              "n": 677,
+              "p50_ms": 0.103125,
+              "p95_ms": 0.135083,
+              "p99_ms": 0.19512500000000002
+            },
+            "failed": 0,
+            "samples": 677,
+            "timed_out": 0
+          },
+          "recomputed_from_raw_samples": true
+        },
+        "ui_composition_complete_ms": {
+          "summary": {
+            "completed": {
+              "max_ms": 8.627042,
+              "n": 677,
+              "p50_ms": 0.43558399999999997,
+              "p95_ms": 0.613625,
+              "p99_ms": 0.851208
+            },
+            "failed": 0,
+            "samples": 677,
+            "timed_out": 0
+          },
+          "recomputed_from_raw_samples": true
+        },
+        "input_to_state_ms": {
+          "summary": {
+            "completed": {
+              "max_ms": 2.403667,
+              "n": 147,
+              "p50_ms": 0.68525,
+              "p95_ms": 1.682958,
+              "p99_ms": 1.9772919999999998
+            },
+            "failed": 0,
+            "samples": 147,
+            "timed_out": 0
+          },
+          "recomputed_from_raw_samples": true
+        },
+        "input_to_commit_ms": {
+          "summary": {
+            "completed": {
+              "max_ms": 85.749541,
+              "n": 13,
+              "p50_ms": 8.209958,
+              "p95_ms": 85.749541,
+              "p99_ms": 85.749541
+            },
+            "failed": 0,
+            "samples": 13,
+            "timed_out": 0
+          },
+          "recomputed_from_raw_samples": true
+        },
+        "request_to_decode_delivery_ms": {
+          "summary": {
+            "completed": {
+              "max_ms": 7.0549159999999995,
+              "n": 55,
+              "p50_ms": 1.151542,
+              "p95_ms": 2.511208,
+              "p99_ms": 7.0549159999999995
+            },
+            "failed": 0,
+            "samples": 55,
+            "timed_out": 0
+          },
+          "recomputed_from_raw_samples": true
+        },
+        "request_to_worker_start_ms": {
+          "summary": {
+            "completed": {
+              "max_ms": 0.007375,
+              "n": 55,
+              "p50_ms": 0.004583,
+              "p95_ms": 0.00725,
+              "p99_ms": 0.007375
+            },
+            "failed": 0,
+            "samples": 55,
+            "timed_out": 0
+          },
+          "recomputed_from_raw_samples": true
+        },
+        "worker_execution_ms": {
+          "summary": {
+            "completed": {
+              "max_ms": 2.267708,
+              "n": 55,
+              "p50_ms": 0.291791,
+              "p95_ms": 0.57125,
+              "p99_ms": 2.267708
+            },
+            "failed": 0,
+            "samples": 55,
+            "timed_out": 0
+          },
+          "recomputed_from_raw_samples": true
+        },
+        "worker_publication_delay_ms": {
+          "summary": {
+            "completed": {
+              "max_ms": 0.00025,
+              "n": 55,
+              "p50_ms": 8.4e-05,
+              "p95_ms": 0.00025,
+              "p99_ms": 0.00025
+            },
+            "failed": 0,
+            "samples": 55,
+            "timed_out": 0
+          },
+          "recomputed_from_raw_samples": true
+        },
+        "publication_to_decode_delivery_ms": {
+          "summary": {
+            "completed": {
+              "max_ms": 4.779583,
+              "n": 55,
+              "p50_ms": 0.814292,
+              "p95_ms": 2.1931659999999997,
+              "p99_ms": 4.779583
+            },
+            "failed": 0,
+            "samples": 55,
+            "timed_out": 0
+          },
+          "recomputed_from_raw_samples": true
+        },
+        "request_to_picture_submission_ms": {
+          "summary": {
+            "completed": {
+              "max_ms": 7.732041000000001,
+              "n": 54,
+              "p50_ms": 1.4055,
+              "p95_ms": 2.857375,
+              "p99_ms": 7.732041000000001
+            },
+            "failed": 0,
+            "samples": 54,
+            "timed_out": 0
+          },
+          "recomputed_from_raw_samples": true
+        },
+        "request_to_picture_complete_ms": {
+          "summary": {
+            "completed": {
+              "max_ms": 8.742916,
+              "n": 54,
+              "p50_ms": 1.9463329999999999,
+              "p95_ms": 3.3622080000000003,
+              "p99_ms": 8.742916
+            },
+            "failed": 0,
+            "samples": 54,
+            "timed_out": 0
+          },
+          "recomputed_from_raw_samples": true
+        },
+        "input_to_picture_complete_ms": {
+          "summary": {
+            "completed": {
+              "max_ms": 94.499416,
+              "n": 40,
+              "p50_ms": 2.2326669999999997,
+              "p95_ms": 25.048208,
+              "p99_ms": 94.499416
+            },
+            "failed": 0,
+            "samples": 40,
+            "timed_out": 0
+          },
+          "recomputed_from_raw_samples": true
+        },
+        "Original initialized and displayed": {
+          "summary": {
+            "completed": {
+              "max_ms": 93.885584,
+              "n": 1,
+              "p50_ms": 93.885584,
+              "p95_ms": 93.885584,
+              "p99_ms": 93.885584
+            },
+            "failed": 0,
+            "samples": 1,
+            "timed_out": 0
+          },
+          "recomputed_from_raw_samples": true
+        },
+        "Project and picture settled": {
+          "summary": {
+            "completed": {
+              "max_ms": 3.749708,
+              "n": 96,
+              "p50_ms": 0.736625,
+              "p95_ms": 1.0149169999999998,
+              "p99_ms": 3.749708
+            },
+            "failed": 0,
+            "samples": 96,
+            "timed_out": 0
+          },
+          "recomputed_from_raw_samples": true
+        },
+        "Committed revision changed": {
+          "summary": {
+            "completed": {
+              "max_ms": 24.933542,
+              "n": 24,
+              "p50_ms": 7.551291,
+              "p95_ms": 23.300874999999998,
+              "p99_ms": 24.933542
+            },
+            "failed": 0,
+            "samples": 24,
+            "timed_out": 0
+          },
+          "recomputed_from_raw_samples": true
+        },
+        "Node-set service and bank receipts finish": {
+          "summary": {
+            "completed": {
+              "max_ms": 15.671166,
+              "n": 57,
+              "p50_ms": 4.2e-05,
+              "p95_ms": 7.907792000000001,
+              "p99_ms": 15.671166
+            },
+            "failed": 0,
+            "samples": 57,
+            "timed_out": 0
+          },
+          "recomputed_from_raw_samples": true
+        }
+      }
+    }
+  },
+  "release_native_executed_copies": [
+    {
+      "name": "deadpan-app",
+      "sha256": "6e728a988c6804ea02dfa4d188dcb179c295f8557a1591108a9ddb66636ea06a",
+      "freshly_built": true,
+      "available_executed_copy_matches": true
+    },
+    {
+      "name": "deadpan-media-worker",
+      "sha256": "70114641de62f0c9c839734f3dddab1221b01888661a43ed5583e40ca9ed90fe",
+      "freshly_built": false,
+      "available_executed_copy_matches": true
+    },
+    {
+      "name": "deadpan-transcribe",
+      "sha256": "a75e83e94c073fa7419fea1ffc4621ab56adba020d402435c65622dababbe8b3",
+      "freshly_built": false,
+      "available_executed_copy_matches": true
+    },
+    {
+      "name": "deadpan-track",
+      "sha256": "97564bc5d9aee093aa7e3fa5e8a89aa5da68134f92f34032a407f27778c1eab4",
+      "freshly_built": false,
+      "available_executed_copy_matches": true
+    }
+  ],
+  "pre_performance_processes": [],
+  "real_media": {
+    "movie": {
+      "file": "node-sets.mp4",
+      "bytes": 14090,
+      "sha256": "5fdd29c3f0f85b366fda82900fd40b922aaa22de0b2d63d47ed58de644c09842"
+    },
+    "movie_identity_equals_publication_readback": true,
+    "ffprobe_metadata_independently_read": {
+      "programs": [],
+      "stream_groups": [],
+      "streams": [
+        {
+          "codec_type": "video",
+          "duration_ts": 32032,
+          "nb_frames": "32"
+        },
+        {
+          "codec_type": "audio",
+          "initial_padding": 2048,
+          "duration_ts": 51251,
+          "nb_frames": "53"
+        }
+      ]
+    },
+    "ffprobe_independent_decode_count": "32 H.264 decoded pictures; separate metadata gives video duration_ts32032, audio duration_ts51251 at48kHz, initial_padding2048.",
+    "verification_passed": true,
+    "summary": {
+      "audio_windows_checked": 1,
+      "audio_windows_failed": 0,
+      "blocks_compared": 1,
+      "index_observable_comparisons": 48,
+      "index_unobservable_comparisons": 14,
+      "max_block_level_db": 0.006032899567912864,
+      "max_local_luma_error": 2.0625,
+      "max_thumbnail_mad": 0.05022078804347826,
+      "min_block_snr_db": 55.30361314632046,
+      "min_chroma_psnr_db": 53.44486901527713,
+      "min_luma_psnr_db": 56.454656378842394,
+      "min_neighbor_margin_db": 0.0,
+      "nonzero_offsets": 0,
+      "offset_unobservable_windows": 0,
+      "offset_verified_windows": 1,
+      "pictures_checked": 32,
+      "pictures_failed": 0,
+      "pictures_without_index_neighbors": 0,
+      "signal_windows": 1
+    },
+    "literal_picture_oracle": [
+      {
+        "frame": 0,
+        "expected_kind": "original",
+        "expected_source_frame": 12,
+        "matches": true
+      },
+      {
+        "frame": 1,
+        "expected_kind": "original",
+        "expected_source_frame": 13,
+        "matches": true
+      },
+      {
+        "frame": 2,
+        "expected_kind": "original",
+        "expected_source_frame": 14,
+        "matches": true
+      },
+      {
+        "frame": 3,
+        "expected_kind": "original",
+        "expected_source_frame": 15,
+        "matches": true
+      },
+      {
+        "frame": 4,
+        "expected_kind": "original",
+        "expected_source_frame": 16,
+        "matches": true
+      },
+      {
+        "frame": 5,
+        "expected_kind": "original",
+        "expected_source_frame": 17,
+        "matches": true
+      },
+      {
+        "frame": 6,
+        "expected_kind": "original",
+        "expected_source_frame": 18,
+        "matches": true
+      },
+      {
+        "frame": 7,
+        "expected_kind": "original",
+        "expected_source_frame": 19,
+        "matches": true
+      },
+      {
+        "frame": 8,
+        "expected_kind": "original",
+        "expected_source_frame": 20,
+        "matches": true
+      },
+      {
+        "frame": 9,
+        "expected_kind": "original",
+        "expected_source_frame": 21,
+        "matches": true
+      },
+      {
+        "frame": 10,
+        "expected_kind": "original",
+        "expected_source_frame": 22,
+        "matches": true
+      },
+      {
+        "frame": 11,
+        "expected_kind": "original",
+        "expected_source_frame": 23,
+        "matches": true
+      },
+      {
+        "frame": 12,
+        "expected_kind": "original",
+        "expected_source_frame": 24,
+        "matches": true
+      },
+      {
+        "frame": 13,
+        "expected_kind": "original",
+        "expected_source_frame": 25,
+        "matches": true
+      },
+      {
+        "frame": 14,
+        "expected_kind": "original",
+        "expected_source_frame": 26,
+        "matches": true
+      },
+      {
+        "frame": 15,
+        "expected_kind": "original",
+        "expected_source_frame": 27,
+        "matches": true
+      },
+      {
+        "frame": 16,
+        "expected_kind": "original",
+        "expected_source_frame": 28,
+        "matches": true
+      },
+      {
+        "frame": 17,
+        "expected_kind": "original",
+        "expected_source_frame": 29,
+        "matches": true
+      },
+      {
+        "frame": 18,
+        "expected_kind": "background",
+        "expected_source_frame": null,
+        "matches": true
+      },
+      {
+        "frame": 19,
+        "expected_kind": "background",
+        "expected_source_frame": null,
+        "matches": true
+      },
+      {
+        "frame": 20,
+        "expected_kind": "original",
+        "expected_source_frame": 30,
+        "matches": true
+      },
+      {
+        "frame": 21,
+        "expected_kind": "original",
+        "expected_source_frame": 31,
+        "matches": true
+      },
+      {
+        "frame": 22,
+        "expected_kind": "original",
+        "expected_source_frame": 32,
+        "matches": true
+      },
+      {
+        "frame": 23,
+        "expected_kind": "original",
+        "expected_source_frame": 33,
+        "matches": true
+      },
+      {
+        "frame": 24,
+        "expected_kind": "original",
+        "expected_source_frame": 34,
+        "matches": true
+      },
+      {
+        "frame": 25,
+        "expected_kind": "original",
+        "expected_source_frame": 35,
+        "matches": true
+      },
+      {
+        "frame": 26,
+        "expected_kind": "original",
+        "expected_source_frame": 36,
+        "matches": true
+      },
+      {
+        "frame": 27,
+        "expected_kind": "original",
+        "expected_source_frame": 37,
+        "matches": true
+      },
+      {
+        "frame": 28,
+        "expected_kind": "original",
+        "expected_source_frame": 38,
+        "matches": true
+      },
+      {
+        "frame": 29,
+        "expected_kind": "original",
+        "expected_source_frame": 39,
+        "matches": true
+      },
+      {
+        "frame": 30,
+        "expected_kind": "original",
+        "expected_source_frame": 40,
+        "matches": true
+      },
+      {
+        "frame": 31,
+        "expected_kind": "original",
+        "expected_source_frame": 41,
+        "matches": true
+      }
+    ],
+    "audio": [
+      {
+        "blocks": {
+          "compared": 1,
+          "level_blocks": 0,
+          "low_snr_blocks": 0,
+          "max_level_difference_db": 0.006032899567912864,
+          "max_silent_level_dbfs": -73.34189261734973,
+          "min_snr_block_start": 28320,
+          "min_snr_db": 55.30361314632046,
+          "silent": 106,
+          "sound_in_silence_blocks": 0
+        },
+        "decoded_peak_dbfs": -2.517191919284652,
+        "decoded_rms_dbfs": -50.187417620967,
+        "error_rms_dbfs": -103.06937054953238,
+        "flags": [],
+        "kind": "signal",
+        "measured_offset_samples": 0,
+        "offset_status": "verified_zero",
+        "passed": true,
+        "project_samples": [
+          0,
+          51251
+        ],
+        "reference_peak_dbfs": -2.509473258576313,
+        "reference_rms_dbfs": -50.181396497483675,
+        "segments": [
+          {
+            "peak_correlation": 0.9999977835228133,
+            "peak_lag": 0,
+            "secondary_correlation": 0.02508999092663137,
+            "secondary_lag": 159,
+            "segment_samples": 4096,
+            "segment_start": 28672,
+            "status": "verified_zero",
+            "zero_lag_correlation": 0.9999977835228133
+          }
+        ],
+        "snr_db": 52.88797405204869,
+        "uncovered_samples": 0,
+        "window": [
+          0,
+          51251
+        ]
+      }
+    ],
+    "audio_edit_media_time": 2048,
+    "final_fixture_summary_matches_retained_summary": true,
+    "publication_document_and_revision_match": true,
+    "encoder_attempts": [
+      {
+        "ordinal": 0,
+        "choice": {
+          "mode": "hardware",
+          "b_frames": "target_two"
+        },
+        "outcome": "rejected"
+      },
+      {
+        "ordinal": 1,
+        "choice": {
+          "mode": "hardware",
+          "b_frames": "none"
+        },
+        "outcome": "succeeded"
+      }
+    ],
+    "encoder_outcome": {
+      "outcome": "selected",
+      "probe_ordinal": 1
+    },
+    "limits": "Canonical preview versus encoded audio. No independent PCM, listening or full mastering qualification."
+  },
+  "owner_package": {
+    "archive": {
+      "file": "node-sets.deadpan.tar.gz",
+      "bytes": 76701,
+      "sha256": "32fcd5df7e18d6a5918eb557073e86e4424dfffd3c90526eaf5c7c0d47c6dd49"
+    },
+    "matches_archive_identity": true,
+    "safe_members": true,
+    "member_count": 9,
+    "every_member_size_sha_matches": true,
+    "members": [
+      {
+        "path": ".render-candidates.lock",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": ".writer.lock",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+        "bytes": 39157,
+        "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918"
+      },
+      {
+        "path": "Media/RenderCandidates/blake3-8b5859df8f70abc7af7954f6ab85c85e36e8e43b5492288e610043f1ca691784",
+        "bytes": 15100,
+        "sha256": "3f9b813d97ef9315b3d0dcbbc0bc6dca4baa8ba969bd49071a82af198e3648dd"
+      },
+      {
+        "path": "Media/RenderCandidates/blake3-aed4899efb62ac2ea3d181bef5cb6504f9ae1f17d99ca508c20540308f1dc4f3",
+        "bytes": 14090,
+        "sha256": "5fdd29c3f0f85b366fda82900fd40b922aaa22de0b2d63d47ed58de644c09842"
+      },
+      {
+        "path": "manifest.json",
+        "bytes": 82,
+        "sha256": "0d03ade1a4314fc9db1d5ff0ea92fab166320815102aef0854902999f8904920"
+      },
+      {
+        "path": "project.sqlite",
+        "bytes": 753664,
+        "sha256": "0fc740ffc0d84b33183c3760e399a81544cb3fb49bf1ba7a795ca93bdb0731de"
+      },
+      {
+        "path": "project.sqlite-shm",
+        "bytes": 32768,
+        "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+      },
+      {
+        "path": "project.sqlite-wal",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ],
+    "validation_receipts": {
+      "checks": {
+        "validate": {
+          "exit": 0
+        },
+        "doctor": {
+          "exit": 0
+        }
+      },
+      "binary_sha256": "fb4c40a6d4a10931bba611aaa68ab12ed1967b83ff1d259b00a3f71348c5124d"
+    },
+    "validate_valid": true,
+    "validate_duration_frames": 32,
+    "validate_revision_matches_media": true,
+    "doctor_history": {
+      "replayed": 0,
+      "revisions": 15,
+      "verified_by_receipt": 15
+    },
+    "doctor_original_managed": true,
+    "doctor_partial_product": [
+      "structural-editing-commands",
+      "sqlite-project-history",
+      "schema-1-through-57-development-format-refusal",
+      "persistent-copy-registers",
+      "resolved-compound-transactions",
+      "native-semantic-macros",
+      "headless-semantic-macros",
+      "single-original-project-baseline",
+      "headless-youtube-original-import",
+      "native-documents-project-library",
+      "indexed-picture-plan",
+      "indexed-audio-plan",
+      "worker-dsp-adapter",
+      "source-audio-preparation",
+      "plan-driven-source-pcm",
+      "transparent-audio-partitions",
+      "retained-context-split",
+      "atomic-sequence-pause-insertion",
+      "logical-mark-bindings",
+      "exact-boundary-selectors",
+      "persistent-marks",
+      "sparse-play-overrides",
+      "nested-occurrence-edits",
+      "persistent-generation-requests",
+      "persistent-generation-attempts",
+      "authored-generated-hold-semantics",
+      "generated-media-conversion",
+      "native-bridge-bundle-qualification",
+      "durable-generated-bundle-acceptance",
+      "durable-original-byte-ownership",
+      "identity-checked-relinking",
+      "persistent-source-decoding",
+      "measured-source-audio-indexes",
+      "independent-source-audio-mapping",
+      "independent-source-video-mapping",
+      "exact-source-stream-placement",
+      "measured-import-timing-candidates",
+      "measured-original-moment-candidates",
+      "exact-source-audio-selections",
+      "durable-source-qualification",
+      "atomic-source-registration-and-insertion",
+      "background-import-preparation",
+      "automatic-presentation-basis",
+      "timed-basis-locking",
+      "explicit-canvas-geometry",
+      "shared-sdr-picture-pipeline",
+      "authored-framing-envelopes",
+      "ordered-canvas-framing",
+      "captured-hold-framing",
+      "native-camera-draft",
+      "native-source-preview",
+      "native-project-workspace",
+      "native-sequence-audition",
+      "native-original-audition",
+      "selection-loop-audition",
+      "native-structural-speed-editing",
+      "root-sound-event-commands-and-mixing",
+      "saved-beat-sound-commands",
+      "root-sound-ripple-edit-history",
+      "hold-audio-policy-commands"
+    ],
+    "original_matches_containment_identity": true,
+    "original_matches_qualified_fixture": true
+  },
+  "selected_capture": {
+    "identity": {
+      "file": "release-visual-node-set-selectors-089.png",
+      "bytes": 294967,
+      "sha256": "c03c652d48da761480407cf29d91c330e370b95f3fb6d08ee6e4def209260735"
+    },
+    "matches_selected_identity": true,
+    "png_raster": [
+      960,
+      640
+    ],
+    "frame": 118,
+    "main_viewer_loading": false,
+    "main_viewer_error": null,
+    "busy": false,
+    "visually_inspected_in_this_audit": true,
+    "inspection": "Main viewer settled, first empty member full ID/actual parent/empty range readable, four-member count, separate clocks and union hints visible. Beat thumbnail visibly says Loading; no fully settled thumbnail claim."
+  },
+  "documentation": {
+    "identities": {
+      "docs/qualification/discontiguous-node-selectors-2026-10-22.md": {
+        "sha256": "0c2261517256f6a59c1a168d99f105a998c641a1725341c0ea0a77c0d6ceaf17",
+        "bytes": 13364
+      },
+      "docs/REQUIREMENTS.md": {
+        "sha256": "b54a039966af9ee3dd225924bb9dfad71cce725597109c8ab65bb614b63a8959",
+        "bytes": 389979
+      },
+      "docs/spec/AGENT_HANDOFF.md": {
+        "sha256": "81c93ffadf3ac2e91db3bac95f07bcab274114ee4b5a1aa625c7d15a4ebff2f2",
+        "bytes": 266895
+      }
+    },
+    "claim_checks": {
+      "earlier_candidate_attribution_explicit": true,
+      "final_reruns_separate": true,
+      "thumbnail_limit_explicit": true,
+      "post_commit_pending_explicit": true,
+      "canonical_audio_limit_explicit": true,
+      "final_source_map_present": true
+    },
+    "resolved_findings": [
+      "Post-commit receipt wording now explicitly pending before publication.",
+      "Qualification/Requirements/handoff distinguish settled main viewer and readable inspector from Loading beat thumbnail; corrected selection note awaits recollection."
+    ]
+  },
+  "layout_receipt_provenance": {
+    "valid_retained_json": true,
+    "validated_paths": [
+      "crates/deadpan-cli/tests/preview_export.rs",
+      "crates/deadpan-cli/tests/preview_export/node_sets.rs"
+    ],
+    "validated_truth_value": true,
+    "old_retained_repair_script": "Unexecuted over-escaped draft, not proof of execution.",
+    "v2_scratch_sha256": "e0ca143185e46e13ec221b75cc6eb2ab520775d5319f1af53f2491d80c537793",
+    "note_scratch_sha256": "ed08bd0dafe359d7055116409ede2a81dbb4f6d425b21445ad7d80c3003bd06d",
+    "decode_controls_recomputed_without_writes": true,
+    "note": {
+      "executed_broad_driver": "broad_fourth.py",
+      "problem": "The initial delta receipt had a literal backslash-n terminator. An inline repair preserved its two validated paths and truth value.",
+      "unexecuted_draft": "repair_layout_receipt.py was saved but not executed; its nested escapes were incorrect.",
+      "verified_recipe": "repair_layout_receipt_v2.py tests literal terminator and valid JSON decoding and leaves the actual repaired receipt byte-identical.",
+      "runtime_or_source_result_changed": false
+    }
+  },
+  "excluded_payloads": "No executable binaries, raw Git batch/blob payloads, foreign fuzz/Cargo.lock, .claude contents or future range drafts found. Identity JSON and ordinary root Cargo.lock intentionally retained; incidental git-status references are metadata only.",
+  "pending": {
+    "recollection_required": true,
+    "not_in_initial_inventory": [
+      "this independent-evidence-audit.json",
+      "correct repair_layout_receipt_v2.py",
+      "layout-receipt-repair-note.json",
+      "updated selected-captures.json note"
+    ],
+    "post_commit_git_blob_verification": "Pending; absent from initial inventory and not established by this audit.",
+    "root_will_rebuild_inventory": true,
+    "additional_runtime_or_source_work_required_by_this_audit": false
+  },
+  "discrepancies": []
+}

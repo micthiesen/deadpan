@@ -1,0 +1,1 @@
+{"dry_run":false,"expected_bank_version":1,"expected_revision":"node-sets-r10","operation":{"count":1,"cursor":31,"parent":"43a42c1e-dc34-48fc-989b-0c7340997b8c","register":"m","selected_child":"node-sets-right-parent","type":"run"},"project_id":"7a7ec184-44d9-4624-a0a0-5beeb1358fa6","protocol":1}

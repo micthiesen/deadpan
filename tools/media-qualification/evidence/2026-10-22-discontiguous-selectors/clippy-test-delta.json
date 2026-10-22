@@ -1,0 +1,7 @@
+{
+  "changed_files": [
+    "crates/deadpan-store/tests/node_sets.rs"
+  ],
+  "all_production_rust_and_other_tests_unchanged": true,
+  "change": "Replace one needless clone with std::slice::from_ref in a test."
+}

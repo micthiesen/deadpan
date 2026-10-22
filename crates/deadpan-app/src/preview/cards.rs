@@ -64,6 +64,8 @@ pub(super) struct Markers {
     /// The Edit frame the badge reports.
     pub frame: u64,
     pub range: Option<std::ops::Range<u64>>,
+    /// Individual structural selections; never their outer envelope.
+    pub members: Vec<deadpan_core::SemanticNodeSetMember>,
     /// Pause bands and shot starts on the Edit clock, sorted.
     pub analysis: std::sync::Arc<super::transcript::AnalysisMarks>,
 }
@@ -153,32 +155,68 @@ pub(super) fn strip(
             );
             let response = beat_card(ui, rect, beat, index, selected == Some(&beat.id), thumbnail);
             paint_analysis(ui, rect, beat, &markers);
-            if let Some(range) = &markers.range
-                && beat.frames > 0
-            {
+            let selected_ranges = markers
+                .range
+                .iter()
+                .map(|range| (range.clone(), None))
+                .chain(
+                    markers
+                        .members
+                        .iter()
+                        .filter(|member| member.navigation_child == beat.id)
+                        .map(|member| {
+                            (
+                                (member.range.start().0 as u64)..(member.range.end().0 as u64),
+                                Some(&member.node),
+                            )
+                        }),
+                );
+            for (range, member) in selected_ranges {
                 let start = range.start.max(beat.start);
                 let end = range.end.min(beat.start + beat.frames);
-                if start < end {
+                let empty = range.start == range.end
+                    && member.is_some()
+                    && (beat.start..=beat.start + beat.frames).contains(&range.start);
+                if start < end || empty {
                     let x = |at: u64| {
-                        rect.left() + rect.width() * (at - beat.start) as f32 / beat.frames as f32
+                        if beat.frames == 0 {
+                            rect.left() + 3.0
+                        } else {
+                            rect.left()
+                                + rect.width() * (at - beat.start) as f32 / beat.frames as f32
+                        }
                     };
                     let highlight = egui::Rect::from_min_max(
-                        egui::pos2(x(start), rect.bottom() - 6.0),
-                        egui::pos2(x(end), rect.bottom()),
+                        egui::pos2(x(start), rect.bottom() - if empty { 12.0 } else { 6.0 }),
+                        egui::pos2(if empty { x(start) + 3.0 } else { x(end) }, rect.bottom()),
                     );
                     ui.painter().rect_filled(highlight, 1.0, style::LAVENDER);
-                    ui.interact(
+                    let label = member.map_or_else(
+                        || format!("Selected Edit range [{}..{}) in {}", start, end, beat.label),
+                        |node| {
+                            format!(
+                                "Selected node {} · Edit [{}..{}){} in {}",
+                                node.as_str(),
+                                range.start,
+                                range.end,
+                                if empty {
+                                    " · empty structural member"
+                                } else {
+                                    ""
+                                },
+                                beat.label
+                            )
+                        },
+                    );
+                    let response = ui.interact(
                         highlight,
-                        ui.make_persistent_id(("edit-range", &beat.id)),
+                        ui.make_persistent_id(("edit-range", &beat.id, member)),
                         egui::Sense::hover(),
-                    )
-                    .widget_info(|| {
-                        egui::WidgetInfo::labeled(
-                            egui::WidgetType::Label,
-                            true,
-                            format!("Selected Edit range [{}..{}) in {}", start, end, beat.label),
-                        )
+                    );
+                    response.widget_info(|| {
+                        egui::WidgetInfo::labeled(egui::WidgetType::Label, true, &label)
                     });
+                    response.on_hover_text(label);
                 }
             }
             if let Some((marker_index, fraction)) = markers.cursor

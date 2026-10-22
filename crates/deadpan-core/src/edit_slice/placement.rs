@@ -200,6 +200,26 @@ pub(crate) fn apply(
     command: &Command,
     context: crate::command::EditContext<'_>,
 ) -> Result<ProjectDocument, EditError> {
+    apply_inner(document, command, context, false).map(|(document, _)| document)
+}
+
+/// Set placement collects copied marks until every component is installed.
+/// Finishing them against a partial destination could drop a valid final
+/// Sequence-clock binding or split one logical mark across member copies.
+pub(super) fn apply_detached_marks(
+    document: &ProjectDocument,
+    command: &Command,
+    context: crate::command::EditContext<'_>,
+) -> Result<(ProjectDocument, BTreeMap<MarkId, Mark>), EditError> {
+    apply_inner(document, command, context, true)
+}
+
+fn apply_inner(
+    document: &ProjectDocument,
+    command: &Command,
+    context: crate::command::EditContext<'_>,
+    detach_marks: bool,
+) -> Result<(ProjectDocument, BTreeMap<MarkId, Mark>), EditError> {
     let placement = Placement::resolve(document, command)?;
     if &placement.timing.allocation != context.allocation {
         return Err(invalid(
@@ -334,11 +354,16 @@ pub(crate) fn apply(
     } else {
         crate::marks::transform_marks(&working, &result, command)?
     };
-    let copied = crate::marks::finish_slice_marks(&result, marks)?;
-    result.marks.extend(copied);
+    let detached = if detach_marks {
+        marks
+    } else {
+        let copied = crate::marks::finish_slice_marks(&result, marks)?;
+        result.marks.extend(copied);
+        BTreeMap::new()
+    };
     crate::audio_binding_lifecycle::prune(&mut result);
     result.validate()?;
-    Ok(result)
+    Ok((result, detached))
 }
 
 fn check_combined(document: &ProjectDocument, slice: &CapturedEditSlice) -> Result<(), EditError> {

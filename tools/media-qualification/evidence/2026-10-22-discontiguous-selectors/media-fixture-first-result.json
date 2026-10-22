@@ -1,0 +1,34 @@
+{
+  "audio_windows": 1,
+  "blocks_compared": 1,
+  "declared_audio_priming": 2048,
+  "failures": [],
+  "fixture": "node-sets",
+  "frames": 32,
+  "max_block_level_db": 0.006032899567912864,
+  "max_thumbnail_mad": 0.05022078804347826,
+  "min_block_snr_db": 55.30361314632046,
+  "min_chroma_psnr_db": 53.44486901527713,
+  "min_luma_psnr_db": 56.454656378842394,
+  "min_neighbor_margin_db": 0.0,
+  "movie": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmp5nWwz3/exports/node-sets.mp4",
+  "notes": [
+    "Qualified retained cfr-bframes.mp4 A/V at 30000/1001. Public Source-clock SetMark followed by Split gives one logical mark with two selected physical bindings. Reverse-listed explicit nodes contain Original 12..18, Original 18..30 and two empty Sequence identities beneath different ordinary parents, separated by an unselected 2f Background gap. One public macro selects, copies, cuts, clears and seam-pastes the complete 18f union. The shared mark remains one copied logical mark with both bindings; the gap remains 2f and Original 30..42 stays intact. Full immutable-capture admission, chronological replay, public Undo/Redo and reopened register equality pass. All 32 pictures have an independent ordinal/background oracle; full encoded audio compares against canonical preview, without an independent PCM claim."
+  ],
+  "offsets": [
+    [
+      "verified_zero",
+      0
+    ]
+  ],
+  "package": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmp5nWwz3/fixture/node-sets.deadpan",
+  "passed": true,
+  "pictures": 32,
+  "render_seconds": 1.399576917,
+  "revision": "77d43078-0722-4bf0-a301-3cec04a33314",
+  "rows": [
+    "Discontiguous whole-node union"
+  ],
+  "signal_windows": 1,
+  "verify_seconds": 0.378508166
+}

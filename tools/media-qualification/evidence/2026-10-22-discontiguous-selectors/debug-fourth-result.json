@@ -1,0 +1,28 @@
+{
+  "exit": 1,
+  "source_and_retained_binaries_unchanged": true,
+  "failed": true,
+  "scenarios": [
+    {
+      "name": "kestrel-shortcuts",
+      "failed": false,
+      "checks": 1,
+      "frames": 0,
+      "failures": [],
+      "warnings": 0
+    },
+    {
+      "name": "node-set-selectors",
+      "failed": true,
+      "checks": 91,
+      "frames": 292,
+      "failures": [
+        {
+          "message": "Timed out waiting for Committed revision changed: {\"annotation_busy\":false,\"beat_count\":1,\"busy\":false,\"camera_open\":false,\"camera_pending\":false,\"command\":\"sequence\",\"command_open\":false,\"context\":\"Sequence\",\"copied_moment\":null,\"copied_slice\":\"Copied node union \u00b7 4 members \u00b7 20 frames\",\"copy_pending\":false,\"duration\":110,\"edit_selection\":null,\"edit_selection_state\":\"None\",\"edit_visual_active\":false,\"error\":\"No repeatable edit is available. Cut, group, ungroup, explode, duplicate, wrap a Repeat or set its play count first.\",\"focused_widget\":\"Id::new(\\\"sequence-pane\\\")\",\"footer_bottom\":[613.0,613.0],\"footer_command_open\":false,\"help_open\":false,\"import\":{\"error\":null,\"stage\":\"Complete\"},\"layout_passes\":1,\"message\":\"Undo saved\",\"original_selection\":null,\"pane\":\"Sequence\",\"pending_keys\":\"\",\"picture\":{\"decoded\":{\"label\":\"Showing sequence frame 81\",\"location\":\"Project { session: 1, project: ProjectId(\\\"7870c680-db26-44cb-b54e-98ea23ef7c1d\\\"), revision: RevisionId(\\\"091db440-0e41-498b-82eb-a374e0b234b8\\\"), view: Sequence { frame: ProjectFrame(80) }, empty_sequence: false }\",\"ticket\":\"Ticket { transport: None, source: 54, request: 56 }\"},\"decoded_framing\":\"[PictureFraming { instance: InstancePath { node: NodeId(\\\"907ae8a4-b842-4744-84da-7107ba7674ab\\\"), repeats: [] }, local_position: ExactRatio { numerator: 181, denominator: 2 }, duration: FrameDuration(120), effective_duration: ExactRatio { numerator: 120, denominator: 1 }, pose: None, escalation: false }, PictureFraming { instance: InstancePath { node: NodeId(\\\"e41b9248-407f-409e-8dac-6a0aa11e174d\\\"), repeats: [] }, local_position: ExactRatio { numerator: 61, denominator: 2 }, duration: FrameDuration(60), effective_duration: ExactRatio { numerator: 60, denominator: 1 }, pose: None, escalation: false }, PictureFraming { instance: InstancePath { node: NodeId(\\\"4967cbae-4758-4a7d-947b-fc0d52e8a809\\\"), repeats: [] }, local_position: ExactRatio { numerator: 161, denominator: 2 }, duration: FrameDuration(110), effective_duration: ExactRatio { numerator: 110, denominator: 1 }, pose: None, escalation: false }, PictureFraming { instance: InstancePath { node: NodeId(\\\"73c79898-4168-4c58-a880-1403b5e62c45\\\"), repeats: [] }, local_position: ExactRatio { numerator: 161, denominator: 2 }, duration: FrameDuration(110), effective_duration: ExactRatio { numerator: 110, denominator: 1 }, pose: None, escalation: false }]\",\"decoded_geometry_revision\":0,\"decoded_tier\":\"Original\",\"displayed\":{\"label\":\"Showing sequence frame 81\",\"location\":\"Project { session: 1, project: ProjectId(\\\"7870c680-db26-44cb-b54e-98ea23ef7c1d\\\"), revision: RevisionId(\\\"091db440-0e41-498b-82eb-a374e0b234b8\\\"), view: Sequence { frame: ProjectFrame(80) }, empty_sequence: false }\",\"ticket\":\"Ticket { transport: None, source: 54, request: 56 }\"},\"displayed_tier\":\"Original\",\"error\":null,\"geometry_revision\":0,\"loading\":false,\"needs_render\":false,\"requested\":{\"label\":\"Showing sequence frame 81\",\"location\":\"Project { session: 1, project: ProjectId(\\\"7870c680-db26-44cb-b54e-98ea23ef7c1d\\\"), revision: RevisionId(\\\"091db440-0e41-498b-82eb-a374e0b234b8\\\"), view: Sequence { frame: ProjectFrame(80) }, empty_sequence: false }\",\"ticket\":\"Ticket { transport: None, source: 54, request: 56 }\"},\"source_frame\":90},\"pixels_per_point\":1.0,\"playback\":null,\"project_error\":null,\"repeat_queue\":{\"active\":false,\"status\":null,\"waiting\":0},\"revision\":\"091db440-0e41-498b-82eb-a374e0b234b8\",\"room_tone\":null,\"scope_end\":110,\"scope_labels\":[],\"scope_start\":0,\"scoped\":null,\"selected_beat\":\"4967cbae-4758-4a7d-947b-fc0d52e8a809\",\"selected_event\":null,\"selected_sound\":null,\"selected_source\":\"a1816df9-c9c2-4249-80ea-9f7b05015380\",\"sequence_cursor\":80,\"sequence_scope\":[],\"slip\":null,\"sound_cursor\":0,\"sound_events\":{},\"sound_routes\":{},\"source_cursor\":0,\"source_summary\":{\"first_pts\":0,\"frame_count\":120,\"height\":180,\"terminal_pts\":120120,\"time_base\":[1,30000],\"width\":320},\"splice\":null,\"trim\":{\"abandon_count\":0,\"command_capture\":null,\"draft\":null,\"pair\":{\"displayed\":null,\"expected\":null,\"gpu_pending\":false,\"render_error\":null,\"required_raster\":null,\"worker_error\":null},\"prefix_capture\":null},\"viewport_points\":[960.0,640.0],\"visual_selection\":false}",
+          "severity": "failure"
+        }
+      ],
+      "warnings": 3
+    }
+  ]
+}

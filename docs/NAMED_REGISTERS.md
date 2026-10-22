@@ -6,6 +6,13 @@ preview. The same names hold Original ranges and editable slices from Your edit,
 including complete empty groups. The footer identifies the selected register
 and its content type. `:registers` opens the live inventory in Keys.
 
+Discontiguous [whole-node sets](SEMANTIC_MACROS.md#discontiguous-whole-node-sets)
+occupy one distinct EditedSet value. Every member comes from the same historical
+document, with its actual parent and whole-child selection. Copying does not
+overwrite the slot once per member. Seam paste creates one editable containing
+Sequence and preserves shared logical marks across the selected components;
+unselected gaps are omitted. Active-set replacement and Place slice refuse.
+
 In Normal Edit, `"ayy` copies the selected beat to **a**, and `"ay5l` copies
 the next five frames without moving the cursor. `"ad5l` cuts that interval.
 With a Visual range selected, `"ay` copies it immediately. Original ranges

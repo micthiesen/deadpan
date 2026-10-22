@@ -333,6 +333,7 @@ pub(crate) fn validate_command(
                 | Command::RollSources { .. }
                 | Command::SpliceSource { .. }
                 | Command::SpliceSlice { .. }
+                | Command::SpliceEditSet { .. }
                 | Command::SpliceSliceAt { .. }
                 | Command::ReplaceSlice { .. }
                 | Command::ReplaceSliceChildren { .. }
@@ -510,6 +511,7 @@ fn preserves_sound_clocks(command: &Command) -> bool {
         | Command::RollSources { .. }
         | Command::SpliceSource { .. }
         | Command::SpliceSlice { .. }
+        | Command::SpliceEditSet { .. }
         | Command::SpliceSliceAt { .. }
         | Command::ReplaceSlice { .. }
         | Command::ReplaceSliceChildren { .. }

@@ -4,6 +4,46 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Current continuation, 2026-10-22
 
+Discontiguous whole authored nodes now use one genuine EditedSet register.
+`:select nodes=["id-a","id-b"]` resolves 1 through 64 distinct identities in
+canonical structural order beneath ordinary Sequences, including empty siblings
+and different actual parents. Cut captures once before reverse deletions in one
+Compound; seam paste uses one outer group and one shared mark pool. Duplicate,
+ancestor-overlapping and temporal-interior targets refuse. Clear the set before
+paste; unsupported consumers, looping, saved framing and AI generation refuse
+instead of falling back to one navigation beat. The set inspector is read-only.
+
+All 63 focused and 4,570 broader cases pass. Later Clippy-only changes have
+separate source attribution and reruns: four Store and 46 native cases, all
+1,273 selected final UI-feature cases, strict checks and formatting pass.
+Both release native modes pass 143 checks plus Kestrel; the compact inspector
+and settled main viewer were inspected, with a pending beat thumbnail explicit.
+Quiet state p99 is 1.977ms over 147 samples. The release
+export verifies 32 pictures and 51,251 samples at zero offset; the extracted
+nine-file owner fixture validates and passes doctor. See the
+[qualification](../qualification/discontiguous-node-selectors-2026-10-22.md)
+for failed candidates, audits, layout warnings, timing and audio limits.
+No requirement or gate is newly complete. Current formats are SQLite 84/core 55.
+
+Next: explicit arbitrary range sets, then transcript-search-result selectors.
+Use closed range components in the existing union, with component-qualified
+identities and mark remapping when disjoint windows share one original owner.
+Do not relax the whole-node duplicate/ancestor rules. Dot must retain semantic
+intent instead of resolved absolute endpoints; existing Visual cuts require a
+new Visual selection. Confirm the range intent and native recording contract
+before admitting it. Corrected transcript queries also require proposal identity
+and correction-version guards inside the publication transaction, beyond the
+document revision. Remaining temporal families, sound owners, mastering,
+renderer and complete workflows remain required.
+
+Draft public controls are in /tmp/deadpan-range-selectors-2026-10-22, with
+read-only design notes in the discontiguous checkpoint scratch directory.
+They are uncompiled and unexecuted, and their final range wire is tentative.
+Qualify them against the committed union baseline before production range
+admission. Keep the existing compact Nextest archive procedure and time limits.
+
+## Whole authored-node checkpoint, 2026-10-22
+
 Whole authored nodes now drive semantic editing through
 `:select node=<exactNodeId>` in ordinary Your edit with Linked role. Selection,
 recording, named calls and dot retain identity through staged revisions.
@@ -27,19 +67,11 @@ the extracted nine-file owner fixture validates and passes doctor. See the
 retained failed setups/runs, identities, layout warnings and media limits.
 No requirement or gate is newly complete.
 
-Next: discontiguous whole-node sets, with one union register value, canonical
-structural ordering including equal-time empty siblings, and one atomic Cut
-through actual parents. Separate ordinary Yanks/Cuts overwrite a register and
-are not a union. Preserve one logical mark spanning multiple components when
-pasting; independent capsule pastes can split it into separate marks. Reject
-duplicate and ancestor-overlapping targets and unsupported consumers explicitly.
-Scratch public counterfactual and shared-mark control drafts have read-only
-review, but remain uncompiled and unexecuted. Install and qualify them against
-this completed single-Node baseline before production Nodes admission.
-Then implement durable union copy/cut/paste, native recording/dot and actual
-media. Transcript-search-result selectors also need corrected-analysis freshness
-beyond document revision. Remaining temporal families, sound owners, mastering,
-renderer work and complete workflows remain required.
+The whole-node union continuation is qualified above. Its old-code controls
+were installed and executed against this completed single-Node baseline before
+Nodes admission; the retained expected refusal remains distinct from the later
+positive regression. Arbitrary range and corrected transcript-search selectors
+remain follow-up work.
 
 ## Selected fixed-Retime checkpoint, 2026-10-22
 

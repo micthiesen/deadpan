@@ -1517,12 +1517,8 @@ fn slice_capture_revision(
     connection: &Connection,
     request: &CommandRequest,
 ) -> Result<Option<ProjectDocument>, StoreError> {
-    let slice = match &request.command {
-        deadpan_core::Command::SpliceSlice { slice, .. }
-        | deadpan_core::Command::SpliceSliceAt { slice, .. }
-        | deadpan_core::Command::ReplaceSlice { slice, .. } => slice,
-        deadpan_core::Command::ReplaceSliceChildren { slice, .. } => slice,
-        _ => return Ok(None),
+    let Some(slice) = compound::captured_content(&request.command) else {
+        return Ok(None);
     };
     let captured = compound::read_capture(connection, slice.revision_id())?;
     slice.validate_capture(&captured)?;

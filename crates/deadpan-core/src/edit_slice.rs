@@ -4,11 +4,17 @@
 mod children;
 mod placement;
 mod rename;
+mod set;
 mod sound_clocks;
 mod wire;
 
 pub use children::SequenceChildrenPlan;
 pub(crate) use placement::apply;
+pub(crate) use set::apply as apply_set;
+pub use set::{
+    CapturedEditSet, EditSetComponentIdentities, EditSetIdentityRequirements,
+    EditSetPasteIdentities, MAX_EDIT_SET_COMPONENTS,
+};
 
 use crate::*;
 use serde::{Deserialize, Serialize};

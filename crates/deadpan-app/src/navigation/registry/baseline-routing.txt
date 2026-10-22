@@ -3466,7 +3466,7 @@ verb "roll" usage ":roll +2f"
 verb "room-tone" usage ":room-tone"
 verb "saturate" usage ":saturate 12dB | off"
 verb "scope" usage ":scope all | play N | plays 2-3"
-verb "select" usage ":select role=audio|video|linked  or :select marks start=<exactMarkId> end=<exactMarkId>  or :select node=<exactNodeId>"
+verb "select" usage ":select role=audio|video|linked  or :select marks start=<exactMarkId> end=<exactMarkId>  or :select node=<exactNodeId>  or :select nodes=[\"id-a\",\"id-b\"]"
 verb "sequence" usage ":sequence  Your edit"
 verb "slip" usage ":slip +5f"
 verb "sound-allow" usage ":sound-allow  in this pause"
@@ -4087,7 +4087,7 @@ parse "   " = Ok(Empty)
 parse ":" = Ok(Empty)
 parse "HOLD 1s" = Ok(Action(Edit(InsertHold(Seconds(ExactRatio { numerator: 1, denominator: 1 })))))
 complete "" = []
-complete "s" = [":saturate 12dB | off", ":scope all | play N | plays 2-3", ":select role=audio|video|linked  or :select marks start=<exactMarkId> end=<exactMarkId>  or :select node=<exactNodeId>", ":sequence  Your edit", ":slip +5f", ":sound-allow  in this pause", ":sound-at 274000  start sample (48 kHz)", ":sound-channels mono|stereo|none", ":sound-cut  end the sound here", ":sound-delete  remove the placed sound", ":sound-edges soft|hard", ":sound-gain -3  dB", ":sound-place", ":sound-silence  in this pause", ":sounds  placed sounds", ":source  Original", ":splice  place a copy", ":split", ":sting  add a sting sound", ":storage  project storage and cleanup"]
+complete "s" = [":saturate 12dB | off", ":scope all | play N | plays 2-3", ":select role=audio|video|linked  or :select marks start=<exactMarkId> end=<exactMarkId>  or :select node=<exactNodeId>  or :select nodes=[\"id-a\",\"id-b\"]", ":sequence  Your edit", ":slip +5f", ":sound-allow  in this pause", ":sound-at 274000  start sample (48 kHz)", ":sound-channels mono|stereo|none", ":sound-cut  end the sound here", ":sound-delete  remove the placed sound", ":sound-edges soft|hard", ":sound-gain -3  dB", ":sound-place", ":sound-silence  in this pause", ":sounds  placed sounds", ":source  Original", ":splice  place a copy", ":split", ":sting  add a sting sound", ":storage  project storage and cleanup"]
 complete "so" = [":sound-allow  in this pause", ":sound-at 274000  start sample (48 kHz)", ":sound-channels mono|stereo|none", ":sound-cut  end the sound here", ":sound-delete  remove the placed sound", ":sound-edges soft|hard", ":sound-gain -3  dB", ":sound-place", ":sound-silence  in this pause", ":sounds  placed sounds", ":source  Original"]
 complete "gag" = [":gag NAME [key=value …]", ":gag-inspect NAME", ":gag-presets", ":gag-save NAME", ":gag-set NAME key=value"]
 complete "re" = [":recipe a", ":recipe-inspect a", ":recipe-save a", ":record a", ":record-cancel", ":record-stop", ":recovery", ":redo", ":register a", ":registers", ":relink", ":render", ":renders", ":repeat 3 [gap=6f gap-step=-2f]", ":retime 0.75 pitch=preserve", ":reverse 8f"]

@@ -1,0 +1,23 @@
+{
+  "exit": 0,
+  "source_and_retained_binaries_unchanged": true,
+  "failed": false,
+  "scenarios": [
+    {
+      "name": "kestrel-shortcuts",
+      "failed": false,
+      "checks": 1,
+      "frames": 0,
+      "failures": [],
+      "warnings": 0
+    },
+    {
+      "name": "node-set-selectors",
+      "failed": false,
+      "checks": 140,
+      "frames": 539,
+      "failures": [],
+      "warnings": 3
+    }
+  ]
+}

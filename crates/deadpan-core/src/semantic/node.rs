@@ -19,7 +19,7 @@ fn unavailable(message: &str) -> EditError {
     EditError::new(EditErrorCode::SelectionUnavailable, message)
 }
 
-fn edit_authority(context: &SemanticContext) -> Result<(), EditError> {
+pub(super) fn edit_authority(context: &SemanticContext) -> Result<(), EditError> {
     if context.original.is_some()
         || context.scoped.is_some()
         || context.hold_duration.is_some()

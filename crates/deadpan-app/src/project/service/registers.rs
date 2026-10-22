@@ -195,6 +195,15 @@ pub(super) fn restore(store: &ProjectStore, session: u64) -> Result<Arc<Bank>> {
                         child_label,
                     }))
                 }
+                RegisterValue::EditedSet { set } => {
+                    let document = store
+                        .capture_snapshot_at(set.revision_id())
+                        .map_err(display)?;
+                    set.validate_capture(&document).map_err(display)?;
+                    let plan = RenderPlan::compile(&document).map_err(display)?;
+                    SequenceScope::from_historical_parent(&document, &plan, set.scope())?;
+                    Value::EditedSet(set.clone())
+                }
                 RegisterValue::Macro { program } => Value::Macro(program.clone()),
             };
             restored.push((value, runtime.clone()));

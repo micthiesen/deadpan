@@ -25,6 +25,137 @@ fn trim(start: i64, end: i64, i: i64, o: i64) -> RootSoundOperation {
     }
 }
 
+#[test]
+fn union_paste_transports_the_root_bus_once_and_keeps_a_shifted_attached_owner() {
+    let rate = FrameRate::new(30_000, 1001).unwrap();
+    let source = fixture(rate, 6, selected(ExactRatio::ZERO, ExactRatio::integer(6)));
+    let mut wire = serde_json::to_value(source).unwrap();
+    let hold = |label: &str, count| {
+        BeatNode::hold(
+            label,
+            HoldRecipe {
+                duration: frames(count),
+                video: HoldVideo::Background,
+                picture_context: None,
+                audio: HoldAudio::Silence,
+            },
+        )
+    };
+    wire["nodes"] = json!({
+        "root":BeatNode::sequence("Root", vec![node("first"),node("gap"),node("last")]),
+        "first":hold("First",2),"gap":hold("Unselected attached owner",1),"last":hold("Last",3),
+    });
+    let base = ProjectDocument::from_json(&wire.to_string()).unwrap();
+    for attached in [false, true] {
+        let before = if attached {
+            let span = SourceSpan::new(
+                SourceTimestamp {
+                    ticks: 0,
+                    time_base: SourceTimeBase::new(1, 48_000).unwrap(),
+                },
+                SourceTimestamp {
+                    ticks: 1000,
+                    time_base: SourceTimeBase::new(1, 48_000).unwrap(),
+                },
+            )
+            .unwrap();
+            let request = CommandRequest {
+                project_id: base.project_id().clone(),
+                expected_revision: base.revision_id().clone(),
+                new_revision: RevisionId::new("union-attached").unwrap(),
+                command: Command::SetBeatSound {
+                    owner: node("gap"),
+                    id: SoundId::new("attached").unwrap(),
+                    event: BeatSound {
+                        label: "Retained exact offset".into(),
+                        source: SourceAudio {
+                            asset: AssetId::new("sound").unwrap(),
+                            span,
+                        },
+                        mapping: SourceAudioMapping::natural_rate(span, rate).unwrap(),
+                        offset: AudioSample(37),
+                        treatments: Default::default(),
+                        start_edge: AudioEdgePolicy::Hard,
+                        end_edge: AudioEdgePolicy::Automatic,
+                        overflow: SoundOverflowPolicy::Reject,
+                    },
+                },
+            };
+            crate::apply(&base, &request)
+                .unwrap()
+                .forward
+                .apply(&base)
+                .unwrap()
+        } else {
+            base.clone()
+        };
+        let capture_timing = AudioTimingId {
+            allocation: RevisionId::new("union-copy").unwrap(),
+            ordinal: 0,
+        };
+        let set = CapturedEditSet::capture(
+            &before,
+            &node("root"),
+            &[node("first"), node("last")],
+            capture_timing,
+        )
+        .unwrap();
+        assert_eq!(set.duration(), frames(5));
+        let requirements = set.identity_requirements().unwrap();
+        let identities = EditSetPasteIdentities {
+            group: node("pasted-union"),
+            components: requirements
+                .components
+                .iter()
+                .enumerate()
+                .map(|(member, count)| EditSetComponentIdentities {
+                    nodes: (0..count.nodes)
+                        .map(|index| node(&format!("pasted-{member}-node-{index}")))
+                        .collect(),
+                    aliases: (0..count.aliases)
+                        .map(|index| node(&format!("pasted-{member}-alias-{index}")))
+                        .collect(),
+                })
+                .collect(),
+            marks: Vec::new(),
+        };
+        let request = CommandRequest {
+            project_id: before.project_id().clone(),
+            expected_revision: before.revision_id().clone(),
+            new_revision: RevisionId::new("union-paste").unwrap(),
+            command: Command::SpliceEditSet {
+                parent: node("root"),
+                index: 1,
+                set,
+                identities,
+                timing: AudioTimingId {
+                    allocation: RevisionId::new("union-paste").unwrap(),
+                    ordinal: 0,
+                },
+            },
+        };
+        let edit = crate::apply(&before, &request).unwrap();
+        let after = edit.forward.apply(&before).unwrap();
+        assert_eq!(after.duration().unwrap(), frames(11));
+        assert_eq!(after.sounds(), before.sounds());
+        let route = &after.sound_routes()[&sound()];
+        assert_eq!(route.edits.len(), 1);
+        assert_eq!(
+            route.edits[0].operation,
+            RootSoundOperation::Insert {
+                at: ProjectFrame(2),
+                duration: frames(5)
+            }
+        );
+        assert_eq!(after.beat_sounds(), before.beat_sounds());
+        assert_eq!(edit.inverse.apply(&after).unwrap(), before);
+        assert_eq!(
+            ProjectDocument::from_json(&after.to_json().unwrap()).unwrap(),
+            after
+        );
+    }
+}
+
 fn fixture(rate: FrameRate, extent: i64, selection: ExactFrameRange) -> ProjectDocument {
     let empty = ProjectDocument::new(
         ProjectId::new("root-trim").unwrap(),

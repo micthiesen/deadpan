@@ -25,6 +25,7 @@ pub enum Value {
         ordinals: Range<u64>,
     },
     Edited(Arc<slice::Captured>),
+    EditedSet(Arc<deadpan_core::CapturedEditSet>),
     Macro(Arc<deadpan_core::SemanticProgram>),
 }
 

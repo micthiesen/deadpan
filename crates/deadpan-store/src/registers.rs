@@ -266,7 +266,7 @@ pub(crate) fn create_tables(connection: &Connection) -> Result<(), StoreError> {
             value TEXT NOT NULL CHECK(json_valid(value)),
             CHECK (coalesce(
                 (json_extract(value,'$.type')='macro' AND capture_revision IS NULL AND capture_step IS NULL)
-                OR (json_extract(value,'$.type') IN ('original','edited') AND ((capture_revision IS NULL) != (capture_step IS NULL))),
+                OR (json_extract(value,'$.type') IN ('original','edited','edited_set') AND ((capture_revision IS NULL) != (capture_step IS NULL))),
                 0))
         ) STRICT;
         CREATE TABLE registers (
@@ -381,7 +381,7 @@ pub(crate) fn check_stored_sizes(connection: &Connection) -> Result<(), StoreErr
     let malformed: bool = connection.query_row(
         "SELECT EXISTS(SELECT 1 FROM register_contents WHERE NOT CASE WHEN json_valid(value) THEN
             coalesce((json_extract(value,'$.type')='macro' AND capture_revision IS NULL AND capture_step IS NULL AND length(CAST(value AS BLOB))<=?1)
-            OR (json_extract(value,'$.type') IN ('original','edited') AND ((capture_revision IS NULL) != (capture_step IS NULL))),0)
+            OR (json_extract(value,'$.type') IN ('original','edited','edited_set') AND ((capture_revision IS NULL) != (capture_step IS NULL))),0)
             ELSE 0 END)", [MAX_MACRO_REGISTER_BYTES as i64], |r| r.get(0),
     )?;
     if malformed {
@@ -513,6 +513,7 @@ pub(crate) fn validate_value_at(
     }
     match value {
         RegisterValue::Edited { slice } => slice.validate_capture(captured)?,
+        RegisterValue::EditedSet { set } => set.validate_capture(captured)?,
         RegisterValue::Original {
             asset,
             qualification,

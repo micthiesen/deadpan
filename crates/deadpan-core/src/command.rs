@@ -212,6 +212,15 @@ define_commands! {
         identities: crate::SlicePasteIdentities,
         timing: crate::AudioTimingId,
     },
+    /// Paste one complete copied union at an ordinary Sequence seam. Its
+    /// components concatenate under one neutral group with shared ownership.
+    SpliceEditSet {
+        parent: NodeId,
+        index: usize,
+        set: crate::CapturedEditSet,
+        identities: crate::EditSetPasteIdentities,
+        timing: crate::AudioTimingId,
+    },
     /// Paste edited contents strictly inside one named ordinary Sequence child.
     SpliceSliceAt {
         parent: NodeId,
@@ -1524,6 +1533,9 @@ fn apply_with_durations_captured(
         | Command::ReplaceSliceChildren { .. } => {
             crate::edit_slice::apply(input, &request.command, context)?
         }
+        Command::SpliceEditSet { .. } => {
+            crate::edit_slice::apply_set(input, &request.command, context)?
+        }
         Command::MoveRange { .. } => crate::move_range::apply(input, &request.command, context)?,
         Command::GroupSelection { .. } => {
             crate::group_selection::apply(input, &request.command, context)?
@@ -2286,6 +2298,7 @@ pub(crate) fn reduce(
         | Command::InsertOccurrenceTime { .. }
         | Command::SpliceSource { .. }
         | Command::SpliceSlice { .. }
+        | Command::SpliceEditSet { .. }
         | Command::SpliceSliceAt { .. }
         | Command::ReplaceSlice { .. }
         | Command::ReplaceSliceChildren { .. }
@@ -3587,6 +3600,7 @@ fn description(command: &Command) -> &'static str {
         Command::InsertOccurrenceTime { .. } => "Insert pause in this play",
         Command::SpliceSource { .. } => "Paste source moment",
         Command::SpliceSlice { .. } => "Paste edited slice",
+        Command::SpliceEditSet { .. } => "Paste copied selection set",
         Command::SpliceSliceAt { .. } => "Paste edited slice inside beat",
         Command::ReplaceSlice { .. } => "Replace with edited slice",
         Command::ReplaceSliceChildren { .. } => "Replace selected children with edited slice",

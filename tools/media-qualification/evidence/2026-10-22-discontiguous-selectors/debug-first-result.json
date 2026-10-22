@@ -1,0 +1,34 @@
+{
+  "exit": 1,
+  "source_and_retained_binaries_unchanged": true,
+  "failed": true,
+  "scenarios": [
+    {
+      "name": "kestrel-shortcuts",
+      "failed": false,
+      "checks": 1,
+      "frames": 0,
+      "findings": []
+    },
+    {
+      "name": "node-set-selectors",
+      "failed": true,
+      "checks": 33,
+      "frames": 88,
+      "findings": [
+        {
+          "message": "Check failed: Native set fixture has separate parents, distinct equal-time empties and an unselected middle",
+          "severity": "failure"
+        },
+        {
+          "message": "11 frame(s) settled their layout only on a second retry: [{\"frame\":23,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5599)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5734)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4168)\"]},{\"frame\":26,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5599)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5734)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4168)\"]},{\"frame\":31,\"input\":\"Command group name=\\\"Set scope\\\"\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5599)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5734)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4168)\"]},{\"frame\":37,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5599)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5734)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4168)\"]},{\"frame\":45,\"input\":\"Command group name=\\\"Empty member\\\"\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5599)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5734)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4168)\"]},{\"frame\":57,\"input\":\"Command select node=6621310b-35db-4de6-a6b9-f5bc4d4b8eec\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5599)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5734)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4168)\"]},{\"frame\":59,\"input\":\"Command duplicate\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5599)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5734)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4168)\"]},{\"frame\":63,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5599)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5734)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4168)\"]},{\"frame\":71,\"input\":\"Command group name=\\\"First selected owner\\\"\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5599)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5734)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4168)\"]},{\"frame\":75,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5599)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5734)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4168)\"]},{\"frame\":83,\"input\":\"Command group name=\\\"Second selected owner\\\"\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5599)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5734)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4168)\"]}]",
+          "severity": "warning"
+        },
+        {
+          "message": "egui discard warning: 1 run(s) of 3+ consecutive retrying frames, each frame with its own cause: [[{\"frame\":56,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:6049)\"]},{\"frame\":57,\"input\":\"Command select node=6621310b-35db-4de6-a6b9-f5bc4d4b8eec\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5599)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5734)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4168)\"]},{\"frame\":58,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":true,\"reasons\":[\"pass 0: initialize text input focus filter (crates/deadpan-app/src/preview.rs:6049)\"]},{\"frame\":59,\"input\":\"Command duplicate\",\"new_input\":true,\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5599)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5734)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4168)\"]},{\"frame\":60,\"input\":\"Committed revision changed\",\"new_input\":false,\"reasons\":[\"pass 0: inline notice changed placement (crates/deadpan-app/src/preview.rs:5977)\",\"pass 0: workspace footer height changed (crates/deadpan-app/src/preview.rs:4168)\"]}]]",
+          "severity": "warning"
+        }
+      ]
+    }
+  ]
+}

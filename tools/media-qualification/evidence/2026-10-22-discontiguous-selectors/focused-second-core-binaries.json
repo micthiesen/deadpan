@@ -1,0 +1,31 @@
+{
+  "deadpan-core::edit_set": {
+    "path": "/private/tmp/deadpan-discontiguous-selectors-2026-10-22/focused-second-core-extracted/target/debug/deps/edit_set-2a0935885b193057",
+    "sha256": "e1ffdbb7600c85a09305fc160763304e89aa9e212e2123bacb40614321e0bdd6",
+    "tests": [
+      "components_can_have_distinct_actual_parents_and_empty_equal_time_owners",
+      "copied_sequence_marks_are_finished_against_the_complete_union_once",
+      "invalid_addresses_forged_capsules_and_shared_mark_loss_are_rejected",
+      "placement_requires_exact_fresh_shared_identity_pools_without_mutating_input",
+      "semantic::invalid_or_unsupported_semantic_set_consumers_fail_before_allocations",
+      "semantic::semantic_union_cut_then_seam_paste_is_one_atomic_reversible_shared_mark_lifecycle",
+      "semantic::semantic_union_yank_is_one_canonical_value_and_preserves_unrelated_context",
+      "union_paste_omits_the_gap_and_preserves_one_logical_mark_with_both_bindings",
+      "unsupported_cross_component_coordinate_is_refused_instead_of_losing_the_binding"
+    ]
+  },
+  "deadpan-core::node_set_counterfactual": {
+    "path": "/private/tmp/deadpan-discontiguous-selectors-2026-10-22/focused-second-core-extracted/target/debug/deps/node_set_counterfactual-df64c1ae08f966d3",
+    "sha256": "8b2e0c7736c3fd55cde58266e21867bfbaac88aa52a5558e13a6a4026a3b933a",
+    "tests": [
+      "explicit_nodes_selector_admits_only_after_public_single_node_controls"
+    ]
+  },
+  "deadpan-core::node_set_shared_mark": {
+    "path": "/private/tmp/deadpan-discontiguous-selectors-2026-10-22/focused-second-core-extracted/target/debug/deps/node_set_shared_mark-21fe891677e0f16e",
+    "sha256": "402e13690e63a661010654a490733f7f7673bc3fbf3bcc56415d43170cb11721",
+    "tests": [
+      "separate_component_pastes_split_one_logical_mark_while_existing_whole_capture_preserves_it"
+    ]
+  }
+}

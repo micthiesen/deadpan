@@ -81,6 +81,9 @@ pub(super) fn validate_context(
         Some(SemanticVisualSelection::Node { node }) => {
             crate::semantic::node::resolve_in_scope(document, context, node)?;
         }
+        Some(SemanticVisualSelection::Nodes { nodes }) => {
+            crate::semantic::node_set::resolve_in_scope(document, context, nodes)?;
+        }
         None => {}
     }
     Ok(())
@@ -102,7 +105,9 @@ where
         {
             SemanticVisualSelection::Time { extending, .. }
             | SemanticVisualSelection::Object { extending, .. } => *extending = false,
-            SemanticVisualSelection::MarkRange { .. } | SemanticVisualSelection::Node { .. } => {}
+            SemanticVisualSelection::MarkRange { .. }
+            | SemanticVisualSelection::Node { .. }
+            | SemanticVisualSelection::Nodes { .. } => {}
         }
         Ok(())
     }
@@ -113,6 +118,11 @@ where
     ) -> Result<ResolvedTarget, EditError> {
         let selection = match selector {
             SemanticSelector::Node { node } => return self.node_target(node),
+            SemanticSelector::Nodes { .. } => {
+                return Err(unavailable(
+                    "this instruction does not accept a whole-node set",
+                ));
+            }
             SemanticSelector::SelectedBeat => {
                 let node =
                     self.context.selected_child.clone().ok_or_else(|| {
@@ -141,6 +151,11 @@ where
                         return self.object_target(selection);
                     }
                     SemanticVisualSelection::Node { node } => return self.node_target(node),
+                    SemanticVisualSelection::Nodes { .. } => {
+                        return Err(unavailable(
+                            "this instruction does not accept a whole-node set",
+                        ));
+                    }
                     SemanticVisualSelection::Time { anchor, head, .. } => {
                         if anchor == head {
                             return Err(unavailable("the macro Visual selection is empty"));

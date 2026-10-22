@@ -36,6 +36,9 @@ enum SelectionKind {
         node: NodeId,
         range: FrameRange,
     },
+    Nodes {
+        nodes: Vec<NodeId>,
+    },
     MarkRange {
         start: deadpan_core::NamedMarkTarget,
         end: deadpan_core::NamedMarkTarget,
@@ -68,6 +71,12 @@ impl Selection {
             _ => None,
         }
     }
+    pub(super) fn nodes(&self) -> Option<&[NodeId]> {
+        match &self.kind {
+            Some(SelectionKind::Nodes { nodes }) => Some(nodes),
+            _ => None,
+        }
+    }
     pub(super) fn has_bounds(&self) -> bool {
         self.kind.is_some()
     }
@@ -90,6 +99,9 @@ impl Selection {
                 SelectionKind::Node { node, .. } => {
                     Ok(SemanticVisualSelection::Node { node: node.clone() })
                 }
+                SelectionKind::Nodes { nodes } => Ok(SemanticVisualSelection::Nodes {
+                    nodes: nodes.clone(),
+                }),
                 SelectionKind::MarkRange { start, end, .. } => {
                     Ok(SemanticVisualSelection::MarkRange {
                         start: start.clone(),
@@ -150,6 +162,9 @@ impl Selection {
                         },
                         false,
                     ))
+                }
+                SemanticVisualSelection::Nodes { .. } => {
+                    Err("A node set needs its complete resolved members.".into())
                 }
                 SemanticVisualSelection::MarkRange {
                     start: first,
@@ -235,7 +250,7 @@ impl Selection {
                         head: at,
                     });
                 }
-                None => {}
+                Some(SelectionKind::Nodes { .. }) | None => {}
             }
         }
     }
@@ -250,7 +265,7 @@ impl Selection {
             ) => {
                 return Some(*range);
             }
-            None => return None,
+            Some(SelectionKind::Nodes { .. }) | None => return None,
         };
         if anchor == head {
             return None;
@@ -276,6 +291,10 @@ impl DeadpanApp {
             return Err("The Edit selection belongs to an earlier editing context.".into());
         }
         let selection = self.edit_range.semantic()?;
+        if let Some(SemanticVisualSelection::Nodes { nodes }) = &selection {
+            self.resolve_native_node_set(nodes)?;
+            return Ok(selection);
+        }
         let object_range = self.object_range(selection.as_ref())?;
         let extending_head = match &selection {
             Some(SemanticVisualSelection::Time {
@@ -316,6 +335,15 @@ impl DeadpanApp {
             .ok_or("The edit is no longer visible.")?;
         let scope = self.sequence_scope.resolve(workspace)?;
         let mut restored = Selection::default();
+        if let Some(SemanticVisualSelection::Nodes { nodes }) = &selection {
+            self.resolve_native_node_set(nodes)?;
+            restored.kind = Some(SelectionKind::Nodes {
+                nodes: nodes.clone(),
+            });
+            restored.identity = Some(identity);
+            self.edit_range = restored;
+            return Ok(());
+        }
         let object_range = self.object_range(selection.as_ref())?;
         restored.restore_semantic(selection, scope.start, scope.end, object_range)?;
         restored.identity = Some(identity);
@@ -380,6 +408,79 @@ impl DeadpanApp {
         } else {
             self.edit_range.range()
         }
+    }
+
+    pub(super) fn selected_node_set(
+        &self,
+    ) -> Result<Option<deadpan_core::SemanticNodeSetTarget>, String> {
+        let Some(nodes) = self.edit_range.nodes() else {
+            return Ok(None);
+        };
+        if self.edit_range.identity != self.edit_range_identity() {
+            return Err("The node set belongs to an earlier editing context.".into());
+        }
+        self.resolve_native_node_set(nodes).map(Some)
+    }
+
+    fn resolve_native_node_set(
+        &self,
+        nodes: &[NodeId],
+    ) -> Result<deadpan_core::SemanticNodeSetTarget, String> {
+        let workspace = self
+            .workspace
+            .as_ref()
+            .ok_or("The selected node set is no longer visible.")?;
+        let parent = self.sequence_scope.resolve(workspace)?.owner;
+        let context = deadpan_core::SemanticContext {
+            original: None,
+            scoped: None,
+            hold_duration: None,
+            shared_hold_duration: None,
+            mixed_hold_duration: None,
+            selected_hold_duration: None,
+            parent: parent.clone(),
+            cursor: ProjectFrame(
+                i64::try_from(self.sequence_cursor).map_err(|error| error.to_string())?,
+            ),
+            selected_child: self.selected_beat.clone(),
+            visual_selection: None,
+        };
+        workspace
+            .document
+            .resolve_semantic_nodes(&context, nodes)
+            .map_err(|error| error.to_string())
+    }
+
+    pub(super) fn node_set_details(&self) -> Option<Vec<String>> {
+        let target = self.selected_node_set().ok()??;
+        let workspace = self.workspace.as_ref()?;
+        Some(
+            target
+                .members
+                .iter()
+                .map(|member| {
+                    let label = workspace
+                        .document
+                        .nodes()
+                        .get(&member.node)
+                        .map(|node| node.label.as_str())
+                        .unwrap_or("Unavailable");
+                    format!(
+                        "{label}\n{}\nParent {}\nEdit [{}..{}) · {} f{}",
+                        member.node.as_str(),
+                        member.parent.as_str(),
+                        member.range.start().0,
+                        member.range.end().0,
+                        member.range.duration().frames(),
+                        if member.range.start() == member.range.end() {
+                            " · empty node"
+                        } else {
+                            ""
+                        }
+                    )
+                })
+                .collect(),
+        )
     }
 
     fn object_range(
@@ -588,13 +689,57 @@ impl DeadpanApp {
         }
     }
 
+    pub(super) fn select_explicit_nodes(
+        &mut self,
+        target: Option<Result<macros::Capture, String>>,
+        nodes: Vec<NodeId>,
+    ) {
+        let result = (|| {
+            if self.view != View::Sequence || self.edit_role != deadpan_core::MediaRole::Linked {
+                return Err("Select authored node sets in Your edit with role=linked.".to_owned());
+            }
+            let capture = target.ok_or("Open :select again to capture its editing context.")??;
+            if !capture.matches(self) {
+                return Err(
+                    "The node-set selection context changed. Enter the command again.".into(),
+                );
+            }
+            capture.select_nodes(nodes.clone())
+        })();
+        match result {
+            Ok(context) => {
+                let prior = self.sequence_cursor;
+                self.sequence_cursor = context.cursor.0 as u64;
+                if let Err(error) = self.restore_macro_visual_selection(context.visual_selection) {
+                    self.sequence_cursor = prior;
+                    self.error = Some(error);
+                    return;
+                }
+                self.selected_beat = context.selected_child;
+                self.pause_playback();
+                self.revoke_scoped_continuation();
+                self.record_macro_local(deadpan_core::SemanticInstruction::SelectNodes { nodes });
+                self.error = None;
+                self.message = Some("Node set retained. y copies one union; d cuts it. Inspector lists each exact member. Clear the set before choosing a paste seam.".into());
+                if prior != self.sequence_cursor {
+                    self.request_picture(false);
+                }
+            }
+            Err(error) => self.error = Some(error),
+        }
+    }
+
     pub(super) fn edit_selection(&self) -> navigation::EditSelection {
         if self.edit_range.identity != self.edit_range_identity() || self.edit_range.kind.is_none()
         {
             navigation::EditSelection::None
         } else if matches!(
             self.edit_range.kind,
-            Some(SelectionKind::Object { .. } | SelectionKind::Node { .. })
+            Some(
+                SelectionKind::Object { .. }
+                    | SelectionKind::Node { .. }
+                    | SelectionKind::Nodes { .. }
+            )
         ) {
             navigation::EditSelection::Object
         } else if self.selected_edit_range().is_some() {
@@ -682,6 +827,16 @@ impl DeadpanApp {
     }
 
     pub(super) fn edit_range_label(&self) -> Option<String> {
+        if self.edit_range.nodes().is_some() {
+            let target = self.selected_node_set().ok()??;
+            return Some(format!(
+                "Node set · {} members · {} f selected · {} · Inspector: members",
+                target.members.len(),
+                target.total_duration.frames(),
+                self.beat_scope_label()
+            ));
+        }
+
         if let Some(SelectionKind::Node { node, .. }) = &self.edit_range.kind {
             let range = self.selected_edit_range()?;
             let workspace = self.workspace.as_ref()?;
@@ -771,6 +926,40 @@ mod tests {
             revision: RevisionId::new(revision).unwrap(),
             scope,
             parent: NodeId::new("sequence").unwrap(),
+        }
+    }
+
+    #[test]
+    fn node_sets_never_expose_a_single_interval_and_finished_motion_preserves_ids() {
+        for nodes in [
+            vec![NodeId::new("one").unwrap()],
+            vec![
+                NodeId::new("second").unwrap(),
+                NodeId::new("empty").unwrap(),
+                NodeId::new("first").unwrap(),
+            ],
+        ] {
+            let mut selected = Selection {
+                kind: Some(SelectionKind::Nodes {
+                    nodes: nodes.clone(),
+                }),
+                ..Selection::default()
+            };
+            assert_eq!(selected.range(), None);
+            selected.move_to(90);
+            assert_eq!(
+                selected.semantic().unwrap(),
+                Some(SemanticVisualSelection::Nodes { nodes })
+            );
+            selected.toggle(90);
+            assert_eq!(
+                selected.semantic().unwrap(),
+                Some(SemanticVisualSelection::Time {
+                    anchor: ProjectFrame(90),
+                    head: ProjectFrame(90),
+                    extending: true,
+                })
+            );
         }
     }
 

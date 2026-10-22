@@ -966,6 +966,7 @@ fn matches_runtime(value: &RegisterValue, runtime: &Value, id: &Id) -> bool {
                 && copied.id().source_revision == *slice.revision_id()
                 && copied.slice() == slice
         }
+        (RegisterValue::EditedSet { set }, Value::EditedSet(found)) => set == found,
         (RegisterValue::Macro { program }, Value::Macro(found)) => program == found,
         _ => false,
     }
@@ -1012,6 +1013,34 @@ fn prepare_runtime_bank(
                 .filter(|entry| matches_runtime(value, entry, id))
                 .ok_or("Macro input differs from its runtime register content")?;
             existing.clone()
+        } else if let RegisterValue::EditedSet { set } = value.as_ref() {
+            let trace = plan.trace.iter().find(|trace| {
+                trace.capture_set.as_ref().is_some_and(|capture| {
+                    &capture.parent == set.scope() && &capture.timing == set.capture_timing()
+                }) && &trace.before_revision == set.revision_id()
+                    && trace.resolved_nodes.len() == set.components().len()
+                    && trace.resolved_ranges == set.components().iter().map(|component|component.range()).collect::<Vec<_>>()
+                    && trace.resolved_nodes.iter().zip(set.components()).all(|(member, component)| {
+                        component.parent() == &member.parent && component.range() == member.range
+                            && matches!(component.selection(), SliceCaptureSelection::Child { node } if node == &member.node)
+                    })
+            }).ok_or("Macro node-union copy has no matching staged capture provenance")?;
+            if set.project_id() != &id.project
+                || trace.resolved_range.is_some()
+                || trace.resolved_parent.is_some()
+                || trace.resolved_selection.is_some()
+            {
+                return Err(
+                    "Macro node-union copy has invalid project or single-range provenance".into(),
+                );
+            }
+            SequenceScope::from_staged_capture(
+                trace
+                    .capture_set
+                    .as_ref()
+                    .ok_or("Missing node-union capture scope")?,
+            )?;
+            Value::EditedSet(set.clone())
         } else {
             let RegisterValue::Edited { slice } = value.as_ref() else {
                 return Err("Macro plan introduced an unexpected register content type".into());
