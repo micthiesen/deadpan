@@ -61,6 +61,9 @@ pub mod nested_fixed_retime_duration;
 #[path = "mixed_fixed_retime_duration.rs"]
 pub mod mixed_fixed_retime_duration;
 
+#[path = "selected_fixed_retime_duration.rs"]
+pub mod selected_fixed_retime_duration;
+
 #[path = "fixed_retime_output_sound.rs"]
 pub mod fixed_retime_output_sound;
 

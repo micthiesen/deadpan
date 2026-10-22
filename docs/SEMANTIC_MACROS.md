@@ -320,7 +320,8 @@ for implementation and verification status.
 Hold, optional primary presentation and ordered further targets. It admits
 2..=1024 targets with distinct explicit Plays at one common Repeat axis and an
 identical earlier authoring prefix. Every target must follow ordinary Sequence
-and Repeat bodies or explicit owned gaps. A shared node ID may represent several distinct selected
+and Repeat bodies or explicit owned gaps. Bodies can also cross one fixed,
+unclocked Edit Retime strictly below every Repeat. A shared node ID may represent several distinct selected
 families and is never used to deduplicate them.
 
 Saved programs still contain only `SetHoldDuration { length }` and named calls.
@@ -330,6 +331,12 @@ use `SetScopedHoldDuration`; explicitly all-Play addresses use the existing
 occurrence duration path. Neither route reconstructs mixed authoring from a
 representative. Every actual leaf proof maps all targets and the primary
 presentation before resolving the next member.
+
+The fixed-window body path validates sampled visibility for every member before
+allocation, including no-op counterparts. It preserves crop, pitch and output
+extent, and resolves final primary continuation from the cropped visible
+interval. An intrinsic start outside the crop is not a continuation frame.
+See the [selected fixed-window qualification](qualification/selected-fixed-retime-hold-duration-2026-10-22.md).
 
 The final Compound retains aggregate limits and commits once. The primary
 cursor is resolved after all leaves, including when a later earlier-in-time
@@ -349,7 +356,7 @@ set explicitly before applying dot to another pair. An owned gap follows its
 preceding stable Play, including a final dormant gap selected alongside a live
 gap. Implicit default gaps have no editable node target. A single all-Play
 dormant gap still has no live-boundary native action. Generic framing,
-Retime/Partition ancestry, placed sounds and unrelated instructions retain
+other Retime ancestry, Partition, placed sounds and unrelated instructions retain
 their guards.
 
 ### Ordinary Hold length inside fixed Retime

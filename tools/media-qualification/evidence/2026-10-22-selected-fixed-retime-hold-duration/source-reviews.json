@@ -1,0 +1,43 @@
+{
+  "base": "c424c8732874e37b37c335962849ae6205d1d23e",
+  "source_review_only": true,
+  "runtime_not_inferred": true,
+  "reviews": [
+    {
+      "agent": "selected_fixed_general_review",
+      "result": "no findings"
+    },
+    {
+      "agent": "selected_fixed_authority_review",
+      "result": "no findings"
+    },
+    {
+      "agent": "selected_fixed_test_review",
+      "result": "no findings"
+    }
+  ],
+  "storage_followup": {
+    "general": "no findings",
+    "authority": "no findings",
+    "scope": [
+      "generation_intents.rs",
+      "generation_preparations/transitions.rs",
+      "generation_scope/transitions.rs",
+      "history.rs"
+    ],
+    "runtime_not_inferred": true
+  },
+  "ordinary_fast_path_followup": {
+    "authority": "no semantic/error/authority regression found",
+    "fixed_path_limit": "Fixed member validation still performs graph work per member; no large-selection latency qualification claimed."
+  },
+  "nested_scope_followup": {
+    "authority": "Initial review found non-retargetable candidate state could be committed; candidate also_targets validation now rejects atomically. Follow-up confirms no remaining issue in this delta.",
+    "runtime_not_inferred": true,
+    "general": "No findings in production delta and four new regressions."
+  },
+  "diagnostic_followup": {
+    "authority": "Confirmed actual decision table preserves precise ordinary invalid-target diagnostic, fixed geometry/clock errors and limit failures. No further issue.",
+    "runtime_not_inferred": true
+  }
+}

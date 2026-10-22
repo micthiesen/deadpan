@@ -4,6 +4,8 @@ use super::*;
 mod mixed_fixed_retime;
 #[path = "processing_hold_duration_repeat/nested_fixed_retime.rs"]
 mod nested_fixed_retime;
+#[path = "processing_hold_duration_repeat/selected_fixed_retime.rs"]
+mod selected_fixed_retime;
 #[path = "processing_hold_duration_repeat/shared_fixed.rs"]
 mod shared_fixed;
 #[path = "processing_hold_duration_repeat/this_play_fixed_retime.rs"]

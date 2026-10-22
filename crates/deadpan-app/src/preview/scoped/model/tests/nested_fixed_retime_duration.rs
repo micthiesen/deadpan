@@ -10,6 +10,9 @@ use deadpan_core::{
 #[path = "mixed_fixed_retime_duration.rs"]
 mod mixed_fixed_retime_duration;
 
+#[path = "selected_fixed_retime_duration.rs"]
+mod selected_fixed_retime_duration;
+
 fn nested_fixed_retime_fixture() -> ProjectDocument {
     let mut stage = retime("fixed-stage", "fixed-body", 0, 8, 6);
     if let NodeKind::Retime { pitch, .. } = &mut stage.1.kind {

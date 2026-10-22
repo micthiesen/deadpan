@@ -1,0 +1,29 @@
+{
+  "phase": "before focused runtime; test compiler still active",
+  "helpers": {
+    "deadpan-cli": {
+      "path": "/Users/michael/Code/deadpan/target/debug/deadpan-cli",
+      "retained": "/tmp/deadpan-selected-fixed-retime-duration-2026-10-22/focused-helpers/deadpan-cli",
+      "sha256": "b90d4c0942bfb95ba75a7583a581f8ba05c1b3ee890c100e91733ced5ad20ef2",
+      "bytes": 71846336
+    },
+    "deadpan-media-worker": {
+      "path": "/Users/michael/Code/deadpan/target/debug/deadpan-media-worker",
+      "retained": "/tmp/deadpan-selected-fixed-retime-duration-2026-10-22/focused-helpers/deadpan-media-worker",
+      "sha256": "786672d36a58e024be1acb18f353c350c06a7c83dd88c84369e69a9512a13c5d",
+      "bytes": 3899480
+    },
+    "deadpan-transcribe": {
+      "path": "/Users/michael/Code/deadpan/target/debug/deadpan-transcribe",
+      "retained": "/tmp/deadpan-selected-fixed-retime-duration-2026-10-22/focused-helpers/deadpan-transcribe",
+      "sha256": "473b69ac2024d691236637017ebea298a08e0f88de2ff3801a948bf866f71362",
+      "bytes": 4025712
+    },
+    "deadpan-track": {
+      "path": "/Users/michael/Code/deadpan/target/debug/deadpan-track",
+      "retained": "/tmp/deadpan-selected-fixed-retime-duration-2026-10-22/focused-helpers/deadpan-track",
+      "sha256": "18861c06d2d468b4e161c2b99110ffc1d5ea99a926e1685d5893437583760244",
+      "bytes": 10372544
+    }
+  }
+}

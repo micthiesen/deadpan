@@ -551,13 +551,15 @@ fn selected_hold_duration_rejects_duplicate_overlap_forged_and_noop_unsupported_
         assert_ne!(error.code, EditErrorCode::IdentityConflict);
     }
     let mut retimed = before;
+    // Fixed Edit windows are eligible. A Partition still cannot authorize a
+    // selected duration change, even when that member would be a no-op.
     let mut rate = BeatNode::sequence("Unsupported", vec![]);
     rate.kind = NodeKind::Retime {
         child: node("inner-held"),
         duration: FrameDuration::new(4).unwrap(),
         mapping: range(0, 4),
         pitch: crate::PitchPolicy::FollowSpeed,
-        purpose: crate::RetimePurpose::Edit,
+        purpose: crate::RetimePurpose::Partition,
     };
     retimed.nodes.insert(node("selected-rate"), rate);
     let NodeKind::Sequence { children } =
@@ -580,10 +582,8 @@ fn selected_hold_duration_rejects_duplicate_overlap_forged_and_noop_unsupported_
         no_original,
     )
     .unwrap_err();
-    assert!(
-        error.message.contains("without Retime or Partition"),
-        "{error:?}"
-    );
+    assert_eq!(error.code, EditErrorCode::SelectionUnavailable);
+    assert!(error.message.contains("unclocked Edit Retime"), "{error:?}");
 }
 
 #[test]

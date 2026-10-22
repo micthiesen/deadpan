@@ -7,6 +7,8 @@ mod mixed_fixed_retime;
 mod nested_fixed_retime;
 #[path = "scoped_mixed_duration/owned_gap.rs"]
 mod owned_gap;
+#[path = "scoped_mixed_duration/selected_fixed_retime.rs"]
+mod selected_fixed_retime;
 #[path = "scoped_mixed_duration/shared_fixed.rs"]
 mod shared_fixed;
 #[path = "scoped_mixed_duration/this_play_fixed_retime.rs"]

@@ -1,0 +1,80 @@
+{
+  "app-final-source": {
+    "archive": "app-final-source.tar.gz",
+    "manifest": "app-final-source-identities.json.gz",
+    "files": 1962,
+    "content_sha256": "5573b5c004a9917186dbc83a58eafedd76f63cea73726af0e89950a79b54482c"
+  },
+  "baseline-source": {
+    "archive": "baseline-source.tar.gz",
+    "manifest": "baseline-source-identities.json.gz",
+    "files": 1957,
+    "content_sha256": "f988a7fedf84565dac65ec7a78a02bd877b1b240c6d9da5a5acc5eea1e8dc4eb"
+  },
+  "final-source": {
+    "archive": "app-final-source.tar.gz",
+    "manifest": "final-source-identities.json.gz",
+    "files": 1962,
+    "content_sha256": "5573b5c004a9917186dbc83a58eafedd76f63cea73726af0e89950a79b54482c"
+  },
+  "focused-first-source": {
+    "archive": "focused-first-source.tar.gz",
+    "manifest": "focused-first-source-identities.json.gz",
+    "files": 1962,
+    "content_sha256": "c017f0481e2a48b6aea5f9bee17a284b6cf3087c1a1ab9979e0824a7a75c3160"
+  },
+  "focused-second-source": {
+    "archive": "focused-second-source.tar.gz",
+    "manifest": "focused-second-source-identities.json.gz",
+    "files": 1962,
+    "content_sha256": "707de5e10b15165e3b61b2465fe25e20dbfe5c391cdadf52a303b8ceed709cd4"
+  },
+  "integration-source": {
+    "archive": "focused-second-source.tar.gz",
+    "manifest": "integration-source-identities.json.gz",
+    "files": 1962,
+    "content_sha256": "707de5e10b15165e3b61b2465fe25e20dbfe5c391cdadf52a303b8ceed709cd4"
+  },
+  "native-attempt-1-source": {
+    "archive": "focused-second-source.tar.gz",
+    "manifest": "native-attempt-1-source-identities.json.gz",
+    "files": 1962,
+    "content_sha256": "707de5e10b15165e3b61b2465fe25e20dbfe5c391cdadf52a303b8ceed709cd4"
+  },
+  "native-attempt-2-source": {
+    "archive": "native-attempt-2-source.tar.gz",
+    "manifest": "native-attempt-2-source-identities.json.gz",
+    "files": 1962,
+    "content_sha256": "96a379ad4ab8026956a7e93680bb3eb511b2365b187b96a18eaef787d5ce90ac"
+  },
+  "native-attempt-3-source": {
+    "archive": "native-attempt-3-source.tar.gz",
+    "manifest": "native-attempt-3-source-identities.json.gz",
+    "files": 1962,
+    "content_sha256": "452ea7e503be6583c8acdceabf2e0d6145efe98c9a3627c6c9c01a58bf3ff518"
+  },
+  "regression-attempt-1-source": {
+    "archive": "regression-attempt-1-source.tar.gz",
+    "manifest": "regression-attempt-1-source-identities.json.gz",
+    "files": 1962,
+    "content_sha256": "ea317db5bef6596070b05b31ef2a5d78bf6699ecf5911bc407951a3d0ae5039b"
+  },
+  "regression-final-source": {
+    "archive": "regression-final-source.tar.gz",
+    "manifest": "regression-final-source-identities.json.gz",
+    "files": 1962,
+    "content_sha256": "bb323971150ceee00cd37747780e1541e6fe6660d5c06ed63c6da208c28997c5"
+  },
+  "ui-final-source": {
+    "archive": "regression-final-source.tar.gz",
+    "manifest": "ui-final-source-identities.json.gz",
+    "files": 1962,
+    "content_sha256": "bb323971150ceee00cd37747780e1541e6fe6660d5c06ed63c6da208c28997c5"
+  },
+  "ui-lint-final-source": {
+    "archive": "app-final-source.tar.gz",
+    "manifest": "ui-lint-final-source-identities.json.gz",
+    "files": 1962,
+    "content_sha256": "5573b5c004a9917186dbc83a58eafedd76f63cea73726af0e89950a79b54482c"
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "finding": "Unconditional fixed preflight rebuilt the graph for every valid ordinary selected member, bypassing the shared parent index.",
+  "correction": "Try indexed ordinary duration_target_dormant first; only a refusal reaches fixed_mixed_preflight. Retain every-member validation and unchanged fixed visibility policy.",
+  "measurement": "Source-complexity correction; no unmeasured wall-clock speedup claimed.",
+  "runtime_obligation": "Final broad suite must contain every focused test after this correction."
+}

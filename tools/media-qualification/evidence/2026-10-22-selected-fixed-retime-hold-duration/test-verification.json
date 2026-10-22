@@ -1,0 +1,75 @@
+{
+  "focused-second": {
+    "summary": "Summary [ 102.540s] 11 tests run: 11 passed (1 slow), 5282 skipped",
+    "post": {
+      "stage": "focused-second",
+      "rust_files": 1962,
+      "test_binaries": 5,
+      "tests": 11,
+      "helpers": 4,
+      "all_pre_post_hashes_identical": true,
+      "root_lock_sha256": "1e39d18ae4de6c7b898edad39eb7104235fb3ffe3af84521ca94df2b6c25b71b"
+    }
+  },
+  "regression-attempt-1": {
+    "summary": "Summary [ 228.349s] 3528 tests run: 3525 passed (4 slow, 1 leaky), 3 failed, 1769 skipped",
+    "post": {
+      "stage": "regression-attempt-1",
+      "rust_files": 1962,
+      "test_binaries": 153,
+      "tests": 3528,
+      "helpers": 4,
+      "all_pre_post_hashes_identical": true,
+      "root_lock_sha256": "1e39d18ae4de6c7b898edad39eb7104235fb3ffe3af84521ca94df2b6c25b71b",
+      "original_stage": "regression-final"
+    }
+  },
+  "regression-final": {
+    "summary": "Summary [ 232.819s] 3528 tests run: 3528 passed (3 slow, 1 leaky), 1769 skipped",
+    "post": {
+      "stage": "regression-final",
+      "rust_files": 1962,
+      "test_binaries": 153,
+      "tests": 3528,
+      "helpers": 4,
+      "all_pre_post_hashes_identical": true,
+      "root_lock_sha256": "1e39d18ae4de6c7b898edad39eb7104235fb3ffe3af84521ca94df2b6c25b71b"
+    }
+  },
+  "ui-final": {
+    "summary": "Summary [  15.147s] 213 tests run: 213 passed, 1060 skipped",
+    "post": {
+      "stage": "ui-final",
+      "rust_files": 1962,
+      "test_binaries": 2,
+      "tests": 213,
+      "helpers": 4,
+      "all_pre_post_hashes_identical": true,
+      "root_lock_sha256": "1e39d18ae4de6c7b898edad39eb7104235fb3ffe3af84521ca94df2b6c25b71b"
+    }
+  },
+  "app-final": {
+    "summary": "Summary [  15.439s] 211 tests run: 211 passed, 1016 skipped",
+    "post": {
+      "stage": "app-final",
+      "rust_files": 1962,
+      "test_binaries": 2,
+      "tests": 211,
+      "helpers": 4,
+      "all_pre_post_hashes_identical": true,
+      "root_lock_sha256": "1e39d18ae4de6c7b898edad39eb7104235fb3ffe3af84521ca94df2b6c25b71b"
+    }
+  },
+  "ui-lint-final": {
+    "summary": "Summary [  15.172s] 213 tests run: 213 passed, 1060 skipped",
+    "post": {
+      "stage": "ui-lint-final",
+      "rust_files": 1962,
+      "test_binaries": 2,
+      "tests": 213,
+      "helpers": 4,
+      "all_pre_post_hashes_identical": true,
+      "root_lock_sha256": "1e39d18ae4de6c7b898edad39eb7104235fb3ffe3af84521ca94df2b6c25b71b"
+    }
+  }
+}

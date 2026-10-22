@@ -1,0 +1,52 @@
+[
+  {
+    "case": "inner-default-unit-grow",
+    "package": "/tmp/deadpan-selected-fixed-retime-duration-2026-10-22/owner-check-inner-default-unit-grow/selected-fixed-unit-grow.deadpan",
+    "validate": {
+      "exit_code": 0
+    },
+    "doctor": {
+      "exit_code": 0
+    }
+  },
+  {
+    "case": "inner-play-unit-grow",
+    "package": "/tmp/deadpan-selected-fixed-retime-duration-2026-10-22/owner-check-inner-play-unit-grow/selected-fixed-unit-grow.deadpan",
+    "validate": {
+      "exit_code": 0
+    },
+    "doctor": {
+      "exit_code": 0
+    }
+  },
+  {
+    "case": "outer-default-unit-grow",
+    "package": "/tmp/deadpan-selected-fixed-retime-duration-2026-10-22/owner-check-outer-default-unit-grow/selected-fixed-unit-grow.deadpan",
+    "validate": {
+      "exit_code": 0
+    },
+    "doctor": {
+      "exit_code": 0
+    }
+  },
+  {
+    "case": "outer-play-unit-grow",
+    "package": "/tmp/deadpan-selected-fixed-retime-duration-2026-10-22/owner-check-outer-play-unit-grow/selected-fixed-unit-grow.deadpan",
+    "validate": {
+      "exit_code": 0
+    },
+    "doctor": {
+      "exit_code": 0
+    }
+  },
+  {
+    "case": "inner-default-affine-grow",
+    "package": "/tmp/deadpan-selected-fixed-retime-duration-2026-10-22/owner-check-inner-default-affine-grow/selected-fixed-affine-grow.deadpan",
+    "validate": {
+      "exit_code": 0
+    },
+    "doctor": {
+      "exit_code": 0
+    }
+  }
+]

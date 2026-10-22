@@ -1,0 +1,9 @@
+{
+  "base": "c424c873",
+  "test": "preview::scoped::model::tests::nested_fixed_retime_duration::selected_fixed_retime_duration::native_selected_fixed_retime_hold_duration_offers_entry_after_public_many_control",
+  "suite": "deadpan-app::bin/deadpan-app",
+  "executed": "/Users/michael/Code/deadpan/target/debug/deps/deadpan_app-edbbed39ebf1d72f",
+  "retained": "/tmp/deadpan-selected-fixed-retime-duration-2026-10-22/baseline-bin/deadpan_app-edbbed39ebf1d72f",
+  "sha256": "a59df10acc2e88edb3f71ab5b5960e0e189b68e6ed8f376e1a18364defc7f3f5",
+  "scope": "Selected inner Plays under Outer Play 2; silent public-many-isolation/raw-duration/RenderPlan identity witness; not audio qualification."
+}

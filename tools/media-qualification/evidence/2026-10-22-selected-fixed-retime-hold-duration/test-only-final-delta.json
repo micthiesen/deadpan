@@ -1,0 +1,13 @@
+{
+  "from_stage": "regression-final",
+  "changed": [
+    {
+      "file": "crates/deadpan-app/src/preview/scoped/model/tests/selected_fixed_retime_duration.rs",
+      "before_sha256": "cb048f728877d06e5bac28d33a7062772129c7b2f46f80ab4c1befd0828d96a1",
+      "after_sha256": "5469b6618b3be10bb67e33dcb9b76ccad3c42e58d0186b588d8aaea393cf837a",
+      "change": "Remove redundant clone on Copy LookupStats in test only."
+    }
+  ],
+  "all_other_rust_files_identical": true,
+  "production_rust_identical": true
+}

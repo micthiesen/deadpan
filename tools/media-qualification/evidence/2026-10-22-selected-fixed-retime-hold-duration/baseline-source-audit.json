@@ -1,0 +1,14 @@
+{
+  "base": "c424c8732874e37b37c335962849ae6205d1d23e",
+  "tracked_rust": 1956,
+  "frozen_rust": 1957,
+  "unchanged": 1955,
+  "changed": [
+    "crates/deadpan-app/src/preview/scoped/model/tests/nested_fixed_retime_duration.rs"
+  ],
+  "new": [
+    "crates/deadpan-app/src/preview/scoped/model/tests/selected_fixed_retime_duration.rs"
+  ],
+  "missing": [],
+  "runtime": "all public controls passed; sole last positive native availability assertion failed"
+}

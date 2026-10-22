@@ -4,6 +4,54 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Current continuation, 2026-10-22
 
+Selected body Hold lengths now cross one fixed, unclocked Edit Retime below
+all enclosing Repeats. Either selected axis retains literal Default/Play
+choices at other levels. Every member, including a no-op, is validated before
+allocation; actual staged proofs retain all counterparts and final cropped
+primary continuation. Fresh outer selections survive inner scalar scope
+choices. Axis replacement and incompatible-counterpart refusal are atomic;
+receipt-mapped sets still revoke on navigation.
+
+Undo also preserves automatic intent ownership: clone-born heads do not acquire
+a restored shared Hold's identity, and normal reconciliation closes removed
+clones as Deleted. Writer admission and chronological replay share the same
+complete canonical-address rule. Existing uniqueness, requests and historical
+preparations remain intact; Redo creates fresh authorizations.
+
+All 3,528 broader cases pass. A subsequent redundant test-only Copy cleanup
+is distinguished from that frozen candidate; all production Rust is identical.
+All 211 affected normal-app and 213 UI-feature cases pass after the cleanup,
+with strict checks and formatting. Both release native modes pass 219 workflow
+checks plus Kestrel. Four final compact captures were inspected; quiet state
+p99 is 1.665ms over 652 samples. Sixteen release exports verify 1,312 pictures
+and 2,101,304 samples across 40 complete zero-offset windows without failures
+or flags. Five owner packages validate after safe extraction. The affine
+local-block SNR minimum remains 12.008dB; its full window measures 35.555dB.
+Listening, full mastering and large-selection latency remain open.
+See the [qualification](../qualification/selected-fixed-retime-hold-duration-2026-10-22.md)
+for failed candidates, exact sources/binaries, independent PCM, accepted-media
+history, output-handle markers and isolated passes, layout warnings and media.
+No requirement or gate is newly complete.
+
+Next: named-mark ranges as semantic edit selectors (spec §6.2). Reuse the
+revision-aware AnchorIndex range resolver for ordinary linked Edit ranges;
+retain ambiguity, unresolved/incompatible-clock, ordering, scope and temporal
+endpoint refusals. Saved selectors keep NamedMarkTarget addresses, not cached
+frame ranges. Removing SemanticSelector Copy reaches keyboard Action and its
+binding carriers. Native selection capture, recording and dot must preserve
+typed mark provenance instead of replacing it with VisualSelection.
+
+Start with public named-range resolution, complete capture and equivalent
+Visual Yank controls before and after a Hold resize. The sole old-code failure
+is positive MarkRange SemanticProgram admission using the existing `type` tag.
+A scratch integration-test draft exists for this session and remains uncompiled
+and unexecuted. Then cover actual Yank/Cut/Repeat, staged re-resolution, durable
+banks, native command capture, macros/dot and failure atomicity.
+Processing clocks, Partition, other temporal placements, sound owners, mastering,
+renderer work and complete workflows remain required.
+
+## Mixed All plays/This play fixed-Retime checkpoint, 2026-10-22
+
 Mixed Default/Play body choices now support one fixed unclocked Edit Retime
 below all enclosing Repeats, with Sequence ancestry otherwise. Literal Default
 authority remains separate from concrete presentation. The raw command checks
@@ -23,24 +71,6 @@ See the [qualification](../qualification/mixed-fixed-retime-hold-duration-2026-1
 for counterfactual source audit, exact pools, PCM, admitted-provider history,
 compile fixes, captured-output markers, layout warnings and binary identities.
 No requirement or gate is newly complete.
-
-Next: selected-play fixed-Retime Hold duration batches. Keep the existing batch
-planner and scalar reducers. Its body_dormant and integral-start visibility
-currently refuse this family; use the narrow fixed-body preflight and exact
-visibility without loosening ordinary duration_target_dormant. Validate every
-member, including no-op members, before allocation. Preserve the uniform
-explicit-Play axis, identical earlier prefixes, shared-node-ID independence,
-actual staged proof mappings and final primary continuation.
-
-Start with the 42f nested app fixture: outer Play2, inner Plays1-2, Held, cursor16.
-Public many-target Rename isolation and raw Compound duration controls must pass
-before the sole old-code positive native-availability failure. Source-derived
-pool expectations are [11,5] nodes, zero marks and three actual proof steps;
-measure rather than assume them. Primary sampled visibility should change
-[16,18) to [16,19), second [22,24) to [22,25), with all four other uses unchanged.
-A scratch draft exists for this ongoing session; it has not been compiled or run.
-Keep Retime-owned gaps, additional or differently placed Retimes, Partition,
-processing clocks and unsupported sound lifecycles outside this narrow family.
 
 ## Nested This play fixed-Retime checkpoint, 2026-10-22
 

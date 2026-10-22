@@ -146,7 +146,12 @@ impl ProjectStore {
         crate::generation_preparations::verify_for_writer(&transaction)?;
         let preparations =
             crate::generation_preparations::history_births(&transaction, plan.entry, redo)?;
-        let isolated = crate::generation_scope::history_transition(&transaction, plan.entry, redo)?;
+        let isolated = crate::generation_scope::history_transition(
+            &transaction,
+            plan.entry,
+            redo,
+            &plan.next,
+        )?;
         generation::reconcile(
             &transaction,
             &plan.current,

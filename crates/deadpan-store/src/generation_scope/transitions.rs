@@ -69,6 +69,7 @@ fn map_scopes(
     connection: &Connection,
     proof: &ValidatedScopedIsolation<'_>,
     forward: bool,
+    destination: &ProjectDocument,
 ) -> Result<(), StoreError> {
     let mut statement =
         connection.prepare("SELECT scope_id FROM generation_scopes ORDER BY scope_id")?;
@@ -89,7 +90,7 @@ fn map_scopes(
         }
     }
     super::validation::check_budget(connection)?;
-    crate::generation_preparations::map(connection, proof, forward)?;
+    crate::generation_preparations::map(connection, proof, forward, destination)?;
     Ok(())
 }
 
@@ -100,7 +101,7 @@ pub(crate) fn command_transition(
     after: &ProjectDocument,
 ) -> Result<bool, StoreError> {
     with_command_proof(before, request, after, |proof| {
-        map_scopes(connection, proof, true)
+        map_scopes(connection, proof, true, after)
     })
 }
 
@@ -108,9 +109,10 @@ pub(crate) fn history_transition(
     connection: &Connection,
     entry: i64,
     forward: bool,
+    destination: &ProjectDocument,
 ) -> Result<bool, StoreError> {
     with_history_proof(connection, entry, |proof| {
-        map_scopes(connection, proof, forward)
+        map_scopes(connection, proof, forward, destination)
     })
 }
 

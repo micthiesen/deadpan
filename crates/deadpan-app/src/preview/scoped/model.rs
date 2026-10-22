@@ -156,7 +156,7 @@ impl State {
         {
             return false;
         }
-        if self.body_fixed_retime_path_supported() {
+        if self.body_fixed_retime_path_supported(&self.selected) {
             return match &self.projection.presentation {
                 Some(presentation) => !presentation.frames.is_empty(),
                 None => {
@@ -241,22 +241,22 @@ impl State {
     /// Literal body choices above one fixed Edit Retime. This is a hint from
     /// retained ancestry only; the core checks visibility and exact isolation
     /// again when the duration command is prepared.
-    fn body_fixed_retime_path_supported(&self) -> bool {
-        let Some(step) = self.selected.repeats.first() else {
+    fn body_fixed_retime_path_supported(&self, target: &ScopedNodeTarget) -> bool {
+        let Some(step) = target.repeats.first() else {
             return false;
         };
         if step.repeat != self.root
             || !matches!(
-                self.index.document.nodes()[&self.selected.node].kind,
+                self.index.document.nodes()[&target.node].kind,
                 NodeKind::Hold { .. }
             )
         {
             return false;
         }
-        let Ok(path) = self.index.path(&self.selected.node) else {
+        let Ok(path) = self.index.path(&target.node) else {
             return false;
         };
-        let mut repeat_steps = self.selected.repeats.iter();
+        let mut repeat_steps = target.repeats.iter();
         let mut retimes = 0;
         for pair in path.windows(2) {
             let parent = &pair[0];
@@ -397,7 +397,7 @@ impl State {
                     }
                     false
                 }
-                None => true,
+                None => !self.body_fixed_retime_path_supported(target),
             }
         }) {
             return false;
@@ -1019,9 +1019,16 @@ impl State {
             })
             .collect::<Result<Vec<_>, _>>()?;
         let mut next = self.clone();
+        // Selecting several plays moves the one varying axis to this Repeat.
+        // Single-branch choices below it may retain it, but never form a
+        // Cartesian product with a second selected-play set.
+        for ancestor in &mut next.levels {
+            ancestor.also.clear();
+        }
         next.switch_play_in(*first)?;
         next.levels[level].also = also;
         next.refresh_labels()?;
+        next.also_targets()?;
         *self = next;
         Ok(())
     }
@@ -1075,15 +1082,17 @@ impl State {
             .repeat_level()
             .ok_or("This level has no Repeat scope")?;
         let mut next = self.clone();
-        next.mapped_also = None;
+        next.revoke_mapped_selection();
         next.levels.truncate(level + 1);
-        for level in &mut next.levels {
-            level.also.clear();
-        }
+        // A scalar choice changes only the nearest Repeat. Fresh ancestor
+        // selections remain structural; receipt-mapped selections above have
+        // already been revoked because navigation cannot recreate them.
+        next.levels[level].also.clear();
         next.levels[level].branch = branch;
         next.levels[level].selected = 0;
         next.preferred = None;
         next.refresh_selected()?;
+        next.also_targets()?;
         *self = next;
         Ok(())
     }

@@ -1,0 +1,10 @@
+{
+  "stage": "regression-attempt-1",
+  "rust_files": 1962,
+  "test_binaries": 153,
+  "tests": 3528,
+  "helpers": 4,
+  "all_pre_post_hashes_identical": true,
+  "root_lock_sha256": "1e39d18ae4de6c7b898edad39eb7104235fb3ffe3af84521ca94df2b6c25b71b",
+  "original_stage": "regression-final"
+}

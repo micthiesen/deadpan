@@ -74,13 +74,36 @@ fn body_dormant(
     ) {
         return Err(unavailable("every selected duration target must be a Hold"));
     }
-    crate::scoped_edit::duration_target_dormant(document, target, parents).map_err(|error| {
-        if error.code == EditErrorCode::LimitExceeded {
-            error
-        } else {
-            unavailable(&error.message)
-        }
-    })
+    // Validate every member, including no-ops, before any identity allocation.
+    // A fixed window keeps literal Default/Play body authority and proves the
+    // member's sampled geometry independently of the primary presentation.
+    // Keep the common ordinary path on the shared ancestry index instead of
+    // rebuilding the complete graph for every selected member.
+    crate::scoped_edit::duration_target_dormant(document, target, parents)
+        .or_else(|ordinary_error| {
+            if ordinary_error.code == EditErrorCode::LimitExceeded {
+                return Err(ordinary_error);
+            }
+            match crate::scoped_edit::fixed_mixed_preflight(document, target) {
+                Ok(Some(fixed)) => Ok(fixed.dormant),
+                Err(error)
+                    if error.code == EditErrorCode::LimitExceeded
+                        || target.validate(document).is_ok() =>
+                {
+                    Err(error)
+                }
+                // The ordinary validator explains invalid Play/gap ownership
+                // more precisely than fixed preflight's general target check.
+                Ok(None) | Err(_) => Err(ordinary_error),
+            }
+        })
+        .map_err(|error| {
+            if error.code == EditErrorCode::LimitExceeded {
+                error
+            } else {
+                unavailable(&error.message)
+            }
+        })
 }
 
 fn uniform_level(authority: &SemanticSelectedHoldDurationContext) -> Result<usize, EditError> {
@@ -184,6 +207,11 @@ impl ProjectDocument {
                 ));
             }
         };
+        if crate::scoped_edit::fixed_mixed_preflight(self, &authority.target)?.is_some() {
+            return self
+                .hold_duration_visibility_for_instance(&authority.root, instance)
+                .map(Some);
+        }
         let boundary = crate::derived_clock::with_sealed(|| {
             AnchorIndex::new(self)
                 .and_then(|index| {

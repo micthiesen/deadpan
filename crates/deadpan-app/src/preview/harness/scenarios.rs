@@ -53,6 +53,7 @@ pub(super) fn run(name: &str, d: &mut Driver<'_>) -> Result<(), String> {
         "this-play-fixed-duration" => super::scoped_plays::this_play_fixed_duration::run(d),
         "nested-fixed-duration" => super::scoped_plays::nested_fixed_duration::run(d),
         "mixed-fixed-duration" => super::scoped_plays::mixed_fixed_duration::run(d),
+        "selected-fixed-duration" => super::scoped_plays::selected_fixed_duration::run(d),
         "structure-copies" => super::structure_copies::run(d),
         "macros" => super::macros::run(d),
         "original-playback" => super::original_playback::run(d),

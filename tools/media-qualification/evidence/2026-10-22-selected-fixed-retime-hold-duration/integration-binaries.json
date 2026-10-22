@@ -1,0 +1,22 @@
+[
+  {
+    "suite": "deadpan-cli::preview_export",
+    "executed": "/Users/michael/Code/deadpan/target/debug/deps/preview_export-505b1da455d184c7",
+    "retained": "/tmp/deadpan-selected-fixed-retime-duration-2026-10-22/integration-bin/preview_export-505b1da455d184c7",
+    "sha256": "f2395630eedd31a43550e5fe2100878b39e99e2829b16f6daccb61dc19f92494",
+    "bytes": 37587552,
+    "tests": [
+      "selected_fixed_retime_hold_duration_preview_and_encoded_output_keep_fixed_windows"
+    ]
+  },
+  {
+    "suite": "deadpan-store::generation_bundles",
+    "executed": "/Users/michael/Code/deadpan/target/debug/deps/generation_bundles-6f28ceac915eed23",
+    "retained": "/tmp/deadpan-selected-fixed-retime-duration-2026-10-22/integration-bin/generation_bundles-6f28ceac915eed23",
+    "sha256": "a109269f6828f4ef096653249bce699984034e15668c7286cc1f629f26426a19",
+    "bytes": 40322176,
+    "tests": [
+      "preparations::scoped_mixed_duration::selected_fixed_retime::selected_fixed_retime_macro_keeps_each_accepted_provider_and_history_atomic"
+    ]
+  }
+]

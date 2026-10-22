@@ -1175,8 +1175,20 @@ fn several_plays_browse_the_first_and_address_each_selected_play() {
         state.scope_label,
         "outer · plays 2, 3/3 › inner · all plays"
     );
-    // Any single scope choice ends the multi-play selection.
+    // A deeper scalar choice keeps the one selected ancestor axis.
     state.switch_play_in(1).unwrap();
+    assert_eq!(
+        state.also_targets().unwrap()[0].repeats,
+        [
+            branch(&document, "outer", Some(2)),
+            branch(&document, "inner", Some(0))
+        ]
+    );
+    assert_eq!(state.scope_label, "outer · plays 2, 3/3 › inner · play 1/2");
+    // Changing the selected level itself ends that set.
+    state.leave_in().unwrap();
+    state.leave_in().unwrap();
+    state.switch_play_in(2).unwrap();
     assert!(state.also_targets().unwrap().is_empty());
-    assert_eq!(state.scope_label, "outer · play 2/3 › inner · play 1/2");
+    assert_eq!(state.scope_label, "outer · play 2/3");
 }

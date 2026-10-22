@@ -1,0 +1,29 @@
+{
+  "source_stage": "native-attempt-1",
+  "debug_binaries": {
+    "deadpan-app": {
+      "source": "target/debug/deadpan-app",
+      "executed": "/tmp/deadpan-selected-fixed-retime-duration-2026-10-22/debug-bin/deadpan-app",
+      "sha256": "9de19e455b50d0c00216c1af3f628d11bd18629c9fb580c2340adf5f6d9932f0"
+    },
+    "deadpan-media-worker": {
+      "source": "target/debug/deadpan-media-worker",
+      "executed": "/tmp/deadpan-selected-fixed-retime-duration-2026-10-22/debug-bin/deadpan-media-worker",
+      "sha256": "786672d36a58e024be1acb18f353c350c06a7c83dd88c84369e69a9512a13c5d"
+    },
+    "deadpan-transcribe": {
+      "source": "target/debug/deadpan-transcribe",
+      "executed": "/tmp/deadpan-selected-fixed-retime-duration-2026-10-22/debug-bin/deadpan-transcribe",
+      "sha256": "473b69ac2024d691236637017ebea298a08e0f88de2ff3801a948bf866f71362"
+    },
+    "deadpan-track": {
+      "source": "target/debug/deadpan-track",
+      "executed": "/tmp/deadpan-selected-fixed-retime-duration-2026-10-22/debug-bin/deadpan-track",
+      "sha256": "18861c06d2d468b4e161c2b99110ffc1d5ea99a926e1685d5893437583760244"
+    }
+  },
+  "result": "Unknown option or scenario: --scenario selected-fixed-duration",
+  "checks_executed": 0,
+  "rust_sources_guard": "unchanged",
+  "original_source_stage": "regression"
+}

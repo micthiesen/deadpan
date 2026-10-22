@@ -284,6 +284,15 @@ operation. The intent table is bounded separately at 100,000 current heads and
 64 MiB of reserved records. Capacity notices identify closed automatic requests
 separately from displaced pending preparations and preserve the saved edit.
 
+Undo maps a current automatic intent only to the restored Hold's complete
+canonical authored address, including its Default or owned Play scope. An
+intent born on a removed isolation clone closes as Deleted instead of acquiring
+the shared definition's identity. Historical preparation and request addresses
+still follow their proofs. Writer admission and chronological replay enforce
+the same rule; Redo creates fresh authorization. The [selected fixed-window
+qualification](qualification/selected-fixed-retime-hold-duration-2026-10-22.md)
+retains the failing Undo witness and multi-target regression.
+
 The [boundary qualification record](qualification/ai-boundaries-2026-10-07.md)
 records the original schema-72 implementation and measured limits.
 

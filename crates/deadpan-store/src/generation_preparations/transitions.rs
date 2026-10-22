@@ -650,8 +650,9 @@ pub(crate) fn map(
     connection: &Connection,
     proof: &ValidatedScopedIsolation<'_>,
     forward: bool,
+    destination: &ProjectDocument,
 ) -> Result<(), StoreError> {
-    intents::map(connection, proof, forward)?;
+    intents::map(connection, proof, forward, destination)?;
     for (mut value, _) in all(connection)? {
         value.target = if forward {
             proof.map_retained_forward(&value.target)

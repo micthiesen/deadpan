@@ -807,6 +807,67 @@ fn mixed_fixed_retime_hold_duration_preview_and_encoded_output_keep_fixed_window
 }
 
 #[test]
+fn selected_fixed_retime_hold_duration_preview_and_encoded_output_keep_fixed_windows() -> Result {
+    use recipes::selected_fixed_retime_duration::Selection;
+    let scratch = tempfile::tempdir()?;
+    let (root, _guard) =
+        if std::env::var_os("DEADPAN_SELECTED_FIXED_RETIME_DURATION_RESULTS").is_some() {
+            (scratch.keep(), None)
+        } else {
+            keep_or(scratch)
+        };
+    let mut results = Vec::new();
+    for selection in [
+        Selection::InnerDefault,
+        Selection::InnerPlay,
+        Selection::OuterDefault,
+        Selection::OuterPlay,
+    ] {
+        for affine in [false, true] {
+            for grow in [true, false] {
+                let name = format!(
+                    "{}-{}-{}",
+                    selection.name(),
+                    if affine { "affine" } else { "unit" },
+                    if grow { "grow" } else { "shrink" }
+                );
+                let fixture = recipes::selected_fixed_retime_duration::build(
+                    &root.join(&name),
+                    selection,
+                    grow,
+                    affine,
+                )?;
+                check(&fixture)?;
+                if skip_without_physical_mac("encoded Render") {
+                    continue;
+                }
+                let movie = render(&fixture, &root.join(format!("exports-{name}")))?;
+                let (report, passed) =
+                    verify(&fixture, &movie, &fixture.revision, &["--every", "1"])?;
+                assert!(passed, "{name}: {report}");
+                assert_eq!(report["summary"]["pictures_checked"], fixture.frames);
+                assert_eq!(report["summary"]["pictures_failed"], 0);
+                assert_eq!(report["summary"]["nonzero_offsets"], 0);
+                for audio in report["audio"].as_array().ok_or("audio report")? {
+                    assert_eq!(audio["flags"], json!([]));
+                    assert_eq!(audio["uncovered_samples"], 0);
+                    assert_eq!(audio["blocks"]["low_snr_blocks"], 0);
+                    assert_eq!(audio["offset_status"], "verified_zero");
+                    assert_eq!(audio["measured_offset_samples"], 0);
+                }
+                check_provenance(&fixture, &report)?;
+                eprintln!("{}", summary_row(&fixture, &report));
+                results.push(json!({"selection":selection.name(),"package":fixture.package,"movie":movie,"report":report,"notes":fixture.notes}));
+            }
+        }
+    }
+    if let Some(path) = std::env::var_os("DEADPAN_SELECTED_FIXED_RETIME_DURATION_RESULTS") {
+        std::fs::write(path, serde_json::to_vec_pretty(&results)?)?;
+    }
+    Ok(())
+}
+
+#[test]
 fn owned_gap_hold_duration_semantics_preview_and_encoded_output_keep_live_and_dormant_clocks()
 -> Result {
     let (root, _guard) = keep_or(tempfile::tempdir()?);

@@ -1,0 +1,38 @@
+{
+  "base": "c424c8732874e37b37c335962849ae6205d1d23e",
+  "production_before_fix": [
+    {
+      "path": "crates/deadpan-store/src/generation_intents.rs",
+      "sha256": "0064b1c2f642e2e4d4981a07f0de9dc11b51ffa1e7057ad0cc4b0374083e9bcf",
+      "matches_pushed_base": true
+    },
+    {
+      "path": "crates/deadpan-store/src/generation_preparations/transitions.rs",
+      "sha256": "66432228a83dcc7c10edbb2f5ecd9ff8cb6c3aed53f2e2973a13f923a6509a4a",
+      "matches_pushed_base": true
+    },
+    {
+      "path": "crates/deadpan-store/src/generation_scope/transitions.rs",
+      "sha256": "5be6994437473dc8e3cd5ed21399a048e38cfcdc7ec1d332e6df20cf98d655fa",
+      "matches_pushed_base": true
+    },
+    {
+      "path": "crates/deadpan-store/src/history.rs",
+      "sha256": "61d110e21839b4c64f589a73d4a302ccb445b0b754b1a3df26ab09e822393398",
+      "matches_pushed_base": true
+    }
+  ],
+  "witness": {
+    "suite": "deadpan-store::generation_bundles",
+    "executed": "/Users/michael/Code/deadpan/target/debug/deps/generation_bundles-8fe4e5fef16f185c",
+    "retained": "/tmp/deadpan-selected-fixed-retime-duration-2026-10-22/focused-first-bin/generation_bundles-8fe4e5fef16f185c",
+    "sha256": "e431dff6877fa4b2fb028bc1aeb6330d20ca6375e95b8db1d800674f3d1f636a",
+    "bytes": 40188512,
+    "tests": [
+      "preparations::scoped_mixed_duration::selected_fixed_retime::selected_fixed_retime_macro_keeps_each_accepted_provider_and_history_atomic"
+    ]
+  },
+  "trace_sha256": "7a7f7e1751ba1783ed4e18dd7ff26bf1902636bb1cd9fffe489a16b235c17004",
+  "debugger": "one bounded LLDB run; optimized Rust locals unavailable; stack confirms Undo; owned process 76858 exited",
+  "first_focused_result": "Store failed UNIQUE generation_intent_heads.hold_id at Undo; all prior commit/validation controls reached"
+}

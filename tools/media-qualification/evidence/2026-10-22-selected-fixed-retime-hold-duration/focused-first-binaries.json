@@ -1,0 +1,58 @@
+[
+  {
+    "suite": "deadpan-app::bin/deadpan-app",
+    "executed": "/Users/michael/Code/deadpan/target/debug/deps/deadpan_app-1665fcaccc742208",
+    "retained": "/tmp/deadpan-selected-fixed-retime-duration-2026-10-22/focused-first-bin/deadpan_app-1665fcaccc742208",
+    "sha256": "abdbbd5c1ed9da305f63fd5f615092f8099dc7e2f62862c0851f6fd296321f80",
+    "bytes": 105657920,
+    "tests": [
+      "preview::scoped::model::tests::nested_fixed_retime_duration::selected_fixed_retime_duration::native_selected_fixed_retime_hold_duration_offers_entry_after_public_many_control",
+      "preview::scoped::model::tests::shared_fixed_retime_duration::native_this_play_fixed_retime_duration_hint_uses_retained_scope_and_clock_guards"
+    ]
+  },
+  {
+    "suite": "deadpan-audio::stages",
+    "executed": "/Users/michael/Code/deadpan/target/debug/deps/stages-d575876438498380",
+    "retained": "/tmp/deadpan-selected-fixed-retime-duration-2026-10-22/focused-first-bin/stages-d575876438498380",
+    "sha256": "eadbb0755a84b09574697436535cd3b61ff568fa5c47f7b43756faab3496ae71",
+    "bytes": 22127080,
+    "tests": [
+      "insert_time::processing_hold_duration::repeat::selected_fixed_retime::selected_fixed_retime_duration_preserves_all_fractional_processing_owners"
+    ]
+  },
+  {
+    "suite": "deadpan-cli::preview_export",
+    "executed": "/Users/michael/Code/deadpan/target/debug/deps/preview_export-09f24f1122af7985",
+    "retained": "/tmp/deadpan-selected-fixed-retime-duration-2026-10-22/focused-first-bin/preview_export-09f24f1122af7985",
+    "sha256": "ed3c5177d89a62a302c2b909145c7bdc7dbe22ab81ab51d454476f7d9ef46f7b",
+    "bytes": 47103504,
+    "tests": [
+      "selected_fixed_retime_hold_duration_preview_and_encoded_output_keep_fixed_windows"
+    ]
+  },
+  {
+    "suite": "deadpan-core",
+    "executed": "/Users/michael/Code/deadpan/target/debug/deps/deadpan_core-99ef176a441abc2a",
+    "retained": "/tmp/deadpan-selected-fixed-retime-duration-2026-10-22/focused-first-bin/deadpan_core-99ef176a441abc2a",
+    "sha256": "48bdcbc5a868521f31df0e6199b53410712c2fcc897539b17d5f505d49e78045",
+    "bytes": 71120016,
+    "tests": [
+      "semantic::planner::tests::shared_hold_duration::selected_hold_duration::selected_hold_duration_rejects_duplicate_overlap_forged_and_noop_unsupported_targets_before_allocation",
+      "semantic::planner::tests::shared_hold_duration::shared_fixed_retime_duration::selected_fixed_retime_duration::selected_fixed_retime_duration_both_axes_literal_families_pitches_crops_and_owned_requery",
+      "semantic::planner::tests::shared_hold_duration::shared_fixed_retime_duration::selected_fixed_retime_duration::selected_fixed_retime_duration_dormant_defaults_keep_absent_presentation_and_cursor",
+      "semantic::planner::tests::shared_hold_duration::shared_fixed_retime_duration::selected_fixed_retime_duration::selected_fixed_retime_duration_hidden_or_unsampled_counterpart_refuses_before_allocating",
+      "semantic::planner::tests::shared_hold_duration::shared_fixed_retime_duration::selected_fixed_retime_duration::selected_fixed_retime_duration_late_visibility_and_pool_failures_leave_input_unchanged",
+      "semantic::planner::tests::shared_hold_duration::shared_fixed_retime_duration::selected_fixed_retime_duration::selected_fixed_retime_duration_partial_noop_still_maps_primary_and_counted_calls"
+    ]
+  },
+  {
+    "suite": "deadpan-store::generation_bundles",
+    "executed": "/Users/michael/Code/deadpan/target/debug/deps/generation_bundles-8fe4e5fef16f185c",
+    "retained": "/tmp/deadpan-selected-fixed-retime-duration-2026-10-22/focused-first-bin/generation_bundles-8fe4e5fef16f185c",
+    "sha256": "e431dff6877fa4b2fb028bc1aeb6330d20ca6375e95b8db1d800674f3d1f636a",
+    "bytes": 40188512,
+    "tests": [
+      "preparations::scoped_mixed_duration::selected_fixed_retime::selected_fixed_retime_macro_keeps_each_accepted_provider_and_history_atomic"
+    ]
+  }
+]

@@ -1,0 +1,9 @@
+{
+  "captures": [
+    "Inner selected under All plays",
+    "Inner selected under This play",
+    "Outer selected with inner All plays",
+    "Outer selected with inner This play"
+  ],
+  "scope": "All four two-target fixed-window scope forms pass 219 workflow checks plus Kestrel in each release native mode. Quiet state p99 1.66475ms over 652 samples. Four final compact captures inspected; warning reports retained."
+}

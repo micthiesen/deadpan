@@ -2,6 +2,8 @@
 use super::*;
 use crate::{PitchPolicy, RetimePurpose};
 
+mod selected_fixed_retime_duration;
+
 fn ratio(n: i128, d: i128) -> ExactRatio {
     ExactRatio::new(n, d).unwrap()
 }
@@ -581,10 +583,13 @@ fn shared_fixed_retime_duration_forged_presentations_and_other_scopes_remain_ref
         }],
         presentation: Some(instance("held", 0, None)),
     };
-    assert!(
-        d.selected_hold_duration_visibility(&node("root"), &selected)
-            .is_err()
-    );
+    // Selected body families now share the fixed-window duration policy.
+    let selected_visible = d
+        .selected_hold_duration_visibility(&node("root"), &selected)
+        .unwrap()
+        .unwrap();
+    assert_eq!(selected_visible, visible(&d, &authority(Some(0))).unwrap());
+    assert_eq!(selected_visible.frames, range(4, 6));
     let mut mixed = fixed(PitchPolicy::FollowSpeed, 0, 6);
     mixed
         .nodes

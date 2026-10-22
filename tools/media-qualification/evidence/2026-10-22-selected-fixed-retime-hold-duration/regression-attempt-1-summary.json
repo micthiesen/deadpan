@@ -1,0 +1,15 @@
+{
+  "source_stage": "regression-attempt-1",
+  "tests": 3528,
+  "passed": 3525,
+  "failed": 3,
+  "slow": 4,
+  "leaky": 1,
+  "elapsed_seconds": 228.349,
+  "leaky_case": "preview::scoped::model::tests::mixed_duration::mixed_duration_hints_offer_owned_gaps_without_changing_all_play_gap_support",
+  "failures": {
+    "new_cursor_expectation": "Model retains entry ProjectFrame(22); native caller follows projected visible start. Correct test only.",
+    "forged_gap_diagnostic": "Guard still refuses before allocation but fixed fallback replaced specific ordinary ownership message. Preserve ordinary invalid-target diagnostic.",
+    "old_selected_fixed_refusal": "Now-supported selected fixed family must compare actual projected geometry with existing shared control."
+  }
+}

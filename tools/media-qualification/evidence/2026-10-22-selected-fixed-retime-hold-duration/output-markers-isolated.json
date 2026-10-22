@@ -1,0 +1,23 @@
+{
+  "source_stage": "regression-final",
+  "binary_sha256": "5a59f6c8c01032741982b203f46372568046add344f9268a5056583a2cf41f6c",
+  "cases": [
+    {
+      "case": "navigation::command::tests::scoped_multi_play_commands_list_distinct_plays",
+      "exit_code": 0,
+      "passed": true,
+      "stdio_eof_within_seconds": 30,
+      "stdout": "output-marker-0.stdout",
+      "stderr": "output-marker-0.stderr"
+    },
+    {
+      "case": "preview::scoped::model::tests::mixed_duration::mixed_duration_hints_offer_owned_gaps_without_changing_all_play_gap_support",
+      "exit_code": 0,
+      "passed": true,
+      "stdio_eof_within_seconds": 30,
+      "stdout": "output-marker-1.stdout",
+      "stderr": "output-marker-1.stderr"
+    }
+  ],
+  "pre_post_binary_unchanged": true
+}

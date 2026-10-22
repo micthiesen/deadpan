@@ -1,0 +1,29 @@
+{
+  "source_stage": "native-attempt-3",
+  "debug_binaries": {
+    "deadpan-app": {
+      "source": "target/debug/deadpan-app",
+      "executed": "/tmp/deadpan-selected-fixed-retime-duration-2026-10-22/debug-bin/deadpan-app",
+      "sha256": "70f049ff9f6117a02b95410b94b74778c3165f7ec6e0befa4f28bd6797e75618"
+    },
+    "deadpan-media-worker": {
+      "source": "target/debug/deadpan-media-worker",
+      "executed": "/tmp/deadpan-selected-fixed-retime-duration-2026-10-22/debug-bin/deadpan-media-worker",
+      "sha256": "786672d36a58e024be1acb18f353c350c06a7c83dd88c84369e69a9512a13c5d"
+    },
+    "deadpan-transcribe": {
+      "source": "target/debug/deadpan-transcribe",
+      "executed": "/tmp/deadpan-selected-fixed-retime-duration-2026-10-22/debug-bin/deadpan-transcribe",
+      "sha256": "473b69ac2024d691236637017ebea298a08e0f88de2ff3801a948bf866f71362"
+    },
+    "deadpan-track": {
+      "source": "target/debug/deadpan-track",
+      "executed": "/tmp/deadpan-selected-fixed-retime-duration-2026-10-22/debug-bin/deadpan-track",
+      "sha256": "18861c06d2d468b4e161c2b99110ffc1d5ea99a926e1685d5893437583760244"
+    }
+  },
+  "source_guard": "unchanged",
+  "checks_executed": 115,
+  "workflow_frames": 1223,
+  "result": "115 checks pass; first outer selection setup loses pair; exception selected Hold duration needs 2..=1024 captured targets"
+}

@@ -1,0 +1,34 @@
+[
+  {
+    "mode": "visual",
+    "file": "selected-fixed-duration-084.png",
+    "label": "Inner selected under All plays",
+    "frame": 138,
+    "sha256": "2fb9236435f30ff3e092b0749346be65f13e642819efc1487cd89bae1fc265bd",
+    "inspection": "Root inspected final 960x640 release capture: both literal scopes, selected-play explanation, duration action, separate clocks and complete footer remain readable."
+  },
+  {
+    "mode": "visual",
+    "file": "selected-fixed-duration-121.png",
+    "label": "Inner selected under This play",
+    "frame": 698,
+    "sha256": "dd4c48f71596912af9ba8765cf02299ed22da6c5e6a3aaf710afb9d717069af9",
+    "inspection": "Root inspected final 960x640 release capture: both literal scopes, selected-play explanation, duration action, separate clocks and complete footer remain readable."
+  },
+  {
+    "mode": "visual",
+    "file": "selected-fixed-duration-122.png",
+    "label": "Outer selected with inner All plays",
+    "frame": 1302,
+    "sha256": "c015cbc234030c0ab275da7a4cdce684c41991769beb860780bab10d7b38a6b5",
+    "inspection": "Root inspected final 960x640 release capture: both literal scopes, selected-play explanation, duration action, separate clocks and complete footer remain readable."
+  },
+  {
+    "mode": "visual",
+    "file": "selected-fixed-duration-123.png",
+    "label": "Outer selected with inner This play",
+    "frame": 1884,
+    "sha256": "4a9bb6dfc415480283fcc649a4219fd765bdf0512089224d8a074015b70f653e",
+    "inspection": "Root inspected final 960x640 release capture: both literal scopes, selected-play explanation, duration action, separate clocks and complete footer remain readable."
+  }
+]

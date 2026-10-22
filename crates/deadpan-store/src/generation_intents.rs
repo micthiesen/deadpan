@@ -511,17 +511,55 @@ pub(crate) fn map(
     connection: &Connection,
     proof: &ValidatedScopedIsolation<'_>,
     forward: bool,
+    destination: &ProjectDocument,
 ) -> Result<(), StoreError> {
-    for mut head in heads(connection)? {
-        head.target = if forward {
-            proof.map_retained_forward(&head.target)
-        } else {
-            proof.map_retained_backward(&head.target)
-        };
+    let current = heads(connection)?;
+    let owners = (!forward && !current.is_empty())
+        .then(|| restored_hold_owners(destination))
+        .transpose()?;
+    for mut head in current {
+        head.target = map_current_target(proof, &head.target, owners.as_ref());
         connection.execute("UPDATE generation_intent_heads SET current_target=?1,hold_id=?2 WHERE activation_id=?3",
             params![crate::generation_scope::target_json(&head.target)?, head.target.node.as_str(), head.activation_id.as_str()])?;
     }
     check_sizes(connection)
+}
+
+fn restored_hold_owners(
+    document: &ProjectDocument,
+) -> Result<BTreeMap<deadpan_core::NodeId, ScopedNodeTarget>, StoreError> {
+    let plan =
+        deadpan_plan::RenderPlan::compile(document).map_err(|error| invalid(&error.to_string()))?;
+    Ok(plan
+        .authored_hold_targets(deadpan_core::BoundaryQueryLimits {
+            max_scopes: deadpan_core::MAX_DOCUMENT_NODES * 64,
+            max_comparisons: deadpan_core::MAX_DOCUMENT_NODES * 64,
+        })
+        .map_err(|error| invalid(&error.to_string()))?
+        .into_iter()
+        .map(|target| (target.node.clone(), target))
+        .collect())
+}
+
+/// Historical addresses may map back to a shared definition, but a live
+/// automatic intent owns one physical Hold. A head born on a removed clone
+/// must not acquire that definition's identity when isolation is undone.
+/// Retain its cloned address so normal reconciliation closes it as Deleted.
+/// Writer admission and chronological replay use this same ownership rule.
+fn map_current_target(
+    proof: &ValidatedScopedIsolation<'_>,
+    target: &ScopedNodeTarget,
+    restored: Option<&BTreeMap<deadpan_core::NodeId, ScopedNodeTarget>>,
+) -> ScopedNodeTarget {
+    let Some(restored) = restored else {
+        return proof.map_retained_forward(target);
+    };
+    let mapped = proof.map_retained_backward(target);
+    if restored.get(&mapped.node) == Some(&mapped) {
+        mapped
+    } else {
+        target.clone()
+    }
 }
 
 /// Charge future scoped-isolation identifier growth once, while preserving
@@ -983,8 +1021,7 @@ impl Replay {
             &self.current.values().cloned().collect::<Vec<_>>(),
         )?;
         crate::generation_scope::with_command_proof(before, request, after, |proof| {
-            self.map(proof, true);
-            Ok(())
+            self.map(proof, true, after)
         })?;
         self.arrive(connection, after, history, births, &choices)
     }
@@ -1013,20 +1050,24 @@ impl Replay {
             )?;
         }
         crate::generation_scope::with_history_proof(connection, entry, |proof| {
-            self.map(proof, redo);
-            Ok(())
+            self.map(proof, redo, after)
         })?;
         self.arrive(connection, after, entry, births, &choices)
     }
 
-    fn map(&mut self, proof: &ValidatedScopedIsolation<'_>, forward: bool) {
+    fn map(
+        &mut self,
+        proof: &ValidatedScopedIsolation<'_>,
+        forward: bool,
+        destination: &ProjectDocument,
+    ) -> Result<(), StoreError> {
+        let owners = (!forward && !self.current.is_empty())
+            .then(|| restored_hold_owners(destination))
+            .transpose()?;
         for head in self.current.values_mut() {
-            head.target = if forward {
-                proof.map_retained_forward(&head.target)
-            } else {
-                proof.map_retained_backward(&head.target)
-            };
+            head.target = map_current_target(proof, &head.target, owners.as_ref());
         }
+        Ok(())
     }
 
     fn arrive(

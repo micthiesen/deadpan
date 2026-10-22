@@ -464,7 +464,7 @@ fn native_this_play_fixed_retime_duration_hint_uses_retained_scope_and_clock_gua
     selected.enter_in().unwrap();
     selected.enter_in().unwrap();
     selected.select_in(1).unwrap();
-    assert!(selected.body_fixed_retime_path_supported());
+    assert!(selected.body_fixed_retime_path_supported(&selected.selected));
     assert!(selected.hold_duration_available());
 
     // Cached clock ownership and actual visibility each revoke the hint.
@@ -478,8 +478,12 @@ fn native_this_play_fixed_retime_duration_hint_uses_retained_scope_and_clock_gua
     selected.projection.presentation = visible;
     assert!(selected.hold_duration_available());
 
-    // A further selected play goes through the batch policy, retaining its
-    // Retime refusal rather than inheriting this single-play exception.
+    // A Repeat iteration fabricated on the inspected Sequence level is not a
+    // captured batch axis and must not inherit this scalar admission.
+    assert_eq!(
+        selected.levels.last().unwrap().owner.node,
+        node("fixed-body")
+    );
     selected
         .levels
         .last_mut()
@@ -490,6 +494,6 @@ fn native_this_play_fixed_retime_duration_hint_uses_retained_scope_and_clock_gua
     selected.levels.last_mut().unwrap().also.clear();
     assert!(selected.hold_duration_available());
     selected.root = node("fixed-stage");
-    assert!(!selected.body_fixed_retime_path_supported());
+    assert!(!selected.body_fixed_retime_path_supported(&selected.selected));
     assert!(!selected.hold_duration_available());
 }

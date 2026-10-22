@@ -26,9 +26,13 @@ over as the same trim step or ranged step, so each play keeps its own recipe; a
 play whose gain recipe differs in another way, or whose owned contents differ
 in structure, refuses with a message instead of being overwritten. Camera and
 pause-audio values are set as chosen in each play. Nested contents entered
-below the multi-play level keep the choice; `:scope all`, `:scope play N` and
-`]r`/`[r` end it. The choice survives its own commit, because the Repeat keeps
-its identity and stable play IDs.
+below the multi-play level keep the choice. A deeper `:scope all`,
+`:scope play N` or `]r`/`[r` changes that inner branch while retaining the outer
+selected set. A scope change at the selected level ends its set; a new
+`:scope plays` replaces the previous selection axis. The choice survives its
+own commit, because the Repeat keeps its identity and stable play IDs. An exact
+set retained from a commit ends on scope navigation, since row positions cannot
+recreate its mapped counterparts.
 
 Freeze and black pause insertion also apply to every selected play, as one
 Compound and one Undo. Each counterpart uses the same local boundary in its
@@ -166,10 +170,17 @@ an entirely unchanged selection makes no edit. Browsing another row revokes the
 mapped selection; choose a new play set explicitly before another batch or dot.
 A final owned gap can remain selected alongside live gaps; changing its recipe
 does not add a trailing gap. A dormant primary preserves the ordinary cursor
-while live counterparts may ripple. Implicit default gaps, Retime/Partition
-ancestry and placed sounds remain unavailable. A single all-Play dormant gap
+while live counterparts may ripple. Implicit default gaps, other Retime ancestry,
+Partition and placed sounds remain unavailable. A single all-Play dormant gap
 retains the existing live-boundary refusal.
 See [selected duration semantics](SEMANTIC_MACROS.md#selected-plays-hold-length).
+
+Selected bodies can cross one fixed unclocked Edit Retime below every enclosing
+Repeat, retaining either selected axis and the other level's literal All plays
+or This play choice. Every member, including a no-op, must have sampled visible
+geometry or a proven dormant Default definition before any allocation. Crops,
+pitch and fixed output remain unchanged; the final primary cursor uses the
+cropped visible interval. See the [selected fixed-window qualification](qualification/selected-fixed-retime-hold-duration-2026-10-22.md).
 
 An ordinary Hold inside fixed Edit Retime windows, without any Repeat ancestry,
 has a separate duration-only path through the same control, Enter and command.
@@ -182,9 +193,9 @@ refuse. Recording admits length setters and named duration calls; other edits
 must wait until recording is saved or cancelled. See the
 [native fixed-window qualification](qualification/native-fixed-retime-hold-2026-10-21.md).
 
-The This play and mixed fixed-Retime paths above require literal body choices
-and one fixed unclocked Edit Retime below all enclosing Repeats. They do not broaden
-selected-play or other Retime duration paths. See the
+The This play, mixed and selected fixed-Retime paths above require literal body
+choices and one fixed unclocked Edit Retime below all enclosing Repeats. Other
+Retime duration paths retain their guards. See the
 [nested This play fixed-Retime qualification](qualification/nested-fixed-retime-hold-duration-2026-10-22.md).
 
 The [This play pause qualification](qualification/scoped-pauses-2026-10-12.md)

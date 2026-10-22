@@ -20,6 +20,7 @@ pub(super) mod nested_fixed_duration;
 pub(super) mod owned_gap_duration;
 mod pause_macros;
 mod pauses;
+pub(super) mod selected_fixed_duration;
 mod shared_hold_duration;
 pub(super) mod this_play_fixed_duration;
 

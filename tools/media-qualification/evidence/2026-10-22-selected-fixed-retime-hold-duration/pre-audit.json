@@ -1,0 +1,94 @@
+{
+  "audit": "selected fixed-Retime milestone pre-collection evidence-integrity review",
+  "scope": {
+    "scratch": "/tmp/deadpan-selected-fixed-retime-duration-2026-10-22",
+    "repository_changes": false,
+    "cargo_or_tests_run": false,
+    "collector_executed": false
+  },
+  "findings": [],
+  "source_stages": {
+    "stage_count": 10,
+    "stages": [
+      {
+        "stage": "baseline-source",
+        "rust_files": 1957,
+        "copy_matches_manifest": true
+      },
+      {
+        "stage": "focused-first-source",
+        "rust_files": 1962,
+        "copy_matches_manifest": true
+      },
+      {
+        "stage": "focused-second-source",
+        "rust_files": 1962,
+        "copy_matches_manifest": true
+      },
+      {
+        "stage": "integration-source",
+        "rust_files": 1962,
+        "copy_matches_manifest": true
+      },
+      {
+        "stage": "native-attempt-1-source",
+        "rust_files": 1962,
+        "copy_matches_manifest": true
+      },
+      {
+        "stage": "native-attempt-2-source",
+        "rust_files": 1962,
+        "copy_matches_manifest": true
+      },
+      {
+        "stage": "native-attempt-3-source",
+        "rust_files": 1962,
+        "copy_matches_manifest": true
+      },
+      {
+        "stage": "regression-attempt-1-source",
+        "rust_files": 1962,
+        "copy_matches_manifest": true
+      },
+      {
+        "stage": "regression-final-source",
+        "rust_files": 1962,
+        "copy_matches_manifest": true
+      },
+      {
+        "stage": "ui-final-source",
+        "rust_files": 1962,
+        "copy_matches_manifest": true
+      }
+    ],
+    "all_copied_sources_match_manifests": true,
+    "final_regression_and_ui_manifests_match_current_checkout": true,
+    "baseline_counterfactual_audit": "1956 tracked Rust sources; 1957 frozen baseline sources, with only the allowed nested-test registration change and one added selected witness; audit reports no missing files."
+  },
+  "collector_review": {
+    "source_archives": "Iterates every *-source directory, requires its identities manifest to match copied Rust files, deduplicates identical content, then verifies archive members and every archived digest.",
+    "failed_attempt_logs": "Top-level extension pass retains attempt-1 through attempt-4 logs and JSON summaries/posts, including regression-attempt-1.log and its failure summary.",
+    "native_raw_reports": {
+      "debug-visual": [
+        "report.json"
+      ],
+      "debug-visual-attempt-2": [
+        "report.json"
+      ],
+      "debug-visual-attempt-3": [
+        "report.json"
+      ],
+      "debug-visual-attempt-4": [
+        "report.json"
+      ]
+    },
+    "native_raw_reports_retained": "The collector copies every JSON report recursively from debug-visual, debug-visual-attempt-2/3/4, final visual and performance report directories, with mode-prefixed names.",
+    "exports": "The selected export test enumerates 4 selection names x 2 stage types x 2 directions, producing 16 deterministic unique case names. Its project package lives in a directory named for that case; encoded_identity.py derives case from package.parent.name, and collect.py retains each MP4 as encoded-<case>.mp4.",
+    "owner_archives": "retain_owner_fixtures.py explicitly selects five unique case keys and writes identities for each; collect.py copies each row named in that identities file and checks the archive SHA-256.",
+    "inventory": "Collector records size/SHA-256 for every produced evidence file except inventory.json itself and rechecks each recorded entry."
+  },
+  "pending_at_pre_audit": [
+    "The evidence destination is absent and collect.py has not run.",
+    "Final release output identities, all 16 MP4s, five owner archives and final visual/performance reports are not yet present; verify their collected names and hashes in the requested post-collection audit."
+  ]
+}
