@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-21T23:58:18Z",
+  "updated_at": "2026-10-22T00:50:26Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Preserve independent sounds owned by a fixed Retime output while resizing its interior Hold, then continue remaining editing, audio mastering, renderer and full-workflow qualification.",
+  "focus": "Repair fractional owner-clock support for nonzero processed audio, then expose verified ordinary Hold resizing inside fixed Retime and continue remaining editing, mastering, renderer and full-workflow qualification.",
   "features": [
     {
       "id": "editing",
@@ -44,7 +44,7 @@
       "requirements": [
         "DP-09"
       ],
-      "note": "Playback, gain, sounds, native EQ, Tail sends, continuous returns and independent sound envelopes/EQ/saturation/balance work. Event processing retains its onset clock and history through routing. Partial sound-owner edits, wider loop/tail qualification and persistent filtered caching remain."
+      "note": "Playback, gain, sounds, native EQ, Tail sends, continuous returns and independent sound treatments work. Fixed Retime output sounds retain exact phase and history through ordinary interior Hold edits. A fractional processed-owner support gap, partial sound-owner edits, wider loop/tail qualification and persistent filtered caching remain."
     },
     {
       "id": "analysis",
@@ -757,6 +757,14 @@
       "revision": "6fe84afc",
       "retrospective": false,
       "summary": "Verified literal one-play trim, saturation, balance and typed EQ recording, calls and dot, including stage removal and exact history. All 23 focused core, 514 normal and 207 UI tests pass; strict lint and both 846-check release replays pass. Independent PCM and complete 72-picture/115,315-sample encoded verification pass at offset zero. Repaired two replay setup assumptions and retained failures, reviews and inspected captures. Broader macro authority stays open."
+    },
+    {
+      "date": "2026-10-21",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "ceaacbb9",
+      "retrospective": false,
+      "summary": "Verified independent fixed Retime output sounds through ordinary interior Hold edits, preserving exact phase, offset and durable history. All thirteen focused core, six PCM, two real-package store and 3,130 broader tests pass; final strict lint and complete 11-picture/17,618-sample release verification pass at offset zero. Retained fixture failures and a pre-existing nonlinear support refusal at sample8236. No requirement or gate is newly complete; native Retime Hold editing and complete nonlinear qualification remain open."
     }
   ]
 }
