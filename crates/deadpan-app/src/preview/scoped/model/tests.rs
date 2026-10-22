@@ -2,6 +2,7 @@ use super::*;
 mod fixed_duration;
 mod mixed_duration;
 mod pause_continuation;
+mod selected_duration;
 mod shared_duration;
 use deadpan_core::{
     BeatNode, ColorPolicy, Command, CommandRequest, FrameRange, FrameRate, HoldAudio, HoldRecipe,

@@ -1,0 +1,21 @@
+{
+  "crates/deadpan-cli/src/macros.rs": 2,
+  "crates/deadpan-cli/src/framing/tests/scoped.rs": 1,
+  "crates/deadpan-cli/tests/preview_export/ordinary_duration.rs": 1,
+  "crates/deadpan-cli/tests/project_commands/macros/original.rs": 1,
+  "crates/deadpan-app/src/preview/repeats/tests.rs": 1,
+  "crates/deadpan-app/src/preview/groups/tests.rs": 1,
+  "crates/deadpan-app/src/preview/macros/tests/splice.rs": 1,
+  "crates/deadpan-app/src/preview/scoped/model/tests/mixed_duration.rs": 1,
+  "crates/deadpan-app/src/preview/scoped/model/tests/shared_duration.rs": 1,
+  "crates/deadpan-app/src/project/tests/macros.rs": 10,
+  "crates/deadpan-app/src/project/tests/splice_equivalence.rs": 1,
+  "crates/deadpan-app/src/project/tests/macros/scoped.rs": 1,
+  "crates/deadpan-app/src/project/tests/semantic/selectors.rs": 3,
+  "crates/deadpan-app/src/project/tests/headless/macros.rs": 1,
+  "crates/deadpan-app/src/project/tests/macros/scoped/fixed_duration.rs": 1,
+  "crates/deadpan-audio/tests/stages/scoped_hold_audio.rs": 1,
+  "crates/deadpan-store/src/compound/tests.rs": 1,
+  "crates/deadpan-store/tests/source_registration/registers.rs": 4,
+  "crates/deadpan-store/tests/source_registration/hold_audio/scoped_semantic.rs": 1
+}

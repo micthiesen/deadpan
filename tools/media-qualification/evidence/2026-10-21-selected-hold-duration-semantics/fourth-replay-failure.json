@@ -1,0 +1,143 @@
+[
+  {
+    "scenario": "scoped-plays",
+    "checks": 1023,
+    "frames": 6220,
+    "check": "A selected-duration commit seeds the duration-only dot and retains counterpart mapping after navigation",
+    "expected": {
+      "dot": "SetHoldDuration 3f",
+      "selected_targets": 2
+    },
+    "actual": {
+      "annotation_busy": false,
+      "beat_count": 3,
+      "busy": false,
+      "camera_open": false,
+      "camera_pending": false,
+      "command": "hold-duration 3f",
+      "command_open": false,
+      "context": "Sequence",
+      "copied_moment": null,
+      "copied_slice": null,
+      "copy_pending": false,
+      "duration": 45,
+      "edit_selection": null,
+      "edit_selection_state": "None",
+      "edit_visual_active": false,
+      "error": null,
+      "focused_widget": "id_E619",
+      "footer_bottom": [
+        640.0,
+        640.0
+      ],
+      "footer_command_open": false,
+      "help_open": false,
+      "import": null,
+      "layout_passes": 1,
+      "message": null,
+      "original_selection": null,
+      "pane": "Sequence",
+      "pending_keys": "",
+      "pixels_per_point": 1.0,
+      "playback": null,
+      "project_error": null,
+      "repeat_queue": {
+        "active": false,
+        "status": null,
+        "waiting": 0
+      },
+      "revision": "f5dcccd8-9b8d-4bc0-a1c3-51e4ed36d955",
+      "room_tone": null,
+      "scope_end": 45,
+      "scope_labels": [],
+      "scope_start": 0,
+      "scoped": {
+        "cursor": 17,
+        "presentation": {
+          "node": "837920cb-9e25-4d91-9022-1463bb459b8d",
+          "repeats": [
+            {
+              "iteration": {
+                "allocation": "ui-shared-duration-insert-1",
+                "ordinal": 1
+              },
+              "node": "ui-shared-duration-outer"
+            },
+            {
+              "iteration": {
+                "allocation": "ui-shared-duration-insert-1",
+                "ordinal": 0
+              },
+              "node": "ui-shared-duration-inner"
+            }
+          ]
+        },
+        "revision": "f5dcccd8-9b8d-4bc0-a1c3-51e4ed36d955",
+        "root": "ui-shared-duration-outer",
+        "target": {
+          "node": "837920cb-9e25-4d91-9022-1463bb459b8d",
+          "repeats": [
+            {
+              "branch": {
+                "type": "default"
+              },
+              "repeat": "ui-shared-duration-outer"
+            },
+            {
+              "branch": {
+                "iteration": {
+                  "allocation": "ui-shared-duration-insert-1",
+                  "ordinal": 0
+                },
+                "type": "play"
+              },
+              "repeat": "ui-shared-duration-inner"
+            }
+          ]
+        }
+      },
+      "selected_beat": "ui-shared-duration-outer",
+      "selected_event": null,
+      "selected_sound": null,
+      "selected_source": "67d8a38b-2236-4317-99b1-2fdb85f4b274",
+      "sequence_cursor": 17,
+      "sequence_scope": [],
+      "slip": null,
+      "sound_cursor": 0,
+      "sound_events": {},
+      "sound_routes": {},
+      "source_cursor": 0,
+      "source_summary": {
+        "first_pts": 0,
+        "frame_count": 120,
+        "height": 180,
+        "terminal_pts": 120120,
+        "time_base": [
+          1,
+          30000
+        ],
+        "width": 320
+      },
+      "splice": null,
+      "trim": {
+        "abandon_count": 0,
+        "command_capture": null,
+        "draft": null,
+        "pair": {
+          "displayed": null,
+          "expected": null,
+          "gpu_pending": false,
+          "render_error": null,
+          "required_raster": null,
+          "worker_error": null
+        },
+        "prefix_capture": null
+      },
+      "viewport_points": [
+        960.0,
+        640.0
+      ],
+      "visual_selection": false
+    }
+  }
+]

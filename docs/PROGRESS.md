@@ -58,7 +58,7 @@ between observations and is not a completion forecast.
 The artifact (Artifacts, https://artifacts.boo) contains
 `app.tsx` and `data/progress.json`. Its live data source replaces
 `data/progress.json` with
-`https://raw.githubusercontent.com/micthiesen/deadpan/main/docs/progress.json`
+`https://raw.githubusercontent.com/micthiesen/deadpan/refs/heads/main/docs/progress.json`
 every 15 minutes; the owner approved `raw.githubusercontent.com` for this.
 Check or refresh it with the Artifacts `artifact_source` tool
 (`{"id": "a3ysikxugbmr4"}` lists it; add `"path": "data/progress.json",

@@ -399,6 +399,7 @@ fn verify_equivalence_with(placement: Placement, semantic: bool) {
                 context: deadpan_core::SemanticContext {
                     hold_duration: None,
                     shared_hold_duration: None,
+                    selected_hold_duration: None,
                     mixed_hold_duration: None,
                     original: None,
                     scoped: None,

@@ -1,0 +1,34 @@
+{
+  "source_snapshot": "third-runtime-source",
+  "binary_receipt": "binaries-first.json",
+  "scenarios": [
+    {
+      "name": "kestrel-shortcuts",
+      "failed": false,
+      "checks": 1,
+      "frames": 0,
+      "failure_findings": [],
+      "failed_checks": []
+    },
+    {
+      "name": "scoped-plays",
+      "failed": true,
+      "checks": 431,
+      "frames": 1722,
+      "failure_findings": [
+        "Check failed: Multiple selected plays refuse pause recording without saving a macro or authored edit"
+      ],
+      "failed_checks": [
+        {
+          "name": "Multiple selected plays refuse pause recording without saving a macro or authored edit",
+          "expected": {
+            "bank": "unchanged",
+            "document": "unchanged",
+            "recording": false
+          },
+          "error": "Several-play pause length requires 2..=1024 captured Holds and no placed sounds."
+        }
+      ]
+    }
+  ]
+}

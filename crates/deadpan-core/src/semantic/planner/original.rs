@@ -11,6 +11,11 @@ pub(super) fn validate_original_context(
     let Some(original) = &context.original else {
         return Ok(());
     };
+    if context.selected_hold_duration.is_some() {
+        return Err(invalid(
+            "selected Hold duration requires Your edit without Original authority",
+        ));
+    }
     let index = index.ok_or_else(|| invalid("Original macros require a measured picture index"))?;
     let asset = document
         .assets()

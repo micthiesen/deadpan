@@ -240,6 +240,15 @@ pub(super) fn applied_summary(
 ) -> Option<String> {
     use deadpan_core::SemanticInstruction as I;
     let text = applied_text(instruction)?;
+    if let (I::SetHoldDuration { length }, Some(selected)) =
+        (instruction, context.selected_hold_duration.as_ref())
+    {
+        return Some(format!(
+            "Pause length set to {} across {} selected plays",
+            pause_text(*length),
+            selected.also.len() + 1
+        ));
+    }
     if context.scoped.is_some() {
         return Some(format!("{text} in this play"));
     }

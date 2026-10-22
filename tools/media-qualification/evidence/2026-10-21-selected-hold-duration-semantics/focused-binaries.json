@@ -1,0 +1,27 @@
+{
+  "deadpan-core": {
+    "path": "/Users/michael/Code/deadpan/target/debug/deps/deadpan_core-99ef176a441abc2a",
+    "retained": "/tmp/deadpan-selected-hold-duration-next-2026-10-21/focused-bin/deadpan_core-99ef176a441abc2a",
+    "sha256": "269945397a2d502372f5d570f861b3b65a09ca3d01388a0ac703fc637f35d3cd"
+  },
+  "deadpan-app::bin/deadpan-app": {
+    "path": "/Users/michael/Code/deadpan/target/debug/deps/deadpan_app-1665fcaccc742208",
+    "retained": "/tmp/deadpan-selected-hold-duration-next-2026-10-21/focused-bin/deadpan_app-1665fcaccc742208",
+    "sha256": "e385bc9666d8957735cb1ed2328051bddadfee66073511ef0927dabbbbf1a070"
+  },
+  "deadpan-audio::stages": {
+    "path": "/Users/michael/Code/deadpan/target/debug/deps/stages-d575876438498380",
+    "retained": "/tmp/deadpan-selected-hold-duration-next-2026-10-21/focused-bin/stages-d575876438498380",
+    "sha256": "5da6a56ac29537689dad1e0fac03b2cfe1f5b3db22644c7e64b976235dd1ede1"
+  },
+  "deadpan-cli::preview_export": {
+    "path": "/Users/michael/Code/deadpan/target/debug/deps/preview_export-09f24f1122af7985",
+    "retained": "/tmp/deadpan-selected-hold-duration-next-2026-10-21/focused-bin/preview_export-09f24f1122af7985",
+    "sha256": "fd4892516542a586af41f54fcef30cbaf158bcec8d719f4b501e0bd7ff85b7d1"
+  },
+  "deadpan-store::generation_bundles": {
+    "path": "/Users/michael/Code/deadpan/target/debug/deps/generation_bundles-8fe4e5fef16f185c",
+    "retained": "/tmp/deadpan-selected-hold-duration-next-2026-10-21/focused-bin/generation_bundles-8fe4e5fef16f185c",
+    "sha256": "b680362c5d3b2b45ccdb993f8af9d1c179a26403928de56550512c374a12c426"
+  }
+}

@@ -1,4 +1,6 @@
 use super::*;
+#[path = "duration/selected_duration.rs"]
+mod selected_duration;
 
 struct DurationFixture {
     document: ProjectDocument,

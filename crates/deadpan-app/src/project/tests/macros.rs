@@ -153,6 +153,7 @@ fn run(update: &ProjectUpdate, request: u64, register: char, count: u32, cursor:
         context: SemanticContext {
             hold_duration: None,
             shared_hold_duration: None,
+            selected_hold_duration: None,
             mixed_hold_duration: None,
             original: None,
             scoped: None,
@@ -248,6 +249,7 @@ fn oriented_visual_copy_keeps_redo_and_replacement_failure_retains_exact_selecti
             context: SemanticContext {
                 hold_duration: None,
                 shared_hold_duration: None,
+                selected_hold_duration: None,
                 mixed_hold_duration: None,
                 original: None,
                 scoped: None,
@@ -313,6 +315,7 @@ fn oriented_visual_copy_keeps_redo_and_replacement_failure_retains_exact_selecti
         context: SemanticContext {
             hold_duration: None,
             shared_hold_duration: None,
+            selected_hold_duration: None,
             mixed_hold_duration: None,
             original: None,
             scoped: None,
@@ -419,6 +422,7 @@ fn bank_only_yank_refresh_failure_retains_the_selected_child_copy_and_redo() {
         context: SemanticContext {
             hold_duration: None,
             shared_hold_duration: None,
+            selected_hold_duration: None,
             mixed_hold_duration: None,
             original: None,
             scoped: None,
@@ -673,6 +677,7 @@ fn empty_selected_beat_yanks_and_pastes_at_its_sibling_slot_without_cursor_infer
             context: SemanticContext {
                 hold_duration: None,
                 shared_hold_duration: None,
+                selected_hold_duration: None,
                 mixed_hold_duration: None,
                 original: None,
                 scoped: None,
@@ -700,6 +705,7 @@ fn empty_selected_beat_yanks_and_pastes_at_its_sibling_slot_without_cursor_infer
             context: SemanticContext {
                 hold_duration: None,
                 shared_hold_duration: None,
+                selected_hold_duration: None,
                 mixed_hold_duration: None,
                 original: None,
                 scoped: None,
@@ -1232,6 +1238,7 @@ fn nested_macro_copies_keep_their_staged_absolute_bounds_and_original_group_labe
         context: SemanticContext {
             hold_duration: None,
             shared_hold_duration: None,
+            selected_hold_duration: None,
             mixed_hold_duration: None,
             original: None,
             scoped: None,
@@ -1295,6 +1302,7 @@ fn group_objects_keep_capture_scope_separate_from_navigation_and_cut_receipt() {
     let inner_context = |_update: &ProjectUpdate| SemanticContext {
         hold_duration: None,
         shared_hold_duration: None,
+        selected_hold_duration: None,
         mixed_hold_duration: None,
         original: None,
         scoped: None,
@@ -1377,6 +1385,7 @@ fn group_objects_keep_capture_scope_separate_from_navigation_and_cut_receipt() {
     let outside_context = SemanticContext {
         hold_duration: None,
         shared_hold_duration: None,
+        selected_hold_duration: None,
         mixed_hold_duration: None,
         original: None,
         scoped: None,
@@ -1577,6 +1586,7 @@ fn counted_group_object_macro_uses_final_scope_and_unique_staged_capture_paths()
             context: SemanticContext {
                 hold_duration: None,
                 shared_hold_duration: None,
+                selected_hold_duration: None,
                 mixed_hold_duration: None,
                 original: None,
                 scoped: None,

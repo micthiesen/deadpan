@@ -102,13 +102,7 @@ impl State {
     }
 
     fn hold_parameter_in(&self) -> Option<String> {
-        if self.levels.iter().any(|level| !level.also.is_empty())
-            || self
-                .mapped_also
-                .as_ref()
-                .is_some_and(|(primary, also)| primary == &self.selected && !also.is_empty())
-            || !self.hold_duration_available()
-        {
+        if !self.hold_duration_available() {
             return None;
         }
         let NodeKind::Hold { recipe } = &self.index.document.nodes().get(&self.selected.node)?.kind
@@ -121,6 +115,14 @@ impl State {
     /// Availability only. The core rechecks the captured occurrence on Apply.
     /// Use the retained parent index so footer layout does not scan the graph.
     pub fn hold_duration_available(&self) -> bool {
+        let has_also = self.levels.iter().any(|level| !level.also.is_empty())
+            || self
+                .mapped_also
+                .as_ref()
+                .is_some_and(|(primary, also)| primary == &self.selected && !also.is_empty());
+        if has_also {
+            return self.selected_duration_available();
+        }
         if self.selected.repeats.is_empty() {
             return self.ordinary_hold_duration_depth().is_some();
         }
@@ -177,6 +179,172 @@ impl State {
             node = parent;
         }
         false
+    }
+
+    /// A bounded inspector hint. Full core authority and picture validation
+    /// happens once when the user captures the action, not on every footer
+    /// layout pass.
+    fn selected_duration_available(&self) -> bool {
+        if !self.index.document.sounds().is_empty()
+            || !self.index.document.beat_sounds().is_empty()
+            || !matches!(
+                self.index.document.nodes()[&self.selected.node].kind,
+                NodeKind::Hold { .. }
+            )
+        {
+            return false;
+        }
+        let Ok(also) = self.also_targets() else {
+            return false;
+        };
+        let count = also.len().saturating_add(1);
+        if !(2..=deadpan_core::MAX_SCOPED_TARGETS).contains(&count)
+            || count > deadpan_core::MAX_COMPOUND_STEPS
+            || !matches!(
+                self.index
+                    .document
+                    .nodes()
+                    .get(&self.root)
+                    .map(|node| &node.kind),
+                Some(NodeKind::Repeat { .. })
+            )
+        {
+            return false;
+        }
+        let mut targets = Vec::with_capacity(count);
+        targets.push(&self.selected);
+        targets.extend(also.iter());
+        if targets.iter().any(|target| {
+            !matches!(
+                self.index
+                    .document
+                    .nodes()
+                    .get(&target.node)
+                    .map(|node| &node.kind),
+                Some(NodeKind::Hold { .. })
+            ) || !self.selected_duration_target_path_supported(target)
+        }) {
+            return false;
+        }
+        let Some(level) = self.levels.iter().find(|level| !level.also.is_empty()) else {
+            return false;
+        };
+        let Some(axis) = self
+            .selected
+            .repeats
+            .iter()
+            .position(|step| step.repeat == level.owner.node)
+        else {
+            return false;
+        };
+        let Some(RepeatEditBranch::Play { iteration }) =
+            self.selected.repeats.get(axis).map(|step| &step.branch)
+        else {
+            return false;
+        };
+        let mut iterations = BTreeSet::from([iteration]);
+        if also.iter().any(|target| {
+            target.repeats.get(axis).is_none_or(|step| {
+                step.repeat != self.selected.repeats[axis].repeat
+                    || !matches!(&step.branch, RepeatEditBranch::Play { iteration } if iterations.insert(iteration))
+                    || target.repeats[..axis] != self.selected.repeats[..axis]
+            })
+        }) {
+            return false;
+        }
+        match &self.projection.presentation {
+            Some(presentation) => {
+                if presentation.frames.is_empty() {
+                    return false;
+                }
+                [presentation.frames.start, presentation.frames.end - 1]
+                    .into_iter()
+                    .all(|frame| {
+                        i64::try_from(frame).ok().is_some_and(|frame| {
+                            self.index
+                                .plan
+                                .picture(ProjectFrame(frame))
+                                .is_ok_and(|picture| {
+                                    picture
+                                        .framing
+                                        .iter()
+                                        .any(|layer| layer.instance == presentation.instance)
+                                })
+                        })
+                    })
+            }
+            None => {
+                self.projection.reason.as_deref() == Some(DORMANT_DEFAULT)
+                    && self
+                        .selected
+                        .repeats
+                        .iter()
+                        .any(|step| step.branch == RepeatEditBranch::Default)
+            }
+        }
+    }
+
+    fn selected_duration_target_path_supported(&self, target: &ScopedNodeTarget) -> bool {
+        if target.repeats.is_empty() || target.repeats.len() > MAX_DOCUMENT_DEPTH {
+            return false;
+        }
+        let Ok(path) = self.index.path(&target.node) else {
+            return false;
+        };
+        if !path.iter().any(|node| node == &self.root) {
+            return false;
+        }
+        // `Index::path` is project-root first, matching the authority's
+        // outermost-to-innermost Repeat vector.
+        let mut repeat_steps = target.repeats.iter();
+        for pair in path.windows(2) {
+            let parent = &pair[0];
+            let child = &pair[1];
+            if self.index.gap_roots.contains(child) {
+                return false;
+            }
+            match &self.index.document.nodes()[parent].kind {
+                NodeKind::Sequence { .. } => {}
+                NodeKind::Repeat {
+                    child: default,
+                    iterations,
+                    ..
+                } => {
+                    let Some(step) = repeat_steps.next() else {
+                        return false;
+                    };
+                    if &step.repeat != parent {
+                        return false;
+                    }
+                    match &step.branch {
+                        RepeatEditBranch::Default if child == default => {}
+                        RepeatEditBranch::Play { iteration } => {
+                            if iterations.position(iteration).is_none()
+                                || self
+                                    .index
+                                    .document
+                                    .gap_overrides()
+                                    .get(parent)
+                                    .is_some_and(|gaps| gaps.get(iteration) == Some(child))
+                                || self
+                                    .index
+                                    .document
+                                    .overrides()
+                                    .get(parent)
+                                    .and_then(|overrides| overrides.get(iteration))
+                                    .unwrap_or(default)
+                                    != child
+                            {
+                                return false;
+                            }
+                        }
+                        _ => return false,
+                    }
+                }
+                _ => return false,
+            }
+        }
+        repeat_steps.next().is_none()
     }
 
     // Returns the number of visited ancestors so the bounded work contract can

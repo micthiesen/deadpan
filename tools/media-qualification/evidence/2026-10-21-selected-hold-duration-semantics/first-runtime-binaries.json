@@ -1,0 +1,30 @@
+{
+  "path_provenance": "All five paths were cross-checked against focused-list.json for the same six-package Cargo graph before the final focused run; the retained core binary also reproduces its recorded setup failure directly.",
+  "binaries": {
+    "deadpan-core": {
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/deadpan_core-99ef176a441abc2a",
+      "retained": "/tmp/deadpan-selected-hold-duration-next-2026-10-21/first-runtime-bin/deadpan_core-99ef176a441abc2a",
+      "sha256": "d695a0bc8641b3f30a66d6b27c4fc74f6476110b675b1b46e4b7d9d414c5d992"
+    },
+    "deadpan-app::bin/deadpan-app": {
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/deadpan_app-1665fcaccc742208",
+      "retained": "/tmp/deadpan-selected-hold-duration-next-2026-10-21/first-runtime-bin/deadpan_app-1665fcaccc742208",
+      "sha256": "16efb2e9ffb7a6d557e0d6f707f877818bd72ec43f4be7def49d8f8fc7a87ea5"
+    },
+    "deadpan-audio::stages": {
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/stages-d575876438498380",
+      "retained": "/tmp/deadpan-selected-hold-duration-next-2026-10-21/first-runtime-bin/stages-d575876438498380",
+      "sha256": "dcbcdfb6126f14bae4e3d69953af3c3da89f8783dcfa89d4b85c2cdf041c46d5"
+    },
+    "deadpan-cli::preview_export": {
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/preview_export-09f24f1122af7985",
+      "retained": "/tmp/deadpan-selected-hold-duration-next-2026-10-21/first-runtime-bin/preview_export-09f24f1122af7985",
+      "sha256": "8d7a93cb23cf4c575b08750c630ca34f3a53828828b06c6ecc9a87588f1f9af5"
+    },
+    "deadpan-store::generation_bundles": {
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/generation_bundles-8fe4e5fef16f185c",
+      "retained": "/tmp/deadpan-selected-hold-duration-next-2026-10-21/first-runtime-bin/generation_bundles-8fe4e5fef16f185c",
+      "sha256": "ca933bd09c3bb19183cfa58d806963cb79809154e630956fea41629ec5b9a516"
+    }
+  }
+}

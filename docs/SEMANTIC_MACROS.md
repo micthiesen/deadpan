@@ -265,6 +265,37 @@ keep their existing paths and guards. See the
 [mixed duration qualification](qualification/mixed-hold-duration-semantics-2026-10-21.md)
 for implementation and verification status.
 
+### Selected plays Hold length
+
+`SemanticSelectedHoldDurationContext` captures the inspected root, primary
+Hold, optional primary presentation and ordered further targets. It admits
+2..=1024 targets with distinct explicit Plays at one common Repeat axis and an
+identical earlier authoring prefix. Every target must follow ordinary Sequence
+and Repeat bodies. A shared node ID may represent several distinct selected
+families and is never used to deduplicate them.
+
+Saved programs still contain only `SetHoldDuration { length }` and named calls.
+The planner validates every member, including no-op members, then requests one
+fresh revision and exact isolation pool per changed target. Mixed addresses
+use `SetScopedHoldDuration`; explicitly all-Play addresses use the existing
+occurrence duration path. Neither route reconstructs mixed authoring from a
+representative. Every actual leaf proof maps all targets and the primary
+presentation before resolving the next member.
+
+The final Compound retains aggregate limits and commits once. The primary
+cursor is resolved after all leaves, including when a later earlier-in-time
+resize moves it again. A zero root-duration delta remains an edit when the
+recipes change. No-op members skip isolation; an all-no-op request refuses
+without history. Dormant primary definitions require positive body-liveness
+proof and preserve their cursor without inventing a presentation.
+
+Native Apply, recording, named calls and direct-edit dot use this invocation
+authority. The receipt independently checks the complete executed proof and
+returns the mapped counterpart set. Navigation permanently revokes delayed
+continuation and clears the mapped multi-target selection. Choose a new play
+set explicitly before applying dot to another pair. Generic framing, owned gaps, Retime/Partition ancestry, placed
+sounds and unrelated instructions retain their guards.
+
 ### Ordinary Hold length inside fixed Retime
 
 An inspected Hold without Repeat ancestry also supports `:hold-duration`, Enter,

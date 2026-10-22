@@ -129,6 +129,7 @@ fn plan(
             hold_duration: None,
             shared_hold_duration: None,
             mixed_hold_duration: None,
+            selected_hold_duration: None,
             parent: id("root"),
             cursor: ProjectFrame(0),
             selected_child: Some(id(selected)),

@@ -6,6 +6,8 @@ use deadpan_core::{
 };
 use std::{collections::BTreeMap, num::NonZeroU32, path::Path};
 
+mod selected;
+
 // Reuse the verified qualified Original/RoomTone fixture without a second seed.
 use super::shared_hold_duration::fixture;
 
@@ -56,6 +58,8 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
         controls(d, &live, original, false, expected_picture)?;
         recording(d)?;
         delayed(d)?;
+        open(d, &live, original)?;
+        selected::run(d, &live, original, expected_picture)?;
         open(d, &dormant, original)?;
         dormant_case(d, &dormant, original)
     })();

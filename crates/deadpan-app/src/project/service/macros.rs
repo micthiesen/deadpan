@@ -20,6 +20,39 @@ fn scoped_macro_target(
     scope: &SequenceScope,
     context: &deadpan_core::SemanticContext,
 ) -> Result<Option<crate::project::scoped::Target>> {
+    if let Some(authority) = &context.selected_hold_duration {
+        if context.mixed_hold_duration.is_some()
+            || context.shared_hold_duration.is_some()
+            || context.hold_duration.is_some()
+            || context.scoped.is_some()
+            || context.original.is_some()
+            || context.visual_selection.is_some()
+            || context.selected_child.as_ref() != Some(&authority.root)
+        {
+            return Err(
+                "Several-play pause length requires its captured Hold selection without another selection.".into(),
+            );
+        }
+        let target = crate::project::scoped::Target {
+            session: id.session,
+            navigation: 0,
+            project: id.project.clone(),
+            revision: id.revision.clone(),
+            scope: scope.clone(),
+            root: authority.root.clone(),
+            target: authority.target.clone(),
+            presentation: authority.presentation.clone(),
+            cursor: context.cursor,
+            also: authority.also.clone(),
+        };
+        target.validate_request(workspace, id.session, &id.revision, scope, context.cursor)?;
+        if target.semantic_selected_hold_duration(workspace)? != **authority {
+            return Err(
+                "Several-play pause length differs from its captured native authority.".into(),
+            );
+        }
+        return Ok(Some(target));
+    }
     if let Some(authority) = &context.mixed_hold_duration {
         if context.shared_hold_duration.is_some()
             || context.hold_duration.is_some()
@@ -140,6 +173,74 @@ fn scoped_macro_receipt(
     context: &deadpan_core::SemanticContext,
     plan: &SemanticPlan,
 ) -> Result<Option<crate::project::scoped::Commit>> {
+    if let Some(authority) = &context.selected_hold_duration {
+        let before = before.ok_or("Several-play pause length lost its native capture.")?;
+        let request = plan
+            .request
+            .as_ref()
+            .ok_or("Several-play pause length has no executed edit.")?;
+        let proof = deadpan_core::derive_scoped_isolation(document, request, &plan.document)
+            .map_err(display)?;
+        let mapped = deadpan_core::SemanticSelectedHoldDurationContext {
+            root: authority.root.clone(),
+            target: proof.map_forward(&authority.target).map_err(display)?,
+            presentation: authority
+                .presentation
+                .as_ref()
+                .map(|instance| proof.map_instance_forward(instance))
+                .transpose()
+                .map_err(display)?,
+            also: authority
+                .also
+                .iter()
+                .map(|target| proof.map_forward(target).map_err(display))
+                .collect::<Result<Vec<_>>>()?,
+        };
+        let visible = plan
+            .document
+            .selected_hold_duration_visibility(&context.parent, &mapped)
+            .map_err(display)?;
+        let mut expected = context.clone();
+        expected.selected_hold_duration = Some(Box::new(mapped.clone()));
+        if let Some(visible) = visible {
+            expected.cursor = visible.frames.start();
+            let instance = mapped
+                .presentation
+                .as_ref()
+                .ok_or("Selected pause lost its primary presentation.")?;
+            let pictures = RenderPlan::compile(&plan.document).map_err(display)?;
+            for frame in [
+                visible.frames.start(),
+                deadpan_core::ProjectFrame(visible.frames.end().0 - 1),
+            ] {
+                if !pictures
+                    .picture(frame)
+                    .map_err(display)?
+                    .framing
+                    .iter()
+                    .any(|layer| &layer.instance == instance)
+                {
+                    return Err(
+                        "Resized selected pause no longer presents its captured primary Hold."
+                            .into(),
+                    );
+                }
+            }
+        }
+        if expected != plan.context {
+            return Err(
+                "Several-play pause length lost its executed isolation or exact continuation."
+                    .into(),
+            );
+        }
+        return Ok(Some(crate::project::scoped::Commit {
+            before,
+            revision: plan.document.revision_id().clone(),
+            target: mapped.target,
+            presentation: mapped.presentation,
+            also: Some(mapped.also),
+        }));
+    }
     if let Some(authority) = &context.mixed_hold_duration {
         let before = before.ok_or("Mixed pause length lost its native capture.")?;
         let request = plan

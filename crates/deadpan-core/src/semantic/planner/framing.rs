@@ -10,7 +10,10 @@ pub(super) fn validate_scoped_context(
     let Some(scoped) = &context.scoped else {
         return Ok(());
     };
-    if context.original.is_some() || context.visual_selection.is_some() {
+    if context.original.is_some()
+        || context.visual_selection.is_some()
+        || context.selected_hold_duration.is_some()
+    {
         return Err(unavailable(
             "single-play editing requires Your edit with no Visual selection",
         ));

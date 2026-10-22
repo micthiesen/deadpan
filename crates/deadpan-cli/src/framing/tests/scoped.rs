@@ -208,6 +208,7 @@ fn semantic_scoped_zoom_keep_preserves_live_follow_and_retained_clock_after_isol
     );
     let context = SemanticContext {
         hold_duration: None,
+        selected_hold_duration: None,
         mixed_hold_duration: None,
         shared_hold_duration: None,
         original: None,

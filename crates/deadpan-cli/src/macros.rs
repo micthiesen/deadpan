@@ -265,6 +265,7 @@ pub fn prepare(store: &ProjectStore, request: &Request) -> Result<Prepared, Live
                 &bank,
                 SemanticContext {
                     hold_duration: None,
+                    selected_hold_duration: None,
                     mixed_hold_duration: None,
                     shared_hold_duration: None,
                     parent: parent.clone(),
@@ -310,6 +311,7 @@ pub fn prepare(store: &ProjectStore, request: &Request) -> Result<Prepared, Live
             &bank,
             SemanticContext {
                 hold_duration: None,
+                selected_hold_duration: None,
                 mixed_hold_duration: None,
                 shared_hold_duration: None,
                 parent: parent.clone(),

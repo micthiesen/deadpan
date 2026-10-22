@@ -401,6 +401,7 @@ fn service_checks(
         scoped: None,
         hold_duration: None,
         shared_hold_duration: Some(target.semantic_shared_hold_duration(before).unwrap()),
+        selected_hold_duration: None,
         mixed_hold_duration: None,
     };
     let rows = || {

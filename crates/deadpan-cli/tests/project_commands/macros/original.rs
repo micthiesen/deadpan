@@ -224,6 +224,7 @@ fn original_macro_admission_and_late_failure_leave_history_and_registers_untouch
     let forged = ProjectDocument::from_json(&forged.to_string())?;
     let forged_context = deadpan_core::SemanticContext {
         hold_duration: None,
+        selected_hold_duration: None,
         mixed_hold_duration: None,
         shared_hold_duration: None,
         scoped: None,

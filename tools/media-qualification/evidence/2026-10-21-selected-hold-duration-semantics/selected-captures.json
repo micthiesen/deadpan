@@ -1,0 +1,20 @@
+[
+  {
+    "mode": "visual",
+    "file": "scoped-plays-157.png",
+    "label": "Selected-play Hold duration under outer Default",
+    "frame": 5289
+  },
+  {
+    "mode": "visual",
+    "file": "scoped-plays-158.png",
+    "label": "Selected-play Hold duration updates both mapped Holds in one edit",
+    "frame": 5320
+  },
+  {
+    "mode": "visual",
+    "file": "scoped-plays-159.png",
+    "label": "Selected-play Hold duration under outer Play",
+    "frame": 5439
+  }
+]

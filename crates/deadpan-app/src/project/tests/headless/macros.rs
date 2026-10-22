@@ -840,6 +840,7 @@ fn unread_native_save_motion_and_copy_continuations_block_remote_mutation() {
                     context: SemanticContext {
                         hold_duration: None,
                         shared_hold_duration: None,
+                        selected_hold_duration: None,
                         mixed_hold_duration: None,
                         original: None,
                         scoped: None,

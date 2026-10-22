@@ -1,0 +1,79 @@
+{
+  "base": "f384a85810f51be4d52ebfbc86b24071ef111268",
+  "tests": [
+    {
+      "log": "baseline.log",
+      "source_snapshot": "baseline-source",
+      "summaries": [
+        "Summary [   0.240s] 1 test run: 0 passed, 1 failed, 1207 skipped"
+      ],
+      "leak_markers": []
+    },
+    {
+      "log": "focused-first-runtime.log",
+      "source_snapshot": "second-runtime-source",
+      "summaries": [
+        "Summary [  23.019s] 15 tests run: 14 passed, 1 failed, 5201 skipped"
+      ],
+      "leak_markers": []
+    },
+    {
+      "log": "focused.log",
+      "source_snapshot": "third-runtime-source",
+      "summaries": [
+        "Summary [  23.004s] 15 tests run: 15 passed (1 leaky), 5201 skipped"
+      ],
+      "leak_markers": [
+        "LEAK [   0.234s] (10/15) deadpan-core semantic::planner::tests::shared_hold_duration::selected_hold_duration::selected_hold_duration_keeps_partial_physical_clocks_and_mark_copy_loss"
+      ]
+    },
+    {
+      "log": "regression.log",
+      "source_snapshot": "third-runtime-source",
+      "summaries": [
+        "Summary [ 142.254s] 3446 tests run: 3446 passed (3 slow), 1770 skipped"
+      ],
+      "leak_markers": []
+    },
+    {
+      "log": "ui.log",
+      "source_snapshot": "third-runtime-source",
+      "summaries": [
+        "Summary [  15.410s] 198 tests run: 198 passed, 1060 skipped"
+      ],
+      "leak_markers": []
+    },
+    {
+      "log": "post-capture-app.log",
+      "source_snapshot": "fourth-runtime-source",
+      "summaries": [
+        "Summary [  14.981s] 196 tests run: 196 passed, 1016 skipped"
+      ],
+      "leak_markers": []
+    },
+    {
+      "log": "post-capture-ui.log",
+      "source_snapshot": "fourth-runtime-source",
+      "summaries": [
+        "Summary [  15.260s] 198 tests run: 198 passed, 1060 skipped"
+      ],
+      "leak_markers": []
+    },
+    {
+      "log": "encoded.log",
+      "source_snapshot": "final-source",
+      "summaries": [
+        "Summary [  19.701s] 1 test run: 1 passed, 50 skipped"
+      ],
+      "leak_markers": []
+    }
+  ],
+  "quiet_core": "quiet-core.json; exact retained binary passes with output EOF",
+  "strict_checks": {
+    "format": "post-navigation-format.log",
+    "changed_packages": "post-capture-lint.log",
+    "ui_clippy": "post-navigation-lint.log",
+    "release_app": "final-release-app.log"
+  },
+  "source_note": "The 3446-test broader and first198 UI results precede only the final Source/Hold macro-capture kind guard. That app-only fix has196 normal app and198 UI follow-ups, strict checks and final native replays. Later changes repair native replay setup/oracles: supported selected-duration entry, re-entering the Hold after play-set changes, mapped IDs after reopen, copied default Sequence shape, fresh versus pre-owned Hold counts, and explicit play-set reselection after navigation revokes mapped continuation. Final UI Clippy and release replays exercise them. Failed compiler/setup/native reports remain separate; an intentional generated-command-reference rewrite exits with an assertion before the ordinary passing check."
+}

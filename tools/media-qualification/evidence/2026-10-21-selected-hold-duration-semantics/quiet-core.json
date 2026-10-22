@@ -1,0 +1,10 @@
+{
+  "binary": "/tmp/deadpan-selected-hold-duration-next-2026-10-21/focused-bin/deadpan_core-99ef176a441abc2a",
+  "sha256": "269945397a2d502372f5d570f861b3b65a09ca3d01388a0ac703fc637f35d3cd",
+  "test": "semantic::planner::tests::shared_hold_duration::selected_hold_duration::selected_hold_duration_keeps_partial_physical_clocks_and_mark_copy_loss",
+  "exit": 0,
+  "seconds": 0.021181791089475155,
+  "stdout_and_stderr_reached_eof": true,
+  "timeout_seconds": 30,
+  "note": "Isolated exact retained binary after focused Nextest completed. Concurrent-run captured-output marker retained; its cause is not established."
+}

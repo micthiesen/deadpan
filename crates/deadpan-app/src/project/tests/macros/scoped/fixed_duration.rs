@@ -130,6 +130,7 @@ fn exercise(output: i64, mapping_start: i64, mapping_end: i64, cursor: i64) {
         visual_selection: None,
         hold_duration: Some(target.semantic_hold_duration(before).unwrap()),
         shared_hold_duration: None,
+        selected_hold_duration: None,
         mixed_hold_duration: None,
     };
     let stable_rows = rows(&path);

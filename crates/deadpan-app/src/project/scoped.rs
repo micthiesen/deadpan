@@ -30,6 +30,70 @@ pub struct Target {
 }
 
 impl Target {
+    /// Duration-only authority for a captured set of selected Repeat plays.
+    /// The core validates the shared Play axis and each retained Default/Play
+    /// path; this native layer also verifies the primary rendered picture.
+    pub fn semantic_selected_hold_duration(
+        &self,
+        workspace: &Workspace,
+    ) -> Result<deadpan_core::SemanticSelectedHoldDurationContext, String> {
+        self.validate(workspace)?;
+        let count = self
+            .also
+            .len()
+            .checked_add(1)
+            .ok_or("Selected pause count overflowed.")?;
+        if !(2..=deadpan_core::MAX_SCOPED_TARGETS).contains(&count)
+            || count > deadpan_core::MAX_COMPOUND_STEPS
+            || !workspace.document.sounds().is_empty()
+            || !workspace.document.beat_sounds().is_empty()
+            || !matches!(
+                workspace.document.nodes()[&self.target.node].kind,
+                NodeKind::Hold { .. }
+            )
+        {
+            return Err(
+                "Several-play pause length requires 2..=1024 captured Holds and no placed sounds."
+                    .into(),
+            );
+        }
+        let authority = deadpan_core::SemanticSelectedHoldDurationContext {
+            root: self.root.clone(),
+            target: self.target.clone(),
+            presentation: self.presentation.clone(),
+            also: self.also.clone(),
+        };
+        let owner = self.scope.resolve(workspace)?;
+        let visible = workspace
+            .document
+            .selected_hold_duration_visibility(owner.owner, &authority)
+            .map_err(|error| error.to_string())?;
+        if let Some(visible) = visible {
+            let instance = authority
+                .presentation
+                .as_ref()
+                .ok_or("Selected pause lost its primary presentation.")?;
+            for frame in [
+                visible.frames.start(),
+                ProjectFrame(visible.frames.end().0 - 1),
+            ] {
+                if !workspace
+                    .plan
+                    .picture(frame)
+                    .map_err(|error| error.to_string())?
+                    .framing
+                    .iter()
+                    .any(|layer| &layer.instance == instance)
+                {
+                    return Err(
+                        "Selected pause no longer presents its captured primary Hold.".into(),
+                    );
+                }
+            }
+        }
+        Ok(authority)
+    }
+
     /// Mixed duration captures preserve authoring choices independently of the
     /// optional rendered representative. No framing authority is implied.
     pub fn semantic_mixed_hold_duration(

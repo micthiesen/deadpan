@@ -1,0 +1,13 @@
+[
+  {
+    "scenario": "scoped-plays",
+    "check": "Several-play Hold duration refuses without authored, cursor, target or bank changes",
+    "expected": {
+      "bank": "unchanged",
+      "document": "unchanged",
+      "error": "explicit",
+      "target": "unchanged"
+    },
+    "actual_message": "Pause length set to 7f across 2 selected plays."
+  }
+]

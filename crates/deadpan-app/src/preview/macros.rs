@@ -61,6 +61,7 @@ impl Capture {
         self.context.hold_duration.is_some()
             || self.context.shared_hold_duration.is_some()
             || self.context.mixed_hold_duration.is_some()
+            || self.context.selected_hold_duration.is_some()
     }
 
     /// Duration-only capture owns a continuation, but cannot authorize Zoom.
@@ -500,6 +501,7 @@ impl DeadpanApp {
             hold_duration: None,
             shared_hold_duration: None,
             mixed_hold_duration: None,
+            selected_hold_duration: None,
         };
         let scoped = self.scoped_target()?;
         let mut context = context;
@@ -510,7 +512,18 @@ impl DeadpanApp {
                         .into(),
                 );
             }
-            if target.target.repeats.is_empty() {
+            if !target.also.is_empty()
+                && matches!(
+                    base.document
+                        .nodes()
+                        .get(&target.target.node)
+                        .map(|node| &node.kind),
+                    Some(deadpan_core::NodeKind::Hold { .. })
+                )
+            {
+                context.selected_hold_duration =
+                    Some(Box::new(target.semantic_selected_hold_duration(&base)?));
+            } else if target.target.repeats.is_empty() {
                 context.hold_duration = Some(target.semantic_hold_duration(&base)?);
             } else if target
                 .target

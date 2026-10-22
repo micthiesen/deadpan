@@ -1,0 +1,65 @@
+[
+  {
+    "scenario": "scoped-plays",
+    "checks": 942,
+    "frames": 5494,
+    "check": "Native multi-play Hold capture preserves its exact inner selection and primary picture",
+    "expected": {
+      "Edit": 19,
+      "frames": 45,
+      "inner_plays": 2,
+      "outer_play": false
+    },
+    "actual": {
+      "duration": 45,
+      "sequence_cursor": 19,
+      "scoped": {
+        "cursor": 19,
+        "presentation": {
+          "node": "ui-shared-duration-body",
+          "repeats": [
+            {
+              "iteration": {
+                "allocation": "ui-shared-duration-insert-1",
+                "ordinal": 1
+              },
+              "node": "ui-shared-duration-outer"
+            },
+            {
+              "iteration": {
+                "allocation": "ui-shared-duration-insert-1",
+                "ordinal": 0
+              },
+              "node": "ui-shared-duration-inner"
+            }
+          ]
+        },
+        "revision": "1fbefa7c-1235-4df6-ac33-27375c996062",
+        "root": "ui-shared-duration-outer",
+        "target": {
+          "node": "ui-shared-duration-body",
+          "repeats": [
+            {
+              "branch": {
+                "type": "default"
+              },
+              "repeat": "ui-shared-duration-outer"
+            },
+            {
+              "branch": {
+                "iteration": {
+                  "allocation": "ui-shared-duration-insert-1",
+                  "ordinal": 0
+                },
+                "type": "play"
+              },
+              "repeat": "ui-shared-duration-inner"
+            }
+          ]
+        }
+      },
+      "error": null,
+      "message": null
+    }
+  }
+]

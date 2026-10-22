@@ -4,6 +4,28 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Current continuation, 2026-10-21
 
+Selected-play Hold duration now captures 2..=1024 Hold bodies with one varying
+explicit Repeat axis and identical earlier prefixes. Every changed member uses
+its exact staged duration path; actual leaf proofs map all targets and the
+primary presentation. Final continuation resolves only after the whole
+Compound, including zero-net duration changes. Native Apply, recording, named
+calls and direct-edit dot retain duration intent. Browsing revokes mapped
+selection; explicitly choose a new play set before dot on another pair.
+
+All 15 focused, 3,446 broader, 196 affected app and 198 UI-feature checks pass,
+with strict lint and the generated command reference. Both final native release
+replays pass 1,318 scoped checks plus Kestrel; three compact captures were
+inspected. Quiet input-to-state p99 is 1.418ms. Four release exports verify all
+240 pictures and 384,384 presented samples at measured offset zero.
+See [selected qualification](../qualification/selected-hold-duration-semantics-2026-10-21.md)
+for the valid old-code witness, retained corrections, review, source/binary
+identities and full evidence. Next: mixed/selected owned-gap duration, then
+remaining Repeat/Retime combinations and selectors. The owned-gap design and
+unexecuted old-code witness are in
+/tmp/deadpan-owned-gap-hold-duration-next-2026-10-21; positively dormant
+all-Play members also need the reducer's old-boundary assumption addressed.
+No requirement or gate is newly complete.
+
 Mixed All plays/This play Hold duration now has a separate invocation-only
 authority and `SetScopedHoldDuration` wrapper. It retains literal Default
 choices while isolating unowned Play bodies, then runs the ordinary duration
@@ -36,8 +58,8 @@ Both final native replays pass 1,069 scoped checks plus Kestrel; four compact
 captures were inspected. Release exports verify all 120 pictures and all
 192,192 presented audio samples at measured offset zero. Failed runs and their
 corrections remain in [the qualification](../qualification/shared-hold-duration-semantics-2026-10-21.md).
-Several-play durations, mixed gap timing and Repeat/Retime temporal combinations
-remain the next editing work. No requirement or gate is newly complete.
+At that checkpoint, several-play durations, mixed gap timing and Repeat/Retime
+temporal combinations remained the next editing work. No requirement or gate is newly complete.
 
 Ordinary Hold lengths inside fixed unclocked Edit Retimes now use a captured
 duration-only semantic context, independently of This-play authority. Enter,

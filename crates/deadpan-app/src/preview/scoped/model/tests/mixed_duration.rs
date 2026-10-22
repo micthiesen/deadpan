@@ -480,6 +480,7 @@ fn service_checks(
         scoped: None,
         hold_duration: None,
         shared_hold_duration: None,
+        selected_hold_duration: None,
         mixed_hold_duration: Some(Box::new(
             target.semantic_mixed_hold_duration(before).unwrap(),
         )),

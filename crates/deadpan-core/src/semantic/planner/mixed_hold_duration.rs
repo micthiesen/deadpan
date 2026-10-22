@@ -109,6 +109,7 @@ pub(super) fn validate_context(
         || context.scoped.is_some()
         || context.hold_duration.is_some()
         || context.shared_hold_duration.is_some()
+        || context.selected_hold_duration.is_some()
         || context.visual_selection.is_some()
         || context.selected_child.as_ref() != Some(&authority.root)
     {

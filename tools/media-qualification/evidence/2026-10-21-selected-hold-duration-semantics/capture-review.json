@@ -1,0 +1,26 @@
+[
+  {
+    "mode": "visual",
+    "file": "scoped-plays-157.png",
+    "label": "Selected-play Hold duration under outer Default",
+    "frame": 5289,
+    "review": "Inspected by root: 960x640; explicit outer scope and two inner Plays visible; primary Hold/duration or saved 3f feedback readable; command/footer keys anchored without overpaint; viewer dominates. Existing inspector scrolling warning remains recorded.",
+    "sha256": "5e8b8f8eb81903a1398d9a46c4506fa5631e6531fe23598f188080f451b6445d"
+  },
+  {
+    "mode": "visual",
+    "file": "scoped-plays-158.png",
+    "label": "Selected-play Hold duration updates both mapped Holds in one edit",
+    "frame": 5320,
+    "review": "Inspected by root: 960x640; explicit outer scope and two inner Plays visible; primary Hold/duration or saved 3f feedback readable; command/footer keys anchored without overpaint; viewer dominates. Existing inspector scrolling warning remains recorded.",
+    "sha256": "67b935384e68c2ba81555719f72b85bbf1c4401cbd0bd53a7f06e53dba7f7ece"
+  },
+  {
+    "mode": "visual",
+    "file": "scoped-plays-159.png",
+    "label": "Selected-play Hold duration under outer Play",
+    "frame": 5439,
+    "review": "Inspected by root: 960x640; explicit outer scope and two inner Plays visible; primary Hold/duration or saved 3f feedback readable; command/footer keys anchored without overpaint; viewer dominates. Existing inspector scrolling warning remains recorded.",
+    "sha256": "7c20712cee918964d23f7a3df209ba74446e5414798a8b1af088b4d1629bf45f"
+  }
+]

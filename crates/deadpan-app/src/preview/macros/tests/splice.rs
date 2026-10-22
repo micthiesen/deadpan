@@ -25,6 +25,7 @@ fn context() -> SemanticContext {
     SemanticContext {
         hold_duration: None,
         shared_hold_duration: None,
+        selected_hold_duration: None,
         mixed_hold_duration: None,
         parent: node("root"),
         cursor: ProjectFrame(37),

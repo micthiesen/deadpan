@@ -72,7 +72,7 @@ one concrete play at every level; Retime ancestors refuse this occurrence path
 ([pause insertion](INSERT_TIME.md)). Freeze
 capture also refuses a boundary whose preceding picture does not pass through
 the selected insertion parent; black pauses need no sampled picture.
-Mixed gap and several-play Hold resizing, Retime timing combinations, copy/paste
+Mixed owned-gap Hold resizing, Repeat/Retime timing combinations, copy/paste
 and general macros inside these contents remain required work;
 their native actions refuse without editing the retained outer beat.
 
@@ -123,6 +123,20 @@ Recording, calls and direct-edit dot retain those choices. Owned gaps,
 Retime/Partition ancestry, several plays and placed sounds remain unavailable
 on this mixed path. See [mixed duration semantics](SEMANTIC_MACROS.md#mixed-all-plays-and-this-play-hold-length)
 and its [qualification status](qualification/mixed-hold-duration-semantics-2026-10-21.md).
+
+Several selected Hold bodies use a separate duration-only context. The selection
+must vary explicit Plays of one Repeat under an identical earlier prefix;
+later All plays/This play choices remain intact. Enter prefills the primary
+Hold's length even when the selected recipes differ. Each changed member uses
+its own staged temporal edit, and all members commit as one Compound with one
+Undo. Actual isolation proofs retain the complete mapped selection; the cursor
+resolves the primary Hold only after every resize. A zero total duration change
+can still change several recipes. Valid no-op members consume no identities;
+an entirely unchanged selection makes no edit. Browsing another row revokes the
+mapped selection; choose a new play set explicitly before another batch or dot.
+Retime/Partition ancestry,
+owned gaps and placed sounds remain unavailable for this body-only family.
+See [selected duration semantics](SEMANTIC_MACROS.md#selected-plays-hold-length).
 
 An ordinary Hold inside fixed Edit Retime windows, without any Repeat ancestry,
 has a separate duration-only path through the same control, Enter and command.

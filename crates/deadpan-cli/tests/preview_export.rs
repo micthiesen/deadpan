@@ -590,26 +590,57 @@ fn shared_hold_duration_semantics_preview_and_encoded_output_keep_shared_source_
 #[test]
 fn mixed_hold_duration_semantics_preview_and_encoded_output_keep_selected_source_clocks() -> Result
 {
+    verify_selected_or_mixed_hold_duration(false)
+}
+
+#[test]
+fn selected_hold_duration_semantics_preview_and_encoded_output_keep_each_source_clock() -> Result {
+    verify_selected_or_mixed_hold_duration(true)
+}
+
+fn verify_selected_or_mixed_hold_duration(selected: bool) -> Result {
     let (root, _guard) = keep_or(tempfile::tempdir()?);
     let mut results = Vec::new();
-    for (name, factory) in [
-        (
-            "outer-grow",
-            recipes::ordinary_duration::mixed_outer_grow as fn(&Path) -> Result<Fixture>,
-        ),
-        (
-            "outer-shrink",
-            recipes::ordinary_duration::mixed_outer_shrink as fn(&Path) -> Result<Fixture>,
-        ),
-        (
-            "inner-grow",
-            recipes::ordinary_duration::mixed_inner_grow as fn(&Path) -> Result<Fixture>,
-        ),
-        (
-            "inner-shrink",
-            recipes::ordinary_duration::mixed_inner_shrink as fn(&Path) -> Result<Fixture>,
-        ),
-    ] {
+    let cases = if selected {
+        [
+            (
+                "selected-owned-grow",
+                recipes::ordinary_duration::selected_owned_grow as fn(&Path) -> Result<Fixture>,
+            ),
+            (
+                "selected-owned-shrink",
+                recipes::ordinary_duration::selected_owned_shrink,
+            ),
+            (
+                "selected-shared-grow",
+                recipes::ordinary_duration::selected_shared_grow,
+            ),
+            (
+                "selected-shared-shrink",
+                recipes::ordinary_duration::selected_shared_shrink,
+            ),
+        ]
+    } else {
+        [
+            (
+                "outer-grow",
+                recipes::ordinary_duration::mixed_outer_grow as fn(&Path) -> Result<Fixture>,
+            ),
+            (
+                "outer-shrink",
+                recipes::ordinary_duration::mixed_outer_shrink as fn(&Path) -> Result<Fixture>,
+            ),
+            (
+                "inner-grow",
+                recipes::ordinary_duration::mixed_inner_grow as fn(&Path) -> Result<Fixture>,
+            ),
+            (
+                "inner-shrink",
+                recipes::ordinary_duration::mixed_inner_shrink as fn(&Path) -> Result<Fixture>,
+            ),
+        ]
+    };
+    for (name, factory) in cases {
         let fixture = factory(&root.join(name))?;
         check(&fixture)?;
         if skip_without_physical_mac("encoded Render") {
@@ -634,7 +665,12 @@ fn mixed_hold_duration_semantics_preview_and_encoded_output_keep_selected_source
             json!({"package":fixture.package,"movie":movie,"report":report,"notes":fixture.notes}),
         );
     }
-    if let Some(path) = std::env::var_os("DEADPAN_MIXED_DURATION_RESULTS") {
+    let variable = if selected {
+        "DEADPAN_SELECTED_DURATION_RESULTS"
+    } else {
+        "DEADPAN_MIXED_DURATION_RESULTS"
+    };
+    if let Some(path) = std::env::var_os(variable) {
         std::fs::write(path, serde_json::to_vec_pretty(&results)?)?;
     }
     Ok(())

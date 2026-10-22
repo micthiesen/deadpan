@@ -14,6 +14,7 @@ fn context(update: &ProjectUpdate, cursor: i64, selected: Option<&str>) -> Seman
     SemanticContext {
         hold_duration: None,
         shared_hold_duration: None,
+        selected_hold_duration: None,
         mixed_hold_duration: None,
         original: None,
         scoped: None,
@@ -130,6 +131,7 @@ fn visual_presence_overrides_every_saved_kind_without_erasing_empty_or_absent_di
     let mut context = SemanticContext {
         hold_duration: None,
         shared_hold_duration: None,
+        selected_hold_duration: None,
         mixed_hold_duration: None,
         original: None,
         scoped: None,
@@ -731,6 +733,7 @@ fn dot_keeps_group_object_intent_and_current_object_visual_override() {
     let mut context = SemanticContext {
         hold_duration: None,
         shared_hold_duration: None,
+        selected_hold_duration: None,
         mixed_hold_duration: None,
         original: None,
         scoped: None,

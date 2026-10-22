@@ -894,7 +894,7 @@ pub static SPECS: &[Spec] = &[
         contexts: C::EDIT.or(C::CONTENTS),
         replay: Replay::RecordedAndDot,
         headless: eq("set_hold_duration instruction", HOLDS),
-        help: "Set a selected Hold to exactly 11 project frames. A visible ordinary Hold inside fixed Edit Retimes keeps those windows unchanged and continues at its first visible sampled frame. Inside Repeat contents, pause length follows each level's All plays or This play choice: shared defaults keep their owned plays, while a selected play becomes independent when needed. An unused default remains editable without moving the cursor or inventing a visible play. Retime ancestors and attached sounds remain unavailable inside Repeats; mixed choices cannot address owned gaps. Enter opens its length. Records and dot-repeats at the new invocation. Several selected plays remain unavailable.",
+        help: "Set a selected Hold to exactly 11 project frames. A visible ordinary Hold inside fixed Edit Retimes keeps those windows unchanged and continues at its first visible sampled frame. Inside Repeat contents, pause length follows each level's All plays, This play or selected plays choice: shared defaults keep their owned plays, while selected plays become independent when needed. Several selected Hold bodies change together with one Undo, retaining the other levels' explicit choices. An unused default remains editable without moving the cursor or inventing a visible play. Retime ancestors and attached sounds remain unavailable inside Repeats; mixed choices and several selected plays cannot address owned gaps. Enter opens its length. Records and dot-repeats at the new invocation.",
     },
     Spec {
         id: "hold.silence",
