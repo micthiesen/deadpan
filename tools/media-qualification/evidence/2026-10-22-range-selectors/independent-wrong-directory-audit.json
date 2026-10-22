@@ -1,0 +1,159 @@
+{
+  "requested_commit": "32598481ba9e66a0a37c79df3967d5e3fd170ebe",
+  "actual_commit": "32598481ba9e66a0a37c79df3967d5e3fd170ebe",
+  "rust_paths": {
+    "manifest_count": 1990,
+    "commit_count": 2000,
+    "path_set_matches": false,
+    "hashes_match": false,
+    "mismatched_count": 33,
+    "missing_from_release_manifest": [
+      "crates/deadpan-app/src/preview/harness/semantic/range_sets.rs",
+      "crates/deadpan-app/src/project/service/macros/tests.rs",
+      "crates/deadpan-cli/tests/preview_export/range_sets.rs",
+      "crates/deadpan-core/src/semantic/planner/range_sets.rs",
+      "crates/deadpan-core/src/semantic/range_set.rs",
+      "crates/deadpan-core/tests/range_set/fixture.rs",
+      "crates/deadpan-core/tests/range_set_counterfactual.rs",
+      "crates/deadpan-core/tests/range_set_shared_mark.rs",
+      "crates/deadpan-core/tests/range_sets.rs",
+      "crates/deadpan-store/tests/range_sets.rs"
+    ],
+    "extra_in_release_manifest": []
+  },
+  "six_inputs_lock": {
+    "count": 6,
+    "hashes_match_commit": false,
+    "details": {
+      "Cargo.lock": {
+        "expected": "1e39d18ae4de6c7b898edad39eb7104235fb3ffe3af84521ca94df2b6c25b71b",
+        "commit": "1e39d18ae4de6c7b898edad39eb7104235fb3ffe3af84521ca94df2b6c25b71b"
+      },
+      "Cargo.toml": {
+        "expected": "121e4cfefb2227cf38d5c1758d6a2250ddc38465a1044dfe896368c7ac1b50f3",
+        "commit": "121e4cfefb2227cf38d5c1758d6a2250ddc38465a1044dfe896368c7ac1b50f3"
+      },
+      "rust-toolchain.toml": {
+        "expected": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc",
+        "commit": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc"
+      },
+      ".cargo/config.toml": {
+        "expected": "b906738cab8f6f289180e1bcf32826d3e2996899cb5055dc7f0c6838655c340d",
+        "commit": "b906738cab8f6f289180e1bcf32826d3e2996899cb5055dc7f0c6838655c340d"
+      },
+      "crates/deadpan-app/src/navigation/registry/baseline-routing.txt": {
+        "expected": "f986ff6c5449846f27a8d4160d84e6b9182b1ea3ce6d72c94299712fa8848cfd",
+        "commit": "96cba21d7b30eee5d061a4eb078f8f60a2a81f2e2ab9f80c4630b10dae221f74"
+      },
+      "docs/COMMANDS.md": {
+        "expected": "7b4250df77e7d38298b4127035e3aed177ea25186509468701d2e91dee399abe",
+        "commit": "6ece9195737facbccfa5905417e2ae2867e8dd8df67fedde4e7d06087b842783"
+      }
+    }
+  },
+  "release_tar": {
+    "release-final-source": {
+      "mapping_count": 1990,
+      "archive_count": 1990,
+      "all_hashes_match": true,
+      "matches_release_manifest": true,
+      "declared_count": 1990
+    }
+  },
+  "release_manifest_commit_identity": {
+    "source_manifest_head_commit": "9a2f04cb413d6d855aa3cdc329405d89f04ca6ee",
+    "source_commit_ee": "eea765a96929be926fd3def97c2de6844df7827d"
+  },
+  "broad_ui_logs": {
+    "broad-final.log.gz": "[Errno 2] No such file or directory: '/Users/michael/Code/deadpan/tools/media-qualification/evidence/2026-10-22-discontiguous-selectors/broad-final.log.gz'",
+    "broad-fourth.log.gz": [
+      "     Summary [ 240.381s] 4570 tests run: 4570 passed, 781 skipped"
+    ],
+    "ui-final.log.gz": [
+      "     Summary [  68.132s] 1269 tests run: 1269 passed, 11 skipped"
+    ],
+    "ui-complete-final-build.log.gz": []
+  },
+  "native": {
+    "visual": {
+      "failed": false,
+      "scenarios": [
+        [
+          "kestrel-shortcuts",
+          1,
+          0,
+          false,
+          0
+        ],
+        [
+          "node-set-selectors",
+          143,
+          546,
+          false,
+          3
+        ]
+      ]
+    },
+    "performance": {
+      "failed": false,
+      "scenarios": [
+        [
+          "kestrel-shortcuts",
+          1,
+          0,
+          false,
+          0
+        ],
+        [
+          "node-set-selectors",
+          143,
+          677,
+          false,
+          2
+        ]
+      ]
+    }
+  },
+  "media": {
+    "passed": true,
+    "pictures": 32,
+    "project_range": [
+      0,
+      51251
+    ],
+    "measured_offset_samples": 0,
+    "offset_status": "verified_zero",
+    "flags": [],
+    "failures": []
+  },
+  "owner_archive": {
+    "members": 9,
+    "safe_paths": true,
+    "file_count": 9,
+    "hashes_match_receipt": true,
+    "validate_doctor": {
+      "checks": {
+        "validate": {
+          "exit": 0
+        },
+        "doctor": {
+          "exit": 0
+        }
+      },
+      "binary_sha256": "fb4c40a6d4a10931bba611aaa68ab12ed1967b83ff1d259b00a3f71348c5124d"
+    }
+  },
+  "inventory": {
+    "entries": 322,
+    "all_size_hashes_match": true,
+    "bad_files": [],
+    "inventory_sha": "52726858f0b5bff26726264a9e9a88f44034beb1af0a3b68e39c68a4a1d38fb2"
+  },
+  "audit_summary": {
+    "status": "partial_with_material_discrepancies",
+    "source_commit_binding": "failed: retained release source manifest is 1990 paths; target commit is 2000 paths, ten paths absent, 33 listed hashes differ",
+    "six_inputs_binding": "failed: 4/6 current blobs match; baseline-routing.txt and docs/COMMANDS.md differ",
+    "qualification_receipts": "retained evidence does not support requested broad/UI counts or media counts/range",
+    "inventory_observation": "322 entries, 112594416 bytes; every listed entry verified at audit time. Digest covers observed inventory, not this /tmp receipt."
+  }
+}

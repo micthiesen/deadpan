@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-22T19:36:31Z",
-  "estimate_note": "Engineering estimate of implemented and verified spec coverage, about \u00b15 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Explicit discontiguous Edit range sets, then corrected transcript-search selectors, remaining temporal families and sound owners, mastering, renderer and complete workflows.",
+  "updated_at": "2026-10-22T20:53:34Z",
+  "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
+  "focus": "Corrected transcript-search-result selectors with transactional analysis freshness, then remaining temporal families and sound owners, mastering, renderer and complete workflows.",
   "features": [
     {
       "id": "editing",
@@ -16,7 +16,7 @@
         "DP-07",
         "DP-21"
       ],
-      "note": "Slices, registers, repeats and semantic macros work, including Original navigation, ranged and per-play framing, selected-play pauses, Hold duration/sound and audio treatments, and exact-pause tape-speed updates around one inner Repeat. Native Hold lengths support ordinary fixed Retimes, explicit Repeat choices, selected-body batches and mixed/selected owned gaps. Nested This play, mixed Default/Play and selected body batches cross one fixed unclocked Edit Retime below every enclosing Repeat, retaining literal scope, actual isolation, cropped visible continuation, exact audio phase and accepted-provider history. Clone-intent Undo ownership and nested selected-scope retention are verified. Named-mark ranges retain addresses through selection, recording, named calls and dot, resolving each staged document with exact clock/scope checks and existing one-child role constraints. Whole-node selectors retain exact identity through staged ordinary-Sequence resolution, including empty nodes, recording/dot and structural replacement at the actual parent. Discontiguous whole-node unions capture one entry snapshot, Cut atomically, preserve shared marks and paste at an ordinary seam. Arbitrary interval sets, search-result selectors and remaining temporal combinations stay open."
+      "note": "Slices, registers, repeats and semantic macros work, including Original navigation, ranged and per-play framing, selected-play pauses, Hold duration/sound and audio treatments, and exact-pause tape-speed updates around one inner Repeat. Native Hold lengths support ordinary fixed Retimes, explicit Repeat choices, selected-body batches and mixed/selected owned gaps. Nested This play, mixed Default/Play and selected body batches cross one fixed unclocked Edit Retime below every enclosing Repeat, retaining literal scope, actual isolation, cropped visible continuation, exact audio phase and accepted-provider history. Clone-intent Undo ownership and nested selected-scope retention are verified. Named-mark ranges retain addresses through selection, recording, named calls and dot, resolving each staged document with exact clock/scope checks and existing one-child role constraints. Whole-node selectors retain exact identity through staged ordinary-Sequence resolution, including empty nodes, recording/dot and structural replacement at the actual parent. Discontiguous whole-node unions capture one entry snapshot, Cut atomically, preserve shared marks and paste at an ordinary seam. Explicit interval sets resolve signed cursor-relative pairs into separate canonical ranges, capture one entry snapshot, Cut atomically, and preserve shared Source context and logical marks through durable registers and seam paste. Native recording retains the pairs, named calls re-resolve them, and Visual Cut dot requires a new set; scalar consumers refuse without a hull. Corrected transcript-search-result selectors and remaining temporal combinations stay open."
     },
     {
       "id": "projects",
@@ -476,7 +476,7 @@
       "complete_sections": 8,
       "revision": "2ff2273374bfc13c0401c5aa22b6bd7c66aa0622",
       "retrospective": false,
-      "summary": "Prepared upcoming accepted Generated Holds on one cancellable background job. Four real-media tests, 44 worker tests, 60 media unit tests and strict Clippy pass. Small-fixture prepared entry takes 0.17\u20130.22 ms; full-resolution device qualification remains open."
+      "summary": "Prepared upcoming accepted Generated Holds on one cancellable background job. Four real-media tests, 44 worker tests, 60 media unit tests and strict Clippy pass. Small-fixture prepared entry takes 0.17–0.22 ms; full-resolution device qualification remains open."
     },
     {
       "date": "2026-10-11",
@@ -877,6 +877,14 @@
       "revision": "eea765a96929be926fd3def97c2de6844df7827d",
       "retrospective": false,
       "summary": "Discontiguous whole-node unions preserve separate parents, empty members and shared marks through one capture, atomic Cut, durable registers and seam paste. Verified 63 focused cases; 4,570 broad cases before final lint cleanup; 46 native cases and 1,273 complete UI cases on final source; 143 release native checks per mode; and 32 pictures/51,251 samples at zero offset. Source and evidence audits pass. No new requirement or gate closed; arbitrary interval and transcript-search selectors remain open."
+    },
+    {
+      "date": "2026-10-22",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "32598481ba9e66a0a37c79df3967d5e3fd170ebe",
+      "retrospective": false,
+      "summary": "Discontiguous interval sets retain relative selection intent and separate finished geometry through native recording, fresh named calls, atomic Cut, durable registers and seam paste, preserving shared Source context and mark bindings. Verified 106 focused, 4,596 broad and 1,281 complete UI cases; 85 release native checks per mode plus Kestrel; and 30 pictures/48,048 samples at zero offset. Source audit and extracted owner validation pass. No new requirement or gate closed; corrected transcript-search-result selectors remain next."
     }
   ]
 }

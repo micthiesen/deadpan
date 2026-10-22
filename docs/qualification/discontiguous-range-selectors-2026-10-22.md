@@ -171,4 +171,12 @@ Evidence lives in
 and inputs, passing and failed candidate reports, case inventories, executable
 hashes, native captures, the actual MP4, verification JSON and portable owner
 project. Canonical-audio and local-machine limits above remain applicable.
-Committed-source and final evidence audits are recorded after the code commit.
+Code commit: `32598481ba9e66a0a37c79df3967d5e3fd170ebe`. Every one of its 2,000
+Rust blobs and all six supplemental inputs match the frozen release candidate.
+An independent audit repeats that comparison, reconstructs the release source
+archive and checks the broad/UI case inventories, both native reports, emitted
+media, owner archive and evidence hashes. It passes on the exact range-selector
+directory. Its initial attempt opened the previous whole-node checkpoint;
+that wrong-directory attempt is retained separately and excluded from the
+passing result. Final collection rehashes all 249 retained inventory entries,
+totaling 42,673,590 bytes.

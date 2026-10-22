@@ -1,5 +1,20 @@
 [
   {
+    "file": "CONTROLS.md",
+    "bytes": 4138,
+    "sha256": "2ee7208145762315f532c65b9d170a579ef38fe60e7e563622fcdd82d1a9497d"
+  },
+  {
+    "file": "audit-output.txt.gz",
+    "bytes": 195845,
+    "sha256": "843d0f89f188f13cd5c360f29d6e72cb88f196c4ed2cfe7c03733a8531918bce"
+  },
+  {
+    "file": "audit.py.gz",
+    "bytes": 2041,
+    "sha256": "1926b66bcd15ce31263ec2b9e9b5cba86c6fb43575863a7767aea35f72c2b43d"
+  },
+  {
     "file": "base-commit.txt.gz",
     "bytes": 59,
     "sha256": "3a1924dcf4b343b669878198dab0af3236d0c67581240b0ad8bd9c206a16107f"
@@ -155,9 +170,19 @@
     "sha256": "c3f19ecaa5ce060e605ba74599a98c7beff0b5f61b3df807c077c88a5b6ef835"
   },
   {
+    "file": "code-commit.txt.gz",
+    "bytes": 60,
+    "sha256": "a63056b77143aa6403349447cbe3745d6d8ba15814bb3e70a4aa870900780cb7"
+  },
+  {
+    "file": "code-source-git-audit.json.gz",
+    "bytes": 158615,
+    "sha256": "0679016c12635b4eadddacdddf64c4aed4fb42cf18892e003687b24cd3e81324"
+  },
+  {
     "file": "collect.py.gz",
-    "bytes": 1650,
-    "sha256": "822b14da6951d936fb5ff261287056877343d99de9e0d441ef458516e7e0746f"
+    "bytes": 1654,
+    "sha256": "fc525d06c6a50026ec16a26b7d6d1febda91b407d679b99386b40368e802b1bc"
   },
   {
     "file": "core-first-identities.json",
@@ -358,6 +383,11 @@
     "file": "draft-identities.json",
     "bytes": 2004,
     "sha256": "31ec9f93dbba9357ef6846e0c2a37cfaf0ec3039b5cda6bf32ca2573225e7431"
+  },
+  {
+    "file": "final-candidate-consistency.json",
+    "bytes": 423,
+    "sha256": "7687a2e6895c7c566b5503ded65e0cbd1a5d321083b8934261760322d62704cb"
   },
   {
     "file": "finish_media.py.gz",
@@ -668,6 +698,26 @@
     "file": "host.json",
     "bytes": 377,
     "sha256": "6ab32f9a6cdb42262eb1614fd71b0c6542496ab46605df668f351f36f323b9ab"
+  },
+  {
+    "file": "independent-source-audit.json.gz",
+    "bytes": 195960,
+    "sha256": "3c99ceb09899b724176c2ddf7b88a61c887deb4eb8e23453d2bef96503b738ca"
+  },
+  {
+    "file": "independent-source-audit.md",
+    "bytes": 1411,
+    "sha256": "4cafe57c3fa2efbe1be96c5d02b0a1eaa522e5973ccc1954630f4c9cef8621a8"
+  },
+  {
+    "file": "independent-wrong-directory-audit.json",
+    "bytes": 5260,
+    "sha256": "01a7abd2e9de1c323663f2122a64e7df7e579b74b88c1075f24a2ede1dd49a47"
+  },
+  {
+    "file": "independent-wrong-directory-audit.md",
+    "bytes": 2309,
+    "sha256": "872d3f294542df2301a727eb76245708cc66a0ec853e73215e7744e58973abf0"
   },
   {
     "file": "input-snapshots.json",
@@ -1063,6 +1113,11 @@
     "file": "ripwire.txt.gz",
     "bytes": 3825,
     "sha256": "8e8eb6c36ccfb0fcec439ca44ba88af7d8c34a166fc79428abe4534597f0a861"
+  },
+  {
+    "file": "run-audit.py.gz",
+    "bytes": 2267,
+    "sha256": "3c6afe259b5128ea07761edbeec003d3578ca0509e21222e2d4902ab6f13bc32"
   },
   {
     "file": "run_archive.py.gz",

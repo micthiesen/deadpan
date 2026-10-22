@@ -1,0 +1,17 @@
+{
+  "stage_checks": {
+    "debug-fourth to lint-final": {
+      "all_2000_rust_equal": true,
+      "six_inputs_equal": true
+    },
+    "lint-final to broad-first": {
+      "all_2000_rust_equal": true,
+      "six_inputs_equal": true
+    },
+    "broad-first to release-final": {
+      "all_2000_rust_equal": true,
+      "six_inputs_equal": true
+    }
+  },
+  "all_native_timing_classes_have_zero_failures_or_timeouts": true
+}
