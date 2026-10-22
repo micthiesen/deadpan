@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-22T01:28:36Z",
-  "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Expose verified ordinary Hold resizing inside fixed Retime through captured native commands, recording and dot, then continue remaining editing, mastering, renderer and full-workflow qualification.",
+  "updated_at": "2026-10-22T02:38:30Z",
+  "estimate_note": "Engineering estimate of implemented and verified spec coverage, about \u00b15 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
+  "focus": "Continue remaining temporal occurrence scopes and selectors, audio-owner routes, mastering, renderer and full-workflow qualification.",
   "features": [
     {
       "id": "editing",
@@ -16,7 +16,7 @@
         "DP-07",
         "DP-21"
       ],
-      "note": "Slices, registers, repeats and semantic macros work, including Original navigation, ranged and per-play framing, selected-play pauses, Hold duration/sound edits, whole-owner gain/mute/saturation/balance/typed EQ in one play, and exact-pause tape-speed updates around one inner Repeat level. Wider operator/selector coverage and remaining timing families stay open."
+      "note": "Slices, registers, repeats and semantic macros work, including Original navigation, ranged and per-play framing, selected-play pauses, per-play Hold duration/sound and audio treatments, and exact-pause tape-speed updates around one inner Repeat. Ordinary Hold lengths inside fixed unclocked Edit Retimes now work through native controls, recording, calls and direct-edit dot. Wider operator/selector coverage and remaining timing families stay open."
     },
     {
       "id": "projects",
@@ -476,7 +476,7 @@
       "complete_sections": 8,
       "revision": "2ff2273374bfc13c0401c5aa22b6bd7c66aa0622",
       "retrospective": false,
-      "summary": "Prepared upcoming accepted Generated Holds on one cancellable background job. Four real-media tests, 44 worker tests, 60 media unit tests and strict Clippy pass. Small-fixture prepared entry takes 0.17–0.22 ms; full-resolution device qualification remains open."
+      "summary": "Prepared upcoming accepted Generated Holds on one cancellable background job. Four real-media tests, 44 worker tests, 60 media unit tests and strict Clippy pass. Small-fixture prepared entry takes 0.17\u20130.22 ms; full-resolution device qualification remains open."
     },
     {
       "date": "2026-10-11",
@@ -773,6 +773,14 @@
       "revision": "8f08d1e9",
       "retrospective": false,
       "summary": "Fixed fractional retained owner support without clamping signed clocks or weakening source admission. Four planner and eight PCM checks, all 1,234 broader plan/audio/playback tests and final strict lint pass. The complete nonzero Original/event nonlinear master matches its independent equation within 3.01e-8. Release export verifies all 11 pictures and 17,618 audio samples at offset zero, minimum block SNR31.05dB. Retained baseline, fixture and lint failures. Native ordinary Retime Hold editing remains open; no requirement or gate is newly complete."
+    },
+    {
+      "date": "2026-10-21",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "12d45f82",
+      "retrospective": false,
+      "summary": "Verified native ordinary Hold lengths inside fixed Retime through Enter, controls, recording, named calls and direct-edit dot, with exact cropped continuation and fixed output sounds. All 15 focused, 698 broader, 190 UI and final 144 app checks pass, with strict lint. Both release replays pass 958 scoped checks plus Kestrel; inspected compact captures and real Zoom regression pass. Release export verifies all 11 pictures and 17,618 audio samples at offset zero. Retained two dot-replay mistakes and the corrected framing-authority regression. No requirement or gate is newly complete."
     }
   ]
 }
