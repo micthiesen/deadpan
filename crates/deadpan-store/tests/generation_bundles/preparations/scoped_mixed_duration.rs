@@ -3,6 +3,8 @@
 use super::*;
 #[path = "scoped_mixed_duration/owned_gap.rs"]
 mod owned_gap;
+#[path = "scoped_mixed_duration/shared_fixed.rs"]
+mod shared_fixed;
 use deadpan_core::{OccurrenceIdentities, RepeatEditBranch, RepeatEditStep, ScopedNodeTarget};
 
 fn accepted_for_duration(

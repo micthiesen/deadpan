@@ -1,5 +1,7 @@
 //! Repeat owners retain their separate PointCeil phases inside processing input.
 use super::*;
+#[path = "processing_hold_duration_repeat/shared_fixed.rs"]
+mod shared_fixed;
 use deadpan_audio::{RoomTone, RoomToneRecipe};
 
 fn repeated_fixture(pitch: PitchPolicy, partial: bool) -> ProjectDocument {

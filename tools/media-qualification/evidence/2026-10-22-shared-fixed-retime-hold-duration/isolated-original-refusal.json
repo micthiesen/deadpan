@@ -1,0 +1,9 @@
+{
+  "executed": "/tmp/deadpan-next-shared-fixed-retime-duration-2026-10-22/focused-bin/deadpan_core-99ef176a441abc2a",
+  "sha256": "59258f557f71d77519febeccd687241f1a833eedd1b0ef3a45a6ffde15e637d1",
+  "test": "semantic::planner::tests::inspected_hold_duration::inspected_hold_duration_forged_and_conflicting_authorities_refuse_before_allocation",
+  "exit_code": 101,
+  "seconds": 0.03341279178857803,
+  "output_eof": true,
+  "note": "Original first-run failing binary; refusal-code assertion is still expected to fail. Isolated output reaches EOF; concurrent captured-output marker cause remains unknown."
+}

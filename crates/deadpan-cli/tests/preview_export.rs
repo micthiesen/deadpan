@@ -599,6 +599,45 @@ fn selected_hold_duration_semantics_preview_and_encoded_output_keep_each_source_
 }
 
 #[test]
+fn shared_fixed_retime_hold_duration_preview_and_encoded_output_keep_fixed_windows() -> Result {
+    let (root, _guard) = keep_or(tempfile::tempdir()?);
+    let mut results = Vec::new();
+    for (name, grow, affine) in [
+        ("unit-grow", true, false),
+        ("unit-shrink", false, false),
+        ("affine-grow", true, true),
+        ("affine-shrink", false, true),
+    ] {
+        let fixture = recipes::shared_fixed_retime_duration::build(&root.join(name), grow, affine)?;
+        check(&fixture)?;
+        if skip_without_physical_mac("encoded Render") {
+            continue;
+        }
+        let movie = render(&fixture, &root.join(format!("exports-{name}")))?;
+        let (report, passed) = verify(&fixture, &movie, &fixture.revision, &["--every", "1"])?;
+        assert!(passed, "{name}: {report}");
+        assert_eq!(report["summary"]["pictures_checked"], fixture.frames);
+        assert_eq!(report["summary"]["pictures_failed"], 0);
+        assert_eq!(report["summary"]["nonzero_offsets"], 0);
+        for audio in report["audio"].as_array().ok_or("audio report")? {
+            assert_eq!(audio["flags"], json!([]));
+            assert_eq!(audio["uncovered_samples"], 0);
+            assert_eq!(audio["blocks"]["low_snr_blocks"], 0);
+            assert_eq!(audio["offset_status"], "verified_zero");
+            assert_eq!(audio["measured_offset_samples"], 0);
+        }
+        check_provenance(&fixture, &report)?;
+        eprintln!("{}", summary_row(&fixture, &report));
+        results.push(json!({"package":fixture.package,"movie":movie,
+            "report":report,"notes":fixture.notes}));
+    }
+    if let Some(path) = std::env::var_os("DEADPAN_SHARED_FIXED_RETIME_DURATION_RESULTS") {
+        std::fs::write(path, serde_json::to_vec_pretty(&results)?)?;
+    }
+    Ok(())
+}
+
+#[test]
 fn owned_gap_hold_duration_semantics_preview_and_encoded_output_keep_live_and_dormant_clocks()
 -> Result {
     let (root, _guard) = keep_or(tempfile::tempdir()?);

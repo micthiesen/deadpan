@@ -69,8 +69,22 @@ impl ProjectDocument {
                 "ordinary Hold duration requires its captured target with no Repeat ancestry",
             ));
         }
+        self.hold_duration_visibility_for_instance(&authority.root, &authority.presentation)
+    }
+
+    /// Structural geometry shared by duration-only authorities. Callers retain
+    /// their own authoring policy; this projects one independently validated
+    /// stable presentation and does not select a substitute occurrence.
+    pub(super) fn hold_duration_visibility_for_instance(
+        &self,
+        inspector_root: &NodeId,
+        instance: &InstancePath,
+    ) -> Result<HoldDurationVisibility, EditError> {
+        instance
+            .validate(self)
+            .map_err(|error| unavailable(&error.message))?;
         let Some(NodeKind::Hold { recipe }) =
-            self.nodes().get(&authority.target).map(|node| &node.kind)
+            self.nodes().get(&instance.node).map(|node| &node.kind)
         else {
             return Err(unavailable(
                 "ordinary Hold duration requires a captured Hold",
@@ -79,7 +93,7 @@ impl ProjectDocument {
         // A descendant clock also seals its enclosing stage. Retained physical
         // audio bindings alone do not, so a second duration edit stays eligible.
         let clocked = self.retimes_with_derived_clocks();
-        if clocked.contains(&authority.root) {
+        if clocked.contains(inspector_root) {
             return Err(unavailable(
                 "ordinary Hold duration requires fixed Retimes without exact pause clocks",
             ));
@@ -91,16 +105,17 @@ impl ProjectDocument {
                 parents.insert(child.clone(), id.clone());
             }
         }
-        let mut current = authority.target.clone();
+        let mut current = instance.node.clone();
+        let mut remaining = instance.repeats.len();
         let mut saw_root = false;
         let mut visible = Some((
             ExactRatio::ZERO,
             ExactRatio::integer(recipe.duration.frames()),
         ));
         for _ in 0..=crate::MAX_DOCUMENT_DEPTH {
-            saw_root |= current == authority.root;
+            saw_root |= &current == inspector_root;
             if current == *self.root() {
-                if !saw_root {
+                if !saw_root || remaining != 0 {
                     return Err(unavailable(
                         "Hold duration target lies outside its captured inspector root",
                     ));
@@ -163,6 +178,51 @@ impl ProjectDocument {
                         })
                         .transpose()?;
                 }
+                NodeKind::Repeat {
+                    child,
+                    iterations,
+                    gap,
+                    ..
+                } if !saw_root => {
+                    remaining = remaining
+                        .checked_sub(1)
+                        .ok_or_else(|| unavailable("Hold presentation omits a Repeat ancestor"))?;
+                    let step = &instance.repeats[remaining];
+                    if &step.node != ancestor || child != &current {
+                        return Err(unavailable(
+                            "Hold presentation must follow its captured literal Repeat body",
+                        ));
+                    }
+                    let layout = crate::ExactRepeatLayout::compile_with_gap_overrides(
+                        iterations,
+                        child,
+                        self.overrides().get(ancestor),
+                        gap.as_ref().map_or(ExactRatio::ZERO, |gap| {
+                            ExactRatio::integer(gap.duration.frames())
+                        }),
+                        self.gap_overrides().get(ancestor),
+                        &extents,
+                    )?;
+                    let play = layout.play(&step.iteration)?.ok_or_else(|| {
+                        unavailable("Hold presentation names a retired Repeat play")
+                    })?;
+                    if play.child != current {
+                        return Err(unavailable(
+                            "Hold presentation uses an overridden Repeat body",
+                        ));
+                    }
+                    visible = visible
+                        .map(|(start, end)| {
+                            Ok::<_, EditError>((
+                                start
+                                    .checked_add(play.start)
+                                    .map_err(crate::DocumentError::from)?,
+                                end.checked_add(play.start)
+                                    .map_err(crate::DocumentError::from)?,
+                            ))
+                        })
+                        .transpose()?;
+                }
                 NodeKind::Retime {
                     duration,
                     mapping,
@@ -202,7 +262,7 @@ impl ProjectDocument {
                 }
                 _ => {
                     return Err(unavailable(
-                        "ordinary Hold duration ancestry must contain only Sequences and fixed unclocked Edit Retimes, without Repeats",
+                        "Hold duration ancestry requires Sequences, literal Repeat bodies and fixed unclocked Edit Retimes below its inspector root",
                     ));
                 }
             }

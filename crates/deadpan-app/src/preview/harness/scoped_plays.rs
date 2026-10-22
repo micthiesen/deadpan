@@ -7,6 +7,7 @@ use egui::Key;
 mod analysis_navigation;
 mod audio_setters;
 mod fixed_hold_duration;
+pub(super) mod fixed_retime_duration;
 mod framing_macros;
 mod gain_macros;
 mod heterogeneous_pauses;

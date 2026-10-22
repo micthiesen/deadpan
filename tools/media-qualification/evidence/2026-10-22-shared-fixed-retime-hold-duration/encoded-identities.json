@@ -1,0 +1,396 @@
+{
+  "binaries": {
+    "deadpan-cli::preview_export": {
+      "path": "/Users/michael/Code/deadpan/target/release/deps/preview_export-633f4b90e83a29ac",
+      "retained": "/tmp/deadpan-next-shared-fixed-retime-duration-2026-10-22/encoded-bin/preview_export-633f4b90e83a29ac",
+      "sha256": "e8092595a5de02db1814343380675692e623391b4ea9628080e78ce944f8049a",
+      "bytes": 26239072
+    },
+    "deadpan-cli": {
+      "path": "/Users/michael/Code/deadpan/target/release/deadpan-cli",
+      "retained": "/tmp/deadpan-next-shared-fixed-retime-duration-2026-10-22/encoded-bin/deadpan-cli",
+      "sha256": "5bee03d5449eeb949f0795915320b7f92f25fc0e7ecb2c6d0bf8653b508621ee",
+      "bytes": 48676048
+    },
+    "deadpan-media-worker": {
+      "path": "/Users/michael/Code/deadpan/target/release/deadpan-media-worker",
+      "retained": "/tmp/deadpan-next-shared-fixed-retime-duration-2026-10-22/encoded-bin/deadpan-media-worker",
+      "sha256": "70114641de62f0c9c839734f3dddab1221b01888661a43ed5583e40ca9ed90fe",
+      "bytes": 1169872
+    },
+    "deadpan-transcribe": {
+      "path": "/Users/michael/Code/deadpan/target/release/deadpan-transcribe",
+      "retained": "/tmp/deadpan-next-shared-fixed-retime-duration-2026-10-22/encoded-bin/deadpan-transcribe",
+      "sha256": "a75e83e94c073fa7419fea1ffc4621ab56adba020d402435c65622dababbe8b3",
+      "bytes": 2603984
+    },
+    "deadpan-track": {
+      "path": "/Users/michael/Code/deadpan/target/release/deadpan-track",
+      "retained": "/tmp/deadpan-next-shared-fixed-retime-duration-2026-10-22/encoded-bin/deadpan-track",
+      "sha256": "97564bc5d9aee093aa7e3fa5e8a89aa5da68134f92f34032a407f27778c1eab4",
+      "bytes": 1656592
+    }
+  },
+  "outputs": [
+    {
+      "movie": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpwaqAYg/exports-unit-grow/shared-fixed-retime-unit-grow.mp4",
+      "movie_bytes": 17368,
+      "movie_sha256": "38b5ccad11a0f8bdeabd598105a0702241618b443d7ad800f13a20b77086c276",
+      "package": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpwaqAYg/unit-grow/shared-fixed-retime-unit-grow.deadpan",
+      "package_files": [
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpwaqAYg/unit-grow/shared-fixed-retime-unit-grow.deadpan/.render-candidates.lock",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpwaqAYg/unit-grow/shared-fixed-retime-unit-grow.deadpan/.writer.lock",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpwaqAYg/unit-grow/shared-fixed-retime-unit-grow.deadpan/Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+          "bytes": 39157,
+          "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpwaqAYg/unit-grow/shared-fixed-retime-unit-grow.deadpan/Media/RenderCandidates/blake3-0d4334a6bb535c9453b4f5d3bf39b0d810edf4aa1c76b7121fb43e1e11110b3d",
+          "bytes": 15097,
+          "sha256": "7ff72975b6e52c6e161ab806b45f9faa7b54c2b33b748e6a8522d535b6544375"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpwaqAYg/unit-grow/shared-fixed-retime-unit-grow.deadpan/Media/RenderCandidates/blake3-809dc133385ff93c6129dd6792465ec0963b6d61e2408950b4d4128514e7c35d",
+          "bytes": 17368,
+          "sha256": "38b5ccad11a0f8bdeabd598105a0702241618b443d7ad800f13a20b77086c276"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpwaqAYg/unit-grow/shared-fixed-retime-unit-grow.deadpan/manifest.json",
+          "bytes": 82,
+          "sha256": "6fe22991b2af980a18e355e4083536c94eb0d1d29b91f4de4d0fac47274e2646"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpwaqAYg/unit-grow/shared-fixed-retime-unit-grow.deadpan/project.sqlite",
+          "bytes": 659456,
+          "sha256": "6de882be1d6ac7790801bc118a9ecb99d702cbd38819dc67f7a127cf62da07f9"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpwaqAYg/unit-grow/shared-fixed-retime-unit-grow.deadpan/project.sqlite-shm",
+          "bytes": 32768,
+          "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpwaqAYg/unit-grow/shared-fixed-retime-unit-grow.deadpan/project.sqlite-wal",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "summary": {
+        "audio_windows_checked": 1,
+        "audio_windows_failed": 0,
+        "blocks_compared": 5,
+        "index_observable_comparisons": 46,
+        "index_unobservable_comparisons": 38,
+        "max_block_level_db": 0.08735021174592106,
+        "max_local_luma_error": 2.125,
+        "max_thumbnail_mad": 0.05022078804347826,
+        "min_block_snr_db": 30.469410825925955,
+        "min_chroma_psnr_db": 53.44486901527713,
+        "min_luma_psnr_db": 56.454656378842394,
+        "min_neighbor_margin_db": 0.0,
+        "nonzero_offsets": 0,
+        "offset_unobservable_windows": 0,
+        "offset_verified_windows": 1,
+        "pictures_checked": 43,
+        "pictures_failed": 0,
+        "pictures_without_index_neighbors": 0,
+        "signal_windows": 1
+      },
+      "audio_windows": [
+        {
+          "window": [
+            0,
+            68869
+          ],
+          "project_samples": [
+            0,
+            68869
+          ],
+          "measured_offset_samples": 0,
+          "offset_status": "verified_zero",
+          "uncovered_samples": 0,
+          "flags": []
+        }
+      ]
+    },
+    {
+      "movie": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpwaqAYg/exports-unit-shrink/shared-fixed-retime-unit-shrink.mp4",
+      "movie_bytes": 22254,
+      "movie_sha256": "93f86ac56baa029c0359edad00460d83def74390849c3972e3cc8f3deb838b74",
+      "package": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpwaqAYg/unit-shrink/shared-fixed-retime-unit-shrink.deadpan",
+      "package_files": [
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpwaqAYg/unit-shrink/shared-fixed-retime-unit-shrink.deadpan/.render-candidates.lock",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpwaqAYg/unit-shrink/shared-fixed-retime-unit-shrink.deadpan/.writer.lock",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpwaqAYg/unit-shrink/shared-fixed-retime-unit-shrink.deadpan/Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+          "bytes": 39157,
+          "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpwaqAYg/unit-shrink/shared-fixed-retime-unit-shrink.deadpan/Media/RenderCandidates/blake3-5f5bed9cbcd993f489b675aaec8d71010cecfee99d82a001e6eefc1782f8dd66",
+          "bytes": 15103,
+          "sha256": "0cc71fff5b807129653e528bcfc65cf7733a00f512fdc40d7688c03dac908372"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpwaqAYg/unit-shrink/shared-fixed-retime-unit-shrink.deadpan/Media/RenderCandidates/blake3-7a0ffa91c90b3aa597ccfc5e0c4a41e47f151ac344096db835b4a7ac86dc05ba",
+          "bytes": 22254,
+          "sha256": "93f86ac56baa029c0359edad00460d83def74390849c3972e3cc8f3deb838b74"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpwaqAYg/unit-shrink/shared-fixed-retime-unit-shrink.deadpan/manifest.json",
+          "bytes": 82,
+          "sha256": "be64b348ead46e474d80ecce6396e305d8b8ba1bbd640adb462960efeafd7249"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpwaqAYg/unit-shrink/shared-fixed-retime-unit-shrink.deadpan/project.sqlite",
+          "bytes": 659456,
+          "sha256": "c5c5f63fed9f3fb0286e6d81c505ad841c1eec5a8d6f279ef060746cb8c7feb4"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpwaqAYg/unit-shrink/shared-fixed-retime-unit-shrink.deadpan/project.sqlite-shm",
+          "bytes": 32768,
+          "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpwaqAYg/unit-shrink/shared-fixed-retime-unit-shrink.deadpan/project.sqlite-wal",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "summary": {
+        "audio_windows_checked": 1,
+        "audio_windows_failed": 0,
+        "blocks_compared": 4,
+        "index_observable_comparisons": 54,
+        "index_unobservable_comparisons": 30,
+        "max_block_level_db": 0.004469754236136936,
+        "max_local_luma_error": 2.125,
+        "max_thumbnail_mad": 0.05022078804347826,
+        "min_block_snr_db": 48.42560111568436,
+        "min_chroma_psnr_db": 53.44486901527713,
+        "min_luma_psnr_db": 56.454656378842394,
+        "min_neighbor_margin_db": 0.0,
+        "nonzero_offsets": 0,
+        "offset_unobservable_windows": 0,
+        "offset_verified_windows": 1,
+        "pictures_checked": 43,
+        "pictures_failed": 0,
+        "pictures_without_index_neighbors": 0,
+        "signal_windows": 1
+      },
+      "audio_windows": [
+        {
+          "window": [
+            0,
+            68869
+          ],
+          "project_samples": [
+            0,
+            68869
+          ],
+          "measured_offset_samples": 0,
+          "offset_status": "verified_zero",
+          "uncovered_samples": 0,
+          "flags": []
+        }
+      ]
+    },
+    {
+      "movie": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpwaqAYg/exports-affine-grow/shared-fixed-retime-affine-grow.mp4",
+      "movie_bytes": 16894,
+      "movie_sha256": "3b1f31a6c30c11e448714789a2deaf7e4ff14a7a3af72d593c7dab9d0927f3b2",
+      "package": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpwaqAYg/affine-grow/shared-fixed-retime-affine-grow.deadpan",
+      "package_files": [
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpwaqAYg/affine-grow/shared-fixed-retime-affine-grow.deadpan/.render-candidates.lock",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpwaqAYg/affine-grow/shared-fixed-retime-affine-grow.deadpan/.writer.lock",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpwaqAYg/affine-grow/shared-fixed-retime-affine-grow.deadpan/Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+          "bytes": 39157,
+          "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpwaqAYg/affine-grow/shared-fixed-retime-affine-grow.deadpan/Media/RenderCandidates/blake3-d917b22b7c9bd07df0c71ec74cc8626f78161559a553800290dd16b84f6830e1",
+          "bytes": 16894,
+          "sha256": "3b1f31a6c30c11e448714789a2deaf7e4ff14a7a3af72d593c7dab9d0927f3b2"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpwaqAYg/affine-grow/shared-fixed-retime-affine-grow.deadpan/Media/RenderCandidates/blake3-f0d59d9d1a64dcdc392476bf08efafa626538723dac19435938a466cb7c3f4ad",
+          "bytes": 15103,
+          "sha256": "869844c04260d526948df7aa2026da1642e9c7793b842eaddd0119574f7d5980"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpwaqAYg/affine-grow/shared-fixed-retime-affine-grow.deadpan/manifest.json",
+          "bytes": 82,
+          "sha256": "6bcd4246aa85376ce29845a932d27cfed9464ddfec23ccfa7a09551146fc9b9a"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpwaqAYg/affine-grow/shared-fixed-retime-affine-grow.deadpan/project.sqlite",
+          "bytes": 659456,
+          "sha256": "902442848d50b6c6695f0953cabbbfe19b8f5b81f20f9dc5f91ea3c52d31bfbf"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpwaqAYg/affine-grow/shared-fixed-retime-affine-grow.deadpan/project.sqlite-shm",
+          "bytes": 32768,
+          "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpwaqAYg/affine-grow/shared-fixed-retime-affine-grow.deadpan/project.sqlite-wal",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "summary": {
+        "audio_windows_checked": 1,
+        "audio_windows_failed": 0,
+        "blocks_compared": 4,
+        "index_observable_comparisons": 44,
+        "index_unobservable_comparisons": 28,
+        "max_block_level_db": 0.037518359494484343,
+        "max_local_luma_error": 2.125,
+        "max_thumbnail_mad": 0.05022078804347826,
+        "min_block_snr_db": 32.93657475605326,
+        "min_chroma_psnr_db": 53.44486901527713,
+        "min_luma_psnr_db": 56.454656378842394,
+        "min_neighbor_margin_db": 0.0,
+        "nonzero_offsets": 0,
+        "offset_unobservable_windows": 0,
+        "offset_verified_windows": 1,
+        "pictures_checked": 37,
+        "pictures_failed": 0,
+        "pictures_without_index_neighbors": 0,
+        "signal_windows": 1
+      },
+      "audio_windows": [
+        {
+          "window": [
+            0,
+            59259
+          ],
+          "project_samples": [
+            0,
+            59259
+          ],
+          "measured_offset_samples": 0,
+          "offset_status": "verified_zero",
+          "uncovered_samples": 0,
+          "flags": []
+        }
+      ]
+    },
+    {
+      "movie": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpwaqAYg/exports-affine-shrink/shared-fixed-retime-affine-shrink.mp4",
+      "movie_bytes": 19695,
+      "movie_sha256": "48a9f2733199a81300ed94f66587955d7de605be71c41d31df89d348fcbfb111",
+      "package": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpwaqAYg/affine-shrink/shared-fixed-retime-affine-shrink.deadpan",
+      "package_files": [
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpwaqAYg/affine-shrink/shared-fixed-retime-affine-shrink.deadpan/.render-candidates.lock",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpwaqAYg/affine-shrink/shared-fixed-retime-affine-shrink.deadpan/.writer.lock",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpwaqAYg/affine-shrink/shared-fixed-retime-affine-shrink.deadpan/Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+          "bytes": 39157,
+          "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpwaqAYg/affine-shrink/shared-fixed-retime-affine-shrink.deadpan/Media/RenderCandidates/blake3-36343e07bf76d5deb49804a8369fe7dfa278fad37b47b143cb154ccef4228bf6",
+          "bytes": 19695,
+          "sha256": "48a9f2733199a81300ed94f66587955d7de605be71c41d31df89d348fcbfb111"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpwaqAYg/affine-shrink/shared-fixed-retime-affine-shrink.deadpan/Media/RenderCandidates/blake3-b247ebf075e1d44d88b5714ab52503e4277540a0cdaf97d35e0394bdafc6ccb2",
+          "bytes": 15109,
+          "sha256": "776987a04d33b19218df444cd75e41995728e0c0478f76126b330b3a0035b86b"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpwaqAYg/affine-shrink/shared-fixed-retime-affine-shrink.deadpan/manifest.json",
+          "bytes": 82,
+          "sha256": "8bd6aceed18875ba5e5d66878caaa22be36d39e2391c550299d2c9217e2151a2"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpwaqAYg/affine-shrink/shared-fixed-retime-affine-shrink.deadpan/project.sqlite",
+          "bytes": 659456,
+          "sha256": "5a4aa8673ccde6a36e7c444160aa046b6c6ed4a69ff1e64b969b1e9afda98916"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpwaqAYg/affine-shrink/shared-fixed-retime-affine-shrink.deadpan/project.sqlite-shm",
+          "bytes": 32768,
+          "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpwaqAYg/affine-shrink/shared-fixed-retime-affine-shrink.deadpan/project.sqlite-wal",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "summary": {
+        "audio_windows_checked": 1,
+        "audio_windows_failed": 0,
+        "blocks_compared": 4,
+        "index_observable_comparisons": 48,
+        "index_unobservable_comparisons": 24,
+        "max_block_level_db": 0.03235416439549965,
+        "max_local_luma_error": 2.125,
+        "max_thumbnail_mad": 0.05022078804347826,
+        "min_block_snr_db": 33.61159956623045,
+        "min_chroma_psnr_db": 53.44486901527713,
+        "min_luma_psnr_db": 56.454656378842394,
+        "min_neighbor_margin_db": 0.0,
+        "nonzero_offsets": 0,
+        "offset_unobservable_windows": 0,
+        "offset_verified_windows": 1,
+        "pictures_checked": 37,
+        "pictures_failed": 0,
+        "pictures_without_index_neighbors": 0,
+        "signal_windows": 1
+      },
+      "audio_windows": [
+        {
+          "window": [
+            0,
+            59259
+          ],
+          "project_samples": [
+            0,
+            59259
+          ],
+          "measured_offset_samples": 0,
+          "offset_status": "verified_zero",
+          "uncovered_samples": 0,
+          "flags": []
+        }
+      ]
+    }
+  ]
+}

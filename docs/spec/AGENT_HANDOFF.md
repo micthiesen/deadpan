@@ -4,6 +4,31 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Current continuation, 2026-10-22
 
+All plays Hold duration now crosses fixed unclocked Edit Retimes below its
+direct Repeat inspector root. Shared and ordinary duration visibility reuse
+one exact crop/scale/center projection with canonical stable Repeat offsets.
+Fixed windows, independent plays and complete dormancy proof remain intact.
+The raw duration reducer and public instruction/context formats are unchanged.
+
+All 23 focused, 3,480 broader and 202 final UI-feature tests pass. Strict
+checks and formatting pass. Both release native replays pass 60 checks plus
+Kestrel, with two inspected compact captures; state p99 is 1.724ms (134 samples).
+Four release exports verify all 160 pictures and 256,256 presented samples at
+offset zero. See [qualification](../qualification/shared-fixed-retime-hold-duration-2026-10-22.md)
+for retained fixture/replay corrections, timing-ID bijection checks, layout and
+captured-output warnings, exact sources and binaries. No requirement or gate
+is newly complete.
+
+Next: remaining temporal scopes and selectors, beginning with duration-only
+This play/mixed paths through fixed Retimes. First prove a public isolation and
+raw-duration control; do not merely remove old guards. The occurrence path
+still captures an integral root suffix and bypasses fixed-window reduction,
+and the shared geometry helper deliberately follows literal Default bodies.
+Single all-Play dormant gaps, implicit default-gap node targets, processing
+clocks, Partition and placed sounds retain their documented limits.
+
+## Owned-gap Hold duration checkpoint, 2026-10-22
+
 Mixed and selected Hold lengths now support explicit owned gaps at any ordinary
 Sequence/Repeat level, including final dormant definitions. Complete branch
 ancestry and current stable Play position determine liveness. Actual isolation
@@ -21,16 +46,7 @@ presented samples at measured offset zero. See the
 for retained failures, exact Source-reference oracle corrections, review,
 warnings and source/binary identities. No requirement or gate is newly complete.
 
-Next: All plays Hold duration inside a fixed unclocked Edit Retime beneath an
-outer Repeat, then the remaining temporal scopes and selectors. The old-code
-witness proposal and rationale are in
-/tmp/deadpan-next-shared-fixed-retime-duration-2026-10-22; they are unexecuted.
-The raw fixed-window duration reducer already has Repeat tests, but shared
-semantic/native visibility assumes integral unretimed Hold extents. Do not
-simply remove This-play guards: that occurrence path still captures a root
-suffix and bypasses the ordinary fixed-window reducer. A single all-Play dormant
-gap, implicit default-gap node targets, processing clocks, Partition and placed
-sounds retain their documented limits.
+The shared fixed-Retime continuation from this checkpoint is qualified above.
 
 ## Selected-play Hold duration checkpoint, 2026-10-21
 

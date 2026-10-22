@@ -3,8 +3,9 @@
 `Enter` opens a selected Repeat or Retime. Inside it, `j/k` selects children,
 `Enter` descends and `Backspace` returns to the parent. On an existing Hold with
 This play at every Repeat level, `Enter` opens its exact duration instead.
-Enter also opens an ordinary Hold's duration inside fixed Edit Retime windows
-without Repeat ancestry or derived pause clocks.
+Enter also opens Hold duration inside fixed Edit Retime windows without Repeat
+ancestry, or with All plays explicit at every enclosing Repeat. Derived pause
+clocks retain their timing guard.
 Pause insertion follows the explicit choice at each enclosing Repeat. Other
 temporal edits still use the ordinary Sequence timeline.
 
@@ -110,7 +111,12 @@ stable play. A default whose body uses are all overridden remains editable
 without inventing a presentation; its cursor and rendered duration stay fixed.
 The core proves dormancy from complete body-override coverage, independently
 of gap overrides. Recording and named calls accept duration setters only.
-Several plays and Retime ancestry retain their timing guards.
+Fixed unclocked Edit Retimes below the inspected Repeat are supported: each
+window keeps its output length, and continuation uses the first sampled visible
+Hold picture after every crop. Nested Repeat offsets follow current stable
+plays, including independent body and gap overrides. Hidden or unsampled Holds
+refuse. Partition, derived clocks and fixed Retimes above the inspector root
+retain their guards. Mixed and several-play paths keep their separate limits.
 See [shared duration semantics](SEMANTIC_MACROS.md#all-plays-hold-length).
 
 Mixed All plays/This play choices have their own duration-only context.

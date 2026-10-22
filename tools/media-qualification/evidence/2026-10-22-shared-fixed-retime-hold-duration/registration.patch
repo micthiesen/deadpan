@@ -1,0 +1,12 @@
+diff --git a/crates/deadpan-app/src/preview/scoped/model/tests.rs b/crates/deadpan-app/src/preview/scoped/model/tests.rs
+index 831ec8bb..5637a5f5 100644
+--- a/crates/deadpan-app/src/preview/scoped/model/tests.rs
++++ b/crates/deadpan-app/src/preview/scoped/model/tests.rs
+@@ -5,6 +5,7 @@ mod owned_gap_duration;
+ mod pause_continuation;
+ mod selected_duration;
+ mod shared_duration;
++mod shared_fixed_retime_duration;
+ use deadpan_core::{
+     BeatNode, ColorPolicy, Command, CommandRequest, FrameRange, FrameRate, HoldAudio, HoldRecipe,
+     HoldVideo, IterationOrder, MarkId, OccurrenceIdentities, PitchPolicy, PlayOverride,

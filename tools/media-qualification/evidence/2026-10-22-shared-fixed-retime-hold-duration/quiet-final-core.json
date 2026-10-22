@@ -1,0 +1,8 @@
+{
+  "executed": "/tmp/deadpan-next-shared-fixed-retime-duration-2026-10-22/final-focused-bin/deadpan_core-99ef176a441abc2a",
+  "sha256": "15cc45207d1d085afc7c766a748ddd71f60850e2a606f63aa1d8a43eb2c375cb",
+  "test": "semantic::planner::tests::inspected_hold_duration::inspected_hold_duration_crops_and_picture_center_ties_reject_unsampled_targets",
+  "exit_code": 0,
+  "seconds": 0.045234291814267635,
+  "output_eof": true
+}

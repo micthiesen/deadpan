@@ -1,0 +1,14 @@
+[
+  {
+    "mode": "visual",
+    "file": "fixed-retime-duration-038.png",
+    "label": "Fixed-Retime All plays duration prefill",
+    "frame": 75
+  },
+  {
+    "mode": "visual",
+    "file": "fixed-retime-duration-095.png",
+    "label": "Shared duration history under fixed Edit Retime",
+    "frame": 156
+  }
+]

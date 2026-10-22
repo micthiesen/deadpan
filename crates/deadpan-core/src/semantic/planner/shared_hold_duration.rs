@@ -1,10 +1,7 @@
 //! Duration intent for literal Repeat defaults, including unused definitions.
 
 use super::*;
-use crate::{
-    Anchor, AnchorIndex, AnchorTarget, BoundaryAnchor, ExactFrameRange, ExactRatio, InsertionBias,
-    InstancePath, RepeatEditBranch, ScopedNodeTarget,
-};
+use crate::{InstancePath, RepeatEditBranch, RetimePurpose, ScopedNodeTarget};
 
 /// Invocation-only All plays authority. A dormant definition has no invented
 /// representative; a live definition retains the host's concrete presentation.
@@ -60,10 +57,11 @@ impl ProjectDocument {
             ));
         }
         target.validate(self)?;
-        let Some(NodeKind::Hold { recipe }) = self.nodes().get(&target.node).map(|node| &node.kind)
+        let Some(NodeKind::Hold { .. }) = self.nodes().get(&target.node).map(|node| &node.kind)
         else {
             return Err(unavailable("shared Hold duration requires a captured Hold"));
         };
+        let clocked = self.retimes_with_derived_clocks();
         let mut parents = BTreeMap::new();
         for id in self.nodes().keys() {
             for child in self.children(id) {
@@ -97,9 +95,13 @@ impl ProjectDocument {
                     dormant |= u64::try_from(overrides)
                         .is_ok_and(|count| count == u64::from(iterations.len()));
                 }
+                NodeKind::Retime {
+                    purpose: RetimePurpose::Edit,
+                    ..
+                } if !saw_root && !clocked.contains(ancestor) => {}
                 _ => {
                     return Err(unavailable(
-                        "shared Hold duration requires literal Repeat bodies and ordinary Sequences, without Retime ancestry",
+                        "shared Hold duration requires literal Repeat bodies, ordinary Sequences and fixed unclocked Edit Retimes below its inspector root",
                     ));
                 }
             }
@@ -133,44 +135,10 @@ impl ProjectDocument {
                 "shared Hold duration presentation differs from its literal default target",
             ));
         }
-        // Unrelated clocked Retimes remain sealed. This target's independently
-        // checked Sequence/Repeat path uses only exact integral owner clocks.
-        let boundary = crate::derived_clock::with_sealed(|| {
-            AnchorIndex::new(self)
-                .and_then(|index| {
-                    index.resolve_target(&AnchorTarget {
-                        boundary: BoundaryAnchor {
-                            coordinate: Anchor::Occurrence {
-                                instance: instance.clone(),
-                                position: ExactRatio::ZERO,
-                            },
-                            bias: InsertionBias::Right,
-                        },
-                        occurrence: None,
-                    })
-                })
-                .map_err(|error| unavailable(&error.to_string()))
-        })?;
-        if boundary.exact_frame.denominator() != 1 {
-            return Err(unavailable(
-                "shared Hold duration needs an integral Repeat clock",
-            ));
-        }
-        let end = boundary
-            .frame
-            .0
-            .checked_add(recipe.duration.frames())
-            .ok_or_else(|| {
-                EditError::new(
-                    EditErrorCode::TimingOverflow,
-                    "shared Hold duration end overflows",
-                )
-            })?;
-        Ok(Some(HoldDurationVisibility {
-            exact: ExactFrameRange::new(boundary.exact_frame, ExactRatio::integer(end))?,
-            frames: FrameRange::new(boundary.frame, ProjectFrame(end))
-                .map_err(crate::DocumentError::from)?,
-        }))
+        Ok(Some(self.hold_duration_visibility_for_instance(
+            &authority.root,
+            instance,
+        )?))
     }
 }
 

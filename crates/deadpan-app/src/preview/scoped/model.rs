@@ -149,6 +149,18 @@ impl State {
             {
                 return false;
             }
+            // Shared All-Default targets can cross one unclocked Edit Retime
+            // inside the inspected Repeat. Keep this admission separate from
+            // the ordinary ThisPlay/mixed/selected path rules below.
+            if self.shared_default_retime_path_supported() {
+                return match &self.projection.presentation {
+                    Some(presentation) => presentation.frames.start < presentation.frames.end,
+                    None => matches!(
+                        self.projection.reason.as_deref(),
+                        Some(DORMANT_DEFAULT) | Some(DORMANT_GAP)
+                    ),
+                };
+            }
             let mut node = &self.selected.node;
             for _ in 0..=MAX_DOCUMENT_DEPTH {
                 let Some(parent) = self.index.parents.get(node) else {
@@ -185,6 +197,57 @@ impl State {
                 _ => false,
             },
         }
+    }
+
+    /// The narrow cached-hint exception for an All-Default Hold below the
+    /// inspected Repeat and an unclocked Edit Retime. This walks only the
+    /// selected ancestry retained in Index; it never expands Repeat plays.
+    fn shared_default_retime_path_supported(&self) -> bool {
+        if self.selected.repeats.is_empty()
+            || self
+                .selected
+                .repeats
+                .iter()
+                .any(|step| step.branch != RepeatEditBranch::Default)
+        {
+            return false;
+        }
+        let Ok(path) = self.index.path(&self.selected.node) else {
+            return false;
+        };
+        let Some(root_position) = path.iter().position(|node| node == &self.root) else {
+            return false;
+        };
+        if root_position == 0 {
+            return false;
+        }
+        let mut repeat_steps = self.selected.repeats.iter();
+        let mut saw_retime_below_root = false;
+        for pair in path.windows(2) {
+            let parent = &pair[0];
+            let child = &pair[1];
+            match &self.index.document.nodes()[parent].kind {
+                NodeKind::Sequence { children } if children.contains(child) => {}
+                NodeKind::Repeat { child: default, .. }
+                    if repeat_steps.next().is_some_and(|step| {
+                        &step.repeat == parent
+                            && step.branch == RepeatEditBranch::Default
+                            && default == child
+                    }) => {}
+                NodeKind::Retime {
+                    child: retime_child,
+                    purpose: deadpan_core::RetimePurpose::Edit,
+                    ..
+                } if root_position < path.iter().position(|node| node == parent).unwrap_or(0)
+                    && retime_child == child
+                    && !self.index.clocked_retimes.contains(parent) =>
+                {
+                    saw_retime_below_root = true;
+                }
+                _ => return false,
+            }
+        }
+        repeat_steps.next().is_none() && saw_retime_below_root
     }
 
     /// A bounded inspector hint. Full core authority and picture validation

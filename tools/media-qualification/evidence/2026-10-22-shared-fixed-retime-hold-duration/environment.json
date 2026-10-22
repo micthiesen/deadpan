@@ -1,0 +1,27 @@
+{
+  "recorded_at": "2026-10-22T09:01:47Z",
+  "machine": "Mac17,7",
+  "cpu": "Apple M5 Max",
+  "memory_bytes": 137438953472,
+  "os": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84",
+  "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+  "ffmpeg_prefix": "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix",
+  "dev_optimization": 2,
+  "physical_mac_required": true,
+  "synthetic_worker_required": true,
+  "inputs": {
+    "Cargo.lock": {
+      "sha256": "1e39d18ae4de6c7b898edad39eb7104235fb3ffe3af84521ca94df2b6c25b71b",
+      "bytes": 135252
+    },
+    "rust-toolchain.toml": {
+      "sha256": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc",
+      "bytes": 86
+    },
+    "native/deadpan-source/tests/fixtures/cfr-bframes.mp4": {
+      "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+      "bytes": 39157
+    }
+  }
+}

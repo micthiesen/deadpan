@@ -1,0 +1,5 @@
+{
+  "executed": "/Users/michael/Code/deadpan/target/debug/deadpan-app",
+  "sha256": "8bf59d5aa00ebb3e483d6bd06f837f9e6069f391d42653b0e0cba4f83c8d9418",
+  "purpose": "Early visual behavior smoke while release compilation runs; not performance or final release qualification."
+}

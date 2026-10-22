@@ -5,6 +5,7 @@ mod owned_gap_duration;
 mod pause_continuation;
 mod selected_duration;
 mod shared_duration;
+mod shared_fixed_retime_duration;
 use deadpan_core::{
     BeatNode, ColorPolicy, Command, CommandRequest, FrameRange, FrameRate, HoldAudio, HoldRecipe,
     HoldVideo, IterationOrder, MarkId, OccurrenceIdentities, PitchPolicy, PlayOverride,

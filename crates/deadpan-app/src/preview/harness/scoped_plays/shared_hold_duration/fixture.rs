@@ -1,8 +1,8 @@
 use super::*;
 use deadpan_core::{
     AudioTimingId, BeatNode, Command, CommandRequest, FrameDuration, HoldAudio, HoldVideo,
-    IterationId, IterationOrder, PlayOverride, PlayOverrides, RevisionId, SourceAudio, SourceSpan,
-    SourceTimestamp, Subtree,
+    IterationId, IterationOrder, PitchPolicy, PlayOverride, PlayOverrides, RevisionId, SourceAudio,
+    SourceSpan, SourceTimestamp, Subtree,
 };
 use deadpan_store::{AccessMode, ProjectStore};
 
@@ -223,5 +223,38 @@ pub(in super::super) fn create(
         .map_err(|e| e.to_string())?
         .validate()
         .map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+/// Add a fixed, unclocked Edit Retime below the outer Repeat while preserving
+/// the fixture's exact duration and every authored play identity.
+pub(in super::super) fn create_fixed_retime(
+    source: &Path,
+    path: &Path,
+    freeze: HoldVideo,
+) -> Result<(), String> {
+    create(source, path, false, freeze)?;
+    let mut store = ProjectStore::open(path, AccessMode::ReadWrite).map_err(|e| e.to_string())?;
+    let before = store.snapshot().map_err(|e| e.to_string())?;
+    let duration = before
+        .node_duration(&id("inner")?)
+        .map_err(|e| e.to_string())?;
+    commit(
+        &mut store,
+        Command::WrapRetime {
+            node: id("inner")?,
+            id: id("fixed-stage")?,
+            duration,
+            pitch: PitchPolicy::FollowSpeed,
+        },
+        "fixed-retime",
+    )?;
+    let after = store.snapshot().map_err(|e| e.to_string())?;
+    if after.duration().map_err(|e| e.to_string())?
+        != before.duration().map_err(|e| e.to_string())?
+        || after.overrides() != before.overrides()
+    {
+        return Err("Fixed Retime fixture changed total timing or play overrides.".into());
+    }
     Ok(())
 }

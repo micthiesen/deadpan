@@ -84,7 +84,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     }
 }
 
-fn controls(d: &mut Driver<'_>, expected_picture: SourceFrameId) -> Result<(), String> {
+pub(super) fn controls(d: &mut Driver<'_>, expected_picture: SourceFrameId) -> Result<(), String> {
     resize(d, 960.0, 640.0)?;
     choose(d)?;
     let baseline = document(d)?.clone();
@@ -181,7 +181,7 @@ fn controls(d: &mut Driver<'_>, expected_picture: SourceFrameId) -> Result<(), S
     undo(d, &baseline)
 }
 
-fn recording(d: &mut Driver<'_>) -> Result<(), String> {
+pub(super) fn recording(d: &mut Driver<'_>) -> Result<(), String> {
     choose(d)?;
     let baseline = document(d)?.clone();
     let prior = target(d)?;
@@ -330,7 +330,7 @@ fn wrong_type(d: &mut Driver<'_>) -> Result<(), String> {
     Ok(())
 }
 
-fn delayed(d: &mut Driver<'_>) -> Result<(), String> {
+pub(super) fn delayed(d: &mut Driver<'_>) -> Result<(), String> {
     choose(d)?;
     let baseline = document(d)?.clone();
     let bank = register_bank(d, None);
@@ -505,11 +505,11 @@ fn continuation(
         json!({"shared_frames":length,"output_frames":output,"Edit":cursor,"owned_inner_frames":4,"owned_outer_frames":7,"isolation":"none","dormant":dormant}), d.snapshot())
 }
 
-fn choose(d: &mut Driver<'_>) -> Result<(), String> {
+pub(super) fn choose(d: &mut Driver<'_>) -> Result<(), String> {
     if d.app().scoped.is_some() {
         d.key(Key::Escape)?;
     }
-    d.chord(&[
+    let mut keys = vec![
         Key::G,
         Key::G,
         Key::Num1,
@@ -518,8 +518,15 @@ fn choose(d: &mut Driver<'_>) -> Result<(), String> {
         Key::Enter,
         Key::Enter,
         Key::Enter,
-        Key::J,
-    ])?;
+    ];
+    if document(d)?
+        .nodes()
+        .contains_key(&fixture::id("fixed-stage")?)
+    {
+        keys.push(Key::Enter);
+    }
+    keys.push(Key::J);
+    d.chord(&keys)?;
     settled(d)?;
     scroll_top(d)?;
     if target(d)?.target.node != fixture::id("selected")? {
@@ -527,7 +534,7 @@ fn choose(d: &mut Driver<'_>) -> Result<(), String> {
     }
     Ok(())
 }
-fn open(d: &mut Driver<'_>, path: &Path, original: u64) -> Result<(), String> {
+pub(super) fn open(d: &mut Driver<'_>, path: &Path, original: u64) -> Result<(), String> {
     let path = path.canonicalize().map_err(|e| e.to_string())?;
     d.app().service.submit(ProjectRequest::Open(path.clone()))?;
     d.wait_for("Open the qualified shared-duration project", |app| {
@@ -577,7 +584,7 @@ fn intent(frames: u32) -> I {
         },
     }
 }
-fn target(d: &Driver<'_>) -> Result<Target, String> {
+pub(super) fn target(d: &Driver<'_>) -> Result<Target, String> {
     d.app()
         .scoped_target()?
         .ok_or("No shared Hold target".into())
@@ -605,12 +612,12 @@ fn saved(d: &Driver<'_>, name: char) -> Option<Vec<I>> {
             _ => None,
         })
 }
-fn equivalent(actual: &ProjectDocument, expected: &ProjectDocument) -> bool {
+pub(super) fn equivalent(actual: &ProjectDocument, expected: &ProjectDocument) -> bool {
     let mut value = serde_json::to_value(actual).unwrap();
     value["revision_id"] = json!(expected.revision_id());
     value == serde_json::to_value(expected).unwrap()
 }
-fn settled(d: &mut Driver<'_>) -> Result<(), String> {
+pub(super) fn settled(d: &mut Driver<'_>) -> Result<(), String> {
     d.wait_for("Shared-duration receipt is admitted", |app| {
         !app.service.is_busy() && !app.macros.is_pending()
     })?;
@@ -622,7 +629,7 @@ fn edit(d: &mut Driver<'_>, text: &str) -> Result<(), String> {
     d.changed(&revision)?;
     settled(d)
 }
-fn submit(d: &mut Driver<'_>, text: &str) -> Result<(), String> {
+pub(super) fn submit(d: &mut Driver<'_>, text: &str) -> Result<(), String> {
     d.key_modified(Key::A, egui::Modifiers::COMMAND)?;
     d.events(
         "Replace the All plays Hold-duration parameter",

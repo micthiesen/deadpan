@@ -2,6 +2,7 @@
 mod mixed_hold_duration;
 mod owned_gap_hold_duration;
 mod selected_hold_duration;
+mod shared_fixed_retime_duration;
 use super::*;
 use crate::{
     Anchor, AnchorLossPolicy, AssetId, AssetRecord, BoundaryAnchor, ExactRatio, InsertionBias,
@@ -677,7 +678,7 @@ fn shared_hold_duration_late_noop_mixed_instruction_and_wrong_resource_fail_atom
 }
 
 #[test]
-fn shared_hold_duration_conflicting_contexts_and_retime_ancestry_remain_unavailable() {
+fn shared_hold_duration_conflicting_contexts_and_partition_ancestry_remain_unavailable() {
     let before = fixture(false);
     let mut cases = vec![];
     let mut context = entry(Some(0));
@@ -735,7 +736,7 @@ fn shared_hold_duration_conflicting_contexts_and_retime_ancestry_remain_unavaila
         duration: FrameDuration::new(14).unwrap(),
         mapping: range(0, 14),
         pitch: crate::PitchPolicy::FollowSpeed,
-        purpose: crate::RetimePurpose::Edit,
+        purpose: crate::RetimePurpose::Partition,
     };
     retimed.nodes.insert(node("rate"), stage);
     let NodeKind::Repeat { child, .. } = &mut retimed.nodes.get_mut(&node("outer")).unwrap().kind
@@ -753,7 +754,7 @@ fn shared_hold_duration_conflicting_contexts_and_retime_ancestry_remain_unavaila
             )
             .unwrap_err()
             .message
-            .contains("without Retime")
+            .contains("fixed unclocked Edit Retimes")
     );
 }
 

@@ -1,0 +1,20 @@
+[
+  {
+    "binary": "deadpan-core::split",
+    "test": "source_identity_and_original_clock_scopes_survive_the_cut",
+    "executed": "/tmp/deadpan-next-shared-fixed-retime-duration-2026-10-22/quiet-broad-bin/split-31ffde955c1d2240",
+    "sha256": "7fc89ae8baa43badc826e3c4092a8cd047d4501d63739fa6d04abd78ad4f0e71",
+    "exit_code": 0,
+    "seconds": 0.014096290804445744,
+    "output_eof": true
+  },
+  {
+    "binary": "deadpan-store::generation_bundles",
+    "test": "scoped_acceptance_isolates_one_play_and_keeps_default_request_current",
+    "executed": "/tmp/deadpan-next-shared-fixed-retime-duration-2026-10-22/quiet-broad-bin/generation_bundles-8fe4e5fef16f185c",
+    "sha256": "cae353f39c5b98809e73d1144852db1df554619a7df0f07834add2212ed88a54",
+    "exit_code": 0,
+    "seconds": 0.20728637464344501,
+    "output_eof": true
+  }
+]

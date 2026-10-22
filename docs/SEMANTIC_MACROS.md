@@ -232,8 +232,15 @@ validated body overrides cover every play of at least one enclosing Repeat.
 That dormant change preserves the cursor and rendered duration. Gap overrides
 alone do not establish dormancy.
 
+Fixed unclocked Edit Retimes below the direct Repeat inspector root retain their
+input windows and output lengths. Exact visibility composes each crop and scale
+with current stable Repeat offsets, then selects project-picture centers. A
+live Hold needs at least one sampled visible picture after every staged setter;
+a later disappearance rolls back the complete run. A crop cannot establish
+dormancy. See [fixed-Retime shared duration qualification](qualification/shared-fixed-retime-hold-duration-2026-10-22.md).
+
 No-op lengths, forged or stale captures, mixed or several-play authority,
-Retime ancestry and unsupported later instructions refuse atomically. Direct
+Partition or derived-clock ancestry and unsupported later instructions refuse atomically. Direct
 Apply supplies dot intent; named Run and Undo retain their existing dot policy.
 Scope navigation revokes delayed inspector continuation even after away/back
 navigation. This path does not broaden one-play semantic framing.
