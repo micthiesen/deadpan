@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-22T22:09:07Z",
+  "updated_at": "2026-10-22T22:47:12Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Transcript-search selectors: 124 focused and 1,292 UI-feature tests pass, including analysis freshness. Strict checks and 103 native workflow checks pass. Broader regressions and release qualification are running. Coverage stays at 89%. Next: grouping endpoint splits for retained sound owners.",
+  "focus": "Transcript-search selectors verified and source-audited. Coverage stays at 89%, with 8/24 requirement sections complete. Next: GroupSelection endpoint splits for attached sounds, preserving exact PCM and retained processing-scope refusals.",
   "features": [
     {
       "id": "editing",
@@ -16,7 +16,7 @@
         "DP-07",
         "DP-21"
       ],
-      "note": "Slices, registers, repeats and semantic macros work, including Original navigation, ranged and per-play framing, selected-play pauses, Hold duration/sound and audio treatments, and exact-pause tape-speed updates around one inner Repeat. Native Hold lengths support ordinary fixed Retimes, explicit Repeat choices, selected-body batches and mixed/selected owned gaps. Nested This play, mixed Default/Play and selected body batches cross one fixed unclocked Edit Retime below every enclosing Repeat, retaining literal scope, actual isolation, cropped visible continuation, exact audio phase and accepted-provider history. Clone-intent Undo ownership and nested selected-scope retention are verified. Named-mark ranges retain addresses through selection, recording, named calls and dot, resolving each staged document with exact clock/scope checks and existing one-child role constraints. Whole-node selectors retain exact identity through staged ordinary-Sequence resolution, including empty nodes, recording/dot and structural replacement at the actual parent. Discontiguous whole-node unions capture one entry snapshot, Cut atomically, preserve shared marks and paste at an ordinary seam. Explicit interval sets resolve signed cursor-relative pairs into separate canonical ranges, capture one entry snapshot, Cut atomically, and preserve shared Source context and logical marks through durable registers and seam paste. Native recording retains the pairs, named calls re-resolve them, and Visual Cut dot requires a new set; scalar consumers refuse without a hull. Corrected transcript-search-result selectors and remaining temporal combinations stay open."
+      "note": "Slices, registers, repeats and semantic macros work, including Original navigation, ranged and per-play framing, selected-play pauses, Hold duration/sound and audio treatments, and exact-pause tape-speed updates around one inner Repeat. Native Hold lengths support ordinary fixed Retimes, explicit Repeat choices, selected-body batches and mixed/selected owned gaps. Nested This play, mixed Default/Play and selected body batches cross one fixed unclocked Edit Retime below every enclosing Repeat, retaining literal scope, actual isolation, cropped visible continuation, exact audio phase and accepted-provider history. Clone-intent Undo ownership and nested selected-scope retention are verified. Named-mark ranges retain addresses through selection, recording, named calls and dot, resolving each staged document with exact clock/scope checks and existing one-child role constraints. Whole-node selectors retain exact identity through staged ordinary-Sequence resolution, including empty nodes, recording/dot and structural replacement at the actual parent. Discontiguous whole-node unions capture one entry snapshot, Cut atomically, preserve shared marks and paste at an ordinary seam. Explicit interval sets resolve signed cursor-relative pairs into separate canonical ranges, capture one entry snapshot, Cut atomically, and preserve shared Source context and logical marks through durable registers and seam paste. Native recording retains the pairs, named calls re-resolve them, and Visual Cut dot requires a new set; scalar consumers refuse without a hull. Corrected transcript-search sets retain raw query intent, complete forward phrase coverage and separate intervals through recording, fresh dot, atomic Cut and durable paste. Transactional proposal/correction guards cover authored and register-only publication; native entry, completion and installed geometry retain displayed analysis authority. Remaining temporal and sound-scope combinations stay open."
     },
     {
       "id": "projects",
@@ -44,7 +44,7 @@
       "requirements": [
         "DP-09"
       ],
-      "note": "Playback, gain, sounds, native EQ, Tail sends, continuous returns and independent sound treatments work. Fixed Retime output sounds retain exact phase and history through ordinary interior Hold edits. Fractional retained owner support and the complete nonzero nonlinear master are verified. Partial sound-owner edits, wider loop/tail qualification and persistent filtered caching remain."
+      "note": "Playback, gain, sounds, native EQ, Tail sends, continuous returns and independent sound treatments work. Fixed Retime output sounds retain exact phase and history through ordinary interior Hold edits. Fractional retained owner support and the complete nonzero nonlinear master are verified. Partial sound copy, move, deletion and Repeat transport work. GroupSelection endpoint splits, retained processing-scope interiors, wider loop/tail qualification and persistent filtered caching remain."
     },
     {
       "id": "analysis",
@@ -53,7 +53,7 @@
       "requirements": [
         "DP-10"
       ],
-      "note": "Local transcription, corrections and proposals work. Refinement and selectors remain."
+      "note": "Local transcription, corrections, proposals and corrected transcript-search selectors work. Refinement and remaining analysis qualification stay open."
     },
     {
       "id": "ai",
@@ -885,6 +885,14 @@
       "revision": "32598481ba9e66a0a37c79df3967d5e3fd170ebe",
       "retrospective": false,
       "summary": "Discontiguous interval sets retain relative selection intent and separate finished geometry through native recording, fresh named calls, atomic Cut, durable registers and seam paste, preserving shared Source context and mark bindings. Verified 106 focused, 4,596 broad and 1,281 complete UI cases; 85 release native checks per mode plus Kestrel; and 30 pictures/48,048 samples at zero offset. Source audit and extracted owner validation pass. No new requirement or gate closed; corrected transcript-search-result selectors remain next."
+    },
+    {
+      "date": "2026-10-22",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "aef99a02d4c6cad1c1d3255e9ec1200076ff6fee",
+      "retrospective": false,
+      "summary": "Corrected transcript-search selectors preserve full forward phrases, raw query intent and separate intervals through recording, fresh calls/dot, atomic Cut and durable paste. Proposal/correction authority is checked inside publication; stale native geometry clears without disabling history. Verified 124 focused, all 13 provider, 4,872 broader and 1,292 UI-feature cases; a passing broader output-handle warning also passes an isolated same-binary run. Both release modes pass 103 checks plus Kestrel; all 120 pictures and 192,192 samples verify at zero offset. Extracted owner validation, source/blob audit and strict checks pass. No requirement or gate newly complete."
     }
   ]
 }
