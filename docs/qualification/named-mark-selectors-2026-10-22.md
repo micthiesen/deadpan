@@ -194,3 +194,8 @@ the recorded baseline, failed candidates, isolated reruns, final suites, strict
 checks, release replay, media and owner validation without inferring a cause
 for the earlier parallel-run anomalies. Supplemental input archives are
 verified by the collector and root guards, outside that independent audit.
+
+After committing `374b31df91afec56781efc39cea618680af82314`, a direct Git-blob
+audit verifies all 1,970 tracked Rust files and six supplemental inputs against
+the final executed source manifest. Its receipt is retained in the inventory;
+the foreign fuzz lockfile and Claude directory are excluded from this work.

@@ -270,6 +270,11 @@
     "sha256": "77ca15090aad7acc3053f225adb0664aff97702b56e36bd7a38f435cf76b1d53"
   },
   {
+    "file": "committed-source-audit.json",
+    "bytes": 301,
+    "sha256": "aab998cd85ea23513b12568891fb51d56e1efa1ecabee206bf3d052a0a7e0764"
+  },
+  {
     "file": "debug-first-binaries.json",
     "bytes": 1124,
     "sha256": "13a092570c37150f44d78fe61fdf967362a3fb65535bfb0d14aa821612fe3a0f"

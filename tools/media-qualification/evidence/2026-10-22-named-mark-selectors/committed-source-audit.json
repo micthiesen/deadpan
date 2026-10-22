@@ -1,0 +1,8 @@
+{
+  "revision": "374b31df91afec56781efc39cea618680af82314",
+  "rust_blobs": 1970,
+  "supplemental_inputs": 6,
+  "all_committed_bytes_match_final_executed_source": true,
+  "source_stage": "release-final",
+  "root_cargo_lock_sha256": "1e39d18ae4de6c7b898edad39eb7104235fb3ffe3af84521ca94df2b6c25b71b"
+}
