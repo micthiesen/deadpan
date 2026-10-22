@@ -1,0 +1,9 @@
+{
+  "base": "9b0c9e620f5a56af37ed5b7d7535acdae7e168a6",
+  "test": "native_mixed_owned_gap_hold_duration_offers_entry_after_public_controls",
+  "binary": "deadpan-app::bin/deadpan-app",
+  "executed": "/Users/michael/Code/deadpan/target/debug/deps/deadpan_app-edbbed39ebf1d72f",
+  "retained": "/tmp/deadpan-owned-gap-hold-duration-next-2026-10-21/baseline-bin/deadpan_app-edbbed39ebf1d72f",
+  "sha256": "c316982109bd3bb32d6c937f32a23b4d97dc03035e95c23d64e837e99bf465ca",
+  "scope": "Silent Background Hold structural/availability witness, not real-media qualification."
+}

@@ -1,0 +1,9 @@
+{
+  "identity_helper_failure": "After compilation, the first identity helper incorrectly assumed exactly one listed Nextest suite. Headless is also listed with zero matching tests. No behavioral test ran in that attempt.",
+  "fix": "Select the suite containing the exact matching test; then verify all frozen source hashes and copy/hash the actual binary before execution.",
+  "valid_baseline": "baseline.log fails only final availability assertion at line315: None versus Some hold-duration 3f. All preceding public controls, dormant ownership, inverse and JSON assertions pass.",
+  "seconds": 0.013,
+  "skipped": 1212,
+  "binary_sha256": "c316982109bd3bb32d6c937f32a23b4d97dc03035e95c23d64e837e99bf465ca",
+  "scope": "Silent Background Hold structural/availability witness; no real-media qualification."
+}

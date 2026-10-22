@@ -43,6 +43,9 @@ pub mod scoped_duration;
 #[path = "ordinary_duration.rs"]
 pub mod ordinary_duration;
 
+#[path = "owned_gap_duration.rs"]
+pub mod owned_gap_duration;
+
 #[path = "fixed_retime_duration.rs"]
 pub mod fixed_retime_duration;
 

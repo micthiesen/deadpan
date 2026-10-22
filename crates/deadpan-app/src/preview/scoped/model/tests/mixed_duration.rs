@@ -808,7 +808,7 @@ fn service_checks(
 }
 
 #[test]
-fn mixed_duration_hints_refuse_owned_gaps_without_changing_all_play_gap_support() {
+fn mixed_duration_hints_offer_owned_gaps_without_changing_all_play_gap_support() {
     let document = fixture(
         "gap-outer",
         vec![
@@ -825,7 +825,10 @@ fn mixed_duration_hints_refuse_owned_gaps_without_changing_all_play_gap_support(
     mixed.switch_play_in(1).unwrap();
     mixed.select_in(1).unwrap();
     assert_eq!(mixed.selected.node, node("owned-gap"));
-    assert!(mixed.hold_parameter_in().is_none());
+    assert_eq!(
+        mixed.hold_parameter_in().as_deref(),
+        Some("hold-duration 3f")
+    );
 
     let mut all_play = state(document, "gap-outer", 2);
     all_play.switch_play_in(1).unwrap();

@@ -123,7 +123,7 @@ and write nothing. Headless requests carry an explicit `parent`, `cursor`,
 | GUI | Headless | Checks | Status |
 |---|---|---|---|
 | `,h`, `:hold D [video=] [audio=]`, Inspector Insert pause | `insert_pause` instruction (`command` `insert_time` is the lower-level form) | R, D | Equivalent |
-| `:hold-duration Nf`, Hold Enter / Change duration | `set_hold_duration` instruction with explicit one-play `scoped` context inside Repeats; ordinary `set_hold_duration` or one-play `edit_occurrence` commands are the lower-level forms | R, D | Equivalent |
+| `:hold-duration Nf`, Hold Enter / Change duration | `set_hold_duration` instruction with captured one-play, shared, mixed or selected duration authority inside Repeats; explicit owned gaps retain their preceding Play. Ordinary `set_hold_duration`, `edit_occurrence` and `set_scoped_hold_duration` commands are the lower-level forms. See [duration scopes and limits](SEMANTIC_MACROS.md#selected-plays-hold-length). | R, D | Equivalent |
 | `:hold-silence`, Inspector Use silence | `command` `set_hold_audio` (or `edit_scoped`) | R, D | Equivalent |
 | `:room-tone` sheet (prepare and audition a range) | interactive; headless applies a range directly | - | GUI-only |
 | Room tone Apply | `command` `set_hold_audio` with an exact RoomTone range, or the `set_room_tone` instruction from an Original register (`yank_original`) | R, D | Equivalent |

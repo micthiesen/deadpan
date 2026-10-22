@@ -2,7 +2,37 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current continuation, 2026-10-21
+## Current continuation, 2026-10-22
+
+Mixed and selected Hold lengths now support explicit owned gaps at any ordinary
+Sequence/Repeat level, including final dormant definitions. Complete branch
+ancestry and current stable Play position determine liveness. Actual isolation
+maps ordered targets and the primary presentation through one Compound; dormant
+primaries keep the ordinary cursor while live counterparts may ripple.
+The selected all-Play allocator now rejects excess node/mark pools too.
+
+All 18 focused and 3,465 broader tests pass; final affected normal/UI checks pass
+199/201. Strict checks, formatting and command-reference validation pass.
+Both first-attempt release native replays pass 27 owned-gap checks plus Kestrel;
+two compact captures were inspected. Quiet input-to-state p99 is 1.733ms (45
+samples). Six release exports verify every one of 411 pictures and 658,257
+presented samples at measured offset zero. See the
+[owned-gap qualification](../qualification/owned-gap-hold-duration-semantics-2026-10-22.md)
+for retained failures, exact Source-reference oracle corrections, review,
+warnings and source/binary identities. No requirement or gate is newly complete.
+
+Next: All plays Hold duration inside a fixed unclocked Edit Retime beneath an
+outer Repeat, then the remaining temporal scopes and selectors. The old-code
+witness proposal and rationale are in
+/tmp/deadpan-next-shared-fixed-retime-duration-2026-10-22; they are unexecuted.
+The raw fixed-window duration reducer already has Repeat tests, but shared
+semantic/native visibility assumes integral unretimed Hold extents. Do not
+simply remove This-play guards: that occurrence path still captures a root
+suffix and bypasses the ordinary fixed-window reducer. A single all-Play dormant
+gap, implicit default-gap node targets, processing clocks, Partition and placed
+sounds retain their documented limits.
+
+## Selected-play Hold duration checkpoint, 2026-10-21
 
 Selected-play Hold duration now captures 2..=1024 Hold bodies with one varying
 explicit Repeat axis and identical earlier prefixes. Every changed member uses
@@ -19,12 +49,9 @@ inspected. Quiet input-to-state p99 is 1.418ms. Four release exports verify all
 240 pictures and 384,384 presented samples at measured offset zero.
 See [selected qualification](../qualification/selected-hold-duration-semantics-2026-10-21.md)
 for the valid old-code witness, retained corrections, review, source/binary
-identities and full evidence. Next: mixed/selected owned-gap duration, then
-remaining Repeat/Retime combinations and selectors. The owned-gap design and
-unexecuted old-code witness are in
-/tmp/deadpan-owned-gap-hold-duration-next-2026-10-21; positively dormant
-all-Play members also need the reducer's old-boundary assumption addressed.
-No requirement or gate is newly complete.
+identities and full evidence. Mixed/selected owned-gap duration and dormant
+all-Play member reduction are now qualified above. Repeat/Retime combinations
+and selectors remain follow-up work. No requirement or gate was newly complete.
 
 Mixed All plays/This play Hold duration now has a separate invocation-only
 authority and `SetScopedHoldDuration` wrapper. It retains literal Default

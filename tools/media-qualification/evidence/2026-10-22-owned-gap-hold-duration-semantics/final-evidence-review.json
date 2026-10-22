@@ -1,0 +1,23 @@
+{
+  "independent_verification_review": {
+    "finding": "none",
+    "inventory_files": 2072,
+    "inventory_bytes": 10859479,
+    "current_Rust_snapshots": 24,
+    "binary_and_encoded_hashes": "matched retained files",
+    "logs_and_document_claims": "matched",
+    "native_capture_count": 2,
+    "note": "Review finished before this receipt was added. No runtime source changed."
+  },
+  "root_full_snapshot_check": {
+    "snapshots": {
+      "baseline-source": 1927,
+      "corrected-direct-runtime-source": 24,
+      "failed-focused-first-runtime-source": 24,
+      "pre-lint-runtime-source": 24,
+      "final-source": 24
+    },
+    "total_rows": 2023,
+    "decompressed_hashes_and_sizes": "all matched"
+  }
+}

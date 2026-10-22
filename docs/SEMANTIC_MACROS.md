@@ -259,8 +259,12 @@ isolation preserves their authored Play meaning, while cursor and output stay
 unchanged. Direct Apply supplies dot intent; named Run and Undo retain their
 existing dot policies. Navigation permanently revokes delayed continuation.
 
-Several targets, owned-gap ancestry, Retime/Partition ancestry, root or attached
-sounds and unrelated instructions remain unavailable. Other duration families
+Explicit owned-gap subtrees follow the exact preceding stable Play at any
+enclosing level. A final owned gap remains a dormant definition; it does not
+invent a project occurrence or move the retained cursor. Default choices still
+follow literal bodies only. Several targets use the selected-duration authority
+below. Retime/Partition ancestry, root or attached sounds and unrelated
+instructions remain unavailable. Other duration families
 keep their existing paths and guards. See the
 [mixed duration qualification](qualification/mixed-hold-duration-semantics-2026-10-21.md)
 for implementation and verification status.
@@ -271,7 +275,7 @@ for implementation and verification status.
 Hold, optional primary presentation and ordered further targets. It admits
 2..=1024 targets with distinct explicit Plays at one common Repeat axis and an
 identical earlier authoring prefix. Every target must follow ordinary Sequence
-and Repeat bodies. A shared node ID may represent several distinct selected
+and Repeat bodies or explicit owned gaps. A shared node ID may represent several distinct selected
 families and is never used to deduplicate them.
 
 Saved programs still contain only `SetHoldDuration { length }` and named calls.
@@ -286,15 +290,22 @@ The final Compound retains aggregate limits and commits once. The primary
 cursor is resolved after all leaves, including when a later earlier-in-time
 resize moves it again. A zero root-duration delta remains an edit when the
 recipes change. No-op members skip isolation; an all-no-op request refuses
-without history. Dormant primary definitions require positive body-liveness
-proof and preserve their cursor without inventing a presentation.
+without history. Dormant primary definitions require positive liveness proof
+from complete body-override coverage or the owned gap's current final position.
+They preserve their cursor without inventing a presentation, even when another
+selected live gap changes output duration. Stable iteration identity alone does
+not determine dormancy after reordering.
 
 Native Apply, recording, named calls and direct-edit dot use this invocation
 authority. The receipt independently checks the complete executed proof and
 returns the mapped counterpart set. Navigation permanently revokes delayed
 continuation and clears the mapped multi-target selection. Choose a new play
-set explicitly before applying dot to another pair. Generic framing, owned gaps, Retime/Partition ancestry, placed
-sounds and unrelated instructions retain their guards.
+set explicitly before applying dot to another pair. An owned gap follows its
+preceding stable Play, including a final dormant gap selected alongside a live
+gap. Implicit default gaps have no editable node target. A single all-Play
+dormant gap still has no live-boundary native action. Generic framing,
+Retime/Partition ancestry, placed sounds and unrelated instructions retain
+their guards.
 
 ### Ordinary Hold length inside fixed Retime
 

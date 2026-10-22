@@ -81,6 +81,98 @@ fn target(instance: &InstancePath) -> ScopedNodeTarget {
     }
 }
 
+/// Validate an ordinary duration path against one shared parent index. Owned
+/// gaps follow their preceding stable Play, including a dormant final branch.
+/// A valid address alone does not prove that it has a project occurrence.
+pub(crate) fn duration_target_dormant(
+    document: &ProjectDocument,
+    target: &ScopedNodeTarget,
+    parents: &BTreeMap<NodeId, NodeId>,
+) -> Result<bool, EditError> {
+    if target.repeats.is_empty() || target.repeats.len() > MAX_DOCUMENT_DEPTH {
+        return Err(invalid(
+            "Hold duration requires bounded explicit Repeat ancestry",
+        ));
+    }
+    if !document.nodes().contains_key(&target.node) {
+        return Err(invalid("Hold duration target is absent"));
+    }
+    let mut current = &target.node;
+    let mut remaining = target.repeats.len();
+    let mut dormant = false;
+    for _ in 0..=MAX_DOCUMENT_DEPTH {
+        if current == document.root() {
+            return if remaining == 0 {
+                Ok(dormant)
+            } else {
+                Err(invalid(
+                    "Hold duration target contains extra Repeat ancestry",
+                ))
+            };
+        }
+        let parent = parents
+            .get(current)
+            .ok_or_else(|| invalid("Hold duration target has no project ancestry"))?;
+        match &document.nodes()[parent].kind {
+            NodeKind::Sequence { .. } => {}
+            NodeKind::Repeat {
+                child, iterations, ..
+            } => {
+                remaining = remaining
+                    .checked_sub(1)
+                    .ok_or_else(|| invalid("Hold duration target omits a Repeat ancestor"))?;
+                let step = &target.repeats[remaining];
+                if &step.repeat != parent {
+                    return Err(invalid(
+                        "Hold duration target names the wrong Repeat ancestor",
+                    ));
+                }
+                match &step.branch {
+                    RepeatEditBranch::Default => {
+                        if current != child {
+                            return Err(invalid("Default must follow the Repeat's literal body"));
+                        }
+                        let owned = document
+                            .overrides()
+                            .get(parent)
+                            .map_or(0, |entries| entries.len());
+                        dormant |= u64::try_from(owned)
+                            .is_ok_and(|count| count == u64::from(iterations.len()));
+                    }
+                    RepeatEditBranch::Play { iteration } => {
+                        let position = iterations
+                            .position(iteration)
+                            .ok_or_else(|| invalid("Hold duration target names a retired Play"))?;
+                        let body = document
+                            .overrides()
+                            .get(parent)
+                            .and_then(|entries| entries.get(iteration))
+                            .unwrap_or(child);
+                        let gap = document
+                            .gap_overrides()
+                            .get(parent)
+                            .and_then(|entries| entries.get(iteration));
+                        if gap == Some(current) {
+                            dormant |= position + 1 == iterations.len();
+                        } else if current != body {
+                            return Err(invalid(
+                                "Hold duration target is outside its selected Play's owned branches",
+                            ));
+                        }
+                    }
+                }
+            }
+            _ => {
+                return Err(invalid(
+                    "Hold duration requires ordinary Sequence/Repeat ancestry without Retime or Partition",
+                ));
+            }
+        }
+        current = parent;
+    }
+    Err(limit("Hold duration ancestry exceeds the depth bound"))
+}
+
 #[derive(Debug)]
 pub struct PreparedOccurrenceHoldDuration {
     pub transaction: EditTransaction,

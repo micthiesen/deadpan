@@ -1,0 +1,42 @@
+[
+  {
+    "test": "preview::scoped::model::tests::owned_gap_duration::native_mixed_owned_gap_hold_duration_offers_entry_after_public_controls",
+    "binary": "/Users/michael/Code/deadpan/target/debug/deps/deadpan_app-1665fcaccc742208",
+    "sha256": "e7d782a80a7eb1299c6cd0014b1bfa738b6e3310df68616ca6609b0b2c86ca75",
+    "exit": 0,
+    "seconds": 0.057665917091071606,
+    "retained": "/tmp/deadpan-owned-gap-hold-duration-next-2026-10-21/corrected-direct-bin/deadpan_app-1665fcaccc742208"
+  },
+  {
+    "test": "preview::scoped::model::tests::owned_gap_duration::selected_live_and_final_owned_gaps_keep_distinct_play_authority",
+    "binary": "/Users/michael/Code/deadpan/target/debug/deps/deadpan_app-1665fcaccc742208",
+    "sha256": "e7d782a80a7eb1299c6cd0014b1bfa738b6e3310df68616ca6609b0b2c86ca75",
+    "exit": 0,
+    "seconds": 0.057546249590814114,
+    "retained": "/tmp/deadpan-owned-gap-hold-duration-next-2026-10-21/corrected-direct-bin/deadpan_app-1665fcaccc742208"
+  },
+  {
+    "test": "preparations::scoped_mixed_duration::owned_gap::owned_gap_compound_keeps_shortened_provider_and_maps_live_and_dormant_extensions_through_history",
+    "binary": "/Users/michael/Code/deadpan/target/debug/deps/generation_bundles-8fe4e5fef16f185c",
+    "sha256": "497ea27b1a6ef7389b4566411ae47084ae23a44f7fc77959babd31b6414d61ab",
+    "exit": 0,
+    "seconds": 0.43201491609215736,
+    "retained": "/tmp/deadpan-owned-gap-hold-duration-next-2026-10-21/corrected-direct-bin/generation_bundles-8fe4e5fef16f185c"
+  },
+  {
+    "test": "insert_time::occurrence_pause::duration::owned_gap_duration::owned_gap_duration_compound_retains_partial_44100_source_and_suppression_clocks",
+    "binary": "/Users/michael/Code/deadpan/target/debug/deps/stages-d575876438498380",
+    "sha256": "9efa86c56d3dff0b24357be8bba718fabe93936ecc9ec6ce8f5b5d38218f723c",
+    "exit": 101,
+    "seconds": 0.5601514577865601,
+    "retained": "/tmp/deadpan-owned-gap-hold-duration-next-2026-10-21/corrected-direct-bin/stages-d575876438498380"
+  },
+  {
+    "test": "insert_time::occurrence_pause::duration::owned_gap_duration::owned_gap_room_tone_duration_compound_retains_materialized_phase_and_dormant_output",
+    "binary": "/Users/michael/Code/deadpan/target/debug/deps/stages-d575876438498380",
+    "sha256": "9efa86c56d3dff0b24357be8bba718fabe93936ecc9ec6ce8f5b5d38218f723c",
+    "exit": 101,
+    "seconds": 1.342159790918231,
+    "retained": "/tmp/deadpan-owned-gap-hold-duration-next-2026-10-21/corrected-direct-bin/stages-d575876438498380"
+  }
+]

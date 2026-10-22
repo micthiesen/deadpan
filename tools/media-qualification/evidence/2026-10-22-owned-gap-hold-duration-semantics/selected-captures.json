@@ -1,0 +1,14 @@
+[
+  {
+    "mode": "visual",
+    "file": "owned-gap-duration-057.png",
+    "label": "Two live owned gap Holds selected together at minimum size",
+    "frame": 103
+  },
+  {
+    "mode": "visual",
+    "file": "owned-gap-duration-043.png",
+    "label": "Outer Play 2 isolates two owned gaps under the selected inner plays",
+    "frame": 81
+  }
+]

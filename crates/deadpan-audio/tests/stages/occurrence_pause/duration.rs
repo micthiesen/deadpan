@@ -1,4 +1,6 @@
 use super::*;
+#[path = "duration/owned_gap_duration.rs"]
+mod owned_gap_duration;
 #[path = "duration/selected_duration.rs"]
 mod selected_duration;
 

@@ -1,0 +1,10 @@
+{
+  "binary": "/tmp/deadpan-owned-gap-hold-duration-next-2026-10-21/failed-focused-first-bin/deadpan_core-99ef176a441abc2a",
+  "sha256": "86a3462e8d2844beb4d32f2ee686b38c95b4f1dc3ba9c8ed17b8bb5a1470c3cf",
+  "test": "semantic::planner::tests::shared_hold_duration::owned_gap_hold_duration::owned_gap_hold_duration_dormant_all_play_raw_works_but_live_boundary_api_stays_strict",
+  "exit": 0,
+  "seconds": 0.00786866620182991,
+  "stdout_and_stderr_reached_eof": true,
+  "timeout_seconds": 30,
+  "note": "Isolated passing check of exact retained binary after concurrent captured-output marker. Cause not established."
+}

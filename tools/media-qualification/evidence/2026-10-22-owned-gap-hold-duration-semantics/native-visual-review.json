@@ -1,0 +1,24 @@
+{
+  "captures": [
+    {
+      "mode": "visual",
+      "file": "owned-gap-duration-057.png",
+      "label": "Two live owned gap Holds selected together at minimum size",
+      "frame": 103,
+      "sha256": "6bcefff44f8f09999743a8eef770f81f41b52821b81804ec83f44b94e841000d"
+    },
+    {
+      "mode": "visual",
+      "file": "owned-gap-duration-043.png",
+      "label": "Outer Play 2 isolates two owned gaps under the selected inner plays",
+      "frame": 81,
+      "sha256": "27006381e021723f242438c97e80a23cd50566c9a647dc37fdcafe2bae36b454"
+    }
+  ],
+  "inspected_by": "root",
+  "size": [
+    960,
+    640
+  ],
+  "result": "Both clocks, focused Beats pane, explicit Default/Play and selected-play scopes, primary gap intervals, Change duration/Enter and complete footer key labels remain visible. Retained picture raster aspect is preserved; no footer overpaint seen. Synthetic Original frame 000 is the measured Freeze reference."
+}

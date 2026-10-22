@@ -1,5 +1,6 @@
 //! All-Default duration intent preserves sparse ownership and concrete clocks.
 mod mixed_hold_duration;
+mod owned_gap_hold_duration;
 mod selected_hold_duration;
 use super::*;
 use crate::{

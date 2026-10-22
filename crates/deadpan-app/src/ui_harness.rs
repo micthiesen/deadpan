@@ -57,6 +57,7 @@ pub(crate) const SCENARIOS: &[&str] = &[
     "repeat-setters",
     "groups",
     "scoped-plays",
+    "owned-gap-duration",
     "structure-copies",
     "macros",
     "original-playback",

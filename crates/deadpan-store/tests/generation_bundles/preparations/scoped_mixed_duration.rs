@@ -1,6 +1,8 @@
 //! Mixed Default/Play duration isolation retains exact accepted-generation scope.
 
 use super::*;
+#[path = "scoped_mixed_duration/owned_gap.rs"]
+mod owned_gap;
 use deadpan_core::{OccurrenceIdentities, RepeatEditBranch, RepeatEditStep, ScopedNodeTarget};
 
 fn accepted_for_duration(

@@ -84,7 +84,6 @@ struct Index {
     plan: Arc<RenderPlan>,
     parents: BTreeMap<NodeId, NodeId>,
     clocked_retimes: BTreeSet<NodeId>,
-    gap_roots: BTreeSet<NodeId>,
     sequence_offsets: BTreeMap<NodeId, i64>,
     durations: BTreeMap<NodeId, FrameDuration>,
     repeats: BTreeMap<NodeId, RepeatLayout>,
@@ -143,17 +142,17 @@ impl State {
                 self.index.document.nodes()[&self.root].kind,
                 NodeKind::Repeat { .. }
             ) || (self.projection.presentation.is_none()
-                && self.projection.reason.as_deref() != Some(DORMANT_DEFAULT))
+                && !matches!(
+                    self.projection.reason.as_deref(),
+                    Some(DORMANT_DEFAULT) | Some(DORMANT_GAP)
+                ))
             {
                 return false;
             }
             let mut node = &self.selected.node;
             for _ in 0..=MAX_DOCUMENT_DEPTH {
-                if self.index.gap_roots.contains(node) {
-                    return false;
-                }
                 let Some(parent) = self.index.parents.get(node) else {
-                    return true;
+                    break;
                 };
                 if !matches!(
                     self.index.document.nodes()[parent].kind,
@@ -163,22 +162,29 @@ impl State {
                 }
                 node = parent;
             }
+        }
+        let Some(final_gap) = self.selected_duration_target_path_status(&self.selected) else {
             return false;
+        };
+        match &self.projection.presentation {
+            Some(presentation) => !final_gap || presentation.frames.start < presentation.frames.end,
+            None => match self.projection.reason.as_deref() {
+                Some(DORMANT_DEFAULT) => self
+                    .selected
+                    .repeats
+                    .iter()
+                    .any(|step| step.branch == RepeatEditBranch::Default),
+                Some(DORMANT_GAP) => {
+                    final_gap
+                        && self
+                            .selected
+                            .repeats
+                            .iter()
+                            .any(|step| step.branch == RepeatEditBranch::Default)
+                }
+                _ => false,
+            },
         }
-        let mut node = &self.selected.node;
-        for _ in 0..=MAX_DOCUMENT_DEPTH {
-            let Some(parent) = self.index.parents.get(node) else {
-                return true;
-            };
-            if matches!(
-                self.index.document.nodes()[parent].kind,
-                NodeKind::Retime { .. }
-            ) {
-                return false;
-            }
-            node = parent;
-        }
-        false
     }
 
     /// A bounded inspector hint. Full core authority and picture validation
@@ -214,6 +220,7 @@ impl State {
         let mut targets = Vec::with_capacity(count);
         targets.push(&self.selected);
         targets.extend(also.iter());
+        let mut primary_final_gap = false;
         if targets.iter().any(|target| {
             !matches!(
                 self.index
@@ -222,7 +229,15 @@ impl State {
                     .get(&target.node)
                     .map(|node| &node.kind),
                 Some(NodeKind::Hold { .. })
-            ) || !self.selected_duration_target_path_supported(target)
+            ) || match self.selected_duration_target_path_status(target) {
+                Some(final_gap) => {
+                    if *target == &self.selected {
+                        primary_final_gap = final_gap;
+                    }
+                    false
+                }
+                None => true,
+            }
         }) {
             return false;
         }
@@ -273,36 +288,38 @@ impl State {
                         })
                     })
             }
-            None => {
-                self.projection.reason.as_deref() == Some(DORMANT_DEFAULT)
-                    && self
-                        .selected
-                        .repeats
-                        .iter()
-                        .any(|step| step.branch == RepeatEditBranch::Default)
-            }
+            None => match self.projection.reason.as_deref() {
+                Some(DORMANT_DEFAULT) => self
+                    .selected
+                    .repeats
+                    .iter()
+                    .any(|step| step.branch == RepeatEditBranch::Default),
+                Some(DORMANT_GAP) => primary_final_gap,
+                _ => false,
+            },
         }
     }
 
-    fn selected_duration_target_path_supported(&self, target: &ScopedNodeTarget) -> bool {
+    /// Returns whether this exact captured path reaches a final or zero-length
+    /// owned gap. The retained Repeat layout supplies compact position and
+    /// positive-gap evidence without expanding plays or rescanning the graph.
+    fn selected_duration_target_path_status(&self, target: &ScopedNodeTarget) -> Option<bool> {
         if target.repeats.is_empty() || target.repeats.len() > MAX_DOCUMENT_DEPTH {
-            return false;
+            return None;
         }
         let Ok(path) = self.index.path(&target.node) else {
-            return false;
+            return None;
         };
         if !path.iter().any(|node| node == &self.root) {
-            return false;
+            return None;
         }
         // `Index::path` is project-root first, matching the authority's
         // outermost-to-innermost Repeat vector.
         let mut repeat_steps = target.repeats.iter();
+        let mut dormant_gap = false;
         for pair in path.windows(2) {
             let parent = &pair[0];
             let child = &pair[1];
-            if self.index.gap_roots.contains(child) {
-                return false;
-            }
             match &self.index.document.nodes()[parent].kind {
                 NodeKind::Sequence { .. } => {}
                 NodeKind::Repeat {
@@ -310,41 +327,51 @@ impl State {
                     iterations,
                     ..
                 } => {
-                    let Some(step) = repeat_steps.next() else {
-                        return false;
-                    };
+                    let step = repeat_steps.next()?;
                     if &step.repeat != parent {
-                        return false;
+                        return None;
                     }
                     match &step.branch {
                         RepeatEditBranch::Default if child == default => {}
                         RepeatEditBranch::Play { iteration } => {
-                            if iterations.position(iteration).is_none()
-                                || self
+                            let position = iterations.position(iteration)?;
+                            let owned_gap = self
+                                .index
+                                .document
+                                .gap_overrides()
+                                .get(parent)
+                                .and_then(|gaps| gaps.get(iteration))
+                                == Some(child);
+                            if owned_gap {
+                                let play = self
                                     .index
-                                    .document
-                                    .gap_overrides()
+                                    .repeats
                                     .get(parent)
-                                    .is_some_and(|gaps| gaps.get(iteration) == Some(child))
-                                || self
-                                    .index
-                                    .document
-                                    .overrides()
-                                    .get(parent)
-                                    .and_then(|overrides| overrides.get(iteration))
-                                    .unwrap_or(default)
-                                    != child
+                                    .and_then(|layout| layout.play(iteration))?;
+                                if play.gap_child.as_ref() != Some(child) {
+                                    return None;
+                                }
+                                dormant_gap |= play.gap_after == FrameDuration::ZERO
+                                    || position.saturating_add(1) == iterations.len();
+                            } else if self
+                                .index
+                                .document
+                                .overrides()
+                                .get(parent)
+                                .and_then(|overrides| overrides.get(iteration))
+                                .unwrap_or(default)
+                                != child
                             {
-                                return false;
+                                return None;
                             }
                         }
-                        _ => return false,
+                        _ => return None,
                     }
                 }
-                _ => return false,
+                _ => return None,
             }
         }
-        repeat_steps.next().is_none()
+        repeat_steps.next().is_none().then_some(dormant_gap)
     }
 
     // Returns the number of visited ancestors so the bounded work contract can
@@ -1373,17 +1400,11 @@ impl Index {
             }
         }
         let clocked_retimes = document.retimes_with_derived_clocks();
-        let gap_roots = document
-            .gap_overrides()
-            .values()
-            .flat_map(|entries| entries.iter().map(|(_, root)| root.clone()))
-            .collect();
         Ok(Self {
             document,
             plan,
             parents,
             clocked_retimes,
-            gap_roots,
             sequence_offsets,
             durations,
             repeats,

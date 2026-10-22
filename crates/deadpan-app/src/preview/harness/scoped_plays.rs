@@ -14,6 +14,7 @@ mod hold_audio;
 mod hold_duration;
 mod mixed_hold_duration;
 mod mute_macros;
+pub(super) mod owned_gap_duration;
 mod pause_macros;
 mod pauses;
 mod shared_hold_duration;

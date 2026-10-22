@@ -48,6 +48,7 @@ pub(super) fn run(name: &str, d: &mut Driver<'_>) -> Result<(), String> {
         "repeat-setters" => super::repeat_operator::run_setters(d),
         "groups" => super::groups::run(d),
         "scoped-plays" => super::scoped_plays::run(d),
+        "owned-gap-duration" => super::scoped_plays::owned_gap_duration::run(d),
         "structure-copies" => super::structure_copies::run(d),
         "macros" => super::macros::run(d),
         "original-playback" => super::original_playback::run(d),

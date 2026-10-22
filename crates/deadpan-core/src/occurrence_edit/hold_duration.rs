@@ -28,6 +28,34 @@ pub(super) fn prepare(
     if recipe.duration == duration {
         return Ok(document.clone());
     }
+    let parents = document
+        .nodes()
+        .keys()
+        .flat_map(|parent| {
+            document
+                .children(parent)
+                .map(move |child| (child.clone(), parent.clone()))
+        })
+        .collect();
+    let target = crate::ScopedNodeTarget {
+        node: instance.node.clone(),
+        repeats: instance
+            .repeats
+            .iter()
+            .map(|step| crate::RepeatEditStep {
+                repeat: step.node.clone(),
+                branch: crate::RepeatEditBranch::Play {
+                    iteration: step.iteration.clone(),
+                },
+            })
+            .collect(),
+    };
+    if crate::scoped_edit::duration_target_dormant(document, &target, &parents)? {
+        // The preceding Play is currently final, or an enclosing definition
+        // is unused. There is no root allocation or suffix clock to capture.
+        // Keep the ordinary recipe/provider/mark reduction after this helper.
+        return Ok(document.clone());
+    }
     let end = AnchorIndex::new(document)
         .map_err(|error| super::invalid(&error.to_string()))?
         .resolve_target(&AnchorTarget {

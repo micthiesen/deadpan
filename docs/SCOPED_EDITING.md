@@ -113,18 +113,21 @@ of gap overrides. Recording and named calls accept duration setters only.
 Several plays and Retime ancestry retain their timing guards.
 See [shared duration semantics](SEMANTIC_MACROS.md#all-plays-hold-length).
 
-Mixed All plays/This play body choices have their own duration-only context.
+Mixed All plays/This play choices have their own duration-only context.
 An explicit This play branch is isolated only when it still uses the default;
 All plays choices stay shared. Already owned branches consume no new node IDs.
 The actual isolation proof maps both the authored target and its independent
 visible representative. A proven dormant definition may still need isolation
 to retain its selected Play meaning, while output and cursor stay fixed.
-Recording, calls and direct-edit dot retain those choices. Owned gaps,
-Retime/Partition ancestry, several plays and placed sounds remain unavailable
-on this mixed path. See [mixed duration semantics](SEMANTIC_MACROS.md#mixed-all-plays-and-this-play-hold-length)
+Recording, calls and direct-edit dot retain those choices. An explicit owned
+gap follows its preceding stable Play, including beneath an outer Default or
+above an inner Default body. The current final Play's gap is a dormant
+definition. Retime/Partition ancestry and placed sounds remain unavailable
+on this mixed path; several targets use the selected path below. See [mixed duration semantics](SEMANTIC_MACROS.md#mixed-all-plays-and-this-play-hold-length)
 and its [qualification status](qualification/mixed-hold-duration-semantics-2026-10-21.md).
 
-Several selected Hold bodies use a separate duration-only context. The selection
+Several selected Holds in bodies or explicit owned gaps use a separate
+duration-only context. The selection
 must vary explicit Plays of one Repeat under an identical earlier prefix;
 later All plays/This play choices remain intact. Enter prefills the primary
 Hold's length even when the selected recipes differ. Each changed member uses
@@ -134,8 +137,11 @@ resolves the primary Hold only after every resize. A zero total duration change
 can still change several recipes. Valid no-op members consume no identities;
 an entirely unchanged selection makes no edit. Browsing another row revokes the
 mapped selection; choose a new play set explicitly before another batch or dot.
-Retime/Partition ancestry,
-owned gaps and placed sounds remain unavailable for this body-only family.
+A final owned gap can remain selected alongside live gaps; changing its recipe
+does not add a trailing gap. A dormant primary preserves the ordinary cursor
+while live counterparts may ripple. Implicit default gaps, Retime/Partition
+ancestry and placed sounds remain unavailable. A single all-Play dormant gap
+retains the existing live-boundary refusal.
 See [selected duration semantics](SEMANTIC_MACROS.md#selected-plays-hold-length).
 
 An ordinary Hold inside fixed Edit Retime windows, without any Repeat ancestry,

@@ -1,0 +1,34 @@
+{
+  "base": "9b0c9e620f5a56af37ed5b7d7535acdae7e168a6",
+  "general": {
+    "agent": "owned_gap_general_review",
+    "subject": "origin/main dirty diff and new owned-gap files, excluding foreign fuzz/Cargo.lock and .claude",
+    "findings": [],
+    "runtime_checks": "not run"
+  },
+  "temporal": {
+    "agent": "owned_gap_temporal_review",
+    "findings": [],
+    "scope": "Exact full ancestry, current stable iteration positions, dormant body/gap validation and actual isolation target mapping"
+  },
+  "verification": {
+    "agent": "selected_duration_verification_review",
+    "applied": [
+      "CLI encoded fixture now checks ordered forward/backward mappings, exact owned gap root and mapped primary presentation"
+    ],
+    "followup": "Confirmed corrected interior Source continuation, request-backed accepted extension controls and old-entry-relative CLI sample offset preserve the oracles; no remaining source issue. Runtime verification still pending."
+  },
+  "first_focused_run": {
+    "passed": 11,
+    "failed": 7,
+    "captured_output_markers": 1,
+    "seconds": 6.023,
+    "corrections": [
+      "Two native unit fixtures navigated one level too far",
+      "Outer owned-gap-only fixture retained cursor outside rewritten graph",
+      "Audio oracle treated an internal Source cut as an endpoint",
+      "Store oracle expected AcceptedArtifact rather than existing exact Request controls",
+      "CLI oracle independently re-rounded a relative NTSC frame at the moved root origin"
+    ]
+  }
+}

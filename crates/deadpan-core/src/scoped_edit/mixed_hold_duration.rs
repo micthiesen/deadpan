@@ -41,13 +41,11 @@ impl ProjectDocument {
     }
 }
 
-/// Body-only liveness proof. A literal Default with every body play overridden
-/// suppresses its descendants. Owned gaps are deliberately outside this slice.
+/// Mixed body/gap liveness without inventing a concrete dormant occurrence.
 pub(crate) fn mixed_body_dormant(
     document: &ProjectDocument,
     target: &ScopedNodeTarget,
 ) -> Result<bool, EditError> {
-    target.validate(document)?;
     if !target
         .repeats
         .iter()
@@ -64,68 +62,10 @@ pub(crate) fn mixed_body_dormant(
     let mut parents = BTreeMap::new();
     for id in document.nodes().keys() {
         for child in document.children(id) {
-            parents.insert(child, id);
+            parents.insert(child.clone(), id.clone());
         }
     }
-    let mut current = &target.node;
-    let mut dormant = false;
-    for _ in 0..=MAX_DOCUMENT_DEPTH {
-        if current == document.root() {
-            return Ok(dormant);
-        }
-        let parent = parents
-            .get(current)
-            .copied()
-            .ok_or_else(|| invalid("mixed Hold target has no project ancestry"))?;
-        match &document.nodes()[parent].kind {
-            NodeKind::Sequence { .. } => {}
-            NodeKind::Repeat {
-                child, iterations, ..
-            } => {
-                let step = target
-                    .repeats
-                    .iter()
-                    .find(|step| &step.repeat == parent)
-                    .ok_or_else(|| invalid("mixed Hold target omits a Repeat ancestor"))?;
-                match &step.branch {
-                    RepeatEditBranch::Default if current == child => {
-                        let owned = document
-                            .overrides()
-                            .get(parent)
-                            .map_or(0, |entries| entries.len());
-                        dormant |=
-                            u64::try_from(owned).is_ok_and(|n| n == u64::from(iterations.len()));
-                    }
-                    RepeatEditBranch::Play { iteration } => {
-                        let body = document
-                            .overrides()
-                            .get(parent)
-                            .and_then(|entries| entries.get(iteration))
-                            .unwrap_or(child);
-                        if body != current {
-                            return Err(invalid(
-                                "mixed Hold duration does not yet support owned gap ancestry",
-                            ));
-                        }
-                    }
-                    _ => {
-                        return Err(invalid(
-                            "mixed Hold duration requires literal Default bodies",
-                        ));
-                    }
-                }
-            }
-            _ => {
-                return Err(invalid(
-                    "mixed Hold duration requires ordinary Sequence/Repeat bodies without Retime or Partition ancestry",
-                ));
-            }
-        }
-        current = parent;
-    }
-    Err(limit(
-        "mixed Hold duration ancestry exceeds the depth bound",
-    ))
+    super::duration_target_dormant(document, target, &parents)
 }
 
 pub(crate) struct ResolvedDuration {

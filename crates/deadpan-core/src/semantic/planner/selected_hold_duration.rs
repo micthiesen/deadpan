@@ -1,4 +1,4 @@
-//! One duration intent over a captured, disjoint selection of Repeat bodies.
+//! One duration intent over a captured, disjoint selection of Repeat branches.
 
 use super::*;
 use crate::{
@@ -68,90 +68,19 @@ fn body_dormant(
     target: &ScopedNodeTarget,
     parents: &BTreeMap<NodeId, NodeId>,
 ) -> Result<bool, EditError> {
-    if target.repeats.is_empty() || target.repeats.len() > crate::MAX_DOCUMENT_DEPTH {
-        return Err(unavailable(
-            "selected Hold duration requires bounded explicit Repeat ancestry",
-        ));
-    }
     if !matches!(
         document.nodes().get(&target.node).map(|node| &node.kind),
         Some(NodeKind::Hold { .. })
     ) {
         return Err(unavailable("every selected duration target must be a Hold"));
     }
-    let mut current = target.node.clone();
-    let mut remaining = target.repeats.len();
-    let mut dormant = false;
-    for _ in 0..=crate::MAX_DOCUMENT_DEPTH {
-        if &current == document.root() {
-            return if remaining == 0 {
-                Ok(dormant)
-            } else {
-                Err(unavailable(
-                    "selected Hold target has extra Repeat authority",
-                ))
-            };
+    crate::scoped_edit::duration_target_dormant(document, target, parents).map_err(|error| {
+        if error.code == EditErrorCode::LimitExceeded {
+            error
+        } else {
+            unavailable(&error.message)
         }
-        let parent = parents
-            .get(&current)
-            .ok_or_else(|| unavailable("selected Hold target has no project ancestry"))?;
-        match &document.nodes()[parent].kind {
-            NodeKind::Sequence { .. } => {}
-            NodeKind::Repeat {
-                child, iterations, ..
-            } => {
-                remaining = remaining
-                    .checked_sub(1)
-                    .ok_or_else(|| unavailable("selected Hold target omits a Repeat ancestor"))?;
-                let step = &target.repeats[remaining];
-                if &step.repeat != parent {
-                    return Err(unavailable(
-                        "selected Hold target names the wrong Repeat ancestor",
-                    ));
-                }
-                match &step.branch {
-                    RepeatEditBranch::Default => {
-                        if &current != child {
-                            return Err(unavailable(
-                                "selected Default must follow its literal body",
-                            ));
-                        }
-                        let owned = document
-                            .overrides()
-                            .get(parent)
-                            .map_or(0, |entries| entries.len());
-                        dormant |= u64::try_from(owned)
-                            .is_ok_and(|count| count == u64::from(iterations.len()));
-                    }
-                    RepeatEditBranch::Play { iteration } => {
-                        if iterations.position(iteration).is_none() {
-                            return Err(unavailable("selected Hold target names a retired Play"));
-                        }
-                        let body = document
-                            .overrides()
-                            .get(parent)
-                            .and_then(|entries| entries.get(iteration))
-                            .unwrap_or(child);
-                        if body != &current {
-                            return Err(unavailable(
-                                "selected Hold duration supports bodies, not owned gaps",
-                            ));
-                        }
-                    }
-                }
-            }
-            _ => {
-                return Err(unavailable(
-                    "selected Hold duration requires Sequence/Repeat bodies without Retime or Partition ancestry",
-                ));
-            }
-        }
-        current = parent.clone();
-    }
-    Err(EditError::new(
-        EditErrorCode::LimitExceeded,
-        "selected Hold ancestry exceeds the depth bound",
-    ))
+    })
 }
 
 fn uniform_level(authority: &SemanticSelectedHoldDurationContext) -> Result<usize, EditError> {
@@ -393,6 +322,13 @@ where
                     "selected Hold duration requires an Isolation allocation",
                 ));
             };
+            if identities.nodes.len() != requirements.nodes
+                || identities.marks.len() != requirements.marks
+            {
+                return Err(invalid(
+                    "selected Hold duration requires its exact node and mark identity pools",
+                ));
+            }
             self.reserve_revision(&new_revision)?;
             for node in &identities.nodes {
                 self.reserve_node(node)?;

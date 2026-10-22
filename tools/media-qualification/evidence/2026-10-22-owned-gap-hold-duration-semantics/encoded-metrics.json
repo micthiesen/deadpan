@@ -1,0 +1,431 @@
+[
+  {
+    "name": "owned-gap-selected-play-grow.mp4",
+    "summary": {
+      "audio_windows_checked": 2,
+      "audio_windows_failed": 0,
+      "blocks_compared": 6,
+      "index_observable_comparisons": 86,
+      "index_unobservable_comparisons": 60,
+      "max_block_level_db": 0.04416584038251159,
+      "max_local_luma_error": 2.25,
+      "max_thumbnail_mad": 0.060716711956521736,
+      "min_block_snr_db": 35.52958958082045,
+      "min_chroma_psnr_db": 53.44486901527713,
+      "min_luma_psnr_db": 56.454656378842394,
+      "min_neighbor_margin_db": 0.0,
+      "nonzero_offsets": 0,
+      "offset_unobservable_windows": 0,
+      "offset_verified_windows": 2,
+      "pictures_checked": 74,
+      "pictures_failed": 0,
+      "pictures_without_index_neighbors": 0,
+      "signal_windows": 2
+    },
+    "windows": [
+      {
+        "range": [
+          0,
+          48000
+        ],
+        "offset": 0,
+        "status": "verified_zero",
+        "uncovered": 0,
+        "flags": [],
+        "blocks": {
+          "compared": 2,
+          "level_blocks": 0,
+          "low_snr_blocks": 0,
+          "max_level_difference_db": 0.04416584038251159,
+          "max_silent_level_dbfs": -104.93401604589074,
+          "min_snr_block_start": 39840,
+          "min_snr_db": 35.52958958082045,
+          "silent": 97,
+          "sound_in_silence_blocks": 0
+        }
+      },
+      {
+        "range": [
+          48000,
+          118518
+        ],
+        "offset": 0,
+        "status": "verified_zero",
+        "uncovered": 0,
+        "flags": [],
+        "blocks": {
+          "compared": 4,
+          "level_blocks": 0,
+          "low_snr_blocks": 0,
+          "max_level_difference_db": 0.031946116950749115,
+          "max_silent_level_dbfs": -84.03123022632556,
+          "min_snr_block_start": 54240,
+          "min_snr_db": 37.25871707281239,
+          "silent": 142,
+          "sound_in_silence_blocks": 0
+        }
+      }
+    ]
+  },
+  {
+    "name": "owned-gap-selected-play-shrink.mp4",
+    "summary": {
+      "audio_windows_checked": 2,
+      "audio_windows_failed": 0,
+      "blocks_compared": 6,
+      "index_observable_comparisons": 86,
+      "index_unobservable_comparisons": 36,
+      "max_block_level_db": 0.04416584038251159,
+      "max_local_luma_error": 2.125,
+      "max_thumbnail_mad": 0.05022078804347826,
+      "min_block_snr_db": 35.52958958082045,
+      "min_chroma_psnr_db": 53.44486901527713,
+      "min_luma_psnr_db": 56.454656378842394,
+      "min_neighbor_margin_db": 0.0,
+      "nonzero_offsets": 0,
+      "offset_unobservable_windows": 0,
+      "offset_verified_windows": 2,
+      "pictures_checked": 62,
+      "pictures_failed": 0,
+      "pictures_without_index_neighbors": 0,
+      "signal_windows": 2
+    },
+    "windows": [
+      {
+        "range": [
+          0,
+          48000
+        ],
+        "offset": 0,
+        "status": "verified_zero",
+        "uncovered": 0,
+        "flags": [],
+        "blocks": {
+          "compared": 2,
+          "level_blocks": 0,
+          "low_snr_blocks": 0,
+          "max_level_difference_db": 0.04416584038251159,
+          "max_silent_level_dbfs": -104.93401604589074,
+          "min_snr_block_start": 39840,
+          "min_snr_db": 35.52958958082045,
+          "silent": 97,
+          "sound_in_silence_blocks": 0
+        }
+      },
+      {
+        "range": [
+          48000,
+          99299
+        ],
+        "offset": 0,
+        "status": "verified_zero",
+        "uncovered": 0,
+        "flags": [],
+        "blocks": {
+          "compared": 4,
+          "level_blocks": 0,
+          "low_snr_blocks": 0,
+          "max_level_difference_db": 0.031946116950749115,
+          "max_silent_level_dbfs": -86.11300119392085,
+          "min_snr_block_start": 54240,
+          "min_snr_db": 37.25871707281239,
+          "silent": 102,
+          "sound_in_silence_blocks": 0
+        }
+      }
+    ]
+  },
+  {
+    "name": "owned-gap-selected-shared-grow.mp4",
+    "summary": {
+      "audio_windows_checked": 3,
+      "audio_windows_failed": 0,
+      "blocks_compared": 6,
+      "index_observable_comparisons": 86,
+      "index_unobservable_comparisons": 72,
+      "max_block_level_db": 0.09044325299942813,
+      "max_local_luma_error": 2.25,
+      "max_thumbnail_mad": 0.060716711956521736,
+      "min_block_snr_db": 30.39394691152717,
+      "min_chroma_psnr_db": 53.44486901527713,
+      "min_luma_psnr_db": 56.454656378842394,
+      "min_neighbor_margin_db": 0.0,
+      "nonzero_offsets": 0,
+      "offset_unobservable_windows": 0,
+      "offset_verified_windows": 3,
+      "pictures_checked": 80,
+      "pictures_failed": 0,
+      "pictures_without_index_neighbors": 0,
+      "signal_windows": 3
+    },
+    "windows": [
+      {
+        "range": [
+          0,
+          48000
+        ],
+        "offset": 0,
+        "status": "verified_zero",
+        "uncovered": 0,
+        "flags": [],
+        "blocks": {
+          "compared": 2,
+          "level_blocks": 0,
+          "low_snr_blocks": 0,
+          "max_level_difference_db": 0.09044325299942813,
+          "max_silent_level_dbfs": -87.11350573382548,
+          "min_snr_block_start": 46080,
+          "min_snr_db": 30.747856022427264,
+          "silent": 97,
+          "sound_in_silence_blocks": 0
+        }
+      },
+      {
+        "range": [
+          48000,
+          96000
+        ],
+        "offset": 0,
+        "status": "verified_zero",
+        "uncovered": 0,
+        "flags": [],
+        "blocks": {
+          "compared": 3,
+          "level_blocks": 0,
+          "low_snr_blocks": 0,
+          "max_level_difference_db": 0.03849960320169288,
+          "max_silent_level_dbfs": -72.95322509325894,
+          "min_snr_block_start": 73440,
+          "min_snr_db": 33.66170758735687,
+          "silent": 97,
+          "sound_in_silence_blocks": 0
+        }
+      },
+      {
+        "range": [
+          96000,
+          128128
+        ],
+        "offset": 0,
+        "status": "verified_zero",
+        "uncovered": 0,
+        "flags": [],
+        "blocks": {
+          "compared": 1,
+          "level_blocks": 0,
+          "low_snr_blocks": 0,
+          "max_level_difference_db": 0.08164417449699002,
+          "max_silent_level_dbfs": -74.72325490018198,
+          "min_snr_block_start": 108480,
+          "min_snr_db": 30.39394691152717,
+          "silent": 66,
+          "sound_in_silence_blocks": 0
+        }
+      }
+    ]
+  },
+  {
+    "name": "owned-gap-selected-shared-shrink.mp4",
+    "summary": {
+      "audio_windows_checked": 2,
+      "audio_windows_failed": 0,
+      "blocks_compared": 7,
+      "index_observable_comparisons": 86,
+      "index_unobservable_comparisons": 24,
+      "max_block_level_db": 0.007348840937815737,
+      "max_local_luma_error": 2.125,
+      "max_thumbnail_mad": 0.05022078804347826,
+      "min_block_snr_db": 27.047203018990935,
+      "min_chroma_psnr_db": 53.44486901527713,
+      "min_luma_psnr_db": 56.454656378842394,
+      "min_neighbor_margin_db": 0.0,
+      "nonzero_offsets": 0,
+      "offset_unobservable_windows": 0,
+      "offset_verified_windows": 2,
+      "pictures_checked": 56,
+      "pictures_failed": 0,
+      "pictures_without_index_neighbors": 0,
+      "signal_windows": 2
+    },
+    "windows": [
+      {
+        "range": [
+          0,
+          48000
+        ],
+        "offset": 0,
+        "status": "verified_zero",
+        "uncovered": 0,
+        "flags": [],
+        "blocks": {
+          "compared": 3,
+          "level_blocks": 0,
+          "low_snr_blocks": 0,
+          "max_level_difference_db": 0.006863757804744353,
+          "max_silent_level_dbfs": -98.1781305130667,
+          "min_snr_block_start": 36480,
+          "min_snr_db": 54.22553778839922,
+          "silent": 96,
+          "sound_in_silence_blocks": 0
+        }
+      },
+      {
+        "range": [
+          48000,
+          89690
+        ],
+        "offset": 0,
+        "status": "verified_zero",
+        "uncovered": 0,
+        "flags": [],
+        "blocks": {
+          "compared": 4,
+          "level_blocks": 0,
+          "low_snr_blocks": 0,
+          "max_level_difference_db": 0.007348840937815737,
+          "max_silent_level_dbfs": -86.92017613030325,
+          "min_snr_block_start": 61920,
+          "min_snr_db": 27.047203018990935,
+          "silent": 83,
+          "sound_in_silence_blocks": 0
+        }
+      }
+    ]
+  },
+  {
+    "name": "owned-gap-dormant-play.mp4",
+    "summary": {
+      "audio_windows_checked": 2,
+      "audio_windows_failed": 0,
+      "blocks_compared": 6,
+      "index_observable_comparisons": 86,
+      "index_unobservable_comparisons": 50,
+      "max_block_level_db": 0.050842431992183634,
+      "max_local_luma_error": 2.25,
+      "max_thumbnail_mad": 0.05022078804347826,
+      "min_block_snr_db": 35.52958958082045,
+      "min_chroma_psnr_db": 53.44486901527713,
+      "min_luma_psnr_db": 56.454656378842394,
+      "min_neighbor_margin_db": 0.0,
+      "nonzero_offsets": 0,
+      "offset_unobservable_windows": 0,
+      "offset_verified_windows": 2,
+      "pictures_checked": 69,
+      "pictures_failed": 0,
+      "pictures_without_index_neighbors": 0,
+      "signal_windows": 2
+    },
+    "windows": [
+      {
+        "range": [
+          0,
+          48000
+        ],
+        "offset": 0,
+        "status": "verified_zero",
+        "uncovered": 0,
+        "flags": [],
+        "blocks": {
+          "compared": 2,
+          "level_blocks": 0,
+          "low_snr_blocks": 0,
+          "max_level_difference_db": 0.04416584038251159,
+          "max_silent_level_dbfs": -104.93401604589074,
+          "min_snr_block_start": 39840,
+          "min_snr_db": 35.52958958082045,
+          "silent": 97,
+          "sound_in_silence_blocks": 0
+        }
+      },
+      {
+        "range": [
+          48000,
+          110510
+        ],
+        "offset": 0,
+        "status": "verified_zero",
+        "uncovered": 0,
+        "flags": [],
+        "blocks": {
+          "compared": 4,
+          "level_blocks": 0,
+          "low_snr_blocks": 0,
+          "max_level_difference_db": 0.050842431992183634,
+          "max_silent_level_dbfs": -69.80326080747402,
+          "min_snr_block_start": 91200,
+          "min_snr_db": 36.46646370861695,
+          "silent": 126,
+          "sound_in_silence_blocks": 0
+        }
+      }
+    ]
+  },
+  {
+    "name": "owned-gap-dormant-shared.mp4",
+    "summary": {
+      "audio_windows_checked": 2,
+      "audio_windows_failed": 0,
+      "blocks_compared": 6,
+      "index_observable_comparisons": 86,
+      "index_unobservable_comparisons": 52,
+      "max_block_level_db": 0.025041227224861018,
+      "max_local_luma_error": 2.25,
+      "max_thumbnail_mad": 0.05022078804347826,
+      "min_block_snr_db": 38.00271402549733,
+      "min_chroma_psnr_db": 53.44486901527713,
+      "min_luma_psnr_db": 56.454656378842394,
+      "min_neighbor_margin_db": 0.0,
+      "nonzero_offsets": 0,
+      "offset_unobservable_windows": 0,
+      "offset_verified_windows": 2,
+      "pictures_checked": 70,
+      "pictures_failed": 0,
+      "pictures_without_index_neighbors": 0,
+      "signal_windows": 2
+    },
+    "windows": [
+      {
+        "range": [
+          0,
+          48000
+        ],
+        "offset": 0,
+        "status": "verified_zero",
+        "uncovered": 0,
+        "flags": [],
+        "blocks": {
+          "compared": 2,
+          "level_blocks": 0,
+          "low_snr_blocks": 0,
+          "max_level_difference_db": 0.0036770453523473634,
+          "max_silent_level_dbfs": -98.68449859063473,
+          "min_snr_block_start": 28320,
+          "min_snr_db": 55.305784126196016,
+          "silent": 97,
+          "sound_in_silence_blocks": 0
+        }
+      },
+      {
+        "range": [
+          48000,
+          112112
+        ],
+        "offset": 0,
+        "status": "verified_zero",
+        "uncovered": 0,
+        "flags": [],
+        "blocks": {
+          "compared": 4,
+          "level_blocks": 0,
+          "low_snr_blocks": 0,
+          "max_level_difference_db": 0.025041227224861018,
+          "max_silent_level_dbfs": -87.20374834155513,
+          "min_snr_block_start": 92640,
+          "min_snr_db": 38.00271402549733,
+          "silent": 130,
+          "sound_in_silence_blocks": 0
+        }
+      }
+    ]
+  }
+]

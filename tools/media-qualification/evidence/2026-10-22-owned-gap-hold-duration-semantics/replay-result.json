@@ -1,0 +1,592 @@
+{
+  "visual": {
+    "failed": false,
+    "metadata": {
+      "binary_sha256": "1cc26fb7638836ebe18f8eaf2291475e2398fecf1e8836ae36b05478c6cc098e",
+      "build_profile": "release",
+      "cache_state": "first import/index cold, subsequent operations warm; OS file cache uncontrolled",
+      "cargo_lock_sha256_at_run": "1e39d18ae4de6c7b898edad39eb7104235fb3ffe3af84521ca94df2b6c25b71b",
+      "fixture": "cfr-bframes.mp4",
+      "fixture_identity_file": "/Users/michael/Code/deadpan/native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+      "fixture_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+      "git_revision": "9b0c9e620f5a56af37ed5b7d7535acdae7e168a6",
+      "git_status": "M crates/deadpan-app/src/navigation/registry/entries.rs\n M crates/deadpan-app/src/preview/harness/scenarios.rs\n M crates/deadpan-app/src/preview/harness/scoped_plays.rs\n M crates/deadpan-app/src/preview/harness/scoped_plays/mixed_hold_duration.rs\n M crates/deadpan-app/src/preview/scoped/model.rs\n M crates/deadpan-app/src/preview/scoped/model/tests.rs\n M crates/deadpan-app/src/preview/scoped/model/tests/mixed_duration.rs\n M crates/deadpan-app/src/ui_harness.rs\n M crates/deadpan-audio/tests/stages/occurrence_pause/duration.rs\n M crates/deadpan-cli/tests/preview_export.rs\n M crates/deadpan-cli/tests/preview_export/recipes.rs\n M crates/deadpan-core/src/occurrence_edit/hold_duration.rs\n M crates/deadpan-core/src/scoped_edit.rs\n M crates/deadpan-core/src/scoped_edit/hold_duration.rs\n M crates/deadpan-core/src/scoped_edit/mixed_hold_duration.rs\n M crates/deadpan-core/src/semantic/planner/selected_hold_duration.rs\n M crates/deadpan-core/src/semantic/planner/tests/shared_hold_duration.rs\n M crates/deadpan-store/tests/generation_bundles/preparations/scoped_mixed_duration.rs\n M docs/COMMANDS.md\n M docs/INSERT_TIME.md\n M docs/PARITY.md\n M docs/SCOPED_EDITING.md\n M docs/SEMANTIC_MACROS.md\n M fuzz/Cargo.lock\n?? .claude/\n?? crates/deadpan-app/src/preview/harness/scoped_plays/owned_gap_duration.rs\n?? crates/deadpan-app/src/preview/scoped/model/tests/owned_gap_duration.rs\n?? crates/deadpan-audio/tests/stages/occurrence_pause/duration/owned_gap_duration.rs\n?? crates/deadpan-cli/tests/preview_export/owned_gap_duration.rs\n?? crates/deadpan-core/src/semantic/planner/tests/shared_hold_duration/owned_gap_hold_duration.rs\n?? crates/deadpan-store/tests/generation_bundles/preparations/scoped_mixed_duration/",
+      "gpu_readback_in_timing_run": false,
+      "hardware": "Apple M5 Max",
+      "os": "26.5.2",
+      "physical_display_measured": false,
+      "picture_worker_timing": "request_start_finish_publication_receipt_v1",
+      "power_thermal_state": "uncontrolled; compare on the same idle machine and power mode",
+      "replay_hz": 60,
+      "replay_wall_ms": 783.4956669999999,
+      "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+      "source_identity_note": "Git metadata describes the checkout at replay start; binary_sha256 identifies the executed build even during concurrent edits.",
+      "started_unix_ms": 1792656638211,
+      "tracked_diff_sha256_at_run": "e1b6fd6004fa0addc5940646a9e540e13b43f312e3c62798e885929cfc11e485",
+      "viewport_points": [
+        1280,
+        820
+      ],
+      "wait_strategy": "egui_repaint_callback_v1"
+    },
+    "scenarios": [
+      {
+        "name": "kestrel-shortcuts",
+        "failed": false,
+        "findings": [],
+        "checks": 1,
+        "frames": 0,
+        "timings": {}
+      },
+      {
+        "name": "owned-gap-duration",
+        "failed": false,
+        "findings": [
+          {
+            "message": "10 frame(s) settled their layout only on a second retry: [{\"frame\":39,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5566)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5701)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4159)\"]},{\"frame\":45,\"input\":\"Command source\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5566)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5701)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4159)\"]},{\"frame\":49,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5566)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5701)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4159)\"]},{\"frame\":58,\"input\":\"Command scope play 2\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5566)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5701)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4159)\"]},{\"frame\":61,\"input\":\"Command scope plays 1,2\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5566)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5701)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4159)\"]},{\"frame\":75,\"input\":\"Replace the mixed Hold duration parameter\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5566)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5701)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4159)\"]},{\"frame\":91,\"input\":\"Command scope plays 1,2\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5566)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5701)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4159)\"]},{\"frame\":106,\"input\":\"Replace the mixed Hold duration parameter\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5566)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5701)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4159)\"]},{\"frame\":111,\"input\":\"Command scope plays 2,3\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5566)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5701)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4159)\"]},{\"frame\":116,\"input\":\"Replace the mixed Hold duration parameter\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5566)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5701)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4159)\"]}]",
+            "severity": "warning"
+          }
+        ],
+        "checks": 27,
+        "frames": 141,
+        "timings": {
+          "ui_frame_cpu_ms": {
+            "completed": {
+              "max_ms": 6.987417,
+              "n": 141,
+              "p50_ms": 0.314,
+              "p95_ms": 1.453333,
+              "p99_ms": 3.202167
+            },
+            "failed": 0,
+            "samples": 141,
+            "timed_out": 0
+          },
+          "ui_composition_submit_cpu_ms": {
+            "completed": {
+              "max_ms": 0.723541,
+              "n": 141,
+              "p50_ms": 0.101917,
+              "p95_ms": 0.185917,
+              "p99_ms": 0.273833
+            },
+            "failed": 0,
+            "samples": 141,
+            "timed_out": 0
+          },
+          "ui_composition_complete_ms": {
+            "completed": {
+              "max_ms": 9.029083,
+              "n": 141,
+              "p50_ms": 0.630042,
+              "p95_ms": 0.968416,
+              "p99_ms": 1.3272080000000002
+            },
+            "failed": 0,
+            "samples": 141,
+            "timed_out": 0
+          },
+          "input_to_state_ms": {
+            "completed": {
+              "max_ms": 1.9853330000000002,
+              "n": 45,
+              "p50_ms": 0.630375,
+              "p95_ms": 1.453333,
+              "p99_ms": 1.9853330000000002
+            },
+            "failed": 0,
+            "samples": 45,
+            "timed_out": 0
+          },
+          "input_to_commit_ms": {
+            "completed": {
+              "max_ms": 98.975875,
+              "n": 4,
+              "p50_ms": 13.038708,
+              "p95_ms": 98.975875,
+              "p99_ms": 98.975875
+            },
+            "failed": 0,
+            "samples": 4,
+            "timed_out": 0
+          },
+          "request_to_decode_delivery_ms": {
+            "completed": {
+              "max_ms": 12.552125,
+              "n": 25,
+              "p50_ms": 4.3168750000000005,
+              "p95_ms": 8.084084,
+              "p99_ms": 12.552125
+            },
+            "failed": 0,
+            "samples": 25,
+            "timed_out": 0
+          },
+          "request_to_worker_start_ms": {
+            "completed": {
+              "max_ms": 0.451667,
+              "n": 25,
+              "p50_ms": 0.007,
+              "p95_ms": 0.0085,
+              "p99_ms": 0.451667
+            },
+            "failed": 0,
+            "samples": 25,
+            "timed_out": 0
+          },
+          "worker_execution_ms": {
+            "completed": {
+              "max_ms": 4.643040999999999,
+              "n": 25,
+              "p50_ms": 0.0067079999999999996,
+              "p95_ms": 2.5195830000000004,
+              "p99_ms": 4.643040999999999
+            },
+            "failed": 0,
+            "samples": 25,
+            "timed_out": 0
+          },
+          "worker_publication_delay_ms": {
+            "completed": {
+              "max_ms": 0.000334,
+              "n": 25,
+              "p50_ms": 8.4e-05,
+              "p95_ms": 0.000292,
+              "p99_ms": 0.000334
+            },
+            "failed": 0,
+            "samples": 25,
+            "timed_out": 0
+          },
+          "publication_to_decode_delivery_ms": {
+            "completed": {
+              "max_ms": 7.900957999999999,
+              "n": 25,
+              "p50_ms": 4.297167,
+              "p95_ms": 7.704167,
+              "p99_ms": 7.900957999999999
+            },
+            "failed": 0,
+            "samples": 25,
+            "timed_out": 0
+          },
+          "request_to_picture_submission_ms": {
+            "completed": {
+              "max_ms": 13.199709,
+              "n": 18,
+              "p50_ms": 5.04525,
+              "p95_ms": 13.199709,
+              "p99_ms": 13.199709
+            },
+            "failed": 0,
+            "samples": 18,
+            "timed_out": 0
+          },
+          "request_to_picture_complete_ms": {
+            "completed": {
+              "max_ms": 13.95225,
+              "n": 18,
+              "p50_ms": 5.774334,
+              "p95_ms": 13.95225,
+              "p99_ms": 13.95225
+            },
+            "failed": 0,
+            "samples": 18,
+            "timed_out": 0
+          },
+          "input_to_picture_complete_ms": {
+            "completed": {
+              "max_ms": 109.07975,
+              "n": 14,
+              "p50_ms": 7.509708000000001,
+              "p95_ms": 109.07975,
+              "p99_ms": 109.07975
+            },
+            "failed": 0,
+            "samples": 14,
+            "timed_out": 0
+          },
+          "Original initialized and displayed": {
+            "completed": {
+              "max_ms": 104.375541,
+              "n": 1,
+              "p50_ms": 104.375541,
+              "p95_ms": 104.375541,
+              "p99_ms": 104.375541
+            },
+            "failed": 0,
+            "samples": 1,
+            "timed_out": 0
+          },
+          "Project and picture settled": {
+            "completed": {
+              "max_ms": 6.304334,
+              "n": 17,
+              "p50_ms": 3.515125,
+              "p95_ms": 6.304334,
+              "p99_ms": 6.304334
+            },
+            "failed": 0,
+            "samples": 17,
+            "timed_out": 0
+          },
+          "Open the qualified mixed-duration project": {
+            "completed": {
+              "max_ms": 33.993541,
+              "n": 1,
+              "p50_ms": 33.993541,
+              "p95_ms": 33.993541,
+              "p99_ms": 33.993541
+            },
+            "failed": 0,
+            "samples": 1,
+            "timed_out": 0
+          },
+          "Mixed-duration receipt is admitted": {
+            "completed": {
+              "max_ms": 0.000209,
+              "n": 10,
+              "p50_ms": 8.4e-05,
+              "p95_ms": 0.000209,
+              "p99_ms": 0.000209
+            },
+            "failed": 0,
+            "samples": 10,
+            "timed_out": 0
+          },
+          "Committed revision changed": {
+            "completed": {
+              "max_ms": 16.25575,
+              "n": 6,
+              "p50_ms": 10.235959,
+              "p95_ms": 16.25575,
+              "p99_ms": 16.25575
+            },
+            "failed": 0,
+            "samples": 6,
+            "timed_out": 0
+          },
+          "Close the private owned-gap writer": {
+            "completed": {
+              "max_ms": 14.007292,
+              "n": 1,
+              "p50_ms": 14.007292,
+              "p95_ms": 14.007292,
+              "p99_ms": 14.007292
+            },
+            "failed": 0,
+            "samples": 1,
+            "timed_out": 0
+          },
+          "Restore the main project after owned-gap replay": {
+            "completed": {
+              "max_ms": 26.6705,
+              "n": 1,
+              "p50_ms": 26.6705,
+              "p95_ms": 26.6705,
+              "p99_ms": 26.6705
+            },
+            "failed": 0,
+            "samples": 1,
+            "timed_out": 0
+          }
+        }
+      }
+    ]
+  },
+  "performance": {
+    "failed": false,
+    "metadata": {
+      "binary_sha256": "1cc26fb7638836ebe18f8eaf2291475e2398fecf1e8836ae36b05478c6cc098e",
+      "build_profile": "release",
+      "cache_state": "first import/index cold, subsequent operations warm; OS file cache uncontrolled",
+      "cargo_lock_sha256_at_run": "1e39d18ae4de6c7b898edad39eb7104235fb3ffe3af84521ca94df2b6c25b71b",
+      "fixture": "cfr-bframes.mp4",
+      "fixture_identity_file": "/Users/michael/Code/deadpan/native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+      "fixture_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+      "git_revision": "9b0c9e620f5a56af37ed5b7d7535acdae7e168a6",
+      "git_status": "M crates/deadpan-app/src/navigation/registry/entries.rs\n M crates/deadpan-app/src/preview/harness/scenarios.rs\n M crates/deadpan-app/src/preview/harness/scoped_plays.rs\n M crates/deadpan-app/src/preview/harness/scoped_plays/mixed_hold_duration.rs\n M crates/deadpan-app/src/preview/scoped/model.rs\n M crates/deadpan-app/src/preview/scoped/model/tests.rs\n M crates/deadpan-app/src/preview/scoped/model/tests/mixed_duration.rs\n M crates/deadpan-app/src/ui_harness.rs\n M crates/deadpan-audio/tests/stages/occurrence_pause/duration.rs\n M crates/deadpan-cli/tests/preview_export.rs\n M crates/deadpan-cli/tests/preview_export/recipes.rs\n M crates/deadpan-core/src/occurrence_edit/hold_duration.rs\n M crates/deadpan-core/src/scoped_edit.rs\n M crates/deadpan-core/src/scoped_edit/hold_duration.rs\n M crates/deadpan-core/src/scoped_edit/mixed_hold_duration.rs\n M crates/deadpan-core/src/semantic/planner/selected_hold_duration.rs\n M crates/deadpan-core/src/semantic/planner/tests/shared_hold_duration.rs\n M crates/deadpan-store/tests/generation_bundles/preparations/scoped_mixed_duration.rs\n M docs/COMMANDS.md\n M docs/INSERT_TIME.md\n M docs/PARITY.md\n M docs/SCOPED_EDITING.md\n M docs/SEMANTIC_MACROS.md\n M fuzz/Cargo.lock\n?? .claude/\n?? crates/deadpan-app/src/preview/harness/scoped_plays/owned_gap_duration.rs\n?? crates/deadpan-app/src/preview/scoped/model/tests/owned_gap_duration.rs\n?? crates/deadpan-audio/tests/stages/occurrence_pause/duration/owned_gap_duration.rs\n?? crates/deadpan-cli/tests/preview_export/owned_gap_duration.rs\n?? crates/deadpan-core/src/semantic/planner/tests/shared_hold_duration/owned_gap_hold_duration.rs\n?? crates/deadpan-store/tests/generation_bundles/preparations/scoped_mixed_duration/",
+      "gpu_readback_in_timing_run": false,
+      "hardware": "Apple M5 Max",
+      "os": "26.5.2",
+      "physical_display_measured": false,
+      "picture_worker_timing": "request_start_finish_publication_receipt_v1",
+      "power_thermal_state": "uncontrolled; compare on the same idle machine and power mode",
+      "replay_hz": 60,
+      "replay_wall_ms": 487.15637499999997,
+      "rust": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+      "source_identity_note": "Git metadata describes the checkout at replay start; binary_sha256 identifies the executed build even during concurrent edits.",
+      "started_unix_ms": 1792656651174,
+      "tracked_diff_sha256_at_run": "e1b6fd6004fa0addc5940646a9e540e13b43f312e3c62798e885929cfc11e485",
+      "viewport_points": [
+        1280,
+        820
+      ],
+      "wait_strategy": "egui_repaint_callback_v1"
+    },
+    "scenarios": [
+      {
+        "name": "kestrel-shortcuts",
+        "failed": false,
+        "findings": [],
+        "checks": 1,
+        "frames": 0,
+        "timings": {}
+      },
+      {
+        "name": "owned-gap-duration",
+        "failed": false,
+        "findings": [
+          {
+            "message": "10 frame(s) settled their layout only on a second retry: [{\"frame\":115,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5566)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5701)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4159)\"]},{\"frame\":149,\"input\":\"Command source\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5566)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5701)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4159)\"]},{\"frame\":153,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5566)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5701)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4159)\"]},{\"frame\":162,\"input\":\"Command scope play 2\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5566)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5701)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4159)\"]},{\"frame\":165,\"input\":\"Command scope plays 1,2\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5566)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5701)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4159)\"]},{\"frame\":182,\"input\":\"Replace the mixed Hold duration parameter\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5566)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5701)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4159)\"]},{\"frame\":226,\"input\":\"Command scope plays 1,2\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5566)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5701)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4159)\"]},{\"frame\":241,\"input\":\"Replace the mixed Hold duration parameter\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5566)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5701)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4159)\"]},{\"frame\":259,\"input\":\"Command scope plays 2,3\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5566)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5701)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4159)\"]},{\"frame\":264,\"input\":\"Replace the mixed Hold duration parameter\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5566)\",\"pass 0: workspace footer mode changed after input (crates/deadpan-app/src/preview.rs:5701)\",\"pass 1: workspace footer height changed (crates/deadpan-app/src/preview.rs:4159)\"]}]",
+            "severity": "warning"
+          }
+        ],
+        "checks": 27,
+        "frames": 405,
+        "timings": {
+          "ui_frame_cpu_ms": {
+            "completed": {
+              "max_ms": 5.769583,
+              "n": 405,
+              "p50_ms": 0.196792,
+              "p95_ms": 0.934333,
+              "p99_ms": 1.7329999999999999
+            },
+            "failed": 0,
+            "samples": 405,
+            "timed_out": 0
+          },
+          "ui_composition_submit_cpu_ms": {
+            "completed": {
+              "max_ms": 0.6105,
+              "n": 405,
+              "p50_ms": 0.086166,
+              "p95_ms": 0.131708,
+              "p99_ms": 0.170292
+            },
+            "failed": 0,
+            "samples": 405,
+            "timed_out": 0
+          },
+          "ui_composition_complete_ms": {
+            "completed": {
+              "max_ms": 8.80475,
+              "n": 405,
+              "p50_ms": 0.401125,
+              "p95_ms": 0.550083,
+              "p99_ms": 0.87175
+            },
+            "failed": 0,
+            "samples": 405,
+            "timed_out": 0
+          },
+          "input_to_state_ms": {
+            "completed": {
+              "max_ms": 1.7329999999999999,
+              "n": 45,
+              "p50_ms": 0.585375,
+              "p95_ms": 1.451417,
+              "p99_ms": 1.7329999999999999
+            },
+            "failed": 0,
+            "samples": 45,
+            "timed_out": 0
+          },
+          "input_to_commit_ms": {
+            "completed": {
+              "max_ms": 82.083791,
+              "n": 4,
+              "p50_ms": 12.376833,
+              "p95_ms": 82.083791,
+              "p99_ms": 82.083791
+            },
+            "failed": 0,
+            "samples": 4,
+            "timed_out": 0
+          },
+          "request_to_decode_delivery_ms": {
+            "completed": {
+              "max_ms": 6.790375,
+              "n": 25,
+              "p50_ms": 1.3724589999999999,
+              "p95_ms": 3.4220829999999998,
+              "p99_ms": 6.790375
+            },
+            "failed": 0,
+            "samples": 25,
+            "timed_out": 0
+          },
+          "request_to_worker_start_ms": {
+            "completed": {
+              "max_ms": 0.532291,
+              "n": 25,
+              "p50_ms": 0.006917,
+              "p95_ms": 0.033874999999999995,
+              "p99_ms": 0.532291
+            },
+            "failed": 0,
+            "samples": 25,
+            "timed_out": 0
+          },
+          "worker_execution_ms": {
+            "completed": {
+              "max_ms": 2.561417,
+              "n": 25,
+              "p50_ms": 0.00625,
+              "p95_ms": 1.939625,
+              "p99_ms": 2.561417
+            },
+            "failed": 0,
+            "samples": 25,
+            "timed_out": 0
+          },
+          "worker_publication_delay_ms": {
+            "completed": {
+              "max_ms": 0.00025,
+              "n": 25,
+              "p50_ms": 8.3e-05,
+              "p95_ms": 0.00025,
+              "p99_ms": 0.00025
+            },
+            "failed": 0,
+            "samples": 25,
+            "timed_out": 0
+          },
+          "publication_to_decode_delivery_ms": {
+            "completed": {
+              "max_ms": 4.219917,
+              "n": 25,
+              "p50_ms": 1.2037499999999999,
+              "p95_ms": 2.883292,
+              "p99_ms": 4.219917
+            },
+            "failed": 0,
+            "samples": 25,
+            "timed_out": 0
+          },
+          "request_to_picture_submission_ms": {
+            "completed": {
+              "max_ms": 7.446292000000001,
+              "n": 18,
+              "p50_ms": 1.7428750000000002,
+              "p95_ms": 7.446292000000001,
+              "p99_ms": 7.446292000000001
+            },
+            "failed": 0,
+            "samples": 18,
+            "timed_out": 0
+          },
+          "request_to_picture_complete_ms": {
+            "completed": {
+              "max_ms": 8.377917,
+              "n": 18,
+              "p50_ms": 2.186958,
+              "p95_ms": 8.377917,
+              "p99_ms": 8.377917
+            },
+            "failed": 0,
+            "samples": 18,
+            "timed_out": 0
+          },
+          "input_to_picture_complete_ms": {
+            "completed": {
+              "max_ms": 90.466625,
+              "n": 14,
+              "p50_ms": 2.544958,
+              "p95_ms": 90.466625,
+              "p99_ms": 90.466625
+            },
+            "failed": 0,
+            "samples": 14,
+            "timed_out": 0
+          },
+          "Original initialized and displayed": {
+            "completed": {
+              "max_ms": 89.866416,
+              "n": 1,
+              "p50_ms": 89.866416,
+              "p95_ms": 89.866416,
+              "p99_ms": 89.866416
+            },
+            "failed": 0,
+            "samples": 1,
+            "timed_out": 0
+          },
+          "Project and picture settled": {
+            "completed": {
+              "max_ms": 9.551957999999999,
+              "n": 17,
+              "p50_ms": 0.70075,
+              "p95_ms": 9.551957999999999,
+              "p99_ms": 9.551957999999999
+            },
+            "failed": 0,
+            "samples": 17,
+            "timed_out": 0
+          },
+          "Open the qualified mixed-duration project": {
+            "completed": {
+              "max_ms": 29.557167,
+              "n": 1,
+              "p50_ms": 29.557167,
+              "p95_ms": 29.557167,
+              "p99_ms": 29.557167
+            },
+            "failed": 0,
+            "samples": 1,
+            "timed_out": 0
+          },
+          "Mixed-duration receipt is admitted": {
+            "completed": {
+              "max_ms": 0.000167,
+              "n": 10,
+              "p50_ms": 4.2e-05,
+              "p95_ms": 0.000167,
+              "p99_ms": 0.000167
+            },
+            "failed": 0,
+            "samples": 10,
+            "timed_out": 0
+          },
+          "Committed revision changed": {
+            "completed": {
+              "max_ms": 15.632125,
+              "n": 6,
+              "p50_ms": 9.546917,
+              "p95_ms": 15.632125,
+              "p99_ms": 15.632125
+            },
+            "failed": 0,
+            "samples": 6,
+            "timed_out": 0
+          },
+          "Close the private owned-gap writer": {
+            "completed": {
+              "max_ms": 9.814084000000001,
+              "n": 1,
+              "p50_ms": 9.814084000000001,
+              "p95_ms": 9.814084000000001,
+              "p99_ms": 9.814084000000001
+            },
+            "failed": 0,
+            "samples": 1,
+            "timed_out": 0
+          },
+          "Restore the main project after owned-gap replay": {
+            "completed": {
+              "max_ms": 29.229625,
+              "n": 1,
+              "p50_ms": 29.229625,
+              "p95_ms": 29.229625,
+              "p99_ms": 29.229625
+            },
+            "failed": 0,
+            "samples": 1,
+            "timed_out": 0
+          }
+        }
+      }
+    ]
+  }
+}

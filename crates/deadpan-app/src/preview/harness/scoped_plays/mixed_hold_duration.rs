@@ -548,7 +548,7 @@ fn choose(d: &mut Driver<'_>, outer_play: bool) -> Result<(), String> {
     }
     Ok(())
 }
-fn open(d: &mut Driver<'_>, path: &Path, original: u64) -> Result<(), String> {
+pub(super) fn open(d: &mut Driver<'_>, path: &Path, original: u64) -> Result<(), String> {
     let path = path.canonicalize().map_err(|e| e.to_string())?;
     d.app().service.submit(ProjectRequest::Open(path.clone()))?;
     d.wait_for("Open the qualified mixed-duration project", |app| {
@@ -572,7 +572,7 @@ fn open(d: &mut Driver<'_>, path: &Path, original: u64) -> Result<(), String> {
     d.chord(&[Key::G, Key::G])?;
     settled(d)
 }
-fn scroll_top(d: &mut Driver<'_>) -> Result<(), String> {
+pub(super) fn scroll_top(d: &mut Driver<'_>) -> Result<(), String> {
     let point = d.rect("Nested beat inspector pane")?.center() + egui::vec2(0.0, 120.0);
     d.events(
         "Restore mixed-duration inspector controls",
@@ -606,7 +606,10 @@ fn scope(outer_play: bool) -> [&'static str; 2] {
         ["All plays", "This play 1"]
     }
 }
-fn recipe<'a>(document: &'a ProjectDocument, node: &NodeId) -> Result<&'a HoldRecipe, String> {
+pub(super) fn recipe<'a>(
+    document: &'a ProjectDocument,
+    node: &NodeId,
+) -> Result<&'a HoldRecipe, String> {
     match &document.nodes()[node].kind {
         NodeKind::Hold { recipe } => Ok(recipe),
         _ => Err("Expected mixed Hold".into()),
@@ -619,7 +622,7 @@ fn intent(frames: u32) -> I {
         },
     }
 }
-fn target(d: &Driver<'_>) -> Result<Target, String> {
+pub(super) fn target(d: &Driver<'_>) -> Result<Target, String> {
     d.app().scoped_target()?.ok_or("No mixed target".into())
 }
 fn saved(d: &Driver<'_>, name: char) -> Option<Vec<I>> {
@@ -639,12 +642,12 @@ fn registers(d: &Driver<'_>, except: Option<char>) -> BTreeMap<char, String> {
         .map(|(name, value)| (name, format!("{value:?}")))
         .collect()
 }
-fn equivalent(actual: &ProjectDocument, expected: &ProjectDocument) -> bool {
+pub(super) fn equivalent(actual: &ProjectDocument, expected: &ProjectDocument) -> bool {
     let mut value = serde_json::to_value(actual).unwrap();
     value["revision_id"] = json!(expected.revision_id());
     value == serde_json::to_value(expected).unwrap()
 }
-fn settled(d: &mut Driver<'_>) -> Result<(), String> {
+pub(super) fn settled(d: &mut Driver<'_>) -> Result<(), String> {
     d.wait_for("Mixed-duration receipt is admitted", |app| {
         !app.service.is_busy() && !app.macros.is_pending()
     })?;
@@ -656,7 +659,7 @@ fn edit(d: &mut Driver<'_>, command: &str) -> Result<(), String> {
     d.changed(&revision)?;
     settled(d)
 }
-fn submit(d: &mut Driver<'_>, command: &str) -> Result<(), String> {
+pub(super) fn submit(d: &mut Driver<'_>, command: &str) -> Result<(), String> {
     d.key_modified(Key::A, egui::Modifiers::COMMAND)?;
     d.events(
         "Replace the mixed Hold duration parameter",
