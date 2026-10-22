@@ -395,6 +395,16 @@
     "sha256": "d775d81a7b8d13827c353ce5ea90970bfd0ffdf1df66ba553081db48964a8253"
   },
   {
+    "file": "code-commit.txt.gz",
+    "bytes": 58,
+    "sha256": "8f24009813f4a2d2a511ea1575f43efcbd0467b8b2075d264816baad8dca6230"
+  },
+  {
+    "file": "code-source-git-audit.json.gz",
+    "bytes": 157790,
+    "sha256": "fedf7a0b76b136f161fa3111f695df6241e13f06e772f3051c85352c25d49d23"
+  },
+  {
     "file": "collect.py.gz",
     "bytes": 1656,
     "sha256": "4fec11b9f4a0936db037bd12facb85a9e436aed9fae91932b85fed41087d6352"
@@ -888,6 +898,11 @@
     "file": "generated-results.json",
     "bytes": 467,
     "sha256": "aa66c25ee0f656f8dea4c539d3606999791908fa7b34fa077d4517fa4497fc87"
+  },
+  {
+    "file": "git_blob_audit.py.gz",
+    "bytes": 781,
+    "sha256": "e1a7dec0030a96cd935d1e160cbf062bff7d754ba4ba5ac836baef14d75db2a3"
   },
   {
     "file": "guard.py.gz",

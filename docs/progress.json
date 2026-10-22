@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-22T17:45:55Z",
+  "updated_at": "2026-10-22T19:36:31Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about \u00b15 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Discontiguous node sets with shared mark preservation, then transcript-search selectors, remaining temporal families and sound owners, mastering, renderer and complete workflows.",
+  "focus": "Explicit discontiguous Edit range sets, then corrected transcript-search selectors, remaining temporal families and sound owners, mastering, renderer and complete workflows.",
   "features": [
     {
       "id": "editing",
@@ -16,7 +16,7 @@
         "DP-07",
         "DP-21"
       ],
-      "note": "Slices, registers, repeats and semantic macros work, including Original navigation, ranged and per-play framing, selected-play pauses, Hold duration/sound and audio treatments, and exact-pause tape-speed updates around one inner Repeat. Native Hold lengths support ordinary fixed Retimes, explicit Repeat choices, selected-body batches and mixed/selected owned gaps. Nested This play, mixed Default/Play and selected body batches cross one fixed unclocked Edit Retime below every enclosing Repeat, retaining literal scope, actual isolation, cropped visible continuation, exact audio phase and accepted-provider history. Clone-intent Undo ownership and nested selected-scope retention are verified. Named-mark ranges retain addresses through selection, recording, named calls and dot, resolving each staged document with exact clock/scope checks and existing one-child role constraints. Whole-node selectors retain exact identity through staged ordinary-Sequence resolution, including empty nodes, recording/dot and structural replacement at the actual parent. Search-result/discontiguous selectors and remaining temporal combinations stay open."
+      "note": "Slices, registers, repeats and semantic macros work, including Original navigation, ranged and per-play framing, selected-play pauses, Hold duration/sound and audio treatments, and exact-pause tape-speed updates around one inner Repeat. Native Hold lengths support ordinary fixed Retimes, explicit Repeat choices, selected-body batches and mixed/selected owned gaps. Nested This play, mixed Default/Play and selected body batches cross one fixed unclocked Edit Retime below every enclosing Repeat, retaining literal scope, actual isolation, cropped visible continuation, exact audio phase and accepted-provider history. Clone-intent Undo ownership and nested selected-scope retention are verified. Named-mark ranges retain addresses through selection, recording, named calls and dot, resolving each staged document with exact clock/scope checks and existing one-child role constraints. Whole-node selectors retain exact identity through staged ordinary-Sequence resolution, including empty nodes, recording/dot and structural replacement at the actual parent. Discontiguous whole-node unions capture one entry snapshot, Cut atomically, preserve shared marks and paste at an ordinary seam. Arbitrary interval sets, search-result selectors and remaining temporal combinations stay open."
     },
     {
       "id": "projects",
@@ -869,6 +869,14 @@
       "revision": "73d775ee451a58caf9ab579875946706ec8a3318",
       "retrospective": false,
       "summary": "Whole-node selectors retain authored identity through native selection, recording, calls and dot, including empty groups and nested actual parents. Verified 52 focused, 4,549 broader and 1,270 UI cases, 84 release native checks per mode, and 37 pictures/59,259 samples at zero offset. Diagnosed Cargo-directory bookmark timeouts; identical archived binaries pass unchanged cases and limits. Source and evidence audits pass; no new requirement or gate closed."
+    },
+    {
+      "date": "2026-10-22",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "eea765a96929be926fd3def97c2de6844df7827d",
+      "retrospective": false,
+      "summary": "Discontiguous whole-node unions preserve separate parents, empty members and shared marks through one capture, atomic Cut, durable registers and seam paste. Verified 63 focused cases; 4,570 broad cases before final lint cleanup; 46 native cases and 1,273 complete UI cases on final source; 143 release native checks per mode; and 32 pictures/51,251 samples at zero offset. Source and evidence audits pass. No new requirement or gate closed; arbitrary interval and transcript-search selectors remain open."
     }
   ]
 }

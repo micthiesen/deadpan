@@ -217,8 +217,10 @@ An independent audit verifies the initial inventory, all mapped source/input
 archives, test inventories and receipts, raw latency samples, actual MP4 and
 owner archive. The report and the explicit layout-receipt repair note are
 included in the rebuilt inventory; neither changes a runtime result.
-Post-commit Git-blob verification is still pending. Its separate receipt will
-bind the executed frozen source to the code commit before publication.
+Post-commit Git-blob verification binds all 1,990 Rust files and six supplemental
+inputs from the executed release snapshot to code commit
+`eea765a96929be926fd3def97c2de6844df7827d`. The separate
+`code-source-git-audit.json` receipt records every blob and SHA-256.
 
 ## Remaining scope
 
