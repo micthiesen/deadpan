@@ -1,0 +1,52 @@
+{
+  "batch_parse_errors": 0,
+  "blob_oid_size_sha256_mismatches": 0,
+  "claude_changes_in_commit": false,
+  "claude_content": "No .claude paths in commit",
+  "claude_paths_in_commit": [],
+  "commit": "73d775ee451a58caf9ab579875946706ec8a3318",
+  "committed_rust_pathset_matches_proof": true,
+  "foreign_fuzz_lock_or_claude_added_or_modified": false,
+  "fuzz_Cargo_lock_note": "Present in commit and base; unchanged by this commit",
+  "fuzz_lock_change_in_commit": false,
+  "fuzz_lock_in_base": true,
+  "fuzz_lock_in_commit": true,
+  "git_blob_batch_objects_verified": 1983,
+  "index_pathset_matches_proof": true,
+  "index_rust_paths": 1977,
+  "missing_proof_paths": 0,
+  "proof_rust_paths": 1977,
+  "supplemental_inputs": {
+    ".cargo/config.toml": {
+      "equal": true,
+      "proof": "b906738cab8f6f289180e1bcf32826d3e2996899cb5055dc7f0c6838655c340d",
+      "release_final_lock": "b906738cab8f6f289180e1bcf32826d3e2996899cb5055dc7f0c6838655c340d"
+    },
+    "Cargo.lock": {
+      "equal": true,
+      "proof": "1e39d18ae4de6c7b898edad39eb7104235fb3ffe3af84521ca94df2b6c25b71b",
+      "release_final_lock": "1e39d18ae4de6c7b898edad39eb7104235fb3ffe3af84521ca94df2b6c25b71b"
+    },
+    "Cargo.toml": {
+      "equal": true,
+      "proof": "121e4cfefb2227cf38d5c1758d6a2250ddc38465a1044dfe896368c7ac1b50f3",
+      "release_final_lock": "121e4cfefb2227cf38d5c1758d6a2250ddc38465a1044dfe896368c7ac1b50f3"
+    },
+    "crates/deadpan-app/src/navigation/registry/baseline-routing.txt": {
+      "equal": true,
+      "proof": "e404bfa072ceee1b1724ffb7f65cee5712c4d8233f006d65a7a527dd88129a4c",
+      "release_final_lock": "e404bfa072ceee1b1724ffb7f65cee5712c4d8233f006d65a7a527dd88129a4c"
+    },
+    "docs/COMMANDS.md": {
+      "equal": true,
+      "proof": "b22fc28624f3811f00a37ec79cf5e621703d9f91021f3ecf7ef393813a90609a",
+      "release_final_lock": "b22fc28624f3811f00a37ec79cf5e621703d9f91021f3ecf7ef393813a90609a"
+    },
+    "rust-toolchain.toml": {
+      "equal": true,
+      "proof": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc",
+      "release_final_lock": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc"
+    }
+  },
+  "verified": true
+}

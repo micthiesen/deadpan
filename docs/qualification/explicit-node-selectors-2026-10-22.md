@@ -214,6 +214,15 @@ original-location failures and the distinct Nextest/driver durations. No
 unsafe archive member, executable, foreign lockfile or future-selector source
 is included. The sanitized audit and inventory are retained with the evidence.
 
+A post-commit direct Git-blob audit compares the complete 1,977-file Rust path
+set and all six release supplemental inputs with code commit
+`73d775ee451a58caf9ab579875946706ec8a3318`. Every byte hash matches the frozen
+release inputs. The compressed proof is retained without raw blob contents.
+Independent review streams all 1,983 committed blobs and verifies their object
+IDs, sizes and SHA-256 values, the complete Rust path set and six input hashes.
+The pre-existing fuzz lockfile is unchanged; foreign working-tree edits and
+the untracked .claude directory are excluded from both commits and evidence.
+
 ## Remaining scope
 
 Discontiguous and transcript-search-result selectors remain open, as do wider
