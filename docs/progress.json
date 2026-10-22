@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-22T05:33:49Z",
-  "estimate_note": "Engineering estimate of implemented and verified spec coverage, about \u00b15 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Continue remaining temporal occurrence scopes and selectors, audio-owner routes, mastering, renderer and full-workflow qualification.",
+  "updated_at": "2026-10-22T07:01:53Z",
+  "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
+  "focus": "Implement mixed and selected owned-gap Hold lengths, then remaining temporal occurrence scopes and selectors, audio-owner routes, mastering, renderer and full-workflow qualification.",
   "features": [
     {
       "id": "editing",
@@ -16,7 +16,7 @@
         "DP-07",
         "DP-21"
       ],
-      "note": "Slices, registers, repeats and semantic macros work, including Original navigation, ranged and per-play framing, selected-play pauses, Hold duration/sound and audio treatments, and exact-pause tape-speed updates around one inner Repeat. Native Hold lengths support ordinary fixed Edit Retimes and explicit All plays/This play Repeat body choices, including dormant defaults, through controls, recording, calls and direct-edit dot. Several-play durations, mixed gap timing, Repeat/Retime combinations and wider selectors remain open."
+      "note": "Slices, registers, repeats and semantic macros work, including Original navigation, ranged and per-play framing, selected-play pauses, Hold duration/sound and audio treatments, and exact-pause tape-speed updates around one inner Repeat. Native Hold lengths support ordinary fixed Edit Retimes, explicit All plays/This play Repeat bodies and atomic selected-body batches, including mapped history, recording, calls and duration-only dot on explicitly reselected plays. Mixed/selected owned-gap timing, Repeat/Retime combinations and wider selectors remain open."
     },
     {
       "id": "projects",
@@ -476,7 +476,7 @@
       "complete_sections": 8,
       "revision": "2ff2273374bfc13c0401c5aa22b6bd7c66aa0622",
       "retrospective": false,
-      "summary": "Prepared upcoming accepted Generated Holds on one cancellable background job. Four real-media tests, 44 worker tests, 60 media unit tests and strict Clippy pass. Small-fixture prepared entry takes 0.17\u20130.22 ms; full-resolution device qualification remains open."
+      "summary": "Prepared upcoming accepted Generated Holds on one cancellable background job. Four real-media tests, 44 worker tests, 60 media unit tests and strict Clippy pass. Small-fixture prepared entry takes 0.17–0.22 ms; full-resolution device qualification remains open."
     },
     {
       "date": "2026-10-11",
@@ -797,6 +797,14 @@
       "revision": "e94a5546",
       "retrospective": false,
       "summary": "Verified native Hold lengths through mixed All plays/This play body scopes, including dormant targets and actual isolation mapping through generation/history. Controls, recording, calls and dot retain literal scope choices. All 15 focused, 3,431 broader, 759 follow-up and 197 UI checks pass, with strict lint. Both release replays pass 1,222 scoped checks plus Kestrel; six compact captures were inspected. Release exports verify all 240 pictures and 384,384 audio samples at offset zero. Fixture, request-size, replay-command and capture-capacity corrections remain recorded. Several-play durations and other temporal combinations remain open; no requirement or gate is newly complete."
+    },
+    {
+      "date": "2026-10-22",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "d7b84aed",
+      "retrospective": false,
+      "summary": "Verified atomic Hold lengths across selected Repeat body plays, preserving literal scope choices, complete mapped selection and exact audio clocks through one history entry. All 15 focused, 3,446 broader, 196 affected app and 198 UI checks pass, with strict lint. Both release replays pass 1,318 scoped checks plus Kestrel; three compact captures were inspected. Four release exports verify all 240 pictures and 384,384 audio samples at zero offset. Retained replay corrections include explicit reselection after navigation. Owned gaps and other temporal combinations remain open; no requirement or gate is newly complete."
     }
   ]
 }
