@@ -1,0 +1,67 @@
+{
+  "status": "design only; native unchanged-API red baseline being authored; no production edits yet",
+  "base": "8814cb42",
+  "previous_code": "12d45f82",
+  "objective": "Existing Hold length intent for explicit All plays at every Repeat level, including proven dormant defaults; preserve overrides and all existing fixed-Retime/This-play gates.",
+  "new_runtime_context": {
+    "type": "SemanticSharedHoldDurationContext",
+    "field": "SemanticContext.shared_hold_duration: Option<SemanticSharedHoldDurationContext>",
+    "fields": {
+      "root": "NodeId",
+      "target": "ScopedNodeTarget",
+      "presentation": "Option<InstancePath>"
+    },
+    "derive": "Debug Clone PartialEq Eq Serialize Deserialize, deny_unknown_fields",
+    "saved_intent": "unchanged SetHoldDuration { length }; no concrete IDs in programs"
+  },
+  "query": {
+    "name": "ProjectDocument::shared_hold_duration_visibility",
+    "return": "Result<Option<HoldDurationVisibility>, EditError>",
+    "none": "positively proven dormant literal default, never guessed visibility",
+    "requirements": [
+      "document and ordinary Sequence scope valid",
+      "root direct child actual Repeat",
+      "target Hold, nonempty Repeat path, every branch Default",
+      "all target ancestry only Sequence and Repeat literal body, no Retime or Partition",
+      "Some presentation matches literal all-Default target; None iff at least one ancestor Repeat has all body plays overridden",
+      "active iff every Repeat has fewer body overrides than plays; gap overrides do not prove dormant",
+      "visible Some resolves same captured stable InstancePath at local0 through AnchorIndex, exact integral start and current Hold extent; no expanded plays"
+    ]
+  },
+  "planner": [
+    "mutually exclusive old fixed hold_duration, scoped, Original, Visual; selected_child==root",
+    "allow only SetHoldDuration and Call",
+    "plain Command::SetHoldDuration with ParameterEdit only, no node/mark clone IDs",
+    "requery every staged setter; visible cursor=representative new start, dormant cursor unchanged and rendered duration unchanged",
+    "trace actual target/parent; dormant has no resolved rendered range",
+    "do not broaden semantic framing validator"
+  ],
+  "native": [
+    "all Default single target captures new context; noRepeat uses current fixed context, allPlay current scoped context, mixed/multiple still explicit refusal",
+    "cached State parameter hint admits all Default including dormant; no wholegraph queries during draw",
+    "reuse duration-only recording draft guards and continuation; camera uses context.scoped only",
+    "receipt retains exact authoring choices and optional presentation, no invented iteration",
+    "direct Apply establishes dot; named Run and Undo keep existing policies"
+  ],
+  "tests": [
+    "qualified unchanged State::hold_parameter red witnesses for visible and dormant allDefault, with valid raw setter positive controls",
+    "nested root45\u219249 fixture: shared Hold2\u21924 live twice; owned innerHold4 and outerHold7 unchanged; representative start19\u219221",
+    "first and later representatives same authored result, different exact continuation",
+    "inner/outer dormant, partial overrides reject None, gap overrides not dormant, forged Some refuses",
+    "no-op/late instruction/context/sound failures atomic; exact Undo/Redo/reopen/registers/marks/provider behavior",
+    "million-play compactness and repeated dormant binding invariance",
+    "real native Enter/button/command/record/call/direct-dot and delayed away/back, real Original provider; retain refusals for mixed/several/Retime"
+  ],
+  "ownership": {
+    "root": "baseline Cargo/Git, external constructors CLI/store/audio, docs/evidence/artifact, integration",
+    "core_agent": "after baseline only core context/query/planner and core tests",
+    "app_agent": "test-only baseline now; after baseline native production/service/tests",
+    "replay_agent": "not assigned yet; after contract new UI harness only"
+  },
+  "remaining": [
+    "mixed Default/Play timing needs actual executed isolation proof",
+    "selected multi-play timing",
+    "broader sound-owner timing routes",
+    "Retime ancestry on shared/This-play temporal paths"
+  ]
+}

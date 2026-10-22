@@ -15,6 +15,7 @@ mod hold_duration;
 mod mute_macros;
 mod pause_macros;
 mod pauses;
+mod shared_hold_duration;
 
 pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     idle(d)?;
@@ -247,6 +248,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     pause_macros::run(d)?;
     hold_duration::run(d)?;
     fixed_hold_duration::run(d)?;
+    shared_hold_duration::run(d)?;
     hold_audio::run(d)?;
     pauses::run(d)?;
     analysis_navigation::run(d)?;

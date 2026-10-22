@@ -1,0 +1,41 @@
+{
+  "base": "8814cb424a0391301fb1f43767ab17f76fff8461",
+  "previous_milestone": "12d45f8229a0629b89b5def764f549d412729102",
+  "hardware": "Mac17,7",
+  "memory_bytes": 137438953472,
+  "os": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84\n",
+  "rustc": "rustc 1.97.1 (8bab26f4f 2026-07-14)",
+  "cargo": "cargo 1.97.1 (c980f4866 2026-06-30)",
+  "ffmpeg_prefix": "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix",
+  "profile_dev_opt_level": 2,
+  "physical_mac_required": true,
+  "synthetic_worker_required": true,
+  "baseline": {
+    "source_head": "8814cb424a0391301fb1f43767ab17f76fff8461",
+    "production_changes": false,
+    "baseline_exit": 100,
+    "tests_failed": 2,
+    "elapsed_seconds": 0.295,
+    "skipped": 1204,
+    "binary": "/Users/michael/Code/deadpan/target/debug/deps/deadpan_app-edbbed39ebf1d72f",
+    "binary_sha256": "2ba73a3dae23440eb9565c8458d6997ec75bf2b07bc866f7360e96fc49f1ebaf",
+    "source_files": {
+      "crates/deadpan-app/src/preview/scoped/model/tests.rs": "79eae66e02b92933cd775e34d31b91e7f4f52dc037b03deb51f543f00f27fcec",
+      "crates/deadpan-app/src/preview/scoped/model/tests/shared_duration.rs": "77d3f12685123302f15b32fcec4d8cc64e2959031468f43deb7ba2f59eb4ae04"
+    },
+    "identity_setup_failures": [
+      "initial newest-executable selection returned exit1 on --list; corrected using nextest rust-suites metadata",
+      "metadata key binary was absent; inspected actual binary-path schema and corrected"
+    ]
+  },
+  "fixtures": {
+    "native/deadpan-source/tests/fixtures/offset-bframes.mp4": {
+      "bytes": 39181,
+      "sha256": "1504e8c41c2e8e33cf588bbe46e7c79f9fb507437533f5d6cd6f280b6bfdb120"
+    },
+    "native/deadpan-source/tests/fixtures/cfr-bframes.mp4": {
+      "bytes": 39157,
+      "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918"
+    }
+  }
+}

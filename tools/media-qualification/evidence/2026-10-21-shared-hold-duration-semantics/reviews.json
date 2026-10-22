@@ -1,0 +1,56 @@
+{
+  "base": "8814cb424a0391301fb1f43767ab17f76fff8461",
+  "general": {
+    "agent": "shared_duration_general_review",
+    "result": "No actionable findings",
+    "scope": "Core authority/planner, app capture/receipt/native model, headless integration, dormant flow and delayed navigation",
+    "runtime": false
+  },
+  "clock": {
+    "agent": "shared_duration_clock_review",
+    "result": "No actionable findings",
+    "scope": "Compact liveness, literal ancestry, exact continuation and raw reducer clock/mark/provider preservation",
+    "runtime": false
+  },
+  "verification": {
+    "agent": "native_fixed_hold_verification_review",
+    "result": "No actionable findings",
+    "scope": "Core/native/live/dormant and real A/V assertions, dot/Run/Undo, stale navigation and Camera gating",
+    "runtime": false,
+    "note": "Fresh third reviewer could not start because harness thread limit was reached; reused earlier-phase reviewer with a bounded new brief."
+  },
+  "root_followup": [
+    {
+      "first_focused_run": "14 run,7 passed,7 failed; core fixture allocation outer collided with shared helper final revision outer. Production native and real media semantic path passed. Core fixture repair and negative-gate specificity review required before any overall pass claim."
+    },
+    {
+      "first_release_replay": "111 scoped checks reached; failed existing All plays Source framing refusal because new capture path attempted Hold duration for a non-Hold. All actual changes still refused. Root narrowed new branch to NodeKind::Hold; existing framing guidance remains strict for Source/Sequence/Repeat.",
+      "review": "macro_original read-only follow-up found no regressions in captured Hold, fixed-Retime, This-play and Camera paths. Runtime rerun pending."
+    },
+    {
+      "second_release_replay": "704 checks reached. Last-sample picture assertion ran immediately after3L while requested24 was pending and displayed21 was correctly retained. Added settlement wait; exact displayed24/source identity assertion remains unchanged. Read-only audit found no other missing picture wait."
+    },
+    {
+      "third_release_replay": "719 checks reached. Redo compared latest3-to4 state with earlier2-to4 state despite distinct retained physical timing history. Corrected oracle captures exact pre-Undo regrown document; full serialized comparison still normalizes only revision_id. Subsequent Undo chain still compares shortened, earlier grown and baseline exact states. Evidence now records both binding histories. Worker independently traced prepare_owners/capture_with_placements/append_steps and found no other analogous history oracle."
+    },
+    {
+      "fourth_release_replay": "735 checks reached; invalid harness command silence produced parser rejection instead of duration guard. Corrected to canonical hold-silence. Its snapshot also exposed misleading one-play recording hint for duration-only context; production hint now advertises only pause lengths and named duration calls. New replay assertion checks this visible message state."
+    },
+    {
+      "fifth_release_replay": "All1007 scoped assertions passed, including new controls, recording/calls/dot, stale navigation and dormant history. Run reached global6000 frame trace capacity during remaining existing scenarios. Previous scoped run already used5703 frames. Added only scoped-plays capacity7000; per-action waits and behavior/performance assertions unchanged. Final run pending."
+    }
+  ],
+  "verification_followup": {
+    "retained_source": "core-tests-first-failure.rs",
+    "result": "Reviewer read exact retained source after correcting initial lookup path; namespace and exact negative-gate assertions reviewed with no actionable findings.",
+    "runtime": false
+  },
+  "integral_clock_query_review": "No production issue: successful scope_bounds calls source_splice_boundary -> durations -> require_integral_clocks under with_sealed. sealed_recipes_exact requires integral extents for every node outside strict clocked-Retime interiors. An admitted Sequence/Repeat path and every preceding stage contribution are integral; fractional unrelated siblings fail before the shared query. Defensive denominator check remains.",
+  "final_root_verification": {
+    "visual": "1069 scoped checks plus Kestrel PASS, 6742 frames",
+    "performance": "1069 scoped checks plus Kestrel PASS, 6674 frames",
+    "source_manifest": "40 Rust files; identity.py verifies frozen current source",
+    "visual_inspection": "Four final 960x640 captures inspected by parent; no material layout issue",
+    "note": "Historical pending statements describe the failed checkpoint at their recording time; final replay results supersede those pending runtime obligations."
+  }
+}

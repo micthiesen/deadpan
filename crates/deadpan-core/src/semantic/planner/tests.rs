@@ -20,6 +20,7 @@ mod retime;
 mod scoped_framing;
 mod selectors;
 mod set_repeat;
+mod shared_hold_duration;
 mod speech;
 mod split;
 mod visual;
@@ -73,6 +74,7 @@ fn context(parent: &str, cursor: i64) -> SemanticContext {
         original: None,
         scoped: None,
         hold_duration: None,
+        shared_hold_duration: None,
         parent: node(parent),
         cursor: ProjectFrame(cursor),
         selected_child: None,

@@ -13,6 +13,7 @@ mod repeats;
 fn context(update: &ProjectUpdate, cursor: i64, selected: Option<&str>) -> SemanticContext {
     SemanticContext {
         hold_duration: None,
+        shared_hold_duration: None,
         original: None,
         scoped: None,
         parent: update.workspace.as_ref().unwrap().document.root().clone(),
@@ -127,6 +128,7 @@ fn same_document(actual: &ProjectDocument, expected: &ProjectDocument) {
 fn visual_presence_overrides_every_saved_kind_without_erasing_empty_or_absent_distinction() {
     let mut context = SemanticContext {
         hold_duration: None,
+        shared_hold_duration: None,
         original: None,
         scoped: None,
         parent: node("root"),
@@ -726,6 +728,7 @@ fn dot_keeps_group_object_intent_and_current_object_visual_override() {
     .unwrap();
     let mut context = SemanticContext {
         hold_duration: None,
+        shared_hold_duration: None,
         original: None,
         scoped: None,
         parent: node("root"),

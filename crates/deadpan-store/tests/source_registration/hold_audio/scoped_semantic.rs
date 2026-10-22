@@ -22,6 +22,7 @@ fn nested_context(document: &ProjectDocument) -> Result<SemanticContext> {
         .collect::<Result<Vec<_>>>()?;
     Ok(SemanticContext {
         hold_duration: None,
+        shared_hold_duration: None,
         original: None,
         parent: document.root().clone(),
         cursor: ProjectFrame(12),

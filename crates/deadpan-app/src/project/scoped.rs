@@ -30,6 +30,59 @@ pub struct Target {
 }
 
 impl Target {
+    /// Shared definition duration authority, including a proven dormant default.
+    pub fn semantic_shared_hold_duration(
+        &self,
+        workspace: &Workspace,
+    ) -> Result<deadpan_core::SemanticSharedHoldDurationContext, String> {
+        self.validate(workspace)?;
+        if !self.also.is_empty()
+            || self.target.repeats.is_empty()
+            || self
+                .target
+                .repeats
+                .iter()
+                .any(|step| step.branch != RepeatEditBranch::Default)
+            || !workspace.document.sounds().is_empty()
+            || !workspace.document.beat_sounds().is_empty()
+        {
+            return Err("Shared pause length requires All plays at every Repeat level and no placed sounds.".into());
+        }
+        let authority = deadpan_core::SemanticSharedHoldDurationContext {
+            root: self.root.clone(),
+            target: self.target.clone(),
+            presentation: self.presentation.clone(),
+        };
+        let owner = self.scope.resolve(workspace)?;
+        let visible = workspace
+            .document
+            .shared_hold_duration_visibility(owner.owner, &authority)
+            .map_err(|error| error.to_string())?;
+        if let Some(visible) = visible {
+            let instance = authority
+                .presentation
+                .as_ref()
+                .ok_or("Shared pause lost its presentation.")?;
+            for frame in [
+                visible.frames.start(),
+                ProjectFrame(visible.frames.end().0 - 1),
+            ] {
+                let picture = workspace
+                    .plan
+                    .picture(frame)
+                    .map_err(|error| error.to_string())?;
+                if !picture
+                    .framing
+                    .iter()
+                    .any(|layer| &layer.instance == instance)
+                {
+                    return Err("The shared pause no longer presents its captured Hold.".into());
+                }
+            }
+        }
+        Ok(authority)
+    }
+
     /// Duration-only authority for a visible ordinary Hold under fixed windows.
     /// This deliberately does not grant generic framing or one-play authority.
     pub fn semantic_hold_duration(

@@ -96,12 +96,22 @@ prepared samples, Silence, RoomTone and unchanged direct scope workflows.
 `:hold-duration Nf` resizes the selected Hold in one explicit play at every
 level. The inspector's Change duration control and Enter prefill its current
 length. A no-op refuses without history, isolation or cursor movement.
-All plays, mixed choices, multiple plays, Retime ancestry and root or attached
+Mixed choices, multiple plays, Retime ancestry and root or attached
 sound events remain unavailable for this timing edit. Accepted generated
 picture shortening retains its provider; extension beyond accepted coverage
 saves the deterministic fallback and durable preparation for a new explicit
 candidate acceptance. The [Hold duration qualification](qualification/scoped-hold-duration-2026-10-20.md)
 retains the nested-play, real-PCM, history and native verification.
+
+All plays at every enclosing Repeat has a separate duration-only path. It
+changes the literal shared Hold once and preserves every independent play
+override. A visible default continues at the new start of the same captured
+stable play. A default whose body uses are all overridden remains editable
+without inventing a presentation; its cursor and rendered duration stay fixed.
+The core proves dormancy from complete body-override coverage, independently
+of gap overrides. Recording and named calls accept duration setters only.
+Mixed choices, several plays and Retime ancestry retain their timing guards.
+See [shared duration semantics](SEMANTIC_MACROS.md#all-plays-hold-length).
 
 An ordinary Hold inside fixed Edit Retime windows, without any Repeat ancestry,
 has a separate duration-only path through the same control, Enter and command.
@@ -137,7 +147,8 @@ The model caches its structural index, rows and selected projection. Play
 counts stay compact; it does not create one widget or node per play.
 
 A dormant or unsampled definition can still receive a typed gain value, Hold
-audio edit or generated-picture acceptance. AI generation requires both local
+audio edit or generated-picture acceptance. A proven dormant All plays Hold
+also accepts duration changes. AI generation requires both local
 definition boundaries. Its inspector reports the missing picture and retains the last
 displayed image. Camera and comparison audition require a visible representative.
 A bounded representative search does not prove that every other play is

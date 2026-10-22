@@ -1,0 +1,18 @@
+{
+  "source_head": "8814cb424a0391301fb1f43767ab17f76fff8461",
+  "production_changes": false,
+  "baseline_exit": 100,
+  "tests_failed": 2,
+  "elapsed_seconds": 0.295,
+  "skipped": 1204,
+  "binary": "/Users/michael/Code/deadpan/target/debug/deps/deadpan_app-edbbed39ebf1d72f",
+  "binary_sha256": "2ba73a3dae23440eb9565c8458d6997ec75bf2b07bc866f7360e96fc49f1ebaf",
+  "source_files": {
+    "crates/deadpan-app/src/preview/scoped/model/tests.rs": "79eae66e02b92933cd775e34d31b91e7f4f52dc037b03deb51f543f00f27fcec",
+    "crates/deadpan-app/src/preview/scoped/model/tests/shared_duration.rs": "77d3f12685123302f15b32fcec4d8cc64e2959031468f43deb7ba2f59eb4ae04"
+  },
+  "identity_setup_failures": [
+    "initial newest-executable selection returned exit1 on --list; corrected using nextest rust-suites metadata",
+    "metadata key binary was absent; inspected actual binary-path schema and corrected"
+  ]
+}

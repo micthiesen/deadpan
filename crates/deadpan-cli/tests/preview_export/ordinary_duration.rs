@@ -51,11 +51,12 @@ fn layout(frames: i64) -> (Vec<Expected>, Vec<i64>, Vec<i64>) {
     (pictures, suffixes, quiet)
 }
 
-fn build(dir: &Path, grow: bool) -> Result<Fixture> {
-    let name = if grow {
-        "ordinary-hold-duration-grow"
-    } else {
-        "ordinary-hold-duration-shrink"
+fn build(dir: &Path, grow: bool, semantic: bool) -> Result<Fixture> {
+    let name = match (grow, semantic) {
+        (true, false) => "ordinary-hold-duration-grow",
+        (false, false) => "ordinary-hold-duration-shrink",
+        (true, true) => "shared-semantic-hold-duration-grow",
+        (false, true) => "shared-semantic-hold-duration-shrink",
     };
     let mut project = Project::create(dir, name)?;
     project.shorten()?;
@@ -98,7 +99,10 @@ fn build(dir: &Path, grow: bool) -> Result<Fixture> {
     let fresh = project.fresh(old_ids.len())?;
     let mapping: std::collections::BTreeMap<_, _> = old_ids.into_iter().zip(fresh).collect();
     let target = mapping[&node("duration-hold")?].clone();
+    let outer = mapping[&node("outer")?].clone();
+    let inner = mapping[&node("inner")?].clone();
     let root = project.fresh(1)?.remove(0);
+    let parent = root.clone();
     let mut nodes = std::collections::BTreeMap::new();
     for (old, fresh) in &mapping {
         let mut recipe = recipes.nodes()[old].clone();
@@ -173,7 +177,91 @@ fn build(dir: &Path, grow: bool) -> Result<Fixture> {
         return Err("Hold".into());
     };
     let frames = if grow { 5 } else { 1 };
-    let after = project.apply(|_, _, _| {
+    let after = project.apply(|_, document, revision| {
+        if semantic {
+            use deadpan_core::{
+                InstancePath, PauseLength, RepeatEditBranch, RepeatEditStep, RepeatInstance,
+                ScopedNodeTarget, SemanticAllocation, SemanticAllocationRequest, SemanticContext,
+                SemanticInstruction, SemanticProgram, SemanticRegisterBank,
+                SemanticSharedHoldDurationContext, plan_semantic,
+            };
+            let repeats = [&outer, &inner]
+                .into_iter()
+                .map(|node| {
+                    let NodeKind::Repeat { iterations, .. } = &document.nodes()[node].kind else {
+                        panic!("captured Repeat")
+                    };
+                    RepeatInstance {
+                        node: node.clone(),
+                        iteration: iterations.at(1).unwrap(),
+                    }
+                })
+                .collect::<Vec<_>>();
+            let context = SemanticContext {
+                original: None,
+                scoped: None,
+                hold_duration: None,
+                shared_hold_duration: Some(SemanticSharedHoldDurationContext {
+                    root: outer.clone(),
+                    target: ScopedNodeTarget {
+                        node: target.clone(),
+                        repeats: repeats
+                            .iter()
+                            .map(|step| RepeatEditStep {
+                                repeat: step.node.clone(),
+                                branch: RepeatEditBranch::Default,
+                            })
+                            .collect(),
+                    },
+                    presentation: Some(InstancePath {
+                        node: target.clone(),
+                        repeats,
+                    }),
+                }),
+                parent: parent.clone(),
+                cursor: ProjectFrame(45),
+                selected_child: Some(outer.clone()),
+                visual_selection: None,
+            };
+            let program = SemanticProgram::new(vec![SemanticInstruction::SetHoldDuration {
+                length: PauseLength::Frames {
+                    frames: std::num::NonZeroU32::new(u32::try_from(frames)?).unwrap(),
+                },
+            }])?;
+            let bank = std::collections::BTreeMap::new();
+            let plan = plan_semantic(
+                document,
+                &context,
+                &program,
+                SemanticRegisterBank {
+                    entries: &bank,
+                    version: 0,
+                },
+                revision.clone(),
+                |request| {
+                    assert!(matches!(
+                        request,
+                        SemanticAllocationRequest::ParameterEdit { .. }
+                    ));
+                    Ok(SemanticAllocation::ParameterEdit {
+                        new_revision: RevisionId::new(format!("{revision}-parameter")).unwrap(),
+                    })
+                },
+                |_, _| panic!("shared duration needs no media resolver"),
+            )?;
+            assert_eq!(plan.context.cursor, ProjectFrame(44 + 3 * (frames - 3)));
+            assert_eq!(
+                plan.context.shared_hold_duration,
+                context.shared_hold_duration
+            );
+            assert_eq!(plan.document.overrides(), document.overrides());
+            let transaction = deadpan_core::apply(document, plan.request.as_ref().unwrap())?;
+            assert_eq!(transaction.inverse.apply(&plan.document)?, *document);
+            return Ok(plan
+                .request
+                .ok_or("semantic duration committed no edit")?
+                .command);
+        }
         Ok(Command::SetHoldDuration {
             node: target.clone(),
             duration: FrameDuration::new(frames)?,
@@ -221,16 +309,28 @@ fn build(dir: &Path, grow: bool) -> Result<Fixture> {
     for origin in quiet {
         audio.push((boundary(origin)? + 512, false));
     }
+    let route = if semantic {
+        "Duration-only All-Default semantic SetHoldDuration, committed through the headless command path"
+    } else {
+        "Ordinary SetHoldDuration"
+    };
     let mut fixture = project.finish(vec!["Hold (insert time)", "Repeat operator"],
         pictures.into_iter().enumerate().map(|(frame, expected)| (frame as u64, expected)).collect(),
-        vec![format!("Real cfr-bframes.mp4 A/V at 30000/1001. A fresh raw Subtree contains qualified Source recipes with no retained bindings before the edit: Source owners {source_owners:?}, gap owners {gap_owners:?}. Ordinary SetHoldDuration changes the shared Hold definition from 3 to {frames} frames in four nested 2x2 plays. Literal final picture layout {final_frames} frames. Each decoded Original click window retains the old per-owner origin at 20, 29, 38 or 47 plus 1554 samples, within 1e-6. Current click windows and their pre-edit authored peaks: {clicks:?}; silent windows: {audio:?}. The complete nonzero pre/post waveforms are checked directly, without assuming every rounded play has a limited peak above 0.5. Canonical PCM tests separately cover 44.1 kHz unbound and partially bound Sources.")])?;
+        vec![format!("Real cfr-bframes.mp4 A/V at 30000/1001. A fresh raw Subtree contains qualified Source recipes with no retained bindings before the edit: Source owners {source_owners:?}, gap owners {gap_owners:?}. {route} changes the shared Hold definition from 3 to {frames} frames in four nested 2x2 plays. Literal final picture layout {final_frames} frames. Each decoded Original click window retains the old per-owner origin at 20, 29, 38 or 47 plus 1554 samples, within 1e-6. Current click windows and their pre-edit authored peaks: {clicks:?}; silent windows: {audio:?}. The complete nonzero pre/post waveforms are checked directly, without assuming every rounded play has a limited peak above 0.5. Canonical PCM tests separately cover 44.1 kHz unbound and partially bound Sources.")])?;
     fixture.audio = audio;
     Ok(fixture)
 }
 
 pub fn grow(dir: &Path) -> Result<Fixture> {
-    build(dir, true)
+    build(dir, true, false)
 }
 pub fn shrink(dir: &Path) -> Result<Fixture> {
-    build(dir, false)
+    build(dir, false, false)
+}
+
+pub fn semantic_grow(dir: &Path) -> Result<Fixture> {
+    build(dir, true, true)
+}
+pub fn semantic_shrink(dir: &Path) -> Result<Fixture> {
+    build(dir, false, true)
 }

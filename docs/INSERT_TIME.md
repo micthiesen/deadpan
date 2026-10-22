@@ -43,6 +43,12 @@ windows also retain moved interior clocks while outer placements stay fixed.
 Preserve/Shift input windows retain those owners on their own PointCeil clocks
 while keeping the processor's output binding and rebuilding its current DSP.
 Attached sounds whose processing subtree changes retain their explicit refusal.
+The native All plays duration action uses this same raw reducer through a
+duration-only semantic context, retaining every per-level Default choice.
+Visible defaults retain their captured stable presentation; positively proven
+dormant defaults change only their recipe and preserve the cursor. No occurrence
+is isolated to implement a shared change. See
+[All plays Hold length](SEMANTIC_MACROS.md#all-plays-hold-length).
 See the
 [ordinary Hold-duration clock qualification](qualification/hold-duration-clocks-2026-10-20.md).
 The [fixed-window qualification](qualification/fixed-retime-hold-clocks-2026-10-20.md)

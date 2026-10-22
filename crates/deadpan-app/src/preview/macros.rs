@@ -54,7 +54,11 @@ pub(super) struct Capture {
 
 impl Capture {
     fn has_scoped_continuation(&self) -> bool {
-        self.context.scoped.is_some() || self.context.hold_duration.is_some()
+        self.context.scoped.is_some() || self.has_duration_authority()
+    }
+
+    fn has_duration_authority(&self) -> bool {
+        self.context.hold_duration.is_some() || self.context.shared_hold_duration.is_some()
     }
 
     /// Duration-only capture owns a continuation, but cannot authorize Zoom.
@@ -424,7 +428,7 @@ impl DeadpanApp {
             .macros
             .recording
             .as_ref()
-            .is_some_and(|recording| recording.expected.context.hold_duration.is_some())
+            .is_some_and(|recording| recording.expected.has_duration_authority())
         {
             self.error = Some(DURATION_RECORDING.into());
             true
@@ -492,6 +496,7 @@ impl DeadpanApp {
             original: None,
             scoped: None,
             hold_duration: None,
+            shared_hold_duration: None,
         };
         let scoped = self.scoped_target()?;
         let mut context = context;
@@ -504,6 +509,20 @@ impl DeadpanApp {
             }
             if target.target.repeats.is_empty() {
                 context.hold_duration = Some(target.semantic_hold_duration(&base)?);
+            } else if target
+                .target
+                .repeats
+                .iter()
+                .all(|step| step.branch == deadpan_core::RepeatEditBranch::Default)
+                && matches!(
+                    base.document
+                        .nodes()
+                        .get(&target.target.node)
+                        .map(|node| &node.kind),
+                    Some(deadpan_core::NodeKind::Hold { .. })
+                )
+            {
+                context.shared_hold_duration = Some(target.semantic_shared_hold_duration(&base)?);
             } else {
                 context.scoped = Some(target.semantic_framing(&base)?);
             }
@@ -620,7 +639,7 @@ impl DeadpanApp {
             .macros
             .recording
             .as_ref()
-            .is_some_and(|recording| recording.expected.context.hold_duration.is_some())
+            .is_some_and(|recording| recording.expected.has_duration_authority())
         {
             if duration_recording_action(&action, self.scoped_hold_parameter().is_some()) {
                 return true;
@@ -961,6 +980,7 @@ impl DeadpanApp {
                         return Err("Save or cancel the current recording first.".into());
                     }
                     self.stop_playback();
+                    let duration_only = captured.has_duration_authority();
                     self.macros.recording = Some(Recording {
                         name,
                         expected: captured,
@@ -971,6 +991,11 @@ impl DeadpanApp {
                     self.message = Some(if self.view == View::Source {
                         format!(
                             "Recording @{name} on Original: frame and boundary motions, marks, jumps and named calls. {} saves; Esc cancels.",
+                            self.editor_key(EditorKey::MacroRecord)
+                        )
+                    } else if duration_only {
+                        format!(
+                            "Recording @{name}: pause lengths and named duration calls only. {} saves; Esc cancels.",
                             self.editor_key(EditorKey::MacroRecord)
                         )
                     } else if self.scoped.is_some() {
@@ -1461,13 +1486,13 @@ impl DeadpanApp {
             }
             let captured = target?;
             let instruction = instruction?;
-            if captured.context.hold_duration.is_some()
+            if captured.has_duration_authority()
                 && !matches!(
                     instruction,
                     SemanticInstruction::SetHoldDuration { .. } | SemanticInstruction::Call { .. }
                 )
             {
-                return Err("This ordinary nested Hold supports pause length and named duration calls only. Return to the parent for other macro edits.".into());
+                return Err("This nested Hold supports pause length and named duration calls only. Return to the parent for other macro edits.".into());
             }
             if captured.context.scoped.is_some()
                 && !matches!(

@@ -2,6 +2,26 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
+## All plays Hold duration semantics, 2026-10-21
+
+[Shared duration qualification](qualification/shared-hold-duration-semantics-2026-10-21.md)
+adds native duration controls, recording, named calls and direct-edit dot for a
+Hold with All plays explicit at every Repeat level. Independent owned plays
+retain their recipes and physical clocks. A live shared default continues at
+the new start of its same stable representative; a positively proven dormant
+default changes its recipe without inventing a play or moving the cursor.
+Two valid old-code native witnesses fail; all 14 focused, 712 broader and 193
+UI-feature tests pass, with the generated command reference and strict lint.
+The retained first-run core fixture identity collision is corrected without
+production changes. Both final native replays pass 1,069 scoped checks plus
+Kestrel; four compact captures were inspected. Quiet input-to-state p99 is
+1.619ms. Release exports verify all 120 pictures and all 192,192 presented
+audio samples at measured offset zero. Replay capture, history-oracle,
+instruction-hint and trace-capacity corrections retain their failed evidence.
+Mixed choices, several-play timing and Retime ancestry on
+Repeat duration paths remain open. DP-06, DP-07 and DP-24 stay partial; no
+requirement or gate is newly complete.
+
 ## Native Hold lengths inside fixed Retime, 2026-10-21
 
 [Native duration qualification](qualification/native-fixed-retime-hold-2026-10-21.md)
@@ -3044,6 +3064,7 @@ exercised; the feature itself is implemented and verified as far as possible.
 
 | Area | What remains for the owner | Related |
 | --- | --- | --- |
+| All plays Hold duration: physical input, speech and listening | 1. In a disposable speech project, insert a 2-frame Hold, wrap that Hold with `:wrap-repeat 2`, then wrap the Repeat with `:wrap-repeat 3`. Enter each level and choose `:scope all`. Enter on the Hold must prefill `hold-duration 2f`; record a change to 4f and save. The edit must grow by 12 frames; one Undo restores all six 2-frame uses. 2. Choose This play at both levels and change one Hold to 6f. Return to All plays at both levels and change the literal 2f default to 4f. Only the four uses in the two still-shared outer plays must grow, by 8 frames total; the owned outer subtree stays unchanged. 3. Give each remaining outer play its own Hold change using This play at both levels, then return to All plays at both levels. The unused default must show no active picture; changing its duration must preserve both clocks, total duration and displayed image. 4. Check physical Enter, Escape, recording, named Call and direct-edit dot with VoiceOver speech, then listen and compare a render across the unchanged speech after the Repeat. Scripted routing, exact clocks, real A/V export and offscreen presentation are covered by the qualification. | [Shared duration qualification](qualification/shared-hold-duration-semantics-2026-10-21.md), DP-06, DP-07, DP-20 |
 | Speed after an exact pause: physical input and listening | 1. In a disposable project, select a 12-frame speech beat and run `:retime 0.5 pitch=tape`. Move three frames into that stage and run `:hold 3f`. The stage must now last 27 frames. 2. Select the same outer stage, open Change speed with the physical keyboard, replace the entry with `retime 7/8 pitch=tape`, and apply. It must last 15 frames; its inspector must show and pre-fill `9/10`. The Original cursor must stay unchanged. 3. Listen across the scaled freeze and resumed speech, then Undo and Redo once and compare the rendered result. Check VoiceOver feedback for the exact speed and refused processing pitch. Injected input, PCM, history and emitted files are covered in [qualification](qualification/clocked-speed-update-2026-10-20.md); physical delivery, speech and listening remain unverified. | DP-07, DP-09, DP-20 |
 | AI generation during physical sleep | 1. In a disposable project with two unaccepted pauses and an installed AI pack, select the first pause and run `:generate`; wait for inference steps in `:jobs`. Start generation for the second pause so it queues. 2. Put the Mac to sleep from the Apple menu, then wake it. Both affected jobs must stop as Interrupted, retain explicit Retry actions, and never restart automatically. The edit revision and accepted providers must stay unchanged. 3. Select one interrupted row and press R; a fresh attempt must start after input validation. Separately cancel a generation before sleeping; it must remain Cancelled rather than reappear for retry. 4. Repeat during candidate validation/publication: a result admitted before the final publication guard may remain Ready; otherwise it must be Interrupted with no new Ready candidate. Injected lifecycle, durable retry and publication boundaries are covered in [qualification](qualification/generation-sleep-2026-10-17.md); physical notification delivery and real inference teardown are not. | DP-12, DP-18 |
 | Transcription during physical sleep | 1. Open a disposable Original project with the Whisper pack installed and wait for recognition progress. Put the Mac to sleep, then wake it. Recognition must drain and show an interruption with Try again, without automatically restarting or publishing a partial result. 2. Activate Try again with keyboard focus and Enter; a new run must complete. 3. With a saved transcript and a manual word correction, start Recognize again, sleep/wake during progress, and verify the prior words/correction remain available and the interrupted replacement is not saved. 4. Cancel recognition before sleeping; cancellation must remain the outcome. [Injected lifecycle qualification](qualification/transcription-sleep-2026-10-17.md) covers the real worker and transactional boundaries, not physical notification delivery. | DP-10, DP-18 |

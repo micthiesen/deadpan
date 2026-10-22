@@ -91,7 +91,15 @@ fn exercise(d: &mut Driver<'_>, path: &Path) -> Result<(), String> {
         json!("two explicit All plays choices"),
         d.snapshot(),
     )?;
-    refuse(d, "All-plays Hold duration")?;
+    let before = document(d)?.clone();
+    d.key(Key::Enter)?;
+    d.check(
+        "All-plays duration now offers the authored Hold length without writing",
+        d.app().command_open && d.app().command == "hold-duration 4f" && document(d)? == &before,
+        json!({"command":"hold-duration 4f","document":"unchanged"}),
+        d.snapshot(),
+    )?;
+    d.key(Key::Escape)?;
     d.key(Key::Escape)?;
     d.chord(&[Key::G, Key::G, Key::Enter])?;
     d.command("scope play 1")?;

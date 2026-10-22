@@ -1,0 +1,38 @@
+{
+  "state": "authored, not compiled or run; root owns all Cargo and replay execution",
+  "scenario": "scoped-plays",
+  "invocation": "deadpan-app --ui-check --scenario scoped-plays --mode visual --output /tmp/deadpan-shared-hold-duration-2026-10-21/visual --kestrel-source /Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+  "files": [
+    "crates/deadpan-app/src/preview/harness/scoped_plays/shared_hold_duration.rs",
+    "crates/deadpan-app/src/preview/harness/scoped_plays/shared_hold_duration/fixture.rs",
+    "crates/deadpan-app/src/preview/harness/scoped_plays.rs",
+    "crates/deadpan-app/src/preview/harness/scoped_plays/hold_duration/refusals.rs"
+  ],
+  "coverage": [
+    "qualified portable Original, measured Freeze, actual 4800-sample RoomTone",
+    "nested All-Default direct Enter/button/command 45 to49, representative19 to21",
+    "unchanged setter preserves interior cursor24 and history/registers",
+    "only literal Hold changes; owned inner4 and outer7 unchanged, no isolation",
+    "exact Undo/Redo",
+    "duration-only recording rejects gain, room-tone, silence and Camera without draft or instruction mutation",
+    "saved duration and nested named Call remain target-free",
+    "direct parameter commit seeds invocation-relative dot on different shared Hold, root53",
+    "named duration refuses wrong current node type",
+    "delayed durable receipt cannot reclaim away/back navigation",
+    "fully overridden outer Repeat dormant39 to39, no fabricated presentation, all39 plan pictures equal",
+    "dormant controls preserve cursor, Original clock, picture and registers; Undo/Redo/reopen"
+  ],
+  "capture_candidates": [
+    "Nested All plays Hold duration entry at minimum size",
+    "All plays grows two shared uses while independent inner and outer pauses retain their lengths",
+    "All plays recording, named Call and direct duration dot preserve independent owned pauses",
+    "Dormant All plays Hold duration changes the definition while retaining both clocks and picture"
+  ],
+  "limitations": [
+    "no runtime pass claimed",
+    "scripted native routing and Metal replay, no physical keyboard/IME/VoiceOver speech/acoustic claims",
+    "short bounded RoomTone interval qualifies provider use, does not prove acoustically nonzero output",
+    "mixed, several and Retime ancestry keep existing refusal witnesses",
+    "exact new check count must come from actual replay report"
+  ]
+}

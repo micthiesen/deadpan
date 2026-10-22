@@ -209,11 +209,34 @@ pools, then carries its actual isolation mapping forward. The final cursor is
 the resized Hold's exact start, while the ordinary enclosing selection remains
 unchanged. Another duration, Zoom, pause or named call uses that mapped Hold.
 No-op lengths and late unsupported instructions leave history and registers
-unchanged. All/mixed/multiple plays, Retime ancestry and attached or root sound
+unchanged. Mixed/multiple plays, Retime ancestry and attached or root sound
 events retain explicit refusals. Generated-picture shortening retains qualified
 accepted media; extension beyond its coverage commits fallback and durable
 preparation rather than stretching the accepted provider silently. See the
 [Hold duration qualification](qualification/scoped-hold-duration-2026-10-20.md).
+
+### All plays Hold length
+
+With All plays explicit at every Repeat level, Enter, Change duration and
+`:hold-duration` capture the literal shared Hold plus its optional concrete
+presentation. Saved `SetHoldDuration { length }` intent contains neither address.
+The duration-only runtime authority accepts length setters and named calls;
+it grants no framing, audio-policy or ordinary navigation authority.
+
+Each staged setter revalidates the shared target, then executes ordinary
+`SetHoldDuration` with a parameter revision and no cloned node or mark IDs.
+Independent play overrides remain intact, while existing physical audio clocks
+use the reducer's old-origin capture. A visible continuation follows the same
+stable representative to its new start. No presentation is accepted only when
+validated body overrides cover every play of at least one enclosing Repeat.
+That dormant change preserves the cursor and rendered duration. Gap overrides
+alone do not establish dormancy.
+
+No-op lengths, forged or stale captures, mixed or several-play authority,
+Retime ancestry and unsupported later instructions refuse atomically. Direct
+Apply supplies dot intent; named Run and Undo retain their existing dot policy.
+Scope navigation revokes delayed inspector continuation even after away/back
+navigation. This path does not broaden one-play semantic framing.
 
 ### Ordinary Hold length inside fixed Retime
 

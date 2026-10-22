@@ -1,0 +1,21 @@
+{
+  "mode": "visual",
+  "inspected": [
+    "scoped-plays-148.png",
+    "scoped-plays-149.png",
+    "scoped-plays-150.png",
+    "scoped-plays-151.png"
+  ],
+  "size": [
+    960,
+    640
+  ],
+  "result": "Parent inspected all four final 960x640 native checkpoints. Duration entry, scope labels, controls, separate clocks, focus and footer are readable. Dormant state explicitly reports no active picture and retains its prior image. The dot target Before shared pause uses authored Background, so its black picture is intentional. The selected shared Hold uses measured Original Freeze. Both complete final replays pass.",
+  "claims_excluded": [
+    "physical display",
+    "physical keyboard",
+    "IME",
+    "VoiceOver speech",
+    "acoustic quality"
+  ]
+}

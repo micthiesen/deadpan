@@ -579,16 +579,33 @@ fn scoped_hold_duration_preview_and_encoded_output_keep_authored_source_clocks()
 
 #[test]
 fn ordinary_hold_duration_preview_and_encoded_output_keep_shared_source_clocks() -> Result {
+    verify_ordinary_hold_duration(false)
+}
+
+#[test]
+fn shared_hold_duration_semantics_preview_and_encoded_output_keep_shared_source_clocks() -> Result {
+    verify_ordinary_hold_duration(true)
+}
+
+fn verify_ordinary_hold_duration(semantic: bool) -> Result {
     let (root, _guard) = keep_or(tempfile::tempdir()?);
     let mut results = Vec::new();
     for (name, factory) in [
         (
             "grow",
-            recipes::ordinary_duration::grow as fn(&Path) -> Result<Fixture>,
+            if semantic {
+                recipes::ordinary_duration::semantic_grow
+            } else {
+                recipes::ordinary_duration::grow
+            } as fn(&Path) -> Result<Fixture>,
         ),
         (
             "shrink",
-            recipes::ordinary_duration::shrink as fn(&Path) -> Result<Fixture>,
+            if semantic {
+                recipes::ordinary_duration::semantic_shrink
+            } else {
+                recipes::ordinary_duration::shrink
+            } as fn(&Path) -> Result<Fixture>,
         ),
     ] {
         let fixture = factory(&root.join(name))?;
@@ -612,7 +629,12 @@ fn ordinary_hold_duration_preview_and_encoded_output_keep_shared_source_clocks()
             json!({"package":fixture.package,"movie":movie,"report":report,"notes":fixture.notes}),
         );
     }
-    if let Some(path) = std::env::var_os("DEADPAN_ORDINARY_DURATION_RESULTS") {
+    let results_key = if semantic {
+        "DEADPAN_SHARED_DURATION_RESULTS"
+    } else {
+        "DEADPAN_ORDINARY_DURATION_RESULTS"
+    };
+    if let Some(path) = std::env::var_os(results_key) {
         std::fs::write(path, serde_json::to_vec_pretty(&results)?)?;
     }
     Ok(())

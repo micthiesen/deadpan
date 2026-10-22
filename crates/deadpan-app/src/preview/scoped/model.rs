@@ -106,11 +106,16 @@ impl State {
                 .mapped_also
                 .as_ref()
                 .is_some_and(|(primary, also)| primary == &self.selected && !also.is_empty())
-            || self
+            || (!self
                 .selected
                 .repeats
                 .iter()
-                .any(|step| !matches!(step.branch, RepeatEditBranch::Play { .. }))
+                .all(|step| matches!(step.branch, RepeatEditBranch::Play { .. }))
+                && !self
+                    .selected
+                    .repeats
+                    .iter()
+                    .all(|step| step.branch == RepeatEditBranch::Default))
             || !self.hold_duration_available()
         {
             return None;
@@ -130,6 +135,38 @@ impl State {
         }
         if !self.index.document.sounds().is_empty() || !self.index.document.beat_sounds().is_empty()
         {
+            return false;
+        }
+        if self
+            .selected
+            .repeats
+            .iter()
+            .all(|step| step.branch == RepeatEditBranch::Default)
+        {
+            if !matches!(
+                self.index.document.nodes()[&self.selected.node].kind,
+                NodeKind::Hold { .. }
+            ) || !matches!(
+                self.index.document.nodes()[&self.root].kind,
+                NodeKind::Repeat { .. }
+            ) || (self.projection.presentation.is_none()
+                && self.projection.reason.as_deref() != Some(DORMANT_DEFAULT))
+            {
+                return false;
+            }
+            let mut node = &self.selected.node;
+            for _ in 0..=MAX_DOCUMENT_DEPTH {
+                let Some(parent) = self.index.parents.get(node) else {
+                    return true;
+                };
+                if !matches!(
+                    self.index.document.nodes()[parent].kind,
+                    NodeKind::Sequence { .. } | NodeKind::Repeat { .. }
+                ) {
+                    return false;
+                }
+                node = parent;
+            }
             return false;
         }
         let mut node = &self.selected.node;

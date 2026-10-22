@@ -1,0 +1,224 @@
+{
+  "binaries": {
+    "deadpan-cli::preview_export": {
+      "path": "/Users/michael/Code/deadpan/target/release/deps/preview_export-633f4b90e83a29ac",
+      "sha256": "9ce2b6c8b1a71a3720c401d1fd20c6d517a0e6557a5019e5a2d0a4d5f3d4ad8a",
+      "bytes": 25364256
+    },
+    "deadpan-media-worker": {
+      "path": "/Users/michael/Code/deadpan/target/release/deadpan-media-worker",
+      "sha256": "70114641de62f0c9c839734f3dddab1221b01888661a43ed5583e40ca9ed90fe",
+      "bytes": 1169872
+    }
+  },
+  "outputs": [
+    {
+      "movie": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmp5Kp3sa/exports-grow/shared-semantic-hold-duration-grow.mp4",
+      "movie_sha256": "0459b21998e9457da2d31b566865404d961486dc3baa3eeaafa6fdff240dbb70",
+      "movie_bytes": 25258,
+      "package": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmp5Kp3sa/grow/shared-semantic-hold-duration-grow.deadpan",
+      "package_files": [
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmp5Kp3sa/grow/shared-semantic-hold-duration-grow.deadpan/.render-candidates.lock",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmp5Kp3sa/grow/shared-semantic-hold-duration-grow.deadpan/.writer.lock",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmp5Kp3sa/grow/shared-semantic-hold-duration-grow.deadpan/Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+          "bytes": 39157,
+          "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmp5Kp3sa/grow/shared-semantic-hold-duration-grow.deadpan/Media/RenderCandidates/blake3-26341f9b00dd3e5fa18bf56470852eac1f2c6877d47a1763ee013ae00637a33b",
+          "bytes": 25258,
+          "sha256": "0459b21998e9457da2d31b566865404d961486dc3baa3eeaafa6fdff240dbb70"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmp5Kp3sa/grow/shared-semantic-hold-duration-grow.deadpan/Media/RenderCandidates/blake3-d6d81fcbc0bb3b0312c7cc6ab2ffbc18fcf50d6ed468ea8f2d3c7d1de279e3f7",
+          "bytes": 15119,
+          "sha256": "56b13cc3b4c0643e0aa19fc9bc59ef92e5017d350a1daf3a7b9f5829b9cb7045"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmp5Kp3sa/grow/shared-semantic-hold-duration-grow.deadpan/manifest.json",
+          "bytes": 82,
+          "sha256": "109a3baae300cbd6f39ddae64d39ccc9e746636590cb4b8f574b91547a5627b9"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmp5Kp3sa/grow/shared-semantic-hold-duration-grow.deadpan/project.sqlite",
+          "bytes": 651264,
+          "sha256": "d64ae93e906af381f94d722c54d87288c35e6b503ae63c85eb4285a3f085bc59"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmp5Kp3sa/grow/shared-semantic-hold-duration-grow.deadpan/project.sqlite-shm",
+          "bytes": 32768,
+          "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmp5Kp3sa/grow/shared-semantic-hold-duration-grow.deadpan/project.sqlite-wal",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "summary": {
+        "audio_windows_checked": 2,
+        "audio_windows_failed": 0,
+        "blocks_compared": 4,
+        "index_observable_comparisons": 70,
+        "index_unobservable_comparisons": 64,
+        "max_block_level_db": 0.01878979534762948,
+        "max_local_luma_error": 2.125,
+        "max_thumbnail_mad": 0.05022078804347826,
+        "min_block_snr_db": 36.80849766077045,
+        "min_chroma_psnr_db": 53.44486901527713,
+        "min_luma_psnr_db": 56.454656378842394,
+        "min_neighbor_margin_db": 0.0,
+        "nonzero_offsets": 0,
+        "offset_unobservable_windows": 0,
+        "offset_verified_windows": 2,
+        "pictures_checked": 68,
+        "pictures_failed": 0,
+        "pictures_without_index_neighbors": 0,
+        "signal_windows": 2
+      },
+      "audio_windows": [
+        {
+          "window": [
+            0,
+            48000
+          ],
+          "project_samples": [
+            0,
+            48000
+          ],
+          "measured_offset_samples": 0,
+          "offset_status": "verified_zero",
+          "uncovered_samples": 0,
+          "flags": []
+        },
+        {
+          "window": [
+            48000,
+            108909
+          ],
+          "project_samples": [
+            48000,
+            108909
+          ],
+          "measured_offset_samples": 0,
+          "offset_status": "verified_zero",
+          "uncovered_samples": 0,
+          "flags": []
+        }
+      ]
+    },
+    {
+      "movie": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmp5Kp3sa/exports-shrink/shared-semantic-hold-duration-shrink.mp4",
+      "movie_sha256": "f672b3eb6d216b47de69618739a5da9cfea470f48822afbec65a386a23e8f88d",
+      "movie_bytes": 22792,
+      "package": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmp5Kp3sa/shrink/shared-semantic-hold-duration-shrink.deadpan",
+      "package_files": [
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmp5Kp3sa/shrink/shared-semantic-hold-duration-shrink.deadpan/.render-candidates.lock",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmp5Kp3sa/shrink/shared-semantic-hold-duration-shrink.deadpan/.writer.lock",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmp5Kp3sa/shrink/shared-semantic-hold-duration-shrink.deadpan/Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+          "bytes": 39157,
+          "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmp5Kp3sa/shrink/shared-semantic-hold-duration-shrink.deadpan/Media/RenderCandidates/blake3-3acb5166dbb3bb6b8a5182a9c75000f852e19230f443432f25b4cc4dcca0e330",
+          "bytes": 22792,
+          "sha256": "f672b3eb6d216b47de69618739a5da9cfea470f48822afbec65a386a23e8f88d"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmp5Kp3sa/shrink/shared-semantic-hold-duration-shrink.deadpan/Media/RenderCandidates/blake3-c32f2d81cb3842259bd6447f0de735ab541d0bb912b1b73fc3c61fc9287eb266",
+          "bytes": 15121,
+          "sha256": "c399608e758523a9d9db6245babecde397a67ed189a99211b0716fe91f54c567"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmp5Kp3sa/shrink/shared-semantic-hold-duration-shrink.deadpan/manifest.json",
+          "bytes": 82,
+          "sha256": "ed7a1cf72ed53c07e8f3bfb6c77c254e01c82310ecc509f1d73dbcb709a49be8"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmp5Kp3sa/shrink/shared-semantic-hold-duration-shrink.deadpan/project.sqlite",
+          "bytes": 655360,
+          "sha256": "af425dddf00c80ac516fca353a2a0e995e4d729321533711e045de8e90820501"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmp5Kp3sa/shrink/shared-semantic-hold-duration-shrink.deadpan/project.sqlite-shm",
+          "bytes": 32768,
+          "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+        },
+        {
+          "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmp5Kp3sa/shrink/shared-semantic-hold-duration-shrink.deadpan/project.sqlite-wal",
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "summary": {
+        "audio_windows_checked": 2,
+        "audio_windows_failed": 0,
+        "blocks_compared": 5,
+        "index_observable_comparisons": 70,
+        "index_unobservable_comparisons": 32,
+        "max_block_level_db": 0.02573341792891526,
+        "max_local_luma_error": 2.125,
+        "max_thumbnail_mad": 0.05022078804347826,
+        "min_block_snr_db": 38.43353644989912,
+        "min_chroma_psnr_db": 53.44486901527713,
+        "min_luma_psnr_db": 56.454656378842394,
+        "min_neighbor_margin_db": 0.0,
+        "nonzero_offsets": 0,
+        "offset_unobservable_windows": 0,
+        "offset_verified_windows": 2,
+        "pictures_checked": 52,
+        "pictures_failed": 0,
+        "pictures_without_index_neighbors": 0,
+        "signal_windows": 2
+      },
+      "audio_windows": [
+        {
+          "window": [
+            0,
+            48000
+          ],
+          "project_samples": [
+            0,
+            48000
+          ],
+          "measured_offset_samples": 0,
+          "offset_status": "verified_zero",
+          "uncovered_samples": 0,
+          "flags": []
+        },
+        {
+          "window": [
+            48000,
+            83283
+          ],
+          "project_samples": [
+            48000,
+            83283
+          ],
+          "measured_offset_samples": 0,
+          "offset_status": "verified_zero",
+          "uncovered_samples": 0,
+          "flags": []
+        }
+      ]
+    }
+  ]
+}

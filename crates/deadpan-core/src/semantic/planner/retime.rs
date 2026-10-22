@@ -433,6 +433,9 @@ where
         trace_index: usize,
         length: crate::PauseLength,
     ) -> Result<(), EditError> {
+        if let Some(authority) = self.context.shared_hold_duration.clone() {
+            return self.set_shared_hold_duration(trace_index, length, authority);
+        }
         if let Some(authority) = self.context.hold_duration.clone() {
             return self.set_inspected_hold_duration(trace_index, length, authority);
         }

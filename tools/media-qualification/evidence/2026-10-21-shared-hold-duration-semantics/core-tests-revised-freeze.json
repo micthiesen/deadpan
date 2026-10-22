@@ -1,0 +1,8 @@
+{
+  "path": "crates/deadpan-core/src/semantic/planner/tests/shared_hold_duration.rs",
+  "sha256": "c7b5952dbcf645e68a252f45ed93d3f95c270ba087c3152173a28475af2a7863",
+  "preserved_first_failure": "/tmp/deadpan-shared-hold-duration-2026-10-21/core-tests-first-failure.rs",
+  "production_changed": false,
+  "cargo_run": false,
+  "formatted": false
+}

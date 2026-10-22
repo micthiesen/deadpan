@@ -4,6 +4,20 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Current continuation, 2026-10-21
 
+All plays Hold durations now have a separate invocation-only semantic context
+that retains every Default choice and the optional concrete presentation.
+Visible defaults continue at the same stable representative's new start;
+positively proven dormant defaults preserve cursor and rendered duration.
+Owned overrides, existing clocks and framing guards remain intact. Native
+Enter, controls, recording, named calls and direct-edit dot use that path.
+All 14 focused, 712 broader and 193 UI-feature tests and strict lint pass.
+Both final native replays pass 1,069 scoped checks plus Kestrel; four compact
+captures were inspected. Release exports verify all 120 pictures and all
+192,192 presented audio samples at measured offset zero. Failed runs and their
+corrections remain in [the qualification](../qualification/shared-hold-duration-semantics-2026-10-21.md).
+Mixed choices, several-play timing and Repeat/Retime temporal combinations remain
+the next editing work. No requirement or gate is newly complete.
+
 Ordinary Hold lengths inside fixed unclocked Edit Retimes now use a captured
 duration-only semantic context, independently of This-play authority. Enter,
 Change duration, recording, named calls and direct-edit dot preserve the fixed

@@ -398,6 +398,7 @@ fn verify_equivalence_with(placement: Placement, semantic: bool) {
                 scope: SequenceScope::default(),
                 context: deadpan_core::SemanticContext {
                     hold_duration: None,
+                    shared_hold_duration: None,
                     original: None,
                     scoped: None,
                     parent: request.parent.clone(),

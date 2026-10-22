@@ -889,6 +889,9 @@ impl Driver<'_> {
     fn step(&mut self, input: &str, capture: bool) -> Result<(), String> {
         let frame_budget = if self.report.name == "ai-playback-interference" {
             24_000
+        } else if self.report.name == "scoped-plays" {
+            // Shared and dormant duration cases extend the retained trace.
+            7000
         } else {
             6000
         };

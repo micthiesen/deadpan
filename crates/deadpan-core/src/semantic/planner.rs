@@ -30,7 +30,9 @@ mod hold_duration;
 pub use hold_duration::{HoldDurationVisibility, SemanticHoldDurationContext};
 mod pause;
 mod scoped_gain;
+mod shared_hold_duration;
 pub use pause::copied_moment_audio;
+pub use shared_hold_duration::SemanticSharedHoldDurationContext;
 mod marks;
 mod original;
 mod repeat;
@@ -80,6 +82,9 @@ pub struct SemanticContext {
     /// Duration-only authority for a Hold inside an ordinary fixed Retime.
     /// Mutually exclusive with single-play, Original and Visual authority.
     pub hold_duration: Option<SemanticHoldDurationContext>,
+    /// Duration-only authority for literal All plays Repeat definitions.
+    /// A dormant default has no fabricated concrete presentation.
+    pub shared_hold_duration: Option<SemanticSharedHoldDurationContext>,
     pub parent: NodeId,
     /// Absolute Edit boundary, including either endpoint of the ordinary scope.
     pub cursor: ProjectFrame,
@@ -744,7 +749,7 @@ where
                 self.trace[index].after = self.context.clone();
                 continue;
             }
-            if self.context.hold_duration.is_some()
+            if (self.context.hold_duration.is_some() || self.context.shared_hold_duration.is_some())
                 && !matches!(
                     instruction,
                     SemanticInstruction::SetHoldDuration { .. } | SemanticInstruction::Call { .. }
@@ -1355,6 +1360,7 @@ pub(super) fn validate_context(
     validate_selection(document, context)?;
     selection::validate_context(document, context, bounds)?;
     hold_duration::validate_context(document, context)?;
+    shared_hold_duration::validate_context(document, context)?;
     framing::validate_scoped_context(document, context)?;
     Ok(bounds)
 }
