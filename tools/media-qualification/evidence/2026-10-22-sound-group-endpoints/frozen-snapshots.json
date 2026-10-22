@@ -1,0 +1,194 @@
+{
+  "format": "sha256-content-addressed-tar-1",
+  "blob_archive": "frozen-source-and-input-blobs.tar.gz",
+  "unique_payloads": 2575,
+  "snapshots": {
+    "base-source": {
+      "manifest": "base-source-identities.json.gz",
+      "kind": "Rust",
+      "files": 2012,
+      "content_sha256": "9ef60ff1c0a7408e5d253b39c97fe590f400bf14628060c20ce81803ae6f182f"
+    },
+    "baseline-first-source": {
+      "manifest": "baseline-first-source-identities.json.gz",
+      "kind": "Rust",
+      "files": 2013,
+      "content_sha256": "00490cbc0a26661d89bb7c448a67b66d67bb10d4cd70ad56861f975530506e6b"
+    },
+    "broad-first-source": {
+      "manifest": "broad-first-source-identities.json.gz",
+      "kind": "Rust",
+      "files": 2019,
+      "content_sha256": "e13bc86ca563b289f16b65d13af3b5fd205caafd5a306f389c8140cf5b2c4fc0"
+    },
+    "broad-second-source": {
+      "manifest": "broad-second-source-identities.json.gz",
+      "kind": "Rust",
+      "files": 2019,
+      "content_sha256": "af90cd5c3aeb100ff1a7b73b0848801494250bcf110dc0852c7626a6e5b9c19d"
+    },
+    "candidate-fifth-source": {
+      "manifest": "candidate-fifth-source-identities.json.gz",
+      "kind": "Rust",
+      "files": 2019,
+      "content_sha256": "071f4d14dc9b8105363f5375775942aa2a27b7d2486323432e26bf04c0a596f4"
+    },
+    "candidate-first-source": {
+      "manifest": "candidate-first-source-identities.json.gz",
+      "kind": "Rust",
+      "files": 2015,
+      "content_sha256": "8a254b3b71d6d8fb066001bee52ce95773f9dc36b29c8fe058aca9618b6837be"
+    },
+    "candidate-fourth-source": {
+      "manifest": "candidate-fourth-source-identities.json.gz",
+      "kind": "Rust",
+      "files": 2019,
+      "content_sha256": "b336b20c157597d67aa28fb9274f6376ee0fd349c7c87cbaa9628820dfe1d9a0"
+    },
+    "candidate-second-source": {
+      "manifest": "candidate-second-source-identities.json.gz",
+      "kind": "Rust",
+      "files": 2015,
+      "content_sha256": "6840ba726319341b3b804793a8f05926bf37cce994a0cc78cac5c12613e858af"
+    },
+    "candidate-third-source": {
+      "manifest": "candidate-third-source-identities.json.gz",
+      "kind": "Rust",
+      "files": 2015,
+      "content_sha256": "9a828c32b56b6d4f166e177c4a7ffa78d5038d02cfdaead02a2a4bf6ac18ecd3"
+    },
+    "debug-first-source": {
+      "manifest": "debug-first-source-identities.json.gz",
+      "kind": "Rust",
+      "files": 2019,
+      "content_sha256": "071f4d14dc9b8105363f5375775942aa2a27b7d2486323432e26bf04c0a596f4"
+    },
+    "export-first-source": {
+      "manifest": "export-first-source-identities.json.gz",
+      "kind": "Rust",
+      "files": 2019,
+      "content_sha256": "071f4d14dc9b8105363f5375775942aa2a27b7d2486323432e26bf04c0a596f4"
+    },
+    "export-second-source": {
+      "manifest": "export-second-source-identities.json.gz",
+      "kind": "Rust",
+      "files": 2019,
+      "content_sha256": "e13bc86ca563b289f16b65d13af3b5fd205caafd5a306f389c8140cf5b2c4fc0"
+    },
+    "lint-final-source": {
+      "manifest": "lint-final-source-identities.json.gz",
+      "kind": "Rust",
+      "files": 2019,
+      "content_sha256": "af90cd5c3aeb100ff1a7b73b0848801494250bcf110dc0852c7626a6e5b9c19d"
+    },
+    "lint-second-source": {
+      "manifest": "lint-second-source-identities.json.gz",
+      "kind": "Rust",
+      "files": 2019,
+      "content_sha256": "ac09ec18cca3cfc87435265e963af4eada91c7171ebc04d3b5d74216068c6b4d"
+    },
+    "old-audio-source": {
+      "manifest": "old-audio-source-identities.json.gz",
+      "kind": "archived Rust and build inputs",
+      "files": 2525,
+      "content_sha256": "060e6defcab95c2cb91bb6a75c7fa2a1dc35b707cc6a94f626ff184b667064f0",
+      "input_manifest": "old-audio-input-identities.json"
+    },
+    "release-final-source": {
+      "manifest": "release-final-source-identities.json.gz",
+      "kind": "Rust",
+      "files": 2019,
+      "content_sha256": "ac09ec18cca3cfc87435265e963af4eada91c7171ebc04d3b5d74216068c6b4d"
+    },
+    "base-inputs": {
+      "manifest": "base-lock.json",
+      "kind": "supplemental",
+      "files": 6,
+      "content_sha256": "b71b8c2e605953501b8721ab89203b524b97d29217575181605dffaec387b2f0"
+    },
+    "baseline-first-inputs": {
+      "manifest": "baseline-first-lock.json",
+      "kind": "supplemental",
+      "files": 6,
+      "content_sha256": "b71b8c2e605953501b8721ab89203b524b97d29217575181605dffaec387b2f0"
+    },
+    "broad-first-inputs": {
+      "manifest": "broad-first-lock.json",
+      "kind": "supplemental",
+      "files": 6,
+      "content_sha256": "b71b8c2e605953501b8721ab89203b524b97d29217575181605dffaec387b2f0"
+    },
+    "broad-second-inputs": {
+      "manifest": "broad-second-lock.json",
+      "kind": "supplemental",
+      "files": 6,
+      "content_sha256": "b71b8c2e605953501b8721ab89203b524b97d29217575181605dffaec387b2f0"
+    },
+    "candidate-fifth-inputs": {
+      "manifest": "candidate-fifth-lock.json",
+      "kind": "supplemental",
+      "files": 6,
+      "content_sha256": "b71b8c2e605953501b8721ab89203b524b97d29217575181605dffaec387b2f0"
+    },
+    "candidate-first-inputs": {
+      "manifest": "candidate-first-lock.json",
+      "kind": "supplemental",
+      "files": 6,
+      "content_sha256": "b71b8c2e605953501b8721ab89203b524b97d29217575181605dffaec387b2f0"
+    },
+    "candidate-fourth-inputs": {
+      "manifest": "candidate-fourth-lock.json",
+      "kind": "supplemental",
+      "files": 6,
+      "content_sha256": "b71b8c2e605953501b8721ab89203b524b97d29217575181605dffaec387b2f0"
+    },
+    "candidate-second-inputs": {
+      "manifest": "candidate-second-lock.json",
+      "kind": "supplemental",
+      "files": 6,
+      "content_sha256": "b71b8c2e605953501b8721ab89203b524b97d29217575181605dffaec387b2f0"
+    },
+    "candidate-third-inputs": {
+      "manifest": "candidate-third-lock.json",
+      "kind": "supplemental",
+      "files": 6,
+      "content_sha256": "b71b8c2e605953501b8721ab89203b524b97d29217575181605dffaec387b2f0"
+    },
+    "debug-first-inputs": {
+      "manifest": "debug-first-lock.json",
+      "kind": "supplemental",
+      "files": 6,
+      "content_sha256": "b71b8c2e605953501b8721ab89203b524b97d29217575181605dffaec387b2f0"
+    },
+    "export-first-inputs": {
+      "manifest": "export-first-lock.json",
+      "kind": "supplemental",
+      "files": 6,
+      "content_sha256": "b71b8c2e605953501b8721ab89203b524b97d29217575181605dffaec387b2f0"
+    },
+    "export-second-inputs": {
+      "manifest": "export-second-lock.json",
+      "kind": "supplemental",
+      "files": 6,
+      "content_sha256": "b71b8c2e605953501b8721ab89203b524b97d29217575181605dffaec387b2f0"
+    },
+    "lint-final-inputs": {
+      "manifest": "lint-final-lock.json",
+      "kind": "supplemental",
+      "files": 6,
+      "content_sha256": "b71b8c2e605953501b8721ab89203b524b97d29217575181605dffaec387b2f0"
+    },
+    "lint-second-inputs": {
+      "manifest": "lint-second-lock.json",
+      "kind": "supplemental",
+      "files": 6,
+      "content_sha256": "b71b8c2e605953501b8721ab89203b524b97d29217575181605dffaec387b2f0"
+    },
+    "release-final-inputs": {
+      "manifest": "release-final-lock.json",
+      "kind": "supplemental",
+      "files": 6,
+      "content_sha256": "b71b8c2e605953501b8721ab89203b524b97d29217575181605dffaec387b2f0"
+    }
+  }
+}

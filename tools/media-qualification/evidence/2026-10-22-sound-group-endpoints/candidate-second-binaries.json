@@ -1,0 +1,29 @@
+{
+  "deadpan-audio::audio_definition": {
+    "path": "/private/tmp/deadpan-sound-group-endpoints-2026-10-22/candidate-second-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+    "sha256": "d9a7245c549b789899e60d741ce4d02a6eb36579ea414a9999ece2c3410f9220",
+    "tests": [
+      "voice_occurrence::beat_sounds::sound_clocks::group_endpoints::endpoint_group_control_range_copy_has_exact_pcm_at_same_ntsc_phase",
+      "voice_occurrence::beat_sounds::sound_clocks::group_endpoints::endpoint_group_copy_keeps_full_owner_processing_and_both_cropped_seams",
+      "voice_occurrence::beat_sounds::sound_clocks::group_endpoints::endpoint_grouping_plain_split_and_aligned_controls_preserve_complete_pcm",
+      "voice_occurrence::beat_sounds::sound_clocks::group_endpoints::endpoint_groups_keep_every_ntsc_sample_through_event_and_shared_eq"
+    ]
+  },
+  "deadpan-core::sound_group_endpoints_counterfactual": {
+    "path": "/private/tmp/deadpan-sound-group-endpoints-2026-10-22/candidate-second-extracted/target/debug/deps/sound_group_endpoints_counterfactual-05be636073442a06",
+    "sha256": "c0da329eb6f572a224fe750278dcd244f929593c119de3b4ea08347c96f199ec",
+    "tests": [
+      "hold_owner_group_endpoints_follow_plain_split_and_aligned_group_controls",
+      "source_owner_group_endpoints_follow_plain_split_and_aligned_group_controls"
+    ]
+  },
+  "deadpan-store::source_registration": {
+    "path": "/private/tmp/deadpan-sound-group-endpoints-2026-10-22/candidate-second-extracted/target/debug/deps/source_registration-6ebd22b991ad32f8",
+    "sha256": "a5d17b69a641c368b3742a4f03a24b29df900eada7148ef16041ec5c75742ce6",
+    "tests": [
+      "sounds::beat_sounds::sound_clocks::group_endpoints::endpoint_group_capture_seam_paste_recopy_and_reopen_keep_complete_sound_recipes",
+      "sounds::beat_sounds::sound_clocks::group_endpoints::endpoint_group_inside_retained_scope_still_refuses_without_durable_writes",
+      "sounds::beat_sounds::sound_clocks::group_endpoints::endpoint_groups_commit_atomically_keep_prior_sound_journals_and_reopen_undo_redo"
+    ]
+  }
+}

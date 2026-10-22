@@ -1,0 +1,28 @@
+{
+  "portable_copy": {
+    "destination": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmp9V2487/fixture/sound-group-endpoints-portable.deadpan",
+    "generated": [],
+    "omitted_generated": 0,
+    "omitted_render_candidates": 0,
+    "originals": [
+      {
+        "bytes": 39157,
+        "content": "blake3:16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+        "from": "managed",
+        "label": "original.mp4",
+        "method": "cloned"
+      }
+    ],
+    "project_id": "235e504a-2900-4455-8aca-fb80c33a434c",
+    "revision_id": "d8a9f9d1-bfb6-47d8-b254-3285202ca4bb",
+    "schema_version": 1,
+    "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmp9V2487/fixture/sound-group-endpoints.deadpan",
+    "total_bytes": 661749,
+    "verified_history": {
+      "replayed": 0,
+      "revisions": 9,
+      "verified_by_receipt": 9
+    }
+  },
+  "protocol": 1
+}

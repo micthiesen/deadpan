@@ -1,0 +1,77 @@
+{
+  "movie": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmp9V2487/exports/sound-group-endpoints.mp4",
+  "movie_bytes": 42563,
+  "movie_sha256": "4dd472fff6ce0c9c5d33ca315c11abe59e54202e6c4e317bfc4d9e6fffeb7765",
+  "package": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmp9V2487/fixture/sound-group-endpoints-portable.deadpan",
+  "package_files": [
+    {
+      "path": ".render-candidates.lock",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".writer.lock",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+      "bytes": 39157,
+      "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918"
+    },
+    {
+      "path": "Media/RenderCandidates/blake3-4b850c66af2cbbefd72755628d4a94b8ec76c9e4336d45c521c4de2532f47ac0",
+      "bytes": 15105,
+      "sha256": "daae321f44ee93be9bd24ed8962cb4c1d7f0ceb675bf32f8c66abc84bf5e4920"
+    },
+    {
+      "path": "Media/RenderCandidates/blake3-84b094cecb990aa9ca000b9072fd65d9f16d3a187a3d29a587eec83166d0c2a4",
+      "bytes": 42563,
+      "sha256": "4dd472fff6ce0c9c5d33ca315c11abe59e54202e6c4e317bfc4d9e6fffeb7765"
+    },
+    {
+      "path": "manifest.json",
+      "bytes": 82,
+      "sha256": "ae290c1d5e54d45151c10380d642612889bc40eb91cd557fa6638ad1bf055261"
+    },
+    {
+      "path": "project.sqlite",
+      "bytes": 614400,
+      "sha256": "d525794f347d910cd27057998d2412a58cf1ce17359bd4f2660800df042405ad"
+    },
+    {
+      "path": "project.sqlite-shm",
+      "bytes": 32768,
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+    },
+    {
+      "path": "project.sqlite-wal",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "summary": {
+    "audio_windows_checked": 1,
+    "audio_windows_failed": 0,
+    "blocks_compared": 7,
+    "index_observable_comparisons": 176,
+    "index_unobservable_comparisons": 64,
+    "max_block_level_db": 0.0320451363592511,
+    "max_local_luma_error": 2.0625,
+    "max_thumbnail_mad": 0.06610054347826087,
+    "min_block_snr_db": 25.38861866027327,
+    "min_chroma_psnr_db": 53.59295014636673,
+    "min_luma_psnr_db": 55.8077264033698,
+    "min_neighbor_margin_db": 0.0,
+    "nonzero_offsets": 0,
+    "offset_unobservable_windows": 0,
+    "offset_verified_windows": 1,
+    "pictures_checked": 121,
+    "pictures_failed": 0,
+    "pictures_without_index_neighbors": 0,
+    "signal_windows": 1
+  },
+  "windows": 1,
+  "presented_samples": 193794,
+  "qualification_limit": "Complete pre/post canonical PCM and limiter-gain bit oracle, plus canonical preview versus encoded audio; no independent DSP or listening claim."
+}

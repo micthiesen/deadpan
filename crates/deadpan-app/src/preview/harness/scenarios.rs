@@ -52,6 +52,7 @@ pub(super) fn run(name: &str, d: &mut Driver<'_>) -> Result<(), String> {
         "repeat-operator" => super::repeat_operator::run(d),
         "repeat-setters" => super::repeat_operator::run_setters(d),
         "groups" => super::groups::run(d),
+        "sound-group-endpoints" => super::sound_group_endpoints::run(d),
         "scoped-plays" => super::scoped_plays::run(d),
         "fixed-retime-duration" => super::scoped_plays::fixed_retime_duration::run(d),
         "owned-gap-duration" => super::scoped_plays::owned_gap_duration::run(d),

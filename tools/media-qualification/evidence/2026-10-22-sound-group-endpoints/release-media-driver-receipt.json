@@ -1,0 +1,10 @@
+{
+  "command": [
+    "python",
+    "/tmp/deadpan-sound-group-endpoints-2026-10-22/run_archive.py",
+    "release-media",
+    "test(sound_group_endpoint_splits_preserve_complete_pcm_and_verified_export)"
+  ],
+  "exit": 0,
+  "seconds": 44.78405704163015
+}

@@ -1,5 +1,7 @@
 #![cfg(target_os = "macos")]
 
+#[path = "preview_export/group_endpoints_export.rs"]
+mod group_endpoints_export;
 #[path = "support/physical_mac.rs"]
 mod physical_mac;
 #[path = "preview_export/recipes.rs"]

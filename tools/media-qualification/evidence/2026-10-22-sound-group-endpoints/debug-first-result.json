@@ -1,0 +1,36 @@
+{
+  "command": [
+    "/tmp/deadpan-sound-group-endpoints-2026-10-22/debug-first-bin/deadpan-app",
+    "--ui-check",
+    "--scenario",
+    "sound-group-endpoints",
+    "--mode",
+    "visual",
+    "--output",
+    "/tmp/deadpan-sound-group-endpoints-2026-10-22/debug-first-visual",
+    "--kestrel-source",
+    "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+  ],
+  "exit": 0,
+  "seconds": 16.96184454113245,
+  "source_inputs_and_executed_hashes_unchanged": true,
+  "failed": false,
+  "scenarios": [
+    {
+      "name": "kestrel-shortcuts",
+      "failed": false,
+      "checks": 1,
+      "frames": 0,
+      "failures": [],
+      "warnings": 0
+    },
+    {
+      "name": "sound-group-endpoints",
+      "failed": false,
+      "checks": 97,
+      "frames": 340,
+      "failures": [],
+      "warnings": 3
+    }
+  ]
+}

@@ -1,0 +1,173 @@
+{
+  "bank_version": 0,
+  "before_bank_version": 0,
+  "before_revision": "sound-group-endpoints-r04",
+  "committed": true,
+  "committed_registers": null,
+  "committed_revision": "e824bfb0-b179-47b0-979f-2013889b326a",
+  "context": {
+    "cursor": 5,
+    "original": null,
+    "parent": "0852b2f3-3692-4167-aac1-c68a44c96dee",
+    "scoped": null,
+    "selected_child": "e88a15b8-887c-4f63-8778-629118bec6bd",
+    "visual_selection": null
+  },
+  "edit": {
+    "changed_ids": [
+      "056eb18a-a55f-4f09-97c9-fe0750e84acd",
+      "0852b2f3-3692-4167-aac1-c68a44c96dee",
+      "3e9e597d-4a2d-45b3-baae-63868082fb26",
+      "acd384a3-b13c-415e-89a4-9b26da06c40b",
+      "bc7fa3fa-ddae-425a-85f9-6913a61e84ea",
+      "c1e15467-905c-4c62-8369-74f89f1c8c3a",
+      "e88a15b8-887c-4f63-8778-629118bec6bd",
+      "fcda052a-a9db-4b6c-8f6f-ac40fb686a1f",
+      "freeze-prefix"
+    ],
+    "description": "Apply resolved transaction",
+    "duration_delta": 0,
+    "new_revision": "e824bfb0-b179-47b0-979f-2013889b326a"
+  },
+  "generation_preparation_notices": [],
+  "generation_preparations": [],
+  "instruction_count": 3,
+  "mark_changes": [],
+  "operation": "apply",
+  "project_id": "235e504a-2900-4455-8aca-fb80c33a434c",
+  "protocol": 1,
+  "register_writes": [],
+  "trace": [
+    {
+      "after_cursor": 5,
+      "after_original": null,
+      "after_parent": "0852b2f3-3692-4167-aac1-c68a44c96dee",
+      "after_scoped": null,
+      "after_selected_child": null,
+      "after_visual_selection": {
+        "anchor": 5,
+        "extending": true,
+        "head": 5,
+        "type": "time"
+      },
+      "before_cursor": 5,
+      "before_original": null,
+      "before_revision": "sound-group-endpoints-r04",
+      "before_scope": {
+        "end": 121,
+        "start": 0
+      },
+      "before_scoped": null,
+      "before_selected_child": null,
+      "before_visual_selection": null,
+      "capture": null,
+      "capture_set": null,
+      "captured_child_label": null,
+      "depth": 0,
+      "instruction": {
+        "type": "begin_selection"
+      },
+      "parent": "0852b2f3-3692-4167-aac1-c68a44c96dee",
+      "removed_range": null,
+      "resolved_nodes": [],
+      "resolved_parent": null,
+      "resolved_range": null,
+      "resolved_ranges": [],
+      "resolved_selection": null
+    },
+    {
+      "after_cursor": 11,
+      "after_original": null,
+      "after_parent": "0852b2f3-3692-4167-aac1-c68a44c96dee",
+      "after_scoped": null,
+      "after_selected_child": "056eb18a-a55f-4f09-97c9-fe0750e84acd",
+      "after_visual_selection": {
+        "anchor": 5,
+        "extending": true,
+        "head": 11,
+        "type": "time"
+      },
+      "before_cursor": 5,
+      "before_original": null,
+      "before_revision": "sound-group-endpoints-r04",
+      "before_scope": {
+        "end": 121,
+        "start": 0
+      },
+      "before_scoped": null,
+      "before_selected_child": null,
+      "before_visual_selection": {
+        "anchor": 5,
+        "extending": true,
+        "head": 5,
+        "type": "time"
+      },
+      "capture": null,
+      "capture_set": null,
+      "captured_child_label": null,
+      "depth": 0,
+      "instruction": {
+        "count": 6,
+        "forward": true,
+        "type": "move_frames"
+      },
+      "parent": "0852b2f3-3692-4167-aac1-c68a44c96dee",
+      "removed_range": null,
+      "resolved_nodes": [],
+      "resolved_parent": null,
+      "resolved_range": null,
+      "resolved_ranges": [],
+      "resolved_selection": null
+    },
+    {
+      "after_cursor": 5,
+      "after_original": null,
+      "after_parent": "0852b2f3-3692-4167-aac1-c68a44c96dee",
+      "after_scoped": null,
+      "after_selected_child": "e88a15b8-887c-4f63-8778-629118bec6bd",
+      "after_visual_selection": null,
+      "before_cursor": 11,
+      "before_original": null,
+      "before_revision": "sound-group-endpoints-r04",
+      "before_scope": {
+        "end": 121,
+        "start": 0
+      },
+      "before_scoped": null,
+      "before_selected_child": "056eb18a-a55f-4f09-97c9-fe0750e84acd",
+      "before_visual_selection": {
+        "anchor": 5,
+        "extending": true,
+        "head": 11,
+        "type": "time"
+      },
+      "capture": null,
+      "capture_set": null,
+      "captured_child_label": null,
+      "depth": 0,
+      "instruction": {
+        "label": "Bounded sound group",
+        "selector": {
+          "type": "visual_selection"
+        },
+        "type": "group"
+      },
+      "parent": "0852b2f3-3692-4167-aac1-c68a44c96dee",
+      "removed_range": null,
+      "resolved_nodes": [],
+      "resolved_parent": "0852b2f3-3692-4167-aac1-c68a44c96dee",
+      "resolved_range": {
+        "end": 11,
+        "start": 5
+      },
+      "resolved_ranges": [],
+      "resolved_selection": {
+        "range": {
+          "end": 11,
+          "start": 5
+        },
+        "type": "range"
+      }
+    }
+  ]
+}

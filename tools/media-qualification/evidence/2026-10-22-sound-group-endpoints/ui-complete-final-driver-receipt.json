@@ -1,0 +1,9 @@
+{
+  "command": [
+    "python",
+    "/tmp/deadpan-sound-group-endpoints-2026-10-22/run_archive.py",
+    "ui-complete-final"
+  ],
+  "exit": 0,
+  "seconds": 71.47277770750225
+}

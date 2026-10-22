@@ -16,6 +16,9 @@ mod partial;
 #[path = "sound_clocks/split_owner.rs"]
 mod split_owner;
 
+#[path = "sound_clocks/group_endpoints.rs"]
+mod group_endpoints;
+
 struct ClockProvider {
     fixture: FixtureProvider,
     revision: RevisionId,

@@ -1,0 +1,39 @@
+{
+  "audio_windows": 1,
+  "blocks_compared": 7,
+  "canonical_channels": 2,
+  "canonical_pcm_oracle": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpKSaLXF/fixture/sound-group-endpoints-before-pcm.json",
+  "canonical_samples_compared": 193794,
+  "declared_audio_priming": 2048,
+  "failures": [],
+  "fixture": "sound-group-endpoints",
+  "frames": 121,
+  "independent_DSP_claim": false,
+  "listening_claim": false,
+  "max_block_level_db": 0.0320451363592511,
+  "max_thumbnail_mad": 0.06610054347826087,
+  "min_block_snr_db": 25.38861866027327,
+  "min_chroma_psnr_db": 53.59295014636673,
+  "min_luma_psnr_db": 55.8077264033698,
+  "min_neighbor_margin_db": 0.0,
+  "movie": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpKSaLXF/exports/sound-group-endpoints.mp4",
+  "notes": [
+    "Full qualified cfr-bframes Original; one silent frozen frame at zero; finite Original audio [40000,56016) at +37 samples with distinct event and owner EQ; independent root sound. Shared CLI semantic group [5,11), durable Undo/Redo, reopened history and portable owned media preserve all canonical authored/limited PCM and limiter gain bits. Every one of 121 pictures has a literal Original identity. This is not listening or independent DSP qualification."
+  ],
+  "offsets": [
+    [
+      "verified_zero",
+      0
+    ]
+  ],
+  "package": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpKSaLXF/fixture/sound-group-endpoints-portable.deadpan",
+  "passed": true,
+  "pictures": 121,
+  "render_seconds": 3.9972281670000003,
+  "revision": "541a4f0e-c84d-4877-b5ca-547675c1bd2f",
+  "rows": [
+    "Editable group slices with owned attachments"
+  ],
+  "signal_windows": 1,
+  "verify_seconds": 3.136692166
+}

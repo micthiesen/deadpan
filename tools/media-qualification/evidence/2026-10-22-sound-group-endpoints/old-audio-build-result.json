@@ -1,0 +1,19 @@
+{
+  "command": [
+    "cargo",
+    "nextest",
+    "list",
+    "--locked",
+    "-p",
+    "deadpan-audio",
+    "--test",
+    "audio_definition",
+    "--target-dir",
+    "/tmp/deadpan-sound-group-endpoints-2026-10-22/old-audio-target",
+    "--message-format",
+    "json"
+  ],
+  "cwd": "/tmp/deadpan-sound-group-endpoints-2026-10-22/old-audio-source",
+  "exit": 0,
+  "seconds": 35.49004204105586
+}

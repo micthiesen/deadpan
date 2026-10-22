@@ -1,0 +1,9 @@
+{
+  "source": "/tmp/deadpan-sound-group-endpoints-2026-10-22/baseline-target/debug/deps/sound_group_endpoints_counterfactual-015e49e37be7431a",
+  "executed": "/tmp/deadpan-sound-group-endpoints-2026-10-22/baseline-first-bin/sound_group_endpoints_counterfactual-015e49e37be7431a",
+  "sha256": "7653f62b26d4a66e0e47cf8269e01abcdc14a5080908d8d175f5ce3e502167ef",
+  "tests": [
+    "hold_owner_group_endpoints_follow_plain_split_and_aligned_group_controls",
+    "source_owner_group_endpoints_follow_plain_split_and_aligned_group_controls"
+  ]
+}

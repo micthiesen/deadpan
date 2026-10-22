@@ -1,0 +1,1 @@
+{"command":{"command":"set_audio_treatments","node":"056eb18a-a55f-4f09-97c9-fe0750e84acd","treatments":{"clip_gain":null,"equalizer":{"bass":3000,"middle":-1500,"treble":1000},"order":["equalizer"]}},"expected_revision":"sound-group-endpoints-r01","new_revision":"sound-group-endpoints-r02","project_id":"235e504a-2900-4455-8aca-fb80c33a434c","protocol":1}

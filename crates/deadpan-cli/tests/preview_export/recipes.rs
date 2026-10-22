@@ -34,6 +34,9 @@ use deadpan_core::{
 use deadpan_store::{AccessMode, ProjectStore};
 use serde_json::{Value, json};
 
+#[path = "group_endpoints_recipe.rs"]
+pub mod group_endpoints;
+
 #[path = "mixed_pause.rs"]
 pub mod mixed_pause;
 

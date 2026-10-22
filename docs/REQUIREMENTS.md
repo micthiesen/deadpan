@@ -2,6 +2,32 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
+## Attached-sound endpoint grouping, 2026-10-22
+
+[Qualification](qualification/sound-group-endpoints-2026-10-22.md) adds ordinary
+`GroupSelection` endpoint Splits through the existing checked sound transport.
+One complete pre-edit audio layout supplies both Original and independent sound
+clocks. Aligned groups keep their existing tables and recipes byte-for-byte.
+The group parent must remain outside every retained sound processing scope;
+root-owned BeatSound transport and processing-interior ownership changes still
+refuse. Existing partial copy, deletion, movement, pause and Repeat support is
+unchanged.
+
+All 14 focused Core/PCM/Store checks and the 97-check native debug replay pass.
+The real-media preflight compares every one of 193,794 canonical samples and
+limiter-gain bits through grouping, Undo/Redo and portable reopen, then verifies
+all 121 encoded pictures and the complete audio window at zero measured offset.
+All 4,904 broader and 1,292 UI-feature tests pass, as do strict ordinary/UI
+checks and formatting. Release replays pass 97 visual and 82 performance checks
+plus Kestrel in each mode; quiet input-to-state p99 is 1.420ms over 161 samples.
+Final release export repeats complete canonical bit equality and verifies all
+121 pictures and 193,794 samples at zero offset, minimum block SNR25.39dB.
+The extracted nine-file owner project validates and passes doctor without
+changing paths or bytes. Retained evidence records failed fixtures, the
+test-only lint correction, exact source/binary identities, four inspected
+captures, sparse commit latency and unobservable picture-neighbor comparisons.
+No requirement or gate is newly complete. SQLite 84/core 55 stay unchanged.
+
 ## Corrected transcript-search selectors, 2026-10-22
 
 [Qualification](qualification/transcript-search-selectors-2026-10-22.md) adds

@@ -1,0 +1,67 @@
+[
+  {
+    "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpKSaLXF/exports/deadpan-render-bb2b7d77-a261-43d5-8d2e-1f727f917bee.json",
+    "file": "exports__deadpan-render-bb2b7d77-a261-43d5-8d2e-1f727f917bee.json.gz",
+    "source_sha256": "f5f5b8a6f17c5e04948ae397b2e35155a313d1176ba25b2299f2762c67bd7f74"
+  },
+  {
+    "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpKSaLXF/fixture/macro-request.json",
+    "file": "fixture__macro-request.json.gz",
+    "source_sha256": "7daa601fa2329003a66a84b0fed1fd87edc2d1c15fcb3c4b8b0b4d8989946d5e"
+  },
+  {
+    "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpKSaLXF/fixture/request-sound-group-endpoints-r01.json",
+    "file": "fixture__request-sound-group-endpoints-r01.json.gz",
+    "source_sha256": "0fd22e406d38363fdb77a801f25bdc9b0aadd519ee20ad5922da5b3f5f40109b"
+  },
+  {
+    "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpKSaLXF/fixture/request-sound-group-endpoints-r02.json",
+    "file": "fixture__request-sound-group-endpoints-r02.json.gz",
+    "source_sha256": "7af924dea02337a50c15910ac81a6df7eb5b8f1f383ce0ef33c15ef75a8cfcda"
+  },
+  {
+    "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpKSaLXF/fixture/request-sound-group-endpoints-r03.json",
+    "file": "fixture__request-sound-group-endpoints-r03.json.gz",
+    "source_sha256": "1031341eea031786c540f5b0e5d7b159a65b12797befcd5eb1742be7da670b6a"
+  },
+  {
+    "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpKSaLXF/fixture/request-sound-group-endpoints-r04.json",
+    "file": "fixture__request-sound-group-endpoints-r04.json.gz",
+    "source_sha256": "422db401a221b7dcf0d438f360340c1c5d3c0bcf28ed4b68905ffddacfe4fede"
+  },
+  {
+    "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpKSaLXF/fixture/sound-group-endpoints-authored-evidence.json",
+    "file": "fixture__sound-group-endpoints-authored-evidence.json.gz",
+    "source_sha256": "9d12dbc8a72d31a3c3f308d2190d48ad43ac412148fa354fd2c6e59e721a592d"
+  },
+  {
+    "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpKSaLXF/fixture/sound-group-endpoints-before-pcm.json",
+    "file": "fixture__sound-group-endpoints-before-pcm.json.gz",
+    "source_sha256": "cea8769f620462b899c5140361af06ff0f6e4dd29a32180660309e851eb39a8a"
+  },
+  {
+    "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpKSaLXF/fixture/sound-group-endpoints-macro.stdout.json",
+    "file": "fixture__sound-group-endpoints-macro.stdout.json.gz",
+    "source_sha256": "3bcb7ad439cbf1e4da2b2d4791c312f475ba90cc4f327288cdaa47ce90ac1771"
+  },
+  {
+    "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpKSaLXF/fixture/sound-group-endpoints-portable-copy.json",
+    "file": "fixture__sound-group-endpoints-portable-copy.json.gz",
+    "source_sha256": "57fcda73abcd2aadee9141055487e919fdd98a0d5048fa54417a956ed89708e0"
+  },
+  {
+    "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpKSaLXF/sound-group-endpoints-summary.json",
+    "file": "sound-group-endpoints-summary.json.gz",
+    "source_sha256": "1f55581b1995b0157ab96446598950ee874abd6c552d3baa4dd3174cf45e2ca0"
+  },
+  {
+    "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpKSaLXF/sound-group-endpoints-verification.json",
+    "file": "sound-group-endpoints-verification.json.gz",
+    "source_sha256": "78a7eeecb2be9fd416bc4612b663eb442ee47f273257efd5b8a1602013084d07"
+  },
+  {
+    "source": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpKSaLXF/exports/sound-group-endpoints.mp4",
+    "file": "sound-group-endpoints.mp4",
+    "source_sha256": "e6247d7a5b70384024c710b62293f69818211c3b415652f43a81e1d622308895"
+  }
+]

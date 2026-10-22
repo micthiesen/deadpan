@@ -4,6 +4,38 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Current continuation, 2026-10-22
 
+Ordinary `GroupSelection` endpoint Splits now use existing sound transport with
+one shared complete pre-edit audio layout. Aligned grouping keeps tables and
+recipes unchanged. The group parent must stay outside every retained processing
+scope. Root-owned BeatSound transport, actual processing-interior changes and
+removal of a Sequence's own sounds still refuse.
+
+Local qualification passes. All 14 focused Core/PCM/Store cases and 97 native
+debug workflow checks pass. The debug real-media preflight preserves all 193,794
+canonical samples and limiter-gain bits through grouping, Undo/Redo and portable
+reopen, and verifies all 121 encoded pictures and the complete audio window at
+zero offset. All 4,904 broader and 1,292 UI-feature tests, strict ordinary/UI
+checks and formatting pass. Release visual/performance replays pass 97/82
+checks plus Kestrel each, with quiet state p99 1.420ms over 161 samples.
+Final release export repeats complete canonical bit equality and verifies all
+121 pictures and 193,794 samples at zero offset. The safely extracted nine-file
+owner project validates and passes doctor without changing paths or bytes. See
+[qualification](../qualification/sound-group-endpoints-2026-10-22.md) for exact
+controls, failed fixtures, sparse timing evidence and input/executable identities.
+SQLite 84/core 55 stay unchanged. No requirement or gate is newly complete.
+
+Scratch sources, logs and orchestration are under
+`/tmp/deadpan-sound-group-endpoints-2026-10-22/`. A read-only next-scope design is
+there too; it is not implemented or verified. Next investigate aligned grouping
+inside an unnecessarily broad ordinary Sequence journal scope, proving narrower
+historical owner scopes before changing any refusal. Do not admit actual
+processor interiors or cropped/Repeat/Retime histories by dropping the guard.
+Partial copy, DeleteRange,
+MoveRange, pause insertion and RepeatSelection already work. Remaining temporal
+families, sound scopes, mastering, renderer and workflows remain open.
+
+## Corrected transcript-search checkpoint, 2026-10-22
+
 Corrected transcript search now produces separate interval selections through
 `:select search="hello world"` in ordinary Your edit with Linked role. Saved
 queries resolve each staged document afresh. Canonical provider-clock coverage
@@ -30,17 +62,6 @@ extracted nine-file owner project validates and passes doctor without changes.
 See [qualification](../qualification/transcript-search-selectors-2026-10-22.md)
 for failed candidates, layout warnings, source/executable audits and audio limits.
 No requirement or gate is newly complete. SQLite 84/core 55 stay unchanged.
-
-Next: ordinary GroupSelection endpoint Splits for attached-sound owners,
-reusing existing Split transport while keeping the group parent outside every
-retained processing scope. Partial copy, DeleteRange, MoveRange, pause insertion
-and RepeatSelection already work. Do not broaden their scope or remove the
-separate processing-interior refusal. Read-only design and uncompiled public,
-PCM and Store test drafts are under
-`/tmp/deadpan-sound-group-endpoints-2026-10-22/`; they are not runtime evidence.
-Start with committed-source public controls and the exact old endpoint refusal.
-Remaining temporal families, sound scopes, mastering, renderer and workflows
-remain open.
 
 ## Discontiguous interval checkpoint, 2026-10-22
 

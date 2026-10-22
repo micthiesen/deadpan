@@ -1,0 +1,18 @@
+{
+  "base_commit": "7ecd222a5cfef8e3cc43f0f9908f4141fe40a913",
+  "archive_selected_paths": [
+    "Cargo.toml",
+    "Cargo.lock",
+    "rust-toolchain.toml",
+    ".cargo",
+    "crates",
+    "native",
+    "docs/COMMANDS.md"
+  ],
+  "base_rust_files": 1967,
+  "all_base_rust_match_recorded_git_blobs": true,
+  "control_addition": "crates/deadpan-audio/tests/audio_definition/sound_clocks/group_endpoints.rs",
+  "only_modified_base_rust": "crates/deadpan-audio/tests/audio_definition/sound_clocks.rs",
+  "modified_module_is_only_test_registration": true,
+  "core_production_identical_to_committed_baseline": true
+}

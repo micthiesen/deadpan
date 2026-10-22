@@ -1,0 +1,47 @@
+{
+  "source_sqlite": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpX9fm4U/fixture/transcript-search-portable.deadpan/project.sqlite",
+  "source_sqlite_read_mode": "ro",
+  "source_history_id": 1,
+  "asset_id": "5ced4d7d-272f-46f0-a901-b0c82f67fd2b",
+  "asset_record": {
+    "label": "original",
+    "content_hash": "blake3:16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+    "video": {
+      "start": {
+        "ticks": 0,
+        "time_base": {
+          "numerator": 1,
+          "denominator": 30000
+        }
+      },
+      "end": {
+        "ticks": 120120,
+        "time_base": {
+          "numerator": 1,
+          "denominator": 30000
+        }
+      }
+    },
+    "audio": {
+      "start": {
+        "ticks": 0,
+        "time_base": {
+          "numerator": 1,
+          "denominator": 48000
+        }
+      },
+      "end": {
+        "ticks": 192192,
+        "time_base": {
+          "numerator": 1,
+          "denominator": 48000
+        }
+      }
+    },
+    "still_image": false,
+    "frame_count": 120,
+    "source_qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6"
+  },
+  "publication_report": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpX9fm4U/exports/deadpan-render-e13129f0-0c33-456d-8f95-5510fd1b8831.json",
+  "scope": "Existing actual qualified asset metadata only; authored graph and sound recipes in the Core oracle are synthetic. This extraction creates no media admission or new qualification."
+}

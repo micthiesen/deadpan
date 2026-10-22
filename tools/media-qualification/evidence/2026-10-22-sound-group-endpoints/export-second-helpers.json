@@ -1,0 +1,18 @@
+{
+  "deadpan-cli": {
+    "path": "/tmp/deadpan-sound-group-endpoints-2026-10-22/export-second-extracted/target/debug/deadpan-cli",
+    "sha256": "ce5bd67f5fc6bd2ebedff0b940ce859b5441e710af631b16f5a72350796ad68b"
+  },
+  "deadpan-media-worker": {
+    "path": "/tmp/deadpan-sound-group-endpoints-2026-10-22/export-second-extracted/target/debug/deadpan-media-worker",
+    "sha256": "786672d36a58e024be1acb18f353c350c06a7c83dd88c84369e69a9512a13c5d"
+  },
+  "deadpan-transcribe": {
+    "path": "/tmp/deadpan-sound-group-endpoints-2026-10-22/export-second-extracted/target/debug/deadpan-transcribe",
+    "sha256": "473b69ac2024d691236637017ebea298a08e0f88de2ff3801a948bf866f71362"
+  },
+  "deadpan-track": {
+    "path": "/tmp/deadpan-sound-group-endpoints-2026-10-22/export-second-extracted/target/debug/deadpan-track",
+    "sha256": "18861c06d2d468b4e161c2b99110ffc1d5ea99a926e1685d5893437583760244"
+  }
+}

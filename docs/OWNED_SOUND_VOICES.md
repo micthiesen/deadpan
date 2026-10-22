@@ -261,15 +261,26 @@ for sample comparisons, exact rounding checks, review and limits.
 
 ## Neutral grouping
 
-`Group`, `GroupSelection` and `Ungroup` preserve absolute time, so they keep
-saved sound clocks, timing layouts and owner recipes unchanged when the change
-lies outside every retained journal scope. A wrapper may stay in place through
-later timing edits; the journal's scope still names the same processing subtree.
-Grouping or ungrouping inside a retained scope, removing a Sequence that owns
-sounds, and selected groups that need endpoint Splits refuse atomically.
+`Group`, aligned `GroupSelection` and `Ungroup` preserve absolute time, so they
+keep saved sound clocks, timing layouts and owner recipes unchanged when the
+change lies outside every retained journal scope. A wrapper may stay in place
+through later timing edits; the journal's scope still names the same processing
+subtree.
+
+`GroupSelection` endpoint Splits use the existing checked sound transport and
+one shared complete pre-edit audio layout. Source/Hold fragments retain the full
+owner's processing input, independent event recipes, phase, prior journals and
+delivery crops. The group parent must remain outside every retained processing
+scope. Aligned grouping skips this capture entirely. Grouping or ungrouping
+inside a retained scope, root-owned BeatSound transport and removing a Sequence
+that owns sounds still refuse atomically. Separate root SoundEvents coexist
+without changing their recipes.
 Core tests cover direct, child, sibling and range groups plus refusals; the audio
 definition test compares rendered occurrence PCM before grouping, after a later
 Hold insertion and deletion, and after Ungroup.
+See [endpoint grouping qualification](qualification/sound-group-endpoints-2026-10-22.md)
+for complete PCM, durable history, native workflow and real-media checks, plus
+the current qualification status and retained failures.
 
 ## Authored bus and remaining work
 

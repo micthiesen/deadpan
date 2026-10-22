@@ -64,6 +64,7 @@ mod scoped_plays;
 mod semantic;
 mod shots;
 mod slip;
+mod sound_group_endpoints;
 mod sound_placement;
 mod sound_playback;
 mod sound_relink;

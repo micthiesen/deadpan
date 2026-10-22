@@ -1,0 +1,12 @@
+{
+  "checks": {
+    "validate": {
+      "exit": 0
+    },
+    "doctor": {
+      "exit": 0
+    }
+  },
+  "binary_sha256": "2be7c932508f2c04a4a4f970bf8d5464655dbc83706b0fe2573d292f9710f0f7",
+  "package_paths_and_bytes_unchanged_after_validation": true
+}

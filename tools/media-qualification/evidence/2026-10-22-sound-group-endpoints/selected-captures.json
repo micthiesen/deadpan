@@ -1,0 +1,30 @@
+[
+  {
+    "mode": "debug-first-visual",
+    "file": "sound-group-endpoints-121.png",
+    "sha256": "31fc9aa460c4595d571722564b3336d40c4c56c0b35dd3a0e38a5a9d832bd145",
+    "checkpoint": "Sound endpoint group with intact picture and key teaching at 960x640",
+    "frame": 141
+  },
+  {
+    "mode": "debug-first-visual",
+    "file": "sound-group-endpoints-122.png",
+    "sha256": "4ee2100c219e7523a47e7faa0c71b525f1f49b7ba665fa597086c0f3803e369e",
+    "checkpoint": "Sound endpoint group breadcrumb and parent key at 960x640",
+    "frame": 144
+  },
+  {
+    "mode": "release-visual",
+    "file": "sound-group-endpoints-121.png",
+    "sha256": "31fc9aa460c4595d571722564b3336d40c4c56c0b35dd3a0e38a5a9d832bd145",
+    "checkpoint": "Sound endpoint group with intact picture and key teaching at 960x640",
+    "frame": 160
+  },
+  {
+    "mode": "release-visual",
+    "file": "sound-group-endpoints-122.png",
+    "sha256": "4ee2100c219e7523a47e7faa0c71b525f1f49b7ba665fa597086c0f3803e369e",
+    "checkpoint": "Sound endpoint group breadcrumb and parent key at 960x640",
+    "frame": 163
+  }
+]

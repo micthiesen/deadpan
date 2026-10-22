@@ -29,6 +29,7 @@ pub(crate) fn timing(command: &Command) -> Option<&AudioTimingId> {
         | Command::SpliceSliceAt { timing, .. }
         | Command::ReplaceSlice { timing, .. }
         | Command::ReplaceSliceChildren { timing, .. }
+        | Command::GroupSelection { timing, .. }
         | Command::RepeatSelection { timing, .. }
         | Command::SetRepeatPlays { timing, .. }
         | Command::SetRepeatGaps { timing, .. }
@@ -100,6 +101,18 @@ impl SoundClockEditCapture {
         command: &Command,
         allocation: &RevisionId,
     ) -> Result<Option<Self>, EditError> {
+        // Aligned neutral grouping changes no delivery crop. Preserve its
+        // existing journals and timing tables without detach or recapture.
+        if let Command::GroupSelection {
+            parent, selection, ..
+        } = command
+            && document
+                .group_selection(parent, selection)?
+                .required_split_ids
+                == 0
+        {
+            return Ok(None);
+        }
         let Some(timing) =
             capture_timing(command, allocation).filter(|_| !document.beat_sounds.is_empty())
         else {

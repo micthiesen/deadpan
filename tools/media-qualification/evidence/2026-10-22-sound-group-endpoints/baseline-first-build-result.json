@@ -1,0 +1,18 @@
+{
+  "command": [
+    "cargo",
+    "nextest",
+    "list",
+    "--locked",
+    "-p",
+    "deadpan-core",
+    "--test",
+    "sound_group_endpoints_counterfactual",
+    "--target-dir",
+    "/tmp/deadpan-sound-group-endpoints-2026-10-22/baseline-target",
+    "--message-format",
+    "json"
+  ],
+  "exit": 0,
+  "seconds": 37.019259583204985
+}

@@ -361,7 +361,8 @@ pub(crate) fn validate_command(
 
 /// Neutral wrappers preserve absolute clocks, including the placement implicit
 /// in a journal's current scope. They must not change or remove that scope's
-/// paired subtree, split an attachment owner, or discard a group's own sounds.
+/// paired subtree or discard a group's own sounds. Endpoint Splits use the
+/// checked sound transport around the structural reducer.
 fn validate_group_ownership(
     document: &ProjectDocument,
     command: &Command,
@@ -371,17 +372,7 @@ fn validate_group_ownership(
         Command::GroupSelection {
             parent, selection, ..
         } => {
-            if !document.beat_sounds.is_empty()
-                && document
-                    .group_selection(parent, selection)?
-                    .required_split_ids
-                    != 0
-            {
-                return Err(EditError::new(
-                    EditErrorCode::InvalidCommand,
-                    "group endpoint splits cannot yet preserve beat-owned sound clocks",
-                ));
-            }
+            document.group_selection(parent, selection)?;
             parent
         }
         Command::Ungroup { node } => {

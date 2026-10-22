@@ -154,31 +154,48 @@ fn ungroup_never_discards_a_sequences_own_sounds_with_or_without_clocks() {
 }
 
 #[test]
-fn selected_groups_still_refuse_partial_sound_owners_with_or_without_clocks() {
-    for clocked in [false, true] {
-        let mut before = fixture();
-        let start = if clocked {
-            before = edit(&before, "shifted", insert("shifted", 0, 2));
-            4
-        } else {
-            2
-        };
-        let selection = SliceCaptureSelection::Range {
-            range: range(start, start + 1),
-        };
-        assert!(
-            before
-                .group_selection(&node("top"), &selection)
-                .unwrap()
-                .required_split_ids
-                > 0
-        );
-        let command = selected_group(&before, "top", selection);
-        let snapshot = before.to_json().unwrap();
-        let error = apply(&before, &request(&before, "grouped", command)).unwrap_err();
-        assert!(error.message.contains("group endpoint splits"), "{error}");
-        assert_eq!(before.to_json().unwrap(), snapshot);
+fn selected_group_endpoints_transport_unclocked_sound_owners() {
+    let before = fixture();
+    let selection = SliceCaptureSelection::Range { range: range(2, 3) };
+    assert!(
+        before
+            .group_selection(&node("top"), &selection)
+            .unwrap()
+            .required_split_ids
+            > 0
+    );
+    let grouped = edit(
+        &before,
+        "grouped",
+        selected_group(&before, "top", selection),
+    );
+    assert_eq!(grouped.duration().unwrap(), before.duration().unwrap());
+    assert_eq!(grouped.node_duration(&node("group")).unwrap(), frames(1));
+    assert_eq!(grouped.beat_sounds.len(), 3);
+    for sounds in grouped.beat_sounds.values() {
+        assert_eq!(sounds, &before.beat_sounds[&node("owner")]);
     }
+}
+
+#[test]
+fn selected_group_endpoints_still_refuse_retained_scope_interiors() {
+    let before = edit(&fixture(), "shifted", insert("shifted", 0, 2));
+    let selection = SliceCaptureSelection::Range { range: range(4, 5) };
+    assert!(
+        before
+            .group_selection(&node("top"), &selection)
+            .unwrap()
+            .required_split_ids
+            > 0
+    );
+    let command = selected_group(&before, "top", selection);
+    let snapshot = before.to_json().unwrap();
+    let error = apply(&before, &request(&before, "grouped", command)).unwrap_err();
+    assert!(
+        error.message.contains("inside a retained beat sound scope"),
+        "{error}"
+    );
+    assert_eq!(before.to_json().unwrap(), snapshot);
 }
 
 #[test]

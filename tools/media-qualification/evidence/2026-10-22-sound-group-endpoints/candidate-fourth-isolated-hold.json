@@ -1,0 +1,10 @@
+{
+  "binary": "/private/tmp/deadpan-sound-group-endpoints-2026-10-22/candidate-fourth-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+  "sha256": "2193da09e6b613a4929b51f1bbc0e8544e1491bf54c368d6195b81e13b73f67e",
+  "test": "voice_occurrence::beat_sounds::sound_clocks::group_endpoints::endpoint_hold_groups_keep_permitted_sound_and_room_tone_phase",
+  "exit": 101,
+  "expected_original_fixture_assertion": true,
+  "seconds": 2.1801305832341313,
+  "stdout_stderr_reached_eof": true,
+  "scope": "Resolve concurrent output-handle warning using the same retained failing executable. This remains a failed fixture check, not passing candidate evidence."
+}

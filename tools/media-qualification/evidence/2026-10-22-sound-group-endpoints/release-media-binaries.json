@@ -1,0 +1,9 @@
+{
+  "deadpan-cli::preview_export": {
+    "path": "/private/tmp/deadpan-sound-group-endpoints-2026-10-22/release-media-extracted/target/release/deps/preview_export-633f4b90e83a29ac",
+    "sha256": "22f19bb99d055ca8a685824694fb904e2eff9ef31dd7d140e8fdc25387d0b0dc",
+    "tests": [
+      "group_endpoints_export::sound_group_endpoint_splits_preserve_complete_pcm_and_verified_export"
+    ]
+  }
+}

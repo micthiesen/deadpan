@@ -1,0 +1,34 @@
+[
+  {
+    "test": "voice_occurrence::beat_sounds::sound_clocks::group_endpoints::endpoint_grouping_plain_split_and_aligned_controls_preserve_complete_pcm",
+    "exit": 0,
+    "expected_pass": true,
+    "expected_outcome": true,
+    "seconds": 13.845327083952725,
+    "sha256": "2100948fc9a61853e49d0ac8316aca6f91c616911a544e70df73c359f5ecdfc5"
+  },
+  {
+    "test": "voice_occurrence::beat_sounds::sound_clocks::group_endpoints::endpoint_group_control_range_copy_has_exact_pcm_at_same_ntsc_phase",
+    "exit": 0,
+    "expected_pass": true,
+    "expected_outcome": true,
+    "seconds": 10.53285612538457,
+    "sha256": "2100948fc9a61853e49d0ac8316aca6f91c616911a544e70df73c359f5ecdfc5"
+  },
+  {
+    "test": "voice_occurrence::beat_sounds::sound_clocks::group_endpoints::endpoint_groups_keep_every_ntsc_sample_through_event_and_shared_eq",
+    "exit": 101,
+    "expected_pass": false,
+    "expected_outcome": true,
+    "seconds": 0.04906800016760826,
+    "sha256": "2100948fc9a61853e49d0ac8316aca6f91c616911a544e70df73c359f5ecdfc5"
+  },
+  {
+    "test": "voice_occurrence::beat_sounds::sound_clocks::group_endpoints::endpoint_group_copy_keeps_full_owner_processing_and_both_cropped_seams",
+    "exit": 101,
+    "expected_pass": false,
+    "expected_outcome": true,
+    "seconds": 0.04781866725534201,
+    "sha256": "2100948fc9a61853e49d0ac8316aca6f91c616911a544e70df73c359f5ecdfc5"
+  }
+]

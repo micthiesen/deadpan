@@ -1,0 +1,32 @@
+{
+  "deadpan-audio::audio_definition": {
+    "path": "/private/tmp/deadpan-sound-group-endpoints-2026-10-22/candidate-third-extracted/target/debug/deps/audio_definition-c96031fa583d4fc1",
+    "sha256": "00c52f450f9c7003f67f4d3dc7026cf2dc222963c9f02fe1d7ca5751a41d7617",
+    "tests": [
+      "voice_occurrence::beat_sounds::sound_clocks::group_endpoints::endpoint_group_control_range_copy_has_exact_pcm_at_same_ntsc_phase",
+      "voice_occurrence::beat_sounds::sound_clocks::group_endpoints::endpoint_group_copy_keeps_full_owner_processing_and_both_cropped_seams",
+      "voice_occurrence::beat_sounds::sound_clocks::group_endpoints::endpoint_grouping_plain_split_and_aligned_controls_preserve_complete_pcm",
+      "voice_occurrence::beat_sounds::sound_clocks::group_endpoints::endpoint_groups_keep_every_ntsc_sample_through_event_and_shared_eq",
+      "voice_occurrence::beat_sounds::sound_clocks::group_endpoints::endpoint_groups_keep_independent_root_sound_in_its_original_clock"
+    ]
+  },
+  "deadpan-core::sound_group_endpoints_counterfactual": {
+    "path": "/private/tmp/deadpan-sound-group-endpoints-2026-10-22/candidate-third-extracted/target/debug/deps/sound_group_endpoints_counterfactual-05be636073442a06",
+    "sha256": "8ff0c863221c23e448efb3a82ffd0448bc0400e0380d006dbb87f5749a9154a7",
+    "tests": [
+      "endpoint_sound_alias_limit_refuses_without_changing_the_entry_document",
+      "hold_owner_group_endpoints_follow_plain_split_and_aligned_group_controls",
+      "root_owned_attachment_keeps_aligned_groups_and_refuses_endpoint_transport",
+      "source_owner_group_endpoints_follow_plain_split_and_aligned_group_controls"
+    ]
+  },
+  "deadpan-store::source_registration": {
+    "path": "/private/tmp/deadpan-sound-group-endpoints-2026-10-22/candidate-third-extracted/target/debug/deps/source_registration-6ebd22b991ad32f8",
+    "sha256": "a5b7013fe2806f58fa9018a67ace186b1ed166bc388a22a6a2f3d9acd8910c22",
+    "tests": [
+      "sounds::beat_sounds::sound_clocks::group_endpoints::endpoint_group_capture_seam_paste_recopy_and_reopen_keep_complete_sound_recipes",
+      "sounds::beat_sounds::sound_clocks::group_endpoints::endpoint_group_inside_retained_scope_still_refuses_without_durable_writes",
+      "sounds::beat_sounds::sound_clocks::group_endpoints::endpoint_groups_commit_atomically_keep_prior_sound_journals_and_reopen_undo_redo"
+    ]
+  }
+}

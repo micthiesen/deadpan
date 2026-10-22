@@ -1,0 +1,16 @@
+[
+  {
+    "test": "hold_owner_group_endpoints_follow_plain_split_and_aligned_group_controls",
+    "exit": 101,
+    "seconds": 0.007873624563217163,
+    "expected_exact_endpoint_refusal_after_both_positive_controls": true,
+    "sha256": "7653f62b26d4a66e0e47cf8269e01abcdc14a5080908d8d175f5ce3e502167ef"
+  },
+  {
+    "test": "source_owner_group_endpoints_follow_plain_split_and_aligned_group_controls",
+    "exit": 101,
+    "seconds": 0.0044672079384326935,
+    "expected_exact_endpoint_refusal_after_both_positive_controls": true,
+    "sha256": "7653f62b26d4a66e0e47cf8269e01abcdc14a5080908d8d175f5ce3e502167ef"
+  }
+]
