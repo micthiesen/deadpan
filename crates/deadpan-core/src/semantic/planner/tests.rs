@@ -11,6 +11,7 @@ mod explode;
 mod framing;
 mod gag_edit;
 mod group;
+mod inspected_hold_duration;
 mod objects;
 mod original;
 mod pause;
@@ -71,6 +72,7 @@ fn context(parent: &str, cursor: i64) -> SemanticContext {
     SemanticContext {
         original: None,
         scoped: None,
+        hold_duration: None,
         parent: node(parent),
         cursor: ProjectFrame(cursor),
         selected_child: None,

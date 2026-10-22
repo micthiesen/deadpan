@@ -149,19 +149,9 @@ impl DeadpanApp {
     /// Reuse ordinary Hold parameter entry, retaining the captured play when
     /// command mode opens. Admission still runs against that exact snapshot.
     pub(super) fn scoped_hold_parameter(&self) -> Option<String> {
-        let workspace = self.workspace.as_ref()?;
-        if !self.scoped.as_ref()?.hold_duration_available() {
-            return None;
-        }
-        let target = self.scoped_target().ok()??;
-        if !target.has_single_play_authority() {
-            return None;
-        }
-        let NodeKind::Hold { recipe } = &workspace.document.nodes().get(&target.target.node)?.kind
-        else {
-            return None;
-        };
-        Some(format!("hold-duration {}f", recipe.duration.frames()))
+        self.scoped
+            .as_ref()?
+            .hold_parameter(self.workspace.as_ref()?)
     }
 
     pub(super) fn inspected_target_matches(&self, node: &NodeId, target: Option<&Target>) -> bool {
@@ -685,6 +675,7 @@ impl DeadpanApp {
             NodeKind::Sequence { .. } | NodeKind::Repeat { .. } | NodeKind::Retime { .. }
         );
         let scope = state.scope_label(workspace).unwrap_or_else(|error| error);
+        let repeated = !state.selected_target().repeats.is_empty();
         let reason = state.no_picture_reason(workspace).ok().flatten();
         let interval = state.visible_range(workspace).ok().flatten().map(|range| {
             let boundary = |value: deadpan_core::ExactRatio| {
@@ -711,7 +702,11 @@ impl DeadpanApp {
                     style::ink_padded_label(ui, style::semibold(label).size(16.0), None);
                     ui.colored_label(style::LAVENDER, scope);
                     if let Some(interval) = interval { ui.small(interval); }
-                    ui.small("All plays changes the shared definition. Existing overrides keep their own changes.");
+                    ui.small(if repeated {
+                        "All plays changes the shared definition. Existing overrides keep their own changes."
+                    } else {
+                        "Changes apply to this beat inside the Retime."
+                    });
                     if let Some(reason) = reason { ui.add_space(8.0); ui.weak(reason); ui.small("The viewer retains its last displayed picture."); }
                     let ready = !self.service.is_busy() && !self.dialogs.is_open();
                     ui.add_space(4.0);
@@ -721,7 +716,7 @@ impl DeadpanApp {
                         self.open_inspector_parameter(ui.ctx());
                     }
                     if hold && hold_parameter.is_none() {
-                        ui.small("Pause length needs This play at every level, with no Retime ancestor or attached sounds.");
+                        ui.small("Pause length needs a visible ordinary Hold inside fixed Edit Retimes, or This play at every Repeat level with no Retime ancestor or attached sounds.");
                     }
                     ui.add_space(8.0);
                     ui.label(style::section_title("EDIT", false));

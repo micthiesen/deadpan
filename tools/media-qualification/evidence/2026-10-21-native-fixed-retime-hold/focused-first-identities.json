@@ -1,0 +1,19 @@
+{
+  "tests": 13,
+  "passed": 11,
+  "failed": 2,
+  "exit_code": 100,
+  "failure": "service test incorrectly expected one transaction_steps row for four changed duration instructions; revision/history counts already correct",
+  "binaries": {
+    "deadpan_core-": {
+      "path": "target/debug/deps/deadpan_core-99ef176a441abc2a",
+      "retained": "/tmp/deadpan-native-fixed-retime-hold-2026-10-21/first-deadpan_core-test",
+      "sha256": "e87ff1137d496fe18362b640f18a66ac7d54bda4ef5b87295ff4a833297fd95b"
+    },
+    "deadpan_app-": {
+      "path": "target/debug/deps/deadpan_app-1665fcaccc742208",
+      "retained": "/tmp/deadpan-native-fixed-retime-hold-2026-10-21/first-deadpan_app-test",
+      "sha256": "ef09a50e83aafd842711d4ae55a8796ee2f0a1225e9f80b55d2a022a85bb5d62"
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "base": "ed33550d",
+  "binary": "target/debug/deps/deadpan_app-edbbed39ebf1d72f",
+  "sha256": "c72079695e63377f947a5f4898506836f5ae94275bc6f6cc87718f0a26e70661",
+  "exit_code": 100,
+  "tests": 2,
+  "fixture_setup_failed": 2,
+  "valid_positive_failures": 0,
+  "classification": "Original import ended Failed before intended availability assertion"
+}

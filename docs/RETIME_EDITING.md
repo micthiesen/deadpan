@@ -89,8 +89,12 @@ An independent sound on the fixed Retime output keeps its exact source phase,
 sample offset and journal when an interior Hold changes. Its proof checks the
 unchanged output owner and placement ancestry; the current physical operand
 still rebuilds. Child-owned sounds whose processing subtree changes retain
-their explicit refusal. Native Hold editing beneath Retime ancestry remains
-outside the current UI timing gate. See the
+their explicit refusal. The native inspector now exposes ordinary Hold resizing
+inside fixed unclocked Edit Retimes with no Repeat ancestry. Its duration-only
+capture supports Enter, command entry, recording, calls and dot, continuing at
+the first sampled visible picture after every crop. See the
+[native qualification](qualification/native-fixed-retime-hold-2026-10-21.md) and
+the
 [output-sound qualification](qualification/fixed-retime-output-sound-2026-10-21.md).
 This remains separate from the dedicated clocked-Retime duration path.
 

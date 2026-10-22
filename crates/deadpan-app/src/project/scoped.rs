@@ -30,6 +30,48 @@ pub struct Target {
 }
 
 impl Target {
+    /// Duration-only authority for a visible ordinary Hold under fixed windows.
+    /// This deliberately does not grant generic framing or one-play authority.
+    pub fn semantic_hold_duration(
+        &self,
+        workspace: &Workspace,
+    ) -> Result<deadpan_core::SemanticHoldDurationContext, String> {
+        self.validate(workspace)?;
+        if !self.also.is_empty() || !self.target.repeats.is_empty() {
+            return Err("Ordinary pause length requires one Hold without Repeat ancestry.".into());
+        }
+        let authority = deadpan_core::SemanticHoldDurationContext {
+            root: self.root.clone(),
+            target: self.target.node.clone(),
+            presentation: self
+                .presentation
+                .clone()
+                .ok_or("This Hold has no visible picture.")?,
+        };
+        let owner = self.scope.resolve(workspace)?;
+        let visible = workspace
+            .document
+            .ordinary_hold_duration_visibility(owner.owner, &authority)
+            .map_err(|error| error.to_string())?;
+        for frame in [
+            visible.frames.start(),
+            ProjectFrame(visible.frames.end().0 - 1),
+        ] {
+            let picture = workspace
+                .plan
+                .picture(frame)
+                .map_err(|error| error.to_string())?;
+            if !picture
+                .framing
+                .iter()
+                .any(|layer| layer.instance == authority.presentation)
+            {
+                return Err("The visible pause no longer presents the captured Hold.".into());
+            }
+        }
+        Ok(authority)
+    }
+
     /// Structural admission only; callers must still validate the captured target.
     pub fn has_single_play_authority(&self) -> bool {
         self.also.is_empty()

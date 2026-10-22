@@ -1,0 +1,91 @@
+{
+  "summary": {
+    "audio_windows_checked": 2,
+    "audio_windows_failed": 0,
+    "blocks_compared": 38,
+    "index_observable_comparisons": 12,
+    "index_unobservable_comparisons": 8,
+    "max_block_level_db": 0.11775026037060776,
+    "max_local_luma_error": 1.9375,
+    "max_thumbnail_mad": 0.051953125,
+    "min_block_snr_db": 31.051172365885794,
+    "min_chroma_psnr_db": 52.24341921598174,
+    "min_luma_psnr_db": 55.57933537861243,
+    "min_neighbor_margin_db": 0.0,
+    "nonzero_offsets": 0,
+    "offset_unobservable_windows": 0,
+    "offset_verified_windows": 2,
+    "pictures_checked": 11,
+    "pictures_failed": 0,
+    "pictures_without_index_neighbors": 0,
+    "signal_windows": 2
+  },
+  "passed": true,
+  "movie": {
+    "audio": {
+      "first_pts": -2048,
+      "gaps": [],
+      "physical_samples": 20480,
+      "presented_end": 17618
+    },
+    "audio_edits": {
+      "edits": 1,
+      "empty_edits": 0,
+      "media_time": 2048,
+      "presented_media_ticks": 17618
+    },
+    "audio_track": 1,
+    "bytes": 22491,
+    "color": {
+      "chroma_location": "Left",
+      "container": [
+        1,
+        1,
+        1
+      ],
+      "container_full_range": false,
+      "decoded": "ColorMetadata { range: Limited, matrix: Bt709, transfer: Bt709, primaries: Bt709, mastering: None, content_light: None, ignored_static: IgnoredStaticMetadata { mastering: false, content_light: false } }",
+      "problems": []
+    },
+    "expected_audio_samples": 17618,
+    "expected_video_frames": 11,
+    "path": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmp5qnryk/exports-fractional-owner/fractional-owner-support.mp4",
+    "picture_anomalies": [],
+    "video_edits": {
+      "edits": 1,
+      "empty_edits": 0,
+      "media_time": 0,
+      "presented_media_ticks": 11011
+    },
+    "video_frames": 11
+  },
+  "audio": [
+    {
+      "window": [
+        0,
+        8809
+      ],
+      "offset": 0,
+      "passed": true
+    },
+    {
+      "window": [
+        8809,
+        17618
+      ],
+      "offset": 0,
+      "passed": true
+    }
+  ],
+  "movie_sha256": "87a4ad19c5a85f3b9ebb7aaa952b766619707c05ea8cc7eabd26ea9335a5df9d",
+  "binaries": {
+    "cli": {
+      "path": "target/release/deadpan-cli",
+      "sha256": "52327cf91a73ef83d5b225732434334203e447e6cf38774a98173b9cc36d3d12"
+    },
+    "test": {
+      "path": "target/release/deps/preview_export-633f4b90e83a29ac",
+      "sha256": "3ce2c4cbd062587da10f43c1907acb7629236d60c01526d4023bb7207e608857"
+    }
+  }
+}

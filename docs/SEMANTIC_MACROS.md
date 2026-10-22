@@ -215,6 +215,24 @@ accepted media; extension beyond its coverage commits fallback and durable
 preparation rather than stretching the accepted provider silently. See the
 [Hold duration qualification](qualification/scoped-hold-duration-2026-10-20.md).
 
+### Ordinary Hold length inside fixed Retime
+
+An inspected Hold without Repeat ancestry also supports `:hold-duration`, Enter,
+Change duration, recording, named calls and dot inside fixed Edit Retime windows.
+The captured runtime context grants duration edits and named calls only. Saved
+programs retain `SetHoldDuration { length }`, without node or presentation IDs.
+Other recording actions refuse before opening a draft or changing state.
+
+Every staged setter revalidates the selected Hold and its exact visibility
+through all enclosing crops. The continuation is its first sampled visible
+project frame, including when the Hold's intrinsic start lies before a crop.
+Input and output half-frame ties follow the half-open picture-center rule.
+No visible sampled picture, exact derived pause clocks, Repeat ancestry, Visual
+selection, no-op lengths and stale captures refuse atomically. The fixed outer
+window and independently supported output sounds retain their clocks. This does
+not grant general semantic authority to Retime contents. See the
+[native fixed-window qualification](qualification/native-fixed-retime-hold-2026-10-21.md).
+
 ### One-play Hold sound
 
 With This play explicit at every enclosing Repeat, `:hold-silence` and the

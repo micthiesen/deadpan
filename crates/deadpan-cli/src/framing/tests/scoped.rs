@@ -207,6 +207,7 @@ fn semantic_scoped_zoom_keep_preserves_live_follow_and_retained_clock_after_isol
         "follow-retimed",
     );
     let context = SemanticContext {
+        hold_duration: None,
         original: None,
         scoped: Some(SemanticScopedContext {
             root: node("retime"),

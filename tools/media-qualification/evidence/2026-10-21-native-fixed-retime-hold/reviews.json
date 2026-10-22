@@ -1,0 +1,44 @@
+{
+  "initial": [
+    {
+      "reviewer": "native_fixed_hold_general_review",
+      "lens": "general correctness and conventions",
+      "findings": []
+    },
+    {
+      "reviewer": "native_fixed_hold_clock_review",
+      "lens": "exact clocks, scopes, work bounds",
+      "findings": []
+    },
+    {
+      "reviewer": "native_fixed_hold_verification_review",
+      "lens": "oracle and native/media verification",
+      "findings": []
+    }
+  ],
+  "followup": {
+    "reviewer": "native_fixed_hold_verification_review",
+    "scope": "duration recording/draft guards, cached parameter hints and delayed-navigation replay",
+    "findings": []
+  },
+  "reviewer_execution": "static read-only; no Cargo or runtime",
+  "root_corrections": [
+    "generic recording guard must describe duration-only authority",
+    "RoomTone and Silence direct draft paths must apply duration-only guard",
+    "whole-document validation and counterpart construction must stay out of per-frame parameter hints",
+    "pending recording navigation must use actual row selection, not blocked keyboard navigation",
+    "Enter was already routed to parameter Command; no old Enter bug established"
+  ],
+  "last_followup": {
+    "reviewer": "native_fixed_hold_verification_review",
+    "scope": "invocation-relative different-Hold dot oracle and ordinary inspector description",
+    "findings": [],
+    "execution": "static only"
+  },
+  "framing_followup": {
+    "reviewer": "native_fixed_hold_verification_review",
+    "scope": "three continuation/framing authority consumers; measured Freeze Zoom native regression; explicit direct-parameter proof before different-Hold dot",
+    "findings": [],
+    "execution": "static only"
+  }
+}

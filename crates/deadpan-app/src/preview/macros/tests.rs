@@ -140,3 +140,52 @@ fn a_project_switch_retains_recorded_command_ownership_until_the_next_command_en
     state.capture_command();
     assert!(!state.command_recording);
 }
+
+#[test]
+fn duration_recording_admits_length_entry_without_opening_unrecordable_drafts() {
+    assert!(duration_recording_action(&Action::EnterGroup, true));
+    assert!(!duration_recording_action(&Action::EnterGroup, false));
+    for action in [
+        Action::Edit(BeatEdit::HoldDuration(
+            deadpan_core::FrameDuration::new(10).unwrap(),
+        )),
+        Action::RepeatLast,
+        Action::Command,
+        Action::MacroStop,
+        Action::MacroCancel,
+        Action::Escape,
+    ] {
+        assert!(duration_recording_action(&action, false));
+    }
+    for action in [
+        Action::Mute,
+        Action::Framing(crate::navigation::FramingAction::EnterCamera),
+        Action::Framing(crate::navigation::FramingAction::PunchIn),
+        Action::Edit(BeatEdit::Split),
+        Action::Trim,
+        Action::VisualMoment,
+    ] {
+        assert!(!duration_recording_action(&action, true), "{action:?}");
+    }
+}
+
+#[test]
+fn duration_recording_catches_audio_draft_entry_without_classifying_reads_as_drafts() {
+    use navigation::command::Entry;
+    for entry in [
+        Entry::RoomTone,
+        Entry::HoldSilence,
+        Entry::Gain(None),
+        Entry::EqualizerEdit,
+    ] {
+        assert!(duration_recording_draft(&entry), "{entry:?}");
+    }
+    for entry in [
+        Entry::Help,
+        Entry::Diagnostics,
+        Entry::GagPresets,
+        Entry::Action(Action::MacroStop),
+    ] {
+        assert!(!duration_recording_draft(&entry), "{entry:?}");
+    }
+}

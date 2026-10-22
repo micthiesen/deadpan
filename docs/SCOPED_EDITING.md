@@ -3,6 +3,8 @@
 `Enter` opens a selected Repeat or Retime. Inside it, `j/k` selects children,
 `Enter` descends and `Backspace` returns to the parent. On an existing Hold with
 This play at every Repeat level, `Enter` opens its exact duration instead.
+Enter also opens an ordinary Hold's duration inside fixed Edit Retime windows
+without Repeat ancestry or derived pause clocks.
 Pause insertion follows the explicit choice at each enclosing Repeat. Other
 temporal edits still use the ordinary Sequence timeline.
 
@@ -100,6 +102,17 @@ picture shortening retains its provider; extension beyond accepted coverage
 saves the deterministic fallback and durable preparation for a new explicit
 candidate acceptance. The [Hold duration qualification](qualification/scoped-hold-duration-2026-10-20.md)
 retains the nested-play, real-PCM, history and native verification.
+
+An ordinary Hold inside fixed Edit Retime windows, without any Repeat ancestry,
+has a separate duration-only path through the same control, Enter and command.
+It supports recording, named duration calls and dot, revalidating the actual
+Hold and every crop before each setter. Its cursor continues at the first
+sampled visible picture, which may differ from the Hold's intrinsic start.
+The fixed output duration and independent output sound clocks stay unchanged.
+Visual ranges, derived pause clocks and Holds with no sampled visible picture
+refuse. Recording admits length setters and named duration calls; other edits
+must wait until recording is saved or cancelled. See the
+[native fixed-window qualification](qualification/native-fixed-retime-hold-2026-10-21.md).
 
 The [This play pause qualification](qualification/scoped-pauses-2026-10-12.md)
 records exact-boundary, PCM, durable-history and offscreen keyboard verification,

@@ -20,6 +20,38 @@ fn scoped_macro_target(
     scope: &SequenceScope,
     context: &deadpan_core::SemanticContext,
 ) -> Result<Option<crate::project::scoped::Target>> {
+    if let Some(authority) = &context.hold_duration {
+        if context.scoped.is_some()
+            || context.original.is_some()
+            || context.visual_selection.is_some()
+            || context.selected_child.as_ref() != Some(&authority.root)
+        {
+            return Err(
+                "Ordinary pause length requires its captured Edit Hold without another selection."
+                    .into(),
+            );
+        }
+        let target = crate::project::scoped::Target {
+            session: id.session,
+            navigation: 0,
+            project: id.project.clone(),
+            revision: id.revision.clone(),
+            scope: scope.clone(),
+            root: authority.root.clone(),
+            target: deadpan_core::ScopedNodeTarget {
+                node: authority.target.clone(),
+                repeats: Vec::new(),
+            },
+            presentation: Some(authority.presentation.clone()),
+            cursor: context.cursor,
+            also: Vec::new(),
+        };
+        target.validate_request(workspace, id.session, &id.revision, scope, context.cursor)?;
+        if target.semantic_hold_duration(workspace)? != *authority {
+            return Err("Ordinary pause length differs from its captured native authority.".into());
+        }
+        return Ok(Some(target));
+    }
     let Some(scoped) = &context.scoped else {
         return Ok(None);
     };
@@ -50,6 +82,41 @@ fn scoped_macro_receipt(
     context: &deadpan_core::SemanticContext,
     plan: &SemanticPlan,
 ) -> Result<Option<crate::project::scoped::Commit>> {
+    if let Some(authority) = &context.hold_duration {
+        let before = before.ok_or("Ordinary pause length lost its native capture.")?;
+        let visible = plan
+            .document
+            .ordinary_hold_duration_visibility(&context.parent, authority)
+            .map_err(display)?;
+        let mut expected = context.clone();
+        expected.cursor = visible.frames.start();
+        if expected != plan.context {
+            return Err(
+                "Ordinary pause length lost its captured authority or visible continuation.".into(),
+            );
+        }
+        let picture_plan = RenderPlan::compile(&plan.document).map_err(display)?;
+        for frame in [
+            visible.frames.start(),
+            deadpan_core::ProjectFrame(visible.frames.end().0 - 1),
+        ] {
+            let picture = picture_plan.picture(frame).map_err(display)?;
+            if !picture
+                .framing
+                .iter()
+                .any(|layer| layer.instance == authority.presentation)
+            {
+                return Err("Resized pause no longer presents its captured Hold.".into());
+            }
+        }
+        return Ok(Some(crate::project::scoped::Commit {
+            target: before.target.clone(),
+            presentation: Some(authority.presentation.clone()),
+            before,
+            revision: plan.document.revision_id().clone(),
+            also: None,
+        }));
+    }
     match (before, &plan.context.scoped) {
         (None, None) => Ok(None),
         (Some(before), Some(after)) => {

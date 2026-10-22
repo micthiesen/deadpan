@@ -1132,7 +1132,9 @@ impl DeadpanApp {
         };
         let scoped_semantic = session.scoped.is_some()
             && semantic_capture.as_ref().is_some_and(|captured| {
-                captured.as_ref().is_ok_and(|captured| captured.is_scoped())
+                captured
+                    .as_ref()
+                    .is_ok_and(|captured| captured.has_scoped_framing_authority())
             });
         let intent_scope = (range.is_some() && session.scoped.is_none())
             || scoped_semantic

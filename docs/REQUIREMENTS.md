@@ -2,6 +2,28 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
+## Native Hold lengths inside fixed Retime, 2026-10-21
+
+[Native duration qualification](qualification/native-fixed-retime-hold-2026-10-21.md)
+exposes ordinary Hold resizing inside fixed unclocked Edit Retime windows through
+Enter, Change duration, command entry, recording, named calls and dot. Exact
+half-open crop visibility determines the first sampled continuation frame.
+Independent output sounds, fixed stage windows and the Original cursor retain
+their clocks. Repeat ancestry, derived pause clocks, Visual ranges and hidden
+or unsampled Holds retain explicit refusals. Rendering reads cached inspector
+geometry; command capture and commit perform full validation. Two valid native
+old-code witnesses fail before implementation; all 15 focused, 698 broader and 190
+UI-feature checks pass, as do the command reference and strict lint. DP-06,
+DP-07 and DP-24 remain partial; no requirement or gate is newly complete.
+Both final release replays pass 958 scoped checks plus Kestrel. The inspected
+960×640 captures retain visible controls and footer; quiet input-to-state p99
+is 1.454ms and maximum input-to-picture completion is 94.903ms. A follow-up
+144-test app selection and strict lint pass after separating framing authority
+from duration continuation. The release nonzero master/export continuity check
+verifies all eleven pictures and 17,618 audio samples at zero measured offset.
+Two mistaken dot-replay assumptions and the corrected ordinary scope description
+remain recorded with their source and binary evidence.
+
 ## Fractional retained audio-owner support, 2026-10-21
 
 [Owner-support qualification](qualification/fractional-owner-support-2026-10-21.md)
@@ -14,8 +36,10 @@ The complete real nonzero-Original master matches its independent equation
 within 3.01e-8; release export verifies all eleven pictures and all17,618 samples
 in two contiguous windows at offset zero, minimum block SNR31.05dB.
 Source admission remains strict; retained fixture/compiler/lint corrections do
-not change production media or DSP behavior. Native Retime Hold editing remains
-gated. DP-07 and DP-09 stay partial; no requirement or gate is newly complete.
+not change production media or DSP behavior. Native Retime Hold editing was still
+gated at that checkpoint; the native duration qualification above exposes its
+ordinary fixed-window path. DP-07 and DP-09 stay partial; no requirement or gate
+is newly complete.
 
 ## Fixed Retime output sounds through Hold edits, 2026-10-21
 
@@ -28,7 +52,7 @@ core, six PCM and two real-package store tests pass; all 3,130 broader
 core/plan/audio/store tests and final strict lint pass. The release export
 verifies all eleven pictures and 17,618 presented samples in two contiguous
 windows at offset zero; its independent event oracle has zero numerical error.
-Native Hold editing under Retime remains gated. That checkpoint retains a
+Native Hold editing under Retime was still gated at that checkpoint. It retains a
 separate pre-existing nonlinear owner-support refusal at sample8236; the
 [subsequent owner-support qualification](qualification/fractional-owner-support-2026-10-21.md)
 repairs it and verifies the complete nonzero master. DP-07 and DP-09 stay

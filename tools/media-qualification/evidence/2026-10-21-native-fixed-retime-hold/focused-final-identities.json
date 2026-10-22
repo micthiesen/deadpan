@@ -1,0 +1,15 @@
+{
+  "passed": 15,
+  "skipped": 2492,
+  "seconds": 0.694,
+  "binaries": {
+    "deadpan_app-1665fcaccc742208": {
+      "path": "/tmp/deadpan-native-fixed-retime-hold-2026-10-21/focused-final-deadpan_app-1665fcaccc742208",
+      "sha256": "62ac7eb9cd00c7375573191d91559592976f333e7c351b3b62591d885e0919b5"
+    },
+    "deadpan_core-99ef176a441abc2a": {
+      "path": "/tmp/deadpan-native-fixed-retime-hold-2026-10-21/focused-final-deadpan_core-99ef176a441abc2a",
+      "sha256": "e87ff1137d496fe18362b640f18a66ac7d54bda4ef5b87295ff4a833297fd95b"
+    }
+  }
+}

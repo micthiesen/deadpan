@@ -1,0 +1,51 @@
+{
+  "base_revision": "ed33550d",
+  "focused": {
+    "passed": 15,
+    "skipped": 2492,
+    "seconds": 0.694
+  },
+  "normal": {
+    "passed": 698,
+    "skipped": 4039,
+    "seconds": 68.755
+  },
+  "ui_feature": {
+    "passed": 190,
+    "skipped": 1060,
+    "seconds": 15.025
+  },
+  "commands_reference": "passed after intentional regeneration refusal",
+  "strict_lint": "cargo xtask check --since ed33550d --no-test passed",
+  "ui_lint": "cargo clippy -p deadpan-app --features ui-harness --locked --all-targets -- -D warnings passed",
+  "remaining_at_recording": [],
+  "release_media": {
+    "passed": 1,
+    "skipped": 47,
+    "seconds": 3.332,
+    "pictures": 11,
+    "audio_samples": 17618,
+    "windows": 2,
+    "offset_samples": 0,
+    "min_block_snr_db": 31.051172365885794,
+    "master_max_error": 3.0058446676139994e-08
+  },
+  "final_format": "passed",
+  "final_ui_lint": "passed after replay correction and inspector wording",
+  "final_ui_selection": {
+    "passed": 144,
+    "skipped": 1106,
+    "seconds": 9.971
+  },
+  "native": {
+    "visual_checks": 958,
+    "performance_checks": 958,
+    "kestrel_routing_cases_each": 21885504,
+    "failed": false,
+    "binary_sha256": "599a16a57b5006f8c6ec21b7e4e02b1f83b062593056bdf8fa790bcb79edfed5",
+    "input_to_state_p99_ms": 1.453875,
+    "max_input_to_picture_ms": 94.90275
+  },
+  "final_release_build": "passed",
+  "final_source_count": 39
+}

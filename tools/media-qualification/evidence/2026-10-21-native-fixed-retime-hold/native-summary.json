@@ -1,0 +1,1965 @@
+{
+  "visual": {
+    "failed": false,
+    "binary_sha256": "599a16a57b5006f8c6ec21b7e4e02b1f83b062593056bdf8fa790bcb79edfed5",
+    "scenarios": [
+      {
+        "name": "kestrel-shortcuts",
+        "checks": 1,
+        "failed": false,
+        "failed_checks": [],
+        "failures": [],
+        "warnings": [],
+        "skipped": [],
+        "timings": []
+      },
+      {
+        "name": "scoped-plays",
+        "checks": 958,
+        "failed": false,
+        "failed_checks": [],
+        "failures": [],
+        "warnings": [
+          "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity.",
+          "The \"Room tone\u2026  :room-tone\" action needs inspector scrolling at 960\u00d7640 before its full button is clickable. The replay includes this extra user step.",
+          "258 frame(s) settled their layout only on a second retry: [{\"frame\":40,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/d",
+          "egui discard warning: 48 run(s) of 3+ consecutive retrying frames, each frame with its own cause: [[{\"frame\":39,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\":"
+        ],
+        "skipped": [
+          "Analysis-navigation witnesses use explicit synthetic words saved over the real qualified Original through SaveTranscript. They exercise native word/search routing and delayed edit receipts, not model inference.",
+          "This replay uses real native widgets, project service and Metal with scripted keyboard delivery. Its final Escape check simulates playback preparation; physical keyboard/IME and acoustic playback are separate checks.",
+          "OS picker behavior: only its selected path is scripted",
+          "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+        ],
+        "timings": [
+          {
+            "name": "ui_frame_cpu_ms",
+            "summary": {
+              "completed": {
+                "max_ms": 6.492584,
+                "n": 5703,
+                "p50_ms": 0.212333,
+                "p95_ms": 0.852042,
+                "p99_ms": 1.209792
+              },
+              "failed": 0,
+              "samples": 5703,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "ui_composition_submit_cpu_ms",
+            "summary": {
+              "completed": {
+                "max_ms": 0.769917,
+                "n": 5703,
+                "p50_ms": 0.093042,
+                "p95_ms": 0.12404199999999999,
+                "p99_ms": 0.149541
+              },
+              "failed": 0,
+              "samples": 5703,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "ui_composition_complete_ms",
+            "summary": {
+              "completed": {
+                "max_ms": 9.387042,
+                "n": 5703,
+                "p50_ms": 0.373708,
+                "p95_ms": 0.614416,
+                "p99_ms": 0.840125
+              },
+              "failed": 0,
+              "samples": 5703,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "input_to_state_ms",
+            "summary": {
+              "completed": {
+                "max_ms": 1.7330830000000002,
+                "n": 1205,
+                "p50_ms": 0.47558399999999995,
+                "p95_ms": 0.971833,
+                "p99_ms": 1.38625
+              },
+              "failed": 0,
+              "samples": 1205,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "input_to_commit_ms",
+            "summary": {
+              "completed": {
+                "max_ms": 97.765458,
+                "n": 91,
+                "p50_ms": 9.539166999999999,
+                "p95_ms": 19.240084,
+                "p99_ms": 97.765458
+              },
+              "failed": 0,
+              "samples": 91,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "request_to_decode_delivery_ms",
+            "summary": {
+              "completed": {
+                "max_ms": 7.554667,
+                "n": 588,
+                "p50_ms": 1.129417,
+                "p95_ms": 3.9975829999999997,
+                "p99_ms": 6.1100829999999995
+              },
+              "failed": 0,
+              "samples": 588,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "request_to_worker_start_ms",
+            "summary": {
+              "completed": {
+                "max_ms": 4.801417,
+                "n": 588,
+                "p50_ms": 0.006375,
+                "p95_ms": 0.007708,
+                "p99_ms": 0.025917
+              },
+              "failed": 0,
+              "samples": 588,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "worker_execution_ms",
+            "summary": {
+              "completed": {
+                "max_ms": 2.494125,
+                "n": 588,
+                "p50_ms": 0.06674999999999999,
+                "p95_ms": 0.37625000000000003,
+                "p99_ms": 1.456625
+              },
+              "failed": 0,
+              "samples": 588,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "worker_publication_delay_ms",
+            "summary": {
+              "completed": {
+                "max_ms": 0.000458,
+                "n": 588,
+                "p50_ms": 8.3e-05,
+                "p95_ms": 0.000167,
+                "p99_ms": 0.00025
+              },
+              "failed": 0,
+              "samples": 588,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "publication_to_decode_delivery_ms",
+            "summary": {
+              "completed": {
+                "max_ms": 7.383917,
+                "n": 588,
+                "p50_ms": 1.049625,
+                "p95_ms": 3.9157920000000006,
+                "p99_ms": 5.980957999999999
+              },
+              "failed": 0,
+              "samples": 588,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "request_to_picture_submission_ms",
+            "summary": {
+              "completed": {
+                "max_ms": 8.435375,
+                "n": 490,
+                "p50_ms": 1.4337499999999999,
+                "p95_ms": 4.501665999999999,
+                "p99_ms": 6.898834000000001
+              },
+              "failed": 0,
+              "samples": 490,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "request_to_picture_complete_ms",
+            "summary": {
+              "completed": {
+                "max_ms": 9.245167,
+                "n": 490,
+                "p50_ms": 1.923166,
+                "p95_ms": 5.358417,
+                "p99_ms": 7.655208999999999
+              },
+              "failed": 0,
+              "samples": 490,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "input_to_picture_complete_ms",
+            "summary": {
+              "completed": {
+                "max_ms": 107.016625,
+                "n": 353,
+                "p50_ms": 2.0710830000000002,
+                "p95_ms": 15.31175,
+                "p99_ms": 21.310541999999998
+              },
+              "failed": 0,
+              "samples": 353,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Original initialized and displayed",
+            "summary": {
+              "completed": {
+                "max_ms": 102.249458,
+                "n": 1,
+                "p50_ms": 102.249458,
+                "p95_ms": 102.249458,
+                "p99_ms": 102.249458
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Project and picture settled",
+            "summary": {
+              "completed": {
+                "max_ms": 12.282458,
+                "n": 584,
+                "p50_ms": 0.59225,
+                "p95_ms": 0.960125,
+                "p99_ms": 5.275167
+              },
+              "failed": 0,
+              "samples": 584,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Scoped edit receipt is admitted",
+            "summary": {
+              "completed": {
+                "max_ms": 0.000167,
+                "n": 53,
+                "p50_ms": 4.1e-05,
+                "p95_ms": 8.3e-05,
+                "p99_ms": 0.000167
+              },
+              "failed": 0,
+              "samples": 53,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Committed revision changed",
+            "summary": {
+              "completed": {
+                "max_ms": 23.394958,
+                "n": 218,
+                "p50_ms": 8.565958,
+                "p95_ms": 18.890792,
+                "p99_ms": 19.934250000000002
+              },
+              "failed": 0,
+              "samples": 218,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Unchanged scoped gain proposal is ready",
+            "summary": {
+              "completed": {
+                "max_ms": 4.310459,
+                "n": 1,
+                "p50_ms": 4.310459,
+                "p95_ms": 4.310459,
+                "p99_ms": 4.310459
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Mark is saved while its UI receipt is withheld",
+            "summary": {
+              "completed": {
+                "max_ms": 4.2e-05,
+                "n": 1,
+                "p50_ms": 4.2e-05,
+                "p95_ms": 4.2e-05,
+                "p99_ms": 4.2e-05
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Scoped Camera opens on the selected play picture",
+            "summary": {
+              "completed": {
+                "max_ms": 0.0,
+                "n": 1,
+                "p50_ms": 0.0,
+                "p95_ms": 0.0,
+                "p99_ms": 0.0
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Scoped edit is durable while its UI receipt is withheld",
+            "summary": {
+              "completed": {
+                "max_ms": 8.3e-05,
+                "n": 1,
+                "p50_ms": 8.3e-05,
+                "p95_ms": 8.3e-05,
+                "p99_ms": 8.3e-05
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "One-play semantic receipt is admitted",
+            "summary": {
+              "completed": {
+                "max_ms": 2.3352910000000002,
+                "n": 28,
+                "p50_ms": 8.3e-05,
+                "p95_ms": 1.651875,
+                "p99_ms": 2.3352910000000002
+              },
+              "failed": 0,
+              "samples": 28,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Save the framing macro without concrete play authority",
+            "summary": {
+              "completed": {
+                "max_ms": 4.2321670000000005,
+                "n": 2,
+                "p50_ms": 3.7565,
+                "p95_ms": 4.2321670000000005,
+                "p99_ms": 4.2321670000000005
+              },
+              "failed": 0,
+              "samples": 2,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "The scoped macro edit commits while its continuation is withheld",
+            "summary": {
+              "completed": {
+                "max_ms": 5.426292,
+                "n": 1,
+                "p50_ms": 5.426292,
+                "p95_ms": 5.426292,
+                "p99_ms": 5.426292
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "A non-recording framing macro commits before its receipt arrives",
+            "summary": {
+              "completed": {
+                "max_ms": 5.202083,
+                "n": 1,
+                "p50_ms": 5.202083,
+                "p95_ms": 5.202083,
+                "p99_ms": 5.202083
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "One-play gain semantic receipt is admitted",
+            "summary": {
+              "completed": {
+                "max_ms": 4.652334,
+                "n": 21,
+                "p50_ms": 4.2e-05,
+                "p95_ms": 1.405,
+                "p99_ms": 4.652334
+              },
+              "failed": 0,
+              "samples": 21,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "The gain step commits before its continuation arrives",
+            "summary": {
+              "completed": {
+                "max_ms": 4.583042,
+                "n": 1,
+                "p50_ms": 4.583042,
+                "p95_ms": 4.583042,
+                "p99_ms": 4.583042
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Mute semantic receipt is admitted",
+            "summary": {
+              "completed": {
+                "max_ms": 3.9283749999999995,
+                "n": 27,
+                "p50_ms": 4.1e-05,
+                "p95_ms": 3.693083,
+                "p99_ms": 3.9283749999999995
+              },
+              "failed": 0,
+              "samples": 27,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Mute commits before its continuation arrives",
+            "summary": {
+              "completed": {
+                "max_ms": 4.778542,
+                "n": 1,
+                "p50_ms": 4.778542,
+                "p95_ms": 4.778542,
+                "p99_ms": 4.778542
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Typed audio semantic receipt is admitted",
+            "summary": {
+              "completed": {
+                "max_ms": 3.870167,
+                "n": 48,
+                "p50_ms": 4.2e-05,
+                "p95_ms": 3.01125,
+                "p99_ms": 3.870167
+              },
+              "failed": 0,
+              "samples": 48,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "A typed setter commits before its continuation arrives",
+            "summary": {
+              "completed": {
+                "max_ms": 4.791125,
+                "n": 1,
+                "p50_ms": 4.791125,
+                "p95_ms": 4.791125,
+                "p99_ms": 4.791125
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Scoped pause macro receipt is admitted",
+            "summary": {
+              "completed": {
+                "max_ms": 4.404375,
+                "n": 33,
+                "p50_ms": 4.2e-05,
+                "p95_ms": 4.272792,
+                "p99_ms": 4.404375
+              },
+              "failed": 0,
+              "samples": 33,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "A recorded pause is durable before its scoped continuation arrives",
+            "summary": {
+              "completed": {
+                "max_ms": 6.656667,
+                "n": 1,
+                "p50_ms": 6.656667,
+                "p95_ms": 6.656667,
+                "p99_ms": 6.656667
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Hold-duration receipt is admitted",
+            "summary": {
+              "completed": {
+                "max_ms": 4.782958000000001,
+                "n": 51,
+                "p50_ms": 4.2e-05,
+                "p95_ms": 0.6677919999999999,
+                "p99_ms": 4.782958000000001
+              },
+              "failed": 0,
+              "samples": 51,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Scoped duration is durable before navigation changes",
+            "summary": {
+              "completed": {
+                "max_ms": 7.295083,
+                "n": 2,
+                "p50_ms": 6.1279580000000005,
+                "p95_ms": 7.295083,
+                "p99_ms": 7.295083
+              },
+              "failed": 0,
+              "samples": 2,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Open actual unsupported duration definitions",
+            "summary": {
+              "completed": {
+                "max_ms": 19.401167,
+                "n": 1,
+                "p50_ms": 19.401167,
+                "p95_ms": 19.401167,
+                "p99_ms": 19.401167
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Open a real qualified project with a root sound interval",
+            "summary": {
+              "completed": {
+                "max_ms": 51.71775,
+                "n": 1,
+                "p50_ms": 51.71775,
+                "p95_ms": 51.71775,
+                "p99_ms": 51.71775
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Close the private duration refusal writer",
+            "summary": {
+              "completed": {
+                "max_ms": 1.848625,
+                "n": 1,
+                "p50_ms": 1.848625,
+                "p95_ms": 1.848625,
+                "p99_ms": 1.848625
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Restore the qualified Hold-duration workspace",
+            "summary": {
+              "completed": {
+                "max_ms": 51.526292,
+                "n": 1,
+                "p50_ms": 51.526292,
+                "p95_ms": 51.526292,
+                "p99_ms": 51.526292
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Open the qualified fixed-window project",
+            "summary": {
+              "completed": {
+                "max_ms": 46.580416,
+                "n": 3,
+                "p50_ms": 38.032416,
+                "p95_ms": 46.580416,
+                "p99_ms": 46.580416
+              },
+              "failed": 0,
+              "samples": 3,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Fixed-window duration receipt is admitted",
+            "summary": {
+              "completed": {
+                "max_ms": 4.048125,
+                "n": 39,
+                "p50_ms": 4.2e-05,
+                "p95_ms": 0.855917,
+                "p99_ms": 4.048125
+              },
+              "failed": 0,
+              "samples": 39,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Fixed-window duration is durable before away/back navigation",
+            "summary": {
+              "completed": {
+                "max_ms": 4.960834,
+                "n": 2,
+                "p50_ms": 4.866667,
+                "p95_ms": 4.960834,
+                "p99_ms": 4.960834
+              },
+              "failed": 0,
+              "samples": 2,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Close the private fixed-duration writer",
+            "summary": {
+              "completed": {
+                "max_ms": 12.090625000000001,
+                "n": 1,
+                "p50_ms": 12.090625000000001,
+                "p95_ms": 12.090625000000001,
+                "p99_ms": 12.090625000000001
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Open the private qualified nested Hold audio project",
+            "summary": {
+              "completed": {
+                "max_ms": 33.254167,
+                "n": 1,
+                "p50_ms": 33.254167,
+                "p95_ms": 33.254167,
+                "p99_ms": 33.254167
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Save the real Original range before audio recording",
+            "summary": {
+              "completed": {
+                "max_ms": 12.1395,
+                "n": 1,
+                "p50_ms": 12.1395,
+                "p95_ms": 12.1395,
+                "p99_ms": 12.1395
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Scoped audio receipt is acknowledged",
+            "summary": {
+              "completed": {
+                "max_ms": 10.443707999999999,
+                "n": 63,
+                "p50_ms": 4.2e-05,
+                "p95_ms": 0.000167,
+                "p99_ms": 10.443707999999999
+              },
+              "failed": 0,
+              "samples": 63,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "The exact scoped RoomTone source is prepared",
+            "summary": {
+              "completed": {
+                "max_ms": 3.3530420000000003,
+                "n": 14,
+                "p50_ms": 2.730542,
+                "p95_ms": 3.3530420000000003,
+                "p99_ms": 3.3530420000000003
+              },
+              "failed": 0,
+              "samples": 14,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Scoped audio is durable while the real completion is withheld",
+            "summary": {
+              "completed": {
+                "max_ms": 16.144959,
+                "n": 2,
+                "p50_ms": 14.921,
+                "p95_ms": 16.144959,
+                "p99_ms": 16.144959
+              },
+              "failed": 0,
+              "samples": 2,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Close the private Hold audio writer",
+            "summary": {
+              "completed": {
+                "max_ms": 14.715458,
+                "n": 1,
+                "p50_ms": 14.715458,
+                "p95_ms": 14.715458,
+                "p99_ms": 14.715458
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Restore the main scoped-play workspace",
+            "summary": {
+              "completed": {
+                "max_ms": 38.266083,
+                "n": 1,
+                "p50_ms": 38.266083,
+                "p95_ms": 38.266083,
+                "p99_ms": 38.266083
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Pause is saved before changing to Placed sounds",
+            "summary": {
+              "completed": {
+                "max_ms": 7.994249999999999,
+                "n": 1,
+                "p50_ms": 7.994249999999999,
+                "p95_ms": 7.994249999999999,
+                "p99_ms": 7.994249999999999
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Pause is saved before pointer view navigation",
+            "summary": {
+              "completed": {
+                "max_ms": 8.734667,
+                "n": 1,
+                "p50_ms": 8.734667,
+                "p95_ms": 8.734667,
+                "p99_ms": 8.734667
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Original moment copied before delayed pause navigation",
+            "summary": {
+              "completed": {
+                "max_ms": 8.329208,
+                "n": 1,
+                "p50_ms": 8.329208,
+                "p95_ms": 8.329208,
+                "p99_ms": 8.329208
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Pause is saved before selecting its Original card",
+            "summary": {
+              "completed": {
+                "max_ms": 19.068875,
+                "n": 1,
+                "p50_ms": 19.068875,
+                "p95_ms": 19.068875,
+                "p99_ms": 19.068875
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Undo completes with the scoped command open",
+            "summary": {
+              "completed": {
+                "max_ms": 6.388959,
+                "n": 1,
+                "p50_ms": 6.388959,
+                "p95_ms": 6.388959,
+                "p99_ms": 6.388959
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Selected pauses are durable before their receipt arrives",
+            "summary": {
+              "completed": {
+                "max_ms": 9.481875,
+                "n": 1,
+                "p50_ms": 9.481875,
+                "p95_ms": 9.481875,
+                "p99_ms": 9.481875
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Annotation lane ready for navigation witness",
+            "summary": {
+              "completed": {
+                "max_ms": 0.0,
+                "n": 1,
+                "p50_ms": 0.0,
+                "p95_ms": 0.0,
+                "p99_ms": 0.0
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Stored navigation words are available",
+            "summary": {
+              "completed": {
+                "max_ms": 6.009666999999999,
+                "n": 1,
+                "p50_ms": 6.009666999999999,
+                "p95_ms": 6.009666999999999,
+                "p99_ms": 6.009666999999999
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Pause is durable before the w/b roundtrip",
+            "summary": {
+              "completed": {
+                "max_ms": 19.40025,
+                "n": 1,
+                "p50_ms": 19.40025,
+                "p95_ms": 19.40025,
+                "p99_ms": 19.40025
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Pause is durable before the n/N roundtrip",
+            "summary": {
+              "completed": {
+                "max_ms": 20.133417,
+                "n": 1,
+                "p50_ms": 20.133417,
+                "p95_ms": 20.133417,
+                "p99_ms": 20.133417
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Open the independent queried-owner pause fixture",
+            "summary": {
+              "completed": {
+                "max_ms": 13.936416,
+                "n": 1,
+                "p50_ms": 13.936416,
+                "p95_ms": 13.936416,
+                "p99_ms": 13.936416
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Close the heterogeneous pause fixture",
+            "summary": {
+              "completed": {
+                "max_ms": 15.960583,
+                "n": 1,
+                "p50_ms": 15.960583,
+                "p95_ms": 15.960583,
+                "p99_ms": 15.960583
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Restore the preceding scoped replay workspace",
+            "summary": {
+              "completed": {
+                "max_ms": 55.242375,
+                "n": 1,
+                "p50_ms": 55.242375,
+                "p95_ms": 55.242375,
+                "p99_ms": 55.242375
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          }
+        ]
+      }
+    ]
+  },
+  "performance": {
+    "failed": false,
+    "binary_sha256": "599a16a57b5006f8c6ec21b7e4e02b1f83b062593056bdf8fa790bcb79edfed5",
+    "scenarios": [
+      {
+        "name": "kestrel-shortcuts",
+        "checks": 1,
+        "failed": false,
+        "failed_checks": [],
+        "failures": [],
+        "warnings": [],
+        "skipped": [],
+        "timings": []
+      },
+      {
+        "name": "scoped-plays",
+        "checks": 958,
+        "failed": false,
+        "failed_checks": [],
+        "failures": [],
+        "warnings": [
+          "The \"Room tone\u2026  :room-tone\" action needs inspector scrolling at 960\u00d7640 before its full button is clickable. The replay includes this extra user step.",
+          "258 frame(s) settled their layout only on a second retry: [{\"frame\":116,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/",
+          "egui discard warning: 47 run(s) of 3+ consecutive retrying frames, each frame with its own cause: [[{\"frame\":115,\"input\":\"Key Modifiers::NONE Colon\",\"new_input\""
+        ],
+        "skipped": [
+          "Analysis-navigation witnesses use explicit synthetic words saved over the real qualified Original through SaveTranscript. They exercise native word/search routing and delayed edit receipts, not model inference.",
+          "This replay uses real native widgets, project service and Metal with scripted keyboard delivery. Its final Escape check simulates playback preparation; physical keyboard/IME and acoustic playback are separate checks.",
+          "OS picker behavior: only its selected path is scripted",
+          "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+        ],
+        "timings": [
+          {
+            "name": "ui_frame_cpu_ms",
+            "summary": {
+              "completed": {
+                "max_ms": 6.16675,
+                "n": 5870,
+                "p50_ms": 0.212875,
+                "p95_ms": 0.854583,
+                "p99_ms": 1.199084
+              },
+              "failed": 0,
+              "samples": 5870,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "ui_composition_submit_cpu_ms",
+            "summary": {
+              "completed": {
+                "max_ms": 0.623417,
+                "n": 5870,
+                "p50_ms": 0.094084,
+                "p95_ms": 0.125667,
+                "p99_ms": 0.144959
+              },
+              "failed": 0,
+              "samples": 5870,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "ui_composition_complete_ms",
+            "summary": {
+              "completed": {
+                "max_ms": 9.005667,
+                "n": 5870,
+                "p50_ms": 0.3735,
+                "p95_ms": 0.5219159999999999,
+                "p99_ms": 0.8182079999999999
+              },
+              "failed": 0,
+              "samples": 5870,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "input_to_state_ms",
+            "summary": {
+              "completed": {
+                "max_ms": 1.715458,
+                "n": 1205,
+                "p50_ms": 0.479625,
+                "p95_ms": 0.9650000000000001,
+                "p99_ms": 1.453875
+              },
+              "failed": 0,
+              "samples": 1205,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "input_to_commit_ms",
+            "summary": {
+              "completed": {
+                "max_ms": 86.00025,
+                "n": 91,
+                "p50_ms": 9.366292,
+                "p95_ms": 19.097459,
+                "p99_ms": 86.00025
+              },
+              "failed": 0,
+              "samples": 91,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "request_to_decode_delivery_ms",
+            "summary": {
+              "completed": {
+                "max_ms": 7.173167,
+                "n": 591,
+                "p50_ms": 1.108667,
+                "p95_ms": 2.084875,
+                "p99_ms": 3.0630409999999997
+              },
+              "failed": 0,
+              "samples": 591,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "request_to_worker_start_ms",
+            "summary": {
+              "completed": {
+                "max_ms": 2.565458,
+                "n": 591,
+                "p50_ms": 0.006375,
+                "p95_ms": 0.007625,
+                "p99_ms": 0.052084
+              },
+              "failed": 0,
+              "samples": 591,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "worker_execution_ms",
+            "summary": {
+              "completed": {
+                "max_ms": 3.42925,
+                "n": 591,
+                "p50_ms": 0.066833,
+                "p95_ms": 0.381083,
+                "p99_ms": 1.839417
+              },
+              "failed": 0,
+              "samples": 591,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "worker_publication_delay_ms",
+            "summary": {
+              "completed": {
+                "max_ms": 0.000334,
+                "n": 591,
+                "p50_ms": 4.2e-05,
+                "p95_ms": 0.000167,
+                "p99_ms": 0.00025
+              },
+              "failed": 0,
+              "samples": 591,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "publication_to_decode_delivery_ms",
+            "summary": {
+              "completed": {
+                "max_ms": 4.769291999999999,
+                "n": 591,
+                "p50_ms": 1.0233340000000002,
+                "p95_ms": 1.86825,
+                "p99_ms": 2.3785
+              },
+              "failed": 0,
+              "samples": 591,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "request_to_picture_submission_ms",
+            "summary": {
+              "completed": {
+                "max_ms": 7.9902500000000005,
+                "n": 494,
+                "p50_ms": 1.4085,
+                "p95_ms": 2.386958,
+                "p99_ms": 3.103667
+              },
+              "failed": 0,
+              "samples": 494,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "request_to_picture_complete_ms",
+            "summary": {
+              "completed": {
+                "max_ms": 8.896625,
+                "n": 494,
+                "p50_ms": 1.895875,
+                "p95_ms": 2.953791,
+                "p99_ms": 3.715167
+              },
+              "failed": 0,
+              "samples": 494,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "input_to_picture_complete_ms",
+            "summary": {
+              "completed": {
+                "max_ms": 94.90275,
+                "n": 355,
+                "p50_ms": 2.032791,
+                "p95_ms": 15.124959,
+                "p99_ms": 20.848417
+              },
+              "failed": 0,
+              "samples": 355,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Original initialized and displayed",
+            "summary": {
+              "completed": {
+                "max_ms": 94.255459,
+                "n": 1,
+                "p50_ms": 94.255459,
+                "p95_ms": 94.255459,
+                "p99_ms": 94.255459
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Project and picture settled",
+            "summary": {
+              "completed": {
+                "max_ms": 2.6830000000000003,
+                "n": 584,
+                "p50_ms": 0.599542,
+                "p95_ms": 0.882042,
+                "p99_ms": 1.015667
+              },
+              "failed": 0,
+              "samples": 584,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Scoped edit receipt is admitted",
+            "summary": {
+              "completed": {
+                "max_ms": 8.4e-05,
+                "n": 53,
+                "p50_ms": 0.0,
+                "p95_ms": 8.3e-05,
+                "p99_ms": 8.4e-05
+              },
+              "failed": 0,
+              "samples": 53,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Committed revision changed",
+            "summary": {
+              "completed": {
+                "max_ms": 22.618792,
+                "n": 218,
+                "p50_ms": 8.902999999999999,
+                "p95_ms": 18.384667,
+                "p99_ms": 19.919416
+              },
+              "failed": 0,
+              "samples": 218,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Unchanged scoped gain proposal is ready",
+            "summary": {
+              "completed": {
+                "max_ms": 0.903625,
+                "n": 1,
+                "p50_ms": 0.903625,
+                "p95_ms": 0.903625,
+                "p99_ms": 0.903625
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Mark is saved while its UI receipt is withheld",
+            "summary": {
+              "completed": {
+                "max_ms": 3.278959,
+                "n": 1,
+                "p50_ms": 3.278959,
+                "p95_ms": 3.278959,
+                "p99_ms": 3.278959
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Scoped Camera opens on the selected play picture",
+            "summary": {
+              "completed": {
+                "max_ms": 0.0,
+                "n": 1,
+                "p50_ms": 0.0,
+                "p95_ms": 0.0,
+                "p99_ms": 0.0
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Scoped edit is durable while its UI receipt is withheld",
+            "summary": {
+              "completed": {
+                "max_ms": 4.6025409999999995,
+                "n": 1,
+                "p50_ms": 4.6025409999999995,
+                "p95_ms": 4.6025409999999995,
+                "p99_ms": 4.6025409999999995
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "One-play semantic receipt is admitted",
+            "summary": {
+              "completed": {
+                "max_ms": 2.19975,
+                "n": 28,
+                "p50_ms": 4.2e-05,
+                "p95_ms": 1.6190829999999998,
+                "p99_ms": 2.19975
+              },
+              "failed": 0,
+              "samples": 28,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Save the framing macro without concrete play authority",
+            "summary": {
+              "completed": {
+                "max_ms": 5.694625,
+                "n": 2,
+                "p50_ms": 4.335875000000001,
+                "p95_ms": 5.694625,
+                "p99_ms": 5.694625
+              },
+              "failed": 0,
+              "samples": 2,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "The scoped macro edit commits while its continuation is withheld",
+            "summary": {
+              "completed": {
+                "max_ms": 5.349667,
+                "n": 1,
+                "p50_ms": 5.349667,
+                "p95_ms": 5.349667,
+                "p99_ms": 5.349667
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "A non-recording framing macro commits before its receipt arrives",
+            "summary": {
+              "completed": {
+                "max_ms": 5.668959,
+                "n": 1,
+                "p50_ms": 5.668959,
+                "p95_ms": 5.668959,
+                "p99_ms": 5.668959
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "One-play gain semantic receipt is admitted",
+            "summary": {
+              "completed": {
+                "max_ms": 4.055750000000001,
+                "n": 21,
+                "p50_ms": 4.2e-05,
+                "p95_ms": 1.422333,
+                "p99_ms": 4.055750000000001
+              },
+              "failed": 0,
+              "samples": 21,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "The gain step commits before its continuation arrives",
+            "summary": {
+              "completed": {
+                "max_ms": 5.697875,
+                "n": 1,
+                "p50_ms": 5.697875,
+                "p95_ms": 5.697875,
+                "p99_ms": 5.697875
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Mute semantic receipt is admitted",
+            "summary": {
+              "completed": {
+                "max_ms": 4.1405829999999995,
+                "n": 27,
+                "p50_ms": 4.2e-05,
+                "p95_ms": 3.54525,
+                "p99_ms": 4.1405829999999995
+              },
+              "failed": 0,
+              "samples": 27,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Mute commits before its continuation arrives",
+            "summary": {
+              "completed": {
+                "max_ms": 4.535709,
+                "n": 1,
+                "p50_ms": 4.535709,
+                "p95_ms": 4.535709,
+                "p99_ms": 4.535709
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Typed audio semantic receipt is admitted",
+            "summary": {
+              "completed": {
+                "max_ms": 4.900125,
+                "n": 48,
+                "p50_ms": 4.2e-05,
+                "p95_ms": 2.471333,
+                "p99_ms": 4.900125
+              },
+              "failed": 0,
+              "samples": 48,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "A typed setter commits before its continuation arrives",
+            "summary": {
+              "completed": {
+                "max_ms": 4.653875,
+                "n": 1,
+                "p50_ms": 4.653875,
+                "p95_ms": 4.653875,
+                "p99_ms": 4.653875
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Scoped pause macro receipt is admitted",
+            "summary": {
+              "completed": {
+                "max_ms": 4.670208000000001,
+                "n": 33,
+                "p50_ms": 4.1e-05,
+                "p95_ms": 4.594833,
+                "p99_ms": 4.670208000000001
+              },
+              "failed": 0,
+              "samples": 33,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "A recorded pause is durable before its scoped continuation arrives",
+            "summary": {
+              "completed": {
+                "max_ms": 5.179708,
+                "n": 1,
+                "p50_ms": 5.179708,
+                "p95_ms": 5.179708,
+                "p99_ms": 5.179708
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Hold-duration receipt is admitted",
+            "summary": {
+              "completed": {
+                "max_ms": 4.305542,
+                "n": 51,
+                "p50_ms": 4.2e-05,
+                "p95_ms": 0.680709,
+                "p99_ms": 4.305542
+              },
+              "failed": 0,
+              "samples": 51,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Scoped duration is durable before navigation changes",
+            "summary": {
+              "completed": {
+                "max_ms": 6.904999999999999,
+                "n": 2,
+                "p50_ms": 6.571959,
+                "p95_ms": 6.904999999999999,
+                "p99_ms": 6.904999999999999
+              },
+              "failed": 0,
+              "samples": 2,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Open actual unsupported duration definitions",
+            "summary": {
+              "completed": {
+                "max_ms": 20.570334,
+                "n": 1,
+                "p50_ms": 20.570334,
+                "p95_ms": 20.570334,
+                "p99_ms": 20.570334
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Open a real qualified project with a root sound interval",
+            "summary": {
+              "completed": {
+                "max_ms": 54.4435,
+                "n": 1,
+                "p50_ms": 54.4435,
+                "p95_ms": 54.4435,
+                "p99_ms": 54.4435
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Close the private duration refusal writer",
+            "summary": {
+              "completed": {
+                "max_ms": 11.767208,
+                "n": 1,
+                "p50_ms": 11.767208,
+                "p95_ms": 11.767208,
+                "p99_ms": 11.767208
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Restore the qualified Hold-duration workspace",
+            "summary": {
+              "completed": {
+                "max_ms": 42.891709,
+                "n": 1,
+                "p50_ms": 42.891709,
+                "p95_ms": 42.891709,
+                "p99_ms": 42.891709
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Open the qualified fixed-window project",
+            "summary": {
+              "completed": {
+                "max_ms": 45.999333,
+                "n": 3,
+                "p50_ms": 44.316167,
+                "p95_ms": 45.999333,
+                "p99_ms": 45.999333
+              },
+              "failed": 0,
+              "samples": 3,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Fixed-window duration receipt is admitted",
+            "summary": {
+              "completed": {
+                "max_ms": 3.910167,
+                "n": 39,
+                "p50_ms": 4.2e-05,
+                "p95_ms": 0.8465830000000001,
+                "p99_ms": 3.910167
+              },
+              "failed": 0,
+              "samples": 39,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Fixed-window duration is durable before away/back navigation",
+            "summary": {
+              "completed": {
+                "max_ms": 4.238917,
+                "n": 2,
+                "p50_ms": 4.073833,
+                "p95_ms": 4.238917,
+                "p99_ms": 4.238917
+              },
+              "failed": 0,
+              "samples": 2,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Close the private fixed-duration writer",
+            "summary": {
+              "completed": {
+                "max_ms": 9.618625,
+                "n": 1,
+                "p50_ms": 9.618625,
+                "p95_ms": 9.618625,
+                "p99_ms": 9.618625
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Open the private qualified nested Hold audio project",
+            "summary": {
+              "completed": {
+                "max_ms": 34.117125,
+                "n": 1,
+                "p50_ms": 34.117125,
+                "p95_ms": 34.117125,
+                "p99_ms": 34.117125
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Save the real Original range before audio recording",
+            "summary": {
+              "completed": {
+                "max_ms": 14.311957999999999,
+                "n": 1,
+                "p50_ms": 14.311957999999999,
+                "p95_ms": 14.311957999999999,
+                "p99_ms": 14.311957999999999
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Scoped audio receipt is acknowledged",
+            "summary": {
+              "completed": {
+                "max_ms": 10.349667,
+                "n": 63,
+                "p50_ms": 4.2e-05,
+                "p95_ms": 0.000292,
+                "p99_ms": 10.349667
+              },
+              "failed": 0,
+              "samples": 63,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "The exact scoped RoomTone source is prepared",
+            "summary": {
+              "completed": {
+                "max_ms": 3.2341670000000002,
+                "n": 14,
+                "p50_ms": 2.6940419999999996,
+                "p95_ms": 3.2341670000000002,
+                "p99_ms": 3.2341670000000002
+              },
+              "failed": 0,
+              "samples": 14,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Scoped audio is durable while the real completion is withheld",
+            "summary": {
+              "completed": {
+                "max_ms": 14.842915999999999,
+                "n": 2,
+                "p50_ms": 14.264209,
+                "p95_ms": 14.842915999999999,
+                "p99_ms": 14.842915999999999
+              },
+              "failed": 0,
+              "samples": 2,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Close the private Hold audio writer",
+            "summary": {
+              "completed": {
+                "max_ms": 15.650082999999999,
+                "n": 1,
+                "p50_ms": 15.650082999999999,
+                "p95_ms": 15.650082999999999,
+                "p99_ms": 15.650082999999999
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Restore the main scoped-play workspace",
+            "summary": {
+              "completed": {
+                "max_ms": 40.233958,
+                "n": 1,
+                "p50_ms": 40.233958,
+                "p95_ms": 40.233958,
+                "p99_ms": 40.233958
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Pause is saved before changing to Placed sounds",
+            "summary": {
+              "completed": {
+                "max_ms": 8.014792,
+                "n": 1,
+                "p50_ms": 8.014792,
+                "p95_ms": 8.014792,
+                "p99_ms": 8.014792
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Pause is saved before pointer view navigation",
+            "summary": {
+              "completed": {
+                "max_ms": 7.620333,
+                "n": 1,
+                "p50_ms": 7.620333,
+                "p95_ms": 7.620333,
+                "p99_ms": 7.620333
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Original moment copied before delayed pause navigation",
+            "summary": {
+              "completed": {
+                "max_ms": 7.276000000000001,
+                "n": 1,
+                "p50_ms": 7.276000000000001,
+                "p95_ms": 7.276000000000001,
+                "p99_ms": 7.276000000000001
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Pause is saved before selecting its Original card",
+            "summary": {
+              "completed": {
+                "max_ms": 17.387542,
+                "n": 1,
+                "p50_ms": 17.387542,
+                "p95_ms": 17.387542,
+                "p99_ms": 17.387542
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Undo completes with the scoped command open",
+            "summary": {
+              "completed": {
+                "max_ms": 5.1912080000000005,
+                "n": 1,
+                "p50_ms": 5.1912080000000005,
+                "p95_ms": 5.1912080000000005,
+                "p99_ms": 5.1912080000000005
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Selected pauses are durable before their receipt arrives",
+            "summary": {
+              "completed": {
+                "max_ms": 9.54275,
+                "n": 1,
+                "p50_ms": 9.54275,
+                "p95_ms": 9.54275,
+                "p99_ms": 9.54275
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Annotation lane ready for navigation witness",
+            "summary": {
+              "completed": {
+                "max_ms": 0.0,
+                "n": 1,
+                "p50_ms": 0.0,
+                "p95_ms": 0.0,
+                "p99_ms": 0.0
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Stored navigation words are available",
+            "summary": {
+              "completed": {
+                "max_ms": 5.610666999999999,
+                "n": 1,
+                "p50_ms": 5.610666999999999,
+                "p95_ms": 5.610666999999999,
+                "p99_ms": 5.610666999999999
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Pause is durable before the w/b roundtrip",
+            "summary": {
+              "completed": {
+                "max_ms": 18.147582999999997,
+                "n": 1,
+                "p50_ms": 18.147582999999997,
+                "p95_ms": 18.147582999999997,
+                "p99_ms": 18.147582999999997
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Pause is durable before the n/N roundtrip",
+            "summary": {
+              "completed": {
+                "max_ms": 18.75775,
+                "n": 1,
+                "p50_ms": 18.75775,
+                "p95_ms": 18.75775,
+                "p99_ms": 18.75775
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Open the independent queried-owner pause fixture",
+            "summary": {
+              "completed": {
+                "max_ms": 14.168541999999999,
+                "n": 1,
+                "p50_ms": 14.168541999999999,
+                "p95_ms": 14.168541999999999,
+                "p99_ms": 14.168541999999999
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Close the heterogeneous pause fixture",
+            "summary": {
+              "completed": {
+                "max_ms": 1.636541,
+                "n": 1,
+                "p50_ms": 1.636541,
+                "p95_ms": 1.636541,
+                "p99_ms": 1.636541
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          },
+          {
+            "name": "Restore the preceding scoped replay workspace",
+            "summary": {
+              "completed": {
+                "max_ms": 60.880583,
+                "n": 1,
+                "p50_ms": 60.880583,
+                "p95_ms": 60.880583,
+                "p99_ms": 60.880583
+              },
+              "failed": 0,
+              "samples": 1,
+              "timed_out": 0
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

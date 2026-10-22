@@ -124,18 +124,26 @@ fn exercise(d: &mut Driver<'_>, path: &Path) -> Result<(), String> {
     refuse(d, "Several-play Hold duration")?;
     d.key(Key::Escape)?;
     d.chord(&[Key::G, Key::G, Key::J, Key::J, Key::Enter])?;
+    d.command("scope play 1")?;
+    d.key(Key::Enter)?;
     let retimed = target(d)?;
     d.check(
-        "Retime duration fixture selects a Hold under a real Retime clock",
-        retimed.target.repeats.is_empty()
+        "This-play duration fixture selects a Hold under a real Retime clock",
+        retimed.target.repeats.len() == 1
+            && retimed.has_single_play_authority()
+            && retimed.target.node.as_str() == "retimed-hold"
+            && matches!(
+                document(d)?.nodes()[&NodeId::new("speed").map_err(|e| e.to_string())?].kind,
+                NodeKind::Retime { .. }
+            )
             && matches!(
                 document(d)?.nodes()[&retimed.root].kind,
-                NodeKind::Retime { .. }
+                NodeKind::Repeat { .. }
             ),
-        json!("Retime ancestor"),
+        json!("This play with Retime ancestor"),
         d.snapshot(),
     )?;
-    refuse(d, "Retimed Hold duration")?;
+    refuse(d, "This-play retimed Hold duration")?;
     Ok(())
 }
 
@@ -211,7 +219,7 @@ fn fixture(path: &Path) -> Result<(), String> {
                             node("group")?,
                             BeatNode::sequence(
                                 "Fixture",
-                                vec![node("outer")?, node("many")?, node("speed")?],
+                                vec![node("outer")?, node("many")?, node("retimed-repeat")?],
                             ),
                         ),
                         (node("outer")?, repeat("outer", "inner")?),
@@ -226,6 +234,7 @@ fn fixture(path: &Path) -> Result<(), String> {
                             BeatNode::hold("Many", recipe(HoldAudio::Silence)?),
                         ),
                         (node("speed")?, speed),
+                        (node("retimed-repeat")?, repeat("retimed-repeat", "speed")?),
                         (
                             node("retimed-hold")?,
                             BeatNode::hold("Retimed", recipe(HoldAudio::Silence)?),

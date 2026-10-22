@@ -1,0 +1,20 @@
+{
+  "passed": 13,
+  "failed": 0,
+  "skipped": 2492,
+  "exit_code": 0,
+  "seconds": 0.695,
+  "scope": "after two test-only corrections, before dedicated ordinary recording action-guard followup; final production identities forthcoming",
+  "binaries": {
+    "deadpan_core-": {
+      "original": "target/debug/deps/deadpan_core-99ef176a441abc2a",
+      "retained": "/tmp/deadpan-native-fixed-retime-hold-2026-10-21/before-guard-deadpan_core-test",
+      "sha256": "e87ff1137d496fe18362b640f18a66ac7d54bda4ef5b87295ff4a833297fd95b"
+    },
+    "deadpan_app-": {
+      "original": "target/debug/deps/deadpan_app-1665fcaccc742208",
+      "retained": "/tmp/deadpan-native-fixed-retime-hold-2026-10-21/before-guard-deadpan_app-test",
+      "sha256": "1de7acb4b95d6ab3a5da29805e34e0546d28dcb0959554b3142dd61523ea2fde"
+    }
+  }
+}

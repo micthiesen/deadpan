@@ -9,6 +9,34 @@ use crate::project::{macros as protocol, slice};
 
 const PENDING_FRAMING: &str =
     "Wait for the pending framing action to finish, or press Esc to cancel it.";
+const DURATION_RECORDING: &str = "This duration-only macro records pause lengths and named duration calls. Save or cancel recording before another action.";
+
+fn duration_recording_action(action: &Action, can_open_length: bool) -> bool {
+    matches!(
+        action,
+        Action::Edit(BeatEdit::HoldDuration(_))
+            | Action::RepeatLast
+            | Action::MacroExecute { .. }
+            | Action::MacroStop
+            | Action::MacroCancel
+            | Action::Command
+            | Action::Escape
+            | Action::Invalid(_)
+            | Action::OfferInsert
+    ) || matches!(action, Action::EnterGroup) && can_open_length
+}
+
+fn duration_recording_draft(command: &navigation::command::Entry) -> bool {
+    use navigation::command::Entry;
+    matches!(
+        command,
+        Entry::RoomTone
+            | Entry::HoldSilence
+            | Entry::Gain(None)
+            | Entry::EqualizerEdit
+            | Entry::GainRange { .. }
+    )
+}
 
 #[derive(Clone)]
 pub(super) struct Capture {
@@ -25,12 +53,17 @@ pub(super) struct Capture {
 }
 
 impl Capture {
-    pub(super) fn is_scoped(&self) -> bool {
+    fn has_scoped_continuation(&self) -> bool {
+        self.context.scoped.is_some() || self.context.hold_duration.is_some()
+    }
+
+    /// Duration-only capture owns a continuation, but cannot authorize Zoom.
+    pub(super) fn has_scoped_framing_authority(&self) -> bool {
         self.context.scoped.is_some()
     }
 
     pub(super) fn captures_scope(&self, target: &crate::project::scoped::Target) -> bool {
-        self.context.scoped.is_some() && self.scoped.as_ref() == Some(target)
+        self.has_scoped_continuation() && self.scoped.as_ref() == Some(target)
     }
 
     /// The selected direct child as it was when the command was entered.
@@ -321,7 +354,7 @@ impl State {
             && self
                 .pending
                 .as_ref()
-                .is_some_and(|pending| pending.capture.is_scoped())
+                .is_some_and(|pending| pending.capture.has_scoped_continuation())
     }
 
     /// Replace the pending action's success message.
@@ -386,6 +419,20 @@ impl State {
 }
 
 impl DeadpanApp {
+    pub(super) fn refuse_duration_recording_draft(&mut self) -> bool {
+        if self
+            .macros
+            .recording
+            .as_ref()
+            .is_some_and(|recording| recording.expected.context.hold_duration.is_some())
+        {
+            self.error = Some(DURATION_RECORDING.into());
+            true
+        } else {
+            false
+        }
+    }
+
     pub(super) fn capture_macro_target(&self) -> Result<Capture, String> {
         let mut captured = self.capture_edit_target(self.view != View::Source)?;
         if self.view == View::Source {
@@ -444,17 +491,22 @@ impl DeadpanApp {
             visual_selection: self.capture_visual_selection()?,
             original: None,
             scoped: None,
+            hold_duration: None,
         };
         let scoped = self.scoped_target()?;
         let mut context = context;
         if let Some(target) = &scoped {
             if context.visual_selection.is_some() || self.view != View::Sequence {
                 return Err(
-                    "Clear the Visual selection and focus Your edit before using one-play macros."
+                    "Clear the Visual selection and focus Your edit before using nested edit macros."
                         .into(),
                 );
             }
-            context.scoped = Some(target.semantic_framing(&base)?);
+            if target.target.repeats.is_empty() {
+                context.hold_duration = Some(target.semantic_hold_duration(&base)?);
+            } else {
+                context.scoped = Some(target.semantic_framing(&base)?);
+            }
         }
         Ok(Capture {
             base,
@@ -563,6 +615,18 @@ impl DeadpanApp {
         }
         if !self.macros.recording() {
             return true;
+        }
+        if self
+            .macros
+            .recording
+            .as_ref()
+            .is_some_and(|recording| recording.expected.context.hold_duration.is_some())
+        {
+            if duration_recording_action(&action, self.scoped_hold_parameter().is_some()) {
+                return true;
+            }
+            self.error = Some(DURATION_RECORDING.into());
+            return false;
         }
         if self.scoped.is_some()
             && !matches!(
@@ -758,6 +822,11 @@ impl DeadpanApp {
             )
         {
             self.error = Some("Recording stopped because its context changed. Start the command again; no action was performed.".into());
+            return false;
+        }
+        if command.as_ref().is_ok_and(duration_recording_draft)
+            && self.refuse_duration_recording_draft()
+        {
             return false;
         }
         match command {
@@ -1392,6 +1461,14 @@ impl DeadpanApp {
             }
             let captured = target?;
             let instruction = instruction?;
+            if captured.context.hold_duration.is_some()
+                && !matches!(
+                    instruction,
+                    SemanticInstruction::SetHoldDuration { .. } | SemanticInstruction::Call { .. }
+                )
+            {
+                return Err("This ordinary nested Hold supports pause length and named duration calls only. Return to the parent for other macro edits.".into());
+            }
             if captured.context.scoped.is_some()
                 && !matches!(
                     instruction,

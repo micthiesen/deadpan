@@ -1,0 +1,130 @@
+{
+  "deadpan-app::headless": {
+    "path": "/Users/michael/Code/deadpan/target/debug/deps/headless-6bec9dd6354a8659",
+    "sha256": "f0838e22ee4505145873f19cbcf213bb1e4d2685ee2432ed3473216d5523a97a"
+  },
+  "deadpan-app::bin/deadpan-app": {
+    "path": "/Users/michael/Code/deadpan/target/debug/deps/deadpan_app-1665fcaccc742208",
+    "sha256": "222aa433353037c870f7bb424d1cc76b0210882c1a409709759efc6c5c32bc9c"
+  },
+  "deadpan-audio::audio_definition": {
+    "path": "/Users/michael/Code/deadpan/target/debug/deps/audio_definition-780c0c8be6058790",
+    "sha256": "88e0f8862320eb63cac59ef5b69164040fd86d62c68991fbe04689a21448f581"
+  },
+  "deadpan-audio::composite_insert": {
+    "path": "/Users/michael/Code/deadpan/target/debug/deps/composite_insert-1f607ffbaa2e62c1",
+    "sha256": "d6accfe27ec63c74df96a51deab3a013718698ccc3bd06d555443ebf146dad88"
+  },
+  "deadpan-audio::sequence": {
+    "path": "/Users/michael/Code/deadpan/target/debug/deps/sequence-2753b78923fcb9a5",
+    "sha256": "4c2d69bd01680e9c7aefa3fc7782323d54fde54aa0bf9a668126cc4224848fbc"
+  },
+  "deadpan-audio::stages": {
+    "path": "/Users/michael/Code/deadpan/target/debug/deps/stages-d575876438498380",
+    "sha256": "092a9402afe0df4e7f2413656350d6ff678ce087d564a2ed32739a38c9a8009f"
+  },
+  "deadpan-cli": {
+    "path": "/Users/michael/Code/deadpan/target/debug/deps/deadpan_cli-29970268ac93aa39",
+    "sha256": "7e0917ebc5df9c88f976480cf17ebce51a9c283ad53bdb2d96b01c0455af62e1"
+  },
+  "deadpan-cli::boundary_location": {
+    "path": "/Users/michael/Code/deadpan/target/debug/deps/boundary_location-3a52426a2920abd9",
+    "sha256": "f3186efaf6c455039518329f85a4996499e34242d089a0f44a687120f233d61e"
+  },
+  "deadpan-cli::bridge_conditioning": {
+    "path": "/Users/michael/Code/deadpan/target/debug/deps/bridge_conditioning-bb8a6f1d29bf2efd",
+    "sha256": "a55401c8d8bc9ffb6f180dcb77a854890442df77aece6e0509d37012ac01ac13"
+  },
+  "deadpan-cli::encoded_render": {
+    "path": "/Users/michael/Code/deadpan/target/debug/deps/encoded_render-74217118d754af4c",
+    "sha256": "0b3fda54bfe5eaf862aae5cc7fc649518b7ec1e7d4145489d72d6f01dab0ef1e"
+  },
+  "deadpan-cli::preview_export": {
+    "path": "/Users/michael/Code/deadpan/target/debug/deps/preview_export-09f24f1122af7985",
+    "sha256": "2ed7c59b8339aee7ad7eef6b9b289a16c8197cbb8c0cff280e09cadfb754b335"
+  },
+  "deadpan-cli::project_commands": {
+    "path": "/Users/michael/Code/deadpan/target/debug/deps/project_commands-6a0b3d2bc6481ebb",
+    "sha256": "fed2202827e2a28bf45528a82f297c56c5b6a2f0f7daa567157e24fb6f4c013d"
+  },
+  "deadpan-cli::render_worker": {
+    "path": "/Users/michael/Code/deadpan/target/debug/deps/render_worker-692f88f5f70bf8f8",
+    "sha256": "1b6b248e4e8e81849f4ed51db550b27c1624d10cee560a6255f3472e71dd6a36"
+  },
+  "deadpan-core": {
+    "path": "/Users/michael/Code/deadpan/target/debug/deps/deadpan_core-99ef176a441abc2a",
+    "sha256": "e87ff1137d496fe18362b640f18a66ac7d54bda4ef5b87295ff4a833297fd95b"
+  },
+  "deadpan-core::anchors": {
+    "path": "/Users/michael/Code/deadpan/target/debug/deps/anchors-a2b0558443797232",
+    "sha256": "ece420b8da36d2f5a02598a294b67bfa0ccf61e8df2d8892320a7b0e142d9a0a"
+  },
+  "deadpan-core::document": {
+    "path": "/Users/michael/Code/deadpan/target/debug/deps/document-82906dc6e1085053",
+    "sha256": "df58801c2423262146724c5ceb30c16baf2fab3e1e48fd2373a6cc295a7d70e8"
+  },
+  "deadpan-core::edited_slice": {
+    "path": "/Users/michael/Code/deadpan/target/debug/deps/edited_slice-ee208805be4e43eb",
+    "sha256": "a38c47a1cd1cdee340c05987e56eb9c2fd931e02fcfb2896a828b347a2e84990"
+  },
+  "deadpan-core::gap_projection": {
+    "path": "/Users/michael/Code/deadpan/target/debug/deps/gap_projection-de751b5edea3e9be",
+    "sha256": "be7e44d14fbdba11b4a73dafe5defa53b7306b9e49f84603271c36bbb99f9252"
+  },
+  "deadpan-core::insert_time": {
+    "path": "/Users/michael/Code/deadpan/target/debug/deps/insert_time-89e57942d872ddce",
+    "sha256": "36a6a973613a7465cd7edbefa70c0ec5624e183079e41162f72455b6fe818d7b"
+  },
+  "deadpan-core::mark_resolution": {
+    "path": "/Users/michael/Code/deadpan/target/debug/deps/mark_resolution-42151e932cefadd2",
+    "sha256": "cae6189e67707ecd7635d85a34f878a8b02c57096390c45327c3d0770cb54eb1"
+  },
+  "deadpan-core::marks": {
+    "path": "/Users/michael/Code/deadpan/target/debug/deps/marks-a5a26409343f8273",
+    "sha256": "f6e704db29e23264581c2455bc0abb91c74d91e91de9405b65fb3291c24a61ba"
+  },
+  "deadpan-core::partitions": {
+    "path": "/Users/michael/Code/deadpan/target/debug/deps/partitions-5e48f9a6c01b619f",
+    "sha256": "b41a160348597afd132841d88dfbe2f9788bcef5bdb10900fcff7b9450fe5a9a"
+  },
+  "deadpan-core::retime_edits": {
+    "path": "/Users/michael/Code/deadpan/target/debug/deps/retime_edits-1b2e5782071465dd",
+    "sha256": "611a7333a6b08e271b9ade051abc984adda91ceb0fadb877573525f8077e4db0"
+  },
+  "deadpan-core::source_slip": {
+    "path": "/Users/michael/Code/deadpan/target/debug/deps/source_slip-deb9cce5964c5b10",
+    "sha256": "24f54cfc6c74e70af4fbc17ebdca911689f24d4d262f2f19ff7ec238f77821f6"
+  },
+  "deadpan-core::split": {
+    "path": "/Users/michael/Code/deadpan/target/debug/deps/split-31ffde955c1d2240",
+    "sha256": "74ebc2b7fa89d4c844ae99fb4062858ca0dfe81841c05255ec233dce223cbeaa"
+  },
+  "deadpan-store": {
+    "path": "/Users/michael/Code/deadpan/target/debug/deps/deadpan_store-a820d32debc45aae",
+    "sha256": "a551e637fb6055863e4b8533840f5755e9cf6eb39ac7b7787e987fd42728a2c7"
+  },
+  "deadpan-store::generation_bundles": {
+    "path": "/Users/michael/Code/deadpan/target/debug/deps/generation_bundles-8fe4e5fef16f185c",
+    "sha256": "f64aac5cfc20bc8b17aa4969d90f60e6f4d9fbe223d60fb9b1bf34bc20b0b15d"
+  },
+  "deadpan-store::hold_duration_clocks": {
+    "path": "/Users/michael/Code/deadpan/target/debug/deps/hold_duration_clocks-b228bae947a92290",
+    "sha256": "74886dea0802a564bc0566c54cd087e57d03c63acb4ca59683b687dfb779f089"
+  },
+  "deadpan-store::migration": {
+    "path": "/Users/michael/Code/deadpan/target/debug/deps/migration-999e92bff4682f40",
+    "sha256": "960deb648e8e27b50b0d02ae8d1a5d983b04c6f6b8bb56db682165c79e939079"
+  },
+  "deadpan-store::occurrence_edits": {
+    "path": "/Users/michael/Code/deadpan/target/debug/deps/occurrence_edits-7f384e227efdc36a",
+    "sha256": "a5e4ef24c949e9aea1dc42b4c8f7f16181cd496fa8244cdd261ff018d385db9a"
+  },
+  "deadpan-store::persistence": {
+    "path": "/Users/michael/Code/deadpan/target/debug/deps/persistence-5dc7e412e05369bb",
+    "sha256": "318d6fc69bfe8639b4f3f04fe5996248eb74ccaf3a5ccc1cefcef56564cee69e"
+  },
+  "deadpan-store::source_registration": {
+    "path": "/Users/michael/Code/deadpan/target/debug/deps/source_registration-3beb61075fc7a591",
+    "sha256": "bd68a61b970822f9d0105feb4560df98b257aba40a377e71a6724158485e3e8c"
+  }
+}

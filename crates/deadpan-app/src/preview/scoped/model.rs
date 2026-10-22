@@ -1,6 +1,10 @@
 //! Authored inspector navigation with separately qualified picture occurrences.
 
-use std::{collections::BTreeMap, ops::Range, sync::Arc};
+use std::{
+    collections::{BTreeMap, BTreeSet},
+    ops::Range,
+    sync::Arc,
+};
 
 use deadpan_core::{
     ExactRatio, FrameDuration, InsertionBias, InstancePath, IterationId, MAX_DOCUMENT_DEPTH,
@@ -79,6 +83,7 @@ struct Index {
     document: Arc<ProjectDocument>,
     plan: Arc<RenderPlan>,
     parents: BTreeMap<NodeId, NodeId>,
+    clocked_retimes: BTreeSet<NodeId>,
     sequence_offsets: BTreeMap<NodeId, i64>,
     durations: BTreeMap<NodeId, FrameDuration>,
     repeats: BTreeMap<NodeId, RepeatLayout>,
@@ -87,9 +92,42 @@ struct Index {
 }
 
 impl State {
+    /// Render-only hint from the immutable inspector index. Capturing the
+    /// action separately validates the complete native and core authority.
+    pub fn hold_parameter(&self, workspace: &Workspace) -> Option<String> {
+        self.matches_workspace(workspace)
+            .then(|| self.hold_parameter_in())
+            .flatten()
+    }
+
+    fn hold_parameter_in(&self) -> Option<String> {
+        if self.levels.iter().any(|level| !level.also.is_empty())
+            || self
+                .mapped_also
+                .as_ref()
+                .is_some_and(|(primary, also)| primary == &self.selected && !also.is_empty())
+            || self
+                .selected
+                .repeats
+                .iter()
+                .any(|step| !matches!(step.branch, RepeatEditBranch::Play { .. }))
+            || !self.hold_duration_available()
+        {
+            return None;
+        }
+        let NodeKind::Hold { recipe } = &self.index.document.nodes().get(&self.selected.node)?.kind
+        else {
+            return None;
+        };
+        Some(format!("hold-duration {}f", recipe.duration.frames()))
+    }
+
     /// Availability only. The core rechecks the captured occurrence on Apply.
     /// Use the retained parent index so footer layout does not scan the graph.
     pub fn hold_duration_available(&self) -> bool {
+        if self.selected.repeats.is_empty() {
+            return self.ordinary_hold_duration_depth().is_some();
+        }
         if !self.index.document.sounds().is_empty() || !self.index.document.beat_sounds().is_empty()
         {
             return false;
@@ -108,6 +146,52 @@ impl State {
             node = parent;
         }
         false
+    }
+
+    // Returns the number of visited ancestors so the bounded work contract can
+    // be tested independently of the size of unrelated compact Repeat branches.
+    fn ordinary_hold_duration_depth(&self) -> Option<usize> {
+        let presentation = self.projection.presentation.as_ref()?;
+        if presentation.frames.is_empty()
+            || presentation.instance.node != self.selected.node
+            || !presentation.instance.repeats.is_empty()
+            || !self.selected.repeats.is_empty()
+            || !matches!(
+                self.index.document.nodes()[&self.selected.node].kind,
+                NodeKind::Hold { .. }
+            )
+            || !matches!(
+                self.index.document.nodes()[&self.root].kind,
+                NodeKind::Retime {
+                    purpose: deadpan_core::RetimePurpose::Edit,
+                    ..
+                }
+            )
+            || self.index.clocked_retimes.contains(&self.root)
+        {
+            return None;
+        }
+        // State construction already proves root is a direct child of its
+        // ordinary navigation scope. Only walk the retained selected ancestry.
+        let mut node = &self.selected.node;
+        let mut saw_root = false;
+        for depth in 0..=MAX_DOCUMENT_DEPTH {
+            saw_root |= node == &self.root;
+            if node == self.index.document.root() {
+                return saw_root.then_some(depth);
+            }
+            let parent = self.index.parents.get(node)?;
+            match &self.index.document.nodes()[parent].kind {
+                NodeKind::Sequence { .. } => {}
+                NodeKind::Retime {
+                    purpose: deadpan_core::RetimePurpose::Edit,
+                    ..
+                } if !saw_root && !self.index.clocked_retimes.contains(parent) => {}
+                _ => return None,
+            }
+            node = parent;
+        }
+        None
     }
 
     pub fn new(
@@ -1089,10 +1173,12 @@ impl Index {
                 overridden.insert(id.clone(), positions);
             }
         }
+        let clocked_retimes = document.retimes_with_derived_clocks();
         Ok(Self {
             document,
             plan,
             parents,
+            clocked_retimes,
             sequence_offsets,
             durations,
             repeats,

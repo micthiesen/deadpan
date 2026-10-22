@@ -838,6 +838,7 @@ fn unread_native_save_motion_and_copy_continuations_block_remote_mutation() {
                     count: 2,
                     scope: SequenceScope::default(),
                     context: SemanticContext {
+                        hold_duration: None,
                         original: None,
                         scoped: None,
                         parent: node("root"),

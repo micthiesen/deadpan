@@ -1,0 +1,101 @@
+{
+  "after": {
+    "master_peak": 0.4747477173805237,
+    "master_seam8236": [
+      -0.36122697591781616,
+      -0.25546398758888245
+    ],
+    "max_master_error": 3.0058446676139994e-8,
+    "omitted_processor_max_difference": 0.2099692037136861,
+    "omitted_root_max_difference": 0.10931901349593987,
+    "raw_seam8236": [
+      -0.08425193279981613,
+      -0.040446747094392776
+    ],
+    "samples": 17618,
+    "suppressed_samples": [
+      12812
+    ],
+    "wrong_separate_voice_max_difference": 0.010320814777448617
+  },
+  "before": {
+    "master_peak": 0.4777233302593231,
+    "master_seam8236": [
+      -0.36257097125053406,
+      -0.254677951335907
+    ],
+    "max_master_error": 2.9578945792696487e-8,
+    "omitted_processor_max_difference": 0.21087366365788462,
+    "omitted_root_max_difference": 0.10957013439810742,
+    "raw_seam8236": [
+      -0.08484326303005219,
+      -0.040137920528650284
+    ],
+    "samples": 17618,
+    "suppressed_samples": [
+      12812
+    ],
+    "wrong_separate_voice_max_difference": 0.014316745165176947
+  },
+  "control": "portable copy with identical committed history, then public DeleteBeatSound and SetAudioTreatments(default) only",
+  "event_native": [
+    3100,
+    8005
+  ],
+  "event_source_sha256": "b95b3debd2c83cf2590fddfaa98276c23c3b383b720fd96ac52c2c00c668318b",
+  "event_step": "147/160",
+  "event_support": [
+    6443,
+    11782
+  ],
+  "event_trim_db": -18,
+  "nonlinear_equation": "root=tanh(10^(3/20)*processor); processor=tanh(10^(6/20)*(current_physical+independent_event)) in[6406,12813)",
+  "physical_change_maximum": 0.10298984497785568,
+  "producer": {
+    "arguments": [
+      "-nostdin",
+      "-v",
+      "error",
+      "-i",
+      "/Users/michael/Code/deadpan/native/deadpan-source/tests/fixtures/cfr-bframes.mp4",
+      "-i",
+      "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmp5qnryk/fractional-owner-support/producer/nonzero-original.wav",
+      "-map",
+      "0:v:0",
+      "-map",
+      "1:a:0",
+      "-c:v",
+      "copy",
+      "-c:a",
+      "aac",
+      "-b:a",
+      "192k",
+      "-flags:a",
+      "+bitexact",
+      "-video_track_timescale",
+      "30000",
+      "-movie_timescale",
+      "48000",
+      "-use_editlist",
+      "1",
+      "-map_metadata",
+      "-1",
+      "-fflags",
+      "+bitexact",
+      "-movflags",
+      "+faststart+write_colr",
+      "-f",
+      "mp4",
+      "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmp5qnryk/fractional-owner-support/producer/nonzero-original.mp4"
+    ],
+    "original": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmp5qnryk/fractional-owner-support/producer/nonzero-original.mp4",
+    "original_bytes": 131615,
+    "original_sha256": "ce1385932d079f1b1fc7f596ae11a2cdc80fe48bd0d2dbf6dbc9929fda6897f2",
+    "producer": "/opt/homebrew/bin/ffmpeg",
+    "producer_sha256": "768609fb3f463ff9272bebac61478515f19e43c5343b0c60dde2e6230c40013e",
+    "recipe": "stereo s16 48000Hz192192samples; 431Hz interpolated unsigned32 hashed knots; L=.013+.18*knot,R=-.009+.13*knot; round(value*32768); explicit FL/FR mask3; source audio AAC192k without resampling, ISO MP4 explicit delay/padding edits and48000 movie clock; cfr video stream copied without reencoding",
+    "video_source_sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+    "wav_sha256": "6ba8da3e750f96e6f57f47bdc2d4731cb4a5bd4c52a723b46e1b1fe1dbfc541c"
+  },
+  "retained_event_phase": "2480147/800"
+}

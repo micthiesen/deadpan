@@ -1,0 +1,19 @@
+{
+  "kestrel-shortcuts": {
+    "checks": 1,
+    "failed_checks": [],
+    "failures": [],
+    "skipped": []
+  },
+  "scoped-plays": {
+    "checks": 636,
+    "failed_checks": [],
+    "failures": [
+      "Timed out waiting for Committed revision changed: {\"annotation_busy\":false,\"beat_count\":1,\"busy\":false,\"camera_open\":false,\"camera_pending\":false,\"command\":\"hold-duration 10f\",\"command_open\":false,\"context\":\"Sequence\",\"copied_moment\":null,\"copied_slice\":null,\"copy_pending\":false,\"duration\":20,\"edit_selection\":null,\"edit_selection_state\":\"None\",\"edit_visual_active\":false,\"error\":\"No repeatable edit is available. Cut, group, ungroup, explode, duplicate, wrap a Repeat or set its play count first.\",\"focused_widget\":\"id_E619\",\"footer_bottom\":[613.0,613.0],\"footer_command_open\":false,\"help_open\":false,\"import\":null,\"layout_passes\":1,\"message\":null,\"original_selection\":null,\"pane\":\"Sequence\",\"pending_keys\":\"\",\"picture\":{\"decoded\":{\"label\":\"Showing sequence frame 1\",\"location\":\"Project { session: 5, project: ProjectId(\\\"186ad7c7-4092-420e-9581-c6d126705188\\\"), revision: RevisionId(\\\"76520df4-930d-4078-88a9-2de6aae9cb8b\\\"), view: Sequence { frame: ProjectFrame(0) }, empty_sequence: false }\",\"ticket\":\"Ticket { transport: None, source: 418, request: 425 }\"},\"decoded_framing\":\"[]\",\"decoded_geometry_revision\":0,\"decoded_tier\":\"Original\",\"displayed\":{\"label\":\"Showing sequence frame 1\",\"location\":\"Project { session: 5, project: ProjectId(\\\"186ad7c7-4092-420e-9581-c6d126705188\\\"), revision: RevisionId(\\\"76520df4-930d-4078-88a9-2de6aae9cb8b\\\"), view: Sequence { frame: ProjectFrame(0) }, empty_sequence: false }\",\"ticket\":\"Ticket { transport: None, source: 418, request: 425 }\"},\"displayed_tier\":\"Original\",\"error\":null,\"geometry_revision\":0,\"loading\":false,\"needs_render\":false,\"requested\":{\"label\":\"Showing sequence frame 1\",\"location\":\"Project { session: 5, project: ProjectId(\\\"186ad7c7-4092-420e-9581-c6d126705188\\\"), revision: RevisionId(\\\"76520df4-930d-4078-88a9-2de6aae9cb8b\\\"), view: Sequence { frame: ProjectFrame(0) }, empty_sequence: false }\",\"ticket\":\"Ticket { transport: None, source: 418, request: 425 }\"},\"source_frame\":null},\"pixels_per_point\":1.0,\"playback\":null,\"project_error\":null,\"repeat_queue\":{\"active\":false,\"status\":null,\"waiting\":0},\"revision\":\"76520df4-930d-4078-88a9-2de6aae9cb8b\",\"room_tone\":null,\"scope_end\":20,\"scope_labels\":[],\"scope_start\":0,\"scoped\":{\"cursor\":0,\"presentation\":{\"node\":\"ui-fixed-duration-lead\",\"repeats\":[]},\"revision\":\"76520df4-930d-4078-88a9-2de6aae9cb8b\",\"root\":\"ui-fixed-duration-rate\",\"target\":{\"node\":\"ui-fixed-duration-lead\",\"repeats\":[]}},\"selected_beat\":\"ui-fixed-duration-rate\",\"selected_event\":null,\"selected_sound\":null,\"selected_source\":\"dfc3da76-b2c8-40f5-968f-7bbef396c8d9\",\"sequence_cursor\":0,\"sequence_scope\":[],\"slip\":null,\"sound_cursor\":0,\"sound_events\":{},\"sound_routes\":{},\"source_cursor\":0,\"source_summary\":null,\"splice\":null,\"trim\":{\"abandon_count\":0,\"command_capture\":null,\"draft\":null,\"pair\":{\"displayed\":null,\"expected\":null,\"gpu_pending\":false,\"render_error\":null,\"required_raster\":null,\"worker_error\":null},\"prefix_capture\":null},\"viewport_points\":[960.0,640.0],\"visual_selection\":false}"
+    ],
+    "skipped": [
+      "OS picker behavior: only its selected path is scripted",
+      "Physical display presentation, VoiceOver, OS IME delivery and audio device output"
+    ]
+  }
+}

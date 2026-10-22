@@ -239,6 +239,9 @@ impl DeadpanApp {
         if !self.macro_action_allowed(Action::Command) {
             return false;
         }
+        if self.refuse_duration_recording_draft() {
+            return false;
+        }
         if self.macros.is_pending() {
             self.error = Some("Wait for the pending macro action to finish.".into());
             return false;

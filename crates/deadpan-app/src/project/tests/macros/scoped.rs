@@ -2,6 +2,7 @@
 
 mod audio_setters;
 mod duration;
+mod fixed_duration;
 mod gain;
 mod mute;
 mod pauses;
@@ -124,6 +125,7 @@ fn capture_scope(update: &ProjectUpdate, root: &NodeId, frame: i64) -> Target {
 fn context_for(update: &ProjectUpdate, target: &Target) -> SemanticContext {
     SemanticContext {
         original: None,
+        hold_duration: None,
         scoped: Some(
             target
                 .semantic_framing(update.workspace.as_ref().unwrap())

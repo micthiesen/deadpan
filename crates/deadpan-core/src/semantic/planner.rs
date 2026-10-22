@@ -26,6 +26,8 @@ mod content;
 mod framing;
 mod gag_edit;
 mod group;
+mod hold_duration;
+pub use hold_duration::{HoldDurationVisibility, SemanticHoldDurationContext};
 mod pause;
 mod scoped_gain;
 pub use pause::copied_moment_audio;
@@ -75,6 +77,9 @@ pub struct SemanticContext {
     /// Explicit current single-play editing authority, independent of ordinary
     /// navigation. This runtime address never belongs to a saved program.
     pub scoped: Option<SemanticScopedContext>,
+    /// Duration-only authority for a Hold inside an ordinary fixed Retime.
+    /// Mutually exclusive with single-play, Original and Visual authority.
+    pub hold_duration: Option<SemanticHoldDurationContext>,
     pub parent: NodeId,
     /// Absolute Edit boundary, including either endpoint of the ordinary scope.
     pub cursor: ProjectFrame,
@@ -739,6 +744,16 @@ where
                 self.trace[index].after = self.context.clone();
                 continue;
             }
+            if self.context.hold_duration.is_some()
+                && !matches!(
+                    instruction,
+                    SemanticInstruction::SetHoldDuration { .. } | SemanticInstruction::Call { .. }
+                )
+            {
+                return Err(invalid(
+                    "ordinary inspected Hold authority supports only Hold duration and named duration calls",
+                ));
+            }
             if self.context.scoped.is_some()
                 && !matches!(
                     instruction,
@@ -1339,6 +1354,7 @@ pub(super) fn validate_context(
     let bounds = scope_bounds(document, &context.parent)?;
     validate_selection(document, context)?;
     selection::validate_context(document, context, bounds)?;
+    hold_duration::validate_context(document, context)?;
     framing::validate_scoped_context(document, context)?;
     Ok(bounds)
 }

@@ -72,6 +72,7 @@ fn fixture() -> ProjectDocument {
 }
 fn context(selected: Option<&str>) -> SemanticContext {
     SemanticContext {
+        hold_duration: None,
         original: None,
         scoped: None,
         parent: node("outer"),

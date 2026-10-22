@@ -1,0 +1,19 @@
+{
+  "base_revision": "ed33550d053be0dc9ecc9143283e294df7993aea",
+  "host": {
+    "machine": "Mac17,7",
+    "chip": "Apple M5 Max",
+    "memory_bytes": 137438953472,
+    "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+    "sw_vers": "ProductName:\t\tmacOS\nProductVersion:\t\t26.5.2\nBuildVersion:\t\t25F84\n"
+  },
+  "toolchain": "[toolchain]\nchannel = \"1.97.1\"\ncomponents = [\"clippy\", \"rustfmt\"]\nprofile = \"minimal\"\n",
+  "cargo_lock_sha256": "1e39d18ae4de6c7b898edad39eb7104235fb3ffe3af84521ca94df2b6c25b71b",
+  "environment": {
+    "DEADPAN_FFMPEG_PREFIX": "/Users/michael/Library/Developer/Deadpan/ffmpeg-8.0.3-opus-1.6.1-dav1d-1.5.4-qualified-3/prefix",
+    "CARGO_PROFILE_DEV_OPT_LEVEL": "2",
+    "DEADPAN_REQUIRE_PHYSICAL_MAC": "1",
+    "DEADPAN_REQUIRE_SYNTHETIC_WORKER": "1"
+  },
+  "scope": "native ordinary fixed-Retime Hold length; no DSP/media/schema changes"
+}

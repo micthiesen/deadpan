@@ -151,6 +151,7 @@ fn run(update: &ProjectUpdate, request: u64, register: char, count: u32, cursor:
         count,
         scope: SequenceScope::default(),
         context: SemanticContext {
+            hold_duration: None,
             original: None,
             scoped: None,
             parent: update.workspace.as_ref().unwrap().document.root().clone(),
@@ -243,6 +244,7 @@ fn oriented_visual_copy_keeps_redo_and_replacement_failure_retains_exact_selecti
             },
             scope: SequenceScope::default(),
             context: SemanticContext {
+                hold_duration: None,
                 original: None,
                 scoped: None,
                 parent: node("root"),
@@ -305,6 +307,7 @@ fn oriented_visual_copy_keeps_redo_and_replacement_failure_retains_exact_selecti
         },
         scope: SequenceScope::default(),
         context: SemanticContext {
+            hold_duration: None,
             original: None,
             scoped: None,
             parent: node("root"),
@@ -408,6 +411,7 @@ fn bank_only_yank_refresh_failure_retains_the_selected_child_copy_and_redo() {
         },
         scope: SequenceScope::default(),
         context: SemanticContext {
+            hold_duration: None,
             original: None,
             scoped: None,
             parent: node("root"),
@@ -659,6 +663,7 @@ fn empty_selected_beat_yanks_and_pastes_at_its_sibling_slot_without_cursor_infer
             },
             scope: SequenceScope::default(),
             context: SemanticContext {
+                hold_duration: None,
                 original: None,
                 scoped: None,
                 parent: node("root"),
@@ -683,6 +688,7 @@ fn empty_selected_beat_yanks_and_pastes_at_its_sibling_slot_without_cursor_infer
             },
             scope: SequenceScope::default(),
             context: SemanticContext {
+                hold_duration: None,
                 original: None,
                 scoped: None,
                 parent: node("root"),
@@ -1212,6 +1218,7 @@ fn nested_macro_copies_keep_their_staged_absolute_bounds_and_original_group_labe
         count: 2,
         scope: scope.clone(),
         context: SemanticContext {
+            hold_duration: None,
             original: None,
             scoped: None,
             parent: node("group"),
@@ -1272,6 +1279,7 @@ fn group_objects_keep_capture_scope_separate_from_navigation_and_cut_receipt() {
         .descend(opened.workspace.as_ref().unwrap(), &node("group"))
         .unwrap();
     let inner_context = |_update: &ProjectUpdate| SemanticContext {
+        hold_duration: None,
         original: None,
         scoped: None,
         parent: node("group"),
@@ -1351,6 +1359,7 @@ fn group_objects_keep_capture_scope_separate_from_navigation_and_cut_receipt() {
     );
 
     let outside_context = SemanticContext {
+        hold_duration: None,
         original: None,
         scoped: None,
         parent: node("root"),
@@ -1548,6 +1557,7 @@ fn counted_group_object_macro_uses_final_scope_and_unique_staged_capture_paths()
             count: 2,
             scope: inside,
             context: SemanticContext {
+                hold_duration: None,
                 original: None,
                 scoped: None,
                 parent: node("group"),

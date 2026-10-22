@@ -120,6 +120,7 @@ fn context(document: &ProjectDocument, outer: u32, inner: u32, owned: bool) -> S
         "hold"
     });
     SemanticContext {
+        hold_duration: None,
         original: None,
         parent: id("root"),
         selected_child: Some(id("outer")),

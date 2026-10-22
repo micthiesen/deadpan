@@ -17,6 +17,21 @@ impl super::DeadpanApp {
             .snapshot()?
             .edit_for(self.workspace.as_ref()?)
             .ok()?;
+        if self
+            .scoped
+            .as_ref()
+            .is_some_and(|state| state.selected_target().repeats.is_empty())
+            && !matches!(
+                edit.operation,
+                RepeatableEdit::Parameter(
+                    deadpan_core::SemanticInstruction::SetHoldDuration { .. }
+                )
+            )
+        {
+            return Some(
+                "repeat unavailable: use an ordinary nested pause length edit first".into(),
+            );
+        }
         let scoped_audio = matches!(&edit.operation,
             RepeatableEdit::Parameter(deadpan_core::SemanticInstruction::SetAudio { change })
                 if super::gain::scoped_audio_change(change));

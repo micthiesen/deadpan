@@ -1,4 +1,5 @@
 use super::*;
+mod fixed_duration;
 mod pause_continuation;
 use deadpan_core::{
     BeatNode, ColorPolicy, Command, CommandRequest, FrameRange, FrameRate, HoldAudio, HoldRecipe,

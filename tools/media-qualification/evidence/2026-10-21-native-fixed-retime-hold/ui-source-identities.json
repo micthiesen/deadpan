@@ -1,0 +1,77 @@
+{
+  "base": "ed33550d",
+  "files": [
+    {
+      "path": "crates/deadpan-app/src/preview/harness/scoped_plays.rs",
+      "sha256": "72556a283ceffe89c42218c04443152c098fdb199d367e7d4f78275380119031",
+      "bytes": 13050
+    },
+    {
+      "path": "crates/deadpan-app/src/preview/harness/scoped_plays/fixed_hold_duration.rs",
+      "sha256": "43896d0635356350b69cdb4e20a808d8363b83b88ce4d230f847c452657529f5",
+      "bytes": 20684
+    },
+    {
+      "path": "crates/deadpan-app/src/preview/harness/scoped_plays/fixed_hold_duration/fixture.rs",
+      "sha256": "1355fb00c57667aa910310b6cbdac68d894d394d345ad11862ee3b56876e7ba9",
+      "bytes": 6024
+    },
+    {
+      "path": "crates/deadpan-app/src/preview/harness/scoped_plays/hold_duration/refusals.rs",
+      "sha256": "3e66d88319052c02df2eac40096d73caa3432f891d87547d370c3b49c0e27822",
+      "bytes": 15312
+    }
+  ],
+  "runtime": "not run by UI replay worker; root owns Cargo/replays/captures",
+  "verification": "rustfmt --edition 2024 --config skip_children=true --check passed on all four owned paths",
+  "registration": "scoped_plays replay after hold_duration and before hold_audio",
+  "fixtures": {
+    "ordinary": {
+      "output": 20,
+      "input": [
+        0,
+        20
+      ],
+      "body": [
+        2,
+        8,
+        10
+      ],
+      "interior_cursor": 5,
+      "continued_cursor": 2
+    },
+    "cropped": {
+      "output": 10,
+      "input": [
+        3,
+        18
+      ],
+      "body": [
+        2,
+        8,
+        10
+      ],
+      "intrinsic_start": "-2/3",
+      "visible": [
+        "0",
+        "14/3"
+      ],
+      "interior_cursor": 2,
+      "continued_cursor": 0
+    }
+  },
+  "captured_states": [
+    "minimum-size Enter parameter",
+    "ordinary inspector after direct/button setters",
+    "saved one-instruction macro",
+    "fractional crop continuation",
+    "atomic invalid shrink",
+    "delayed direct receipt after away/back",
+    "delayed recording after away/back",
+    "minimum-size Enter parameter while duration-only recording"
+  ],
+  "recording_guard": "qw; typed Gain refused with exact duration-only error and no state/recording/register change; real Enter prefill8f; field submits10f; acknowledged instruction count1",
+  "delayed_recording_navigation": "actual selectable Lead row then selected Hold row; keyboard L only after pointer selection abandons recording",
+  "qualification_correction": "Enter was already remapped to Command in scoped_action. Do not claim an old Enter production bug; new coverage proves Enter while recording and truthful duration-only/readypending action admission.",
+  "first_replay_correction": "Undo intentionally clears semantic repeat state. After successful call, select Lead via K then dot without Undo; assert Lead2\u219210, called Hold stays10, fixed output20/map/event unchanged; Undo dot then Undo call."
+}

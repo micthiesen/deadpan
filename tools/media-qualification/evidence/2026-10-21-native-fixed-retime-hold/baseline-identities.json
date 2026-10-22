@@ -1,0 +1,13 @@
+{
+  "base_revision": "ed33550d",
+  "binary": "target/debug/deps/deadpan_app-edbbed39ebf1d72f",
+  "sha256": "1e754093aa71b4c5a4774dfeeaf83b784cbacd5079b86eadb07cb277881e1886",
+  "exit_code": 100,
+  "tests": 2,
+  "valid_positive_failed": 2,
+  "fixture_setup_failed": 0,
+  "skipped": 1193,
+  "duration_seconds": 0.334,
+  "source_identity_map": "baseline-source-identities.json",
+  "invariants": "Qualified ready Original, valid fixed EditRetime/Hold, noRepeat, actual visible framing instance, Target.validate success, semantic_framing refusal remains, unchanged State::hold_duration_available positive fails"
+}

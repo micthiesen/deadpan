@@ -6,6 +6,7 @@ use egui::Key;
 
 mod analysis_navigation;
 mod audio_setters;
+mod fixed_hold_duration;
 mod framing_macros;
 mod gain_macros;
 mod heterogeneous_pauses;
@@ -245,6 +246,7 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     audio_setters::run(d)?;
     pause_macros::run(d)?;
     hold_duration::run(d)?;
+    fixed_hold_duration::run(d)?;
     hold_audio::run(d)?;
     pauses::run(d)?;
     analysis_navigation::run(d)?;

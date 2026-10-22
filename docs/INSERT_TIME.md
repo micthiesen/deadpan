@@ -50,6 +50,12 @@ records exact nested slopes, cropped support and retained allocation endpoints.
 The [processing-input qualification](qualification/processing-hold-clocks-2026-10-20.md)
 extends that coverage to Preserve/Shift, historical input and output bindings,
 default and owned plays, and RoomTone gaps.
+The native inspector exposes existing Hold resizing for ordinary fixed Edit
+Retime ancestry through Enter, Change duration and `:hold-duration`, including
+recording, named calls and dot. Exact crop visibility determines the first
+sampled continuation frame. Repeat ancestry and derived pause clocks retain
+their separate restrictions. See the
+[native fixed-window qualification](qualification/native-fixed-retime-hold-2026-10-21.md).
 An eligible tape-speed stage can subsequently change speed while preserving
 its exact selected input and descendant pause clocks. The stage's output scales
 those pauses; its inspector and macros use the exact input rather than the

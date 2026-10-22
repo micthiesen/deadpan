@@ -110,6 +110,7 @@ fn plan(kind: SplitEditKind, length: u32, cursor: i64) -> Result<SemanticPlan, E
         &SemanticContext {
             original: None,
             scoped: None,
+            hold_duration: None,
             parent: id("root"),
             cursor: ProjectFrame(cursor),
             selected_child: None,
@@ -233,6 +234,7 @@ fn plan_role(role: MediaRole, anchor: i64, head: i64) -> Result<SemanticPlan, Ed
         &SemanticContext {
             original: None,
             scoped: None,
+            hold_duration: None,
             parent: id("root"),
             cursor: ProjectFrame(head),
             selected_child: None,
@@ -367,6 +369,7 @@ fn plan_repeat_with(
         &SemanticContext {
             original: None,
             scoped: None,
+            hold_duration: None,
             parent: id("root"),
             cursor: ProjectFrame(30),
             selected_child: None,
@@ -576,6 +579,7 @@ fn split_edits_capture_clocks_beside_a_pitch_shifted_stage() {
             &SemanticContext {
                 original: None,
                 scoped: None,
+                hold_duration: None,
                 parent: id("root"),
                 cursor: ProjectFrame(20),
                 selected_child: None,

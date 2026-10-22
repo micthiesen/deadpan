@@ -2,7 +2,26 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current continuation, 2026-10-18
+## Current continuation, 2026-10-21
+
+Ordinary Hold lengths inside fixed unclocked Edit Retimes now use a captured
+duration-only semantic context, independently of This-play authority. Enter,
+Change duration, recording, named calls and direct-edit dot preserve the fixed
+window and continue at the first sampled visible picture through exact crops.
+Repeat ancestry, derived pause clocks and unsampled Holds retain their guards.
+Rendering uses cached inspector geometry; capture and commit validate the full
+target. Duration continuation does not grant semantic framing authority, so
+ordinary nonrecording Zoom retains its direct scoped path.
+
+See [native qualification](../qualification/native-fixed-retime-hold-2026-10-21.md)
+for two valid failing baselines, 15 focused and 698 broader passes, 190 UI tests,
+the final 144-test app follow-up, strict lint, both 958-check release replays and
+the complete nonzero master/export continuity run. The progress artifact and
+[requirements](../REQUIREMENTS.md) remain the status of record; no requirement
+or gate is newly complete. Continue broader temporal scopes and selectors,
+remaining audio-owner routes, mastering, renderer and full-workflow acceptance.
+
+## Earlier continuation, 2026-10-18
 
 The older priority list below predates completed whole-Original, Original mark
 and eligible Place slice macro work. See [whole-Original macros](../qualification/whole-original-macros-2026-10-16.md),
