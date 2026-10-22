@@ -4,6 +4,9 @@ use deadpan_core::*;
 use proptest::prelude::*;
 use serde_json::json;
 
+#[path = "marks/named_mark_selectors.rs"]
+mod named_mark_selectors;
+
 fn node(value: &str) -> NodeId {
     NodeId::new(value).unwrap()
 }

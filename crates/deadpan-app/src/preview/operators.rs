@@ -48,6 +48,14 @@ impl DeadpanApp {
             .map_or(Ok(RegisterName::unnamed()), RegisterName::new)
             .map_err(|error| error.to_string())
             .map(|register| {
+                let selector = if selector == SemanticSelector::VisualSelection {
+                    captured
+                        .target
+                        .as_ref()
+                        .map_or(selector.clone(), macros::Capture::repeat_selector)
+                } else {
+                    selector
+                };
                 if cut {
                     SemanticInstruction::Cut { selector, register }
                 } else {

@@ -112,7 +112,7 @@ where
                 "select the range to bleep with v first",
             ));
         }
-        let target = self.resolve_selector(crate::SemanticSelector::VisualSelection)?;
+        let target = self.resolve_selector(&crate::SemanticSelector::VisualSelection)?;
         let SliceCaptureSelection::Range { range } = target.selection()?.clone() else {
             return Err(EditError::new(
                 EditErrorCode::SelectionUnavailable,
@@ -158,7 +158,7 @@ where
         self.capture_selector(
             trace_index,
             register,
-            crate::SemanticSelector::VisualSelection,
+            &crate::SemanticSelector::VisualSelection,
             true,
         )?;
         let cut = self.trace[trace_index]

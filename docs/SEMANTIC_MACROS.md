@@ -10,7 +10,7 @@ Both binding families are configurable through `macro.record` and
 `macro.execute`. Names are case-insensitive a–z.
 
 The current vocabulary includes relative frame and beat motion, group start/end,
-Visual selection begin/finish/clear, frame, beat or Visual cut, selected-beat or
+Visual selection begin/finish/clear, named-mark range selection, frame, beat or Visual cut, selected-beat or
 Visual yank, typed operator motions and group objects, Repeat wraps (optionally
 escalating) and count setters, named Group, neutral Ungroup, register paste or
 Visual replacement, pauses (`InsertPause`, exact frames or milliseconds with a
@@ -84,6 +84,50 @@ See [copy/paste qualification](qualification/macro-reuse-2026-10-02.md) for
 checks, rendered captures, retained failures and remaining limits.
 
 ## Recording and input ownership
+
+### Named-mark ranges
+
+`:select marks start=<exactMarkId> end=<exactMarkId>` selects a finished,
+half-open Edit range in the active ordinary Sequence. It requires the Linked
+role. Native letter marks use the IDs `native-mark-a` through `native-mark-z`;
+the command takes exact IDs, not labels or guessed letters. For example:
+
+```text
+:select marks start=native-mark-a end=native-mark-b
+:wrap-repeat 3
+```
+
+Recording stores `SelectMarkRange { start, end }`. Its targets are
+`NamedMarkTarget` addresses, each containing a mark ID and an optional explicit
+occurrence. The resulting `SemanticVisualSelection::MarkRange` retains those
+addresses. It contains no cached frame endpoints. Native copy, cut, Group,
+Duplicate and Repeat operations retain the effective
+`SemanticSelector::MarkRange { start, end }`, so a named call or dot-repeat
+resolves the marks again after preceding staged edits. A saved direct operator
+can reuse that selector without an active Visual selection; a new explicit
+Visual selection overrides it.
+
+Both exact and quantized endpoints must remain ordered and inside the captured
+scope. Missing, unresolved, ambiguous, wrong-clock, reversed or collapsed marks
+refuse atomically. Repeated hosts require the existing explicit occurrence
+rules. The planner never swaps, clamps or substitutes endpoints. This admission
+does not add temporal occurrence scopes or duration-edit authority. Role-only
+consumers retain their existing one-direct-child constraint; this does not
+grant cross-owner role authority. Each consuming instruction keeps its own
+existing range constraints.
+
+The selection survives ordinary cursor movement and displays the current
+resolved range with its exact IDs. If an edit makes it unresolved, consuming it
+refuses; Escape clears it before a different selection is made. Plain Visual
+selection replaces the named range. Command entry captures session, revision,
+scope, cursor, selection and role, and refuses a stale completion.
+
+Selecting alone writes neither authored history nor the register bank. Copy
+changes only its register; authored runs keep their existing atomic Undo and
+bank behavior. `:wrap-repeat` wraps the range; `:repeat` remains the existing
+selected-beat/count command and refuses an active Visual range.
+See the [named-mark qualification](qualification/named-mark-selectors-2026-10-22.md)
+for the current verification state and retained failures.
 
 ### Ranged zoom and creep
 
@@ -468,8 +512,9 @@ that instruction resolves to the displayed placement. Copy must use the entry
 register's exact source, including its endpoints. An insertion must use the
 literal child slot immediately before or after the captured selected beat;
 slot zero also works in an empty Sequence. Replacement must use the captured
-nonempty time range or exact Object selection. Empty structural Objects retain
-their identity and can be replaced.
+nonempty time range, exact Object selection or named-mark range resolved to
+that exact captured interval. Empty structural Objects retain their identity
+and can be replaced.
 
 Move, refined source endpoints, interior or nonadjacent insertion, and insertion
 with an Object selection refuse recording with a visible explanation. The draft,

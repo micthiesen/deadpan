@@ -1,0 +1,13 @@
+{
+  "production_rust_identical": true,
+  "files": {
+    "crates/deadpan-core/tests/marks/named_mark_roles.rs": {
+      "broad_first": null,
+      "role_final": "a2805109734c8055227335bcbad8067519c45178c010a74ada1e83f7a7f1b5e0"
+    },
+    "crates/deadpan-core/tests/marks/named_mark_selectors.rs": {
+      "broad_first": "106fd4f0f18eee80921713fb5624441d7b976e22a8b0179b0efbbb39c0aa345c",
+      "role_final": "39b5da367228200c918519e21bda00da370496deadee2b0b8a6012a0b817f506"
+    }
+  }
+}

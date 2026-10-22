@@ -764,7 +764,7 @@ fn setter_plays(d: &Driver<'_>, id: &deadpan_core::NodeId) -> Result<u32, String
 
 fn candidate(d: &mut Driver<'_>, selector: SemanticSelector, plays: u32) -> Result<(), String> {
     let expected = RepeatableEdit::Repeat {
-        selector,
+        selector: selector.clone(),
         plays: NonZeroU32::new(plays).unwrap(),
         escalation: None,
     };

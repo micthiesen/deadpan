@@ -1,0 +1,35 @@
+{
+  "audio_windows": 1,
+  "blocks_compared": 1,
+  "declared_audio_priming": 2048,
+  "failures": [],
+  "fixture": "named-mark-range",
+  "frames": 33,
+  "max_block_level_db": 0.004084992149394395,
+  "max_thumbnail_mad": 0.05022078804347826,
+  "min_block_snr_db": 58.44175738919641,
+  "min_chroma_psnr_db": 53.44486901527713,
+  "min_luma_psnr_db": 56.454656378842394,
+  "min_neighbor_margin_db": 0.0,
+  "movie": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmptfbUkx/exports/named-mark-range.mp4",
+  "notes": [
+    "Real retained cfr-bframes.mp4 A/V at 30000/1001. One public macro grows the silent Background Hold 2 to 3 frames, Yanks and Cuts marks a/b at re-resolved [11,14), then repeats marks c/d at re-resolved [13,16) twice. Both registers retain validated three-frame transaction-step captures. Complete chronological command replay passes before navigation and after public Undo/Redo; the bank remains intact. Every one of the 33 final pictures has an independent ordinal/background oracle. Encoded audio is compared against canonical preview by the shared verifier; this fixture does not claim an independent PCM oracle."
+  ],
+  "offsets": [
+    [
+      "verified_zero",
+      0
+    ]
+  ],
+  "package": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmptfbUkx/fixture/named-mark-range.deadpan",
+  "passed": true,
+  "pictures": 33,
+  "render_seconds": 1.211314709,
+  "revision": "b371d2fd-311c-48dc-b2ef-1b8c6c51de9a",
+  "rows": [
+    "Repeat operator",
+    "Hold (insert time)"
+  ],
+  "signal_windows": 1,
+  "verify_seconds": 0.3764035
+}

@@ -157,7 +157,7 @@ impl Pane {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Action {
     Repeat {
         selector: deadpan_core::SemanticSelector,
@@ -327,7 +327,7 @@ pub enum Action {
 }
 
 /// What a Keys palette entry performs for a configured editor binding.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum PaletteBinding {
     /// The action the binding's path resolves to.
     Action(Action),
@@ -458,7 +458,7 @@ pub struct Bindings {
     operator_refusal: Option<&'static str>,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 struct HeldBinding {
     identity: Key,
     stroke: editor_map::Stroke,
@@ -1045,7 +1045,11 @@ impl Bindings {
     ) -> Option<Action> {
         let identity = physical_key.unwrap_or(key);
         if !pressed {
-            if self.held.is_some_and(|held| held.identity == identity) {
+            if self
+                .held
+                .as_ref()
+                .is_some_and(|held| held.identity == identity)
+            {
                 self.held = None;
             }
             return None;
@@ -1075,8 +1079,9 @@ impl Bindings {
             let stroke = self.stroke_with_logical_text(key, physical_key, modifiers, logical_text);
             return self
                 .held
+                .as_ref()
                 .filter(|held| held.identity == identity && Some(held.stroke) == stroke)
-                .map(|held| held.action);
+                .map(|held| held.action.clone());
         }
         self.held = None;
         // Native application shortcuts have priority over the editor trie.
@@ -1312,7 +1317,7 @@ impl Bindings {
                 action: binding.value.resolve(None),
             });
             self.clear_pending();
-            if !matches!(action, Action::Invalid(_)) {
+            if !matches!(&action, Action::Invalid(_)) {
                 self.held = held;
             }
             return Some(action);
@@ -1533,7 +1538,7 @@ mod tests {
                 }
                 assert_eq!(
                     bindings.key(key, Modifiers::NONE, false, false),
-                    Some(action)
+                    Some(action.clone())
                 );
                 assert!(bindings.pending().is_empty());
                 assert_eq!(bindings.key(Key::G, Modifiers::NONE, false, false), None);

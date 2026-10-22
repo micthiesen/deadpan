@@ -1,0 +1,30 @@
+[
+  {
+    "label": "core",
+    "tests_selected": 7,
+    "run_exit": 0,
+    "wall_seconds": 0.26580987498164177,
+    "source_and_binary_unchanged": true
+  },
+  {
+    "label": "store",
+    "tests_selected": 1,
+    "run_exit": 0,
+    "wall_seconds": 0.37570558302104473,
+    "source_and_binary_unchanged": true
+  },
+  {
+    "label": "cli",
+    "tests_selected": 1,
+    "run_exit": 100,
+    "wall_seconds": 0.5715983342379332,
+    "source_and_binary_unchanged": true
+  },
+  {
+    "label": "app",
+    "tests_selected": 5,
+    "run_exit": 0,
+    "wall_seconds": 0.5027747917920351,
+    "source_and_binary_unchanged": true
+  }
+]

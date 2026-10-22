@@ -72,7 +72,7 @@ pub(super) fn structure_instruction(
         {
             return Err("The Edit selection is empty. Move a boundary before duplicating.".into());
         }
-        Some(_) => SemanticSelector::VisualSelection,
+        Some(selection) => selection.effective_selector(),
         None => {
             let selected = context
                 .selected_child
@@ -113,7 +113,7 @@ pub(super) fn instruction(
             {
                 return Err("The Edit selection is empty. Move a boundary before grouping.".into());
             }
-            SemanticSelector::VisualSelection
+            selection.effective_selector()
         } else {
             selected_child(document, context)?;
             SemanticSelector::SelectedBeat

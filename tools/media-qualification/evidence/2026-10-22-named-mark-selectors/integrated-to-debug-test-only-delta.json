@@ -1,0 +1,11 @@
+{
+  "rust_files": 1969,
+  "only_changed_file": {
+    "crates/deadpan-app/src/preview/harness/semantic/named_marks.rs": {
+      "integrated_second": "0bda2a6e74c126ffe8dfebab24de6f552a6d599a23e33797652bd866be3ec98c",
+      "debug_third": "936084e2b89d62988ca7c848c23e2273eca756eaa59c18f8e9b40b66df0599c2"
+    }
+  },
+  "production_rust_identical": true,
+  "reason": "Native replay fixture uses wrap-repeat and requests a picture after direct late-cursor injection."
+}

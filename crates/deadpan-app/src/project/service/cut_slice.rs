@@ -135,10 +135,10 @@ impl Service {
                 &capture.id.project,
                 &capture.id.source_revision,
                 &outcome.revision_id,
-                semantic::Change::Replace(LastEdit {
+                semantic::Change::Replace(Box::new(LastEdit {
                     operation: RepeatableEdit::Cut(attempt.operation.clone()),
                     register: capture.register,
-                }),
+                })),
             );
         }
         bank.version = saved.version;

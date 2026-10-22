@@ -393,7 +393,7 @@ fn verify_equivalence_with(placement: Placement, semantic: bool) {
                     bank_version,
                     request: 42,
                 },
-                instruction,
+                instruction: Box::new(instruction),
                 repeat_version: None,
                 scope: SequenceScope::default(),
                 context: deadpan_core::SemanticContext {

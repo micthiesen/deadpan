@@ -1,0 +1,10 @@
+{
+  "base": "74616d32",
+  "test": "named_mark_selectors::named_mark_range_semantic_yank_admits_after_public_resolver_and_visual_controls",
+  "suite": "deadpan-core::marks",
+  "executed": "/Users/michael/Code/deadpan/target/debug/deps/marks-361fdd41c110872b",
+  "retained": "/tmp/deadpan-named-mark-selectors-2026-10-22/baseline-bin/marks-361fdd41c110872b",
+  "sha256": "8fd2cd33739dc60b1f22943959eba592218b0a4db5454df56a4d8c2a6ab9bd02",
+  "rust_files": 1963,
+  "scope": "Synthetic structural public mark resolver and Visual capture controls before sole positive mark_range semantic wire admission assertion. No real media qualification."
+}

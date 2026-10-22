@@ -608,8 +608,8 @@ impl Service {
                         format!("Macro {register}"),
                     ),
                     Operation::Apply { instruction, .. } => (
-                        instruction.clone(),
-                        match instruction {
+                        instruction.as_ref().clone(),
+                        match instruction.as_ref() {
                             SemanticInstruction::YankBeat { .. } => "Copy beat",
                             SemanticInstruction::Yank {
                                 selector: SemanticSelector::SelectedBeat,
@@ -800,7 +800,7 @@ impl Service {
                         &id.project,
                         &id.revision,
                         &saved.revision_id,
-                        semantic::Change::Replace(edit),
+                        semantic::Change::Replace(Box::new(edit)),
                     );
                 }
                 // A yank-only program saves its bank without a new timeline

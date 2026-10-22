@@ -8,6 +8,8 @@ mod apply;
 mod framing;
 #[path = "macros/groups.rs"]
 mod groups;
+#[path = "macros/mark_range.rs"]
+mod mark_range;
 #[path = "macros/original.rs"]
 mod original;
 

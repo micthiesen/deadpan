@@ -113,12 +113,12 @@ where
         &mut self,
         trace_index: usize,
         register: RegisterName,
-        selector: SemanticSelector,
+        selector: &SemanticSelector,
         cut: bool,
     ) -> Result<(), EditError> {
         let target = self.resolve_selector(selector)?;
         self.capture_instruction(trace_index, register, target, cut)?;
-        if !cut && selector == SemanticSelector::VisualSelection {
+        if !cut && matches!(selector, SemanticSelector::VisualSelection) {
             self.finish_selection()?;
         }
         Ok(())
@@ -223,7 +223,7 @@ where
         index: usize,
         register: RegisterName,
     ) -> Result<(), EditError> {
-        let target = self.resolve_selector(SemanticSelector::VisualSelection)?;
+        let target = self.resolve_selector(&SemanticSelector::VisualSelection)?;
         let destination = match &target.selection {
             None => Destination::Seam {
                 index: 0,

@@ -1,0 +1,16 @@
+[
+  {
+    "mode": "debug-third-visual",
+    "file": "named-mark-selectors-031.png",
+    "label": "Named marks show both identities and exact Edit range before an operator",
+    "frame": 45,
+    "sha256": "bfc33283a48deb2ce04ad527506214df2602d73b37b46a7d7f790b7280f7378d"
+  },
+  {
+    "mode": "release-visual",
+    "file": "named-mark-selectors-032.png",
+    "label": "Named marks show both identities and exact Edit range before an operator",
+    "frame": 61,
+    "sha256": "bfc33283a48deb2ce04ad527506214df2602d73b37b46a7d7f790b7280f7378d"
+  }
+]

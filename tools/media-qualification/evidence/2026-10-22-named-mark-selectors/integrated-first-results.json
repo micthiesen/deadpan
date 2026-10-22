@@ -1,0 +1,16 @@
+[
+  {
+    "label": "cli",
+    "tests_selected": 1,
+    "run_exit": 100,
+    "wall_seconds": 0.571756667457521,
+    "source_and_binary_unchanged": true
+  },
+  {
+    "label": "app-ui",
+    "tests_selected": 297,
+    "run_exit": 100,
+    "wall_seconds": 38.50691491551697,
+    "source_and_binary_unchanged": true
+  }
+]

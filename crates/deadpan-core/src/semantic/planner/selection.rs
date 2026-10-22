@@ -75,6 +75,9 @@ pub(super) fn validate_context(
                 ));
             }
         }
+        Some(SemanticVisualSelection::MarkRange { start, end }) => {
+            crate::semantic::mark_range::resolve_in_scope(document, context, start, end)?;
+        }
         None => {}
     }
     Ok(())
@@ -96,13 +99,14 @@ where
         {
             SemanticVisualSelection::Time { extending, .. }
             | SemanticVisualSelection::Object { extending, .. } => *extending = false,
+            SemanticVisualSelection::MarkRange { .. } => {}
         }
         Ok(())
     }
 
     pub(super) fn resolve_selector(
         &self,
-        selector: SemanticSelector,
+        selector: &SemanticSelector,
     ) -> Result<ResolvedTarget, EditError> {
         let selection = match selector {
             SemanticSelector::SelectedBeat => {
@@ -114,9 +118,17 @@ where
                 SliceCaptureSelection::Child { node }
             }
             SemanticSelector::TextObject { object } => {
-                let object = self.current.resolve_group_object(&self.context, object)?;
+                let object = self.current.resolve_group_object(&self.context, *object)?;
                 return self.object_target(&object);
             }
+            SemanticSelector::MarkRange { start, end } => SliceCaptureSelection::Range {
+                range: crate::semantic::mark_range::resolve_in_scope(
+                    &self.current,
+                    &self.context,
+                    start,
+                    end,
+                )?,
+            },
             SemanticSelector::VisualSelection => {
                 match self.context.visual_selection.as_ref().ok_or_else(|| {
                     unavailable("select a Visual range before using this macro instruction")
@@ -133,18 +145,28 @@ where
                                 .map_err(crate::DocumentError::from)?,
                         }
                     }
+                    SemanticVisualSelection::MarkRange { start, end } => {
+                        SliceCaptureSelection::Range {
+                            range: crate::semantic::mark_range::resolve_in_scope(
+                                &self.current,
+                                &self.context,
+                                start,
+                                end,
+                            )?,
+                        }
+                    }
                 }
             }
             SemanticSelector::Speech { object } => SliceCaptureSelection::Range {
                 range: self.speech()?.object_range(
                     self.context.cursor,
                     self.bounds,
-                    object,
+                    *object,
                     self.current.presentation_basis().frame_rate,
                 )?,
             },
             SemanticSelector::Motion { motion } => {
-                let (destination, _) = self.motion_target(motion)?;
+                let (destination, _) = self.motion_target(*motion)?;
                 let cursor = self.context.cursor;
                 if destination == cursor {
                     return Err(unavailable("the macro motion selection is empty"));

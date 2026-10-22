@@ -1,0 +1,6 @@
+{
+  "rust_files": 1963,
+  "source_and_binary_unchanged": true,
+  "sole_failure": "final positive semantic mark_range admission",
+  "test_seconds": 0.011
+}

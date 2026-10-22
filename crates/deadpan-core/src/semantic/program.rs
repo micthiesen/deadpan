@@ -4,7 +4,9 @@ use std::num::NonZeroU32;
 
 use serde::{Deserialize, Serialize};
 
-use crate::{EditError, EditErrorCode, FrameCut, RegisterName, SemanticTextObject};
+use crate::{
+    EditError, EditErrorCode, FrameCut, NamedMarkTarget, RegisterName, SemanticTextObject,
+};
 
 pub const MAX_SEMANTIC_PROGRAM_INSTRUCTIONS: usize = 1024;
 pub const MAX_SEMANTIC_PROGRAM_BYTES: usize = 128 * 1024;
@@ -106,13 +108,18 @@ impl PauseLength {
 
 /// Select copied or deleted content without moving the context. Motion ranges
 /// run from the entry cursor to the same destination as ordinary navigation.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
 pub enum SemanticSelector {
     #[serde(deserialize_with = "deserialize_empty")]
     SelectedBeat,
     #[serde(deserialize_with = "deserialize_empty")]
     VisualSelection,
+    /// Two named Edit boundaries, resolved anew against the staged revision.
+    MarkRange {
+        start: NamedMarkTarget,
+        end: NamedMarkTarget,
+    },
     Motion {
         motion: SemanticMotion,
     },
@@ -127,11 +134,14 @@ pub enum SemanticSelector {
 }
 
 impl SemanticSelector {
-    pub const fn uses_speech(self) -> bool {
+    pub const fn uses_speech(&self) -> bool {
         match self {
             Self::Motion { motion } => motion.uses_speech(),
             Self::Speech { .. } => true,
-            Self::SelectedBeat | Self::VisualSelection | Self::TextObject { .. } => false,
+            Self::SelectedBeat
+            | Self::VisualSelection
+            | Self::TextObject { .. }
+            | Self::MarkRange { .. } => false,
         }
     }
 }
@@ -181,6 +191,11 @@ pub enum SemanticInstruction {
     },
     SelectObject {
         object: SemanticTextObject,
+    },
+    /// Select a finished named Edit range without saving its resolved frames.
+    SelectMarkRange {
+        start: NamedMarkTarget,
+        end: NamedMarkTarget,
     },
     #[serde(deserialize_with = "deserialize_empty")]
     BeginSelection,

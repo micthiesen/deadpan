@@ -578,14 +578,17 @@ pub static SPECS: &[Spec] = &[
         name: "Choose the media role",
         section: Section::Select,
         keys: &[],
-        commands: &[verb("select", ":select role=audio|video")],
+        commands: &[verb(
+            "select",
+            ":select role=audio|video|linked  or :select marks start=<exactMarkId> end=<exactMarkId>",
+        )],
         contexts: C::YOUR_EDIT,
         replay: Replay::RecordedAndDot,
         headless: eq(
-            "role parameter of delete_role / role_repeat instructions",
+            "role parameter of delete_role / role_repeat; select_mark_range instruction",
             SEL,
         ),
-        help: "Choose the role a Visual {cut.range} deletes in Your edit: role=audio replaces the range's sound with silence, role=video removes its picture to show the background; neither moves later content or the other role. role=linked restores ordinary cuts; the status line shows the chosen role. With a role, Visual {repeat.range} repeats only that role with 2 plays. Bare :select starts or finishes a Visual range like {visual}.",
+        help: "Choose the role a Visual {cut.range} deletes in Your edit: role=audio replaces the range's sound with silence, role=video removes its picture to show the background; neither moves later content or the other role. role=linked restores ordinary cuts; the status line shows the chosen role. With a role, Visual {repeat.range} repeats only that role with 2 plays. :select marks start=native-mark-a end=native-mark-b selects the half-open range between those exact mark IDs in the current ordinary Sequence. Native letter marks use native-mark-<letter>; IDs are exact, not labels or letter shorthand. Missing, ambiguous, reversed, or out-of-scope marks are refused. Bare :select starts or finishes a Visual range like {visual}.",
     },
     // COPY, CUT & PASTE
     Spec {

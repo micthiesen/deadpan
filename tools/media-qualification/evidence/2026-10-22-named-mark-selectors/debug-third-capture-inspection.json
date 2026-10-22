@@ -1,0 +1,9 @@
+{
+  "stage": "debug-third",
+  "file": "debug-third-visual/named-mark-selectors-031.png",
+  "frame": 45,
+  "viewport": [960, 640],
+  "inspected_by": "root",
+  "result": "Both exact mark IDs and Edit [10..20) 10f are readable. Original/Edit clocks, focused Beats, copy/cut/repeat teaching and the final footer notice are visible without overlap. Synthetic fixture only; final release capture still owed.",
+  "warnings": "Intermediate screenshot allowance; 27 second-retry frames; 8 consecutive retrying runs with distinct causes. No ignored painted retry or repeated identical-retry failure."
+}

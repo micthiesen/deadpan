@@ -1,0 +1,16 @@
+{
+  "capture": {
+    "mode": "release-visual",
+    "file": "named-mark-selectors-032.png",
+    "label": "Named marks show both identities and exact Edit range before an operator",
+    "frame": 61,
+    "sha256": "bfc33283a48deb2ce04ad527506214df2602d73b37b46a7d7f790b7280f7378d"
+  },
+  "inspected_by": "root",
+  "viewport": [
+    960,
+    640
+  ],
+  "result": "Exact IDs, Edit [10..20), 10f duration, separate clocks, focused Beats, selection key teaching and footer notice are readable without overlap. Screenshot bytes match the inspected debug-third checkpoint.",
+  "approved": true
+}

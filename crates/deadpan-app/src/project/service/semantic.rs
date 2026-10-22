@@ -6,7 +6,7 @@ use crate::project::semantic::{LastEdit, Snapshot};
 #[derive(Clone)]
 pub(super) enum Change {
     Preserve,
-    Replace(LastEdit),
+    Replace(Box<LastEdit>),
 }
 
 struct Proof {
@@ -68,7 +68,7 @@ impl State {
         {
             edit = match proof.change {
                 Change::Preserve => previous.edit.clone(),
-                Change::Replace(edit) => Some(edit),
+                Change::Replace(edit) => Some(*edit),
             };
         }
         // Reserve the final version for a permanent unavailable state. An old

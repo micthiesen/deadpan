@@ -395,6 +395,6 @@ fn saved_count_refresh_failure_keeps_receipt_and_exact_retry_cannot_replace_newe
     let MacroOperation::Apply { instruction, .. } = &mut altered else {
         unreachable!()
     };
-    *instruction = setter(5);
+    **instruction = setter(5);
     refused(&harness.service, &path, altered, &changed);
 }

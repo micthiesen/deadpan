@@ -80,7 +80,7 @@ pub(super) fn exercise(service: &ProjectService, opened: &ProjectUpdate) {
         service,
         ProjectRequest::Macro(Operation::Apply {
             id: id(opened, 211),
-            instruction: length(3),
+            instruction: Box::new(length(3)),
             repeat_version: None,
             scope: target.scope.clone(),
             context: duplicate,
@@ -98,7 +98,7 @@ pub(super) fn exercise(service: &ProjectService, opened: &ProjectUpdate) {
         service,
         ProjectRequest::Macro(Operation::Apply {
             id: id(opened, 212),
-            instruction: length(3),
+            instruction: Box::new(length(3)),
             repeat_version: None,
             scope: target.scope.clone(),
             context: context.clone(),
@@ -162,7 +162,7 @@ pub(super) fn exercise(service: &ProjectService, opened: &ProjectUpdate) {
         service,
         ProjectRequest::Macro(Operation::Apply {
             id: id(&changed, 213),
-            instruction: length(3),
+            instruction: Box::new(length(3)),
             repeat_version: None,
             scope: target.scope.clone(),
             context: current.clone(),
@@ -175,7 +175,7 @@ pub(super) fn exercise(service: &ProjectService, opened: &ProjectUpdate) {
         service,
         ProjectRequest::Macro(Operation::Apply {
             id: id(opened, 214),
-            instruction: length(4),
+            instruction: Box::new(length(4)),
             repeat_version: None,
             scope: target.scope.clone(),
             context,

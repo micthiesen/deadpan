@@ -1,0 +1,14 @@
+[
+  {
+    "test": "navigation::registry::tests::commands_reference_is_current",
+    "exit": 101,
+    "expected_regeneration_stop": true,
+    "binary_sha256": "79bb5a20f3f2d118fc80984f1f0afc7c6d718c47b2995630a04d5186394f9913"
+  },
+  {
+    "test": "navigation::registry::tests::routing_matches_the_pre_registry_baseline",
+    "exit": 101,
+    "expected_regeneration_stop": true,
+    "binary_sha256": "79bb5a20f3f2d118fc80984f1f0afc7c6d718c47b2995630a04d5186394f9913"
+  }
+]

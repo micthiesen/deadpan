@@ -93,7 +93,7 @@ where
     pub(super) fn repeat(
         &mut self,
         trace_index: usize,
-        selector: SemanticSelector,
+        selector: &SemanticSelector,
         plays: u32,
         escalation: Option<crate::RepeatEscalation>,
     ) -> Result<(), EditError> {
@@ -244,7 +244,7 @@ where
                 })?;
                 self.repeat(
                     trace_index,
-                    SemanticSelector::SelectedBeat,
+                    &SemanticSelector::SelectedBeat,
                     plays.get(),
                     None,
                 )?;

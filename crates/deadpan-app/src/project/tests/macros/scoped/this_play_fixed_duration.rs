@@ -152,7 +152,7 @@ fn exercise(output: i64, crop: (i64, i64), cursor: i64, continuation: i64) {
         &service,
         Operation::Apply {
             id: id(&opened, 1),
-            instruction: length(10),
+            instruction: Box::new(length(10)),
             repeat_version: None,
             scope: target.scope.clone(),
             context: context.clone(),
@@ -185,7 +185,7 @@ fn exercise(output: i64, crop: (i64, i64), cursor: i64, continuation: i64) {
         &service,
         ProjectRequest::Macro(Operation::Apply {
             id: id(&opened, 2),
-            instruction: length(11),
+            instruction: Box::new(length(11)),
             repeat_version: None,
             scope: target.scope.clone(),
             context: context.clone(),

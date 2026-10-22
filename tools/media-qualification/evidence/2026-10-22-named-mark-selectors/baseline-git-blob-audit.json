@@ -1,0 +1,13 @@
+{
+  "base": "74616d32a40f9ea75ededcaedbe7edd8613bfec6",
+  "base_rust_files": 1962,
+  "unchanged_base_files": 1961,
+  "registration_only": [
+    "crates/deadpan-core/tests/marks.rs"
+  ],
+  "new_witness_only": [
+    "crates/deadpan-core/tests/marks/named_mark_selectors.rs"
+  ],
+  "baseline_files": 1963,
+  "valid_old_code_controls": true
+}

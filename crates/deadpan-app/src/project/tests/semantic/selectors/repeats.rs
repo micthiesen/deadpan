@@ -389,7 +389,7 @@ fn repeat_refresh_failure_retains_proof_and_retry_does_not_replace_a_newer_cut()
     let MacroOperation::Apply { instruction, .. } = &mut altered else {
         unreachable!()
     };
-    *instruction = wrapping(SemanticSelector::SelectedBeat, 3);
+    **instruction = wrapping(SemanticSelector::SelectedBeat, 3);
     refused(&harness.service, &path, altered, &changed);
 }
 

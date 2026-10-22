@@ -159,7 +159,7 @@ fn apply(
 ) -> Operation {
     Operation::Apply {
         id: id(update, request),
-        instruction,
+        instruction: Box::new(instruction),
         repeat_version: None,
         scope: target.scope.clone(),
         context: context_for(update, target),

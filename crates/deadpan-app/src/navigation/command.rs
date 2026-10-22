@@ -178,6 +178,12 @@ pub enum Entry {
     /// `:select role=audio|video|linked`: the media role the next Visual
     /// delete acts on.
     SelectRole(deadpan_core::MediaRole),
+    /// `:select marks start=<id> end=<id>`: select the half-open Edit range
+    /// between two exact authored mark identities.
+    SelectMarkRange {
+        start: deadpan_core::NamedMarkTarget,
+        end: deadpan_core::NamedMarkTarget,
+    },
     /// `:delete role=audio|video`: delete one role over the Visual range.
     DeleteRole(deadpan_core::MediaRole),
     /// `:recipe-save a`: keep the selected group, with its parts and
@@ -403,6 +409,40 @@ pub fn parse(input: &str) -> Result<Entry, String> {
             None => Ok(Entry::TrackCancel),
             Some(_) => Err("Use :track-cancel without arguments.".into()),
         };
+    }
+    if verb.eq_ignore_ascii_case("select")
+        && words
+            .clone()
+            .next()
+            .is_some_and(|word| word.eq_ignore_ascii_case("marks"))
+    {
+        const USAGE: &str = "Use :select marks start=<exactMarkId> end=<exactMarkId>, for example start=native-mark-a end=native-mark-b.";
+        let _ = words.next();
+        let start = words
+            .next()
+            .and_then(|word| word.strip_prefix("start="))
+            .filter(|id| !id.is_empty())
+            .and_then(|id| deadpan_core::MarkId::new(id.to_owned()).ok())
+            .ok_or(USAGE)?;
+        let end = words
+            .next()
+            .and_then(|word| word.strip_prefix("end="))
+            .filter(|id| !id.is_empty())
+            .and_then(|id| deadpan_core::MarkId::new(id.to_owned()).ok())
+            .ok_or(USAGE)?;
+        if words.next().is_some() {
+            return Err(USAGE.into());
+        }
+        return Ok(Entry::SelectMarkRange {
+            start: deadpan_core::NamedMarkTarget {
+                id: start,
+                occurrence: None,
+            },
+            end: deadpan_core::NamedMarkTarget {
+                id: end,
+                occurrence: None,
+            },
+        });
     }
     if verb == "trim" {
         return super::trim::parse(words).map(Entry::Trim);
@@ -1501,6 +1541,43 @@ mod tests {
         ] {
             assert!(parse(input).is_err(), "{input}");
         }
+    }
+
+    #[test]
+    fn named_mark_selection_uses_exact_ids_and_rejects_ambiguous_shorthand() {
+        use deadpan_core::{MarkId, NamedMarkTarget};
+        let target = |id: &str| NamedMarkTarget {
+            id: MarkId::new(id.to_owned()).unwrap(),
+            occurrence: None,
+        };
+        assert_eq!(
+            parse(":select marks start=native-mark-a end=native-mark-b"),
+            Ok(Entry::SelectMarkRange {
+                start: target("native-mark-a"),
+                end: target("native-mark-b"),
+            })
+        );
+        assert_eq!(
+            parse(":select marks start=custom_left end=custom_right"),
+            Ok(Entry::SelectMarkRange {
+                start: target("custom_left"),
+                end: target("custom_right"),
+            })
+        );
+        for input in [
+            ":select marks",
+            ":select marks a b",
+            ":select marks start=a end=b extra",
+            ":select marks end=b start=a",
+            ":select marks start= end=b",
+        ] {
+            assert!(parse(input).is_err(), "{input}");
+        }
+        assert_eq!(parse(":select"), Ok(Entry::Action(Action::VisualMoment)));
+        assert_eq!(
+            parse(":select role=linked"),
+            Ok(Entry::SelectRole(deadpan_core::MediaRole::Linked))
+        );
     }
 
     #[test]

@@ -1,0 +1,23 @@
+{
+  "reviewer": "named_mark_general_review",
+  "result": "no discrepancies",
+  "inventory_entries": 245,
+  "inventory_bytes": 70694892,
+  "source_stages": 12,
+  "unique_source_archives": 9,
+  "input_archives_independently_audited": false,
+  "checks": [
+    "inventory sizes and SHA256",
+    "all source-stage manifests and archive contents",
+    "old-code public control and Git blob audit",
+    "broad failure/output marker and same-binary isolated results",
+    "role tests and boxing source deltas",
+    "final normal/UI tests and test-only reruns",
+    "strict checks",
+    "release native checks and timing",
+    "matching inspected captures",
+    "actual media verification",
+    "owner archive and validation"
+  ],
+  "correction": "Reviewer initially misstated the source-stage count as 13, then recounted and confirmed 12 stages / 9 unique archives. Input snapshots were not part of that independent loop."
+}

@@ -1,0 +1,32 @@
+{
+  "deadpan-app::bin/deadpan-app": {
+    "path": "/Users/michael/Code/deadpan/target/debug/deps/deadpan_app-7e20ea767f3f19d5",
+    "retained": "/tmp/deadpan-named-mark-selectors-2026-10-22/ui-lint-final-bin/deadpan_app-7e20ea767f3f19d5",
+    "sha256": "c630cb1dcb95ec450dacdc0dba7ecf718f0e2a25c3cdc499b403ce3da864d877",
+    "tests": [
+      "project::tests::semantic::selectors::groups::group_refresh_failure_retains_proof_and_exact_retry_does_not_replace_newer_intent",
+      "project::tests::semantic::selectors::repeat_counts::saved_count_refresh_failure_keeps_receipt_and_exact_retry_cannot_replace_newer_proof",
+      "project::tests::semantic::selectors::repeats::repeat_refresh_failure_retains_proof_and_retry_does_not_replace_a_newer_cut"
+    ]
+  },
+  "helper-deadpan-app": {
+    "path": "target/debug/deadpan-app",
+    "sha256": "d7969b64df7e30c5a33e49ac0e7f21d02e52f2cb67f2ca6d1621de1544a20e68"
+  },
+  "helper-deadpan-cli": {
+    "path": "target/debug/deadpan-cli",
+    "sha256": "2a2b85419d797718d7264afbc0cb65bde945e0c0b239b9c0fbda3aa776cd2bf3"
+  },
+  "helper-deadpan-media-worker": {
+    "path": "target/debug/deadpan-media-worker",
+    "sha256": "786672d36a58e024be1acb18f353c350c06a7c83dd88c84369e69a9512a13c5d"
+  },
+  "helper-deadpan-transcribe": {
+    "path": "target/debug/deadpan-transcribe",
+    "sha256": "473b69ac2024d691236637017ebea298a08e0f88de2ff3801a948bf866f71362"
+  },
+  "helper-deadpan-track": {
+    "path": "target/debug/deadpan-track",
+    "sha256": "18861c06d2d468b4e161c2b99110ffc1d5ea99a926e1685d5893437583760244"
+  }
+}

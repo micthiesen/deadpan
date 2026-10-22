@@ -1609,7 +1609,7 @@ impl Service {
                 &request.project_id,
                 &request.expected_revision,
                 &outcome.revision_id,
-                semantic::Change::Replace(intent),
+                semantic::Change::Replace(Box::new(intent)),
             );
         }
         // Retain the actual durable receipt even if rebuilding the workspace

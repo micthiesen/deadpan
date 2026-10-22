@@ -13,7 +13,7 @@ where
     pub(super) fn group(
         &mut self,
         trace_index: usize,
-        selector: SemanticSelector,
+        selector: &SemanticSelector,
         label: &str,
     ) -> Result<(), EditError> {
         crate::validate_group_label(label)?;
@@ -179,7 +179,7 @@ where
     pub(super) fn duplicate(
         &mut self,
         trace_index: usize,
-        selector: SemanticSelector,
+        selector: &SemanticSelector,
     ) -> Result<(), EditError> {
         let target = self.resolve_selector(selector)?;
         let selection = target.selection()?.clone();

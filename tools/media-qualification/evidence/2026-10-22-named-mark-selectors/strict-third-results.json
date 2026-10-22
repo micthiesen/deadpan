@@ -1,0 +1,55 @@
+[
+  {
+    "name": "strict-third-check",
+    "command": [
+      "cargo",
+      "xtask",
+      "check",
+      "--since",
+      "74616d32a40f9ea75ededcaedbe7edd8613bfec6",
+      "--no-test"
+    ],
+    "exit": 0,
+    "seconds": 95.68548887502402
+  },
+  {
+    "name": "strict-third-ui-clippy",
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness",
+      "--all-targets",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "exit": 0,
+    "seconds": 20.55889166612178
+  },
+  {
+    "name": "strict-third-format",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "exit": 0,
+    "seconds": 6.2940465826541185
+  },
+  {
+    "name": "strict-third-whitespace",
+    "command": [
+      "git",
+      "diff",
+      "--check"
+    ],
+    "exit": 0,
+    "seconds": 0.05606924928724766
+  }
+]

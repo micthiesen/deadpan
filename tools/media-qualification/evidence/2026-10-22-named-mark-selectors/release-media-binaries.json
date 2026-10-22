@@ -1,0 +1,32 @@
+{
+  "deadpan-cli::preview_export": {
+    "path": "/Users/michael/Code/deadpan/target/release/deps/preview_export-633f4b90e83a29ac",
+    "retained": "/tmp/deadpan-named-mark-selectors-2026-10-22/release-media-bin/preview_export-633f4b90e83a29ac",
+    "sha256": "b5ad12824ecabf8e382994955487e20f5f7154f3fdb22bfa6d9a64a4ebb13e3f",
+    "bytes": 27245824
+  },
+  "deadpan-cli": {
+    "path": "/Users/michael/Code/deadpan/target/release/deadpan-cli",
+    "retained": "/tmp/deadpan-named-mark-selectors-2026-10-22/release-media-bin/deadpan-cli",
+    "sha256": "c062d42071a9acfdd11b14cd909eaeb0866eb28eb5822355e93e736f4561733a",
+    "bytes": 48836288
+  },
+  "deadpan-media-worker": {
+    "path": "/Users/michael/Code/deadpan/target/release/deadpan-media-worker",
+    "retained": "/tmp/deadpan-named-mark-selectors-2026-10-22/release-media-bin/deadpan-media-worker",
+    "sha256": "70114641de62f0c9c839734f3dddab1221b01888661a43ed5583e40ca9ed90fe",
+    "bytes": 1169872
+  },
+  "deadpan-transcribe": {
+    "path": "/Users/michael/Code/deadpan/target/release/deadpan-transcribe",
+    "retained": "/tmp/deadpan-named-mark-selectors-2026-10-22/release-media-bin/deadpan-transcribe",
+    "sha256": "a75e83e94c073fa7419fea1ffc4621ab56adba020d402435c65622dababbe8b3",
+    "bytes": 2603984
+  },
+  "deadpan-track": {
+    "path": "/Users/michael/Code/deadpan/target/release/deadpan-track",
+    "retained": "/tmp/deadpan-named-mark-selectors-2026-10-22/release-media-bin/deadpan-track",
+    "sha256": "97564bc5d9aee093aa7e3fa5e8a89aa5da68134f92f34032a407f27778c1eab4",
+    "bytes": 1656592
+  }
+}

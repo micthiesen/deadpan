@@ -46,6 +46,7 @@ pub(super) struct Capture {
     bank_version: u64,
     pane: Pane,
     view: View,
+    role: deadpan_core::MediaRole,
     sound_focused: bool,
     event_focused: bool,
     original_selection: Option<moment::Selection>,
@@ -113,7 +114,10 @@ impl Capture {
     fn object_selected(&self) -> bool {
         matches!(
             self.context.visual_selection,
-            Some(deadpan_core::SemanticVisualSelection::Object { .. })
+            Some(
+                deadpan_core::SemanticVisualSelection::Object { .. }
+                    | deadpan_core::SemanticVisualSelection::MarkRange { .. }
+            )
         )
     }
     pub(super) fn select_object(
@@ -123,6 +127,16 @@ impl Capture {
         self.base
             .document
             .select_semantic_object(&self.context, object)
+            .map_err(|error| error.to_string())
+    }
+    pub(super) fn select_mark_range(
+        &self,
+        start: deadpan_core::NamedMarkTarget,
+        end: deadpan_core::NamedMarkTarget,
+    ) -> Result<SemanticContext, String> {
+        self.base
+            .document
+            .select_semantic_mark_range(&self.context, start, end)
             .map_err(|error| error.to_string())
     }
     /// A word or sentence object at the captured cursor, as a Visual range.
@@ -177,8 +191,8 @@ impl Capture {
     }
 
     pub(super) fn repeat_selector(&self) -> deadpan_core::SemanticSelector {
-        if self.context.visual_selection.is_some() {
-            deadpan_core::SemanticSelector::VisualSelection
+        if let Some(selection) = &self.context.visual_selection {
+            selection.effective_selector()
         } else {
             deadpan_core::SemanticSelector::SelectedBeat
         }
@@ -224,6 +238,7 @@ impl Capture {
             && i64::try_from(app.sequence_cursor).ok() == Some(self.context.cursor.0)
             && app.pane == if splice { Pane::Viewer } else { self.pane }
             && app.view == self.view
+            && app.edit_role == self.role
             && app.capture_visual_selection().as_ref() == Ok(&self.context.visual_selection)
             && app.sound_focused() == self.sound_focused
             && app.event_focused() == self.event_focused
@@ -311,6 +326,12 @@ impl Capture {
                     .resolve_object_selection(&self.context.parent, selection)
                     .map_err(|error| error.to_string())?
                     .range,
+            ),
+            Some(deadpan_core::SemanticVisualSelection::MarkRange { start, end }) => Some(
+                self.base
+                    .document
+                    .resolve_semantic_mark_range(&self.context, start, end)
+                    .map_err(|error| error.to_string())?,
             ),
             None => None,
         };
@@ -584,6 +605,7 @@ impl DeadpanApp {
                 .ok_or("The project registers are still loading.")?,
             pane: self.pane,
             view: self.view,
+            role: self.edit_role,
             sound_focused: self.sound_focused(),
             event_focused: self.event_focused(),
             original_selection: None,
@@ -908,7 +930,9 @@ impl DeadpanApp {
             Ok(navigation::command::Entry::Group { .. }) => {
                 self.macro_action_allowed(Action::Group)
             }
-            Ok(navigation::command::Entry::Action(action)) => self.macro_action_allowed(*action),
+            Ok(navigation::command::Entry::Action(action)) => {
+                self.macro_action_allowed(action.clone())
+            }
             // Recorded as the framing it commits, like ,z and ,c.
             Ok(navigation::command::Entry::Zoom(_)) => self
                 .macro_action_allowed(Action::Framing(crate::navigation::FramingAction::PunchIn)),
@@ -934,6 +958,9 @@ impl DeadpanApp {
                 self.macro_action_allowed(Action::DeleteSelection)
             }
             Ok(navigation::command::Entry::SelectRole(_)) => true,
+            Ok(navigation::command::Entry::SelectMarkRange { .. }) => self.macro_action_allowed(
+                Action::SelectObject(deadpan_core::SemanticTextObject::InnerGroup),
+            ),
             Ok(navigation::command::Entry::Trim(_) | navigation::command::Entry::Slip(_)) => {
                 self.macro_action_allowed(Action::Trim)
             }
@@ -1250,7 +1277,15 @@ impl DeadpanApp {
         target: Option<Result<Capture, String>>,
     ) -> bool {
         let object = target.as_ref().map_or_else(
-            || self.edit_selection() == navigation::EditSelection::Object,
+            || {
+                matches!(
+                    self.capture_visual_selection(),
+                    Ok(Some(
+                        deadpan_core::SemanticVisualSelection::Object { .. }
+                            | deadpan_core::SemanticVisualSelection::MarkRange { .. }
+                    ))
+                )
+            },
             |target| target.as_ref().is_ok_and(Capture::object_selected),
         );
         if !self.macros.recording() && !self.macros.is_pending() && !object {
@@ -1264,8 +1299,18 @@ impl DeadpanApp {
         self.copied.begin_write();
         let instruction = target.as_ref().map_err(Clone::clone).and_then(|target| {
             let register = register_name(destination)?;
-            Ok(if target.context.visual_selection.is_some() {
-                SemanticInstruction::YankSelection { register }
+            Ok(if let Some(selection) = &target.context.visual_selection {
+                if matches!(
+                    selection,
+                    deadpan_core::SemanticVisualSelection::MarkRange { .. }
+                ) {
+                    SemanticInstruction::Yank {
+                        selector: selection.effective_selector(),
+                        register,
+                    }
+                } else {
+                    SemanticInstruction::YankSelection { register }
+                }
             } else {
                 SemanticInstruction::YankBeat { register }
             })
@@ -1280,7 +1325,15 @@ impl DeadpanApp {
         target: Option<Result<Capture, String>>,
     ) -> bool {
         let object = target.as_ref().map_or_else(
-            || self.edit_selection() == navigation::EditSelection::Object,
+            || {
+                matches!(
+                    self.capture_visual_selection(),
+                    Ok(Some(
+                        deadpan_core::SemanticVisualSelection::Object { .. }
+                            | deadpan_core::SemanticVisualSelection::MarkRange { .. }
+                    ))
+                )
+            },
             |target| target.as_ref().is_ok_and(Capture::object_selected),
         );
         if !self.macros.recording() && !self.macros.is_pending() && !object {
@@ -1290,8 +1343,18 @@ impl DeadpanApp {
         self.copied.begin_write();
         let instruction = target.as_ref().map_err(Clone::clone).and_then(|target| {
             let register = register_name(destination)?;
-            Ok(if target.context.visual_selection.is_some() {
-                SemanticInstruction::CutSelection { register }
+            Ok(if let Some(selection) = &target.context.visual_selection {
+                if matches!(
+                    selection,
+                    deadpan_core::SemanticVisualSelection::MarkRange { .. }
+                ) {
+                    SemanticInstruction::Cut {
+                        selector: selection.effective_selector(),
+                        register,
+                    }
+                } else {
+                    SemanticInstruction::CutSelection { register }
+                }
             } else {
                 SemanticInstruction::Cut {
                     selector: deadpan_core::SemanticSelector::SelectedBeat,
@@ -1578,7 +1641,7 @@ impl DeadpanApp {
             };
             let operation = protocol::Operation::Apply {
                 id: captured.id(serial),
-                instruction: instruction.clone(),
+                instruction: Box::new(instruction.clone()),
                 scope: captured.scope.clone(),
                 context: captured.context.clone(),
                 repeat_version,
@@ -1971,7 +2034,7 @@ fn splice_instruction(
     }
     match &proposal.destination {
         Destination::Replace { range }
-            if matches!(context.visual_selection, Some(deadpan_core::SemanticVisualSelection::Time { .. }))
+            if matches!(context.visual_selection, Some(deadpan_core::SemanticVisualSelection::Time { .. } | deadpan_core::SemanticVisualSelection::MarkRange { .. }))
                 && captured_range == Some(*range)
                 && range.start() < range.end() =>
         {

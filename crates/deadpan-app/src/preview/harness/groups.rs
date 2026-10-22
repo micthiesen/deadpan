@@ -651,7 +651,7 @@ fn candidate_group(
     label: &str,
 ) -> Result<(), String> {
     let expected = RepeatableEdit::Group {
-        selector,
+        selector: selector.clone(),
         label: label.into(),
     };
     d.check(

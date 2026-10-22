@@ -241,10 +241,10 @@ fn oriented_visual_copy_keeps_redo_and_replacement_failure_retains_exact_selecti
         Operation::Apply {
             id: id(&undone, 1),
             repeat_version: None,
-            instruction: SemanticInstruction::Yank {
+            instruction: Box::new(SemanticInstruction::Yank {
                 selector: SemanticSelector::VisualSelection,
                 register: RegisterName::new('b').unwrap(),
-            },
+            }),
             scope: SequenceScope::default(),
             context: SemanticContext {
                 hold_duration: None,
@@ -308,9 +308,9 @@ fn oriented_visual_copy_keeps_redo_and_replacement_failure_retains_exact_selecti
     let operation = Operation::Apply {
         id: id(&redone, 2),
         repeat_version: None,
-        instruction: SemanticInstruction::ReplaceSelection {
+        instruction: Box::new(SemanticInstruction::ReplaceSelection {
             register: RegisterName::new('b').unwrap(),
-        },
+        }),
         scope: SequenceScope::default(),
         context: SemanticContext {
             hold_duration: None,
@@ -415,9 +415,9 @@ fn bank_only_yank_refresh_failure_retains_the_selected_child_copy_and_redo() {
     let operation = Operation::Apply {
         id: id(&undone, 1),
         repeat_version: None,
-        instruction: SemanticInstruction::YankBeat {
+        instruction: Box::new(SemanticInstruction::YankBeat {
             register: RegisterName::new('b').unwrap(),
-        },
+        }),
         scope: SequenceScope::default(),
         context: SemanticContext {
             hold_duration: None,
@@ -669,10 +669,10 @@ fn empty_selected_beat_yanks_and_pastes_at_its_sibling_slot_without_cursor_infer
         Operation::Apply {
             id: id(&opened, 1),
             repeat_version: None,
-            instruction: SemanticInstruction::Yank {
+            instruction: Box::new(SemanticInstruction::Yank {
                 selector: SemanticSelector::SelectedBeat,
                 register: RegisterName::new('c').unwrap(),
-            },
+            }),
             scope: SequenceScope::default(),
             context: SemanticContext {
                 hold_duration: None,
@@ -697,10 +697,10 @@ fn empty_selected_beat_yanks_and_pastes_at_its_sibling_slot_without_cursor_infer
         Operation::Apply {
             id: id(&copied_update, 2),
             repeat_version: None,
-            instruction: SemanticInstruction::Paste {
+            instruction: Box::new(SemanticInstruction::Paste {
                 register: RegisterName::new('c').unwrap(),
                 before: false,
-            },
+            }),
             scope: SequenceScope::default(),
             context: SemanticContext {
                 hold_duration: None,
@@ -1322,7 +1322,7 @@ fn group_objects_keep_capture_scope_separate_from_navigation_and_cut_receipt() {
         Operation::Apply {
             id: id(update, request),
             repeat_version: None,
-            instruction: if cut {
+            instruction: Box::new(if cut {
                 SemanticInstruction::Cut {
                     selector,
                     register: RegisterName::new(register).unwrap(),
@@ -1332,7 +1332,7 @@ fn group_objects_keep_capture_scope_separate_from_navigation_and_cut_receipt() {
                     selector,
                     register: RegisterName::new(register).unwrap(),
                 }
-            },
+            }),
             scope,
             context,
         }

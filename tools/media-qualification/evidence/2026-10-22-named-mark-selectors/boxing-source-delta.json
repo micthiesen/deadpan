@@ -1,0 +1,25 @@
+{
+  "files": [
+    "crates/deadpan-app/src/preview/copied.rs",
+    "crates/deadpan-app/src/preview/macros.rs",
+    "crates/deadpan-app/src/preview/scoped/model/tests/shared_duration.rs",
+    "crates/deadpan-app/src/preview/scoped/model/tests/selected_duration/service.rs",
+    "crates/deadpan-app/src/preview/scoped/model/tests/mixed_duration.rs",
+    "crates/deadpan-app/src/project/service/macros.rs",
+    "crates/deadpan-app/src/project/service/semantic/tests.rs",
+    "crates/deadpan-app/src/project/service/semantic.rs",
+    "crates/deadpan-app/src/project/service/cut_slice.rs",
+    "crates/deadpan-app/src/project/macros.rs",
+    "crates/deadpan-app/src/project/service.rs",
+    "crates/deadpan-app/src/project/tests/splice_equivalence.rs",
+    "crates/deadpan-app/src/project/tests/macros.rs",
+    "crates/deadpan-app/src/project/tests/semantic/selectors/repeat_counts.rs",
+    "crates/deadpan-app/src/project/tests/semantic/selectors/repeats.rs",
+    "crates/deadpan-app/src/project/tests/semantic/selectors/groups.rs",
+    "crates/deadpan-app/src/project/tests/semantic/selectors.rs",
+    "crates/deadpan-app/src/project/tests/macros/scoped/fixed_duration.rs",
+    "crates/deadpan-app/src/project/tests/macros/scoped/this_play_fixed_duration.rs",
+    "crates/deadpan-app/src/project/tests/macros/scoped.rs"
+  ],
+  "all_non_app_rust_identical": true
+}

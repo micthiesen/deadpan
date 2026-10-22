@@ -342,7 +342,7 @@ fn comma_m_mutes_comma_r_picks_a_cutaway_and_comma_t_adds_a_tail_in_your_edit_on
         bindings.key(Key::Comma, Modifiers::NONE, false, false);
         assert_eq!(
             bindings.key(key, Modifiers::NONE, false, false),
-            Some(action)
+            Some(action.clone())
         );
         assert!(!bindings.allows_key_repeat(key, Modifiers::NONE));
         // A count refuses instead of acting.
@@ -364,7 +364,7 @@ fn comma_m_mutes_comma_r_picks_a_cutaway_and_comma_t_adds_a_tail_in_your_edit_on
         );
         assert_eq!(
             bindings.key_with_selection(key, Modifiers::NONE, false, false, EditSelection::Range),
-            Some(action)
+            Some(action.clone())
         );
         for domain in [RoutingDomain::Original, RoutingDomain::Sound] {
             let mut bindings = Bindings::default();
@@ -372,7 +372,7 @@ fn comma_m_mutes_comma_r_picks_a_cutaway_and_comma_t_adds_a_tail_in_your_edit_on
             bindings.key(Key::Comma, Modifiers::NONE, false, false);
             assert_ne!(
                 bindings.key(key, Modifiers::NONE, false, false),
-                Some(action),
+                Some(action.clone()),
                 "{domain:?}"
             );
         }

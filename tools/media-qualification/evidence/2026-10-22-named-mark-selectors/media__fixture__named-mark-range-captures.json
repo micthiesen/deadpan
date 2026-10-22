@@ -1,0 +1,1485 @@
+{
+  "before_revision": "named-mark-range-r07",
+  "captures": [
+    {
+      "capture": {
+        "assets": {
+          "5fa98758-3499-4965-bba0-df3104c7b79a": {
+            "audio": {
+              "end": {
+                "ticks": 192192,
+                "time_base": {
+                  "denominator": 48000,
+                  "numerator": 1
+                }
+              },
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "denominator": 48000,
+                  "numerator": 1
+                }
+              }
+            },
+            "content_hash": "blake3:16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+            "frame_count": 120,
+            "label": "original",
+            "source_qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6",
+            "still_image": false,
+            "video": {
+              "end": {
+                "ticks": 120120,
+                "time_base": {
+                  "denominator": 30000,
+                  "numerator": 1
+                }
+              },
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "denominator": 30000,
+                  "numerator": 1
+                }
+              }
+            }
+          }
+        },
+        "audio_bindings": {
+          "bindings": {
+            "named-mark-range-n7": {
+              "lattice": {
+                "arguments": [],
+                "births": [],
+                "reference": {
+                  "physical": "83966264-8779-4f20-a37d-7419c2d646c8",
+                  "root": {
+                    "type": "project_root_round_even"
+                  },
+                  "timing": {
+                    "allocation": "named-mark-range-r01",
+                    "ordinal": 0
+                  }
+                }
+              },
+              "reanchors": [
+                {
+                  "placement": {
+                    "arguments": [],
+                    "births": [],
+                    "reference": {
+                      "physical": "named-mark-range-n5",
+                      "root": {
+                        "type": "project_root_round_even"
+                      },
+                      "timing": {
+                        "allocation": "named-mark-range-r02",
+                        "ordinal": 1
+                      }
+                    }
+                  },
+                  "window": {
+                    "end": {
+                      "denominator": "1",
+                      "numerator": "42"
+                    },
+                    "start": {
+                      "denominator": "1",
+                      "numerator": "12"
+                    }
+                  }
+                },
+                {
+                  "placement": {
+                    "arguments": [],
+                    "births": [],
+                    "reference": {
+                      "physical": "named-mark-range-n5",
+                      "root": {
+                        "type": "project_root_round_even"
+                      },
+                      "timing": {
+                        "allocation": "named-mark-range-r03",
+                        "ordinal": 0
+                      }
+                    }
+                  },
+                  "window": {
+                    "end": {
+                      "denominator": "1",
+                      "numerator": "30"
+                    },
+                    "start": {
+                      "denominator": "1",
+                      "numerator": "6"
+                    }
+                  }
+                },
+                {
+                  "placement": {
+                    "arguments": [],
+                    "births": [],
+                    "reference": {
+                      "physical": "named-mark-range-n7",
+                      "root": {
+                        "type": "project_root_round_even"
+                      },
+                      "timing": {
+                        "allocation": "f4e31150-c901-4ddf-84d7-51bde2f84259",
+                        "ordinal": 0
+                      }
+                    }
+                  },
+                  "window": {
+                    "end": {
+                      "denominator": "1",
+                      "numerator": "14"
+                    },
+                    "start": {
+                      "denominator": "1",
+                      "numerator": "11"
+                    }
+                  }
+                }
+              ],
+              "resume": null
+            }
+          },
+          "timings": [
+            {
+              "id": {
+                "allocation": "f4e31150-c901-4ddf-84d7-51bde2f84259",
+                "ordinal": 0
+              },
+              "layout": {
+                "audio_lineage": {
+                  "named-mark-range-n5": {
+                    "allocation": "named-mark-range-r01",
+                    "origin": "83966264-8779-4f20-a37d-7419c2d646c8"
+                  },
+                  "named-mark-range-n7": {
+                    "allocation": "named-mark-range-r01",
+                    "origin": "83966264-8779-4f20-a37d-7419c2d646c8"
+                  }
+                },
+                "nodes": {
+                  "af0471ed-c131-4e21-a071-2c00082465ce": {
+                    "duration": 33,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "children": [
+                        "named-mark-range-n4",
+                        "named-mark-range-held",
+                        "named-mark-range-n6"
+                      ],
+                      "type": "sequence"
+                    }
+                  },
+                  "named-mark-range-held": {
+                    "duration": 3,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "audio": {
+                        "type": "silence"
+                      },
+                      "type": "hold"
+                    }
+                  },
+                  "named-mark-range-n4": {
+                    "duration": 6,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "child": "named-mark-range-n5",
+                      "mapping": {
+                        "end": 18,
+                        "start": 12
+                      },
+                      "pitch": "preserve",
+                      "purpose": "partition",
+                      "type": "retime"
+                    }
+                  },
+                  "named-mark-range-n5": {
+                    "duration": 120,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "placement": {
+                        "end": {
+                          "denominator": "1",
+                          "numerator": "120"
+                        },
+                        "start": {
+                          "denominator": "1",
+                          "numerator": "0"
+                        }
+                      },
+                      "type": "source"
+                    }
+                  },
+                  "named-mark-range-n6": {
+                    "duration": 24,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "child": "named-mark-range-n7",
+                      "mapping": {
+                        "end": 42,
+                        "start": 18
+                      },
+                      "pitch": "preserve",
+                      "purpose": "partition",
+                      "type": "retime"
+                    }
+                  },
+                  "named-mark-range-n7": {
+                    "duration": 120,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "placement": {
+                        "end": {
+                          "denominator": "1",
+                          "numerator": "120"
+                        },
+                        "start": {
+                          "denominator": "1",
+                          "numerator": "0"
+                        }
+                      },
+                      "type": "source"
+                    }
+                  }
+                },
+                "overrides": {},
+                "rate": {
+                  "denominator": 1001,
+                  "numerator": 30000
+                },
+                "root": "af0471ed-c131-4e21-a071-2c00082465ce"
+              }
+            },
+            {
+              "id": {
+                "allocation": "named-mark-range-r01",
+                "ordinal": 0
+              },
+              "layout": {
+                "nodes": {
+                  "83966264-8779-4f20-a37d-7419c2d646c8": {
+                    "duration": 120,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "placement": {
+                        "end": {
+                          "denominator": "1",
+                          "numerator": "120"
+                        },
+                        "start": {
+                          "denominator": "1",
+                          "numerator": "0"
+                        }
+                      },
+                      "type": "source"
+                    }
+                  },
+                  "af0471ed-c131-4e21-a071-2c00082465ce": {
+                    "duration": 120,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "children": [
+                        "83966264-8779-4f20-a37d-7419c2d646c8"
+                      ],
+                      "type": "sequence"
+                    }
+                  }
+                },
+                "overrides": {},
+                "rate": {
+                  "denominator": 1001,
+                  "numerator": 30000
+                },
+                "root": "af0471ed-c131-4e21-a071-2c00082465ce"
+              }
+            },
+            {
+              "id": {
+                "allocation": "named-mark-range-r02",
+                "ordinal": 1
+              },
+              "layout": {
+                "audio_lineage": {
+                  "named-mark-range-n5": {
+                    "allocation": "named-mark-range-r01",
+                    "origin": "83966264-8779-4f20-a37d-7419c2d646c8"
+                  }
+                },
+                "nodes": {
+                  "af0471ed-c131-4e21-a071-2c00082465ce": {
+                    "duration": 42,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "children": [
+                        "named-mark-range-n1",
+                        "named-mark-range-n4"
+                      ],
+                      "type": "sequence"
+                    }
+                  },
+                  "named-mark-range-n1": {
+                    "duration": 12,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "audio": {
+                        "type": "silence"
+                      },
+                      "type": "hold"
+                    }
+                  },
+                  "named-mark-range-n4": {
+                    "duration": 30,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "child": "named-mark-range-n5",
+                      "mapping": {
+                        "end": 42,
+                        "start": 12
+                      },
+                      "pitch": "preserve",
+                      "purpose": "partition",
+                      "type": "retime"
+                    }
+                  },
+                  "named-mark-range-n5": {
+                    "duration": 120,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "placement": {
+                        "end": {
+                          "denominator": "1",
+                          "numerator": "120"
+                        },
+                        "start": {
+                          "denominator": "1",
+                          "numerator": "0"
+                        }
+                      },
+                      "type": "source"
+                    }
+                  }
+                },
+                "overrides": {},
+                "rate": {
+                  "denominator": 1001,
+                  "numerator": 30000
+                },
+                "root": "af0471ed-c131-4e21-a071-2c00082465ce"
+              }
+            },
+            {
+              "id": {
+                "allocation": "named-mark-range-r03",
+                "ordinal": 0
+              },
+              "layout": {
+                "audio_lineage": {
+                  "named-mark-range-n5": {
+                    "allocation": "named-mark-range-r01",
+                    "origin": "83966264-8779-4f20-a37d-7419c2d646c8"
+                  }
+                },
+                "nodes": {
+                  "af0471ed-c131-4e21-a071-2c00082465ce": {
+                    "duration": 30,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "children": [
+                        "named-mark-range-n4"
+                      ],
+                      "type": "sequence"
+                    }
+                  },
+                  "named-mark-range-n4": {
+                    "duration": 30,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "child": "named-mark-range-n5",
+                      "mapping": {
+                        "end": 42,
+                        "start": 12
+                      },
+                      "pitch": "preserve",
+                      "purpose": "partition",
+                      "type": "retime"
+                    }
+                  },
+                  "named-mark-range-n5": {
+                    "duration": 120,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "placement": {
+                        "end": {
+                          "denominator": "1",
+                          "numerator": "120"
+                        },
+                        "start": {
+                          "denominator": "1",
+                          "numerator": "0"
+                        }
+                      },
+                      "type": "source"
+                    }
+                  }
+                },
+                "overrides": {},
+                "rate": {
+                  "denominator": 1001,
+                  "numerator": 30000
+                },
+                "root": "af0471ed-c131-4e21-a071-2c00082465ce"
+              }
+            }
+          ]
+        },
+        "audio_lineage": {
+          "named-mark-range-n7": {
+            "allocation": "named-mark-range-r01",
+            "origin": "83966264-8779-4f20-a37d-7419c2d646c8"
+          }
+        },
+        "beat_sounds": {},
+        "capture_timing": {
+          "allocation": "f4e31150-c901-4ddf-84d7-51bde2f84259",
+          "ordinal": 0
+        },
+        "gap_overrides": {},
+        "marks": {
+          "native-mark-a": {
+            "boundary": {
+              "bias": "right",
+              "coordinate": {
+                "instance": {
+                  "node": "named-mark-range-n7",
+                  "repeats": []
+                },
+                "position": {
+                  "denominator": "1",
+                  "numerator": "20"
+                },
+                "space": "occurrence"
+              }
+            },
+            "label": "a",
+            "loss_policy": "delete_owned",
+            "owner": "named-mark-range-n7",
+            "state": {
+              "type": "bound"
+            }
+          },
+          "native-mark-b": {
+            "boundary": {
+              "bias": "left",
+              "coordinate": {
+                "instance": {
+                  "node": "named-mark-range-n7",
+                  "repeats": []
+                },
+                "position": {
+                  "denominator": "1",
+                  "numerator": "23"
+                },
+                "space": "occurrence"
+              }
+            },
+            "label": "b",
+            "loss_policy": "delete_owned",
+            "owner": "named-mark-range-n7",
+            "state": {
+              "type": "bound"
+            }
+          }
+        },
+        "nodes": {
+          "named-mark-range-n6": {
+            "kind": {
+              "child": "named-mark-range-n7",
+              "duration": 24,
+              "mapping": {
+                "end": 42,
+                "start": 18
+              },
+              "pitch": "preserve",
+              "purpose": "partition",
+              "type": "retime"
+            },
+            "label": "original"
+          },
+          "named-mark-range-n7": {
+            "kind": {
+              "source": {
+                "audio": {
+                  "asset": "5fa98758-3499-4965-bba0-df3104c7b79a",
+                  "span": {
+                    "end": {
+                      "ticks": 192192,
+                      "time_base": {
+                        "denominator": 48000,
+                        "numerator": 1
+                      }
+                    },
+                    "start": {
+                      "ticks": 0,
+                      "time_base": {
+                        "denominator": 48000,
+                        "numerator": 1
+                      }
+                    }
+                  }
+                },
+                "audio_mapping": {
+                  "frames": {
+                    "denominator": "1",
+                    "numerator": "120"
+                  },
+                  "start": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "type": "placement"
+                },
+                "audio_offset": 0,
+                "duration": 120,
+                "edit_window": {
+                  "end": {
+                    "denominator": "1",
+                    "numerator": "120"
+                  },
+                  "start": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  }
+                },
+                "link": "linked",
+                "video": {
+                  "asset": "5fa98758-3499-4965-bba0-df3104c7b79a",
+                  "span": {
+                    "end": {
+                      "ticks": 120120,
+                      "time_base": {
+                        "denominator": 30000,
+                        "numerator": 1
+                      }
+                    },
+                    "start": {
+                      "ticks": 0,
+                      "time_base": {
+                        "denominator": 30000,
+                        "numerator": 1
+                      }
+                    }
+                  },
+                  "type": "stream"
+                },
+                "video_mapping": {
+                  "endpoints": "hold_adjacent",
+                  "frames": {
+                    "denominator": "1",
+                    "numerator": "120"
+                  },
+                  "start": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "type": "placement"
+                }
+              },
+              "type": "source"
+            },
+            "label": "original"
+          }
+        },
+        "overrides": {},
+        "parent": "af0471ed-c131-4e21-a071-2c00082465ce",
+        "parts": [
+          {
+            "mapping": {
+              "end": 5,
+              "start": 2
+            },
+            "root": "named-mark-range-n6",
+            "source_start": 9
+          }
+        ],
+        "presentation_basis": {
+          "color_policy": "sdr_rec709",
+          "frame_rate": {
+            "denominator": 1001,
+            "numerator": 30000
+          },
+          "height": 180,
+          "width": 320
+        },
+        "project_id": "1174cba7-94e4-4a98-bc10-800a138a297e",
+        "range": {
+          "end": 14,
+          "start": 11
+        },
+        "revision_id": "1be4e164-4207-4492-a2c8-0d7716e98f96",
+        "source_duration": 33
+      },
+      "capture_revision": "1be4e164-4207-4492-a2c8-0d7716e98f96",
+      "range": {
+        "end": 14,
+        "start": 11
+      },
+      "register": "a"
+    },
+    {
+      "capture": {
+        "assets": {
+          "5fa98758-3499-4965-bba0-df3104c7b79a": {
+            "audio": {
+              "end": {
+                "ticks": 192192,
+                "time_base": {
+                  "denominator": 48000,
+                  "numerator": 1
+                }
+              },
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "denominator": 48000,
+                  "numerator": 1
+                }
+              }
+            },
+            "content_hash": "blake3:16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+            "frame_count": 120,
+            "label": "original",
+            "source_qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6",
+            "still_image": false,
+            "video": {
+              "end": {
+                "ticks": 120120,
+                "time_base": {
+                  "denominator": 30000,
+                  "numerator": 1
+                }
+              },
+              "start": {
+                "ticks": 0,
+                "time_base": {
+                  "denominator": 30000,
+                  "numerator": 1
+                }
+              }
+            }
+          }
+        },
+        "audio_bindings": {
+          "bindings": {
+            "named-mark-range-n7": {
+              "lattice": {
+                "arguments": [],
+                "births": [],
+                "reference": {
+                  "physical": "83966264-8779-4f20-a37d-7419c2d646c8",
+                  "root": {
+                    "type": "project_root_round_even"
+                  },
+                  "timing": {
+                    "allocation": "named-mark-range-r01",
+                    "ordinal": 0
+                  }
+                }
+              },
+              "reanchors": [
+                {
+                  "placement": {
+                    "arguments": [],
+                    "births": [],
+                    "reference": {
+                      "physical": "named-mark-range-n5",
+                      "root": {
+                        "type": "project_root_round_even"
+                      },
+                      "timing": {
+                        "allocation": "named-mark-range-r02",
+                        "ordinal": 1
+                      }
+                    }
+                  },
+                  "window": {
+                    "end": {
+                      "denominator": "1",
+                      "numerator": "42"
+                    },
+                    "start": {
+                      "denominator": "1",
+                      "numerator": "12"
+                    }
+                  }
+                },
+                {
+                  "placement": {
+                    "arguments": [],
+                    "births": [],
+                    "reference": {
+                      "physical": "named-mark-range-n5",
+                      "root": {
+                        "type": "project_root_round_even"
+                      },
+                      "timing": {
+                        "allocation": "named-mark-range-r03",
+                        "ordinal": 0
+                      }
+                    }
+                  },
+                  "window": {
+                    "end": {
+                      "denominator": "1",
+                      "numerator": "30"
+                    },
+                    "start": {
+                      "denominator": "1",
+                      "numerator": "6"
+                    }
+                  }
+                },
+                {
+                  "placement": {
+                    "arguments": [],
+                    "births": [],
+                    "reference": {
+                      "physical": "named-mark-range-n7",
+                      "root": {
+                        "type": "project_root_round_even"
+                      },
+                      "timing": {
+                        "allocation": "8692d5a1-5e4d-481d-bbf0-fc9b5a25736e",
+                        "ordinal": 0
+                      }
+                    }
+                  },
+                  "window": {
+                    "end": {
+                      "denominator": "1",
+                      "numerator": "14"
+                    },
+                    "start": {
+                      "denominator": "1",
+                      "numerator": "11"
+                    }
+                  }
+                }
+              ],
+              "resume": null
+            }
+          },
+          "timings": [
+            {
+              "id": {
+                "allocation": "8692d5a1-5e4d-481d-bbf0-fc9b5a25736e",
+                "ordinal": 0
+              },
+              "layout": {
+                "audio_lineage": {
+                  "named-mark-range-n5": {
+                    "allocation": "named-mark-range-r01",
+                    "origin": "83966264-8779-4f20-a37d-7419c2d646c8"
+                  },
+                  "named-mark-range-n7": {
+                    "allocation": "named-mark-range-r01",
+                    "origin": "83966264-8779-4f20-a37d-7419c2d646c8"
+                  }
+                },
+                "nodes": {
+                  "af0471ed-c131-4e21-a071-2c00082465ce": {
+                    "duration": 33,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "children": [
+                        "named-mark-range-n4",
+                        "named-mark-range-held",
+                        "named-mark-range-n6"
+                      ],
+                      "type": "sequence"
+                    }
+                  },
+                  "named-mark-range-held": {
+                    "duration": 3,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "audio": {
+                        "type": "silence"
+                      },
+                      "type": "hold"
+                    }
+                  },
+                  "named-mark-range-n4": {
+                    "duration": 6,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "child": "named-mark-range-n5",
+                      "mapping": {
+                        "end": 18,
+                        "start": 12
+                      },
+                      "pitch": "preserve",
+                      "purpose": "partition",
+                      "type": "retime"
+                    }
+                  },
+                  "named-mark-range-n5": {
+                    "duration": 120,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "placement": {
+                        "end": {
+                          "denominator": "1",
+                          "numerator": "120"
+                        },
+                        "start": {
+                          "denominator": "1",
+                          "numerator": "0"
+                        }
+                      },
+                      "type": "source"
+                    }
+                  },
+                  "named-mark-range-n6": {
+                    "duration": 24,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "child": "named-mark-range-n7",
+                      "mapping": {
+                        "end": 42,
+                        "start": 18
+                      },
+                      "pitch": "preserve",
+                      "purpose": "partition",
+                      "type": "retime"
+                    }
+                  },
+                  "named-mark-range-n7": {
+                    "duration": 120,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "placement": {
+                        "end": {
+                          "denominator": "1",
+                          "numerator": "120"
+                        },
+                        "start": {
+                          "denominator": "1",
+                          "numerator": "0"
+                        }
+                      },
+                      "type": "source"
+                    }
+                  }
+                },
+                "overrides": {},
+                "rate": {
+                  "denominator": 1001,
+                  "numerator": 30000
+                },
+                "root": "af0471ed-c131-4e21-a071-2c00082465ce"
+              }
+            },
+            {
+              "id": {
+                "allocation": "named-mark-range-r01",
+                "ordinal": 0
+              },
+              "layout": {
+                "nodes": {
+                  "83966264-8779-4f20-a37d-7419c2d646c8": {
+                    "duration": 120,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "placement": {
+                        "end": {
+                          "denominator": "1",
+                          "numerator": "120"
+                        },
+                        "start": {
+                          "denominator": "1",
+                          "numerator": "0"
+                        }
+                      },
+                      "type": "source"
+                    }
+                  },
+                  "af0471ed-c131-4e21-a071-2c00082465ce": {
+                    "duration": 120,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "children": [
+                        "83966264-8779-4f20-a37d-7419c2d646c8"
+                      ],
+                      "type": "sequence"
+                    }
+                  }
+                },
+                "overrides": {},
+                "rate": {
+                  "denominator": 1001,
+                  "numerator": 30000
+                },
+                "root": "af0471ed-c131-4e21-a071-2c00082465ce"
+              }
+            },
+            {
+              "id": {
+                "allocation": "named-mark-range-r02",
+                "ordinal": 1
+              },
+              "layout": {
+                "audio_lineage": {
+                  "named-mark-range-n5": {
+                    "allocation": "named-mark-range-r01",
+                    "origin": "83966264-8779-4f20-a37d-7419c2d646c8"
+                  }
+                },
+                "nodes": {
+                  "af0471ed-c131-4e21-a071-2c00082465ce": {
+                    "duration": 42,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "children": [
+                        "named-mark-range-n1",
+                        "named-mark-range-n4"
+                      ],
+                      "type": "sequence"
+                    }
+                  },
+                  "named-mark-range-n1": {
+                    "duration": 12,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "audio": {
+                        "type": "silence"
+                      },
+                      "type": "hold"
+                    }
+                  },
+                  "named-mark-range-n4": {
+                    "duration": 30,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "child": "named-mark-range-n5",
+                      "mapping": {
+                        "end": 42,
+                        "start": 12
+                      },
+                      "pitch": "preserve",
+                      "purpose": "partition",
+                      "type": "retime"
+                    }
+                  },
+                  "named-mark-range-n5": {
+                    "duration": 120,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "placement": {
+                        "end": {
+                          "denominator": "1",
+                          "numerator": "120"
+                        },
+                        "start": {
+                          "denominator": "1",
+                          "numerator": "0"
+                        }
+                      },
+                      "type": "source"
+                    }
+                  }
+                },
+                "overrides": {},
+                "rate": {
+                  "denominator": 1001,
+                  "numerator": 30000
+                },
+                "root": "af0471ed-c131-4e21-a071-2c00082465ce"
+              }
+            },
+            {
+              "id": {
+                "allocation": "named-mark-range-r03",
+                "ordinal": 0
+              },
+              "layout": {
+                "audio_lineage": {
+                  "named-mark-range-n5": {
+                    "allocation": "named-mark-range-r01",
+                    "origin": "83966264-8779-4f20-a37d-7419c2d646c8"
+                  }
+                },
+                "nodes": {
+                  "af0471ed-c131-4e21-a071-2c00082465ce": {
+                    "duration": 30,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "children": [
+                        "named-mark-range-n4"
+                      ],
+                      "type": "sequence"
+                    }
+                  },
+                  "named-mark-range-n4": {
+                    "duration": 30,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "child": "named-mark-range-n5",
+                      "mapping": {
+                        "end": 42,
+                        "start": 12
+                      },
+                      "pitch": "preserve",
+                      "purpose": "partition",
+                      "type": "retime"
+                    }
+                  },
+                  "named-mark-range-n5": {
+                    "duration": 120,
+                    "edges": {
+                      "node_end": "automatic",
+                      "node_start": "automatic",
+                      "repeat_gap_end": "automatic",
+                      "repeat_gap_start": "automatic",
+                      "source_placement_end": "automatic",
+                      "source_placement_start": "automatic"
+                    },
+                    "kind": {
+                      "placement": {
+                        "end": {
+                          "denominator": "1",
+                          "numerator": "120"
+                        },
+                        "start": {
+                          "denominator": "1",
+                          "numerator": "0"
+                        }
+                      },
+                      "type": "source"
+                    }
+                  }
+                },
+                "overrides": {},
+                "rate": {
+                  "denominator": 1001,
+                  "numerator": 30000
+                },
+                "root": "af0471ed-c131-4e21-a071-2c00082465ce"
+              }
+            }
+          ]
+        },
+        "audio_lineage": {
+          "named-mark-range-n7": {
+            "allocation": "named-mark-range-r01",
+            "origin": "83966264-8779-4f20-a37d-7419c2d646c8"
+          }
+        },
+        "beat_sounds": {},
+        "capture_timing": {
+          "allocation": "8692d5a1-5e4d-481d-bbf0-fc9b5a25736e",
+          "ordinal": 0
+        },
+        "gap_overrides": {},
+        "marks": {
+          "native-mark-a": {
+            "boundary": {
+              "bias": "right",
+              "coordinate": {
+                "instance": {
+                  "node": "named-mark-range-n7",
+                  "repeats": []
+                },
+                "position": {
+                  "denominator": "1",
+                  "numerator": "20"
+                },
+                "space": "occurrence"
+              }
+            },
+            "label": "a",
+            "loss_policy": "delete_owned",
+            "owner": "named-mark-range-n7",
+            "state": {
+              "type": "bound"
+            }
+          },
+          "native-mark-b": {
+            "boundary": {
+              "bias": "left",
+              "coordinate": {
+                "instance": {
+                  "node": "named-mark-range-n7",
+                  "repeats": []
+                },
+                "position": {
+                  "denominator": "1",
+                  "numerator": "23"
+                },
+                "space": "occurrence"
+              }
+            },
+            "label": "b",
+            "loss_policy": "delete_owned",
+            "owner": "named-mark-range-n7",
+            "state": {
+              "type": "bound"
+            }
+          }
+        },
+        "nodes": {
+          "named-mark-range-n6": {
+            "kind": {
+              "child": "named-mark-range-n7",
+              "duration": 24,
+              "mapping": {
+                "end": 42,
+                "start": 18
+              },
+              "pitch": "preserve",
+              "purpose": "partition",
+              "type": "retime"
+            },
+            "label": "original"
+          },
+          "named-mark-range-n7": {
+            "kind": {
+              "source": {
+                "audio": {
+                  "asset": "5fa98758-3499-4965-bba0-df3104c7b79a",
+                  "span": {
+                    "end": {
+                      "ticks": 192192,
+                      "time_base": {
+                        "denominator": 48000,
+                        "numerator": 1
+                      }
+                    },
+                    "start": {
+                      "ticks": 0,
+                      "time_base": {
+                        "denominator": 48000,
+                        "numerator": 1
+                      }
+                    }
+                  }
+                },
+                "audio_mapping": {
+                  "frames": {
+                    "denominator": "1",
+                    "numerator": "120"
+                  },
+                  "start": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "type": "placement"
+                },
+                "audio_offset": 0,
+                "duration": 120,
+                "edit_window": {
+                  "end": {
+                    "denominator": "1",
+                    "numerator": "120"
+                  },
+                  "start": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  }
+                },
+                "link": "linked",
+                "video": {
+                  "asset": "5fa98758-3499-4965-bba0-df3104c7b79a",
+                  "span": {
+                    "end": {
+                      "ticks": 120120,
+                      "time_base": {
+                        "denominator": 30000,
+                        "numerator": 1
+                      }
+                    },
+                    "start": {
+                      "ticks": 0,
+                      "time_base": {
+                        "denominator": 30000,
+                        "numerator": 1
+                      }
+                    }
+                  },
+                  "type": "stream"
+                },
+                "video_mapping": {
+                  "endpoints": "hold_adjacent",
+                  "frames": {
+                    "denominator": "1",
+                    "numerator": "120"
+                  },
+                  "start": {
+                    "denominator": "1",
+                    "numerator": "0"
+                  },
+                  "type": "placement"
+                }
+              },
+              "type": "source"
+            },
+            "label": "original"
+          }
+        },
+        "overrides": {},
+        "parent": "af0471ed-c131-4e21-a071-2c00082465ce",
+        "parts": [
+          {
+            "mapping": {
+              "end": 5,
+              "start": 2
+            },
+            "root": "named-mark-range-n6",
+            "source_start": 9
+          }
+        ],
+        "presentation_basis": {
+          "color_policy": "sdr_rec709",
+          "frame_rate": {
+            "denominator": 1001,
+            "numerator": 30000
+          },
+          "height": 180,
+          "width": 320
+        },
+        "project_id": "1174cba7-94e4-4a98-bc10-800a138a297e",
+        "range": {
+          "end": 14,
+          "start": 11
+        },
+        "revision_id": "1be4e164-4207-4492-a2c8-0d7716e98f96",
+        "source_duration": 33
+      },
+      "capture_revision": "1be4e164-4207-4492-a2c8-0d7716e98f96",
+      "range": {
+        "end": 14,
+        "start": 11
+      },
+      "register": "b"
+    }
+  ],
+  "history_after_redo": {
+    "replayed": 11,
+    "revisions": 12,
+    "verified_by_receipt": 0
+  },
+  "history_before_navigation": {
+    "replayed": 9,
+    "revisions": 10,
+    "verified_by_receipt": 0
+  },
+  "macro_revision": "55f84c2f-1ec8-48d1-894e-762fd352b690",
+  "render_revision": "b371d2fd-311c-48dc-b2ef-1b8c6c51de9a"
+}

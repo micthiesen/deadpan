@@ -32,6 +32,11 @@ enum SelectionKind {
         selection: SemanticObjectSelection,
         range: FrameRange,
     },
+    MarkRange {
+        start: deadpan_core::NamedMarkTarget,
+        end: deadpan_core::NamedMarkTarget,
+        range: FrameRange,
+    },
 }
 
 impl Selection {
@@ -72,6 +77,12 @@ impl Selection {
                     selection: selection.clone(),
                     extending: self.active,
                 }),
+                SelectionKind::MarkRange { start, end, .. } => {
+                    Ok(SemanticVisualSelection::MarkRange {
+                        start: start.clone(),
+                        end: end.clone(),
+                    })
+                }
             })
             .transpose()
     }
@@ -112,6 +123,24 @@ impl Selection {
                             range,
                         },
                         *extending,
+                    ))
+                }
+                SemanticVisualSelection::MarkRange {
+                    start: first,
+                    end: last,
+                } => {
+                    let range =
+                        object_range.ok_or("The named mark range is no longer available.")?;
+                    if range.start().0 < start as i64 || range.end().0 > end as i64 {
+                        return Err("The named mark range is outside this group.".into());
+                    }
+                    Ok((
+                        SelectionKind::MarkRange {
+                            start: first.clone(),
+                            end: last.clone(),
+                            range,
+                        },
+                        false,
                     ))
                 }
             })
@@ -170,7 +199,9 @@ impl Selection {
         if self.active {
             match &mut self.kind {
                 Some(SelectionKind::Time { head, .. }) => *head = at,
-                Some(SelectionKind::Object { range, .. }) => {
+                Some(
+                    SelectionKind::Object { range, .. } | SelectionKind::MarkRange { range, .. },
+                ) => {
                     self.kind = Some(SelectionKind::Time {
                         anchor: range.start().0 as u64,
                         head: at,
@@ -184,7 +215,9 @@ impl Selection {
     fn range(&self) -> Option<FrameRange> {
         let (anchor, head) = match &self.kind {
             Some(SelectionKind::Time { anchor, head }) => (*anchor, *head),
-            Some(SelectionKind::Object { range, .. }) => return Some(*range),
+            Some(SelectionKind::Object { range, .. } | SelectionKind::MarkRange { range, .. }) => {
+                return Some(*range);
+            }
             None => return None,
         };
         if anchor == head {
@@ -305,26 +338,61 @@ impl DeadpanApp {
         if self.edit_range.identity != self.edit_range_identity() {
             return None;
         }
-        self.edit_range.range()
+        if matches!(self.edit_range.kind, Some(SelectionKind::MarkRange { .. })) {
+            self.object_range(self.edit_range.semantic().ok()?.as_ref())
+                .ok()
+                .flatten()
+        } else {
+            self.edit_range.range()
+        }
     }
 
     fn object_range(
         &self,
         selection: Option<&SemanticVisualSelection>,
     ) -> Result<Option<FrameRange>, String> {
-        let Some(SemanticVisualSelection::Object { selection, .. }) = selection else {
+        if !matches!(
+            selection,
+            Some(
+                SemanticVisualSelection::Object { .. } | SemanticVisualSelection::MarkRange { .. }
+            )
+        ) {
             return Ok(None);
-        };
+        }
         let workspace = self
             .workspace
             .as_ref()
             .ok_or("The selected group is no longer visible.")?;
         let parent = self.sequence_scope.resolve(workspace)?.owner;
-        workspace
-            .document
-            .resolve_object_selection(parent, selection)
-            .map(|target| Some(target.range))
-            .map_err(|error| error.to_string())
+        match selection {
+            Some(SemanticVisualSelection::Object { selection, .. }) => workspace
+                .document
+                .resolve_object_selection(parent, selection)
+                .map(|target| Some(target.range))
+                .map_err(|error| error.to_string()),
+            Some(SemanticVisualSelection::MarkRange { start, end }) => {
+                let context = deadpan_core::SemanticContext {
+                    original: None,
+                    scoped: None,
+                    hold_duration: None,
+                    shared_hold_duration: None,
+                    mixed_hold_duration: None,
+                    selected_hold_duration: None,
+                    parent: parent.clone(),
+                    cursor: ProjectFrame(
+                        i64::try_from(self.sequence_cursor).map_err(|error| error.to_string())?,
+                    ),
+                    selected_child: self.selected_beat.clone(),
+                    visual_selection: None,
+                };
+                workspace
+                    .document
+                    .resolve_semantic_mark_range(&context, start, end)
+                    .map(Some)
+                    .map_err(|error| error.to_string())
+            }
+            _ => Ok(None),
+        }
     }
 
     pub(super) fn select_group_object(&mut self, object: deadpan_core::SemanticTextObject) {
@@ -366,13 +434,63 @@ impl DeadpanApp {
         }
     }
 
+    pub(super) fn select_named_mark_range(
+        &mut self,
+        target: Option<Result<macros::Capture, String>>,
+        start: deadpan_core::NamedMarkTarget,
+        end: deadpan_core::NamedMarkTarget,
+    ) {
+        let result = (|| {
+            if self.view != View::Sequence || self.edit_role != deadpan_core::MediaRole::Linked {
+                return Err("Select named Edit marks in Your edit with role=linked.".to_owned());
+            }
+            let capture = target.ok_or("Open :select again to capture its editing context.")??;
+            if !capture.matches(self) {
+                return Err(
+                    "The named-mark selection context changed. Enter the command again.".into(),
+                );
+            }
+            capture.select_mark_range(start.clone(), end.clone())
+        })();
+        match result {
+            Ok(context) => {
+                let prior = self.sequence_cursor;
+                self.sequence_cursor = context.cursor.0 as u64;
+                if let Err(error) = self.restore_macro_visual_selection(context.visual_selection) {
+                    self.sequence_cursor = prior;
+                    self.error = Some(error);
+                    return;
+                }
+                self.pause_playback();
+                self.revoke_scoped_continuation();
+                self.record_macro_local(deadpan_core::SemanticInstruction::SelectMarkRange {
+                    start,
+                    end,
+                });
+                self.error = None;
+                self.message = self.edit_range_label().map(|label| {
+                    format!(
+                        "{label}. {} copies; {} cuts; {} repeats.",
+                        self.editor_key(EditorKey::Copy),
+                        self.editor_key(EditorKey::CutRange),
+                        self.editor_key(EditorKey::Repeat)
+                    )
+                });
+                if prior != self.sequence_cursor {
+                    self.request_picture(false);
+                }
+            }
+            Err(error) => self.error = Some(error),
+        }
+    }
+
     pub(super) fn edit_selection(&self) -> navigation::EditSelection {
         if self.edit_range.identity != self.edit_range_identity() || self.edit_range.kind.is_none()
         {
             navigation::EditSelection::None
         } else if matches!(self.edit_range.kind, Some(SelectionKind::Object { .. })) {
             navigation::EditSelection::Object
-        } else if self.edit_range.range().is_some() {
+        } else if self.selected_edit_range().is_some() {
             navigation::EditSelection::Range
         } else {
             navigation::EditSelection::Empty
@@ -457,6 +575,18 @@ impl DeadpanApp {
     }
 
     pub(super) fn edit_range_label(&self) -> Option<String> {
+        if let Some(SelectionKind::MarkRange { start, end, .. }) = &self.edit_range.kind {
+            return self.selected_edit_range().map(|range| {
+                format!(
+                    "Marks {} → {} · Edit [{}..{}) · {} f",
+                    start.id.as_str(),
+                    end.id.as_str(),
+                    range.start().0,
+                    range.end().0,
+                    range.duration().frames(),
+                )
+            });
+        }
         if self.edit_selection() == navigation::EditSelection::Object
             && let Some(SelectionKind::Object { selection, range }) = &self.edit_range.kind
         {

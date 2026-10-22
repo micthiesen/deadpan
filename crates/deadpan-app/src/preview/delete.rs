@@ -40,7 +40,12 @@ impl DeadpanApp {
         let scope = self.sequence_scope.clone();
         let parent = scope.resolve(&base)?.owner.clone();
         let selection = self.edit_selection();
-        if selection == navigation::EditSelection::Object {
+        if selection == navigation::EditSelection::Object
+            || matches!(
+                self.capture_visual_selection()?,
+                Some(deadpan_core::SemanticVisualSelection::MarkRange { .. })
+            )
+        {
             return Ok(CommandTarget {
                 base,
                 scope,
@@ -104,7 +109,10 @@ impl DeadpanApp {
                         Ok(deadpan_core::RegisterName::unnamed()),
                         deadpan_core::RegisterName::new,
                     )
-                    .map(|register| deadpan_core::SemanticInstruction::CutSelection { register })
+                    .map(|register| deadpan_core::SemanticInstruction::Cut {
+                        selector: capture.repeat_selector(),
+                        register,
+                    })
                     .map_err(|error| error.to_string());
                 self.apply_recorded_instruction(Ok(*capture), instruction);
                 return;

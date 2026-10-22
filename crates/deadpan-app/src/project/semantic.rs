@@ -6,6 +6,9 @@ use deadpan_core::{
 };
 use std::num::NonZeroU32;
 
+#[cfg(test)]
+mod tests;
+
 /// Unresolved cut intent. FrameCut retains its checked-add overflow behavior.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum RepeatableCut {
@@ -21,7 +24,7 @@ impl RepeatableCut {
                 register,
             },
             Self::Selector(selector) => SemanticInstruction::Cut {
-                selector: *selector,
+                selector: selector.clone(),
                 register,
             },
         }
@@ -120,8 +123,8 @@ impl LastEdit {
     ) -> SemanticInstruction {
         match &self.operation {
             RepeatableEdit::Cut(operation) => {
-                if context.visual_selection.is_some() {
-                    RepeatableCut::Selector(SemanticSelector::VisualSelection).instruction(register)
+                if let Some(selection) = &context.visual_selection {
+                    RepeatableCut::Selector(selection.effective_selector()).instruction(register)
                 } else {
                     operation.instruction(register)
                 }
@@ -131,10 +134,10 @@ impl LastEdit {
                 plays,
                 escalation,
             } => SemanticInstruction::Repeat {
-                selector: if context.visual_selection.is_some() {
-                    SemanticSelector::VisualSelection
+                selector: if let Some(selection) = &context.visual_selection {
+                    selection.effective_selector()
                 } else {
-                    *selector
+                    selector.clone()
                 },
                 plays: *plays,
                 escalation: escalation.clone(),
@@ -143,20 +146,20 @@ impl LastEdit {
                 SemanticInstruction::SetRepeatPlays { plays: *plays }
             }
             RepeatableEdit::Group { selector, label } => SemanticInstruction::Group {
-                selector: if context.visual_selection.is_some() {
-                    SemanticSelector::VisualSelection
+                selector: if let Some(selection) = &context.visual_selection {
+                    selection.effective_selector()
                 } else {
-                    *selector
+                    selector.clone()
                 },
                 label: label.clone(),
             },
             RepeatableEdit::Ungroup => SemanticInstruction::Ungroup,
             RepeatableEdit::Explode => SemanticInstruction::Explode,
             RepeatableEdit::Duplicate { selector } => SemanticInstruction::Duplicate {
-                selector: if context.visual_selection.is_some() {
-                    SemanticSelector::VisualSelection
+                selector: if let Some(selection) = &context.visual_selection {
+                    selection.effective_selector()
                 } else {
-                    *selector
+                    selector.clone()
                 },
             },
             RepeatableEdit::Parameter(instruction) => instruction.clone(),
@@ -173,7 +176,7 @@ impl LastEdit {
         if let SemanticInstruction::Group { selector, label } = instruction {
             return Some(Self {
                 operation: RepeatableEdit::Group {
-                    selector: *selector,
+                    selector: selector.clone(),
                     label: label.clone(),
                 },
                 register: None,
@@ -194,7 +197,7 @@ impl LastEdit {
         if let SemanticInstruction::Duplicate { selector } = instruction {
             return Some(Self {
                 operation: RepeatableEdit::Duplicate {
-                    selector: *selector,
+                    selector: selector.clone(),
                 },
                 register: None,
             });
@@ -213,7 +216,7 @@ impl LastEdit {
         {
             return Some(Self {
                 operation: RepeatableEdit::Repeat {
-                    selector: *selector,
+                    selector: selector.clone(),
                     plays: *plays,
                     escalation: escalation.clone(),
                 },
@@ -222,7 +225,7 @@ impl LastEdit {
         }
         let (operation, register) = match instruction {
             SemanticInstruction::Cut { selector, register } => {
-                (RepeatableCut::Selector(*selector), *register)
+                (RepeatableCut::Selector(selector.clone()), *register)
             }
             SemanticInstruction::CutFrames {
                 operation,

@@ -422,7 +422,7 @@ fn service_checks(
         service,
         ProjectRequest::Macro(Operation::Apply {
             id: make_id(opened, 80),
-            instruction: length(2),
+            instruction: Box::new(length(2)),
             repeat_version: None,
             scope: target.scope.clone(),
             context: context.clone(),
@@ -436,7 +436,7 @@ fn service_checks(
         service,
         ProjectRequest::Macro(Operation::Apply {
             id: make_id(opened, 81),
-            instruction: length(4),
+            instruction: Box::new(length(4)),
             repeat_version: None,
             scope: target.scope.clone(),
             context: context.clone(),
@@ -480,7 +480,7 @@ fn service_checks(
         service,
         ProjectRequest::Macro(Operation::Apply {
             id: make_id(opened, 82),
-            instruction: length(6),
+            instruction: Box::new(length(6)),
             repeat_version: None,
             scope: target.scope.clone(),
             context: context.clone(),

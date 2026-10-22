@@ -433,7 +433,7 @@ fn group_refresh_failure_retains_proof_and_exact_retry_does_not_replace_newer_in
     let MacroOperation::Apply { instruction, .. } = &mut altered else {
         unreachable!()
     };
-    *instruction = grouping(SemanticSelector::SelectedBeat, "Different");
+    **instruction = grouping(SemanticSelector::SelectedBeat, "Different");
     refused(&harness.service, &path, altered, &changed);
     let saved_macro = execute(
         &harness.service,

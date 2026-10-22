@@ -144,7 +144,7 @@ fn exercise(output: i64, mapping_start: i64, mapping_end: i64, cursor: i64) {
         &service,
         ProjectRequest::Macro(Operation::Apply {
             id: id(&opened, 89),
-            instruction: length(10),
+            instruction: Box::new(length(10)),
             repeat_version: None,
             scope: target.scope.clone(),
             context: conflicting_context,
@@ -156,7 +156,7 @@ fn exercise(output: i64, mapping_start: i64, mapping_end: i64, cursor: i64) {
         &service,
         ProjectRequest::Macro(Operation::Apply {
             id: id(&opened, 90),
-            instruction: length(8),
+            instruction: Box::new(length(8)),
             repeat_version: None,
             scope: target.scope.clone(),
             context: context.clone(),
@@ -169,11 +169,11 @@ fn exercise(output: i64, mapping_start: i64, mapping_end: i64, cursor: i64) {
         &service,
         Operation::Apply {
             id: id(&opened, 1),
-            instruction: SemanticInstruction::SetHoldDuration {
+            instruction: Box::new(SemanticInstruction::SetHoldDuration {
                 length: PauseLength::Frames {
                     frames: NonZeroU32::new(10).unwrap(),
                 },
-            },
+            }),
             repeat_version: None,
             scope: target.scope.clone(),
             context: context.clone(),
@@ -203,7 +203,7 @@ fn exercise(output: i64, mapping_start: i64, mapping_end: i64, cursor: i64) {
         &service,
         ProjectRequest::Macro(Operation::Apply {
             id: id(&opened, 91),
-            instruction: length(11),
+            instruction: Box::new(length(11)),
             repeat_version: None,
             scope: target.scope.clone(),
             context: context.clone(),

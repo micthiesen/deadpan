@@ -1,0 +1,16 @@
+{
+  "deadpan-core::marks": {
+    "executed": "/Users/michael/Code/deadpan/target/debug/deps/marks-361fdd41c110872b",
+    "retained": "/tmp/deadpan-named-mark-selectors-2026-10-22/focused-first-bins/core/marks-361fdd41c110872b",
+    "sha256": "a1e34f1da6d474cf92b65457b87d02be74917e59313c1d1c1db3ae850c6bbe6f",
+    "tests": [
+      "named_mark_selectors::named_mark_range_cut_and_repeat_use_actual_range_and_atomic_inverse",
+      "named_mark_selectors::named_mark_range_late_failure_publishes_neither_staged_edit_nor_capture",
+      "named_mark_selectors::named_mark_range_rejections_allocate_nothing_and_never_fall_back",
+      "named_mark_selectors::named_mark_range_semantic_yank_admits_after_public_resolver_and_visual_controls",
+      "named_mark_selectors::named_mark_range_wire_retains_only_addresses_and_rejects_unknown_fields",
+      "named_mark_selectors::named_mark_selection_is_finished_typed_intent_and_rechecks_after_resize_and_calls",
+      "named_mark_selectors::named_mark_selection_replaces_invalid_prior_selection_and_navigation_retains_finished_intent"
+    ]
+  }
+}

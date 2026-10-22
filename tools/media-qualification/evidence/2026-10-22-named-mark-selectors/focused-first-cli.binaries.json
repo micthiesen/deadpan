@@ -1,0 +1,10 @@
+{
+  "deadpan-cli::project_commands": {
+    "executed": "/Users/michael/Code/deadpan/target/debug/deps/project_commands-f2c949c8aca668e8",
+    "retained": "/tmp/deadpan-named-mark-selectors-2026-10-22/focused-first-bins/cli/project_commands-f2c949c8aca668e8",
+    "sha256": "cc501a67731137de61d4132e0e05da7701700f68dfd81e984122b4209be568c0",
+    "tests": [
+      "macros::mark_range::named_mark_range_macro_calls_resolve_staged_endpoints_and_fail_atomically"
+    ]
+  }
+}

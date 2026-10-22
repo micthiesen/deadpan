@@ -115,7 +115,7 @@ struct Pending {
 }
 
 enum Intent {
-    Yank(edit_range::Selection),
+    Yank(Box<edit_range::Selection>),
     Cut,
 }
 
@@ -258,7 +258,7 @@ impl Register {
         self.unsettled = Some(Unsettled::Edit(request.id.clone()));
         self.pending = Some(Pending {
             request,
-            intent: Intent::Yank(selection),
+            intent: Intent::Yank(Box::new(selection)),
         });
     }
 
@@ -342,7 +342,7 @@ impl Register {
         let Intent::Yank(selection) = pending.intent else {
             unreachable!("matched yank intent")
         };
-        Some((selection, result))
+        Some((*selection, result))
     }
 
     pub fn receive_cut(

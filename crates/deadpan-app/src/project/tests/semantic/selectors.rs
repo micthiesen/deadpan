@@ -45,7 +45,7 @@ fn apply(
 ) -> MacroOperation {
     MacroOperation::Apply {
         id: id(update, request),
-        instruction,
+        instruction: Box::new(instruction),
         repeat_version,
         context,
         scope: SequenceScope::default(),
@@ -285,7 +285,7 @@ fn beat_motion_repeat_resolves_the_new_selected_child_instead_of_reusing_a_lengt
             &opened,
             1,
             context(&opened, 3, Some("a")),
-            instruction(selector, 'a'),
+            instruction(selector.clone(), 'a'),
             None,
         ),
     );
@@ -726,7 +726,7 @@ fn dot_keeps_group_object_intent_and_current_object_visual_override() {
         object: SemanticTextObject::AroundGroup,
     };
     let edit = LastEdit::from_instruction(&SemanticInstruction::Group {
-        selector,
+        selector: selector.clone(),
         label: "Around".into(),
     })
     .unwrap();
@@ -745,7 +745,7 @@ fn dot_keeps_group_object_intent_and_current_object_visual_override() {
     assert_eq!(
         edit.instruction(&context, RegisterName::unnamed()),
         SemanticInstruction::Group {
-            selector,
+            selector: selector.clone(),
             label: "Around".into(),
         }
     );
@@ -765,7 +765,7 @@ fn dot_keeps_group_object_intent_and_current_object_visual_override() {
     );
     assert_eq!(
         LastEdit::from_instruction(&SemanticInstruction::Cut {
-            selector,
+            selector: selector.clone(),
             register: RegisterName::new('a').unwrap(),
         })
         .unwrap()

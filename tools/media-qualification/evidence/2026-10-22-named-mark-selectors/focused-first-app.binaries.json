@@ -1,0 +1,14 @@
+{
+  "deadpan-app::bin/deadpan-app": {
+    "executed": "/Users/michael/Code/deadpan/target/debug/deps/deadpan_app-edbbed39ebf1d72f",
+    "retained": "/tmp/deadpan-named-mark-selectors-2026-10-22/focused-first-bins/app/deadpan_app-edbbed39ebf1d72f",
+    "sha256": "549874c6809daf875767409783095aec7dec7a8400ade69b648ce59562cd33d0",
+    "tests": [
+      "navigation::command::tests::named_mark_selection_uses_exact_ids_and_rejects_ambiguous_shorthand",
+      "navigation::registry::tests::select_help_and_completion_expose_exact_named_mark_range_syntax",
+      "preview::macros::tests::splice::named_mark_splice_recording_requires_the_exact_resolved_capture",
+      "project::semantic::tests::named_mark_repeat_receipts_preserve_intent_and_allow_explicit_visual_override",
+      "project::tests::marks::native_key_addresses_reject_other_named_marks_without_overwriting_or_deleting"
+    ]
+  }
+}

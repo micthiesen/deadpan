@@ -343,7 +343,7 @@ pub(super) struct Counts {
     pub motion: Option<u32>,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone)]
 pub(super) struct Rule {
     action: Action,
     count: CountPolicy,
@@ -361,6 +361,7 @@ impl Rule {
     }
 
     pub fn resolve_counts(&self, counts: Counts) -> Action {
+        let action = self.action.clone();
         if matches!(self.count, CountPolicy::Operator | CountPolicy::Repeat)
             && counts.leading.is_some()
             && counts.motion.is_some()
@@ -372,7 +373,7 @@ impl Rule {
         let count = counts.motion.or(counts.leading);
         match self.count {
             CountPolicy::Repeat => {
-                let Action::Repeat { selector, .. } = self.action else {
+                let Action::Repeat { selector, .. } = action else {
                     unreachable!()
                 };
                 use deadpan_core::{SemanticMotion as M, SemanticSelector as S};
@@ -442,7 +443,7 @@ impl Rule {
                 Action::Repeat { selector, plays }
             }
             CountPolicy::Operator => {
-                let Action::Operator { cut, selector } = self.action else {
+                let Action::Operator { cut, selector } = action else {
                     unreachable!()
                 };
                 use deadpan_core::{SemanticMotion as M, SemanticSelector as S};
@@ -530,8 +531,8 @@ impl Rule {
                 };
                 Action::Operator { cut, selector }
             }
-            CountPolicy::Ignore => self.action,
-            CountPolicy::Motion => match self.action {
+            CountPolicy::Ignore => action,
+            CountPolicy::Motion => match action {
                 Action::Step { forward, .. } => Action::Step {
                     forward,
                     count: count.unwrap_or(1).max(1),
@@ -567,7 +568,7 @@ impl Rule {
                 Some(0) => Action::Invalid("A frame cut count must be positive; no edit was made."),
                 value => Action::DeleteFrames(value.unwrap_or(1)),
             },
-            CountPolicy::Macro => match (self.action, count) {
+            CountPolicy::Macro => match (action, count) {
                 (_, Some(0)) => {
                     Action::Invalid("A macro count must be positive; no edit was made.")
                 }
@@ -583,21 +584,21 @@ impl Rule {
             },
             CountPolicy::DeleteBeat => match count {
                 Some(0) => Action::Invalid("An edit count must be positive; no edit was made."),
-                None | Some(1) => self.action,
+                None | Some(1) => action,
                 Some(_) => Action::Invalid(
                     "Whole-beat cut deletes one selected beat. Counted deletion is not available.",
                 ),
             },
             CountPolicy::Hold => {
                 let length = duration::DurationInput::half_seconds(count.unwrap_or(1));
-                Action::Edit(match self.action {
+                Action::Edit(match action {
                     Action::Edit(BeatEdit::InsertHold(_)) => BeatEdit::InsertHold(length),
                     Action::Edit(BeatEdit::InsertAiHold(_)) => BeatEdit::InsertAiHold(length),
                     _ => unreachable!("pause declarations carry a pause insertion"),
                 })
             }
             CountPolicy::Gain => {
-                let Action::GainStep(step) = self.action else {
+                let Action::GainStep(step) = action else {
                     unreachable!("gain declarations carry a gain action")
                 };
                 if count == Some(0) {
@@ -617,7 +618,7 @@ impl Rule {
                 if count.is_some() {
                     Action::Invalid(message)
                 } else {
-                    self.action
+                    action
                 }
             }
         }
@@ -627,24 +628,25 @@ impl Rule {
 impl Rule {
     pub fn id(&self) -> BindingId {
         use BindingId as I;
-        match self.action {
+        match &self.action {
             Action::Repeat { selector, .. } => match selector {
                 deadpan_core::SemanticSelector::SelectedBeat => I::Repeat,
                 deadpan_core::SemanticSelector::VisualSelection => I::RepeatRange,
+                deadpan_core::SemanticSelector::MarkRange { .. } => I::RepeatOperator,
                 deadpan_core::SemanticSelector::Motion { .. }
                 | deadpan_core::SemanticSelector::TextObject { .. }
                 | deadpan_core::SemanticSelector::Speech { .. } => I::RepeatOperator,
             },
             Action::Operator { cut, selector } => match selector {
                 deadpan_core::SemanticSelector::SelectedBeat => {
-                    if cut {
+                    if *cut {
                         I::CutBeat
                     } else {
                         I::CopyBeat
                     }
                 }
                 _ => {
-                    if cut {
+                    if *cut {
                         I::CutOperator
                     } else {
                         I::YankOperator
@@ -710,7 +712,7 @@ impl Rule {
             Action::Ai(AiAction::Choose(VariantChoice::Next)) => I::NextAi,
             Action::Insert => I::Insert,
             Action::Sound(SoundAction::Place) => I::PlaceSound,
-            Action::GainStep(step) if step > 0 => I::GainUp,
+            Action::GainStep(step) if *step > 0 => I::GainUp,
             Action::GainStep(_) => I::GainDown,
             Action::Mute => I::Mute,
             Action::CutawayPicker => I::CutawayPicker,
@@ -998,7 +1000,7 @@ impl Compiled {
         while let Some(node) = pending.pop() {
             if node
                 .terminal()
-                .is_some_and(|binding| matches!(binding.value.action, Action::Operator { .. }))
+                .is_some_and(|binding| matches!(&binding.value.action, Action::Operator { .. }))
             {
                 return true;
             }
@@ -1017,7 +1019,7 @@ impl Compiled {
         let mut result = None;
         while let Some(node) = pending.pop() {
             if let Some(binding) = node.terminal()
-                && let Action::Repeat { selector, .. } = binding.value.action
+                && let Action::Repeat { selector, .. } = &binding.value.action
             {
                 let scope = match selector {
                     deadpan_core::SemanticSelector::SelectedBeat => {
@@ -1028,7 +1030,8 @@ impl Compiled {
                     }
                     deadpan_core::SemanticSelector::Motion { .. } => RepeatPendingScope::Motion,
                     deadpan_core::SemanticSelector::TextObject { .. }
-                    | deadpan_core::SemanticSelector::Speech { .. } => {
+                    | deadpan_core::SemanticSelector::Speech { .. }
+                    | deadpan_core::SemanticSelector::MarkRange { .. } => {
                         RepeatPendingScope::TextObject
                     }
                 };
@@ -1227,12 +1230,12 @@ impl Compiled {
         }
         if definition.paths.is_empty() {
             // Command aliases with no default key (Ungroup, Explode, Duplicate).
-            return Some((Some(definition.rule), Vec::new()));
+            return Some((Some(definition.rule.clone()), Vec::new()));
         }
         definition.paths.iter().find_map(|path| {
             self.rule(path, selection, domain)
                 .filter(|rule| rule.id() == id)
-                .map(|rule| (Some(*rule), path.clone()))
+                .map(|rule| (Some(rule.clone()), path.clone()))
         })
     }
     /// The configured paths of one action (a prefix family's own prefix).
@@ -1284,6 +1287,7 @@ fn repeat_description(
     let selected = match selector {
         S::SelectedBeat => "this whole beat".into(),
         S::VisualSelection => "the selected range".into(),
+        S::MarkRange { .. } => "the named-mark range".into(),
         S::TextObject {
             object: deadpan_core::SemanticTextObject::InnerGroup,
         } => "group contents".into(),
@@ -1438,7 +1442,7 @@ fn compile_mode(
                 });
                 if kind.is_operator() {
                     for motion in definitions {
-                        let selector = match motion.rule.action {
+                        let selector = match motion.rule.action.clone() {
                             Action::SelectObject(object) => {
                                 deadpan_core::SemanticSelector::TextObject { object }
                             }
@@ -1510,11 +1514,12 @@ fn compile_mode(
                                 path: expanded,
                                 value: Rule {
                                     action: match kind {
-                                        PrefixKind::Operator { cut } => {
-                                            Action::Operator { cut, selector }
-                                        }
+                                        PrefixKind::Operator { cut } => Action::Operator {
+                                            cut,
+                                            selector: selector.clone(),
+                                        },
                                         PrefixKind::Repeat => Action::Repeat {
-                                            selector,
+                                            selector: selector.clone(),
                                             plays: std::num::NonZeroU32::new(2).unwrap(),
                                         },
                                         _ => unreachable!(),
@@ -1586,7 +1591,7 @@ fn compile_mode(
                         let letter = mark_letter(key, shift).expect("ASCII letter");
                         let mut expanded = path.clone();
                         expanded.push(Stroke::Key(key, shift));
-                        let mut rule = definition.rule;
+                        let mut rule = definition.rule.clone();
                         rule.action = kind.letter_action(letter);
                         bindings.push(Binding {
                             label: path_label(&expanded),
@@ -1598,7 +1603,7 @@ fn compile_mode(
                 if kind == PrefixKind::Register {
                     let mut expanded = path.clone();
                     expanded.push(Stroke::Key(Key::Quote, true));
-                    let mut rule = definition.rule;
+                    let mut rule = definition.rule.clone();
                     rule.action = Action::SelectRegister('"');
                     bindings.push(Binding {
                         label: path_label(&expanded),
@@ -1607,7 +1612,7 @@ fn compile_mode(
                     });
                 }
             } else {
-                let mut rule = definition.rule;
+                let mut rule = definition.rule.clone();
                 if domain != RoutingDomain::Edit && definition.id == BindingId::CutBeat {
                     rule.action = Action::Edit(BeatEdit::Delete);
                     rule.count = CountPolicy::DeleteBeat;
@@ -1789,12 +1794,12 @@ fn speech_select_text(object: deadpan_core::SpeechObject) -> &'static str {
 
 fn shipped(visual: bool) -> Vec<Binding<Stroke, Rule>> {
     let mut bindings = Vec::new();
-    let mut add = |path: &[Stroke], action, count, short, repeatable| {
+    let mut add = |path: &[Stroke], action: Action, count, short, repeatable| {
         bindings.push(Binding {
             path: path.to_vec(),
             label: path.iter().map(|stroke| stroke.label()).collect::<String>(),
             value: Rule {
-                action,
+                action: action.clone(),
                 count,
                 short,
                 repeatable,

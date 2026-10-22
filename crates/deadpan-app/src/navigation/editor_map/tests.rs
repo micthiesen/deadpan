@@ -474,7 +474,10 @@ fn prefix_teaching_lists_reachable_declared_leaves_and_counted_leader_restricts_
                     let leaf = child.terminal().expect("shipped prefix has direct leaves");
                     let expected = leaf.value.resolve(count);
                     let mut candidate = pending.clone();
-                    assert_eq!(candidate.audit_stroke(*stroke, selection), Some(expected));
+                    assert_eq!(
+                        candidate.audit_stroke(*stroke, selection),
+                        Some(expected.clone())
+                    );
                     if !matches!(expected, Action::Invalid(_)) {
                         reachable.push(stroke.label());
                     }

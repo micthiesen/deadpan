@@ -2004,10 +2004,10 @@ impl DeadpanApp {
     }
 
     fn action(&mut self, action: Action, context: &egui::Context) {
-        if self.scoped_action(action, context) {
+        if self.scoped_action(action.clone(), context) {
             return;
         }
-        if !self.macro_action_allowed(action) {
+        if !self.macro_action_allowed(action.clone()) {
             if action == Action::RepeatLast && self.last_edit_uses_register() {
                 self.copied.begin_write();
             }
@@ -2139,7 +2139,7 @@ impl DeadpanApp {
                 _ => {}
             }
         }
-        if self.sound_focused() && !sound_action_allowed(action) {
+        if self.sound_focused() && !sound_action_allowed(&action) {
             if matches!(
                 action,
                 Action::CopyMoment
@@ -2929,7 +2929,7 @@ impl DeadpanApp {
                     // latch; actual pointer, text and context changes still clear it.
                     let motion = matches!(action, Action::Step { .. } | Action::Beat { .. })
                         .then(|| self.bindings.clone());
-                    self.action(action, context);
+                    self.action(action.clone(), context);
                     if let Some(bindings) = motion {
                         self.bindings = bindings;
                         self.bindings.set_macro_recording(self.macros.recording());
@@ -3342,6 +3342,9 @@ impl DeadpanApp {
                 self.set_gag(macro_target, &parameters)
             }
             Ok(navigation::command::Entry::SelectRole(role)) => self.select_role(role),
+            Ok(navigation::command::Entry::SelectMarkRange { start, end }) => {
+                self.select_named_mark_range(macro_target, start, end)
+            }
             Ok(navigation::command::Entry::DeleteRole(role)) => self.delete_role(
                 role,
                 macro_target.unwrap_or_else(|| {
@@ -5848,7 +5851,7 @@ fn frame_rate_label(rate: deadpan_core::FrameRate) -> String {
     }
 }
 
-fn sound_action_allowed(action: Action) -> bool {
+fn sound_action_allowed(action: &Action) -> bool {
     matches!(
         action,
         Action::New
@@ -6576,7 +6579,7 @@ mod tests {
             Action::Framing(navigation::FramingAction::EnterCamera),
         ] {
             assert!(
-                !sound_action_allowed(action),
+                !sound_action_allowed(&action),
                 "{action:?} must not target the retained editor selection"
             );
         }
@@ -6595,7 +6598,7 @@ mod tests {
             Action::Escape,
         ] {
             assert!(
-                sound_action_allowed(action),
+                sound_action_allowed(&action),
                 "{action:?} remains available in the sound catalog"
             );
         }
@@ -6618,7 +6621,7 @@ mod tests {
                 .last()
                 .unwrap();
             assert!(
-                !sound_action_allowed(action),
+                !sound_action_allowed(&action),
                 "Sound focus must suppress {action:?}"
             );
         }
@@ -6627,7 +6630,7 @@ mod tests {
             assert_eq!(bindings.key(Key::Num2, Modifiers::NONE, false, false), None);
             let action = bindings.key(key, Modifiers::NONE, false, false).unwrap();
             assert_eq!(action, Action::Beat { forward, count: 2 });
-            assert!(sound_action_allowed(action));
+            assert!(sound_action_allowed(&action));
         }
         for (text, ime) in [(true, false), (false, true), (true, true)] {
             let mut bindings = Bindings::default();

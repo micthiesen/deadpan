@@ -1,0 +1,10 @@
+{
+  "deadpan-store::source_registration": {
+    "executed": "/Users/michael/Code/deadpan/target/debug/deps/source_registration-9dc8c89f5f7a9079",
+    "retained": "/tmp/deadpan-named-mark-selectors-2026-10-22/focused-first-bins/store/source_registration-9dc8c89f5f7a9079",
+    "sha256": "da0c64784684440a31896de403caad31260ce2c7086c5003673812d65a5bdb20",
+    "tests": [
+      "mark_range::named_mark_range_selection_is_bank_neutral_and_rejects_reversed_endpoints"
+    ]
+  }
+}

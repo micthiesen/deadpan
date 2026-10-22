@@ -43,6 +43,7 @@ pub(super) fn run(name: &str, d: &mut Driver<'_>) -> Result<(), String> {
         "marks" => super::marks::run(d),
         "named-registers" => super::registers::run(d),
         "dot-repeat" => super::semantic::run(d),
+        "named-mark-selectors" => super::semantic::named_marks::run(d),
         "creative-dot" => super::creative_dot::run(d),
         "repeat-operator" => super::repeat_operator::run(d),
         "repeat-setters" => super::repeat_operator::run_setters(d),

@@ -120,6 +120,14 @@ where
                     .resolve_object_selection(&self.context.parent, selection)?
                     .range,
             ),
+            Some(SemanticVisualSelection::MarkRange { start, end }) => {
+                Some(crate::semantic::mark_range::resolve_in_scope(
+                    &self.current,
+                    &self.context,
+                    start,
+                    end,
+                )?)
+            }
             None => None,
         };
         let local = range.map(|range| {

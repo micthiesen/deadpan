@@ -408,7 +408,7 @@ impl DeadpanApp {
         let blocked = matches!(
             command,
             Ok(Entry::Splice | Entry::Slip(_) | Entry::Trim(_) | Entry::Group { .. })
-        ) || matches!(command, Ok(Entry::Action(action)) if scoped_structural_action(*action));
+        ) || matches!(command, Ok(Entry::Action(action)) if scoped_structural_action(action));
         if blocked {
             self.error = Some(STRUCTURE_UNAVAILABLE.into());
         }
@@ -426,7 +426,7 @@ impl DeadpanApp {
         let permission = if duration_entry {
             Action::Command
         } else {
-            action
+            action.clone()
         };
         if (self.macros.recording() || duration_entry) && !self.macro_action_allowed(permission) {
             return true;
@@ -437,7 +437,7 @@ impl DeadpanApp {
         {
             return false;
         }
-        if scoped_structural_action(action) {
+        if scoped_structural_action(&action) {
             self.error = Some(STRUCTURE_UNAVAILABLE.into());
             return true;
         }
@@ -740,7 +740,7 @@ impl DeadpanApp {
     }
 }
 
-fn scoped_structural_action(action: Action) -> bool {
+fn scoped_structural_action(action: &Action) -> bool {
     if matches!(
         action,
         Action::Edit(

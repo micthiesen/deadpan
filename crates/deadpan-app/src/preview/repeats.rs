@@ -72,14 +72,14 @@ impl DeadpanApp {
     pub(super) fn escalating_repeat(&mut self) {
         self.bindings.clear();
         self.cancel_repeats("an escalating Repeat was requested");
-        let selector = if self
-            .capture_visual_selection()
-            .is_ok_and(|visual| visual.is_some())
-        {
-            SemanticSelector::VisualSelection
-        } else {
-            SemanticSelector::SelectedBeat
+        let target = match self.capture_macro_target() {
+            Ok(target) => target,
+            Err(error) => {
+                self.error = Some(error);
+                return;
+            }
         };
+        let selector = target.repeat_selector();
         let escalation = deadpan_core::RepeatEscalation {
             gain_step: deadpan_core::GainDb::new(3_000).expect("constant gain"),
             zoom: Some(deadpan_core::ZoomStep {
@@ -91,9 +91,8 @@ impl DeadpanApp {
                 target: None,
             }),
         };
-        let target = self.capture_macro_target();
         self.apply_recorded_instruction(
-            target,
+            Ok(target),
             Ok(SemanticInstruction::Repeat {
                 selector,
                 plays: NonZeroU32::new(3).expect("constant plays"),
@@ -523,6 +522,13 @@ impl DeadpanApp {
             }
         } else {
             self.cancel_repeats("a Repeat selection was requested");
+            let selector = if selector == SemanticSelector::VisualSelection {
+                target
+                    .as_ref()
+                    .map_or(selector.clone(), macros::Capture::repeat_selector)
+            } else {
+                selector
+            };
             self.apply_recorded_instruction(
                 target,
                 Ok(SemanticInstruction::Repeat {

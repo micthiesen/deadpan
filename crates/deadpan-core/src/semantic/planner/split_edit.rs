@@ -298,7 +298,7 @@ where
         &self,
         across: &str,
     ) -> Result<(NodeId, ProjectFrame, ProjectFrame, FrameRange), EditError> {
-        let target = self.resolve_selector(crate::SemanticSelector::VisualSelection)?;
+        let target = self.resolve_selector(&crate::SemanticSelector::VisualSelection)?;
         let SliceCaptureSelection::Range { range } = target.selection()?.clone() else {
             return Err(invalid(
                 "a role edit acts on a Visual time range, not a group object",

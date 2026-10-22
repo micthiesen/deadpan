@@ -1,0 +1,453 @@
+{
+  "bank_version": 2,
+  "before_bank_version": 1,
+  "before_revision": "named-mark-range-r07",
+  "committed": true,
+  "committed_registers": {
+    "bank_version": 2,
+    "project_id": "1174cba7-94e4-4a98-bc10-800a138a297e",
+    "revision_id": "55f84c2f-1ec8-48d1-894e-762fd352b690"
+  },
+  "committed_revision": "55f84c2f-1ec8-48d1-894e-762fd352b690",
+  "context": {
+    "cursor": 13,
+    "original": null,
+    "parent": "af0471ed-c131-4e21-a071-2c00082465ce",
+    "scoped": null,
+    "selected_child": "c0a77ea9-7e17-4597-adbc-efa6fb3d6596",
+    "visual_selection": null
+  },
+  "edit": {
+    "changed_ids": [
+      "324d4998-3e96-482e-9700-6ebcc2039c99",
+      "3b3b31e0-4882-4c11-ae84-d18c4c736766",
+      "4fd1ce1a-4d82-4016-a1d7-e4facbed36df",
+      "6c34f059-f432-438d-b25a-c0250a6fb376",
+      "a7c50ea0-0bf4-4807-9ce5-457d42994611",
+      "af0471ed-c131-4e21-a071-2c00082465ce",
+      "c0a77ea9-7e17-4597-adbc-efa6fb3d6596",
+      "d3690833-f634-44f1-8e9b-ddfd1ce88bcd",
+      "f814b4e0-6a15-4ada-889f-faec89b516b9",
+      "named-mark-range-held",
+      "named-mark-range-n6"
+    ],
+    "description": "Apply resolved transaction",
+    "duration_delta": 1,
+    "new_revision": "55f84c2f-1ec8-48d1-894e-762fd352b690"
+  },
+  "generation_preparation_notices": [],
+  "generation_preparations": [],
+  "mark_changes": [
+    {
+      "after": null,
+      "before": {
+        "boundary": {
+          "bias": "right",
+          "coordinate": {
+            "instance": {
+              "node": "named-mark-range-n7",
+              "repeats": []
+            },
+            "position": {
+              "denominator": "1",
+              "numerator": "20"
+            },
+            "space": "occurrence"
+          }
+        },
+        "label": "a",
+        "loss_policy": "delete_owned",
+        "owner": "named-mark-range-n7",
+        "state": {
+          "type": "bound"
+        }
+      },
+      "id": "native-mark-a"
+    },
+    {
+      "after": null,
+      "before": {
+        "boundary": {
+          "bias": "left",
+          "coordinate": {
+            "instance": {
+              "node": "named-mark-range-n7",
+              "repeats": []
+            },
+            "position": {
+              "denominator": "1",
+              "numerator": "23"
+            },
+            "space": "occurrence"
+          }
+        },
+        "label": "b",
+        "loss_policy": "delete_owned",
+        "owner": "named-mark-range-n7",
+        "state": {
+          "type": "bound"
+        }
+      },
+      "id": "native-mark-b"
+    },
+    {
+      "after": {
+        "boundary": {
+          "bias": "right",
+          "coordinate": {
+            "instance": {
+              "node": "6c34f059-f432-438d-b25a-c0250a6fb376",
+              "repeats": [
+                {
+                  "iteration": {
+                    "allocation": "68920e63-e6f0-4d8e-b876-db99362d73cc",
+                    "ordinal": 0
+                  },
+                  "node": "c0a77ea9-7e17-4597-adbc-efa6fb3d6596"
+                }
+              ]
+            },
+            "position": {
+              "denominator": "1",
+              "numerator": "25"
+            },
+            "space": "occurrence"
+          }
+        },
+        "label": "c",
+        "loss_policy": "delete_owned",
+        "owner": "6c34f059-f432-438d-b25a-c0250a6fb376",
+        "state": {
+          "type": "bound"
+        }
+      },
+      "before": {
+        "boundary": {
+          "bias": "right",
+          "coordinate": {
+            "instance": {
+              "node": "named-mark-range-n7",
+              "repeats": []
+            },
+            "position": {
+              "denominator": "1",
+              "numerator": "25"
+            },
+            "space": "occurrence"
+          }
+        },
+        "label": "c",
+        "loss_policy": "delete_owned",
+        "owner": "named-mark-range-n7",
+        "state": {
+          "type": "bound"
+        }
+      },
+      "id": "native-mark-c"
+    },
+    {
+      "after": {
+        "boundary": {
+          "bias": "left",
+          "coordinate": {
+            "instance": {
+              "node": "6c34f059-f432-438d-b25a-c0250a6fb376",
+              "repeats": [
+                {
+                  "iteration": {
+                    "allocation": "68920e63-e6f0-4d8e-b876-db99362d73cc",
+                    "ordinal": 0
+                  },
+                  "node": "c0a77ea9-7e17-4597-adbc-efa6fb3d6596"
+                }
+              ]
+            },
+            "position": {
+              "denominator": "1",
+              "numerator": "28"
+            },
+            "space": "occurrence"
+          }
+        },
+        "label": "d",
+        "loss_policy": "delete_owned",
+        "owner": "6c34f059-f432-438d-b25a-c0250a6fb376",
+        "state": {
+          "type": "bound"
+        }
+      },
+      "before": {
+        "boundary": {
+          "bias": "left",
+          "coordinate": {
+            "instance": {
+              "node": "named-mark-range-n7",
+              "repeats": []
+            },
+            "position": {
+              "denominator": "1",
+              "numerator": "28"
+            },
+            "space": "occurrence"
+          }
+        },
+        "label": "d",
+        "loss_policy": "delete_owned",
+        "owner": "named-mark-range-n7",
+        "state": {
+          "type": "bound"
+        }
+      },
+      "id": "native-mark-d"
+    }
+  ],
+  "operation": "run",
+  "project_id": "1174cba7-94e4-4a98-bc10-800a138a297e",
+  "protocol": 1,
+  "register": "m",
+  "register_writes": [
+    "\"",
+    "a",
+    "b"
+  ],
+  "trace": [
+    {
+      "after_cursor": 13,
+      "after_original": null,
+      "after_parent": "af0471ed-c131-4e21-a071-2c00082465ce",
+      "after_scoped": null,
+      "after_selected_child": "c0a77ea9-7e17-4597-adbc-efa6fb3d6596",
+      "after_visual_selection": null,
+      "before_cursor": 7,
+      "before_original": null,
+      "before_revision": "named-mark-range-r07",
+      "before_scope": {
+        "end": 32,
+        "start": 0
+      },
+      "before_scoped": null,
+      "before_selected_child": "named-mark-range-held",
+      "before_visual_selection": null,
+      "capture": null,
+      "captured_child_label": null,
+      "depth": 0,
+      "instruction": {
+        "count": 1,
+        "register": "m",
+        "type": "call"
+      },
+      "parent": "af0471ed-c131-4e21-a071-2c00082465ce",
+      "removed_range": null,
+      "resolved_parent": null,
+      "resolved_range": null,
+      "resolved_selection": null
+    },
+    {
+      "after_cursor": 6,
+      "after_original": null,
+      "after_parent": "af0471ed-c131-4e21-a071-2c00082465ce",
+      "after_scoped": null,
+      "after_selected_child": "named-mark-range-held",
+      "after_visual_selection": null,
+      "before_cursor": 7,
+      "before_original": null,
+      "before_revision": "named-mark-range-r07",
+      "before_scope": {
+        "end": 32,
+        "start": 0
+      },
+      "before_scoped": null,
+      "before_selected_child": "named-mark-range-held",
+      "before_visual_selection": null,
+      "capture": null,
+      "captured_child_label": null,
+      "depth": 1,
+      "instruction": {
+        "length": {
+          "frames": 3,
+          "unit": "frames"
+        },
+        "type": "set_hold_duration"
+      },
+      "parent": "af0471ed-c131-4e21-a071-2c00082465ce",
+      "removed_range": null,
+      "resolved_parent": "af0471ed-c131-4e21-a071-2c00082465ce",
+      "resolved_range": {
+        "end": 9,
+        "start": 6
+      },
+      "resolved_selection": {
+        "node": "named-mark-range-held",
+        "type": "child"
+      }
+    },
+    {
+      "after_cursor": 6,
+      "after_original": null,
+      "after_parent": "af0471ed-c131-4e21-a071-2c00082465ce",
+      "after_scoped": null,
+      "after_selected_child": "named-mark-range-held",
+      "after_visual_selection": null,
+      "before_cursor": 6,
+      "before_original": null,
+      "before_revision": "1be4e164-4207-4492-a2c8-0d7716e98f96",
+      "before_scope": {
+        "end": 33,
+        "start": 0
+      },
+      "before_scoped": null,
+      "before_selected_child": "named-mark-range-held",
+      "before_visual_selection": null,
+      "capture": {
+        "bounds": {
+          "end": 33,
+          "start": 0
+        },
+        "parent": "af0471ed-c131-4e21-a071-2c00082465ce",
+        "scope": [],
+        "scope_labels": [],
+        "timing": {
+          "allocation": "f4e31150-c901-4ddf-84d7-51bde2f84259",
+          "ordinal": 0
+        }
+      },
+      "captured_child_label": null,
+      "depth": 1,
+      "instruction": {
+        "register": "a",
+        "selector": {
+          "end": {
+            "id": "native-mark-b"
+          },
+          "start": {
+            "id": "native-mark-a"
+          },
+          "type": "mark_range"
+        },
+        "type": "yank"
+      },
+      "parent": "af0471ed-c131-4e21-a071-2c00082465ce",
+      "removed_range": null,
+      "resolved_parent": "af0471ed-c131-4e21-a071-2c00082465ce",
+      "resolved_range": {
+        "end": 14,
+        "start": 11
+      },
+      "resolved_selection": {
+        "range": {
+          "end": 14,
+          "start": 11
+        },
+        "type": "range"
+      }
+    },
+    {
+      "after_cursor": 11,
+      "after_original": null,
+      "after_parent": "af0471ed-c131-4e21-a071-2c00082465ce",
+      "after_scoped": null,
+      "after_selected_child": "324d4998-3e96-482e-9700-6ebcc2039c99",
+      "after_visual_selection": null,
+      "before_cursor": 6,
+      "before_original": null,
+      "before_revision": "1be4e164-4207-4492-a2c8-0d7716e98f96",
+      "before_scope": {
+        "end": 33,
+        "start": 0
+      },
+      "before_scoped": null,
+      "before_selected_child": "named-mark-range-held",
+      "before_visual_selection": null,
+      "capture": {
+        "bounds": {
+          "end": 33,
+          "start": 0
+        },
+        "parent": "af0471ed-c131-4e21-a071-2c00082465ce",
+        "scope": [],
+        "scope_labels": [],
+        "timing": {
+          "allocation": "8692d5a1-5e4d-481d-bbf0-fc9b5a25736e",
+          "ordinal": 0
+        }
+      },
+      "captured_child_label": null,
+      "depth": 1,
+      "instruction": {
+        "register": "b",
+        "selector": {
+          "end": {
+            "id": "native-mark-b"
+          },
+          "start": {
+            "id": "native-mark-a"
+          },
+          "type": "mark_range"
+        },
+        "type": "cut"
+      },
+      "parent": "af0471ed-c131-4e21-a071-2c00082465ce",
+      "removed_range": null,
+      "resolved_parent": "af0471ed-c131-4e21-a071-2c00082465ce",
+      "resolved_range": {
+        "end": 14,
+        "start": 11
+      },
+      "resolved_selection": {
+        "range": {
+          "end": 14,
+          "start": 11
+        },
+        "type": "range"
+      }
+    },
+    {
+      "after_cursor": 13,
+      "after_original": null,
+      "after_parent": "af0471ed-c131-4e21-a071-2c00082465ce",
+      "after_scoped": null,
+      "after_selected_child": "c0a77ea9-7e17-4597-adbc-efa6fb3d6596",
+      "after_visual_selection": null,
+      "before_cursor": 11,
+      "before_original": null,
+      "before_revision": "e1676ab1-ef82-4196-bd19-b498af48fe70",
+      "before_scope": {
+        "end": 30,
+        "start": 0
+      },
+      "before_scoped": null,
+      "before_selected_child": "324d4998-3e96-482e-9700-6ebcc2039c99",
+      "before_visual_selection": null,
+      "capture": null,
+      "captured_child_label": null,
+      "depth": 1,
+      "instruction": {
+        "plays": 2,
+        "selector": {
+          "end": {
+            "id": "native-mark-d"
+          },
+          "start": {
+            "id": "native-mark-c"
+          },
+          "type": "mark_range"
+        },
+        "type": "repeat"
+      },
+      "parent": "af0471ed-c131-4e21-a071-2c00082465ce",
+      "removed_range": null,
+      "resolved_parent": "af0471ed-c131-4e21-a071-2c00082465ce",
+      "resolved_range": {
+        "end": 16,
+        "start": 13
+      },
+      "resolved_selection": {
+        "range": {
+          "end": 16,
+          "start": 13
+        },
+        "type": "range"
+      }
+    }
+  ]
+}

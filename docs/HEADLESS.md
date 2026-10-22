@@ -86,10 +86,14 @@ The dedicated [Macro commands](SEMANTIC_MACROS.md#headless-inspection-save-and-r
 inspect, save and run bounded motions, frame cuts, beat copies, register pastes
 and named calls. Effects that resolve through semantic instructions are
 reachable through inline `apply` (below), and `macro inspect` lists registers.
-Still missing against spec section 6.2: edit operators over mark-range, explicit
-node and transcript-search-result selectors and discontiguous ranges (macro
-selectors are `SemanticSelector` in `crates/deadpan-core/src/semantic/program.rs`;
-`resolve-selection` resolves mark and mark_range selectors read-only).
+Named-mark ranges also select and drive the existing range operators in an
+ordinary Edit Sequence. They retain mark addresses and resolve against each
+staged document; role-only consumers keep their one-child constraint. See
+[named-mark ranges](SEMANTIC_MACROS.md#named-mark-ranges).
+Still missing against spec section 6.2: explicit node and
+transcript-search-result selectors and discontiguous ranges. Macro selectors are
+`SemanticSelector` in `crates/deadpan-core/src/semantic/program.rs`;
+`resolve-selection` also resolves mark and mark_range selectors read-only.
 
 `compound` executes a bounded `ResolvedTransaction` through the same preview
 and commit boundary. Its flat Edit/Yank/Cut/Paste steps carry exact resolved
@@ -852,8 +856,10 @@ The index stores authored parents and sequence prefixes; seeking billions of
 plays does not expand them. Repeat identity lookup scans compact runs.
 
 `set_mark` persists one of these boundaries, its owner, label, and explicit loss
-policy. Named-mark selectors are described below. Range-editing operators and
-temporal attachments remain to be implemented.
+policy. Named-mark selectors are described below. Semantic named-mark ranges
+can drive the existing range operators in an ordinary Edit Sequence. Role-only
+consumers retain their one-direct-child constraint; named ranges do not grant
+new temporal attachment or occurrence-edit authority.
 [Boundary verification](ANCHOR_VERIFICATION.md) preserves the original query
 evidence; [mark verification](MARK_VERIFICATION.md) covers the schema-3 extension.
 

@@ -315,7 +315,7 @@ impl DeadpanApp {
         // While a macro records, an Edit mark is saved through the recorded
         // instruction; a jump records itself once it lands (below).
         if self.macros.recording() {
-            match (&capture.location, action) {
+            match (&capture.location, action.clone()) {
                 (Location::Original { .. }, Action::SetMark(letter)) => {
                     let instruction = deadpan_core::SemanticInstruction::SetMark { letter };
                     self.apply_recorded_instruction(self.capture_macro_target(), Ok(instruction));

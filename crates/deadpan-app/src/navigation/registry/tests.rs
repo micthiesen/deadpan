@@ -144,6 +144,18 @@ fn every_configurable_action_and_verb_is_described_exactly_once() {
     }
 }
 
+#[test]
+fn select_help_and_completion_expose_exact_named_mark_range_syntax() {
+    let spec = SPECS.iter().find(|spec| spec.id == "select.role").unwrap();
+    let usage =
+        ":select role=audio|video|linked  or :select marks start=<exactMarkId> end=<exactMarkId>";
+    assert!(spec.commands.iter().any(|command| command.usage == usage));
+    assert!(super::super::command::completions(":select").contains(&usage));
+    assert!(spec.help.contains("native-mark-<letter>"));
+    assert!(spec.help.contains("exact mark IDs"));
+    assert!(spec.help.contains("current ordinary Sequence"));
+}
+
 /// A key only claims a timeline context where the compiled trie routes it.
 #[test]
 fn declared_timeline_contexts_are_routed_by_the_trie() {

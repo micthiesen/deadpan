@@ -1,0 +1,55 @@
+{
+  "archive": "named-mark-range.deadpan.tar.gz",
+  "bytes": 74069,
+  "sha256": "ebe89173fd95ca7c800bd86feee3122c4e55ab89b116191f016c1144c7aed3f3",
+  "package_name": "named-mark-range.deadpan",
+  "extracted": "/tmp/deadpan-named-mark-selectors-2026-10-22/owner-check/named-mark-range.deadpan",
+  "files": [
+    {
+      "path": ".render-candidates.lock",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": ".writer.lock",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+      "bytes": 39157,
+      "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918"
+    },
+    {
+      "path": "Media/RenderCandidates/blake3-1c99f5960957639d7a0b665ea697d78e33bdfc8ad1ec26ecdf9c0a6fe077ad23",
+      "bytes": 15103,
+      "sha256": "4ceaa775ea6e2e05e8295ae5b67f053749717ca73f780853fa2d119f860660be"
+    },
+    {
+      "path": "Media/RenderCandidates/blake3-323264a71cd5f220936a390ccfc9281491e13c9fb10f987d4a293d575cda6c7a",
+      "bytes": 13124,
+      "sha256": "9b04ac9950a290dd60e442c237487d678799dfe45c22913a87ed85ce070f8947"
+    },
+    {
+      "path": "manifest.json",
+      "bytes": 82,
+      "sha256": "e26c7dca257657dde69a682a693f6b7a61d725d3f375942c68c2627d7fa538dd"
+    },
+    {
+      "path": "project.sqlite",
+      "bytes": 696320,
+      "sha256": "b9397b37643f684de4208da12e217f98ff13403ce4a692d13fc976cd5e9ddce6"
+    },
+    {
+      "path": "project.sqlite-shm",
+      "bytes": 32768,
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+    },
+    {
+      "path": "project.sqlite-wal",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "safely_extracted_and_rehashed": true
+}

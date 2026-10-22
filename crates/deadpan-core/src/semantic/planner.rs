@@ -62,6 +62,25 @@ pub enum SemanticVisualSelection {
         selection: SemanticObjectSelection,
         extending: bool,
     },
+    /// Finished named Edit intent. Geometry is always resolved on the current
+    /// staged revision, never retained as a pair of project-frame timestamps.
+    MarkRange {
+        start: crate::NamedMarkTarget,
+        end: crate::NamedMarkTarget,
+    },
+}
+
+impl SemanticVisualSelection {
+    /// Preserve named selection intent in recorded operators and dot receipts.
+    pub fn effective_selector(&self) -> SemanticSelector {
+        match self {
+            Self::MarkRange { start, end } => SemanticSelector::MarkRange {
+                start: start.clone(),
+                end: end.clone(),
+            },
+            Self::Time { .. } | Self::Object { .. } => SemanticSelector::VisualSelection,
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize)]
@@ -844,7 +863,7 @@ where
                         *object,
                         self.current.presentation_basis().frame_rate,
                     )?;
-                    let target = self.resolve_selector(SemanticSelector::VisualSelection)?;
+                    let target = self.resolve_selector(&SemanticSelector::VisualSelection)?;
                     self.trace[index].resolved_parent = Some(target.parent);
                     self.trace[index].resolved_range = Some(target.range);
                     self.trace[index].resolved_selection = target.selection;
@@ -854,7 +873,19 @@ where
                     self.context = self
                         .current
                         .select_semantic_object(&self.context, *object)?;
-                    let target = self.resolve_selector(SemanticSelector::VisualSelection)?;
+                    let target = self.resolve_selector(&SemanticSelector::VisualSelection)?;
+                    self.trace[index].resolved_parent = Some(target.parent);
+                    self.trace[index].resolved_range = Some(target.range);
+                    self.trace[index].resolved_selection = target.selection;
+                }
+                SemanticInstruction::SelectMarkRange { start, end } => {
+                    self.charge_resolution()?;
+                    self.context = self.current.select_semantic_mark_range(
+                        &self.context,
+                        start.clone(),
+                        end.clone(),
+                    )?;
+                    let target = self.resolve_selector(&SemanticSelector::VisualSelection)?;
                     self.trace[index].resolved_parent = Some(target.parent);
                     self.trace[index].resolved_range = Some(target.range);
                     self.trace[index].resolved_selection = target.selection;
@@ -873,25 +904,25 @@ where
                     self.context.visual_selection = None;
                 }
                 SemanticInstruction::Yank { selector, register } => {
-                    self.capture_selector(index, *register, *selector, false)?;
+                    self.capture_selector(index, *register, selector, false)?;
                 }
                 SemanticInstruction::Cut { selector, register } => {
-                    self.capture_selector(index, *register, *selector, true)?;
+                    self.capture_selector(index, *register, selector, true)?;
                 }
                 SemanticInstruction::Group { selector, label } => {
-                    self.group(index, *selector, label)?;
+                    self.group(index, selector, label)?;
                 }
                 SemanticInstruction::Ungroup => self.ungroup(index)?,
                 SemanticInstruction::Explode => self.explode(index)?,
                 SemanticInstruction::Duplicate { selector } => {
-                    self.duplicate(index, *selector)?;
+                    self.duplicate(index, selector)?;
                 }
                 SemanticInstruction::Repeat {
                     selector,
                     plays,
                     escalation,
                 } => {
-                    self.repeat(index, *selector, plays.get(), escalation.clone())?;
+                    self.repeat(index, selector, plays.get(), escalation.clone())?;
                 }
                 SemanticInstruction::SetRepeatPlays { plays } => {
                     self.set_repeat_plays(index, plays.get())?;
@@ -1052,13 +1083,18 @@ where
                     self.call(*register, count.get())?;
                 }
                 SemanticInstruction::YankBeat { register } => {
-                    self.capture_selector(index, *register, SemanticSelector::SelectedBeat, false)?;
+                    self.capture_selector(
+                        index,
+                        *register,
+                        &SemanticSelector::SelectedBeat,
+                        false,
+                    )?;
                 }
                 SemanticInstruction::YankSelection { register } => {
                     self.capture_selector(
                         index,
                         *register,
-                        SemanticSelector::VisualSelection,
+                        &SemanticSelector::VisualSelection,
                         false,
                     )?;
                 }
@@ -1066,7 +1102,7 @@ where
                     self.capture_selector(
                         index,
                         *register,
-                        SemanticSelector::VisualSelection,
+                        &SemanticSelector::VisualSelection,
                         true,
                     )?;
                 }

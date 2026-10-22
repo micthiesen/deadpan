@@ -1,0 +1,22 @@
+[
+  {
+    "suite": "deadpan-app::bin/deadpan-app",
+    "case": "project::tests::native_new_starts_with_the_full_original_and_history_stops_at_that_baseline",
+    "retained": "/tmp/deadpan-named-mark-selectors-2026-10-22/broad-isolated-bin/deadpan_app-1665fcaccc742208",
+    "sha256": "3fa2692aaafb332f0f1533987017c6e21d235276e7355a1e412adb86c7012ba1",
+    "exit": 0,
+    "passed": true,
+    "seconds": 0.36613537557423115,
+    "stdio_eof_within_seconds": 60
+  },
+  {
+    "suite": "deadpan-core::adversarial",
+    "case": "adversarial_command_requests_are_atomic_and_reversible_under_mutation",
+    "retained": "/tmp/deadpan-named-mark-selectors-2026-10-22/broad-isolated-bin/adversarial-4dbaead825d136d2",
+    "sha256": "11387ffba265c6c5b740e96e96e0d67f4222f4fbaf6656ff97fa0d94ca9dd435",
+    "exit": 0,
+    "passed": true,
+    "seconds": 0.096217917278409,
+    "stdio_eof_within_seconds": 60
+  }
+]

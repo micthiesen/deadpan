@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/tmp/deadpan-named-mark-selectors-2026-10-22/release-bin/deadpan-app",
+    "--ui-check",
+    "--scenario",
+    "named-mark-selectors",
+    "--mode",
+    "performance",
+    "--output",
+    "/tmp/deadpan-named-mark-selectors-2026-10-22/release-performance",
+    "--kestrel-source",
+    "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+  ],
+  "exit": 0,
+  "seconds": 14.587208916433156
+}

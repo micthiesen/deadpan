@@ -153,7 +153,7 @@ fn motion_selectors_match_navigation_and_preserve_yank_context_in_nested_scopes(
         let copied_plan = plan(
             &document,
             entry.clone(),
-            vec![yank(selector, 'a')],
+            vec![yank(selector.clone(), 'a')],
             &BTreeMap::new(),
         )
         .unwrap();
@@ -174,7 +174,7 @@ fn motion_selectors_match_navigation_and_preserve_yank_context_in_nested_scopes(
         let cut_plan = plan(
             &document,
             entry,
-            vec![cut_selector(selector, 'a')],
+            vec![cut_selector(selector.clone(), 'a')],
             &BTreeMap::new(),
         )
         .unwrap();
@@ -219,7 +219,7 @@ fn selected_child_cut_uses_exact_identity_and_zero_split_pool_even_for_empty_chi
         let yanked = plan(
             &document,
             entry.clone(),
-            vec![yank(selected, 'a')],
+            vec![yank(selected.clone(), 'a')],
             &BTreeMap::new(),
         )
         .unwrap();
@@ -347,9 +347,9 @@ fn empty_motion_and_absent_selectors_refuse_before_allocating_without_child_fall
     ] {
         for cut in [false, true] {
             let instruction = if cut {
-                cut_selector(selector, 'a')
+                cut_selector(selector.clone(), 'a')
             } else {
-                yank(selector, 'a')
+                yank(selector.clone(), 'a')
             };
             let error = plan_semantic(
                 &document,

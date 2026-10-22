@@ -89,7 +89,7 @@ fn batched_and_slow_mark_prefixes_have_the_same_meaning() {
             .into_iter()
             .filter_map(|key| batch.key(key, Modifiers::NONE, false, false))
             .collect();
-        assert_eq!(output, vec![expected]);
+        assert_eq!(output, vec![expected.clone()]);
         let mut slow = Bindings::default();
         slow.key(prefix, Modifiers::NONE, false, false);
         // Reading the visible pending state on arbitrarily many idle frames

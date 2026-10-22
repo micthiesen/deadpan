@@ -4,6 +4,42 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Current continuation, 2026-10-22
 
+Named-mark ranges now drive semantic editing through
+`:select marks start=<exactMarkId> end=<exactMarkId>` in ordinary Your edit.
+Selection, native operators, recording, named calls and dot retain mark
+addresses and resolve each staged revision. Exact ordering, quantization,
+scope, ambiguity and clock checks remain authoritative; missing marks cannot
+fall back to a selected beat. Existing one-child role consumers also accept a
+named selection without gaining cross-owner authority.
+
+Eight core cases pass. The 4,532-case broad run retains one existing import
+timeout and one passing output-handle marker, both passing exact isolated runs
+of the same binaries. Native carrier boxing then passes all 1,220 normal app
+and 1,266 UI-feature checks without either anomaly. Three final test-only
+allocation cleanups pass the affected cases in both builds. Strict checks and
+formatting pass. Both release native modes pass 95 workflow checks plus Kestrel;
+the compact capture was inspected and quiet state p99 is 2.174ms over 94 samples.
+The release export verifies all 33 pictures and 52,853 samples at zero offset;
+the extracted nine-file owner package validates and passes doctor. See the
+[qualification](../qualification/named-mark-selectors-2026-10-22.md) for exact
+source/binary identities, retained failures, layout warnings and media limits.
+No requirement or gate is newly complete.
+
+Next: explicit NodeId selectors for whole authored nodes beneath ordinary
+Sequence ancestry in the captured Edit scope, including empty sibling nodes.
+Keep identity separate from cursor, selected beat and time geometry; use the
+existing whole-child capture/delete path. Refuse absent or out-of-scope IDs and
+paths through temporal interiors without fallback. Start with public nested
+capture, equivalent SelectedBeat and zero-split Cut/inverse controls, plus
+distinct equal-time empty siblings, before the sole old-code positive Node
+wire-admission assertion. A future scratch draft has received read-only review
+but remains uncompiled and unqualified. Then cover staged resolution, native
+selection, recording/dot, durable failure atomicity and actual media.
+Search-result/discontiguous selectors, remaining temporal families, sound
+owners, mastering, renderer work and complete workflows remain required.
+
+## Selected fixed-Retime checkpoint, 2026-10-22
+
 Selected body Hold lengths now cross one fixed, unclocked Edit Retime below
 all enclosing Repeats. Either selected axis retains literal Default/Play
 choices at other levels. Every member, including a no-op, is validated before
@@ -32,23 +68,6 @@ See the [qualification](../qualification/selected-fixed-retime-hold-duration-202
 for failed candidates, exact sources/binaries, independent PCM, accepted-media
 history, output-handle markers and isolated passes, layout warnings and media.
 No requirement or gate is newly complete.
-
-Next: named-mark ranges as semantic edit selectors (spec §6.2). Reuse the
-revision-aware AnchorIndex range resolver for ordinary linked Edit ranges;
-retain ambiguity, unresolved/incompatible-clock, ordering, scope and temporal
-endpoint refusals. Saved selectors keep NamedMarkTarget addresses, not cached
-frame ranges. Removing SemanticSelector Copy reaches keyboard Action and its
-binding carriers. Native selection capture, recording and dot must preserve
-typed mark provenance instead of replacing it with VisualSelection.
-
-Start with public named-range resolution, complete capture and equivalent
-Visual Yank controls before and after a Hold resize. The sole old-code failure
-is positive MarkRange SemanticProgram admission using the existing `type` tag.
-A scratch integration-test draft exists for this session and remains uncompiled
-and unexecuted. Then cover actual Yank/Cut/Repeat, staged re-resolution, durable
-banks, native command capture, macros/dot and failure atomicity.
-Processing clocks, Partition, other temporal placements, sound owners, mastering,
-renderer work and complete workflows remain required.
 
 ## Mixed All plays/This play fixed-Retime checkpoint, 2026-10-22
 

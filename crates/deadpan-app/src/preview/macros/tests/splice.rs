@@ -231,3 +231,38 @@ fn place_slice_recording_requires_nonempty_time_but_preserves_zero_time_object_i
     );
     assert!(eligible(&context(), &replace, Some(selected)).is_err());
 }
+
+#[test]
+fn named_mark_splice_recording_requires_the_exact_resolved_capture() {
+    let mut context = context();
+    context.visual_selection = Some(SemanticVisualSelection::MarkRange {
+        start: deadpan_core::NamedMarkTarget {
+            id: deadpan_core::MarkId::new("first").unwrap(),
+            occurrence: None,
+        },
+        end: deadpan_core::NamedMarkTarget {
+            id: deadpan_core::MarkId::new("last").unwrap(),
+            occurrence: None,
+        },
+    });
+    let selected = range(20, 30);
+    let replace = proposal(Destination::Replace { range: selected });
+    assert_eq!(
+        eligible(&context, &replace, Some(selected)),
+        Ok(SemanticInstruction::ReplaceSelection {
+            register: RegisterName::new('w').unwrap(),
+        })
+    );
+    assert!(eligible(&context, &replace, None).is_err());
+    assert!(eligible(&context, &replace, Some(range(19, 30))).is_err());
+    assert!(
+        eligible(
+            &context,
+            &proposal(Destination::Replace {
+                range: range(20, 20)
+            }),
+            Some(range(20, 20))
+        )
+        .is_err()
+    );
+}

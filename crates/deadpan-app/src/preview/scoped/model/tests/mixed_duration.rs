@@ -503,7 +503,7 @@ fn service_checks(
         service,
         ProjectRequest::Macro(Operation::Apply {
             id: id(opened, 180),
-            instruction: length(2),
+            instruction: Box::new(length(2)),
             repeat_version: None,
             scope: target.scope.clone(),
             context: context.clone(),
@@ -527,7 +527,7 @@ fn service_checks(
         service,
         ProjectRequest::Macro(Operation::Apply {
             id: id(opened, 181),
-            instruction: length(3),
+            instruction: Box::new(length(3)),
             repeat_version: None,
             scope: target.scope.clone(),
             context: absent_picture,
@@ -540,7 +540,7 @@ fn service_checks(
         service,
         ProjectRequest::Macro(Operation::Apply {
             id: id(opened, 182),
-            instruction: length(3),
+            instruction: Box::new(length(3)),
             repeat_version: None,
             scope: target.scope.clone(),
             context: context.clone(),
@@ -596,7 +596,7 @@ fn service_checks(
         service,
         ProjectRequest::Macro(Operation::Apply {
             id: id(opened, 183),
-            instruction: length(4),
+            instruction: Box::new(length(4)),
             repeat_version: None,
             scope: target.scope.clone(),
             context: context.clone(),
@@ -796,7 +796,7 @@ fn service_checks(
         service,
         ProjectRequest::Macro(Operation::Apply {
             id: id(&sounding, 189),
-            instruction: length(6),
+            instruction: Box::new(length(6)),
             repeat_version: None,
             scope: target.scope.clone(),
             context: current_context,

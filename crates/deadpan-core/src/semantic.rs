@@ -1,6 +1,7 @@
 //! Reusable editing intent, resolved against the host's current selection.
 
 mod gags;
+mod mark_range;
 mod object;
 mod planner;
 mod program;
