@@ -55,6 +55,9 @@ pub mod shared_fixed_retime_duration;
 #[path = "this_play_fixed_retime_duration.rs"]
 pub mod this_play_fixed_retime_duration;
 
+#[path = "nested_fixed_retime_duration.rs"]
+pub mod nested_fixed_retime_duration;
+
 #[path = "fixed_retime_output_sound.rs"]
 pub mod fixed_retime_output_sound;
 

@@ -1,0 +1,11 @@
+{
+  "stage": "first focused audio marker",
+  "binary": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/focused-bin/stages-d575876438498380",
+  "sha256": "b9428cce7d5017e30d8836d1800f05cb8a245e9f6da34d7d6ab1d86f6b49f413",
+  "test": "insert_time::processing_hold_duration::repeat::nested_fixed_retime::nested_fixed_retime_duration_preserves_fractional_input_phase_and_all_other_owners",
+  "exit_code": 0,
+  "elapsed_seconds": 3.460444458760321,
+  "captured_eof": true,
+  "cause": "unknown; no production workaround",
+  "original_log": "first-focused.log"
+}

@@ -1,0 +1,10 @@
+{
+  "binary": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/focused-second-bin/deadpan_app-1665fcaccc742208",
+  "sha256": "b88103e82596a9c1e14e011084cbd39ed75ea0fbb1ab217dad5efb42dc32b8f3",
+  "test": "preview::scoped::model::tests::shared_fixed_retime_duration::native_this_play_fixed_retime_duration_hint_uses_retained_scope_and_clock_guards",
+  "exit_code": 0,
+  "elapsed_seconds": 0.011178124696016312,
+  "captured_eof": true,
+  "cause": "unknown; no production workaround",
+  "original_log": "focused-second.log"
+}

@@ -4,6 +4,35 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Current continuation, 2026-10-22
 
+Explicit This play bodies now support bounded Repeat ancestry with one fixed,
+unclocked Edit Retime below the innermost Repeat. The existing vector, context
+and command remain authoritative. Actual isolation proofs preserve fixed extent,
+audio phase and cropped visible continuation, including partly owned paths.
+
+All 46 focused and 3,503 broader tests pass, including 205 affected normal app
+checks; all 207 UI-feature checks pass. Strict checks and formatting pass.
+Both release native replays pass 59 checks plus Kestrel, with two inspected
+compact captures. Quiet state p99 is 1.645ms over 172 samples. Four release
+exports verify all 328 pictures and 525,326 presented samples at zero offset.
+The retained 91f owner package is independently extracted and validated. See the
+[qualification](../qualification/nested-fixed-retime-hold-duration-2026-10-22.md)
+for the old-code control, exact pools, sparse clocks, independent PCM, durable
+accepted-media controls, source/binary identities, failed test setups and warnings.
+No requirement or gate is newly complete.
+
+Next: mixed Default/Play fixed-Retime Hold durations, then selected batches.
+Retain literal Default authority separately from a concrete presentation. Start
+with both mixed directions: public Rename isolation and mapped raw duration
+must pass before the sole old-code positive native-availability failure. Do not
+merely loosen duration_target_dormant: mixed continuation currently assumes
+integral start plus raw length, which is wrong through a crop/scale. Preserve
+existing ordinary mixed owned-gap/dormant paths. One fixed unclocked Edit Retime
+strictly below every Repeat is the next narrow family. Single all-Play dormant
+gaps, implicit default-gap targets, processing clocks, Partition and unsupported
+sounds remain open.
+
+## This play fixed-Retime checkpoint, 2026-10-22
+
 One explicit This play body now supports Hold duration beneath one fixed,
 unclocked Edit Retime. Existing temporal isolation feeds the ordinary reducer;
 fixed extent, physical audio phase and actual mapped presentation remain intact.
@@ -20,15 +49,7 @@ for accepted-artifact controls, exact source/binary identity, failed fixtures,
 source-freeze and script repairs, captured-output markers and layout warnings.
 No requirement or gate is newly complete.
 
-Next: extend this same fixed-window family through nested explicit Repeat body
-choices, retaining one Retime strictly below the innermost Repeat. Use the
-existing bounded vector, not an arbitrary two-level cap. First prove public
-Rename isolation, mapped raw duration, geometry and inverses; the sole old-code
-failure must be positive native availability. Then cover exact fresh/preowned
-pools, sparse stable offsets, cropped visibility, durable history, independent
-PCM and emitted files. Mixed/selected fixed-Retime durations follow separately.
-Single all-Play dormant gaps, implicit default-gap node targets, other temporal
-placements, processing clocks, Partition and unsupported sounds remain open.
+The bounded nested continuation from this checkpoint is qualified above.
 
 ## All plays fixed-Retime checkpoint, 2026-10-22
 

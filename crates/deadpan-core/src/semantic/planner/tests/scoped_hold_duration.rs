@@ -274,7 +274,7 @@ fn scoped_hold_duration_noop_mixed_nonhold_and_retime_fail_before_allocation() {
         duration: FrameDuration::new(4).unwrap(),
         mapping: range(0, 4),
         pitch: crate::PitchPolicy::FollowSpeed,
-        purpose: crate::RetimePurpose::Edit,
+        purpose: crate::RetimePurpose::Partition,
     };
     retimed.nodes.insert(node("retime"), wrapper);
     retimed.validate().unwrap();
@@ -290,8 +290,8 @@ fn scoped_hold_duration_noop_mixed_nonhold_and_retime_fail_before_allocation() {
         .message
         .contains("Retime")
     );
-    // The raw occurrence wrapper also refuses this unqualified clock, rather
-    // than applying an integral root-suffix translation beneath the Retime.
+    // Partition remains outside duration authority even though a fixed Edit
+    // Retime below all explicit Repeat bodies is supported.
     let target = entry().scoped.unwrap().target;
     let needs = retimed
         .scoped_edit_requirements(

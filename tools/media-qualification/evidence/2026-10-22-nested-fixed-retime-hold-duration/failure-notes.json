@@ -1,0 +1,39 @@
+[
+  {
+    "stage": "first all-target cargo check",
+    "status": "failed",
+    "cause": "New CLI fixture moved stage NodeId into Repeat child and later borrowed it",
+    "repair": "clone stage NodeId in fixture; no production change",
+    "source": "first-source-identities.json",
+    "log": "check-first.log"
+  },
+  {
+    "stage": "first focused orchestration after successful 7m build",
+    "status": "failed before test execution",
+    "cause": "Adapted script invoked focused_identity_second.py which looked for old focused-second source manifest",
+    "repair": "Invoke prepared focused_identity.py; it verified all 17 sources and hashed 6 binaries before execution",
+    "script": "focused-first-script.sh",
+    "build_log": "first-focused-build.log"
+  },
+  {
+    "stage": "first focused runtime",
+    "status": "44 passed (1 leaky), 2 failed, 46 total, 28.460s",
+    "cause": [
+      "New repeated-plan fixture reused allocation IDs in its helper",
+      "Historical refusal now described supported nested fixed Edit Retime"
+    ],
+    "repair": [
+      "Namespace test allocator from current revision",
+      "Make refusal fixture Partition, retaining before-allocation refusal"
+    ],
+    "log": "first-focused.log",
+    "source": "focused-runtime-source-identities.json"
+  },
+  {
+    "stage": "test quality refinement",
+    "status": "not a runtime failure",
+    "cause": "Sparse fixture selected stable ordinal1 still occupied position1",
+    "repair": "Move retained ordinal1 behind independent ordinals40/41; use nonuniform earlier-owned 7f body and literal113f sampled-start oracle",
+    "source": "focused-second-runtime-source-identities.json"
+  }
+]

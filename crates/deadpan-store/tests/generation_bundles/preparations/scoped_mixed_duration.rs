@@ -1,6 +1,8 @@
 //! Mixed Default/Play duration isolation retains exact accepted-generation scope.
 
 use super::*;
+#[path = "scoped_mixed_duration/nested_fixed_retime.rs"]
+mod nested_fixed_retime;
 #[path = "scoped_mixed_duration/owned_gap.rs"]
 mod owned_gap;
 #[path = "scoped_mixed_duration/shared_fixed.rs"]

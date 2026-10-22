@@ -233,16 +233,21 @@ impl State {
         }
     }
 
-    /// One explicit live body under one fixed Edit Retime. This is a hint from
+    /// Explicit live bodies above one fixed Edit Retime. This is a hint from
     /// retained ancestry only; the core checks visibility and exact isolation
     /// again when the duration command is prepared.
     fn this_play_fixed_retime_path_supported(&self) -> bool {
-        let [step] = self.selected.repeats.as_slice() else {
+        let Some(step) = self.selected.repeats.first() else {
             return false;
         };
-        let RepeatEditBranch::Play { iteration } = &step.branch else {
+        if self
+            .selected
+            .repeats
+            .iter()
+            .any(|step| !matches!(step.branch, RepeatEditBranch::Play { .. }))
+        {
             return false;
-        };
+        }
         if step.repeat != self.root
             || !matches!(
                 self.index.document.nodes()[&self.selected.node].kind,
@@ -254,29 +259,37 @@ impl State {
         let Ok(path) = self.index.path(&self.selected.node) else {
             return false;
         };
-        let Some(root_position) = path.iter().position(|node| node == &self.root) else {
-            return false;
-        };
-        let Some(play) = self
-            .index
-            .repeats
-            .get(&self.root)
-            .and_then(|layout| layout.play(iteration))
-        else {
-            return false;
-        };
+        let mut repeat_steps = self.selected.repeats.iter();
         let mut retimes = 0;
-        for (position, pair) in path.windows(2).enumerate() {
+        for pair in path.windows(2) {
             let parent = &pair[0];
             let child = &pair[1];
             match &self.index.document.nodes()[parent].kind {
                 NodeKind::Sequence { children } if children.contains(child) => {}
-                NodeKind::Repeat { .. } if parent == &self.root && &play.child == child => {}
+                NodeKind::Repeat { .. } => {
+                    let Some(step) = repeat_steps.next() else {
+                        return false;
+                    };
+                    let RepeatEditBranch::Play { iteration } = &step.branch else {
+                        return false;
+                    };
+                    if parent != &step.repeat
+                        || !self
+                            .index
+                            .repeats
+                            .get(parent)
+                            .and_then(|layout| layout.play(iteration))
+                            .is_some_and(|play| &play.child == child)
+                    {
+                        return false;
+                    }
+                }
                 NodeKind::Retime {
                     child: retime_child,
                     purpose: deadpan_core::RetimePurpose::Edit,
                     ..
-                } if position > root_position
+                } if repeat_steps.len() == 0
+                    && retimes == 0
                     && retime_child == child
                     && !self.index.clocked_retimes.contains(parent) =>
                 {
@@ -285,7 +298,7 @@ impl State {
                 _ => return false,
             }
         }
-        retimes == 1
+        repeat_steps.len() == 0 && retimes == 1
     }
 
     /// The narrow cached-hint exception for an All-Default Hold below the

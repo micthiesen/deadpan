@@ -1,0 +1,16 @@
+{
+  "reviewer": "independent check-focused evidence/docs audit",
+  "findings": [],
+  "audited_inventory_entries": 132,
+  "source_archives": 6,
+  "baseline_rust_files": 1945,
+  "final_rust_files": 18,
+  "owner_archive_files": 9,
+  "owner_archive_bytes": 91286,
+  "owner_archive_sha256": "209f1e0026646e0212a95356eb125d162ddf9212b8c5fdfa0161d885df42a8c2",
+  "export_pictures": 328,
+  "presented_samples": 525326,
+  "verified_zero_windows": 10,
+  "minimum_block_snr_db": 30.469410825925955,
+  "verification": "All entry bytes/SHA, archive members and manifests, current source hashes, report totals, warning/failure retention and owner steps inspected. No private artifact links or actual credentials found; baseline synthetic credential examples are source fixtures. This receipt is added after that audit and root rehashes final inventory."
+}

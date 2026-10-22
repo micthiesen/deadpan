@@ -53,8 +53,8 @@ impl ProjectDocument {
         isolation::temporal_requirements(self, &target)
     }
 
-    /// Duration-only authority for one visible body Hold in one explicit Play,
-    /// with exactly one fixed unclocked Edit Retime below the inspected Repeat.
+    /// Duration-only authority for one visible body Hold through explicit Plays,
+    /// with one fixed unclocked Edit Retime below the innermost Repeat.
     /// This grants no authority for gaps, mixed choices or multiple targets.
     pub fn fixed_occurrence_hold_duration_visibility(
         &self,
@@ -125,14 +125,13 @@ pub(crate) fn fixed_occurrence_preflight(
     {
         return Ok(None);
     }
-    if instance.repeats.len() != 1 {
+    let Some(repeat) = instance.repeats.first() else {
         return Err(invalid(
-            "fixed one-play Hold duration needs exactly one Repeat and one Edit Retime",
+            "fixed one-play Hold duration needs explicit Repeat ancestry",
         ));
-    }
-    let repeat = &instance.repeats[0];
+    };
     let clocked = document.retimes_with_derived_clocks();
-    let mut saw_repeat = false;
+    let mut remaining = instance.repeats.len();
     let mut retimes = 0usize;
     for (parent, child) in path {
         match &document.nodes()[parent].kind {
@@ -140,34 +139,41 @@ pub(crate) fn fixed_occurrence_preflight(
             NodeKind::Retime {
                 purpose: RetimePurpose::Edit,
                 ..
-            } if !saw_repeat && !clocked.contains(parent) => {
+            } if remaining == instance.repeats.len()
+                && retimes == 0
+                && !clocked.contains(parent) =>
+            {
                 retimes += 1;
             }
-            NodeKind::Repeat { child: default, .. }
-                if !saw_repeat && parent == &repeat.node && retimes == 1 =>
-            {
+            NodeKind::Repeat { child: default, .. } if remaining > 0 && retimes == 1 => {
+                remaining -= 1;
+                let step = &instance.repeats[remaining];
+                if parent != &step.node {
+                    return Err(invalid(
+                        "fixed one-play Hold duration differs from its Repeat ancestry",
+                    ));
+                }
                 let effective = document
                     .overrides()
                     .get(parent)
-                    .and_then(|entries| entries.get(&repeat.iteration))
+                    .and_then(|entries| entries.get(&step.iteration))
                     .unwrap_or(default);
                 if child != effective {
                     return Err(invalid(
                         "fixed one-play Hold duration requires a body, not an owned gap",
                     ));
                 }
-                saw_repeat = true;
             }
             _ => {
                 return Err(invalid(
-                    "fixed one-play Hold duration requires one fixed unclocked Edit Retime below one Repeat, otherwise Sequences",
+                    "fixed one-play Hold duration requires one fixed unclocked Edit Retime below all explicit Repeats, otherwise Sequences",
                 ));
             }
         }
     }
-    if !saw_repeat || retimes != 1 {
+    if remaining != 0 || retimes != 1 {
         return Err(invalid(
-            "fixed one-play Hold duration needs one Edit Retime below its Repeat",
+            "fixed one-play Hold duration needs one Edit Retime below its innermost Repeat",
         ));
     }
     let visibility = document.hold_duration_visibility_for_instance(&repeat.node, instance)?;

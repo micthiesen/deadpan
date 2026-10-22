@@ -1,0 +1,9 @@
+{
+  "base": "95ddb9aebe8d001f32b01e4cd3d9abff0a471585",
+  "test": "preview::scoped::model::tests::nested_fixed_retime_duration::native_this_play_nested_fixed_retime_hold_duration_offers_entry_after_public_control",
+  "suite": "deadpan-app::bin/deadpan-app",
+  "executed": "/Users/michael/Code/deadpan/target/debug/deps/deadpan_app-edbbed39ebf1d72f",
+  "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/baseline-bin/deadpan_app-edbbed39ebf1d72f",
+  "sha256": "71bd1c137cc75a14e85ca99e1623ffafb4627bfe1c4fa95a2b8f02b3c8eef4b9",
+  "scope": "Two nested explicit Repeat bodies, silent structural/public-isolation/raw-duration witness; not audio or media qualification."
+}

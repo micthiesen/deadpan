@@ -1,0 +1,8 @@
+{
+  "pictures": 328,
+  "presented_samples": 525326,
+  "audio_windows": 10,
+  "minimum_block_snr_db": 30.469410825925955,
+  "observable_neighbors": 366,
+  "unobservable_neighbors": 282
+}

@@ -1,0 +1,28 @@
+{
+  "base": "95ddb9aebe8d001f32b01e4cd3d9abff0a471585",
+  "scope": "Owned Rust paths in code-paths.txt; foreign fuzz/Cargo.lock and .claude excluded",
+  "reviews": [
+    {
+      "reviewer": "general",
+      "findings": [],
+      "method": "read-only source review; no execution or edits"
+    },
+    {
+      "reviewer": "timing/scope",
+      "findings": [],
+      "method": "read-only source review; no execution or edits"
+    },
+    {
+      "reviewer": "test quality",
+      "findings": [],
+      "method": "read-only source review; no execution or edits"
+    }
+  ],
+  "root_triage": "No findings to apply. Root retains runtime verification and final diff review.",
+  "followup": {
+    "reviewer": "test quality",
+    "scope": "Core fixture allocation namespacing, Partition refusal, ordinal1 physical-position2/nonuniform113f oracle and partial ownership7+11",
+    "findings": [],
+    "method": "read-only source review, no execution or edits"
+  }
+}

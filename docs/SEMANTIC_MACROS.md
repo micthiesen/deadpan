@@ -211,7 +211,7 @@ the resized Hold's exact start, while the ordinary enclosing selection remains
 unchanged. Another duration, Zoom, pause or named call uses that mapped Hold.
 No-op lengths and late unsupported instructions leave history and registers
 unchanged. Multiple plays and attached or root sound events retain explicit
-refusals. Retime ancestry remains refused except for the narrow one-Repeat
+refusals. Retime ancestry remains refused except for the explicit-body
 fixed-Retime duration path below. Generated-picture shortening retains
 qualified accepted media; extension beyond its coverage commits fallback and
 durable preparation rather than stretching the accepted provider silently.
@@ -219,10 +219,10 @@ See the [Hold duration qualification](qualification/scoped-hold-duration-2026-10
 
 ### This-play Hold length inside fixed Retime
 
-One explicit This play body supports `SetHoldDuration` through exactly one
-fixed, unclocked Edit Retime below the inspected Repeat. The target path may
-contain Sequence nodes around that Retime; a second Repeat, any other Retime,
-Partition or owned gap refuses. The runtime context retains the explicit play
+Explicit This play bodies support `SetHoldDuration` through exactly one
+fixed, unclocked Edit Retime below the innermost Repeat. The target path may
+otherwise contain Sequence nodes; any other Retime, Partition or owned gap
+refuses. The runtime context retains every explicit play
 and concrete Hold, while saved programs still carry only the requested length.
 
 Each setter isolates the selected branch when needed and preserves the fixed
@@ -232,11 +232,11 @@ picture. That frame may differ from the Hold's intrinsic start when the crop
 cuts it away. The target must remain visible in at least one sampled project
 picture after every staged setter. Hidden or unsampled Holds, derived pause
 clocks, root or attached sound events, mixed or selected-multiple-play
-contexts, and contexts with multiple Repeat ancestors refuse atomically.
-Already-owned branches can be edited without another isolation copy. Ordinary
-nested This play duration edits without Retime ancestry remain supported.
+contexts refuse atomically. Explicit Repeat ancestry follows the existing
+document depth bound. Already-owned branches can be edited without another
+isolation copy; partly owned paths copy only the remaining shared branches.
 Recording, named duration calls and dot use the same invocation authority.
-See the [This play fixed-Retime qualification](qualification/this-play-fixed-retime-hold-duration-2026-10-22.md)
+See the [nested This play fixed-Retime qualification](qualification/nested-fixed-retime-hold-duration-2026-10-22.md)
 for retained scope and verification evidence.
 
 ### All plays Hold length

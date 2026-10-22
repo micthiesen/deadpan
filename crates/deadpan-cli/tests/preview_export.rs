@@ -689,6 +689,64 @@ fn this_play_fixed_retime_hold_duration_preview_and_encoded_output_keep_fixed_wi
 }
 
 #[test]
+fn nested_fixed_retime_hold_duration_preview_and_encoded_output_keep_fixed_windows() -> Result {
+    let scratch = tempfile::tempdir()?;
+    // Keep every source package and emitted file whenever a result record is requested.
+    let (root, _guard) =
+        if std::env::var_os("DEADPAN_NESTED_FIXED_RETIME_DURATION_RESULTS").is_some() {
+            (scratch.keep(), None)
+        } else {
+            keep_or(scratch)
+        };
+    let mut results = Vec::new();
+    for (name, factory) in [
+        (
+            "unit-grow",
+            recipes::nested_fixed_retime_duration::unit_grow as fn(&Path) -> Result<Fixture>,
+        ),
+        (
+            "unit-shrink",
+            recipes::nested_fixed_retime_duration::unit_shrink,
+        ),
+        (
+            "affine-grow",
+            recipes::nested_fixed_retime_duration::affine_grow,
+        ),
+        (
+            "affine-shrink",
+            recipes::nested_fixed_retime_duration::affine_shrink,
+        ),
+    ] {
+        let fixture = factory(&root.join(name))?;
+        check(&fixture)?;
+        if skip_without_physical_mac("encoded Render") {
+            continue;
+        }
+        let movie = render(&fixture, &root.join(format!("exports-{name}")))?;
+        let (report, passed) = verify(&fixture, &movie, &fixture.revision, &["--every", "1"])?;
+        assert!(passed, "{name}: {report}");
+        assert_eq!(report["summary"]["pictures_checked"], fixture.frames);
+        assert_eq!(report["summary"]["pictures_failed"], 0);
+        assert_eq!(report["summary"]["nonzero_offsets"], 0);
+        for audio in report["audio"].as_array().ok_or("audio report")? {
+            assert_eq!(audio["flags"], json!([]));
+            assert_eq!(audio["uncovered_samples"], 0);
+            assert_eq!(audio["blocks"]["low_snr_blocks"], 0);
+            assert_eq!(audio["offset_status"], "verified_zero");
+            assert_eq!(audio["measured_offset_samples"], 0);
+        }
+        check_provenance(&fixture, &report)?;
+        eprintln!("{}", summary_row(&fixture, &report));
+        results.push(json!({"package":fixture.package,"movie":movie,
+            "report":report,"notes":fixture.notes}));
+    }
+    if let Some(path) = std::env::var_os("DEADPAN_NESTED_FIXED_RETIME_DURATION_RESULTS") {
+        std::fs::write(path, serde_json::to_vec_pretty(&results)?)?;
+    }
+    Ok(())
+}
+
+#[test]
 fn owned_gap_hold_duration_semantics_preview_and_encoded_output_keep_live_and_dormant_clocks()
 -> Result {
     let (root, _guard) = keep_or(tempfile::tempdir()?);

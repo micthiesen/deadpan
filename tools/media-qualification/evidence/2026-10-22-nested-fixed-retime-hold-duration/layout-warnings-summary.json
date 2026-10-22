@@ -1,0 +1,32 @@
+{
+  "visual": {
+    "warnings": [
+      {
+        "severity": "warning",
+        "prefix": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity."
+      },
+      {
+        "severity": "warning",
+        "prefix": "34 frame(s) settled their layout only on a second retry"
+      },
+      {
+        "severity": "warning",
+        "prefix": "egui discard warning: 3 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      }
+    ],
+    "failed": false
+  },
+  "performance": {
+    "warnings": [
+      {
+        "severity": "warning",
+        "prefix": "34 frame(s) settled their layout only on a second retry"
+      },
+      {
+        "severity": "warning",
+        "prefix": "egui discard warning: 3 run(s) of 3+ consecutive retrying frames, each frame with its own cause"
+      }
+    ],
+    "failed": false
+  }
+}

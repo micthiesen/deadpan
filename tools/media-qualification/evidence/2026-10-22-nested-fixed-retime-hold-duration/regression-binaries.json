@@ -1,0 +1,1317 @@
+{
+  "capture": "around broad completion, after its build phase; no pre-execution claim",
+  "source_manifest": "regression-runtime-source-identities.json",
+  "binaries": [
+    {
+      "suite": "deadpan-app::headless",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/headless-6bec9dd6354a8659",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/headless-6bec9dd6354a8659",
+      "sha256": "37a9bbc1b2fd131af024d76dd5ce234c60d765105e74316d826f6d29e29e9a6a",
+      "bytes": 26854824
+    },
+    {
+      "suite": "deadpan-app::bin/deadpan-app",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/deadpan_app-1665fcaccc742208",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/deadpan_app-1665fcaccc742208",
+      "sha256": "b88103e82596a9c1e14e011084cbd39ed75ea0fbb1ab217dad5efb42dc32b8f3",
+      "bytes": 105532064
+    },
+    {
+      "suite": "deadpan-audio",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/deadpan_audio-99038466bf87beb0",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/deadpan_audio-99038466bf87beb0",
+      "sha256": "61b893a71e60da90c96d8822f0516eec113fe9e73a036f3c16954beab988eacf",
+      "bytes": 17790288
+    },
+    {
+      "suite": "deadpan-audio::audio_context",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/audio_context-538b6eebb44f6f1f",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/audio_context-538b6eebb44f6f1f",
+      "sha256": "94f8457e69c8fce1d65b3139e1917ffaf0d178e2cb9e2c6cfe476b4146f6fdcd",
+      "bytes": 16089520
+    },
+    {
+      "suite": "deadpan-audio::audio_definition",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/audio_definition-780c0c8be6058790",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/audio_definition-780c0c8be6058790",
+      "sha256": "534c5f33892d532ef2e48c5ae5f6f0f60a14791ef532789364d09ca1313970ae",
+      "bytes": 21420480
+    },
+    {
+      "suite": "deadpan-audio::audio_domain",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/audio_domain-6c57ea726fcd2eb8",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/audio_domain-6c57ea726fcd2eb8",
+      "sha256": "bedde723877c2beabb6da0a7fae6babc8c60156f6a348fdb77a8daf8c6a06a5d",
+      "bytes": 9350144
+    },
+    {
+      "suite": "deadpan-audio::composite_insert",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/composite_insert-1f607ffbaa2e62c1",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/composite_insert-1f607ffbaa2e62c1",
+      "sha256": "28505ab48002551a1667b058f5decb841f1cc3ebb06217ae6548d893bf343807",
+      "bytes": 16347600
+    },
+    {
+      "suite": "deadpan-audio::dormant_source",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/dormant_source-1a77816cb7d45a6a",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/dormant_source-1a77816cb7d45a6a",
+      "sha256": "160bf98be391ac0f45baee7d0728d5ff8d1855068a17045aa4467ec39112ba25",
+      "bytes": 15119472
+    },
+    {
+      "suite": "deadpan-audio::gap_bindings",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/gap_bindings-a6d42f0c860d0fea",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/gap_bindings-a6d42f0c860d0fea",
+      "sha256": "86fbfbdc46df27a893a43b13b27077aefbc2d1ec63f9cae135bac4a7616cf997",
+      "bytes": 14906816
+    },
+    {
+      "suite": "deadpan-audio::gap_definition",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/gap_definition-de6b20f4741b93ad",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/gap_definition-de6b20f4741b93ad",
+      "sha256": "4a726defe1eb68f8491b617c2df10cea6ca9b9ff82f4982e5af51315454ae082",
+      "bytes": 9342176
+    },
+    {
+      "suite": "deadpan-audio::limiter",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/limiter-6d4770fc426f2d40",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/limiter-6d4770fc426f2d40",
+      "sha256": "eb3733d3410c7091b810f1b8b813d6003598e28cbf758fc2617832be64ee25b3",
+      "bytes": 1307880
+    },
+    {
+      "suite": "deadpan-audio::loudness",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/loudness-2ad5d14d9a2160ee",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/loudness-2ad5d14d9a2160ee",
+      "sha256": "f59a092b04d755f1a2dc841bcc0618b462fb0b7962428622499345dbded33182",
+      "bytes": 1142824
+    },
+    {
+      "suite": "deadpan-audio::reanchors",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/reanchors-91d2ce82a733a251",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/reanchors-91d2ce82a733a251",
+      "sha256": "727ddbdcf6781355debe6fd610d9afc158ad064b703f110c0296c363207d5725",
+      "bytes": 14830136
+    },
+    {
+      "suite": "deadpan-audio::reference_policy",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/reference_policy-eb9316d6afe79724",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/reference_policy-eb9316d6afe79724",
+      "sha256": "b2a5305c5cc0a25a61dcc2c260345cc620dc258399010d95954be09e3be940f5",
+      "bytes": 5746688
+    },
+    {
+      "suite": "deadpan-audio::resample",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/resample-bca905713cd7a1bc",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/resample-bca905713cd7a1bc",
+      "sha256": "b66286dc68f093d4464372e0db70abca23be8350a6572e185dc22b17206a3882",
+      "bytes": 1172984
+    },
+    {
+      "suite": "deadpan-audio::root_sound_trim",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/root_sound_trim-401c3a4ae3b05d05",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/root_sound_trim-401c3a4ae3b05d05",
+      "sha256": "a165721ac85845471bb0ce57a5191b903b0902e1e41189409f46f37a1d216807",
+      "bytes": 9047600
+    },
+    {
+      "suite": "deadpan-audio::sequence",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/sequence-2753b78923fcb9a5",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/sequence-2753b78923fcb9a5",
+      "sha256": "22b5825e4055b379605a7aea2414dcd795d24e3599725e7ff5d447835a7c503e",
+      "bytes": 9668808
+    },
+    {
+      "suite": "deadpan-audio::session",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/session-cd4ebd9b02714147",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/session-cd4ebd9b02714147",
+      "sha256": "88b70e52cbf724d3a9da0bdb3d6131bf23389678f35042d404dccc3f69610c5f",
+      "bytes": 1768120
+    },
+    {
+      "suite": "deadpan-audio::signal_transfer",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/signal_transfer-f67f6c4b1bf323e4",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/signal_transfer-f67f6c4b1bf323e4",
+      "sha256": "e388f2dade08375062c3ea49ad2f4bcf5f65660fe58b0af3ace4b987827a4b9d",
+      "bytes": 5842016
+    },
+    {
+      "suite": "deadpan-audio::sound_events",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/sound_events-340041967eb19632",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/sound_events-340041967eb19632",
+      "sha256": "d63db6573dd7499c701071739ce3e1e90795833905f58cea92f3a25b1ed835fd",
+      "bytes": 8268304
+    },
+    {
+      "suite": "deadpan-audio::stages",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/stages-d575876438498380",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/stages-d575876438498380",
+      "sha256": "3936aa50e8f54d2b475474a8508b2add40727e2ad2bfe3d826248253889f86f5",
+      "bytes": 21736744
+    },
+    {
+      "suite": "deadpan-audio::timing_representation",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/timing_representation-28c75a16d42d7afd",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/timing_representation-28c75a16d42d7afd",
+      "sha256": "662741ad5ce571d199010f74d1c22434f928f9750c1b7873025c120486abe9b3",
+      "bytes": 18119208
+    },
+    {
+      "suite": "deadpan-audio::true_peak",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/true_peak-a23ef106a546fef5",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/true_peak-a23ef106a546fef5",
+      "sha256": "2bb848cced63e3f5e226952eb77186617805171b396e7812794f6de230b7a13d",
+      "bytes": 1132648
+    },
+    {
+      "suite": "deadpan-cli",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/deadpan_cli-29970268ac93aa39",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/deadpan_cli-29970268ac93aa39",
+      "sha256": "67af117c9ee1584851728490649e1913a9e809558ab51d4dc8937533338249b0",
+      "bytes": 77563344
+    },
+    {
+      "suite": "deadpan-cli::audio_context",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/audio_context-35841486a6a41dcd",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/audio_context-35841486a6a41dcd",
+      "sha256": "8a330ac4d12bac9e7012898ea3c1a4951ad431a052e726eb24eeb2a501ce0f26",
+      "bytes": 31809936
+    },
+    {
+      "suite": "deadpan-cli::audio_inspection",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/audio_inspection-eaba7190c460b17d",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/audio_inspection-eaba7190c460b17d",
+      "sha256": "5b053fbdf755e94d7602ac37c093f0b273d9359c4aa3ed662705c49377d709af",
+      "bytes": 33263216
+    },
+    {
+      "suite": "deadpan-cli::backups",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/backups-f0f7659edf7ae5de",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/backups-f0f7659edf7ae5de",
+      "sha256": "9d1984ce738f3b8b37e4bab58f9d10e0556a82a72a93bfe83521078232d462db",
+      "bytes": 27481928
+    },
+    {
+      "suite": "deadpan-cli::boundary_location",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/boundary_location-3a52426a2920abd9",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/boundary_location-3a52426a2920abd9",
+      "sha256": "fd77de8ac6d222baa1ccb26c8e7167e3a587b45ec1a21a5ad8d9d01fbd3906c5",
+      "bytes": 28677536
+    },
+    {
+      "suite": "deadpan-cli::bridge_conditioning",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/bridge_conditioning-bb8a6f1d29bf2efd",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/bridge_conditioning-bb8a6f1d29bf2efd",
+      "sha256": "5983d849c5d6c3457665c91f2d42c3e2409447b438984c1d5bbe1e7ffed1e627",
+      "bytes": 39666392
+    },
+    {
+      "suite": "deadpan-cli::corrections",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/corrections-e985a320777aa93f",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/corrections-e985a320777aa93f",
+      "sha256": "99bbe9bc6695b768d6bad40a442d75b864f563fea25bb0bac3c9afb6145e2e68",
+      "bytes": 39765136
+    },
+    {
+      "suite": "deadpan-cli::doctor",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/doctor-5c9fffdc758c55bd",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/doctor-5c9fffdc758c55bd",
+      "sha256": "78c67919b44e4455db74adc7d2c52eacd8249376d26aa848cd0a75130ee9844f",
+      "bytes": 1398904
+    },
+    {
+      "suite": "deadpan-cli::encoded_render",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/encoded_render-74217118d754af4c",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/encoded_render-74217118d754af4c",
+      "sha256": "2d54917a3c7c6027ed7b4ddbca2605700ed73d3fcf178b61dfaf8f4e5320767c",
+      "bytes": 29930416
+    },
+    {
+      "suite": "deadpan-cli::encoded_verification",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/encoded_verification-e9d0f4e1181224ad",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/encoded_verification-e9d0f4e1181224ad",
+      "sha256": "e1c654d7af8c3b9a6a8ad713860eb8af3dd8f0c60cc9b8bc269aa107a07eb782",
+      "bytes": 33664536
+    },
+    {
+      "suite": "deadpan-cli::encoder_admission",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/encoder_admission-2d695d238caa867c",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/encoder_admission-2d695d238caa867c",
+      "sha256": "0b394e67043972ce79b5eb9e12826a847a563da14ce0b0eb579d22aaff5649f5",
+      "bytes": 3153936
+    },
+    {
+      "suite": "deadpan-cli::generated_joins",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/generated_joins-b22ae90bb43ea5ea",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/generated_joins-b22ae90bb43ea5ea",
+      "sha256": "a0e9c9daa753a90260e0b8fcabf52d6b6841e1c9509cabe3209dc979c6945e91",
+      "bytes": 43021024
+    },
+    {
+      "suite": "deadpan-cli::golden_renders",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/golden_renders-125b96e8ac68d16b",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/golden_renders-125b96e8ac68d16b",
+      "sha256": "ff37d2a57003a4422c6f069b48df40de4f904cfe9586c0cd51ea9b5f02aad201",
+      "bytes": 43115616
+    },
+    {
+      "suite": "deadpan-cli::headless_parity",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/headless_parity-dcbd45c3f8aec99f",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/headless_parity-dcbd45c3f8aec99f",
+      "sha256": "73723e696e72cf3a7693c86fbde115ebc7649873b74e08cf632de3ab4186478e",
+      "bytes": 40221968
+    },
+    {
+      "suite": "deadpan-cli::hostile_analysis_workers",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/hostile_analysis_workers-ef36da1e5b4dfd2b",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/hostile_analysis_workers-ef36da1e5b4dfd2b",
+      "sha256": "4e0fe406c714daa3519ee450964d0824e991ed4b1a5586e2789ad40b0734330f",
+      "bytes": 28598520
+    },
+    {
+      "suite": "deadpan-cli::live_generation",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/live_generation-0a3983322790be40",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/live_generation-0a3983322790be40",
+      "sha256": "756fe89500e109234fcab1d33b9bce56b8f5a63aec513280ee71069608537ced",
+      "bytes": 20303536
+    },
+    {
+      "suite": "deadpan-cli::live_preparation",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/live_preparation-8fec2f3d5a932b48",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/live_preparation-8fec2f3d5a932b48",
+      "sha256": "4f38fb9c814dcb32edd78b02bb811666009b19d3a462712fa1488df36cc24db1",
+      "bytes": 41346368
+    },
+    {
+      "suite": "deadpan-cli::live_project",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/live_project-a194fed02ebe5220",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/live_project-a194fed02ebe5220",
+      "sha256": "c13099b9f45ede4c3287cac54ba209c560c54fec77add15e4764c26da592e199",
+      "bytes": 48062432
+    },
+    {
+      "suite": "deadpan-cli::model_pack_import_disk_full",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/model_pack_import_disk_full-9b72cc88d28233ff",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/model_pack_import_disk_full-9b72cc88d28233ff",
+      "sha256": "2484aee4d8a3ff605639f7034c9bd28e87aa874f80d98aefd6e09170d2f1745b",
+      "bytes": 5105056
+    },
+    {
+      "suite": "deadpan-cli::model_packs",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/model_packs-9e521351ab52e1d0",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/model_packs-9e521351ab52e1d0",
+      "sha256": "86bd2a19032f2018376d2ac07ded419bf136583b148350c6001856ea1358250d",
+      "bytes": 1346704
+    },
+    {
+      "suite": "deadpan-cli::offline_audio",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/offline_audio-be2746e3525d39b5",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/offline_audio-be2746e3525d39b5",
+      "sha256": "e941aaba1927bf6b41c1bdb0bb7ca45c4b1a432b68d63d6386394f5d4bcd36c6",
+      "bytes": 31658336
+    },
+    {
+      "suite": "deadpan-cli::offline_portable",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/offline_portable-bac72d69754280ba",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/offline_portable-bac72d69754280ba",
+      "sha256": "0076459d2e926bd17d5c58e0bc269be592322a6dae2e0d2e0cf1df5dc694db1f",
+      "bytes": 39067408
+    },
+    {
+      "suite": "deadpan-cli::original_commands",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/original_commands-b9cf3b43f7f5252f",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/original_commands-b9cf3b43f7f5252f",
+      "sha256": "5bc2b0abf1cc330211db8fc7cdac1232c566eed8906040d5d9ce23ed2c58cc26",
+      "bytes": 26583008
+    },
+    {
+      "suite": "deadpan-cli::preview_export",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/preview_export-09f24f1122af7985",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/preview_export-09f24f1122af7985",
+      "sha256": "c1f4c68ce388dc58cbd7e3484b9936bc364fe1152b12290eb42904b029e03142",
+      "bytes": 46452160
+    },
+    {
+      "suite": "deadpan-cli::preview_export_hdr",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/preview_export_hdr-23bb3f574446ca6e",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/preview_export_hdr-23bb3f574446ca6e",
+      "sha256": "0a6832a2235540638b7c984b616376751b8d7946cc35c902515a9a386b7e8ccb",
+      "bytes": 41694304
+    },
+    {
+      "suite": "deadpan-cli::privacy_network_audit",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/privacy_network_audit-2b09e5dbaf3aac12",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/privacy_network_audit-2b09e5dbaf3aac12",
+      "sha256": "6b2c0c8d233fdb40882f536b9f3e98d0336ba6b5c7adad1047e20b22a8180aff",
+      "bytes": 1415496
+    },
+    {
+      "suite": "deadpan-cli::privacy_sandbox",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/privacy_sandbox-3ba53212b986002e",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/privacy_sandbox-3ba53212b986002e",
+      "sha256": "4701b84729a7558018ff332a0479166a0392784e274ab58d6eb9c2f940d352d1",
+      "bytes": 1459968
+    },
+    {
+      "suite": "deadpan-cli::project_commands",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/project_commands-6a0b3d2bc6481ebb",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/project_commands-6a0b3d2bc6481ebb",
+      "sha256": "1952a21157dbf7f751639a49a467a413d1f30a4572889e1b6185a6fe7be038d6",
+      "bytes": 49984320
+    },
+    {
+      "suite": "deadpan-cli::proxy_disk_full",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/proxy_disk_full-5ca2d97f566ec749",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/proxy_disk_full-5ca2d97f566ec749",
+      "sha256": "7dadbcced84d08bd4f6a5cffd208eeb4d52e5b2112b246bc34667ffe926d096f",
+      "bytes": 2739776
+    },
+    {
+      "suite": "deadpan-cli::proxy_resume",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/proxy_resume-8b2d9aa116eee663",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/proxy_resume-8b2d9aa116eee663",
+      "sha256": "4a53bb6606054c3a5d48ca1a6369b67a394e9cd443bf71dd5484f04916e986ba",
+      "bytes": 3496448
+    },
+    {
+      "suite": "deadpan-cli::relink_moved",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/relink_moved-e0690e33fc0ac65d",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/relink_moved-e0690e33fc0ac65d",
+      "sha256": "ca49b4e2b78ec06559d58c4b3efcd2f038d996edfd2329c5a5da8105d98e01cc",
+      "bytes": 1330384
+    },
+    {
+      "suite": "deadpan-cli::render",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/render-66333663098c93d4",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/render-66333663098c93d4",
+      "sha256": "6a5dd83e9b5c475a93d5c10fa54f10a87c0d96d6a65ae58f9d5d28df6798d71f",
+      "bytes": 27256328
+    },
+    {
+      "suite": "deadpan-cli::render_worker",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/render_worker-692f88f5f70bf8f8",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/render_worker-692f88f5f70bf8f8",
+      "sha256": "f2d6b0569756f537c0856524d29f40cf4c976c92cd3f9e0d4e066bb734b7f18f",
+      "bytes": 29271952
+    },
+    {
+      "suite": "deadpan-cli::shots",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/shots-9526903eafe6b0f2",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/shots-9526903eafe6b0f2",
+      "sha256": "e7099d40b6addce4b8532459b90bfdf18264196bca0e6c7edad0b7e77481d0b8",
+      "bytes": 29023720
+    },
+    {
+      "suite": "deadpan-cli::source_registration",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/source_registration-7cc7cc46eb0eba03",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/source_registration-7cc7cc46eb0eba03",
+      "sha256": "a8eee8ac9c0cbd7ac97952d50251e0cd773be77d1cbb1c6fcbbaee6caab67f75",
+      "bytes": 43383544
+    },
+    {
+      "suite": "deadpan-cli::takes",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/takes-3acf074de835f4e6",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/takes-3acf074de835f4e6",
+      "sha256": "41686e68f3079b8633259b75c78ec2d90d384613e7dcc678c4ba52f67db961c7",
+      "bytes": 44846344
+    },
+    {
+      "suite": "deadpan-cli::tracking",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/tracking-3847d95c5e2fbfc2",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/tracking-3847d95c5e2fbfc2",
+      "sha256": "50aaecc2bfd574559d5733b542ad169dfc98cc0cccf1aa38f7db2436cc9e2331",
+      "bytes": 36051496
+    },
+    {
+      "suite": "deadpan-cli::transcription",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/transcription-3b6595a456c26baf",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/transcription-3b6595a456c26baf",
+      "sha256": "814fd932cfd273f4c98f84fe6fef0bfb5d2e7c2f1cb472f83a252a21ee48afd7",
+      "bytes": 27475008
+    },
+    {
+      "suite": "deadpan-cli::updates",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/updates-8a83f239c674d845",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/updates-8a83f239c674d845",
+      "sha256": "3b3ced22164808bb239b5c452a39ff93758de1af9931231cba223adda08db3b2",
+      "bytes": 1972568
+    },
+    {
+      "suite": "deadpan-cli::youtube_import",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/youtube_import-c0a0c5436e0693be",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/youtube_import-c0a0c5436e0693be",
+      "sha256": "c0ff29eba0455f2570b00d8f69b220538a4ca3b16d48777cc1ba2502fefcb374",
+      "bytes": 1322640
+    },
+    {
+      "suite": "deadpan-cli::bin/deadpan-cli",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/deadpan_cli-8df5e51f3d29d48e",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/deadpan_cli-8df5e51f3d29d48e",
+      "sha256": "93eb3c2831ce5bffbdf9d649ed6ee11555f957d40af49f433169f58ea6b7a111",
+      "bytes": 1002944
+    },
+    {
+      "suite": "deadpan-core",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/deadpan_core-99ef176a441abc2a",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/deadpan_core-99ef176a441abc2a",
+      "sha256": "0c5445bbcfbcb78c294295f91cc68434c70cf2c72eab010d290f7f874aefd095",
+      "bytes": 70058800
+    },
+    {
+      "suite": "deadpan-core::adversarial",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/adversarial-4dbaead825d136d2",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/adversarial-4dbaead825d136d2",
+      "sha256": "695601c27876962a6682dc6a31949e39e9d22103451bfbb48c9e9a68e610a321",
+      "bytes": 19166688
+    },
+    {
+      "suite": "deadpan-core::allocation_projection",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/allocation_projection-88fbfc74c006ba60",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/allocation_projection-88fbfc74c006ba60",
+      "sha256": "8f68c6242f3cef908a47567849b4a648dd237b425a23ee0ac255450e8b5f4aae",
+      "bytes": 2353752
+    },
+    {
+      "suite": "deadpan-core::anchors",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/anchors-a2b0558443797232",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/anchors-a2b0558443797232",
+      "sha256": "1239e5b90ee16a35e40fe2a858a673437cd408f376e635449f2246afc6c639f6",
+      "bytes": 19214104
+    },
+    {
+      "suite": "deadpan-core::audio_binding_capture",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/audio_binding_capture-c1bdf1e95694ac80",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/audio_binding_capture-c1bdf1e95694ac80",
+      "sha256": "cafe194d2c3f9fd071fd029f2a6edc044a762c576e4ae617e4110da1fe7e2f69",
+      "bytes": 11875592
+    },
+    {
+      "suite": "deadpan-core::audio_bindings",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/audio_bindings-2cafb7c95bcd0913",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/audio_bindings-2cafb7c95bcd0913",
+      "sha256": "a4100a31caff08f72e3474e02cb1f11fd6ae1003270a636caf6ec4b7a9d363a5",
+      "bytes": 13281184
+    },
+    {
+      "suite": "deadpan-core::audio_context",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/audio_context-83d3fc7dde5961e5",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/audio_context-83d3fc7dde5961e5",
+      "sha256": "23fa191343b54b9d0ab57f6588b1f9712c0ce18629707a66bca50293091c9e9b",
+      "bytes": 12363664
+    },
+    {
+      "suite": "deadpan-core::audio_edges",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/audio_edges-6e0475c4ff393f5e",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/audio_edges-6e0475c4ff393f5e",
+      "sha256": "e5f431a1a5629849e0fa797ddcd34c9adcdb98d6d79fadb1862a9ffbfc713761",
+      "bytes": 18293216
+    },
+    {
+      "suite": "deadpan-core::audio_gain",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/audio_gain-46180119744e4d34",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/audio_gain-46180119744e4d34",
+      "sha256": "65079d5ac5e0563f5e12dbaa7a95f0c6f3877d6ef6c38e1530cc14cc8f7954cd",
+      "bytes": 2012008
+    },
+    {
+      "suite": "deadpan-core::audio_gain_prefix",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/audio_gain_prefix-aed1444837c30b1e",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/audio_gain_prefix-aed1444837c30b1e",
+      "sha256": "162d521d948e900c9fd1827dae5f4505908f27de6769466df08c85f7e157f0ed",
+      "bytes": 1435168
+    },
+    {
+      "suite": "deadpan-core::audio_lineage",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/audio_lineage-ff91e879f27de2d3",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/audio_lineage-ff91e879f27de2d3",
+      "sha256": "295ccb6e57da879805f0d265a8247d4e7c81e5aff6a067eb618c5f4dc226ee9f",
+      "bytes": 14860416
+    },
+    {
+      "suite": "deadpan-core::audio_reference",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/audio_reference-2d9dafffcb4f92cf",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/audio_reference-2d9dafffcb4f92cf",
+      "sha256": "563bdf85cb9b8b11e3ddaa39fb269ce7dd175d0623056d43759d979155a6e25e",
+      "bytes": 11943888
+    },
+    {
+      "suite": "deadpan-core::command_work",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/command_work-0ccbe9e25ec0371c",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/command_work-0ccbe9e25ec0371c",
+      "sha256": "24fbe89363eac9636aeb9b4dc1ad9009a21e8be91d709edf47bdf6cf9cf77206",
+      "bytes": 12138448
+    },
+    {
+      "suite": "deadpan-core::document",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/document-82906dc6e1085053",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/document-82906dc6e1085053",
+      "sha256": "ff1be335fe32239af7ae898313a2812c0ae8a7493ae7ca7d40488c3f33412cac",
+      "bytes": 15120168
+    },
+    {
+      "suite": "deadpan-core::edited_slice",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/edited_slice-ee208805be4e43eb",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/edited_slice-ee208805be4e43eb",
+      "sha256": "f3b6de8e50f067571f590437b7e7bf55c6b56c5f124990bc581d654fba656011",
+      "bytes": 19728064
+    },
+    {
+      "suite": "deadpan-core::explode",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/explode-88f7f97dc45196a8",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/explode-88f7f97dc45196a8",
+      "sha256": "17ece1e5a1806959311ba69e48d074978fed3a321ca4931754670e154e0d2070",
+      "bytes": 17809624
+    },
+    {
+      "suite": "deadpan-core::framing",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/framing-0f2e6f065f25b46a",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/framing-0f2e6f065f25b46a",
+      "sha256": "1cea1c9540d46ae4447f7f8329c2fbd8fb373ed1656dc924aaf9a44246b0c2e5",
+      "bytes": 12674088
+    },
+    {
+      "suite": "deadpan-core::gap_overrides",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/gap_overrides-d5c8f2cff84d39c4",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/gap_overrides-d5c8f2cff84d39c4",
+      "sha256": "29032bc4c3cd401ddd09356f95dd7db6c717b5b4e3cee7c56928eb17db9e0928",
+      "bytes": 11952192
+    },
+    {
+      "suite": "deadpan-core::gap_projection",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/gap_projection-de751b5edea3e9be",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/gap_projection-de751b5edea3e9be",
+      "sha256": "8d4bbabcb67b33b68ff5471dcf121ccd394ed90e737b05a7697669d76dfee50b",
+      "bytes": 11432208
+    },
+    {
+      "suite": "deadpan-core::generated_holds",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/generated_holds-7b33390ab07e29ae",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/generated_holds-7b33390ab07e29ae",
+      "sha256": "4679f62caefa11eae25dff98eb181fbe0f00bf48467aba9bc0f97d555712d059",
+      "bytes": 18789824
+    },
+    {
+      "suite": "deadpan-core::hold_audio",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/hold_audio-7640e2b5fba5e930",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/hold_audio-7640e2b5fba5e930",
+      "sha256": "6cd59d3a4273b71f7c326c8a497823a171fd10d84f6fee12e0df885020b91322",
+      "bytes": 18896984
+    },
+    {
+      "suite": "deadpan-core::insert_time",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/insert_time-89e57942d872ddce",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/insert_time-89e57942d872ddce",
+      "sha256": "30e846184a69e4140a93be89bef264a62e7bfb85e15106e63156830a789cdc0b",
+      "bytes": 21187216
+    },
+    {
+      "suite": "deadpan-core::mark_fragments",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/mark_fragments-b416b1d342978aec",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/mark_fragments-b416b1d342978aec",
+      "sha256": "5ec2c413fdc80af1445a7230c49b65e64b7757cf114e56bb00c97e77e904f1b4",
+      "bytes": 14622112
+    },
+    {
+      "suite": "deadpan-core::mark_resolution",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/mark_resolution-42151e932cefadd2",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/mark_resolution-42151e932cefadd2",
+      "sha256": "6e8da6bc76231afd66a7dbac6a3fa6d54a6af40a4dabe4778f151680f46c4216",
+      "bytes": 5495072
+    },
+    {
+      "suite": "deadpan-core::marks",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/marks-a5a26409343f8273",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/marks-a5a26409343f8273",
+      "sha256": "ecdbf0198f286686fec1c78c32bf45be9b6bb8e94c4dcdd2cf6047498ea53a19",
+      "bytes": 19967096
+    },
+    {
+      "suite": "deadpan-core::move_range",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/move_range-051844b1ba2508d3",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/move_range-051844b1ba2508d3",
+      "sha256": "83d7060d36aa9971f562028216c531819e6640e418eb18845da63fc9de703579",
+      "bytes": 18505080
+    },
+    {
+      "suite": "deadpan-core::node_gain",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/node_gain-e55ba6574132f21c",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/node_gain-e55ba6574132f21c",
+      "sha256": "f97cd5f9bafde1fb72a7f97aeb7bd1c7e1e9dad30bdf08c8417b51bfa8942a78",
+      "bytes": 19086504
+    },
+    {
+      "suite": "deadpan-core::occurrence_edits",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/occurrence_edits-6de96acd6ecaae0e",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/occurrence_edits-6de96acd6ecaae0e",
+      "sha256": "d0a0ae1ff00e1e673ac57d2ec8df9488971c3fd907a167289b084faabb96bfcc",
+      "bytes": 18288432
+    },
+    {
+      "suite": "deadpan-core::partitions",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/partitions-5e48f9a6c01b619f",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/partitions-5e48f9a6c01b619f",
+      "sha256": "b655395ee046d5bb618e8a39f7b83291717d84e8f0b5d7dbdec2d6ba0a82af4a",
+      "bytes": 14346728
+    },
+    {
+      "suite": "deadpan-core::picture_context",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/picture_context-9034b457690119f9",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/picture_context-9034b457690119f9",
+      "sha256": "e944da1bf5e7d29c06ded307aa1c7e30b9956e6c5866b2e0059a7ee7fb77c0da",
+      "bytes": 12137936
+    },
+    {
+      "suite": "deadpan-core::play_overrides",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/play_overrides-031872b7df5e7cf2",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/play_overrides-031872b7df5e7cf2",
+      "sha256": "da52fe5c6599761d1c11aa3a9dec7ee50601fa7a790c01f9ffa155be43016da9",
+      "bytes": 12568096
+    },
+    {
+      "suite": "deadpan-core::presentation_basis",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/presentation_basis-2be56ab0bc5524e0",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/presentation_basis-2be56ab0bc5524e0",
+      "sha256": "45520f5cc77273654929c9e241469c91d86f14972cab815e7c3cdabd111ea239",
+      "bytes": 19527840
+    },
+    {
+      "suite": "deadpan-core::repeat_exact_layout",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/repeat_exact_layout-4a38aee2b078d8d6",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/repeat_exact_layout-4a38aee2b078d8d6",
+      "sha256": "119ed01860b8fda518b29636d25c7b10291f5a8492892046ebd86d561b43b7e2",
+      "bytes": 1768088
+    },
+    {
+      "suite": "deadpan-core::repeat_gap_layout",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/repeat_gap_layout-2a5b5b4b2ceef93d",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/repeat_gap_layout-2a5b5b4b2ceef93d",
+      "sha256": "9613059f25259d32b8b71213adbe94d3078a31cdd352d5afef476f46c5a84bd1",
+      "bytes": 1258800
+    },
+    {
+      "suite": "deadpan-core::retime_edits",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/retime_edits-1b2e5782071465dd",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/retime_edits-1b2e5782071465dd",
+      "sha256": "b4837e393b7f3333a5d5ca8c55d4535fe555b22871d6ca9ffadda81df0754509",
+      "bytes": 12001504
+    },
+    {
+      "suite": "deadpan-core::scoped_many",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/scoped_many-98c8f18f33133680",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/scoped_many-98c8f18f33133680",
+      "sha256": "4e4eb73ca3eef96d7c4006e69099668694843e048b1fb1e84d757e393976dc74",
+      "bytes": 17200240
+    },
+    {
+      "suite": "deadpan-core::semantic_trim",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/semantic_trim-54925f1e14afec6e",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/semantic_trim-54925f1e14afec6e",
+      "sha256": "e311498eab09dcbb61b1033b3247c525b3a0a875151396efa2961d9de458b714",
+      "bytes": 12827824
+    },
+    {
+      "suite": "deadpan-core::sound_allowances",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/sound_allowances-c4b18e919a217b93",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/sound_allowances-c4b18e919a217b93",
+      "sha256": "a1327ff1598dd7ff2066e8c0aaa8ac44db0baccb2bd08253a20f0b568c382758",
+      "bytes": 18082288
+    },
+    {
+      "suite": "deadpan-core::sound_events",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/sound_events-49446fbe821c9913",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/sound_events-49446fbe821c9913",
+      "sha256": "10ce86fb9cad618e118bfc20294af499804c0fc3e1f0b11f01e0c3633b8270d8",
+      "bytes": 18499312
+    },
+    {
+      "suite": "deadpan-core::sound_routes",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/sound_routes-4ad91d8551dd40cf",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/sound_routes-4ad91d8551dd40cf",
+      "sha256": "87a28ae6b33a4daca1edfaccaace9c47324b2a9ec2485f5a7bd574233ef09486",
+      "bytes": 2051888
+    },
+    {
+      "suite": "deadpan-core::sound_routing",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/sound_routing-b35c87be712488cc",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/sound_routing-b35c87be712488cc",
+      "sha256": "7cee4bb62fda8cf1d918c4bc4ce53d3816cebe43fc04e5f4862c7445de64e12c",
+      "bytes": 12542944
+    },
+    {
+      "suite": "deadpan-core::source_edit_window",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/source_edit_window-33fe294a0b091b9e",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/source_edit_window-33fe294a0b091b9e",
+      "sha256": "fb6944749fdea6f8bee94b7e67ee71acc75653df103cc33faeb82b146a04275c",
+      "bytes": 14582352
+    },
+    {
+      "suite": "deadpan-core::source_import",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/source_import-258e4306c65d7b43",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/source_import-258e4306c65d7b43",
+      "sha256": "bd0b6ff8072cf0b7add35eef6c2c57df916cca4e41c4d5691c0c54c43cd07fdd",
+      "bytes": 18535024
+    },
+    {
+      "suite": "deadpan-core::source_interpretation",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/source_interpretation-b49c4efe9c6a666f",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/source_interpretation-b49c4efe9c6a666f",
+      "sha256": "cb378a8d8ffae5f0a17f17a7785c6e19b05ba907542fad59e7b6e9f626ca4046",
+      "bytes": 14757384
+    },
+    {
+      "suite": "deadpan-core::source_roll",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/source_roll-1a3460033b1385b0",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/source_roll-1a3460033b1385b0",
+      "sha256": "d0217f9e22c6e37048f0f8d967aa3f0e8288db336dd46ba505be22befa7126e5",
+      "bytes": 19479616
+    },
+    {
+      "suite": "deadpan-core::source_slip",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/source_slip-deb9cce5964c5b10",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/source_slip-deb9cce5964c5b10",
+      "sha256": "d5d520c9eef0ca90363c5f9ab03b9a9a3d9068ef9c106ecce3b4ae477ae6c889",
+      "bytes": 19106256
+    },
+    {
+      "suite": "deadpan-core::source_trim_command",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/source_trim_command-3071f3305b5e45ea",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/source_trim_command-3071f3305b5e45ea",
+      "sha256": "1dd1d7346d156d3c28ea2cedefce3cf4fc12ce6dae9101602d1c69cfe5ce4ade",
+      "bytes": 19390920
+    },
+    {
+      "suite": "deadpan-core::source_trim_edit",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/source_trim_edit-653751c9732eb8ec",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/source_trim_edit-653751c9732eb8ec",
+      "sha256": "cd0785de04808904df71bb9d4f46c1657100ee211660c7543cbc968625644deb",
+      "bytes": 19041520
+    },
+    {
+      "suite": "deadpan-core::source_trim_geometry",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/source_trim_geometry-f14bd0ad17dfa766",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/source_trim_geometry-f14bd0ad17dfa766",
+      "sha256": "be483f10c0b9b362a7708ea6f78dc956cc59593fef0026ff16a52ab4c0f7d279",
+      "bytes": 6059848
+    },
+    {
+      "suite": "deadpan-core::source_trim_resolution",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/source_trim_resolution-67352596b4651e6a",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/source_trim_resolution-67352596b4651e6a",
+      "sha256": "f37ba88e345d9ed0afb56af7e0c0d38e0de129fa7eee7845d28074dbb84963c0",
+      "bytes": 5890184
+    },
+    {
+      "suite": "deadpan-core::source_view",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/source_view-674131b7795a390f",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/source_view-674131b7795a390f",
+      "sha256": "86a54ffb5331e7a76fe1eb497034c28136e62b3bc130999d63be37494769d0f1",
+      "bytes": 5726176
+    },
+    {
+      "suite": "deadpan-core::split",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/split-31ffde955c1d2240",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/split-31ffde955c1d2240",
+      "sha256": "9ecd8a21a9b4d0df8fc27f5754f3ef5ab8406d484cc946701b135f07adf7316b",
+      "bytes": 19169512
+    },
+    {
+      "suite": "deadpan-core::split_edit",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/split_edit-fdf8bc6882ee3bef",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/split_edit-fdf8bc6882ee3bef",
+      "sha256": "0d860a34de51e9aa517db6a9963c85bef45fcdce2040e0678e5f5c210940390a",
+      "bytes": 13816600
+    },
+    {
+      "suite": "deadpan-core::structural_properties",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/structural_properties-ad52991b2db21692",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/structural_properties-ad52991b2db21692",
+      "sha256": "625683507e38bb5f7da35f58be73bc25e8dee0040fee1e54f7515ed9a59b300c",
+      "bytes": 12516136
+    },
+    {
+      "suite": "deadpan-plan",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/deadpan_plan-b53bb62433ee558e",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/deadpan_plan-b53bb62433ee558e",
+      "sha256": "641c8742447521ec694a1498aee9fb1279a7a66582a428de6495a56bcdfd8d45",
+      "bytes": 13898080
+    },
+    {
+      "suite": "deadpan-plan::audio_bindings",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/audio_bindings-787f7885e6c56296",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/audio_bindings-787f7885e6c56296",
+      "sha256": "9373bcaf709ae7f918eddf9a269aa4d932352be602eeeca80725127189fad3b4",
+      "bytes": 6937568
+    },
+    {
+      "suite": "deadpan-plan::audio_context",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/audio_context-115ea7956a9b6527",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/audio_context-115ea7956a9b6527",
+      "sha256": "362242b911ab475bb2739ae521cfa404360cf0835a2dd4483beed5e0f9cab706",
+      "bytes": 12547744
+    },
+    {
+      "suite": "deadpan-plan::audio_definition",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/audio_definition-adfda985e8f8cdd7",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/audio_definition-adfda985e8f8cdd7",
+      "sha256": "2b98b32bc2bb6f247f868471b63c7a3c9a712cbe3624c6bf4f0ee5149972ee6b",
+      "bytes": 8010384
+    },
+    {
+      "suite": "deadpan-plan::audio_domain",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/audio_domain-2f31dcdcab7d3665",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/audio_domain-2f31dcdcab7d3665",
+      "sha256": "576b4487b3bc8b20ca5bfa9563589248809f37d477a4941a65ba2b224450266f",
+      "bytes": 6383584
+    },
+    {
+      "suite": "deadpan-plan::audio_fades",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/audio_fades-44fd0157496ceaf8",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/audio_fades-44fd0157496ceaf8",
+      "sha256": "0f098062e932b78c78cd0b861d247839e5269f7f2767dcce03337bfaa5581c1a",
+      "bytes": 12255376
+    },
+    {
+      "suite": "deadpan-plan::audio_plan",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/audio_plan-892311bd2c102d94",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/audio_plan-892311bd2c102d94",
+      "sha256": "d0a644b2f214fe290f37c9f7cf0fce8a691afa79a408dc7948c4034fae7df6fb",
+      "bytes": 12726088
+    },
+    {
+      "suite": "deadpan-plan::audio_policy",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/audio_policy-b9867081765c834f",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/audio_policy-b9867081765c834f",
+      "sha256": "78f3e8fc5466c8ab14fc35c4a9be38f5c8533de6b3294f6e83293038560a1803",
+      "bytes": 6540816
+    },
+    {
+      "suite": "deadpan-plan::audio_reference",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/audio_reference-ea73af3e349abda5",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/audio_reference-ea73af3e349abda5",
+      "sha256": "74f6b4c229492d7312d9973f22f05400a21fc204a631b70384e6eec37068f253",
+      "bytes": 12740512
+    },
+    {
+      "suite": "deadpan-plan::audio_signal",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/audio_signal-09cf847bb6a5bca8",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/audio_signal-09cf847bb6a5bca8",
+      "sha256": "13f0b5bca182ea4626fd584cfb641e7da25b4ddd8a2ffbb0ea1626fa558b87c6",
+      "bytes": 6573328
+    },
+    {
+      "suite": "deadpan-plan::audio_tape",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/audio_tape-48cec8551205ab78",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/audio_tape-48cec8551205ab78",
+      "sha256": "c030572e8112778f76569bacec9851d70c2b03fcef3d8e778421d618b4fc4583",
+      "bytes": 6433704
+    },
+    {
+      "suite": "deadpan-plan::edited_slice",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/edited_slice-702e9997f240bc61",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/edited_slice-702e9997f240bc61",
+      "sha256": "6eb2e82a972f73ebbca6b22ca152f56f22eef9cd3a16d3df2134cec05eba4ea9",
+      "bytes": 12462528
+    },
+    {
+      "suite": "deadpan-plan::gap_bindings",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/gap_bindings-c29cd52802d4af03",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/gap_bindings-c29cd52802d4af03",
+      "sha256": "410ff6cfe4ae90d7579b63138a72fc86660772c607129393650ce0f95bbe48d6",
+      "bytes": 11893856
+    },
+    {
+      "suite": "deadpan-plan::gap_branches",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/gap_branches-cbe6af705ee62b95",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/gap_branches-cbe6af705ee62b95",
+      "sha256": "c0648ec6272e27ef1553687dd3ca5cfc74aada04852ccdc74f709a526789e675",
+      "bytes": 12573120
+    },
+    {
+      "suite": "deadpan-plan::hold_policy",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/hold_policy-d133147202553b4c",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/hold_policy-d133147202553b4c",
+      "sha256": "6de2b7ae8f5e3b9420571eac90b330c74028193d29742dd9794b2fedacd458e9",
+      "bytes": 6817136
+    },
+    {
+      "suite": "deadpan-plan::occurrence_edits",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/occurrence_edits-98b92539951632fb",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/occurrence_edits-98b92539951632fb",
+      "sha256": "dc90e6d7e9fce77c086859a68b0e4ecfe434bc0a1f83987cf21470fa4561490e",
+      "bytes": 12065200
+    },
+    {
+      "suite": "deadpan-plan::picture_plan",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/picture_plan-6230b9350f2b2189",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/picture_plan-6230b9350f2b2189",
+      "sha256": "5ede692ee88d02fe9e47cdeae902e5c41f582fa4a86a2d9685670e8fcda4e9d6",
+      "bytes": 14122144
+    },
+    {
+      "suite": "deadpan-plan::play_overrides",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/play_overrides-00fceb308b01345c",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/play_overrides-00fceb308b01345c",
+      "sha256": "ef8a93caf625514fe861d043b4fb36cffafadab239c2e6ddb6239d2380c0ba3c",
+      "bytes": 12493568
+    },
+    {
+      "suite": "deadpan-plan::root_sound_routes",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/root_sound_routes-842bf79b4162718d",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/root_sound_routes-842bf79b4162718d",
+      "sha256": "fcae3eb0fc1f1fd2bae5e3e18dd3984161a15b382a79793440033837bf5ac71a",
+      "bytes": 7222208
+    },
+    {
+      "suite": "deadpan-plan::routed_voice",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/routed_voice-81eb58979b2906c6",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/routed_voice-81eb58979b2906c6",
+      "sha256": "65a4e673b3497e025700704adfc31789261ba5c3806bb68e8a25828e7950f599",
+      "bytes": 6266448
+    },
+    {
+      "suite": "deadpan-plan::selected_video_window",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/selected_video_window-49736f86aea670f7",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/selected_video_window-49736f86aea670f7",
+      "sha256": "0daecd91e88e18651629efbdb6dff7c069b3831820fcf794b9efcb6446ca8762",
+      "bytes": 12630488
+    },
+    {
+      "suite": "deadpan-plan::sound_event_fades",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/sound_event_fades-140e232f192df25d",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/sound_event_fades-140e232f192df25d",
+      "sha256": "cdec409c66f822c7bd1be3b39841dad55901fa732704f50cb4320feb1c17520c",
+      "bytes": 5997408
+    },
+    {
+      "suite": "deadpan-plan::sound_events",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/sound_events-c241ddc04b6e9c55",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/sound_events-c241ddc04b6e9c55",
+      "sha256": "1204a92d2e3a7612d2b3241aa6900f5432a3d7fe67a51fc68af8d7e1e3bfc6c7",
+      "bytes": 6068656
+    },
+    {
+      "suite": "deadpan-plan::sound_processing_layout",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/sound_processing_layout-4ee61b850cc2597b",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/sound_processing_layout-4ee61b850cc2597b",
+      "sha256": "84b62cf9c79894850c900ec54d8d9ac7fca80e2faa4b501bcce9453345719328",
+      "bytes": 6809800
+    },
+    {
+      "suite": "deadpan-plan::sound_route_sampling",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/sound_route_sampling-7a8f3cea018880ce",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/sound_route_sampling-7a8f3cea018880ce",
+      "sha256": "be2e27d6571383ae80e49e1a5c33e47fc4e070128f68ceed3dcc86ef9e1a5352",
+      "bytes": 1415432
+    },
+    {
+      "suite": "deadpan-plan::source_voice",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/source_voice-6247c34305f83c97",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/source_voice-6247c34305f83c97",
+      "sha256": "173549227b3256ecdc37c13a39c532cf7ff3f0a8dbf1929f3fbf766c3c1d77a9",
+      "bytes": 6338400
+    },
+    {
+      "suite": "deadpan-plan::source_voice_policy",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/source_voice_policy-f3cea13637495227",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/source_voice_policy-f3cea13637495227",
+      "sha256": "2dbb62915c460a6755052c869ed7a461f5a4e7fcd3a8904d824f68166c434b67",
+      "bytes": 6802952
+    },
+    {
+      "suite": "deadpan-store",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/deadpan_store-a820d32debc45aae",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/deadpan_store-a820d32debc45aae",
+      "sha256": "3a7a59e013ab27843190f20f5e58eefc3fa96bb1bb73a69cec1c88a2bdc7b0d4",
+      "bytes": 36671536
+    },
+    {
+      "suite": "deadpan-store::adversarial",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/adversarial-abba6a3bd856b98a",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/adversarial-abba6a3bd856b98a",
+      "sha256": "2663fb4f5d43e1b6bb8513fa40187e83cd9d34cfd907369112c92d2f2e8cbe90",
+      "bytes": 32983792
+    },
+    {
+      "suite": "deadpan-store::analysis_corrections",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/analysis_corrections-806e975892526bd5",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/analysis_corrections-806e975892526bd5",
+      "sha256": "91f8803fb9e065acdcc414ca19457181760d7ebc5ccbe781d56acaa672351bb6",
+      "bytes": 26812648
+    },
+    {
+      "suite": "deadpan-store::backups",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/backups-ae5d5ce02db2069a",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/backups-ae5d5ce02db2069a",
+      "sha256": "417c45969c7321d9bd35446f3b228067a34ad275cff9f65768b507af74354dce",
+      "bytes": 28719624
+    },
+    {
+      "suite": "deadpan-store::bookmarks",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/bookmarks-0f17258a6d3c4259",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/bookmarks-0f17258a6d3c4259",
+      "sha256": "17c88917f7f759911f1832e0004171b7823cf78683e155cf5c4715d2555adf4e",
+      "bytes": 7670904
+    },
+    {
+      "suite": "deadpan-store::chaos_kills",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/chaos_kills-6734fed7d2f26cce",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/chaos_kills-6734fed7d2f26cce",
+      "sha256": "b1d8c3869a2a9e2e2f825cd6427834af3e4550f88844314e43ad1e31902fb562",
+      "bytes": 28457504
+    },
+    {
+      "suite": "deadpan-store::delete_range",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/delete_range-7835514a065b97d7",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/delete_range-7835514a065b97d7",
+      "sha256": "3fd80e9ef6077d9fd4a137d6b8921c0f477214df02f50381b1d797f7e5d5a8fc",
+      "bytes": 33493104
+    },
+    {
+      "suite": "deadpan-store::delete_ripple",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/delete_ripple-b708ea4ab18a2f41",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/delete_ripple-b708ea4ab18a2f41",
+      "sha256": "9ed55113e7c2788816a12daff760b8f13e4b7b4b15b82a881381b106e04a5349",
+      "bytes": 33556768
+    },
+    {
+      "suite": "deadpan-store::derived_clocks",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/derived_clocks-9335a1f9793876b7",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/derived_clocks-9335a1f9793876b7",
+      "sha256": "8ac03a1cfaecea6470207e8d2bb0e52120f215268c2788d5c6c90585f741d1f8",
+      "bytes": 28496944
+    },
+    {
+      "suite": "deadpan-store::edited_slice",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/edited_slice-305a1ab60dfb20b9",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/edited_slice-305a1ab60dfb20b9",
+      "sha256": "bc0380981080e536650a3271c210f87603089e5091b3ad91d226111839b78666",
+      "bytes": 37195472
+    },
+    {
+      "suite": "deadpan-store::failpoints",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/failpoints-7a920fed61f48c2e",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/failpoints-7a920fed61f48c2e",
+      "sha256": "63aafbdb940a19e75c425b42686f7559658992b8a9b082a1b6a011b4f99db33f",
+      "bytes": 28380856
+    },
+    {
+      "suite": "deadpan-store::generated_admission",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/generated_admission-b0f73931d4f1c370",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/generated_admission-b0f73931d4f1c370",
+      "sha256": "470b00d0d012b8e8796cabc1b12452a9b7c2ea7b2b2e0a16fe407d2e0e6ad921",
+      "bytes": 27970312
+    },
+    {
+      "suite": "deadpan-store::generated_media",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/generated_media-d73fc9f130edaada",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/generated_media-d73fc9f130edaada",
+      "sha256": "9cb9d25c8989cf5a425d9b763756c64583d0d4f9658bba201e4d9ac637375b07",
+      "bytes": 28082768
+    },
+    {
+      "suite": "deadpan-store::generated_read_handle",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/generated_read_handle-06ef83bc3d04ba80",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/generated_read_handle-06ef83bc3d04ba80",
+      "sha256": "ef146fd3928dfd5878ec4c6591a4877fdc056ecdd8482b24bcdb6783d19626e9",
+      "bytes": 27202744
+    },
+    {
+      "suite": "deadpan-store::generation",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/generation-6b1052d6b3314dac",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/generation-6b1052d6b3314dac",
+      "sha256": "c02202de9c878a919430f58cad0af140ea58137c1246e4e6595596c5205c1a0e",
+      "bytes": 28423032
+    },
+    {
+      "suite": "deadpan-store::generation_attempts",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/generation_attempts-3c3ebfbddbeee8a1",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/generation_attempts-3c3ebfbddbeee8a1",
+      "sha256": "4a1423872f683fbd90ef2ccc07f050b5453b7d4b11f167c0e9e1ed5a4d3cf219",
+      "bytes": 27291688
+    },
+    {
+      "suite": "deadpan-store::generation_bundles",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/generation_bundles-8fe4e5fef16f185c",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/generation_bundles-8fe4e5fef16f185c",
+      "sha256": "216f47e4c6835b2acfa7a7d94dac634caa4ae92724845856654e168949afcca6",
+      "bytes": 39568144
+    },
+    {
+      "suite": "deadpan-store::hold_duration_clocks",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/hold_duration_clocks-b228bae947a92290",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/hold_duration_clocks-b228bae947a92290",
+      "sha256": "774a2a4ff17b63df02464243ca239d56161985b06e3c77097bd92b72512a5071",
+      "bytes": 28935624
+    },
+    {
+      "suite": "deadpan-store::host_owner",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/host_owner-a83b3ab3232c772b",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/host_owner-a83b3ab3232c772b",
+      "sha256": "6ea39193fdd1d332237a73ac77065573a944b24099eff6dfcdb34622fcbbe0e1",
+      "bytes": 26645512
+    },
+    {
+      "suite": "deadpan-store::long_project_stress",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/long_project_stress-733dbc29bf239955",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/long_project_stress-733dbc29bf239955",
+      "sha256": "7560020a4353975984cb845209f4c048358fd5f6b2e139165149a8d8cd9d1a6c",
+      "bytes": 28182008
+    },
+    {
+      "suite": "deadpan-store::migration",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/migration-999e92bff4682f40",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/migration-999e92bff4682f40",
+      "sha256": "4c911b0662916b98d86b893fcac7e4894c616a09034e8475ee049757a9f8c230",
+      "bytes": 31691912
+    },
+    {
+      "suite": "deadpan-store::occurrence_edits",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/occurrence_edits-7f384e227efdc36a",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/occurrence_edits-7f384e227efdc36a",
+      "sha256": "49cf1a9a984cb56fdfad49028a98cb49898d763af06355370bf72fd75a1d168f",
+      "bytes": 28739200
+    },
+    {
+      "suite": "deadpan-store::original_media",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/original_media-acf59a456ab7ee1d",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/original_media-acf59a456ab7ee1d",
+      "sha256": "97c2a3387f2d66ac46261847e1c9a6e890a76a0ce76301694f2a141010bfb78c",
+      "bytes": 27435440
+    },
+    {
+      "suite": "deadpan-store::original_preparation",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/original_preparation-55ba7b8ebb570561",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/original_preparation-55ba7b8ebb570561",
+      "sha256": "d281062b22e402f7fd722aad4b74fb0adbad9d609eede3b5842837a457e9c3f3",
+      "bytes": 28370104
+    },
+    {
+      "suite": "deadpan-store::original_provenance",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/original_provenance-3a743de70b404a37",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/original_provenance-3a743de70b404a37",
+      "sha256": "d1a7198785fe3df4334b6c0ff06aa7545f0f95c874b77505f29b4d5c8820162d",
+      "bytes": 27119080
+    },
+    {
+      "suite": "deadpan-store::persistence",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/persistence-5dc7e412e05369bb",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/persistence-5dc7e412e05369bb",
+      "sha256": "919a8e7bfe7c4520953f56718263b7f3a9aa44485ffca72360f51ee26fd6ad7e",
+      "bytes": 32055136
+    },
+    {
+      "suite": "deadpan-store::prepared_checkpoint",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/prepared_checkpoint-63b28010494b3ec0",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/prepared_checkpoint-63b28010494b3ec0",
+      "sha256": "330267d0ff87c4205eb668a2ed1a1ad4d5a0d31d8a9947f5ca451bd3b17bc002",
+      "bytes": 28241960
+    },
+    {
+      "suite": "deadpan-store::prepared_relink",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/prepared_relink-36cb2270efaca080",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/prepared_relink-36cb2270efaca080",
+      "sha256": "879e368043f02fa0127033bd0543e184c43d967585229ab75f49176883b7db29",
+      "bytes": 28458560
+    },
+    {
+      "suite": "deadpan-store::prepared_source_registration",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/prepared_source_registration-7cf1383cd259aeb2",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/prepared_source_registration-7cf1383cd259aeb2",
+      "sha256": "e1f93f369c4bd9dfb5b2c9d55446a2b240e6a284fff223dbab8979266aa90bc5",
+      "bytes": 30169824
+    },
+    {
+      "suite": "deadpan-store::presentation_basis",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/presentation_basis-b09bf995d920b675",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/presentation_basis-b09bf995d920b675",
+      "sha256": "4e49b7cd43337d6b2050a05a3930a1cddc4d558ebb7614525e0f41ab79528826",
+      "bytes": 32355392
+    },
+    {
+      "suite": "deadpan-store::recovery",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/recovery-9c1f8b1fe29f04d2",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/recovery-9c1f8b1fe29f04d2",
+      "sha256": "916af2b12cf7fc1581ba9db26e2da0a025ea9b1804fb2ee1317c42c36e213f8d",
+      "bytes": 28141128
+    },
+    {
+      "suite": "deadpan-store::render_jobs",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/render_jobs-1c8e21831bba4a26",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/render_jobs-1c8e21831bba4a26",
+      "sha256": "59e4859e17fee3b0c56e357ab9b841508efcb9bcaffdc7059e345bdf8dcbe0eb",
+      "bytes": 29342176
+    },
+    {
+      "suite": "deadpan-store::revision_storage",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/revision_storage-535222a2a1ff0d5b",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/revision_storage-535222a2a1ff0d5b",
+      "sha256": "6553eed06d2027826d87b167c970283af85eb1b76da551974ae1a5c7ebf7644b",
+      "bytes": 28375552
+    },
+    {
+      "suite": "deadpan-store::shot_analysis",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/shot_analysis-7b79db7d489d88e1",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/shot_analysis-7b79db7d489d88e1",
+      "sha256": "852f01f8952166388c7cf641db0b3d16bed08daa5b5acb152da0edcab013daff",
+      "bytes": 27427968
+    },
+    {
+      "suite": "deadpan-store::single_source",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/single_source-117f72505c43de56",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/single_source-117f72505c43de56",
+      "sha256": "cb5c0635cf773c7630ae5af2346abf4b89d2929e7d489fb1c1cf1f8b58fb79f3",
+      "bytes": 29106144
+    },
+    {
+      "suite": "deadpan-store::source_effects",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/source_effects-1bd675025ddafff3",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/source_effects-1bd675025ddafff3",
+      "sha256": "ac4f9758437a2e928650074af8aba71460d65d109a1acf09e452be1d1422d4fa",
+      "bytes": 33979376
+    },
+    {
+      "suite": "deadpan-store::source_origin",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/source_origin-87330828d9bf85a7",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/source_origin-87330828d9bf85a7",
+      "sha256": "0acd06b17dbb8b683a2aa9535fe77918b4f95b29838a9ff960fc7824e13ae65b",
+      "bytes": 30555200
+    },
+    {
+      "suite": "deadpan-store::source_registration",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/source_registration-3beb61075fc7a591",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/source_registration-3beb61075fc7a591",
+      "sha256": "fa5b0e99fa0cc0a69e0e9073131f1b4d8c7d2ae61de90d6cbb475b68dcc9fd6f",
+      "bytes": 40328648
+    },
+    {
+      "suite": "deadpan-store::speech_activity",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/speech_activity-f6e40b9d46faefa2",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/speech_activity-f6e40b9d46faefa2",
+      "sha256": "39828f0fdda4ebdc4d371ae9a4943fcd4e22eff8f91db10873f688d8aa88ff57",
+      "bytes": 27376448
+    },
+    {
+      "suite": "deadpan-store::storage_failures",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/storage_failures-dfdec6ed2f27d5ef",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/storage_failures-dfdec6ed2f27d5ef",
+      "sha256": "42c5ce104a3d1bb21beefea175a769dc436f4a5ffc22d630a628227a3b5a6f82",
+      "bytes": 28313568
+    },
+    {
+      "suite": "deadpan-store::storage_failures_media",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/storage_failures_media-7e4d8ac0d6047990",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/storage_failures_media-7e4d8ac0d6047990",
+      "sha256": "7c2f8d1c3787d9428473ddd7c4f3921b9c29700db75ff8cb3606819a021dc968",
+      "bytes": 27166216
+    },
+    {
+      "suite": "deadpan-store::transcripts",
+      "path": "/Users/michael/Code/deadpan/target/debug/deps/transcripts-6e53fba6a4d37898",
+      "retained": "/tmp/deadpan-nested-fixed-retime-duration-2026-10-22/regression-bin/transcripts-6e53fba6a4d37898",
+      "sha256": "e42312b11376f9e6c3342840f76534180a44764000b09116ba5e9462ed42f584",
+      "bytes": 27246784
+    }
+  ],
+  "post_run_all_hashes_unchanged": true,
+  "summary": "3503 passed, 4 slow, 1769 skipped, 163.574s"
+}

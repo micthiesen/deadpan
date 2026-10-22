@@ -1,0 +1,16 @@
+[
+  {
+    "suite": "deadpan-app::headless",
+    "path": "/Users/michael/Code/deadpan/target/debug/deps/headless-a11997053e77fe52",
+    "sha256": "09fa70e1c1793abfc595ff18990661e6db4bafcebd3c3e0abeaa26a80f0fad07",
+    "matched_tests": 1,
+    "capture": "post-run listing rebuild, not a pre-execution identity claim"
+  },
+  {
+    "suite": "deadpan-app::bin/deadpan-app",
+    "path": "/Users/michael/Code/deadpan/target/debug/deps/deadpan_app-7e20ea767f3f19d5",
+    "sha256": "496d3be186e0f8d10d680f357193d8e30be36e1e8fc69192b3b776705ddfb67e",
+    "matched_tests": 206,
+    "capture": "post-run listing rebuild, not a pre-execution identity claim"
+  }
+]

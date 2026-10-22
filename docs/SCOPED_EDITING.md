@@ -5,7 +5,7 @@
 This play at every Repeat level, `Enter` opens its exact duration instead.
 Enter also opens Hold duration inside fixed Edit Retime windows without Repeat
 ancestry, with All plays explicit at every enclosing Repeat, or in the narrow
-This play case of one explicit Repeat body containing one fixed, unclocked Edit
+This play case of explicit Repeat bodies containing one fixed, unclocked Edit
 Retime. Derived pause clocks retain their timing guard.
 Pause insertion follows the explicit choice at each enclosing Repeat. Other
 temporal edits still use the ordinary Sequence timeline.
@@ -105,17 +105,16 @@ deterministic fallback and durable preparation for a new explicit candidate
 acceptance. The [Hold duration qualification](qualification/scoped-hold-duration-2026-10-20.md)
 retains the nested-play, real-PCM, history and native verification.
 
-One explicit This play body also supports this duration edit through exactly
-one fixed, unclocked Edit Retime below the inspected Repeat. The target path
-may contain Sequence ancestry, but no second Repeat, Retime, Partition or
-owned gap. Each edit isolates that play's branch as needed and retains the
-Retime's source crop and output extent. Visibility composes the crop and scale
+Explicit This play choices at every enclosing Repeat also support this duration
+edit through exactly one fixed, unclocked Edit Retime below the innermost Repeat.
+The target path may otherwise contain Sequence ancestry, but no other Retime,
+Partition or owned gap. Each edit isolates its selected branches outside-in and
+retains the Retime's source crop and output extent. Visibility composes crop and scale
 with the selected stable play; the cursor continues at the first sampled
 visible Hold picture, which can differ from the Hold's intrinsic start.
 Hidden or unsampled Holds, derived pause clocks, root or attached sound events,
-and mixed, selected-multiple-play or multi-Repeat contexts refuse. Ordinary
-nested This play duration edits without Retime ancestry remain supported. See
-the [This play fixed-Retime qualification](qualification/this-play-fixed-retime-hold-duration-2026-10-22.md).
+and mixed or selected-multiple-play contexts refuse. Repeat depth follows the
+existing document bound. See the [nested This play fixed-Retime qualification](qualification/nested-fixed-retime-hold-duration-2026-10-22.md).
 
 All plays at every enclosing Repeat has a separate duration-only path. It
 changes the literal shared Hold once and preserves every independent play
@@ -174,10 +173,10 @@ refuse. Recording admits length setters and named duration calls; other edits
 must wait until recording is saved or cancelled. See the
 [native fixed-window qualification](qualification/native-fixed-retime-hold-2026-10-21.md).
 
-The separate This play fixed-Retime path above is limited to one explicit
-Repeat body and one fixed unclocked Edit Retime below it. It does not broaden
-mixed, selected-play, nested-Repeat or other Retime duration paths. See the
-[This play fixed-Retime qualification](qualification/this-play-fixed-retime-hold-duration-2026-10-22.md).
+The separate This play fixed-Retime path above requires explicit body choices
+and one fixed unclocked Edit Retime below all enclosing Repeats. It does not broaden
+mixed, selected-play or other Retime duration paths. See the
+[nested This play fixed-Retime qualification](qualification/nested-fixed-retime-hold-duration-2026-10-22.md).
 
 The [This play pause qualification](qualification/scoped-pauses-2026-10-12.md)
 records exact-boundary, PCM, durable-history and offscreen keyboard verification,

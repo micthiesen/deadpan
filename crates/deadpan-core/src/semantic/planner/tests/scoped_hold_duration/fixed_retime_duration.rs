@@ -5,6 +5,9 @@ use crate::{
     RetimePurpose,
 };
 
+#[path = "nested_fixed_retime_duration.rs"]
+mod nested;
+
 fn plan(
     d: &ProjectDocument,
     c: &SemanticContext,
