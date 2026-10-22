@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-22T04:03:02Z",
+  "updated_at": "2026-10-22T05:33:49Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about \u00b15 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
   "focus": "Continue remaining temporal occurrence scopes and selectors, audio-owner routes, mastering, renderer and full-workflow qualification.",
   "features": [
@@ -16,7 +16,7 @@
         "DP-07",
         "DP-21"
       ],
-      "note": "Slices, registers, repeats and semantic macros work, including Original navigation, ranged and per-play framing, selected-play pauses, per-play Hold duration/sound and audio treatments, and exact-pause tape-speed updates around one inner Repeat. Native Hold lengths support ordinary fixed Edit Retimes and All plays at every Repeat level, including dormant defaults, through controls, recording, calls and direct-edit dot. Mixed choices, wider selectors and remaining timing families stay open."
+      "note": "Slices, registers, repeats and semantic macros work, including Original navigation, ranged and per-play framing, selected-play pauses, Hold duration/sound and audio treatments, and exact-pause tape-speed updates around one inner Repeat. Native Hold lengths support ordinary fixed Edit Retimes and explicit All plays/This play Repeat body choices, including dormant defaults, through controls, recording, calls and direct-edit dot. Several-play durations, mixed gap timing, Repeat/Retime combinations and wider selectors remain open."
     },
     {
       "id": "projects",
@@ -789,6 +789,14 @@
       "revision": "3158c9ce",
       "retrospective": false,
       "summary": "Verified native All plays Hold lengths, including dormant defaults, through controls, recording, named calls and direct-edit dot. Independent overrides and physical audio clocks remain intact. All 14 focused, 712 broader, 193 UI and final 147 app checks pass, with strict lint. Both release replays pass 1,069 scoped checks plus Kestrel; four compact captures were inspected. Release exports verify all 120 pictures and 192,192 audio samples at offset zero. Failed capture, replay-oracle, recording-hint and trace-capacity checks remain recorded with corrections. Mixed choices remain open; no requirement or gate is newly complete."
+    },
+    {
+      "date": "2026-10-21",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "e94a5546",
+      "retrospective": false,
+      "summary": "Verified native Hold lengths through mixed All plays/This play body scopes, including dormant targets and actual isolation mapping through generation/history. Controls, recording, calls and dot retain literal scope choices. All 15 focused, 3,431 broader, 759 follow-up and 197 UI checks pass, with strict lint. Both release replays pass 1,222 scoped checks plus Kestrel; six compact captures were inspected. Release exports verify all 240 pictures and 384,384 audio samples at offset zero. Fixture, request-size, replay-command and capture-capacity corrections remain recorded. Several-play durations and other temporal combinations remain open; no requirement or gate is newly complete."
     }
   ]
 }
