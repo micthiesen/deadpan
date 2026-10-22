@@ -1,0 +1,14 @@
+[
+  {
+    "mode": "visual",
+    "file": "mixed-fixed-duration-108.png",
+    "label": "Mixed fixed Retime All plays then This play duration history",
+    "frame": 161
+  },
+  {
+    "mode": "visual",
+    "file": "mixed-fixed-duration-121.png",
+    "label": "Mixed fixed Retime This play then All plays duration history",
+    "frame": 665
+  }
+]

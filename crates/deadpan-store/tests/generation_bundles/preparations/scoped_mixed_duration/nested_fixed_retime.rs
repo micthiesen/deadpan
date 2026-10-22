@@ -11,7 +11,7 @@ use deadpan_core::{
 use std::num::NonZeroU32;
 use std::sync::Arc;
 
-fn fixed_repeat_initial() -> Result<ProjectDocument> {
+pub(super) fn fixed_repeat_initial() -> Result<ProjectDocument> {
     let mut wire = serde_json::to_value(document()?)?;
     let quiet = |frames| -> Result<BeatNode> {
         Ok(BeatNode::hold(
@@ -130,7 +130,7 @@ fn presentation(document: &ProjectDocument, target: &ScopedNodeTarget) -> Result
     })
 }
 
-fn set(frames: u32) -> SemanticInstruction {
+pub(super) fn set(frames: u32) -> SemanticInstruction {
     SemanticInstruction::SetHoldDuration {
         length: PauseLength::Frames {
             frames: NonZeroU32::new(frames).unwrap(),
@@ -138,7 +138,7 @@ fn set(frames: u32) -> SemanticInstruction {
     }
 }
 
-fn allocation(
+pub(super) fn allocation(
     request: SemanticAllocationRequest,
 ) -> std::result::Result<SemanticAllocation, deadpan_core::EditError> {
     let SemanticAllocationRequest::Isolation {
@@ -167,14 +167,14 @@ fn allocation(
     })
 }
 
-fn content_eq(document: &ProjectDocument, original: &ProjectDocument) -> Result {
+pub(super) fn content_eq(document: &ProjectDocument, original: &ProjectDocument) -> Result {
     let mut expected = serde_json::to_value(original)?;
     expected["revision_id"] = serde_json::json!(document.revision_id());
     assert_eq!(serde_json::to_value(document)?, expected);
     Ok(())
 }
 
-fn db_counts(package: &std::path::Path) -> Result<[i64; 6]> {
+pub(super) fn db_counts(package: &std::path::Path) -> Result<[i64; 6]> {
     let db = rusqlite::Connection::open(package.join("project.sqlite"))?;
     Ok(db.query_row(
         "SELECT (SELECT count(*) FROM revisions), (SELECT count(*) FROM history), (SELECT count(*) FROM transaction_steps), (SELECT count(*) FROM generation_requests), (SELECT count(*) FROM generation_preparations), (SELECT count(*) FROM generation_bundle_receipts)",

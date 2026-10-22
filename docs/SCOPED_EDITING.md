@@ -113,7 +113,8 @@ retains the Retime's source crop and output extent. Visibility composes crop and
 with the selected stable play; the cursor continues at the first sampled
 visible Hold picture, which can differ from the Hold's intrinsic start.
 Hidden or unsampled Holds, derived pause clocks, root or attached sound events,
-and mixed or selected-multiple-play contexts refuse. Repeat depth follows the
+and selected-multiple-play contexts refuse. Mixed choices use the separate path
+below. Repeat depth follows the
 existing document bound. See the [nested This play fixed-Retime qualification](qualification/nested-fixed-retime-hold-duration-2026-10-22.md).
 
 All plays at every enclosing Repeat has a separate duration-only path. It
@@ -140,9 +141,17 @@ to retain its selected Play meaning, while output and cursor stay fixed.
 Recording, calls and direct-edit dot retain those choices. An explicit owned
 gap follows its preceding stable Play, including beneath an outer Default or
 above an inner Default body. The current final Play's gap is a dormant
-definition. Retime/Partition ancestry and placed sounds remain unavailable
-on this mixed path; several targets use the selected path below. See [mixed duration semantics](SEMANTIC_MACROS.md#mixed-all-plays-and-this-play-hold-length)
-and its [qualification status](qualification/mixed-hold-duration-semantics-2026-10-21.md).
+definition. Mixed body choices also support one fixed, unclocked Edit Retime
+below every enclosing Repeat, with Sequence ancestry otherwise. Literal All
+plays choices remain shared; the independent representative follows the actual
+isolation proof. Each setter preserves the crop and output extent and continues
+at the first sampled visible Hold picture. A cropped intrinsic start is not a
+continuation frame. Hidden or unsampled Holds refuse before publication.
+Owned-gap Retime paths, additional Retimes, Retimes above or between Repeats,
+Partition, derived clocks and placed sounds remain unavailable on this mixed
+path; several targets use the selected path below. See [mixed duration semantics](SEMANTIC_MACROS.md#mixed-all-plays-and-this-play-hold-length)
+and the [ordinary mixed qualification](qualification/mixed-hold-duration-semantics-2026-10-21.md)
+and [fixed-Retime qualification](qualification/mixed-fixed-retime-hold-duration-2026-10-22.md).
 
 Several selected Holds in bodies or explicit owned gaps use a separate
 duration-only context. The selection
@@ -173,9 +182,9 @@ refuse. Recording admits length setters and named duration calls; other edits
 must wait until recording is saved or cancelled. See the
 [native fixed-window qualification](qualification/native-fixed-retime-hold-2026-10-21.md).
 
-The separate This play fixed-Retime path above requires explicit body choices
-and one fixed unclocked Edit Retime below all enclosing Repeats. It does not broaden
-mixed, selected-play or other Retime duration paths. See the
+The This play and mixed fixed-Retime paths above require literal body choices
+and one fixed unclocked Edit Retime below all enclosing Repeats. They do not broaden
+selected-play or other Retime duration paths. See the
 [nested This play fixed-Retime qualification](qualification/nested-fixed-retime-hold-duration-2026-10-22.md).
 
 The [This play pause qualification](qualification/scoped-pauses-2026-10-12.md)

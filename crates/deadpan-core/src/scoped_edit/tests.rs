@@ -2,6 +2,7 @@ use super::*;
 use crate::*;
 use std::collections::BTreeMap;
 
+mod mixed_fixed_hold_duration;
 #[path = "proof_tests.rs"]
 mod proof_tests;
 mod requirements_tests;

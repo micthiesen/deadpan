@@ -1,0 +1,14 @@
+{
+  "base": "310c1b7b1c433bec7d87f60fc389a35694d4edb7",
+  "frozen_rust_files": 1951,
+  "base_rust_files": 1950,
+  "changed": [
+    "crates/deadpan-app/src/preview/scoped/model/tests/nested_fixed_retime_duration.rs"
+  ],
+  "added": [
+    "crates/deadpan-app/src/preview/scoped/model/tests/mixed_fixed_retime_duration.rs"
+  ],
+  "missing": [],
+  "unchanged_base_rust_files": 1949,
+  "method": "Rehash every frozen source against manifest; Git blob hash comparison against base tree, allowing only witness module and its registration."
+}

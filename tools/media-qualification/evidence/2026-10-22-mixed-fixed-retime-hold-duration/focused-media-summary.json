@@ -1,0 +1,306 @@
+{
+  "cases": 8,
+  "pictures": 656,
+  "windows": 20,
+  "failed_pictures": 0,
+  "failed_windows": 0,
+  "nonzero_offsets": 0,
+  "offset_unobservable_windows": 0,
+  "observable_neighbors": 708,
+  "unobservable_neighbors": 588,
+  "minimum_block_snr_db": 12.007608663779333,
+  "audio_windows": [
+    {
+      "window": [
+        0,
+        48000
+      ],
+      "project_samples": [
+        0,
+        48000
+      ],
+      "measured_offset_samples": 0,
+      "offset_status": "verified_zero",
+      "uncovered_samples": 0,
+      "flags": []
+    },
+    {
+      "window": [
+        48000,
+        96000
+      ],
+      "project_samples": [
+        48000,
+        96000
+      ],
+      "measured_offset_samples": 0,
+      "offset_status": "verified_zero",
+      "uncovered_samples": 0,
+      "flags": []
+    },
+    {
+      "window": [
+        96000,
+        145746
+      ],
+      "project_samples": [
+        96000,
+        145746
+      ],
+      "measured_offset_samples": 0,
+      "offset_status": "verified_zero",
+      "uncovered_samples": 0,
+      "flags": []
+    },
+    {
+      "window": [
+        0,
+        48000
+      ],
+      "project_samples": [
+        0,
+        48000
+      ],
+      "measured_offset_samples": 0,
+      "offset_status": "verified_zero",
+      "uncovered_samples": 0,
+      "flags": []
+    },
+    {
+      "window": [
+        48000,
+        96000
+      ],
+      "project_samples": [
+        48000,
+        96000
+      ],
+      "measured_offset_samples": 0,
+      "offset_status": "verified_zero",
+      "uncovered_samples": 0,
+      "flags": []
+    },
+    {
+      "window": [
+        96000,
+        145746
+      ],
+      "project_samples": [
+        96000,
+        145746
+      ],
+      "measured_offset_samples": 0,
+      "offset_status": "verified_zero",
+      "uncovered_samples": 0,
+      "flags": []
+    },
+    {
+      "window": [
+        0,
+        48000
+      ],
+      "project_samples": [
+        0,
+        48000
+      ],
+      "measured_offset_samples": 0,
+      "offset_status": "verified_zero",
+      "uncovered_samples": 0,
+      "flags": []
+    },
+    {
+      "window": [
+        48000,
+        116917
+      ],
+      "project_samples": [
+        48000,
+        116917
+      ],
+      "measured_offset_samples": 0,
+      "offset_status": "verified_zero",
+      "uncovered_samples": 0,
+      "flags": []
+    },
+    {
+      "window": [
+        0,
+        48000
+      ],
+      "project_samples": [
+        0,
+        48000
+      ],
+      "measured_offset_samples": 0,
+      "offset_status": "verified_zero",
+      "uncovered_samples": 0,
+      "flags": []
+    },
+    {
+      "window": [
+        48000,
+        116917
+      ],
+      "project_samples": [
+        48000,
+        116917
+      ],
+      "measured_offset_samples": 0,
+      "offset_status": "verified_zero",
+      "uncovered_samples": 0,
+      "flags": []
+    },
+    {
+      "window": [
+        0,
+        48000
+      ],
+      "project_samples": [
+        0,
+        48000
+      ],
+      "measured_offset_samples": 0,
+      "offset_status": "verified_zero",
+      "uncovered_samples": 0,
+      "flags": []
+    },
+    {
+      "window": [
+        48000,
+        96000
+      ],
+      "project_samples": [
+        48000,
+        96000
+      ],
+      "measured_offset_samples": 0,
+      "offset_status": "verified_zero",
+      "uncovered_samples": 0,
+      "flags": []
+    },
+    {
+      "window": [
+        96000,
+        145746
+      ],
+      "project_samples": [
+        96000,
+        145746
+      ],
+      "measured_offset_samples": 0,
+      "offset_status": "verified_zero",
+      "uncovered_samples": 0,
+      "flags": []
+    },
+    {
+      "window": [
+        0,
+        48000
+      ],
+      "project_samples": [
+        0,
+        48000
+      ],
+      "measured_offset_samples": 0,
+      "offset_status": "verified_zero",
+      "uncovered_samples": 0,
+      "flags": []
+    },
+    {
+      "window": [
+        48000,
+        96000
+      ],
+      "project_samples": [
+        48000,
+        96000
+      ],
+      "measured_offset_samples": 0,
+      "offset_status": "verified_zero",
+      "uncovered_samples": 0,
+      "flags": []
+    },
+    {
+      "window": [
+        96000,
+        145746
+      ],
+      "project_samples": [
+        96000,
+        145746
+      ],
+      "measured_offset_samples": 0,
+      "offset_status": "verified_zero",
+      "uncovered_samples": 0,
+      "flags": []
+    },
+    {
+      "window": [
+        0,
+        48000
+      ],
+      "project_samples": [
+        0,
+        48000
+      ],
+      "measured_offset_samples": 0,
+      "offset_status": "verified_zero",
+      "uncovered_samples": 0,
+      "flags": []
+    },
+    {
+      "window": [
+        48000,
+        116917
+      ],
+      "project_samples": [
+        48000,
+        116917
+      ],
+      "measured_offset_samples": 0,
+      "offset_status": "verified_zero",
+      "uncovered_samples": 0,
+      "flags": []
+    },
+    {
+      "window": [
+        0,
+        48000
+      ],
+      "project_samples": [
+        0,
+        48000
+      ],
+      "measured_offset_samples": 0,
+      "offset_status": "verified_zero",
+      "uncovered_samples": 0,
+      "flags": []
+    },
+    {
+      "window": [
+        48000,
+        116917
+      ],
+      "project_samples": [
+        48000,
+        116917
+      ],
+      "measured_offset_samples": 0,
+      "offset_status": "verified_zero",
+      "uncovered_samples": 0,
+      "flags": []
+    }
+  ],
+  "presented_samples": 1050652,
+  "low_snr_blocks": 0,
+  "lowest_block_detail": [
+    {
+      "movie": "mixed-fixed-default-play-affine-grow.mp4",
+      "minimum_block_snr_db": 12.007608663779333,
+      "minimum_block_start": 108480,
+      "window_snr_db": 35.96235971153248,
+      "flags": []
+    }
+  ],
+  "verification_limit_note": "Existing unchanged block SNR threshold is 1.5 dB (export_verification.rs default). Retain measured 12.007608663779333 dB local minimum and 35.96235971153248 dB whole-window SNR in affine Default/Play growth. This is no listening or full mastering qualification."
+}

@@ -594,10 +594,10 @@ fn edit(d: &mut Driver<'_>, text: &str) -> Result<(), String> {
     super::shared_hold_duration::settled(d)
 }
 
-mod fixture {
+pub(super) mod fixture {
     use super::*;
 
-    pub(super) fn id(name: &str) -> Result<NodeId, String> {
+    pub(in crate::preview::harness::scoped_plays) fn id(name: &str) -> Result<NodeId, String> {
         NodeId::new(format!("ui-nested-fixed-duration-{name}")).map_err(|e| e.to_string())
     }
     fn rev(name: &str) -> Result<RevisionId, String> {
@@ -626,7 +626,11 @@ mod fixture {
         recipe.video = video;
         Ok(BeatNode::hold(label, recipe))
     }
-    pub(super) fn create(source: &Path, path: &Path, freeze: HoldVideo) -> Result<(), String> {
+    pub(in crate::preview::harness::scoped_plays) fn create(
+        source: &Path,
+        path: &Path,
+        freeze: HoldVideo,
+    ) -> Result<(), String> {
         super::super::shared_hold_duration::fixture::create(source, path, false, freeze.clone())?;
         let mut store =
             ProjectStore::open(path, AccessMode::ReadWrite).map_err(|e| e.to_string())?;
@@ -750,7 +754,9 @@ mod fixture {
         }
         Ok(())
     }
-    pub(super) fn assert_fixture(d: &Driver<'_>) -> Result<(), String> {
+    pub(in crate::preview::harness::scoped_plays) fn assert_fixture(
+        d: &Driver<'_>,
+    ) -> Result<(), String> {
         let doc = super::document(d)?;
         let NodeKind::Sequence { children } = &doc.nodes()[doc.root()].kind else {
             return Err("Fixture root is not a Sequence".into());

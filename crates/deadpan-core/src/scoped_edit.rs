@@ -26,7 +26,8 @@ pub(crate) use isolation::{
 };
 pub use mixed_hold_duration::{PreparedScopedHoldDuration, prepare_scoped_hold_duration};
 pub(crate) use mixed_hold_duration::{
-    mixed_body_dormant, prepare_command as prepare_mixed_hold_duration_command,
+    fixed_mixed_preflight, mixed_body_dormant,
+    prepare_command as prepare_mixed_hold_duration_command,
 };
 pub use proof::{
     ScopedIsolationRecord, ScopedIsolationStep, ValidatedScopedIsolation, derive_scoped_isolation,

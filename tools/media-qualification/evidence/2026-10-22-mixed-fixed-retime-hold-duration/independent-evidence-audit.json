@@ -1,0 +1,165 @@
+{
+  "audit": "independent evidence and qualification integrity",
+  "scope": {
+    "base": "310c1b7b1c433bec7d87f60fc389a35694d4edb7",
+    "evidence": "tools/media-qualification/evidence/2026-10-22-mixed-fixed-retime-hold-duration",
+    "scratch": "/tmp/deadpan-mixed-fixed-retime-duration-2026-10-22",
+    "read_only": true,
+    "executed_tests_or_builds": false,
+    "repository_files_changed": false
+  },
+  "findings": [],
+  "checks": {
+    "inventory": {
+      "listed_files": 146,
+      "listed_bytes": 19022357,
+      "file_hashes_and_sizes_match": true,
+      "unlisted_files_except_inventory": 0
+    },
+    "source_snapshots": {
+      "stages": 5,
+      "distinct_archives": 2,
+      "baseline_source": {
+        "files": 1951,
+        "archive_sha256": "b6b8006dc5ecbe17844c3b86cbf11d506051196c45e489314727ca328936cfaa",
+        "manifest_matches_archive": true
+      },
+      "final_source": {
+        "files": 1956,
+        "archive_sha256": "04b6679e2d074ecc267d65cae135db258b0290810e2c8fb276ec78f1d0786c24",
+        "manifest_matches_archive": true
+      },
+      "focused_first_regression_ui": "All three later manifests match the final source archive byte-for-byte.",
+      "current_source": "All 1,956 final-manifest Rust source hashes match the current checkout; all 24 owned paths match.",
+      "baseline_git_blob_audit": "1,950 base Rust blobs were compared. The only changed base Rust file is the allowed witness registration; the added witness accounts for the 1,951st frozen source."
+    },
+    "execution_identity": {
+      "baseline_runtime_failure": "One valid old-code test fails only at the final native-availability assertion after both-direction public controls pass; 0.015s test time.",
+      "baseline_app_sha256": "54b41e2b230f5a2b3270f2c5721ce96b90d7002f6f6fa3e7bb19b2fea27eadd8",
+      "broad_suite": {
+        "tests_passed": 3515,
+        "skipped": 1769,
+        "frozen_sources": 1956,
+        "pre_post_hashed_binaries": 153,
+        "all_unchanged": true
+      },
+      "ui_suite": {
+        "tests_passed": 208,
+        "skipped": 1060,
+        "frozen_sources": 1956,
+        "pre_post_hashed_binaries": 2,
+        "all_unchanged": true
+      },
+      "captured_output_markers": [
+        {
+          "name": "broader keymap marker",
+          "retained_binary_matches_sha256": true,
+          "exit_code": 0,
+          "captured_eof": true,
+          "elapsed_seconds": 0.016102333553135395,
+          "cause": "unknown"
+        },
+        {
+          "name": "UI-feature exact-mark-transition marker",
+          "retained_binary_matches_sha256": true,
+          "exit_code": 0,
+          "captured_eof": true,
+          "elapsed_seconds": 0.01137029193341732,
+          "cause": "unknown"
+        }
+      ]
+    },
+    "native_replays": {
+      "debug": {
+        "failed": false,
+        "workflow_checks": 115,
+        "workflow_frames": 1002,
+        "kestrel_checks": 1,
+        "kestrel_frames": 0
+      },
+      "release_visual": {
+        "failed": false,
+        "workflow_checks": 115,
+        "workflow_frames": 1049,
+        "kestrel_checks": 1,
+        "kestrel_frames": 0
+      },
+      "release_performance": {
+        "failed": false,
+        "workflow_checks": 115,
+        "workflow_frames": 1278,
+        "kestrel_checks": 1,
+        "kestrel_frames": 0
+      },
+      "release_app_sha256": "0c3c28bf6ade991c3e338d25a825d72406c2e708ad3f9d7a826965a56482c9ed",
+      "selected_captures": [
+        "960x640",
+        "960x640"
+      ],
+      "layout_warnings": "65 second-retry frames and five distinct-cause consecutive-retry runs are retained; visual runs include the intermediate-capture allowance warning. The report passed its ignored-paint and repeated-identical-retry assertions; limits were not raised."
+    },
+    "exports": {
+      "case_count": 8,
+      "all_eight_mp4_hashes_match_retained_identities": true,
+      "pictures": 656,
+      "presented_samples": 1050652,
+      "complete_audio_windows": 20,
+      "nonzero_offsets": 0,
+      "uncovered_samples": 0,
+      "failed_pictures_or_windows": 0,
+      "flags": 0,
+      "min_local_block_snr_db": 12.007608663779333,
+      "affected_case": "mixed-fixed-default-play-affine-grow.mp4, block start 108480",
+      "whole_window_snr_db": 35.96235971153248,
+      "unchanged_block_limit_db": 1.5,
+      "low_snr_blocks_flagged": 0,
+      "neighbor_comparisons": {
+        "observable": 708,
+        "unobservable": 588
+      },
+      "acoustic_quality_or_full_mastering_closed": false
+    },
+    "owner_archives": [
+      {
+        "archive": "mixed-fixed-default-play-unit-grow.deadpan.tar.gz",
+        "sha256": "95e9d516a59e10435ee71501053589086207a3e041235117932298bb9d48b73c",
+        "members": 9,
+        "all_member_hashes_match": true,
+        "valid": true,
+        "nodes": 24,
+        "frames": 91,
+        "doctor_succeeds_but_retains_partial_and_unimplemented_lists": true
+      },
+      {
+        "archive": "mixed-fixed-play-default-unit-grow.deadpan.tar.gz",
+        "sha256": "4fa76b5688eb8ccbb368c9bf82e3740330f3bd5e760c37a5525f34a78d5d537d",
+        "members": 9,
+        "all_member_hashes_match": true,
+        "valid": true,
+        "nodes": 25,
+        "frames": 91,
+        "doctor_succeeds_but_retains_partial_and_unimplemented_lists": true
+      },
+      {
+        "archive": "mixed-fixed-default-play-affine-grow.deadpan.tar.gz",
+        "sha256": "a81793603aef7f5c74aea89d51e53255f0caf3a1c3998aa1834bceba52003f53",
+        "members": 9,
+        "all_member_hashes_match": true,
+        "valid": true,
+        "nodes": 24,
+        "frames": 73,
+        "doctor_succeeds_but_retains_partial_and_unimplemented_lists": true
+      }
+    ],
+    "requirements_and_privacy": {
+      "DP06_DP07_remain_partial": true,
+      "no_requirement_or_gate_newly_complete": true,
+      "qualification_retains_unknown_marker_causes_and_layout_warnings": true,
+      "evidence_contains_private_artifact_receipts_or_sign_in_links": false,
+      "future_task_research_included": false,
+      "credential_shaped_patterns_in_source_archives": 0,
+      "synthetic_secret_test_fixtures_are_not_real_credentials": true
+    }
+  },
+  "receipt_correction_note": "Raw reports show 115 mixed workflow checks and 1002/1049/1278 workflow steps; the separate Kestrel scenario has one check and zero steps. Corrected the frame-count labels without changing findings."
+}

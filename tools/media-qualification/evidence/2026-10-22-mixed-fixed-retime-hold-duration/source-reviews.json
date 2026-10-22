@@ -1,0 +1,27 @@
+{
+  "base": "310c1b7b1c433bec7d87f60fc389a35694d4edb7",
+  "scope": "current mixed fixed-Retime Hold duration owned Rust changes; foreign fuzz/Cargo.lock and .claude excluded",
+  "reviews": [
+    {
+      "lens": "general",
+      "agent": "mixed_fixed_general_review_2",
+      "findings": []
+    },
+    {
+      "lens": "authority and timing",
+      "agent": "mixed_fixed_authority_review_2",
+      "findings": [
+        {
+          "issue": "two old private helper names in app tests",
+          "status": "fixed by root, independently confirmed by all-target compile; failed check retained"
+        }
+      ]
+    },
+    {
+      "lens": "test quality",
+      "agent": "mixed_fixed_evidence_review_2",
+      "findings": []
+    }
+  ],
+  "runtime": "No runtime success inferred from source review."
+}

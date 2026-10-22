@@ -1,0 +1,161 @@
+[
+  {
+    "archive": "mixed-fixed-default-play-unit-grow.deadpan.tar.gz",
+    "sha256": "95e9d516a59e10435ee71501053589086207a3e041235117932298bb9d48b73c",
+    "bytes": 89443,
+    "files": [
+      {
+        "path": "mixed-fixed-default-play-unit-grow.deadpan/.render-candidates.lock",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "mixed-fixed-default-play-unit-grow.deadpan/.writer.lock",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "mixed-fixed-default-play-unit-grow.deadpan/Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+        "bytes": 39157,
+        "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918"
+      },
+      {
+        "path": "mixed-fixed-default-play-unit-grow.deadpan/Media/RenderCandidates/blake3-36d05b35b79266a19444d67b2ecbb5c8c215c91554efcc34c9c44d5230b67c8b",
+        "bytes": 41492,
+        "sha256": "78eaa6938ec249a51d5e4767d190516fb460ff0f5e0171fd3ab06f18468e9008"
+      },
+      {
+        "path": "mixed-fixed-default-play-unit-grow.deadpan/Media/RenderCandidates/blake3-87b3593b3c4b728926fc38fcfc774eb663589e4f9e2f3e1576806d08e53852ec",
+        "bytes": 15104,
+        "sha256": "1f7b6ca238570036bb77297c849c056159c81eb49630e4bee5c2365b90e7af26"
+      },
+      {
+        "path": "mixed-fixed-default-play-unit-grow.deadpan/manifest.json",
+        "bytes": 82,
+        "sha256": "2789c6c04971a9443fd8dcb32be88ead2c8a04c77989a64a81db7a74f703a133"
+      },
+      {
+        "path": "mixed-fixed-default-play-unit-grow.deadpan/project.sqlite",
+        "bytes": 663552,
+        "sha256": "7c9c7f40de9bda347e2efc1cab65477af79095c6939d196f87974b44eb581dfb"
+      },
+      {
+        "path": "mixed-fixed-default-play-unit-grow.deadpan/project.sqlite-shm",
+        "bytes": 32768,
+        "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+      },
+      {
+        "path": "mixed-fixed-default-play-unit-grow.deadpan/project.sqlite-wal",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ],
+    "extracted": "/tmp/deadpan-mixed-fixed-retime-duration-2026-10-22/owner-check-mixed-fixed-default-play-unit-grow.deadpan/mixed-fixed-default-play-unit-grow.deadpan"
+  },
+  {
+    "archive": "mixed-fixed-play-default-unit-grow.deadpan.tar.gz",
+    "sha256": "4fa76b5688eb8ccbb368c9bf82e3740330f3bd5e760c37a5525f34a78d5d537d",
+    "bytes": 89378,
+    "files": [
+      {
+        "path": "mixed-fixed-play-default-unit-grow.deadpan/.render-candidates.lock",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "mixed-fixed-play-default-unit-grow.deadpan/.writer.lock",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "mixed-fixed-play-default-unit-grow.deadpan/Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+        "bytes": 39157,
+        "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918"
+      },
+      {
+        "path": "mixed-fixed-play-default-unit-grow.deadpan/Media/RenderCandidates/blake3-2b56e80d3f9a482e52f94c58b75029f6d3c5e81bc33cd6abdf3e4212d19ae83d",
+        "bytes": 40332,
+        "sha256": "fa062b3a0099f5fff0414924edec2cb6705b5df99d08ac533db5d493280bf966"
+      },
+      {
+        "path": "mixed-fixed-play-default-unit-grow.deadpan/Media/RenderCandidates/blake3-60e688a39d61ddab6ca383c4b191459d29561830f2cf446988534eda98b52bb2",
+        "bytes": 15104,
+        "sha256": "6ad82da4d3f56109d0ea53e72d3a33eeb237ecb443262b3b9507058f8abe721d"
+      },
+      {
+        "path": "mixed-fixed-play-default-unit-grow.deadpan/manifest.json",
+        "bytes": 82,
+        "sha256": "4ea7ba718df5c60497d9b3eb7de301e4f047e65736c888efc24f9fe004e64c9f"
+      },
+      {
+        "path": "mixed-fixed-play-default-unit-grow.deadpan/project.sqlite",
+        "bytes": 663552,
+        "sha256": "e27f0b3da077ef0612e311da97657c83bd307e380a56db7a538f2ad326afd6ad"
+      },
+      {
+        "path": "mixed-fixed-play-default-unit-grow.deadpan/project.sqlite-shm",
+        "bytes": 32768,
+        "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+      },
+      {
+        "path": "mixed-fixed-play-default-unit-grow.deadpan/project.sqlite-wal",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ],
+    "extracted": "/tmp/deadpan-mixed-fixed-retime-duration-2026-10-22/owner-check-mixed-fixed-play-default-unit-grow.deadpan/mixed-fixed-play-default-unit-grow.deadpan"
+  },
+  {
+    "archive": "mixed-fixed-default-play-affine-grow.deadpan.tar.gz",
+    "sha256": "a81793603aef7f5c74aea89d51e53255f0caf3a1c3998aa1834bceba52003f53",
+    "bytes": 89213,
+    "files": [
+      {
+        "path": "mixed-fixed-default-play-affine-grow.deadpan/.render-candidates.lock",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "mixed-fixed-default-play-affine-grow.deadpan/.writer.lock",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      },
+      {
+        "path": "mixed-fixed-default-play-affine-grow.deadpan/Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+        "bytes": 39157,
+        "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918"
+      },
+      {
+        "path": "mixed-fixed-default-play-affine-grow.deadpan/Media/RenderCandidates/blake3-4ef38ed02151c327875445757eb483e15910715ce1f2649e751d542fe498af8a",
+        "bytes": 15110,
+        "sha256": "e2f714851b8831337f95f0f512f015b0adcab27a30fa1c534c4d12f361cdcc4c"
+      },
+      {
+        "path": "mixed-fixed-default-play-affine-grow.deadpan/Media/RenderCandidates/blake3-922c7d498700f42fa99684be899aef56749868f155f17fd28a80367c24944696",
+        "bytes": 36695,
+        "sha256": "ed93bb0b021c40e41a1c410d632a319ca54265462a10d0cd8262b2741238b11f"
+      },
+      {
+        "path": "mixed-fixed-default-play-affine-grow.deadpan/manifest.json",
+        "bytes": 82,
+        "sha256": "eb503acbc76faf350e594662304b7054af73384ef7faf2bddfbbf1ba24dca2aa"
+      },
+      {
+        "path": "mixed-fixed-default-play-affine-grow.deadpan/project.sqlite",
+        "bytes": 663552,
+        "sha256": "df45529b319bfcd0fdb5170e4ebf252af90a0d9636dfea8a72723e9b23658484"
+      },
+      {
+        "path": "mixed-fixed-default-play-affine-grow.deadpan/project.sqlite-shm",
+        "bytes": 32768,
+        "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+      },
+      {
+        "path": "mixed-fixed-default-play-affine-grow.deadpan/project.sqlite-wal",
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    ],
+    "extracted": "/tmp/deadpan-mixed-fixed-retime-duration-2026-10-22/owner-check-mixed-fixed-default-play-affine-grow.deadpan/mixed-fixed-default-play-affine-grow.deadpan"
+  }
+]

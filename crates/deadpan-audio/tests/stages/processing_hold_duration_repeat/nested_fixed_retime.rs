@@ -2,7 +2,7 @@
 //! changing any of the other eight processing plays or the exterior owner.
 use super::*;
 
-fn repeated_fixed_fixture(prebound: bool) -> ProjectDocument {
+pub(super) fn repeated_fixed_fixture(prebound: bool) -> ProjectDocument {
     let mut wire =
         serde_json::to_value(super::super::fixture(PitchPolicy::Preserve, 1, false)).unwrap();
     let order = IterationOrder::new(RevisionId::new("nested-fixed-outer").unwrap(), 3).unwrap();
@@ -108,7 +108,7 @@ fn occurrence_resize(
     deadpan_core::prepare_occurrence_hold_duration(document, &request).unwrap()
 }
 
-fn stage_input(
+pub(super) fn stage_input(
     plan: &Arc<RenderPlan>,
     provider: &mut FixtureProvider,
     root_sample: usize,

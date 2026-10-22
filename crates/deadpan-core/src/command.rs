@@ -1314,6 +1314,23 @@ fn apply_with_durations_captured(
         };
         let (_, result, _) =
             apply_with_durations_captured(&prepared.document, &resolved, None, isolation)?;
+        if let Some((target, before_dormant)) = prepared.fixed_target {
+            let after =
+                crate::scoped_edit::fixed_mixed_preflight(&result, &target)?.ok_or_else(|| {
+                    EditError::new(
+                        EditErrorCode::InvalidCommand,
+                        "mixed fixed duration lost its Retime",
+                    )
+                })?;
+            if after.dormant != before_dormant
+                || result.structural_duration()? != document.structural_duration()?
+            {
+                return Err(EditError::new(
+                    EditErrorCode::InvalidCommand,
+                    "mixed fixed duration changed project duration or definition visibility",
+                ));
+            }
+        }
         let (transaction, validation) = net_transaction_with_durations(
             document,
             &result,

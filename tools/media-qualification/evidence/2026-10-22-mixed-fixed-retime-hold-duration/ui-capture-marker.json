@@ -1,0 +1,12 @@
+{
+  "stage": "UI-feature captured-output marker",
+  "binary": "/tmp/deadpan-mixed-fixed-retime-duration-2026-10-22/capture-marker-bin/deadpan_app-7e20ea767f3f19d5",
+  "sha256": "c46f9628bfef1b06c2a9e7069115295193cfe50f75966a42d45b8e95b76b2fda",
+  "test": "preview::scoped::model::tests::exact_mark_transition_preserves_current_nested_navigation_and_repeated_receipt_is_noop",
+  "exit_code": 0,
+  "elapsed_seconds": 0.01137029193341732,
+  "captured_eof": true,
+  "cause": "unknown; no production workaround",
+  "original_log": "ui.log",
+  "note": "Exact pre-run hashed UI binary copied after unchanged-hash check; isolated while Clippy compilation finishes."
+}

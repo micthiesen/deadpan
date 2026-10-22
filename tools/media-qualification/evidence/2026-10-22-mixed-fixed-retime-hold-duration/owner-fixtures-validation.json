@@ -1,0 +1,167 @@
+[
+  {
+    "archive": "mixed-fixed-default-play-unit-grow.deadpan.tar.gz",
+    "package": "/tmp/deadpan-mixed-fixed-retime-duration-2026-10-22/owner-check-mixed-fixed-default-play-unit-grow.deadpan/mixed-fixed-default-play-unit-grow.deadpan",
+    "cli_sha256": "8662a466109f877d5ae819cf59d30691705b822bc0784d434a2fd884bee3c076",
+    "outcomes": {
+      "validate": {
+        "returncode": 0,
+        "keys": [
+          "basis_state",
+          "duration_frames",
+          "mark_count",
+          "node_count",
+          "presentation_basis",
+          "project_id",
+          "protocol",
+          "revision_id",
+          "root",
+          "valid"
+        ],
+        "report": "mixed-fixed-default-play-unit-grow-validate.json"
+      },
+      "doctor": {
+        "returncode": 0,
+        "keys": [
+          "application",
+          "architecture",
+          "database_schema",
+          "device_output",
+          "diagnostics",
+          "document_schema",
+          "downloader",
+          "edge_faded_pcm",
+          "internal_audio_sample_rate",
+          "limited_pcm",
+          "os",
+          "partial",
+          "project",
+          "render",
+          "render_entrypoints",
+          "render_preview_choices",
+          "room_tone_pcm",
+          "runtime",
+          "schema_version",
+          "sequence_audition",
+          "sqlite_version",
+          "stage",
+          "time_mapped_pcm",
+          "timing_probe",
+          "unimplemented",
+          "version"
+        ],
+        "report": "mixed-fixed-default-play-unit-grow-doctor.json"
+      }
+    }
+  },
+  {
+    "archive": "mixed-fixed-play-default-unit-grow.deadpan.tar.gz",
+    "package": "/tmp/deadpan-mixed-fixed-retime-duration-2026-10-22/owner-check-mixed-fixed-play-default-unit-grow.deadpan/mixed-fixed-play-default-unit-grow.deadpan",
+    "cli_sha256": "8662a466109f877d5ae819cf59d30691705b822bc0784d434a2fd884bee3c076",
+    "outcomes": {
+      "validate": {
+        "returncode": 0,
+        "keys": [
+          "basis_state",
+          "duration_frames",
+          "mark_count",
+          "node_count",
+          "presentation_basis",
+          "project_id",
+          "protocol",
+          "revision_id",
+          "root",
+          "valid"
+        ],
+        "report": "mixed-fixed-play-default-unit-grow-validate.json"
+      },
+      "doctor": {
+        "returncode": 0,
+        "keys": [
+          "application",
+          "architecture",
+          "database_schema",
+          "device_output",
+          "diagnostics",
+          "document_schema",
+          "downloader",
+          "edge_faded_pcm",
+          "internal_audio_sample_rate",
+          "limited_pcm",
+          "os",
+          "partial",
+          "project",
+          "render",
+          "render_entrypoints",
+          "render_preview_choices",
+          "room_tone_pcm",
+          "runtime",
+          "schema_version",
+          "sequence_audition",
+          "sqlite_version",
+          "stage",
+          "time_mapped_pcm",
+          "timing_probe",
+          "unimplemented",
+          "version"
+        ],
+        "report": "mixed-fixed-play-default-unit-grow-doctor.json"
+      }
+    }
+  },
+  {
+    "archive": "mixed-fixed-default-play-affine-grow.deadpan.tar.gz",
+    "package": "/tmp/deadpan-mixed-fixed-retime-duration-2026-10-22/owner-check-mixed-fixed-default-play-affine-grow.deadpan/mixed-fixed-default-play-affine-grow.deadpan",
+    "cli_sha256": "8662a466109f877d5ae819cf59d30691705b822bc0784d434a2fd884bee3c076",
+    "outcomes": {
+      "validate": {
+        "returncode": 0,
+        "keys": [
+          "basis_state",
+          "duration_frames",
+          "mark_count",
+          "node_count",
+          "presentation_basis",
+          "project_id",
+          "protocol",
+          "revision_id",
+          "root",
+          "valid"
+        ],
+        "report": "mixed-fixed-default-play-affine-grow-validate.json"
+      },
+      "doctor": {
+        "returncode": 0,
+        "keys": [
+          "application",
+          "architecture",
+          "database_schema",
+          "device_output",
+          "diagnostics",
+          "document_schema",
+          "downloader",
+          "edge_faded_pcm",
+          "internal_audio_sample_rate",
+          "limited_pcm",
+          "os",
+          "partial",
+          "project",
+          "render",
+          "render_entrypoints",
+          "render_preview_choices",
+          "room_tone_pcm",
+          "runtime",
+          "schema_version",
+          "sequence_audition",
+          "sqlite_version",
+          "stage",
+          "time_mapped_pcm",
+          "timing_probe",
+          "unimplemented",
+          "version"
+        ],
+        "report": "mixed-fixed-default-play-affine-grow-doctor.json"
+      }
+    }
+  }
+]

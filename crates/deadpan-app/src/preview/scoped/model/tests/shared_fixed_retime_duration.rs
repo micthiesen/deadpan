@@ -464,7 +464,7 @@ fn native_this_play_fixed_retime_duration_hint_uses_retained_scope_and_clock_gua
     selected.enter_in().unwrap();
     selected.enter_in().unwrap();
     selected.select_in(1).unwrap();
-    assert!(selected.this_play_fixed_retime_path_supported());
+    assert!(selected.body_fixed_retime_path_supported());
     assert!(selected.hold_duration_available());
 
     // Cached clock ownership and actual visibility each revoke the hint.
@@ -490,6 +490,6 @@ fn native_this_play_fixed_retime_duration_hint_uses_retained_scope_and_clock_gua
     selected.levels.last_mut().unwrap().also.clear();
     assert!(selected.hold_duration_available());
     selected.root = node("fixed-stage");
-    assert!(!selected.this_play_fixed_retime_path_supported());
+    assert!(!selected.body_fixed_retime_path_supported());
     assert!(!selected.hold_duration_available());
 }

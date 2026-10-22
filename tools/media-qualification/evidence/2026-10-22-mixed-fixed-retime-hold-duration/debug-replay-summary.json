@@ -1,0 +1,19 @@
+{
+  "failed": false,
+  "scenarios": [
+    {
+      "name": "kestrel-shortcuts",
+      "failed": false,
+      "checks": 1,
+      "frames": 0,
+      "finding_count": 0
+    },
+    {
+      "name": "mixed-fixed-duration",
+      "failed": false,
+      "checks": 115,
+      "frames": 1002,
+      "finding_count": 3
+    }
+  ]
+}

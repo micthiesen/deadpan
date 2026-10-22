@@ -4,6 +4,46 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Current continuation, 2026-10-22
 
+Mixed Default/Play body choices now support one fixed unclocked Edit Retime
+below all enclosing Repeats, with Sequence ancestry otherwise. Literal Default
+authority remains separate from concrete presentation. The raw command checks
+visibility before/after isolation and resize; continuation uses sampled visible
+geometry, including cropped intrinsic starts. Existing contexts and commands
+remain authoritative, and owned setters need no new identities.
+
+All 48 focused and 3,515 broader tests pass, including 206 affected normal app
+checks; all 208 UI-feature checks pass. Strict checks and formatting pass.
+Both release native runs pass 115 checks plus Kestrel, with two inspected
+compact captures. Quiet state p99 is 1.622ms over 332 samples. Eight release
+exports verify all 656 pictures and 1,050,652 samples at zero offset. The affine
+Default/Play growth case retains a 12.008dB local-block SNR minimum, above the
+unchanged 1.5dB block limit; that window measures 35.962dB. Full mastering and
+listening remain open. Three owner packages validate after safe extraction.
+See the [qualification](../qualification/mixed-fixed-retime-hold-duration-2026-10-22.md)
+for counterfactual source audit, exact pools, PCM, admitted-provider history,
+compile fixes, captured-output markers, layout warnings and binary identities.
+No requirement or gate is newly complete.
+
+Next: selected-play fixed-Retime Hold duration batches. Keep the existing batch
+planner and scalar reducers. Its body_dormant and integral-start visibility
+currently refuse this family; use the narrow fixed-body preflight and exact
+visibility without loosening ordinary duration_target_dormant. Validate every
+member, including no-op members, before allocation. Preserve the uniform
+explicit-Play axis, identical earlier prefixes, shared-node-ID independence,
+actual staged proof mappings and final primary continuation.
+
+Start with the 42f nested app fixture: outer Play2, inner Plays1-2, Held, cursor16.
+Public many-target Rename isolation and raw Compound duration controls must pass
+before the sole old-code positive native-availability failure. Source-derived
+pool expectations are [11,5] nodes, zero marks and three actual proof steps;
+measure rather than assume them. Primary sampled visibility should change
+[16,18) to [16,19), second [22,24) to [22,25), with all four other uses unchanged.
+A scratch draft exists for this ongoing session; it has not been compiled or run.
+Keep Retime-owned gaps, additional or differently placed Retimes, Partition,
+processing clocks and unsupported sound lifecycles outside this narrow family.
+
+## Nested This play fixed-Retime checkpoint, 2026-10-22
+
 Explicit This play bodies now support bounded Repeat ancestry with one fixed,
 unclocked Edit Retime below the innermost Repeat. The existing vector, context
 and command remain authoritative. Actual isolation proofs preserve fixed extent,
@@ -20,16 +60,10 @@ for the old-code control, exact pools, sparse clocks, independent PCM, durable
 accepted-media controls, source/binary identities, failed test setups and warnings.
 No requirement or gate is newly complete.
 
-Next: mixed Default/Play fixed-Retime Hold durations, then selected batches.
-Retain literal Default authority separately from a concrete presentation. Start
-with both mixed directions: public Rename isolation and mapped raw duration
-must pass before the sole old-code positive native-availability failure. Do not
-merely loosen duration_target_dormant: mixed continuation currently assumes
-integral start plus raw length, which is wrong through a crop/scale. Preserve
-existing ordinary mixed owned-gap/dormant paths. One fixed unclocked Edit Retime
-strictly below every Repeat is the next narrow family. Single all-Play dormant
-gaps, implicit default-gap targets, processing clocks, Partition and unsupported
-sounds remain open.
+Mixed Default/Play fixed-Retime lengths from this checkpoint are qualified in
+the current continuation above. Selected batches, single all-Play dormant gaps,
+implicit default-gap targets, processing clocks, Partition and unsupported
+sound lifecycles remain open.
 
 ## This play fixed-Retime checkpoint, 2026-10-22
 

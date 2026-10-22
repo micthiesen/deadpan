@@ -1,0 +1,12 @@
+[
+  {
+    "frame": 153,
+    "input": "Mixed fixed Retime All plays then This play duration history",
+    "screenshot": "mixed-fixed-duration-106.png"
+  },
+  {
+    "frame": 651,
+    "input": "Mixed fixed Retime This play then All plays duration history",
+    "screenshot": "mixed-fixed-duration-121.png"
+  }
+]

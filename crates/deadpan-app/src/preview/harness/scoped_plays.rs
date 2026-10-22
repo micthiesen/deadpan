@@ -13,6 +13,7 @@ mod gain_macros;
 mod heterogeneous_pauses;
 mod hold_audio;
 mod hold_duration;
+pub(super) mod mixed_fixed_duration;
 mod mixed_hold_duration;
 mod mute_macros;
 pub(super) mod nested_fixed_duration;

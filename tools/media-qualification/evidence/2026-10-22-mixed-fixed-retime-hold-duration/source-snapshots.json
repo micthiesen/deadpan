@@ -1,0 +1,32 @@
+{
+  "baseline-source": {
+    "archive": "baseline-source.tar.gz",
+    "manifest": "baseline-source-identities.json.gz",
+    "files": 1951,
+    "content_sha256": "be41b4be5af6783390014c8ff3d6f48b00880feb9c518fd291d907847c36c8e2"
+  },
+  "final-source": {
+    "archive": "final-source.tar.gz",
+    "manifest": "final-source-identities.json.gz",
+    "files": 1956,
+    "content_sha256": "d8b7541b5326514923b7004f90c27ee31fb0a0cca87aa1fa55b548a87c2415f4"
+  },
+  "focused-first-source": {
+    "archive": "final-source.tar.gz",
+    "manifest": "focused-first-source-identities.json.gz",
+    "files": 1956,
+    "content_sha256": "d8b7541b5326514923b7004f90c27ee31fb0a0cca87aa1fa55b548a87c2415f4"
+  },
+  "regression-source": {
+    "archive": "final-source.tar.gz",
+    "manifest": "regression-source-identities.json.gz",
+    "files": 1956,
+    "content_sha256": "d8b7541b5326514923b7004f90c27ee31fb0a0cca87aa1fa55b548a87c2415f4"
+  },
+  "ui-source": {
+    "archive": "final-source.tar.gz",
+    "manifest": "ui-source-identities.json.gz",
+    "files": 1956,
+    "content_sha256": "d8b7541b5326514923b7004f90c27ee31fb0a0cca87aa1fa55b548a87c2415f4"
+  }
+}

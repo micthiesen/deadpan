@@ -1,0 +1,23 @@
+{
+  "regression": {
+    "frozen_rust_files": 1956,
+    "pre_and_post_hashed_binaries": 153,
+    "tests": 3515,
+    "app_suites": {
+      "deadpan-app::headless": 1,
+      "deadpan-app::bin/deadpan-app": 205
+    },
+    "all_unchanged": true
+  },
+  "ui": {
+    "frozen_rust_files": 1956,
+    "pre_and_post_hashed_binaries": 2,
+    "tests": 208,
+    "app_suites": {
+      "deadpan-app::headless": 1,
+      "deadpan-app::bin/deadpan-app": 207
+    },
+    "all_unchanged": true
+  },
+  "root_Cargo_lock_sha256": "1e39d18ae4de6c7b898edad39eb7104235fb3ffe3af84521ca94df2b6c25b71b"
+}

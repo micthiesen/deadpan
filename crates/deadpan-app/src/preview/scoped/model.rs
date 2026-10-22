@@ -156,12 +156,17 @@ impl State {
         {
             return false;
         }
-        if self.this_play_fixed_retime_path_supported() {
-            return self
-                .projection
-                .presentation
-                .as_ref()
-                .is_some_and(|presentation| !presentation.frames.is_empty());
+        if self.body_fixed_retime_path_supported() {
+            return match &self.projection.presentation {
+                Some(presentation) => !presentation.frames.is_empty(),
+                None => {
+                    self.selected
+                        .repeats
+                        .iter()
+                        .any(|step| step.branch == RepeatEditBranch::Default)
+                        && self.projection.reason.as_deref() == Some(DORMANT_DEFAULT)
+                }
+            };
         }
         if self
             .selected
@@ -233,21 +238,13 @@ impl State {
         }
     }
 
-    /// Explicit live bodies above one fixed Edit Retime. This is a hint from
+    /// Literal body choices above one fixed Edit Retime. This is a hint from
     /// retained ancestry only; the core checks visibility and exact isolation
     /// again when the duration command is prepared.
-    fn this_play_fixed_retime_path_supported(&self) -> bool {
+    fn body_fixed_retime_path_supported(&self) -> bool {
         let Some(step) = self.selected.repeats.first() else {
             return false;
         };
-        if self
-            .selected
-            .repeats
-            .iter()
-            .any(|step| !matches!(step.branch, RepeatEditBranch::Play { .. }))
-        {
-            return false;
-        }
         if step.repeat != self.root
             || !matches!(
                 self.index.document.nodes()[&self.selected.node].kind,
@@ -266,21 +263,20 @@ impl State {
             let child = &pair[1];
             match &self.index.document.nodes()[parent].kind {
                 NodeKind::Sequence { children } if children.contains(child) => {}
-                NodeKind::Repeat { .. } => {
+                NodeKind::Repeat { child: default, .. } => {
                     let Some(step) = repeat_steps.next() else {
                         return false;
                     };
-                    let RepeatEditBranch::Play { iteration } = &step.branch else {
-                        return false;
-                    };
-                    if parent != &step.repeat
-                        || !self
+                    let body_matches = match &step.branch {
+                        RepeatEditBranch::Default => default == child,
+                        RepeatEditBranch::Play { iteration } => self
                             .index
                             .repeats
                             .get(parent)
                             .and_then(|layout| layout.play(iteration))
-                            .is_some_and(|play| &play.child == child)
-                    {
+                            .is_some_and(|play| &play.child == child),
+                    };
+                    if parent != &step.repeat || !body_matches {
                         return false;
                     }
                 }

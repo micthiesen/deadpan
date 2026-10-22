@@ -64,6 +64,11 @@ impl ProjectDocument {
                 ));
             }
         };
+        if crate::scoped_edit::fixed_mixed_preflight(self, &authority.target)?.is_some() {
+            return self
+                .hold_duration_visibility_for_instance(&authority.root, instance)
+                .map(Some);
+        }
         let boundary = crate::derived_clock::with_sealed(|| {
             AnchorIndex::new(self)
                 .and_then(|index| {
@@ -177,7 +182,10 @@ where
             &leaf.request(&self.current),
             authority.presentation.as_ref(),
         )?;
-        let start = prepared.boundary.as_ref().map(|boundary| boundary.frame);
+        let start = prepared
+            .fixed_visibility()
+            .map(|visible| visible.frames.start())
+            .or_else(|| prepared.boundary.as_ref().map(|boundary| boundary.frame));
         let mapped = SemanticMixedHoldDurationContext {
             root: authority.root,
             target: prepared.target,

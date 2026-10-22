@@ -1,0 +1,9 @@
+{
+  "base": "310c1b7b1c433bec7d87f60fc389a35694d4edb7",
+  "test": "preview::scoped::model::tests::nested_fixed_retime_duration::mixed_fixed_retime_duration::native_mixed_fixed_retime_directions_retain_duration_entry_after_controls",
+  "suite": "deadpan-app::bin/deadpan-app",
+  "executed": "/Users/michael/Code/deadpan/target/debug/deps/deadpan_app-edbbed39ebf1d72f",
+  "retained": "/tmp/deadpan-mixed-fixed-retime-duration-2026-10-22/baseline-bin/deadpan_app-edbbed39ebf1d72f",
+  "sha256": "54b41e2b230f5a2b3270f2c5721ce96b90d7002f6f6fa3e7bb19b2fea27eadd8",
+  "scope": "Two mixed Default/Play directions, silent public-isolation/raw-duration/RenderPlan identity witness; not audio qualification."
+}

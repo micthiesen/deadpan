@@ -231,8 +231,9 @@ through that crop and scale, then continues at the first sampled visible Hold
 picture. That frame may differ from the Hold's intrinsic start when the crop
 cuts it away. The target must remain visible in at least one sampled project
 picture after every staged setter. Hidden or unsampled Holds, derived pause
-clocks, root or attached sound events, mixed or selected-multiple-play
-contexts refuse atomically. Explicit Repeat ancestry follows the existing
+clocks, root or attached sound events and selected-multiple-play
+contexts refuse atomically. Mixed choices use the separate authority below.
+Explicit Repeat ancestry follows the existing
 document depth bound. Already-owned branches can be edited without another
 isolation copy; partly owned paths copy only the remaining shared branches.
 Recording, named duration calls and dot use the same invocation authority.
@@ -293,11 +294,24 @@ existing dot policies. Navigation permanently revokes delayed continuation.
 Explicit owned-gap subtrees follow the exact preceding stable Play at any
 enclosing level. A final owned gap remains a dormant definition; it does not
 invent a project occurrence or move the retained cursor. Default choices still
-follow literal bodies only. Several targets use the selected-duration authority
-below. Retime/Partition ancestry, root or attached sounds and unrelated
-instructions remain unavailable. Other duration families
+follow literal bodies only.
+
+Mixed body targets can cross one fixed unclocked Edit Retime strictly below
+every enclosing Repeat, with Sequence ancestry otherwise. The fixed crop and
+output extent survive each setter. Visibility composes the crop and scale with
+the captured stable presentation, and continuation uses its first sampled
+visible Hold picture rather than its potentially cropped intrinsic start.
+The raw command independently checks a live use of the literal definition
+before and after resizing; this geometry check never replaces Default authority
+with a Play target. An unused definition retains no presentation, and a live
+Hold disappearing from the sampled output refuses the entire staged run.
+
+Several targets use the selected-duration authority below. Retime-owned gaps,
+additional Retimes, Retimes above or between Repeats, Partition, derived clocks,
+root or attached sounds and unrelated instructions remain unavailable. Other duration families
 keep their existing paths and guards. See the
 [mixed duration qualification](qualification/mixed-hold-duration-semantics-2026-10-21.md)
+and [fixed mixed duration qualification](qualification/mixed-fixed-retime-hold-duration-2026-10-22.md)
 for implementation and verification status.
 
 ### Selected plays Hold length

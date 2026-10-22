@@ -1,0 +1,24 @@
+{
+  "cases": 8,
+  "pictures": 656,
+  "presented_samples": 1050652,
+  "audio_windows": 20,
+  "failed_pictures": 0,
+  "failed_windows": 0,
+  "nonzero_offsets": 0,
+  "offset_unobservable_windows": 0,
+  "observable_neighbors": 708,
+  "unobservable_neighbors": 588,
+  "minimum_block_snr_db": 12.007608663779333,
+  "low_snr_blocks": 0,
+  "uncovered_samples": 0,
+  "flag_count": 0,
+  "low_block_details": [
+    {
+      "movie": "mixed-fixed-default-play-affine-grow.mp4",
+      "minimum_block_snr_db": 12.007608663779333,
+      "minimum_block_start": 108480,
+      "whole_window_snr_db": 35.96235971153248
+    }
+  ]
+}

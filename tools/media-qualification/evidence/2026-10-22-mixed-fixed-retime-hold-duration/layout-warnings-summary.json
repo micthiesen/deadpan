@@ -1,0 +1,40 @@
+{
+  "debug-visual": [
+    {
+      "severity": "warning",
+      "message_prefix": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity."
+    },
+    {
+      "severity": "warning",
+      "message_prefix": "65 frame(s) settled their layout only on a second retry: [{\"frame\":33,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/de"
+    },
+    {
+      "severity": "warning",
+      "message_prefix": "egui discard warning: 5 run(s) of 3+ consecutive retrying frames, each frame with its own cause: [[{\"frame\":397,\"input\":\"Open the qualified shared-duration proj"
+    }
+  ],
+  "visual": [
+    {
+      "severity": "warning",
+      "message_prefix": "Intermediate screenshot allowance reached; semantic frames continue and named checkpoints retain reserved image capacity."
+    },
+    {
+      "severity": "warning",
+      "message_prefix": "65 frame(s) settled their layout only on a second retry: [{\"frame\":39,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/de"
+    },
+    {
+      "severity": "warning",
+      "message_prefix": "egui discard warning: 5 run(s) of 3+ consecutive retrying frames, each frame with its own cause: [[{\"frame\":411,\"input\":\"Open the qualified shared-duration proj"
+    }
+  ],
+  "performance": [
+    {
+      "severity": "warning",
+      "message_prefix": "65 frame(s) settled their layout only on a second retry: [{\"frame\":108,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/d"
+    },
+    {
+      "severity": "warning",
+      "message_prefix": "egui discard warning: 5 run(s) of 3+ consecutive retrying frames, each frame with its own cause: [[{\"frame\":611,\"input\":\"Open the qualified shared-duration proj"
+    }
+  ]
+}
