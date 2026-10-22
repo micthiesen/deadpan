@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-22T07:01:53Z",
+  "updated_at": "2026-10-22T08:18:48Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Implement mixed and selected owned-gap Hold lengths, then remaining temporal occurrence scopes and selectors, audio-owner routes, mastering, renderer and full-workflow qualification.",
+  "focus": "Implement All plays Hold lengths inside fixed Edit Retime windows under Repeats, then remaining temporal scopes and selectors, audio-owner routes, mastering, renderer and full-workflow qualification.",
   "features": [
     {
       "id": "editing",
@@ -805,6 +805,14 @@
       "revision": "d7b84aed",
       "retrospective": false,
       "summary": "Verified atomic Hold lengths across selected Repeat body plays, preserving literal scope choices, complete mapped selection and exact audio clocks through one history entry. All 15 focused, 3,446 broader, 196 affected app and 198 UI checks pass, with strict lint. Both release replays pass 1,318 scoped checks plus Kestrel; three compact captures were inspected. Four release exports verify all 240 pictures and 384,384 audio samples at zero offset. Retained replay corrections include explicit reselection after navigation. Owned gaps and other temporal combinations remain open; no requirement or gate is newly complete."
+    },
+    {
+      "date": "2026-10-22",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "2b0484c7b37d4370203470edbe89156a3ac3cd00",
+      "retrospective": false,
+      "summary": "Owned-gap Hold lengths now follow explicit mixed/selected Play authority, including final dormant definitions, with exact isolation, accepted-provider history and retained per-owner sample clocks. All 18 focused and 3,465 broader tests pass; final normal/UI checks pass 199/201 with strict lint. Both native release replays pass 27 checks plus Kestrel; two compact captures were inspected, with quiet state p99 1.733ms over 45 samples. Six release exports verify all 411 pictures and 658,257 samples at measured offset zero. Retained oracle and fixture corrections are independently reviewed; no requirement or gate is newly complete."
     }
   ]
 }
