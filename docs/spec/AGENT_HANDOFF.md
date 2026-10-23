@@ -4,6 +4,24 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Current continuation, 2026-10-22
 
+Compact timing checkpoint, 2026-10-23: Core 57 / SQLite 86 remains an
+uncommitted candidate. All 1,503 Core, 3,499 broader selected and 1,292 UI tests
+pass, plus strict ordinary/UI and formatting. Debug media passes all15 pictures
+and24,024 samples at zero offset with full canonical PCM/history controls.
+Four fixture assumptions were corrected without production edits. Source-verified
+baseline witness has2 expected omission failures and4 passing controls.
+See ../qualification/compact-frozen-edges-2026-10-23.md and its203-file checkpoint.
+Serialized driver PID10303 (started22:41:19 local) is live in root scratch;
+final-driver.stdout/stderr and final-qualification-receipt.json are authoritative.
+Its stdout is redirected, so an expired harness handle is not termination.
+Release media/native are running. prepare_performance.py then validates portable
+packages, applies the reviewed test-only refinement, runs six stronger codec
+tests/Clippy/old-code witness, and only then builds/measures current-format perf.
+The refinement draft and immutable historical codec probe are in scratch.
+Do not edit Rust during this driver. No current-format timing claim or target PASS.
+Future capture/default-binding audits and preparation-only scripts are isolated
+in next-profile-plan; no production optimization beyond compact edges is applied.
+
 First-pause profile, 2026-10-23: root scratch is
 `/tmp/deadpan-first-pause-profile-2026-10-22`. Initial and finer controlled
 batches complete with all source/executable guards, no duplicate phase markers

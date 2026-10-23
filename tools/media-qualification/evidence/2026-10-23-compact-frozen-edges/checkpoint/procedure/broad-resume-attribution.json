@@ -1,0 +1,10 @@
+{
+  "initial_matrix_exit": 120,
+  "build_succeeded": true,
+  "list_or_test_run_started": false,
+  "original_tool_session_missing": true,
+  "root_cause_not_proven": "Driver stdio was not redirected. Exit120 followed disappearance of the parent tool session; closed-output failure is suspected, not established.",
+  "archive_sha256": "cca46260a489f8c6952d0b3985374a1b0f2267f1412feec05ff10c393e5a36ac",
+  "all_2047_rust_and_six_inputs_match_build": true,
+  "resume_action": "Reuse the unchanged archive; retain stdout/stderr for all following drivers."
+}

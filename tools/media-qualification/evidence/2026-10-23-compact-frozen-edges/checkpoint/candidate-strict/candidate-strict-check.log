@@ -1,0 +1,33 @@
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.06s
+     Running `target/debug/xtask check --since a18ff65443aa8fd1aa5ab63fa33678c9afd88220 --no-test`
+check: packages changed since a18ff65443aa8fd1aa5ab63fa33678c9afd88220: deadpan-core, deadpan-store
+    Checking errno v0.3.14
+    Checking zerocopy v0.8.57
+    Checking num-traits v0.2.19
+    Checking hashbrown v0.17.1
+    Checking objc2 v0.6.4
+    Checking smallvec v1.16.1
+    Checking deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+    Checking bytemuck v1.25.2
+    Checking uuid v1.26.1
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Checking rustix v1.1.5
+    Checking hashlink v0.12.2
+    Checking moxcms v0.8.1
+    Checking objc2-foundation v0.3.2
+    Checking ppv-lite86 v0.2.21
+    Checking deadpan-analysis v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-analysis)
+    Checking deadpan-source v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-source)
+    Checking deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+    Checking tempfile v3.27.0
+    Checking deadpan-native-process v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-process)
+    Checking rusqlite v0.40.2
+    Checking deadpan-filesystem v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-filesystem)
+    Checking image v0.25.10
+    Checking rand_chacha v0.9.0
+    Checking rusty-fork v0.3.1
+    Checking deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+    Checking deadpan-sqlite-status v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-sqlite-status)
+    Checking deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+    Checking proptest v1.11.0
+    Finished `dev` profile [optimized + debuginfo] target(s) in 3m 37s

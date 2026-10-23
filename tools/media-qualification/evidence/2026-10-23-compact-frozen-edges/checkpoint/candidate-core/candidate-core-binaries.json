@@ -1,0 +1,14 @@
+{
+  "deadpan-core::compact_frozen_edges": {
+    "path": "/private/tmp/deadpan-compact-frozen-edges-2026-10-22/candidate-core-extracted/target/debug/deps/compact_frozen_edges-5b9347c8c3aa8fc8",
+    "sha256": "69e9acb0720793c4300ab1e6cf7a2eaa7db4375b6de098fff23ccdaa9c2eac7f",
+    "tests": [
+      "automatic_edges_are_omitted_and_restore_exactly",
+      "explicit_automatic_edges_from_older_wire_still_decode",
+      "explicit_nondefault_allowed_edges_survive_exactly",
+      "malformed_edge_objects_are_rejected_at_layout_ingress",
+      "source_and_repeat_edge_policies_survive_a_mixed_layout_roundtrip",
+      "standalone_context_keeps_legacy_explicit_edges_and_schema_bytes"
+    ]
+  }
+}

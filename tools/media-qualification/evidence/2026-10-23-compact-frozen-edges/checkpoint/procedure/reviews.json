@@ -1,0 +1,25 @@
+{
+  "scope": "Core57/SQLite86 compact frozen-edge candidate; foreign fuzz/Cargo.lock and .claude excluded",
+  "reviewers": [
+    {
+      "agent": "compact_edges_general_review",
+      "initial_finding": "Changing FrozenAudioNode serialization would alter standalone FrozenAudioContext schema12 bytes.",
+      "resolution": "Borrowed explicit-edge adapter preserves standalone schema1\u201312 encoding and caller bounded writer.",
+      "final": "No concrete defect; missing edges now decode as Automatic, widening accepted input while retaining meaning. Test derives expected canonical bytes from current serializer; no historical golden output comparison."
+    },
+    {
+      "agent": "compact_edges_wire_review",
+      "initial_finding": "Standalone context schema12 output changed under unversioned omission.",
+      "resolution": "Explicit adapter retains original layout and node field order, BTreeMap ordering, provisional rejection and bounded writer.",
+      "final": "Finding resolved. Mixed non-Automatic context adapter lacks direct fixture coverage; source plainly emits borrowed policies. Layout mixed-edge regression is present."
+    }
+  ],
+  "final_fixture_review": {
+    "agent": "compact_edges_general_review",
+    "result": "No findings. Valid long IDs stay below MAX_IDENTITY_BYTES; both sizes use same names, 12k stays within independent capture work. Exact<=bound/to_json/reference assertions retained."
+  },
+  "store_fixture_review": {
+    "agent": "compact_edges_general_review",
+    "result": "No findings. Only cloned expected JSON removes edge objects asserted equal to default; literal/database rows untouched. Typed first >=400-node timing/>=400 bindings and later <16-node new timing assertions replace first byte-size floor, retaining later size and final catalog assertions."
+  }
+}

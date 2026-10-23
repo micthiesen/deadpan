@@ -1,0 +1,24 @@
+{
+  "source_base": "a18ff65443aa8fd1aa5ab63fa33678c9afd88220",
+  "qualification_in_progress": true,
+  "completed_phases": [
+    "candidate-core",
+    "candidate-all-core",
+    "candidate-all-core-corrected",
+    "candidate-all-core-final",
+    "baseline-core",
+    "candidate-broad",
+    "candidate-broad-resumed",
+    "candidate-broad-final",
+    "candidate-ui",
+    "candidate-strict",
+    "debug-media"
+  ],
+  "pending": [
+    "release-media",
+    "release-native",
+    "portable extraction checks",
+    "strengthened historical/asymmetric fixture checks",
+    "current-format performance"
+  ]
+}

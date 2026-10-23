@@ -1,0 +1,23 @@
+{
+  "changed": [
+    "crates/deadpan-core/tests/command_work.rs",
+    "crates/deadpan-core/tests/audio_reference.rs"
+  ],
+  "all_other_rust_unchanged": true,
+  "production_unchanged": true,
+  "causes": [
+    "Tamper test assumed default edges were serialized; explicitly materialize policy object before tampering.",
+    "12,000-node structural bound is now 65,316,393 bytes, below 64MiB; use14,000 to exercise exact-count fallback."
+  ],
+  "followup": "14,000 Holds exceeded the independent binding-work budget during capture. Final fixture keeps12,000 nodes and lengthens owner identities to cross only the byte-bound threshold. Both failed runs retained. Production remains unchanged.",
+  "final_source_guard": {
+    "rust_paths": 2047,
+    "same_path_set": true,
+    "changed_only": [
+      "crates/deadpan-core/tests/command_work.rs",
+      "crates/deadpan-core/tests/audio_reference.rs"
+    ],
+    "all_production_unchanged": true,
+    "all_1503_pass": true
+  }
+}

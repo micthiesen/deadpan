@@ -1,0 +1,15 @@
+{
+  "command": [
+    "cargo",
+    "nextest",
+    "archive",
+    "--locked",
+    "-p",
+    "deadpan-core",
+    "--archive-file",
+    "/tmp/deadpan-compact-frozen-edges-2026-10-22/candidate-all-core.tar.zst",
+    "--zstd-level=-1"
+  ],
+  "exit": 0,
+  "seconds": 544.7016334999353
+}
