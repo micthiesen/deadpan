@@ -1,0 +1,16 @@
+
+running 11 tests
+test audio_reference::scoped_capture_tests::complete_wire_count_equals_serialization ... ok
+test audio_reference::scoped_capture_property::full_layout_reuse_late_unknown_alias_precedes_identity_and_clock_fallbacks ... ok
+test audio_reference::scoped_capture_property::full_layout_reuse_leaf_closure_preserves_nested_wire_and_fields ... ok
+test audio_reference::scoped_capture_property::full_layout_reuse_partial_and_provisional_tables_still_rebuild ... ok
+test audio_reference::scoped_capture_property::almost_complete_scope_keeps_precharge_refusals_before_fallback ... ok
+test insert_time::hold_duration::tests::processing::output_owned::fixed_retime_output_owned_sound_outside_hold_move_keeps_group_scoped_capture ... ok
+test audio_reference::scoped_capture_property::scoped_capture_slices_like_the_complete_capture_on_random_documents ... ok
+test audio_reference::scoped_capture_property::scoped_capture_matches_the_complete_capture_at_ten_thousand_children ... ok
+test audio_reference::scoped_capture_property::almost_complete_scopes_fall_back_without_changing_the_complete_clock ... ok
+test audio_reference::scoped_capture_property::full_layout_reuse_ten_thousand_hold_interior_pause_matches_reference ... ok
+test audio_reference::scoped_capture_property::full_layout_reuse_retains_canonical_wire_limit_refusal ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 702 filtered out; finished in 0.41s
+

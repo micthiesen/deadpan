@@ -1,0 +1,26 @@
+{
+  "reviewer": "full_layout_reuse_review",
+  "status": "no_findings",
+  "candidate": "/tmp/deadpan-full-timing-closure-reuse-2026-10-23/source/crates/deadpan-core/src/audio_reference.rs",
+  "reviewed_sha256": "91f72ec0917ac60f273206483ab29a69c1786874aeb4c1cc885fa8cf14e67926",
+  "initial_sha256": "2ffd12ca446e6d223e0cd6bd11fa1175ab033121283c76791a8969eefb637549",
+  "source_changed_during_review": true,
+  "concurrent_change_review": "Re-read the complete diff after detecting the new hash. Production branch unchanged; test changes strengthen successful wire comparisons, add transaction wire equality, explicitly type the closure collection, and clarify the limit-fixture comment. No new finding.",
+  "baseline": "/tmp/deadpan-full-timing-closure-reuse-2026-10-23/worker-notes/before/crates/deadpan-core/src/audio_reference.rs.txt",
+  "baseline_sha256": "b4b675b292a234035f8e55ef919b4d1cc28d32089f395ab0864461d96910bb9f",
+  "findings": [],
+  "assessment": {
+    "scope": "One guarded production return in FrozenAudioLayout::sliced and five full_layout_reuse_ unit tests plus their private fixtures.",
+    "authority": "FrozenAudioLayout contents are private, immutable Arc data admitted through build_index. The new branch explicitly excludes provisional captures, so it cannot promote scoped spacers or complete-budget metadata into a serializable authoritative table.",
+    "closure": "Each required alias is checked against nodes before ancestor collection. The admitted index represents a reachable single-parent tree including explicit Repeat play overrides and gap overrides. Thus keep is a subset of node keys and equal cardinality proves every stored node is retained. The old traversal then clones every node, preserves Sequence children including zero-duration children, retains all override and gap entries and all lineage, and has empty derived_clocks, exactly matching the shared wire fields.",
+    "ordering_and_refusal": "The entire requested-alias iterator still runs before any return, preserving a late missing-alias refusal. The pre-existing derived-clock return remains first and unchanged. Complete integral layouts still receive canonical wire-size checking before success, including from_json admission that deferred this canonical-size check. The skipped build_index operates on identical already-admitted immutable fields, so it cannot supply a new structural refusal for this case.",
+    "memory_and_work": "The branch retains existing bounded ancestor-set work and shares the layout/index allocation. wire_bytes counts through a bounded writer and only caches a usize on success; it does not retain serialized JSON. The branch avoids the old cloned node/maps and rebuilt index. No additional unbounded production allocation or Repeat expansion was introduced.",
+    "tests": "Static inspection found meaningful differential assertions: complete leaf closure with nested Sequences, an empty Sequence, Repeat override/gap branches and lineage; partial/provisional rebuild boundaries; late unknown aliases before both returns; canonical-size refusal with an uncached admitted table; and a 10,000-Hold interior InsertTime comparing command results, compact document wire output and forward/inverse patch restoration. Arc identity assertions distinguish the optimized return from the reference reconstruction. The max-size fixture uses actual existing node/identity limits and the production bounded serializer. These tests were not compiled or executed by this reviewer."
+  },
+  "limits": [
+    "Read-only static review of the private candidate and baseline only; no production checkout edits.",
+    "No Cargo, formatting, Git, app/runtime, allocation or timing measurements were performed, as assigned. Parent owns those checks.",
+    "Reviewed hash applies to the unformatted candidate. Formatting or later edits require parent to pin the final source and determine whether additional review is needed.",
+    "Tests are finite examples rather than an exhaustive proof over all admitted layouts; the full-closure equivalence argument additionally relies on admission and immutability invariants."
+  ]
+}

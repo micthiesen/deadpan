@@ -1,0 +1,17 @@
+{
+  "before": {
+    "crates/deadpan-core/src/audio_reference.rs": "b4b675b292a234035f8e55ef919b4d1cc28d32089f395ab0864461d96910bb9f"
+  },
+  "proposed": {
+    "crates/deadpan-core/src/audio_reference.rs": "91f72ec0917ac60f273206483ab29a69c1786874aeb4c1cc885fa8cf14e67926"
+  },
+  "all_baseline_files": 33824,
+  "all_rust_files": 2050,
+  "nonowned_unchanged": 33823,
+  "changed_files": [
+    "crates/deadpan-core/src/audio_reference.rs"
+  ],
+  "input_identity_source": "/tmp/deadpan-full-timing-closure-reuse-2026-10-23/input-identities.json",
+  "uncompiled": true,
+  "unformatted": true
+}

@@ -1,0 +1,292 @@
+[
+  {
+    "name": "1-control-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-full-timing-closure-reuse-2026-10-23/1-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.1909482078626752
+  },
+  {
+    "name": "1-control",
+    "command": [
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-full-timing-closure-reuse-2026-10-23/1-control.deadpan",
+      "--output",
+      "/tmp/deadpan-full-timing-closure-reuse-2026-10-23/1-control-report"
+    ],
+    "exit": 0,
+    "seconds": 13.734061749652028
+  },
+  {
+    "name": "1-prototype-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-full-timing-closure-reuse-2026-10-23/1-prototype.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.18843695800751448
+  },
+  {
+    "name": "1-prototype",
+    "command": [
+      "/tmp/deadpan-full-timing-closure-reuse-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-full-timing-closure-reuse-2026-10-23/1-prototype.deadpan",
+      "--output",
+      "/tmp/deadpan-full-timing-closure-reuse-2026-10-23/1-prototype-report"
+    ],
+    "exit": 0,
+    "seconds": 13.853644167073071
+  },
+  {
+    "name": "2-prototype-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-full-timing-closure-reuse-2026-10-23/2-prototype.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.19159070774912834
+  },
+  {
+    "name": "2-prototype",
+    "command": [
+      "/tmp/deadpan-full-timing-closure-reuse-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-full-timing-closure-reuse-2026-10-23/2-prototype.deadpan",
+      "--output",
+      "/tmp/deadpan-full-timing-closure-reuse-2026-10-23/2-prototype-report"
+    ],
+    "exit": 0,
+    "seconds": 13.526184124872088
+  },
+  {
+    "name": "2-control-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-full-timing-closure-reuse-2026-10-23/2-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.18968874961137772
+  },
+  {
+    "name": "2-control",
+    "command": [
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-full-timing-closure-reuse-2026-10-23/2-control.deadpan",
+      "--output",
+      "/tmp/deadpan-full-timing-closure-reuse-2026-10-23/2-control-report"
+    ],
+    "exit": 0,
+    "seconds": 14.24506341572851
+  },
+  {
+    "name": "3-control-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-full-timing-closure-reuse-2026-10-23/3-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.19524833280593157
+  },
+  {
+    "name": "3-control",
+    "command": [
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-full-timing-closure-reuse-2026-10-23/3-control.deadpan",
+      "--output",
+      "/tmp/deadpan-full-timing-closure-reuse-2026-10-23/3-control-report"
+    ],
+    "exit": 0,
+    "seconds": 13.847964375279844
+  },
+  {
+    "name": "3-prototype-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-full-timing-closure-reuse-2026-10-23/3-prototype.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.1899792905896902
+  },
+  {
+    "name": "3-prototype",
+    "command": [
+      "/tmp/deadpan-full-timing-closure-reuse-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-full-timing-closure-reuse-2026-10-23/3-prototype.deadpan",
+      "--output",
+      "/tmp/deadpan-full-timing-closure-reuse-2026-10-23/3-prototype-report"
+    ],
+    "exit": 0,
+    "seconds": 13.874932542443275
+  },
+  {
+    "name": "4-prototype-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-full-timing-closure-reuse-2026-10-23/4-prototype.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.18806575052440166
+  },
+  {
+    "name": "4-prototype",
+    "command": [
+      "/tmp/deadpan-full-timing-closure-reuse-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-full-timing-closure-reuse-2026-10-23/4-prototype.deadpan",
+      "--output",
+      "/tmp/deadpan-full-timing-closure-reuse-2026-10-23/4-prototype-report"
+    ],
+    "exit": 0,
+    "seconds": 13.619569707661867
+  },
+  {
+    "name": "4-control-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-full-timing-closure-reuse-2026-10-23/4-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.18914154171943665
+  },
+  {
+    "name": "4-control",
+    "command": [
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-full-timing-closure-reuse-2026-10-23/4-control.deadpan",
+      "--output",
+      "/tmp/deadpan-full-timing-closure-reuse-2026-10-23/4-control-report"
+    ],
+    "exit": 0,
+    "seconds": 13.68061654176563
+  },
+  {
+    "name": "5-control-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-full-timing-closure-reuse-2026-10-23/5-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.18943554162979126
+  },
+  {
+    "name": "5-control",
+    "command": [
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-full-timing-closure-reuse-2026-10-23/5-control.deadpan",
+      "--output",
+      "/tmp/deadpan-full-timing-closure-reuse-2026-10-23/5-control-report"
+    ],
+    "exit": 0,
+    "seconds": 13.41433516703546
+  },
+  {
+    "name": "5-prototype-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-full-timing-closure-reuse-2026-10-23/5-prototype.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.18699512537568808
+  },
+  {
+    "name": "5-prototype",
+    "command": [
+      "/tmp/deadpan-full-timing-closure-reuse-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-full-timing-closure-reuse-2026-10-23/5-prototype.deadpan",
+      "--output",
+      "/tmp/deadpan-full-timing-closure-reuse-2026-10-23/5-prototype-report"
+    ],
+    "exit": 0,
+    "seconds": 13.549621749669313
+  }
+]

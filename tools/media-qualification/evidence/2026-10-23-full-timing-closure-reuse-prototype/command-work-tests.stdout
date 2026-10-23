@@ -1,0 +1,8 @@
+
+running 3 tests
+test merged_diff_matches_key_union_lookup ... ok
+test binding_byte_check_equals_to_json_on_both_sides_of_the_structural_bound ... ok
+test local_command_work_equals_the_reference_on_random_edit_sequences ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.55s
+

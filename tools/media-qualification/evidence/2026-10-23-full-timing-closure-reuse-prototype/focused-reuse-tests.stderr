@@ -1,0 +1,29 @@
+   Compiling getrandom v0.3.4
+   Compiling proc-macro2 v1.0.107
+   Compiling quote v1.0.47
+   Compiling zerocopy v0.8.57
+   Compiling rustix v1.1.5
+   Compiling num-traits v0.2.19
+   Compiling bit-vec v0.8.0
+   Compiling quick-error v1.2.3
+   Compiling fnv v1.0.7
+   Compiling unarray v0.1.4
+   Compiling regex-syntax v0.8.11
+   Compiling errno v0.3.14
+   Compiling wait-timeout v0.2.1
+   Compiling deadpan-chaos v0.1.0 (/private/tmp/deadpan-full-timing-closure-reuse-2026-10-23/source/crates/deadpan-chaos)
+   Compiling bit-set v0.8.0
+   Compiling rand_core v0.9.5
+   Compiling rand_xorshift v0.4.0
+   Compiling rand v0.9.5
+   Compiling syn v3.0.6
+   Compiling tempfile v3.27.0
+   Compiling rusty-fork v0.3.1
+   Compiling serde_derive v1.0.229
+   Compiling ppv-lite86 v0.2.21
+   Compiling rand_chacha v0.9.0
+   Compiling proptest v1.11.0
+   Compiling serde v1.0.229
+   Compiling deadpan-core v0.1.0 (/private/tmp/deadpan-full-timing-closure-reuse-2026-10-23/source/crates/deadpan-core)
+    Finished `release` profile [optimized] target(s) in 11m 53s
+     Running unittests src/lib.rs (/tmp/deadpan-full-timing-closure-reuse-2026-10-23/target/release/deps/deadpan_core-e938e0404317f499)

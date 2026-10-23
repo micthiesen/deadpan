@@ -65,6 +65,16 @@ remain separate historical records. No requirement or gate closes.
 
 ## Remaining preparation cost, 2026-10-23
 
+A private [complete frozen-layout reuse prototype](qualification/full-timing-closure-reuse-prototype-2026-10-23.md)
+recognizes a full alias closure after all existing alias checks, retains the
+canonical wire guard, excludes provisional layouts and reuses its admitted
+immutable table. Five new regressions plus eleven scoped-capture, three
+command-work and 104 InsertTime tests pass. Five quiet native pairs pass every
+guard and measure commit medians 257.887084 /244.544917 ms and offscreen
+composition 260.609875 /247.164042 ms, a 13.445833 ms /5.16% diagnostic
+difference. The 138-file evidence inventory verifies. Production qualification
+is pending; no requirement, gate or latency target closes.
+
 The subsequent [Core detail profile](qualification/core-planning-detail-profile-2026-10-23.md)
 passes nine rotated control/off/on trials with all pause/shortcut and identity
 guards. Its three enabled traces validate 24 phase counts and nine containment

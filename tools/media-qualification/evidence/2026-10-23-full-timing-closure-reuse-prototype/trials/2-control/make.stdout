@@ -1,0 +1,7 @@
+{
+  "beats": 10000,
+  "creation_ms": 169.065,
+  "package": "/tmp/deadpan-full-timing-closure-reuse-2026-10-23/2-control.deadpan",
+  "stage": "make-large",
+  "stage_wall_ms": 178.467875
+}

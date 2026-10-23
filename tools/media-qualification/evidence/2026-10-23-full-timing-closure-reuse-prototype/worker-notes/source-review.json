@@ -1,0 +1,14 @@
+{
+  "tests": [
+    "full_layout_reuse_leaf_closure_preserves_nested_wire_and_fields",
+    "full_layout_reuse_partial_and_provisional_tables_still_rebuild",
+    "full_layout_reuse_late_unknown_alias_precedes_identity_and_clock_fallbacks",
+    "full_layout_reuse_retains_canonical_wire_limit_refusal",
+    "full_layout_reuse_ten_thousand_hold_interior_pause_matches_reference"
+  ],
+  "only_production_change": "        if crate::command_work::local()\n            && !self.is_provisional()\n            && keep.len() == self.nodes.len()\n        {\n            self.wire_bytes()?;\n            return Ok(self.clone());\n        }\n",
+  "nonowned_files_unchanged": true,
+  "tests_executed": false,
+  "formatted": false,
+  "compiled": false
+}

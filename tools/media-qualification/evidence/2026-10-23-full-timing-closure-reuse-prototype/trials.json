@@ -1,0 +1,192 @@
+[
+  {
+    "pair": 1,
+    "kind": "control",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 260.385625,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 263.06350000000003
+    },
+    "load": [
+      2.76220703125,
+      2.75390625,
+      2.07666015625
+    ],
+    "checks": 7,
+    "kestrel_checks": 1,
+    "source_and_binary_guards": true,
+    "authored_inputs_unchanged": true,
+    "empty_wal": true,
+    "binary_sha256": "c36b894466eb4f16fe976924b05c02ada87b0e8872f7f9a7fc6028a60a342037"
+  },
+  {
+    "pair": 1,
+    "kind": "prototype",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 246.94987500000002,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 249.612417
+    },
+    "load": [
+      2.451171875,
+      2.68408203125,
+      2.0634765625
+    ],
+    "checks": 7,
+    "kestrel_checks": 1,
+    "source_and_binary_guards": true,
+    "authored_inputs_unchanged": true,
+    "empty_wal": true,
+    "binary_sha256": "f7cf2d6b7fdf416e115cd0cb6c15b361e26a54d106cbbb8620aec084a3173af8"
+  },
+  {
+    "pair": 2,
+    "kind": "prototype",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 243.31629199999998,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 245.999584
+    },
+    "load": [
+      2.41796875,
+      2.666015625,
+      2.06787109375
+    ],
+    "checks": 7,
+    "kestrel_checks": 1,
+    "source_and_binary_guards": true,
+    "authored_inputs_unchanged": true,
+    "empty_wal": true,
+    "binary_sha256": "f7cf2d6b7fdf416e115cd0cb6c15b361e26a54d106cbbb8620aec084a3173af8"
+  },
+  {
+    "pair": 2,
+    "kind": "control",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 256.802875,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 259.530125
+    },
+    "load": [
+      2.103515625,
+      2.583984375,
+      2.048828125
+    ],
+    "checks": 7,
+    "kestrel_checks": 1,
+    "source_and_binary_guards": true,
+    "authored_inputs_unchanged": true,
+    "empty_wal": true,
+    "binary_sha256": "c36b894466eb4f16fe976924b05c02ada87b0e8872f7f9a7fc6028a60a342037"
+  },
+  {
+    "pair": 3,
+    "kind": "control",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 258.58020799999997,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 261.305458
+    },
+    "load": [
+      2.01220703125,
+      2.5390625,
+      2.04150390625
+    ],
+    "checks": 7,
+    "kestrel_checks": 1,
+    "source_and_binary_guards": true,
+    "authored_inputs_unchanged": true,
+    "empty_wal": true,
+    "binary_sha256": "c36b894466eb4f16fe976924b05c02ada87b0e8872f7f9a7fc6028a60a342037"
+  },
+  {
+    "pair": 3,
+    "kind": "prototype",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 246.82679199999998,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 249.404167
+    },
+    "load": [
+      2.02734375,
+      2.5126953125,
+      2.0400390625
+    ],
+    "checks": 7,
+    "kestrel_checks": 1,
+    "source_and_binary_guards": true,
+    "authored_inputs_unchanged": true,
+    "empty_wal": true,
+    "binary_sha256": "f7cf2d6b7fdf416e115cd0cb6c15b361e26a54d106cbbb8620aec084a3173af8"
+  },
+  {
+    "pair": 4,
+    "kind": "prototype",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 243.21425,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 245.94
+    },
+    "load": [
+      1.94921875,
+      2.47900390625,
+      2.033203125
+    ],
+    "checks": 7,
+    "kestrel_checks": 1,
+    "source_and_binary_guards": true,
+    "authored_inputs_unchanged": true,
+    "empty_wal": true,
+    "binary_sha256": "f7cf2d6b7fdf416e115cd0cb6c15b361e26a54d106cbbb8620aec084a3173af8"
+  },
+  {
+    "pair": 4,
+    "kind": "control",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 257.887084,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 260.609875
+    },
+    "load": [
+      1.73828125,
+      2.40576171875,
+      2.01416015625
+    ],
+    "checks": 7,
+    "kestrel_checks": 1,
+    "source_and_binary_guards": true,
+    "authored_inputs_unchanged": true,
+    "empty_wal": true,
+    "binary_sha256": "c36b894466eb4f16fe976924b05c02ada87b0e8872f7f9a7fc6028a60a342037"
+  },
+  {
+    "pair": 5,
+    "kind": "control",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 257.73316600000004,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 260.334166
+    },
+    "load": [
+      1.57373046875,
+      2.33642578125,
+      1.9951171875
+    ],
+    "checks": 7,
+    "kestrel_checks": 1,
+    "source_and_binary_guards": true,
+    "authored_inputs_unchanged": true,
+    "empty_wal": true,
+    "binary_sha256": "c36b894466eb4f16fe976924b05c02ada87b0e8872f7f9a7fc6028a60a342037"
+  },
+  {
+    "pair": 5,
+    "kind": "prototype",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 244.544917,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 247.164042
+    },
+    "load": [
+      1.513671875,
+      2.2861328125,
+      1.9833984375
+    ],
+    "checks": 7,
+    "kestrel_checks": 1,
+    "source_and_binary_guards": true,
+    "authored_inputs_unchanged": true,
+    "empty_wal": true,
+    "binary_sha256": "f7cf2d6b7fdf416e115cd0cb6c15b361e26a54d106cbbb8620aec084a3173af8"
+  }
+]

@@ -1,0 +1,10 @@
+
+running 5 tests
+test audio_reference::scoped_capture_property::full_layout_reuse_late_unknown_alias_precedes_identity_and_clock_fallbacks ... ok
+test audio_reference::scoped_capture_property::full_layout_reuse_leaf_closure_preserves_nested_wire_and_fields ... ok
+test audio_reference::scoped_capture_property::full_layout_reuse_partial_and_provisional_tables_still_rebuild ... ok
+test audio_reference::scoped_capture_property::full_layout_reuse_ten_thousand_hold_interior_pause_matches_reference ... ok
+test audio_reference::scoped_capture_property::full_layout_reuse_retains_canonical_wire_limit_refusal ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 708 filtered out; finished in 0.39s
+

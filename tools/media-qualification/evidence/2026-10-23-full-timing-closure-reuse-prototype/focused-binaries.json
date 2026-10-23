@@ -1,0 +1,54 @@
+[
+  {
+    "step": "focused-reuse-tests",
+    "source": "/tmp/deadpan-full-timing-closure-reuse-2026-10-23/target/release/deps/deadpan_core-e938e0404317f499",
+    "retained_executed_copy": "/tmp/deadpan-full-timing-closure-reuse-2026-10-23/focused-bin/focused-reuse-tests-0",
+    "sha256": "3502e668df1a527942bfd8b44a1b794d3d4f21caeeeb1c83e993bab04b7fcb79",
+    "test_results": [
+      [
+        "5",
+        "0",
+        "0"
+      ]
+    ]
+  },
+  {
+    "step": "scoped-capture-tests",
+    "source": "/tmp/deadpan-full-timing-closure-reuse-2026-10-23/target/release/deps/deadpan_core-e938e0404317f499",
+    "retained_executed_copy": "/tmp/deadpan-full-timing-closure-reuse-2026-10-23/focused-bin/scoped-capture-tests-0",
+    "sha256": "3502e668df1a527942bfd8b44a1b794d3d4f21caeeeb1c83e993bab04b7fcb79",
+    "test_results": [
+      [
+        "11",
+        "0",
+        "0"
+      ]
+    ]
+  },
+  {
+    "step": "command-work-tests",
+    "source": "/tmp/deadpan-full-timing-closure-reuse-2026-10-23/target/release/deps/command_work-ba5d901dcb4c9adc",
+    "retained_executed_copy": "/tmp/deadpan-full-timing-closure-reuse-2026-10-23/focused-bin/command-work-tests-0",
+    "sha256": "31937ad258ace71859fc371c257f8c7e202af28f4d705b9422f5d156f6cfc395",
+    "test_results": [
+      [
+        "3",
+        "0",
+        "0"
+      ]
+    ]
+  },
+  {
+    "step": "insert-time-tests",
+    "source": "/tmp/deadpan-full-timing-closure-reuse-2026-10-23/target/release/deps/insert_time-9a9c7a124717f1b5",
+    "retained_executed_copy": "/tmp/deadpan-full-timing-closure-reuse-2026-10-23/focused-bin/insert-time-tests-0",
+    "sha256": "729eb9925472906d7e9c8b3ea51676052984ddb818be75b216fef836d06e8b96",
+    "test_results": [
+      [
+        "104",
+        "0",
+        "0"
+      ]
+    ]
+  }
+]

@@ -1,0 +1,7 @@
+{
+  "changed": [
+    "crates/deadpan-core/src/audio_reference.rs"
+  ],
+  "nonowned_rust_unchanged": true,
+  "inputs_unchanged": true
+}

@@ -254,10 +254,23 @@ e18d6c4cd8fe64665af5e21cf0fecb5a90a4411adf214fe80ed85c4197a7fc78.
 The first packager failed after trial validation on Root's nonexistent optional
 outline requirement; original script/error and partial staging are preserved.
 The corrected fresh run succeeds without changing source or measurements.
-Next: finish next-optimization-study/ in that scratch, identify a concrete
-repeated reducer/postprocessing or semantic operation, then qualify an isolated
-prototype. Preserve all serialization, validation, historical-reader, inverse
-and host checks. There is no new production change or latency target PASS.
+The read-only next-optimization-study/ is complete. Its one-file private
+[full-layout reuse prototype](../qualification/full-timing-closure-reuse-prototype-2026-10-23.md)
+is complete in /tmp/deadpan-full-timing-closure-reuse-2026-10-23. Both build and
+measurement drivers are terminal: all seven stages, 123 selected tests and ten
+quiet alternating native trials pass. Do not restart them. Candidate app:
+f7cf2d6b7fdf416e115cd0cb6c15b361e26a54d106cbbb8620aec084a3173af8.
+Five pairs give control/prototype commit medians 257.887084 /244.544917 ms,
+offscreen composition 260.609875 /247.164042 ms, a 13.445833 ms /5.16%
+diagnostic difference. No target PASS. The 138-file /2,932,293-byte inventory
+verifies, SHA-256 10e1516fae9e4fd44d36a8a73ec249e6784017470946dc3e229374f9808d5735.
+Only audio_reference.rs changes: sliced completes its existing alias closure
+and derived-clock fallback, then local complete nonprovisional full-closure
+tables run wire_bytes and return the same Arc. Reference behavior stays old.
+Next: adopt those exact formatted bytes and run full production qualification.
+Draft drivers are in /tmp/deadpan-full-timing-closure-reuse-qualification-2026-10-23;
+Root must review them before execution. Preserve all serialization, validation,
+historical-reader, inverse and host checks. Production checks remain owed.
 The separate
 next-replay-count-study.md describes immutable borrowed count pairs and a
 post-validation finalizer; bare counts on mutable public outcomes are

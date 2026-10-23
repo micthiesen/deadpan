@@ -1,0 +1,3 @@
+   Compiling deadpan-core v0.1.0 (/private/tmp/deadpan-full-timing-closure-reuse-2026-10-23/source/crates/deadpan-core)
+    Finished `release` profile [optimized] target(s) in 38.39s
+     Running tests/command_work.rs (/tmp/deadpan-full-timing-closure-reuse-2026-10-23/target/release/deps/command_work-ba5d901dcb4c9adc)

@@ -1,0 +1,22 @@
+{
+  ".writer.lock": {
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  "manifest.json": {
+    "sha256": "8fce85b103ad4d3dafd2869369b57c72a89855e890518209ea1b9412aabcb9c7",
+    "bytes": 62
+  },
+  "project.sqlite": {
+    "sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c",
+    "bytes": 4489216
+  },
+  "project.sqlite-shm": {
+    "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb",
+    "bytes": 32768
+  },
+  "project.sqlite-wal": {
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  }
+}
