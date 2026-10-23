@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-23T14:43:08.958Z",
+  "updated_at": "2026-10-23T15:09:44.523Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about \u00b15 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Production qualification of complete frozen-layout reuse is progressing: all 1,522 Core tests across 69 binaries pass with zero skipped, and all 3,506 broader selected tests pass with 740 skipped. Source/input/executable guards pass. UI is compiling; strict checks, actual media/history, native workflows, portable copies and a separate final timing comparison remain owed. The earlier private prototype passes 123 selected checks and five guarded pairs, with offscreen medians 260.609875/247.164042 ms (about 5.16% diagnostic difference); its 138-file inventory verifies. The adopted source bytes equal that tested prototype, and the production change is not committed yet. Coverage stays 89%, with 8 Complete and 16 Partial requirements and the 100 ms/50 ms targets open.",
+  "focus": "Complete frozen-layout reuse is implemented, reviewed, fully qualified and pushed. All 1,522 Core tests (zero skipped), 3,506 broader tests (740 skipped), 1,296 UI tests (eleven skipped), strict checks and formatting pass, without leak annotations. Actual media/history, six native workflows and both portable copies pass. Five final quiet pairs give offscreen medians 260.353458/250.976250 ms, a 9.377208 ms/about 3.60% diagnostic difference. All 455 evidence files verify, including three emitted movies and decoder/control reports. The earlier private 5.16% prototype is a separate batch. Next is a source-level study of repeated semantic duration/anchor work; no further gain is measured. Coverage stays 89%, with 8 Complete and 16 Partial requirements and the 100 ms/50 ms targets open.",
   "features": [
     {
       "id": "editing",
@@ -102,7 +102,7 @@
         "DP-18",
         "DP-24"
       ],
-      "note": "Qualified independent n=5 comparisons: shared preparation offscreen 393.261916/275.697709 ms, leaf-result reuse 275.099042/267.862584 ms, JSON size counting 268.773292/261.593583 ms. Separate Store/Core profiles pass all phase counts and containment checks. A later private one-file complete frozen-layout reuse prototype passes 123 selected checks and five guarded native pairs: offscreen medians 260.609875/247.164042 ms, about 5.16% apart. Its 138-file evidence inventory verifies; the exact tested bytes are adopted locally and full production qualification is running. Do not pool batches or infer percentiles or target passes. Native latency targets, peak memory, calibrated timer overhead, worker-memory and sleep qualification remain open."
+      "note": "Qualified independent n=5 native offscreen comparisons: shared preparation 393.261916/275.697709 ms, leaf-result reuse 275.099042/267.862584 ms, JSON size counting 268.773292/261.593583 ms, and complete frozen-layout reuse 260.353458/250.976250 ms (about 3.60% apart). Do not pool batches or infer percentiles or target passes. Latest 1,522 Core, 3,506 broader and 1,296 UI tests, strict, actual media/history, native and portable checks pass without leak annotations. All 455 final evidence files verify, including three emitted movies. Separate Store/Core profiles guide the next study of repeated semantic duration/anchor work, whose new cost and benefit remain unmeasured. Native latency targets, peak memory, calibrated timer overhead, worker-memory and sleep qualification remain open."
     },
     {
       "id": "models",
@@ -1133,6 +1133,14 @@
       "revision": "8529a1b2ffe656a7eb3b377d7d8af8919969c736",
       "retrospective": false,
       "summary": "A private one-file complete frozen-layout reuse prototype passes source review, five new regressions, eleven scoped-capture tests, three command-work tests and 104 InsertTime tests, all with zero ignored, plus formatting and the locked release app build. FrozenAudioLayout::sliced completes all alias/ancestor checks and the existing derived-clock branch, then reuses a complete nonprovisional immutable table only in local mode after the same wire-size guard. All ten native trials pass seven pause and one Kestrel check, exact identity/authored-file guards and empty WAL. Five quiet pairs give commit medians 257.887084/244.544917 ms and offscreen composition 260.609875/247.164042 ms, a 13.445833 ms/about 5.16% diagnostic difference. The 138-file/2,932,293-byte inventory verifies independently. Exact tested bytes are adopted locally; full production qualification remains in progress. No percentile, memory claim, latency target PASS, requirement or gate closure follows."
+    },
+    {
+      "date": "2026-10-23",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "ae5eedd065b851242917b38a428ee40a3588978d",
+      "retrospective": false,
+      "summary": "Complete frozen-layout reuse is implemented and fully qualified without schema, API, authority or work-charge changes. The full alias closure, wire-size refusal, provisional behavior and reference path remain. All 1,522 Core tests pass across 69 binaries with zero skipped, 3,506 broader tests with 740 skipped, and 1,296 UI tests with eleven skipped; no leak annotations occur. Strict Core/UI checks and formatting pass. Debug/release neutral media verifies 15 pictures and 24,024 canonical samples; aligned release verifies 19 pictures and 30,430 final canonical samples, all at zero offset with full canonical/history controls. Its 238.739-second slow run passes unchanged. Six native scenarios pass 1,340 workflow and six Kestrel checks; both nine-file portable copies validate/doctor unchanged. Five final quiet pairs measure commit 257.618792/248.292125 ms and offscreen composition 260.353458/250.976250 ms, a 9.377208 ms/about 3.60% diagnostic difference. All 455 files/14,990,467 bytes verify independently, including three emitted movies and decoder/control reports. Twelve native layout warnings and false independent-DSP/listening/ordinary Move PCM claims remain. The private prototype batch is separate. No percentile, peak-memory result, latency target PASS, requirement or gate closes. Next study repeated semantic duration/anchor work before another change."
     }
   ]
 }
