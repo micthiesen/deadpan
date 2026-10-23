@@ -40,8 +40,9 @@ offset in 43.470 seconds from the same archive. Both safely extracted nine-file
 release packages pass full validation and doctor without changing any package
 path or byte. Receipts are in `owner-portable-check/`. Full performance remains open;
 the fresh scratch scripts are `qualify_candidate.py` and
-`qualify_native_media.py`. All scoped checks are complete; finish the evidence
-inventory and scoped implementation commit. Full qualification is in
+`qualify_native_media.py`. All scoped checks and the evidence inventory are
+complete; implementation commit `c72abe12965b08f7705e0c9a61ab2298d5a562ae`
+is pushed to main. Full qualification is in
 `docs/qualification/aligned-sound-scope-2026-10-23.md`. A read-only next-scope
 design is `next-neutral-ungroup-design.json` in the same scratch directory:
 neutral removal of a still-unpaired introduced group, without widening scope.

@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-23T03:20:54Z",
+  "updated_at": "2026-10-23T03:23:14Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Aligned sound grouping is implemented and locally verified; the scoped commit is being prepared. Fresh checks pass 1,489 Core, 3,492 broader and 1,292 UI tests, strict checks and formatting. Native replay passes 130 checks plus Kestrel; both release exports verify at zero audio offset, and extracted projects validate unchanged. Full performance remains open, including the recorded 88.3 ms commit p95. Coverage stays at 89%, with 8/24 requirement sections complete.",
+  "focus": "Aligned sound grouping landed in c72abe12 with exact PCM/history and debug/release media verification. Fresh checks pass 1,489 Core, 3,492 broader and 1,292 UI tests, strict checks and formatting; native replay passes 130 checks plus Kestrel. Both exported fixtures verify at zero audio offset. Full performance remains open, including the recorded 88.3 ms commit p95. Continuing with neutral ungrouping. Coverage stays at 89%, with 8/24 requirement sections complete.",
   "features": [
     {
       "id": "editing",
@@ -901,6 +901,14 @@
       "revision": "6a7eed92e239add1d3a3b6522d8810826c6b52ac",
       "retrospective": false,
       "summary": "GroupSelection endpoint splits now retain complete attached-sound processing, exact phase and history outside retained scopes; aligned groups keep existing tables unchanged. Verified 14 focused, 4,904 broader and 1,292 UI-feature cases, strict checks and release visual/performance replays with 97/82 checks plus Kestrel each. Complete pre/post canonical PCM and limiter gain remain bit-identical; release export verifies all 121 pictures and 193,794 samples at zero offset. Extracted owner validation, source/blob audit and inspected captures pass. Failed fixtures, layout warnings, sparse timing and neighbor observability limits are retained. No requirement or gate newly complete."
+    },
+    {
+      "date": "2026-10-23",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "c72abe12965b08f7705e0c9a61ab2298d5a562ae",
+      "retrospective": false,
+      "summary": "Aligned complete Source/Hold grouping inside ordinary retained sound scopes now keeps explicit introduced-group and Split relations, shared group EQ/saturation, exact phase and pre-birth delivery masks through whole-group copy and relocation. Verified 1,489 Core, 3,492 selected broader and 1,292 UI tests; fresh strict checks; 130 native workflow checks plus Kestrel; debug/release 19-picture and release 121-picture exports with complete canonical PCM/history controls and zero audio offsets. Extracted portable packages validate without byte changes. Retained counterexamples, replay correction and warnings; 88.3 ms commit p95 over seven samples does not establish the 50 ms target. No requirement or gate newly complete."
     }
   ]
 }

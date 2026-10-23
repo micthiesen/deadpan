@@ -4,6 +4,9 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 
 ## Aligned sound scopes, 2026-10-23
 
+Implemented, qualified and pushed in `c72abe12`. Scope remains bounded to an
+aligned complete Source/Hold group under ordinary Sequence ancestry.
+
 Fresh current-source verification passes all 1,489 Core tests across 67 binaries
 with zero skipped, and all 3,492 broader selected tests across 109 binaries
 (739 ignored or unselected). The fresh Core library SHA-256 is
