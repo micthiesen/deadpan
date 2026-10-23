@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-23T13:27:46.118Z",
+  "updated_at": "2026-10-23T13:45:23.846Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about \u00b15 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "The isolated Store preparation detail profile is complete: all nine rotated control/off/on runs pass seven pause checks and one Kestrel check each, with exact source/input/binary and authored-file guards. Three enabled traces validate 33 phases and ten containment equations. Median semantic planning is 103.020292 ms; Store preparation is 110.396833 ms, including Core replay 76.287833 ms (host visitor 5.053292 ms) and stored-edit historical decode/equality 19.017083 ms. The 71.226624 ms replay-minus-visitor residual needs internal attribution. All 141 evidence files verify. No production code, requirement or target changed. Next is a separate Core planning/replay profile; its internal costs remain unmeasured. Coverage stays 89%, with 8 Complete and 16 Partial requirements and the 100 ms/50 ms targets open.",
+  "focus": "The isolated Core planning/replay profile is complete: nine rotated control/off/on runs pass seven pause and one Kestrel check each, all identity/authored-file guards, and exact 24-phase counts with nine containment equations. Across two leaf applications, median reduction totals 64.732208 ms and postprocessing 17.760625 ms. Semantic execution has another 30.641416 ms residual outside its leaf call and after-leaf size/charge. All 152 evidence files verify. These intervals contain multiple operations and overhead; next identify a concrete repeated operation and qualify a separate prototype. No production source, requirement or target changed. Coverage stays 89%, with 8 Complete and 16 Partial requirements and the 100 ms/50 ms targets open.",
   "features": [
     {
       "id": "editing",
@@ -102,7 +102,7 @@
         "DP-18",
         "DP-24"
       ],
-      "note": "Qualified independent n=5 batches improve native first-pause offscreen medians: shared preparation 393.261916/275.697709 ms, leaf-result reuse 275.099042/267.862584 ms, exact JSON size counting 268.773292/261.593583 ms. Do not pool them or infer percentiles/target passes. A later isolated nine-run control/off/on profile validates 33 phases and ten containment equations: semantic planning median 103.020292 ms, Store preparation 110.396833 ms, Core replay 76.287833 ms including host visitor 5.053292 ms, history edit decode/equality 19.017083 ms. Replay-minus-visitor 71.226624 ms is a residual, not an individual Core operation. Its 141-file evidence inventory verifies. Next attribute Core planning/replay internally. Current production checks pass; peak memory, timer overhead, native latency, worker-memory and sleep qualification remain open."
+      "note": "Qualified independent n=5 native first-pause comparisons: shared preparation offscreen 393.261916/275.697709 ms; leaf-result reuse 275.099042/267.862584 ms; JSON size counting 268.773292/261.593583 ms. Do not pool batches or infer percentiles or target passes. Later separate n=3 control/off/on profiles locate Store preparation at 110.396833 ms (history edit decode/equality 19.017083 ms) and Core work across two leaf applications: reduction 64.732208 ms and postprocessing 17.760625 ms, plus a semantic execution residual of 30.641416 ms outside the leaf call and after-size charge. All 24 Core phase counts and nine containment checks pass, and the 152-file evidence inventory verifies. These grouped costs need a concrete source-level explanation before changes. Current production checks pass; native latency targets, peak memory, calibrated timer overhead, worker-memory and sleep qualification remain open."
     },
     {
       "id": "models",
@@ -1117,6 +1117,14 @@
       "revision": "44fdc49a548419d8e24e63c77cbe64f5efc4bbd3",
       "retrospective": false,
       "summary": "Isolated Store preparation detail profiling completes with no production change: nine fresh rotated control/off/on runs pass 7 pause plus 1 Kestrel check each, source/input/binary and authored-path guards, and empty WAL. Three enabled 35-line traces pass exact 33-phase counts/order and 10 containment equations; all 6 control/off logs have no trace. Qualified control/off/on composition medians are 258.869500/258.387042/258.544042 ms, n=3 diagnostic only with uncalibrated overhead. Profile-on semantic planning median is 103.020292 ms and Store preparation 110.396833 ms. Core replay 76.287833 ms includes host visitor 5.053292 ms; its 71.226624 ms residual is not a separately measured Core subphase. Stored-edit historical decode/equality takes 19.017083 ms. The 141-file/2,997,706-byte inventory verifies independently. Both native layout warnings and scope exclusions remain retained. No latency target, requirement or gate closes. Next design a separate Core planning/replay profile before choosing algorithmic changes; its proposed costs remain unmeasured."
+    },
+    {
+      "date": "2026-10-23",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "6983f48b231baa397bd026b84483f89b0e1ae370",
+      "retrospective": false,
+      "summary": "A separate Core planning/replay profile passes nine rotated fresh control/off/on runs, each with seven pause and one Kestrel check, unchanged source/input/binary and authored-file guards, and empty WAL. Three enabled 26-line traces validate 24 ordered phase counts, two shared leaf applications, three net transactions, four replay size checks and nine containment equations; six disabled/control logs contain no trace. Control/off/on offscreen medians 259.902375/259.529792/258.317250 ms are n=3 diagnostics with uncalibrated overhead. Two-call leaf reduction median is 64.732208 ms and postprocessing 17.760625 ms. The semantic execution residual of 30.641416 ms excludes the leaf call and after-size charge but includes multiple operations and overhead. The 152-file/3,434,107-byte inventory verifies independently. Initial packaging failure on Root\\u0027s nonexistent optional outline is retained; the corrected fresh packager passes with unchanged measurements. No production change, percentile, target PASS, requirement or gate closure follows. Next identify and qualify a concrete repeated operation in an isolated prototype."
     }
   ]
 }
