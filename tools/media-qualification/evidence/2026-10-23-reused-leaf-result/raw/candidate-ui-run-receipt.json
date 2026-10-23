@@ -1,0 +1,21 @@
+{
+  "command": [
+    "cargo",
+    "nextest",
+    "run",
+    "--archive-file",
+    "/tmp/deadpan-reused-leaf-result-qualification-2026-10-23/candidate-ui.tar.zst",
+    "--extract-to",
+    "/tmp/deadpan-reused-leaf-result-qualification-2026-10-23/candidate-ui-extracted",
+    "--extract-overwrite",
+    "--workspace-remap",
+    "/Users/michael/Code/deadpan",
+    "-E",
+    "all()",
+    "--test-threads",
+    "8",
+    "--no-fail-fast"
+  ],
+  "exit": 0,
+  "seconds": 70.50617912504822
+}

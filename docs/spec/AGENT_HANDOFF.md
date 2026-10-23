@@ -137,8 +137,8 @@ Inventory verifies 118 files /1,356,170 bytes, SHA-256
 b85c335624ba10b58cb86f7855d771c93fe8e00c0485e095e23dfa4f9c7e2e46.
 Never modify or restart that completed comparison.
 
-Next: qualify the uncommitted two-file Core candidate. Production commit_leaf
-now uses the same existing apply_with_result API; the new pause/setter test
+The two-file Core change is now qualified. Production commit_leaf
+uses the same existing apply_with_result API; the new pause/setter test
 compares old leaf patches, returned results, authoritative replay, retained
 bindings/marks, inverse restoration and unchanged input. Both static reviews
 report no defects. No schema or other helper changes are involved.
@@ -155,12 +155,36 @@ Scratch: /tmp/deadpan-reused-leaf-result-qualification-2026-10-23. Initial
 focused.py and qualify.py are terminal after the fixture failure. The failed
 test executable is preserved in first-focused-failure/, with its hash in the
 evidence package. focused_final.py is terminal with all four steps successful.
-qualify_final.py is live: step 1 full Core passed; broader, UI, strict,
-debug/release media and native are queued across eight steps. post.py is
-already live, waiting for eight successful main rows before portable checks,
-five extra native scenarios and five quiet pairs against qualified app 69978abd.
-Inspect owner/receipt files before restarting anything. All remaining phases
-are owed; keep the candidate unqualified and preserve every failed attempt.
+qualify_final.py is terminal with all eight steps successful; post.py is
+terminal with all 26 steps successful and ten guarded timing trials. Do not
+restart them. Broader 3,505 tests (740 skipped), UI 1,296 (eleven skipped),
+strict Core/UI Clippy and formatting all pass. Both suite LEAK cases pass
+isolated same-archive reruns without the warning. The first rerun wrapper
+failed before testing on a wrong guard filename; preserve that setup error.
+Debug/release media verifies 15 pictures /24,024 samples and release verifies
+19 pictures /30,430 samples, all at zero offset with canonical/history controls.
+Six native scenarios pass 1,340 workflow checks plus six Kestrel checks;
+both nine-file portable extractions validate/doctor unchanged.
+
+Five final quiet pairs give control/candidate commit medians
+272.579417 /265.164417 ms and offscreen composition 275.099042 /267.862584 ms.
+The 7.236458 ms difference is about 2.63%, diagnostic only. Keep the 100 ms
+fallback and 50 ms ordinary-edit targets open. Final app SHA-256:
+1864c3acd798d7ce68a8d3a62ee144ec6956cdc4750c568bf0001d7c2a67be4c.
+See the [final qualification](../qualification/reused-leaf-result-2026-10-23.md).
+Root independently verifies all 548 retained payload paths/bytes/hashes and
+gzip streams, totaling 13,363,276 bytes. Inventory SHA-256:
+d1805e2c757039581298c368938afdc8ef2a1d05da3ae76f3bdbc88444dbd9f4.
+
+Next: a separate compact JSON byte-count experiment. Its uncompiled,
+unformatted five-file draft and read-only reviews are in this scratch's
+next-size-study/draft/. Original/proposed sources and exact hashes are retained
+there. Count entry/final and uncaptured Store stages with the identical
+serializer; keep captured checkpoint bytes, error/limit ordering and every
+byte charge. No gain is measured. First use a separate source/target and the
+new qualified 1864c3ac app as control. Never combine timing batches. The
+remaining-work-map.md recommends finer disjoint preparation timers if needed;
+do not skip history reader roundtrips or invent a reusable result proof.
 
 Refresh/verify progress artifact a3ysikxugbmr4 from the next pushed
 docs/progress.json after this implementation commit. Preserve foreign

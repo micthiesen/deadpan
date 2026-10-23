@@ -1,0 +1,16 @@
+{
+  "base": "1e67fdb27bbb3a59d282e5240c65b860b4090b76",
+  "all_core_source_manifest": "9568cd84ccae53fb71248ac2e653816b39c68bea49620b4dffc67aa17db7b45f",
+  "sources": {
+    "crates/deadpan-core/src/semantic/planner/pause.rs": {
+      "manifest_sha256": "8b6e2f282b5d704afe6528e5dbdad5118028bb99d637fe0644410bb514fde15f",
+      "retained_sha256": "8b6e2f282b5d704afe6528e5dbdad5118028bb99d637fe0644410bb514fde15f",
+      "bytes": 46723
+    },
+    "crates/deadpan-core/src/semantic/planner/tests/pause.rs": {
+      "manifest_sha256": "febd9d852ee043b496960a9442cdc8ed34cae1e497442ce7a46e400867dcc276",
+      "retained_sha256": "febd9d852ee043b496960a9442cdc8ed34cae1e497442ce7a46e400867dcc276",
+      "bytes": 58102
+    }
+  }
+}

@@ -1,0 +1,36 @@
+[
+  {
+    "step": 1,
+    "command": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "exit": 0,
+    "seconds": 6.414254292845726
+  },
+  {
+    "step": 2,
+    "command": [
+      "python",
+      "/tmp/deadpan-reused-leaf-result-qualification-2026-10-23/freeze.py",
+      "focused"
+    ],
+    "exit": 0,
+    "seconds": 0.3161770002916455
+  },
+  {
+    "step": 3,
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-core",
+      "--lib",
+      "interior_pause_and_audio_setter_match_legacy_leaf_patches_with_bound_audio_and_marks"
+    ],
+    "exit": 101,
+    "seconds": 359.7567083751783
+  }
+]

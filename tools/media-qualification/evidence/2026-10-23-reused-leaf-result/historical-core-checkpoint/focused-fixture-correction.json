@@ -1,0 +1,10 @@
+{
+  "initial_failure": "AnchorError::OutsideMapping at resolve_target of mark.boundary after interior split",
+  "cause": "A logical mark can retain several physical bindings; the primary coordinate alone can lie outside a clipped interval.",
+  "correction": "Use revision-aware SelectionRequest + BoundarySelector::Mark + NamedMarkTarget to resolve retained bindings. Keep exact frame12 and every differential, inverse and immutability assertion.",
+  "production_helper_changed_after_failure": false,
+  "focused_final_selected": 1,
+  "focused_final_passed": 1,
+  "complete_core_passed": 1514,
+  "complete_core_skipped": 0
+}

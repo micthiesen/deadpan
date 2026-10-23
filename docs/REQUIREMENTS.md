@@ -2,7 +2,7 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
-## Validated leaf-result reuse candidate, 2026-10-23
+## Validated leaf-result reuse, 2026-10-23
 
 A private one-site [prototype](qualification/reused-leaf-result-prototype-2026-10-23.md)
 reuses the validated document returned by the existing `apply_with_result`
@@ -16,17 +16,32 @@ PASS; this is a separate batch from the qualified shared-preparation result.
 All ten replay/input/source/binary guards pass. Evidence verifies 118 files
 /1,356,170 bytes.
 
-The same one-line change plus a pause/setter differential test is an
-uncommitted production candidate. The focused test and all 1,514 Core tests
-across 69 binaries pass, with zero skipped and exact source/input/executable
-guards. Its initial raw primary-mark lookup failed after a split; the fixture
+The production change and pause/setter differential test are qualified: all
+1,514 Core tests across 69 binaries pass with zero skipped, 3,505 broader tests
+pass with 740 skipped, and 1,296 UI tests pass with eleven skipped. Strict
+Core/UI Clippy and formatting pass. Debug/release verifies 15 pictures and
+24,024 audio samples; release also verifies 19 pictures and 30,430 samples,
+all at zero offset with canonical PCM/history controls. Six native scenarios
+pass 1,340 workflow checks plus six Kestrel checks. Both nine-file portable
+extractions validate and doctor without changing paths or bytes.
+
+Five final quiet pairs measure control/candidate input-to-commit medians
+272.579417 /265.164417 ms and offscreen composition 275.099042 /267.862584 ms.
+The 7.236458 ms composition difference is about 2.63%, diagnostic only. The
+100 ms fallback and 50 ms ordinary-edit targets remain open. These samples
+are separate from the earlier prototype. See the
+[final qualification](qualification/reused-leaf-result-2026-10-23.md).
+
+The initial raw primary-mark lookup failed after a split; the fixture
 now uses the revision-aware logical mark API while retaining exact frame 12,
 all differential/replay, binding/mark, inverse and immutability assertions.
 Production code stayed unchanged during that correction. Preserve the failed
 run and its executable hash. See the
 [Core checkpoint](qualification/reused-leaf-result-core-checkpoint-2026-10-23.md).
-Broader, UI, strict, media/native and final timing checks remain owed. No
-requirement or gate closes.
+Both passing suite tests reported as leaky pass isolated reruns from the same
+archived binaries without that warning. The first rerun wrapper failed before
+any test on an incorrect guard filename; its corrected wrapper and all native
+layout warnings remain in the evidence. No requirement or gate closes.
 
 ## Remaining preparation cost, 2026-10-23
 

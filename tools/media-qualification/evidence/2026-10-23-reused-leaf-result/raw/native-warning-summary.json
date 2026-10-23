@@ -1,0 +1,92 @@
+[
+  {
+    "run": "release-native-performance",
+    "scenario": "kestrel-shortcuts",
+    "checks": 1,
+    "findings": []
+  },
+  {
+    "run": "release-native-performance",
+    "scenario": "sound-group-endpoints",
+    "checks": 197,
+    "findings": [
+      "51 frame(s) settled their layout only on a second retry",
+      "egui discard warning"
+    ]
+  },
+  {
+    "run": "native-macros",
+    "scenario": "kestrel-shortcuts",
+    "checks": 1,
+    "findings": []
+  },
+  {
+    "run": "native-macros",
+    "scenario": "macros",
+    "checks": 401,
+    "findings": [
+      "115 frame(s) settled their layout only on a second retry",
+      "egui discard warning"
+    ]
+  },
+  {
+    "run": "native-named-registers",
+    "scenario": "kestrel-shortcuts",
+    "checks": 1,
+    "findings": []
+  },
+  {
+    "run": "native-named-registers",
+    "scenario": "named-registers",
+    "checks": 171,
+    "findings": [
+      "30 frame(s) settled their layout only on a second retry",
+      "egui discard warning"
+    ]
+  },
+  {
+    "run": "native-dot-repeat",
+    "scenario": "kestrel-shortcuts",
+    "checks": 1,
+    "findings": []
+  },
+  {
+    "run": "native-dot-repeat",
+    "scenario": "dot-repeat",
+    "checks": 383,
+    "findings": [
+      "61 frame(s) settled their layout only on a second retry",
+      "egui discard warning"
+    ]
+  },
+  {
+    "run": "native-range-set-selectors",
+    "scenario": "kestrel-shortcuts",
+    "checks": 1,
+    "findings": []
+  },
+  {
+    "run": "native-range-set-selectors",
+    "scenario": "range-set-selectors",
+    "checks": 85,
+    "findings": [
+      "22 frame(s) settled their layout only on a second retry",
+      "egui discard warning"
+    ]
+  },
+  {
+    "run": "native-transcript-search-selectors",
+    "scenario": "kestrel-shortcuts",
+    "checks": 1,
+    "findings": []
+  },
+  {
+    "run": "native-transcript-search-selectors",
+    "scenario": "transcript-search-selectors",
+    "checks": 103,
+    "findings": [
+      "31 frame(s) settled their layout only on a second retry",
+      "egui discard warning"
+    ]
+  }
+]

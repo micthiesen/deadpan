@@ -247,10 +247,16 @@ An isolated [leaf-result reuse prototype](qualification/reused-leaf-result-proto
 replaces one semantic helper's `apply` then `forward.apply` pair with the
 existing `apply_with_result`. Five quiet pairs measure offscreen medians
 272.684834 /268.738125 ms, a small diagnostic difference with all replay and
-provenance guards passing. This is unqualified prototype evidence, separate
-from the earlier production comparison. The working candidate adds a
-differential pause/setter, binding/mark and inverse test; production checks
-remain pending. No percentile or latency target PASS follows.
+provenance guards passing. This prototype remains separate from the
+[qualified production change](qualification/reused-leaf-result-2026-10-23.md).
+The final production comparison passes five quiet guarded pairs with
+control/candidate input-to-commit medians 272.579417 /265.164417 ms and
+offscreen composition 275.099042 /267.862584 ms. The latter difference is
+7.236458 ms, about 2.63%. All Core, broader/UI, strict, media, native and
+portable checks pass, including differential pause/setter, binding/mark,
+inverse and authoritative replay checks. These n=5 diagnostics establish no
+percentile or latency target PASS; the 100 ms fallback and 50 ms ordinary-edit
+targets remain open.
 
 | Section 25 target | Measurement | Notes |
 | --- | --- | --- |

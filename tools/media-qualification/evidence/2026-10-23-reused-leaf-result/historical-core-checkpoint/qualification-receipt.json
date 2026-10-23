@@ -1,0 +1,14 @@
+[
+  {
+    "step": 1,
+    "command": [
+      "python",
+      "/tmp/deadpan-reused-leaf-result-qualification-2026-10-23/qualify_all_ui.py",
+      "candidate-all-core",
+      "candidate",
+      "allcore"
+    ],
+    "exit": 0,
+    "seconds": 135.71340945921838
+  }
+]

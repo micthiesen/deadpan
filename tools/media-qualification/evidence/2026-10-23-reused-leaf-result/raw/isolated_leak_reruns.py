@@ -1,0 +1,30 @@
+from pathlib import Path
+import subprocess,json,time,hashlib,os
+q=Path('/tmp/deadpan-reused-leaf-result-qualification-2026-10-23')
+def sha(p):return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+def guard(phase):
+ sources=json.loads((q/(phase+'-source-identities.json')).read_text())
+ names=set(subprocess.check_output(['rg','--files','-g','*.rs'],text=True).splitlines())
+ assert names==set(sources)
+ assert all(sha(p)==h for p,h in sources.items())
+ assert all(sha(p)==h for p,h in json.loads((q/(phase+'-inputs.json')).read_text()).items())
+rows=[]
+cases=[('candidate-broad','serialized_record_does_not_grant_authority_over_current_inventory'),('candidate-ui','ntsc_picture_changes_at_allocated_sample_boundary_once')]
+for phase,needle in cases:
+ guard(phase)
+ listed=json.loads((q/(phase+'-list.json')).read_text())['rust-suites']
+ paths=[suite['binary-path']for suite in listed.values()if any(name==needle or name.endswith('::'+needle)for name in suite['testcases'])]
+ assert len(paths)==1,paths
+ binary=paths[0];before=sha(binary);log=q/(phase+'-isolated-leak-rerun.log')
+ command=['cargo','nextest','run','--archive-file',str(q/(phase+'.tar.zst')),'--extract-to',str(q/(phase+'-extracted')),'--extract-overwrite','--workspace-remap','/Users/michael/Code/deadpan','-E','test(='+needle+')','--test-threads','1','--no-fail-fast']
+ # UI test names are module-qualified; select with a unique suffix from the archived listing.
+ command[command.index('-E')+1]='test('+needle+')'
+ start=time.monotonic()
+ with log.open('w')as out:r=subprocess.run(command,stdout=out,stderr=subprocess.STDOUT)
+ text=log.read_text()
+ assert r.returncode==0 and '1 test run: 1 passed' in text,text[-2500:]
+ assert sha(binary)==before
+ guard(phase)
+ rows.append({'phase':phase,'test':needle,'command':command,'exit':r.returncode,'seconds':time.monotonic()-start,'tests':1,'passed':1,'leaky':'LEAK ['in text,'binary':binary,'sha256':before,'source_binary_guards':True})
+ (q/'isolated-leak-reruns.json').write_text(json.dumps(rows,indent=2)+'\n')
+ print(json.dumps(rows[-1]),flush=True)

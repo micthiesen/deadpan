@@ -1,0 +1,70 @@
+{
+  "executed_cli": {
+    "source": "target/release/deadpan-cli",
+    "path": "/tmp/deadpan-reused-leaf-result-qualification-2026-10-23/release-media-extracted/target/release/deadpan-cli",
+    "sha256": "5e1e04b96bc9ba82e7b056a266246054122dc40ea8526554269b8d083a7a2ceb"
+  },
+  "safe_relative_regular_files_only": true,
+  "cases": [
+    {
+      "label": "neutral",
+      "package": "/tmp/deadpan-reused-leaf-result-qualification-2026-10-23/owner-portable-check/neutral/neutral-ungroup-portable.deadpan",
+      "regular_files": 9,
+      "archive_sha256": "c603fecdf40ff5046fa9eb3b72099bbeb918e20e732957b368e61ca65cb24ea4",
+      "commands": [
+        {
+          "command": [
+            "/tmp/deadpan-reused-leaf-result-qualification-2026-10-23/release-media-extracted/target/release/deadpan-cli",
+            "project",
+            "validate",
+            "/tmp/deadpan-reused-leaf-result-qualification-2026-10-23/owner-portable-check/neutral/neutral-ungroup-portable.deadpan"
+          ],
+          "exit": 0,
+          "seconds": 0.04522116668522358,
+          "package_paths_and_bytes_unchanged": true
+        },
+        {
+          "command": [
+            "/tmp/deadpan-reused-leaf-result-qualification-2026-10-23/release-media-extracted/target/release/deadpan-cli",
+            "doctor",
+            "--project",
+            "/tmp/deadpan-reused-leaf-result-qualification-2026-10-23/owner-portable-check/neutral/neutral-ungroup-portable.deadpan"
+          ],
+          "exit": 0,
+          "seconds": 0.035216749645769596,
+          "package_paths_and_bytes_unchanged": true
+        }
+      ]
+    },
+    {
+      "label": "aligned",
+      "package": "/tmp/deadpan-reused-leaf-result-qualification-2026-10-23/owner-portable-check/aligned/aligned-sound-scope-portable.deadpan",
+      "regular_files": 9,
+      "archive_sha256": "777b9b73c6dd8d714ae34ed489e63180b38807e03c3a7c47f0d8f3533ad3193f",
+      "commands": [
+        {
+          "command": [
+            "/tmp/deadpan-reused-leaf-result-qualification-2026-10-23/release-media-extracted/target/release/deadpan-cli",
+            "project",
+            "validate",
+            "/tmp/deadpan-reused-leaf-result-qualification-2026-10-23/owner-portable-check/aligned/aligned-sound-scope-portable.deadpan"
+          ],
+          "exit": 0,
+          "seconds": 0.06700420752167702,
+          "package_paths_and_bytes_unchanged": true
+        },
+        {
+          "command": [
+            "/tmp/deadpan-reused-leaf-result-qualification-2026-10-23/release-media-extracted/target/release/deadpan-cli",
+            "doctor",
+            "--project",
+            "/tmp/deadpan-reused-leaf-result-qualification-2026-10-23/owner-portable-check/aligned/aligned-sound-scope-portable.deadpan"
+          ],
+          "exit": 0,
+          "seconds": 0.038329457864165306,
+          "package_paths_and_bytes_unchanged": true
+        }
+      ]
+    }
+  ]
+}
