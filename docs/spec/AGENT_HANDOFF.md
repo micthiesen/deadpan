@@ -4,6 +4,21 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Current continuation, 2026-10-22
 
+Working candidate update, 2026-10-23: explicit introduced-group correspondence,
+bounded aligned single-leaf admission, copy renaming and later clock transport
+are integrated locally and uncommitted. Nineteen focused public Core cases pass;
+one copy test uses an invalid absolute range and needs its setup corrected.
+The isolated proof prototype passes 678 Core library tests. Source reviews found
+no concrete defect, but the actual new-group birth/copy PCM test fails with all
+controls valid: one terminal input channel sample disappears and 1,899 output
+channel samples change. Its executable SHA-256 is
+`cc512d96a02ab32759c40783225eacdb9cb3d829985a71ee9113119e325fbafc`.
+Raw evidence is under the task scratch's
+`integrated-first-probe-evidence/new-group-birth/`. Preserve pre-birth delivery
+masks and expand only the genuinely post-birth processing history; changing
+`all(expands_history)` to `any` is insufficient. The optimized archive build is
+still pending. Candidate core 56/store 85 are not yet committed or qualified.
+
 Ordinary `GroupSelection` endpoint Splits now use existing sound transport with
 one shared complete pre-edit audio layout. Aligned grouping keeps tables and
 recipes unchanged. The group parent must stay outside every retained processing

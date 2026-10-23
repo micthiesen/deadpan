@@ -4,14 +4,24 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 
 ## Aligned sound-scope research, 2026-10-23
 
+The uncommitted context-preserving candidate passes 19 focused public Core
+cases; one additional copy fixture has invalid absolute range coordinates and
+does not establish its intended behavior. The isolated correspondence prototype
+passes all 678 Core library tests. Independent source reviews report no concrete
+findings, but the new-group copy audio test finds a real processing-history gap:
+one retained input sample is lost and 1,899 canonical PCM channel samples differ
+from the delivered-at-group-birth oracle. All witness controls pass. The fix and
+optimized integrated suite remain in progress; these are not release results.
+No coverage percentage, requirement completion or gate changes.
+
 [Research qualification](qualification/sound-scope-research-2026-10-23.md)
 refutes manual journal-scope narrowing. A two-placement test loses retained
 terminal sample 22422 from an existing ancestor EQ's input and changes 1,899
 canonical PCM channel samples. The earlier 40 single-placement comparisons,
 40 audible-effect controls and four JSON-admitted exterior crops pass. Complete
 failure evidence is retained; production grouping guards remain unchanged.
-A context-preserving correspondence prototype is not yet integrated or qualified
-as an edit. No requirement or gate is newly complete; SQLite 84/core 55 remain.
+The context-preserving candidate is not yet qualified as an edit. No requirement
+or gate is newly complete; committed versions remain SQLite 84/core 55.
 
 ## Attached-sound endpoint grouping, 2026-10-22
 
