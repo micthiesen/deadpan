@@ -1,0 +1,16 @@
+{
+  "at": "2026-10-23T11:19:43.764230+00:00",
+  "executor": "root",
+  "command": [
+    "python",
+    "/tmp/deadpan-reused-leaf-result-qualification-2026-10-23/final-evidence-draft/scripts/package_final.py",
+    "--destination",
+    "/tmp/deadpan-reused-leaf-result-package-audit-2026-10-23/reproduced",
+    "--finalize"
+  ],
+  "exit": 0,
+  "stderr_empty": true,
+  "all548_payload_paths_bytes_hashes_identical": true,
+  "inventory_sha256": "d1805e2c757039581298c368938afdc8ef2a1d05da3ae76f3bdbc88444dbd9f4",
+  "initial_packaging_history": "Delegate reports first wrapper refused before writing on an all-suites versus matching-suites assertion; corrected invocation found the final directory already present. Original creation receipt is unavailable. Root reproduces the complete package independently and obtains identical inventory and payload hashes."
+}

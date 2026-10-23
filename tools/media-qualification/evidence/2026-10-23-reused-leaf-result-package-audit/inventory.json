@@ -1,0 +1,36 @@
+{
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 793,
+      "sha256": "8e02baf34cb8cfb60a56910436da6a9b0761c5f39df7a6d0d8e05579e8a48f56"
+    },
+    {
+      "path": "comparison.json",
+      "bytes": 197,
+      "sha256": "1964c5ef0b19c19cf18dc547d15da72193fbafc79e413c1b7f8b89f481ea9cb9"
+    },
+    {
+      "path": "package_final.py",
+      "bytes": 11902,
+      "sha256": "b0dbcec031251b6190d22419b3998022a40c505b91de0d4480dde281e78ca8fc"
+    },
+    {
+      "path": "receipt.json",
+      "bytes": 856,
+      "sha256": "c10968e39c16842e515806879cdf182a7983d9e9662c57e57bfeac3c67d1685e"
+    },
+    {
+      "path": "stderr.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "stdout.json",
+      "bytes": 163,
+      "sha256": "459b7f44bb4306093b28ad398fd491b229a7b84f023a53d4f81b810d36ee396b"
+    }
+  ],
+  "total_files": 6,
+  "total_bytes": 13911
+}
