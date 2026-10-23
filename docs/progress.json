@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-23T09:42:41Z",
+  "updated_at": "2026-10-23T09:51:20Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "The uncommitted transaction-owned Compound preparation candidate passes all 3,505 broader tests, 1,296 UI tests, strict checks, debug/release media and the primary 197-check native replay. Both nine-file portable extractions validate/doctor unchanged. An extra dot-repeat replay exposed an obsolete assertion that Split clears the last edit; the previous qualified executable fails identically. The harness now uses an unsupported whole-Original insertion in the Edit domain, and its debug replay passes all 383 checks. Fresh UI/strict checks pass after this harness-only correction; the new release build and extra replay/performance sequence are running. The initial failed replay, baseline witness and debug performance-mode refusal are retained. No candidate latency gain or target PASS is claimed; coverage remains 89%, 8/24 sections complete.",
+  "focus": "Shared transactional runtime preparation is implemented, reviewed, qualified and pushed. All 3,505 broader selected tests and 1,296 UI-feature tests pass, plus strict checks, debug/release media/history, 1,340 release workflow checks across six scenarios and two portable extractions. Five quiet fresh-package pairs reduce median input-to-commit390.680250 to273.119542ms and input-to-offscreen composition393.261916 to275.697709ms, about117.56ms/29.9%. This remains a short diagnostic, not a formal percentile or latency-budget PASS. The 100ms fallback and50ms ordinary-edit targets remain open. Evidence verifies430files/10,600,909bytes and preserves the stale Split replay/baseline witness, zero-test filter, debug-mode refusal and comment-only correction. Core58/SQLite87 and coverage89%,8/24 complete remain unchanged. Next work profiles the remaining native delay in an isolated build.",
   "features": [
     {
       "id": "editing",
@@ -102,7 +102,7 @@
         "DP-18",
         "DP-24"
       ],
-      "note": "Core 58 / SQLite 87 compact bindings remain qualified: five direct store-and-refresh pairs improved first median114.587 to93.633ms, excluding picture display. The later native service profile measures root-control offscreen median388.289833ms and locates redundant preview preparation. The transaction-owned preparation candidate passes broader/UI/strict/media/history and primary native checks, but remains uncommitted while a stale Split expectation is corrected and final release replays/paired timings complete. Both old and candidate executables failed that obsolete check; the corrected debug scenario passes383 checks. No new percentile or latency-budget PASS."
+      "note": "Shared Compound preparation now avoids a separate native preview replay while preserving transactional authority and fallible runtime preparation before writes. Qualified broader/UI/strict/media/history/native/portable checks pass. Five quiet native pairs improve offscreen first-pause median393.261916 to275.697709ms, about29.9%; n=5 does not establish a percentile or the100ms/50ms edit targets. Remaining native latency, worker-memory and sleep qualification stay open."
     },
     {
       "id": "models",
@@ -1045,6 +1045,14 @@
       "revision": "09063d3a4169cd2b9fe4f567def147b20417c7b2",
       "retrospective": false,
       "summary": "Compound preparation candidate now passes strict changed-package/UI checks, debug/release15-picture24,024-sample and release19-picture30,430-sample media/history controls atzerooffset, the primary197-check native replay plusKestrel, and two nine-file portable extractions without byte/path changes. Extra dot-repeat replay failed an obsolete assertion that Split invalidates the old edit; the qualified previous executable fails identically because Split now supports semantic dot. Only the harness was corrected to test unsupported whole-Original insertion in the Edit domain. Its debugvisual run passes383 checks plusKestrel; fresh1,296-case UI and strictUI checks pass. The initial --lib0selection, failed candidate/baseline replay, and explicit debugperformance-mode refusal before replay are retained. Final release/extra-native/paired timing qualification remains owed; production is uncommitted and no gain or targetPASS is claimed."
+    },
+    {
+      "date": "2026-10-23",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "d29ee6376f2c3b3f37f76612f7bf14c266c11ce5",
+      "retrospective": false,
+      "summary": "Shared runtime preparation is implemented and qualified: the Store prepares a Compound once inside the Immediate transaction, prepares a fallible private runtime bank before writes, and returns it after durable commit. Head/bank/allocation/capture/analysis guards and legacy APIs remain; Core58/SQLite87 is unchanged. Five focused Store,3,505 broader selected and1,296 UI tests pass (740/11 skipped), strict changed-package/UI checks and formatting pass. Debug/release15pictures24,024samples and release19pictures30,430samples verify atzerooffset with canonical/history controls. Six release scenarios pass1,340workflowchecks plusKestrelperrun; two nine-file portable packages validate/doctor unchanged. Five quiet pairs improve input-to-commit medians390.680250/273.119542ms and offscreen composition393.261916/275.697709ms. This117.564207ms/~29.9% reduction is diagnostic,n=5,with no percentile or100ms/50ms targetPASS. The stale Split assertion failed on both executables; corrected unsupported-insertion replay passes383checks. All initial mistakes, layout warnings and exact post-qualification two-line comment correction remain retained. Inventory verifies430files/10,600,909bytes. No requirement or gate closes; finer isolated profiling is next."
     }
   ]
 }
