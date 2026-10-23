@@ -1010,6 +1010,11 @@ impl FrozenAudioLayout {
         if !self.derived_clocks.is_empty() {
             return Ok(self.clone());
         }
+        if crate::command_work::local() && !self.is_provisional() && keep.len() == self.nodes.len()
+        {
+            self.wire_bytes()?;
+            return Ok(self.clone());
+        }
         let mut nodes = BTreeMap::new();
         let mut pending = vec![&self.root];
         while let Some(id) = pending.pop() {
@@ -3217,6 +3222,367 @@ mod scoped_capture_property {
                 audio: HoldAudio::Silence,
             },
         )
+    }
+
+    fn reuse_id(name: &str) -> NodeId {
+        NodeId::new(name).unwrap()
+    }
+
+    fn frozen_sequence(frames: i64, children: &[&str]) -> FrozenAudioNode {
+        FrozenAudioNode {
+            duration: FrameDuration::new(frames).unwrap(),
+            edges: Default::default(),
+            editorial_edges: Default::default(),
+            kind: FrozenAudioKind::Sequence {
+                children: children.iter().map(|name| reuse_id(name)).collect(),
+            },
+        }
+    }
+
+    fn reuse_nested_layout() -> FrozenAudioLayout {
+        let iterations = IterationOrder::new(RevisionId::new("plays").unwrap(), 2).unwrap();
+        let mut overrides = PlayOverrides::default();
+        overrides.insert(iterations.at(1).unwrap(), reuse_id("override"));
+        let mut gaps = PlayOverrides::default();
+        gaps.insert(iterations.at(0).unwrap(), reuse_id("gap"));
+        FrozenAudioLayout::admit(LayoutWire {
+            root: reuse_id("root"),
+            rate: FrameRate::new(24, 1).unwrap(),
+            nodes: BTreeMap::from([
+                (
+                    reuse_id("root"),
+                    frozen_sequence(14, &["group", "repeat", "empty"]),
+                ),
+                (reuse_id("group"), frozen_sequence(5, &["lead"])),
+                (reuse_id("lead"), spacer(FrameDuration::new(5).unwrap())),
+                (reuse_id("empty"), frozen_sequence(0, &[])),
+                (
+                    reuse_id("repeat"),
+                    FrozenAudioNode {
+                        duration: FrameDuration::new(9).unwrap(),
+                        edges: Default::default(),
+                        editorial_edges: Default::default(),
+                        kind: FrozenAudioKind::Repeat {
+                            child: reuse_id("base"),
+                            iterations,
+                            gap_duration: FrameDuration::new(1).unwrap(),
+                            gap_audio: ReferenceAudibility::Silence,
+                        },
+                    },
+                ),
+                (reuse_id("base"), spacer(FrameDuration::new(2).unwrap())),
+                (reuse_id("override"), frozen_sequence(3, &["override-leaf"])),
+                (
+                    reuse_id("override-leaf"),
+                    spacer(FrameDuration::new(3).unwrap()),
+                ),
+                (reuse_id("gap"), frozen_sequence(4, &["gap-leaf"])),
+                (reuse_id("gap-leaf"), spacer(FrameDuration::new(4).unwrap())),
+            ]),
+            overrides: BTreeMap::from([(reuse_id("repeat"), overrides)]),
+            gap_overrides: BTreeMap::from([(reuse_id("repeat"), gaps)]),
+            audio_lineage: BTreeMap::from([
+                (
+                    reuse_id("lead"),
+                    AudioLineageId {
+                        allocation: RevisionId::new("lineage").unwrap(),
+                        origin: reuse_id("historical-lead"),
+                    },
+                ),
+                (
+                    reuse_id("gap"),
+                    AudioLineageId {
+                        allocation: RevisionId::new("lineage").unwrap(),
+                        origin: reuse_id("historical-gap"),
+                    },
+                ),
+            ]),
+            derived_clocks: BTreeMap::new(),
+        })
+        .unwrap()
+    }
+
+    fn reuse_wide_document(count: usize) -> ProjectDocument {
+        let mut document = ProjectDocument::new(
+            ProjectId::new("reuse-wide").unwrap(),
+            RevisionId::new("initial").unwrap(),
+            PresentationBasis {
+                width: 16,
+                height: 16,
+                frame_rate: FrameRate::new(24, 1).unwrap(),
+                color_policy: ColorPolicy::SdrRec709,
+            },
+            reuse_id("root"),
+        )
+        .unwrap();
+        let children: Vec<_> = (0..count)
+            .map(|index| {
+                let id = reuse_id(&format!("hold-{index:05}"));
+                document.nodes.insert(id.clone(), hold(4));
+                id
+            })
+            .collect();
+        document
+            .nodes
+            .insert(reuse_id("root"), BeatNode::sequence("Root", children));
+        document.validate().unwrap();
+        document
+    }
+
+    #[test]
+    fn full_layout_reuse_leaf_closure_preserves_nested_wire_and_fields() {
+        let layout = reuse_nested_layout();
+        // Empty Sequences are leaves too. No structural parent is requested.
+        let aliases: Vec<_> = layout
+            .nodes
+            .keys()
+            .filter(|id| layout.children(id).next().is_none())
+            .cloned()
+            .collect();
+        assert!(!aliases.contains(&layout.root));
+        assert!(aliases.contains(&reuse_id("empty")));
+        let local = layout.sliced(&aliases).unwrap();
+        let reference = crate::with_reference_command_work(|| layout.sliced(&aliases)).unwrap();
+        assert_eq!(local, layout);
+        assert_eq!(local, reference);
+        assert_eq!(local.to_json().unwrap(), reference.to_json().unwrap());
+        assert_eq!(local.to_json().unwrap(), layout.to_json().unwrap());
+        assert!(Arc::ptr_eq(&local.inner, &layout.inner));
+        assert!(!Arc::ptr_eq(&reference.inner, &layout.inner));
+        assert!(!layout.overrides.is_empty());
+        assert!(!layout.gap_overrides.is_empty());
+        assert!(!layout.audio_lineage.is_empty());
+    }
+
+    #[test]
+    fn full_layout_reuse_partial_and_provisional_tables_still_rebuild() {
+        let document = reuse_wide_document(64);
+        let layout = FrozenAudioLayout::capture(&document).unwrap();
+        let required = BTreeSet::from([reuse_id("hold-00032")]);
+        let partial = layout.sliced(&required).unwrap();
+        let reference = crate::with_reference_command_work(|| layout.sliced(&required)).unwrap();
+        assert_eq!(partial, reference);
+        assert_eq!(partial.to_json(), reference.to_json());
+        assert!(partial.nodes.len() < layout.nodes.len());
+        assert!(!Arc::ptr_eq(&partial.inner, &layout.inner));
+        let provisional = FrozenAudioLayout::capture_scoped(&document, &required)
+            .unwrap()
+            .unwrap();
+        assert!(provisional.is_provisional());
+        // Cover every stored node, including its duration-preserving spacers.
+        let all: Vec<_> = provisional.nodes.keys().cloned().collect();
+        for aliases in [required.iter().cloned().collect::<Vec<_>>(), all] {
+            let local = provisional.sliced(&aliases).unwrap();
+            let reference =
+                crate::with_reference_command_work(|| provisional.sliced(&aliases)).unwrap();
+            assert_eq!(local, reference);
+            assert_eq!(local.to_json().unwrap(), reference.to_json().unwrap());
+            assert!(!local.is_provisional());
+            assert!(!Arc::ptr_eq(&local.inner, &provisional.inner));
+        }
+    }
+
+    #[test]
+    fn full_layout_reuse_late_unknown_alias_precedes_identity_and_clock_fallbacks() {
+        let layout = reuse_nested_layout();
+        let mut clock_wire = LayoutWire {
+            root: reuse_id("root"),
+            rate: FrameRate::new(24, 1).unwrap(),
+            nodes: BTreeMap::from([
+                (reuse_id("root"), frozen_sequence(2, &["retime"])),
+                (reuse_id("leaf"), spacer(FrameDuration::new(2).unwrap())),
+            ]),
+            overrides: BTreeMap::new(),
+            gap_overrides: BTreeMap::new(),
+            audio_lineage: BTreeMap::new(),
+            derived_clocks: BTreeMap::new(),
+        };
+        clock_wire.nodes.insert(
+            reuse_id("retime"),
+            FrozenAudioNode {
+                duration: FrameDuration::new(2).unwrap(),
+                edges: Default::default(),
+                editorial_edges: Default::default(),
+                kind: FrozenAudioKind::Retime {
+                    child: reuse_id("leaf"),
+                    mapping: FrameRange::new(crate::ProjectFrame(0), crate::ProjectFrame(2))
+                        .unwrap(),
+                    pitch: PitchPolicy::FollowSpeed,
+                    purpose: RetimePurpose::Partition,
+                },
+            },
+        );
+        clock_wire.derived_clocks.insert(
+            reuse_id("retime"),
+            FrozenRetimeClock {
+                extent: ExactRatio::integer(2),
+                child_start: ExactRatio::ZERO,
+                child_end: ExactRatio::integer(2),
+            },
+        );
+        let clocked = FrozenAudioLayout::admit(clock_wire).unwrap();
+        assert!(!clocked.derived_clocks.is_empty());
+        for layout in [&layout, &clocked] {
+            let mut aliases: Vec<_> = layout.nodes.keys().cloned().collect();
+            aliases.push(reuse_id("zz-missing-after-complete-coverage"));
+            let local = layout.sliced(&aliases);
+            let reference = crate::with_reference_command_work(|| layout.sliced(&aliases));
+            assert_eq!(local, reference);
+            assert_eq!(
+                local.unwrap_err(),
+                invalid("sliced frozen alias is missing")
+            );
+        }
+        // A valid derived-clock request retains the pre-existing shared fallback
+        // in both modes, even when it does not cover the complete table.
+        let aliases = [reuse_id("root")];
+        let local = clocked.sliced(&aliases).unwrap();
+        let reference = crate::with_reference_command_work(|| clocked.sliced(&aliases)).unwrap();
+        assert_eq!(local.to_json(), reference.to_json());
+        assert!(Arc::ptr_eq(&local.inner, &clocked.inner));
+        assert!(Arc::ptr_eq(&reference.inner, &clocked.inner));
+    }
+
+    #[test]
+    fn full_layout_reuse_retains_canonical_wire_limit_refusal() {
+        // This private admission mode also backs from_json. Exercise its valid
+        // graph without canonical size checking, using the real wire ceiling.
+        let allocation = RevisionId::new("a".repeat(crate::MAX_IDENTITY_BYTES)).unwrap();
+        let mut nodes = BTreeMap::new();
+        let mut children = Vec::new();
+        let mut lineage = BTreeMap::new();
+        for index in 0..MAX_DOCUMENT_NODES - 1 {
+            let id = reuse_id(&format!(
+                "{index:06}{}",
+                "x".repeat(crate::MAX_IDENTITY_BYTES - 6)
+            ));
+            nodes.insert(id.clone(), spacer(FrameDuration::new(1).unwrap()));
+            children.push(id.clone());
+            lineage.insert(
+                id.clone(),
+                AudioLineageId {
+                    allocation: allocation.clone(),
+                    origin: id,
+                },
+            );
+        }
+        nodes.insert(
+            reuse_id("root"),
+            FrozenAudioNode {
+                duration: FrameDuration::new(i64::try_from(children.len()).unwrap()).unwrap(),
+                edges: Default::default(),
+                editorial_edges: Default::default(),
+                kind: FrozenAudioKind::Sequence {
+                    children: children.clone(),
+                },
+            },
+        );
+        let layout = FrozenAudioLayout::admit_sized(
+            LayoutWire {
+                root: reuse_id("root"),
+                rate: FrameRate::new(24, 1).unwrap(),
+                nodes,
+                overrides: BTreeMap::new(),
+                gap_overrides: BTreeMap::new(),
+                audio_lineage: lineage,
+                derived_clocks: BTreeMap::new(),
+            },
+            false,
+        )
+        .unwrap();
+        assert!(!layout.is_provisional());
+        assert!(layout.inner.wire_bytes.get().is_none());
+        let expected = limit("frozen audio JSON exceeds byte limit");
+        assert_eq!(layout.wire_bytes().unwrap_err(), expected);
+        let local = layout.sliced(&children);
+        let reference = crate::with_reference_command_work(|| layout.sliced(&children));
+        assert_eq!(local, reference);
+        assert_eq!(local.unwrap_err(), expected);
+        assert!(layout.inner.wire_bytes.get().is_none());
+    }
+
+    #[test]
+    fn full_layout_reuse_ten_thousand_hold_interior_pause_matches_reference() {
+        let document = reuse_wide_document(10_000);
+        assert!(document.audio_bindings().is_empty());
+        let at = crate::ProjectFrame(17_933);
+        let split = document.insert_time_target(at).unwrap().split.unwrap();
+        let request = crate::CommandRequest {
+            project_id: document.project_id().clone(),
+            expected_revision: document.revision_id().clone(),
+            new_revision: RevisionId::new("pause").unwrap(),
+            command: crate::Command::InsertTime {
+                at,
+                hold: HoldRecipe {
+                    duration: FrameDuration::new(3).unwrap(),
+                    picture_context: None,
+                    video: HoldVideo::Background,
+                    audio: HoldAudio::Silence,
+                },
+                id: reuse_id("pause-node"),
+                identities: crate::SplitIdentities {
+                    nodes: (0..split.required_ids)
+                        .map(|index| reuse_id(&format!("split-{index}")))
+                        .collect(),
+                },
+                timing: crate::AudioTimingId {
+                    allocation: RevisionId::new("pause").unwrap(),
+                    ordinal: 0,
+                },
+            },
+        };
+        let local = crate::apply_with_result(&document, &request);
+        let reference =
+            crate::with_reference_command_work(|| crate::apply_with_result(&document, &request));
+        assert_eq!(local, reference);
+        let (transaction, after) = local.unwrap();
+        let (reference_transaction, reference_after) = reference.unwrap();
+        assert_eq!(
+            after.to_compact_json().unwrap(),
+            reference_after.to_compact_json().unwrap()
+        );
+        assert_eq!(
+            serde_json::to_string(&transaction).unwrap(),
+            serde_json::to_string(&reference_transaction).unwrap()
+        );
+        assert_eq!(transaction.forward.apply(&document).unwrap(), after);
+        assert_eq!(transaction.inverse.apply(&after).unwrap(), document);
+        assert_eq!(transaction.forward.restores(&document, &after), Ok(true));
+        assert_eq!(transaction.inverse.restores(&after, &document), Ok(true));
+        let state = after.audio_bindings();
+        assert_eq!(state.timings().len(), 1);
+        let (timing, layout) = state.timings().first_key_value().unwrap();
+        assert!(!layout.is_provisional());
+        assert_eq!(layout.nodes.len(), document.nodes().len());
+        let mut aliases = BTreeSet::new();
+        for (_, _, binding) in state.owners() {
+            for template in binding.placements() {
+                if &template.reference.timing == timing {
+                    crate::audio_binding_lifecycle::template_aliases(template, &mut aliases);
+                }
+            }
+        }
+        assert!(!aliases.contains(&layout.root));
+        let mut closure = BTreeSet::new();
+        for alias in &aliases {
+            let mut current = alias;
+            while closure.insert(current.clone()) {
+                match layout.index.parents.get(current) {
+                    Some((parent, _)) => current = parent,
+                    None => break,
+                }
+            }
+        }
+        assert_eq!(
+            closure,
+            layout.nodes.keys().cloned().collect::<BTreeSet<_>>()
+        );
+        let shared = layout.sliced(&aliases).unwrap();
+        let rebuilt = crate::with_reference_command_work(|| layout.sliced(&aliases)).unwrap();
+        assert_eq!(shared, rebuilt);
+        assert_eq!(shared.to_json(), rebuilt.to_json());
+        assert!(Arc::ptr_eq(&shared.inner, &layout.inner));
+        assert!(!Arc::ptr_eq(&rebuilt.inner, &layout.inner));
     }
 
     /// A random valid tree of Sequences (some empty), Holds, Repeats and
