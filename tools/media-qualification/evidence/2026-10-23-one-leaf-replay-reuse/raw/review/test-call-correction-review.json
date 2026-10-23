@@ -1,0 +1,37 @@
+{
+  "status": "no_findings",
+  "reviewer": "/root/one_leaf_replay_review",
+  "date": "2026-10-23",
+  "scope": "Read-only independent source review of exactly the one existing Store unit-test call correction after retained E0061 compile failure.",
+  "file": "crates/deadpan-store/src/compound/tests.rs",
+  "line": 953,
+  "before_sha256": "cef529c2160c229a25741be09f7257e7d7340608ea5fa571ee0b72092c03b0be",
+  "after_sha256": "bbaa8d302938a55abe05d9437acc53025a68e0af3fec591a72103bd057964d37",
+  "receipt_sha256": "1af08c6a3214c1a5c6631658b992574477c3ccf162c2384ad8fced57151189a5",
+  "before_source_map_sha256": "b855d62986fcf2337bb86e8796f5b971160ad91f0c806238e3cd078690417ba1",
+  "exact_one_replacement_verified": true,
+  "diff": "--- before/crates/deadpan-store/src/compound/tests.rs\n+++ after/crates/deadpan-store/src/compound/tests.rs\n@@ -950,7 +950,7 @@\n         2\n     );\n     let before = cells(&store);\n-    let (counted, staged) = execute(&store.connection, &initial, &command, None).unwrap();\n+    let (counted, staged) = execute(&store.connection, &initial, &command, None, None).unwrap();\n     assert_eq!(counted.document, reference.document);\n     assert_eq!(counted.edit, reference.edit);\n     assert_eq!(counted.register_writes, reference.register_writes);\n",
+  "findings": [],
+  "assertions_weakened": false,
+  "production_changed_by_correction": false,
+  "source_comparison": {
+    "rust_files": 2053,
+    "only_changed_path": "crates/deadpan-store/src/compound/tests.rs",
+    "other_rust_files_byte_identical": 2052,
+    "six_pinned_inputs_byte_identical": true
+  },
+  "reasoning": [
+    "Private execute now takes connection, current, request, admitted and optional OneLeafReplay candidate. Adding a fifth None selects the existing uncached reference path and leaves the fourth admitted=None unchanged.",
+    "The test continues to compare document, EditTransaction, register writes, exact staged checkpoint values and unchanged SQL cells against its independently materialized replay visitor.",
+    "No assertion, fixture, expected value, production source or limit was modified. The one-line source replacement was verified against the complete archived file."
+  ],
+  "failure_history": {
+    "retained_directory": "/tmp/deadpan-one-leaf-replay-production-2026-10-23/history/initial-store-test-compile-failure",
+    "receipt": "/tmp/deadpan-one-leaf-replay-production-2026-10-23/history/initial-store-test-compile-failure/failure.json",
+    "scope": "Existence checked; no claim here that compilation after this fix has passed."
+  },
+  "limitations": [
+    "Reviewer ran no Cargo, formatter, compiler, tests, app/runtime, browser or Git action and made no repository writes.",
+    "Root owns the restarted full qualification and any subsequent compiler/runtime results."
+  ]
+}

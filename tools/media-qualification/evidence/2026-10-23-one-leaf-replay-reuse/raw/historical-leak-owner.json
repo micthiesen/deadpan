@@ -1,0 +1,16 @@
+{
+  "pid": 66269,
+  "script": "/tmp/deadpan-one-leaf-replay-production-2026-10-23/rerun_historical_leaks.py",
+  "cases": [
+    [
+      "candidate-all-core",
+      "deadpan-core::mark_fragments",
+      "retained_copy_ownership_depends_on_authored_nodes_not_visible_matching_plays"
+    ],
+    [
+      "candidate-broad",
+      "deadpan-store",
+      "storage::tests::typed_references_carry_lengths_and_content_identities"
+    ]
+  ]
+}

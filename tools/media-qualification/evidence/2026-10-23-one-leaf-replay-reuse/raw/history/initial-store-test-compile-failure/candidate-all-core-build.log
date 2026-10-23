@@ -1,0 +1,4 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+    Finished `test` profile [optimized + debuginfo] target(s) in 8m 24s
+   Archiving 71 binaries and 1 standard library to /tmp/deadpan-one-leaf-replay-production-2026-10-23/candidate-all-core.tar.zst
+    Archived 74 files to /tmp/deadpan-one-leaf-replay-production-2026-10-23/candidate-all-core.tar.zst in 0.31s

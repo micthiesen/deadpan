@@ -1,0 +1,8 @@
+{
+  "status": "static correction before first execution",
+  "cause": "Generator double-escaped regex and newline literals",
+  "actual_runtime_failure": false,
+  "before_sha256": "753a28dbb24ca00c7970c12cabf94938a17358c6cd9d8f337020f867554c91b4",
+  "after_sha256": "7523136a060748e2b5cec8885c0ce430adaa68bd0549cda4c520596d3e3b8a51",
+  "actual_leak_line_parser_checked": true
+}

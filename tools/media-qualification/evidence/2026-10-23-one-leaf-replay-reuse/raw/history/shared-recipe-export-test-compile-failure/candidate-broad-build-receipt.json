@@ -1,0 +1,27 @@
+{
+  "command": [
+    "cargo",
+    "nextest",
+    "archive",
+    "--locked",
+    "-p",
+    "deadpan-plan",
+    "-p",
+    "deadpan-audio",
+    "-p",
+    "deadpan-analysis",
+    "-p",
+    "deadpan-store",
+    "-p",
+    "deadpan-app",
+    "-p",
+    "deadpan-cli",
+    "--features",
+    "deadpan-cli/synthetic-worker",
+    "--archive-file",
+    "/tmp/deadpan-one-leaf-replay-production-2026-10-23/candidate-broad.tar.zst",
+    "--zstd-level=-1"
+  ],
+  "exit": 101,
+  "seconds": 244.36471724975854
+}

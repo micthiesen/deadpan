@@ -1,0 +1,11 @@
+{
+  "resume_step": 4,
+  "completed_steps_preserved": [
+    1,
+    2,
+    3
+  ],
+  "source_unchanged": true,
+  "fresh_ui_extraction_required": true,
+  "old_failure": "/tmp/deadpan-one-leaf-replay-production-2026-10-23/history/stale-ui-helper-preflight/failure.json"
+}

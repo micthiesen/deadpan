@@ -1,0 +1,72 @@
+Frozen Rust path set, all SHA256 identities and six inputs unchanged: release-media 2053
+{"one_leaf_exports_retained": 2, "pictures_each": 45, "samples_each": 72072, "canonical_history_parity": true}
+{
+  "executed_cli": {
+    "source": "target/release/deadpan-cli",
+    "path": "/tmp/deadpan-one-leaf-replay-production-2026-10-23/release-media-extracted/target/release/deadpan-cli",
+    "sha256": "7486def0556eb921eb61c5d9e815b974c49fc42e48f5f29ce5b060ea99d21a90"
+  },
+  "safe_relative_regular_files_only": true,
+  "cases": [
+    {
+      "label": "neutral",
+      "package": "/tmp/deadpan-one-leaf-replay-production-2026-10-23/owner-portable-check/neutral/neutral-ungroup-portable.deadpan",
+      "regular_files": 9,
+      "archive_sha256": "e15c28c75a13564706c4863fe95dcc3e5bfda9874bec880b011aae68dfdc8144",
+      "commands": [
+        {
+          "command": [
+            "/tmp/deadpan-one-leaf-replay-production-2026-10-23/release-media-extracted/target/release/deadpan-cli",
+            "project",
+            "validate",
+            "/tmp/deadpan-one-leaf-replay-production-2026-10-23/owner-portable-check/neutral/neutral-ungroup-portable.deadpan"
+          ],
+          "exit": 0,
+          "seconds": 0.04536150023341179,
+          "package_paths_and_bytes_unchanged": true
+        },
+        {
+          "command": [
+            "/tmp/deadpan-one-leaf-replay-production-2026-10-23/release-media-extracted/target/release/deadpan-cli",
+            "doctor",
+            "--project",
+            "/tmp/deadpan-one-leaf-replay-production-2026-10-23/owner-portable-check/neutral/neutral-ungroup-portable.deadpan"
+          ],
+          "exit": 0,
+          "seconds": 0.03615629207342863,
+          "package_paths_and_bytes_unchanged": true
+        }
+      ]
+    },
+    {
+      "label": "aligned",
+      "package": "/tmp/deadpan-one-leaf-replay-production-2026-10-23/owner-portable-check/aligned/aligned-sound-scope-portable.deadpan",
+      "regular_files": 9,
+      "archive_sha256": "7c74fd798fed24eda8747c3f5c2ff68a38d71a85992eb7c85cab7531c0136265",
+      "commands": [
+        {
+          "command": [
+            "/tmp/deadpan-one-leaf-replay-production-2026-10-23/release-media-extracted/target/release/deadpan-cli",
+            "project",
+            "validate",
+            "/tmp/deadpan-one-leaf-replay-production-2026-10-23/owner-portable-check/aligned/aligned-sound-scope-portable.deadpan"
+          ],
+          "exit": 0,
+          "seconds": 0.06800979189574718,
+          "package_paths_and_bytes_unchanged": true
+        },
+        {
+          "command": [
+            "/tmp/deadpan-one-leaf-replay-production-2026-10-23/release-media-extracted/target/release/deadpan-cli",
+            "doctor",
+            "--project",
+            "/tmp/deadpan-one-leaf-replay-production-2026-10-23/owner-portable-check/aligned/aligned-sound-scope-portable.deadpan"
+          ],
+          "exit": 0,
+          "seconds": 0.03876675013452768,
+          "package_paths_and_bytes_unchanged": true
+        }
+      ]
+    }
+  ]
+}

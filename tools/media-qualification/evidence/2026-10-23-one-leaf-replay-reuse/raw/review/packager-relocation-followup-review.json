@@ -1,0 +1,55 @@
+{
+  "status": "no_findings",
+  "reviewer": "/root/one_leaf_replay_review",
+  "date": "2026-10-23",
+  "scope": "Static read-only review of the new exact retimed test-module relocation exception, six-review binding, provenance retention and local-variable scope changes in the final packager. No packager function or producer was executed.",
+  "draft": "/tmp/deadpan-one-leaf-replay-production-2026-10-23/packaging-draft/package_final.py",
+  "draft_sha256": "0c8327cc1b779898d9cd8adc2822d886d1251ba3baa89f3666c0f98adc246665",
+  "previous_reviewed_draft_sha256": "46a72608eeb5ac518e1942d8337cd98ae0e946e1887bbd1ccfcc2d9b22313afd",
+  "findings": [],
+  "analysis": [
+    {
+      "topic": "Exact original-overlay exception",
+      "result": "satisfied_in_source",
+      "detail": "The original prototype map remains hash-bound to source-review-basis. Thirteen original overlay paths must remain byte-identical. retimed.rs is the sole exception; its retained before bytes must equal the original pinned map's retimed hash. The code extracts the known cfg(test) module before the supported() documentation seam, requires the exact7421-byte/module559cee457415457980a4b4334a1f9f8f091408e839f3b730529584dec834c796 value and reconstructs the complete EOF move. Reconstructed, retained-after and current bytes must all be identical and match hardcoded final0f4a3cd202ef5f3005c928b4085a5ed7b7f0e7a45ca38e3c0eba645d8591b9e8. This does not permit arbitrary changes within retimed.rs or replace the original reviewed map wholesale."
+    },
+    {
+      "topic": "Relocation proof and independent review",
+      "result": "satisfied_in_source",
+      "detail": "Proof and independent relocation review must both report the same before/final/module hashes and7421-byte size, unchanged module and assertions, no findings, and no weakened assertions. The source-review basis must permit exactly one in-prototype relocation with that final SHA. Its reviews set now includes the exact sixth relocation review in addition to the existing five."
+    },
+    {
+      "topic": "Provenance and failure history",
+      "result": "satisfied_in_source",
+      "detail": "The final package explicitly includes before/after retimed text snapshots, relocation proof, independent review and patch-attempt notes. Existing raw capture includes the retained third lint-failure directory's failure JSON, scripts, source/input manifests and logs; its path is not excluded by include_path. Full source/build archives and executable directories remain excluded. The original prototype map and all earlier reviews remain retained separately."
+    },
+    {
+      "topic": "Function-local scope",
+      "result": "satisfied_in_source",
+      "detail": "verify_source_guards owns relocation/proof temporaries locally. verify_all's returned test_module_relocation and test_module_relocation_review fields now load the designated JSON files directly instead of referring to those unavailable locals. New main snapshot variables are defined in main before use. No remaining local/global name mismatch was found in the changed areas."
+    },
+    {
+      "topic": "Qualification identity",
+      "result": "satisfied_in_source",
+      "detail": "The existing full final-source-map and per-phase source/input equality checks remain. Thus pre-relocation phase evidence cannot silently satisfy the final post-relocation source identity. Source scope remains seventeen existing changed paths,2053Rust files and six inputs."
+    }
+  ],
+  "reviewed_binding_values": {
+    "prototype_map_sha256": "0677019b918263bf58ca4f411e2fa098aa0ca5eef98bba37d5215093f2bbfe0d",
+    "retimed_before_sha256": "4ab7bcda2052aaf5611998ddc1059455e5d9701a53cca9292f503e7d483348d7",
+    "retimed_after_sha256": "0f4a3cd202ef5f3005c928b4085a5ed7b7f0e7a45ca38e3c0eba645d8591b9e8",
+    "module_sha256": "559cee457415457980a4b4334a1f9f8f091408e839f3b730529584dec834c796",
+    "module_bytes": 7421,
+    "relocation_review_sha256": "9e71663759e929d84ae14d0cf6b92eb883ca1a10637933c3b79a3095021efcae"
+  },
+  "prior_packager_followup_preserved": {
+    "path": "/tmp/deadpan-one-leaf-replay-production-2026-10-23/review/packager-followup-review.json",
+    "sha256": "a3dedc634aea4ad8a9547ca487ae2fad48fc279c9a9179cf47a8bbd2f5d7c6eb"
+  },
+  "limitations": [
+    "No execution, import, parser run, GO authorization, final inventory or packaging pass is claimed.",
+    "Root owns all outstanding qualification, isolated reruns, exports, timing and eventual final GO.",
+    "Owner-reported strict Clippy/format success is not a check independently executed by this reviewer.",
+    "Review applies to the exact draft SHA above and only the changed binding/provenance/scope areas."
+  ]
+}

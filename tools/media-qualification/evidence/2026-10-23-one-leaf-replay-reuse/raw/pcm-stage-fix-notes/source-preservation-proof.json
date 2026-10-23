@@ -1,0 +1,14 @@
+{
+  "legacy_wrapper_exact_stage": "authored_bus_pcm_before_mastering",
+  "one_leaf_wrapper_exact_stage": "edge_faded_pcm_before_voice_effects",
+  "original_reader_body_byte_equal_after_only_expected_stage_parameter_and_three_plan_assertions_removed": true,
+  "same_actual_opened_session_proved_and_read": true,
+  "new_plan_assertions": 3,
+  "one_leaf_call_sites_changed": 6,
+  "source_defined_one_leaf_reader_invocations": 9,
+  "other_call_sites_unchanged": true,
+  "cold_exact_byte_identical": true,
+  "all_other_source_bytes_reconstruct_original": true,
+  "capability_some_assertion_preserved": true,
+  "shared_crate_root_calls": 0
+}

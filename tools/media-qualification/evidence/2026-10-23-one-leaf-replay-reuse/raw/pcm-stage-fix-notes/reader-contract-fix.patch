@@ -1,0 +1,91 @@
+--- a/crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs
++++ b/crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs
+@@ -11,9 +11,28 @@
+ }
+ 
+ fn read_exact(path: &Path, partitions: &[u32]) -> Result<CanonicalPcm> {
++    read_exact_with_stage(path, partitions, "authored_bus_pcm_before_mastering")
++}
++
++fn read_one_leaf_exact(path: &Path, partitions: &[u32]) -> Result<CanonicalPcm> {
++    read_exact_with_stage(path, partitions, "edge_faded_pcm_before_voice_effects")
++}
++
++fn read_exact_with_stage(
++    path: &Path,
++    partitions: &[u32],
++    expected_stage: &'static str,
++) -> Result<CanonicalPcm> {
+     assert!(!partitions.is_empty());
+     assert!(partitions.iter().all(|count| (1..=256).contains(count)));
+     let mut session = ProjectAudioSession::open(path)?;
++    if expected_stage == "edge_faded_pcm_before_voice_effects" {
++        // Prove the canonical authored-bus fast path on the same immutable
++        // session that supplies this fixture's PCM, before reading any block.
++        assert!(session.plan().sounds().is_empty());
++        assert!(session.plan().beat_sounds().is_empty());
++        assert!(!session.plan().has_audio_treatments());
++    }
+     let total = session.plan().audio_duration()?.0;
+     let cancelled = AtomicBool::new(false);
+     let mut result = CanonicalPcm {
+@@ -30,7 +49,7 @@
+         assert_eq!(authored.samples.len(), usize::try_from(count)?);
+         assert_eq!(limited.samples.len(), usize::try_from(count)?);
+         assert_eq!(limited.gain.len(), usize::try_from(count)?);
+-        assert_eq!(authored.stage, "authored_bus_pcm_before_mastering");
++        assert_eq!(authored.stage, expected_stage);
+         assert!(
+             authored
+                 .samples
+@@ -786,7 +805,7 @@
+     let before = project.shorten()?;
+     assert_eq!(before.duration()?.frames(), 30);
+     assert!(before.derived_clocks().is_empty());
+-    let before_pcm = read_exact(&project.package, &[256])?;
++    let before_pcm = read_one_leaf_exact(&project.package, &[256])?;
+     assert_eq!(before_pcm.authored_bits.len(), 48_048);
+     assert!(
+         before_pcm
+@@ -808,7 +827,7 @@
+     );
+     same_exact(
+         &before_pcm,
+-        &read_exact(&uncached, &[37, 173, 251])?,
++        &read_one_leaf_exact(&uncached, &[37, 173, 251])?,
+         "portable entry",
+     );
+ 
+@@ -937,12 +956,12 @@
+     drop(cached_store);
+     drop(plain_store);
+ 
+-    let after_pcm = read_exact(&project.package, &[256])?;
++    let after_pcm = read_one_leaf_exact(&project.package, &[256])?;
+     assert_eq!(after_pcm.authored_bits.len(), usize::try_from(SAMPLES)?);
+     for path in [&project.package, &uncached] {
+         same_exact(
+             &after_pcm,
+-            &read_exact(path, &[37, 173, 251])?,
++            &read_one_leaf_exact(path, &[37, 173, 251])?,
+             "published pause complete PCM",
+         );
+         cold_exact(
+@@ -996,7 +1015,7 @@
+     for path in [&project.package, &uncached] {
+         same_exact(
+             &before_pcm,
+-            &read_exact(path, &[251, 37, 173])?,
++            &read_one_leaf_exact(path, &[251, 37, 173])?,
+             "durable pause undo",
+         );
+     }
+@@ -1038,7 +1057,7 @@
+         drop(reopened);
+         same_exact(
+             &after_pcm,
+-            &read_exact(path, &[173, 251, 37])?,
++            &read_one_leaf_exact(path, &[173, 251, 37])?,
+             "reopened pause redo",
+         );
+         cold_exact(

@@ -412,61 +412,63 @@ peaks, retention or memory savings. The independently reread 394-file /
 5,809,852-byte inventory has SHA-256
 f4989f93e792915eec9470939a7ce9d0a7c987ae653ad6c84c426ba06935479b.
 See [private prototype](../qualification/one-leaf-replay-reuse-prototype-2026-10-23.md).
-The reviewed overlay is integrated in Main but not committed. Production
-qualification owns /tmp/deadpan-one-leaf-replay-production-2026-10-23.
-There are 17 changed Rust paths, 2,053 total, with six inputs unchanged:
-fourteen prototype paths, two positive-media test paths and one existing
-Store test-call correction. The new export-only test is
-group_endpoints_export::one_leaf_replay_qualified_media_commit_export_matches_uncached;
-the shared aligned recipe contains its Core/Store/PCM/history fixture helper.
-All 62 assertions and both complete exports remain required. Its result schema
-deadpan-one-leaf-media-parity-1 retains both movies and complete numerical
-controls. No successful positive-media runtime result is claimed yet.
+Production qualification is COMPLETE at implementation
+5fdae748ac2fdc67e1a11793c5ab69f6b61da833. Scratch is
+/tmp/deadpan-one-leaf-replay-production-2026-10-23. All producers are TERMINAL;
+do not restart them. Seventeen Rust paths change, 2,053 total, six inputs
+unchanged, Core 58 /SQLite 87. Thirteen prototype paths are byte-identical;
+retimed.rs only moves the unchanged 7,421-byte test module to EOF. Its final
+SHA is 0f4a3cd202ef5f3005c928b4085a5ed7b7f0e7a45ca38e3c0eba645d8591b9e8.
+Seven independent source reviews cover the overlay and test-only corrections.
 
-Three actual failures are retained under history/: initial-store-test-compile-
-failure (old private execute call missing optional None), shared-recipe-export-
-test-compile-failure (export-only test incorrectly in shared recipes), and
-test-module-layout-clippy-failure (cfg(test) module before production items).
-The first two fixes preserve all assertions. The third moves the complete
-unchanged 7,421-byte test module to EOF in Core insert_time/retimed.rs, leaving
-all production text and supported() documentation intact. Its final SHA-256 is
-0f4a3cd202ef5f3005c928b4085a5ed7b7f0e7a45ca38e3c0eba645d8591b9e8.
-Thirteen prototype paths remain byte-identical; this one has only that reviewed
-test relocation. Six independent source reviews are retained. Static producer
-and patch corrections are separately recorded without runtime-failure claims.
+All 1,543 Core/71 binaries, 3,513 broader/110 and 1,296 UI/two pass with
+0/741/11 skipped; strict and UI Clippy/format pass. One reviewed test-helper
+amendment follows those tests: legacy read_exact retains its exact processed
+stage; the one-leaf reader requires the exact edge stage and three predicates
+on the same session. All 2,052 other Rust files and six inputs are unchanged;
+original executed test maps/binaries remain, and strict plus debug/release
+neutral/aligned and positive media rerun afterward. Final source map is
+final-source-identities.json, with pcm-reader-source-amendment.json. Do not
+rewrite earlier maps or claim all test binaries used the amended helper.
 
-Before the layout-only correction, 1,543 Core, 3,513 broader and 1,296 UI tests
-passed with 0/741/11 skipped. Core and broader each had one LEAK annotation;
-preserve them and run exact isolated cases when final builds/timing finish.
-All CLI test compilation contexts pass. The current restarted qualify.py runs
-strict FIRST, then Core/broad/UI, UI lint, debug/release media and release native.
-post.py waits for all eight successful steps before portable/native and five
-final quiet timing pairs. Strict, Core (1,543/0 skipped), broader (3,513/741)
-and UI (1,296/11), plus UI lint/format, now pass on the final layout. Core/UI
-have no LEAK; broader has one final marks case. Earlier warning cases remain
-in history. UI initially refused an old supplemental CLI helper left in its
-reused extraction; history/stale-ui-helper-preflight retains both hashes and
-all receipts. The extraction was preserved and recreated; source guards for
-completed strict/Core/broad pass, so qualify_resumed.py resumes at step four
-without repeating them. UI passes from fresh extraction. Debug and release neutral media pass
-(15 pictures/24,024 samples), and aligned release passes (19/30,430 final) at
-zero offset in 235.908 seconds with slow notices retained. The first new
-positive case fails before either commit on the old test reader stage label:
-plain no-voice/no-treatment authored PCM legitimately reports edge_faded_pcm_
-before_voice_effects. history/positive-media-pcm-stage-failure retains it.
-The reviewed one-file test helper fix preserves the old exact authored-bus
-expectation; the one-leaf reader requires the exact edge tag and proves all
-three predicates on the same opened session. No production source changed;
-all 2,052 other Rust files and six inputs match. Seven source reviews pass.
-The explicit pcm-reader-source-amendment.json retains completed Core/broad/UI
-maps, and final-source-identities.json records the new test helper. Strict
-and debug/release neutral/aligned controls plus the new positive case rerun;
-qualify_pcm_reader_resumed.py then continues to native. Both it and the post
-waiter are ACTIVE; inspect owner PIDs and receipts before any restart. Root owns Cargo, formatting, source and runtime producers.
-The isolated rerun script is prepared but unexecuted; final packaging and its
-GO marker remain pending. Independent packaging review findings were corrected
-before execution. No production performance result or target PASS is claimed.
-Do not repeat completed private producers or pool their measurements.
+Debug/release neutral verify 15 pictures/24,024 samples. Aligned release
+verifies 19/30,430 final samples in 232.393 seconds with slow notices retained.
+The new group_endpoints_export::one_leaf_replay_qualified_media_commit_export_matches_uncached
+passes in 6.378 seconds: genuine Some capability versus explicit None,
+callbacks once, full PCM/limiter bits/history/Undo/Redo/reopen, and two exports
+each verify every 45 pictures/72,072 samples at zero offset. Native six reports
+pass 1,340 workflow +six Kestrel checks, with twelve warnings. Two nine-file
+portable copies validate/doctor without changing paths or bytes.
+
+Final five quiet pairs: commit medians 240.560333 /195.108542 ms, offscreen
+composition 243.137083 /197.389583 ms, 45.747500 ms /18.815517% diagnostic
+difference. Candidate app SHA
+0cb2931562108a68b57915c6135f448bc74293ba20623c7484053152566d31ff
+is the next qualified control; reuse its executed release-native-bin copy,
+not the private prototype. Paired reports add seventy pause +ten Kestrel
+checks and twenty warnings. No percentile/target or memory closure follows.
+
+All eight qualification and 26 post commands pass. The final broader LEAK
+mark case passes isolated on its same executable. Two earlier Core/Store
+warning cases pass on final binaries with old/executed hashes distinguished;
+those are not old-executable reexecutions. All annotations remain. Five actual
+failures remain under history/: Store test argument, shared-recipe export
+test, test-module Clippy, stale supplemental UI helper, and plain PCM stage
+assumption. Static producer/patch corrections are separately retained.
+
+Evidence is tools/media-qualification/evidence/2026-10-23-one-leaf-replay-reuse:
+995 files /23,149,781 bytes, including five movies and five fixture archives.
+Inventory SHA 6e81c229c306b3ef9163e974ee025cdd083826f38b24238fa3a382d02ec806e9.
+Root independently rereads every size/hash and 178 gzip streams.
+See [production qualification](../qualification/one-leaf-replay-reuse-2026-10-23.md).
+The packager and all isolated runners are terminal. Remaining route costs
+need fresh measurement: next-diagnostic-plan.md proposes thirteen disjoint
+categories, controlled off/on lanes and conditional refinements. Prepare a
+fresh source-matched private overlay only after this checkpoint is pushed.
+Do not infer current costs from old Store33/Core24, pool prototype/final
+batches, add a cache API or skip authority without new measured evidence.
+Keep the full goal active; this is not a final-answer checkpoint.
+
 No validation, work charge, first-error or durable authority can be weakened
 to make the experiment pass.
 The separate

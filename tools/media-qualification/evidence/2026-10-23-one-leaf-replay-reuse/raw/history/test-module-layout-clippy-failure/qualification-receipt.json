@@ -1,0 +1,50 @@
+[
+  {
+    "step": 1,
+    "command": [
+      "python",
+      "/tmp/deadpan-one-leaf-replay-production-2026-10-23/qualify_all_ui.py",
+      "candidate-all-core",
+      "candidate",
+      "allcore"
+    ],
+    "exit": 0,
+    "seconds": 9.745590375736356
+  },
+  {
+    "step": 2,
+    "command": [
+      "python",
+      "/tmp/deadpan-one-leaf-replay-production-2026-10-23/qualify_all_ui.py",
+      "candidate-broad",
+      "candidate",
+      "broad"
+    ],
+    "exit": 0,
+    "seconds": 396.2036790000275
+  },
+  {
+    "step": 3,
+    "command": [
+      "python",
+      "/tmp/deadpan-one-leaf-replay-production-2026-10-23/qualify_all_ui.py",
+      "candidate-ui",
+      "candidate",
+      "ui"
+    ],
+    "exit": 0,
+    "seconds": 211.4055731659755
+  },
+  {
+    "step": 4,
+    "command": [
+      "python",
+      "/tmp/deadpan-one-leaf-replay-production-2026-10-23/qualify_all_ui.py",
+      "candidate-strict",
+      "candidate",
+      "strict"
+    ],
+    "exit": 1,
+    "seconds": 157.56418224982917
+  }
+]

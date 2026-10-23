@@ -333,8 +333,21 @@ The separate memory lane retains 18,296 whole-app samples with maximum gaps
 12.329791 ms. Median sampled footprint maxima are 731,940,088 /686,851,224
 bytes; they do not prove exact peaks, per-leaf retention or memory savings.
 All 394 evidence files verify. The 140 pause and twenty Kestrel checks pass;
-forty layout warnings remain. Production adoption, positive real-media cached
-publication/PCM/history/export and full qualification remain owed. No target closes.
+forty layout warnings remain. This remains a separate private batch.
+
+[Production one-leaf replay reuse](qualification/one-leaf-replay-reuse-2026-10-23.md)
+passes Core, broader/UI, strict and real-media/history qualification. An opaque
+exact-value/mode witness reuses a successful pure leaf application while all
+Core boundary charges and current Store authority remain. Both real-media
+paths publish matching canonical PCM/history and each emitted file verifies
+45 pictures /72,072 samples at zero offset. Six native reports pass 1,340
+workflow and six Kestrel checks; portable copies validate unchanged.
+Final five-pair commit medians are 240.560333 /195.108542 ms, and offscreen
+composition 243.137083 /197.389583 ms: 45.747500 ms /18.82% apart. All 995
+files /23,149,781 bytes verify, including five actual emitted movies. The
+reviewed test-only reader amendment retains original test maps and reruns
+strict/media controls; failures and clean isolated warning-case checks remain.
+No percentile, memory ceiling/retention result or latency target closes.
 
 | Section 25 target | Measurement | Notes |
 | --- | --- | --- |

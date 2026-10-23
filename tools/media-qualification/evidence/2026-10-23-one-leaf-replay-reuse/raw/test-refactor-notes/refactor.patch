@@ -1,0 +1,162 @@
+--- a/crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs
++++ b/crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs
+@@ -775,19 +775,12 @@
+ 
+ /// One real-media semantic leaf publishes the same exact PCM and durable
+ /// history with its opaque result borrowed through the native host path.
+-#[test]
+-#[cfg_attr(
+-    debug_assertions,
+-    ignore = "slow in debug builds; run with --release (see docs/PREVIEW_EXPORT_VERIFICATION.md)"
+-)]
+-fn one_leaf_replay_qualified_media_commit_export_matches_uncached() -> Result {
++pub fn one_leaf_replay_qualified_media_fixture(root: &Path) -> Result<(Fixture, Fixture, Value)> {
+     use deadpan_core::{PauseLength, SemanticContext, SemanticInstruction, SemanticProgram};
+     use std::{cell::Cell, num::NonZeroU32};
+ 
+     const FRAMES: u64 = 45;
+     const SAMPLES: i64 = 72_072;
+-    let (root, _guard) = crate::keep_or(tempfile::tempdir()?);
+-    eprintln!("one-leaf qualified media evidence: {}", root.display());
+     let directory = root.join("cached");
+     let mut project = Project::create(&directory, "one-leaf-cached-media")?;
+     let before = project.shorten()?;
+@@ -1055,13 +1048,13 @@
+             "reopened pause seams",
+         )?;
+     }
+-    retain(&root, "one-leaf-before-document.json", &before)?;
+-    retain(&root, "one-leaf-after-document.json", &final_document)?;
+-    retain(&root, "one-leaf-before-pcm.json", &before_pcm)?;
+-    retain(&root, "one-leaf-after-pcm.json", &after_pcm)?;
+-    retain(&root, "one-leaf-commit.json", &cached_outcome)?;
+-    retain(&root, "one-leaf-undo.json", &undone)?;
+-    retain(&root, "one-leaf-redo.json", &restored)?;
++    retain(root, "one-leaf-before-document.json", &before)?;
++    retain(root, "one-leaf-after-document.json", &final_document)?;
++    retain(root, "one-leaf-before-pcm.json", &before_pcm)?;
++    retain(root, "one-leaf-after-pcm.json", &after_pcm)?;
++    retain(root, "one-leaf-commit.json", &cached_outcome)?;
++    retain(root, "one-leaf-undo.json", &undone)?;
++    retain(root, "one-leaf-redo.json", &restored)?;
+     let pictures = (0..FRAMES)
+         .map(|frame| {
+             (
+@@ -1083,40 +1076,6 @@
+     let mut plain_fixture = cached_fixture.clone();
+     plain_fixture.package = uncached;
+     plain_fixture.name = "one-leaf-uncached-media";
+-    crate::check(&cached_fixture)?;
+-    crate::check(&plain_fixture)?;
+-    if crate::skip_without_physical_mac("one-leaf cached and uncached encoded Render") {
+-        return Ok(());
+-    }
+-    let mut evidence = Vec::new();
+-    for (label, fixture) in [("cached", &cached_fixture), ("uncached", &plain_fixture)] {
+-        let movie = crate::render(fixture, &root.join(format!("exports-{label}")))?;
+-        let (report, passed) = crate::verify(
+-            fixture,
+-            &movie,
+-            &fixture.revision,
+-            &["--every", "1", "--samples", "0:72072"],
+-        )?;
+-        retain(
+-            &root,
+-            &format!("one-leaf-{label}-verification.json"),
+-            &report,
+-        )?;
+-        crate::check_provenance(fixture, &report)?;
+-        assert_eq!(report["summary"]["pictures_checked"], FRAMES);
+-        assert_eq!(report["summary"]["pictures_failed"], 0);
+-        assert_eq!(report["summary"]["nonzero_offsets"], 0);
+-        let audio = report["audio"].as_array().ok_or("complete decoded audio")?;
+-        assert_eq!(audio.len(), 1);
+-        assert_eq!(audio[0]["project_samples"], json!([0, SAMPLES]));
+-        assert_eq!(audio[0]["flags"], json!([]));
+-        assert_eq!(audio[0]["uncovered_samples"], 0);
+-        assert_eq!(audio[0]["blocks"]["low_snr_blocks"], 0);
+-        assert_eq!(audio[0]["offset_status"], "verified_zero");
+-        assert_eq!(audio[0]["measured_offset_samples"], 0);
+-        assert!(passed, "{label}: {report}");
+-        evidence.push(json!({"leg":label,"package":fixture.package,"movie":movie,"revision":fixture.revision,"verification":report}));
+-    }
+     let summary = json!({
+         "schema":"deadpan-one-leaf-media-parity-1","root":root,"evidence_dir":root,
+         "capability_present":true,"callback_counts":[cached_calls.get(),plain_calls.get()],
+@@ -1134,11 +1093,6 @@
+             "undo_redo_reopen_checked":true,"full_replay_checked":true,"receipt_shortcut_used":false,
+         },
+         "independent_DSP_claim":false,"listening_claim":false,"compressed_byte_identity_claim":false,
+-        "exports":evidence,
+     });
+-    retain(&root, "one-leaf-media-summary.json", &summary)?;
+-    if let Some(path) = std::env::var_os("DEADPAN_PREVIEW_EXPORT_RESULTS") {
+-        fs::write(path, serde_json::to_vec_pretty(&summary)?)?;
+-    }
+-    Ok(())
++    Ok((cached_fixture, plain_fixture, summary))
+ }
+--- a/crates/deadpan-cli/tests/preview_export/group_endpoints_export.rs
++++ b/crates/deadpan-cli/tests/preview_export/group_endpoints_export.rs
+@@ -215,3 +215,61 @@
+     assert!(passed, "{report}");
+     Ok(())
+ }
++
++/// One real-media semantic leaf publishes the same exact PCM and durable
++/// history with its opaque result borrowed through the native host path.
++#[test]
++#[cfg_attr(
++    debug_assertions,
++    ignore = "slow in debug builds; run with --release (see docs/PREVIEW_EXPORT_VERIFICATION.md)"
++)]
++fn one_leaf_replay_qualified_media_commit_export_matches_uncached() -> Result {
++    const FRAMES: u64 = 45;
++    const SAMPLES: i64 = 72_072;
++    let (root, _guard) = keep_or(tempfile::tempdir()?);
++    eprintln!("one-leaf qualified media evidence: {}", root.display());
++    let (cached_fixture, plain_fixture, mut summary) =
++        recipes::group_endpoints::aligned::one_leaf_replay_qualified_media_fixture(&root)?;
++    check(&cached_fixture)?;
++    check(&plain_fixture)?;
++    if skip_without_physical_mac("one-leaf cached and uncached encoded Render") {
++        return Ok(());
++    }
++    let mut evidence = Vec::new();
++    for (label, fixture) in [("cached", &cached_fixture), ("uncached", &plain_fixture)] {
++        let movie = render(fixture, &root.join(format!("exports-{label}")))?;
++        let (report, passed) = verify(
++            fixture,
++            &movie,
++            &fixture.revision,
++            &["--every", "1", "--samples", "0:72072"],
++        )?;
++        fs::write(
++            root.join(format!("one-leaf-{label}-verification.json")),
++            serde_json::to_vec(&report)?,
++        )?;
++        check_provenance(fixture, &report)?;
++        assert_eq!(report["summary"]["pictures_checked"], FRAMES);
++        assert_eq!(report["summary"]["pictures_failed"], 0);
++        assert_eq!(report["summary"]["nonzero_offsets"], 0);
++        let audio = report["audio"].as_array().ok_or("complete decoded audio")?;
++        assert_eq!(audio.len(), 1);
++        assert_eq!(audio[0]["project_samples"], json!([0, SAMPLES]));
++        assert_eq!(audio[0]["flags"], json!([]));
++        assert_eq!(audio[0]["uncovered_samples"], 0);
++        assert_eq!(audio[0]["blocks"]["low_snr_blocks"], 0);
++        assert_eq!(audio[0]["offset_status"], "verified_zero");
++        assert_eq!(audio[0]["measured_offset_samples"], 0);
++        assert!(passed, "{label}: {report}");
++        evidence.push(json!({"leg":label,"package":fixture.package,"movie":movie,"revision":fixture.revision,"verification":report}));
++    }
++    summary["exports"] = json!(evidence);
++    fs::write(
++        root.join("one-leaf-media-summary.json"),
++        serde_json::to_vec(&summary)?,
++    )?;
++    if let Some(path) = std::env::var_os("DEADPAN_PREVIEW_EXPORT_RESULTS") {
++        fs::write(path, serde_json::to_vec_pretty(&summary)?)?;
++    }
++    Ok(())
++}

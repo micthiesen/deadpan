@@ -1,0 +1,6 @@
+{
+  "path": "crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs",
+  "sha256": "c90e802b2181177f6e67a455e739555e0ea3f569dbf34a683b85fe002bbf0f88",
+  "original_prefix_preserved": true,
+  "rustfmt_edition": "2024"
+}

@@ -1,0 +1,27 @@
+{
+  "phase": "release-media-one-leaf",
+  "exit": 100,
+  "nextest_test_exit": "failure",
+  "seconds": 0.213,
+  "source_path": "crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs",
+  "line": 33,
+  "actual_stage": "edge_faded_pcm_before_voice_effects",
+  "expected_stage": "authored_bus_pcm_before_mastering",
+  "before_cached_or_uncached_commit": true,
+  "emitted_new_parity_movies": 0,
+  "source_root": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpBlcjXN",
+  "cause_under_review": "Existing PCM test reader assumes processed-bus stage label; new fixture is plain single Original",
+  "previous_passes_preserved": [
+    "strict",
+    "Core1543",
+    "broader3513",
+    "UI1296",
+    "UIlint",
+    "debug-neutral",
+    "release-neutral",
+    "release-aligned235.908s"
+  ],
+  "qualification_terminal": true,
+  "post_terminal": true,
+  "post_commands_executed": 0
+}

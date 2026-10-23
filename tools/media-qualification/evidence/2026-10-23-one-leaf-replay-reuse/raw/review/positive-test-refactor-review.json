@@ -1,0 +1,88 @@
+{
+  "status": "no_findings",
+  "reviewer": "/root/one_leaf_replay_review",
+  "date": "2026-10-23",
+  "scope": "Read-only source review of the two-file qualified-media test inclusion refactor after preserved shared-recipe compile failure. Prior runtime/source evidence is not silently transferred to this source.",
+  "before_sha256": {
+    "crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs": "c90e802b2181177f6e67a455e739555e0ea3f569dbf34a683b85fe002bbf0f88",
+    "crates/deadpan-cli/tests/preview_export/group_endpoints_export.rs": "13363c532b6bbcb6db246bec458c04705f458861ae0ef159ee32c1fefe28a572"
+  },
+  "final_formatted_sha256": {
+    "crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs": "58ce580c3def2cf42c809b7a059e21058cae591eea31284641148e1bca83bd1b",
+    "crates/deadpan-cli/tests/preview_export/group_endpoints_export.rs": "93f803cfa31c8d716ce5850a43314290d91c363f94f666eddb61fd733b105fd9"
+  },
+  "source_comparison": {
+    "rust_files": 2053,
+    "changed_since_retained_failure_snapshot": [
+      "crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs",
+      "crates/deadpan-cli/tests/preview_export/group_endpoints_export.rs"
+    ],
+    "other_rust_files_byte_identical": 2051,
+    "six_pinned_inputs_byte_identical": true,
+    "production_changes": false,
+    "new_files_or_module_declarations": false
+  },
+  "supporting_source_sha256": {
+    "crates/deadpan-cli/tests/preview_export.rs": "e21a82dedb0dd0d29ee1b113a7fdc1c9dcca4e048290189632277b18fa2ea9a5",
+    "crates/deadpan-cli/tests/offline_portable.rs": "cf0c554861e4f47b5555da40bb4b8ec7ec900c3db92c05bc225547e5ab01e2df",
+    "crates/deadpan-cli/tests/generated_joins.rs": "bb90a18c86a76674d9907b89df20d63158d127eefc232e98470858c7df54b9b0",
+    "crates/deadpan-cli/tests/golden_renders.rs": "319e77f57e678e919c4ce760b4c88b75a6b8fffc0e5b766c733205d87b58b8fc",
+    "crates/deadpan-cli/tests/bridge_conditioning.rs": "01152eae77cf604cca5cbc9bc35734132aa846d957b3e203e213e83c12ef828c",
+    "crates/deadpan-cli/tests/project_commands/macros/framing.rs": "e12b9a7ce094a733c7739179d63927c441e479a50b7e3ccb2169f54934b5d1cb",
+    "crates/deadpan-cli/tests/preview_export/recipes.rs": "74012534d3db24ba7dcfbe4278efb214cc99fb1ea3e0734f9fc19abe98d66ccb",
+    "crates/deadpan-cli/tests/preview_export/group_endpoints_recipe.rs": "03424491865dc557a6fe1fede3179455dd53331b702de44d98a8cdd87d9c7851",
+    "crates/deadpan-cli/tests/support/physical_mac.rs": "72304dc84c705dc41470c8218a122c99650bbb0dc7a8633cfd994647a868d70e"
+  },
+  "handoff_sha256": "f4501cddf5cb722e8bfce47077527a59cf062ec8c5fc77d9eab30a7dc78763e7",
+  "root_format_receipt_sha256": "ca25a3afabb5039ab851df159d6ca4a84c19904ce6ee7dd51ba9aaa03dcd011a",
+  "assertion_preservation_audit_sha256": "52f6120f55e3766949f4db707cf786ffdfc4477805cae50594c1af36a9852eb9",
+  "findings": [],
+  "assertions_weakened": false,
+  "analysis": [
+    {
+      "topic": "Shared module compile contexts",
+      "result": "source_dependency_issue_removed",
+      "detail": "recipes.rs is included by preview_export, offline_portable, generated_joins, golden_renders, bridge_conditioning and macOS+synthetic-worker project_commands/macros/framing. The shared one_leaf_replay_qualified_media_fixture(root:&Path) is now a regular public fixture helper returning (Fixture,Fixture,Value), with no #[test], crate-root call, custom cfg or export-driver dependency. Its names are inherited from existing recipes/group_endpoints modules and public Core/Store/CLI APIs. Root-specific keep/check/render/verify/provenance helpers occur only in group_endpoints_export, a module included solely by preview_export.rs."
+    },
+    {
+      "topic": "Assertion and oracle preservation",
+      "result": "satisfied_in_source",
+      "detail": "Reviewed complete two-file diff. All62 original assertion macro bodies remain,51 in helper and11 in wrapper; actual setup/controls/statements were also reviewed rather than relying solely on counts. Helper retains genuine capabilitySome, one ordinary15frame Freeze/Silence leaf, cachedHost versus same exact request+explicitNone, callbacks1, outcome/document/bank/forward/inverse parity, full authored/limited/limiter-bit PCM, alternate partitions, cold seams, nonzero source/suffix and silent interior, fixed undo/redo and reopened full-history checks. Literal45picture mapping and72072sample target are unchanged."
+    },
+    {
+      "topic": "Distinct data paths",
+      "result": "satisfied_in_source",
+      "detail": "The helper still creates actual qualified cfr-bframes Original[12,42), copies its package, and commits independently through cachedHost and uncachedStore paths. It returns the two distinct package fixtures and canonical/history metadata only after those checks complete. Cached output is compared with uncached output and nonzero/silence controls; no new self-equality-only oracle was introduced."
+    },
+    {
+      "topic": "Export wrapper and temp-root lifetime",
+      "result": "satisfied_in_source",
+      "detail": "group_endpoints_export::one_leaf_replay_qualified_media_commit_export_matches_uncached owns keep_or and its guard through both exports. It calls helper, both existing fixture checks, strict physicalMac guard, then renders and verifies each distinct package. --every1 and literal --samples0:72072,45pictures, provenance, flags/uncovered/SNR/zero-offset and passed assertions are preserved. Per-leg reports are retained before assertions. Existing physicalMac helper fails a guest under DEADPAN_REQUIRE_PHYSICAL_MAC=1; release/debug-ignore convention is unchanged."
+    },
+    {
+      "topic": "Receipt preservation",
+      "result": "satisfied_in_source",
+      "detail": "Helper returns unchanged deadpan-one-leaf-media-parity-1 canonical/history summary including actualroot/evidence_dir, callback counts and artifact paths. Wrapper attaches both exports with leg/package/movie/revision/fullverification only after both pass, then writes root/one-leaf-media-summary.json and DEADPAN_PREVIEW_EXPORT_RESULTS. DEADPAN_PREVIEW_EXPORT_KEEP=1 preserves the root and movies. IndependentDSP/listening/compressed-byte identity exclusions are unchanged."
+    },
+    {
+      "topic": "Existing test code preservation",
+      "result": "satisfied_in_source",
+      "detail": "The entire pre-one-leaf aligned recipe prefix and the entire previous group_endpoints_export file are byte-preserved prefixes. No prior recipe or export assertion was edited. No production code or limit changed."
+    }
+  ],
+  "test_path": {
+    "removed_from_shared_recipe": "recipes::group_endpoints::aligned::one_leaf_replay_qualified_media_commit_export_matches_uncached",
+    "new_export_only_path": "group_endpoints_export::one_leaf_replay_qualified_media_commit_export_matches_uncached",
+    "name_filter_retained": "one_leaf_replay_qualified_media_commit_export_matches_uncached"
+  },
+  "prior_reviews_preserved": {
+    "/tmp/deadpan-one-leaf-replay-production-2026-10-23/review/qualified-media-independent-review.json": "18fd1e2b0e9722fb4a89b1b707dbb36d7232e03cf16c34acbe5d233551c6c7c9",
+    "/tmp/deadpan-one-leaf-replay-production-2026-10-23/review/test-call-correction-review.json": "3acc9a3b61dc5c2a1dbff860a6feca48475b78e1420feeab0be035e304eb07ec"
+  },
+  "limitations": [
+    "Reviewer ran no Cargo, formatter, compiler, test, native runtime, browser or Git action and made no repository edits.",
+    "Source dependency inspection refutes the original crate-root helper problem in the new form; Root's all-CLI integration-target typecheck and strict physical-Mac release run remain required execution evidence.",
+    "No performance, memory, independentDSP, listening, compressed-byte or decodedAACbit claim is made.",
+    "Review applies to these exact final formatted hashes."
+  ]
+}

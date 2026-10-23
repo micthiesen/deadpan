@@ -1,0 +1,34 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+   Compiling deadpan-source v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-source)
+   Compiling deadpan-analysis v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-analysis)
+   Compiling deadpan-render v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-render)
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling deadpan-encode v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-encode)
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+error[E0061]: this function takes 5 arguments but 4 arguments were supplied
+   --> crates/deadpan-store/src/compound/tests.rs:953:29
+    |
+953 |     let (counted, staged) = execute(&store.connection, &initial, &command, None).unwrap();
+    |                             ^^^^^^^--------------------------------------------- argument #5 of type `std::option::Option<&OneLeafReplay>` is missing
+    |
+note: function defined here
+   --> crates/deadpan-store/src/compound.rs:447:4
+    |
+447 | fn execute(
+    |    ^^^^^^^
+...
+452 |     candidate: Option<&deadpan_core::OneLeafReplay>,
+    |     -----------------------------------------------
+help: provide the argument
+    |
+953 |     let (counted, staged) = execute(&store.connection, &initial, &command, None, /* std::option::Option<&OneLeafReplay> */).unwrap();
+    |                                                                                +++++++++++++++++++++++++++++++++++++++++++
+
+For more information about this error, try `rustc --explain E0061`.
+error: could not compile `deadpan-store` (lib test) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error: command `/Users/michael/.rustup/toolchains/1.97.1-aarch64-apple-darwin/bin/cargo test --no-run --message-format json-render-diagnostics --package deadpan-plan --package deadpan-audio --package deadpan-analysis --package deadpan-store --package deadpan-app --package deadpan-cli --features deadpan-cli/synthetic-worker --locked` exited with code 101

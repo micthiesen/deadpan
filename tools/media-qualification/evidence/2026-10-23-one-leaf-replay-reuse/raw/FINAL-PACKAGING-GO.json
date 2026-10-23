@@ -1,0 +1,19 @@
+{
+  "authorized": true,
+  "owner": "root",
+  "source_commit": "5fdae748ac2fdc67e1a11793c5ab69f6b61da833",
+  "source_base": "3a32c923358c0cb7ca53f821bfb6db3e01ebb466",
+  "qualification_terminal": true,
+  "post_terminal": true,
+  "isolated_latest_terminal": true,
+  "historical_case_checks_terminal": true,
+  "scope": "Package actual qualified one-leaf implementation evidence; no target closure",
+  "code_commit_matches_all17_changed_source_hashes": true,
+  "packager_sha256": "7d1c9e33940cfd269cd36d494d85df77e3e3f17915c6ca35a89fb31f81c1dae1",
+  "at_unix": 1792787850.436759,
+  "known_limits": [
+    "five-pair timing diagnostic only",
+    "historical warning cases checked on final binaries, not old binaries",
+    "Core/broader/UI retain original source identities before single-file test-only PCM reader amendment; strict and affected media rerun afterward"
+  ]
+}

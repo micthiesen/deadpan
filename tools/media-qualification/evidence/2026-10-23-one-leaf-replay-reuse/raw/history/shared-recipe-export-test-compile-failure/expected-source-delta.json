@@ -1,0 +1,27 @@
+{
+  "baseline_commit": "3a32c923358c0cb7ca53f821bfb6db3e01ebb466",
+  "baseline_rust_files": 2051,
+  "candidate_rust_files": 2053,
+  "changed": [
+    "crates/deadpan-cli/src/macros.rs",
+    "crates/deadpan-core/src/audio_reference.rs",
+    "crates/deadpan-core/src/compound.rs",
+    "crates/deadpan-core/src/insert_time/retimed.rs",
+    "crates/deadpan-core/src/lib.rs",
+    "crates/deadpan-core/src/one_leaf_replay.rs",
+    "crates/deadpan-core/src/semantic/planner.rs",
+    "crates/deadpan-core/src/semantic/planner/content.rs",
+    "crates/deadpan-core/src/semantic/planner/pause.rs",
+    "crates/deadpan-core/src/semantic/planner/tests.rs",
+    "crates/deadpan-core/tests/semantic_leaf_replay.rs",
+    "crates/deadpan-store/src/compound.rs",
+    "crates/deadpan-store/src/lib.rs",
+    "crates/deadpan-store/tests/compound_preparation.rs",
+    "crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs",
+    "crates/deadpan-store/src/compound/tests.rs"
+  ],
+  "new": [
+    "crates/deadpan-core/src/one_leaf_replay.rs",
+    "crates/deadpan-core/tests/semantic_leaf_replay.rs"
+  ]
+}

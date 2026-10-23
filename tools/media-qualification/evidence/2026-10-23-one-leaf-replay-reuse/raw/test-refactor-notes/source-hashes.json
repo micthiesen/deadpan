@@ -1,0 +1,10 @@
+{
+  "crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs": {
+    "before": "c90e802b2181177f6e67a455e739555e0ea3f569dbf34a683b85fe002bbf0f88",
+    "proposed": "58ce580c3def2cf42c809b7a059e21058cae591eea31284641148e1bca83bd1b"
+  },
+  "crates/deadpan-cli/tests/preview_export/group_endpoints_export.rs": {
+    "before": "13363c532b6bbcb6db246bec458c04705f458861ae0ef159ee32c1fefe28a572",
+    "proposed": "93f803cfa31c8d716ce5850a43314290d91c363f94f666eddb61fd733b105fd9"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "original_assertion_macros": 62,
+  "helper_assertion_macros": 51,
+  "export_wrapper_assertion_macros": 11,
+  "all_original_assertion_tokens_and_multiplicities_preserved": true,
+  "shared_file_crate_root_calls": 0,
+  "shared_helper_test_attributes": 0,
+  "old_recipe_prefix_byte_identical": true,
+  "old_export_file_prefix_byte_identical": true,
+  "new_test_full_path": "group_endpoints_export::one_leaf_replay_qualified_media_commit_export_matches_uncached",
+  "uncompiled": true,
+  "unformatted": true,
+  "unexecuted": true
+}

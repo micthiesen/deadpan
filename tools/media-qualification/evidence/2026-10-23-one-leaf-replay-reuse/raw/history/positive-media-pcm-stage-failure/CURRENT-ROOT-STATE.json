@@ -1,0 +1,137 @@
+{
+  "goal": "Full Deadpan DP01-24/GatesA-G remains active; no final at feature checkpoints",
+  "current_git_head": "fdfb30102b7728a6eae6e36fb2dbd6014ad700ee",
+  "code_committed": false,
+  "foreign_preserve": [
+    "fuzz/Cargo.lock",
+    ".claude/"
+  ],
+  "live_sessions": {
+    "qualification_resume": 57836,
+    "post_waiter": 59950
+  },
+  "owners": {
+    "qualification": {
+      "pid": 36007,
+      "started_unix": 1792785003.01867,
+      "script": "/tmp/deadpan-one-leaf-replay-production-2026-10-23/qualify_resumed.py"
+    },
+    "post": {
+      "pid": 36065,
+      "script": "/tmp/deadpan-one-leaf-replay-production-2026-10-23/post.py",
+      "waiting_for": "qualification eight successful steps"
+    }
+  },
+  "qualification_order": [
+    "strict",
+    "allcore",
+    "broad",
+    "ui",
+    "ui-lint",
+    "debug-neutral-media",
+    "release-neutral-aligned-one-leaf-media",
+    "release-native"
+  ],
+  "latest_receipts": [
+    {
+      "step": 1,
+      "command": [
+        "python",
+        "/tmp/deadpan-one-leaf-replay-production-2026-10-23/qualify_all_ui.py",
+        "candidate-strict",
+        "candidate",
+        "strict"
+      ],
+      "exit": 0,
+      "seconds": 429.24983266647905
+    },
+    {
+      "step": 2,
+      "command": [
+        "python",
+        "/tmp/deadpan-one-leaf-replay-production-2026-10-23/qualify_all_ui.py",
+        "candidate-all-core",
+        "candidate",
+        "allcore"
+      ],
+      "exit": 0,
+      "seconds": 440.9415638335049
+    },
+    {
+      "step": 3,
+      "command": [
+        "python",
+        "/tmp/deadpan-one-leaf-replay-production-2026-10-23/qualify_all_ui.py",
+        "candidate-broad",
+        "candidate",
+        "broad"
+      ],
+      "exit": 0,
+      "seconds": 804.6353476671502
+    }
+  ],
+  "source_delta_paths": 17,
+  "rust_paths": 2053,
+  "inputs": 6,
+  "schema": {
+    "core": 58,
+    "sqlite": 87
+  },
+  "test_module_relocation": {
+    "path": "crates/deadpan-core/src/insert_time/retimed.rs",
+    "before_sha256": "4ab7bcda2052aaf5611998ddc1059455e5d9701a53cca9292f503e7d483348d7",
+    "after_sha256": "0f4a3cd202ef5f3005c928b4085a5ed7b7f0e7a45ca38e3c0eba645d8591b9e8",
+    "module_sha256": "559cee457415457980a4b4334a1f9f8f091408e839f3b730529584dec834c796",
+    "module_bytes": 7421,
+    "module_unchanged": true,
+    "production_text_and_doc_comments_unchanged_ignoring_module_and_seam_whitespace": true,
+    "before_start_line": 136,
+    "after_start_line": 989,
+    "assertions_unchanged": true,
+    "rustfmt_exit": 0
+  },
+  "before_final_layout_results": {
+    "Core": "1543pass/0skip/1LEAK",
+    "broad": "3513pass/741skip/1LEAK",
+    "UI": "1296pass/11skip/0LEAK"
+  },
+  "failure_history": [
+    "initial-store-test-compile-failure",
+    "shared-recipe-export-test-compile-failure",
+    "test-module-layout-clippy-failure",
+    "stale-ui-helper-preflight"
+  ],
+  "packager": {
+    "script": "packaging-draft/package_final.py",
+    "sha256": "0c8327cc1b779898d9cd8adc2822d886d1251ba3baa89f3666c0f98adc246665",
+    "executed": false,
+    "GO_exists": false
+  },
+  "isolation": {
+    "script": "rerun_leaks.py",
+    "executed": false,
+    "when": "after all8qualification/all26post commands and finaltiming complete; collect current LEAK exactcases"
+  },
+  "artifact": {
+    "id": "a3ysikxugbmr4",
+    "version": 14,
+    "source_commit": "fdfb30102b7728a6eae6e36fb2dbd6014ad700ee",
+    "deep_equal": true,
+    "phone_render": "pass",
+    "lines": 1179,
+    "history_rows": 130,
+    "coverage_percent": 89,
+    "Complete": 8,
+    "Partial": 16
+  },
+  "next": "Let producers finish. Preserve failures before edits. After full8+post26 pass, exactLEAKisolatedreruns, finalpackagerGO+execute+independentinventoryaudit, completequalreport/trackers/progress, scopedcode+evidence commits/pushes, artifactrefresh+deepcompare/phonecheck. Continuegoal.",
+  "next_after_qualification": "Read next-diagnostic-plan.md; no current subphasecost inferred, no further cacheAPI withoutmeasurement.",
+  "scope": "Historical in-progress checkpoint, not final qualification results",
+  "checkpoint_unix": 1792783790.816098,
+  "latest_final_layout": {
+    "strict": "pass",
+    "Core": "1543pass/0skip/0LEAK",
+    "broad": "3513pass/741skip/1LEAK",
+    "UI": "resuming fresh extraction; no source changes"
+  }
+}

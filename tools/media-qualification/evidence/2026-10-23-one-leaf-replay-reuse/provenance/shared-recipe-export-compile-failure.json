@@ -1,0 +1,16 @@
+{
+  "phase": "candidate-broad-build",
+  "exit": 101,
+  "errors": [
+    "E0425",
+    "E0061",
+    "E0308"
+  ],
+  "cause": "New export test placed in shared recipes module reused by offline_portable and project_commands; crate-root helpers are specific to preview_export test binary",
+  "production_changes_required": false,
+  "core_tests_before_failure": 1543,
+  "post_commands_executed": 0,
+  "qualification_terminal": true,
+  "post_terminal": true,
+  "required_fix": "Keep shared Core/Store/PCM fixture helper in aligned recipe; move render/verification test to preview_export-only group_endpoints_export module"
+}

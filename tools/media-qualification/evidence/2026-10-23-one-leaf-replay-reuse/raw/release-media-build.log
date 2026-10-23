@@ -1,0 +1,4 @@
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Finished `release` profile [optimized] target(s) in 1m 08s
+   Archiving 2 binaries (including 1 non-test binary), 7 linked paths, and 1 standard library to /tmp/deadpan-one-leaf-replay-production-2026-10-23/release-media.tar.zst
+    Archived 51 files to /tmp/deadpan-one-leaf-replay-production-2026-10-23/release-media.tar.zst in 0.05s

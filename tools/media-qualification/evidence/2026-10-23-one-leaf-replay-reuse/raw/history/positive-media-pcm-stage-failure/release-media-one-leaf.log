@@ -1,0 +1,31 @@
+  Extracting 2 binaries (including 1 non-test binary) and 7 linked paths to /private/tmp/deadpan-one-leaf-replay-production-2026-10-23/release-media-extracted
+   Extracted 51 files to /private/tmp/deadpan-one-leaf-replay-production-2026-10-23/release-media-extracted in 0.09s
+────────────
+ Nextest run ID f58ec203-2b30-42fa-a7c2-1c921f77de5d with nextest profile: default
+    Starting 1 test across 1 binary (65 tests skipped)
+        FAIL [   0.213s] (1/1) deadpan-cli::preview_export group_endpoints_export::one_leaf_replay_qualified_media_commit_export_matches_uncached
+  stdout ───
+
+    running 1 test
+    test group_endpoints_export::one_leaf_replay_qualified_media_commit_export_matches_uncached ... FAILED
+
+    failures:
+
+    failures:
+        group_endpoints_export::one_leaf_replay_qualified_media_commit_export_matches_uncached
+
+    test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 65 filtered out; finished in 0.20s
+
+  stderr ───
+    one-leaf qualified media evidence: /var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpBlcjXN
+
+    thread 'group_endpoints_export::one_leaf_replay_qualified_media_commit_export_matches_uncached' (179577147) panicked at crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs:33:9:
+    assertion `left == right` failed
+      left: "edge_faded_pcm_before_voice_effects"
+     right: "authored_bus_pcm_before_mastering"
+    note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+────────────
+     Summary [   0.213s] 1 test run: 0 passed, 1 failed, 65 skipped
+        FAIL [   0.213s] (1/1) deadpan-cli::preview_export group_endpoints_export::one_leaf_replay_qualified_media_commit_export_matches_uncached
+error: test run failed

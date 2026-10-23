@@ -119,8 +119,19 @@ warnings remain. Five timing pairs give control/prototype composition medians
 Separate memory trials retain 18,296 whole-app samples, with gaps up to
 12.329791 ms; these are sampled lower bounds, not per-leaf peaks or savings.
 The 394-file /5,809,852-byte inventory verifies. Exact immutable value/mode
-binding preserves independent Core/Store authority. Production adoption and
-successful cached real-media PCM/history/export qualification remain owed.
+binding preserves independent Core/Store authority; this remains a separate batch.
+
+[Production one-leaf replay reuse](qualification/one-leaf-replay-reuse-2026-10-23.md)
+is qualified at 5fdae748. All 1,543 Core, 3,513 broader and 1,296 UI tests pass
+(0/741/11 skipped), with strict checks, native workflows and portable copies.
+Completed test maps remain truthful across one reviewed test-only PCM reader
+amendment; strict and affected media controls rerun afterward. Both cached and
+uncached real-media commits preserve full PCM/history and verify 45 pictures /
+72,072 samples each at zero offset. All five movies and 995 evidence files /
+23,149,781 bytes verify independently. Five final pairs give offscreen medians
+243.137083 /197.389583 ms, a 45.747500 ms /18.82% diagnostic difference.
+Five actual failures, warnings and clean isolated case checks remain retained.
+No percentile, peak/retention memory, latency target, requirement or gate closes.
 
 A private [semantic refresh duration reuse prototype](qualification/semantic-refresh-duration-reuse-prototype-2026-10-23.md)
 reuses one complete map for the same immutable staged refresh, preserving

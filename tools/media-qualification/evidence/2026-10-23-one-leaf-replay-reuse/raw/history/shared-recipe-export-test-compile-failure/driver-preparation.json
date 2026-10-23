@@ -1,0 +1,13 @@
+{
+  "scripts": {
+    "post.py": "8170efd0b5a9d1e04757fd193bfd3cd3680b2604e392d4fec92be5de8b7d4cbf",
+    "retain_media_and_check.py": "2dff65188034c870b37ef1003b14e802df5c0f00d290166850e0b5e6106fc396",
+    "ui_lint.py": "d5f36ae1522f45060f1b21d94fd00e90fa0963aab7bbd0358b1850960089a277",
+    "freeze.py": "1445cbfd031bb9a14e7c00794c3411be1b070ef2716ae882519e4fb0ce88854c",
+    "guard.py": "94009ca0991844c6fc81cf9e5fe7448e66b8b3d1017548dd93f38e340d14b005",
+    "qualify_all_ui.py": "a29e9770611b00307afaef3a59783e91b78894b3ea0c5053360d3165dd8b70d4",
+    "qualify.py": "80858b5e5943b5437db5e6345b1f9a3b7fe21ace05822a55c6c46d34af398556",
+    "qualify_native_media.py": "c818b0eb135ed9e580ed513df63546193a65ec760c5dad82c309704e10e93746"
+  },
+  "scope": "Full source-frozen production qualification, before first execution"
+}

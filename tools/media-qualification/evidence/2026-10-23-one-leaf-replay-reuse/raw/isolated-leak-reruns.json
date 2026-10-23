@@ -1,0 +1,33 @@
+[
+  {
+    "phase": "candidate-broad",
+    "binary": "deadpan-app::bin/deadpan-app",
+    "test": "project::tests::marks::cli_mark_with_the_exact_native_address_and_label_remains_accessible",
+    "binary_id": "deadpan-app::bin/deadpan-app",
+    "binary_sha256": "d4170f72645eb5ad3b3ba88499736957b0435dac18d62459dc6e30e16de599fe",
+    "run_log": "isolated-leak-1.log",
+    "log_sha256": "3717a1e3f3753f5e602b963f219bba36736b7c1bc7f36b8eb900cc3be57171b3",
+    "command": [
+      "cargo",
+      "nextest",
+      "run",
+      "--archive-file",
+      "/tmp/deadpan-one-leaf-replay-production-2026-10-23/candidate-broad.tar.zst",
+      "--extract-to",
+      "/tmp/deadpan-one-leaf-replay-production-2026-10-23/candidate-broad-extracted",
+      "--extract-overwrite",
+      "--workspace-remap",
+      "/Users/michael/Code/deadpan",
+      "-E",
+      "package(=deadpan-app) & binary(=deadpan-app) & test(=project::tests::marks::cli_mark_with_the_exact_native_address_and_label_remains_accessible)",
+      "--test-threads",
+      "1",
+      "--no-fail-fast"
+    ],
+    "exit": 0,
+    "seconds": 3.0293415831401944,
+    "passed": true,
+    "leaky": false,
+    "source_binary_guards": true
+  }
+]

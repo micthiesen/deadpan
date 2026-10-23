@@ -1,0 +1,714 @@
+{
+  "source_base": "3a32c923358c0cb7ca53f821bfb6db3e01ebb466",
+  "rust_files": 2053,
+  "input_files": 6,
+  "phases": {
+    "candidate-all-core": {
+      "tests": 1543,
+      "passed": 1543,
+      "skipped": 0,
+      "leaky": 0,
+      "matching_suites": 71
+    },
+    "candidate-broad": {
+      "tests": 3513,
+      "passed": 3513,
+      "skipped": 741,
+      "leaky": 1,
+      "matching_suites": 110
+    },
+    "candidate-ui": {
+      "tests": 1296,
+      "passed": 1296,
+      "skipped": 11,
+      "leaky": 0,
+      "matching_suites": 2
+    }
+  },
+  "native_report_checks": {
+    "workflow_checks": 1340,
+    "kestrel_checks": 6,
+    "reports": [
+      {
+        "report": "release-native-performance/report.json",
+        "workflow_checks": 197,
+        "kestrel_checks": 1
+      },
+      {
+        "report": "native-macros/report.json",
+        "workflow_checks": 401,
+        "kestrel_checks": 1
+      },
+      {
+        "report": "native-named-registers/report.json",
+        "workflow_checks": 171,
+        "kestrel_checks": 1
+      },
+      {
+        "report": "native-dot-repeat/report.json",
+        "workflow_checks": 383,
+        "kestrel_checks": 1
+      },
+      {
+        "report": "native-range-set-selectors/report.json",
+        "workflow_checks": 85,
+        "kestrel_checks": 1
+      },
+      {
+        "report": "native-transcript-search-selectors/report.json",
+        "workflow_checks": 103,
+        "kestrel_checks": 1
+      }
+    ],
+    "finding_severity_counts": {
+      "warning": 12
+    },
+    "finding_prefix_counts": {
+      "# frame(s) settled their layout only on a second retry": 6,
+      "egui discard warning": 6
+    },
+    "media_fixtures": [
+      {
+        "phase": "debug-media",
+        "fixture": "neutral",
+        "frames": 15,
+        "pictures": 15,
+        "offsets": [
+          [
+            "verified_zero",
+            0
+          ]
+        ],
+        "canonical_samples_compared": 24024,
+        "final_canonical_samples_compared": null,
+        "claim_flags": {
+          "authored_limited_and_limiter_gain_bits_equal": true,
+          "independent_DSP_claim": false,
+          "listening_claim": false
+        }
+      },
+      {
+        "phase": "release-media",
+        "fixture": "neutral",
+        "frames": 15,
+        "pictures": 15,
+        "offsets": [
+          [
+            "verified_zero",
+            0
+          ]
+        ],
+        "canonical_samples_compared": 24024,
+        "final_canonical_samples_compared": null,
+        "claim_flags": {
+          "authored_limited_and_limiter_gain_bits_equal": true,
+          "independent_DSP_claim": false,
+          "listening_claim": false
+        }
+      },
+      {
+        "phase": "release-media",
+        "fixture": "aligned",
+        "frames": 19,
+        "pictures": 19,
+        "offsets": [
+          [
+            "verified_zero",
+            0
+          ]
+        ],
+        "canonical_samples_compared": null,
+        "final_canonical_samples_compared": 30430,
+        "claim_flags": {
+          "independent_DSP_claim": false,
+          "listening_claim": false,
+          "move_PCM_translation_claim": false
+        }
+      },
+      {
+        "phase": "release-media",
+        "fixture": "one-leaf",
+        "pictures": 45,
+        "samples": 72072,
+        "exports": [
+          {
+            "leg": "cached",
+            "pictures": 45,
+            "samples": 72072,
+            "movie": "retained-media/media/release-media/one-leaf/cached/one-leaf-cached-media.mp4",
+            "movie_sha256": "092a8d38459aae0e407e375df577db33fb8786f97692c858e5bee7f6825005a5",
+            "portable_archive": "retained-media/media/release-media/one-leaf/cached/portable-package.tar.gz",
+            "portable_archive_sha256": "cc5fbceaa53c2c8beabdc027d6820603f55a0b56e1a8ba3bd812eadc5cc4e6ba",
+            "portable_files": 9
+          },
+          {
+            "leg": "uncached",
+            "pictures": 45,
+            "samples": 72072,
+            "movie": "retained-media/media/release-media/one-leaf/uncached/one-leaf-uncached-media.mp4",
+            "movie_sha256": "327a959bc930361c3529b8904d1108f74e9a1cdae10283bc8aaf43a775231098",
+            "portable_archive": "retained-media/media/release-media/one-leaf/uncached/portable-package.tar.gz",
+            "portable_archive_sha256": "8647025b6d1d4294171c663e65e709600ca472722b95d52a950a81adb9bf683a",
+            "portable_files": 9
+          }
+        ],
+        "history": {
+          "after_commit": {
+            "replayed": 4,
+            "revisions": 5,
+            "verified_by_receipt": 0
+          },
+          "before": {
+            "replayed": 3,
+            "revisions": 4,
+            "verified_by_receipt": 0
+          },
+          "full_replay_checked": true,
+          "receipt_shortcut_used": false,
+          "reopened": [
+            {
+              "history": {
+                "replayed": 6,
+                "revisions": 7,
+                "verified_by_receipt": 0
+              },
+              "leg": "cached"
+            },
+            {
+              "history": {
+                "replayed": 6,
+                "revisions": 7,
+                "verified_by_receipt": 0
+              },
+              "leg": "uncached"
+            }
+          ],
+          "undo_redo_reopen_checked": true
+        },
+        "canonical_comparison": {
+          "after_document": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpECgsoW/one-leaf-after-document.json",
+          "after_pcm": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpECgsoW/one-leaf-after-pcm.json",
+          "authored_limited_and_limiter_gain_bits_equal": true,
+          "before_document": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpECgsoW/one-leaf-before-document.json",
+          "before_pcm": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpECgsoW/one-leaf-before-pcm.json",
+          "commit_undo_redo_bytes_equal": true,
+          "document_bytes_equal": true,
+          "partition_and_cold_reads_equal": true,
+          "pause_interior_silent": true,
+          "register_banks_equal": true,
+          "source_pcm_nonzero": true
+        }
+      }
+    ]
+  },
+  "post": {
+    "post_commands": 26,
+    "timing_trials": 10,
+    "candidate_app_sha256": "0cb2931562108a68b57915c6135f448bc74293ba20623c7484053152566d31ff",
+    "control_app_sha256": "a9ce60a4d227e8c8107b06602915e6323e0cfabbf12610b67a85eda77bdd4a0f",
+    "timing_medians": {
+      "n_per_kind": 5,
+      "diagnostic_only": true,
+      "no_percentile_or_target_pass": true,
+      "kinds": {
+        "control": {
+          "large_first_pause_input_to_commit_ms": {
+            "min": 238.406375,
+            "median": 240.56033299999999,
+            "max": 241.98329199999998
+          },
+          "large_first_pause_input_to_offscreen_background_composition_ms": {
+            "min": 240.994208,
+            "median": 243.137083,
+            "max": 244.63625
+          }
+        },
+        "candidate": {
+          "large_first_pause_input_to_commit_ms": {
+            "min": 193.445125,
+            "median": 195.108542,
+            "max": 196.618833
+          },
+          "large_first_pause_input_to_offscreen_background_composition_ms": {
+            "min": 195.935916,
+            "median": 197.38958300000002,
+            "max": 199.03975
+          }
+        }
+      }
+    }
+  },
+  "positive_test_review": {
+    "status": "no_findings",
+    "reviewer": "/root/one_leaf_replay_review",
+    "date": "2026-10-23",
+    "scope": "Independent read-only source review of the one appended qualified-media replay test and its existing helper/API dependencies. Prior fourteen-file production review stands; no new production re-review is claimed.",
+    "test": "recipes::group_endpoints::aligned::one_leaf_replay_qualified_media_commit_export_matches_uncached",
+    "reviewed_file": "/Users/michael/Code/deadpan/crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs",
+    "before_sha256": "2d69409017da2c31486d2de8b059018dce398d0ffa94b53d169a572e99993cdf",
+    "final_formatted_sha256": "c90e802b2181177f6e67a455e739555e0ea3f569dbf34a683b85fe002bbf0f88",
+    "original_file_byte_preserved_prefix": true,
+    "supporting_source_sha256": {
+      "crates/deadpan-cli/tests/preview_export.rs": "e21a82dedb0dd0d29ee1b113a7fdc1c9dcca4e048290189632277b18fa2ea9a5",
+      "crates/deadpan-cli/tests/preview_export/recipes.rs": "74012534d3db24ba7dcfbe4278efb214cc99fb1ea3e0734f9fc19abe98d66ccb",
+      "crates/deadpan-cli/tests/preview_export/group_endpoints_recipe.rs": "03424491865dc557a6fe1fede3179455dd53331b702de44d98a8cdd87d9c7851",
+      "crates/deadpan-cli/tests/support/physical_mac.rs": "72304dc84c705dc41470c8218a122c99650bbb0dc7a8633cfd994647a868d70e",
+      "crates/deadpan-cli/src/macros.rs": "fd43a4660644793f43f2c26ba9cb79e50890f1ecbbb05ebcf8b100297e195ac4",
+      "crates/deadpan-store/src/compound.rs": "852c4a4982ad28536649fe6ed91005503424bd941eb16de2877c26ed7f82d7b2",
+      "crates/deadpan-store/src/lib.rs": "6cac4fccb2112473fd9143f3ac0b50bb5d97dc2eeb2b6988d8336d45071fd010",
+      "crates/deadpan-media/src/source_qualification.rs": "74f7c93869aef275f85d327938510ab98d4c0c64939462588560d1cd919cd923",
+      "crates/deadpan-media/src/source_index.rs": "ce0f8ea6bcbf0d40ace6ac4b99e6e5bd85a02c0c6e467724fcd630e27b401d7c"
+    },
+    "handoff_sha256": "e33c1a0a6f4c98a40544aa5e61a2618f4b07e52289e95fd8a6dae310ca53eb7a",
+    "root_format_receipt_sha256": "e572125ba48f2392de6bf11dc707cdc34cf4cc059b96149d7c2e115d1d52111f",
+    "findings": [],
+    "source_audit": [
+      {
+        "topic": "Real qualified input and independent commit legs",
+        "result": "satisfied_in_source",
+        "detail": "Existing Project::create uses public create-original on actual cfr-bframes.mp4. shorten retains Original[12,42), asserted30frames/48048samples with nonzero decoded PCM. The test requires ready single Original and measured video/audio receipt with120pictures. A portable copy has identical entry and bank before any pause commit."
+      },
+      {
+        "topic": "Actual eligible capability and host path",
+        "result": "satisfied_in_source",
+        "detail": "Actual plan_program generates a15frame Freeze/Silence ordinary InsertTime at15; test requires Some(OneLeafReplay), exactly one Edit and empty derived clocks. Cached leg calls HostSemanticPlan::commit_compound_prepared; uncached leg calls Store prepared API with the same exact borrowed request/guard and explicitNone. Both callbacks must execute once and receive the authoritative bank. Current production source routes the first leg's private witness and leaves the second uncached."
+      },
+      {
+        "topic": "Exact state and durable behavior parity",
+        "result": "satisfied_in_source",
+        "detail": "Outcome wire, complete document value/wire, bank and host-plan result are compared; forward/inverse patches must reach after/entry. Both packages execute fixed-ID undo/redo with outcome wire parity, authored-state comparison and complete PCM comparisons. Reopen requires identical current document/bank and full history replay with0receipt shortcuts and initial+3revisions. This tests durable history behavior, not arbitrary SQLite-file byte identity."
+      },
+      {
+        "topic": "Nonvacuous full canonical PCM comparison",
+        "result": "satisfied_in_source",
+        "detail": "Existing read_exact returns every authored stereo sample bit, limited stereo sample bit and limiter f64 gain bit, with finite/count/range checks. same_exact compares complete arrays including lengths across distinct cached/uncached packages, different bounded partitions and reopened legs. cold_exact opens fresh sessions around15/30/end seams and compares authored/limited/gain bits to full-window baseline. Before PCM and suffix after pause must be nonzero; interior pause away from edges must be silent. Array equality is the intended canonical implementation parity oracle, not an independent DSP oracle."
+      },
+      {
+        "topic": "Literal timing and pictures",
+        "result": "satisfied_in_source",
+        "detail": "At30000/1001,45frames at48000Hz is72072samples. Literal expected picture sequence is Original12..26 for output0..14, Original26 for held output15..29, Original27..41 for output30..44. This expectation is derived from edit semantics rather than compiled-plan output; check and emitted provenance verify all45positions."
+      },
+      {
+        "topic": "Two real exports and complete emitted-file window",
+        "result": "satisfied_in_source",
+        "detail": "Distinct cached/uncached packages are each passed to actual public Render. Each emitted movie is independently verify-export checked against its own committed revision with --every1 and literal --samples0:72072. Required report assertions are45pictures checked,0picture failures/nonzero offsets, one complete0..72072audio window, empty flags,0uncovered/low-SNRblocks, verified_zero offset and measured offset0, plus successful verifier result. Export verification uses existing fidelity thresholds; there is no compressed-byte or decoded-AAC-bit identity assertion."
+      },
+      {
+        "topic": "Receipt and retained evidence",
+        "result": "satisfied_in_source",
+        "detail": "After both exports pass, summary schema deadpan-one-leaf-media-parity-1 contains root/evidence_dir, both export legs with package/movie/revision/full verification, callback counts, history reports, canonical comparison flags and document/PCM artifact paths. It is written within root and to DEADPAN_PREVIEW_EXPORT_RESULTS. Existing DEADPAN_PREVIEW_EXPORT_KEEP=1 preserves root; Root's inspected qualify_native_media.py sets it along with results path."
+      },
+      {
+        "topic": "Physical Mac and execution scope",
+        "result": "satisfied_in_source",
+        "detail": "Existing physical_mac helper panics on hypervisor guest with DEADPAN_REQUIRE_PHYSICAL_MAC=1 rather than skipping. Root's qualification driver sets this env. Debug builds intentionally ignore this slow test under the existing suite convention; required release invocation runs it. Non-physical optional runs may skip exports, so they cannot support physical export qualification."
+      },
+      {
+        "topic": "Compile plausibility and helper use",
+        "result": "no_source_issue_found",
+        "detail": "Reviewed inherited module imports, registered_source/video-index API chain, plan_program/Host prepared API types, CommitOutcome.edit, Clone Fixture, existing same_authored, read_exact/cold_exact and render/verify helpers. Root formatting preserves the original file byte prefix. No source-level type/API mismatch found; only actual compilation can establish a pass."
+      }
+    ],
+    "claims_explicitly_excluded": [
+      "Independent DSP correctness",
+      "Listening or subjective quality",
+      "Compressed output byte identity",
+      "Decoded AAC bit identity",
+      "Performance or memory improvement",
+      "Execution or compilation success from this review"
+    ],
+    "limitations": [
+      "Reviewer ran no Cargo, formatter, compiler, test, native runtime, browser or Git action and made no source edits.",
+      "Root owns compilation and the strict physical-Mac release run with retained evidence.",
+      "Test fixtures, silence/length expectations and export verifier assertions are reviewed source obligations, not executed evidence yet.",
+      "No reducer hit counter was added; Some capability plus exact eligible entry/request and the reviewed production path establish intended hit routing in source, with performance measurement separate.",
+      "This report pins the final formatted SHA; later source edits require review of their delta."
+    ]
+  },
+  "positive_test_refactor_review": {
+    "status": "no_findings",
+    "reviewer": "/root/one_leaf_replay_review",
+    "date": "2026-10-23",
+    "scope": "Read-only source review of the two-file qualified-media test inclusion refactor after preserved shared-recipe compile failure. Prior runtime/source evidence is not silently transferred to this source.",
+    "before_sha256": {
+      "crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs": "c90e802b2181177f6e67a455e739555e0ea3f569dbf34a683b85fe002bbf0f88",
+      "crates/deadpan-cli/tests/preview_export/group_endpoints_export.rs": "13363c532b6bbcb6db246bec458c04705f458861ae0ef159ee32c1fefe28a572"
+    },
+    "final_formatted_sha256": {
+      "crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs": "58ce580c3def2cf42c809b7a059e21058cae591eea31284641148e1bca83bd1b",
+      "crates/deadpan-cli/tests/preview_export/group_endpoints_export.rs": "93f803cfa31c8d716ce5850a43314290d91c363f94f666eddb61fd733b105fd9"
+    },
+    "source_comparison": {
+      "rust_files": 2053,
+      "changed_since_retained_failure_snapshot": [
+        "crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs",
+        "crates/deadpan-cli/tests/preview_export/group_endpoints_export.rs"
+      ],
+      "other_rust_files_byte_identical": 2051,
+      "six_pinned_inputs_byte_identical": true,
+      "production_changes": false,
+      "new_files_or_module_declarations": false
+    },
+    "supporting_source_sha256": {
+      "crates/deadpan-cli/tests/preview_export.rs": "e21a82dedb0dd0d29ee1b113a7fdc1c9dcca4e048290189632277b18fa2ea9a5",
+      "crates/deadpan-cli/tests/offline_portable.rs": "cf0c554861e4f47b5555da40bb4b8ec7ec900c3db92c05bc225547e5ab01e2df",
+      "crates/deadpan-cli/tests/generated_joins.rs": "bb90a18c86a76674d9907b89df20d63158d127eefc232e98470858c7df54b9b0",
+      "crates/deadpan-cli/tests/golden_renders.rs": "319e77f57e678e919c4ce760b4c88b75a6b8fffc0e5b766c733205d87b58b8fc",
+      "crates/deadpan-cli/tests/bridge_conditioning.rs": "01152eae77cf604cca5cbc9bc35734132aa846d957b3e203e213e83c12ef828c",
+      "crates/deadpan-cli/tests/project_commands/macros/framing.rs": "e12b9a7ce094a733c7739179d63927c441e479a50b7e3ccb2169f54934b5d1cb",
+      "crates/deadpan-cli/tests/preview_export/recipes.rs": "74012534d3db24ba7dcfbe4278efb214cc99fb1ea3e0734f9fc19abe98d66ccb",
+      "crates/deadpan-cli/tests/preview_export/group_endpoints_recipe.rs": "03424491865dc557a6fe1fede3179455dd53331b702de44d98a8cdd87d9c7851",
+      "crates/deadpan-cli/tests/support/physical_mac.rs": "72304dc84c705dc41470c8218a122c99650bbb0dc7a8633cfd994647a868d70e"
+    },
+    "handoff_sha256": "f4501cddf5cb722e8bfce47077527a59cf062ec8c5fc77d9eab30a7dc78763e7",
+    "root_format_receipt_sha256": "ca25a3afabb5039ab851df159d6ca4a84c19904ce6ee7dd51ba9aaa03dcd011a",
+    "assertion_preservation_audit_sha256": "52f6120f55e3766949f4db707cf786ffdfc4477805cae50594c1af36a9852eb9",
+    "findings": [],
+    "assertions_weakened": false,
+    "analysis": [
+      {
+        "topic": "Shared module compile contexts",
+        "result": "source_dependency_issue_removed",
+        "detail": "recipes.rs is included by preview_export, offline_portable, generated_joins, golden_renders, bridge_conditioning and macOS+synthetic-worker project_commands/macros/framing. The shared one_leaf_replay_qualified_media_fixture(root:&Path) is now a regular public fixture helper returning (Fixture,Fixture,Value), with no #[test], crate-root call, custom cfg or export-driver dependency. Its names are inherited from existing recipes/group_endpoints modules and public Core/Store/CLI APIs. Root-specific keep/check/render/verify/provenance helpers occur only in group_endpoints_export, a module included solely by preview_export.rs."
+      },
+      {
+        "topic": "Assertion and oracle preservation",
+        "result": "satisfied_in_source",
+        "detail": "Reviewed complete two-file diff. All62 original assertion macro bodies remain,51 in helper and11 in wrapper; actual setup/controls/statements were also reviewed rather than relying solely on counts. Helper retains genuine capabilitySome, one ordinary15frame Freeze/Silence leaf, cachedHost versus same exact request+explicitNone, callbacks1, outcome/document/bank/forward/inverse parity, full authored/limited/limiter-bit PCM, alternate partitions, cold seams, nonzero source/suffix and silent interior, fixed undo/redo and reopened full-history checks. Literal45picture mapping and72072sample target are unchanged."
+      },
+      {
+        "topic": "Distinct data paths",
+        "result": "satisfied_in_source",
+        "detail": "The helper still creates actual qualified cfr-bframes Original[12,42), copies its package, and commits independently through cachedHost and uncachedStore paths. It returns the two distinct package fixtures and canonical/history metadata only after those checks complete. Cached output is compared with uncached output and nonzero/silence controls; no new self-equality-only oracle was introduced."
+      },
+      {
+        "topic": "Export wrapper and temp-root lifetime",
+        "result": "satisfied_in_source",
+        "detail": "group_endpoints_export::one_leaf_replay_qualified_media_commit_export_matches_uncached owns keep_or and its guard through both exports. It calls helper, both existing fixture checks, strict physicalMac guard, then renders and verifies each distinct package. --every1 and literal --samples0:72072,45pictures, provenance, flags/uncovered/SNR/zero-offset and passed assertions are preserved. Per-leg reports are retained before assertions. Existing physicalMac helper fails a guest under DEADPAN_REQUIRE_PHYSICAL_MAC=1; release/debug-ignore convention is unchanged."
+      },
+      {
+        "topic": "Receipt preservation",
+        "result": "satisfied_in_source",
+        "detail": "Helper returns unchanged deadpan-one-leaf-media-parity-1 canonical/history summary including actualroot/evidence_dir, callback counts and artifact paths. Wrapper attaches both exports with leg/package/movie/revision/fullverification only after both pass, then writes root/one-leaf-media-summary.json and DEADPAN_PREVIEW_EXPORT_RESULTS. DEADPAN_PREVIEW_EXPORT_KEEP=1 preserves the root and movies. IndependentDSP/listening/compressed-byte identity exclusions are unchanged."
+      },
+      {
+        "topic": "Existing test code preservation",
+        "result": "satisfied_in_source",
+        "detail": "The entire pre-one-leaf aligned recipe prefix and the entire previous group_endpoints_export file are byte-preserved prefixes. No prior recipe or export assertion was edited. No production code or limit changed."
+      }
+    ],
+    "test_path": {
+      "removed_from_shared_recipe": "recipes::group_endpoints::aligned::one_leaf_replay_qualified_media_commit_export_matches_uncached",
+      "new_export_only_path": "group_endpoints_export::one_leaf_replay_qualified_media_commit_export_matches_uncached",
+      "name_filter_retained": "one_leaf_replay_qualified_media_commit_export_matches_uncached"
+    },
+    "prior_reviews_preserved": {
+      "/tmp/deadpan-one-leaf-replay-production-2026-10-23/review/qualified-media-independent-review.json": "18fd1e2b0e9722fb4a89b1b707dbb36d7232e03cf16c34acbe5d233551c6c7c9",
+      "/tmp/deadpan-one-leaf-replay-production-2026-10-23/review/test-call-correction-review.json": "3acc9a3b61dc5c2a1dbff860a6feca48475b78e1420feeab0be035e304eb07ec"
+    },
+    "limitations": [
+      "Reviewer ran no Cargo, formatter, compiler, test, native runtime, browser or Git action and made no repository edits.",
+      "Source dependency inspection refutes the original crate-root helper problem in the new form; Root's all-CLI integration-target typecheck and strict physical-Mac release run remain required execution evidence.",
+      "No performance, memory, independentDSP, listening, compressed-byte or decodedAACbit claim is made.",
+      "Review applies to these exact final formatted hashes."
+    ]
+  },
+  "store_test_call_correction": {
+    "path": "crates/deadpan-store/src/compound/tests.rs",
+    "before_sha256": "cef529c2160c229a25741be09f7257e7d7340608ea5fa571ee0b72092c03b0be",
+    "after_sha256": "bbaa8d302938a55abe05d9437acc53025a68e0af3fec591a72103bd057964d37",
+    "change": "Pass None for the new optional replay capability in existing internal uncached Store execute reference test",
+    "production_sources_unchanged": true,
+    "assertions_unchanged": true,
+    "initial_failure_retained": true
+  },
+  "store_test_call_correction_review": {
+    "status": "no_findings",
+    "reviewer": "/root/one_leaf_replay_review",
+    "date": "2026-10-23",
+    "scope": "Read-only independent source review of exactly the one existing Store unit-test call correction after retained E0061 compile failure.",
+    "file": "crates/deadpan-store/src/compound/tests.rs",
+    "line": 953,
+    "before_sha256": "cef529c2160c229a25741be09f7257e7d7340608ea5fa571ee0b72092c03b0be",
+    "after_sha256": "bbaa8d302938a55abe05d9437acc53025a68e0af3fec591a72103bd057964d37",
+    "receipt_sha256": "1af08c6a3214c1a5c6631658b992574477c3ccf162c2384ad8fced57151189a5",
+    "before_source_map_sha256": "b855d62986fcf2337bb86e8796f5b971160ad91f0c806238e3cd078690417ba1",
+    "exact_one_replacement_verified": true,
+    "diff": "--- before/crates/deadpan-store/src/compound/tests.rs\n+++ after/crates/deadpan-store/src/compound/tests.rs\n@@ -950,7 +950,7 @@\n         2\n     );\n     let before = cells(&store);\n-    let (counted, staged) = execute(&store.connection, &initial, &command, None).unwrap();\n+    let (counted, staged) = execute(&store.connection, &initial, &command, None, None).unwrap();\n     assert_eq!(counted.document, reference.document);\n     assert_eq!(counted.edit, reference.edit);\n     assert_eq!(counted.register_writes, reference.register_writes);\n",
+    "findings": [],
+    "assertions_weakened": false,
+    "production_changed_by_correction": false,
+    "source_comparison": {
+      "rust_files": 2053,
+      "only_changed_path": "crates/deadpan-store/src/compound/tests.rs",
+      "other_rust_files_byte_identical": 2052,
+      "six_pinned_inputs_byte_identical": true
+    },
+    "reasoning": [
+      "Private execute now takes connection, current, request, admitted and optional OneLeafReplay candidate. Adding a fifth None selects the existing uncached reference path and leaves the fourth admitted=None unchanged.",
+      "The test continues to compare document, EditTransaction, register writes, exact staged checkpoint values and unchanged SQL cells against its independently materialized replay visitor.",
+      "No assertion, fixture, expected value, production source or limit was modified. The one-line source replacement was verified against the complete archived file."
+    ],
+    "failure_history": {
+      "retained_directory": "/tmp/deadpan-one-leaf-replay-production-2026-10-23/history/initial-store-test-compile-failure",
+      "receipt": "/tmp/deadpan-one-leaf-replay-production-2026-10-23/history/initial-store-test-compile-failure/failure.json",
+      "scope": "Existence checked; no claim here that compilation after this fix has passed."
+    },
+    "limitations": [
+      "Reviewer ran no Cargo, formatter, compiler, tests, app/runtime, browser or Git action and made no repository writes.",
+      "Root owns the restarted full qualification and any subsequent compiler/runtime results."
+    ]
+  },
+  "test_module_relocation": {
+    "path": "crates/deadpan-core/src/insert_time/retimed.rs",
+    "before_sha256": "4ab7bcda2052aaf5611998ddc1059455e5d9701a53cca9292f503e7d483348d7",
+    "after_sha256": "0f4a3cd202ef5f3005c928b4085a5ed7b7f0e7a45ca38e3c0eba645d8591b9e8",
+    "module_sha256": "559cee457415457980a4b4334a1f9f8f091408e839f3b730529584dec834c796",
+    "module_bytes": 7421,
+    "module_unchanged": true,
+    "production_text_and_doc_comments_unchanged_ignoring_module_and_seam_whitespace": true,
+    "before_start_line": 136,
+    "after_start_line": 989,
+    "assertions_unchanged": true,
+    "rustfmt_exit": 0
+  },
+  "pcm_reader_test_only_amendment": {
+    "scope": "Test-only PCM reader contract correction after completed production tests; no runtime or non-test source changed",
+    "only_changed_path": "crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs",
+    "before_sha256": "58ce580c3def2cf42c809b7a059e21058cae591eea31284641148e1bca83bd1b",
+    "after_sha256": "1b6b7a8e342f4358c9f6f04c998cd1e4247603d5d96853305f6bbb58383ad802",
+    "other_rust_files_byte_identical": 2052,
+    "six_inputs_byte_identical": true,
+    "production_sources_changed": false,
+    "legacy_default_reader_contract_preserved": true,
+    "targeted_reverification_required": [
+      "strict CLI all-targets Clippy/fmt",
+      "debug and release neutral media",
+      "release aligned media",
+      "release one-leaf cached/uncached media"
+    ],
+    "completed_core_broad_ui_results_preserved_with_actual_original_source_maps": true
+  },
+  "pcm_reader_test_only_review": {
+    "status": "no_findings",
+    "reviewer": "/root/one_leaf_replay_review",
+    "date": "2026-10-23",
+    "scope": "Independent source-only review of the one-file test PCM-reader stage-contract correction. No source writes, Cargo, formatter, compiler, native/runtime, browser or Git action by reviewer.",
+    "file": "crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs",
+    "before_sha256": "58ce580c3def2cf42c809b7a059e21058cae591eea31284641148e1bca83bd1b",
+    "final_formatted_sha256": "1b6b7a8e342f4358c9f6f04c998cd1e4247603d5d96853305f6bbb58383ad802",
+    "findings": [],
+    "legacy_reader_behavior_preserved": true,
+    "all_other_source_reconstructs_original_after_only_six_call_name_restorations": true,
+    "cold_exact_byte_identical": true,
+    "new_one_leaf_full_reader_call_sites": 6,
+    "source_defined_full_reader_invocations": 9,
+    "new_same_session_plan_assertions": 3,
+    "supporting_source_sha256": {
+      "crates/deadpan-cli/src/audio.rs": "59f0471650356580c8c0187bd97cac3fe5f7ccf953d3b1f3d8832cd2b8c8f922",
+      "crates/deadpan-audio/src/stages.rs": "b6bf9f4bf1b91cc6690c7dac8291e32d662f70e8dc81e5b0201c065ae22de7ac",
+      "crates/deadpan-audio/src/sound_events.rs": "8a9d01e4fcb3abf947cc2176d518a36531ee9cabbb80baeb090bfdf372ac1e1e",
+      "crates/deadpan-plan/src/plan.rs": "050985e9fc4b5617ddc7e4604b6c35de9ad8b98b839cba0e6af437796940c168",
+      "crates/deadpan-plan/src/audio_owners.rs": "d8774faef9d8cace84d01745b7893a2c328c494c079215c2c166ceedb5c2c8af",
+      "crates/deadpan-cli/tests/preview_export/group_endpoints_export.rs": "93f803cfa31c8d716ce5850a43314290d91c363f94f666eddb61fd733b105fd9"
+    },
+    "analysis": [
+      {
+        "topic": "Actual production stage contract",
+        "detail": "ProjectAudioSession::read_authored_bus (audio.rs255+) still dispatches prepare_authored_bus. StageAudio::prepare_authored_bus/prepare_bus (stages.rs806/819+) call prepare_bus_inner with authored_gain=true. The selected label at stages.rs879+ is edge_faded_pcm_before_voice_effects exactly when sounds and beat_sounds are empty and has_audio_treatments is false; otherwise it is authored_bus_pcm_before_mastering. sound_events.rs25-64 confirms the restricted no-FX branch uses the canonical controlled edge-faded path. RenderPlan treatment detection also includes nonunity Repeat gain escalation. The three asserted plan predicates therefore justify this exact test expectation."
+      },
+      {
+        "topic": "Strict wrappers",
+        "detail": "Legacy read_exact selects only the original authored_bus_pcm_before_mastering literal. New private read_one_leaf_exact selects only edge_faded_pcm_before_voice_effects. There is no accept-either allowlist, returned-label normalization, fixture FX addition or production change. Each block still asserts exact equality to its wrapper-selected fixed stage."
+      },
+      {
+        "topic": "Proof belongs to the actual reader",
+        "detail": "The common function opens one ProjectAudioSession, asserts empty sounds, empty beat_sounds and no audio treatments on that same session.plan before its first block whenever the edge expectation is selected, then uses that mutable session for both read_authored_bus and read_limited. No extra unused SourceSession/proof reader is opened."
+      },
+      {
+        "topic": "Original PCM reader body",
+        "detail": "Independently reconstructed the old reader body by removing only the three-predicate proof block and substituting the old fixed stage literal for expected_stage. The body is byte-identical: partition bounds, lengths, finite authored/limited samples, limiter gain range/finite checks, read order and complete bit-vector extraction are unchanged."
+      },
+      {
+        "topic": "Call scope and unchanged assertions",
+        "detail": "Only six full-reader call names inside one_leaf_replay_qualified_media_fixture change, covering nine baseline/portable/published/undo/reopened invocations. Other aligned/neutral callers keep legacy read_exact. Restoring the old reader section and those six call names reconstructs every original file byte. Thus Some capability, both commit paths, full sample/limiter equality, partitions/cold seams, nonzero/silence controls, history, literal picture fixtures and metadata remain unchanged. cold_exact and the separate export wrapper are untouched."
+      },
+      {
+        "topic": "Shared integration contexts",
+        "detail": "The new helpers remain private normal recipe functions with no #[test] or crate-root dependency. The existing multi-target recipe inclusion structure remains valid in source; Root still owns broad typechecking."
+      }
+    ],
+    "source_comparison": {
+      "rust_files": 2053,
+      "only_changed_path_since_retained_failure": "crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs",
+      "other_rust_files_byte_identical": 2052,
+      "six_pinned_inputs_byte_identical": true
+    },
+    "evidence": {
+      "handoff_sha256": "379b2786f73578a2299023de65fe25b5f86182a103659af98268355552f8bea5",
+      "root_format_receipt_sha256": "14e642692a86e3649ae59d2bb200de8059b0a6a4949de3f9edaa0b93c395be40",
+      "source_preservation_proof_sha256": "778117c50289cc259e18d1a4645d5cb49d89e492fc7888bfbfae4e2ad5a4eb83",
+      "retained_failure_directory": "/tmp/deadpan-one-leaf-replay-production-2026-10-23/history/positive-media-pcm-stage-failure"
+    },
+    "limitations": [
+      "This source review does not claim successful Some/None publication or new emitted movies after the fix.",
+      "Root's actual prior failure occurred before either commit; that evidence remains separate from future corrected execution.",
+      "Root owns final typecheck/Clippy, legacy control reruns, strict physical-Mac release execution, fresh helper/source qualification guards and final receipts.",
+      "No performance, independentDSP, listening, compressed-byte or decodedAACbit claim is made."
+    ]
+  },
+  "pcm_reader_source_preservation": {
+    "legacy_wrapper_exact_stage": "authored_bus_pcm_before_mastering",
+    "one_leaf_wrapper_exact_stage": "edge_faded_pcm_before_voice_effects",
+    "original_reader_body_byte_equal_after_only_expected_stage_parameter_and_three_plan_assertions_removed": true,
+    "same_actual_opened_session_proved_and_read": true,
+    "new_plan_assertions": 3,
+    "one_leaf_call_sites_changed": 6,
+    "source_defined_one_leaf_reader_invocations": 9,
+    "other_call_sites_unchanged": true,
+    "cold_exact_byte_identical": true,
+    "all_other_source_bytes_reconstruct_original": true,
+    "capability_some_assertion_preserved": true,
+    "shared_crate_root_calls": 0
+  },
+  "test_module_relocation_review": {
+    "status": "no_findings",
+    "reviewer": "/root/one_leaf_replay_review",
+    "date": "2026-10-23",
+    "scope": "Independent source-only review of exact private cfg(test) module relocation to EOF after retained strict-Clippy items_after_test_module failure. No code changes, Cargo, formatter, compiler, runtime or Git action by reviewer.",
+    "file": "crates/deadpan-core/src/insert_time/retimed.rs",
+    "before_sha256": "4ab7bcda2052aaf5611998ddc1059455e5d9701a53cca9292f503e7d483348d7",
+    "after_sha256": "0f4a3cd202ef5f3005c928b4085a5ed7b7f0e7a45ca38e3c0eba645d8591b9e8",
+    "module_bytes": 7421,
+    "module_sha256": "559cee457415457980a4b4334a1f9f8f091408e839f3b730529584dec834c796",
+    "module_byte_identical": true,
+    "module_top_level_parent_unchanged": true,
+    "module_at_eof": true,
+    "production_nonblank_lines_byte_identical_and_in_same_order": true,
+    "supported_doc_comment_stays_with_function": true,
+    "assertions_weakened": false,
+    "findings": [],
+    "reasoning": [
+      "The complete7421-byte one_leaf_replay_tests module including cfg(test), use super, test body, all TLS setup/cleanup, mode/fallback checks, exact errors and every assertion is byte-identical.",
+      "Removing that exact block from both versions yields identical nonblank production lines in the same order. Remaining differences are only seam/EOF whitespace from relocation.",
+      "The supported() documentation remains immediately attached to supported(), and no production item text or ordering changed.",
+      "The module remains a top-level child of the same retimed module; moving it after all production items does not change its private parent access or symbol resolution and addresses the reported layout lint without a suppression."
+    ],
+    "source_comparison": {
+      "rust_files": 2053,
+      "changed_since_retained_failure_snapshot": [
+        "crates/deadpan-core/src/insert_time/retimed.rs"
+      ],
+      "other_rust_files_byte_identical": 2052,
+      "six_pinned_inputs_byte_identical": true
+    },
+    "evidence": {
+      "root_proof_sha256": "d831c5fdf391eddc7fdb0d85753b5a49ec4b321815d00d6501a0d6e0a632e0d7",
+      "patch_notes_sha256": "a2dc390c2a7e4a4754f048ed2f39b6a1ad15899771466a41a65ad105c1b62c92",
+      "retained_strict_source_map_sha256": "1fca0c6116cbaabe34bdeb0919243362c43b2f782d562fc4c86783942405f366"
+    },
+    "history": {
+      "failure_directory": "/tmp/deadpan-one-leaf-replay-production-2026-10-23/history/test-module-layout-clippy-failure",
+      "intermediate_states": "Root's retained patch notes describe refused/truncated/ambiguous/static-doc-comment attempts and explicitly state that no intermediate state was compiled or executed. This review assesses the final exact bytes, not those temporary states."
+    },
+    "packager_requirement": "Permit only this reviewed transformation for retimed.rs within the original fourteen-path subset: before4ab7bc..., exact7421-byte module559cee... moved to EOF, final0f4a3c...; the other thirteen prototype files remain byte-identical. Do not replace the original reviewed prototype map with the new source wholesale.",
+    "limitations": [
+      "Root's rustfmt_exit=0 is a recorded owner result; reviewer did not rerun it or strict Clippy.",
+      "Root owns strict-first qualification rerun and all subsequent execution evidence.",
+      "No prior runtime pass is claimed for this changed full-source identity; production text preservation is a source proof only."
+    ]
+  },
+  "source_review_basis": {
+    "prototype_production_overlay_paths": 14,
+    "additional_positive_test_paths": 2,
+    "prototype_final_map_sha256": "0677019b918263bf58ca4f411e2fa098aa0ca5eef98bba37d5215093f2bbfe0d",
+    "formatted_positive_test_sha256": "c90e802b2181177f6e67a455e739555e0ea3f569dbf34a683b85fe002bbf0f88",
+    "reviews": [
+      {
+        "path": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/independent-review.json",
+        "sha256": "9107e928c9cc9f5ac024ddf9cf6fe28bba6d7d9032a3b3c9b80dca48d91aa52c"
+      },
+      {
+        "path": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/test-warning-independent-review.json",
+        "sha256": "cd86d74514c216208755f4a3211bc106370551c65d442b502606ce3abee8984e"
+      },
+      {
+        "path": "/tmp/deadpan-one-leaf-replay-production-2026-10-23/review/qualified-media-independent-review.json",
+        "sha256": "18fd1e2b0e9722fb4a89b1b707dbb36d7232e03cf16c34acbe5d233551c6c7c9"
+      },
+      {
+        "path": "/tmp/deadpan-one-leaf-replay-production-2026-10-23/review/test-call-correction-review.json",
+        "sha256": "3acc9a3b61dc5c2a1dbff860a6feca48475b78e1420feeab0be035e304eb07ec"
+      },
+      {
+        "path": "/tmp/deadpan-one-leaf-replay-production-2026-10-23/review/positive-test-refactor-review.json",
+        "sha256": "f492a060b7b47badeb90404783239c5523af6bbd39382727a6445f1e3e8f4420"
+      },
+      {
+        "path": "/tmp/deadpan-one-leaf-replay-production-2026-10-23/review/test-module-relocation-review.json",
+        "sha256": "9e71663759e929d84ae14d0cf6b92eb883ca1a10637933c3b79a3095021efcae"
+      },
+      {
+        "path": "/tmp/deadpan-one-leaf-replay-production-2026-10-23/review/pcm-stage-reader-review.json",
+        "sha256": "968657a87070567b4cd614a11d1516924652d45a70826d9c8baa1e4cbb622b97"
+      }
+    ],
+    "qualifying": true,
+    "no_product_target_claim": true,
+    "schema": {
+      "core": 58,
+      "sqlite": 87
+    },
+    "test_call_signature_correction_paths": 1,
+    "refactored_positive_test_sha256": {
+      "crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs": "58ce580c3def2cf42c809b7a059e21058cae591eea31284641148e1bca83bd1b",
+      "crates/deadpan-cli/tests/preview_export/group_endpoints_export.rs": "93f803cfa31c8d716ce5850a43314290d91c363f94f666eddb61fd733b105fd9"
+    },
+    "test_module_layout_relocation_paths_within_prototype": 1,
+    "test_module_layout_relocation_sha256": "0f4a3cd202ef5f3005c928b4085a5ed7b7f0e7a45ca38e3c0eba645d8591b9e8",
+    "pcm_reader_test_only_amendment": {
+      "scope": "Test-only PCM reader contract correction after completed production tests; no runtime or non-test source changed",
+      "only_changed_path": "crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs",
+      "before_sha256": "58ce580c3def2cf42c809b7a059e21058cae591eea31284641148e1bca83bd1b",
+      "after_sha256": "1b6b7a8e342f4358c9f6f04c998cd1e4247603d5d96853305f6bbb58383ad802",
+      "other_rust_files_byte_identical": 2052,
+      "six_inputs_byte_identical": true,
+      "production_sources_changed": false,
+      "legacy_default_reader_contract_preserved": true,
+      "targeted_reverification_required": [
+        "strict CLI all-targets Clippy/fmt",
+        "debug and release neutral media",
+        "release aligned media",
+        "release one-leaf cached/uncached media"
+      ],
+      "completed_core_broad_ui_results_preserved_with_actual_original_source_maps": true
+    },
+    "final_positive_test_sha256": {
+      "crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs": "1b6b7a8e342f4358c9f6f04c998cd1e4247603d5d96853305f6bbb58383ad802",
+      "crates/deadpan-cli/tests/preview_export/group_endpoints_export.rs": "93f803cfa31c8d716ce5850a43314290d91c363f94f666eddb61fd733b105fd9"
+    }
+  },
+  "go": {
+    "authorized": true,
+    "owner": "root",
+    "source_commit": "5fdae748ac2fdc67e1a11793c5ab69f6b61da833",
+    "source_base": "3a32c923358c0cb7ca53f821bfb6db3e01ebb466",
+    "qualification_terminal": true,
+    "post_terminal": true,
+    "isolated_latest_terminal": true,
+    "historical_case_checks_terminal": true,
+    "scope": "Package actual qualified one-leaf implementation evidence; no target closure",
+    "code_commit_matches_all17_changed_source_hashes": true,
+    "packager_sha256": "7d1c9e33940cfd269cd36d494d85df77e3e3f17915c6ca35a89fb31f81c1dae1",
+    "at_unix": 1792787850.436759,
+    "known_limits": [
+      "five-pair timing diagnostic only",
+      "historical warning cases checked on final binaries, not old binaries",
+      "Core/broader/UI retain original source identities before single-file test-only PCM reader amendment; strict and affected media rerun afterward"
+    ]
+  },
+  "schema": {
+    "core": 58,
+    "sqlite": 87
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "scope": "Test-only PCM reader contract correction after completed production tests; no runtime or non-test source changed",
+  "only_changed_path": "crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs",
+  "before_sha256": "58ce580c3def2cf42c809b7a059e21058cae591eea31284641148e1bca83bd1b",
+  "after_sha256": "1b6b7a8e342f4358c9f6f04c998cd1e4247603d5d96853305f6bbb58383ad802",
+  "other_rust_files_byte_identical": 2052,
+  "six_inputs_byte_identical": true,
+  "production_sources_changed": false,
+  "legacy_default_reader_contract_preserved": true,
+  "targeted_reverification_required": [
+    "strict CLI all-targets Clippy/fmt",
+    "debug and release neutral media",
+    "release aligned media",
+    "release one-leaf cached/uncached media"
+  ],
+  "completed_core_broad_ui_results_preserved_with_actual_original_source_maps": true
+}

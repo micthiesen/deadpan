@@ -1,0 +1,4 @@
+{"step": 4, "command": ["python", "/tmp/deadpan-one-leaf-replay-production-2026-10-23/qualify_all_ui.py", "candidate-ui", "candidate", "ui"], "exit": 0, "seconds": 70.72432520892471}
+{"step": 5, "command": ["python", "/tmp/deadpan-one-leaf-replay-production-2026-10-23/ui_lint.py"], "exit": 0, "seconds": 111.24626937508583}
+{"step": 6, "command": ["python", "/tmp/deadpan-one-leaf-replay-production-2026-10-23/qualify_native_media.py", "debug-media", "preflight"], "exit": 0, "seconds": 148.12764449976385}
+{"step": 7, "command": ["python", "/tmp/deadpan-one-leaf-replay-production-2026-10-23/qualify_native_media.py", "release-media", "release-media"], "exit": 100, "seconds": 461.1176472073421}

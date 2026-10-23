@@ -1,0 +1,17 @@
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.07s
+     Running `target/debug/xtask check --since 3a32c923358c0cb7ca53f821bfb6db3e01ebb466 --no-test`
+check: packages changed since 3a32c923358c0cb7ca53f821bfb6db3e01ebb466: deadpan-cli, deadpan-core, deadpan-store
+    Checking deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+    Checking deadpan-source v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-source)
+    Checking deadpan-analysis v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-analysis)
+    Checking deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+    Checking deadpan-render v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-render)
+    Checking deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+    Checking deadpan-encode v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-encode)
+    Checking deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+    Checking deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+    Checking deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+    Checking deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 7m 00s

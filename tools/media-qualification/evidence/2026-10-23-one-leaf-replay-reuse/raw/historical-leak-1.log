@@ -1,0 +1,8 @@
+  Extracting 71 binaries to /private/tmp/deadpan-one-leaf-replay-production-2026-10-23/candidate-all-core-extracted
+   Extracted 74 files to /private/tmp/deadpan-one-leaf-replay-production-2026-10-23/candidate-all-core-extracted in 0.88s
+────────────
+ Nextest run ID fb98c039-e7b0-42e6-bf23-6102ea10c35e with nextest profile: default
+    Starting 1 test across 1 binary (8 tests and 70 binaries skipped)
+        PASS [   0.008s] (1/1) deadpan-core::mark_fragments retained_copy_ownership_depends_on_authored_nodes_not_visible_matching_plays
+────────────
+     Summary [   0.008s] 1 test run: 1 passed, 8 skipped

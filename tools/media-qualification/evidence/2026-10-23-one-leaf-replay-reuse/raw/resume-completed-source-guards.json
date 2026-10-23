@@ -1,0 +1,20 @@
+[
+  {
+    "phase": "candidate-strict",
+    "rust_files": 2053,
+    "inputs": 6,
+    "source_and_inputs_unchanged": true
+  },
+  {
+    "phase": "candidate-all-core",
+    "rust_files": 2053,
+    "inputs": 6,
+    "source_and_inputs_unchanged": true
+  },
+  {
+    "phase": "candidate-broad",
+    "rust_files": 2053,
+    "inputs": 6,
+    "source_and_inputs_unchanged": true
+  }
+]

@@ -1,0 +1,10 @@
+{
+  "status": "static correction before first execution",
+  "producer": "retain_media_and_check.py",
+  "cause": "Two newly added JSON writes append literal backslash+n instead of newline",
+  "post_commands_executed": 0,
+  "retention_has_not_run": true,
+  "actual_runtime_failure": false,
+  "before_sha256": "2dff65188034c870b37ef1003b14e802df5c0f00d290166850e0b5e6106fc396",
+  "after_sha256": "d79ba30babda166e519440c64d5b9c4c5e41f6d8ebe8904cfecd3c11ae2743a6"
+}

@@ -1,0 +1,18 @@
+# Positive one-leaf qualified media test: source-only handoff
+
+Writes stopped. Only assigned repository file crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs changed, by appending one test. The complete original file is byte-preserved as a prefix. Exact before/proposed hashes are in source-hashes.json; snapshots and positive-media-test.patch are beside this note. No Cargo, rustfmt, compiler, runtime, Git or other repository writer ran.
+
+Test: recipes::group_endpoints::aligned::one_leaf_replay_qualified_media_commit_export_matches_uncached
+
+Actual qualified cfr-bframes Original [12,42) baseline is created/shortened through existing CLI helpers and copied with the existing portable-copy command. The test checks original video/audio qualification and exact entry/bank equality. One actual Host plan inserts an ordinary15frame Freeze at15, asserts Some(OneLeafReplay), ordinary InsertTime/Freeze/Silence shape and empty derived clocks. Host cached prepared commit and explicit Store None use the same immutable request/guard; both callbacks must run once with current authoritative bank. Commit/outcome/forward/inverse/document bytes, banks and full history are compared. Fixed-revision undo/redo is closed/reopened and compared, with complete48048baseline/72072result PCM bits, differing read partitions, cold seams and nonzero/silent controls.
+
+Both45frame outputs are rendered and decoded/verified with every picture and the complete0:72072sample window, literal source-picture provenance, zero offsets/uncovered samples/low-SNR blocks and empty flags. Canonical PCM is bit-exact across legs; emitted fidelity uses existing verifier thresholds. No compressed-byte, decodedAACbit, independentDSP, listening or performance claim is made.
+
+Receipt schema deadpan-one-leaf-media-parity-1 is written after both outputs pass to DEADPAN_PREVIEW_EXPORT_RESULTS. It contains root/evidence_dir, exports[] with leg/package/movie/revision/verification, canonical-comparison flags and retained document/PCM paths, callback counts and history reports/flags. It also remains at root/one-leaf-media-summary.json. Reports are retained before verification assertions. DEADPAN_PREVIEW_EXPORT_KEEP=1 is required to preserve the root and both movies.
+
+Required isolated release execution (Root owns):
+DEADPAN_REQUIRE_PHYSICAL_MAC=1 DEADPAN_PREVIEW_EXPORT_KEEP=1 DEADPAN_PREVIEW_EXPORT_RESULTS=/tmp/deadpan-one-leaf-replay-production-2026-10-23/release-media-one-leaf-fixture.json cargo test --release --locked -p deadpan-cli --test preview_export one_leaf_replay_qualified_media_commit_export_matches_uncached -- --nocapture --test-threads=1
+
+Use Root's qualified media/encoder environment and pinned source-directory toolchain. Existing physical-Mac guard fails under DEADPAN_REQUIRE_PHYSICAL_MAC=1 if unavailable. Debug builds intentionally ignore this slow test per existing target convention; the required release invocation executes it.
+
+Unexecuted fixture expectations: shortened baseline still meets empty-derived/Some capability eligibility; portable copy is exact at the authored snapshot; source PCM length is48048 and final45frame length72072; pause interior more than256samples from both seams is silent; original suffix retains nonzero real decoded audio; full history revision count rises by3 for commit/undo/redo. These expectations are assertions, not claimed passes. Root will independently review, format, compile and run. Test is bounded at45pictures/72072samples per leg plus complete undo/redo reads and about90 existing CLI per-frame plan inspections; runtime relative to nextest300s is unmeasured. No timeout or assertion was weakened.

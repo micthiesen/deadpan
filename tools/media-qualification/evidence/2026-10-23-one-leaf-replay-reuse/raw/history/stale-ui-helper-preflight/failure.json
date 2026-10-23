@@ -1,0 +1,18 @@
+{
+  "phase": "candidate-ui-helper-preflight",
+  "exit": 1,
+  "before_test_execution": true,
+  "cause": "Supplemental CLI helper from prior extraction was not in the new UI archive and remained stale",
+  "stale_cli_sha256": "aa81957d32ffc2a974b6e44138fccb2d42db2d4b47ba0815b1cfc298ddf8d879",
+  "current_cli_sha256": "1ca8f19a4f8202a0323106cc01d1de522ae619ee8eb6ce752d63e1c09fd8ff84",
+  "source_changed": false,
+  "production_tests_failed": 0,
+  "prior_final_layout_passes": {
+    "strict": true,
+    "Core": 1543,
+    "broad": 3513
+  },
+  "source_guard": "all current2053Rust and sixinputs match completed strict/Core/broad maps",
+  "old_extracted": "/tmp/deadpan-one-leaf-replay-production-2026-10-23/candidate-ui-extracted",
+  "retained_extracted": "/tmp/deadpan-one-leaf-replay-production-2026-10-23/history/stale-ui-helper-preflight/candidate-ui-extracted"
+}

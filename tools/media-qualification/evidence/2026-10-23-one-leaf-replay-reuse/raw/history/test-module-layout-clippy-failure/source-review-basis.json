@@ -1,0 +1,39 @@
+{
+  "prototype_production_overlay_paths": 14,
+  "additional_positive_test_paths": 2,
+  "prototype_final_map_sha256": "0677019b918263bf58ca4f411e2fa098aa0ca5eef98bba37d5215093f2bbfe0d",
+  "formatted_positive_test_sha256": "c90e802b2181177f6e67a455e739555e0ea3f569dbf34a683b85fe002bbf0f88",
+  "reviews": [
+    {
+      "path": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/independent-review.json",
+      "sha256": "9107e928c9cc9f5ac024ddf9cf6fe28bba6d7d9032a3b3c9b80dca48d91aa52c"
+    },
+    {
+      "path": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/test-warning-independent-review.json",
+      "sha256": "cd86d74514c216208755f4a3211bc106370551c65d442b502606ce3abee8984e"
+    },
+    {
+      "path": "/tmp/deadpan-one-leaf-replay-production-2026-10-23/review/qualified-media-independent-review.json",
+      "sha256": "18fd1e2b0e9722fb4a89b1b707dbb36d7232e03cf16c34acbe5d233551c6c7c9"
+    },
+    {
+      "path": "/tmp/deadpan-one-leaf-replay-production-2026-10-23/review/test-call-correction-review.json",
+      "sha256": "3acc9a3b61dc5c2a1dbff860a6feca48475b78e1420feeab0be035e304eb07ec"
+    },
+    {
+      "path": "/tmp/deadpan-one-leaf-replay-production-2026-10-23/review/positive-test-refactor-review.json",
+      "sha256": "f492a060b7b47badeb90404783239c5523af6bbd39382727a6445f1e3e8f4420"
+    }
+  ],
+  "qualifying": true,
+  "no_product_target_claim": true,
+  "schema": {
+    "core": 58,
+    "sqlite": 87
+  },
+  "test_call_signature_correction_paths": 1,
+  "refactored_positive_test_sha256": {
+    "crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs": "58ce580c3def2cf42c809b7a059e21058cae591eea31284641148e1bca83bd1b",
+    "crates/deadpan-cli/tests/preview_export/group_endpoints_export.rs": "93f803cfa31c8d716ce5850a43314290d91c363f94f666eddb61fd733b105fd9"
+  }
+}

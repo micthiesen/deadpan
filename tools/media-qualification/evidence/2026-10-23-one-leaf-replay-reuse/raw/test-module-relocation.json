@@ -1,0 +1,13 @@
+{
+  "path": "crates/deadpan-core/src/insert_time/retimed.rs",
+  "before_sha256": "4ab7bcda2052aaf5611998ddc1059455e5d9701a53cca9292f503e7d483348d7",
+  "after_sha256": "0f4a3cd202ef5f3005c928b4085a5ed7b7f0e7a45ca38e3c0eba645d8591b9e8",
+  "module_sha256": "559cee457415457980a4b4334a1f9f8f091408e839f3b730529584dec834c796",
+  "module_bytes": 7421,
+  "module_unchanged": true,
+  "production_text_and_doc_comments_unchanged_ignoring_module_and_seam_whitespace": true,
+  "before_start_line": 136,
+  "after_start_line": 989,
+  "assertions_unchanged": true,
+  "rustfmt_exit": 0
+}

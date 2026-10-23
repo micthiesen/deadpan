@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "/tmp/deadpan-one-leaf-replay-production-2026-10-23/qualify_all_ui.py", line 60, in <module>
+    assert len(matches)==1 and sha(matches[0])==sha(source),(name,matches)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: ('deadpan-cli', [PosixPath('/tmp/deadpan-one-leaf-replay-production-2026-10-23/candidate-ui-extracted/target/debug/deadpan-cli')])

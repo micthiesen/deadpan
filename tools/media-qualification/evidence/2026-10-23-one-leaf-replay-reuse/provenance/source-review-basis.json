@@ -1,0 +1,70 @@
+{
+  "prototype_production_overlay_paths": 14,
+  "additional_positive_test_paths": 2,
+  "prototype_final_map_sha256": "0677019b918263bf58ca4f411e2fa098aa0ca5eef98bba37d5215093f2bbfe0d",
+  "formatted_positive_test_sha256": "c90e802b2181177f6e67a455e739555e0ea3f569dbf34a683b85fe002bbf0f88",
+  "reviews": [
+    {
+      "path": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/independent-review.json",
+      "sha256": "9107e928c9cc9f5ac024ddf9cf6fe28bba6d7d9032a3b3c9b80dca48d91aa52c"
+    },
+    {
+      "path": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/test-warning-independent-review.json",
+      "sha256": "cd86d74514c216208755f4a3211bc106370551c65d442b502606ce3abee8984e"
+    },
+    {
+      "path": "/tmp/deadpan-one-leaf-replay-production-2026-10-23/review/qualified-media-independent-review.json",
+      "sha256": "18fd1e2b0e9722fb4a89b1b707dbb36d7232e03cf16c34acbe5d233551c6c7c9"
+    },
+    {
+      "path": "/tmp/deadpan-one-leaf-replay-production-2026-10-23/review/test-call-correction-review.json",
+      "sha256": "3acc9a3b61dc5c2a1dbff860a6feca48475b78e1420feeab0be035e304eb07ec"
+    },
+    {
+      "path": "/tmp/deadpan-one-leaf-replay-production-2026-10-23/review/positive-test-refactor-review.json",
+      "sha256": "f492a060b7b47badeb90404783239c5523af6bbd39382727a6445f1e3e8f4420"
+    },
+    {
+      "path": "/tmp/deadpan-one-leaf-replay-production-2026-10-23/review/test-module-relocation-review.json",
+      "sha256": "9e71663759e929d84ae14d0cf6b92eb883ca1a10637933c3b79a3095021efcae"
+    },
+    {
+      "path": "/tmp/deadpan-one-leaf-replay-production-2026-10-23/review/pcm-stage-reader-review.json",
+      "sha256": "968657a87070567b4cd614a11d1516924652d45a70826d9c8baa1e4cbb622b97"
+    }
+  ],
+  "qualifying": true,
+  "no_product_target_claim": true,
+  "schema": {
+    "core": 58,
+    "sqlite": 87
+  },
+  "test_call_signature_correction_paths": 1,
+  "refactored_positive_test_sha256": {
+    "crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs": "58ce580c3def2cf42c809b7a059e21058cae591eea31284641148e1bca83bd1b",
+    "crates/deadpan-cli/tests/preview_export/group_endpoints_export.rs": "93f803cfa31c8d716ce5850a43314290d91c363f94f666eddb61fd733b105fd9"
+  },
+  "test_module_layout_relocation_paths_within_prototype": 1,
+  "test_module_layout_relocation_sha256": "0f4a3cd202ef5f3005c928b4085a5ed7b7f0e7a45ca38e3c0eba645d8591b9e8",
+  "pcm_reader_test_only_amendment": {
+    "scope": "Test-only PCM reader contract correction after completed production tests; no runtime or non-test source changed",
+    "only_changed_path": "crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs",
+    "before_sha256": "58ce580c3def2cf42c809b7a059e21058cae591eea31284641148e1bca83bd1b",
+    "after_sha256": "1b6b7a8e342f4358c9f6f04c998cd1e4247603d5d96853305f6bbb58383ad802",
+    "other_rust_files_byte_identical": 2052,
+    "six_inputs_byte_identical": true,
+    "production_sources_changed": false,
+    "legacy_default_reader_contract_preserved": true,
+    "targeted_reverification_required": [
+      "strict CLI all-targets Clippy/fmt",
+      "debug and release neutral media",
+      "release aligned media",
+      "release one-leaf cached/uncached media"
+    ],
+    "completed_core_broad_ui_results_preserved_with_actual_original_source_maps": true
+  },
+  "final_positive_test_sha256": {
+    "crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs": "1b6b7a8e342f4358c9f6f04c998cd1e4247603d5d96853305f6bbb58383ad802",
+    "crates/deadpan-cli/tests/preview_export/group_endpoints_export.rs": "93f803cfa31c8d716ce5850a43314290d91c363f94f666eddb61fd733b105fd9"
+  }
+}

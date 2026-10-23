@@ -1,0 +1,10 @@
+[
+  {
+    "from": "/tmp/deadpan-one-leaf-replay-production-2026-10-23/debug-media-extracted",
+    "to": "/tmp/deadpan-one-leaf-replay-production-2026-10-23/history/positive-media-pcm-stage-failure/debug-media-extracted"
+  },
+  {
+    "from": "/tmp/deadpan-one-leaf-replay-production-2026-10-23/release-media-extracted",
+    "to": "/tmp/deadpan-one-leaf-replay-production-2026-10-23/history/positive-media-pcm-stage-failure/release-media-extracted"
+  }
+]

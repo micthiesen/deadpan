@@ -1,0 +1,9 @@
+{
+  "first_attempt": "generated diff output truncated; patch refused without changes",
+  "second_attempt": "ambiguous append context matched an earlier function; exact target hash assertion refused to proceed",
+  "final_attempt": "complete current-text exact replacement with intended relocation; hash matches reviewed transformation target",
+  "compiled_or_executed_during_intermediate_state": false,
+  "production_item_text_and_order_preserved": true,
+  "doc_comment_static_failure": "Initial module extraction included the following function doc comment; rustfmt refused before compilation. Left doc comment with supported; exact transformation and format now pass.",
+  "final_sha256": "0f4a3cd202ef5f3005c928b4085a5ed7b7f0e7a45ca38e3c0eba645d8591b9e8"
+}

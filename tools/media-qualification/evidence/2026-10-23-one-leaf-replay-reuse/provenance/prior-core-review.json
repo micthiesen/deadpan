@@ -1,0 +1,157 @@
+{
+  "status": "no_findings",
+  "meaning": "No unresolved actionable source defect found in the reviewed frozen proposal. This is not compilation, test, runtime, performance or memory qualification.",
+  "reviewer": "/root/one_leaf_replay_review",
+  "date": "2026-10-23",
+  "source_root": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source",
+  "baseline_commit": "3a32c923358c0cb7ca53f821bfb6db3e01ebb466",
+  "scope": {
+    "full_changed_file_diff_reviewed": true,
+    "changed_files": 14,
+    "existing_files": 12,
+    "new_files": 2,
+    "tests_reviewed_in_source_only": {
+      "core": 17,
+      "store": 7
+    },
+    "production_boundaries": [
+      "Core semantic creation",
+      "Core compound replay",
+      "Store shared preparation/Immediate commit/visitor",
+      "CLI prepared semantic commit"
+    ],
+    "no_app_fast_path": true,
+    "source_edits_by_reviewer": false,
+    "formatting_compilation_tests_runtime_git_writes_by_reviewer": false
+  },
+  "reviewed_sha256": {
+    "crates/deadpan-cli/src/macros.rs": "5a41a720840844726b9e308ea12151aca39c58fbf5c6f9c06311929dee62085e",
+    "crates/deadpan-core/src/audio_reference.rs": "9d67911d7a2b414df0afe964efbc7a3111dfc679884f5068add5a226e53141ef",
+    "crates/deadpan-core/src/compound.rs": "1de3788b9f6b1275a8ca34e4e607f6a7b18eb8982aee1486399dcf95abbf62d0",
+    "crates/deadpan-core/src/insert_time/retimed.rs": "8310600f2b8c6d83b034539bec0cbd7ece91eb32aeeb9031840ccfe2442564b6",
+    "crates/deadpan-core/src/lib.rs": "b7746cc15dd05b11d13c842229ddc5ee3081e3f351ca03c7d894d6eda67f99ac",
+    "crates/deadpan-core/src/one_leaf_replay.rs": "3c866bb385b0782f29cb5d0ee66efc84b501c38e4936c5dd60c7bee5f20be05f",
+    "crates/deadpan-core/src/semantic/planner.rs": "90052a1e9dd0e8f0223c3161aa70891412e7f3881b0da9b750f26c57e52b5ae1",
+    "crates/deadpan-core/src/semantic/planner/content.rs": "168b2b5a2b1a93361d72aa2ccf2c71eeb763d62931840b243d01f4b1519fcb5d",
+    "crates/deadpan-core/src/semantic/planner/pause.rs": "6403efdf543dba011b5bac1fb1d6fce617b3bf78e3c16628ca4ebcf6559841b6",
+    "crates/deadpan-core/src/semantic/planner/tests.rs": "ba36a97b458cd4895dc3d9b810e58f2580c95d24ae80deddee66461c14c9bd09",
+    "crates/deadpan-core/tests/semantic_leaf_replay.rs": "08002eca0821907de19072701c0325af1596f09d04200c67b88b60f44a1cc832",
+    "crates/deadpan-store/src/compound.rs": "877db764a64a39dc2111c8e1e6eb53786f26e1b2730961c81c6abb0a5f03704e",
+    "crates/deadpan-store/src/lib.rs": "ad44a235a6dbd421f45d35d59ed9232021ac6c5528622da0576b97337d0ea8af",
+    "crates/deadpan-store/tests/compound_preparation.rs": "1706eaf64a98da3634570e24d44c0fa0b0aed9e093657f4d70ad3c5c98400884"
+  },
+  "supporting_source_sha256": {
+    "crates/deadpan-core/src/command.rs": "37e364c3e02ab670d372a7bdc37f7d53b9979347b5821303047a4fef61b563b5",
+    "crates/deadpan-core/src/command_work.rs": "c06e518513e82a8b52daf516d4eb134e7056a898f9a34f8e8f991670a7f84606",
+    "crates/deadpan-core/src/derived_clock.rs": "cd6b50d2cfbc2e29de3dec5be7dc9fb8ed9fe5d2e9bef2b15a2d6ed76b366225",
+    "crates/deadpan-core/src/document.rs": "2763bb86bbaba1afe9f11ade4e0077c154ffc12c9452bc2836fc9b0105865d10",
+    "crates/deadpan-core/src/shared_map.rs": "08270640fa48e0614ad33e384cf92723ccde4c5f06bc2a0a3c54c8fabe409e26",
+    "crates/deadpan-core/src/audio_binding.rs": "94c43e887cb29d01a769a9e579fc82be278a5523e52cdfb24eb5df6951e0cac0",
+    "crates/deadpan-core/src/audio_binding_lifecycle.rs": "bac4f558f42595384b542f538c8aefbcfc58538bfd29314599d58368e345c33b",
+    "crates/deadpan-core/src/audio_context.rs": "0dfdb8f4cab7486026ed3fa52e68abbea91e0e01d8238ba4e74bb248696d9c12",
+    "crates/deadpan-core/src/audio_reference/exact_clock.rs": "e9a2e664d3f3928a22f128c53ae03c97984b6cab96932155662792503b11d60f",
+    "crates/deadpan-core/src/insert_time/occurrence/target.rs": "c2fc9390864c349f151f4b2316f4fb72d53a3d745fd274364750350d06eda514",
+    "crates/deadpan-core/src/compound/wire.rs": "1f348d2134666bb3703c44eed959e686c7464df368234e24475aa3f46a660cad",
+    "crates/deadpan-store/src/source_registration.rs": "00e7dd4ce9d8a31d257ba611e65e78f1e6b84d992eaa9fbd0519e81c8380351f",
+    "crates/deadpan-store/src/transcript_selection.rs": "f135e0df8ba882463e3ac106a0173af215b25ebdc94150f6f38ce0fee44ecdf6"
+  },
+  "artifact_sha256": {
+    "prototype.patch": "0bcca28714ee338bca85128ca40b153b5db402c3b9e552eb8418f54d4eacd49c",
+    "production-review.patch": "37b332cbe434e4e4c80aebf29613872ea9901cef161b0210285df637e6e82664",
+    "source-hashes.json": "7be4c743ff6dd4ad5d801b6133817ac93ff5b034303e4556435f1a6ee654be82",
+    "budget-boundaries.md": "4a807416352e9227b254df56bbdea856ee4d1cf80ffb6aa1476f4023c93f4bfc",
+    "proposal.md": "87ecb6f5ad393da50d92393cdc8c463a0d96c5436f0beca6ec1a10df93ea666c",
+    "wire-equality-conclusion.md": "2d62d8eae11bc17914977f305d12591da5f4b7299cd9bc594ae0befded7cf72b"
+  },
+  "pinned_inputs_verified_unchanged": {
+    "Cargo.lock": "1e39d18ae4de6c7b898edad39eb7104235fb3ffe3af84521ca94df2b6c25b71b",
+    "Cargo.toml": "121e4cfefb2227cf38d5c1758d6a2250ddc38465a1044dfe896368c7ac1b50f3",
+    "rust-toolchain.toml": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc",
+    ".cargo/config.toml": "b906738cab8f6f289180e1bcf32826d3e2996899cb5055dc7f0c6838655c340d",
+    "crates/deadpan-app/src/navigation/registry/baseline-routing.txt": "a181ba1d3f2db1c030fbdf1feaf2d5ae8efd5edd885114bcea9c161ac774cd8d",
+    "docs/COMMANDS.md": "b4fc50fffbb6d96406593dda90a56ee6c9f3b89a3790b6e7f69b87863f57beec"
+  },
+  "findings": [],
+  "resolved_review_observations": [
+    {
+      "issue": "Four private tests used unwrap_err on Result<CompoundOutcome, _>, although CompoundOutcome has no Debug implementation.",
+      "resolution": "Writer replaced the provisional and TLS replay unwrap_err calls with explicit Err matches and bounded fixed unexpected-success diagnostics. Final source was re-read. No production Debug implementation was added.",
+      "files": [
+        "crates/deadpan-core/src/audio_reference.rs",
+        "crates/deadpan-core/src/insert_time/retimed.rs"
+      ]
+    },
+    {
+      "issue": "Initial test set lacked reachable numeric wire boundaries, genuine admitted-media/corrections refusal, and historical allocation reuse distinct from current-head reuse.",
+      "resolution": "Writer added the private real-64-MiB boundary test and three Store tests using admitted decoded Original media, actual corrections, and head-advanced historical allocations. All additions were reviewed in source; none was executed by reviewer."
+    }
+  ],
+  "contract_audit": [
+    {
+      "topic": "Opaque exact immutable binding",
+      "result": "satisfied_in_source",
+      "evidence": "one_leaf_replay.rs9-13 owns complete entry, CommandRequest and leaf-revision next; fields private, no Clone/Deserialize/Serialize/constructor/mutable accessor. SemanticPlan accessor only borrows. Creation owns apply_with_result, calls original post-leaf serializer/charge callback before constructing token. Public request/document mutations do not reach private witnesses."
+    },
+    {
+      "topic": "Bounded eligibility and lifetime",
+      "result": "satisfied_in_source",
+      "evidence": "Creation/use require local command work, compact timing, empty live derived clocks and no provisional timing layouts in entry/result. Final plan retention requires one ordinary InsertTime Edit, empty inputs/writes; second resolved operation clears witness and later commit_leaf cannot recreate it. Isolation retains original apply branch. No global/persisted/cache-list or app special case added."
+    },
+    {
+      "topic": "Replay placement and error order",
+      "result": "satisfied_in_source",
+      "evidence": "compound.rs262-401 retains outer revision/transaction/leaf allocation admission, initial size, Ledger creation/reserve and pre-leaf wire/charge before lookup. Exact request/value mismatch falls back to old apply. Post size/charge, Ledger observe, visitor, current adoption, outer revision assignment, final size/charge and aggregate net_transaction remain in original order."
+    },
+    {
+      "topic": "Destructive TLS and ambient scoped timing",
+      "result": "satisfied_in_source",
+      "evidence": "OneLeafReplay::reuse explicitly consumes EXACT_EDIT on entry, runs leaf check_revision, clones sealed next, consumes EXACT_EDIT again and calls sealed_preserved when false. Empty before/after live clocks make that existing check O(1). Hit does not change SCOPED_TIMING; private tests cover stale flags, pre-leaf refusal, hit/fallback and ambient false/true."
+    },
+    {
+      "topic": "Store independent current authority",
+      "result": "satisfied_in_source",
+      "evidence": "New API delegates into same commit_compound_prepared_inner Immediate body. Current snapshot/head, transcript/corrections guard, bank/frozen inputs, historical allocations, per-leaf validate_transition/media checks, boundary transition preparation, fallible host preparation, current request/edit codecs, inverse/history validation, SQL writes/durability/publication remain. Old APIs and historical replay pass None."
+    },
+    {
+      "topic": "Wire equality and provisional state",
+      "result": "satisfied_in_source_for_current_types",
+      "evidence": "Witness compares full typed document and leaf request, not revision/hash/pointer identity. Private nonprovisional guards and mandatory unchanged canonical serializers remain. Tests cover rational signed-zero canonicalization in entry/request, refused floating ingress, exact retained/default wire values, distinct numeric-looking labels, and equal-by-fields provisional serialization refusal."
+    }
+  ],
+  "retained_clock_SEALED_dependency_audit": {
+    "verdict": "Refuted for current source; historical FrozenAudioLayout derived clocks do not make eligible InsertTime depend on ambient SEALED.",
+    "actual_TLS_readers": [
+      "derived_clock.rs31-52 owns SEALED; require_integral_clocks at319-327 is the only policy reader of SEALED itself and tests that ProjectDocument's own live derived_clocks.",
+      "command.rs1168-1172 and insert_time/occurrence/target.rs242-245 use sealed_active only while examining the supplied live ProjectDocument's derived_clocks. Empty live clocks make these branches independent of ambient SEALED."
+    ],
+    "historical_layout_path": [
+      "audio_reference/exact_clock.rs86-94 defines a separate FrozenAudioLayout::require_integral_clocks: it always refuses nonempty retained derived clocks, with no SEALED read.",
+      "audio_reference.rs904-924 builds a retained FrozenIndex during admission; build_index at1930-2057 invokes index_exact_clocks. exact_clock.rs98+ reads retained FrozenRetimeClock/extents directly and never reads SEALED.",
+      "audio_reference.rs2154-2215 projects retained layouts using their own index and node_extent. audio_context.rs321 calls the frozen require_integral_clocks, not ProjectDocument policy.",
+      "Production audio_reference.rs and its production submodules have no frozen-to-ProjectDocument reconstruction and no calls into command application or occurrence target resolution. Their ProjectDocument inputs are supplied live documents for capture/capture_structural; captured retained clocks remain in the distinct FrozenAudioLayout representation."
+    ],
+    "limitation": "This is an anchored source-path proof, not a newly executed retained-clock regression. A future frozen-to-live adapter or SEALED reader would require re-audit."
+  },
+  "budget_reachability": {
+    "core_formula": "For exactly one Edit with no inputs/captures: initial E + pre-leaf E + post-leaf L + final F, each traversal <=64 MiB. Therefore 2E+L+F <=256 MiB < unchanged512 MiB staged cap, with no integer overflow possible from the bounded sum.",
+    "pre_leaf": "Initial and pre-leaf serialize the identical immutable entry before any mutation. A new numeric pre-leaf wire refusal cannot arise after successful initial admission for this shape.",
+    "post_leaf": "An exact hit reuses a result whose original post-leaf serializer succeeded. A changed entry/request falls back and can newly fail the real post-result64-MiB cap.",
+    "final": "Outer revision is independent current authority. Assignment after the visitor can enlarge bytes (existing IDs1..128 ASCII); unchanged final serializer/charge and net_transaction still execute. Public changed-outer request parity checks complete bytes/edits and forward/inverse restoration; private exact-cap hit checks final refusal after1visit.",
+    "store_formula": "One eligible Edit has no captured checkpoints. Store processed entry+next <=128 MiB, below unchanged512 MiB; checkpoint charge remains0. Existing other-shape cumulative checks are retained.",
+    "tests_distinguished": "The public MAX_COMPOUND_STEPS/duplicate/RestoreSnapshot cases are constructor/identity tests, not evidence of a cumulative byte refusal. New private boundary test uses actual64-MiB limits and legal escaped labels, no lowered ceiling; its final hit comes from private application/sealing helper, not an end-to-end returned SemanticPlan."
+  },
+  "validation_reused": "A hit reuses one exact successful pure leaf application's request checks, reducer arithmetic, bindings/capture/split/phase/marks/lineage/pruning/timed-basis work, and leaf result/patch validation. Those pure leaf checks are intentionally not independently rerun.",
+  "independent_current_authority_executed": "Core outer/leaf revision and transaction/ledger checks, all cumulative wire/work charges, explicit TLS boundaries, every host visitor, final aggregate validation, and Store current head/bank/frozen/allocation/media/analysis/corrections/preparation/codec/inverse/SQL/durability/history authority still execute.",
+  "test_source_audit": {
+    "public_core": "Exact result/edit/visitor bytes, inverse restoration, same-revision changed authored values, reconstructed values, swapped witnesses, public plan mutation, changed leaf/outer requests, prefix refusal order, host refusal, modes, ineligible shapes, rational/default/string wire cases.",
+    "private_core": "Actual Some hit, mode misses at creation/use, sealing only after admission, equal provisional refusal, real64-MiB initial/post/final boundaries, stale EXACT_EDIT entry/exit and ambient scoped timing.",
+    "store": "Exact history/cells/bank/document/undo/redo/reopen/portable-copy parity; current head/bank/frozen/historical allocation refusal; host and SQL rollback/Drop/retry; missing Original guard; real admitted Reverse receipt removal after witness; actual corrections Apply stale guard with fresh-guard successful preview. New authority cases assert exact variant/message, candidate/None Debug+Display parity, callback0, unchanged snapshot and all table cells.",
+    "executed": false
+  },
+  "limitations_and_owed_verification": [
+    "Frozen source remains unformatted, uncompiled and unexecuted. Reviewer ran no Cargo/build/test/Rust-source-parser/app/runtime/benchmark/Git writes; source inspection cannot establish compilation or test passes.",
+    "Root still owns formatting, compilation, focused and existing Core/Store/property/budget/media verification, real-media native integration, performance/overhead and owned-process peak-memory qualification.",
+    "No performance saving, latency target, memory ceiling, or release readiness is inferred from source review or the prior approximately44-ms leaf groups.",
+    "Review applies only to the exact hashes recorded here. Formatting/source fixes require appropriate re-verification; semantic changes require re-review."
+  ]
+}

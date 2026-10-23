@@ -1,0 +1,3 @@
+    Finished `test` profile [optimized + debuginfo] target(s) in 0.17s
+   Archiving 3 binaries (including 1 non-test binary), 7 linked paths, and 1 standard library to /tmp/deadpan-one-leaf-replay-production-2026-10-23/candidate-ui.tar.zst
+    Archived 58 files to /tmp/deadpan-one-leaf-replay-production-2026-10-23/candidate-ui.tar.zst in 0.08s

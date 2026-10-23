@@ -1,0 +1,143 @@
+{
+  "bank_version": 2,
+  "before_bank_version": 1,
+  "before_revision": "6d4c9257-de2f-41a8-9561-7224840abde6",
+  "committed": true,
+  "committed_registers": {
+    "bank_version": 2,
+    "project_id": "b90a1a04-8a11-4fe4-a937-08ed210d3989",
+    "revision_id": "b284fffc-b232-496c-8e44-1f945bac51f9"
+  },
+  "committed_revision": "b284fffc-b232-496c-8e44-1f945bac51f9",
+  "context": {
+    "cursor": 15,
+    "original": null,
+    "parent": "69393052-5ef2-4ca7-8893-c8fa1a0cabdf",
+    "scoped": null,
+    "selected_child": "6aca99b7-3dd5-4407-8127-461aa9e1c4be",
+    "visual_selection": null
+  },
+  "edit": {
+    "changed_ids": [
+      "69393052-5ef2-4ca7-8893-c8fa1a0cabdf",
+      "6aca99b7-3dd5-4407-8127-461aa9e1c4be",
+      "801cc72e-a744-4dcc-8351-65c039f78079",
+      "9b686802-e1bc-47cc-8445-5d166bf8a623",
+      "a2e97755-f455-4e92-be8a-d50f89610efc",
+      "b8135ac8-6f83-47c5-9aa8-5dbf63d66452",
+      "e595d4b4-b31b-4966-a7e1-4c1a6e1a3d9f"
+    ],
+    "description": "Apply resolved transaction",
+    "duration_delta": 4,
+    "new_revision": "b284fffc-b232-496c-8e44-1f945bac51f9"
+  },
+  "generation_preparation_notices": [],
+  "generation_preparations": [],
+  "instruction_count": 2,
+  "mark_changes": [],
+  "operation": "apply",
+  "project_id": "b90a1a04-8a11-4fe4-a937-08ed210d3989",
+  "protocol": 1,
+  "register_writes": [
+    "\"",
+    "c"
+  ],
+  "trace": [
+    {
+      "after_cursor": 15,
+      "after_original": null,
+      "after_parent": "69393052-5ef2-4ca7-8893-c8fa1a0cabdf",
+      "after_scoped": null,
+      "after_selected_child": "aligned-sound-scope-n18",
+      "after_visual_selection": null,
+      "before_cursor": 15,
+      "before_original": null,
+      "before_revision": "6d4c9257-de2f-41a8-9561-7224840abde6",
+      "before_scope": {
+        "end": 15,
+        "start": 0
+      },
+      "before_scoped": null,
+      "before_selected_child": "aligned-sound-scope-n18",
+      "before_visual_selection": null,
+      "capture": {
+        "bounds": {
+          "end": 14,
+          "start": 8
+        },
+        "parent": "aligned-top",
+        "scope": [
+          "aligned-top"
+        ],
+        "scope_labels": [
+          "Retained ancestor Top"
+        ],
+        "timing": {
+          "allocation": "60bc7c24-9ff0-4476-b41f-4121e63fc032",
+          "ordinal": 0
+        }
+      },
+      "capture_set": null,
+      "captured_child_label": "New processing G",
+      "depth": 0,
+      "instruction": {
+        "register": "c",
+        "selector": {
+          "node": "65259830-54cf-461b-9547-22324cedfe0e",
+          "type": "node"
+        },
+        "type": "yank"
+      },
+      "parent": "69393052-5ef2-4ca7-8893-c8fa1a0cabdf",
+      "removed_range": null,
+      "resolved_nodes": [],
+      "resolved_parent": "aligned-top",
+      "resolved_range": {
+        "end": 12,
+        "start": 8
+      },
+      "resolved_ranges": [],
+      "resolved_selection": {
+        "node": "65259830-54cf-461b-9547-22324cedfe0e",
+        "type": "child"
+      }
+    },
+    {
+      "after_cursor": 15,
+      "after_original": null,
+      "after_parent": "69393052-5ef2-4ca7-8893-c8fa1a0cabdf",
+      "after_scoped": null,
+      "after_selected_child": "6aca99b7-3dd5-4407-8127-461aa9e1c4be",
+      "after_visual_selection": null,
+      "before_cursor": 15,
+      "before_original": null,
+      "before_revision": "6d4c9257-de2f-41a8-9561-7224840abde6",
+      "before_scope": {
+        "end": 15,
+        "start": 0
+      },
+      "before_scoped": null,
+      "before_selected_child": "aligned-sound-scope-n18",
+      "before_visual_selection": null,
+      "capture": null,
+      "capture_set": null,
+      "captured_child_label": null,
+      "depth": 0,
+      "instruction": {
+        "before": false,
+        "register": "c",
+        "type": "paste"
+      },
+      "parent": "69393052-5ef2-4ca7-8893-c8fa1a0cabdf",
+      "removed_range": null,
+      "resolved_nodes": [],
+      "resolved_parent": "69393052-5ef2-4ca7-8893-c8fa1a0cabdf",
+      "resolved_range": {
+        "end": 19,
+        "start": 15
+      },
+      "resolved_ranges": [],
+      "resolved_selection": null
+    }
+  ]
+}

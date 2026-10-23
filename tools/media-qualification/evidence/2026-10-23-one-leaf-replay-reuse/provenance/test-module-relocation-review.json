@@ -1,0 +1,47 @@
+{
+  "status": "no_findings",
+  "reviewer": "/root/one_leaf_replay_review",
+  "date": "2026-10-23",
+  "scope": "Independent source-only review of exact private cfg(test) module relocation to EOF after retained strict-Clippy items_after_test_module failure. No code changes, Cargo, formatter, compiler, runtime or Git action by reviewer.",
+  "file": "crates/deadpan-core/src/insert_time/retimed.rs",
+  "before_sha256": "4ab7bcda2052aaf5611998ddc1059455e5d9701a53cca9292f503e7d483348d7",
+  "after_sha256": "0f4a3cd202ef5f3005c928b4085a5ed7b7f0e7a45ca38e3c0eba645d8591b9e8",
+  "module_bytes": 7421,
+  "module_sha256": "559cee457415457980a4b4334a1f9f8f091408e839f3b730529584dec834c796",
+  "module_byte_identical": true,
+  "module_top_level_parent_unchanged": true,
+  "module_at_eof": true,
+  "production_nonblank_lines_byte_identical_and_in_same_order": true,
+  "supported_doc_comment_stays_with_function": true,
+  "assertions_weakened": false,
+  "findings": [],
+  "reasoning": [
+    "The complete7421-byte one_leaf_replay_tests module including cfg(test), use super, test body, all TLS setup/cleanup, mode/fallback checks, exact errors and every assertion is byte-identical.",
+    "Removing that exact block from both versions yields identical nonblank production lines in the same order. Remaining differences are only seam/EOF whitespace from relocation.",
+    "The supported() documentation remains immediately attached to supported(), and no production item text or ordering changed.",
+    "The module remains a top-level child of the same retimed module; moving it after all production items does not change its private parent access or symbol resolution and addresses the reported layout lint without a suppression."
+  ],
+  "source_comparison": {
+    "rust_files": 2053,
+    "changed_since_retained_failure_snapshot": [
+      "crates/deadpan-core/src/insert_time/retimed.rs"
+    ],
+    "other_rust_files_byte_identical": 2052,
+    "six_pinned_inputs_byte_identical": true
+  },
+  "evidence": {
+    "root_proof_sha256": "d831c5fdf391eddc7fdb0d85753b5a49ec4b321815d00d6501a0d6e0a632e0d7",
+    "patch_notes_sha256": "a2dc390c2a7e4a4754f048ed2f39b6a1ad15899771466a41a65ad105c1b62c92",
+    "retained_strict_source_map_sha256": "1fca0c6116cbaabe34bdeb0919243362c43b2f782d562fc4c86783942405f366"
+  },
+  "history": {
+    "failure_directory": "/tmp/deadpan-one-leaf-replay-production-2026-10-23/history/test-module-layout-clippy-failure",
+    "intermediate_states": "Root's retained patch notes describe refused/truncated/ambiguous/static-doc-comment attempts and explicitly state that no intermediate state was compiled or executed. This review assesses the final exact bytes, not those temporary states."
+  },
+  "packager_requirement": "Permit only this reviewed transformation for retimed.rs within the original fourteen-path subset: before4ab7bc..., exact7421-byte module559cee... moved to EOF, final0f4a3c...; the other thirteen prototype files remain byte-identical. Do not replace the original reviewed prototype map with the new source wholesale.",
+  "limitations": [
+    "Root's rustfmt_exit=0 is a recorded owner result; reviewer did not rerun it or strict Clippy.",
+    "Root owns strict-first qualification rerun and all subsequent execution evidence.",
+    "No prior runtime pass is claimed for this changed full-source identity; production text preservation is a source proof only."
+  ]
+}

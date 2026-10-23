@@ -1,0 +1,87 @@
+{
+  "status": "no_findings",
+  "reviewer": "/root/one_leaf_replay_review",
+  "date": "2026-10-23",
+  "scope": "Independent read-only source review of the one appended qualified-media replay test and its existing helper/API dependencies. Prior fourteen-file production review stands; no new production re-review is claimed.",
+  "test": "recipes::group_endpoints::aligned::one_leaf_replay_qualified_media_commit_export_matches_uncached",
+  "reviewed_file": "/Users/michael/Code/deadpan/crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs",
+  "before_sha256": "2d69409017da2c31486d2de8b059018dce398d0ffa94b53d169a572e99993cdf",
+  "final_formatted_sha256": "c90e802b2181177f6e67a455e739555e0ea3f569dbf34a683b85fe002bbf0f88",
+  "original_file_byte_preserved_prefix": true,
+  "supporting_source_sha256": {
+    "crates/deadpan-cli/tests/preview_export.rs": "e21a82dedb0dd0d29ee1b113a7fdc1c9dcca4e048290189632277b18fa2ea9a5",
+    "crates/deadpan-cli/tests/preview_export/recipes.rs": "74012534d3db24ba7dcfbe4278efb214cc99fb1ea3e0734f9fc19abe98d66ccb",
+    "crates/deadpan-cli/tests/preview_export/group_endpoints_recipe.rs": "03424491865dc557a6fe1fede3179455dd53331b702de44d98a8cdd87d9c7851",
+    "crates/deadpan-cli/tests/support/physical_mac.rs": "72304dc84c705dc41470c8218a122c99650bbb0dc7a8633cfd994647a868d70e",
+    "crates/deadpan-cli/src/macros.rs": "fd43a4660644793f43f2c26ba9cb79e50890f1ecbbb05ebcf8b100297e195ac4",
+    "crates/deadpan-store/src/compound.rs": "852c4a4982ad28536649fe6ed91005503424bd941eb16de2877c26ed7f82d7b2",
+    "crates/deadpan-store/src/lib.rs": "6cac4fccb2112473fd9143f3ac0b50bb5d97dc2eeb2b6988d8336d45071fd010",
+    "crates/deadpan-media/src/source_qualification.rs": "74f7c93869aef275f85d327938510ab98d4c0c64939462588560d1cd919cd923",
+    "crates/deadpan-media/src/source_index.rs": "ce0f8ea6bcbf0d40ace6ac4b99e6e5bd85a02c0c6e467724fcd630e27b401d7c"
+  },
+  "handoff_sha256": "e33c1a0a6f4c98a40544aa5e61a2618f4b07e52289e95fd8a6dae310ca53eb7a",
+  "root_format_receipt_sha256": "e572125ba48f2392de6bf11dc707cdc34cf4cc059b96149d7c2e115d1d52111f",
+  "findings": [],
+  "source_audit": [
+    {
+      "topic": "Real qualified input and independent commit legs",
+      "result": "satisfied_in_source",
+      "detail": "Existing Project::create uses public create-original on actual cfr-bframes.mp4. shorten retains Original[12,42), asserted30frames/48048samples with nonzero decoded PCM. The test requires ready single Original and measured video/audio receipt with120pictures. A portable copy has identical entry and bank before any pause commit."
+    },
+    {
+      "topic": "Actual eligible capability and host path",
+      "result": "satisfied_in_source",
+      "detail": "Actual plan_program generates a15frame Freeze/Silence ordinary InsertTime at15; test requires Some(OneLeafReplay), exactly one Edit and empty derived clocks. Cached leg calls HostSemanticPlan::commit_compound_prepared; uncached leg calls Store prepared API with the same exact borrowed request/guard and explicitNone. Both callbacks must execute once and receive the authoritative bank. Current production source routes the first leg's private witness and leaves the second uncached."
+    },
+    {
+      "topic": "Exact state and durable behavior parity",
+      "result": "satisfied_in_source",
+      "detail": "Outcome wire, complete document value/wire, bank and host-plan result are compared; forward/inverse patches must reach after/entry. Both packages execute fixed-ID undo/redo with outcome wire parity, authored-state comparison and complete PCM comparisons. Reopen requires identical current document/bank and full history replay with0receipt shortcuts and initial+3revisions. This tests durable history behavior, not arbitrary SQLite-file byte identity."
+    },
+    {
+      "topic": "Nonvacuous full canonical PCM comparison",
+      "result": "satisfied_in_source",
+      "detail": "Existing read_exact returns every authored stereo sample bit, limited stereo sample bit and limiter f64 gain bit, with finite/count/range checks. same_exact compares complete arrays including lengths across distinct cached/uncached packages, different bounded partitions and reopened legs. cold_exact opens fresh sessions around15/30/end seams and compares authored/limited/gain bits to full-window baseline. Before PCM and suffix after pause must be nonzero; interior pause away from edges must be silent. Array equality is the intended canonical implementation parity oracle, not an independent DSP oracle."
+    },
+    {
+      "topic": "Literal timing and pictures",
+      "result": "satisfied_in_source",
+      "detail": "At30000/1001,45frames at48000Hz is72072samples. Literal expected picture sequence is Original12..26 for output0..14, Original26 for held output15..29, Original27..41 for output30..44. This expectation is derived from edit semantics rather than compiled-plan output; check and emitted provenance verify all45positions."
+    },
+    {
+      "topic": "Two real exports and complete emitted-file window",
+      "result": "satisfied_in_source",
+      "detail": "Distinct cached/uncached packages are each passed to actual public Render. Each emitted movie is independently verify-export checked against its own committed revision with --every1 and literal --samples0:72072. Required report assertions are45pictures checked,0picture failures/nonzero offsets, one complete0..72072audio window, empty flags,0uncovered/low-SNRblocks, verified_zero offset and measured offset0, plus successful verifier result. Export verification uses existing fidelity thresholds; there is no compressed-byte or decoded-AAC-bit identity assertion."
+    },
+    {
+      "topic": "Receipt and retained evidence",
+      "result": "satisfied_in_source",
+      "detail": "After both exports pass, summary schema deadpan-one-leaf-media-parity-1 contains root/evidence_dir, both export legs with package/movie/revision/full verification, callback counts, history reports, canonical comparison flags and document/PCM artifact paths. It is written within root and to DEADPAN_PREVIEW_EXPORT_RESULTS. Existing DEADPAN_PREVIEW_EXPORT_KEEP=1 preserves root; Root's inspected qualify_native_media.py sets it along with results path."
+    },
+    {
+      "topic": "Physical Mac and execution scope",
+      "result": "satisfied_in_source",
+      "detail": "Existing physical_mac helper panics on hypervisor guest with DEADPAN_REQUIRE_PHYSICAL_MAC=1 rather than skipping. Root's qualification driver sets this env. Debug builds intentionally ignore this slow test under the existing suite convention; required release invocation runs it. Non-physical optional runs may skip exports, so they cannot support physical export qualification."
+    },
+    {
+      "topic": "Compile plausibility and helper use",
+      "result": "no_source_issue_found",
+      "detail": "Reviewed inherited module imports, registered_source/video-index API chain, plan_program/Host prepared API types, CommitOutcome.edit, Clone Fixture, existing same_authored, read_exact/cold_exact and render/verify helpers. Root formatting preserves the original file byte prefix. No source-level type/API mismatch found; only actual compilation can establish a pass."
+    }
+  ],
+  "claims_explicitly_excluded": [
+    "Independent DSP correctness",
+    "Listening or subjective quality",
+    "Compressed output byte identity",
+    "Decoded AAC bit identity",
+    "Performance or memory improvement",
+    "Execution or compilation success from this review"
+  ],
+  "limitations": [
+    "Reviewer ran no Cargo, formatter, compiler, test, native runtime, browser or Git action and made no source edits.",
+    "Root owns compilation and the strict physical-Mac release run with retained evidence.",
+    "Test fixtures, silence/length expectations and export verifier assertions are reviewed source obligations, not executed evidence yet.",
+    "No reducer hit counter was added; Some capability plus exact eligible entry/request and the reviewed production path establish intended hit routing in source, with performance measurement separate.",
+    "This report pins the final formatted SHA; later source edits require review of their delta."
+  ]
+}

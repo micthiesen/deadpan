@@ -1,0 +1,28 @@
+{
+  "phase": "candidate-strict-check",
+  "exit": 1,
+  "cargo_clippy_exit": 101,
+  "lint": "clippy::items_after_test_module",
+  "source_path": "crates/deadpan-core/src/insert_time/retimed.rs",
+  "line": 137,
+  "cause": "New cfg(test) module before existing production items",
+  "required_fix": "Move complete unchanged cfg(test) module to file end",
+  "prior_core": {
+    "passed": 1543,
+    "skipped": 0,
+    "leaky": 1
+  },
+  "prior_broad": {
+    "passed": 3513,
+    "skipped": 741,
+    "leaky": 1
+  },
+  "prior_ui": {
+    "passed": 1296,
+    "skipped": 11,
+    "leaky": 0
+  },
+  "post_commands_executed": 0,
+  "qualification_terminal": true,
+  "post_terminal": true
+}

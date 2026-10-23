@@ -1,0 +1,15 @@
+{
+  "command": [
+    "cargo",
+    "check",
+    "--locked",
+    "-p",
+    "deadpan-cli",
+    "--tests",
+    "--features",
+    "synthetic-worker"
+  ],
+  "exit": 0,
+  "seconds": 155.11411625053734,
+  "scope": "Typecheck every CLI test compilation context; no test execution claim"
+}

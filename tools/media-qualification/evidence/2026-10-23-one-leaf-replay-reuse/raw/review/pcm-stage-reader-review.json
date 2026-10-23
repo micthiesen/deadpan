@@ -1,0 +1,68 @@
+{
+  "status": "no_findings",
+  "reviewer": "/root/one_leaf_replay_review",
+  "date": "2026-10-23",
+  "scope": "Independent source-only review of the one-file test PCM-reader stage-contract correction. No source writes, Cargo, formatter, compiler, native/runtime, browser or Git action by reviewer.",
+  "file": "crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs",
+  "before_sha256": "58ce580c3def2cf42c809b7a059e21058cae591eea31284641148e1bca83bd1b",
+  "final_formatted_sha256": "1b6b7a8e342f4358c9f6f04c998cd1e4247603d5d96853305f6bbb58383ad802",
+  "findings": [],
+  "legacy_reader_behavior_preserved": true,
+  "all_other_source_reconstructs_original_after_only_six_call_name_restorations": true,
+  "cold_exact_byte_identical": true,
+  "new_one_leaf_full_reader_call_sites": 6,
+  "source_defined_full_reader_invocations": 9,
+  "new_same_session_plan_assertions": 3,
+  "supporting_source_sha256": {
+    "crates/deadpan-cli/src/audio.rs": "59f0471650356580c8c0187bd97cac3fe5f7ccf953d3b1f3d8832cd2b8c8f922",
+    "crates/deadpan-audio/src/stages.rs": "b6bf9f4bf1b91cc6690c7dac8291e32d662f70e8dc81e5b0201c065ae22de7ac",
+    "crates/deadpan-audio/src/sound_events.rs": "8a9d01e4fcb3abf947cc2176d518a36531ee9cabbb80baeb090bfdf372ac1e1e",
+    "crates/deadpan-plan/src/plan.rs": "050985e9fc4b5617ddc7e4604b6c35de9ad8b98b839cba0e6af437796940c168",
+    "crates/deadpan-plan/src/audio_owners.rs": "d8774faef9d8cace84d01745b7893a2c328c494c079215c2c166ceedb5c2c8af",
+    "crates/deadpan-cli/tests/preview_export/group_endpoints_export.rs": "93f803cfa31c8d716ce5850a43314290d91c363f94f666eddb61fd733b105fd9"
+  },
+  "analysis": [
+    {
+      "topic": "Actual production stage contract",
+      "detail": "ProjectAudioSession::read_authored_bus (audio.rs255+) still dispatches prepare_authored_bus. StageAudio::prepare_authored_bus/prepare_bus (stages.rs806/819+) call prepare_bus_inner with authored_gain=true. The selected label at stages.rs879+ is edge_faded_pcm_before_voice_effects exactly when sounds and beat_sounds are empty and has_audio_treatments is false; otherwise it is authored_bus_pcm_before_mastering. sound_events.rs25-64 confirms the restricted no-FX branch uses the canonical controlled edge-faded path. RenderPlan treatment detection also includes nonunity Repeat gain escalation. The three asserted plan predicates therefore justify this exact test expectation."
+    },
+    {
+      "topic": "Strict wrappers",
+      "detail": "Legacy read_exact selects only the original authored_bus_pcm_before_mastering literal. New private read_one_leaf_exact selects only edge_faded_pcm_before_voice_effects. There is no accept-either allowlist, returned-label normalization, fixture FX addition or production change. Each block still asserts exact equality to its wrapper-selected fixed stage."
+    },
+    {
+      "topic": "Proof belongs to the actual reader",
+      "detail": "The common function opens one ProjectAudioSession, asserts empty sounds, empty beat_sounds and no audio treatments on that same session.plan before its first block whenever the edge expectation is selected, then uses that mutable session for both read_authored_bus and read_limited. No extra unused SourceSession/proof reader is opened."
+    },
+    {
+      "topic": "Original PCM reader body",
+      "detail": "Independently reconstructed the old reader body by removing only the three-predicate proof block and substituting the old fixed stage literal for expected_stage. The body is byte-identical: partition bounds, lengths, finite authored/limited samples, limiter gain range/finite checks, read order and complete bit-vector extraction are unchanged."
+    },
+    {
+      "topic": "Call scope and unchanged assertions",
+      "detail": "Only six full-reader call names inside one_leaf_replay_qualified_media_fixture change, covering nine baseline/portable/published/undo/reopened invocations. Other aligned/neutral callers keep legacy read_exact. Restoring the old reader section and those six call names reconstructs every original file byte. Thus Some capability, both commit paths, full sample/limiter equality, partitions/cold seams, nonzero/silence controls, history, literal picture fixtures and metadata remain unchanged. cold_exact and the separate export wrapper are untouched."
+    },
+    {
+      "topic": "Shared integration contexts",
+      "detail": "The new helpers remain private normal recipe functions with no #[test] or crate-root dependency. The existing multi-target recipe inclusion structure remains valid in source; Root still owns broad typechecking."
+    }
+  ],
+  "source_comparison": {
+    "rust_files": 2053,
+    "only_changed_path_since_retained_failure": "crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs",
+    "other_rust_files_byte_identical": 2052,
+    "six_pinned_inputs_byte_identical": true
+  },
+  "evidence": {
+    "handoff_sha256": "379b2786f73578a2299023de65fe25b5f86182a103659af98268355552f8bea5",
+    "root_format_receipt_sha256": "14e642692a86e3649ae59d2bb200de8059b0a6a4949de3f9edaa0b93c395be40",
+    "source_preservation_proof_sha256": "778117c50289cc259e18d1a4645d5cb49d89e492fc7888bfbfae4e2ad5a4eb83",
+    "retained_failure_directory": "/tmp/deadpan-one-leaf-replay-production-2026-10-23/history/positive-media-pcm-stage-failure"
+  },
+  "limitations": [
+    "This source review does not claim successful Some/None publication or new emitted movies after the fix.",
+    "Root's actual prior failure occurred before either commit; that evidence remains separate from future corrected execution.",
+    "Root owns final typecheck/Clippy, legacy control reruns, strict physical-Mac release execution, fresh helper/source qualification guards and final receipts.",
+    "No performance, independentDSP, listening, compressed-byte or decodedAACbit claim is made."
+  ]
+}

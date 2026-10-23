@@ -1,0 +1,8 @@
+  Extracting 143 binaries (including 2 non-test binaries), 2 build script output directories, and 7 linked paths to /private/tmp/deadpan-one-leaf-replay-production-2026-10-23/candidate-broad-extracted
+   Extracted 198 files to /private/tmp/deadpan-one-leaf-replay-production-2026-10-23/candidate-broad-extracted in 2.64s
+────────────
+ Nextest run ID afd0c79a-c26a-4167-b17f-270ec2dbecac with nextest profile: default
+    Starting 1 test across 1 binary (250 tests and 140 binaries skipped)
+        PASS [   0.009s] (1/1) deadpan-store storage::tests::typed_references_carry_lengths_and_content_identities
+────────────
+     Summary [   0.009s] 1 test run: 1 passed, 250 skipped

@@ -1,0 +1,4 @@
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+    Finished `test` profile [optimized + debuginfo] target(s) in 1m 35s
+   Archiving 143 binaries (including 2 non-test binaries), 2 build script output directories, 7 linked paths, and 1 standard library to /tmp/deadpan-one-leaf-replay-production-2026-10-23/candidate-broad.tar.zst
+    Archived 198 files to /tmp/deadpan-one-leaf-replay-production-2026-10-23/candidate-broad.tar.zst in 0.91s

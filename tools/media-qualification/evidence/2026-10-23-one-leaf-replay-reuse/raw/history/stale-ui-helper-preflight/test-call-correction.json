@@ -1,0 +1,9 @@
+{
+  "path": "crates/deadpan-store/src/compound/tests.rs",
+  "before_sha256": "cef529c2160c229a25741be09f7257e7d7340608ea5fa571ee0b72092c03b0be",
+  "after_sha256": "bbaa8d302938a55abe05d9437acc53025a68e0af3fec591a72103bd057964d37",
+  "change": "Pass None for the new optional replay capability in existing internal uncached Store execute reference test",
+  "production_sources_unchanged": true,
+  "assertions_unchanged": true,
+  "initial_failure_retained": true
+}

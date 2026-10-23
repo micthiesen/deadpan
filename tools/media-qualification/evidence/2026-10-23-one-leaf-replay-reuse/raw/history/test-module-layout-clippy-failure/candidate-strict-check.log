@@ -1,0 +1,102 @@
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.06s
+     Running `target/debug/xtask check --since 3a32c923358c0cb7ca53f821bfb6db3e01ebb466 --no-test`
+check: packages changed since 3a32c923358c0cb7ca53f821bfb6db3e01ebb466: deadpan-cli, deadpan-core, deadpan-store
+    Checking deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling ring v0.17.14
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+   Compiling rustls v0.23.45
+    Checking rustls-webpki v0.103.16
+    Checking deadpan-source v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-source)
+    Checking deadpan-analysis v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-analysis)
+    Checking deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+    Checking deadpan-render v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-render)
+    Checking deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+    Checking deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+    Checking deadpan-encode v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-encode)
+    Checking rustls-platform-verifier v0.7.1
+    Checking ureq v3.4.2
+    Checking deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+    Checking deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+error: items after a test module
+    --> crates/deadpan-core/src/insert_time/retimed.rs:137:1
+     |
+ 137 |   mod one_leaf_replay_tests {
+     |   ^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+ 319 |   fn supported(document: &ProjectDocument) -> Result<(), EditError> {
+     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+ 335 | / pub(crate) fn pause_target(
+ 336 | |     document: &ProjectDocument,
+ 337 | |     at: ProjectFrame,
+ 338 | | ) -> Result<Option<crate::RetimedPauseTarget>, EditError> {
+     | |_________________________________________________________^
+...
+ 380 |   struct Plan {
+     |   ^^^^^^^^^^^
+...
+ 396 |   struct Stage {
+     |   ^^^^^^^^^^^^
+...
+ 404 |   fn nested_stage(document: &ProjectDocument, id: &NodeId) -> bool {
+     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+ 416 |   fn clock_of(document: &ProjectDocument, id: &NodeId) -> Result<DerivedRetimeClock, EditError> {
+     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+ 436 |   fn refinable(node: &BeatNode) -> bool {
+     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+ 448 |   impl Plan {
+     |   ^^^^^^^^^
+...
+ 640 | / fn window(
+ 641 | |     document: &mut ProjectDocument,
+ 642 | |     id: &NodeId,
+ 643 | |     label: &str,
+...    |
+ 648 | |     pitch: PitchPolicy,
+ 649 | | ) -> Result<(), EditError> {
+     | |__________________________^
+...
+ 684 | / fn set_clock(
+ 685 | |     document: &mut ProjectDocument,
+ 686 | |     id: &NodeId,
+ 687 | |     extent: ExactRatio,
+ 688 | |     start: ExactRatio,
+ 689 | |     end: ExactRatio,
+ 690 | | ) -> Result<(), EditError> {
+     | |__________________________^
+...
+ 740 |   fn ceil_frames(value: ExactRatio) -> Result<i64, EditError> {
+     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+ 749 | / pub(crate) fn apply(
+ 750 | |     document: &ProjectDocument,
+ 751 | |     target: &RetimedTarget,
+ 752 | |     at: ProjectFrame,
+...    |
+ 757 | |     allocation: &crate::RevisionId,
+ 758 | | ) -> Result<ProjectDocument, EditError> {
+     | |_______________________________________^
+...
+1066 |   pub(crate) fn inside_clocked(document: &ProjectDocument, node: &NodeId) -> bool {
+     |   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+...
+1075 | / pub(crate) fn set_hold_duration(
+1076 | |     document: &ProjectDocument,
+1077 | |     node: &NodeId,
+1078 | |     duration: FrameDuration,
+1079 | |     allocation: &crate::RevisionId,
+1080 | | ) -> Result<ProjectDocument, EditError> {
+     | |_______________________________________^
+     |
+     = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.97.0/index.html#items_after_test_module
+     = note: `-D clippy::items-after-test-module` implied by `-D warnings`
+     = help: to override `-D warnings` add `#[allow(clippy::items_after_test_module)]`
+     = help: move the items to before the test module was defined
+
+error: could not compile `deadpan-core` (lib test) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+xtask: cargo clippy -p deadpan-cli -p deadpan-core -p deadpan-store --all-targets --locked --features deadpan-cli/synthetic-worker -- -D warnings exited with exit status: 101

@@ -1,0 +1,11 @@
+  Extracting 2 binaries (including 1 non-test binary) and 7 linked paths to /private/tmp/deadpan-one-leaf-replay-production-2026-10-23/release-media-extracted
+   Extracted 51 files to /private/tmp/deadpan-one-leaf-replay-production-2026-10-23/release-media-extracted in 0.10s
+────────────
+ Nextest run ID 502ef6f8-7448-4d66-aaaa-255dc5ec5a5d with nextest profile: default
+    Starting 1 test across 1 binary (65 tests skipped)
+        SLOW [> 60.000s] (───) deadpan-cli::preview_export group_endpoints_export::aligned_sound_scope_group_split_move_copy_preserves_canonical_pcm_and_verified_export
+        SLOW [>120.000s] (───) deadpan-cli::preview_export group_endpoints_export::aligned_sound_scope_group_split_move_copy_preserves_canonical_pcm_and_verified_export
+        SLOW [>180.000s] (───) deadpan-cli::preview_export group_endpoints_export::aligned_sound_scope_group_split_move_copy_preserves_canonical_pcm_and_verified_export
+        PASS [ 235.908s] (1/1) deadpan-cli::preview_export group_endpoints_export::aligned_sound_scope_group_split_move_copy_preserves_canonical_pcm_and_verified_export
+────────────
+     Summary [ 235.909s] 1 test run: 1 passed (1 slow), 65 skipped

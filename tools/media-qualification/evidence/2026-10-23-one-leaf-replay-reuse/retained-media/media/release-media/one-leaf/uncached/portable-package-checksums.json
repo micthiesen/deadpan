@@ -1,0 +1,50 @@
+{
+  "archive_sha256": "8647025b6d1d4294171c663e65e709600ca472722b95d52a950a81adb9bf683a",
+  "regular_files": [
+    {
+      "path": "uncached.deadpan/.render-candidates.lock",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    {
+      "path": "uncached.deadpan/.writer.lock",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    {
+      "path": "uncached.deadpan/Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+      "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+      "size": 39157
+    },
+    {
+      "path": "uncached.deadpan/Media/RenderCandidates/blake3-30b2edbcc0391b32dc46f2592b02182668b52bbc02931f552796a6262571ba2a",
+      "sha256": "327a959bc930361c3529b8904d1108f74e9a1cdae10283bc8aaf43a775231098",
+      "size": 13232
+    },
+    {
+      "path": "uncached.deadpan/Media/RenderCandidates/blake3-c76fcf88ba6f51251c016dc2dc6ffe303f1ab9f8e353cde77b4407468d70af93",
+      "sha256": "7f00f4a3a4c946520e27ee8f0042ec98569ee4c6c14bdab3e5ce29f77967cc86",
+      "size": 15064
+    },
+    {
+      "path": "uncached.deadpan/manifest.json",
+      "sha256": "30dfb1b64e414414a56349bd7825c50f79f864beeeb770768a17eabd4785d63d",
+      "size": 82
+    },
+    {
+      "path": "uncached.deadpan/project.sqlite",
+      "sha256": "ab783ad133976c2bcfc2a8d43640bfe5ff98daa945b77eb639ac9c0f1fe9c935",
+      "size": 593920
+    },
+    {
+      "path": "uncached.deadpan/project.sqlite-shm",
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb",
+      "size": 32768
+    },
+    {
+      "path": "uncached.deadpan/project.sqlite-wal",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    }
+  ]
+}

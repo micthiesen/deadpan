@@ -1,0 +1,138 @@
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+   Compiling deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+error[E0425]: cannot find function `keep_or` in the crate root
+   --> crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs:789:33
+    |
+789 |     let (root, _guard) = crate::keep_or(tempfile::tempdir()?);
+    |                                 ^^^^^^^ not found in the crate root
+
+error[E0425]: cannot find function `check` in the crate root
+    --> crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs:1086:12
+     |
+1086 |     crate::check(&cached_fixture)?;
+     |            ^^^^^ not found in the crate root
+
+error[E0425]: cannot find function `check` in the crate root
+    --> crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs:1087:12
+     |
+1087 |     crate::check(&plain_fixture)?;
+     |            ^^^^^ not found in the crate root
+
+error[E0425]: cannot find function `check_provenance` in the crate root
+    --> crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs:1105:16
+     |
+1105 |         crate::check_provenance(fixture, &report)?;
+     |                ^^^^^^^^^^^^^^^^ not found in the crate root
+
+error[E0061]: this function takes 4 arguments but 2 arguments were supplied
+    --> crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs:1093:21
+     |
+1093 |         let movie = crate::render(fixture, &root.join(format!("exports-{label}")))?;
+     |                     ^^^^^^^^^^^^^-------------------------------------------------
+     |                                  ||
+     |                                  |expected `&Path`, found `&Fixture`
+     |                                  two arguments of type `&std::path::Path` and `&std::path::Path` are missing
+     |
+     = note: expected reference `&std::path::Path`
+                found reference `&recipes::Fixture`
+note: function defined here
+    --> crates/deadpan-cli/tests/offline_portable.rs:136:4
+     |
+ 136 | fn render(package: &Path, revision: &str, output: &Path, home: &Path) -> Result<PathBuf> {
+     |    ^^^^^^ --------------                  -------------  -----------
+help: provide the arguments
+     |
+1093 -         let movie = crate::render(fixture, &root.join(format!("exports-{label}")))?;
+1093 +         let movie = crate::render(/* &std::path::Path */, &root.join(format!("exports-{label}")), /* &std::path::Path */, /* &std::path::Path */)?;
+     |
+
+error[E0308]: arguments to this function are incorrect
+    --> crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs:1094:32
+     |
+1094 |         let (report, passed) = crate::verify(
+     |                                ^^^^^^^^^^^^^
+1095 |             fixture,
+     |             ------- expected `&Path`, found `&Fixture`
+...
+1098 |             &["--every", "1", "--samples", "0:72072"],
+     |             ----------------------------------------- expected `&Path`, found `&[&str; 4]`
+     |
+     = note: expected reference `&std::path::Path`
+                found reference `&recipes::Fixture`
+     = note: expected reference `&std::path::Path`
+                found reference `&[&str; 4]`
+note: function defined here
+    --> crates/deadpan-cli/tests/offline_portable.rs:162:4
+     |
+ 162 | fn verify(package: &Path, movie: &Path, revision: &str, home: &Path) -> Result {
+     |    ^^^^^^ --------------                                -----------
+
+error[E0308]: mismatched types
+    --> crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs:1094:13
+     |
+1094 |           let (report, passed) = crate::verify(
+     |  _____________^^^^^^^^^^^^^^^^___-
+     | |             |
+     | |             expected `()`, found `(_, _)`
+1095 | |             fixture,
+1096 | |             &movie,
+1097 | |             &fixture.revision,
+1098 | |             &["--every", "1", "--samples", "0:72072"],
+1099 | |         )?;
+     | |__________- this expression has type `()`
+     |
+     = note: expected unit type `()`
+                    found tuple `(_, _)`
+
+Some errors have detailed explanations: E0061, E0308, E0425.
+For more information about an error, try `rustc --explain E0061`.
+error: could not compile `deadpan-cli` (test "offline_portable") due to 7 previous errors
+warning: build failed, waiting for other jobs to finish...
+error[E0425]: cannot find function `keep_or` in the crate root
+   --> crates/deadpan-cli/tests/project_commands/macros/../../preview_export/aligned_group_recipe.rs:789:33
+    |
+789 |     let (root, _guard) = crate::keep_or(tempfile::tempdir()?);
+    |                                 ^^^^^^^ not found in the crate root
+
+error[E0425]: cannot find function `check` in the crate root
+    --> crates/deadpan-cli/tests/project_commands/macros/../../preview_export/aligned_group_recipe.rs:1086:12
+     |
+1086 |     crate::check(&cached_fixture)?;
+     |            ^^^^^ not found in the crate root
+
+error[E0425]: cannot find function `check` in the crate root
+    --> crates/deadpan-cli/tests/project_commands/macros/../../preview_export/aligned_group_recipe.rs:1087:12
+     |
+1087 |     crate::check(&plain_fixture)?;
+     |            ^^^^^ not found in the crate root
+
+error[E0425]: cannot find function `skip_without_physical_mac` in the crate root
+    --> crates/deadpan-cli/tests/project_commands/macros/../../preview_export/aligned_group_recipe.rs:1088:15
+     |
+1088 |     if crate::skip_without_physical_mac("one-leaf cached and uncached encoded Render") {
+     |               ^^^^^^^^^^^^^^^^^^^^^^^^^ not found in the crate root
+
+error[E0425]: cannot find function `render` in the crate root
+    --> crates/deadpan-cli/tests/project_commands/macros/../../preview_export/aligned_group_recipe.rs:1093:28
+     |
+1093 |         let movie = crate::render(fixture, &root.join(format!("exports-{label}")))?;
+     |                            ^^^^^^ not found in the crate root
+
+error[E0425]: cannot find function `verify` in the crate root
+    --> crates/deadpan-cli/tests/project_commands/macros/../../preview_export/aligned_group_recipe.rs:1094:39
+     |
+1094 |         let (report, passed) = crate::verify(
+     |                                       ^^^^^^ not found in the crate root
+
+error[E0425]: cannot find function `check_provenance` in the crate root
+    --> crates/deadpan-cli/tests/project_commands/macros/../../preview_export/aligned_group_recipe.rs:1105:16
+     |
+1105 |         crate::check_provenance(fixture, &report)?;
+     |                ^^^^^^^^^^^^^^^^ not found in the crate root
+
+For more information about this error, try `rustc --explain E0425`.
+error: could not compile `deadpan-cli` (test "project_commands") due to 7 previous errors
+error: command `/Users/michael/.rustup/toolchains/1.97.1-aarch64-apple-darwin/bin/cargo test --no-run --message-format json-render-diagnostics --package deadpan-plan --package deadpan-audio --package deadpan-analysis --package deadpan-store --package deadpan-app --package deadpan-cli --features deadpan-cli/synthetic-worker --locked` exited with code 101

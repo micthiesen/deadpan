@@ -1,0 +1,81 @@
+[
+  {
+    "step": 1,
+    "command": [
+      "python",
+      "/tmp/deadpan-one-leaf-replay-production-2026-10-23/qualify_all_ui.py",
+      "candidate-strict",
+      "candidate",
+      "strict"
+    ],
+    "exit": 0,
+    "seconds": 429.24983266647905
+  },
+  {
+    "step": 2,
+    "command": [
+      "python",
+      "/tmp/deadpan-one-leaf-replay-production-2026-10-23/qualify_all_ui.py",
+      "candidate-all-core",
+      "candidate",
+      "allcore"
+    ],
+    "exit": 0,
+    "seconds": 440.9415638335049
+  },
+  {
+    "step": 3,
+    "command": [
+      "python",
+      "/tmp/deadpan-one-leaf-replay-production-2026-10-23/qualify_all_ui.py",
+      "candidate-broad",
+      "candidate",
+      "broad"
+    ],
+    "exit": 0,
+    "seconds": 804.6353476671502
+  },
+  {
+    "step": 4,
+    "command": [
+      "python",
+      "/tmp/deadpan-one-leaf-replay-production-2026-10-23/qualify_all_ui.py",
+      "candidate-ui",
+      "candidate",
+      "ui"
+    ],
+    "exit": 0,
+    "seconds": 70.72432520892471
+  },
+  {
+    "step": 5,
+    "command": [
+      "python",
+      "/tmp/deadpan-one-leaf-replay-production-2026-10-23/ui_lint.py"
+    ],
+    "exit": 0,
+    "seconds": 111.24626937508583
+  },
+  {
+    "step": 6,
+    "command": [
+      "python",
+      "/tmp/deadpan-one-leaf-replay-production-2026-10-23/qualify_native_media.py",
+      "debug-media",
+      "preflight"
+    ],
+    "exit": 0,
+    "seconds": 148.12764449976385
+  },
+  {
+    "step": 7,
+    "command": [
+      "python",
+      "/tmp/deadpan-one-leaf-replay-production-2026-10-23/qualify_native_media.py",
+      "release-media",
+      "release-media"
+    ],
+    "exit": 100,
+    "seconds": 461.1176472073421
+  }
+]

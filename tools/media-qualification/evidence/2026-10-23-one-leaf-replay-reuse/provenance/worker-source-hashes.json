@@ -1,0 +1,10 @@
+{
+  "path": "/Users/michael/Code/deadpan/crates/deadpan-cli/tests/preview_export/aligned_group_recipe.rs",
+  "before": "2d69409017da2c31486d2de8b059018dce398d0ffa94b53d169a572e99993cdf",
+  "proposed": "f6cbf9152ba601a06859308823bcef26dfe3aa877ef5d100c5105e8120b744fc",
+  "only_appended": true,
+  "uncompiled": true,
+  "unformatted": true,
+  "unexecuted": true,
+  "test": "recipes::group_endpoints::aligned::one_leaf_replay_qualified_media_commit_export_matches_uncached"
+}

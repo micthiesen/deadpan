@@ -1,0 +1,6 @@
+{
+  "all_71_test_binary_maps_identical": true,
+  "source_change": "Only separate Store internal test call added None; full Core source unchanged",
+  "initial_core_pass": 1543,
+  "current_core_pass": 1543
+}
