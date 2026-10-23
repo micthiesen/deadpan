@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-23T14:08:18.493Z",
+  "updated_at": "2026-10-23T14:24:33.742Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about \u00b15 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "A narrow private full-layout reuse prototype has passed source review and is compiling. It reuses an admitted immutable timing table only after the complete required-alias/ancestor closure, keeps the wire-size guard, excludes provisional tables and retains the reference path. Five regression tests cover sharing, partial/provisional slicing, late unknown aliases, the real canonical wire limit and 10,000-Hold interior-pause transaction/inverse parity; none has run yet, and no gain is measured. The completed Core profile remains the verified basis: all nine trials and exact 24-phase/nine-containment checks pass, with two-call reduction 64.732208 ms, postprocessing 17.760625 ms and semantic execution residual 30.641416 ms. No production source or requirement changed. Coverage stays 89%, with 8 Complete and 16 Partial requirements and the 100 ms/50 ms targets open.",
+  "focus": "The private complete frozen-layout reuse prototype passes all 123 selected Core checks and five guarded native timing pairs. Offscreen medians are 260.609875/247.164042 ms, a 13.445833 ms diagnostic difference of about 5.16%; commit medians are 257.887084/244.544917 ms. All 138 evidence files verify. The exact tested source bytes are now in the checkout and full production qualification is running: Core, broader/UI, strict, real media/history, native workflows, portable copies and a separate final comparison remain owed. The branch preserves the full alias closure, wire-size refusal, provisional handling and reference behavior. No requirement or target closes. Coverage stays 89%, with 8 Complete and 16 Partial requirements and the 100 ms/50 ms targets open.",
   "features": [
     {
       "id": "editing",
@@ -102,7 +102,7 @@
         "DP-18",
         "DP-24"
       ],
-      "note": "Qualified independent n=5 native first-pause comparisons: shared preparation offscreen 393.261916/275.697709 ms; leaf-result reuse 275.099042/267.862584 ms; JSON size counting 268.773292/261.593583 ms. Do not pool batches or infer percentiles or target passes. Later separate n=3 control/off/on profiles locate Store preparation at 110.396833 ms (history edit decode/equality 19.017083 ms) and Core work across two leaf applications: reduction 64.732208 ms and postprocessing 17.760625 ms, plus a semantic execution residual of 30.641416 ms outside the leaf call and after-size charge. All 24 Core phase counts and nine containment checks pass, and the 152-file evidence inventory verifies. These grouped costs need a concrete source-level explanation before changes. Current production checks pass; native latency targets, peak memory, calibrated timer overhead, worker-memory and sleep qualification remain open."
+      "note": "Qualified independent n=5 comparisons: shared preparation offscreen 393.261916/275.697709 ms, leaf-result reuse 275.099042/267.862584 ms, JSON size counting 268.773292/261.593583 ms. Separate Store/Core profiles pass all phase counts and containment checks. A later private one-file complete frozen-layout reuse prototype passes 123 selected checks and five guarded native pairs: offscreen medians 260.609875/247.164042 ms, about 5.16% apart. Its 138-file evidence inventory verifies; the exact tested bytes are adopted locally and full production qualification is running. Do not pool batches or infer percentiles or target passes. Native latency targets, peak memory, calibrated timer overhead, worker-memory and sleep qualification remain open."
     },
     {
       "id": "models",
@@ -1125,6 +1125,14 @@
       "revision": "6983f48b231baa397bd026b84483f89b0e1ae370",
       "retrospective": false,
       "summary": "A separate Core planning/replay profile passes nine rotated fresh control/off/on runs, each with seven pause and one Kestrel check, unchanged source/input/binary and authored-file guards, and empty WAL. Three enabled 26-line traces validate 24 ordered phase counts, two shared leaf applications, three net transactions, four replay size checks and nine containment equations; six disabled/control logs contain no trace. Control/off/on offscreen medians 259.902375/259.529792/258.317250 ms are n=3 diagnostics with uncalibrated overhead. Two-call leaf reduction median is 64.732208 ms and postprocessing 17.760625 ms. The semantic execution residual of 30.641416 ms excludes the leaf call and after-size charge but includes multiple operations and overhead. The 152-file/3,434,107-byte inventory verifies independently. Initial packaging failure on a nonexistent optional outline added by Root is retained; the corrected fresh packager passes with unchanged measurements. No production change, percentile, target PASS, requirement or gate closure follows. Next identify and qualify a concrete repeated operation in an isolated prototype."
+    },
+    {
+      "date": "2026-10-23",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "8529a1b2ffe656a7eb3b377d7d8af8919969c736",
+      "retrospective": false,
+      "summary": "A private one-file complete frozen-layout reuse prototype passes source review, five new regressions, eleven scoped-capture tests, three command-work tests and 104 InsertTime tests, all with zero ignored, plus formatting and the locked release app build. FrozenAudioLayout::sliced completes all alias/ancestor checks and the existing derived-clock branch, then reuses a complete nonprovisional immutable table only in local mode after the same wire-size guard. All ten native trials pass seven pause and one Kestrel check, exact identity/authored-file guards and empty WAL. Five quiet pairs give commit medians 257.887084/244.544917 ms and offscreen composition 260.609875/247.164042 ms, a 13.445833 ms/about 5.16% diagnostic difference. The 138-file/2,932,293-byte inventory verifies independently. Exact tested bytes are adopted locally; full production qualification remains in progress. No percentile, memory claim, latency target PASS, requirement or gate closure follows."
     }
   ]
 }
