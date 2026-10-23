@@ -1,0 +1,3 @@
+   Compiling deadpan-core v0.1.0 (/private/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source/crates/deadpan-core)
+    Finished `release` profile [optimized] target(s) in 41.18s
+     Running tests/semantic_trim.rs (/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/target/release/deps/semantic_trim-bfb70a35a2f8b456)

@@ -1,0 +1,41 @@
+{
+  "new_core_tests": 17,
+  "new_store_tests": 7,
+  "names": {
+    "crates/deadpan-core/src/audio_reference.rs": [
+      "one_leaf_replay_equal_provisional_value_cannot_bypass_wire_admission"
+    ],
+    "crates/deadpan-core/src/insert_time/retimed.rs": [
+      "one_leaf_replay_consumes_stale_exact_edit_at_both_ordinary_boundaries"
+    ],
+    "crates/deadpan-core/src/one_leaf_replay.rs": [
+      "one_leaf_replay_private_hit_is_exact_and_mode_misses_do_not_return_a_result",
+      "one_leaf_replay_post_leaf_admission_failure_returns_no_capability",
+      "one_leaf_replay_real_wire_boundaries_preserve_initial_post_and_final_refusals"
+    ],
+    "crates/deadpan-core/tests/semantic_leaf_replay.rs": [
+      "one_leaf_replay_exact_interior_result_visitor_and_aggregate_are_unchanged",
+      "one_leaf_replay_same_revision_changed_values_and_swapped_witnesses_cannot_retarget",
+      "one_leaf_replay_public_plan_field_mutation_does_not_modify_private_witnesses",
+      "one_leaf_replay_changed_leaf_payloads_fall_back_with_exact_results_or_refusals",
+      "one_leaf_replay_outer_leaf_and_identity_prefix_errors_still_precede_the_visitor",
+      "one_leaf_replay_host_visitor_refusal_is_not_bypassed",
+      "one_leaf_replay_reference_modes_bypass_use_and_creation_and_restore_their_state",
+      "one_leaf_replay_extra_steps_registers_ai_occurrences_and_derived_results_are_ineligible",
+      "one_leaf_replay_signed_zero_rational_spelling_normalizes_in_entry_and_request",
+      "one_leaf_replay_numeric_looking_labels_are_distinct_authored_strings",
+      "one_leaf_replay_explicit_defaults_roundtrip_complete_timing_values_and_wire",
+      "one_leaf_replay_transaction_constructor_limits_and_identity_refusals_remain"
+    ],
+    "crates/deadpan-store/tests/compound_preparation.rs": [
+      "one_leaf_replay_prepared_commit_retains_exact_history_undo_redo_and_copy",
+      "one_leaf_replay_store_refusals_precede_callback_and_leave_no_writes",
+      "one_leaf_replay_host_and_sql_failures_roll_back_even_after_a_hit",
+      "one_leaf_replay_transcript_guard_is_current_authority_before_preparation",
+      "one_leaf_replay_admitted_reverse_audio_rechecks_stored_qualification",
+      "one_leaf_replay_changed_corrections_invalidate_admitted_transcript_guard",
+      "one_leaf_replay_historical_allocations_refuse_before_preparation"
+    ]
+  },
+  "executed": false
+}

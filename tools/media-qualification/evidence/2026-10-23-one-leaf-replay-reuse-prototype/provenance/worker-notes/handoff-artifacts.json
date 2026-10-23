@@ -1,0 +1,38 @@
+{
+  "worker-notes/HANDOFF.md": {
+    "bytes": 9530,
+    "sha256": "6029414571984d13165de1c49fabd1467cd52e7786ec3d0416ff209487ba71c1"
+  },
+  "worker-notes/prototype.patch": {
+    "bytes": 90049,
+    "sha256": "0bcca28714ee338bca85128ca40b153b5db402c3b9e552eb8418f54d4eacd49c"
+  },
+  "worker-notes/production-review.patch": {
+    "bytes": 28860,
+    "sha256": "37b332cbe434e4e4c80aebf29613872ea9901cef161b0210285df637e6e82664"
+  },
+  "worker-notes/source-hashes.json": {
+    "bytes": 4404,
+    "sha256": "7be4c743ff6dd4ad5d801b6133817ac93ff5b034303e4556435f1a6ee654be82"
+  },
+  "worker-notes/test-inventory.json": {
+    "bytes": 2372,
+    "sha256": "cc367fef0c2ac6746808ff6f3ab060470f7dab8447e5ed9a2ef22ffe910584a7"
+  },
+  "original-source-identities.json": {
+    "bytes": 253256,
+    "sha256": "05cb2958139b28d639c81efe4b35ed799d3961f02f36f34896679d5103a02b49"
+  },
+  "proposed-source-identities.json": {
+    "bytes": 253495,
+    "sha256": "ec8ffbb78d97ec6fac4c0033ba0117046c80c59c562879df9c92313715235d74"
+  },
+  "input-identities.json": {
+    "bytes": 583,
+    "sha256": "b783a007ca4b3ab356c3488372a276c0ffa7ad4f9f34b31f1b0743b121e44317"
+  },
+  "source-basis.json": {
+    "bytes": 368,
+    "sha256": "94bf9719de33bc5e5ad7e1dbcf9cff5fae94304b236a38f5accb43995eec40d7"
+  }
+}

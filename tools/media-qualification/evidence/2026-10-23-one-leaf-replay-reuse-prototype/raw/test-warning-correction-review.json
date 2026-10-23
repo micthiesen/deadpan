@@ -1,0 +1,21 @@
+{
+  "changed": [
+    "crates/deadpan-core/tests/semantic_leaf_replay.rs",
+    "crates/deadpan-store/tests/compound_preparation.rs"
+  ],
+  "production_and_other_sources_unchanged": 2051,
+  "inputs_unchanged": true,
+  "core_change": "Strengthen reference-mode parity by requiring successful result; no prior equality/wire/inverse assertion removed.",
+  "store_change": "Remove three unreachable else clauses for CompoundPreparationError<Infallible>; exact error/callback/no-write assertions unchanged.",
+  "before": {
+    "crates/deadpan-core/tests/semantic_leaf_replay.rs": "cc7cb653699757a22a6f2236a0a1ce93334eb803f593489bfc24d2c77c5e2280",
+    "crates/deadpan-store/tests/compound_preparation.rs": "416b5ca32e07ea7b280092c8f540b134604656f8e725740c92dfa43b33c636b6"
+  },
+  "after": {
+    "crates/deadpan-core/tests/semantic_leaf_replay.rs": "0836e272bb2594e6cdcceaf7273a0773504d286a3ace91cd7ea1b059e8a9b561",
+    "crates/deadpan-store/tests/compound_preparation.rs": "228103f1a7c12d8b05bb527ecb5c9b79eaa2e6ef77b192b4f28964620be66f61"
+  },
+  "initial_tests_all_passed": 39,
+  "initial_warnings": 4,
+  "initial_build_archived": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/initial-build"
+}

@@ -1,0 +1,32 @@
+{
+  "diagnostic_only": true,
+  "kinds": {
+    "candidate": {
+      "large_first_pause_input_to_commit_ms": {
+        "max": 196.68883300000002,
+        "median": 194.917708,
+        "min": 192.794125
+      },
+      "large_first_pause_input_to_offscreen_background_composition_ms": {
+        "max": 199.147208,
+        "median": 197.496833,
+        "min": 195.395667
+      }
+    },
+    "control": {
+      "large_first_pause_input_to_commit_ms": {
+        "max": 241.57375,
+        "median": 239.682292,
+        "min": 237.06912499999999
+      },
+      "large_first_pause_input_to_offscreen_background_composition_ms": {
+        "max": 244.13204199999998,
+        "median": 242.163542,
+        "min": 239.633541
+      }
+    }
+  },
+  "lane": "unobserved-timing",
+  "n_pairs": 5,
+  "no_percentile_or_target_pass": true
+}

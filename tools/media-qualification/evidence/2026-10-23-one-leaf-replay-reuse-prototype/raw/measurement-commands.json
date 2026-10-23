@@ -1,0 +1,762 @@
+[
+  {
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/timing-1-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "cwd": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source",
+    "exit": 0,
+    "name": "timing-1-control-make",
+    "seconds": 0.1911116661503911
+  },
+  {
+    "command": [
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+      "--project",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/timing-1-control.deadpan",
+      "--output",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/timing-1-control-report"
+    ],
+    "cwd": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source",
+    "exit": 0,
+    "name": "timing-1-control",
+    "seconds": 14.102097666822374
+  },
+  {
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/timing-1-candidate.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "cwd": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source",
+    "exit": 0,
+    "name": "timing-1-candidate-make",
+    "seconds": 0.1905840002000332
+  },
+  {
+    "command": [
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+      "--project",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/timing-1-candidate.deadpan",
+      "--output",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/timing-1-candidate-report"
+    ],
+    "cwd": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source",
+    "exit": 0,
+    "name": "timing-1-candidate",
+    "seconds": 13.523197334259748
+  },
+  {
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/timing-2-candidate.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "cwd": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source",
+    "exit": 0,
+    "name": "timing-2-candidate-make",
+    "seconds": 0.18581491708755493
+  },
+  {
+    "command": [
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+      "--project",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/timing-2-candidate.deadpan",
+      "--output",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/timing-2-candidate-report"
+    ],
+    "cwd": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source",
+    "exit": 0,
+    "name": "timing-2-candidate",
+    "seconds": 13.780719875358045
+  },
+  {
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/timing-2-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "cwd": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source",
+    "exit": 0,
+    "name": "timing-2-control-make",
+    "seconds": 0.19056487549096346
+  },
+  {
+    "command": [
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+      "--project",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/timing-2-control.deadpan",
+      "--output",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/timing-2-control-report"
+    ],
+    "cwd": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source",
+    "exit": 0,
+    "name": "timing-2-control",
+    "seconds": 13.823026875033975
+  },
+  {
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/timing-3-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "cwd": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source",
+    "exit": 0,
+    "name": "timing-3-control-make",
+    "seconds": 0.18923704233020544
+  },
+  {
+    "command": [
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+      "--project",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/timing-3-control.deadpan",
+      "--output",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/timing-3-control-report"
+    ],
+    "cwd": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source",
+    "exit": 0,
+    "name": "timing-3-control",
+    "seconds": 14.07645966578275
+  },
+  {
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/timing-3-candidate.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "cwd": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source",
+    "exit": 0,
+    "name": "timing-3-candidate-make",
+    "seconds": 0.18860795721411705
+  },
+  {
+    "command": [
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+      "--project",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/timing-3-candidate.deadpan",
+      "--output",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/timing-3-candidate-report"
+    ],
+    "cwd": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source",
+    "exit": 0,
+    "name": "timing-3-candidate",
+    "seconds": 13.801180167123675
+  },
+  {
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/timing-4-candidate.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "cwd": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source",
+    "exit": 0,
+    "name": "timing-4-candidate-make",
+    "seconds": 0.18795945774763823
+  },
+  {
+    "command": [
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+      "--project",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/timing-4-candidate.deadpan",
+      "--output",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/timing-4-candidate-report"
+    ],
+    "cwd": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source",
+    "exit": 0,
+    "name": "timing-4-candidate",
+    "seconds": 13.52601670846343
+  },
+  {
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/timing-4-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "cwd": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source",
+    "exit": 0,
+    "name": "timing-4-control-make",
+    "seconds": 0.18652208242565393
+  },
+  {
+    "command": [
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+      "--project",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/timing-4-control.deadpan",
+      "--output",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/timing-4-control-report"
+    ],
+    "cwd": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source",
+    "exit": 0,
+    "name": "timing-4-control",
+    "seconds": 14.129713458009064
+  },
+  {
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/timing-5-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "cwd": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source",
+    "exit": 0,
+    "name": "timing-5-control-make",
+    "seconds": 0.18848375044763088
+  },
+  {
+    "command": [
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+      "--project",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/timing-5-control.deadpan",
+      "--output",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/timing-5-control-report"
+    ],
+    "cwd": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source",
+    "exit": 0,
+    "name": "timing-5-control",
+    "seconds": 14.013814083300531
+  },
+  {
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/timing-5-candidate.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "cwd": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source",
+    "exit": 0,
+    "name": "timing-5-candidate-make",
+    "seconds": 0.18619062472134829
+  },
+  {
+    "command": [
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+      "--project",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/timing-5-candidate.deadpan",
+      "--output",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/timing-5-candidate-report"
+    ],
+    "cwd": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source",
+    "exit": 0,
+    "name": "timing-5-candidate",
+    "seconds": 13.932167707942426
+  },
+  {
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-1-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "cwd": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source",
+    "exit": 0,
+    "name": "memory-1-control-make",
+    "seconds": 0.1845234166830778
+  },
+  {
+    "command": [
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-observer",
+      "--receipt",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-1-control-observer-receipt.json",
+      "--samples",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-1-control-memory-samples.json",
+      "--stdout",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-1-control-app.stdout",
+      "--stderr",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-1-control-app.stderr",
+      "--",
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+      "--project",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-1-control.deadpan",
+      "--output",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-1-control-report"
+    ],
+    "cwd": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source",
+    "exit": 0,
+    "name": "memory-1-control-observer",
+    "seconds": 13.87540079280734
+  },
+  {
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-1-candidate.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "cwd": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source",
+    "exit": 0,
+    "name": "memory-1-candidate-make",
+    "seconds": 0.1886057499796152
+  },
+  {
+    "command": [
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-observer",
+      "--receipt",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-1-candidate-observer-receipt.json",
+      "--samples",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-1-candidate-memory-samples.json",
+      "--stdout",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-1-candidate-app.stdout",
+      "--stderr",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-1-candidate-app.stderr",
+      "--",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+      "--project",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-1-candidate.deadpan",
+      "--output",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-1-candidate-report"
+    ],
+    "cwd": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source",
+    "exit": 0,
+    "name": "memory-1-candidate-observer",
+    "seconds": 13.735413291491568
+  },
+  {
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-2-candidate.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "cwd": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source",
+    "exit": 0,
+    "name": "memory-2-candidate-make",
+    "seconds": 0.19262520875781775
+  },
+  {
+    "command": [
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-observer",
+      "--receipt",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-2-candidate-observer-receipt.json",
+      "--samples",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-2-candidate-memory-samples.json",
+      "--stdout",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-2-candidate-app.stdout",
+      "--stderr",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-2-candidate-app.stderr",
+      "--",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+      "--project",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-2-candidate.deadpan",
+      "--output",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-2-candidate-report"
+    ],
+    "cwd": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source",
+    "exit": 0,
+    "name": "memory-2-candidate-observer",
+    "seconds": 13.497533542104065
+  },
+  {
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-2-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "cwd": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source",
+    "exit": 0,
+    "name": "memory-2-control-make",
+    "seconds": 0.18838725052773952
+  },
+  {
+    "command": [
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-observer",
+      "--receipt",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-2-control-observer-receipt.json",
+      "--samples",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-2-control-memory-samples.json",
+      "--stdout",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-2-control-app.stdout",
+      "--stderr",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-2-control-app.stderr",
+      "--",
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+      "--project",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-2-control.deadpan",
+      "--output",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-2-control-report"
+    ],
+    "cwd": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source",
+    "exit": 0,
+    "name": "memory-2-control-observer",
+    "seconds": 13.65172945894301
+  },
+  {
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-3-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "cwd": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source",
+    "exit": 0,
+    "name": "memory-3-control-make",
+    "seconds": 0.18934612441807985
+  },
+  {
+    "command": [
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-observer",
+      "--receipt",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-3-control-observer-receipt.json",
+      "--samples",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-3-control-memory-samples.json",
+      "--stdout",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-3-control-app.stdout",
+      "--stderr",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-3-control-app.stderr",
+      "--",
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+      "--project",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-3-control.deadpan",
+      "--output",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-3-control-report"
+    ],
+    "cwd": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source",
+    "exit": 0,
+    "name": "memory-3-control-observer",
+    "seconds": 13.67648783326149
+  },
+  {
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-3-candidate.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "cwd": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source",
+    "exit": 0,
+    "name": "memory-3-candidate-make",
+    "seconds": 0.1896309582516551
+  },
+  {
+    "command": [
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-observer",
+      "--receipt",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-3-candidate-observer-receipt.json",
+      "--samples",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-3-candidate-memory-samples.json",
+      "--stdout",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-3-candidate-app.stdout",
+      "--stderr",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-3-candidate-app.stderr",
+      "--",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+      "--project",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-3-candidate.deadpan",
+      "--output",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-3-candidate-report"
+    ],
+    "cwd": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source",
+    "exit": 0,
+    "name": "memory-3-candidate-observer",
+    "seconds": 13.747713584452868
+  },
+  {
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-4-candidate.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "cwd": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source",
+    "exit": 0,
+    "name": "memory-4-candidate-make",
+    "seconds": 0.1829132093116641
+  },
+  {
+    "command": [
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-observer",
+      "--receipt",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-4-candidate-observer-receipt.json",
+      "--samples",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-4-candidate-memory-samples.json",
+      "--stdout",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-4-candidate-app.stdout",
+      "--stderr",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-4-candidate-app.stderr",
+      "--",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+      "--project",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-4-candidate.deadpan",
+      "--output",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-4-candidate-report"
+    ],
+    "cwd": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source",
+    "exit": 0,
+    "name": "memory-4-candidate-observer",
+    "seconds": 13.871739165857434
+  },
+  {
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-4-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "cwd": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source",
+    "exit": 0,
+    "name": "memory-4-control-make",
+    "seconds": 0.18699970748275518
+  },
+  {
+    "command": [
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-observer",
+      "--receipt",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-4-control-observer-receipt.json",
+      "--samples",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-4-control-memory-samples.json",
+      "--stdout",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-4-control-app.stdout",
+      "--stderr",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-4-control-app.stderr",
+      "--",
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+      "--project",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-4-control.deadpan",
+      "--output",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-4-control-report"
+    ],
+    "cwd": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source",
+    "exit": 0,
+    "name": "memory-4-control-observer",
+    "seconds": 13.882565749809146
+  },
+  {
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-5-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "cwd": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source",
+    "exit": 0,
+    "name": "memory-5-control-make",
+    "seconds": 0.19044533371925354
+  },
+  {
+    "command": [
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-observer",
+      "--receipt",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-5-control-observer-receipt.json",
+      "--samples",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-5-control-memory-samples.json",
+      "--stdout",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-5-control-app.stdout",
+      "--stderr",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-5-control-app.stderr",
+      "--",
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+      "--project",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-5-control.deadpan",
+      "--output",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-5-control-report"
+    ],
+    "cwd": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source",
+    "exit": 0,
+    "name": "memory-5-control-observer",
+    "seconds": 13.20999658294022
+  },
+  {
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-5-candidate.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "cwd": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source",
+    "exit": 0,
+    "name": "memory-5-candidate-make",
+    "seconds": 0.18782112561166286
+  },
+  {
+    "command": [
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-observer",
+      "--receipt",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-5-candidate-observer-receipt.json",
+      "--samples",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-5-candidate-memory-samples.json",
+      "--stdout",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-5-candidate-app.stdout",
+      "--stderr",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-5-candidate-app.stderr",
+      "--",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+      "--project",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-5-candidate.deadpan",
+      "--output",
+      "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/memory-5-candidate-report"
+    ],
+    "cwd": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source",
+    "exit": 0,
+    "name": "memory-5-candidate-observer",
+    "seconds": 13.946772582828999
+  }
+]

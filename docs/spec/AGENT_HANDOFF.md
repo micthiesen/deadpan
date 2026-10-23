@@ -383,7 +383,7 @@ was corrected during static review before any build. The 512 MiB cumulative
 limit is unreachable for an eligible leaf under four capped 64 MiB traversals;
 no limit was lowered. Retained historical clocks do not add a SEALED dependency.
 Root owns source now. Scoped formatting, all 2,053 Rust paths, 2,039 nonowned
-baseline paths and six inputs verify. The fresh-target build_prototype.py is
+baseline paths and six inputs verify. The fresh-target build_prototype.py
 is terminal after initial and corrected runs; rustc/cargo 1.97.1, cargo fmt check
 and all six focused test phases pass:
 12 public Core, five private Core, 12 Store, three command-work, four refresh
@@ -398,14 +398,24 @@ remain byte-identical. Separate correction review has no findings. Initial
 build logs/sources/executable copies are in initial-build/. A resumed wrapper
 first failed before any command on redundant TARGET.mkdir; its exact failure
 and corrected script are retained in resume-preflight-failure/.
-measure.py is ACTIVE: five alternating control/candidate timing pairs, then
-five separate owned-memory pairs. Candidate6d1e compares qualified controla9ce,
-observerd1166, with exact source/binary/fixture/WAL/Kestrel/power/load guards.
-Both launch from the pinned source directory, so runtime toolchain metadata is
-Rust 1.97.1. No temporary profiling marker may appear. Check measurement-owner
-and command/trial receipts plus live process before restarting anything.
-No prototype performance or memory result is claimed; main stays unchanged.
-Qualify actual speed/retention before production adoption.
+measure.py is TERMINAL, exit zero: five alternating timing pairs and five
+separate owned-memory pairs, forty successful commands. All 140 pause and
+twenty Kestrel checks pass; forty layout warnings remain. Candidate 6d1e
+compares qualified control a9ce using observer d1166, with every source/input/
+binary/fixture/WAL/Kestrel/power/load guard passing. Runtime metadata is pinned
+Rust 1.97.1 and profiling markers are absent. Commit medians are
+239.682292 /194.917708 ms; composition 242.163542 /197.496833 ms, a
+44.666709 ms /18.44% diagnostic difference. The separate memory lane retains
+18,296 samples with maximum gaps 12.329791 ms. Median sampled footprint maxima
+731,940,088 /686,851,224 bytes are whole-app lower bounds, not exact/per-leaf
+peaks, retention or memory savings. The independently reread 394-file /
+5,809,852-byte inventory has SHA-256
+f4989f93e792915eec9470939a7ce9d0a7c987ae653ad6c84c426ba06935479b.
+See [private prototype](../qualification/one-leaf-replay-reuse-prototype-2026-10-23.md).
+Main Rust remains unchanged. Next adopt the exact final fourteen-file overlay,
+add a successful qualified-media cached-vs-uncached commit/PCM/history/export
+case in CLI preview_export/aligned_group_recipe.rs, and run full production
+qualification. Do not repeat completed private producers.
 No validation, work charge, first-error or durable authority can be weakened
 to make the experiment pass.
 The separate

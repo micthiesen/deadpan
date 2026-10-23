@@ -1,0 +1,7 @@
+{
+  "beats": 10000,
+  "creation_ms": 166.484,
+  "package": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/timing-5-candidate.deadpan",
+  "stage": "make-large",
+  "stage_wall_ms": 175.80337500000002
+}

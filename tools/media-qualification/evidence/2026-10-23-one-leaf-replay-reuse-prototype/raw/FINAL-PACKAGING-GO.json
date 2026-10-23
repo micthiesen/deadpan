@@ -1,0 +1,13 @@
+{
+  "authorized": true,
+  "owner": "root",
+  "scope": "Package completed private prototype evidence only; no production adoption",
+  "build_terminal": true,
+  "measurement_terminal": true,
+  "packager_sha256": "4333a1fc202f9906a2e95825df75abffe32583b0a40295ae773dde428f0abd15",
+  "reviewed_corrections": [
+    "Compare 14-path audit maps to the corresponding full-map subsets",
+    "Correct raw regular-expression escaping for test results and trial log filtering"
+  ],
+  "tuple_metric_keys": "Internal validation only; not serialized in verified-gates.json"
+}

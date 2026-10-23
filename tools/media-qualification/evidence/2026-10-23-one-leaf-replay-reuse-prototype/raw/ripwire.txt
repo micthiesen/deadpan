@@ -1,0 +1,112 @@
+<ctx task="OneLeafReplay optional capability from SemanticPlan Planner::commit_leaf replay_compound_captured through prepare_command ProjectStore::commit_compound_prepared_inner HostSemanticPlan::commit_compound_prepared" route=" [routed: subtoken+body BM25 (--for&apos;s default) — no strong name hit, multi-word conceptual query]" bundle="auto" bodies="6"><!-- ripwire lens for "OneLeafReplay optional capability from SemanticPlan Planner::commit_leaf replay_compound_captured through prepare_command ProjectStore::commit_compound_prepared_inner HostSemanticPlan::commit_compound_prepared" [doc mentions: 1 doc discussing 1 top-ranked symbol surfaced]: reusable building blocks + quality facts for what you're about to touch (cx=complexity ccx=cognitive in=reuse-count churn=recent-commits amp=change-amplification clone=1(duplicated) tested=1) — prefer composing/reusing these; watch the high-churn/high-amp/cloned ones; bundle=auto: the top-ranked FULL bodies ride inline after the signatures in a bodies section (bodies=N on this root counts them; bodies=0 reason=budget when none fit the remaining budget whole; the signatures-only flag opts out) — read them here instead of opening the files. The bodies element discloses the house way: total=requested, shown=printed, capped=1 when they differ; each body's calls child lists its callee signatures, total= always, shown=/capped= only when that list is cut est_tokens="4603" --><sigs capped="1"><f p="/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source/crates/deadpan-store/src/compound.rs"><d l="47" n="CompoundCommitOutcome" cx="0" ccx="0" in="0">pub struct CompoundCommitOutcome</d><d l="69" n="preview_compound" id="/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source/crates/deadpan-store/src/compound.rs::ProjectStore::preview_compound" cx="1" ccx="0" in="21" amp="21" tested="1">pub fn preview_compound( &amp;self, request: &amp;CommandRequest, ) -&gt; Result&lt;CompoundPreview, StoreErro…</d><d l="85" n="preview_compound_inner" id="/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source/crates/deadpan-store/src/compound.rs::ProjectStore::preview_compound_inner" cx="2" ccx="1" in="2" amp="2" tested="1">fn preview_compound_inner( &amp;self, request: &amp;CommandRequest, guard: Option&lt;&amp;crate::TranscriptSelectionGuard&gt;, ) -&gt; Result&lt;CompoundPreview, StoreError&gt;</d><d l="104" n="commit_compound" id="/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source/crates/deadpan-store/src/compound.rs::ProjectStore::commit_compound" cx="1" ccx="0" in="0">pub fn commit_compound( &amp;mut self, request: &amp;CommandRequest, relevance: Option&lt;&amp;crate::generation::RelevancePlan&gt;, ) -&gt; Result&lt;CompoundCommitOutcome, StoreError…</d><d l="114" n="commit_compound_with_transcript_guard" id="/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source/crates/deadpan-store/src/compound.rs::ProjectStore::commit_compound_with_transcript_guard" cx="1" ccx="0" in="2" amp="2" tested="1">pub fn commit_compound_with_transcript_guard( &amp;mut self, request: &amp;CommandRequest, relevance: Option&lt;&amp;crate::generation::RelevancePlan&gt;, guard: &amp;crate::Transcri…</d><d l="128" n="commit_compound_prepared" id="/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source/crates/deadpan-store/src/compound.rs::ProjectStore::commit_compound_prepared" cx="1" ccx="0" in="0"><doc>Prepare host state from the authoritative final register bank before publishing anything. The ca…</doc>pub fn commit_compound_prepared&lt;T, E&gt;( &amp;mut self, request: &amp;CommandRequest, relevance: Option&lt;&amp;crate::generation::RelevancePlan&gt;, prepare: impl FnOnce(&amp;Register…</d><d l="139" n="commit_compound_with_transcript_guard_prepared" id="/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source/crates/deadpan-store/src/compound.rs::ProjectStore::commit_compound_with_transcript_guard_prepared" cx="1" ccx="0" in="2" amp="2" tested="1"><doc>Check consumed analysis inside the publication transaction before preparing either the Compound …</doc>pub fn commit_compound_with_transcript_guard_prepared&lt;T, E&gt;( &amp;mut self, request: &amp;CommandRequest, relevance: Option&lt;&amp;crate::generation::RelevancePlan&gt;, guard: &amp;…</d><d l="149" n="commit_compound_inner" id="/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source/crates/deadpan-store/src/compound.rs::ProjectStore::commit_compound_inner" cx="3" ccx="5" in="2" amp="2" tested="1">fn commit_compound_inner( &amp;mut self, request: &amp;CommandRequest, relevance: Option&lt;&amp;crate::generation::RelevancePlan&gt;, guard: Option&lt;&amp;crate::TranscriptSelectionGu…</d><d l="165" n="commit_compound_prepared_inner" id="/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source/crates/deadpan-store/src/compound.rs::ProjectStore::commit_compound_prepared_inner" cx="4" ccx="5" in="3" amp="3" tested="1">fn commit_compound_prepared_inner&lt;T, E&gt;( &amp;mut self, request: &amp;CommandRequest, relevance: Option&lt;&amp;crate::generation::RelevancePlan&gt;, guard: Option&lt;&amp;crate::Transc…</d></f></sigs><bodies shown="6" total="6" capped="0"><b t="method" l="165" p="/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source/crates/deadpan-store/src/compound.rs" n="commit_compound_prepared_inner"><![CDATA[fn commit_compound_prepared_inner<T, E>(
+        &mut self,
+        request: &CommandRequest,
+        relevance: Option<&crate::generation::RelevancePlan>,
+        guard: Option<&crate::TranscriptSelectionGuard>,
+        prepare: impl FnOnce(&RegisterBank) -> Result<T, E>,
+    ) -> Result<(CompoundCommitOutcome, T), CompoundPreparationError<E>> {
+        self.require_writer()?;
+        require_compound(request)?;
+        let documents = &self.documents;
+        let transaction = self
+            .connection
+            .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)
+            .map_err(StoreError::from)?;
+        if let Some(guard) = guard {
+            crate::transcript_selection::check_guard(&transaction, documents, guard)?;
+        }
+        let plan = crate::prepare_command(&transaction, documents, request)?;
+        let prepared = plan.compound.as_ref().expect("compound plan");
+        let register_bank = prepared.registers.bank.clone();
+        let host = prepare(&register_bank).map_err(CompoundPreparationError::Preparation)?;
+        let committed = if prepared.steps.is_empty() {
+            if prepared.writes {
+                crate::registers::write_prepared_bank(
+                    &transaction,
+                    &prepared.registers,
+                    plan.current.project_id(),
+                )?;
+            }
+            None
+        } else {
+            Some(crate::write_command_plan(
+                &transaction,
+                documents,
+                plan,
+                relevance,
+                self.context_resolver.as_deref(),
+            )?)
+        };
+        transaction.commit().map_err(StoreError::from)?;
+        let committed = committed.map(|(outcome, next)| {
+            documents.insert(next);
+            outcome
+        });
+        Ok((
+            CompoundCommitOutcome {
+                committed,
+                register_bank,
+            },
+            host,
+        ))
+    }]]><calls total="12"><c n="project_id" l="114">pub fn project_id(&amp;self) -&gt; &amp;ProjectId</c><c n="require_compound" l="219">fn require_compound(request: &amp;CommandRequest) -&gt; Result&lt;(), StoreError&gt;</c><c n="prepare" l="386">pub(crate) fn prepare( connection: &amp;Connection, documents: &amp;crate::document_cache::DocumentCache, current: deadpan_core::ValidatedDocument, request: &amp;CommandRequest, ) -&gt; Result&lt;CommandPlan, StoreError&gt;</c><c n="insert" l="88">pub(crate) fn insert(&amp;self, document: ValidatedDocument)</c><c n="insert" l="618">fn insert(&amp;mut self, id: PreparationId, order: i64, charge: usize) -&gt; Result&lt;(), StoreError&gt;</c><c n="map" l="1058">fn map( &amp;mut self, proof: &amp;ValidatedScopedIsolation&lt;&apos;_&gt;, forward: bool, destination: &amp;ProjectDocument, ) -&gt; Result&lt;(), StoreError&gt;</c><c n="is_empty" l="211">pub fn is_empty(&amp;self) -&gt; bool</c><c n="commit" l="866">pub fn commit(&amp;mut self, request: &amp;CommandRequest) -&gt; Result&lt;CommitOutcome, StoreError&gt;</c><c n="require_writer" l="1006">fn require_writer(&amp;self) -&gt; Result&lt;(), StoreError&gt;</c><c n="project_id" l="1192">pub(crate) fn project_id(&amp;self) -&gt; &amp;deadpan_core::ProjectId</c><c n="write_prepared_bank" l="761">pub(crate) fn write_prepared_bank( connection: &amp;Connection, prepared: &amp;PreparedBank, project: &amp;ProjectId, ) -&gt; Result&lt;(), StoreError&gt;</c><c n="check_guard" l="134">pub(crate) fn check_guard( connection: &amp;Connection, documents: &amp;crate::document_cache::DocumentCache, expected: &amp;TranscriptSelectionGuard, ) -&gt; Result&lt;(), StoreError&gt;</c></calls></b><b t="method" l="128" p="/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source/crates/deadpan-store/src/compound.rs" n="commit_compound_prepared"><![CDATA[pub fn commit_compound_prepared<T, E>(
+        &mut self,
+        request: &CommandRequest,
+        relevance: Option<&crate::generation::RelevancePlan>,
+        prepare: impl FnOnce(&RegisterBank) -> Result<T, E>,
+    ) -> Result<(CompoundCommitOutcome, T), CompoundPreparationError<E>> {
+        self.commit_compound_prepared_inner(request, relevance, None, prepare)
+    }]]><calls total="1"><c n="commit_compound_prepared_inner" l="165">fn commit_compound_prepared_inner&lt;T, E&gt;( &amp;mut self, request: &amp;CommandRequest, relevance: Option&lt;&amp;crate::generation::RelevancePlan&gt;, guard: Option&lt;&amp;crate::TranscriptSelectionGuard&gt;, prepare: impl FnOnce(&amp;RegisterBank) -&gt; Result&lt;T, E&gt;, ) -&gt; R</c></calls></b><b t="method" l="139" p="/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source/crates/deadpan-store/src/compound.rs" n="commit_compound_with_transcript_guard_prepared"><![CDATA[pub fn commit_compound_with_transcript_guard_prepared<T, E>(
+        &mut self,
+        request: &CommandRequest,
+        relevance: Option<&crate::generation::RelevancePlan>,
+        guard: &crate::TranscriptSelectionGuard,
+        prepare: impl FnOnce(&RegisterBank) -> Result<T, E>,
+    ) -> Result<(CompoundCommitOutcome, T), CompoundPreparationError<E>> {
+        self.commit_compound_prepared_inner(request, relevance, Some(guard), prepare)
+    }]]><calls total="1"><c n="commit_compound_prepared_inner" l="165">fn commit_compound_prepared_inner&lt;T, E&gt;( &amp;mut self, request: &amp;CommandRequest, relevance: Option&lt;&amp;crate::generation::RelevancePlan&gt;, guard: Option&lt;&amp;crate::TranscriptSelectionGuard&gt;, prepare: impl FnOnce(&amp;RegisterBank) -&gt; Result&lt;T, E&gt;, ) -&gt; R</c></calls></b><b t="method" l="149" p="/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source/crates/deadpan-store/src/compound.rs" n="commit_compound_inner"><![CDATA[fn commit_compound_inner(
+        &mut self,
+        request: &CommandRequest,
+        relevance: Option<&crate::generation::RelevancePlan>,
+        guard: Option<&crate::TranscriptSelectionGuard>,
+    ) -> Result<CompoundCommitOutcome, StoreError> {
+        self.commit_compound_prepared_inner(request, relevance, guard, |_| {
+            Ok::<(), std::convert::Infallible>(())
+        })
+        .map(|(outcome, ())| outcome)
+        .map_err(|error| match error {
+            CompoundPreparationError::Store(error) => error,
+            CompoundPreparationError::Preparation(never) => match never {},
+        })
+    }]]><calls total="2"><c n="commit_compound_prepared_inner" l="165">fn commit_compound_prepared_inner&lt;T, E&gt;( &amp;mut self, request: &amp;CommandRequest, relevance: Option&lt;&amp;crate::generation::RelevancePlan&gt;, guard: Option&lt;&amp;crate::TranscriptSelectionGuard&gt;, prepare: impl FnOnce(&amp;RegisterBank) -&gt; Result&lt;T, E&gt;, ) -&gt; R</c><c n="map" l="1058">fn map( &amp;mut self, proof: &amp;ValidatedScopedIsolation&lt;&apos;_&gt;, forward: bool, destination: &amp;ProjectDocument, ) -&gt; Result&lt;(), StoreError&gt;</c></calls></b><b t="method" l="104" p="/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source/crates/deadpan-store/src/compound.rs" n="commit_compound"><![CDATA[pub fn commit_compound(
+        &mut self,
+        request: &CommandRequest,
+        relevance: Option<&crate::generation::RelevancePlan>,
+    ) -> Result<CompoundCommitOutcome, StoreError> {
+        self.commit_compound_inner(request, relevance, None)
+    }]]><calls total="1"><c n="commit_compound_inner" l="149">fn commit_compound_inner( &amp;mut self, request: &amp;CommandRequest, relevance: Option&lt;&amp;crate::generation::RelevancePlan&gt;, guard: Option&lt;&amp;crate::TranscriptSelectionGuard&gt;, ) -&gt; Result&lt;CompoundCommitOutcome, StoreError&gt;</c></calls></b><b t="method" l="186" p="/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source/crates/deadpan-cli/src/macros.rs" n="commit_compound_prepared"><![CDATA[pub fn commit_compound_prepared<T, E>(
+        &self,
+        store: &mut ProjectStore,
+        prepare: impl FnOnce(&RegisterBank) -> Result<T, E>,
+    ) -> Result<(deadpan_store::CompoundCommitOutcome, T), PreparedCommitError<E>> {
+        let request = self.request.as_ref().ok_or_else(|| {
+            PreparedCommitError::Commit(LiveError::new(
+                "InvalidCommand",
+                "Selection-only plan has no Compound",
+            ))
+        })?;
+        match &self.transcript_guard {
+            Some(guard) => {
+                store.commit_compound_with_transcript_guard_prepared(request, None, guard, prepare)
+            }
+            None => store.commit_compound_prepared(request, None, prepare),
+        }
+        .map_err(|error| match error {
+            deadpan_store::CompoundPreparationError::Store(error) => {
+                PreparedCommitError::Commit(LiveError::store(error))
+            }
+            deadpan_store::CompoundPreparationError::Preparation(error) => {
+                PreparedCommitError::Preparation(error)
+            }
+        })
+    }]]><calls total="3"><c n="new" l="268">pub fn new(code: &amp;str, message: impl ToString) -&gt; Self</c><c n="store" l="278">pub fn store(error: StoreError) -&gt; Self</c><c n="commit_compound_with_transcript_guard_prepared" l="139">pub fn commit_compound_with_transcript_guard_prepared&lt;T, E&gt;( &amp;mut self, request: &amp;CommandRequest, relevance: Option&lt;&amp;crate::generation::RelevancePlan&gt;, guard: &amp;crate::TranscriptSelectionGuard, prepare: impl FnOnce(&amp;RegisterBank) -&gt; Result&lt;T</c></calls></b></bodies></ctx>

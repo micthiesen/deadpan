@@ -1,0 +1,62 @@
+[
+  {
+    "original": {
+      "executed": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/target/release/deps/semantic_leaf_replay-c735a3c09feadd12",
+      "retained": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/test-bin/core-refutations/semantic_leaf_replay-c735a3c09feadd12",
+      "sha256": "cb1b00b71bc4083dac3187df9759450a30ca1d9d5d97d941a315f48ea23f39b0",
+      "bytes": 15184736
+    },
+    "archived_retained": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/initial-build/test-bin/core-refutations/semantic_leaf_replay-c735a3c09feadd12",
+    "sha256": "cb1b00b71bc4083dac3187df9759450a30ca1d9d5d97d941a315f48ea23f39b0"
+  },
+  {
+    "original": {
+      "executed": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/target/release/deps/deadpan_core-e938e0404317f499",
+      "retained": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/test-bin/core-boundary-unit/deadpan_core-e938e0404317f499",
+      "sha256": "ee50179930f351d158de3566f2849b316400af86da257aeca22fc75c334e307f",
+      "bytes": 57157440
+    },
+    "archived_retained": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/initial-build/test-bin/core-boundary-unit/deadpan_core-e938e0404317f499",
+    "sha256": "ee50179930f351d158de3566f2849b316400af86da257aeca22fc75c334e307f"
+  },
+  {
+    "original": {
+      "executed": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/target/release/deps/compound_preparation-439f3bd294ec4be6",
+      "retained": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/test-bin/store-atomic/compound_preparation-439f3bd294ec4be6",
+      "sha256": "a421295fb815dbe93af96b75ab2c1c70f8d5b133588a1b6c0c7bb80f1518d97e",
+      "bytes": 24046896
+    },
+    "archived_retained": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/initial-build/test-bin/store-atomic/compound_preparation-439f3bd294ec4be6",
+    "sha256": "a421295fb815dbe93af96b75ab2c1c70f8d5b133588a1b6c0c7bb80f1518d97e"
+  },
+  {
+    "original": {
+      "executed": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/target/release/deps/command_work-ba5d901dcb4c9adc",
+      "retained": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/test-bin/core-reference/command_work-ba5d901dcb4c9adc",
+      "sha256": "b90f7cf07737e2f91d6938f898f392c6fb7eedc931ca6f8aba9d37088fcb36ab",
+      "bytes": 9220144
+    },
+    "archived_retained": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/initial-build/test-bin/core-reference/command_work-ba5d901dcb4c9adc",
+    "sha256": "b90f7cf07737e2f91d6938f898f392c6fb7eedc931ca6f8aba9d37088fcb36ab"
+  },
+  {
+    "original": {
+      "executed": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/target/release/deps/semantic_refresh-5c911c9074bef855",
+      "retained": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/test-bin/core-refresh/semantic_refresh-5c911c9074bef855",
+      "sha256": "dba755aec5b61adf11eeec1eeee4e2918728cafd1f30a67c8a1b064458f87d6d",
+      "bytes": 10641840
+    },
+    "archived_retained": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/initial-build/test-bin/core-refresh/semantic_refresh-5c911c9074bef855",
+    "sha256": "dba755aec5b61adf11eeec1eeee4e2918728cafd1f30a67c8a1b064458f87d6d"
+  },
+  {
+    "original": {
+      "executed": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/target/release/deps/semantic_trim-bfb70a35a2f8b456",
+      "retained": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/test-bin/core-trim/semantic_trim-bfb70a35a2f8b456",
+      "sha256": "230bb356ab0864b6c70a738be614fde23d856518a935a947e3f50ac38bff11b5",
+      "bytes": 9951232
+    },
+    "archived_retained": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/initial-build/test-bin/core-trim/semantic_trim-bfb70a35a2f8b456",
+    "sha256": "230bb356ab0864b6c70a738be614fde23d856518a935a947e3f50ac38bff11b5"
+  }
+]

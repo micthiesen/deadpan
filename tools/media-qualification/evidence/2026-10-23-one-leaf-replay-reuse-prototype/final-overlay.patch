@@ -1,0 +1,2614 @@
+--- a/crates/deadpan-cli/src/macros.rs
++++ b/crates/deadpan-cli/src/macros.rs
+@@ -194,20 +194,22 @@
+                 "Selection-only plan has no Compound",
+             ))
+         })?;
+-        match &self.transcript_guard {
+-            Some(guard) => {
+-                store.commit_compound_with_transcript_guard_prepared(request, None, guard, prepare)
+-            }
+-            None => store.commit_compound_prepared(request, None, prepare),
+-        }
+-        .map_err(|error| match error {
+-            deadpan_store::CompoundPreparationError::Store(error) => {
+-                PreparedCommitError::Commit(LiveError::store(error))
+-            }
+-            deadpan_store::CompoundPreparationError::Preparation(error) => {
+-                PreparedCommitError::Preparation(error)
+-            }
+-        })
++        store
++            .commit_compound_prepared_with_one_leaf(
++                request,
++                None,
++                self.transcript_guard.as_ref(),
++                self.plan.one_leaf_replay(),
++                prepare,
++            )
++            .map_err(|error| match error {
++                deadpan_store::CompoundPreparationError::Store(error) => {
++                    PreparedCommitError::Commit(LiveError::store(error))
++                }
++                deadpan_store::CompoundPreparationError::Preparation(error) => {
++                    PreparedCommitError::Preparation(error)
++                }
++            })
+     }
+ 
+     pub fn validate_selection_at(
+--- a/crates/deadpan-core/src/audio_reference.rs
++++ b/crates/deadpan-core/src/audio_reference.rs
+@@ -3585,6 +3585,131 @@
+         assert!(!Arc::ptr_eq(&rebuilt.inner, &layout.inner));
+     }
+ 
++    #[test]
++    fn one_leaf_replay_equal_provisional_value_cannot_bypass_wire_admission() {
++        let mut entry = reuse_wide_document(64);
++        let alias = reuse_id("hold-00032");
++        let timing = crate::AudioTimingId {
++            allocation: RevisionId::new("captured").unwrap(),
++            ordinal: 0,
++        };
++        let provisional =
++            FrozenAudioLayout::capture_scoped(&entry, &BTreeSet::from([alias.clone()]))
++                .unwrap()
++                .unwrap();
++        let normal = provisional.sliced(provisional.nodes.keys()).unwrap();
++        assert_eq!(provisional, normal);
++        assert!(provisional.to_json().is_err());
++        assert!(normal.to_json().is_ok());
++        let (mut bindings, _) =
++            crate::audio_binding_lifecycle::capture_for_insertion(&entry, timing.clone()).unwrap();
++        bindings.bindings.retain(|owner, _| owner == &alias);
++        bindings.timings.insert(timing.clone(), normal);
++        entry.audio_bindings = bindings;
++        entry.validate().unwrap();
++        let mut intermediate = entry.clone();
++        intermediate
++            .audio_bindings
++            .timings
++            .insert(timing, provisional);
++        assert_eq!(entry, intermediate);
++        assert!(entry.to_compact_json().is_ok());
++        assert!(intermediate.to_compact_json().is_err());
++        let plan = |document: &ProjectDocument| {
++            crate::plan_semantic_with_speech(
++                document,
++                &crate::SemanticContext {
++                    original: None,
++                    scoped: None,
++                    hold_duration: None,
++                    shared_hold_duration: None,
++                    mixed_hold_duration: None,
++                    selected_hold_duration: None,
++                    parent: reuse_id("root"),
++                    cursor: crate::ProjectFrame(129),
++                    selected_child: None,
++                    visual_selection: None,
++                },
++                &crate::SemanticProgram::new(vec![crate::SemanticInstruction::InsertPause {
++                    length: crate::PauseLength::Frames {
++                        frames: std::num::NonZeroU32::new(2).unwrap(),
++                    },
++                    black: false,
++                }])
++                .unwrap(),
++                crate::SemanticRegisterBank {
++                    entries: &BTreeMap::new(),
++                    version: 0,
++                },
++                RevisionId::new("reuse-outer").unwrap(),
++                |request| {
++                    let crate::SemanticAllocationRequest::InsertPause {
++                        required_split_ids, ..
++                    } = request
++                    else {
++                        panic!("pause")
++                    };
++                    Ok(crate::SemanticAllocation::InsertPause {
++                        new_revision: RevisionId::new("reuse-leaf").unwrap(),
++                        id: reuse_id("reuse-pause"),
++                        split: crate::SplitIdentities {
++                            nodes: (0..required_split_ids)
++                                .map(|index| reuse_id(&format!("reuse-split-{index}")))
++                                .collect(),
++                        },
++                    })
++                },
++                |_, _| panic!("no Original lookup"),
++                |_| panic!("no speech"),
++                |_, _| {
++                    Ok(crate::PauseProvider {
++                        video: HoldVideo::Background,
++                        picture_context: None,
++                        audio: HoldAudio::Silence,
++                    })
++                },
++            )
++        };
++        let planned = plan(&entry).unwrap();
++        let candidate = planned.one_leaf_replay().unwrap();
++        let request = planned.request.as_ref().unwrap();
++        let crate::Command::Compound { transaction } = &request.command else {
++            panic!("compound")
++        };
++        let leaf = transaction.steps()[0].edit().unwrap().request(&entry);
++        assert!(candidate.reuse(&entry, &leaf).unwrap().is_some());
++        assert!(candidate.reuse(&intermediate, &leaf).unwrap().is_none());
++        let expected =
++            crate::compound::wire::size(&intermediate, MAX_DOCUMENT_JSON_BYTES).unwrap_err();
++        // Successful normal planning cannot expose a candidate from the
++        // nonserializable equal intermediate, regardless of equality.
++        assert_eq!(plan(&intermediate).unwrap_err(), expected);
++        let mut visits = 0;
++        let cached = match crate::replay_compound_with_one_leaf::<crate::EditError>(
++            &intermediate,
++            request,
++            |_| {
++                visits += 1;
++                Ok(())
++            },
++            Some(candidate),
++        ) {
++            Err(error) => error,
++            Ok(_) => panic!("provisional replay unexpectedly succeeded"),
++        };
++        assert_eq!(visits, 0);
++        let plain = match crate::replay_compound::<crate::EditError>(&intermediate, request, |_| {
++            visits += 1;
++            Ok(())
++        }) {
++            Err(error) => error,
++            Ok(_) => panic!("provisional replay unexpectedly succeeded"),
++        };
++        assert_eq!(visits, 0);
++        assert_eq!(cached, expected);
++        assert_eq!(cached, plain);
++    }
++
+     /// A random valid tree of Sequences (some empty), Holds, Repeats and
+     /// unity Partitions, returning the document and its node identities.
+     fn document(random: &mut Lcg) -> (ProjectDocument, Vec<NodeId>) {
+--- a/crates/deadpan-core/src/compound.rs
++++ b/crates/deadpan-core/src/compound.rs
+@@ -242,8 +242,29 @@
+ pub(crate) fn replay_compound_captured<E: From<EditError>>(
+     document: &ProjectDocument,
+     request: &CommandRequest,
++    visit: impl FnMut(CompoundVisit<'_>) -> Result<(), E>,
++    isolation: Option<&mut Vec<crate::ScopedIsolationStep>>,
++) -> Result<CompoundOutcome, E> {
++    replay_compound_inner(document, request, visit, isolation, None)
++}
++
++/// Replay with an optional immutable result of Core's own exact semantic leaf.
++/// Every replay prefix charge, host visit and final aggregate still executes.
++pub fn replay_compound_with_one_leaf<E: From<EditError>>(
++    document: &ProjectDocument,
++    request: &CommandRequest,
++    visit: impl FnMut(CompoundVisit<'_>) -> Result<(), E>,
++    candidate: Option<&crate::OneLeafReplay>,
++) -> Result<CompoundOutcome, E> {
++    replay_compound_inner(document, request, visit, None, candidate)
++}
++
++fn replay_compound_inner<E: From<EditError>>(
++    document: &ProjectDocument,
++    request: &CommandRequest,
+     mut visit: impl FnMut(CompoundVisit<'_>) -> Result<(), E>,
+     mut isolation: Option<&mut Vec<crate::ScopedIsolationStep>>,
++    candidate: Option<&crate::OneLeafReplay>,
+ ) -> Result<CompoundOutcome, E> {
+     crate::command::check_revision(
+         document,
+@@ -324,7 +345,18 @@
+                 isolation.extend(steps);
+                 next
+             } else {
+-                crate::apply_with_result(&current, leaf)?.1
++                let reused = if crate::one_leaf_replay::eligible_compound(request) {
++                    match candidate {
++                        Some(candidate) => candidate.reuse(&current, leaf)?,
++                        None => None,
++                    }
++                } else {
++                    None
++                };
++                match reused {
++                    Some(next) => next,
++                    None => crate::apply_with_result(&current, leaf)?.1,
++                }
+             };
+             let size = wire::size(&next, crate::MAX_DOCUMENT_JSON_BYTES)?;
+             charge(
+--- a/crates/deadpan-core/src/insert_time/retimed.rs
++++ b/crates/deadpan-core/src/insert_time/retimed.rs
+@@ -131,6 +131,188 @@
+ /// which the ordinary sealed-content check must not refuse. Clears the flag.
+ pub(crate) fn take_exact_edit() -> bool {
+     EXACT_EDIT.with(|flag| flag.replace(false))
++}
++
++#[cfg(test)]
++mod one_leaf_replay_tests {
++    use super::*;
++
++    #[test]
++    fn one_leaf_replay_consumes_stale_exact_edit_at_both_ordinary_boundaries() {
++        let id = |name: &str| NodeId::new(name).unwrap();
++        let revision = |name: &str| crate::RevisionId::new(name).unwrap();
++        let mut entry = ProjectDocument::new(
++            crate::ProjectId::new("exact-cache").unwrap(),
++            revision("entry"),
++            crate::basis::default_basis(),
++            id("root"),
++        )
++        .unwrap();
++        entry.nodes.insert(
++            id("hold"),
++            BeatNode::hold(
++                "Hold",
++                HoldRecipe {
++                    duration: FrameDuration::new(8).unwrap(),
++                    picture_context: None,
++                    video: crate::HoldVideo::Background,
++                    audio: crate::HoldAudio::Silence,
++                },
++            ),
++        );
++        entry
++            .nodes
++            .insert(id("root"), BeatNode::sequence("Root", vec![id("hold")]));
++        let planned = crate::plan_semantic_with_speech(
++            &entry,
++            &crate::SemanticContext {
++                original: None,
++                scoped: None,
++                hold_duration: None,
++                shared_hold_duration: None,
++                mixed_hold_duration: None,
++                selected_hold_duration: None,
++                parent: id("root"),
++                cursor: ProjectFrame(3),
++                selected_child: None,
++                visual_selection: None,
++            },
++            &crate::SemanticProgram::new(vec![crate::SemanticInstruction::InsertPause {
++                length: crate::PauseLength::Frames {
++                    frames: std::num::NonZeroU32::new(2).unwrap(),
++                },
++                black: false,
++            }])
++            .unwrap(),
++            crate::SemanticRegisterBank {
++                entries: &BTreeMap::new(),
++                version: 0,
++            },
++            revision("outer"),
++            |request| {
++                let crate::SemanticAllocationRequest::InsertPause {
++                    required_split_ids, ..
++                } = request
++                else {
++                    panic!("pause")
++                };
++                Ok(crate::SemanticAllocation::InsertPause {
++                    new_revision: revision("leaf"),
++                    id: id("pause"),
++                    split: crate::SplitIdentities {
++                        nodes: (0..required_split_ids)
++                            .map(|n| id(&format!("split-{n}")))
++                            .collect(),
++                    },
++                })
++            },
++            |_, _| panic!("no Original"),
++            |_| panic!("no speech"),
++            |_, _| {
++                Ok(crate::PauseProvider {
++                    video: crate::HoldVideo::Background,
++                    picture_context: None,
++                    audio: crate::HoldAudio::Silence,
++                })
++            },
++        )
++        .unwrap();
++        let request = planned.request.as_ref().unwrap();
++        let candidate = planned.one_leaf_replay().unwrap();
++        EXACT_EDIT.with(|flag| flag.set(true));
++        let cached = crate::replay_compound_with_one_leaf::<EditError>(
++            &entry,
++            request,
++            |_| Ok(()),
++            Some(candidate),
++        )
++        .unwrap();
++        assert!(!take_exact_edit());
++        EXACT_EDIT.with(|flag| flag.set(true));
++        let plain = crate::replay_compound::<EditError>(&entry, request, |_| Ok(())).unwrap();
++        assert!(!take_exact_edit());
++        assert_eq!(cached.document, plain.document);
++        assert_eq!(cached.edit, plain.edit);
++        let crate::Command::Compound { transaction } = &request.command else {
++            panic!("compound")
++        };
++        let mut fallback = request.clone();
++        let mut steps = transaction.steps().to_vec();
++        let crate::ResolvedStep::Edit { edit } = &mut steps[0] else {
++            panic!("Edit")
++        };
++        let mut command = edit.command.as_command().clone();
++        let Command::InsertTime { hold, .. } = &mut command else {
++            panic!("InsertTime")
++        };
++        hold.duration = FrameDuration::new(3).unwrap();
++        edit.command = crate::AtomicCommand::new(command).unwrap();
++        fallback.command = Command::Compound {
++            transaction: crate::ResolvedTransaction::new(
++                transaction.expected_bank_version(),
++                transaction.inputs().clone(),
++                steps,
++            )
++            .unwrap(),
++        };
++        for permitted in [false, true] {
++            crate::command_work::with_scoped_timing_captures(permitted, || {
++                assert_eq!(crate::command_work::scoped_timing_captures(), permitted);
++                for request in [request, &fallback] {
++                    let cached = crate::replay_compound_with_one_leaf::<EditError>(
++                        &entry,
++                        request,
++                        |_| Ok(()),
++                        Some(candidate),
++                    )
++                    .unwrap();
++                    assert_eq!(crate::command_work::scoped_timing_captures(), permitted);
++                    let plain =
++                        crate::replay_compound::<EditError>(&entry, request, |_| Ok(())).unwrap();
++                    assert_eq!(crate::command_work::scoped_timing_captures(), permitted);
++                    assert_eq!(
++                        cached.document.to_compact_json(),
++                        plain.document.to_compact_json()
++                    );
++                    assert_eq!(cached.edit, plain.edit);
++                    assert_eq!(cached.register_writes, plain.register_writes);
++                    assert!(!take_exact_edit());
++                }
++            });
++        }
++        // A later ordinary refusal also clears the same destructive flag.
++        let mut stale = transaction.steps()[0].edit().unwrap().request(&entry);
++        stale.expected_revision = revision("wrong");
++        EXACT_EDIT.with(|flag| flag.set(true));
++        let cached_later = crate::apply_with_result(&entry, &stale).unwrap_err();
++        assert!(!take_exact_edit());
++        let plain_later = crate::apply_with_result(&entry, &stale).unwrap_err();
++        assert_eq!(cached_later, plain_later);
++        // Outer-prefix refusal never enters a leaf, so it must not consume a
++        // stale flag early merely because a witness was supplied.
++        let mut wrong_outer = request.clone();
++        wrong_outer.expected_revision = revision("wrong-outer");
++        EXACT_EDIT.with(|flag| flag.set(true));
++        let cached_error = match crate::replay_compound_with_one_leaf::<EditError>(
++            &entry,
++            &wrong_outer,
++            |_| panic!("prefix refused"),
++            Some(candidate),
++        ) {
++            Err(error) => error,
++            Ok(_) => panic!("outer revision conflict unexpectedly succeeded"),
++        };
++        assert!(take_exact_edit());
++        EXACT_EDIT.with(|flag| flag.set(true));
++        let plain_error = match crate::replay_compound::<EditError>(&entry, &wrong_outer, |_| {
++            panic!("prefix refused")
++        }) {
++            Err(error) => error,
++            Ok(_) => panic!("outer revision conflict unexpectedly succeeded"),
++        };
++        assert!(take_exact_edit());
++        assert_eq!(cached_error, plain_error);
++    }
+ }
+ 
+ /// Document content the retimed path cannot yet transform.
+--- a/crates/deadpan-core/src/lib.rs
++++ b/crates/deadpan-core/src/lib.rs
+@@ -34,6 +34,8 @@
+     with_reference_command_work,
+ };
+ mod compound;
++mod one_leaf_replay;
++pub use one_leaf_replay::OneLeafReplay;
+ mod cutaway;
+ mod derived_clock;
+ mod document;
+--- a/crates/deadpan-core/src/one_leaf_replay.rs
++++ b/crates/deadpan-core/src/one_leaf_replay.rs
+@@ -0,0 +1,372 @@
++//! One exact, successfully applied ordinary semantic leaf. No host proof or
++//! mutable plan field can construct or retarget this in-memory capability.
++
++use crate::{Command, CommandRequest, EditError, ProjectDocument, ResolvedStep};
++
++/// An optional result of Core's own one-leaf semantic application. Its complete
++/// entry, request and leaf-revision result are private immutable values. It is
++/// never serialized, cloned as a capability, or stored in authored history.
++pub struct OneLeafReplay {
++    entry: ProjectDocument,
++    request: CommandRequest,
++    next: ProjectDocument,
++}
++
++impl std::fmt::Debug for OneLeafReplay {
++    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
++        formatter
++            .debug_struct("OneLeafReplay")
++            .finish_non_exhaustive()
++    }
++}
++
++fn eligible_value(document: &ProjectDocument) -> bool {
++    document.derived_clocks().is_empty() && !document.audio_bindings().has_provisional_timings()
++}
++
++fn eligible_mode() -> bool {
++    crate::command_work::local() && crate::audio_binding_lifecycle::compact_representation()
++}
++
++pub(crate) fn eligible_compound(request: &CommandRequest) -> bool {
++    matches!(&request.command, Command::Compound { transaction }
++        if transaction.inputs().is_empty()
++            && matches!(transaction.steps(), [ResolvedStep::Edit { edit }]
++                if matches!(edit.command.as_command(), Command::InsertTime { .. })))
++}
++
++/// Own the application as well as sealing its result. The caller's unchanged
++/// post-leaf serialization/charge must succeed before a capability is created.
++pub(crate) fn apply_semantic_leaf(
++    entry: &ProjectDocument,
++    request: &CommandRequest,
++    retain: bool,
++    admit_next: impl FnOnce(&ProjectDocument) -> Result<(), EditError>,
++) -> Result<(ProjectDocument, Option<OneLeafReplay>), EditError> {
++    let (_, next) = crate::apply_with_result(entry, request)?;
++    admit_next(&next)?;
++    let candidate = (retain
++        && eligible_mode()
++        && eligible_value(entry)
++        && eligible_value(&next)
++        && matches!(&request.command, Command::InsertTime { .. }))
++    .then(|| OneLeafReplay {
++        entry: entry.clone(),
++        request: request.clone(),
++        next: next.clone(),
++    });
++    Ok((next, candidate))
++}
++
++impl OneLeafReplay {
++    /// Called only at replay's ordinary leaf boundary, after all original
++    /// prefix admission, canonical serialization, ledger and work charges.
++    pub(crate) fn reuse(
++        &self,
++        entry: &ProjectDocument,
++        request: &CommandRequest,
++    ) -> Result<Option<ProjectDocument>, EditError> {
++        if !eligible_mode()
++            || !eligible_value(entry)
++            || !eligible_value(&self.entry)
++            || !eligible_value(&self.next)
++            || entry != &self.entry
++            || request != &self.request
++        {
++            return Ok(None);
++        }
++        // Ordinary apply clears this destructive TLS before leaf revision
++        // admission and consumes it again before preserving exact clocks.
++        crate::insert_time::retimed::take_exact_edit();
++        crate::command::check_revision(
++            entry,
++            &request.project_id,
++            &request.expected_revision,
++            &request.new_revision,
++        )?;
++        let next = self.next.clone();
++        if !crate::insert_time::retimed::take_exact_edit() {
++            crate::derived_clock::sealed_preserved(entry, &next)?;
++        }
++        Ok(Some(next))
++    }
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++
++    fn fixture() -> (ProjectDocument, CommandRequest) {
++        let id = |value: &str| crate::NodeId::new(value).unwrap();
++        let mut entry = ProjectDocument::new(
++            crate::ProjectId::new("private-leaf").unwrap(),
++            crate::RevisionId::new("entry").unwrap(),
++            crate::basis::default_basis(),
++            id("root"),
++        )
++        .unwrap();
++        let recipe = |frames| crate::HoldRecipe {
++            duration: crate::FrameDuration::new(frames).unwrap(),
++            picture_context: None,
++            video: crate::HoldVideo::Background,
++            audio: crate::HoldAudio::Silence,
++        };
++        entry
++            .nodes
++            .insert(id("hold"), crate::BeatNode::hold("Held", recipe(8)));
++        entry.nodes.insert(
++            id("root"),
++            crate::BeatNode::sequence("Root", vec![id("hold")]),
++        );
++        entry.validate().unwrap();
++        crate::compound::wire::size(&entry, crate::MAX_DOCUMENT_JSON_BYTES).unwrap();
++        let split = entry
++            .insert_time_target(crate::ProjectFrame(3))
++            .unwrap()
++            .split
++            .unwrap();
++        let request = CommandRequest {
++            project_id: entry.project_id().clone(),
++            expected_revision: entry.revision_id().clone(),
++            new_revision: crate::RevisionId::new("leaf").unwrap(),
++            command: Command::InsertTime {
++                at: crate::ProjectFrame(3),
++                hold: recipe(2),
++                id: id("pause"),
++                identities: crate::SplitIdentities {
++                    nodes: (0..split.required_ids)
++                        .map(|n| id(&format!("split-{n}")))
++                        .collect(),
++                },
++                timing: crate::AudioTimingId {
++                    allocation: crate::RevisionId::new("leaf").unwrap(),
++                    ordinal: 0,
++                },
++            },
++        };
++        (entry, request)
++    }
++
++    fn serialize(next: &ProjectDocument) -> Result<(), EditError> {
++        crate::compound::wire::size(next, crate::MAX_DOCUMENT_JSON_BYTES).map(|_| ())
++    }
++
++    #[test]
++    fn one_leaf_replay_private_hit_is_exact_and_mode_misses_do_not_return_a_result() {
++        let (entry, request) = fixture();
++        let (next, candidate) = apply_semantic_leaf(&entry, &request, true, serialize).unwrap();
++        let candidate = candidate.unwrap();
++        assert_eq!(candidate.reuse(&entry, &request).unwrap().unwrap(), next);
++        assert!(
++            crate::with_reference_command_work(|| candidate.reuse(&entry, &request))
++                .unwrap()
++                .is_none()
++        );
++        assert!(
++            crate::with_reference_timing_representation(|| candidate.reuse(&entry, &request))
++                .unwrap()
++                .is_none()
++        );
++        let mut changed = entry.clone();
++        changed
++            .nodes
++            .get_mut(&crate::NodeId::new("hold").unwrap())
++            .unwrap()
++            .label = "Different".into();
++        assert!(candidate.reuse(&changed, &request).unwrap().is_none());
++        assert!(
++            crate::with_reference_command_work(|| apply_semantic_leaf(
++                &entry, &request, true, serialize
++            ))
++            .unwrap()
++            .1
++            .is_none()
++        );
++        assert!(
++            crate::with_reference_timing_representation(|| apply_semantic_leaf(
++                &entry, &request, true, serialize
++            ))
++            .unwrap()
++            .1
++            .is_none()
++        );
++    }
++
++    #[test]
++    fn one_leaf_replay_post_leaf_admission_failure_returns_no_capability() {
++        let (entry, request) = fixture();
++        let refused = EditError::new(
++            crate::EditErrorCode::LimitExceeded,
++            "post-leaf admission refused",
++        );
++        let result = apply_semantic_leaf(&entry, &request, true, |_| Err(refused.clone()));
++        assert_eq!(result.unwrap_err(), refused);
++        // A failed admission leaves no reusable state behind for another call.
++        let (next, candidate) = apply_semantic_leaf(&entry, &request, true, serialize).unwrap();
++        assert_eq!(
++            candidate.unwrap().reuse(&entry, &request).unwrap().unwrap(),
++            next
++        );
++    }
++
++    fn wide_fixture() -> (ProjectDocument, CommandRequest) {
++        let (mut entry, request) = fixture();
++        let mut children = vec![crate::NodeId::new("hold").unwrap()];
++        // Empty ordinary groups add no picture time. Escaped legal labels let
++        // this reach the real 64 MiB wire cap with only 12,002 valid nodes.
++        for index in 0..12_000 {
++            let id = crate::NodeId::new(format!("padding-{index}")).unwrap();
++            entry
++                .nodes
++                .insert(id.clone(), crate::BeatNode::sequence("", vec![]));
++            children.push(id);
++        }
++        entry.nodes.insert(
++            crate::NodeId::new("root").unwrap(),
++            crate::BeatNode::sequence("Root", children),
++        );
++        entry.validate().unwrap();
++        (entry, request)
++    }
++
++    fn pad_wire_by(entry: &mut ProjectDocument, mut additional: usize) {
++        for index in 0..12_000 {
++            let count = additional.min(6_000);
++            let label = format!("{}{}", "\u{1}".repeat(count / 6), "x".repeat(count % 6));
++            assert!(label.len() <= 1_024);
++            entry
++                .nodes
++                .get_mut(&crate::NodeId::new(format!("padding-{index}")).unwrap())
++                .unwrap()
++                .label = label;
++            additional -= count;
++        }
++        assert_eq!(additional, 0);
++        entry.validate().unwrap();
++    }
++
++    fn replay_error(
++        entry: &ProjectDocument,
++        leaf: &CommandRequest,
++        outer: &str,
++        candidate: Option<&OneLeafReplay>,
++    ) -> (EditError, usize) {
++        let request = CommandRequest {
++            project_id: entry.project_id().clone(),
++            expected_revision: entry.revision_id().clone(),
++            new_revision: crate::RevisionId::new(outer).unwrap(),
++            command: Command::Compound {
++                transaction: crate::ResolvedTransaction::new(
++                    0,
++                    Default::default(),
++                    vec![ResolvedStep::Edit {
++                        edit: crate::LeafEdit::new(leaf.new_revision.clone(), leaf.command.clone())
++                            .unwrap(),
++                    }],
++                )
++                .unwrap(),
++            },
++        };
++        let mut visits = 0;
++        let result = crate::replay_compound_with_one_leaf(
++            entry,
++            &request,
++            |_| {
++                visits += 1;
++                Ok::<(), EditError>(())
++            },
++            candidate,
++        );
++        let error = match result {
++            Err(error) => error,
++            Ok(_) => panic!("wire-boundary replay unexpectedly succeeded"),
++        };
++        (error, visits)
++    }
++
++    #[test]
++    fn one_leaf_replay_real_wire_boundaries_preserve_initial_post_and_final_refusals() {
++        let (small, small_request) = fixture();
++        let (_, small_candidate) =
++            apply_semantic_leaf(&small, &small_request, true, serialize).unwrap();
++        let small_candidate = small_candidate.unwrap();
++        let limit = crate::MAX_DOCUMENT_JSON_BYTES;
++        let wire_size =
++            |entry: &ProjectDocument| crate::compound::wire::size(entry, usize::MAX).unwrap();
++
++        // Initial wins before the duplicate pre-leaf traversal. A one-leaf
++        // pre-leaf value is identical, so it cannot newly exceed this cap.
++        {
++            let (mut entry, request) = wide_fixture();
++            let added = limit + 1 - wire_size(&entry);
++            pad_wire_by(&mut entry, added);
++            assert_eq!(wire_size(&entry), limit + 1);
++            let expected = serialize(&entry).unwrap_err();
++            assert_eq!(
++                replay_error(&entry, &request, "outer", None),
++                (expected.clone(), 0)
++            );
++            assert_eq!(
++                replay_error(&entry, &request, "outer", Some(&small_candidate)),
++                (expected, 0)
++            );
++        }
++        // A changed entry misses. Original leaf application reaches the real
++        // post-result cap before any visitor; creation cannot seal that result.
++        {
++            let (mut entry, request) = wide_fixture();
++            let (_, next) = crate::apply_with_result(&entry, &request).unwrap();
++            let added = limit + 1 - wire_size(&next);
++            drop(next);
++            pad_wire_by(&mut entry, added);
++            serialize(&entry).unwrap();
++            let (_, next) = crate::apply_with_result(&entry, &request).unwrap();
++            assert_eq!(wire_size(&next), limit + 1);
++            let expected = serialize(&next).unwrap_err();
++            drop(next);
++            let error = match apply_semantic_leaf(&entry, &request, true, serialize) {
++                Err(error) => error,
++                Ok(_) => panic!("oversized result unexpectedly sealed"),
++            };
++            assert_eq!(error, expected);
++            assert_eq!(
++                replay_error(&entry, &request, "outer", None),
++                (expected.clone(), 0)
++            );
++            assert_eq!(
++                replay_error(&entry, &request, "outer", Some(&small_candidate)),
++                (expected, 0)
++            );
++        }
++        // Leaf result exactly at the cap seals successfully. A longer public
++        // outer revision still fails final serialization after the one visit.
++        {
++            let (mut entry, request) = wide_fixture();
++            let (_, next) = crate::apply_with_result(&entry, &request).unwrap();
++            let added = limit - wire_size(&next);
++            drop(next);
++            pad_wire_by(&mut entry, added);
++            serialize(&entry).unwrap();
++            let (next, candidate) = apply_semantic_leaf(&entry, &request, true, serialize).unwrap();
++            assert_eq!(wire_size(&next), limit);
++            let candidate = candidate.unwrap();
++            let reused = candidate.reuse(&entry, &request).unwrap().unwrap();
++            assert!(reused == next, "exact-cap reuse changed its result");
++            drop(reused);
++            let mut final_value = next;
++            final_value.revision_id = crate::RevisionId::new("o".repeat(128)).unwrap();
++            let expected = serialize(&final_value).unwrap_err();
++            assert_eq!(
++                replay_error(&entry, &request, &"o".repeat(128), None),
++                (expected.clone(), 1)
++            );
++            assert_eq!(
++                replay_error(&entry, &request, &"o".repeat(128), Some(&candidate)),
++                (expected, 1)
++            );
++        }
++        // Even four maximum successful traversals total only 256 MiB. The
++        // unchanged 512 MiB cumulative document cap cannot fail for one leaf.
++        assert!(limit.checked_mul(4).unwrap() < crate::MAX_COMPOUND_DOCUMENT_BYTES);
++    }
++}
+--- a/crates/deadpan-core/src/semantic/planner.rs
++++ b/crates/deadpan-core/src/semantic/planner.rs
+@@ -411,6 +411,7 @@
+ 
+ #[derive(Debug)]
+ pub struct SemanticPlan {
++    one_leaf_replay: Option<crate::OneLeafReplay>,
+     /// Motion-only programs produce no request. A Yank-only request updates the
+     /// bank without changing `document`'s revision or creating authored history.
+     pub request: Option<CommandRequest>,
+@@ -421,6 +422,14 @@
+     /// Final writes only, including the unnamed alias of each named cut.
+     pub register_writes: BTreeMap<RegisterName, Arc<RegisterValue>>,
+     pub trace: Vec<SemanticTrace>,
++}
++
++impl SemanticPlan {
++    /// Optional immutable result of Core's own exact ordinary one-leaf apply.
++    /// Public plan mutations cannot modify its private entry/request/result.
++    pub fn one_leaf_replay(&self) -> Option<&crate::OneLeafReplay> {
++        self.one_leaf_replay.as_ref()
++    }
+ }
+ 
+ /// Resolve and apply each instruction once against the preceding staged state.
+@@ -692,6 +701,7 @@
+     let child_ends = child_ends(document, &context.parent, bounds)?;
+     let mut planner = Planner {
+         current: document.clone(),
++        one_leaf_replay: None,
+         context: context.clone(),
+         bounds,
+         child_indices: child_indices(&child_ends),
+@@ -742,7 +752,17 @@
+             },
+         })
+     };
++    let one_leaf_replay = if planner.writes.is_empty()
++        && request
++            .as_ref()
++            .is_some_and(crate::one_leaf_replay::eligible_compound)
++    {
++        planner.one_leaf_replay
++    } else {
++        None
++    };
+     Ok(SemanticPlan {
++        one_leaf_replay,
+         request,
+         document: planner.current,
+         context: planner.context,
+@@ -754,6 +774,7 @@
+ 
+ struct Planner<'a, F, R, S, P> {
+     current: ProjectDocument,
++    one_leaf_replay: Option<crate::OneLeafReplay>,
+     context: SemanticContext,
+     bounds: (ProjectFrame, ProjectFrame),
+     /// Updated only after an authored leaf. Frame motions use a binary search
+--- a/crates/deadpan-core/src/semantic/planner/content.rs
++++ b/crates/deadpan-core/src/semantic/planner/content.rs
+@@ -640,6 +640,11 @@
+                 "macro captured document byte limit",
+             )?;
+         }
++        // A second resolved operation cannot retain or replace the first
++        // leaf's witness, including non-editing register captures.
++        if !self.steps.is_empty() {
++            self.one_leaf_replay = None;
++        }
+         Ok(())
+     }
+ 
+--- a/crates/deadpan-core/src/semantic/planner/pause.rs
++++ b/crates/deadpan-core/src/semantic/planner/pause.rs
+@@ -1067,13 +1067,21 @@
+ 
+     /// Apply one leaf to the staged document within the byte limits.
+     pub(super) fn commit_leaf(&mut self, edit: LeafEdit) -> Result<(), EditError> {
+-        let (_, next) = crate::apply_with_result(&self.current, &edit.request(&self.current))?;
+-        charge(
+-            &mut self.document_bytes,
+-            wire::size(&next, MAX_DOCUMENT_JSON_BYTES)?,
+-            MAX_COMPOUND_DOCUMENT_BYTES,
+-            "macro staged document byte limit",
+-        )?;
++        let document_bytes = &mut self.document_bytes;
++        let (next, candidate) = crate::one_leaf_replay::apply_semantic_leaf(
++            &self.current,
++            &edit.request(&self.current),
++            self.steps.is_empty() && self.inputs.is_empty() && self.writes.is_empty(),
++            |next| {
++                charge(
++                    document_bytes,
++                    wire::size(next, MAX_DOCUMENT_JSON_BYTES)?,
++                    MAX_COMPOUND_DOCUMENT_BYTES,
++                    "macro staged document byte limit",
++                )
++            },
++        )?;
++        self.one_leaf_replay = candidate;
+         self.current = next;
+         self.steps.push(ResolvedStep::Edit { edit });
+         self.refresh_children()
+--- a/crates/deadpan-core/src/semantic/planner/tests.rs
++++ b/crates/deadpan-core/src/semantic/planner/tests.rs
+@@ -913,6 +913,7 @@
+             Err(invalid("work-budget fixture does not resolve framing"))
+         };
+         let mut planner = Planner {
++            one_leaf_replay: None,
+             current: document.clone(),
+             context: context("root", 0),
+             bounds: (ProjectFrame(0), ProjectFrame(8)),
+--- a/crates/deadpan-core/tests/semantic_leaf_replay.rs
++++ b/crates/deadpan-core/tests/semantic_leaf_replay.rs
+@@ -0,0 +1,888 @@
++//! Refuting tests for the opaque, exact-value one-InsertTime replay witness.
++//! No test manufactures a witness or observes it through a mutable API.
++
++use std::collections::BTreeMap;
++use std::num::NonZeroU32;
++use std::sync::Arc;
++
++use deadpan_core::*;
++use serde_json::{Value, json};
++
++fn id(value: &str) -> NodeId {
++    NodeId::new(value).unwrap()
++}
++fn revision(value: &str) -> RevisionId {
++    RevisionId::new(value).unwrap()
++}
++fn frames(value: i64) -> FrameDuration {
++    FrameDuration::new(value).unwrap()
++}
++fn range(start: i64, end: i64) -> FrameRange {
++    FrameRange::new(ProjectFrame(start), ProjectFrame(end)).unwrap()
++}
++fn hold(duration: i64) -> BeatNode {
++    BeatNode::hold(
++        "Held",
++        HoldRecipe {
++            duration: frames(duration),
++            picture_context: None,
++            video: HoldVideo::Background,
++            audio: HoldAudio::Silence,
++        },
++    )
++}
++fn tree(children: Vec<NodeId>, mut nodes: BTreeMap<NodeId, BeatNode>) -> ProjectDocument {
++    nodes.insert(id("root"), BeatNode::sequence("Root", children));
++    ProjectDocument::from_json(&json!({
++        "schema_version": DOCUMENT_SCHEMA_VERSION, "project_id":"one-leaf", "revision_id":"entry",
++        "presentation_basis":{"width":16,"height":16,"frame_rate":{"numerator":30,"denominator":1},"color_policy":"sdr_rec709"},
++        "basis_state":{"rate_origin":"explicit","geometry_origin":"explicit","primary":null},
++        "root":"root", "nodes":nodes, "assets":{}, "marks":{}, "overrides":{}
++    }).to_string()).unwrap()
++}
++fn apply(document: &ProjectDocument, allocation: &str, command: Command) -> ProjectDocument {
++    let (edit, next) = apply_with_result(
++        document,
++        &CommandRequest {
++            project_id: document.project_id().clone(),
++            expected_revision: document.revision_id().clone(),
++            new_revision: revision(allocation),
++            command,
++        },
++    )
++    .unwrap();
++    assert_eq!(edit.forward.apply(document).unwrap(), next);
++    assert_eq!(edit.inverse.apply(&next).unwrap(), *document);
++    next
++}
++fn picture_context() -> CapturedFraming {
++    CapturedFraming::new(vec![CapturedCanvas {
++        width: 16,
++        height: 16,
++        fit: CapturedFit::Fit,
++        layers: vec![Some(
++            FramingPose::new(
++                ExactRatio::ZERO,
++                ExactRatio::new(1, 2).unwrap(),
++                ExactRatio::ONE,
++            )
++            .unwrap(),
++        )],
++    }])
++    .unwrap()
++}
++fn fixture(bound: bool) -> ProjectDocument {
++    let mut first = hold(12);
++    first.framing = Some(
++        Framing::static_pose(
++            FramingPose::new(
++                ExactRatio::ZERO,
++                ExactRatio::new(1, 2).unwrap(),
++                ExactRatio::ONE,
++            )
++            .unwrap(),
++        )
++        .unwrap(),
++    );
++    first.audio_treatments = first
++        .audio_treatments
++        .with_trim(GainDb::new(-3_000).unwrap())
++        .unwrap();
++    let document = tree(
++        vec![id("group"), id("tail")],
++        BTreeMap::from([
++            (
++                id("group"),
++                BeatNode::sequence("Group", vec![id("first"), id("empty"), id("second")]),
++            ),
++            (id("first"), first),
++            (id("empty"), BeatNode::sequence("Empty", vec![])),
++            (id("second"), hold(12)),
++            (id("tail"), hold(8)),
++        ]),
++    );
++    let document = apply(
++        &document,
++        "marked",
++        Command::SetMark {
++            id: MarkId::new("native-mark-m").unwrap(),
++            owner: id("first"),
++            label: "m".into(),
++            boundary: BoundaryAnchor {
++                coordinate: Anchor::Local {
++                    node: id("first"),
++                    position: ExactRatio::integer(9),
++                },
++                bias: InsertionBias::Right,
++            },
++            loss_policy: AnchorLossPolicy::DeleteOwned,
++        },
++    );
++    if !bound {
++        return document;
++    }
++    apply(
++        &document,
++        "seed-bindings",
++        Command::InsertTime {
++            at: ProjectFrame(32),
++            hold: HoldRecipe {
++                duration: frames(2),
++                picture_context: None,
++                video: HoldVideo::Background,
++                audio: HoldAudio::Silence,
++            },
++            id: id("seed-pause"),
++            identities: SplitIdentities { nodes: vec![] },
++            timing: AudioTimingId {
++                allocation: revision("seed-bindings"),
++                ordinal: 0,
++            },
++        },
++    )
++}
++fn context(parent: &str, cursor: i64) -> SemanticContext {
++    SemanticContext {
++        original: None,
++        scoped: None,
++        hold_duration: None,
++        shared_hold_duration: None,
++        mixed_hold_duration: None,
++        selected_hold_duration: None,
++        parent: id(parent),
++        cursor: ProjectFrame(cursor),
++        selected_child: Some(id("first")),
++        visual_selection: None,
++    }
++}
++fn pause(duration: u32) -> SemanticInstruction {
++    SemanticInstruction::InsertPause {
++        length: PauseLength::Frames {
++            frames: NonZeroU32::new(duration).unwrap(),
++        },
++        black: false,
++    }
++}
++fn motion(count: u32) -> SemanticInstruction {
++    SemanticInstruction::MoveFrames {
++        forward: true,
++        count: NonZeroU32::new(count).unwrap(),
++    }
++}
++fn cut() -> SemanticInstruction {
++    SemanticInstruction::CutFrames {
++        operation: FrameCut::new(1).unwrap(),
++        register: RegisterName::new('b').unwrap(),
++    }
++}
++fn allocate(request: SemanticAllocationRequest) -> SemanticAllocation {
++    match request {
++        SemanticAllocationRequest::InsertPause {
++            step_index,
++            required_split_ids,
++        } => SemanticAllocation::InsertPause {
++            new_revision: revision(&format!("leaf-{step_index}")),
++            id: id(&format!("pause-{step_index}")),
++            split: SplitIdentities {
++                nodes: (0..required_split_ids)
++                    .map(|index| id(&format!("pause-split-{step_index}-{index}")))
++                    .collect(),
++            },
++        },
++        SemanticAllocationRequest::InsertOccurrencePause {
++            step_index,
++            isolation_nodes,
++            isolation_marks,
++            split_nodes,
++            container,
++            gap,
++        } => SemanticAllocation::InsertOccurrencePause {
++            new_revision: revision(&format!("leaf-{step_index}")),
++            id: id(&format!("pause-{step_index}")),
++            identities: OccurrencePauseIdentities {
++                isolation: OccurrenceIdentities {
++                    nodes: (0..isolation_nodes)
++                        .map(|n| id(&format!("occurrence-{step_index}-{n}")))
++                        .collect(),
++                    marks: (0..isolation_marks)
++                        .map(|n| MarkId::new(format!("occurrence-mark-{step_index}-{n}")).unwrap())
++                        .collect(),
++                },
++                split: SplitIdentities {
++                    nodes: (0..split_nodes)
++                        .map(|n| id(&format!("occurrence-split-{step_index}-{n}")))
++                        .collect(),
++                },
++                container: container.then(|| id(&format!("container-{step_index}"))),
++                gap: gap.then(|| id(&format!("gap-{step_index}"))),
++            },
++        },
++        SemanticAllocationRequest::Cut {
++            step_index,
++            required_split_ids,
++        } => SemanticAllocation::Cut {
++            new_revision: revision(&format!("leaf-{step_index}")),
++            capture_revision: revision(&format!("capture-{step_index}")),
++            split_identities: SplitIdentities {
++                nodes: (0..required_split_ids)
++                    .map(|index| id(&format!("cut-split-{step_index}-{index}")))
++                    .collect(),
++            },
++        },
++        SemanticAllocationRequest::Yank { step_index } => SemanticAllocation::Yank {
++            capture_revision: revision(&format!("capture-{step_index}")),
++        },
++        SemanticAllocationRequest::ParameterEdit { step_index } => {
++            SemanticAllocation::ParameterEdit {
++                new_revision: revision(&format!("leaf-{step_index}")),
++            }
++        }
++        other => panic!("unexpected fixture allocation {other:?}"),
++    }
++}
++fn plan_in(
++    document: &ProjectDocument,
++    context: &SemanticContext,
++    instructions: Vec<SemanticInstruction>,
++    bank: &BTreeMap<RegisterName, Arc<RegisterValue>>,
++) -> SemanticPlan {
++    plan_in_namespace(document, context, instructions, bank, "")
++}
++fn plan_in_namespace(
++    document: &ProjectDocument,
++    context: &SemanticContext,
++    instructions: Vec<SemanticInstruction>,
++    bank: &BTreeMap<RegisterName, Arc<RegisterValue>>,
++    namespace: &str,
++) -> SemanticPlan {
++    plan_semantic_with_speech(
++        document,
++        context,
++        &SemanticProgram::new(instructions).unwrap(),
++        SemanticRegisterBank {
++            entries: bank,
++            version: 7,
++        },
++        revision(&format!("{namespace}outer")),
++        |request| {
++            let allocation = allocate(request);
++            if namespace.is_empty() {
++                return Ok(allocation);
++            }
++            let SemanticAllocation::InsertPause {
++                new_revision,
++                id: node,
++                split,
++            } = allocation
++            else {
++                panic!("fresh namespace is used only by a later pause")
++            };
++            Ok(SemanticAllocation::InsertPause {
++                new_revision: revision(&format!("{namespace}{new_revision}")),
++                id: id(&format!("{namespace}{node}")),
++                split: SplitIdentities {
++                    nodes: split
++                        .nodes
++                        .into_iter()
++                        .map(|node| id(&format!("{namespace}{node}")))
++                        .collect(),
++                },
++            })
++        },
++        |_, _| panic!("no Original register"),
++        |_| panic!("no speech analysis"),
++        |_, _| {
++            Ok(PauseProvider {
++                video: HoldVideo::Background,
++                picture_context: Some(picture_context()),
++                audio: HoldAudio::Silence,
++            })
++        },
++    )
++    .unwrap()
++}
++fn plan(document: &ProjectDocument, duration: u32) -> SemanticPlan {
++    plan_in(
++        document,
++        &context("group", 5),
++        vec![pause(duration)],
++        &BTreeMap::new(),
++    )
++}
++
++#[derive(Debug, PartialEq, Eq)]
++struct Visit {
++    before: String,
++    after: String,
++    request: Option<String>,
++    step: String,
++    value: Option<String>,
++}
++#[derive(Debug, PartialEq, Eq)]
++struct Replayed {
++    document: ProjectDocument,
++    edit: EditTransaction,
++    register_writes: BTreeMap<RegisterName, Arc<RegisterValue>>,
++    document_wire: String,
++    edit_wire: String,
++}
++fn host_refusal() -> EditError {
++    EditError {
++        code: EditErrorCode::SelectionUnavailable,
++        message: "host refused this exact staged value".into(),
++        current_revision: None,
++    }
++}
++fn replay(
++    document: &ProjectDocument,
++    request: &CommandRequest,
++    candidate: Option<&OneLeafReplay>,
++    legacy: bool,
++    refuse: bool,
++) -> (Result<Replayed, EditError>, Vec<Visit>) {
++    let mut visits = Vec::new();
++    let mut visit = |value: CompoundVisit<'_>| {
++        visits.push(Visit {
++            before: value.before.to_compact_json().unwrap(),
++            after: value.after.to_compact_json().unwrap(),
++            request: value
++                .request
++                .map(|request| serde_json::to_string(request).unwrap()),
++            step: serde_json::to_string(value.step).unwrap(),
++            value: value
++                .value
++                .map(|value| serde_json::to_string(value).unwrap()),
++        });
++        if refuse { Err(host_refusal()) } else { Ok(()) }
++    };
++    let result = if legacy {
++        replay_compound::<EditError>(document, request, &mut visit)
++    } else {
++        replay_compound_with_one_leaf::<EditError>(document, request, &mut visit, candidate)
++    };
++    let result = result.map(|outcome| Replayed {
++        document_wire: outcome.document.to_compact_json().unwrap(),
++        edit_wire: serde_json::to_string(&outcome.edit).unwrap(),
++        document: outcome.document,
++        edit: outcome.edit,
++        register_writes: outcome.register_writes,
++    });
++    (result, visits)
++}
++fn parity(
++    document: &ProjectDocument,
++    request: &CommandRequest,
++    candidate: &OneLeafReplay,
++) -> (Result<Replayed, EditError>, Vec<Visit>) {
++    let cached = replay(document, request, Some(candidate), false, false);
++    assert_eq!(cached, replay(document, request, None, false, false));
++    assert_eq!(cached, replay(document, request, None, true, false));
++    cached
++}
++fn modify_document(document: &ProjectDocument, change: impl FnOnce(&mut Value)) -> ProjectDocument {
++    let mut wire = serde_json::to_value(document).unwrap();
++    change(&mut wire);
++    ProjectDocument::from_json(&wire.to_string()).unwrap()
++}
++fn modify_leaf(request: &CommandRequest, change: impl FnOnce(&mut LeafEdit)) -> CommandRequest {
++    let mut changed = request.clone();
++    let Command::Compound { transaction } = &request.command else {
++        panic!("fixture compound")
++    };
++    let mut steps = transaction.steps().to_vec();
++    let ResolvedStep::Edit { edit } = &mut steps[0] else {
++        panic!("fixture Edit")
++    };
++    change(edit);
++    changed.command = Command::Compound {
++        transaction: ResolvedTransaction::new(
++            transaction.expected_bank_version(),
++            transaction.inputs().clone(),
++            steps,
++        )
++        .unwrap(),
++    };
++    changed
++}
++fn change_insert(
++    edit: &mut LeafEdit,
++    change: impl FnOnce(&mut HoldRecipe, &mut SplitIdentities, &mut AudioTimingId),
++) {
++    let mut command = edit.command.as_command().clone();
++    let Command::InsertTime {
++        hold,
++        identities,
++        timing,
++        ..
++    } = &mut command
++    else {
++        panic!("fixture InsertTime")
++    };
++    change(hold, identities, timing);
++    edit.command = AtomicCommand::new(command).unwrap();
++}
++fn assert_inverse(entry: &ProjectDocument, replayed: &Replayed) {
++    assert_eq!(
++        replayed.edit.forward.apply(entry).unwrap(),
++        replayed.document
++    );
++    assert_eq!(
++        replayed.edit.inverse.apply(&replayed.document).unwrap(),
++        *entry
++    );
++    assert_eq!(
++        replayed.edit.forward.restores(entry, &replayed.document),
++        Ok(true)
++    );
++    assert_eq!(
++        replayed.edit.inverse.restores(&replayed.document, entry),
++        Ok(true)
++    );
++}
++
++#[test]
++fn one_leaf_replay_exact_interior_result_visitor_and_aggregate_are_unchanged() {
++    let entry = fixture(true);
++    let planned = plan(&entry, 3);
++    let candidate = planned
++        .one_leaf_replay()
++        .expect("one ordinary eligible leaf");
++    let request = planned.request.as_ref().unwrap();
++    let (result, visits) = parity(&entry, request, candidate);
++    let result = result.unwrap();
++    assert_eq!(result.document, planned.document);
++    assert_eq!(visits.len(), 1);
++    assert_eq!(visits[0].before, entry.to_compact_json().unwrap());
++    assert!(visits[0].request.is_some());
++    assert_inverse(&entry, &result);
++    let rebuilt = ProjectDocument::from_json(&entry.to_compact_json().unwrap()).unwrap();
++    assert_eq!(entry, rebuilt);
++    assert_eq!(parity(&rebuilt, request, candidate).0.unwrap(), result);
++}
++
++#[test]
++fn one_leaf_replay_same_revision_changed_values_and_swapped_witnesses_cannot_retarget() {
++    let entry = fixture(true);
++    let planned = plan(&entry, 3);
++    let request = planned.request.as_ref().unwrap();
++    let candidate = planned.one_leaf_replay().unwrap();
++    for changed in [
++        modify_document(&entry, |wire| {
++            wire["nodes"]["first"]["label"] = json!("changed label")
++        }),
++        modify_document(&entry, |wire| {
++            wire["marks"]["native-mark-m"]["label"] = json!("n")
++        }),
++    ] {
++        assert_eq!(changed.project_id(), entry.project_id());
++        assert_eq!(changed.revision_id(), entry.revision_id());
++        assert_ne!(changed, entry);
++        let (result, _) = parity(&changed, request, candidate);
++        let result = result.unwrap();
++        assert_ne!(result.document, planned.document);
++        assert_inverse(&changed, &result);
++    }
++    let changed_entry = modify_document(&entry, |wire| {
++        wire["nodes"]["first"]["label"] = json!("another witness entry")
++    });
++    let other = plan(&changed_entry, 3);
++    assert_eq!(
++        other.request, planned.request,
++        "same request identifiers do not bind the entry value"
++    );
++    assert_eq!(
++        parity(&entry, request, other.one_leaf_replay().unwrap())
++            .0
++            .unwrap()
++            .document,
++        planned.document
++    );
++    let other_request = plan(&entry, 5);
++    assert_ne!(other_request.request, planned.request);
++    assert_eq!(
++        parity(&entry, request, other_request.one_leaf_replay().unwrap())
++            .0
++            .unwrap()
++            .document,
++        planned.document
++    );
++}
++
++#[test]
++fn one_leaf_replay_public_plan_field_mutation_does_not_modify_private_witnesses() {
++    let entry = fixture(true);
++    let mut planned = plan(&entry, 3);
++    let original_request = planned.request.as_ref().unwrap().clone();
++    let original_result = planned.document.clone();
++    let changed_request = modify_leaf(&original_request, |edit| {
++        change_insert(edit, |hold, _, _| hold.duration = frames(6))
++    });
++    planned.document = modify_document(&planned.document, |wire| {
++        wire["nodes"]["pause-0"]["label"] = json!("public field mutation")
++    });
++    planned.request = Some(changed_request.clone());
++    let witness = planned.one_leaf_replay().unwrap();
++    assert_eq!(
++        parity(&entry, &original_request, witness)
++            .0
++            .unwrap()
++            .document,
++        original_result
++    );
++    let changed = parity(&entry, &changed_request, witness).0.unwrap();
++    assert_ne!(changed.document, original_result);
++    assert_ne!(changed.document, planned.document);
++    assert_inverse(&entry, &changed);
++}
++
++#[test]
++fn one_leaf_replay_changed_leaf_payloads_fall_back_with_exact_results_or_refusals() {
++    let entry = fixture(true);
++    let planned = plan(&entry, 3);
++    let request = planned.request.as_ref().unwrap();
++    let candidate = planned.one_leaf_replay().unwrap();
++    let mut changed = vec![
++        modify_leaf(request, |edit| {
++            change_insert(edit, |hold, _, _| hold.duration = frames(7))
++        }),
++        modify_leaf(request, |edit| {
++            change_insert(edit, |hold, _, _| hold.picture_context = None)
++        }),
++        modify_leaf(request, |edit| {
++            change_insert(edit, |_, identities, _| {
++                identities.nodes.pop();
++            })
++        }),
++        modify_leaf(request, |edit| {
++            change_insert(edit, |_, _, timing| timing.ordinal = 3)
++        }),
++        modify_leaf(request, |edit| {
++            edit.new_revision = revision("different-leaf")
++        }),
++    ];
++    let mut outer = request.clone();
++    outer.new_revision = revision("different-outer");
++    changed.push(outer);
++    for request in changed {
++        let (result, visits) = parity(&entry, &request, candidate);
++        if let Ok(result) = result {
++            assert_inverse(&entry, &result);
++        } else {
++            assert!(visits.is_empty());
++        }
++    }
++}
++
++#[test]
++fn one_leaf_replay_outer_leaf_and_identity_prefix_errors_still_precede_the_visitor() {
++    let entry = fixture(true);
++    let planned = plan(&entry, 3);
++    let request = planned.request.as_ref().unwrap();
++    let candidate = planned.one_leaf_replay().unwrap();
++    let mut wrong_project = request.clone();
++    wrong_project.project_id = ProjectId::new("wrong-project").unwrap();
++    let mut stale = request.clone();
++    stale.expected_revision = revision("stale");
++    let leaf_is_outer = modify_leaf(request, |edit| {
++        edit.new_revision = request.new_revision.clone()
++    });
++    let collision = modify_leaf(request, |edit| {
++        change_insert(edit, |_, identities, _| identities.nodes[0] = id("first"))
++    });
++    for (request, code) in [
++        (wrong_project, EditErrorCode::ProjectConflict),
++        (stale, EditErrorCode::RevisionConflict),
++        (leaf_is_outer, EditErrorCode::IdentityConflict),
++        (collision, EditErrorCode::IdentityConflict),
++    ] {
++        let (result, visits) = parity(&entry, &request, candidate);
++        assert_eq!(result.unwrap_err().code, code);
++        assert!(visits.is_empty());
++    }
++}
++
++#[test]
++fn one_leaf_replay_host_visitor_refusal_is_not_bypassed() {
++    let entry = fixture(true);
++    let planned = plan(&entry, 3);
++    let request = planned.request.as_ref().unwrap();
++    let cached = replay(&entry, request, planned.one_leaf_replay(), false, true);
++    assert_eq!(cached, replay(&entry, request, None, false, true));
++    assert_eq!(cached, replay(&entry, request, None, true, true));
++    assert_eq!(cached.0.unwrap_err(), host_refusal());
++    assert_eq!(cached.1.len(), 1);
++}
++
++#[test]
++fn one_leaf_replay_reference_modes_bypass_use_and_creation_and_restore_their_state() {
++    let entry = fixture(true);
++    let planned = plan(&entry, 3);
++    let request = planned.request.as_ref().unwrap();
++    let candidate = planned.one_leaf_replay().unwrap();
++    with_reference_command_work(|| {
++        parity(&entry, request, candidate).0.unwrap();
++    });
++    let normal_wire = parity(&entry, request, candidate).0.unwrap().document_wire;
++    let reference_wire = with_reference_timing_representation(|| {
++        parity(&entry, request, candidate).0.unwrap().document_wire
++    });
++    assert_ne!(
++        normal_wire, reference_wire,
++        "fixture must distinguish compact and complete retained timing representations"
++    );
++    let reference_created = with_reference_command_work(|| plan(&entry, 3));
++    assert!(reference_created.one_leaf_replay().is_none());
++    let full_created = with_reference_timing_representation(|| plan(&entry, 3));
++    assert!(full_created.one_leaf_replay().is_none());
++    assert_eq!(
++        parity(&entry, request, candidate).0.unwrap().document_wire,
++        normal_wire
++    );
++}
++
++#[test]
++fn one_leaf_replay_extra_steps_registers_ai_occurrences_and_derived_results_are_ineligible() {
++    let entry = fixture(false);
++    let yank = SemanticInstruction::YankBeat {
++        register: RegisterName::new('b').unwrap(),
++    };
++    for instructions in [
++        vec![pause(3), motion(5), pause(1)],
++        vec![yank.clone(), pause(3)],
++        vec![pause(3), yank],
++        vec![cut(), pause(3)],
++        vec![SemanticInstruction::InsertAiPause {
++            length: PauseLength::Frames {
++                frames: NonZeroU32::new(3).unwrap(),
++            },
++        }],
++    ] {
++        let planned = plan_in(&entry, &context("group", 5), instructions, &BTreeMap::new());
++        assert!(planned.one_leaf_replay().is_none());
++        let request = planned.request.as_ref().unwrap();
++        assert_eq!(
++            replay(&entry, request, None, false, false),
++            replay(&entry, request, None, true, false)
++        );
++    }
++    let bank = BTreeMap::from([(
++        RegisterName::new('a').unwrap(),
++        Arc::new(RegisterValue::Macro {
++            program: Arc::new(SemanticProgram::new(vec![pause(3)]).unwrap()),
++        }),
++    )]);
++    let input_plan = plan_in(
++        &entry,
++        &context("group", 5),
++        vec![SemanticInstruction::Call {
++            register: RegisterName::new('a').unwrap(),
++            count: NonZeroU32::new(1).unwrap(),
++        }],
++        &bank,
++    );
++    assert!(input_plan.one_leaf_replay().is_none());
++    let mut repeated = hold(12);
++    repeated.kind = NodeKind::Repeat {
++        child: id("first"),
++        iterations: IterationOrder::new(revision("plays"), 2).unwrap(),
++        gap: None,
++        escalation: None,
++    };
++    let repeated = tree(
++        vec![id("repeat")],
++        BTreeMap::from([(id("repeat"), repeated), (id("first"), hold(12))]),
++    );
++    let mut root_context = context("root", 5);
++    root_context.selected_child = None;
++    let occurrence = plan_in(&repeated, &root_context, vec![pause(3)], &BTreeMap::new());
++    assert!(occurrence.one_leaf_replay().is_none());
++    let mut speed = hold(8);
++    speed.kind = NodeKind::Retime {
++        child: id("first"),
++        duration: frames(8),
++        mapping: range(0, 12),
++        pitch: PitchPolicy::FollowSpeed,
++        purpose: RetimePurpose::Edit,
++    };
++    let speed = tree(
++        vec![id("speed")],
++        BTreeMap::from([(id("speed"), speed), (id("first"), hold(12))]),
++    );
++    let derived = plan_in(&speed, &root_context, vec![pause(3)], &BTreeMap::new());
++    assert!(!derived.document.derived_clocks().is_empty());
++    assert!(derived.one_leaf_replay().is_none());
++    let mut next_context = context("root", 1);
++    next_context.selected_child = None;
++    let later = plan_in_namespace(
++        &derived.document,
++        &next_context,
++        vec![pause(1)],
++        &BTreeMap::new(),
++        "later-",
++    );
++    assert!(later.one_leaf_replay().is_none());
++}
++
++fn alias_zero_ratios(value: &mut Value) -> usize {
++    match value {
++        Value::Object(fields) => {
++            if fields.get("numerator") == Some(&json!("0")) && fields.contains_key("denominator") {
++                fields.insert("numerator".into(), json!("-0"));
++                fields.insert("denominator".into(), json!("7"));
++                1
++            } else {
++                fields.values_mut().map(alias_zero_ratios).sum()
++            }
++        }
++        Value::Array(values) => values.iter_mut().map(alias_zero_ratios).sum(),
++        _ => 0,
++    }
++}
++
++#[test]
++fn one_leaf_replay_signed_zero_rational_spelling_normalizes_in_entry_and_request() {
++    let entry = fixture(true);
++    let mut alias_wire = serde_json::to_value(&entry).unwrap();
++    assert!(alias_zero_ratios(&mut alias_wire) > 0);
++    let alias = ProjectDocument::from_json(&alias_wire.to_string()).unwrap();
++    assert_eq!(entry, alias);
++    assert_eq!(
++        entry.to_compact_json().unwrap(),
++        alias.to_compact_json().unwrap()
++    );
++    let planned = plan(&entry, 3);
++    let request = planned.request.as_ref().unwrap();
++    let mut request_wire = serde_json::to_value(request).unwrap();
++    assert!(
++        alias_zero_ratios(&mut request_wire) > 0,
++        "request contains captured framing"
++    );
++    let alias_request: CommandRequest = serde_json::from_value(request_wire).unwrap();
++    assert_eq!(*request, alias_request);
++    assert_eq!(
++        serde_json::to_string(request).unwrap(),
++        serde_json::to_string(&alias_request).unwrap()
++    );
++    let (result, _) = parity(&alias, &alias_request, planned.one_leaf_replay().unwrap());
++    assert_inverse(&alias, &result.unwrap());
++    for literal in ["-0.0", "+0.0", "0.0"] {
++        assert!(serde_json::from_str::<ExactRatio>(literal).is_err());
++    }
++    for floating in [json!(-0.0), json!(0.0)] {
++        assert!(
++            serde_json::from_value::<ExactRatio>(
++                json!({"numerator":floating.clone(),"denominator":"1"})
++            )
++            .is_err()
++        );
++        let gain_error = serde_json::from_value::<GainDb>(floating.clone()).unwrap_err();
++        let integer_error = serde_json::from_value::<i32>(floating.clone()).unwrap_err();
++        assert_eq!(gain_error.to_string(), integer_error.to_string());
++        let mut invalid = serde_json::to_value(&entry).unwrap();
++        invalid["presentation_basis"]["width"] = floating;
++        let geometry_error = ProjectDocument::from_json(&invalid.to_string()).unwrap_err();
++        assert_eq!(geometry_error.code, DocumentErrorCode::InvalidJson);
++        assert!(
++            geometry_error.message.contains("expected u32"),
++            "{geometry_error:?}"
++        );
++    }
++}
++
++#[test]
++fn one_leaf_replay_numeric_looking_labels_are_distinct_authored_strings() {
++    let entry = modify_document(&fixture(true), |wire| {
++        wire["nodes"]["first"]["label"] = json!("-0.0")
++    });
++    let other = modify_document(&entry, |wire| {
++        wire["nodes"]["first"]["label"] = json!("+0.0")
++    });
++    assert_ne!(entry, other);
++    assert_eq!(entry.revision_id(), other.revision_id());
++    let planned = plan(&entry, 3);
++    let result = parity(
++        &other,
++        planned.request.as_ref().unwrap(),
++        planned.one_leaf_replay().unwrap(),
++    )
++    .0
++    .unwrap();
++    assert_eq!(result.document.nodes()[&id("first")].label, "+0.0");
++    assert_inverse(&other, &result);
++}
++
++#[test]
++fn one_leaf_replay_explicit_defaults_roundtrip_complete_timing_values_and_wire() {
++    let entry = fixture(true);
++    let mut explicit = serde_json::to_value(&entry).unwrap();
++    explicit["derived_clocks"] = json!({});
++    explicit["sounds"] = json!({});
++    explicit["audio_bindings"]["gap_bindings"] = json!({});
++    explicit["audio_bindings"]["sound_clocks"] = json!({});
++    for binding in explicit["audio_bindings"]["bindings"]
++        .as_object_mut()
++        .unwrap()
++        .values_mut()
++    {
++        let binding = binding.as_object_mut().unwrap();
++        binding.entry("resume").or_insert(Value::Null);
++        binding.entry("reanchors").or_insert(json!([]));
++        let lattice = binding.get_mut("lattice").unwrap().as_object_mut().unwrap();
++        lattice.entry("arguments").or_insert(json!([]));
++        lattice.entry("births").or_insert(json!([]));
++        lattice
++            .get_mut("reference")
++            .unwrap()
++            .as_object_mut()
++            .unwrap()
++            .entry("root")
++            .or_insert(json!({"type":"project_root_round_even"}));
++    }
++    let decoded = ProjectDocument::from_json(&explicit.to_string()).unwrap();
++    assert_eq!(entry, decoded);
++    assert_eq!(
++        entry.to_compact_json().unwrap(),
++        decoded.to_compact_json().unwrap()
++    );
++    let planned = plan(&entry, 3);
++    let result = parity(
++        &decoded,
++        planned.request.as_ref().unwrap(),
++        planned.one_leaf_replay().unwrap(),
++    )
++    .0
++    .unwrap();
++    assert_inverse(&decoded, &result);
++}
++
++#[test]
++fn one_leaf_replay_transaction_constructor_limits_and_identity_refusals_remain() {
++    let entry = fixture(true);
++    let planned = plan(&entry, 3);
++    let Command::Compound { transaction } = &planned.request.as_ref().unwrap().command else {
++        panic!("compound")
++    };
++    let step = transaction.steps()[0].clone();
++    let too_many = ResolvedTransaction::new(
++        7,
++        BTreeMap::new(),
++        vec![step.clone(); MAX_COMPOUND_STEPS + 1],
++    )
++    .unwrap_err();
++    assert_eq!(too_many.code, EditErrorCode::LimitExceeded);
++    let duplicate =
++        ResolvedTransaction::new(7, BTreeMap::new(), vec![step.clone(), step]).unwrap_err();
++    assert_eq!(duplicate.code, EditErrorCode::IdentityConflict);
++    let forbidden = AtomicCommand::new(Command::RestoreSnapshot {
++        snapshot: Box::new(entry.clone()),
++    })
++    .unwrap_err();
++    assert_eq!(forbidden.code, EditErrorCode::InvalidCommand);
++    parity(
++        &entry,
++        planned.request.as_ref().unwrap(),
++        planned.one_leaf_replay().unwrap(),
++    )
++    .0
++    .unwrap();
++}
+--- a/crates/deadpan-store/src/compound.rs
++++ b/crates/deadpan-store/src/compound.rs
+@@ -131,7 +131,7 @@
+         relevance: Option<&crate::generation::RelevancePlan>,
+         prepare: impl FnOnce(&RegisterBank) -> Result<T, E>,
+     ) -> Result<(CompoundCommitOutcome, T), CompoundPreparationError<E>> {
+-        self.commit_compound_prepared_inner(request, relevance, None, prepare)
++        self.commit_compound_prepared_inner(request, relevance, None, None, prepare)
+     }
+ 
+     /// Check consumed analysis inside the publication transaction before
+@@ -143,7 +143,21 @@
+         guard: &crate::TranscriptSelectionGuard,
+         prepare: impl FnOnce(&RegisterBank) -> Result<T, E>,
+     ) -> Result<(CompoundCommitOutcome, T), CompoundPreparationError<E>> {
+-        self.commit_compound_prepared_inner(request, relevance, Some(guard), prepare)
++        self.commit_compound_prepared_inner(request, relevance, Some(guard), None, prepare)
++    }
++
++    /// The optional Core-created witness replaces only one exact pure leaf
++    /// application. All current Store authority and host preparation still run
++    /// inside the same Immediate transaction as ordinary Compound commits.
++    pub fn commit_compound_prepared_with_one_leaf<T, E>(
++        &mut self,
++        request: &CommandRequest,
++        relevance: Option<&crate::generation::RelevancePlan>,
++        guard: Option<&crate::TranscriptSelectionGuard>,
++        candidate: Option<&deadpan_core::OneLeafReplay>,
++        prepare: impl FnOnce(&RegisterBank) -> Result<T, E>,
++    ) -> Result<(CompoundCommitOutcome, T), CompoundPreparationError<E>> {
++        self.commit_compound_prepared_inner(request, relevance, guard, candidate, prepare)
+     }
+ 
+     fn commit_compound_inner(
+@@ -152,7 +166,7 @@
+         relevance: Option<&crate::generation::RelevancePlan>,
+         guard: Option<&crate::TranscriptSelectionGuard>,
+     ) -> Result<CompoundCommitOutcome, StoreError> {
+-        self.commit_compound_prepared_inner(request, relevance, guard, |_| {
++        self.commit_compound_prepared_inner(request, relevance, guard, None, |_| {
+             Ok::<(), std::convert::Infallible>(())
+         })
+         .map(|(outcome, ())| outcome)
+@@ -167,6 +181,7 @@
+         request: &CommandRequest,
+         relevance: Option<&crate::generation::RelevancePlan>,
+         guard: Option<&crate::TranscriptSelectionGuard>,
++        candidate: Option<&deadpan_core::OneLeafReplay>,
+         prepare: impl FnOnce(&RegisterBank) -> Result<T, E>,
+     ) -> Result<(CompoundCommitOutcome, T), CompoundPreparationError<E>> {
+         self.require_writer()?;
+@@ -179,7 +194,8 @@
+         if let Some(guard) = guard {
+             crate::transcript_selection::check_guard(&transaction, documents, guard)?;
+         }
+-        let plan = crate::prepare_command(&transaction, documents, request)?;
++        let plan =
++            crate::prepare_command_with_one_leaf(&transaction, documents, request, candidate)?;
+         let prepared = plan.compound.as_ref().expect("compound plan");
+         let register_bank = prepared.registers.bank.clone();
+         let host = prepare(&register_bank).map_err(CompoundPreparationError::Preparation)?;
+@@ -388,6 +404,7 @@
+     documents: &crate::document_cache::DocumentCache,
+     current: deadpan_core::ValidatedDocument,
+     request: &CommandRequest,
++    candidate: Option<&deadpan_core::OneLeafReplay>,
+ ) -> Result<CommandPlan, StoreError> {
+     let Command::Compound { transaction } = &request.command else {
+         return Err(invalid("expected compound"));
+@@ -411,7 +428,7 @@
+         )
+         .collect();
+     crate::ensure_unused_revisions(connection, documents, &allocations)?;
+-    let (outcome, steps) = execute(connection, &current, request, None)?;
++    let (outcome, steps) = execute(connection, &current, request, None, candidate)?;
+     let writes = !outcome.register_writes.is_empty();
+     let registers = crate::registers::prepare_writes_from(bank, &outcome.register_writes)?;
+     crate::command_plan(
+@@ -432,6 +449,7 @@
+     current: &ProjectDocument,
+     request: &CommandRequest,
+     admitted: Option<&BTreeSet<RevisionId>>,
++    candidate: Option<&deadpan_core::OneLeafReplay>,
+ ) -> Result<(deadpan_core::CompoundOutcome, Vec<StepRecord>), StoreError> {
+     let Command::Compound { transaction } = &request.command else {
+         return Err(invalid("expected compound"));
+@@ -474,8 +492,10 @@
+     let mut checkpoint_bytes = 0_usize;
+     let mut processed_bytes = current.compact_json_size()?;
+     let mut original_pastes = OriginalPasteMappings::default();
+-    let outcome =
+-        deadpan_core::replay_compound(current, request, |visit| -> Result<(), StoreError> {
++    let outcome = deadpan_core::replay_compound_with_one_leaf(
++        current,
++        request,
++        |visit| -> Result<(), StoreError> {
+             if matches!(
+                 visit.step,
+                 ResolvedStep::Yank { .. } | ResolvedStep::Cut { .. }
+@@ -572,7 +592,9 @@
+                 });
+             }
+             Ok(())
+-        })?;
++        },
++        candidate,
++    )?;
+     crate::check_document_size_bytes(outcome.document.compact_json_size()?)?;
+     Ok((outcome, steps))
+ }
+@@ -711,7 +733,7 @@
+     request: &CommandRequest,
+     admitted: &BTreeSet<RevisionId>,
+ ) -> Result<EditTransaction, StoreError> {
+-    let (outcome, expected) = execute(connection, current, request, Some(admitted))?;
++    let (outcome, expected) = execute(connection, current, request, Some(admitted), None)?;
+     if expected.is_empty() {
+         return Err(invalid("history contains a register-only compound"));
+     }
+--- a/crates/deadpan-store/src/lib.rs
++++ b/crates/deadpan-store/src/lib.rs
+@@ -1289,6 +1289,24 @@
+     prepare_admitted_command(connection, documents, request, None)
+ }
+ 
++fn prepare_command_with_one_leaf(
++    connection: &Connection,
++    documents: &document_cache::DocumentCache,
++    request: &CommandRequest,
++    candidate: Option<&deadpan_core::OneLeafReplay>,
++) -> Result<CommandPlan, StoreError> {
++    let current = read_command_snapshot(connection, documents, request)?;
++    prepare_current_command_with_one_leaf(
++        connection,
++        documents,
++        current,
++        (request, candidate),
++        None,
++        None,
++        None,
++    )
++}
++
+ fn prepare_admitted_command(
+     connection: &Connection,
+     documents: &document_cache::DocumentCache,
+@@ -1330,6 +1348,30 @@
+     source: Option<(&deadpan_core::AssetId, &deadpan_core::AssetRecord)>,
+     geometry: Option<(u32, u32)>,
+ ) -> Result<CommandPlan, StoreError> {
++    prepare_current_command_with_one_leaf(
++        connection,
++        documents,
++        current,
++        (request, None),
++        generated,
++        source,
++        geometry,
++    )
++}
++
++fn prepare_current_command_with_one_leaf(
++    connection: &Connection,
++    documents: &document_cache::DocumentCache,
++    current: deadpan_core::ValidatedDocument,
++    request: (&CommandRequest, Option<&deadpan_core::OneLeafReplay>),
++    generated: Option<(
++        &deadpan_core::GeneratedArtifact,
++        &generation_origins::AcceptedOriginReceipt,
++    )>,
++    source: Option<(&deadpan_core::AssetId, &deadpan_core::AssetRecord)>,
++    geometry: Option<(u32, u32)>,
++) -> Result<CommandPlan, StoreError> {
++    let (request, candidate) = request;
+     let base = CommandRequest {
+         command: request.command.base_command().clone(),
+         ..request.clone()
+@@ -1338,7 +1380,7 @@
+         connection,
+         documents,
+         current.clone(),
+-        &base,
++        (&base, candidate),
+         generated.map(|(artifact, _)| artifact),
+         source,
+         geometry,
+@@ -1356,11 +1398,12 @@
+     connection: &Connection,
+     documents: &document_cache::DocumentCache,
+     current: deadpan_core::ValidatedDocument,
+-    request: &CommandRequest,
++    request: (&CommandRequest, Option<&deadpan_core::OneLeafReplay>),
+     generated: Option<&deadpan_core::GeneratedArtifact>,
+     source: Option<(&deadpan_core::AssetId, &deadpan_core::AssetRecord)>,
+     geometry: Option<(u32, u32)>,
+ ) -> Result<CommandPlan, StoreError> {
++    let (request, candidate) = request;
+     if matches!(
+         &request.command,
+         deadpan_core::Command::RestoreSnapshot { .. }
+@@ -1376,7 +1419,7 @@
+                 "compound commands require per-leaf admission".into(),
+             ));
+         }
+-        return compound::prepare(connection, documents, current, request);
++        return compound::prepare(connection, documents, current, request, candidate);
+     }
+     // The core validates the result once; it equals the forward patch applied
+     // to `current`, so the store neither reapplies nor revalidates it, and the
+--- a/crates/deadpan-store/tests/compound_preparation.rs
++++ b/crates/deadpan-store/tests/compound_preparation.rs
+@@ -1,11 +1,29 @@
+ //! Host preparation shares the authoritative Compound transaction. SQL triggers
+-//! below inject write failures; the fixture has only structural Hold content.
+-
++//! below inject write failures; media authority cases also decode and admit the
++//! existing bounded Original fixture before changing its stored authority.
++
++#[cfg(any(target_os = "macos", target_os = "linux"))]
++use deadpan_analysis::{AnalysedAudio, CorrectedTranscript, Corrections, Transcript, Word};
+ use deadpan_core::*;
++#[cfg(any(target_os = "macos", target_os = "linux"))]
++use deadpan_media::{
++    audio_session::{AudioSession, AudioSessionLimits},
++    source_index::SourceContentIdentity,
++    source_input::VerifiedSourceInput,
++    source_qualification::DecodedSourceQualification,
++    source_session::{SourceSession, SourceSessionLimits},
++};
+ use deadpan_store::{
+-    AccessMode, CompoundPreparationError, ProjectStore, TranscriptKey,
++    AccessMode, CompoundPreparationError, ProjectStore, StoreError, TranscriptKey,
+     TranscriptSelectionCorrectionRule, TranscriptSelectionCorrections, TranscriptSelectionFormat,
+     TranscriptSelectionGuard,
++};
++#[cfg(any(target_os = "macos", target_os = "linux"))]
++use deadpan_store::{
++    CorrectionChange, CorrectionsKey,
++    original_media::{OriginalMediaLimits, OriginalOwnership},
++    single_source::SingleSourceInitialization,
++    source_registration::PreparedSourceRegistration,
+ };
+ use rusqlite::{Connection, OpenFlags};
+ use std::{
+@@ -333,6 +351,562 @@
+     }
+ }
+ 
++fn one_leaf_plan(store: &ProjectStore) -> Result<SemanticPlan> {
++    one_leaf_plan_with_audio(store, HoldAudio::Silence)
++}
++
++fn one_leaf_plan_with_audio(store: &ProjectStore, audio: HoldAudio) -> Result<SemanticPlan> {
++    let document = store.snapshot()?;
++    let planned = plan_semantic_with_speech(
++        &document,
++        &SemanticContext {
++            original: None,
++            scoped: None,
++            hold_duration: None,
++            shared_hold_duration: None,
++            mixed_hold_duration: None,
++            selected_hold_duration: None,
++            parent: node("root"),
++            cursor: ProjectFrame(5),
++            selected_child: None,
++            visual_selection: None,
++        },
++        &SemanticProgram::new(vec![SemanticInstruction::InsertPause {
++            length: PauseLength::Frames {
++                frames: std::num::NonZeroU32::new(3).unwrap(),
++            },
++            black: false,
++        }])?,
++        SemanticRegisterBank {
++            entries: &BTreeMap::new(),
++            version: store.register_version()?,
++        },
++        revision("cached-outer"),
++        |request| {
++            let SemanticAllocationRequest::InsertPause {
++                required_split_ids, ..
++            } = request
++            else {
++                panic!("pause")
++            };
++            Ok(SemanticAllocation::InsertPause {
++                new_revision: revision("cached-leaf"),
++                id: node("cached-pause"),
++                split: SplitIdentities {
++                    nodes: (0..required_split_ids)
++                        .map(|index| node(&format!("cached-split-{index}")))
++                        .collect(),
++                },
++            })
++        },
++        |_, _| panic!("no Original"),
++        |_| panic!("no speech"),
++        |_, _| {
++            Ok(PauseProvider {
++                video: HoldVideo::Background,
++                picture_context: None,
++                audio: audio.clone(),
++            })
++        },
++    )?;
++    assert!(planned.one_leaf_replay().is_some());
++    Ok(planned)
++}
++
++#[cfg(any(target_os = "macos", target_os = "linux"))]
++fn one_leaf_admitted_original(
++    parent: &Path,
++) -> Result<(std::path::PathBuf, ProjectStore, TranscriptKey, Transcript)> {
++    use std::{path::PathBuf, sync::atomic::AtomicBool, time::Duration};
++
++    // Match transcript_selection_guard::ready: source admission is obtained
++    // from real decoding. Only the word annotations below are synthetic.
++    let active = || AtomicBool::new(false);
++    let path = parent.join("admitted-cache.deadpan");
++    let document = ProjectDocument::new_automatic(
++        ProjectId::new("admitted-cache")?,
++        revision("initial"),
++        node("root"),
++    )?;
++    let mut store = ProjectStore::create_single_source(&path, &document)?;
++    let fixture = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
++        .join("../../native/deadpan-source/tests/fixtures/offset-bframes.mp4")
++        .canonicalize()?;
++    let limits = OriginalMediaLimits::new(2_000_000, Duration::from_secs(10))?;
++    let record = store
++        .retain_original(&fixture, OriginalOwnership::Managed, limits, &active())?
++        .record;
++    let mut original =
++        store
++            .original_import_handle()?
++            .snapshot_original(&record, limits, &active())?;
++    let input = VerifiedSourceInput::copy_verified(
++        &mut original,
++        SourceContentIdentity::new(record.sha256(), record.object().byte_length())?,
++        2_000_000,
++        Duration::from_secs(10),
++        &active(),
++    )?;
++    let video = SourceSession::open_input(
++        input.clone(),
++        AssetId::new("decode")?,
++        SourceSessionLimits::default(),
++        &active(),
++    )?;
++    let audio = AudioSession::open_input(input, 1, AudioSessionLimits::default(), &active())?;
++    let decoded = DecodedSourceQualification::from_sessions(Some(&video), Some(&audio))?;
++    let source = PreparedSourceRegistration::from_decoded(original, &decoded, &active())?;
++    let measured = source.receipt().snapshot().audio().unwrap();
++    let key = TranscriptKey {
++        content: source.receipt().original().content().to_string(),
++        audio_stream: measured.stream().stream_index,
++        model_sha256: "a".repeat(64),
++        language: "en".into(),
++        engine: "cached-guard".into(),
++    };
++    let first = measured.frames().first().unwrap().valid_start;
++    let last = measured.frames().last().unwrap().valid_end;
++    let duration_cs = u32::try_from(
++        (u64::try_from(last - first)? * 100).div_ceil(u64::from(measured.stream().sample_rate)),
++    )?;
++    let proposal = Transcript::new(
++        AnalysedAudio {
++            origin: first,
++            sample_rate: measured.stream().sample_rate,
++            duration_cs,
++        },
++        vec![
++            Word {
++                text: "hello".into(),
++                start_cs: 1,
++                end_cs: 3,
++                probability: 0.9,
++                segment: 0,
++            },
++            Word {
++                text: "world".into(),
++                start_cs: 4,
++                end_cs: 7,
++                probability: 0.8,
++                segment: 0,
++            },
++        ],
++    )?;
++    store.initialize_prepared_source(
++        &SingleSourceInitialization {
++            expected_revision: revision("initial"),
++            new_revision: revision("baseline"),
++            new_asset_id: AssetId::new("original")?,
++            node: node("full-original"),
++            label: "The original".into(),
++        },
++        &source,
++        &active(),
++    )?;
++    store.save_transcript(&key, &proposal)?;
++    Ok((path, store, key, proposal))
++}
++
++#[test]
++fn one_leaf_replay_prepared_commit_retains_exact_history_undo_redo_and_copy() -> Result {
++    let scratch = tempfile::tempdir()?;
++    let cached_path = scratch.path().join("cached.deadpan");
++    let plain_path = scratch.path().join("plain.deadpan");
++    let mut cached = create(&cached_path)?;
++    let mut plain = create(&plain_path)?;
++    let planned = one_leaf_plan(&cached)?;
++    let request = planned.request.as_ref().unwrap();
++    let candidate = planned.one_leaf_replay();
++    let (actual, actual_bank) =
++        cached.commit_compound_prepared_with_one_leaf(request, None, None, candidate, |bank| {
++            Ok::<_, std::convert::Infallible>(bank.clone())
++        })?;
++    let (expected, expected_bank) = plain.commit_compound_prepared(request, None, |bank| {
++        Ok::<_, std::convert::Infallible>(bank.clone())
++    })?;
++    assert_eq!(
++        serde_json::to_string(&actual)?,
++        serde_json::to_string(&expected)?
++    );
++    assert_eq!(actual_bank, expected_bank);
++    assert_eq!(
++        cached.snapshot()?.to_compact_json()?,
++        planned.document.to_compact_json()?
++    );
++    assert_eq!(cells(&cached_path)?, cells(&plain_path)?);
++    for store in [&mut cached, &mut plain] {
++        store.undo(&revision("cached-outer"), revision("cached-undo"))?;
++        store.redo(&revision("cached-undo"), revision("cached-redo"))?;
++        store.validate_report(true)?;
++    }
++    assert_eq!(cells(&cached_path)?, cells(&plain_path)?);
++    drop(cached);
++    drop(plain);
++    let cached = ProjectStore::open(&cached_path, AccessMode::ReadOnly)?;
++    let plain = ProjectStore::open(&plain_path, AccessMode::ReadOnly)?;
++    assert_eq!(
++        cached.snapshot_with_registers()?,
++        plain.snapshot_with_registers()?
++    );
++    let copy_path = scratch.path().join("copy.deadpan");
++    deadpan_store::portable::copy_portable(
++        &cached_path,
++        &copy_path,
++        &std::sync::atomic::AtomicBool::new(false),
++    )?;
++    let copy = ProjectStore::open(&copy_path, AccessMode::ReadOnly)?;
++    assert_eq!(
++        copy.snapshot_with_registers()?,
++        cached.snapshot_with_registers()?
++    );
++    copy.validate_report(true)?;
++    Ok(())
++}
++
++#[test]
++fn one_leaf_replay_store_refusals_precede_callback_and_leave_no_writes() -> Result {
++    let scratch = tempfile::tempdir()?;
++    let path = scratch.path().join("refused-cache.deadpan");
++    let mut store = create(&path)?;
++    let planned = one_leaf_plan(&store)?;
++    let valid = planned.request.as_ref().unwrap();
++    let Command::Compound { transaction } = &valid.command else {
++        panic!("compound")
++    };
++    let mut stale = valid.clone();
++    stale.expected_revision = revision("stale");
++    let mut bank = valid.clone();
++    bank.command = Command::Compound {
++        transaction: ResolvedTransaction::new(
++            transaction.expected_bank_version() + 1,
++            transaction.inputs().clone(),
++            transaction.steps().to_vec(),
++        )?,
++    };
++    let mut frozen = valid.clone();
++    frozen.command = Command::Compound {
++        transaction: ResolvedTransaction::new(
++            transaction.expected_bank_version(),
++            BTreeMap::from([(
++                RegisterName::new('a')?,
++                Some(Arc::new(RegisterValue::Macro {
++                    program: Arc::new(SemanticProgram::new(vec![
++                        SemanticInstruction::MoveFrames {
++                            forward: true,
++                            count: std::num::NonZeroU32::new(1).unwrap(),
++                        },
++                    ])?),
++                })),
++            )]),
++            transaction.steps().to_vec(),
++        )?,
++    };
++    let mut reused = valid.clone();
++    reused.new_revision = revision("initial");
++    let mut reused_leaf = valid.clone();
++    let mut steps = transaction.steps().to_vec();
++    let ResolvedStep::Edit { edit } = &mut steps[0] else {
++        panic!("Edit")
++    };
++    edit.new_revision = revision("initial");
++    reused_leaf.command = Command::Compound {
++        transaction: ResolvedTransaction::new(
++            transaction.expected_bank_version(),
++            transaction.inputs().clone(),
++            steps,
++        )?,
++    };
++    let before = cells(&path)?;
++    for request in [stale, bank, frozen, reused, reused_leaf] {
++        let mut errors = Vec::new();
++        for candidate in [planned.one_leaf_replay(), None] {
++            let called = Cell::new(false);
++            let error = store
++                .commit_compound_prepared_with_one_leaf(&request, None, None, candidate, |_| {
++                    called.set(true);
++                    Ok::<_, std::convert::Infallible>(())
++                })
++                .unwrap_err();
++            assert!(!called.get());
++            errors.push(error.to_string());
++            assert_eq!(cells(&path)?, before);
++        }
++        assert_eq!(errors[0], errors[1]);
++    }
++    Ok(())
++}
++
++#[test]
++fn one_leaf_replay_host_and_sql_failures_roll_back_even_after_a_hit() -> Result {
++    let scratch = tempfile::tempdir()?;
++    let path = scratch.path().join("failed-cache.deadpan");
++    let mut store = create(&path)?;
++    let planned = one_leaf_plan(&store)?;
++    let request = planned.request.as_ref().unwrap();
++    let before = cells(&path)?;
++    for candidate in [planned.one_leaf_replay(), None] {
++        let result =
++            store.commit_compound_prepared_with_one_leaf(request, None, None, candidate, |_| {
++                Err::<(), _>("host rejected")
++            });
++        assert!(matches!(
++            result,
++            Err(CompoundPreparationError::Preparation("host rejected"))
++        ));
++        assert_eq!(cells(&path)?, before);
++    }
++    let database = Connection::open(path.join("project.sqlite"))?;
++    database.execute_batch("CREATE TRIGGER reject_cached_history BEFORE INSERT ON history BEGIN SELECT RAISE(FAIL,'injected cached history failure'); END;")?;
++    let before = cells(&path)?;
++    for candidate in [planned.one_leaf_replay(), None] {
++        let dropped = Arc::new(AtomicUsize::new(0));
++        let called = Cell::new(0);
++        let result =
++            store.commit_compound_prepared_with_one_leaf(request, None, None, candidate, |_| {
++                called.set(called.get() + 1);
++                Ok::<_, std::convert::Infallible>(PreparedHost(Arc::clone(&dropped)))
++            });
++        assert!(matches!(result, Err(CompoundPreparationError::Store(_))));
++        assert_eq!(called.get(), 1);
++        assert_eq!(dropped.load(Ordering::SeqCst), 1);
++        assert_eq!(cells(&path)?, before);
++    }
++    database.execute_batch("DROP TRIGGER reject_cached_history;")?;
++    store.commit_compound_prepared_with_one_leaf(
++        request,
++        None,
++        None,
++        planned.one_leaf_replay(),
++        |_| Ok::<_, std::convert::Infallible>(()),
++    )?;
++    store.validate_report(true)?;
++    Ok(())
++}
++
++#[test]
++fn one_leaf_replay_transcript_guard_is_current_authority_before_preparation() -> Result {
++    let scratch = tempfile::tempdir()?;
++    let path = scratch.path().join("guarded-cache.deadpan");
++    let mut store = create(&path)?;
++    let planned = one_leaf_plan(&store)?;
++    let guard = TranscriptSelectionGuard {
++        format: TranscriptSelectionFormat::V1,
++        asset: AssetId::new("missing-original")?,
++        qualification: SourceQualificationId::new("a".repeat(64))?,
++        key: TranscriptKey {
++            content: "b".repeat(64),
++            audio_stream: 0,
++            model_sha256: "c".repeat(64),
++            language: "en".into(),
++            engine: "cached-guard".into(),
++        },
++        proposal_sha256: "d".repeat(64),
++        correction_rule: TranscriptSelectionCorrectionRule::V1,
++        corrections: TranscriptSelectionCorrections::Absent,
++    };
++    let before = cells(&path)?;
++    let mut errors = Vec::new();
++    for candidate in [planned.one_leaf_replay(), None] {
++        let called = Cell::new(false);
++        let error = store
++            .commit_compound_prepared_with_one_leaf(
++                planned.request.as_ref().unwrap(),
++                None,
++                Some(&guard),
++                candidate,
++                |_| {
++                    called.set(true);
++                    Ok::<_, std::convert::Infallible>(())
++                },
++            )
++            .unwrap_err();
++        assert!(!called.get());
++        errors.push(error.to_string());
++        assert_eq!(cells(&path)?, before);
++    }
++    assert_eq!(errors[0], errors[1]);
++    Ok(())
++}
++
++#[cfg(any(target_os = "macos", target_os = "linux"))]
++#[test]
++fn one_leaf_replay_admitted_reverse_audio_rechecks_stored_qualification() -> Result {
++    let scratch = tempfile::tempdir()?;
++    let (path, mut store, _, _) = one_leaf_admitted_original(scratch.path())?;
++    let document = store.snapshot()?;
++    let asset = AssetId::new("original")?;
++    let record = &document.assets()[&asset];
++    let qualification = record.source_qualification.as_ref().unwrap();
++    let full = record.audio.unwrap();
++    let source = SourceAudio {
++        asset,
++        span: SourceSpan::new(
++            SourceTimestamp {
++                ticks: full.start().ticks + 17,
++                time_base: full.start().time_base,
++            },
++            SourceTimestamp {
++                ticks: full.start().ticks + 113,
++                time_base: full.start().time_base,
++            },
++        )?,
++    };
++    let planned = one_leaf_plan_with_audio(&store, HoldAudio::Reverse { source })?;
++    let request = planned.request.as_ref().unwrap();
++    // Establish that the exact request passes real Store media admission before
++    // damaging its receipt. The candidate's immutable entry stays identical.
++    store.preview_compound(request)?;
++    let database = Connection::open(path.join("project.sqlite"))?;
++    assert_eq!(
++        database.execute(
++            "DELETE FROM source_qualifications WHERE id=?1",
++            [qualification.as_str()],
++        )?,
++        1
++    );
++    let before = cells(&path)?;
++    let mut errors = Vec::new();
++    for candidate in [planned.one_leaf_replay(), None] {
++        let called = Cell::new(0);
++        let error = store
++            .commit_compound_prepared_with_one_leaf(request, None, None, candidate, |_| {
++                called.set(called.get() + 1);
++                Ok::<_, std::convert::Infallible>(())
++            })
++            .unwrap_err();
++        let CompoundPreparationError::Store(error) = error;
++        assert!(matches!(&error, StoreError::SourceRegistration(message)
++            if message == "Hold audio source qualification is missing"));
++        assert_eq!(called.get(), 0);
++        errors.push((format!("{error:?}"), error.to_string()));
++        assert_eq!(store.snapshot()?, document);
++        assert_eq!(cells(&path)?, before);
++    }
++    assert_eq!(errors[0], errors[1]);
++    Ok(())
++}
++
++#[cfg(any(target_os = "macos", target_os = "linux"))]
++#[test]
++fn one_leaf_replay_changed_corrections_invalidate_admitted_transcript_guard() -> Result {
++    let scratch = tempfile::tempdir()?;
++    let (path, mut store, key, proposal) = one_leaf_admitted_original(scratch.path())?;
++    let document = store.snapshot()?;
++    let planned = one_leaf_plan(&store)?;
++    let request = planned.request.as_ref().unwrap();
++    let guard = store.transcript_selection(&key)?.guard;
++    assert_eq!(guard.corrections, TranscriptSelectionCorrections::Absent);
++    store.preview_compound_with_transcript_guard(request, &guard)?;
++    let corrected = Corrections::empty(Corrections::clock_of(&proposal)).edit_word_text(
++        &CorrectedTranscript::recognized(proposal.clone()),
++        0,
++        "hullo",
++        &[],
++    )?;
++    let applied = store.change_analysis_corrections(
++        &CorrectionsKey {
++            content: key.content.clone(),
++            audio_stream: key.audio_stream,
++        },
++        0,
++        CorrectionChange::Apply {
++            corrections: corrected,
++            label: "Correct hello".into(),
++        },
++    )?;
++    assert_eq!(applied.version, 1);
++    let fresh = store.transcript_selection(&key)?.guard;
++    assert!(matches!(
++        fresh.corrections,
++        TranscriptSelectionCorrections::Present { version: 1, .. }
++    ));
++    assert_ne!(fresh, guard);
++    // The current guard still accepts this exact edit. Only the captured
++    // analysis authority became stale; the cached project entry did not.
++    store.preview_compound_with_transcript_guard(request, &fresh)?;
++    let before = cells(&path)?;
++    let mut errors = Vec::new();
++    for candidate in [planned.one_leaf_replay(), None] {
++        let called = Cell::new(0);
++        let error = store
++            .commit_compound_prepared_with_one_leaf(request, None, Some(&guard), candidate, |_| {
++                called.set(called.get() + 1);
++                Ok::<_, std::convert::Infallible>(())
++            })
++            .unwrap_err();
++        let CompoundPreparationError::Store(error) = error;
++        assert!(matches!(&error, StoreError::Integrity(message)
++            if message == "transcript selection analysis changed"));
++        assert_eq!(called.get(), 0);
++        errors.push((format!("{error:?}"), error.to_string()));
++        assert_eq!(store.snapshot()?, document);
++        assert_eq!(cells(&path)?, before);
++    }
++    assert_eq!(errors[0], errors[1]);
++    Ok(())
++}
++
++#[test]
++fn one_leaf_replay_historical_allocations_refuse_before_preparation() -> Result {
++    let scratch = tempfile::tempdir()?;
++    let path = scratch.path().join("historical-allocation.deadpan");
++    let mut store = create(&path)?;
++    let initial = store.snapshot()?;
++    store.commit(&ordinary(
++        &initial,
++        "later",
++        Command::Rename {
++            node: node("hold"),
++            label: "Advance the head".into(),
++        },
++    ))?;
++    let document = store.snapshot()?;
++    assert_eq!(document.revision_id(), &revision("later"));
++    let planned = one_leaf_plan(&store)?;
++    let valid = planned.request.as_ref().unwrap();
++    store.preview_compound(valid)?;
++    let mut reused_outer = valid.clone();
++    reused_outer.new_revision = revision("initial");
++    let Command::Compound { transaction } = &valid.command else {
++        panic!("Compound")
++    };
++    let mut steps = transaction.steps().to_vec();
++    let ResolvedStep::Edit { edit } = &mut steps[0] else {
++        panic!("Edit")
++    };
++    edit.new_revision = revision("initial");
++    let mut reused_leaf = valid.clone();
++    reused_leaf.command = Command::Compound {
++        transaction: ResolvedTransaction::new(
++            transaction.expected_bank_version(),
++            transaction.inputs().clone(),
++            steps,
++        )?,
++    };
++    let before = cells(&path)?;
++    for request in [reused_outer, reused_leaf] {
++        assert_ne!(request.new_revision, request.expected_revision);
++        let mut errors = Vec::new();
++        for candidate in [planned.one_leaf_replay(), None] {
++            let called = Cell::new(0);
++            let error = store
++                .commit_compound_prepared_with_one_leaf(&request, None, None, candidate, |_| {
++                    called.set(called.get() + 1);
++                    Ok::<_, std::convert::Infallible>(())
++                })
++                .unwrap_err();
++            let CompoundPreparationError::Store(error) = error;
++            assert!(matches!(&error, StoreError::RevisionReused(id) if id == "initial"));
++            assert_eq!(called.get(), 0);
++            errors.push((format!("{error:?}"), error.to_string()));
++            assert_eq!(store.snapshot()?, document);
++            assert_eq!(cells(&path)?, before);
++        }
++        assert_eq!(errors[0], errors[1]);
++    }
++    Ok(())
++}
++
+ #[test]
+ fn write_failure_discards_host_state_and_rolls_back_before_retry() -> Result {
+     let scratch = tempfile::tempdir()?;

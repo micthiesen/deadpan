@@ -1,0 +1,11 @@
+# One-leaf wire and charge reachability
+
+The replay's traversal order is unchanged: initial entry wire size; ledger reservation; pre-leaf entry wire size and charge; leaf application or exact reuse; post-leaf result wire size and charge; ledger observation; visitor; outer revision assignment; final wire size and charge; aggregate net construction.
+
+Each document traversal uses the existing 64 MiB cap. The one ordinary Edit has no captures or register inputs. Initial and pre-leaf serialize the identical immutable entry, with no mutation between them. Therefore a pre-leaf numerical wire failure cannot newly arise after successful initial traversal for this shape. A matching capability also has successful original entry and result serializers at creation; current entry and stored result remain immutable and have no provisional timing representation.
+
+Initial entry failure is reachable for a changed entry and wins before candidate lookup. Post-result failure is reachable on fallback with a different entry/request, and prevents capability creation. Final failure is reachable even on an actual private hit because assigning the publicly mutable outer revision can increase the bytes after the leaf result was sealed. Identity lengths remain the existing 1..128 ASCII bytes.
+
+The new private test uses valid shallow zero-duration groups and legal labels containing U+0001 (six bytes in JSON) to reach actual 64 MiB boundaries without changing any cap. It covers initial cap+1 with zero visitors, post-result cap+1 with zero visitors/no seal, and sealed leaf result exactly at cap followed by a longer outer revision failing after one visitor. Candidate and None paths compare complete EditError values. The final case constructs its actual capability through the private original-application/sealing helper; it is not claimed as a returned end-to-end SemanticPlan fixture. Unexpected success uses fixed diagnostic text, avoiding a 64 MiB document Debug dump.
+
+The cumulative document charge cannot fail for this shape: at most four traversals individually capped at 64 MiB total 256 MiB, below the unchanged 512 MiB cumulative cap. A numerical overflow cannot arise from their bounded sum. No lower test-only cap or production limit was added. Existing multi-step cumulative-budget regressions remain part of Root verification.

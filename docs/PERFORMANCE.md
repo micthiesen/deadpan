@@ -323,8 +323,18 @@ owned main app's whole lifetime only: 16,303 samples, maximum gaps up to
 7.818667 ms, with observed footprint maxima about 659–700 MiB. These are lower
 bounds, not exact peaks, per-leaf allocation, cache retention or a ceiling.
 The 376-file inventory and separate toolchain witness verify. No production
-code changes or target closes; a private opaque one-leaf replay-reuse
-experiment is being prepared against exact current authority.
+code changes or target closes.
+
+The private [one-leaf replay reuse prototype](qualification/one-leaf-replay-reuse-prototype-2026-10-23.md)
+passes 39 focused checks, source review and twenty fresh native trials.
+Five alternating timing pairs give commit medians 239.682292 /194.917708 ms
+and composition 242.163542 /197.496833 ms, an 18.44% diagnostic difference.
+The separate memory lane retains 18,296 whole-app samples with maximum gaps
+12.329791 ms. Median sampled footprint maxima are 731,940,088 /686,851,224
+bytes; they do not prove exact peaks, per-leaf retention or memory savings.
+All 394 evidence files verify. The 140 pause and twenty Kestrel checks pass;
+forty layout warnings remain. Production adoption, positive real-media cached
+publication/PCM/history/export and full qualification remain owed. No target closes.
 
 | Section 25 target | Measurement | Notes |
 | --- | --- | --- |

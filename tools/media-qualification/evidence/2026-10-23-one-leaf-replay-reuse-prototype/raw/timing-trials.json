@@ -1,0 +1,262 @@
+[
+  {
+    "authored_paths_bytes_unchanged": true,
+    "binary_sha256": "a9ce60a4d227e8c8107b06602915e6323e0cfabbf12610b67a85eda77bdd4a0f",
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c",
+    "kestrel_checks": 1,
+    "kind": "control",
+    "lane": "unobserved-timing",
+    "load_average": [
+      1.60498046875,
+      2.318359375,
+      2.14892578125
+    ],
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 237.06912499999999,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 239.633541
+    },
+    "pair": 1,
+    "pause_checks": 7,
+    "power_process_observation": "timing-1-control-preflight.json",
+    "profile_marker": {
+      "prefix_absent": true,
+      "stderr_bytes": 0
+    },
+    "source_binary_input_guards": true,
+    "wal_empty": true
+  },
+  {
+    "authored_paths_bytes_unchanged": true,
+    "binary_sha256": "6d1eaa132978c7c796ae1f56bb6d417bb19627511ce48cdb2e2b48724ccde73b",
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c",
+    "kestrel_checks": 1,
+    "kind": "candidate",
+    "lane": "unobserved-timing",
+    "load_average": [
+      1.67919921875,
+      2.30126953125,
+      2.14599609375
+    ],
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 195.32495799999998,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 197.796667
+    },
+    "pair": 1,
+    "pause_checks": 7,
+    "power_process_observation": "timing-1-candidate-preflight.json",
+    "profile_marker": {
+      "prefix_absent": true,
+      "stderr_bytes": 0
+    },
+    "source_binary_input_guards": true,
+    "wal_empty": true
+  },
+  {
+    "authored_paths_bytes_unchanged": true,
+    "binary_sha256": "6d1eaa132978c7c796ae1f56bb6d417bb19627511ce48cdb2e2b48724ccde73b",
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c",
+    "kestrel_checks": 1,
+    "kind": "candidate",
+    "lane": "unobserved-timing",
+    "load_average": [
+      1.68798828125,
+      2.27001953125,
+      2.13720703125
+    ],
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 196.68883300000002,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 199.147208
+    },
+    "pair": 2,
+    "pause_checks": 7,
+    "power_process_observation": "timing-2-candidate-preflight.json",
+    "profile_marker": {
+      "prefix_absent": true,
+      "stderr_bytes": 0
+    },
+    "source_binary_input_guards": true,
+    "wal_empty": true
+  },
+  {
+    "authored_paths_bytes_unchanged": true,
+    "binary_sha256": "a9ce60a4d227e8c8107b06602915e6323e0cfabbf12610b67a85eda77bdd4a0f",
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c",
+    "kestrel_checks": 1,
+    "kind": "control",
+    "lane": "unobserved-timing",
+    "load_average": [
+      1.615234375,
+      2.2236328125,
+      2.12255859375
+    ],
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 237.632959,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 240.15675
+    },
+    "pair": 2,
+    "pause_checks": 7,
+    "power_process_observation": "timing-2-control-preflight.json",
+    "profile_marker": {
+      "prefix_absent": true,
+      "stderr_bytes": 0
+    },
+    "source_binary_input_guards": true,
+    "wal_empty": true
+  },
+  {
+    "authored_paths_bytes_unchanged": true,
+    "binary_sha256": "a9ce60a4d227e8c8107b06602915e6323e0cfabbf12610b67a85eda77bdd4a0f",
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c",
+    "kestrel_checks": 1,
+    "kind": "control",
+    "lane": "unobserved-timing",
+    "load_average": [
+      1.6201171875,
+      2.1953125,
+      2.11376953125
+    ],
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 239.9945,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 242.583875
+    },
+    "pair": 3,
+    "pause_checks": 7,
+    "power_process_observation": "timing-3-control-preflight.json",
+    "profile_marker": {
+      "prefix_absent": true,
+      "stderr_bytes": 0
+    },
+    "source_binary_input_guards": true,
+    "wal_empty": true
+  },
+  {
+    "authored_paths_bytes_unchanged": true,
+    "binary_sha256": "6d1eaa132978c7c796ae1f56bb6d417bb19627511ce48cdb2e2b48724ccde73b",
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c",
+    "kestrel_checks": 1,
+    "kind": "candidate",
+    "lane": "unobserved-timing",
+    "load_average": [
+      1.48193359375,
+      2.13623046875,
+      2.09326171875
+    ],
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 192.794125,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 195.395667
+    },
+    "pair": 3,
+    "pause_checks": 7,
+    "power_process_observation": "timing-3-candidate-preflight.json",
+    "profile_marker": {
+      "prefix_absent": true,
+      "stderr_bytes": 0
+    },
+    "source_binary_input_guards": true,
+    "wal_empty": true
+  },
+  {
+    "authored_paths_bytes_unchanged": true,
+    "binary_sha256": "6d1eaa132978c7c796ae1f56bb6d417bb19627511ce48cdb2e2b48724ccde73b",
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c",
+    "kestrel_checks": 1,
+    "kind": "candidate",
+    "lane": "unobserved-timing",
+    "load_average": [
+      1.5283203125,
+      2.11328125,
+      2.08447265625
+    ],
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 194.917708,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 197.496833
+    },
+    "pair": 4,
+    "pause_checks": 7,
+    "power_process_observation": "timing-4-candidate-preflight.json",
+    "profile_marker": {
+      "prefix_absent": true,
+      "stderr_bytes": 0
+    },
+    "source_binary_input_guards": true,
+    "wal_empty": true
+  },
+  {
+    "authored_paths_bytes_unchanged": true,
+    "binary_sha256": "a9ce60a4d227e8c8107b06602915e6323e0cfabbf12610b67a85eda77bdd4a0f",
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c",
+    "kestrel_checks": 1,
+    "kind": "control",
+    "lane": "unobserved-timing",
+    "load_average": [
+      1.859375,
+      2.15625,
+      2.099609375
+    ],
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 241.57375,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 244.13204199999998
+    },
+    "pair": 4,
+    "pause_checks": 7,
+    "power_process_observation": "timing-4-control-preflight.json",
+    "profile_marker": {
+      "prefix_absent": true,
+      "stderr_bytes": 0
+    },
+    "source_binary_input_guards": true,
+    "wal_empty": true
+  },
+  {
+    "authored_paths_bytes_unchanged": true,
+    "binary_sha256": "a9ce60a4d227e8c8107b06602915e6323e0cfabbf12610b67a85eda77bdd4a0f",
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c",
+    "kestrel_checks": 1,
+    "kind": "control",
+    "lane": "unobserved-timing",
+    "load_average": [
+      1.822265625,
+      2.1318359375,
+      2.0908203125
+    ],
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 239.682292,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 242.163542
+    },
+    "pair": 5,
+    "pause_checks": 7,
+    "power_process_observation": "timing-5-control-preflight.json",
+    "profile_marker": {
+      "prefix_absent": true,
+      "stderr_bytes": 0
+    },
+    "source_binary_input_guards": true,
+    "wal_empty": true
+  },
+  {
+    "authored_paths_bytes_unchanged": true,
+    "binary_sha256": "6d1eaa132978c7c796ae1f56bb6d417bb19627511ce48cdb2e2b48724ccde73b",
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c",
+    "kestrel_checks": 1,
+    "kind": "candidate",
+    "lane": "unobserved-timing",
+    "load_average": [
+      1.873046875,
+      2.12548828125,
+      2.08837890625
+    ],
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 194.80520900000002,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 197.334417
+    },
+    "pair": 5,
+    "pause_checks": 7,
+    "power_process_observation": "timing-5-candidate-preflight.json",
+    "profile_marker": {
+      "prefix_absent": true,
+      "stderr_bytes": 0
+    },
+    "source_binary_input_guards": true,
+    "wal_empty": true
+  }
+]

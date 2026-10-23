@@ -1,0 +1,382 @@
+[
+  {
+    "authored_paths_bytes_unchanged": true,
+    "binary_sha256": "a9ce60a4d227e8c8107b06602915e6323e0cfabbf12610b67a85eda77bdd4a0f",
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c",
+    "kestrel_checks": 1,
+    "kind": "control",
+    "lane": "owned-observer-memory",
+    "load_average": [
+      1.8203125,
+      2.1015625,
+      2.07958984375
+    ],
+    "memory": {
+      "first_sample_start_elapsed_ns": 579333,
+      "last_sample_start_elapsed_ns": 13860135166,
+      "maximum_sample_start_gap_ns": 8922500,
+      "sample_count": 1850,
+      "sample_query_sum_ns": 3420003,
+      "sampled_max_phys_footprint_bytes": 729253112,
+      "sampled_max_resident_size_bytes": 729874432,
+      "sampling_window_elapsed_ns": 13867666625
+    },
+    "memory_scope": "sampled whole-app lifetime lower bound; not peak or phase attribution",
+    "observer_sha256": "d1166aef7e1b30c787bb39fa536c18aee9af9da4f2327120d321432205fc0ed2",
+    "pair": 1,
+    "pause_checks": 7,
+    "power_process_observation": "memory-1-control-preflight.json",
+    "profile_marker": {
+      "prefix_absent": true,
+      "stderr_bytes": 0
+    },
+    "source_binary_input_observer_guards": true,
+    "timing_metrics_observer_contaminated_do_not_pool": {
+      "large_first_pause_input_to_commit_ms": 239.628333,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 242.174833
+    },
+    "wal_empty": true
+  },
+  {
+    "authored_paths_bytes_unchanged": true,
+    "binary_sha256": "6d1eaa132978c7c796ae1f56bb6d417bb19627511ce48cdb2e2b48724ccde73b",
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c",
+    "kestrel_checks": 1,
+    "kind": "candidate",
+    "lane": "owned-observer-memory",
+    "load_average": [
+      1.71826171875,
+      2.0634765625,
+      2.06640625
+    ],
+    "memory": {
+      "first_sample_start_elapsed_ns": 512709,
+      "last_sample_start_elapsed_ns": 13722391167,
+      "maximum_sample_start_gap_ns": 7646667,
+      "sample_count": 1833,
+      "sample_query_sum_ns": 3466493,
+      "sampled_max_phys_footprint_bytes": 697222320,
+      "sampled_max_resident_size_bytes": 664813568,
+      "sampling_window_elapsed_ns": 13729916792
+    },
+    "memory_scope": "sampled whole-app lifetime lower bound; not peak or phase attribution",
+    "observer_sha256": "d1166aef7e1b30c787bb39fa536c18aee9af9da4f2327120d321432205fc0ed2",
+    "pair": 1,
+    "pause_checks": 7,
+    "power_process_observation": "memory-1-candidate-preflight.json",
+    "profile_marker": {
+      "prefix_absent": true,
+      "stderr_bytes": 0
+    },
+    "source_binary_input_observer_guards": true,
+    "timing_metrics_observer_contaminated_do_not_pool": {
+      "large_first_pause_input_to_commit_ms": 202.046166,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 204.578583
+    },
+    "wal_empty": true
+  },
+  {
+    "authored_paths_bytes_unchanged": true,
+    "binary_sha256": "6d1eaa132978c7c796ae1f56bb6d417bb19627511ce48cdb2e2b48724ccde73b",
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c",
+    "kestrel_checks": 1,
+    "kind": "candidate",
+    "lane": "owned-observer-memory",
+    "load_average": [
+      1.638671875,
+      2.02734375,
+      2.05322265625
+    ],
+    "memory": {
+      "first_sample_start_elapsed_ns": 522750,
+      "last_sample_start_elapsed_ns": 13484112416,
+      "maximum_sample_start_gap_ns": 7597792,
+      "sample_count": 1805,
+      "sample_query_sum_ns": 3382850,
+      "sampled_max_phys_footprint_bytes": 686851224,
+      "sampled_max_resident_size_bytes": 648101888,
+      "sampling_window_elapsed_ns": 13491641166
+    },
+    "memory_scope": "sampled whole-app lifetime lower bound; not peak or phase attribution",
+    "observer_sha256": "d1166aef7e1b30c787bb39fa536c18aee9af9da4f2327120d321432205fc0ed2",
+    "pair": 2,
+    "pause_checks": 7,
+    "power_process_observation": "memory-2-candidate-preflight.json",
+    "profile_marker": {
+      "prefix_absent": true,
+      "stderr_bytes": 0
+    },
+    "source_binary_input_observer_guards": true,
+    "timing_metrics_observer_contaminated_do_not_pool": {
+      "large_first_pause_input_to_commit_ms": 194.645041,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 197.077791
+    },
+    "wal_empty": true
+  },
+  {
+    "authored_paths_bytes_unchanged": true,
+    "binary_sha256": "a9ce60a4d227e8c8107b06602915e6323e0cfabbf12610b67a85eda77bdd4a0f",
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c",
+    "kestrel_checks": 1,
+    "kind": "control",
+    "lane": "owned-observer-memory",
+    "load_average": [
+      1.64404296875,
+      2.00927734375,
+      2.0458984375
+    ],
+    "memory": {
+      "first_sample_start_elapsed_ns": 590333,
+      "last_sample_start_elapsed_ns": 13638369416,
+      "maximum_sample_start_gap_ns": 7598875,
+      "sample_count": 1822,
+      "sample_query_sum_ns": 3348780,
+      "sampled_max_phys_footprint_bytes": 731940088,
+      "sampled_max_resident_size_bytes": 700612608,
+      "sampling_window_elapsed_ns": 13645900208
+    },
+    "memory_scope": "sampled whole-app lifetime lower bound; not peak or phase attribution",
+    "observer_sha256": "d1166aef7e1b30c787bb39fa536c18aee9af9da4f2327120d321432205fc0ed2",
+    "pair": 2,
+    "pause_checks": 7,
+    "power_process_observation": "memory-2-control-preflight.json",
+    "profile_marker": {
+      "prefix_absent": true,
+      "stderr_bytes": 0
+    },
+    "source_binary_input_observer_guards": true,
+    "timing_metrics_observer_contaminated_do_not_pool": {
+      "large_first_pause_input_to_commit_ms": 240.11525,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 242.625416
+    },
+    "wal_empty": true
+  },
+  {
+    "authored_paths_bytes_unchanged": true,
+    "binary_sha256": "a9ce60a4d227e8c8107b06602915e6323e0cfabbf12610b67a85eda77bdd4a0f",
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c",
+    "kestrel_checks": 1,
+    "kind": "control",
+    "lane": "owned-observer-memory",
+    "load_average": [
+      1.50048828125,
+      1.958984375,
+      2.02685546875
+    ],
+    "memory": {
+      "first_sample_start_elapsed_ns": 558417,
+      "last_sample_start_elapsed_ns": 13663310333,
+      "maximum_sample_start_gap_ns": 12329791,
+      "sample_count": 1822,
+      "sample_query_sum_ns": 3331151,
+      "sampled_max_phys_footprint_bytes": 731038992,
+      "sampled_max_resident_size_bytes": 731627520,
+      "sampling_window_elapsed_ns": 13670833333
+    },
+    "memory_scope": "sampled whole-app lifetime lower bound; not peak or phase attribution",
+    "observer_sha256": "d1166aef7e1b30c787bb39fa536c18aee9af9da4f2327120d321432205fc0ed2",
+    "pair": 3,
+    "pause_checks": 7,
+    "power_process_observation": "memory-3-control-preflight.json",
+    "profile_marker": {
+      "prefix_absent": true,
+      "stderr_bytes": 0
+    },
+    "source_binary_input_observer_guards": true,
+    "timing_metrics_observer_contaminated_do_not_pool": {
+      "large_first_pause_input_to_commit_ms": 239.053333,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 241.611917
+    },
+    "wal_empty": true
+  },
+  {
+    "authored_paths_bytes_unchanged": true,
+    "binary_sha256": "6d1eaa132978c7c796ae1f56bb6d417bb19627511ce48cdb2e2b48724ccde73b",
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c",
+    "kestrel_checks": 1,
+    "kind": "candidate",
+    "lane": "owned-observer-memory",
+    "load_average": [
+      1.46875,
+      1.927734375,
+      2.013671875
+    ],
+    "memory": {
+      "first_sample_start_elapsed_ns": 522833,
+      "last_sample_start_elapsed_ns": 13734619125,
+      "maximum_sample_start_gap_ns": 7536167,
+      "sample_count": 1832,
+      "sample_query_sum_ns": 3154696,
+      "sampled_max_phys_footprint_bytes": 641188992,
+      "sampled_max_resident_size_bytes": 621412352,
+      "sampling_window_elapsed_ns": 13742147333
+    },
+    "memory_scope": "sampled whole-app lifetime lower bound; not peak or phase attribution",
+    "observer_sha256": "d1166aef7e1b30c787bb39fa536c18aee9af9da4f2327120d321432205fc0ed2",
+    "pair": 3,
+    "pause_checks": 7,
+    "power_process_observation": "memory-3-candidate-preflight.json",
+    "profile_marker": {
+      "prefix_absent": true,
+      "stderr_bytes": 0
+    },
+    "source_binary_input_observer_guards": true,
+    "timing_metrics_observer_contaminated_do_not_pool": {
+      "large_first_pause_input_to_commit_ms": 194.60666600000002,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 196.965375
+    },
+    "wal_empty": true
+  },
+  {
+    "authored_paths_bytes_unchanged": true,
+    "binary_sha256": "6d1eaa132978c7c796ae1f56bb6d417bb19627511ce48cdb2e2b48724ccde73b",
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c",
+    "kestrel_checks": 1,
+    "kind": "candidate",
+    "lane": "owned-observer-memory",
+    "load_average": [
+      1.3642578125,
+      1.88134765625,
+      1.99462890625
+    ],
+    "memory": {
+      "first_sample_start_elapsed_ns": 551375,
+      "last_sample_start_elapsed_ns": 13858533166,
+      "maximum_sample_start_gap_ns": 10840459,
+      "sample_count": 1856,
+      "sample_query_sum_ns": 3555304,
+      "sampled_max_phys_footprint_bytes": 641533056,
+      "sampled_max_resident_size_bytes": 622067712,
+      "sampling_window_elapsed_ns": 13866048083
+    },
+    "memory_scope": "sampled whole-app lifetime lower bound; not peak or phase attribution",
+    "observer_sha256": "d1166aef7e1b30c787bb39fa536c18aee9af9da4f2327120d321432205fc0ed2",
+    "pair": 4,
+    "pause_checks": 7,
+    "power_process_observation": "memory-4-candidate-preflight.json",
+    "profile_marker": {
+      "prefix_absent": true,
+      "stderr_bytes": 0
+    },
+    "source_binary_input_observer_guards": true,
+    "timing_metrics_observer_contaminated_do_not_pool": {
+      "large_first_pause_input_to_commit_ms": 195.390333,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 197.839875
+    },
+    "wal_empty": true
+  },
+  {
+    "authored_paths_bytes_unchanged": true,
+    "binary_sha256": "a9ce60a4d227e8c8107b06602915e6323e0cfabbf12610b67a85eda77bdd4a0f",
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c",
+    "kestrel_checks": 1,
+    "kind": "control",
+    "lane": "owned-observer-memory",
+    "load_average": [
+      1.3505859375,
+      1.853515625,
+      1.98291015625
+    ],
+    "memory": {
+      "first_sample_start_elapsed_ns": 531875,
+      "last_sample_start_elapsed_ns": 13869330042,
+      "maximum_sample_start_gap_ns": 7612958,
+      "sample_count": 1851,
+      "sample_query_sum_ns": 3443725,
+      "sampled_max_phys_footprint_bytes": 732726520,
+      "sampled_max_resident_size_bytes": 695992320,
+      "sampling_window_elapsed_ns": 13876857958
+    },
+    "memory_scope": "sampled whole-app lifetime lower bound; not peak or phase attribution",
+    "observer_sha256": "d1166aef7e1b30c787bb39fa536c18aee9af9da4f2327120d321432205fc0ed2",
+    "pair": 4,
+    "pause_checks": 7,
+    "power_process_observation": "memory-4-control-preflight.json",
+    "profile_marker": {
+      "prefix_absent": true,
+      "stderr_bytes": 0
+    },
+    "source_binary_input_observer_guards": true,
+    "timing_metrics_observer_contaminated_do_not_pool": {
+      "large_first_pause_input_to_commit_ms": 240.617833,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 243.28158299999998
+    },
+    "wal_empty": true
+  },
+  {
+    "authored_paths_bytes_unchanged": true,
+    "binary_sha256": "a9ce60a4d227e8c8107b06602915e6323e0cfabbf12610b67a85eda77bdd4a0f",
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c",
+    "kestrel_checks": 1,
+    "kind": "control",
+    "lane": "owned-observer-memory",
+    "load_average": [
+      1.3525390625,
+      1.8271484375,
+      1.97119140625
+    ],
+    "memory": {
+      "first_sample_start_elapsed_ns": 554542,
+      "last_sample_start_elapsed_ns": 13196658167,
+      "maximum_sample_start_gap_ns": 7528167,
+      "sample_count": 1767,
+      "sample_query_sum_ns": 3143388,
+      "sampled_max_phys_footprint_bytes": 732202208,
+      "sampled_max_resident_size_bytes": 723484672,
+      "sampling_window_elapsed_ns": 13204183750
+    },
+    "memory_scope": "sampled whole-app lifetime lower bound; not peak or phase attribution",
+    "observer_sha256": "d1166aef7e1b30c787bb39fa536c18aee9af9da4f2327120d321432205fc0ed2",
+    "pair": 5,
+    "pause_checks": 7,
+    "power_process_observation": "memory-5-control-preflight.json",
+    "profile_marker": {
+      "prefix_absent": true,
+      "stderr_bytes": 0
+    },
+    "source_binary_input_observer_guards": true,
+    "timing_metrics_observer_contaminated_do_not_pool": {
+      "large_first_pause_input_to_commit_ms": 240.09375,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 242.716667
+    },
+    "wal_empty": true
+  },
+  {
+    "authored_paths_bytes_unchanged": true,
+    "binary_sha256": "6d1eaa132978c7c796ae1f56bb6d417bb19627511ce48cdb2e2b48724ccde73b",
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c",
+    "kestrel_checks": 1,
+    "kind": "candidate",
+    "lane": "owned-observer-memory",
+    "load_average": [
+      1.35400390625,
+      1.80224609375,
+      1.95947265625
+    ],
+    "memory": {
+      "first_sample_start_elapsed_ns": 534958,
+      "last_sample_start_elapsed_ns": 13933539500,
+      "maximum_sample_start_gap_ns": 7548750,
+      "sample_count": 1858,
+      "sample_query_sum_ns": 3236054,
+      "sampled_max_phys_footprint_bytes": 698188976,
+      "sampled_max_resident_size_bytes": 668696576,
+      "sampling_window_elapsed_ns": 13941066166
+    },
+    "memory_scope": "sampled whole-app lifetime lower bound; not peak or phase attribution",
+    "observer_sha256": "d1166aef7e1b30c787bb39fa536c18aee9af9da4f2327120d321432205fc0ed2",
+    "pair": 5,
+    "pause_checks": 7,
+    "power_process_observation": "memory-5-candidate-preflight.json",
+    "profile_marker": {
+      "prefix_absent": true,
+      "stderr_bytes": 0
+    },
+    "source_binary_input_observer_guards": true,
+    "timing_metrics_observer_contaminated_do_not_pool": {
+      "large_first_pause_input_to_commit_ms": 194.337042,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 196.9515
+    },
+    "wal_empty": true
+  }
+]

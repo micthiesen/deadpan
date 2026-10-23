@@ -1,0 +1,63 @@
+{
+  "before": {
+    "crates/deadpan-cli/src/macros.rs": "c120ec8575fc5b72267bbccfd84481bf97fef1b39c96092b4048d6ca35165f7f",
+    "crates/deadpan-core/src/audio_reference.rs": "ed3259f86f811e61adcffdc58972342057b9f3afa1622fd38bc42db5c44dd70d",
+    "crates/deadpan-core/src/compound.rs": "5cc9f31f2b1a88267518b5edfb228c9de956cf3a4248434e77b70a312186db17",
+    "crates/deadpan-core/src/insert_time/retimed.rs": "d5cd1bb8a12c777275fb2af286ba42c120572723f5143b15f36ed9def3ef5358",
+    "crates/deadpan-core/src/lib.rs": "9087e729aeebf830f54717074e4a59835dea4b131a7b04f5a98224c0a3db9b2a",
+    "crates/deadpan-core/src/one_leaf_replay.rs": null,
+    "crates/deadpan-core/src/semantic/planner.rs": "67e5d86a9f6c96b98bb6289b838f8b1375ac4ee0559dbf26417819e7e3e17c1f",
+    "crates/deadpan-core/src/semantic/planner/content.rs": "539e3340dc8dc6450997f2821b1196978dcef7b41bb76dd7038e657c0bbdc8fa",
+    "crates/deadpan-core/src/semantic/planner/pause.rs": "8b6e2f282b5d704afe6528e5dbdad5118028bb99d637fe0644410bb514fde15f",
+    "crates/deadpan-core/src/semantic/planner/tests.rs": "c80952632e4dff220d9de5679872193c803455fdfc5e18a3cc0d816ea60b12eb",
+    "crates/deadpan-core/tests/semantic_leaf_replay.rs": null,
+    "crates/deadpan-store/src/compound.rs": "1d5f07d4bc517906ed8cd650e42620cfca5d9e19c474599b3fafdd87a9ebc8e4",
+    "crates/deadpan-store/src/lib.rs": "60e791a846e4ae64bd400194a7efe8d9123880490b8b18a2cf57a5d66c429227",
+    "crates/deadpan-store/tests/compound_preparation.rs": "7b9bd2b1f90e62c2519d1cd8f6606ea6f49a37b9c18aec4bd29194106fddaa44"
+  },
+  "proposed": {
+    "crates/deadpan-cli/src/macros.rs": "5a41a720840844726b9e308ea12151aca39c58fbf5c6f9c06311929dee62085e",
+    "crates/deadpan-core/src/audio_reference.rs": "9d67911d7a2b414df0afe964efbc7a3111dfc679884f5068add5a226e53141ef",
+    "crates/deadpan-core/src/compound.rs": "1de3788b9f6b1275a8ca34e4e607f6a7b18eb8982aee1486399dcf95abbf62d0",
+    "crates/deadpan-core/src/insert_time/retimed.rs": "8310600f2b8c6d83b034539bec0cbd7ece91eb32aeeb9031840ccfe2442564b6",
+    "crates/deadpan-core/src/lib.rs": "b7746cc15dd05b11d13c842229ddc5ee3081e3f351ca03c7d894d6eda67f99ac",
+    "crates/deadpan-core/src/one_leaf_replay.rs": "3c866bb385b0782f29cb5d0ee66efc84b501c38e4936c5dd60c7bee5f20be05f",
+    "crates/deadpan-core/src/semantic/planner.rs": "90052a1e9dd0e8f0223c3161aa70891412e7f3881b0da9b750f26c57e52b5ae1",
+    "crates/deadpan-core/src/semantic/planner/content.rs": "168b2b5a2b1a93361d72aa2ccf2c71eeb763d62931840b243d01f4b1519fcb5d",
+    "crates/deadpan-core/src/semantic/planner/pause.rs": "6403efdf543dba011b5bac1fb1d6fce617b3bf78e3c16628ca4ebcf6559841b6",
+    "crates/deadpan-core/src/semantic/planner/tests.rs": "ba36a97b458cd4895dc3d9b810e58f2580c95d24ae80deddee66461c14c9bd09",
+    "crates/deadpan-core/tests/semantic_leaf_replay.rs": "08002eca0821907de19072701c0325af1596f09d04200c67b88b60f44a1cc832",
+    "crates/deadpan-store/src/compound.rs": "877db764a64a39dc2111c8e1e6eb53786f26e1b2730961c81c6abb0a5f03704e",
+    "crates/deadpan-store/src/lib.rs": "ad44a235a6dbd421f45d35d59ed9232021ac6c5528622da0576b97337d0ea8af",
+    "crates/deadpan-store/tests/compound_preparation.rs": "1706eaf64a98da3634570e24d44c0fa0b0aed9e093657f4d70ad3c5c98400884"
+  },
+  "baseline_rust": 2051,
+  "proposed_rust": 2053,
+  "all_nonowned_rust_unchanged": 2039,
+  "all_baseline_files": 34585,
+  "all_nonowned_baseline_files_unchanged": 34573,
+  "changed_files": [
+    "crates/deadpan-cli/src/macros.rs",
+    "crates/deadpan-core/src/audio_reference.rs",
+    "crates/deadpan-core/src/compound.rs",
+    "crates/deadpan-core/src/insert_time/retimed.rs",
+    "crates/deadpan-core/src/lib.rs",
+    "crates/deadpan-core/src/one_leaf_replay.rs",
+    "crates/deadpan-core/src/semantic/planner.rs",
+    "crates/deadpan-core/src/semantic/planner/content.rs",
+    "crates/deadpan-core/src/semantic/planner/pause.rs",
+    "crates/deadpan-core/src/semantic/planner/tests.rs",
+    "crates/deadpan-core/tests/semantic_leaf_replay.rs",
+    "crates/deadpan-store/src/compound.rs",
+    "crates/deadpan-store/src/lib.rs",
+    "crates/deadpan-store/tests/compound_preparation.rs"
+  ],
+  "new_files": [
+    "crates/deadpan-core/src/one_leaf_replay.rs",
+    "crates/deadpan-core/tests/semantic_leaf_replay.rs"
+  ],
+  "six_inputs_unchanged": true,
+  "control_app_sha256": "a9ce60a4d227e8c8107b06602915e6323e0cfabbf12610b67a85eda77bdd4a0f",
+  "uncompiled": true,
+  "unformatted": true
+}

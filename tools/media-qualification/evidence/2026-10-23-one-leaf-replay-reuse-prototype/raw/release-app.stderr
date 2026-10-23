@@ -1,0 +1,6 @@
+   Compiling deadpan-audio v0.1.0 (/private/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source/crates/deadpan-audio)
+   Compiling deadpan-store v0.1.0 (/private/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source/crates/deadpan-store)
+   Compiling deadpan-playback v0.1.0 (/private/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source/crates/deadpan-playback)
+   Compiling deadpan-cli v0.1.0 (/private/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source/crates/deadpan-cli)
+   Compiling deadpan-app v0.1.0 (/private/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/source/crates/deadpan-app)
+    Finished `release` profile [optimized] target(s) in 4m 13s

@@ -1,0 +1,7 @@
+{
+  "phase": "resume wrapper preflight",
+  "commands_executed": 0,
+  "reason": "Existing-target assertion was updated, but a later unconditional TARGET.mkdir remained. Removed only that redundant creation; source/tests/inputs unchanged.",
+  "before_script_sha256": "78c45f12a7a568dd403b5d53a96899613ab06925cf597ec09c5cedecaaf9f0f0",
+  "after_script_sha256": "738700e9a84c83c4a73f025d097410087541b9f7744d2a56482e994f889f0eac"
+}

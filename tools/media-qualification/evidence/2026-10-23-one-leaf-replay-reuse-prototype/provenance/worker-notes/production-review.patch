@@ -1,0 +1,638 @@
+--- a/crates/deadpan-cli/src/macros.rs
++++ b/crates/deadpan-cli/src/macros.rs
+@@ -194,12 +194,9 @@
+                 "Selection-only plan has no Compound",
+             ))
+         })?;
+-        match &self.transcript_guard {
+-            Some(guard) => {
+-                store.commit_compound_with_transcript_guard_prepared(request, None, guard, prepare)
+-            }
+-            None => store.commit_compound_prepared(request, None, prepare),
+-        }
++        store.commit_compound_prepared_with_one_leaf(
++            request, None, self.transcript_guard.as_ref(), self.plan.one_leaf_replay(), prepare,
++        )
+         .map_err(|error| match error {
+             deadpan_store::CompoundPreparationError::Store(error) => {
+                 PreparedCommitError::Commit(LiveError::store(error))
+--- a/crates/deadpan-core/src/compound.rs
++++ b/crates/deadpan-core/src/compound.rs
+@@ -242,8 +242,29 @@
+ pub(crate) fn replay_compound_captured<E: From<EditError>>(
+     document: &ProjectDocument,
+     request: &CommandRequest,
++    visit: impl FnMut(CompoundVisit<'_>) -> Result<(), E>,
++    isolation: Option<&mut Vec<crate::ScopedIsolationStep>>,
++) -> Result<CompoundOutcome, E> {
++    replay_compound_inner(document, request, visit, isolation, None)
++}
++
++/// Replay with an optional immutable result of Core's own exact semantic leaf.
++/// Every replay prefix charge, host visit and final aggregate still executes.
++pub fn replay_compound_with_one_leaf<E: From<EditError>>(
++    document: &ProjectDocument,
++    request: &CommandRequest,
++    visit: impl FnMut(CompoundVisit<'_>) -> Result<(), E>,
++    candidate: Option<&crate::OneLeafReplay>,
++) -> Result<CompoundOutcome, E> {
++    replay_compound_inner(document, request, visit, None, candidate)
++}
++
++fn replay_compound_inner<E: From<EditError>>(
++    document: &ProjectDocument,
++    request: &CommandRequest,
+     mut visit: impl FnMut(CompoundVisit<'_>) -> Result<(), E>,
+     mut isolation: Option<&mut Vec<crate::ScopedIsolationStep>>,
++    candidate: Option<&crate::OneLeafReplay>,
+ ) -> Result<CompoundOutcome, E> {
+     crate::command::check_revision(
+         document,
+@@ -324,7 +345,18 @@
+                 isolation.extend(steps);
+                 next
+             } else {
+-                crate::apply_with_result(&current, leaf)?.1
++                let reused = if crate::one_leaf_replay::eligible_compound(request) {
++                    match candidate {
++                        Some(candidate) => candidate.reuse(&current, leaf)?,
++                        None => None,
++                    }
++                } else {
++                    None
++                };
++                match reused {
++                    Some(next) => next,
++                    None => crate::apply_with_result(&current, leaf)?.1,
++                }
+             };
+             let size = wire::size(&next, crate::MAX_DOCUMENT_JSON_BYTES)?;
+             charge(
+--- a/crates/deadpan-core/src/lib.rs
++++ b/crates/deadpan-core/src/lib.rs
+@@ -34,6 +34,8 @@
+     with_reference_command_work,
+ };
+ mod compound;
++mod one_leaf_replay;
++pub use one_leaf_replay::OneLeafReplay;
+ mod cutaway;
+ mod derived_clock;
+ mod document;
+--- /dev/null
++++ b/crates/deadpan-core/src/one_leaf_replay.rs
+@@ -0,0 +1,264 @@
++//! One exact, successfully applied ordinary semantic leaf. No host proof or
++//! mutable plan field can construct or retarget this in-memory capability.
++
++use crate::{Command, CommandRequest, EditError, ProjectDocument, ResolvedStep};
++
++/// An optional result of Core's own one-leaf semantic application. Its complete
++/// entry, request and leaf-revision result are private immutable values. It is
++/// never serialized, cloned as a capability, or stored in authored history.
++pub struct OneLeafReplay {
++    entry: ProjectDocument,
++    request: CommandRequest,
++    next: ProjectDocument,
++}
++
++impl std::fmt::Debug for OneLeafReplay {
++    fn fmt(&self, formatter: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
++        formatter.debug_struct("OneLeafReplay").finish_non_exhaustive()
++    }
++}
++
++fn eligible_value(document: &ProjectDocument) -> bool {
++    document.derived_clocks().is_empty()
++        && !document.audio_bindings().has_provisional_timings()
++}
++
++fn eligible_mode() -> bool {
++    crate::command_work::local() && crate::audio_binding_lifecycle::compact_representation()
++}
++
++pub(crate) fn eligible_compound(request: &CommandRequest) -> bool {
++    matches!(&request.command, Command::Compound { transaction }
++        if transaction.inputs().is_empty()
++            && matches!(transaction.steps(), [ResolvedStep::Edit { edit }]
++                if matches!(edit.command.as_command(), Command::InsertTime { .. })))
++}
++
++/// Own the application as well as sealing its result. The caller's unchanged
++/// post-leaf serialization/charge must succeed before a capability is created.
++pub(crate) fn apply_semantic_leaf(
++    entry: &ProjectDocument,
++    request: &CommandRequest,
++    retain: bool,
++    admit_next: impl FnOnce(&ProjectDocument) -> Result<(), EditError>,
++) -> Result<(ProjectDocument, Option<OneLeafReplay>), EditError> {
++    let (_, next) = crate::apply_with_result(entry, request)?;
++    admit_next(&next)?;
++    let candidate = (retain
++        && eligible_mode()
++        && eligible_value(entry)
++        && eligible_value(&next)
++        && matches!(&request.command, Command::InsertTime { .. }))
++    .then(|| OneLeafReplay {
++        entry: entry.clone(),
++        request: request.clone(),
++        next: next.clone(),
++    });
++    Ok((next, candidate))
++}
++
++impl OneLeafReplay {
++    /// Called only at replay's ordinary leaf boundary, after all original
++    /// prefix admission, canonical serialization, ledger and work charges.
++    pub(crate) fn reuse(
++        &self,
++        entry: &ProjectDocument,
++        request: &CommandRequest,
++    ) -> Result<Option<ProjectDocument>, EditError> {
++        if !eligible_mode()
++            || !eligible_value(entry)
++            || !eligible_value(&self.entry)
++            || !eligible_value(&self.next)
++            || entry != &self.entry
++            || request != &self.request
++        {
++            return Ok(None);
++        }
++        // Ordinary apply clears this destructive TLS before leaf revision
++        // admission and consumes it again before preserving exact clocks.
++        crate::insert_time::retimed::take_exact_edit();
++        crate::command::check_revision(
++            entry, &request.project_id, &request.expected_revision, &request.new_revision,
++        )?;
++        let next = self.next.clone();
++        if !crate::insert_time::retimed::take_exact_edit() {
++            crate::derived_clock::sealed_preserved(entry, &next)?;
++        }
++        Ok(Some(next))
++    }
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++
++    fn fixture() -> (ProjectDocument, CommandRequest) {
++        let id = |value: &str| crate::NodeId::new(value).unwrap();
++        let mut entry = ProjectDocument::new(
++            crate::ProjectId::new("private-leaf").unwrap(), crate::RevisionId::new("entry").unwrap(),
++            crate::basis::default_basis(), id("root"),
++        ).unwrap();
++        let recipe = |frames| crate::HoldRecipe {
++            duration: crate::FrameDuration::new(frames).unwrap(), picture_context: None,
++            video: crate::HoldVideo::Background, audio: crate::HoldAudio::Silence,
++        };
++        entry.nodes.insert(id("hold"), crate::BeatNode::hold("Held", recipe(8)));
++        entry.nodes.insert(id("root"), crate::BeatNode::sequence("Root", vec![id("hold")]));
++        entry.validate().unwrap();
++        crate::compound::wire::size(&entry, crate::MAX_DOCUMENT_JSON_BYTES).unwrap();
++        let split = entry.insert_time_target(crate::ProjectFrame(3)).unwrap().split.unwrap();
++        let request = CommandRequest {
++            project_id: entry.project_id().clone(), expected_revision: entry.revision_id().clone(),
++            new_revision: crate::RevisionId::new("leaf").unwrap(),
++            command: Command::InsertTime {
++                at: crate::ProjectFrame(3), hold: recipe(2), id: id("pause"),
++                identities: crate::SplitIdentities { nodes: (0..split.required_ids).map(|n| id(&format!("split-{n}"))).collect() },
++                timing: crate::AudioTimingId { allocation: crate::RevisionId::new("leaf").unwrap(), ordinal: 0 },
++            },
++        };
++        (entry, request)
++    }
++
++    fn serialize(next: &ProjectDocument) -> Result<(), EditError> {
++        crate::compound::wire::size(next, crate::MAX_DOCUMENT_JSON_BYTES).map(|_| ())
++    }
++
++    #[test]
++    fn one_leaf_replay_private_hit_is_exact_and_mode_misses_do_not_return_a_result() {
++        let (entry, request) = fixture();
++        let (next, candidate) = apply_semantic_leaf(&entry, &request, true, serialize).unwrap();
++        let candidate = candidate.unwrap();
++        assert_eq!(candidate.reuse(&entry, &request).unwrap().unwrap(), next);
++        assert!(crate::with_reference_command_work(|| candidate.reuse(&entry, &request)).unwrap().is_none());
++        assert!(crate::with_reference_timing_representation(|| candidate.reuse(&entry, &request)).unwrap().is_none());
++        let mut changed = entry.clone();
++        changed.nodes.get_mut(&crate::NodeId::new("hold").unwrap()).unwrap().label = "Different".into();
++        assert!(candidate.reuse(&changed, &request).unwrap().is_none());
++        assert!(crate::with_reference_command_work(|| apply_semantic_leaf(&entry, &request, true, serialize)).unwrap().1.is_none());
++        assert!(crate::with_reference_timing_representation(|| apply_semantic_leaf(&entry, &request, true, serialize)).unwrap().1.is_none());
++    }
++
++    #[test]
++    fn one_leaf_replay_post_leaf_admission_failure_returns_no_capability() {
++        let (entry, request) = fixture();
++        let refused = EditError::new(crate::EditErrorCode::LimitExceeded, "post-leaf admission refused");
++        let result = apply_semantic_leaf(&entry, &request, true, |_| Err(refused.clone()));
++        assert_eq!(result.unwrap_err(), refused);
++        // A failed admission leaves no reusable state behind for another call.
++        let (next, candidate) = apply_semantic_leaf(&entry, &request, true, serialize).unwrap();
++        assert_eq!(candidate.unwrap().reuse(&entry, &request).unwrap().unwrap(), next);
++    }
++
++    fn wide_fixture() -> (ProjectDocument, CommandRequest) {
++        let (mut entry, request) = fixture();
++        let mut children = vec![crate::NodeId::new("hold").unwrap()];
++        // Empty ordinary groups add no picture time. Escaped legal labels let
++        // this reach the real 64 MiB wire cap with only 12,002 valid nodes.
++        for index in 0..12_000 {
++            let id = crate::NodeId::new(format!("padding-{index}")).unwrap();
++            entry.nodes.insert(id.clone(), crate::BeatNode::sequence("", vec![]));
++            children.push(id);
++        }
++        entry.nodes.insert(crate::NodeId::new("root").unwrap(), crate::BeatNode::sequence("Root", children));
++        entry.validate().unwrap();
++        (entry, request)
++    }
++
++    fn pad_wire_by(entry: &mut ProjectDocument, mut additional: usize) {
++        for index in 0..12_000 {
++            let count = additional.min(6_000);
++            let label = format!("{}{}", "\u{1}".repeat(count / 6), "x".repeat(count % 6));
++            assert!(label.len() <= 1_024);
++            entry.nodes.get_mut(&crate::NodeId::new(format!("padding-{index}")).unwrap()).unwrap().label = label;
++            additional -= count;
++        }
++        assert_eq!(additional, 0);
++        entry.validate().unwrap();
++    }
++
++    fn replay_error(entry: &ProjectDocument, leaf: &CommandRequest, outer: &str, candidate: Option<&OneLeafReplay>) -> (EditError, usize) {
++        let request = CommandRequest {
++            project_id: entry.project_id().clone(), expected_revision: entry.revision_id().clone(),
++            new_revision: crate::RevisionId::new(outer).unwrap(),
++            command: Command::Compound { transaction: crate::ResolvedTransaction::new(
++                0, Default::default(), vec![ResolvedStep::Edit { edit: crate::LeafEdit::new(leaf.new_revision.clone(), leaf.command.clone()).unwrap() }],
++            ).unwrap() },
++        };
++        let mut visits = 0;
++        let result = crate::replay_compound_with_one_leaf(entry, &request, |_| {
++            visits += 1;
++            Ok::<(), EditError>(())
++        }, candidate);
++        let error = match result {
++            Err(error) => error,
++            Ok(_) => panic!("wire-boundary replay unexpectedly succeeded"),
++        };
++        (error, visits)
++    }
++
++    #[test]
++    fn one_leaf_replay_real_wire_boundaries_preserve_initial_post_and_final_refusals() {
++        let (small, small_request) = fixture();
++        let (_, small_candidate) = apply_semantic_leaf(&small, &small_request, true, serialize).unwrap();
++        let small_candidate = small_candidate.unwrap();
++        let limit = crate::MAX_DOCUMENT_JSON_BYTES;
++        let wire_size = |entry: &ProjectDocument| crate::compound::wire::size(entry, usize::MAX).unwrap();
++
++        // Initial wins before the duplicate pre-leaf traversal. A one-leaf
++        // pre-leaf value is identical, so it cannot newly exceed this cap.
++        {
++            let (mut entry, request) = wide_fixture();
++            let added = limit + 1 - wire_size(&entry);
++            pad_wire_by(&mut entry, added);
++            assert_eq!(wire_size(&entry), limit + 1);
++            let expected = serialize(&entry).unwrap_err();
++            assert_eq!(replay_error(&entry, &request, "outer", None), (expected.clone(), 0));
++            assert_eq!(replay_error(&entry, &request, "outer", Some(&small_candidate)), (expected, 0));
++        }
++        // A changed entry misses. Original leaf application reaches the real
++        // post-result cap before any visitor; creation cannot seal that result.
++        {
++            let (mut entry, request) = wide_fixture();
++            let (_, next) = crate::apply_with_result(&entry, &request).unwrap();
++            let added = limit + 1 - wire_size(&next);
++            drop(next);
++            pad_wire_by(&mut entry, added);
++            serialize(&entry).unwrap();
++            let (_, next) = crate::apply_with_result(&entry, &request).unwrap();
++            assert_eq!(wire_size(&next), limit + 1);
++            let expected = serialize(&next).unwrap_err();
++            drop(next);
++            let error = match apply_semantic_leaf(&entry, &request, true, serialize) {
++                Err(error) => error,
++                Ok(_) => panic!("oversized result unexpectedly sealed"),
++            };
++            assert_eq!(error, expected);
++            assert_eq!(replay_error(&entry, &request, "outer", None), (expected.clone(), 0));
++            assert_eq!(replay_error(&entry, &request, "outer", Some(&small_candidate)), (expected, 0));
++        }
++        // Leaf result exactly at the cap seals successfully. A longer public
++        // outer revision still fails final serialization after the one visit.
++        {
++            let (mut entry, request) = wide_fixture();
++            let (_, next) = crate::apply_with_result(&entry, &request).unwrap();
++            let added = limit - wire_size(&next);
++            drop(next);
++            pad_wire_by(&mut entry, added);
++            serialize(&entry).unwrap();
++            let (next, candidate) = apply_semantic_leaf(&entry, &request, true, serialize).unwrap();
++            assert_eq!(wire_size(&next), limit);
++            let candidate = candidate.unwrap();
++            let reused = candidate.reuse(&entry, &request).unwrap().unwrap();
++            assert!(reused == next, "exact-cap reuse changed its result");
++            drop(reused);
++            let mut final_value = next;
++            final_value.revision_id = crate::RevisionId::new("o".repeat(128)).unwrap();
++            let expected = serialize(&final_value).unwrap_err();
++            assert_eq!(replay_error(&entry, &request, &"o".repeat(128), None), (expected.clone(), 1));
++            assert_eq!(replay_error(&entry, &request, &"o".repeat(128), Some(&candidate)), (expected, 1));
++        }
++        // Even four maximum successful traversals total only 256 MiB. The
++        // unchanged 512 MiB cumulative document cap cannot fail for one leaf.
++        assert!(limit.checked_mul(4).unwrap() < crate::MAX_COMPOUND_DOCUMENT_BYTES);
++    }
++}
+--- a/crates/deadpan-core/src/semantic/planner.rs
++++ b/crates/deadpan-core/src/semantic/planner.rs
+@@ -411,6 +411,7 @@
+ 
+ #[derive(Debug)]
+ pub struct SemanticPlan {
++    one_leaf_replay: Option<crate::OneLeafReplay>,
+     /// Motion-only programs produce no request. A Yank-only request updates the
+     /// bank without changing `document`'s revision or creating authored history.
+     pub request: Option<CommandRequest>,
+@@ -421,6 +422,14 @@
+     /// Final writes only, including the unnamed alias of each named cut.
+     pub register_writes: BTreeMap<RegisterName, Arc<RegisterValue>>,
+     pub trace: Vec<SemanticTrace>,
++}
++
++impl SemanticPlan {
++    /// Optional immutable result of Core's own exact ordinary one-leaf apply.
++    /// Public plan mutations cannot modify its private entry/request/result.
++    pub fn one_leaf_replay(&self) -> Option<&crate::OneLeafReplay> {
++        self.one_leaf_replay.as_ref()
++    }
+ }
+ 
+ /// Resolve and apply each instruction once against the preceding staged state.
+@@ -692,6 +701,7 @@
+     let child_ends = child_ends(document, &context.parent, bounds)?;
+     let mut planner = Planner {
+         current: document.clone(),
++        one_leaf_replay: None,
+         context: context.clone(),
+         bounds,
+         child_indices: child_indices(&child_ends),
+@@ -742,7 +752,15 @@
+             },
+         })
+     };
++    let one_leaf_replay = if planner.writes.is_empty()
++        && request.as_ref().is_some_and(crate::one_leaf_replay::eligible_compound)
++    {
++        planner.one_leaf_replay
++    } else {
++        None
++    };
+     Ok(SemanticPlan {
++        one_leaf_replay,
+         request,
+         document: planner.current,
+         context: planner.context,
+@@ -754,6 +772,7 @@
+ 
+ struct Planner<'a, F, R, S, P> {
+     current: ProjectDocument,
++    one_leaf_replay: Option<crate::OneLeafReplay>,
+     context: SemanticContext,
+     bounds: (ProjectFrame, ProjectFrame),
+     /// Updated only after an authored leaf. Frame motions use a binary search
+--- a/crates/deadpan-core/src/semantic/planner/content.rs
++++ b/crates/deadpan-core/src/semantic/planner/content.rs
+@@ -640,6 +640,11 @@
+                 "macro captured document byte limit",
+             )?;
+         }
++        // A second resolved operation cannot retain or replace the first
++        // leaf's witness, including non-editing register captures.
++        if !self.steps.is_empty() {
++            self.one_leaf_replay = None;
++        }
+         Ok(())
+     }
+ 
+--- a/crates/deadpan-core/src/semantic/planner/pause.rs
++++ b/crates/deadpan-core/src/semantic/planner/pause.rs
+@@ -1067,13 +1067,19 @@
+ 
+     /// Apply one leaf to the staged document within the byte limits.
+     pub(super) fn commit_leaf(&mut self, edit: LeafEdit) -> Result<(), EditError> {
+-        let (_, next) = crate::apply_with_result(&self.current, &edit.request(&self.current))?;
+-        charge(
+-            &mut self.document_bytes,
+-            wire::size(&next, MAX_DOCUMENT_JSON_BYTES)?,
+-            MAX_COMPOUND_DOCUMENT_BYTES,
+-            "macro staged document byte limit",
+-        )?;
++        let document_bytes = &mut self.document_bytes;
++        let (next, candidate) = crate::one_leaf_replay::apply_semantic_leaf(
++            &self.current,
++            &edit.request(&self.current),
++            self.steps.is_empty() && self.inputs.is_empty() && self.writes.is_empty(),
++            |next| charge(
++                document_bytes,
++                wire::size(next, MAX_DOCUMENT_JSON_BYTES)?,
++                MAX_COMPOUND_DOCUMENT_BYTES,
++                "macro staged document byte limit",
++            ),
++        )?;
++        self.one_leaf_replay = candidate;
+         self.current = next;
+         self.steps.push(ResolvedStep::Edit { edit });
+         self.refresh_children()
+--- a/crates/deadpan-store/src/compound.rs
++++ b/crates/deadpan-store/src/compound.rs
+@@ -131,7 +131,7 @@
+         relevance: Option<&crate::generation::RelevancePlan>,
+         prepare: impl FnOnce(&RegisterBank) -> Result<T, E>,
+     ) -> Result<(CompoundCommitOutcome, T), CompoundPreparationError<E>> {
+-        self.commit_compound_prepared_inner(request, relevance, None, prepare)
++        self.commit_compound_prepared_inner(request, relevance, None, None, prepare)
+     }
+ 
+     /// Check consumed analysis inside the publication transaction before
+@@ -143,7 +143,21 @@
+         guard: &crate::TranscriptSelectionGuard,
+         prepare: impl FnOnce(&RegisterBank) -> Result<T, E>,
+     ) -> Result<(CompoundCommitOutcome, T), CompoundPreparationError<E>> {
+-        self.commit_compound_prepared_inner(request, relevance, Some(guard), prepare)
++        self.commit_compound_prepared_inner(request, relevance, Some(guard), None, prepare)
++    }
++
++    /// The optional Core-created witness replaces only one exact pure leaf
++    /// application. All current Store authority and host preparation still run
++    /// inside the same Immediate transaction as ordinary Compound commits.
++    pub fn commit_compound_prepared_with_one_leaf<T, E>(
++        &mut self,
++        request: &CommandRequest,
++        relevance: Option<&crate::generation::RelevancePlan>,
++        guard: Option<&crate::TranscriptSelectionGuard>,
++        candidate: Option<&deadpan_core::OneLeafReplay>,
++        prepare: impl FnOnce(&RegisterBank) -> Result<T, E>,
++    ) -> Result<(CompoundCommitOutcome, T), CompoundPreparationError<E>> {
++        self.commit_compound_prepared_inner(request, relevance, guard, candidate, prepare)
+     }
+ 
+     fn commit_compound_inner(
+@@ -152,7 +166,7 @@
+         relevance: Option<&crate::generation::RelevancePlan>,
+         guard: Option<&crate::TranscriptSelectionGuard>,
+     ) -> Result<CompoundCommitOutcome, StoreError> {
+-        self.commit_compound_prepared_inner(request, relevance, guard, |_| {
++        self.commit_compound_prepared_inner(request, relevance, guard, None, |_| {
+             Ok::<(), std::convert::Infallible>(())
+         })
+         .map(|(outcome, ())| outcome)
+@@ -167,6 +181,7 @@
+         request: &CommandRequest,
+         relevance: Option<&crate::generation::RelevancePlan>,
+         guard: Option<&crate::TranscriptSelectionGuard>,
++        candidate: Option<&deadpan_core::OneLeafReplay>,
+         prepare: impl FnOnce(&RegisterBank) -> Result<T, E>,
+     ) -> Result<(CompoundCommitOutcome, T), CompoundPreparationError<E>> {
+         self.require_writer()?;
+@@ -179,7 +194,7 @@
+         if let Some(guard) = guard {
+             crate::transcript_selection::check_guard(&transaction, documents, guard)?;
+         }
+-        let plan = crate::prepare_command(&transaction, documents, request)?;
++        let plan = crate::prepare_command_with_one_leaf(&transaction, documents, request, candidate)?;
+         let prepared = plan.compound.as_ref().expect("compound plan");
+         let register_bank = prepared.registers.bank.clone();
+         let host = prepare(&register_bank).map_err(CompoundPreparationError::Preparation)?;
+@@ -388,6 +403,7 @@
+     documents: &crate::document_cache::DocumentCache,
+     current: deadpan_core::ValidatedDocument,
+     request: &CommandRequest,
++    candidate: Option<&deadpan_core::OneLeafReplay>,
+ ) -> Result<CommandPlan, StoreError> {
+     let Command::Compound { transaction } = &request.command else {
+         return Err(invalid("expected compound"));
+@@ -411,7 +427,7 @@
+         )
+         .collect();
+     crate::ensure_unused_revisions(connection, documents, &allocations)?;
+-    let (outcome, steps) = execute(connection, &current, request, None)?;
++    let (outcome, steps) = execute(connection, &current, request, None, candidate)?;
+     let writes = !outcome.register_writes.is_empty();
+     let registers = crate::registers::prepare_writes_from(bank, &outcome.register_writes)?;
+     crate::command_plan(
+@@ -432,6 +448,7 @@
+     current: &ProjectDocument,
+     request: &CommandRequest,
+     admitted: Option<&BTreeSet<RevisionId>>,
++    candidate: Option<&deadpan_core::OneLeafReplay>,
+ ) -> Result<(deadpan_core::CompoundOutcome, Vec<StepRecord>), StoreError> {
+     let Command::Compound { transaction } = &request.command else {
+         return Err(invalid("expected compound"));
+@@ -475,7 +492,7 @@
+     let mut processed_bytes = current.compact_json_size()?;
+     let mut original_pastes = OriginalPasteMappings::default();
+     let outcome =
+-        deadpan_core::replay_compound(current, request, |visit| -> Result<(), StoreError> {
++        deadpan_core::replay_compound_with_one_leaf(current, request, |visit| -> Result<(), StoreError> {
+             if matches!(
+                 visit.step,
+                 ResolvedStep::Yank { .. } | ResolvedStep::Cut { .. }
+@@ -572,7 +589,7 @@
+                 });
+             }
+             Ok(())
+-        })?;
++        }, candidate)?;
+     crate::check_document_size_bytes(outcome.document.compact_json_size()?)?;
+     Ok((outcome, steps))
+ }
+@@ -711,7 +728,7 @@
+     request: &CommandRequest,
+     admitted: &BTreeSet<RevisionId>,
+ ) -> Result<EditTransaction, StoreError> {
+-    let (outcome, expected) = execute(connection, current, request, Some(admitted))?;
++    let (outcome, expected) = execute(connection, current, request, Some(admitted), None)?;
+     if expected.is_empty() {
+         return Err(invalid("history contains a register-only compound"));
+     }
+--- a/crates/deadpan-store/src/lib.rs
++++ b/crates/deadpan-store/src/lib.rs
+@@ -1289,6 +1289,18 @@
+     prepare_admitted_command(connection, documents, request, None)
+ }
+ 
++fn prepare_command_with_one_leaf(
++    connection: &Connection,
++    documents: &document_cache::DocumentCache,
++    request: &CommandRequest,
++    candidate: Option<&deadpan_core::OneLeafReplay>,
++) -> Result<CommandPlan, StoreError> {
++    let current = read_command_snapshot(connection, documents, request)?;
++    prepare_current_command_with_one_leaf(
++        connection, documents, current, (request, candidate), None, None, None,
++    )
++}
++
+ fn prepare_admitted_command(
+     connection: &Connection,
+     documents: &document_cache::DocumentCache,
+@@ -1330,6 +1342,24 @@
+     source: Option<(&deadpan_core::AssetId, &deadpan_core::AssetRecord)>,
+     geometry: Option<(u32, u32)>,
+ ) -> Result<CommandPlan, StoreError> {
++    prepare_current_command_with_one_leaf(
++        connection, documents, current, (request, None), generated, source, geometry,
++    )
++}
++
++fn prepare_current_command_with_one_leaf(
++    connection: &Connection,
++    documents: &document_cache::DocumentCache,
++    current: deadpan_core::ValidatedDocument,
++    request: (&CommandRequest, Option<&deadpan_core::OneLeafReplay>),
++    generated: Option<(
++        &deadpan_core::GeneratedArtifact,
++        &generation_origins::AcceptedOriginReceipt,
++    )>,
++    source: Option<(&deadpan_core::AssetId, &deadpan_core::AssetRecord)>,
++    geometry: Option<(u32, u32)>,
++) -> Result<CommandPlan, StoreError> {
++    let (request, candidate) = request;
+     let base = CommandRequest {
+         command: request.command.base_command().clone(),
+         ..request.clone()
+@@ -1338,7 +1368,7 @@
+         connection,
+         documents,
+         current.clone(),
+-        &base,
++        (&base, candidate),
+         generated.map(|(artifact, _)| artifact),
+         source,
+         geometry,
+@@ -1356,11 +1386,12 @@
+     connection: &Connection,
+     documents: &document_cache::DocumentCache,
+     current: deadpan_core::ValidatedDocument,
+-    request: &CommandRequest,
++    request: (&CommandRequest, Option<&deadpan_core::OneLeafReplay>),
+     generated: Option<&deadpan_core::GeneratedArtifact>,
+     source: Option<(&deadpan_core::AssetId, &deadpan_core::AssetRecord)>,
+     geometry: Option<(u32, u32)>,
+ ) -> Result<CommandPlan, StoreError> {
++    let (request, candidate) = request;
+     if matches!(
+         &request.command,
+         deadpan_core::Command::RestoreSnapshot { .. }
+@@ -1376,7 +1407,7 @@
+                 "compound commands require per-leaf admission".into(),
+             ));
+         }
+-        return compound::prepare(connection, documents, current, request);
++        return compound::prepare(connection, documents, current, request, candidate);
+     }
+     // The core validates the result once; it equals the forward patch applied
+     // to `current`, so the store neither reapplies nor revalidates it, and the

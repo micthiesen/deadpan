@@ -1,0 +1,38 @@
+{
+  "label": "memory-4-control",
+  "power": {
+    "battery": {
+      "command": [
+        "pmset",
+        "-g",
+        "batt"
+      ],
+      "exit": 0,
+      "stderr": "",
+      "stdout": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=22741091)\t80%; AC attached; not charging present: true\n"
+    },
+    "thermal": {
+      "command": [
+        "pmset",
+        "-g",
+        "therm"
+      ],
+      "exit": 0,
+      "stderr": "",
+      "stdout": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n"
+    }
+  },
+  "ready": true,
+  "samples": [
+    {
+      "conflicting_processes": [],
+      "elapsed_seconds": 0.038,
+      "load_average": [
+        1.3505859375,
+        1.853515625,
+        1.98291015625
+      ]
+    }
+  ],
+  "waited_seconds": 0.038
+}

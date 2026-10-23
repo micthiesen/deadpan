@@ -1,0 +1,34 @@
+{
+  "diagnostic_only": true,
+  "interpretation": "sampled whole-app lifetime lower bounds; no exact peak, per-leaf, or ceiling claim",
+  "kinds": {
+    "candidate": {
+      "sampled_max_phys_footprint_bytes": {
+        "max": 698188976,
+        "median": 686851224,
+        "min": 641188992
+      },
+      "sampled_max_resident_size_bytes": {
+        "max": 668696576,
+        "median": 648101888,
+        "min": 621412352
+      }
+    },
+    "control": {
+      "sampled_max_phys_footprint_bytes": {
+        "max": 732726520,
+        "median": 731940088,
+        "min": 729253112
+      },
+      "sampled_max_resident_size_bytes": {
+        "max": 731627520,
+        "median": 723484672,
+        "min": 695992320
+      }
+    }
+  },
+  "lane": "owned-observer-memory",
+  "n_pairs": 5,
+  "no_percentile_or_target_pass": true,
+  "separate_from_unobserved_timing_lane": true
+}

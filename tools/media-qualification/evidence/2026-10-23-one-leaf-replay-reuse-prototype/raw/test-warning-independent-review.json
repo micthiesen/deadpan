@@ -1,0 +1,60 @@
+{
+  "status": "no_findings",
+  "reviewer": "/root/one_leaf_replay_review",
+  "date": "2026-10-23",
+  "scope": "Independent source-only review of exactly two test-warning corrections against archived initial-build sources; no source edits, formatting, build, tests, app/runtime, measurements or Git writes.",
+  "before_sha256": {
+    "crates/deadpan-core/tests/semantic_leaf_replay.rs": "cc7cb653699757a22a6f2236a0a1ce93334eb803f593489bfc24d2c77c5e2280",
+    "crates/deadpan-store/tests/compound_preparation.rs": "416b5ca32e07ea7b280092c8f540b134604656f8e725740c92dfa43b33c636b6"
+  },
+  "after_sha256": {
+    "crates/deadpan-core/tests/semantic_leaf_replay.rs": "0836e272bb2594e6cdcceaf7273a0773504d286a3ace91cd7ea1b059e8a9b561",
+    "crates/deadpan-store/tests/compound_preparation.rs": "228103f1a7c12d8b05bb527ecb5c9b79eaa2e6ef77b192b4f28964620be66f61"
+  },
+  "initial_build_source_map_sha256": "85c286bf90fd1f0a71d9aa19457b401e12144d8da0f306c22dcf257e37cf29d2",
+  "request_sha256": "66420eb2318fbe7a23d2fa30d160578a00d67ecb96316c0d3afab322a2f768f7",
+  "all_rust_source_comparison": {
+    "files_compared": 2053,
+    "changed": [
+      "crates/deadpan-core/tests/semantic_leaf_replay.rs",
+      "crates/deadpan-store/tests/compound_preparation.rs"
+    ],
+    "production_and_other_rust_files_byte_identical": 2051,
+    "six_inputs_byte_identical": true
+  },
+  "findings": [],
+  "assertions_weakened": false,
+  "analysis": [
+    {
+      "file": "crates/deadpan-core/tests/semantic_leaf_replay.rs",
+      "line": 623,
+      "change": "parity(&entry, request, candidate) becomes parity(...).0.unwrap() inside with_reference_command_work.",
+      "effect": "Strengthens the reference-mode case by requiring successful replay after the existing complete candidate/None/legacy outcome and visitor equality checks. The parity helper and all prior result, wire, inverse, mode-creation and state-restoration assertions are unchanged."
+    },
+    {
+      "file": "crates/deadpan-store/tests/compound_preparation.rs",
+      "lines": [
+        777,
+        837,
+        898
+      ],
+      "change": "Three let-else Store destructures become irrefutable let destructures.",
+      "effect": "Callbacks explicitly return Result<(), Infallible>, so CompoundPreparationError::Preparation(Infallible) cannot be constructed. Removing unreachable else panics removes no reachable failure check. Each unwrap_err and exact Store variant/message, callback-zero, candidate/None Debug+Display parity, unchanged snapshot and all-table-cell assertion remains byte-identical."
+    }
+  ],
+  "exact_diff": {
+    "crates/deadpan-core/tests/semantic_leaf_replay.rs": "--- initial-build/crates/deadpan-core/tests/semantic_leaf_replay.rs\n+++ current/crates/deadpan-core/tests/semantic_leaf_replay.rs\n@@ -620,7 +620,7 @@\n     let request = planned.request.as_ref().unwrap();\n     let candidate = planned.one_leaf_replay().unwrap();\n     with_reference_command_work(|| {\n-        parity(&entry, request, candidate);\n+        parity(&entry, request, candidate).0.unwrap();\n     });\n     let normal_wire = parity(&entry, request, candidate).0.unwrap().document_wire;\n     let reference_wire = with_reference_timing_representation(|| {\n",
+    "crates/deadpan-store/tests/compound_preparation.rs": "--- initial-build/crates/deadpan-store/tests/compound_preparation.rs\n+++ current/crates/deadpan-store/tests/compound_preparation.rs\n@@ -774,9 +774,7 @@\n                 Ok::<_, std::convert::Infallible>(())\n             })\n             .unwrap_err();\n-        let CompoundPreparationError::Store(error) = error else {\n-            panic!(\"Store authority refusal\")\n-        };\n+        let CompoundPreparationError::Store(error) = error;\n         assert!(matches!(&error, StoreError::SourceRegistration(message)\n             if message == \"Hold audio source qualification is missing\"));\n         assert_eq!(called.get(), 0);\n@@ -836,9 +834,7 @@\n                 Ok::<_, std::convert::Infallible>(())\n             })\n             .unwrap_err();\n-        let CompoundPreparationError::Store(error) = error else {\n-            panic!(\"Store authority refusal\")\n-        };\n+        let CompoundPreparationError::Store(error) = error;\n         assert!(matches!(&error, StoreError::Integrity(message)\n             if message == \"transcript selection analysis changed\"));\n         assert_eq!(called.get(), 0);\n@@ -899,9 +895,7 @@\n                     Ok::<_, std::convert::Infallible>(())\n                 })\n                 .unwrap_err();\n-            let CompoundPreparationError::Store(error) = error else {\n-                panic!(\"Store allocation refusal\")\n-            };\n+            let CompoundPreparationError::Store(error) = error;\n             assert!(matches!(&error, StoreError::RevisionReused(id) if id == \"initial\"));\n             assert_eq!(called.get(), 0);\n             errors.push((format!(\"{error:?}\"), error.to_string()));\n"
+  },
+  "prior_independent_review_preserved": {
+    "path": "/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23/independent-review.json",
+    "sha256": "9107e928c9cc9f5ac024ddf9cf6fe28bba6d7d9032a3b3c9b80dca48d91aa52c",
+    "modified": false
+  },
+  "limitations": [
+    "This review establishes only the source scope and assertion-preservation of the two corrections.",
+    "Reviewer did not rerun compilation or tests. Root owns focused rebuilding and verification after these exact source bytes.",
+    "Initial build/test/app outcomes reported by Root are not represented as independently executed review results.",
+    "No performance or memory measurement claim is made."
+  ]
+}

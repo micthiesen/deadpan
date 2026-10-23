@@ -109,9 +109,18 @@ maxima are about 659–700 MiB with gaps up to 7.818667 ms. Sampled whole-app
 lower bounds cannot establish exact/per-leaf peaks, retention or a ceiling.
 The 376-file /4,211,716-byte inventory and two-file toolchain supplement verify;
 all failure history and 36 layout warnings remain. No production change,
-calibrated overhead, percentile or target PASS follows. A private one-leaf
-replay-reuse experiment is being prepared with exact value/mode binding and
-unchanged independent Core/Store authority.
+calibrated overhead, percentile or target PASS follows.
+
+The private [one-leaf replay reuse prototype](qualification/one-leaf-replay-reuse-prototype-2026-10-23.md)
+passes 39 focused checks without warnings and independent review. All twenty
+fresh trials pass, with 140 pause and twenty Kestrel checks; all forty layout
+warnings remain. Five timing pairs give control/prototype composition medians
+242.163542 /197.496833 ms, a 44.666709 ms /18.44% diagnostic difference.
+Separate memory trials retain 18,296 whole-app samples, with gaps up to
+12.329791 ms; these are sampled lower bounds, not per-leaf peaks or savings.
+The 394-file /5,809,852-byte inventory verifies. Exact immutable value/mode
+binding preserves independent Core/Store authority. Production adoption and
+successful cached real-media PCM/history/export qualification remain owed.
 
 A private [semantic refresh duration reuse prototype](qualification/semantic-refresh-duration-reuse-prototype-2026-10-23.md)
 reuses one complete map for the same immutable staged refresh, preserving
