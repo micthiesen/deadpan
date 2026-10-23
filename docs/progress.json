@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-23T08:02:05Z",
+  "updated_at": "2026-10-23T08:47:42Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Core 58 / SQLite 87 compact bindings and full-capture fallback are implemented, reviewed, qualified and pushed. All 1,513 Core, 3,499 broader selected and 1,292 UI-feature tests pass, plus strict checks, media/native and portable validation. Five quiet current-format pairs improve first store-and-refresh median 114.587 to 93.633 ms and second 32.896 to 28.906 ms. Picture display and formal percentile qualification remain open. Evidence verifies 683 files / 24,889,683 bytes; all failures and two native layout warnings are retained. Coverage remains 89%, 8/24 sections complete. Next work integrates and verifies a fresh large-project offscreen first-pause measurement; its draft is not implemented yet.",
+  "focus": "The native large-first-pause measurement is implemented and verified. All 1,295 UI-feature tests pass (11 skipped), strict UI checks pass, and seven replay checks pass. One final release sample takes 393.681375 ms input to commit and 396.208834 ms through new-revision same-ticket offscreen Background composition. This is a diagnostic n=1, not a percentile or target PASS. The original authored inputs remain unchanged; only SQLite shared-memory and empty-WAL coordination files appear. Evidence verifies 66 files / 12,780,151 bytes and retains the initial wrapper guard failure and layout retry warnings. Core 58 / SQLite 87 remains qualified. Coverage remains 89%, 8/24 sections complete. An isolated service-phase profile is being built to locate the remaining native delay; no production latency improvement is claimed.",
   "features": [
     {
       "id": "editing",
@@ -102,7 +102,7 @@
         "DP-18",
         "DP-24"
       ],
-      "note": "Core 58 / SQLite 87 binding defaults and early full-capture fallback are qualified across Core, broader, UI, strict, media/native and portable checks. Five quiet pairs improve first store-and-refresh median 114.587 to 93.633 ms and second 32.896 to 28.906 ms. These exclude picture display and formal percentile qualification. Native descriptive commit p95 is 90.561250 ms over nine samples. Remaining latency, worker memory and sleep policies stay open."
+      "note": "Core 58 / SQLite 87 binding defaults and early full-capture fallback are qualified across Core, broader, UI, strict, media/native and portable checks. Five quiet pairs improve first store-and-refresh median 114.587 to 93.633 ms and second 32.896 to 28.906 ms. These exclude picture display and formal percentile qualification. Native descriptive commit p95 is 90.561250 ms over nine samples. Remaining latency, worker memory and sleep policies stay open. A verified large-first-pause replay now measures one fresh 10,000-Hold insertion through native semantic routing: 393.681375 ms to commit and 396.208834 ms to offscreen composition in the final release diagnostic. This n=1 does not qualify a percentile or either edit target. Service-phase profiling is in progress."
     },
     {
       "id": "models",
@@ -1013,6 +1013,14 @@
       "revision": "8c6e9eb6e3f9da44bb0c767caf8df683713ae811",
       "retrospective": false,
       "summary": "Compact audio bindings and full-capture fallback are implemented and qualified in Core 58 / SQLite 87. All 1,513 Core, 3,499 broader selected and 1,292 UI-feature tests pass, strict changed Core/Store plus explicit UI Clippy and formatting pass. Debug/release verify 15 pictures / 24,024 samples and release verifies 19 pictures / 30,430 samples at zero offset with canonical/history controls. Native passes 197 checks plus Kestrel; two nine-file portable packages validate/doctor unchanged, and all five edited benchmark packages pass full CLI replay unchanged. Five quiet current-format pairs give first medians 114.587 / 93.633 ms and second 32.896 / 28.906 ms. No picture or formal percentile target PASS; native descriptive commit p95 is 90.561250 ms over nine samples. All failed builds/fixtures, prior-code witness toolchain mismatch, passing output-handle warning and two layout warnings remain retained. Inventory verifies 683 payload files / 24,889,683 bytes. No requirement or gate closes; large-project offscreen first-pause measurement is next."
+    },
+    {
+      "date": "2026-10-23",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "0418cd49274ed0ac4094a3993ac29cc15477a852",
+      "retrospective": false,
+      "summary": "Implemented and verified the dedicated large-first-pause replay. It pins a pristine 10,000-Hold 1920x1080/24fps/SDR709 fixture, edits a private portable copy at frame 17933, and requires exactly one committed 12-frame InsertPause plus new-revision same-ticket picture request/decode/submission/composition. All 1,295 UI-feature tests pass, eleven skipped; strict UI checks and seven replay checks pass. The final release n=1 measures 393.681375 ms to commit and 396.208834 ms through offscreen Background composition. Separate earlier diagnostics are not pooled. Final authored-input paths and bytes remain unchanged; the guard accounts only for SQLite shared-memory and empty-WAL files. The initial wrapper failure, missing first full before-map and two layout warnings remain retained. Evidence verifies 66 payload files /12,780,151 bytes. No native-window, source-decode, PCM, percentile or latency-budget PASS; no requirement or gate closes. Next work profiles the actual semantic service path in an isolated source/build."
     }
   ]
 }
