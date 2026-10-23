@@ -1,0 +1,5 @@
+{
+  "baseline_commit": "6916ee0d578a11c37e6e66a470eb430b02773764",
+  "candidate": "uncommitted Core58/SQLite87, exact source identities in release-perf-source-identities.json",
+  "no_p95_or_visible_hold_pass_claim": true
+}

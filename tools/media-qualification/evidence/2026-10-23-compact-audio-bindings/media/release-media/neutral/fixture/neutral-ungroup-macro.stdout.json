@@ -1,0 +1,73 @@
+{
+  "bank_version": 1,
+  "before_bank_version": 1,
+  "before_revision": "neutral-sound-ungroup-r11",
+  "committed": true,
+  "committed_registers": null,
+  "committed_revision": "9f1d2208-71d1-4cbb-9557-93ecd71c73af",
+  "context": {
+    "cursor": 9,
+    "original": null,
+    "parent": "aligned-top",
+    "scoped": null,
+    "selected_child": "73c24480-6961-4bb1-88e3-44067ab22a07",
+    "visual_selection": null
+  },
+  "edit": {
+    "changed_ids": [
+      "9faaf03a-fdf8-4e20-b57f-58e9b24bf5d8",
+      "aligned-top"
+    ],
+    "description": "Apply resolved transaction",
+    "duration_delta": 0,
+    "new_revision": "9f1d2208-71d1-4cbb-9557-93ecd71c73af"
+  },
+  "generation_preparation_notices": [],
+  "generation_preparations": [],
+  "instruction_count": 1,
+  "mark_changes": [],
+  "operation": "apply",
+  "project_id": "6784452b-29b6-4e33-b7b7-5650be5171c7",
+  "protocol": 1,
+  "register_writes": [],
+  "trace": [
+    {
+      "after_cursor": 9,
+      "after_original": null,
+      "after_parent": "aligned-top",
+      "after_scoped": null,
+      "after_selected_child": "73c24480-6961-4bb1-88e3-44067ab22a07",
+      "after_visual_selection": null,
+      "before_cursor": 14,
+      "before_original": null,
+      "before_revision": "neutral-sound-ungroup-r11",
+      "before_scope": {
+        "end": 15,
+        "start": 9
+      },
+      "before_scoped": null,
+      "before_selected_child": "9faaf03a-fdf8-4e20-b57f-58e9b24bf5d8",
+      "before_visual_selection": null,
+      "capture": null,
+      "capture_set": null,
+      "captured_child_label": null,
+      "depth": 0,
+      "instruction": {
+        "type": "ungroup"
+      },
+      "parent": "aligned-top",
+      "removed_range": null,
+      "resolved_nodes": [],
+      "resolved_parent": "aligned-top",
+      "resolved_range": {
+        "end": 13,
+        "start": 9
+      },
+      "resolved_ranges": [],
+      "resolved_selection": {
+        "node": "9faaf03a-fdf8-4e20-b57f-58e9b24bf5d8",
+        "type": "child"
+      }
+    }
+  ]
+}

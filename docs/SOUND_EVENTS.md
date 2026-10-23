@@ -206,7 +206,7 @@ the identical original file. Its registered identity, placements and history
 stay intact. See [media recovery](RECOVERY.md#moved-linked-files).
 
 Core schema 29 and database 35 introduced `SoundEvent` recipes keyed by `SoundId`.
-The current schemas are core 57 and database 86. `SetSound` creates an event or
+The current schemas are core 58 and database 87. `SetSound` creates an event or
 updates it under the retained-route rules below; `DeleteSound` removes it. The
 shared headless command entrypoint supports preview and atomic commit, followed
 by ordinary durable undo/redo. Obsolete unused development packages are refused

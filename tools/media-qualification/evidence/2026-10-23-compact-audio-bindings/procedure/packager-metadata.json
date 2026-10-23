@@ -1,0 +1,14 @@
+{
+  "destination": "/Users/michael/Code/deadpan/tools/media-qualification/evidence/2026-10-23-compact-audio-bindings",
+  "failed_phases": "retained when represented by eligible top-level receipts/logs or witness files",
+  "intentionally_excluded": [
+    "binary build outputs and executable payloads",
+    "*.tar.zst archives",
+    "*-source folders",
+    "*-extracted folders",
+    "*-inputs duplicate trees",
+    "generated *.deadpan benchmark packages",
+    "live tool output and self-capture files"
+  ],
+  "packager_sha256": "77af6bbe19b44996a645c19f2ca2bdce82b5796585899804e28b207f575ee331"
+}

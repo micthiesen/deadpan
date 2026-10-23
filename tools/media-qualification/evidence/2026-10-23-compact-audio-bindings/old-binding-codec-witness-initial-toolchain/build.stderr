@@ -1,0 +1,23 @@
+error[E0514]: found crate `deadpan_core` compiled by an incompatible version of rustc
+ --> /Users/michael/Code/deadpan/crates/deadpan-core/tests/compact_audio_bindings.rs:1:5
+  |
+1 | use deadpan_core::*;
+  |     ^^^^^^^^^^^^
+  |
+  = note: the following crate versions were found:
+          crate `deadpan_core` compiled by rustc 1.97.1 (8bab26f4f 2026-07-14): /private/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/early-fallback-prototype-target/release/deps/libdeadpan_core-50104e954f70f69f.rlib
+  = help: please recompile that crate using this compiler (rustc 1.99.1 (58cf8f9c3 2026-10-13)) (consider running `cargo clean` first)
+
+error[E0514]: found crate `serde_json` compiled by an incompatible version of rustc
+ --> /Users/michael/Code/deadpan/crates/deadpan-core/tests/compact_audio_bindings.rs:2:5
+  |
+2 | use serde_json::{Value, json};
+  |     ^^^^^^^^^^
+  |
+  = note: the following crate versions were found:
+          crate `serde_json` compiled by rustc 1.97.1 (8bab26f4f 2026-07-14): /private/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/early-fallback-prototype-target/release/deps/libserde_json-7b5e96388f88d567.rlib
+  = help: please recompile that crate using this compiler (rustc 1.99.1 (58cf8f9c3 2026-10-13)) (consider running `cargo clean` first)
+
+error: aborting due to 2 previous errors
+
+For more information about this error, try `rustc --explain E0514`.

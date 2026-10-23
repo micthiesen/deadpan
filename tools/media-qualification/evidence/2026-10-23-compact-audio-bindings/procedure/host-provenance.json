@@ -1,0 +1,94 @@
+{
+  "captured_at": "2026-10-23T07:34:38.549792+00:00",
+  "commands": [
+    {
+      "command": [
+        "sysctl",
+        "-n",
+        "hw.model"
+      ],
+      "exit": 0,
+      "stdout": "Mac17,7\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "sysctl",
+        "-n",
+        "hw.memsize"
+      ],
+      "exit": 0,
+      "stdout": "137438953472\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "sysctl",
+        "-n",
+        "machdep.cpu.brand_string"
+      ],
+      "exit": 0,
+      "stdout": "Apple M5 Max\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "sw_vers",
+        "-productVersion"
+      ],
+      "exit": 0,
+      "stdout": "26.5.2\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "sw_vers",
+        "-buildVersion"
+      ],
+      "exit": 0,
+      "stdout": "25F84\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "rustc",
+        "--version",
+        "--verbose"
+      ],
+      "exit": 0,
+      "stdout": "rustc 1.97.1 (8bab26f4f 2026-07-14)\nbinary: rustc\ncommit-hash: 8bab26f4f68e0e26f0bb7960be334d5b520ea452\ncommit-date: 2026-07-14\nhost: aarch64-apple-darwin\nrelease: 1.97.1\nLLVM version: 22.1.6\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "cargo",
+        "--version",
+        "--verbose"
+      ],
+      "exit": 0,
+      "stdout": "cargo 1.97.1 (c980f4866 2026-06-30)\nrelease: 1.97.1\ncommit-hash: c980f4866141969fab6254a680546a277789d6f0\ncommit-date: 2026-06-30\nhost: aarch64-apple-darwin\nlibgit2: 1.9.2 (sys:0.20.4 vendored)\nlibcurl: 8.7.1 (sys:0.4.88+curl-8.20.0 system ssl:(SecureTransport) LibreSSL/3.3.6)\nssl: OpenSSL 3.6.2 7 Apr 2026\nos: Mac OS 26.5.2 [64-bit]\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "pmset",
+        "-g",
+        "batt"
+      ],
+      "exit": 0,
+      "stdout": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=22741091)\t80%; AC attached; not charging present: true\n",
+      "stderr": ""
+    },
+    {
+      "command": [
+        "pmset",
+        "-g",
+        "therm"
+      ],
+      "exit": 0,
+      "stdout": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n",
+      "stderr": ""
+    }
+  ],
+  "during_builds_not_timing_trials": true
+}

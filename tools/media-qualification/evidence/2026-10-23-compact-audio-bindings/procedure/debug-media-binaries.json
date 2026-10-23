@@ -1,0 +1,27 @@
+{
+  "tests": {
+    "/private/tmp/deadpan-compact-audio-bindings-2026-10-23/debug-media-extracted/target/debug/deps/preview_export-a88d124621cb7ef2": "2af6c33c6d7fcfeebb01ad69540bff51418b7ee8520743d73a339c1cc0575771"
+  },
+  "helpers": {
+    "deadpan-cli": {
+      "source": "target/debug/deadpan-cli",
+      "path": "/tmp/deadpan-compact-audio-bindings-2026-10-23/debug-media-extracted/target/debug/deadpan-cli",
+      "sha256": "72c02c06ca65697782233d117a780288161a3cb9f4a7f3f6d3ea7d0add339ce3"
+    },
+    "deadpan-media-worker": {
+      "source": "target/debug/deadpan-media-worker",
+      "path": "/tmp/deadpan-compact-audio-bindings-2026-10-23/debug-media-extracted/target/debug/deadpan-media-worker",
+      "sha256": "786672d36a58e024be1acb18f353c350c06a7c83dd88c84369e69a9512a13c5d"
+    },
+    "deadpan-transcribe": {
+      "source": "target/debug/deadpan-transcribe",
+      "path": "/tmp/deadpan-compact-audio-bindings-2026-10-23/debug-media-extracted/target/debug/deadpan-transcribe",
+      "sha256": "473b69ac2024d691236637017ebea298a08e0f88de2ff3801a948bf866f71362"
+    },
+    "deadpan-track": {
+      "source": "target/debug/deadpan-track",
+      "path": "/tmp/deadpan-compact-audio-bindings-2026-10-23/debug-media-extracted/target/debug/deadpan-track",
+      "sha256": "18861c06d2d468b4e161c2b99110ffc1d5ea99a926e1685d5893437583760244"
+    }
+  }
+}

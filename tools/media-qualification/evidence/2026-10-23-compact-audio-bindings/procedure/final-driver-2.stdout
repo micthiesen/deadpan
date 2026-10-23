@@ -1,0 +1,7 @@
+{"command": ["python", "/tmp/deadpan-compact-audio-bindings-2026-10-23/qualify.py", "candidate-broad-final", "candidate", "broad"], "exit": 0, "seconds": 487.74254325032234}
+{"command": ["python", "/tmp/deadpan-compact-audio-bindings-2026-10-23/qualify.py", "candidate-ui", "candidate", "ui"], "exit": 0, "seconds": 202.06110337469727}
+{"command": ["python", "/tmp/deadpan-compact-audio-bindings-2026-10-23/qualify.py", "candidate-strict", "candidate", "strict"], "exit": 0, "seconds": 200.40133849997073}
+{"command": ["python", "/tmp/deadpan-compact-audio-bindings-2026-10-23/ui_lint.py"], "exit": 0, "seconds": 72.83024037443101}
+{"command": ["python", "/tmp/deadpan-compact-audio-bindings-2026-10-23/qualify_native_media.py", "debug-media", "preflight"], "exit": 0, "seconds": 139.76293041743338}
+{"command": ["python", "/tmp/deadpan-compact-audio-bindings-2026-10-23/qualify_native_media.py", "release-media", "release-media"], "exit": 0, "seconds": 454.6874597920105}
+{"command": ["python", "/tmp/deadpan-compact-audio-bindings-2026-10-23/qualify_native_media.py", "release-native", "native"], "exit": 0, "seconds": 283.5916137499735}

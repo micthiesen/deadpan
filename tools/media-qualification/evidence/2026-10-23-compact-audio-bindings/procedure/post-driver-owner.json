@@ -1,0 +1,7 @@
+{
+  "pid": 35760,
+  "started_unix": 1792741116.7055218,
+  "script": "/tmp/deadpan-compact-audio-bindings-2026-10-23/post_qualification.py",
+  "waits_for": "final-qualification-2-receipt.json seven exit0 rows",
+  "stdout_stderr_redirected": true
+}

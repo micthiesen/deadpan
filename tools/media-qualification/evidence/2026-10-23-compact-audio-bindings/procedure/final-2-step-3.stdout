@@ -1,0 +1,2 @@
+check {"command": ["cargo", "xtask", "check", "--since", "917f9a54eb992ea5c99244c395bf05d4c5ef63c5", "--no-test"], "exit": 0, "seconds": 193.50592454057187}
+format {"command": ["cargo", "fmt", "--all", "--", "--check"], "exit": 0, "seconds": 6.571034708060324}

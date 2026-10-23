@@ -649,6 +649,13 @@ impl FrozenAudioLayout {
         if durations.len() != document.nodes().len() {
             return Ok(None);
         }
+        // With at most one omitted node, ancestor closure or its keyed
+        // spacer keeps the projection as large as the complete layout.
+        // Leave all complete-capture checks to the caller's fallback instead
+        // of building and then discarding that same-sized projection.
+        if required.len() >= document.nodes().len().saturating_sub(1) {
+            return Ok(None);
+        }
         // One pass: the complete capture's per-node checks, each node's
         // parent and duration, and the complete layout's exact JSON length.
         let mut info: std::collections::HashMap<&NodeId, (Option<&NodeId>, FrameDuration)> =
@@ -3311,6 +3318,81 @@ mod scoped_capture_property {
         );
         let ids = document.nodes.keys().cloned().collect();
         (document, ids)
+    }
+
+    #[test]
+    fn almost_complete_scopes_fall_back_without_changing_the_complete_clock() {
+        let mut random = Lcg(47);
+        for _ in 0..64 {
+            let (document, ids) = document(&mut random);
+            document.validate().unwrap();
+            let full = FrozenAudioLayout::capture(&document).unwrap();
+            for omitted in &ids {
+                let required = ids.iter().filter(|id| *id != omitted).cloned().collect();
+                assert!(
+                    FrozenAudioLayout::capture_scoped(&document, &required)
+                        .unwrap()
+                        .is_none()
+                );
+                let fallback = FrozenAudioLayout::capture(&document).unwrap();
+                assert_eq!(fallback, full);
+                assert_eq!(fallback.to_json().unwrap(), full.to_json().unwrap());
+            }
+            let mut unknown: BTreeSet<_> = ids.iter().cloned().collect();
+            unknown.remove(document.root());
+            unknown.insert(NodeId::new("unknown-alias").unwrap());
+            assert!(
+                FrozenAudioLayout::capture_scoped(&document, &unknown)
+                    .unwrap()
+                    .is_none()
+            );
+            // Below the fast fallback threshold, unknown aliases must still
+            // take the existing complete-capture fallback rather than panic.
+            if ids.len() > 2 {
+                assert!(
+                    FrozenAudioLayout::capture_scoped(
+                        &document,
+                        &BTreeSet::from([NodeId::new("unknown-alias").unwrap()]),
+                    )
+                    .unwrap()
+                    .is_none()
+                );
+            }
+        }
+        let (mut empty, _) = document(&mut random);
+        let root = empty.root().clone();
+        empty.nodes.clear();
+        empty
+            .nodes
+            .insert(root, BeatNode::sequence("Empty", vec![]));
+        empty.validate().unwrap();
+        assert!(
+            FrozenAudioLayout::capture_scoped(&empty, &BTreeSet::new())
+                .unwrap()
+                .is_none()
+        );
+        assert_eq!(
+            FrozenAudioLayout::capture(&empty).unwrap().duration(),
+            FrameDuration::ZERO
+        );
+    }
+
+    #[test]
+    fn almost_complete_scope_keeps_precharge_refusals_before_fallback() {
+        let (mut document, _) = document(&mut Lcg(1));
+        let root = document.root().clone();
+        document.nodes.clear();
+        let child = NodeId::new("child").unwrap();
+        document.nodes.insert(child.clone(), hold(1));
+        document.nodes.insert(
+            root,
+            BeatNode::sequence("Too many edges", vec![child; MAX_DOCUMENT_NODES + 1]),
+        );
+        let required = document.nodes().keys().cloned().collect();
+        let complete = FrozenAudioLayout::capture(&document).unwrap_err();
+        let scoped = FrozenAudioLayout::capture_scoped(&document, &required).unwrap_err();
+        assert_eq!(complete.code, DocumentErrorCode::LimitExceeded);
+        assert_eq!(scoped, complete);
     }
 
     /// The scoped capture equals the complete capture for everything the

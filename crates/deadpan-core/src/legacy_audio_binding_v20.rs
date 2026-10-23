@@ -9,9 +9,14 @@ use serde_json::value::RawValue;
 
 use crate::{AudioBindingState, DocumentError, DocumentErrorCode, ValueChange};
 
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
-#[serde(transparent)]
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub(crate) struct LegacyAudioBindingState(AudioBindingState);
+
+impl Serialize for LegacyAudioBindingState {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        crate::legacy_audio_binding_v21::historical_wire(&self.0).serialize(serializer)
+    }
+}
 
 impl LegacyAudioBindingState {
     pub(crate) fn project(state: &AudioBindingState) -> Option<Self> {
@@ -157,8 +162,26 @@ mod tests {
                     .is_none()
             );
         }
-        let encoded = state.to_json().unwrap();
-        let binding = serde_json::to_string(&state.bindings()[&node("hold")]).unwrap();
+        let legacy_wire = crate::legacy_audio_binding_v21::historical_wire(state);
+        let projected =
+            serde_json::to_value(super::LegacyAudioBindingState::project(state).unwrap()).unwrap();
+        assert_eq!(projected, legacy_wire);
+        let placement = &legacy_wire["bindings"]["hold"]["lattice"];
+        assert_eq!(
+            placement["reference"]["root"],
+            serde_json::json!({"type": "project_root_round_even"})
+        );
+        assert_eq!(placement["arguments"], serde_json::json!([]));
+        assert_eq!(placement["births"], serde_json::json!([]));
+        let resume = &legacy_wire["bindings"]["hold"]["resume"];
+        assert!(resume.get("local_boundary").is_some());
+        assert!(resume["phase"].get("constant").is_some());
+        let term_placement = &resume["phase"]["terms"][0]["placement"];
+        assert_eq!(term_placement["arguments"], serde_json::json!([]));
+        assert_eq!(term_placement["births"], serde_json::json!([]));
+        assert!(term_placement["reference"].get("root").is_some());
+        let encoded = legacy_wire.to_string();
+        let binding = legacy_wire["bindings"]["hold"].to_string();
         let duplicate = encoded.replace(
             "\"bindings\":{",
             &format!("\"bindings\":{{\"hold\":{binding},"),
@@ -169,6 +192,35 @@ mod tests {
                 &duplicate
             )
             .is_err()
+        );
+
+        let mut defaults = state.clone();
+        let resume = defaults
+            .bindings
+            .get_mut(&node("hold"))
+            .unwrap()
+            .resume
+            .as_mut()
+            .unwrap();
+        resume.local_boundary = ExactRatio::ZERO;
+        resume.phase.constant = ExactRatio::ZERO;
+        let default_wire = crate::legacy_audio_binding_v21::historical_wire(&defaults);
+        let serialized_zero = serde_json::to_value(ExactRatio::ZERO).unwrap();
+        assert_eq!(
+            default_wire["bindings"]["hold"]["resume"]["local_boundary"],
+            serialized_zero
+        );
+        assert_eq!(
+            default_wire["bindings"]["hold"]["resume"]["phase"]["constant"],
+            serialized_zero
+        );
+
+        let mut absent = defaults;
+        absent.bindings.get_mut(&node("hold")).unwrap().resume = None;
+        let absent_wire = crate::legacy_audio_binding_v21::historical_wire(&absent);
+        assert_eq!(
+            absent_wire["bindings"]["hold"]["resume"],
+            serde_json::Value::Null
         );
     }
 }

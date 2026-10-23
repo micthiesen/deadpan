@@ -1,0 +1,27 @@
+{
+  "deadpan-app": {
+    "source": "/Users/michael/Code/deadpan/target/debug/deadpan-app",
+    "path": "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-broad-extracted/target/debug/deadpan-app",
+    "sha256": "e83e643cd38635e3ce50aa718901bc5fab929f9ab13788fbf84441a6a889cb23"
+  },
+  "deadpan-cli": {
+    "source": "/Users/michael/Code/deadpan/target/debug/deadpan-cli",
+    "path": "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-broad-extracted/target/debug/deadpan-cli",
+    "sha256": "fe73da4a0908f1d678bee8a8994db52802581fa00603bdcd354353b969049812"
+  },
+  "deadpan-media-worker": {
+    "source": "/Users/michael/Code/deadpan/target/debug/deadpan-media-worker",
+    "path": "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-broad-extracted/target/debug/deadpan-media-worker",
+    "sha256": "786672d36a58e024be1acb18f353c350c06a7c83dd88c84369e69a9512a13c5d"
+  },
+  "deadpan-transcribe": {
+    "source": "/Users/michael/Code/deadpan/target/debug/deadpan-transcribe",
+    "path": "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-broad-extracted/target/debug/deadpan-transcribe",
+    "sha256": "473b69ac2024d691236637017ebea298a08e0f88de2ff3801a948bf866f71362"
+  },
+  "deadpan-track": {
+    "source": "/Users/michael/Code/deadpan/target/debug/deadpan-track",
+    "path": "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-broad-extracted/target/debug/deadpan-track",
+    "sha256": "18861c06d2d468b4e161c2b99110ffc1d5ea99a926e1685d5893437583760244"
+  }
+}

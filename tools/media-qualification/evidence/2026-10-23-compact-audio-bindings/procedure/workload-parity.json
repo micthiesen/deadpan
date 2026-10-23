@@ -1,0 +1,313 @@
+{
+  "source_changes_after_core_pass": [
+    "crates/deadpan-store/tests/edited_slice/child_capture/range_compat.rs"
+  ],
+  "production_unchanged": true,
+  "pairs": [
+    {
+      "pair": 1,
+      "values": {
+        "baseline": {
+          "initial": {
+            "frames": 120000,
+            "nodes": 10001,
+            "root_children": 10000
+          },
+          "final": {
+            "database_bytes": 13592672,
+            "document_json_bytes": 12319659,
+            "frames": 120024,
+            "nodes": 10009,
+            "root_children": 10004
+          },
+          "document_json_bytes": {
+            "max": 12319659.0,
+            "mean": 12317082.5,
+            "min": 12314506.0,
+            "n": 2,
+            "p50": 12314506.0,
+            "p95": 12319659.0
+          },
+          "main_database_bytes_after_validation": 9154560,
+          "reopen_validation": {
+            "replayed": 0,
+            "revisions": 5,
+            "verified_by_receipt": 5
+          }
+        },
+        "candidate": {
+          "initial": {
+            "frames": 120000,
+            "nodes": 10001,
+            "root_children": 10000
+          },
+          "final": {
+            "database_bytes": 7674008,
+            "document_json_bytes": 9136733,
+            "frames": 120024,
+            "nodes": 10009,
+            "root_children": 10004
+          },
+          "document_json_bytes": {
+            "max": 9136733.0,
+            "mean": 9134445.5,
+            "min": 9132158.0,
+            "n": 2,
+            "p50": 9132158.0,
+            "p95": 9136733.0
+          },
+          "main_database_bytes_after_validation": 7589888,
+          "reopen_validation": {
+            "replayed": 0,
+            "revisions": 5,
+            "verified_by_receipt": 5
+          }
+        }
+      }
+    },
+    {
+      "pair": 2,
+      "values": {
+        "baseline": {
+          "initial": {
+            "frames": 120000,
+            "nodes": 10001,
+            "root_children": 10000
+          },
+          "final": {
+            "database_bytes": 13592672,
+            "document_json_bytes": 12319659,
+            "frames": 120024,
+            "nodes": 10009,
+            "root_children": 10004
+          },
+          "document_json_bytes": {
+            "max": 12319659.0,
+            "mean": 12317082.5,
+            "min": 12314506.0,
+            "n": 2,
+            "p50": 12314506.0,
+            "p95": 12319659.0
+          },
+          "main_database_bytes_after_validation": 9154560,
+          "reopen_validation": {
+            "replayed": 0,
+            "revisions": 5,
+            "verified_by_receipt": 5
+          }
+        },
+        "candidate": {
+          "initial": {
+            "frames": 120000,
+            "nodes": 10001,
+            "root_children": 10000
+          },
+          "final": {
+            "database_bytes": 7674008,
+            "document_json_bytes": 9136733,
+            "frames": 120024,
+            "nodes": 10009,
+            "root_children": 10004
+          },
+          "document_json_bytes": {
+            "max": 9136733.0,
+            "mean": 9134445.5,
+            "min": 9132158.0,
+            "n": 2,
+            "p50": 9132158.0,
+            "p95": 9136733.0
+          },
+          "main_database_bytes_after_validation": 7589888,
+          "reopen_validation": {
+            "replayed": 0,
+            "revisions": 5,
+            "verified_by_receipt": 5
+          }
+        }
+      }
+    },
+    {
+      "pair": 3,
+      "values": {
+        "baseline": {
+          "initial": {
+            "frames": 120000,
+            "nodes": 10001,
+            "root_children": 10000
+          },
+          "final": {
+            "database_bytes": 13592672,
+            "document_json_bytes": 12319659,
+            "frames": 120024,
+            "nodes": 10009,
+            "root_children": 10004
+          },
+          "document_json_bytes": {
+            "max": 12319659.0,
+            "mean": 12317082.5,
+            "min": 12314506.0,
+            "n": 2,
+            "p50": 12314506.0,
+            "p95": 12319659.0
+          },
+          "main_database_bytes_after_validation": 9154560,
+          "reopen_validation": {
+            "replayed": 0,
+            "revisions": 5,
+            "verified_by_receipt": 5
+          }
+        },
+        "candidate": {
+          "initial": {
+            "frames": 120000,
+            "nodes": 10001,
+            "root_children": 10000
+          },
+          "final": {
+            "database_bytes": 7674008,
+            "document_json_bytes": 9136733,
+            "frames": 120024,
+            "nodes": 10009,
+            "root_children": 10004
+          },
+          "document_json_bytes": {
+            "max": 9136733.0,
+            "mean": 9134445.5,
+            "min": 9132158.0,
+            "n": 2,
+            "p50": 9132158.0,
+            "p95": 9136733.0
+          },
+          "main_database_bytes_after_validation": 7589888,
+          "reopen_validation": {
+            "replayed": 0,
+            "revisions": 5,
+            "verified_by_receipt": 5
+          }
+        }
+      }
+    },
+    {
+      "pair": 4,
+      "values": {
+        "baseline": {
+          "initial": {
+            "frames": 120000,
+            "nodes": 10001,
+            "root_children": 10000
+          },
+          "final": {
+            "database_bytes": 13592672,
+            "document_json_bytes": 12319659,
+            "frames": 120024,
+            "nodes": 10009,
+            "root_children": 10004
+          },
+          "document_json_bytes": {
+            "max": 12319659.0,
+            "mean": 12317082.5,
+            "min": 12314506.0,
+            "n": 2,
+            "p50": 12314506.0,
+            "p95": 12319659.0
+          },
+          "main_database_bytes_after_validation": 9154560,
+          "reopen_validation": {
+            "replayed": 0,
+            "revisions": 5,
+            "verified_by_receipt": 5
+          }
+        },
+        "candidate": {
+          "initial": {
+            "frames": 120000,
+            "nodes": 10001,
+            "root_children": 10000
+          },
+          "final": {
+            "database_bytes": 7674008,
+            "document_json_bytes": 9136733,
+            "frames": 120024,
+            "nodes": 10009,
+            "root_children": 10004
+          },
+          "document_json_bytes": {
+            "max": 9136733.0,
+            "mean": 9134445.5,
+            "min": 9132158.0,
+            "n": 2,
+            "p50": 9132158.0,
+            "p95": 9136733.0
+          },
+          "main_database_bytes_after_validation": 7589888,
+          "reopen_validation": {
+            "replayed": 0,
+            "revisions": 5,
+            "verified_by_receipt": 5
+          }
+        }
+      }
+    },
+    {
+      "pair": 5,
+      "values": {
+        "baseline": {
+          "initial": {
+            "frames": 120000,
+            "nodes": 10001,
+            "root_children": 10000
+          },
+          "final": {
+            "database_bytes": 13592672,
+            "document_json_bytes": 12319659,
+            "frames": 120024,
+            "nodes": 10009,
+            "root_children": 10004
+          },
+          "document_json_bytes": {
+            "max": 12319659.0,
+            "mean": 12317082.5,
+            "min": 12314506.0,
+            "n": 2,
+            "p50": 12314506.0,
+            "p95": 12319659.0
+          },
+          "main_database_bytes_after_validation": 9154560,
+          "reopen_validation": {
+            "replayed": 0,
+            "revisions": 5,
+            "verified_by_receipt": 5
+          }
+        },
+        "candidate": {
+          "initial": {
+            "frames": 120000,
+            "nodes": 10001,
+            "root_children": 10000
+          },
+          "final": {
+            "database_bytes": 7674008,
+            "document_json_bytes": 9136733,
+            "frames": 120024,
+            "nodes": 10009,
+            "root_children": 10004
+          },
+          "document_json_bytes": {
+            "max": 9136733.0,
+            "mean": 9134445.5,
+            "min": 9132158.0,
+            "n": 2,
+            "p50": 9132158.0,
+            "p95": 9136733.0
+          },
+          "main_database_bytes_after_validation": 7589888,
+          "reopen_validation": {
+            "replayed": 0,
+            "revisions": 5,
+            "verified_by_receipt": 5
+          }
+        }
+      }
+    }
+  ]
+}

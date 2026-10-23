@@ -1,0 +1,13 @@
+[
+  {
+    "command": [
+      "python",
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/qualify.py",
+      "candidate-broad",
+      "candidate",
+      "broad"
+    ],
+    "exit": 100,
+    "seconds": 768.382151208818
+  }
+]

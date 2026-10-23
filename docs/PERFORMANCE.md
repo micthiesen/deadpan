@@ -187,6 +187,19 @@ Hardware decoding stays opt-in because the measured long-GOP seeks were slower.
 
 ## Target inventory
 
+The [first-pause profile](qualification/first-pause-profile-2026-10-23.md) and
+[compact frozen timing qualification](qualification/compact-frozen-edges-2026-10-23.md)
+separate the fresh 10,000-Hold binding cost from later edits. Qualified compact
+timing measures first store-and-refresh medians 130.636 → 114.691 ms across five
+quiet pairs, before picture display. A later
+[binding/capture prototype](qualification/first-pause-binding-prototypes-2026-10-23.md)
+measures 111.576 → 91.629 ms in a separate five-pair batch, with incomplete
+standalone decoding. The [qualified Core 58 implementation](qualification/compact-audio-bindings-2026-10-23.md)
+adds that reader correction and measures first medians 114.587 → 93.633 ms in
+five quiet current-format pairs, with second medians 32.896 → 28.906 ms. These
+short batches exclude picture display and establish neither a percentile nor
+the complete visible-Hold target.
+
 | Section 25 target | Measurement | Notes |
 | --- | --- | --- |
 | Key event to command-state update, p95 < 8 ms | ui `rapid-input` `warm_navigation_input_cpu_ms` | Whole egui input frame CPU: an upper bound on the state update. Small replay fixture. |

@@ -1,0 +1,55 @@
+{
+  "failed": false,
+  "binary_sha256": "c411127e35c8b8750d2683c1a884f6a20f365ec0bdb84e79fcf0472e28c21fac",
+  "physical_display_measured": false,
+  "scenarios": [
+    {
+      "name": "kestrel-shortcuts",
+      "failed": false,
+      "checks": 1,
+      "findings": [],
+      "timings": {}
+    },
+    {
+      "name": "sound-group-endpoints",
+      "failed": false,
+      "checks": 197,
+      "findings": [
+        {
+          "severity": "warning",
+          "message": "51 frame(s) settled their layout only on a second retry: [{\"frame\":139,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native command footer will close (crates/deadpan-app/src/preview.rs:5700)\",\"pass 0: workspace footer mode changed after input (crate"
+        },
+        {
+          "severity": "warning",
+          "message": "egui discard warning: 7 run(s) of 3+ consecutive retrying frames, each frame with its own cause: [[{\"frame\":459,\"input\":\"Key Modifiers::NONE L\",\"new_input\":true,\"reasons\":[\"pass 0: workspace footer height changed (crates/deadpan-app/src/preview.rs:42"
+        }
+      ],
+      "timings": {
+        "input_to_state_ms": {
+          "completed": {
+            "max_ms": 2.2243749999999998,
+            "n": 330,
+            "p50_ms": 0.5746669999999999,
+            "p95_ms": 1.0940839999999998,
+            "p99_ms": 1.5677919999999999
+          },
+          "failed": 0,
+          "samples": 330,
+          "timed_out": 0
+        },
+        "input_to_commit_ms": {
+          "completed": {
+            "max_ms": 90.56125,
+            "n": 9,
+            "p50_ms": 6.778542,
+            "p95_ms": 90.56125,
+            "p99_ms": 90.56125
+          },
+          "failed": 0,
+          "samples": 9,
+          "timed_out": 0
+        }
+      }
+    }
+  ]
+}

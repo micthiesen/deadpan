@@ -1,0 +1,26 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+error[E0502]: cannot borrow `empty` as immutable because it is also borrowed as mutable
+    --> crates/deadpan-core/src/audio_reference.rs:3359:21
+     |
+3357 | /         empty
+3358 | |             .nodes
+     | |__________________- mutable borrow occurs here
+3359 |               .insert(empty.root().clone(), BeatNode::sequence("Empty", vec![]));
+     |                ------ ^^^^^ immutable borrow occurs here
+     |                |
+     |                mutable borrow later used by call
+
+error[E0502]: cannot borrow `document` as immutable because it is also borrowed as mutable
+    --> crates/deadpan-core/src/audio_reference.rs:3379:13
+     |
+3378 |         document.nodes.insert(
+     |         -------------- ------ mutable borrow later used by call
+     |         |
+     |         mutable borrow occurs here
+3379 |             document.root().clone(),
+     |             ^^^^^^^^ immutable borrow occurs here
+
+For more information about this error, try `rustc --explain E0502`.
+error: could not compile `deadpan-core` (lib test) due to 2 previous errors
+warning: build failed, waiting for other jobs to finish...
+error: command `/Users/michael/.rustup/toolchains/1.97.1-aarch64-apple-darwin/bin/cargo test --no-run --message-format json-render-diagnostics --package deadpan-core --locked` exited with code 101

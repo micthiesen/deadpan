@@ -1,0 +1,70 @@
+{
+  "executed_cli": {
+    "source": "target/release/deadpan-cli",
+    "path": "/tmp/deadpan-compact-audio-bindings-2026-10-23/release-media-extracted/target/release/deadpan-cli",
+    "sha256": "e77ea56d89a84acbe200f5c9277a8d71f9b99588ea764c01bfd0acae1a4f0428"
+  },
+  "safe_relative_regular_files_only": true,
+  "cases": [
+    {
+      "label": "neutral",
+      "package": "/tmp/deadpan-compact-audio-bindings-2026-10-23/owner-portable-check/neutral/neutral-ungroup-portable.deadpan",
+      "regular_files": 9,
+      "archive_sha256": "985d8491fde14bcee60ce19dfe93c9329c1fee30ab0e03c5926126690cac7954",
+      "commands": [
+        {
+          "command": [
+            "/tmp/deadpan-compact-audio-bindings-2026-10-23/release-media-extracted/target/release/deadpan-cli",
+            "project",
+            "validate",
+            "/tmp/deadpan-compact-audio-bindings-2026-10-23/owner-portable-check/neutral/neutral-ungroup-portable.deadpan"
+          ],
+          "exit": 0,
+          "seconds": 0.04718979261815548,
+          "package_paths_and_bytes_unchanged": true
+        },
+        {
+          "command": [
+            "/tmp/deadpan-compact-audio-bindings-2026-10-23/release-media-extracted/target/release/deadpan-cli",
+            "doctor",
+            "--project",
+            "/tmp/deadpan-compact-audio-bindings-2026-10-23/owner-portable-check/neutral/neutral-ungroup-portable.deadpan"
+          ],
+          "exit": 0,
+          "seconds": 0.03604966588318348,
+          "package_paths_and_bytes_unchanged": true
+        }
+      ]
+    },
+    {
+      "label": "aligned",
+      "package": "/tmp/deadpan-compact-audio-bindings-2026-10-23/owner-portable-check/aligned/aligned-sound-scope-portable.deadpan",
+      "regular_files": 9,
+      "archive_sha256": "428f3677115e6dc7c2cb8b42b9edef2b28aede9d2a7c0400bedaf574710568a2",
+      "commands": [
+        {
+          "command": [
+            "/tmp/deadpan-compact-audio-bindings-2026-10-23/release-media-extracted/target/release/deadpan-cli",
+            "project",
+            "validate",
+            "/tmp/deadpan-compact-audio-bindings-2026-10-23/owner-portable-check/aligned/aligned-sound-scope-portable.deadpan"
+          ],
+          "exit": 0,
+          "seconds": 0.06844575051218271,
+          "package_paths_and_bytes_unchanged": true
+        },
+        {
+          "command": [
+            "/tmp/deadpan-compact-audio-bindings-2026-10-23/release-media-extracted/target/release/deadpan-cli",
+            "doctor",
+            "--project",
+            "/tmp/deadpan-compact-audio-bindings-2026-10-23/owner-portable-check/aligned/aligned-sound-scope-portable.deadpan"
+          ],
+          "exit": 0,
+          "seconds": 0.03880720864981413,
+          "package_paths_and_bytes_unchanged": true
+        }
+      ]
+    }
+  ]
+}

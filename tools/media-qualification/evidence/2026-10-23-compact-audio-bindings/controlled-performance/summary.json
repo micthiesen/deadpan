@@ -1,0 +1,54 @@
+{
+  "fresh_packages": true,
+  "phase_multiplicity_check": "not_applicable_uninstrumented_binaries",
+  "source": {
+    "baseline_commit": "6916ee0d578a11c37e6e66a470eb430b02773764",
+    "candidate": "uncommitted Core58/SQLite87, exact source identities in release-perf-source-identities.json",
+    "no_p95_or_visible_hold_pass_claim": true
+  },
+  "binaries": {
+    "baseline": {
+      "source_path": "/tmp/deadpan-compact-frozen-edges-2026-10-22/candidate-perf",
+      "executed_path": "/tmp/deadpan-compact-frozen-edges-2026-10-22/candidate-perf",
+      "sha256": "d8c0cd0fb54c22f8b697ed7e4c9e4f7944f6ea59b0e55f103c58d2ab61e2e7fd"
+    },
+    "candidate": {
+      "source_path": "/Users/michael/Code/deadpan/target/release/examples/perf",
+      "executed_path": "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "sha256": "fa11b331dcd9b2f5645cb011af6f07a54986fa0c0055bcce63bd4af6a4ba3166"
+    }
+  },
+  "load_flags": [],
+  "path_anomalies": [],
+  "summary": {
+    "baseline": {
+      "first": {
+        "n": 5,
+        "min_ms": 113.553,
+        "median_ms": 114.587,
+        "max_ms": 116.431
+      },
+      "second": {
+        "n": 5,
+        "min_ms": 31.93,
+        "median_ms": 32.896,
+        "max_ms": 33.741
+      }
+    },
+    "candidate": {
+      "first": {
+        "n": 5,
+        "min_ms": 92.883,
+        "median_ms": 93.633,
+        "max_ms": 93.827
+      },
+      "second": {
+        "n": 5,
+        "min_ms": 28.441,
+        "median_ms": 28.906,
+        "max_ms": 29.641
+      }
+    }
+  },
+  "no_p95_or_target_pass_claim": true
+}

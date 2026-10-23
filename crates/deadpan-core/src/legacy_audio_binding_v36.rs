@@ -236,7 +236,7 @@ mod endpoint_tests {
     #[test]
     fn old_binding_ingress_rejects_even_default_or_escaped_anchor_fields() {
         let state = fixture();
-        let encoded = state.to_json().unwrap();
+        let encoded = crate::legacy_audio_binding_v21::historical_wire(&state).to_string();
         assert!(super::validate(&encoded).is_ok());
         assert!(supports(&state));
         assert!(crate::legacy_audio_binding_v35::from_json(&encoded).is_ok());
@@ -262,7 +262,7 @@ mod endpoint_tests {
             .clear();
         assert!(
             serde_json::from_str::<crate::legacy_audio_binding_v20::LegacyAudioBindingState>(
-                &pre_reanchor.to_json().unwrap()
+                &crate::legacy_audio_binding_v21::historical_wire(&pre_reanchor).to_string()
             )
             .is_ok()
         );
@@ -271,7 +271,7 @@ mod endpoint_tests {
             json!({"type":"source_endpoint","endpoint":"end"}),
             json!(null),
         ] {
-            let mut wire = serde_json::to_value(&state).unwrap();
+            let mut wire = crate::legacy_audio_binding_v21::historical_wire(&state);
             wire["bindings"]["source"]["reanchors"][0]["anchor"] = anchor;
             for encoded in [
                 wire.to_string(),

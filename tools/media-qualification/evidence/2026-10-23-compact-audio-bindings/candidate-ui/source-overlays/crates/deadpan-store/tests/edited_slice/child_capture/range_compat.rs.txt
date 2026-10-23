@@ -1,0 +1,281 @@
+//! Literal range command shapes survive the deliberate development-format break.
+use super::*;
+use deadpan_core::AudioEdgePolicies;
+use deadpan_store::StoreError;
+use serde_json::Value;
+
+fn text<'a>(value: &'a Value, key: &str) -> &'a str {
+    value[key].as_str().unwrap()
+}
+
+fn literal() -> Result<Value> {
+    let literal: Value =
+        serde_json::from_str(include_str!("../../fixtures/edited_slice/range-v1.json"))?;
+    assert_eq!(
+        literal["base_commit"],
+        "2ea675646abc24e8410616af74b4193ed4af51da"
+    );
+    assert_eq!(literal["document_schema"], 34);
+    assert_eq!(literal["database_schema"], 43);
+    Ok(literal)
+}
+
+// TEST ONLY: this permits command-shape assertions on current documents by
+// changing exactly their schema header. It is not a project-format migration,
+// and neither production readers nor the literal historical rows use it.
+fn current_test_document(old_json: &str) -> Result<ProjectDocument> {
+    let mut value: Value = serde_json::from_str(old_json)?;
+    assert_eq!(value["schema_version"], 34);
+    value["schema_version"] = serde_json::to_value(DOCUMENT_SCHEMA_VERSION)?;
+    Ok(ProjectDocument::from_json(&value.to_string())?)
+}
+
+// Adapt only the expected current writer value. The literal historical
+// capture and database rows remain unchanged and still decode directly.
+fn compact_expected_audio_defaults(capture: &mut Value) {
+    let automatic = serde_json::to_value(AudioEdgePolicies::default()).unwrap();
+    for timing in capture["audio_bindings"]["timings"].as_array_mut().unwrap() {
+        for node in timing["layout"]["nodes"]
+            .as_object_mut()
+            .unwrap()
+            .values_mut()
+        {
+            let removed = node.as_object_mut().unwrap().remove("edges");
+            assert_eq!(removed.as_ref(), Some(&automatic));
+        }
+    }
+    // This immutable schema-34 fixture predates compact binding defaults.
+    // Project only exact default values in its closed audio-binding graph;
+    // retain every nondefault path, clock and rational unchanged.
+    let defaults = [
+        (
+            "root",
+            serde_json::json!({"type":"project_root_round_even"}),
+        ),
+        ("arguments", serde_json::json!([])),
+        ("births", serde_json::json!([])),
+        ("resume", Value::Null),
+        (
+            "local_boundary",
+            serde_json::json!({"numerator":"0","denominator":"1"}),
+        ),
+        (
+            "constant",
+            serde_json::json!({"numerator":"0","denominator":"1"}),
+        ),
+    ];
+    fn project(value: &mut Value, defaults: &[(&str, Value)]) {
+        match value {
+            Value::Object(fields) => {
+                for child in fields.values_mut() {
+                    project(child, defaults);
+                }
+                for (key, default) in defaults {
+                    if fields.get(*key) == Some(default) {
+                        fields.remove(*key);
+                    }
+                }
+            }
+            Value::Array(values) => {
+                for child in values {
+                    project(child, defaults);
+                }
+            }
+            _ => {}
+        }
+    }
+    project(&mut capture["audio_bindings"], &defaults);
+}
+
+// Restore literal old rows into a fresh package shell. No request is applied to
+// generate expected history; the old writer's JSON strings enter SQLite intact.
+fn restore_rows(path: &Path, original: &ProjectDocument, tables: &Value) -> Result {
+    drop(ProjectStore::create(path, original)?);
+    let mut database = Connection::open(path.join("project.sqlite"))?;
+    let transaction = database.transaction()?;
+    transaction.execute("DELETE FROM state", [])?;
+    transaction.execute("DELETE FROM revisions", [])?;
+    for (table, sql) in [
+        (
+            "revisions",
+            "INSERT INTO revisions SELECT json_extract(?1,'$[0]'),json_extract(?1,'$[1]'),json_extract(?1,'$[2]'),json_extract(?1,'$[3]'),0,length(CAST(json_extract(?1,'$[3]') AS BLOB))",
+        ),
+        (
+            "history",
+            "INSERT INTO history SELECT json_extract(?1,'$[0]'),json_extract(?1,'$[1]'),json_extract(?1,'$[2]'),json_extract(?1,'$[3]'),json_extract(?1,'$[4]')",
+        ),
+        (
+            "state",
+            "INSERT INTO state SELECT json_extract(?1,'$[0]'),json_extract(?1,'$[1]'),json_extract(?1,'$[2]'),json_extract(?1,'$[3]')",
+        ),
+        (
+            "redo",
+            "INSERT INTO redo SELECT json_extract(?1,'$[0]'),json_extract(?1,'$[1]')",
+        ),
+    ] {
+        for row in tables[table].as_array().unwrap() {
+            transaction.execute(sql, [row.as_str().unwrap()])?;
+        }
+    }
+    transaction.pragma_update(None, "user_version", 43)?;
+    transaction.commit()?;
+    Ok(())
+}
+
+#[test]
+fn literal_range_command_shapes_match_on_test_only_current_header_documents() -> Result {
+    // Asserts the authored reference representation (every reanchor step
+    // and complete timing tables). tests/timing_representation.rs proves the
+    // compact storage resolves and renders identically.
+    deadpan_core::with_reference_timing_representation(|| {
+        let literal = literal()?;
+        let original = current_test_document(text(&literal, "original"))?;
+        let slice = CapturedEditSlice::from_json(text(&literal, "capture"))?;
+        assert_eq!(
+            slice.selection(),
+            &SliceCaptureSelection::Range {
+                range: slice.range()
+            }
+        );
+        // Current slices explicitly serialize the new empty attachment map. Keep
+        // the historical literal intact and adapt only this expected test value.
+        let mut expected_capture: Value = serde_json::from_str(text(&literal, "capture"))?;
+        assert!(expected_capture.get("beat_sounds").is_none());
+        expected_capture["beat_sounds"] = serde_json::json!({});
+        compact_expected_audio_defaults(&mut expected_capture);
+        assert_eq!(
+            serde_json::from_str::<Value>(&slice.to_json()?)?,
+            expected_capture
+        );
+        assert_eq!(capture(&original)?, slice);
+        assert_eq!(
+            serde_json::from_str::<Value>(&capture(&original)?.to_json()?)?,
+            expected_capture
+        );
+        assert!(serde_json::to_value(&slice)?.get("selection").is_none());
+        let removal: CommandRequest = serde_json::from_str(text(&literal, "removal_request"))?;
+        let removal_edit: EditTransaction =
+            serde_json::from_str(text(&literal, "removal_transaction"))?;
+        assert_eq!(apply(&original, &removal)?, removal_edit);
+        assert_eq!(
+            serde_json::to_string(&removal)?,
+            text(&literal, "removal_request")
+        );
+        // The current writer stores the compact transaction form (no inverse
+        // when it is the forward patch's reverse); the literal complete row
+        // still decodes to the same transaction, and so does the compact one.
+        assert_eq!(
+            serde_json::from_str::<EditTransaction>(&serde_json::to_string(&removal_edit)?)?,
+            removal_edit
+        );
+        assert_eq!(literal["cases"].as_array().unwrap().len(), 3);
+        for case in literal["cases"].as_array().unwrap() {
+            let before = current_test_document(text(case, "before"))?;
+            let after = current_test_document(text(case, "after"))?;
+            let command: CommandRequest = serde_json::from_str(text(case, "request"))?;
+            let expected: EditTransaction = serde_json::from_str(text(case, "transaction"))?;
+            assert_eq!(removal_edit.forward.apply(&original)?, before);
+            let embedded = match &command.command {
+                Command::SpliceSlice { slice, .. } => {
+                    assert_eq!(case["kind"], "seam");
+                    slice
+                }
+                Command::SpliceSliceAt { slice, .. } => {
+                    assert_eq!(case["kind"], "interior");
+                    slice
+                }
+                Command::ReplaceSlice { slice, .. } => {
+                    assert_eq!(case["kind"], "replacement");
+                    slice
+                }
+                _ => panic!("literal must cover each placement envelope"),
+            };
+            assert_eq!(embedded, &slice);
+            let mut expected_request: Value = serde_json::from_str(text(case, "request"))?;
+            assert!(
+                expected_request["command"]["slice"]
+                    .get("beat_sounds")
+                    .is_none()
+            );
+            expected_request["command"]["slice"]["beat_sounds"] = serde_json::json!({});
+            compact_expected_audio_defaults(&mut expected_request["command"]["slice"]);
+            assert_eq!(serde_json::to_value(&command)?, expected_request);
+            let actual = apply(&before, &command)?;
+            assert_eq!(
+                actual, expected,
+                "complete transaction for {}",
+                case["kind"]
+            );
+            assert_eq!(
+                serde_json::from_str::<EditTransaction>(&serde_json::to_string(&actual)?)?,
+                expected
+            );
+            assert_eq!(actual.forward.apply(&before)?, after);
+            assert_eq!(actual.inverse.apply(&after)?, before);
+        }
+        Ok(())
+    })
+}
+
+#[test]
+fn literal_core_34_and_database_43_are_rejected_without_rewriting_authored_rows() -> Result {
+    let literal = literal()?;
+    assert_eq!(
+        ProjectDocument::from_json(text(&literal, "original"))
+            .unwrap_err()
+            .code,
+        DocumentErrorCode::UnsupportedSchema
+    );
+    let original = current_test_document(text(&literal, "original"))?;
+    for case in literal["cases"].as_array().unwrap() {
+        let scratch = tempfile::tempdir()?;
+        let path = scratch.path().join("old-history.deadpan");
+        restore_rows(&path, &original, &case["tables"])?;
+        let saved = history_rows(&path)?;
+        let old_rows: Vec<_> = case["tables"]["history"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|row| row.as_str().unwrap().to_owned())
+            .collect();
+        assert_eq!(saved, old_rows);
+        let all_cells = authored(&path)?;
+        let snapshots = std::fs::read_dir(path.join("Snapshots"))?
+            .map(|entry| entry.map(|entry| entry.file_name()))
+            .collect::<std::io::Result<std::collections::BTreeSet<_>>>()?;
+        for mode in [AccessMode::ReadOnly, AccessMode::ReadWrite] {
+            assert!(matches!(
+                ProjectStore::open(&path, mode),
+                Err(StoreError::UnsupportedSchema(43))
+            ));
+            assert_eq!(authored(&path)?, all_cells);
+        }
+        assert!(matches!(
+            ProjectStore::migrate(&path),
+            Err(StoreError::UnsupportedSchema(43))
+        ));
+        assert_eq!(authored(&path)?, all_cells);
+        assert_eq!(
+            std::fs::read_dir(path.join("Snapshots"))?
+                .map(|entry| entry.map(|entry| entry.file_name()))
+                .collect::<std::io::Result<std::collections::BTreeSet<_>>>()?,
+            snapshots,
+            "rejection must not create a migration backup"
+        );
+        let database = Connection::open(path.join("project.sqlite"))?;
+        assert_eq!(
+            database.pragma_query_value(None, "user_version", |row| row.get::<_, u32>(0))?,
+            43
+        );
+        for row in case["tables"]["revisions"].as_array().unwrap() {
+            let row: Value = serde_json::from_str(row.as_str().unwrap())?;
+            let current: String = database.query_row(
+                "SELECT document FROM revisions WHERE id=?1",
+                [row[0].as_str().unwrap()],
+                |row| row.get(0),
+            )?;
+            assert_eq!(current, row[3].as_str().unwrap());
+        }
+    }
+    Ok(())
+}

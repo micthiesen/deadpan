@@ -1,0 +1,7 @@
+{
+  "beats": 10000,
+  "creation_ms": 170.141,
+  "package": "/tmp/deadpan-compact-audio-bindings-2026-10-23/controlled-performance/candidate-3.deadpan",
+  "stage": "make-large",
+  "stage_wall_ms": 179.638458
+}

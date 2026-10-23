@@ -1,0 +1,46 @@
+ripwire situational-awareness — 10 changed file(s), 568 symbols in them
+  [1] blast radius: 15958 symbols across 1886 files transitively depend on these changes (showing 8 of 1886 files; --pr-context's own per-file blast-radius list is also capped, at 20)
+        /Users/michael/Code/deadpan/crates/deadpan-cli/tests/preview_export/recipes.rs  (104 dependent symbols)
+        /Users/michael/Code/deadpan/crates/deadpan-cli/tests/preview_export.rs  (76 dependent symbols)
+        /Users/michael/Code/deadpan/crates/deadpan-app/src/preview.rs  (74 dependent symbols)
+        /Users/michael/Code/deadpan/crates/deadpan-app/src/jobs.rs  (73 dependent symbols)
+        /Users/michael/Code/deadpan/crates/deadpan-audio/src/stages.rs  (65 dependent symbols)
+        /Users/michael/Code/deadpan/crates/deadpan-store/src/object_storage.rs  (64 dependent symbols)
+        /Users/michael/Code/deadpan/crates/deadpan-store/src/lib.rs  (57 dependent symbols)
+        /Users/michael/Code/deadpan/crates/deadpan-app/src/navigation.rs  (56 dependent symbols)
+  [2] tests to run (740) (showing 25 of 740 tests):
+        /Users/michael/Code/deadpan/crates/deadpan-cli/tests/preview_export/recipes.rs
+        /Users/michael/Code/deadpan/crates/deadpan-cli/tests/preview_export.rs
+        /Users/michael/Code/deadpan/crates/deadpan-audio/tests/stages.rs
+        /Users/michael/Code/deadpan/crates/deadpan-plan/tests/picture_plan.rs
+        /Users/michael/Code/deadpan/crates/deadpan-app/src/project/tests/generation.rs
+        /Users/michael/Code/deadpan/crates/deadpan-core/tests/source_trim_edit.rs
+        /Users/michael/Code/deadpan/crates/deadpan-store/tests/generation_bundles.rs
+        /Users/michael/Code/deadpan/crates/deadpan-plan/tests/audio_reference.rs
+        /Users/michael/Code/deadpan/crates/deadpan-cli/tests/preview_export/section8.rs
+        /Users/michael/Code/deadpan/crates/deadpan-core/tests/anchors.rs
+        /Users/michael/Code/deadpan/crates/deadpan-core/tests/split.rs
+        /Users/michael/Code/deadpan/crates/deadpan-media/tests/source_qualification.rs
+        /Users/michael/Code/deadpan/crates/deadpan-audio/tests/sequence.rs
+        /Users/michael/Code/deadpan/crates/deadpan-audio/tests/stages/gain.rs
+        /Users/michael/Code/deadpan/crates/deadpan-core/tests/audio_context.rs
+        /Users/michael/Code/deadpan/crates/deadpan-core/tests/marks.rs
+        /Users/michael/Code/deadpan/crates/deadpan-audio/tests/audio_definition/sound_clocks/group_mix.rs
+        /Users/michael/Code/deadpan/crates/deadpan-cli/tests/preview_export_hdr.rs
+        /Users/michael/Code/deadpan/crates/deadpan-core/tests/insert_time.rs
+        /Users/michael/Code/deadpan/crates/deadpan-core/tests/sound_routing.rs
+        /Users/michael/Code/deadpan/native/deadpan-media-worker/tests/bundle_qualification.rs
+        /Users/michael/Code/deadpan/native/deadpan-media-worker/tests/proxy_real_media.rs
+        /Users/michael/Code/deadpan/crates/deadpan-plan/tests/audio_plan.rs
+        /Users/michael/Code/deadpan/crates/deadpan-audio/tests/audio_definition/sound_clocks.rs
+        /Users/michael/Code/deadpan/crates/deadpan-audio/tests/composite_insert.rs
+        (0 test/*.sh gates are NOT modelled: script-to-binary edges are not call edges, so they never appear here — a path count, not every one invokes the binary)
+  [3] co-change — usually edited with these but NOT in your diff (25) (showing 8 of 25 files):
+        /Users/michael/Code/deadpan/docs/REQUIREMENTS.md  (co-edited in 89% of commits)
+        /Users/michael/Code/deadpan/crates/deadpan-cli/tests/project_commands.rs  (co-edited in 78% of commits)
+        /Users/michael/Code/deadpan/docs/HEADLESS.md  (co-edited in 78% of commits)
+        /Users/michael/Code/deadpan/crates/deadpan-plan/src/plan.rs  (co-edited in 75% of commits)
+        /Users/michael/Code/deadpan/docs/spec/AGENT_HANDOFF.md  (co-edited in 75% of commits)
+        /Users/michael/Code/deadpan/crates/deadpan-core/src/lib.rs  (co-edited in 73% of commits)
+        /Users/michael/Code/deadpan/AGENTS.md  (co-edited in 67% of commits)
+        /Users/michael/Code/deadpan/crates/deadpan-core/src/audio_reference/exact_clock/tests.rs  (co-edited in 60% of commits)

@@ -12,17 +12,110 @@ use serde::de::IgnoredAny;
 #[cfg(test)]
 use serde::de::{self, MapAccess, SeqAccess, Visitor};
 #[cfg(test)]
-use serde::{Deserializer, Serialize};
+use serde::{Deserializer, Serialize, Serializer};
 #[cfg(test)]
 use serde_json::value::RawValue;
 
 #[cfg(test)]
 use crate::{AudioBindingState, DocumentError, DocumentErrorCode, ValueChange};
 
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
-#[serde(transparent)]
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 #[cfg(test)]
 pub(crate) struct LegacyAudioBindingState(AudioBindingState);
+
+#[cfg(test)]
+impl Serialize for LegacyAudioBindingState {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        historical_wire(&self.0).serialize(serializer)
+    }
+}
+
+/// Serialize the current state using the explicit default fields required by
+/// the old schema 20-21 placement grammar. Other current serde omissions are
+/// retained, so this is only a historical fixture adapter.
+#[cfg(test)]
+pub(crate) fn historical_wire(state: &AudioBindingState) -> serde_json::Value {
+    fn placement(value: &mut serde_json::Value) {
+        let object = value
+            .as_object_mut()
+            .expect("serialized audio placement is an object");
+        object
+            .entry("arguments")
+            .or_insert_with(|| serde_json::json!([]));
+        object
+            .entry("births")
+            .or_insert_with(|| serde_json::json!([]));
+        let reference = object
+            .get_mut("reference")
+            .and_then(serde_json::Value::as_object_mut)
+            .expect("serialized audio reference is an object");
+        reference
+            .entry("root")
+            .or_insert_with(|| serde_json::json!({"type": "project_root_round_even"}));
+    }
+
+    fn binding(value: &mut serde_json::Value) {
+        let object = value
+            .as_object_mut()
+            .expect("serialized owned audio binding is an object");
+        object.entry("resume").or_insert(serde_json::Value::Null);
+        placement(
+            object
+                .get_mut("lattice")
+                .expect("serialized binding has a lattice"),
+        );
+        if let Some(resume) = object
+            .get_mut("resume")
+            .and_then(serde_json::Value::as_object_mut)
+        {
+            resume.entry("local_boundary").or_insert_with(|| {
+                serde_json::to_value(crate::ExactRatio::ZERO).expect("zero exact ratio serializes")
+            });
+            if let Some(phase) = resume
+                .get_mut("phase")
+                .and_then(serde_json::Value::as_object_mut)
+            {
+                phase.entry("constant").or_insert_with(|| {
+                    serde_json::to_value(crate::ExactRatio::ZERO)
+                        .expect("zero exact ratio serializes")
+                });
+                if let Some(terms) = phase
+                    .get_mut("terms")
+                    .and_then(serde_json::Value::as_array_mut)
+                {
+                    for term in terms {
+                        if let Some(placement_value) = term.get_mut("placement") {
+                            placement(placement_value);
+                        }
+                    }
+                }
+            }
+        }
+        if let Some(reanchors) = object
+            .get_mut("reanchors")
+            .and_then(serde_json::Value::as_array_mut)
+        {
+            for step in reanchors {
+                if let Some(placement_value) = step.get_mut("placement") {
+                    placement(placement_value);
+                }
+            }
+        }
+    }
+
+    let mut wire = serde_json::to_value(state).expect("audio binding state serializes");
+    for map_name in ["bindings", "gap_bindings"] {
+        if let Some(bindings) = wire
+            .get_mut(map_name)
+            .and_then(serde_json::Value::as_object_mut)
+        {
+            for value in bindings.values_mut() {
+                binding(value);
+            }
+        }
+    }
+    wire
+}
 
 #[cfg(test)]
 impl LegacyAudioBindingState {

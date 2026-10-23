@@ -1,0 +1,12 @@
+{
+  "birth_terminal_nonzero": true,
+  "classification": "mixed history preserves this group-birth terminal",
+  "controls_valid": true,
+  "copied_terminal_nonzero": true,
+  "failure": null,
+  "implementation_claim": false,
+  "pcm_different_channel_samples": 0,
+  "pcm_equal": true,
+  "raw_different_channel_samples": 0,
+  "raw_equal": true
+}

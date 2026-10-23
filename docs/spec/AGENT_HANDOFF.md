@@ -2,70 +2,58 @@
 
 Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product specification. The imported 1.0 package is preserved in `archive/1.0/` and does not override the revised single-original V1 policy. Designs and examples are not implementation evidence; keep actual progress and measured capability in the requirement tracker.
 
-## Current continuation, 2026-10-22
+## Current continuation, 2026-10-23
 
-Active candidate, 2026-10-23: omit six exact audio-binding defaults and skip
-a scoped projection that cannot be smaller than full capture. Disposable
-combined n=5 pairs measure first store-and-refresh median 111.576 → 91.629 ms.
-Those prototypes lack the standalone preflight fix and are not production or
-visible-picture qualification. Working Core 58 / SQLite 87 adds bounded optional
-path preflight and explicit historical test fixtures. All 1,513 Core, 3,499 broader selected and 1,292 UI-feature tests pass.
-Strict changed Core/Store checks and formatting pass; independent production
-reviews report no defect. Initial test borrow errors, the malformed negative
-fixture, the old literal range expectation and one passing output-handle
-warning remain retained. Both isolated and full broader reruns are clean.
-Explicit UI lint, actual media/native, portable reopening and current-format
-timing remain owed. See [Core checkpoint](../qualification/compact-audio-bindings-2026-10-23.md). Diagnostic source and failures are retained in
-[329 verified evidence files](../qualification/first-pause-binding-prototypes-2026-10-23.md).
+Core 58 / SQLite 87 compact bindings and early full-capture fallback are
+implemented, reviewed and qualified. All 1,513 Core, 3,499 broader selected and
+1,292 UI-feature tests pass, strict changed Core/Store and explicit UI Clippy
+plus formatting pass. Debug/release verify 15 pictures /24,024 samples, and
+release verifies 19 pictures /30,430 samples, all at zero offset with complete
+canonical/history controls. Native passes 197 checks plus Kestrel, retaining
+51 second-retry frames and seven distinct-cause retry runs. Both nine-file
+portable extractions validate/doctor unchanged; all five edited benchmark
+packages pass full CLI replay unchanged.
 
-Compact timing qualified, 2026-10-23: Core 57 / SQLite 86 omits only default
-frozen-node edge objects; standalone context codecs 1–12 preserve historical
-bytes. All 1,503 Core, 3,499 broader and 1,292 UI tests pass; six refined asymmetric/
-historical codec cases, strict Core/Store+UI Clippy and formatting pass.
-Debug/release 15-picture/24,024-sample and release 19-picture/30,430-sample exports
-verify at zero offset with complete PCM/history controls. Native passes 197
-checks plus Kestrel; both 9-file portable packages validate/doctor unchanged.
-Retain 51 second-retry frames and 7 retry runs; native commit p95 is 85.747709 ms / 9.
-Five quiet current-format pairs give first medians 130.636 / 114.691 ms and second
-33.206 / 33.265 ms. No 100 ms visible-Hold or 50 ms ordinary-edit target PASS.
-All source/input/executable guards and final inventory checks pass. The
-qualification record retains 1,069 payload files / 46,387,246 bytes, inventory SHA
-2848b62c95487b8c927b7b130faa040bc19fbfd085328d529d101fd0d57e9716.
-The serialized driver completed successfully; no Cargo/runtime job remains.
-Scratch /tmp/deadpan-compact-frozen-edges-2026-10-22 contains isolated next-profile-plan:
-capture timers and an early N−1 alias fallback prototype are prepared; none has
-been compiled/measured yet. A read-only byte audit finds 1,561,546 default binding
-bytes removable in the first compact history edit, without claiming speed.
-Implementation 6916ee0d578a11c37e6e66a470eb430b02773764 is committed and pushed.
-Refresh/verify the progress artifact, then measure the isolated capture/default-
-binding hypotheses. Preserve foreign
+Five quiet current-format pairs give first store-and-refresh medians
+114.587 /93.633 ms and second 32.896 /28.906 ms. No picture or p95 target PASS.
+Native descriptive commit p95 is 90.561250 ms /9; the 50 ms ordinary-edit target
+stays open. Coverage remains 89%, 8/24 sections complete, no gate closes.
+[Qualification](../qualification/compact-audio-bindings-2026-10-23.md) retains
+683 evidence files /24,889,683 bytes; inventory SHA-256
+e75445ac55c307ee5bf020474e5d26602b2898e3a41fad7840f0a58aca75a6ba.
+Earlier [compact-edge](../qualification/compact-frozen-edges-2026-10-23.md),
+[prototype](../qualification/first-pause-binding-prototypes-2026-10-23.md) and
+[Core checkpoint](../../tools/media-qualification/evidence/2026-10-23-compact-bindings-core-checkpoint/README.md)
+records remain historical evidence, not active jobs.
+
+Scratch: /tmp/deadpan-compact-audio-bindings-2026-10-23. Both
+final_qualification_2.py and post_qualification.py completed with all successful
+rows. Do not restart them. Current executed perf SHA-256:
+fa11b331dcd9b2f5645cb011af6f07a54986fa0c0055bcce63bd4af6a4ba3166.
+All production source stayed unchanged through qualification; only the Store
+expected-value fixture changed after the final Core pass. The final report
+retains initial test borrow errors, malformed negative fixture, old literal
+range expectation, output-handle warning and old-witness toolchain mismatch.
+
+Next: integrate the scratch-only large-first-pause harness draft at
+/tmp/deadpan-large-pause-harness-2026-10-23/large-first-pause.patch. It is not
+applied, formatted, compiled or run. source-hashes.json records the two existing
+file identities and the new module; NOTES.md describes behavior and limits.
+A pre-integration measurement review found no concrete defect. Re-read current
+targets before applying, then format, run targeted/UI tests and strict checks,
+build release, and run one diagnostic before collecting forty independent
+fresh-package trials. The scenario must remain offscreen acceptance, with no
+native-window/scanout claim. It uses hold 12f at frame 17933, not hold-duration.
+Pristine make-large has three revisions/two setup commits and undo available;
+it has no source media. Split neighbors retain Partition contexts with
+durations [5,12,7], rather than shortened Hold recipes. Require a new matching
+ticket/revision through decode, submission and composition.
+
+Refresh/verify progress artifact a3ysikxugbmr4 from the next pushed
+docs/progress.json after this implementation commit. Preserve foreign
 fuzz/Cargo.lock and .claude/. Keep the full goal active.
 
-First-pause profile, 2026-10-23: root scratch is
-`/tmp/deadpan-first-pause-profile-2026-10-22`. Initial and finer controlled
-batches complete with all source/executable guards, no duplicate phase markers
-and edit-start load below 3. Uninstrumented first medians are 128.497 and
-131.432 ms; second medians 32.379 and 33.669 ms. Finer first-pause history is
-6,416,116 bytes: round-trip checking 26.656 ms, history write 14.981 ms and
-SQLite commit 16.824 ms. Keep nested phases separate. These five-pair runs are
-INFO, with no p95 or target PASS. The [record](../qualification/first-pause-profile-2026-10-23.md)
-retains copier and anchor setup failures separately. The disposable compact-edge
-prototype completed five quiet pairs: first medians 127.513 versus 111.362 ms,
-still above 100 ms; second medians 32.783 versus 32.406 ms. It is not shipping
-qualification. Current production candidate uses Core 57 / SQLite 86, preserving
-standalone context schemas 1–12 through a borrowed explicit-edge serializer.
-All 1,503 Core tests across 68 binaries pass, zero skipped, after two fixture
-corrections with unchanged production. The intermediate 14k-node fixture hit the
-binding-work budget; final byte-bound fixture retains 12k nodes and longer IDs.
-The a18ff654 witness fails exactly two omission cases; four strict/legacy
-controls pass. Both reviewers find no remaining codec or fixture defect.
-Qualification is active in /tmp/deadpan-compact-frozen-edges-2026-10-22.
-Matrix PID 85560 (started Thu Oct22 22:24:01 local) owns Cargo and is building
-the broader suite. Its original PTY handle expired, but ps confirms it live.
-after_matrix.py waits for the complete successful matrix before native/media
-and quiet current-format performance. Do not restart a live owner. The latest
-artifact checkpoint is updated through Core verification; refresh after the
-next pushed results. Preserve foreign fuzz/Cargo.lock and .claude/.
+## Earlier qualification checkpoints
 
 Neutral Ungroup qualified, 2026-10-23: Core admission removes only a
 neutral unary introduced wrapper around a Source/Hold when every affected

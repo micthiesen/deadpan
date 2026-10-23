@@ -1,0 +1,20 @@
+
+running 1 test
+test six_exact_binding_defaults_omit_and_restore_with_fixed_wire_bytes ... FAILED
+
+failures:
+
+---- six_exact_binding_defaults_omit_and_restore_with_fixed_wire_bytes stdout ----
+
+thread 'six_exact_binding_defaults_omit_and_restore_with_fixed_wire_bytes' (176525221) panicked at /Users/michael/Code/deadpan/crates/deadpan-core/tests/compact_audio_bindings.rs:50:5:
+assertion `left == right` failed
+  left: "{\"lattice\":{\"reference\":{\"timing\":{\"allocation\":\"timing\",\"ordinal\":0},\"root\":{\"type\":\"project_root_round_even\"},\"physical\":\"owner\"},\"arguments\":[],\"births\":[]},\"resume\":null}"
+ right: "{\"lattice\":{\"reference\":{\"timing\":{\"allocation\":\"timing\",\"ordinal\":0},\"physical\":\"owner\"}}}"
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    six_exact_binding_defaults_omit_and_restore_with_fixed_wire_bytes
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 7 filtered out; finished in 0.00s
+

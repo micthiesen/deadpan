@@ -3,14 +3,20 @@
 use crate::{AudioBindingState, DocumentError, DocumentErrorCode, ValueChange};
 use crate::{FrozenAudioKind, FrozenAudioLayout};
 #[cfg(test)]
-use serde::{Deserialize, Deserializer, Serialize, de};
+use serde::{Deserialize, Deserializer, Serialize, Serializer, de};
 #[cfg(test)]
 use serde_json::value::RawValue;
 
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
-#[serde(transparent)]
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 #[cfg(test)]
 pub(crate) struct LegacyAudioBindingState(AudioBindingState);
+
+#[cfg(test)]
+impl Serialize for LegacyAudioBindingState {
+    fn serialize<S: Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        crate::legacy_audio_binding_v21::historical_wire(&self.0).serialize(serializer)
+    }
+}
 #[cfg(test)]
 impl LegacyAudioBindingState {
     pub(crate) fn project(state: &AudioBindingState) -> Option<Self> {

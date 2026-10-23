@@ -1,0 +1,299 @@
+{
+  "cli": {
+    "source": "target/release/deadpan-cli",
+    "path": "/tmp/deadpan-compact-audio-bindings-2026-10-23/release-media-extracted/target/release/deadpan-cli",
+    "sha256": "e77ea56d89a84acbe200f5c9277a8d71f9b99588ea764c01bfd0acae1a4f0428"
+  },
+  "cases": [
+    {
+      "trial": 1,
+      "command": [
+        "/tmp/deadpan-compact-audio-bindings-2026-10-23/release-media-extracted/target/release/deadpan-cli",
+        "project",
+        "validate",
+        "/tmp/deadpan-compact-audio-bindings-2026-10-23/controlled-performance/candidate-1.deadpan"
+      ],
+      "exit": 0,
+      "seconds": 0.446216625161469,
+      "response": {
+        "basis_state": {
+          "geometry_origin": "explicit",
+          "primary": null,
+          "rate_origin": "explicit"
+        },
+        "duration_frames": 120024,
+        "mark_count": 0,
+        "node_count": 10009,
+        "presentation_basis": {
+          "color_policy": "sdr_rec709",
+          "frame_rate": {
+            "denominator": 1,
+            "numerator": 24
+          },
+          "height": 1080,
+          "width": 1920
+        },
+        "project_id": "perf-large-10000",
+        "protocol": 1,
+        "revision_id": "perf-rev-42275-9",
+        "root": "large-root",
+        "valid": true
+      },
+      "package_unchanged": true,
+      "package_files": {
+        ".writer.lock": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "manifest.json": {
+          "bytes": 62,
+          "sha256": "8fce85b103ad4d3dafd2869369b57c72a89855e890518209ea1b9412aabcb9c7"
+        },
+        "project.sqlite": {
+          "bytes": 7589888,
+          "sha256": "d049287d38f9b8d2fe05103782cf9505b07b91e3385d5c8e9e73b4134f97a47c"
+        },
+        "project.sqlite-shm": {
+          "bytes": 32768,
+          "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+        },
+        "project.sqlite-wal": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "trial": 2,
+      "command": [
+        "/tmp/deadpan-compact-audio-bindings-2026-10-23/release-media-extracted/target/release/deadpan-cli",
+        "project",
+        "validate",
+        "/tmp/deadpan-compact-audio-bindings-2026-10-23/controlled-performance/candidate-2.deadpan"
+      ],
+      "exit": 0,
+      "seconds": 0.44733166694641113,
+      "response": {
+        "basis_state": {
+          "geometry_origin": "explicit",
+          "primary": null,
+          "rate_origin": "explicit"
+        },
+        "duration_frames": 120024,
+        "mark_count": 0,
+        "node_count": 10009,
+        "presentation_basis": {
+          "color_policy": "sdr_rec709",
+          "frame_rate": {
+            "denominator": 1,
+            "numerator": 24
+          },
+          "height": 1080,
+          "width": 1920
+        },
+        "project_id": "perf-large-10000",
+        "protocol": 1,
+        "revision_id": "perf-rev-42278-9",
+        "root": "large-root",
+        "valid": true
+      },
+      "package_unchanged": true,
+      "package_files": {
+        ".writer.lock": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "manifest.json": {
+          "bytes": 62,
+          "sha256": "8fce85b103ad4d3dafd2869369b57c72a89855e890518209ea1b9412aabcb9c7"
+        },
+        "project.sqlite": {
+          "bytes": 7589888,
+          "sha256": "5fe0dff6250c1706f63236ab347dde4337d98d4c4d7b8f36450031e540ac8f4d"
+        },
+        "project.sqlite-shm": {
+          "bytes": 32768,
+          "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+        },
+        "project.sqlite-wal": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "trial": 3,
+      "command": [
+        "/tmp/deadpan-compact-audio-bindings-2026-10-23/release-media-extracted/target/release/deadpan-cli",
+        "project",
+        "validate",
+        "/tmp/deadpan-compact-audio-bindings-2026-10-23/controlled-performance/candidate-3.deadpan"
+      ],
+      "exit": 0,
+      "seconds": 0.4552371250465512,
+      "response": {
+        "basis_state": {
+          "geometry_origin": "explicit",
+          "primary": null,
+          "rate_origin": "explicit"
+        },
+        "duration_frames": 120024,
+        "mark_count": 0,
+        "node_count": 10009,
+        "presentation_basis": {
+          "color_policy": "sdr_rec709",
+          "frame_rate": {
+            "denominator": 1,
+            "numerator": 24
+          },
+          "height": 1080,
+          "width": 1920
+        },
+        "project_id": "perf-large-10000",
+        "protocol": 1,
+        "revision_id": "perf-rev-42285-9",
+        "root": "large-root",
+        "valid": true
+      },
+      "package_unchanged": true,
+      "package_files": {
+        ".writer.lock": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "manifest.json": {
+          "bytes": 62,
+          "sha256": "8fce85b103ad4d3dafd2869369b57c72a89855e890518209ea1b9412aabcb9c7"
+        },
+        "project.sqlite": {
+          "bytes": 7589888,
+          "sha256": "02b8328b767d6c901cb05c733f068fcf18bac0efdff8ea7867a31e635a97770a"
+        },
+        "project.sqlite-shm": {
+          "bytes": 32768,
+          "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+        },
+        "project.sqlite-wal": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "trial": 4,
+      "command": [
+        "/tmp/deadpan-compact-audio-bindings-2026-10-23/release-media-extracted/target/release/deadpan-cli",
+        "project",
+        "validate",
+        "/tmp/deadpan-compact-audio-bindings-2026-10-23/controlled-performance/candidate-4.deadpan"
+      ],
+      "exit": 0,
+      "seconds": 0.45062558352947235,
+      "response": {
+        "basis_state": {
+          "geometry_origin": "explicit",
+          "primary": null,
+          "rate_origin": "explicit"
+        },
+        "duration_frames": 120024,
+        "mark_count": 0,
+        "node_count": 10009,
+        "presentation_basis": {
+          "color_policy": "sdr_rec709",
+          "frame_rate": {
+            "denominator": 1,
+            "numerator": 24
+          },
+          "height": 1080,
+          "width": 1920
+        },
+        "project_id": "perf-large-10000",
+        "protocol": 1,
+        "revision_id": "perf-rev-42287-9",
+        "root": "large-root",
+        "valid": true
+      },
+      "package_unchanged": true,
+      "package_files": {
+        ".writer.lock": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "manifest.json": {
+          "bytes": 62,
+          "sha256": "8fce85b103ad4d3dafd2869369b57c72a89855e890518209ea1b9412aabcb9c7"
+        },
+        "project.sqlite": {
+          "bytes": 7589888,
+          "sha256": "96ab715aadac35d0cbc51cb8cfb5536bc7aa107a5a3a50a87b7f80d3d62f9f0f"
+        },
+        "project.sqlite-shm": {
+          "bytes": 32768,
+          "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+        },
+        "project.sqlite-wal": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    {
+      "trial": 5,
+      "command": [
+        "/tmp/deadpan-compact-audio-bindings-2026-10-23/release-media-extracted/target/release/deadpan-cli",
+        "project",
+        "validate",
+        "/tmp/deadpan-compact-audio-bindings-2026-10-23/controlled-performance/candidate-5.deadpan"
+      ],
+      "exit": 0,
+      "seconds": 0.45429408363997936,
+      "response": {
+        "basis_state": {
+          "geometry_origin": "explicit",
+          "primary": null,
+          "rate_origin": "explicit"
+        },
+        "duration_frames": 120024,
+        "mark_count": 0,
+        "node_count": 10009,
+        "presentation_basis": {
+          "color_policy": "sdr_rec709",
+          "frame_rate": {
+            "denominator": 1,
+            "numerator": 24
+          },
+          "height": 1080,
+          "width": 1920
+        },
+        "project_id": "perf-large-10000",
+        "protocol": 1,
+        "revision_id": "perf-rev-42304-9",
+        "root": "large-root",
+        "valid": true
+      },
+      "package_unchanged": true,
+      "package_files": {
+        ".writer.lock": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "manifest.json": {
+          "bytes": 62,
+          "sha256": "8fce85b103ad4d3dafd2869369b57c72a89855e890518209ea1b9412aabcb9c7"
+        },
+        "project.sqlite": {
+          "bytes": 7589888,
+          "sha256": "21737a8fa0ce385e7dc9271ac1482cea9a58f65b4194ebdc6667c85b4cf467e4"
+        },
+        "project.sqlite-shm": {
+          "bytes": 32768,
+          "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb"
+        },
+        "project.sqlite-wal": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    }
+  ]
+}

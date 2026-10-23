@@ -1,0 +1,8 @@
+2048 Rust files frozen for release-media
+build {"command": ["cargo", "nextest", "archive", "--release", "--locked", "-p", "deadpan-cli", "--test", "preview_export", "--features", "synthetic-worker", "--archive-file", "/tmp/deadpan-compact-audio-bindings-2026-10-23/release-media.tar.zst", "--zstd-level=-1"], "exit": 0, "seconds": 187.96610554028302}
+Frozen Rust path set, all SHA256 identities and Cargo.lock unchanged: release-media 2048
+Frozen Rust path set, all SHA256 identities and Cargo.lock unchanged: release-media 2048
+neutral {"command": ["cargo", "nextest", "run", "--archive-file", "/tmp/deadpan-compact-audio-bindings-2026-10-23/release-media.tar.zst", "--extract-to", "/tmp/deadpan-compact-audio-bindings-2026-10-23/release-media-extracted", "--extract-overwrite", "--workspace-remap", "/Users/michael/Code/deadpan", "-E", "test(neutral_unpaired_sound_group_ungroup_preserves_complete_pcm_and_verified_export)", "--run-ignored", "all", "--test-threads", "1", "--no-fail-fast"], "exit": 0, "seconds": 34.94620554149151}
+Frozen Rust path set, all SHA256 identities and Cargo.lock unchanged: release-media 2048
+aligned {"command": ["cargo", "nextest", "run", "--archive-file", "/tmp/deadpan-compact-audio-bindings-2026-10-23/release-media.tar.zst", "--extract-to", "/tmp/deadpan-compact-audio-bindings-2026-10-23/release-media-extracted", "--extract-overwrite", "--workspace-remap", "/Users/michael/Code/deadpan", "-E", "test(aligned_sound_scope_group_split_move_copy_preserves_canonical_pcm_and_verified_export)", "--run-ignored", "all", "--test-threads", "1", "--no-fail-fast"], "exit": 0, "seconds": 230.6847733752802}
+Frozen Rust path set, all SHA256 identities and Cargo.lock unchanged: release-media 2048

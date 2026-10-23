@@ -1,6 +1,6 @@
 # Supported development project formats
 
-The current package uses SQLite schema 86 and core document schema 57. Schema
+The current package uses SQLite schema 87 and core document schema 58. Schema
 64 stores revision documents only at [keyframes](TIMING_STORAGE.md#revision-storage-database-schema-64),
 records each revision's patch-chain depth and JSON size bound, and adds the
 [verified history receipt](TIMING_STORAGE.md#verified-history-receipts).
@@ -56,12 +56,21 @@ retain their semantics. Standalone FrozenAudioContext schemas 1 through 12
 keep their original explicit edge objects and canonical encoding; only the
 versioned project and history layout uses this compact representation.
 
+Schema 87 uses core 58's compact owned audio bindings. The project-root clock,
+empty argument and birth paths, absent resume, and exact zero resume boundary
+and phase constant are omitted and restore their original values. Nondefault
+values remain explicit. The independent raw preflight treats absent paths as
+zero entries while enforcing the same limits on present paths; null vectors,
+duplicates and unknown fields remain invalid. Standalone binding JSON has no
+independent version header and adopts this current vocabulary. Frozen audio
+contexts and sound-clock records retain their separate existing formats.
+
 Under the 2026-09-30 development-format authorization, this build refuses
-schemas 1 through 85 as `UnsupportedSchema` without changes. The retained
-66-to-67 and 67-to-68 migration steps do not form a complete chain to schema 86.
+schemas 1 through 86 as `UnsupportedSchema` without changes. The retained
+66-to-67 and 67-to-68 migration steps do not form a complete chain to schema 87.
 The [release migration runner](BACKUPS.md#release-migration-policy) remains
 implemented and tested; this development build does not invent missing steps.
-A schema *above* 86 is refused by writers as `NewerSchema` and opens read-only
+A schema *above* 87 is refused by writers as `NewerSchema` and opens read-only
 for viewing.
 
 History patches now record retained audio timing as granular
@@ -69,7 +78,7 @@ History patches now record retained audio timing as granular
 timing tables are sliced to the aliases their placements name. Both are
 breaking changes to the history and document representation of new edits.
 Stored literal fixtures that embedded complete binding states were converted.
-It refuses schemas 1 through 85 with the
+It refuses schemas 1 through 86 with the
 store's `UnsupportedSchema` error (`SchemaUnsupported` over the CLI) before obtaining
 a writer lock, creating a backup, enabling WAL, repairing directories or parsing
 authored documents. The old package remains intact. Create a current project to
@@ -120,12 +129,12 @@ cargo run --locked -p deadpan-cli -- project migrate /tmp/example.deadpan
 Core schema 47 retains scoped historical aliases in chronological sample clocks
 for beat-owned sounds, addressed by owner and local sound ID. Core 48 retains
 these clocks and adds Hold picture origins. Core 49 adds source interpretations.
-The current database 86 stores core 57 documents and their reversible patches. Prior unused
+The current database 87 stores core 58 documents and their reversible patches. Prior unused
 packages have no supported migration, including the former schema-52 additive upgrade. Create a
 current package to continue; refusal never rewrites
 the old package or its media.
 
-Calling `project migrate` on schema 86 performs read-only validation and reports
+Calling `project migrate` on schema 87 performs read-only validation and reports
 equal source/destination schemas with `backup: null`, including alongside a
 native writer. On an older package it returns `SchemaUnsupported` before
 creating a backup or obtaining a writer. An open native endpoint only

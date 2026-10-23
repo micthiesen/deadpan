@@ -1,0 +1,26 @@
+{
+  "command": [
+    "cargo",
+    "nextest",
+    "run",
+    "--archive-file",
+    "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-broad.tar.zst",
+    "--extract-to",
+    "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-broad-extracted",
+    "--extract-overwrite",
+    "--workspace-remap",
+    "/Users/michael/Code/deadpan",
+    "-E",
+    "test(owner_replacement_revokes_late_preparation_and_keeps_the_worker_bounded)",
+    "--test-threads",
+    "1",
+    "--no-fail-fast"
+  ],
+  "exit": 0,
+  "seconds": 3.6563996244221926,
+  "binary": {
+    "path": "/private/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-broad-extracted/target/debug/deps/deadpan_app-6c91f3fd414f9cf2",
+    "sha256": "a7dc1489cda2cc1641e4f4b19961fe24423cd312f1ea9550a7f64d187dc52895"
+  },
+  "source_inputs_unchanged": true
+}

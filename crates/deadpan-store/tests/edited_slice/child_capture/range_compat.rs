@@ -32,7 +32,7 @@ fn current_test_document(old_json: &str) -> Result<ProjectDocument> {
 
 // Adapt only the expected current writer value. The literal historical
 // capture and database rows remain unchanged and still decode directly.
-fn compact_expected_timing_edges(capture: &mut Value) {
+fn compact_expected_audio_defaults(capture: &mut Value) {
     let automatic = serde_json::to_value(AudioEdgePolicies::default()).unwrap();
     for timing in capture["audio_bindings"]["timings"].as_array_mut().unwrap() {
         for node in timing["layout"]["nodes"]
@@ -44,6 +44,47 @@ fn compact_expected_timing_edges(capture: &mut Value) {
             assert_eq!(removed.as_ref(), Some(&automatic));
         }
     }
+    // This immutable schema-34 fixture predates compact binding defaults.
+    // Project only exact default values in its closed audio-binding graph;
+    // retain every nondefault path, clock and rational unchanged.
+    let defaults = [
+        (
+            "root",
+            serde_json::json!({"type":"project_root_round_even"}),
+        ),
+        ("arguments", serde_json::json!([])),
+        ("births", serde_json::json!([])),
+        ("resume", Value::Null),
+        (
+            "local_boundary",
+            serde_json::json!({"numerator":"0","denominator":"1"}),
+        ),
+        (
+            "constant",
+            serde_json::json!({"numerator":"0","denominator":"1"}),
+        ),
+    ];
+    fn project(value: &mut Value, defaults: &[(&str, Value)]) {
+        match value {
+            Value::Object(fields) => {
+                for child in fields.values_mut() {
+                    project(child, defaults);
+                }
+                for (key, default) in defaults {
+                    if fields.get(*key) == Some(default) {
+                        fields.remove(*key);
+                    }
+                }
+            }
+            Value::Array(values) => {
+                for child in values {
+                    project(child, defaults);
+                }
+            }
+            _ => {}
+        }
+    }
+    project(&mut capture["audio_bindings"], &defaults);
 }
 
 // Restore literal old rows into a fresh package shell. No request is applied to
@@ -101,7 +142,7 @@ fn literal_range_command_shapes_match_on_test_only_current_header_documents() ->
         let mut expected_capture: Value = serde_json::from_str(text(&literal, "capture"))?;
         assert!(expected_capture.get("beat_sounds").is_none());
         expected_capture["beat_sounds"] = serde_json::json!({});
-        compact_expected_timing_edges(&mut expected_capture);
+        compact_expected_audio_defaults(&mut expected_capture);
         assert_eq!(
             serde_json::from_str::<Value>(&slice.to_json()?)?,
             expected_capture
@@ -157,7 +198,7 @@ fn literal_range_command_shapes_match_on_test_only_current_header_documents() ->
                     .is_none()
             );
             expected_request["command"]["slice"]["beat_sounds"] = serde_json::json!({});
-            compact_expected_timing_edges(&mut expected_request["command"]["slice"]);
+            compact_expected_audio_defaults(&mut expected_request["command"]["slice"]);
             assert_eq!(serde_json::to_value(&command)?, expected_request);
             let actual = apply(&before, &command)?;
             assert_eq!(

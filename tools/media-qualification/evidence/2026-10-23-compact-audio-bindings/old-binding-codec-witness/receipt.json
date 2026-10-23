@@ -1,0 +1,70 @@
+{
+  "source_sha256": "a2e531de57a6b917328ae98af1de9e43b421bc94e2ea7ddc358d6f7f7990e739",
+  "libraries": {
+    "deadpan_core": {
+      "path": "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/early-fallback-prototype-target/release/deps/libdeadpan_core-50104e954f70f69f.rlib",
+      "sha256": "49bcf5c040be63cc900d3da107bc6741ac05bcfb4d1910a7c74bff47cc72cd7d"
+    },
+    "serde_json": {
+      "path": "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/early-fallback-prototype-target/release/deps/libserde_json-7b5e96388f88d567.rlib",
+      "sha256": "802ab3b42308370ad2c6764067cdca50de3c3fbebd027bb1d6f4be5a3dcc2b42"
+    }
+  },
+  "prior_binding_source_matches_qualified_core57": true,
+  "comparison_library": "early-fallback prototype, Core57 codec unchanged; only audio_reference has unrelated guard",
+  "commands": [
+    {
+      "name": "build",
+      "command": [
+        "rustc",
+        "+1.97.1",
+        "--edition",
+        "2024",
+        "-C",
+        "lto=thin",
+        "--crate-name",
+        "old_binding_codec_witness",
+        "--test",
+        "/Users/michael/Code/deadpan/crates/deadpan-core/tests/compact_audio_bindings.rs",
+        "-L",
+        "dependency=/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/early-fallback-prototype-target/release/deps",
+        "-o",
+        "/tmp/deadpan-compact-audio-bindings-2026-10-23/old-binding-codec-witness/tests",
+        "--extern",
+        "deadpan_core=/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/early-fallback-prototype-target/release/deps/libdeadpan_core-50104e954f70f69f.rlib",
+        "--extern",
+        "serde_json=/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/early-fallback-prototype-target/release/deps/libserde_json-7b5e96388f88d567.rlib"
+      ],
+      "exit": 0,
+      "expected_exit": 0,
+      "seconds": 7.034699792042375
+    },
+    {
+      "name": "omission",
+      "command": [
+        "./tests",
+        "--exact",
+        "six_exact_binding_defaults_omit_and_restore_with_fixed_wire_bytes",
+        "--test-threads",
+        "1"
+      ],
+      "exit": 101,
+      "expected_exit": 101,
+      "seconds": 0.009274625219404697
+    },
+    {
+      "name": "nondefault-control",
+      "command": [
+        "./tests",
+        "--exact",
+        "signed_nonzero_resume_values_and_phase_terms_remain_explicit_and_exact",
+        "--test-threads",
+        "1"
+      ],
+      "exit": 0,
+      "expected_exit": 0,
+      "seconds": 0.006346959620714188
+    }
+  ],
+  "binary_sha256": "10d3afbf61e36912a7ad3e18868e868d5d2ed28fbf87b5e163bebe3e39a3de1b"
+}

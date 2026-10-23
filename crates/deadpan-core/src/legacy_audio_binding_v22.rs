@@ -7,9 +7,14 @@ use serde_json::value::RawValue;
 
 use crate::{AudioBindingState, DocumentError, DocumentErrorCode, ValueChange};
 
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
-#[serde(transparent)]
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub(crate) struct LegacyAudioBindingState(AudioBindingState);
+
+impl Serialize for LegacyAudioBindingState {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        crate::legacy_audio_binding_v21::historical_wire(&self.0).serialize(serializer)
+    }
+}
 
 impl LegacyAudioBindingState {
     pub(crate) fn project(state: &AudioBindingState) -> Option<Self> {

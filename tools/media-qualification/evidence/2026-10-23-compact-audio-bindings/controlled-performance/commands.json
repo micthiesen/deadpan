@@ -1,0 +1,262 @@
+[
+  {
+    "name": "baseline-1-make",
+    "command": [
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/controlled-performance/baseline-1.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.20852091535925865
+  },
+  {
+    "name": "baseline-1-edit",
+    "command": [
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/candidate-perf",
+      "edit",
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/controlled-performance/baseline-1.deadpan",
+      "--cycles",
+      "2",
+      "--kinds",
+      "pause"
+    ],
+    "exit": 0,
+    "seconds": 0.5340337082743645
+  },
+  {
+    "name": "candidate-1-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/controlled-performance/candidate-1.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.19688129052519798
+  },
+  {
+    "name": "candidate-1-edit",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "edit",
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/controlled-performance/candidate-1.deadpan",
+      "--cycles",
+      "2",
+      "--kinds",
+      "pause"
+    ],
+    "exit": 0,
+    "seconds": 0.44308141712099314
+  },
+  {
+    "name": "candidate-2-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/controlled-performance/candidate-2.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.1892792508006096
+  },
+  {
+    "name": "candidate-2-edit",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "edit",
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/controlled-performance/candidate-2.deadpan",
+      "--cycles",
+      "2",
+      "--kinds",
+      "pause"
+    ],
+    "exit": 0,
+    "seconds": 0.44990774989128113
+  },
+  {
+    "name": "baseline-2-make",
+    "command": [
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/controlled-performance/baseline-2.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.19195187464356422
+  },
+  {
+    "name": "baseline-2-edit",
+    "command": [
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/candidate-perf",
+      "edit",
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/controlled-performance/baseline-2.deadpan",
+      "--cycles",
+      "2",
+      "--kinds",
+      "pause"
+    ],
+    "exit": 0,
+    "seconds": 0.49164487421512604
+  },
+  {
+    "name": "baseline-3-make",
+    "command": [
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/controlled-performance/baseline-3.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.191621707752347
+  },
+  {
+    "name": "baseline-3-edit",
+    "command": [
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/candidate-perf",
+      "edit",
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/controlled-performance/baseline-3.deadpan",
+      "--cycles",
+      "2",
+      "--kinds",
+      "pause"
+    ],
+    "exit": 0,
+    "seconds": 0.492787167429924
+  },
+  {
+    "name": "candidate-3-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/controlled-performance/candidate-3.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.19092450011521578
+  },
+  {
+    "name": "candidate-3-edit",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "edit",
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/controlled-performance/candidate-3.deadpan",
+      "--cycles",
+      "2",
+      "--kinds",
+      "pause"
+    ],
+    "exit": 0,
+    "seconds": 0.44427600037306547
+  },
+  {
+    "name": "candidate-4-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/controlled-performance/candidate-4.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.1873563751578331
+  },
+  {
+    "name": "candidate-4-edit",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "edit",
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/controlled-performance/candidate-4.deadpan",
+      "--cycles",
+      "2",
+      "--kinds",
+      "pause"
+    ],
+    "exit": 0,
+    "seconds": 0.45235150028020144
+  },
+  {
+    "name": "baseline-4-make",
+    "command": [
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/controlled-performance/baseline-4.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.1872323751449585
+  },
+  {
+    "name": "baseline-4-edit",
+    "command": [
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/candidate-perf",
+      "edit",
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/controlled-performance/baseline-4.deadpan",
+      "--cycles",
+      "2",
+      "--kinds",
+      "pause"
+    ],
+    "exit": 0,
+    "seconds": 0.4934423342347145
+  },
+  {
+    "name": "baseline-5-make",
+    "command": [
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/controlled-performance/baseline-5.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.18467508349567652
+  },
+  {
+    "name": "baseline-5-edit",
+    "command": [
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/candidate-perf",
+      "edit",
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/controlled-performance/baseline-5.deadpan",
+      "--cycles",
+      "2",
+      "--kinds",
+      "pause"
+    ],
+    "exit": 0,
+    "seconds": 0.4958638325333595
+  },
+  {
+    "name": "candidate-5-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/controlled-performance/candidate-5.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.18932320829480886
+  },
+  {
+    "name": "candidate-5-edit",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "edit",
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/controlled-performance/candidate-5.deadpan",
+      "--cycles",
+      "2",
+      "--kinds",
+      "pause"
+    ],
+    "exit": 0,
+    "seconds": 0.44421274960041046
+  }
+]

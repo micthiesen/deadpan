@@ -1,0 +1,8 @@
+  Extracting 142 binaries (including 2 non-test binaries), 2 build script output directories, and 7 linked paths to /private/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-broad-extracted
+   Extracted 197 files to /private/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-broad-extracted in 2.95s
+────────────
+ Nextest run ID 011814f6-7778-4f17-bf94-3523517c49a9 with nextest profile: default
+    Starting 1 test across 140 binaries (4238 tests skipped)
+        PASS [   0.363s] (1/1) deadpan-app::bin/deadpan-app project::tests::headless::preparation::owner_replacement_revokes_late_preparation_and_keeps_the_worker_bounded
+────────────
+     Summary [   0.366s] 1 test run: 1 passed, 4238 skipped

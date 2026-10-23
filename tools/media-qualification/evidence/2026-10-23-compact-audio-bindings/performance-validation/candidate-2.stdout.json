@@ -1,0 +1,24 @@
+{
+  "basis_state": {
+    "geometry_origin": "explicit",
+    "primary": null,
+    "rate_origin": "explicit"
+  },
+  "duration_frames": 120024,
+  "mark_count": 0,
+  "node_count": 10009,
+  "presentation_basis": {
+    "color_policy": "sdr_rec709",
+    "frame_rate": {
+      "denominator": 1,
+      "numerator": 24
+    },
+    "height": 1080,
+    "width": 1920
+  },
+  "project_id": "perf-large-10000",
+  "protocol": 1,
+  "revision_id": "perf-rev-42278-9",
+  "root": "large-root",
+  "valid": true
+}

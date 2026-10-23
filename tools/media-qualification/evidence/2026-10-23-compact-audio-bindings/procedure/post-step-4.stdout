@@ -1,0 +1,2 @@
+Frozen Rust path set, all SHA256 identities and Cargo.lock unchanged: release-perf 2048
+{"valid_packages": 5, "all_paths_bytes_unchanged": true, "full_replay_no_quick_flag": true}

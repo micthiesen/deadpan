@@ -41,6 +41,13 @@ pub enum AudioClockRoot {
     GapDefinitionPointCeil { repeat: NodeId },
 }
 
+fn default_audio_clock_root() -> AudioClockRoot {
+    AudioClockRoot::ProjectRootRoundEven
+}
+fn is_project_root_round_even(root: &AudioClockRoot) -> bool {
+    matches!(root, AudioClockRoot::ProjectRootRoundEven)
+}
+
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum AudioRecipeKind {
@@ -59,6 +66,10 @@ impl AudioRecipeKind {
 #[serde(deny_unknown_fields)]
 pub struct AudioReferenceClock {
     pub timing: AudioTimingId,
+    #[serde(
+        default = "default_audio_clock_root",
+        skip_serializing_if = "is_project_root_round_even"
+    )]
     pub root: AudioClockRoot,
     pub physical: NodeId,
     #[serde(default, skip_serializing_if = "AudioRecipeKind::is_node")]
@@ -114,10 +125,18 @@ pub struct AudioPlacementTemplate {
     /// The gap's own preceding play is separate from its outer Repeat path.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub gap_after: Option<AudioRepeatValue>,
-    #[serde(deserialize_with = "path_vec")]
+    #[serde(
+        default,
+        skip_serializing_if = "Vec::is_empty",
+        deserialize_with = "path_vec"
+    )]
     pub arguments: Vec<AudioRepeatArgument>,
     /// Outer-to-inner lexical order. The innermost matching birth wins.
-    #[serde(deserialize_with = "path_vec")]
+    #[serde(
+        default,
+        skip_serializing_if = "Vec::is_empty",
+        deserialize_with = "path_vec"
+    )]
     pub births: Vec<AudioBirthClause>,
 }
 
@@ -139,6 +158,10 @@ pub struct AudioPhaseTerm {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct AudioLocalPhase {
+    #[serde(
+        default = "zero_reference_local_offset",
+        skip_serializing_if = "is_zero_reference_local_offset"
+    )]
     pub constant: ExactRatio,
     #[serde(deserialize_with = "term_vec")]
     pub terms: Vec<AudioPhaseTerm>,
@@ -156,6 +179,10 @@ impl Default for AudioLocalPhase {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct AudioResume {
+    #[serde(
+        default = "zero_reference_local_offset",
+        skip_serializing_if = "is_zero_reference_local_offset"
+    )]
     pub local_boundary: ExactRatio,
     pub phase: AudioLocalPhase,
 }
@@ -222,6 +249,7 @@ pub struct AudioReanchorStep {
 #[serde(deny_unknown_fields)]
 pub struct OwnedAudioBinding {
     pub lattice: AudioPlacementTemplate,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resume: Option<AudioResume>,
     #[serde(
         default,
@@ -2067,19 +2095,28 @@ fn preflight_binding(json: &str, budget: &mut Work) -> Result<(), DocumentError>
     }
     #[derive(Deserialize)]
     struct Template<'a> {
-        #[serde(borrow)]
-        arguments: &'a RawValue,
-        #[serde(borrow)]
-        births: &'a RawValue,
+        #[serde(default, borrow, deserialize_with = "present_raw")]
+        arguments: Option<&'a RawValue>,
+        #[serde(default, borrow, deserialize_with = "present_raw")]
+        births: Option<&'a RawValue>,
         #[serde(default, borrow, deserialize_with = "present_raw")]
         gap_after: Option<&'a RawValue>,
     }
     let mut template = |raw: &RawValue| -> Result<(), DocumentError> {
         let value: Template<'_> = serde_json::from_str(raw.get()).map_err(DocumentError::json)?;
-        let args: Vec<&RawValue> =
-            bounded_json_sequence(value.arguments.get(), MAX_DOCUMENT_DEPTH)?;
-        let births: Vec<&RawValue> = bounded_json_sequence(value.births.get(), MAX_DOCUMENT_DEPTH)?;
-        budget.spend(1 + args.len() + births.len() + usize::from(value.gap_after.is_some()))
+        let path_len = |raw: Option<&RawValue>| -> Result<usize, DocumentError> {
+            raw.map(|raw| {
+                bounded_json_sequence::<&RawValue>(raw.get(), MAX_DOCUMENT_DEPTH)
+                    .map(|entries| entries.len())
+            })
+            .transpose()
+            .map(|length| length.unwrap_or(0))
+        };
+        budget.spend(
+            1 + path_len(value.arguments)?
+                + path_len(value.births)?
+                + usize::from(value.gap_after.is_some()),
+        )
     };
     let binding: Binding<'_> = serde_json::from_str(json).map_err(DocumentError::json)?;
     template(binding.lattice)?;

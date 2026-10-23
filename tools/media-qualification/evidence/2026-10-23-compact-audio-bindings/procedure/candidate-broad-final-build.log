@@ -1,0 +1,7 @@
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+   Compiling deadpan-app v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-app)
+    Finished `test` profile [optimized + debuginfo] target(s) in 3m 05s
+   Archiving 142 binaries (including 2 non-test binaries), 2 build script output directories, 7 linked paths, and 1 standard library to /tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-broad-final.tar.zst
+    Archived 197 files to /tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-broad-final.tar.zst in 0.91s

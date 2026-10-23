@@ -2,31 +2,38 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
-## Compact bindings Core checkpoint, 2026-10-23
+## Compact bindings and full-capture fallback, 2026-10-23
 
-The uncommitted Core 58 / SQLite 87 candidate passes all 1,513 Core tests across
-69 binaries, zero skipped, all 3,499 broader selected tests (740 skipped), and
-all 1,292 UI-feature tests (eleven skipped). Strict changed Core/Store checks
-and formatting pass. Independent production reviews report no defect;
-below-threshold unknown aliases and valid nested malformed-path fixtures were
-strengthened. Retain the initial test borrow errors and 1,512/1,513 run before
-the fixture correction. The broader run's old literal range comparison was
-adapted only for exact default omissions; its one passing output-handle warning
-cleared in an isolated same-binary run and the complete rerun. Explicit UI lint,
-actual media/native, portable reopening and current-format performance remain
-owed. See
-[qualification and 91-file checkpoint evidence](qualification/compact-audio-bindings-2026-10-23.md).
-No requirement or gate closes.
+Implemented and qualified: Core 58 / SQLite 87 omits six exact binding defaults,
+retains bounded raw preflight and nondefault semantics, and skips a scoped
+projection that cannot be smaller. Old unused packages are refused without
+mutation. Independent frozen-context/sound-clock formats remain unchanged.
+
+All 1,513 Core, 3,499 broader selected and 1,292 UI-feature tests pass, plus
+strict changed Core/Store, explicit UI Clippy and formatting. Debug/release
+verify 15 pictures / 24,024 samples and release verifies 19 pictures / 30,430
+samples, all at zero offset with complete canonical/history controls. Native
+passes 197 checks plus Kestrel. Both nine-file extracted packages validate and
+doctor unchanged, as do all five edited benchmark packages under full replay.
+
+Five quiet current-format pairs measure first store-and-refresh median
+114.587 → 93.633 ms and second 32.896 → 28.906 ms. Picture display and formal
+percentile qualification remain unmeasured. Native descriptive commit p95 is
+90.561250 ms over nine samples, so the full 50 ms ordinary-edit target stays
+open. Retain every failed build/fixture run, one passing output-handle warning
+with clean isolated/full reruns, and two native layout warnings. Final evidence
+verifies 683 files / 24,889,683 bytes. See
+[qualification and evidence](qualification/compact-audio-bindings-2026-10-23.md).
+Coverage remains 89%, 8/24 sections complete; no requirement or gate closes.
 
 ## Binding and capture diagnostics, 2026-10-23
 
 Four isolated five-pair batches measure the remaining first-pause overhead.
 The combined prototype improves first store-and-refresh median from 111.576 to
 91.629 ms; the standalone binding reader is still incomplete in that prototype.
-A round-trip test exposes its missing-path preflight. The production candidate
-adds bounded optional paths, historical fixture preservation and Core 58 /
-SQLite 87; review, full tests, reopening, media and current-format timing remain
-owed. No visible-Hold, p95 or gate PASS is claimed. See the
+A round-trip test exposed its missing-path preflight. The final implementation
+above adds bounded optional paths and historical fixture preservation, and
+separately completes Core 58 / SQLite 87 qualification. No visible-Hold, p95 or gate PASS is claimed. See the
 [diagnostic report and 329-file evidence inventory](qualification/first-pause-binding-prototypes-2026-10-23.md).
 
 ## Compact frozen timing, 2026-10-23

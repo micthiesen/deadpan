@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "/tmp/deadpan-compact-audio-bindings-2026-10-23/old_binding_codec_witness.py", line 28, in <module>
+    assert r.returncode==expected,rows[-1]
+           ^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'name': 'build', 'command': ['rustc', '--edition', '2024', '-C', 'lto=thin', '--crate-name', 'old_binding_codec_witness', '--test', '/Users/michael/Code/deadpan/crates/deadpan-core/tests/compact_audio_bindings.rs', '-L', 'dependency=/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/early-fallback-prototype-target/release/deps', '-o', '/tmp/deadpan-compact-audio-bindings-2026-10-23/old-binding-codec-witness/tests', '--extern', 'deadpan_core=/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/early-fallback-prototype-target/release/deps/libdeadpan_core-50104e954f70f69f.rlib', '--extern', 'serde_json=/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/early-fallback-prototype-target/release/deps/libserde_json-7b5e96388f88d567.rlib'], 'exit': 1, 'expected_exit': 0, 'seconds': 0.25205466616898775}
