@@ -5,11 +5,16 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 ## Compact bindings Core checkpoint, 2026-10-23
 
 The uncommitted Core 58 / SQLite 87 candidate passes all 1,513 Core tests across
-69 binaries, zero skipped. Independent production reviews report no defect;
+69 binaries, zero skipped, all 3,499 broader selected tests (740 skipped), and
+all 1,292 UI-feature tests (eleven skipped). Strict changed Core/Store checks
+and formatting pass. Independent production reviews report no defect;
 below-threshold unknown aliases and valid nested malformed-path fixtures were
 strengthened. Retain the initial test borrow errors and 1,512/1,513 run before
-the fixture correction. Broader Store/UI, strict checks, actual media/native,
-portable reopening and current-format performance remain owed. See
+the fixture correction. The broader run's old literal range comparison was
+adapted only for exact default omissions; its one passing output-handle warning
+cleared in an isolated same-binary run and the complete rerun. Explicit UI lint,
+actual media/native, portable reopening and current-format performance remain
+owed. See
 [qualification and 91-file checkpoint evidence](qualification/compact-audio-bindings-2026-10-23.md).
 No requirement or gate closes.
 

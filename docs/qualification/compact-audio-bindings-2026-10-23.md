@@ -1,9 +1,12 @@
 # Compact audio bindings and complete-capture fallback
 
 Working candidate, 2026-10-23. All 1,513 Core tests pass across 69 binaries,
-with zero skipped. Production remains uncommitted; broader/UI, strict,
-actual-media/native, portable reopening and current-format performance
-qualification are still owed. No target or gate PASS is claimed.
+with zero skipped. All 3,499 broader selected tests pass across 109 binaries
+(740 skipped), and all 1,292 UI-feature tests pass across two binaries (eleven
+skipped). Strict changed Core/Store checks and formatting pass. Production
+remains uncommitted; explicit UI lint, actual-media/native, portable reopening
+and current-format performance qualification are still owed. No target or gate
+PASS is claimed.
 
 Core 58 / SQLite 87 omits only six exact defaults: project-root clock, empty
 argument and birth paths, absent resume, zero local resume boundary and zero
@@ -35,6 +38,17 @@ negative fixture failed its three-placement control. Only the new integration
 test changed after that run, then all 1,513 passed. Production logic stayed
 unchanged through the fixture correction. Source/input/executable hashes are
 retained for each phase.
+
+The first broader run passed 3,498/3,499, with one old literal range-capture
+Value comparison still expecting explicit binding defaults. Its expected
+current-writer audio-binding graph now removes only the six exact default
+field/value pairs. Nondefault clocks, paths and rationals stay explicit, and
+the original historical literal/history rows remain unchanged. Independent
+review checked the actual immutable fixture and accepted the correction. Only
+that Store test file changed before the complete passing broader rerun.
+One passing output-handle warning in the first run did not recur in an
+isolated same-archive run or the full rerun. All failures and phase identities
+remain in scratch pending the final evidence bundle.
 
 [Core checkpoint evidence](../../tools/media-qualification/evidence/2026-10-23-compact-bindings-core-checkpoint/README.md)
 contains 91 payload files / 3,784,283 bytes. Independently verified inventory

@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-23T07:03:23Z",
+  "updated_at": "2026-10-23T07:32:47Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Working Core 58 / SQLite 87 compact bindings and full-capture fallback pass all 1,513 Core tests across 69 binaries, zero skipped; independent production reviews found no defect. Nested rejection fixtures and unknown-alias coverage were strengthened, with failed runs retained. Broader Store/UI, strict checks, media/native, portable reopening and current-format timing remain owed. Disposable combined prototype n=5 medians are 111.576 / 91.629 ms before picture display, not a target PASS. Coverage remains 89%, 8/24 sections complete; no gate closes.",
+  "focus": "Working Core 58 / SQLite 87 passes all 1,513 Core, 3,499 broader selected and 1,292 UI-feature tests, strict changed Core/Store checks and formatting. Production reviews found no defect. Fixture corrections and one passing output-handle warning are retained; isolated and full broader reruns are clean. Explicit UI lint, media/native, portable reopening and current-format timing remain owed. Disposable n=5 prototype medians 111.576 / 91.629 ms exclude picture display and are not target qualification. Coverage remains 89%, 8/24 sections complete; no gate closes.",
   "features": [
     {
       "id": "editing",
@@ -997,6 +997,14 @@
       "revision": "086ebc2969849642cf9ae1e203fd310ab48b330d",
       "retrospective": false,
       "summary": "Uncommitted Core58/SQLite87 compact binding defaults, bounded optional preflight and early full-capture fallback pass all1,513 Core tests across69 binaries, zero skipped. General/codec/capture review found no production defect; added below-threshold unknown aliases. Initial private-test borrow errors and the1,512/1,513 run are retained. The one failure exposed a negative fixture lacking valid resume/reanchor parents; it now shares a validated nested state, confirms positive roundtrip, and tests all six path fields plus three duplicate placements. Only that integration test changed before the final passing run. Checkpoint inventory verifies91 files /3,784,283 bytes. Broader/UI, strict, media/native, portable reopening and current-format timing remain owed. Prototype observations do not establish a visible-Hold or percentile target. No requirement or gate changes."
+    },
+    {
+      "date": "2026-10-23",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "1e42a799ebe77aa08d3c0c097cc1dce3c4326fe8",
+      "retrospective": false,
+      "summary": "Uncommitted Core58/SQLite87 candidate now passes all1,513 Core,3,499 broader selected and1,292 UI-feature tests, strict changed Core/Store checks and formatting. The first broader run passed3,498/3,499; its old literal range Value expectation was adapted only for six exact binding defaults, preserving nondefault values and historical rows. Only that Store test changed before the complete passing rerun. One passing output-handle warning clears in an isolated same-archive run and the full rerun. All failures/source identities remain retained. The prior-code binding witness has one expected omission failure and one passing nondefault control; its first default-toolchain mismatch is retained. Explicit UI lint, actual media/native, portable reopening and current-format performance remain owed. No requirement, gate or visible/percentile target newly complete."
     }
   ]
 }
