@@ -4,7 +4,21 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 
 ## Aligned sound-scope research, 2026-10-23
 
-The latest `integrated-eighth` archive passes all eleven focused audio checks.
+The `integrated-eleventh` archive passes twelve focused audio checks. A new
+valid-control counterfactual first measured 7,581 changed output channel samples
+after a label-only edit and 7,570 after a fragment trim. Removing live labels
+and treatment values from the certified permission identity fixes both, with
+exact complete PCM and raw gain-input equality. Recipe replacement still
+retires authority. Audio SHA-256:
+`37673f39244c8b762efd57c00ae541cc984386d0df3307fb2945a27e4038bccc`.
+The subsequent Store archive passes three introduced-group/Split-forest cases
+through Source and RoomTone Hold history, reopening and portable copies, with
+binary SHA-256 `ff227d7cf191f2b34983cc693048725c9a6e08a4469648b5ab41848478a206cc`.
+Later strict lint cleanup changes the Core argument interface and test helpers;
+renewed current-source checks remain owed. Native and CLI fixtures have been
+reviewed and integrated but not executed. No coverage or gate changes.
+
+The earlier `integrated-eighth` archive passes all eleven focused audio checks.
 The late-birth oracle now independently applies the retained half-open output
 mask after EQ: raw label 33633 remains exhausted, and all 33,634 output samples
 match. The unmasked FIR-tail control remains nonzero at that label. Audio

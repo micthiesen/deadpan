@@ -4,7 +4,23 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Current continuation, 2026-10-22
 
-Latest checkpoint, 2026-10-23: `integrated-eighth` passes all eleven focused
+Current checkpoint, 2026-10-23: `integrated-eleventh` passes all twelve focused
+audio checks. Valid-control label/trim failures (7,581/7,570 changed channel
+samples) become exact equality after removing live event values from the
+certified family identity. Recipe replacement still retires authority. Audio
+SHA-256: `37673f39244c8b762efd57c00ae541cc984386d0df3307fb2945a27e4038bccc`.
+`integrated-twelfth-store` passes three persistence cases, including Source and
+RoomTone Hold Split forests, with SHA-256
+`ff227d7cf191f2b34983cc693048725c9a6e08a4469648b5ab41848478a206cc`.
+Strict lint cleanup combines Core introduced-group/Split arguments into a tuple,
+collapses two equivalent conditionals and cleans test helpers. Fresh current
+Core and broad verification remain owed. Native/CLI extensions are integrated
+with source-review corrections, unexecuted: move the complete Top scope, compare
+its post-group children, and prove the attached event through an event-off
+control. Archived source payloads use `.rs.txt`, after plain `.rs` copies caused
+an evidence-packaging rustfmt failure. Production code remains uncommitted.
+
+Earlier checkpoint, 2026-10-23: `integrated-eighth` passes all eleven focused
 audio checks, including the corrected late-birth output-mask oracle. Raw lost
 label 33633 stays silent; all 33,634 output samples match while the retained
 unmasked FIR-tail control is nonzero there. Audio SHA-256:

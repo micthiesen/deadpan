@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-23T02:03:31Z",
+  "updated_at": "2026-10-23T02:22:16Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Aligned sound grouping remains uncommitted. All eleven focused audio checks, eleven route checks and 1,489 Core tests pass. Split preserves exact audio through EQ, saturation and a later move; late birth preserves its lost-label silence and complete output mask. A further label/trim continuity audit has two fixture setup errors under repair. Store, broader, native and export qualification remain. Coverage stays at 89%, with 8/24 requirement sections complete.",
+  "focus": "Aligned sound grouping remains uncommitted. Twelve focused audio checks and three Store checks pass, including label/trim continuity, Split, durable history and portable copy. Earlier runs passed eleven route checks and 1,489 Core tests. Strict lint cleanup requires renewed current-source checks; reviewed native and export fixtures are integrated but unexecuted. Final qualification continues. Coverage stays at 89%, with 8/24 requirement sections complete.",
   "features": [
     {
       "id": "editing",
