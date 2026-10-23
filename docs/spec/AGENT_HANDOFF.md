@@ -373,14 +373,23 @@ cache may be feasible but must preserve current authority and explicit TLS
 entry/exit behavior. Current authored values use integers/rationals; the wire
 audit excludes provisional serialization and requires refuting regressions.
 Root now accepts a PRIVATE experiment based on the current measured leaf
-cost. A source-only worker is preparing Core/Store/CLI capability plumbing and
-refuting tests in /tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23,
-fresh baseline 3a32c923. One subworker owns only the standalone Core integration
-test. No prototype build, test, formatter or measurement has run. Main source
-stays unchanged. Wait for source handoff, review exact authority/TLS/mode/value
-binding, then qualify correctness and actual speed/retention before production
-adoption. No validation, work charge, first-error or durable authority can be
-weakened to make the experiment pass.
+cost. Source preparation is terminal in
+/tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23, fresh baseline 3a32c923.
+Fourteen files change, with 24 new source-reviewed tests (17 Core, seven Store).
+Independent review reports no unresolved findings, including exact value/mode/
+TLS/sealing/Store authority, actual 64 MiB wire boundaries and genuine admitted-
+media/corrections/history refutations. A test-only no-Debug compilation issue
+was corrected during static review before any build. The 512 MiB cumulative
+limit is unreachable for an eligible leaf under four capped 64 MiB traversals;
+no limit was lowered. Retained historical clocks do not add a SEALED dependency.
+Root owns source now. Scoped formatting, all 2,053 Rust paths, 2,039 nonowned
+baseline paths and six inputs verify. The fresh-target build_prototype.py is
+ACTIVE; rustc/cargo 1.97.1 and cargo fmt check pass, Core public refutations are
+compiling. Check build-owner.json/receipts and live process before any restart.
+No prototype test, performance or memory result is claimed yet; main source
+stays unchanged. Qualify correctness and actual speed/retention before adoption.
+No validation, work charge, first-error or durable authority can be weakened
+to make the experiment pass.
 The separate
 next-replay-count-study.md describes immutable borrowed count pairs and a
 post-validation finalizer; bare counts on mutable public outcomes are
