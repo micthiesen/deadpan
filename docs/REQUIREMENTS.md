@@ -4,6 +4,21 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 
 ## Aligned sound-scope research, 2026-10-23
 
+The latest `integrated-eighth` archive passes all eleven focused audio checks.
+The late-birth oracle now independently applies the retained half-open output
+mask after EQ: raw label 33633 remains exhausted, and all 33,634 output samples
+match. The unmasked FIR-tail control remains nonzero at that label. Audio
+executable SHA-256 is
+`dd2d85183b974c2f01fef6d934fb3444105e668d1d10519c2ebaf056a6cccf31`.
+The separate `integrated-eighth-core` archive passes all 1,489 Core tests across
+67 binaries, with none skipped. Its library executable SHA-256 is
+`33f2f49d4f2b01313798732af67376de6bc6d7089ba098ccc3a2ea6ffd26aa2e`.
+Both runs preserve the frozen identities of 2,037 Rust files and six inputs.
+Label/trim continuity within a certified Split family is under further audit;
+its two new fixtures currently fail setup and establish no result. Durable
+Store, broader/strict, native and export qualification remain. This is still
+an uncommitted core 56/store 85 candidate, with no coverage or gate change.
+
 The earlier context-preserving candidate passes all 679 integrated Core library
 tests; the new Split certificate and lifecycle checks still need execution.
 The corrected partial-copy fixture requires entering its group

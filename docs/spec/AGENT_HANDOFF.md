@@ -4,6 +4,21 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Current continuation, 2026-10-22
 
+Latest checkpoint, 2026-10-23: `integrated-eighth` passes all eleven focused
+audio checks, including the corrected late-birth output-mask oracle. Raw lost
+label 33633 stays silent; all 33,634 output samples match while the retained
+unmasked FIR-tail control is nonzero there. Audio SHA-256:
+`dd2d85183b974c2f01fef6d934fb3444105e668d1d10519c2ebaf056a6cccf31`.
+`integrated-eighth-core` passes all 1,489 Core tests, none skipped, across 67
+binaries. Core library SHA-256:
+`33f2f49d4f2b01313798732af67376de6bc6d7089ba098ccc3a2ea6ffd26aa2e`.
+Both retain unchanged 2,037-file Rust and six-input guards. The new label/trim
+continuity audit has two fixture setup failures and no behavioral result yet.
+Correct those fixtures before changing the family token's current complete
+BeatSound equality, which source review identifies as too strict. Store tests
+are frozen; native and CLI workers own scratch-only vertical extensions. Broad,
+strict and vertical checks remain. All production changes remain uncommitted.
+
 Working candidate update, 2026-10-23: explicit introduced-group correspondence,
 bounded aligned single-leaf admission, copy renaming and later clock transport
 are integrated locally and uncommitted. All 679 integrated Core library tests
