@@ -10,8 +10,11 @@ Two quiet five-pair batches reproduce the 10,000-Hold first-pause delay at
 14.981 ms for the history write and 16.824 ms for durable transaction commit.
 These overlapping phase and total measurements are short diagnostics, not
 p95 qualification. All existing checks remain intact. A disposable prototype
-tests omitting all-Automatic frozen edge records and updating the exact byte
-counter; production is unchanged and no improvement is claimed. See the
+completed five quiet pairs with first medians 127.513 ms before and 111.362 ms
+after, still above 100 ms. The production candidate uses Core 57 / SQLite 86
+and preserves standalone context schemas 1–12. Six focused format regressions
+and independent codec reviews pass; previous-code witnesses, broader checks,
+native/media verification and current-format performance remain owed. See the
 [profile and retained evidence](qualification/first-pause-profile-2026-10-23.md).
 DP-24 remains partial; no requirement or gate closes.
 

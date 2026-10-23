@@ -12,12 +12,17 @@ and edit-start load below 3. Uninstrumented first medians are 128.497 and
 6,416,116 bytes: round-trip checking 26.656 ms, history write 14.981 ms and
 SQLite commit 16.824 ms. Keep nested phases separate. These five-pair runs are
 INFO, with no p95 or target PASS. The [record](../qualification/first-pause-profile-2026-10-23.md)
-retains copier and anchor setup failures separately. `compact_edges.py`
-is building/running a disposable one-file prototype from immutable `a18ff654`,
-with its own target directory. It omits only default frozen edge records and
-updates WireCount; no production change, schema decision or improvement claim
-yet. Session 67723 belongs to that driver. Preserve foreign `fuzz/Cargo.lock`
-and `.claude/`.
+retains copier and anchor setup failures separately. The disposable compact-edge
+prototype completed five quiet pairs: first medians 127.513 versus 111.362 ms,
+still above 100 ms; second medians 32.783 versus 32.406 ms. It is not shipping
+qualification. Current production candidate uses Core 57 / SQLite 86, preserving
+standalone context schemas 1–12 through a borrowed explicit-edge serializer.
+Six focused regressions pass, and both reviewers find the codec concern resolved.
+Qualification is active in /tmp/deadpan-compact-frozen-edges-2026-10-22; the
+matrix owns Cargo. Baseline witness, broader, UI, strict, native/media and
+current-format performance are still owed. Progress artifact was verified at
+157194739f264a848304c477cf601556fe1ed2d3 (947 lines); refresh it after the next
+pushed checkpoint. Preserve foreign fuzz/Cargo.lock and .claude/.
 
 Neutral Ungroup qualified, 2026-10-23: Core admission removes only a
 neutral unary introduced wrapper around a Source/Hold when every affected
