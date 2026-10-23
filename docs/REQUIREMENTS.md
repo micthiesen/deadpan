@@ -16,10 +16,17 @@ PASS; this is a separate batch from the qualified shared-preparation result.
 All ten replay/input/source/binary guards pass. Evidence verifies 118 files
 /1,356,170 bytes.
 
-The same one-line change plus a pause/setter differential test is now an
-uncommitted production candidate. Static reviews report no defects; focused,
-Core, broader, UI, strict, media/native and final performance checks are owed.
-No requirement or gate closes.
+The same one-line change plus a pause/setter differential test is an
+uncommitted production candidate. The focused test and all 1,514 Core tests
+across 69 binaries pass, with zero skipped and exact source/input/executable
+guards. Its initial raw primary-mark lookup failed after a split; the fixture
+now uses the revision-aware logical mark API while retaining exact frame 12,
+all differential/replay, binding/mark, inverse and immutability assertions.
+Production code stayed unchanged during that correction. Preserve the failed
+run and its executable hash. See the
+[Core checkpoint](qualification/reused-leaf-result-core-checkpoint-2026-10-23.md).
+Broader, UI, strict, media/native and final timing checks remain owed. No
+requirement or gate closes.
 
 ## Remaining preparation cost, 2026-10-23
 

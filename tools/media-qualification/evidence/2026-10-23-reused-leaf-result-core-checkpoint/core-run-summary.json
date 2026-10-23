@@ -1,0 +1,70 @@
+{
+  "source_base": "1e67fdb27bbb3a59d282e5240c65b860b4090b76",
+  "test_count": 1514,
+  "binary_count": 69,
+  "skipped": 0,
+  "passed": 1514,
+  "failed": 0,
+  "selected_focused_test": "interior_pause_and_audio_setter_match_legacy_leaf_patches_with_bound_audio_and_marks",
+  "selected_focused_passed": 1,
+  "focused_final_steps": [
+    {
+      "step": 1,
+      "command": [
+        "cargo",
+        "fmt",
+        "--all"
+      ],
+      "exit": 0,
+      "seconds": 6.257388083264232
+    },
+    {
+      "step": 2,
+      "command": [
+        "python",
+        "/tmp/deadpan-reused-leaf-result-qualification-2026-10-23/freeze.py",
+        "focused-final"
+      ],
+      "exit": 0,
+      "seconds": 0.33147916570305824
+    },
+    {
+      "step": 3,
+      "command": [
+        "cargo",
+        "test",
+        "--locked",
+        "-p",
+        "deadpan-core",
+        "--lib",
+        "interior_pause_and_audio_setter_match_legacy_leaf_patches_with_bound_audio_and_marks"
+      ],
+      "exit": 0,
+      "seconds": 20.535822125151753
+    },
+    {
+      "step": 4,
+      "command": [
+        "python",
+        "/tmp/deadpan-reused-leaf-result-qualification-2026-10-23/guard.py",
+        "focused-final"
+      ],
+      "exit": 0,
+      "seconds": 0.11940525006502867
+    }
+  ],
+  "all_core_receipt": [
+    {
+      "step": 1,
+      "command": [
+        "python",
+        "/tmp/deadpan-reused-leaf-result-qualification-2026-10-23/qualify_all_ui.py",
+        "candidate-all-core",
+        "candidate",
+        "allcore"
+      ],
+      "exit": 0,
+      "seconds": 135.71340945921838
+    }
+  ]
+}

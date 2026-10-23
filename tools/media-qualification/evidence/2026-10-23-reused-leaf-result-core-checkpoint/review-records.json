@@ -1,0 +1,35 @@
+{
+  "source_reviews": [
+    {
+      "reviewer": "/root/compound_authority_review",
+      "scope": "private one-site production helper change and existing apply_with_result guarantees",
+      "mode": "read-only static review, before private measurement",
+      "verdict": "no findings",
+      "response": "No findings. The change reuses the validated result from apply_with_result and preserves the existing charge, mutation, step, and child-refresh order."
+    },
+    {
+      "reviewer": "/root/compound_preparation_review",
+      "scope": "current Core helper change and new differential test",
+      "mode": "read-only static review before focused result",
+      "verdict": "no findings",
+      "response": "No findings. apply_with_result returns the same validated document as applying the generated forward patch, so the change preserves validation and charge/step/refresh ordering while removing the redundant patch application. The differential test checks patch equivalence, compound replay, inverse restoration, retained bindings and marks, and unchanged input."
+    },
+    {
+      "reviewer": "/root/compound_preparation_review",
+      "scope": "test-only correction from raw primary anchor to logical named-mark resolution",
+      "mode": "read-only static review after initial focused failure, before full Core result",
+      "verdict": "no findings",
+      "response": "The fixture correction does not weaken the mark invariant. BoundarySelector::Mark resolves through resolve_mark, which considers the mark\u2019s retained bound bindings; the test still requires the resolved point to be exactly frame 12. It also retains the mark-state and binding equality, replay, inverse restoration, and unchanged-input assertions."
+    }
+  ],
+  "fixture_correction_review": {
+    "initial_failure": "AnchorError::OutsideMapping at resolve_target of mark.boundary after interior split",
+    "cause": "A logical mark can retain several physical bindings; the primary coordinate alone can lie outside a clipped interval.",
+    "correction": "Use revision-aware SelectionRequest + BoundarySelector::Mark + NamedMarkTarget to resolve retained bindings. Keep exact frame12 and every differential, inverse and immutability assertion.",
+    "production_helper_changed_after_failure": false,
+    "focused_final_selected": 1,
+    "focused_final_passed": 1,
+    "complete_core_passed": 1514,
+    "complete_core_skipped": 0
+  }
+}

@@ -1,0 +1,146 @@
+--- a/crates/deadpan-core/src/semantic/planner/tests/pause.rs
++++ b/crates/deadpan-core/src/semantic/planner/tests/pause.rs
+@@ -1481,3 +1481,143 @@
+         planned.document
+     );
+ }
++
++#[test]
++fn interior_pause_and_audio_setter_match_legacy_leaf_patches_with_bound_audio_and_marks() {
++    fn apply_legacy(
++        document: &ProjectDocument,
++        id: &str,
++        command: Command,
++    ) -> ProjectDocument {
++        let request = CommandRequest {
++            project_id: document.project_id().clone(),
++            expected_revision: document.revision_id().clone(),
++            new_revision: revision(id),
++            command,
++        };
++        let edit = crate::apply(document, &request).unwrap();
++        let after = edit.forward.apply(document).unwrap();
++        assert_eq!(edit.inverse.apply(&after).unwrap(), *document);
++        after
++    }
++
++    let document = tree(&["a", "b"], vec![("a", hold(12)), ("b", hold(6))]);
++    let mark = crate::MarkId::new("native-mark-m").unwrap();
++    let document = apply_legacy(
++        &document,
++        "marked-entry",
++        Command::SetMark {
++            id: mark.clone(),
++            owner: node("a"),
++            label: "m".into(),
++            boundary: crate::BoundaryAnchor {
++                coordinate: crate::Anchor::Local {
++                    node: node("a"),
++                    position: ExactRatio::integer(9),
++                },
++                bias: crate::InsertionBias::Right,
++            },
++            loss_policy: crate::AnchorLossPolicy::DeleteOwned,
++        },
++    );
++    // Establish genuine retained bindings before the measured program. The
++    // seam insertion leaves the future interior target and its mark intact.
++    let document = apply_legacy(
++        &document,
++        "seed-bindings",
++        Command::InsertTime {
++            at: ProjectFrame(12),
++            hold: HoldRecipe {
++                duration: FrameDuration::new(2).unwrap(),
++                picture_context: None,
++                video: HoldVideo::Background,
++                audio: HoldAudio::Silence,
++            },
++            id: node("seed-pause"),
++            identities: crate::SplitIdentities { nodes: Vec::new() },
++            timing: crate::AudioTimingId {
++                allocation: revision("seed-bindings"),
++                ordinal: 0,
++            },
++        },
++    );
++    assert!(!document.audio_bindings().is_empty());
++    assert_eq!(document.marks()[&mark].state, crate::MarkState::Bound);
++    let entry = document.clone();
++    let entry_wire = document.to_json().unwrap();
++
++    let planned = plan_pauses(
++        &document,
++        context("root", 5),
++        vec![
++            pause(3),
++            SemanticInstruction::SetAudio {
++                change: crate::AudioChange::Trim {
++                    gain: crate::GainDb::new(-3_000).unwrap(),
++                },
++            },
++        ],
++    )
++    .unwrap();
++    assert_eq!(planned.context.cursor, ProjectFrame(5));
++    assert_eq!(planned.context.selected_child, Some(node("pause-0")));
++    assert_eq!(planned.document.duration().unwrap().frames(), 23);
++    assert_eq!(
++        planned.document.nodes()[&node("pause-0")]
++            .audio_treatments.clip_gain().unwrap().trim().millidecibels(),
++        -3_000
++    );
++    assert!(!planned.document.audio_bindings().is_empty());
++    assert_eq!(planned.document.marks()[&mark].label, "m");
++    assert_eq!(planned.document.marks()[&mark].state, crate::MarkState::Bound);
++    let mark_boundary = crate::AnchorIndex::new(&planned.document).unwrap()
++        .resolve_target(&crate::AnchorTarget {
++            boundary: planned.document.marks()[&mark].boundary.clone(),
++            occurrence: None,
++        }).unwrap();
++    assert_eq!(mark_boundary.exact_frame, ExactRatio::integer(12));
++
++    let request = planned.request.as_ref().unwrap();
++    let Command::Compound { transaction } = &request.command else { panic!("Compound") };
++    assert_eq!(transaction.steps().len(), 2);
++    assert!(matches!(
++        transaction.steps()[0].edit().unwrap().command.as_command(),
++        Command::InsertTime { at: ProjectFrame(5), .. }
++    ));
++    let mut legacy = document.clone();
++    let mut stages = Vec::new();
++    for step in transaction.steps() {
++        let edit = step.edit().expect("both operations author leaves");
++        let leaf_request = edit.request(&legacy);
++        // This is the former planner path: independently calculate an edit,
++        // apply its forward patch, and validate every resulting field.
++        let old_edit = crate::apply(&legacy, &leaf_request).unwrap();
++        let patched = old_edit.forward.apply(&legacy).unwrap();
++        let (returned_edit, returned) =
++            crate::apply_with_result(&legacy, &leaf_request).unwrap();
++        assert_eq!(returned_edit, old_edit);
++        assert_eq!(returned, patched);
++        assert_eq!(old_edit.inverse.apply(&patched).unwrap(), legacy);
++        assert_eq!(returned_edit.inverse.apply(&returned).unwrap(), legacy);
++        stages.push((legacy, patched.clone()));
++        legacy = patched;
++    }
++    legacy.revision_id = request.new_revision.clone();
++    legacy.validate().unwrap();
++    assert_eq!(legacy, planned.document);
++
++    let mut visited = 0;
++    let replay = crate::replay_compound::<EditError>(&document, request, |visit| {
++        assert_eq!(visit.before, &stages[visited].0);
++        assert_eq!(visit.after, &stages[visited].1);
++        visited += 1;
++        Ok(())
++    }).unwrap();
++    assert_eq!(visited, 2);
++    assert_eq!(replay.document, legacy);
++    assert_eq!(replay.document.audio_bindings(), planned.document.audio_bindings());
++    assert_eq!(replay.document.marks(), planned.document.marks());
++    assert_eq!(replay.edit.inverse.apply(&replay.document).unwrap(), entry);
++    assert_eq!(document, entry);
++    assert_eq!(document.to_json().unwrap(), entry_wire);
++}

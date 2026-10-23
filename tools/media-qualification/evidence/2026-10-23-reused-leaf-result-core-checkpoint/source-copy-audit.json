@@ -1,0 +1,13 @@
+{
+  "base_commit": "1e67fdb27bbb3a59d282e5240c65b860b4090b76",
+  "helper_before_sha256": "9462060e367d8ca16ebbb415291db2129f4af83b165b8ab0421f0568ac05d749",
+  "helper_prototype_sha256": "8b6e2f282b5d704afe6528e5dbdad5118028bb99d637fe0644410bb514fde15f",
+  "initial_focused_helper_sha256": "8b6e2f282b5d704afe6528e5dbdad5118028bb99d637fe0644410bb514fde15f",
+  "corrected_focused_helper_sha256": "8b6e2f282b5d704afe6528e5dbdad5118028bb99d637fe0644410bb514fde15f",
+  "failed_test_sha256": "fa453d8df283bd0c838ead72fd7817fbaf945096c3e51290ea8dcf48257504ee",
+  "corrected_test_sha256": "febd9d852ee043b496960a9442cdc8ed34cae1e497442ce7a46e400867dcc276",
+  "all_core_test_matches_corrected_final": true,
+  "only_test_source_changed_after_fixture_failure": true,
+  "failing_binary_sha256": "aeb1018287dd22a8effef271618a2694c3721375ef5695f2d8313044954d6ea1",
+  "failing_binary_retained": false
+}

@@ -142,12 +142,25 @@ now uses the same existing apply_with_result API; the new pause/setter test
 compares old leaf patches, returned results, authoritative replay, retained
 bindings/marks, inverse restoration and unchanged input. Both static reviews
 report no defects. No schema or other helper changes are involved.
-Scratch: /tmp/deadpan-reused-leaf-result-qualification-2026-10-23. focused.py is
-compiling the one selected Core test; qualify.py waits for its four successful
-steps before full Core, broader, UI, strict, debug/release media and native
-checks. Inspect owner/receipt files before restarting. A post driver for
-portable validation, extra native scenarios and final paired timings is still
-to be prepared. Preserve all failures and keep this candidate unqualified.
+The focused test and all 1,514 Core tests across 69 binaries pass, zero skipped,
+with source/input/executable guards. The initial test's raw primary mark lookup
+failed OutsideMapping after a split. Its corrected logical named-mark query
+still requires frame 12 and every differential/replay, binding/mark, inverse
+and immutability assertion. Only the test changed; the helper stayed fixed.
+The [Core checkpoint](../qualification/reused-leaf-result-core-checkpoint-2026-10-23.md)
+retains 86 files /1,672,053 bytes, inventory SHA-256
+fd9fc7c60526605df1827a1a7b9e91074ef267140c98711263bed41c0f953150.
+
+Scratch: /tmp/deadpan-reused-leaf-result-qualification-2026-10-23. Initial
+focused.py and qualify.py are terminal after the fixture failure. The failed
+test executable is preserved in first-focused-failure/, with its hash in the
+evidence package. focused_final.py is terminal with all four steps successful.
+qualify_final.py is live: step 1 full Core passed; broader, UI, strict,
+debug/release media and native are queued across eight steps. post.py is
+already live, waiting for eight successful main rows before portable checks,
+five extra native scenarios and five quiet pairs against qualified app 69978abd.
+Inspect owner/receipt files before restarting anything. All remaining phases
+are owed; keep the candidate unqualified and preserve every failed attempt.
 
 Refresh/verify progress artifact a3ysikxugbmr4 from the next pushed
 docs/progress.json after this implementation commit. Preserve foreign

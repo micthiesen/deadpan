@@ -1,0 +1,12 @@
+{
+  "repo": "/Users/michael/Code/deadpan",
+  "target": "crates/deadpan-core/src/semantic/planner/tests/pause.rs",
+  "original_sha256": "37678abf1e3cfbbd71056a9757956db598a85ba884bbb44d908a7131405e63d4",
+  "proposed_sha256": "472dd4a23029343e9b56a8a3e996caa767dd70c02f72bd8b31741c4026f60fcb",
+  "production_target": "crates/deadpan-core/src/semantic/planner/pause.rs",
+  "production_sha256": "9462060e367d8ca16ebbb415291db2129f4af83b165b8ab0421f0568ac05d749",
+  "insertion": "append after the existing final nested_follow_speed_semantic_pauses_refresh_exact_scope_and_replay_as_one_edit test",
+  "tail_anchor": "peech_unavailable()),\n        |_, _| {\n            Ok(PauseProvider {\n                video: HoldVideo::Background,\n                picture_context: None,\n                audio: crate::HoldAudio::Silence,\n            })\n        },\n    )\n    .unwrap();\n    assert_eq!(\n        later.document.exact_durations().unwrap()[document.root()],\n        ExactRatio::integer(166)\n    );\n    let replay = crate::replay_compound::<EditError>(\n        &planned.document,\n        later.request.as_ref().unwrap(),\n        |_| Ok(()),\n    )\n    .unwrap();\n    assert_eq!(replay.document, later.document);\n    assert_eq!(\n        replay.edit.inverse.apply(&replay.document).unwrap(),\n        planned.document\n    );\n}\n",
+  "test_addition_sha256": "5ff87c7b54eece15b357b0c60a776b2c855cdf15d04264c586c403a42bbda4a3",
+  "executed": false
+}
