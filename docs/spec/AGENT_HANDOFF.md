@@ -27,7 +27,7 @@ and eight route geometry tests pass. The executed audio SHA-256 is
 the complete 2,033-file Rust source set and six inputs match their frozen hashes
 before and after the archived run. The corrected partial-copy fixture requires
 entering the group before slicing, then filters the exterior group relation.
-The expanded `integrated-fifth` archive passes six of nine checks. Ordered-journal
+The earlier `integrated-fifth` archive passes six of nine checks. Ordered-journal
 authority passes its positive and ten negatives. The standalone neutral-Split
 witness has valid controls and identical complete G input, including the
 2,048-sample filter halo, but 7,581 output channel samples differ (maximum
@@ -39,9 +39,22 @@ The frozen 2,031-file Rust source set and six inputs are unchanged before/after.
 Evidence: `/tmp/deadpan-aligned-sound-scope-2026-10-22/integrated-fifth-evidence/`.
 Split narrows the journal away from its genuine ordinary ancestor G; preserve
 strict context correspondence without erasing real fragment delivery crops.
-Before committing, finish Split context retention, late-birth qualification,
-broad/strict checks and vertical qualification. Root owns builds; the audio test
-worker owns only the late-birth fixture repair.
+The current `integrated-seventh` archive passes ten of eleven audio checks.
+Neutral Split is now bit-identical through G EQ and EQ followed by saturation
+(24,024 stereo samples); Split plus a later move matches all 25,626 samples,
+including retained terminal input. The family authority/locality check passes.
+Late birth has valid controls and exact raw input with lost label 33633 still
+silent. Its only two channel differences are the EQ oracle expecting nonzero
+output at that exhausted label; audit delivery-mask semantics before classifying
+it or changing code. The audio worker is auditing that oracle read-only.
+Audio executable SHA-256:
+`51ee1ee328bea6db725f697dfa9f03e080a4fcaf6283253a07fa9a6f01cdca38`.
+All eleven private Plan history checks pass; Plan executable SHA-256:
+`3fe101c190d76183f3539ce5e03f5f89fdde635a23ed8126e2cf605c1e74c0d2`.
+Both frozen source/guard runs cover 2,037 Rust files and six inputs. New Core
+Split certificate/lifecycle tests still need execution. Source reviewers report
+no findings, with no runtime claims. Broad/strict and vertical checks remain.
+Root owns all source writes/builds unless explicitly reassigned.
 
 Ordinary `GroupSelection` endpoint Splits now use existing sound transport with
 one shared complete pre-edit audio layout. Aligned grouping keeps tables and

@@ -4,14 +4,16 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 
 ## Aligned sound-scope research, 2026-10-23
 
-The uncommitted context-preserving candidate passes all 679 integrated Core
-library tests. The corrected partial-copy fixture requires entering its group
+The earlier context-preserving candidate passes all 679 integrated Core library
+tests; the new Split certificate and lifecycle checks still need execution.
+The corrected partial-copy fixture requires entering its group
 before slicing. Independent source reviews report no concrete findings. The
 first processing-birth fix preserves the terminal raw sample and suppression
-state, and all 30,430 stereo output samples match the explicit EQ oracle. Eight
-private route tests pass, including retention of pre-birth losses.
+state, and all 30,430 stereo output samples match the explicit EQ oracle. Eleven
+private route tests now pass, including Split-piece phase continuity and
+retention of pre-birth losses.
 
-The expanded `integrated-fifth` audio run passes six of nine checks, including
+The earlier `integrated-fifth` audio run passes six of nine checks, including
 the ordered-journal authority positive and ten rejection cases. A standalone
 [neutral Split witness](qualification/neutral-split-research-2026-10-23.md)
 confirms a real failure with all controls valid: the
@@ -24,6 +26,21 @@ setup assertion and establishes no audio result. The archived executable is
 all 2,031 Rust source identities and six build inputs match their frozen hashes
 before and after the run. Split context retention and final qualification remain
 in progress; candidate core 56/store 85 are not committed or release-qualified.
+
+The subsequent `integrated-seventh` run passes ten of eleven audio checks.
+Neutral Split preserves all 24,024 stereo output samples, including EQ followed
+by saturation, and Split followed by a move preserves all 25,626 samples and
+the retained terminal input. Public permission-family authority and locality
+checks pass. The late-birth fixture now establishes its controls: complete raw
+input matches and lost label 33633 remains silent. Its EQ oracle expects
+nonzero output only at that exhausted label, producing two channel differences;
+the output-mask semantics of that oracle are under review. No repair success
+is inferred from weakening the comparison. Executed audio SHA-256:
+`51ee1ee328bea6db725f697dfa9f03e080a4fcaf6283253a07fa9a6f01cdca38`.
+The separate eleven-check Plan archive passes with executable SHA-256
+`3fe101c190d76183f3539ce5e03f5f89fdde635a23ed8126e2cf605c1e74c0d2`.
+Both runs retain unchanged hashes for 2,037 Rust files and six inputs. New
+Core lifecycle tests, broader/strict checks and vertical qualification remain.
 No coverage percentage, requirement completion or gate changes.
 
 [Research qualification](qualification/sound-scope-research-2026-10-23.md)

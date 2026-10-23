@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-23T01:21:26Z",
+  "updated_at": "2026-10-23T01:48:31Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Aligned sound grouping remains uncommitted. Six of nine expanded audio checks pass, including group-birth copy and journal authority. A neutral Split preserves the complete raw group input but changes 7,581 output channel samples; fixing retained processing context next. The late-birth fixture still fails setup and provides no audio result. Coverage stays at 89%, with 8/24 requirement sections complete.",
+  "focus": "Aligned sound grouping remains uncommitted. Split now preserves exact audio through EQ, saturation and a later move. Ten of eleven focused audio checks and all eleven route checks pass. Late birth preserves raw input and the lost label stays silent; its output oracle differs at one stereo sample and is under review. Broader Core and final qualification remain. Coverage stays at 89%, with 8/24 requirement sections complete.",
   "features": [
     {
       "id": "editing",
