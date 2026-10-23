@@ -271,6 +271,16 @@ offscreen composition 268.773292 /261.593583 ms, a 7.179709 ms difference of
 about 2.67%. Peak memory remains unmeasured. No percentile or 100 ms/50 ms
 target PASS follows; do not pool the independent batches.
 
+The [Store preparation detail profile](qualification/store-preparation-detail-profile-2026-10-23.md)
+adds nine rotated control/off/on runs after size counting. All pause/shortcut,
+source/input/binary and authored-file guards pass. The enabled traces validate
+33 phases and ten containment equations. Median semantic planning is
+103.020292 ms; Store preparation is 110.396833 ms. Core replay takes 76.287833
+ms including a 5.053292 ms host visitor; stored-edit historical decode/equality
+takes 19.017083 ms. The 71.226624 ms replay-minus-visitor residual still needs
+internal attribution. Three samples per condition establish no percentile,
+calibrated timer overhead, further production improvement or target PASS.
+
 | Section 25 target | Measurement | Notes |
 | --- | --- | --- |
 | Key event to command-state update, p95 < 8 ms | ui `rapid-input` `warm_navigation_input_cpu_ms` | Whole egui input frame CPU: an upper bound on the state update. Small replay fixture. |

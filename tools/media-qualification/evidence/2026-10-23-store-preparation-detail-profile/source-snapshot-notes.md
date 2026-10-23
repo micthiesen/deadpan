@@ -1,0 +1,1 @@
+The before/ copies are original baseline source snapshots, checked against original-source-identities.json. The after/ copies are from the formatted, built source tree, checked against instrumented-source-identities.json. The prepared_compound_profile.rs module was newly added, so no before-source existed.

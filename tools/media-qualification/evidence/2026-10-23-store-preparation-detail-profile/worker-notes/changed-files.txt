@@ -1,0 +1,5 @@
+crates/deadpan-app/src/project/service.rs
+crates/deadpan-app/src/project/service/macros.rs
+crates/deadpan-store/src/compound.rs
+crates/deadpan-store/src/lib.rs
+crates/deadpan-store/src/prepared_compound_profile.rs

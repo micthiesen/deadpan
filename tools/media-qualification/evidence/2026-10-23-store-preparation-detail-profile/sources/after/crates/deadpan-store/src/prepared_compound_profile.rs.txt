@@ -1,0 +1,191 @@
+//! Temporary diagnostic API for an isolated source copy only.
+//! Activation and output belong to the app's single Macro service route.
+//! Store paths outside that thread-local gate record nothing.
+
+use std::cell::RefCell;
+use std::io::Write;
+use std::time::Instant;
+
+#[derive(Clone, Copy)]
+pub enum Phase {
+    AppServiceTotal,
+    AppPerformMacroTotal,
+    AppSemanticPlanning,
+    AppPreparedCommitTotal,
+    AppServiceRefresh,
+    AppPublication,
+    StorePreparedCommitTotal,
+    StoreAdmissionImmediateGuard,
+    StorePrepareCommand,
+    StoreHostCallback,
+    StoreWritePlanOrBank,
+    StoreDurableSqlCommit,
+    StoreCachePublication,
+    AppRefreshSucceeded,
+    StoreCompoundPrepareTotal,
+    StoreCompoundPreflight,
+    StoreCompoundExecuteTotal,
+    StoreExecuteEntrySize,
+    StoreCoreReplayTotal,
+    StoreCoreHostVisitTotal,
+    StoreVisitAdmission,
+    StoreVisitAfterSize,
+    StoreVisitAccounting,
+    StoreExecuteFinalSizeGuard,
+    StorePrepareRegisterBank,
+    StorePrepareFinalValidation,
+    StoreCommandPlanTotal,
+    StoreRequestSerializeAndBound,
+    StoreRequestHistoricalDecode,
+    StoreEditSerializeAndBound,
+    StoreEditHistoricalDecode,
+    StoreInverseRestoreCheck,
+    StoreDebugVerification,
+}
+
+const PHASES: [(&str, &str); 33] = [
+    ("app_service_total", "inclusive_total"),
+    ("app_perform_macro_total", "nested_inclusive_total"),
+    ("app_semantic_planning", "disjoint_app_child"),
+    ("app_prepared_commit_total", "nested_inclusive_app_child"),
+    ("app_service_refresh", "disjoint_app_child"),
+    ("app_publication", "disjoint_service_child"),
+    (
+        "store_prepared_commit_total",
+        "nested_inclusive_store_total",
+    ),
+    ("store_admission_immediate_guard", "disjoint_store_child"),
+    ("store_prepare_command", "disjoint_store_child"),
+    ("store_host_callback", "disjoint_store_child"),
+    ("store_write_plan_or_bank", "disjoint_store_child"),
+    ("store_durable_sql_commit", "disjoint_store_child"),
+    ("store_cache_publication", "disjoint_store_child"),
+    ("app_refresh_succeeded", "success_marker"),
+    ("store_compound_prepare_total", "nested_compound_total"),
+    ("store_compound_preflight", "disjoint_compound_child"),
+    ("store_compound_execute_total", "nested_execute_total"),
+    ("store_execute_entry_size", "disjoint_execute_child"),
+    ("store_core_replay_total", "nested_replay_total"),
+    ("store_core_host_visit_total", "nested_host_visit_total"),
+    ("store_visit_admission", "disjoint_host_visit_child"),
+    ("store_visit_after_size", "disjoint_host_visit_child"),
+    ("store_visit_accounting", "disjoint_host_visit_child"),
+    ("store_execute_final_size_guard", "disjoint_execute_child"),
+    ("store_prepare_register_bank", "disjoint_compound_child"),
+    ("store_prepare_final_validation", "disjoint_compound_child"),
+    ("store_command_plan_total", "nested_command_plan_total"),
+    (
+        "store_request_serialize_and_bound",
+        "disjoint_command_plan_child",
+    ),
+    (
+        "store_request_historical_decode",
+        "disjoint_command_plan_child",
+    ),
+    (
+        "store_edit_serialize_and_bound",
+        "disjoint_command_plan_child",
+    ),
+    (
+        "store_edit_historical_decode",
+        "disjoint_command_plan_child",
+    ),
+    ("store_inverse_restore_check", "disjoint_command_plan_child"),
+    ("store_debug_verification", "debug_only_child"),
+];
+
+#[derive(Default)]
+struct Measurement {
+    nanoseconds: u128,
+    count: u64,
+}
+
+struct Profile {
+    phases: [Measurement; PHASES.len()],
+}
+
+thread_local! {
+    static ACTIVE: RefCell<Option<Profile>> = const { RefCell::new(None) };
+}
+
+pub fn begin_macro() -> bool {
+    if std::env::var_os("DEADPAN_COMPOUND_PREPARATION_DETAIL_PROFILE").as_deref()
+        != Some(std::ffi::OsStr::new("1"))
+    {
+        return false;
+    }
+    ACTIVE.with(|active| {
+        let mut active = active.borrow_mut();
+        if active.is_some() {
+            return false;
+        }
+        *active = Some(Profile {
+            phases: std::array::from_fn(|_| Measurement::default()),
+        });
+        true
+    })
+}
+
+pub struct Span {
+    phase: Phase,
+    started: Option<Instant>,
+}
+
+impl Span {
+    pub fn start(phase: Phase) -> Self {
+        let started = ACTIVE.with(|active| active.borrow().is_some().then(Instant::now));
+        Self { phase, started }
+    }
+}
+
+impl Drop for Span {
+    fn drop(&mut self) {
+        let Some(started) = self.started else {
+            return;
+        };
+        record(self.phase, started.elapsed().as_nanos());
+    }
+}
+
+fn record(phase: Phase, nanoseconds: u128) {
+    ACTIVE.with(|active| {
+        if let Some(profile) = active.borrow_mut().as_mut() {
+            let measurement = &mut profile.phases[phase as usize];
+            measurement.nanoseconds = measurement.nanoseconds.saturating_add(nanoseconds);
+            measurement.count = measurement.count.saturating_add(1);
+        }
+    });
+}
+
+pub fn mark_refresh_success() {
+    record(Phase::AppRefreshSucceeded, 0);
+}
+
+pub fn finish_after_shared_publication() {
+    let profile = ACTIVE.with(|active| active.borrow_mut().take());
+    let Some(profile) = profile else {
+        return;
+    };
+    if profile.phases[Phase::AppRefreshSucceeded as usize].count != 1 {
+        return;
+    }
+    // Neither Store commit nor refresh prints. The app calls this only after
+    // its measured shared.store_update, wake, and outer span drops complete.
+    let stderr = std::io::stderr();
+    let mut output = stderr.lock();
+    let _ = writeln!(
+        output,
+        "DEADPAN_COMPOUND_PREPARATION_DETAIL_PROFILE BEGIN count=1"
+    );
+    for ((phase, kind), measurement) in PHASES.into_iter().zip(profile.phases) {
+        let _ = writeln!(
+            output,
+            "DEADPAN_COMPOUND_PREPARATION_DETAIL_PROFILE PHASE phase={phase} kind={kind} elapsed_ns={} count={}",
+            measurement.nanoseconds, measurement.count,
+        );
+    }
+    let _ = writeln!(
+        output,
+        "DEADPAN_COMPOUND_PREPARATION_DETAIL_PROFILE END count=1"
+    );
+}

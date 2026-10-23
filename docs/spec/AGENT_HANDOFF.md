@@ -221,13 +221,25 @@ including three emitted movies. Inventory SHA-256:
 dda2a29542a845ca25e58341ca9a1c90173434a2d552b3aefc29ac25791a47e3.
 The private prototype and 18-file Core checkpoint remain separate records.
 
-Next: measure finer Store-only preparation phases using next-profile-design/
-in that qualification scratch. The read-only plan has exact source anchors,
-33 phase/count definitions and parser containment rules; no overlays or jobs
-have started. Core and CLI must remain unmodified. Use a fresh separate
-source/target against qualified c36b8944, preserve all serializations, decodes,
-inverse/host checks and emit buffered traces only after native publication.
-Subphase costs and control/off/on overhead remain unmeasured. The separate
+The finer [Store detail profile](../qualification/store-preparation-detail-profile-2026-10-23.md)
+is complete in /tmp/deadpan-store-preparation-detail-profile-2026-10-23.
+build_profile.py and measure_service.py are terminal: three build steps and
+21 measurement commands succeed, nine fresh rotated control/off/on runs pass
+seven pause checks plus one Kestrel each. Do not restart those drivers.
+Instrumented app SHA-256:
+396b661014e334d78fe186a249d28dee56bcfeacdb24597dbaaa4c4e3089209e.
+Core and CLI remain byte-identical; only four app/store files and one temporary
+store module change. Three exact 35-line traces pass 33 phase counts and ten
+containment equations; all six other logs contain no trace.
+Median semantic planning is 103.020292 ms; Store preparation 110.396833 ms.
+Core replay is 76.287833 ms including host visitor 5.053292 ms; its residual
+is 71.226624 ms. Stored-edit decode/equality is 19.017083 ms. These are nested
+diagnostics, not a further production gain or target PASS. Overhead, queue wait
+and memory remain unqualified. Evidence verifies 141 files /2,997,706 bytes,
+inventory SHA-256 e5ec3de077a87bd85be45ee772bba3521fe34ae8485a4cdcb4fc92b0837904e4.
+Next: attribute semantic planning and Core replay/apply/aggregate costs in a
+new isolated profile before choosing an algorithmic change. Keep all existing
+serialization, validation, historical-reader, inverse and host checks. The separate
 next-replay-count-study.md describes immutable borrowed count pairs and a
 post-validation finalizer; bare counts on mutable public outcomes are
 insufficient. Do not implement that API or skip validation/history work

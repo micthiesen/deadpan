@@ -1,0 +1,26 @@
+{
+  "changed_files": [
+    "crates/deadpan-app/src/project/service.rs",
+    "crates/deadpan-app/src/project/service/macros.rs",
+    "crates/deadpan-store/src/prepared_compound_profile.rs",
+    "crates/deadpan-store/src/lib.rs",
+    "crates/deadpan-store/src/compound.rs"
+  ],
+  "before": {
+    "crates/deadpan-app/src/project/service.rs": "d68879b682dc78607a9ac996fa6941dde1975b6860da375e2da97ab7222ff750",
+    "crates/deadpan-app/src/project/service/macros.rs": "b3d63ee05d49d3c1208a54a5492fe365c39b198b2a82448388df5a264e64c20c",
+    "crates/deadpan-store/src/prepared_compound_profile.rs": null,
+    "crates/deadpan-store/src/lib.rs": "60e791a846e4ae64bd400194a7efe8d9123880490b8b18a2cf57a5d66c429227",
+    "crates/deadpan-store/src/compound.rs": "1d5f07d4bc517906ed8cd650e42620cfca5d9e19c474599b3fafdd87a9ebc8e4"
+  },
+  "after": {
+    "crates/deadpan-app/src/project/service.rs": "0a38ad7e63b90bbf70c5adbfaada974799fbcc0ca9173e1f733438544e02a283",
+    "crates/deadpan-app/src/project/service/macros.rs": "99e61454055094ef6e3192c0c545ddee8e819c2f306fb1cf4a662fee9366a861",
+    "crates/deadpan-store/src/prepared_compound_profile.rs": "52f643a88c576e537496e09e84f597046e20682f8b1a74f03c2773a42c11f906",
+    "crates/deadpan-store/src/lib.rs": "890611d68c625cad6f79e49131e902d138a747697b6031a5510f1031418126f5",
+    "crates/deadpan-store/src/compound.rs": "f0479870d1df885bc81150cfa0c9fc7dd684ddba9ab6456ed16c10dd5ad12b73"
+  },
+  "all_other_file_count_unchanged": 33523,
+  "uncompiled": true,
+  "unformatted": true
+}

@@ -65,6 +65,18 @@ remain separate historical records. No requirement or gate closes.
 
 ## Remaining preparation cost, 2026-10-23
 
+The later [Store detail profile](qualification/store-preparation-detail-profile-2026-10-23.md)
+passes nine rotated control/off/on runs with seven pause checks and one
+Kestrel check each. All three enabled traces pass exact 33-phase counts and
+ten containment equations. Median semantic planning is 103.020292 ms; Store
+preparation is 110.396833 ms, including 76.287833 ms Core replay (5.053292 ms
+host visitor) and 19.017083 ms stored-edit historical decode/equality.
+Replay minus visitor is a 71.226624 ms residual, not an individual Core phase.
+The next investigation must attribute Core planning/replay internally before
+choosing another algorithmic change. Control/off/on overhead remains
+uncalibrated. This private profile changes no production source or target
+status. Evidence verifies 141 files /2,997,706 bytes.
+
 The isolated [prepared-Compound profile](qualification/prepared-compound-profile-2026-10-23.md)
 passes nine fresh-process runs and exact source/binary/input guards. In three
 profile-on runs, median semantic planning is 108.336666 ms and Store command

@@ -1,0 +1,7 @@
+{
+  "instrumentation.patch": "b28d6cf1a43e5a0189b768825d051f1e32b01dfbc0ecbbff352b90431cbae955",
+  "source-hashes.json": "8cb77bf339b2991fa14be908334d7777def41618dee42b52946f1aeaf3ca1c31",
+  "INSTRUMENTATION.md": "a5b726f2b271b5f3bfa1d85128fc20f1f8dac0442cf6afee3e07fbc33175bab5",
+  "phases.json": "4b78acb57a6f34c90bc756b218582e05c8ea5d1b7a653e1af15eee9a340bba2f",
+  "changed-files.txt": "6a8736e844a3ee46b71a945a374c803eb244fab4f30d8578ff1c68628ef7e3f3"
+}

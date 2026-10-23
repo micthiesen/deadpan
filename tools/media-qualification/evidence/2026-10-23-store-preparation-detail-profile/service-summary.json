@@ -1,0 +1,264 @@
+{
+  "diagnostic_only": true,
+  "no_percentile_or_target_pass": true,
+  "n_per_kind": 3,
+  "kinds": {
+    "root-control": {
+      "large_first_pause_input_to_commit_ms": {
+        "min": 255.93508300000002,
+        "median": 256.18395799999996,
+        "max": 257.394042
+      },
+      "large_first_pause_input_to_offscreen_background_composition_ms": {
+        "min": 258.497541,
+        "median": 258.86949999999996,
+        "max": 259.866125
+      }
+    },
+    "off": {
+      "large_first_pause_input_to_commit_ms": {
+        "min": 255.13825,
+        "median": 255.854584,
+        "max": 258.102416
+      },
+      "large_first_pause_input_to_offscreen_background_composition_ms": {
+        "min": 257.645167,
+        "median": 258.387042,
+        "max": 260.88975
+      }
+    },
+    "on": {
+      "large_first_pause_input_to_commit_ms": {
+        "min": 255.80145799999997,
+        "median": 256.061084,
+        "max": 258.24275
+      },
+      "large_first_pause_input_to_offscreen_background_composition_ms": {
+        "min": 258.340458,
+        "median": 258.544042,
+        "max": 260.765917
+      }
+    }
+  },
+  "phase_ms": {
+    "app_service_total": {
+      "min": 249.285625,
+      "median": 249.611917,
+      "max": 251.834625
+    },
+    "app_perform_macro_total": {
+      "min": 245.305709,
+      "median": 245.550625,
+      "max": 247.839833
+    },
+    "app_semantic_planning": {
+      "min": 102.665708,
+      "median": 103.020292,
+      "max": 104.083916
+    },
+    "app_prepared_commit_total": {
+      "min": 123.100625,
+      "median": 123.674625,
+      "max": 124.277417
+    },
+    "app_service_refresh": {
+      "min": 4.12575,
+      "median": 4.141958,
+      "max": 4.172334
+    },
+    "app_publication": {
+      "min": 3.975042,
+      "median": 3.990042,
+      "max": 4.056209
+    },
+    "store_prepared_commit_total": {
+      "min": 123.1,
+      "median": 123.673833,
+      "max": 124.276666
+    },
+    "store_admission_immediate_guard": {
+      "min": 0.021666,
+      "median": 0.023209,
+      "max": 0.026708
+    },
+    "store_prepare_command": {
+      "min": 109.927417,
+      "median": 110.396833,
+      "max": 110.432708
+    },
+    "store_host_callback": {
+      "min": 0.000916,
+      "median": 0.000959,
+      "max": 0.001
+    },
+    "store_write_plan_or_bank": {
+      "min": 7.288125,
+      "median": 7.349459,
+      "max": 7.370708
+    },
+    "store_durable_sql_commit": {
+      "min": 5.267042,
+      "median": 6.370958,
+      "max": 6.567416
+    },
+    "store_cache_publication": {
+      "min": 0.000875,
+      "median": 0.001,
+      "max": 0.001
+    },
+    "app_refresh_succeeded": {
+      "min": 0.0,
+      "median": 0.0,
+      "max": 0.0
+    },
+    "store_compound_prepare_total": {
+      "min": 109.776125,
+      "median": 110.235,
+      "max": 110.260208
+    },
+    "store_compound_preflight": {
+      "min": 0.180958,
+      "median": 0.192166,
+      "max": 0.199667
+    },
+    "store_compound_execute_total": {
+      "min": 82.557667,
+      "median": 82.987125,
+      "max": 83.2395
+    },
+    "store_execute_entry_size": {
+      "min": 1.97575,
+      "median": 1.986208,
+      "max": 2.021125
+    },
+    "store_core_replay_total": {
+      "min": 75.814042,
+      "median": 76.287833,
+      "max": 76.530959
+    },
+    "store_core_host_visit_total": {
+      "min": 5.00075,
+      "median": 5.053292,
+      "max": 5.061209
+    },
+    "store_visit_admission": {
+      "min": 0.235792,
+      "median": 0.237417,
+      "max": 0.250541
+    },
+    "store_visit_after_size": {
+      "min": 4.764541,
+      "median": 4.801875,
+      "max": 4.822959
+    },
+    "store_visit_accounting": {
+      "min": 0.0,
+      "median": 0.000417,
+      "max": 0.000458
+    },
+    "store_execute_final_size_guard": {
+      "min": 4.686375,
+      "median": 4.712584,
+      "max": 4.767166
+    },
+    "store_prepare_register_bank": {
+      "min": 0.000166,
+      "median": 0.000291,
+      "max": 0.000292
+    },
+    "store_prepare_final_validation": {
+      "min": 2.884625,
+      "median": 2.93125,
+      "max": 2.944209
+    },
+    "store_command_plan_total": {
+      "min": 23.916791,
+      "median": 24.08575,
+      "max": 24.146125
+    },
+    "store_request_serialize_and_bound": {
+      "min": 0.020916,
+      "median": 0.020917,
+      "max": 0.021958
+    },
+    "store_request_historical_decode": {
+      "min": 0.04325,
+      "median": 0.046292,
+      "max": 0.048625
+    },
+    "store_edit_serialize_and_bound": {
+      "min": 2.946625,
+      "median": 3.129333,
+      "max": 3.162625
+    },
+    "store_edit_historical_decode": {
+      "min": 18.99225,
+      "median": 19.017083,
+      "max": 19.095916
+    },
+    "store_inverse_restore_check": {
+      "min": 1.841042,
+      "median": 1.852958,
+      "max": 1.906292
+    },
+    "store_debug_verification": {
+      "min": 0.0,
+      "median": 0.0,
+      "max": 0.0
+    }
+  },
+  "residual_ms": {
+    "app_service_total_minus_disjoint_children_and_overhead": {
+      "min": 0.00475,
+      "median": 0.004874,
+      "max": 0.005083
+    },
+    "app_perform_macro_total_minus_disjoint_children_and_overhead": {
+      "min": 15.059042,
+      "median": 15.068334,
+      "max": 15.306166
+    },
+    "app_prepared_commit_total_minus_disjoint_children_and_overhead": {
+      "min": 0.000625,
+      "median": 0.000751,
+      "max": 0.000792
+    },
+    "store_prepared_commit_total_minus_disjoint_children_and_overhead": {
+      "min": 0.000792,
+      "median": 0.000834,
+      "max": 0.000874
+    },
+    "store_prepare_command_minus_disjoint_children_and_overhead": {
+      "min": 0.151292,
+      "median": 0.161833,
+      "max": 0.1725
+    },
+    "store_compound_prepare_total_minus_disjoint_children_and_overhead": {
+      "min": 0.001499,
+      "median": 0.001625,
+      "max": 0.001627
+    },
+    "store_compound_execute_total_minus_disjoint_children_and_overhead": {
+      "min": 0.0005,
+      "median": 0.000709,
+      "max": 0.001041
+    },
+    "store_core_replay_total_minus_disjoint_children_and_overhead": {
+      "min": 70.813292,
+      "median": 71.226624,
+      "max": 71.477667
+    },
+    "store_core_host_visit_total_minus_disjoint_children_and_overhead": {
+      "min": 0.000416,
+      "median": 0.000417,
+      "max": 0.000418
+    },
+    "store_command_plan_total_minus_disjoint_children_and_overhead": {
+      "min": 0.000709,
+      "median": 0.000834,
+      "max": 0.001041
+    }
+  },
+  "instrumentation_overhead_unqualified": true,
+  "no_production_optimization_in_this_profile": true
+}

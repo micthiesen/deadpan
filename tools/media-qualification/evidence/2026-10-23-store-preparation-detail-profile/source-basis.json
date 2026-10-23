@@ -1,0 +1,8 @@
+{
+  "base": "a0ff0555e6614752086ddfea030f0b664e78cb7a",
+  "qualified_implementation": "ca40995b64fc4acdc0a5e046660a36a1faa7cee5",
+  "archive_sha256": "1b5ba50a10a0f757a15f88fa2268a45a1fec348924f8cf28962a3c9474d1bb12",
+  "rust_files": 2050,
+  "qualified_control_app_sha256": "c36b894466eb4f16fe976924b05c02ada87b0e8872f7f9a7fc6028a60a342037",
+  "scope": "isolated diagnostic only; no production timers"
+}

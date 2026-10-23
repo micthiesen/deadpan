@@ -1,0 +1,507 @@
+--- a/crates/deadpan-app/src/project/service.rs
++++ b/crates/deadpan-app/src/project/service.rs
+@@ -11,6 +11,7 @@
+ };
+ use deadpan_plan::RenderPlan;
+ use deadpan_store::original_media::{OriginalMediaRecord, OriginalOwnership};
++use deadpan_store::prepared_compound_profile as pause_profile;
+ use deadpan_store::single_source::{SingleSourceInitialization, SingleSourceState};
+ use deadpan_store::source_registration::{
+     PreparedSourceRegistration, SourceInsertionPurpose, SourceInsertionRequest, SourceRegistration,
+@@ -340,7 +341,14 @@
+                 service.publish();
+             }
+             Ok(request) => {
+-                if service.dispatch_request(request) {
++                let profiling_macro =
++                    matches!(&request, ProjectRequest::Macro(_)) && pause_profile::begin_macro();
++                let total_profile =
++                    pause_profile::Span::start(pause_profile::Phase::AppServiceTotal);
++                let completed = service.dispatch_request(request);
++                let publication_profile =
++                    pause_profile::Span::start(pause_profile::Phase::AppPublication);
++                if completed {
+                     #[cfg(test)]
+                     service.shared.request_completed(crate::project::Lane::User);
+                     service.shared.busy.store(false, Ordering::Release);
+@@ -349,6 +357,11 @@
+                 service.reconcile_slip();
+                 service.reconcile_trim();
+                 service.publish();
++                drop(publication_profile);
++                drop(total_profile);
++                if profiling_macro {
++                    pause_profile::finish_after_shared_publication();
++                }
+             }
+             Err(RecvTimeoutError::Disconnected) => {
+                 requests_connected = false;
+--- a/crates/deadpan-app/src/project/service/macros.rs
++++ b/crates/deadpan-app/src/project/service/macros.rs
+@@ -552,6 +552,7 @@
+     }
+ 
+     fn perform_macro(&mut self, operation: &Operation) -> Result<Receipt> {
++        let _total = pause_profile::Span::start(pause_profile::Phase::AppPerformMacroTotal);
+         self.observe_semantic();
+         let id = operation.id();
+         let (document, stored) = self.check_macro_context(id)?;
+@@ -710,6 +711,8 @@
+                     context,
+                 )?;
+                 let invocation = SemanticProgram::new(vec![instruction]).map_err(display)?;
++                let semantic_profile =
++                    pause_profile::Span::start(pause_profile::Phase::AppSemanticPlanning);
+                 let plan = deadpan_cli::macros::plan_program_with_transcript_guard(
+                     self.store.as_ref().ok_or("Open a project first")?,
+                     &document,
+@@ -720,6 +723,7 @@
+                     id.transcript_guard.as_deref(),
+                 )
+                 .map_err(display)?;
++                drop(semantic_profile);
+                 if let Some(consumed) = &plan.transcript_guard {
+                     let displayed = self
+                         .workspace
+@@ -793,6 +797,8 @@
+                 // The store prepares the Compound once, under its publication
+                 // transaction. Runtime copies remain fallible and private until
+                 // that same prepared edit and bank have durably committed.
++                let prepared_commit_profile =
++                    pause_profile::Span::start(pause_profile::Phase::AppPreparedCommitTotal);
+                 let (outcome, bank) = plan
+                     .commit_compound_prepared(self.writer()?, |prepared| {
+                         prepare_runtime_bank(id, &runtime, &stored, prepared, &plan)
+@@ -801,6 +807,7 @@
+                         deadpan_cli::macros::PreparedCommitError::Commit(error) => display(error),
+                         deadpan_cli::macros::PreparedCommitError::Preparation(error) => error,
+                     })?;
++                drop(prepared_commit_profile);
+                 if let Some(saved) = &outcome.committed {
+                     self.capture_preparation_notices(&saved.generation_preparation_notices);
+                     if plan.context.original.is_some() {
+@@ -867,7 +874,14 @@
+                         .render_commit_refresh_failure
+                         .swap(false, Ordering::AcqRel);
+                 }
+-                match self.refresh() {
++                let refresh_profile =
++                    pause_profile::Span::start(pause_profile::Phase::AppServiceRefresh);
++                let refresh_result = self.refresh();
++                drop(refresh_profile);
++                if refresh_result.is_ok() {
++                    pause_profile::mark_refresh_success();
++                }
++                match refresh_result {
+                     Ok(()) => {
+                         self.message = Some(if committed.is_some() {
+                             format!("{label} saved as one edit; Undo restores it")
+--- a/crates/deadpan-store/src/compound.rs
++++ b/crates/deadpan-store/src/compound.rs
+@@ -10,6 +10,7 @@
+ use rusqlite::{Connection, params};
+ use serde::Serialize;
+ 
++use crate::prepared_compound_profile::{Phase, Span};
+ use crate::{CommandPlan, CommitOutcome, ProjectStore, StoreError, registers::RegisterBank};
+ 
+ const MAX_STEPS: usize = 1_024;
+@@ -169,6 +170,8 @@
+         guard: Option<&crate::TranscriptSelectionGuard>,
+         prepare: impl FnOnce(&RegisterBank) -> Result<T, E>,
+     ) -> Result<(CompoundCommitOutcome, T), CompoundPreparationError<E>> {
++        let _total = Span::start(Phase::StorePreparedCommitTotal);
++        let admission_profile = Span::start(Phase::StoreAdmissionImmediateGuard);
+         self.require_writer()?;
+         require_compound(request)?;
+         let documents = &self.documents;
+@@ -179,10 +182,16 @@
+         if let Some(guard) = guard {
+             crate::transcript_selection::check_guard(&transaction, documents, guard)?;
+         }
++        drop(admission_profile);
++        let prepare_profile = Span::start(Phase::StorePrepareCommand);
+         let plan = crate::prepare_command(&transaction, documents, request)?;
++        drop(prepare_profile);
+         let prepared = plan.compound.as_ref().expect("compound plan");
+         let register_bank = prepared.registers.bank.clone();
++        let callback_profile = Span::start(Phase::StoreHostCallback);
+         let host = prepare(&register_bank).map_err(CompoundPreparationError::Preparation)?;
++        drop(callback_profile);
++        let write_profile = Span::start(Phase::StoreWritePlanOrBank);
+         let committed = if prepared.steps.is_empty() {
+             if prepared.writes {
+                 crate::registers::write_prepared_bank(
+@@ -201,11 +210,16 @@
+                 self.context_resolver.as_deref(),
+             )?)
+         };
++        drop(write_profile);
++        let durable_profile = Span::start(Phase::StoreDurableSqlCommit);
+         transaction.commit().map_err(StoreError::from)?;
++        drop(durable_profile);
++        let cache_profile = Span::start(Phase::StoreCachePublication);
+         let committed = committed.map(|(outcome, next)| {
+             documents.insert(next);
+             outcome
+         });
++        drop(cache_profile);
+         Ok((
+             CompoundCommitOutcome {
+                 committed,
+@@ -389,6 +403,8 @@
+     current: deadpan_core::ValidatedDocument,
+     request: &CommandRequest,
+ ) -> Result<CommandPlan, StoreError> {
++    let _total = Span::start(Phase::StoreCompoundPrepareTotal);
++    let preflight_profile = Span::start(Phase::StoreCompoundPreflight);
+     let Command::Compound { transaction } = &request.command else {
+         return Err(invalid("expected compound"));
+     };
+@@ -411,12 +427,19 @@
+         )
+         .collect();
+     crate::ensure_unused_revisions(connection, documents, &allocations)?;
++    drop(preflight_profile);
+     let (outcome, steps) = execute(connection, &current, request, None)?;
++    let registers_profile = Span::start(Phase::StorePrepareRegisterBank);
+     let writes = !outcome.register_writes.is_empty();
+     let registers = crate::registers::prepare_writes_from(bank, &outcome.register_writes)?;
++    drop(registers_profile);
++    let current_document = std::sync::Arc::clone(current.document());
++    let validation_profile = Span::start(Phase::StorePrepareFinalValidation);
++    let next = deadpan_core::ValidatedDocument::new(std::sync::Arc::new(outcome.document))?;
++    drop(validation_profile);
+     crate::command_plan(
+-        std::sync::Arc::clone(current.document()),
+-        deadpan_core::ValidatedDocument::new(std::sync::Arc::new(outcome.document))?,
++        current_document,
++        next,
+         outcome.edit,
+         request,
+         Some(Prepared {
+@@ -433,6 +456,7 @@
+     request: &CommandRequest,
+     admitted: Option<&BTreeSet<RevisionId>>,
+ ) -> Result<(deadpan_core::CompoundOutcome, Vec<StepRecord>), StoreError> {
++    let _total = Span::start(Phase::StoreCompoundExecuteTotal);
+     let Command::Compound { transaction } = &request.command else {
+         return Err(invalid("expected compound"));
+     };
+@@ -472,10 +496,15 @@
+     }
+     let mut steps: Vec<StepRecord> = Vec::new();
+     let mut checkpoint_bytes = 0_usize;
++    let entry_size_profile = Span::start(Phase::StoreExecuteEntrySize);
+     let mut processed_bytes = current.compact_json_size()?;
++    drop(entry_size_profile);
+     let mut original_pastes = OriginalPasteMappings::default();
++    let replay_profile = Span::start(Phase::StoreCoreReplayTotal);
+     let outcome =
+         deadpan_core::replay_compound(current, request, |visit| -> Result<(), StoreError> {
++            let _visit_total = Span::start(Phase::StoreCoreHostVisitTotal);
++            let admission_profile = Span::start(Phase::StoreVisitAdmission);
+             if matches!(
+                 visit.step,
+                 ResolvedStep::Yank { .. } | ResolvedStep::Cut { .. }
+@@ -545,6 +574,8 @@
+                 }
+                 // Captured stages retain the identical compact bytes.
+                 // Other stages need their exact byte charge, not an output buffer.
++                drop(admission_profile);
++                let after_size_profile = Span::start(Phase::StoreVisitAfterSize);
+                 let document = capture_states
+                     .contains(&leaf.new_revision)
+                     .then(|| visit.after.to_compact_json())
+@@ -553,6 +584,8 @@
+                     Some(json) => json.len(),
+                     None => visit.after.compact_json_size()?,
+                 };
++                drop(after_size_profile);
++                let accounting_profile = Span::start(Phase::StoreVisitAccounting);
+                 processed_bytes = processed_bytes
+                     .checked_add(bytes)
+                     .filter(|bytes| *bytes <= MAX_PROCESSED_BYTES)
+@@ -570,10 +603,14 @@
+                     revision: leaf.new_revision.clone(),
+                     document,
+                 });
++                drop(accounting_profile);
+             }
+             Ok(())
+         })?;
++    drop(replay_profile);
++    let final_size_profile = Span::start(Phase::StoreExecuteFinalSizeGuard);
+     crate::check_document_size_bytes(outcome.document.compact_json_size()?)?;
++    drop(final_size_profile);
+     Ok((outcome, steps))
+ }
+ 
+--- a/crates/deadpan-store/src/lib.rs
++++ b/crates/deadpan-store/src/lib.rs
+@@ -40,6 +40,7 @@
+ mod output_color;
+ #[cfg(any(target_os = "macos", target_os = "linux"))]
+ pub mod portable;
++pub mod prepared_compound_profile;
+ #[cfg(any(target_os = "macos", target_os = "linux"))]
+ pub mod publication;
+ #[cfg(any(target_os = "macos", target_os = "linux"))]
+@@ -1406,37 +1407,63 @@
+     request: &CommandRequest,
+     compound: Option<compound::Prepared>,
+ ) -> Result<CommandPlan, StoreError> {
++    let _total = prepared_compound_profile::Span::start(
++        prepared_compound_profile::Phase::StoreCommandPlanTotal,
++    );
++    let request_serialize_profile = prepared_compound_profile::Span::start(
++        prepared_compound_profile::Phase::StoreRequestSerializeAndBound,
++    );
+     let request_json = serde_json::to_string(request)?;
+     check_document_size(&request_json)?;
++    drop(request_serialize_profile);
+     // Typed native callers bypass JSON ingress. Admit their exact stored wire
+     // through the replay reader before any writes, including its value/depth
+     // bounds, so a successful save cannot create unreadable command history.
++    let request_decode_profile = prepared_compound_profile::Span::start(
++        prepared_compound_profile::Phase::StoreRequestHistoricalDecode,
++    );
+     if serde_json::from_str::<CommandRequest>(&request_json)? != *request {
+         return Err(StoreError::Integrity(
+             "command changes meaning when decoded for history replay".into(),
+         ));
+     }
++    drop(request_decode_profile);
++    let edit_serialize_profile = prepared_compound_profile::Span::start(
++        prepared_compound_profile::Phase::StoreEditSerializeAndBound,
++    );
+     let edit_json = serde_json::to_string(&edit)?;
+     check_document_size(&edit_json)?;
++    drop(edit_serialize_profile);
+     // The remaining replay checks for this revision, so that a commit can
+     // extend the history receipt: the stored edit decodes to the computed one
+     // and its inverse restores the preceding revision exactly. The preceding
+     // revision is valid, so the restored document needs no validation.
++    let edit_decode_profile = prepared_compound_profile::Span::start(
++        prepared_compound_profile::Phase::StoreEditHistoricalDecode,
++    );
+     if serde_json::from_str::<EditTransaction>(&edit_json)? != edit {
+         return Err(StoreError::Integrity(
+             "edit changes meaning when decoded for history replay".into(),
+         ));
+     }
++    drop(edit_decode_profile);
++    let inverse_profile = prepared_compound_profile::Span::start(
++        prepared_compound_profile::Phase::StoreInverseRestoreCheck,
++    );
+     if !edit.inverse.restores(&next, &current)? {
+         return Err(StoreError::History(
+             "inverse does not restore the preceding revision".into(),
+         ));
+     }
++    drop(inverse_profile);
+     // The adopted result must be exactly what history replay reconstructs
+     // from the stored patch, and its retained validation must equal complete
+     // validation. Debug builds (every test) check both on every commit.
+     #[cfg(debug_assertions)]
+     {
++        let _debug_profile = prepared_compound_profile::Span::start(
++            prepared_compound_profile::Phase::StoreDebugVerification,
++        );
+         let replayed = edit.forward.apply_stored(&current)?;
+         assert!(
+             replayed == **next.document(),
+--- a/crates/deadpan-store/src/prepared_compound_profile.rs
++++ b/crates/deadpan-store/src/prepared_compound_profile.rs
+@@ -0,0 +1,191 @@
++//! Temporary diagnostic API for an isolated source copy only.
++//! Activation and output belong to the app's single Macro service route.
++//! Store paths outside that thread-local gate record nothing.
++
++use std::cell::RefCell;
++use std::io::Write;
++use std::time::Instant;
++
++#[derive(Clone, Copy)]
++pub enum Phase {
++    AppServiceTotal,
++    AppPerformMacroTotal,
++    AppSemanticPlanning,
++    AppPreparedCommitTotal,
++    AppServiceRefresh,
++    AppPublication,
++    StorePreparedCommitTotal,
++    StoreAdmissionImmediateGuard,
++    StorePrepareCommand,
++    StoreHostCallback,
++    StoreWritePlanOrBank,
++    StoreDurableSqlCommit,
++    StoreCachePublication,
++    AppRefreshSucceeded,
++    StoreCompoundPrepareTotal,
++    StoreCompoundPreflight,
++    StoreCompoundExecuteTotal,
++    StoreExecuteEntrySize,
++    StoreCoreReplayTotal,
++    StoreCoreHostVisitTotal,
++    StoreVisitAdmission,
++    StoreVisitAfterSize,
++    StoreVisitAccounting,
++    StoreExecuteFinalSizeGuard,
++    StorePrepareRegisterBank,
++    StorePrepareFinalValidation,
++    StoreCommandPlanTotal,
++    StoreRequestSerializeAndBound,
++    StoreRequestHistoricalDecode,
++    StoreEditSerializeAndBound,
++    StoreEditHistoricalDecode,
++    StoreInverseRestoreCheck,
++    StoreDebugVerification,
++}
++
++const PHASES: [(&str, &str); 33] = [
++    ("app_service_total", "inclusive_total"),
++    ("app_perform_macro_total", "nested_inclusive_total"),
++    ("app_semantic_planning", "disjoint_app_child"),
++    ("app_prepared_commit_total", "nested_inclusive_app_child"),
++    ("app_service_refresh", "disjoint_app_child"),
++    ("app_publication", "disjoint_service_child"),
++    (
++        "store_prepared_commit_total",
++        "nested_inclusive_store_total",
++    ),
++    ("store_admission_immediate_guard", "disjoint_store_child"),
++    ("store_prepare_command", "disjoint_store_child"),
++    ("store_host_callback", "disjoint_store_child"),
++    ("store_write_plan_or_bank", "disjoint_store_child"),
++    ("store_durable_sql_commit", "disjoint_store_child"),
++    ("store_cache_publication", "disjoint_store_child"),
++    ("app_refresh_succeeded", "success_marker"),
++    ("store_compound_prepare_total", "nested_compound_total"),
++    ("store_compound_preflight", "disjoint_compound_child"),
++    ("store_compound_execute_total", "nested_execute_total"),
++    ("store_execute_entry_size", "disjoint_execute_child"),
++    ("store_core_replay_total", "nested_replay_total"),
++    ("store_core_host_visit_total", "nested_host_visit_total"),
++    ("store_visit_admission", "disjoint_host_visit_child"),
++    ("store_visit_after_size", "disjoint_host_visit_child"),
++    ("store_visit_accounting", "disjoint_host_visit_child"),
++    ("store_execute_final_size_guard", "disjoint_execute_child"),
++    ("store_prepare_register_bank", "disjoint_compound_child"),
++    ("store_prepare_final_validation", "disjoint_compound_child"),
++    ("store_command_plan_total", "nested_command_plan_total"),
++    (
++        "store_request_serialize_and_bound",
++        "disjoint_command_plan_child",
++    ),
++    (
++        "store_request_historical_decode",
++        "disjoint_command_plan_child",
++    ),
++    (
++        "store_edit_serialize_and_bound",
++        "disjoint_command_plan_child",
++    ),
++    (
++        "store_edit_historical_decode",
++        "disjoint_command_plan_child",
++    ),
++    ("store_inverse_restore_check", "disjoint_command_plan_child"),
++    ("store_debug_verification", "debug_only_child"),
++];
++
++#[derive(Default)]
++struct Measurement {
++    nanoseconds: u128,
++    count: u64,
++}
++
++struct Profile {
++    phases: [Measurement; PHASES.len()],
++}
++
++thread_local! {
++    static ACTIVE: RefCell<Option<Profile>> = const { RefCell::new(None) };
++}
++
++pub fn begin_macro() -> bool {
++    if std::env::var_os("DEADPAN_COMPOUND_PREPARATION_DETAIL_PROFILE").as_deref()
++        != Some(std::ffi::OsStr::new("1"))
++    {
++        return false;
++    }
++    ACTIVE.with(|active| {
++        let mut active = active.borrow_mut();
++        if active.is_some() {
++            return false;
++        }
++        *active = Some(Profile {
++            phases: std::array::from_fn(|_| Measurement::default()),
++        });
++        true
++    })
++}
++
++pub struct Span {
++    phase: Phase,
++    started: Option<Instant>,
++}
++
++impl Span {
++    pub fn start(phase: Phase) -> Self {
++        let started = ACTIVE.with(|active| active.borrow().is_some().then(Instant::now));
++        Self { phase, started }
++    }
++}
++
++impl Drop for Span {
++    fn drop(&mut self) {
++        let Some(started) = self.started else {
++            return;
++        };
++        record(self.phase, started.elapsed().as_nanos());
++    }
++}
++
++fn record(phase: Phase, nanoseconds: u128) {
++    ACTIVE.with(|active| {
++        if let Some(profile) = active.borrow_mut().as_mut() {
++            let measurement = &mut profile.phases[phase as usize];
++            measurement.nanoseconds = measurement.nanoseconds.saturating_add(nanoseconds);
++            measurement.count = measurement.count.saturating_add(1);
++        }
++    });
++}
++
++pub fn mark_refresh_success() {
++    record(Phase::AppRefreshSucceeded, 0);
++}
++
++pub fn finish_after_shared_publication() {
++    let profile = ACTIVE.with(|active| active.borrow_mut().take());
++    let Some(profile) = profile else {
++        return;
++    };
++    if profile.phases[Phase::AppRefreshSucceeded as usize].count != 1 {
++        return;
++    }
++    // Neither Store commit nor refresh prints. The app calls this only after
++    // its measured shared.store_update, wake, and outer span drops complete.
++    let stderr = std::io::stderr();
++    let mut output = stderr.lock();
++    let _ = writeln!(
++        output,
++        "DEADPAN_COMPOUND_PREPARATION_DETAIL_PROFILE BEGIN count=1"
++    );
++    for ((phase, kind), measurement) in PHASES.into_iter().zip(profile.phases) {
++        let _ = writeln!(
++            output,
++            "DEADPAN_COMPOUND_PREPARATION_DETAIL_PROFILE PHASE phase={phase} kind={kind} elapsed_ns={} count={}",
++            measurement.nanoseconds, measurement.count,
++        );
++    }
++    let _ = writeln!(
++        output,
++        "DEADPAN_COMPOUND_PREPARATION_DETAIL_PROFILE END count=1"
++    );
++}

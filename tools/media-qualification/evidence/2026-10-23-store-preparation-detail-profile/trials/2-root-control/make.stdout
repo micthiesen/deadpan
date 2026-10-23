@@ -1,0 +1,7 @@
+{
+  "beats": 10000,
+  "creation_ms": 166.361,
+  "package": "/tmp/deadpan-store-preparation-detail-profile-2026-10-23/2-root-control.deadpan",
+  "stage": "make-large",
+  "stage_wall_ms": 175.805792
+}

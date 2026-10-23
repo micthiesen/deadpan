@@ -1,0 +1,305 @@
+{
+  "state": "design-only; all subphase costs unmeasured",
+  "prefix": "DEADPAN_COMPOUND_PREPARATION_DETAIL_PROFILE",
+  "gate": "DEADPAN_COMPOUND_PREPARATION_DETAIL_PROFILE=1",
+  "workload": "one successful native large-first-pause Macro; locked release; fresh 10000-Hold package",
+  "phases": [
+    {
+      "name": "app_service_total",
+      "kind": "inclusive_total",
+      "expected_count": 1,
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "app_perform_macro_total",
+      "kind": "nested_inclusive_total",
+      "expected_count": 1,
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "app_semantic_planning",
+      "kind": "disjoint_app_child",
+      "expected_count": 1,
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "app_prepared_commit_total",
+      "kind": "nested_inclusive_app_child",
+      "expected_count": 1,
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "app_service_refresh",
+      "kind": "disjoint_app_child",
+      "expected_count": 1,
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "app_publication",
+      "kind": "disjoint_service_child",
+      "expected_count": 1,
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "store_prepared_commit_total",
+      "kind": "nested_inclusive_store_total",
+      "expected_count": 1,
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "store_admission_immediate_guard",
+      "kind": "disjoint_store_child",
+      "expected_count": 1,
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "store_prepare_command",
+      "kind": "disjoint_store_child",
+      "expected_count": 1,
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "store_host_callback",
+      "kind": "disjoint_store_child",
+      "expected_count": 1,
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "store_write_plan_or_bank",
+      "kind": "disjoint_store_child",
+      "expected_count": 1,
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "store_durable_sql_commit",
+      "kind": "disjoint_store_child",
+      "expected_count": 1,
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "store_cache_publication",
+      "kind": "disjoint_store_child",
+      "expected_count": 1,
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "app_refresh_succeeded",
+      "kind": "success_marker",
+      "expected_count": 1,
+      "expected_elapsed_ns": 0
+    },
+    {
+      "name": "store_compound_prepare_total",
+      "kind": "nested_compound_total",
+      "expected_count": 1,
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "store_compound_preflight",
+      "kind": "disjoint_compound_child",
+      "expected_count": 1,
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "store_compound_execute_total",
+      "kind": "nested_execute_total",
+      "expected_count": 1,
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "store_execute_entry_size",
+      "kind": "disjoint_execute_child",
+      "expected_count": 1,
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "store_core_replay_total",
+      "kind": "nested_replay_total",
+      "expected_count": 1,
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "store_core_host_visit_total",
+      "kind": "nested_host_visit_total",
+      "expected_count": 1,
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "store_visit_admission",
+      "kind": "disjoint_host_visit_child",
+      "expected_count": 1,
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "store_visit_after_size",
+      "kind": "disjoint_host_visit_child",
+      "expected_count": 1,
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "store_visit_accounting",
+      "kind": "disjoint_host_visit_child",
+      "expected_count": 1,
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "store_execute_final_size_guard",
+      "kind": "disjoint_execute_child",
+      "expected_count": 1,
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "store_prepare_register_bank",
+      "kind": "disjoint_compound_child",
+      "expected_count": 1,
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "store_prepare_final_validation",
+      "kind": "disjoint_compound_child",
+      "expected_count": 1,
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "store_command_plan_total",
+      "kind": "nested_command_plan_total",
+      "expected_count": 1,
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "store_request_serialize_and_bound",
+      "kind": "disjoint_command_plan_child",
+      "expected_count": 1,
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "store_request_historical_decode",
+      "kind": "disjoint_command_plan_child",
+      "expected_count": 1,
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "store_edit_serialize_and_bound",
+      "kind": "disjoint_command_plan_child",
+      "expected_count": 1,
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "store_edit_historical_decode",
+      "kind": "disjoint_command_plan_child",
+      "expected_count": 1,
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "store_inverse_restore_check",
+      "kind": "disjoint_command_plan_child",
+      "expected_count": 1,
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "store_debug_verification",
+      "kind": "debug_only_child",
+      "expected_count": 0,
+      "expected_elapsed_ns": 0
+    }
+  ],
+  "containment": [
+    {
+      "parent": "app_service_total",
+      "disjoint_children": [
+        "app_perform_macro_total",
+        "app_publication"
+      ],
+      "required_residual_nonnegative": true
+    },
+    {
+      "parent": "app_perform_macro_total",
+      "disjoint_children": [
+        "app_semantic_planning",
+        "app_prepared_commit_total",
+        "app_service_refresh"
+      ],
+      "required_residual_nonnegative": true
+    },
+    {
+      "parent": "app_prepared_commit_total",
+      "disjoint_children": [
+        "store_prepared_commit_total"
+      ],
+      "required_residual_nonnegative": true
+    },
+    {
+      "parent": "store_prepared_commit_total",
+      "disjoint_children": [
+        "store_admission_immediate_guard",
+        "store_prepare_command",
+        "store_host_callback",
+        "store_write_plan_or_bank",
+        "store_durable_sql_commit",
+        "store_cache_publication"
+      ],
+      "required_residual_nonnegative": true
+    },
+    {
+      "parent": "store_prepare_command",
+      "disjoint_children": [
+        "store_compound_prepare_total"
+      ],
+      "required_residual_nonnegative": true
+    },
+    {
+      "parent": "store_compound_prepare_total",
+      "disjoint_children": [
+        "store_compound_preflight",
+        "store_compound_execute_total",
+        "store_prepare_register_bank",
+        "store_prepare_final_validation",
+        "store_command_plan_total"
+      ],
+      "required_residual_nonnegative": true
+    },
+    {
+      "parent": "store_compound_execute_total",
+      "disjoint_children": [
+        "store_execute_entry_size",
+        "store_core_replay_total",
+        "store_execute_final_size_guard"
+      ],
+      "required_residual_nonnegative": true
+    },
+    {
+      "parent": "store_core_replay_total",
+      "disjoint_children": [
+        "store_core_host_visit_total"
+      ],
+      "required_residual_nonnegative": true
+    },
+    {
+      "parent": "store_core_host_visit_total",
+      "disjoint_children": [
+        "store_visit_admission",
+        "store_visit_after_size",
+        "store_visit_accounting"
+      ],
+      "required_residual_nonnegative": true
+    },
+    {
+      "parent": "store_command_plan_total",
+      "disjoint_children": [
+        "store_request_serialize_and_bound",
+        "store_request_historical_decode",
+        "store_edit_serialize_and_bound",
+        "store_edit_historical_decode",
+        "store_inverse_restore_check",
+        "store_debug_verification"
+      ],
+      "required_residual_nonnegative": true
+    }
+  ],
+  "format": "BEGIN count=1; one PHASE phase=... kind=... elapsed_ns=... count=... per ordered row; END count=1",
+  "expected_profile_lines": 35,
+  "unknown_duplicate_missing_out_of_order_phases": "reject",
+  "partial_failure_or_absent_success_marker": "discard buffered profile and invalidate timing trial",
+  "queue_wait_measured": false,
+  "control_off_on_overhead_qualified": false
+}
