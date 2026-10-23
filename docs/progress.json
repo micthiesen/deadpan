@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-23T13:45:23.846Z",
+  "updated_at": "2026-10-23T14:08:18.493Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about \u00b15 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "The isolated Core planning/replay profile is complete: nine rotated control/off/on runs pass seven pause and one Kestrel check each, all identity/authored-file guards, and exact 24-phase counts with nine containment equations. Across two leaf applications, median reduction totals 64.732208 ms and postprocessing 17.760625 ms. Semantic execution has another 30.641416 ms residual outside its leaf call and after-leaf size/charge. All 152 evidence files verify. These intervals contain multiple operations and overhead; next identify a concrete repeated operation and qualify a separate prototype. No production source, requirement or target changed. Coverage stays 89%, with 8 Complete and 16 Partial requirements and the 100 ms/50 ms targets open.",
+  "focus": "A narrow private full-layout reuse prototype has passed source review and is compiling. It reuses an admitted immutable timing table only after the complete required-alias/ancestor closure, keeps the wire-size guard, excludes provisional tables and retains the reference path. Five regression tests cover sharing, partial/provisional slicing, late unknown aliases, the real canonical wire limit and 10,000-Hold interior-pause transaction/inverse parity; none has run yet, and no gain is measured. The completed Core profile remains the verified basis: all nine trials and exact 24-phase/nine-containment checks pass, with two-call reduction 64.732208 ms, postprocessing 17.760625 ms and semantic execution residual 30.641416 ms. No production source or requirement changed. Coverage stays 89%, with 8 Complete and 16 Partial requirements and the 100 ms/50 ms targets open.",
   "features": [
     {
       "id": "editing",
