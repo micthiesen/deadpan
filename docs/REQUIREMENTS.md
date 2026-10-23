@@ -4,6 +4,17 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 
 ## Aligned sound-scope research, 2026-10-23
 
+Fresh current-source verification passes all 1,489 Core tests across 67 binaries
+with zero skipped, and all 3,492 broader selected tests across 109 binaries
+(739 ignored or unselected). The fresh Core library SHA-256 is
+`1c69c724a70b193d5e311d4a9089b280c5f6f355a19774c5f1befffd48392bf9`.
+Strict ordinary/UI checks and formatting pass. After the broad run, one private
+UI replay assertion was corrected to distinguish old pre-Split owner aliases
+from each live fragment in a later Move capture. That file is excluded by
+`ui-harness` in the ordinary broad build; all other 2,038 Rust hashes and six
+inputs remain unchanged. A fresh strict run passes after the correction.
+Full UI tests are building; native replay and emitted-media verification remain.
+
 The `integrated-eleventh` archive passes twelve focused audio checks. A new
 valid-control counterfactual first measured 7,581 changed output channel samples
 after a label-only edit and 7,570 after a fragment trim. Removing live labels

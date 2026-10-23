@@ -4,7 +4,21 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Current continuation, 2026-10-22
 
-Current checkpoint, 2026-10-23: `integrated-eleventh` passes all twelve focused
+Current checkpoint, 2026-10-23: fresh `integrated-final-core` passes all 1,489
+tests across 67 binaries, zero skipped; library SHA-256
+`1c69c724a70b193d5e311d4a9089b280c5f6f355a19774c5f1befffd48392bf9`.
+`final-broad` passes all 3,492 selected tests across 109 binaries (739 ignored or
+unselected), with frozen 2,039-file Rust and six-input guards. Strict ordinary/UI
+checks and formatting pass. The only subsequent Rust change fixes a private
+UI replay assertion: the third Move clock names each live full owner, while
+the first two keep the pre-Split owner. `preview.rs` gates that file behind
+`ui-harness`, absent from the broad archive; exact one-file attribution is in
+scratch. `strict-final` passes after that correction. `final-ui` is building.
+Native performance replay and debug/release actual-media checks remain owed;
+the fresh scratch scripts are `qualify_candidate.py` and
+`qualify_native_media.py`. All production code is still uncommitted.
+
+Earlier checkpoint: `integrated-eleventh` passes all twelve focused
 audio checks. Valid-control label/trim failures (7,581/7,570 changed channel
 samples) become exact equality after removing live event values from the
 certified family identity. Recipe replacement still retires authority. Audio
