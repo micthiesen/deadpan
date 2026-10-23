@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-23T00:55:32Z",
-  "estimate_note": "Engineering estimate of implemented and verified spec coverage, about \u00b15 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Candidate aligned sound grouping passes structural checks, but copying a newly created group loses one retained terminal input sample and changes 1,899 PCM channel samples. Fixing group-birth processing history; production guards remain. Coverage stays at 89%, with 8/24 requirement sections complete.",
+  "updated_at": "2026-10-23T01:06:07Z",
+  "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
+  "focus": "Aligned sound grouping: the group-birth fix preserves the retained terminal input and all 30,430 stereo output samples; five focused audio checks pass. Testing late birth and Split before committing the feature. Coverage stays at 89%, with 8/24 requirement sections complete.",
   "features": [
     {
       "id": "editing",
@@ -476,7 +476,7 @@
       "complete_sections": 8,
       "revision": "2ff2273374bfc13c0401c5aa22b6bd7c66aa0622",
       "retrospective": false,
-      "summary": "Prepared upcoming accepted Generated Holds on one cancellable background job. Four real-media tests, 44 worker tests, 60 media unit tests and strict Clippy pass. Small-fixture prepared entry takes 0.17\u20130.22 ms; full-resolution device qualification remains open."
+      "summary": "Prepared upcoming accepted Generated Holds on one cancellable background job. Four real-media tests, 44 worker tests, 60 media unit tests and strict Clippy pass. Small-fixture prepared entry takes 0.17–0.22 ms; full-resolution device qualification remains open."
     },
     {
       "date": "2026-10-11",

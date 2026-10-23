@@ -12,6 +12,11 @@ findings, but the new-group copy audio test finds a real processing-history gap:
 one retained input sample is lost and 1,899 canonical PCM channel samples differ
 from the delivered-at-group-birth oracle. All witness controls pass. The fix and
 optimized integrated suite remain in progress; these are not release results.
+The first processing-birth fix now passes all five focused audio checks: the
+terminal raw sample and suppression state match, and all 30,430 stereo output
+samples match the explicit EQ oracle. Eight private route tests pass, including
+retention of pre-birth losses. Late-birth, authority and Split qualification are
+still owed before the feature can be committed.
 No coverage percentage, requirement completion or gate changes.
 
 [Research qualification](qualification/sound-scope-research-2026-10-23.md)

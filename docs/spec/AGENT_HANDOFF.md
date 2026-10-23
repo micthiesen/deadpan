@@ -19,6 +19,18 @@ masks and expand only the genuinely post-birth processing history; changing
 `all(expands_history)` to `any` is insufficient. The optimized archive build is
 still pending. Candidate core 56/store 85 are not yet committed or qualified.
 
+The first fix is now exercised: `integrated-second` preserves the terminal
+input/suppression and every one of 30,430 stereo output samples, with all active
+EQ/event/source controls and cold/partitioned reads. Five focused audio tests
+and eight route geometry tests pass. The executed audio SHA-256 is
+`ef8187441c03960f759dca56a3825c6d41dd11c5b1ec0538321ef27ac2ef896a`;
+the complete 2,033-file Rust source set and six inputs match their frozen hashes
+before and after the archived run. The corrected partial-copy fixture requires
+entering the group before slicing, then filters the exterior group relation.
+Before committing, finish independent late-birth and Split witnesses plus the
+complete ordered-journal authority negatives, broad/strict checks and vertical
+qualification. Root owns builds; the audio test worker is writing child tests.
+
 Ordinary `GroupSelection` endpoint Splits now use existing sound transport with
 one shared complete pre-edit audio layout. Aligned grouping keeps tables and
 recipes unchanged. The group parent must stay outside every retained processing
