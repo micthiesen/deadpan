@@ -6,12 +6,12 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 Compact timing checkpoint, 2026-10-23: Core 57 / SQLite 86 remains an
 uncommitted candidate. All 1,503 Core, 3,499 broader selected and 1,292 UI tests
-pass, plus strict ordinary/UI and formatting. Debug media passes all15 pictures
-and24,024 samples at zero offset with full canonical PCM/history controls.
+pass, plus strict ordinary/UI and formatting. Debug media passes all 15 pictures
+and 24,024 samples at zero offset with full canonical PCM/history controls.
 Four fixture assumptions were corrected without production edits. Source-verified
-baseline witness has2 expected omission failures and4 passing controls.
-See ../qualification/compact-frozen-edges-2026-10-23.md and its203-file checkpoint.
-Serialized driver PID10303 (started22:41:19 local) is live in root scratch;
+baseline witness has 2 expected omission failures and 4 passing controls.
+See ../qualification/compact-frozen-edges-2026-10-23.md and its 203-file checkpoint.
+Serialized driver PID 10303 (started 22:41:19 local) is live in root scratch;
 final-driver.stdout/stderr and final-qualification-receipt.json are authoritative.
 Its stdout is redirected, so an expired harness handle is not termination.
 Release media/native are running. prepare_performance.py then validates portable

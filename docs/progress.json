@@ -2,7 +2,7 @@
   "schema_version": 1,
   "updated_at": "2026-10-23T06:04:52Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Compact timing candidate passes 1,503 Core, 3,499 broader selected and 1,292 UI-feature tests, strict ordinary/UI checks and formatting. Debug media verifies all 15 pictures and 24,024 samples at zero offset, with complete PCM/limiter bits and history controls. Four obsolete fixture assumptions were corrected without production changes; all failures remain retained. Release/native, portable validation, strengthened historical/asymmetric codec tests and current-format timing are still underway. The prior prototype median111.362 ms is not current-format qualification or a target PASS. Coverage stays89%,8/24 sections complete; no gate closes.",
+  "focus": "Compact timing candidate passes 1,503 Core, 3,499 broader selected and 1,292 UI-feature tests, strict ordinary/UI checks and formatting. Debug media verifies all 15 pictures and 24,024 samples at zero offset, with complete PCM/limiter bits and history controls. Four obsolete fixture assumptions were corrected without production changes; all failures remain retained. Release/native, portable validation, strengthened historical/asymmetric codec tests and current-format timing are still underway. The prior prototype median 111.362 ms is not current-format qualification or a target PASS. Coverage stays 89%, 8/24 sections complete; no gate closes.",
   "features": [
     {
       "id": "editing",
@@ -102,7 +102,7 @@
         "DP-18",
         "DP-24"
       ],
-      "note": "The Core57/SQLite86 compact timing candidate passes 1,503 Core,3,499 broader and1,292 UI tests, strict checks and debug encoded-media/history verification. Release/native, portable and current-format timing remain owed. The prior disposable prototype improved first-pause median127.513 to111.362 ms, still above100 ms. Remaining latency, worker memory and sleep policies stay open."
+      "note": "The Core 57 / SQLite 86 compact timing candidate passes 1,503 Core, 3,499 broader and 1,292 UI tests, strict checks and debug encoded-media/history verification. Release/native, portable and current-format timing remain owed. The prior disposable prototype improved first-pause median 127.513 to 111.362 ms, still above 100 ms. Remaining latency, worker memory and sleep policies stay open."
     },
     {
       "id": "models",
@@ -964,7 +964,7 @@
       "complete_sections": 8,
       "revision": "1e1f7e0d72bf75c0578b33f6c4b6484cf152e1f7",
       "retrospective": false,
-      "summary": "Compact timing candidate passes all1,503 Core,3,499 selected broader and1,292 UI-feature tests, strict ordinary/UI checks and formatting. Debug semantic media verifies all15 pictures and24,024 samples at zero offset; complete authored/limited/gain bits and Undo/Redo/reopen controls agree. Four old fixture assumptions were corrected without production changes; the intermediate work-budget refusal, interrupted driver120 and failed runs remain retained. The source-verified previous-code witness has2 expected omission failures and4 passing controls. Historical Automatic/asymmetric context bytes were generated with immutable a18 code for stronger pending tests. Release/native, portable and current-format timing are still owed. Checkpoint evidence verifies203 payloadfiles/7,415,361bytes. No requirement or gate newly complete."
+      "summary": "Compact timing candidate passes all 1,503 Core, 3,499 selected broader and 1,292 UI-feature tests, strict ordinary/UI checks and formatting. Debug semantic media verifies all 15 pictures and 24,024 samples at zero offset; complete authored/limited/gain bits and Undo/Redo/reopen controls agree. Four old fixture assumptions were corrected without production changes; the intermediate work-budget refusal, interrupted driver 120 and failed runs remain retained. The source-verified previous-code witness has 2 expected omission failures and 4 passing controls. Historical Automatic/asymmetric context bytes were generated with immutable a18 code for stronger pending tests. Release/native, portable and current-format timing are still owed. Checkpoint evidence verifies 203 payload files / 7,415,361 bytes. No requirement or gate newly complete."
     }
   ]
 }
