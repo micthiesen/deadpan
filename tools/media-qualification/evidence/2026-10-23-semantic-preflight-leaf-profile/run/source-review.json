@@ -1,0 +1,43 @@
+{
+  "status": "no_findings",
+  "findings": [],
+  "review_kind": "independent_static_V3_microprofile_source_review",
+  "source_map_sha256": "c4e2c6a8592dd5b819f81b49ad6f196d63b27cb8c68b8c20ee61ecb64bebdae5",
+  "parent_fine_map_sha256": "e58e62f56f0859cb184e54c56ac0def09b6ec9315b72838feafe1f9ae6c76351",
+  "patch_sha256": "604b20fbfade702194798382d4c846106b4da82527062581694e11305387d750",
+  "reviewed_paths": {
+    "crates/deadpan-app/src/project/service.rs": "3f290296af812245290ae9a39bbda1cfdb58a82e86ebba6f963bdb5e0c59a420",
+    "crates/deadpan-core/src/command.rs": "ef40053c894ebed6af299f3a28e7acce0c4fc22115ef1bc3d710c24e44c7d5da",
+    "crates/deadpan-core/src/insert_time.rs": "400f02917aa920c457138c27af1983e6b20ed27d24cbe4a68189da9756d8882f",
+    "crates/deadpan-core/src/pause_route_profile.rs": "b4a435b76db6749c0a87383b5ccabb0690544bbd5832d0e79f6fe4934e579f2a",
+    "crates/deadpan-core/src/semantic/planner.rs": "74427a6fa8c6deb009cd68984e566ad3e7dc56912340084e8c44f70c776b202f",
+    "crates/deadpan-core/src/semantic/planner/pause.rs": "8137e6231c1cec8b9a1bf11db91c9c850eef208f716cd75453a70db903ff21e0",
+    "crates/deadpan-core/src/semantic/planner/selection.rs": "01f1833486770980345fef38950e014bad7f3f762a705ed004405806c943464c"
+  },
+  "scope": {
+    "rust_files": 2054,
+    "owned_changed": 7,
+    "nonowned_unchanged": 2047,
+    "unchanged_inputs": 6,
+    "phases": 35,
+    "helper_tests": 8
+  },
+  "verified": [
+    "Full2054Rust inventory equals frozen map; relative fine parent has identical path set, exactly seven assigned changes and2047unchanged files. All six inputs and all seven before/after retained snapshots hash correctly.",
+    "App gate/native selection/error/success/publication lifecycle is unchanged. Emitter only appends fixed names and V3prefix. Helper state/access/drop/cancel mechanisms remain unchanged except35phases/counts and updated tests.",
+    "Head validation remains after program.validate and before original revision check. Context timer brackets only existing validate_context, before unchanged Original context admission. Planner setup starts after initial wire span and preserves original initializer expression/ownership/order until execute.",
+    "Pause target timer wraps original if/expression before within_scope. Provider wraps exactly provider(self), retaining target-before-provider-before-charge/allocation/refusal ordering. Whole refresh_children method is timed, retaining original exact-borrow proved-durations path and fallback queries.",
+    "LeafInsertKnown starts after original scoped/saved-allowance locals and retains one guard around existing scoped apply_known, projection guard, unchanged fallback and KnownValidation update. LeafInputDurations wraps only original document.durations call after existing early admissions; fallback second actual call increments2 and invalidates expected1 diagnostic rather than hiding/reaveraging work.",
+    "LeafNetConstruction brackets the original final net_transaction_known call site in apply_with_durations_captured, preserving description/previous/known argument evaluation, result identity check and original author-value drops. Generic net_transaction/replay aggregate is unchanged. A successful outer leaf necessarily hits this site once, so any extra nested invocation makes its expected count fail; it cannot silently merge into an accepted count-one block.",
+    "No extra queries/serialization/validation/retiming or authored-state authority work is introduced. Original expressions/args/results/errors and scopes remain. Numeric TLS access ends before measured calls/callbacks; Core gains no environment/file/Store/output I/O.",
+    "All prior26names/counts remain, including4/4/3/0. Nine appended counts are1. SemanticPlan, SemanticLeafApply and LeafInsertKnown are exclusive residuals while children run, not inclusive parents. Current target leaf stack reaches4frames, existing Store visitor maximum6, below fixed8.",
+    "Emitter/helper/parser/schema agree on35ordered phases and37lines. Independently recomputed conservative3699byte bound and628duration-digit/tight3647byte bound, including a feasible exactu64MAX duration assignment. Existing4096buffer suffices; no output/format allocation added.",
+    "Eight helper test names retained. Updated deterministic/live graphs exercise nine children, exact child/residual durations, counts and conservation; wrong-count cases cover new rows and old cancellation/reentrancy/borrow/overflow/stack/zero-duration/inactive cases remain."
+  ],
+  "limitations": [
+    "Static review only; no Cargo/rustc/test/formatter/native runtime/Git/Main/source writes.",
+    "Worker HANDOFF describes pre-Root format state; final review pins Root frozen map/patch/snapshots rather than that earlier source hash.",
+    "Actual V3counts and mask behavior, standalone helper execution, strict/release integration and all timing/state parity remain Root-owned pending execution.",
+    "No subphase cost, overhead, optimization or target claim established."
+  ]
+}

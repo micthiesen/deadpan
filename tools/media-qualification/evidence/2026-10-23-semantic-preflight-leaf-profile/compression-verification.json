@@ -1,0 +1,158 @@
+{
+  "verified_gzip_payloads": [
+    {
+      "decoded_bytes": 253615,
+      "decoded_sha256": "e58e62f56f0859cb184e54c56ac0def09b6ec9315b72838feafe1f9ae6c76351",
+      "source": "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/fine-frozen-sources.json",
+      "stored": "run/fine-frozen-sources.json.gz",
+      "stored_sha256": "d24a4a7fc07243849164e3951b39d618f919ee4d9b70eb97081e21fbc305f07d"
+    },
+    {
+      "decoded_bytes": 253495,
+      "decoded_sha256": "0b61b120b75aa6bbcf350f7642a5fb731c711b8e6985c8fa61709229ed12696f",
+      "source": "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/qualified-source-identities.json",
+      "stored": "run/qualified-source-identities.json.gz",
+      "stored_sha256": "183ca1c3e3777775c09d768753a90085e5ca9bb1129aa031bed0e500ec22a2e2"
+    },
+    {
+      "decoded_bytes": 253615,
+      "decoded_sha256": "c4e2c6a8592dd5b819f81b49ad6f196d63b27cb8c68b8c20ee61ecb64bebdae5",
+      "source": "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/frozen-sources.json",
+      "stored": "run/frozen-sources.json.gz",
+      "stored_sha256": "857eac15918c6b16e8a67411f7b01413258c380bc3c41a1ce23a66cc542c3c5f"
+    },
+    {
+      "decoded_bytes": 100010,
+      "decoded_sha256": "f6fab297af3f35e813369730c783d0f8ab857e23f65d442b2c7e8f3a45ad0d58",
+      "source": "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/store-preparation.stdout",
+      "stored": "run/store-preparation.stdout.gz",
+      "stored_sha256": "57592892f7f54a0b207ef55195ae10a6fa92a74c157ce1e4d89f0f539c781483"
+    },
+    {
+      "decoded_bytes": 102379,
+      "decoded_sha256": "73616d17199c35b9a373b6ab411a6541b79052dcd6592f2f1569607855dd6290",
+      "source": "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/source-retention/before/crates/deadpan-app/src/project/service.rs.txt",
+      "stored": "source-retention/before/crates/deadpan-app/src/project/service.rs.txt.gz",
+      "stored_sha256": "32354ee988d8535eff6c727e4e582bf0a88095468c6ab71934e695dd1549d956"
+    },
+    {
+      "decoded_bytes": 154563,
+      "decoded_sha256": "37e364c3e02ab670d372a7bdc37f7d53b9979347b5821303047a4fef61b563b5",
+      "source": "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/source-retention/before/crates/deadpan-core/src/command.rs.txt",
+      "stored": "source-retention/before/crates/deadpan-core/src/command.rs.txt.gz",
+      "stored_sha256": "be8d78667518c94085d6db5cdd39907032a894050645f5a91c3bc64fc911d615"
+    },
+    {
+      "decoded_bytes": 102684,
+      "decoded_sha256": "3f290296af812245290ae9a39bbda1cfdb58a82e86ebba6f963bdb5e0c59a420",
+      "source": "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/source-retention/after/crates/deadpan-app/src/project/service.rs.txt",
+      "stored": "source-retention/after/crates/deadpan-app/src/project/service.rs.txt.gz",
+      "stored_sha256": "422ec66a728eccf606b3eb3b212981f30bd9620dcbe183df0c916415f46ab43b"
+    },
+    {
+      "decoded_bytes": 154853,
+      "decoded_sha256": "ef40053c894ebed6af299f3a28e7acce0c4fc22115ef1bc3d710c24e44c7d5da",
+      "source": "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/source-retention/after/crates/deadpan-core/src/command.rs.txt",
+      "stored": "source-retention/after/crates/deadpan-core/src/command.rs.txt.gz",
+      "stored_sha256": "f6dd658e5a4ab89ae228a53d0c6fd33127598a37d7fb8b554fb3f138994c5dc9"
+    },
+    {
+      "decoded_bytes": 102684,
+      "decoded_sha256": "3f290296af812245290ae9a39bbda1cfdb58a82e86ebba6f963bdb5e0c59a420",
+      "source": "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/implementer-notes/after/crates/deadpan-app/src/project/service.rs.txt",
+      "stored": "implementer-notes/after/crates/deadpan-app/src/project/service.rs.txt.gz",
+      "stored_sha256": "422ec66a728eccf606b3eb3b212981f30bd9620dcbe183df0c916415f46ab43b"
+    },
+    {
+      "decoded_bytes": 154814,
+      "decoded_sha256": "9320de37c497fdc66caa5b826b97f4197c74ebca28ccea87a9d2bda75dcb1f2a",
+      "source": "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/implementer-notes/after/crates/deadpan-core/src/command.rs.txt",
+      "stored": "implementer-notes/after/crates/deadpan-core/src/command.rs.txt.gz",
+      "stored_sha256": "a6ea365223c22c496aeb100a83d16d0737d854fd664c577d29c4c0e74bcb8b36"
+    },
+    {
+      "decoded_bytes": 102379,
+      "decoded_sha256": "73616d17199c35b9a373b6ab411a6541b79052dcd6592f2f1569607855dd6290",
+      "source": "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/implementer-notes/before/crates/deadpan-app/src/project/service.rs.txt",
+      "stored": "implementer-notes/before/crates/deadpan-app/src/project/service.rs.txt.gz",
+      "stored_sha256": "32354ee988d8535eff6c727e4e582bf0a88095468c6ab71934e695dd1549d956"
+    },
+    {
+      "decoded_bytes": 154563,
+      "decoded_sha256": "37e364c3e02ab670d372a7bdc37f7d53b9979347b5821303047a4fef61b563b5",
+      "source": "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/implementer-notes/before/crates/deadpan-core/src/command.rs.txt",
+      "stored": "implementer-notes/before/crates/deadpan-core/src/command.rs.txt.gz",
+      "stored_sha256": "be8d78667518c94085d6db5cdd39907032a894050645f5a91c3bc64fc911d615"
+    },
+    {
+      "decoded_bytes": 253615,
+      "decoded_sha256": "023ca4ab119f8e5acd059a6594f12b5631af9e4243081e6162b92b2a261648b1",
+      "source": "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/implementer-notes/proposed-source-map.json",
+      "stored": "implementer-notes/proposed-source-map.json.gz",
+      "stored_sha256": "2f70260605f1f29a9dbf5b70dd4ba3b0bc8a0ce3d48967e45f1d66b4a4bdf415"
+    },
+    {
+      "decoded_bytes": 1690874,
+      "decoded_sha256": "094b98d3735d6c909847b3069e87016301cc12a15c264ea2822889f67369d478",
+      "source": "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/rotation-1-control-report/report.json",
+      "stored": "trials/rotation-1-control-report/report.json.gz",
+      "stored_sha256": "ded7345212ef56a1907d6a6b16233a5aac58e82953bfe3d8cb0a9fb0bf88b360"
+    },
+    {
+      "decoded_bytes": 1710522,
+      "decoded_sha256": "4f150f0c56710577b7c74b1317c4e8a0401c9a7a543a3e3a48c23dc7659f22f2",
+      "source": "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/rotation-1-off-report/report.json",
+      "stored": "trials/rotation-1-off-report/report.json.gz",
+      "stored_sha256": "8b91027740a0bd5a95998f8ad40ea2c1a78a956b504969488c7256d77c86ad43"
+    },
+    {
+      "decoded_bytes": 1692249,
+      "decoded_sha256": "17662e996bcfc2de15cb0b7e8d74f8f2c4bac77ea351253a3b67cdbc2d55e7ed",
+      "source": "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/rotation-1-on-report/report.json",
+      "stored": "trials/rotation-1-on-report/report.json.gz",
+      "stored_sha256": "972137b2fde8085ad65866ed8fc7b8849cb9fa6ffbc07f9fe0d7192097a671cd"
+    },
+    {
+      "decoded_bytes": 1700783,
+      "decoded_sha256": "b305c4d10b529d9f107e0b2055d4c633a33a292bf8b496c422a77da80b98b493",
+      "source": "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/rotation-2-off-report/report.json",
+      "stored": "trials/rotation-2-off-report/report.json.gz",
+      "stored_sha256": "ba609cf0454720bf561b92382c465ea915657b8df1280560c20e35a44dd06ed9"
+    },
+    {
+      "decoded_bytes": 1681782,
+      "decoded_sha256": "24f28eb4849d46708c88bc387f28f1035c1300b0a71a03619f84013525c1a981",
+      "source": "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/rotation-2-on-report/report.json",
+      "stored": "trials/rotation-2-on-report/report.json.gz",
+      "stored_sha256": "606e6f129ec74a6614bf3bf417f47b03461dd52e478edc97eddd61eed8b2f66b"
+    },
+    {
+      "decoded_bytes": 1668474,
+      "decoded_sha256": "6a78f8e4be7879f54715cbb57ce59ae8b99472cebcf64277d7fdae7578b5cf3a",
+      "source": "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/rotation-2-control-report/report.json",
+      "stored": "trials/rotation-2-control-report/report.json.gz",
+      "stored_sha256": "3265106cec7fdba7fa934ad5e69dbe86237c2128b415f35264461b9f2d133801"
+    },
+    {
+      "decoded_bytes": 1696889,
+      "decoded_sha256": "1d7f00702b05aa1c8bfc548c9595a76104196dff61f3bef285eeb87aa7c3d4e5",
+      "source": "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/rotation-3-on-report/report.json",
+      "stored": "trials/rotation-3-on-report/report.json.gz",
+      "stored_sha256": "c56393f0a2f6dad30cb9ebbaa61491d43816911d49c4771fb07d2e05fdd64526"
+    },
+    {
+      "decoded_bytes": 1681900,
+      "decoded_sha256": "45956cd8f38d48bf4cbae3ae4092586c2695727dee81dce518b646c6bed54a02",
+      "source": "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/rotation-3-control-report/report.json",
+      "stored": "trials/rotation-3-control-report/report.json.gz",
+      "stored_sha256": "fa695dd3d107149e3d7ea118613874964e286414708aac37dd89e6a8c1b56d95"
+    },
+    {
+      "decoded_bytes": 1681839,
+      "decoded_sha256": "2e4f785bc5c24a26798cf64f61ff01693e1288fdfc0a18fa8076b735db789261",
+      "source": "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/rotation-3-off-report/report.json",
+      "stored": "trials/rotation-3-off-report/report.json.gz",
+      "stored_sha256": "c239667e0af2876dc7e894dc65ab8b6341e6672d8005cd43630abf5add292925"
+    }
+  ]
+}

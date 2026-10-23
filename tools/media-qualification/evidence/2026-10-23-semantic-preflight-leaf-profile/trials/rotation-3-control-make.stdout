@@ -1,0 +1,7 @@
+{
+  "beats": 10000,
+  "creation_ms": 165.831,
+  "package": "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/rotation-3-control.deadpan",
+  "stage": "make-large",
+  "stage_wall_ms": 175.120208
+}

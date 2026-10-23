@@ -1,0 +1,26 @@
+test_accepts_complete_block_and_preserves_all_phase_order (test_profile_parser.ProfileParserTests.test_accepts_complete_block_and_preserves_all_phase_order) ... ok
+test_accepts_multiple_blocks_and_selects_first_in_stream_order (test_profile_parser.ProfileParserTests.test_accepts_multiple_blocks_and_selects_first_in_stream_order) ... ok
+test_accepts_unrelated_stderr_between_trace_rows (test_profile_parser.ProfileParserTests.test_accepts_unrelated_stderr_between_trace_rows) ... ok
+test_accepts_zero_durations_and_decimal_leading_zeroes (test_profile_parser.ProfileParserTests.test_accepts_zero_durations_and_decimal_leading_zeroes) ... ok
+test_rejects_conservation_mismatch (test_profile_parser.ProfileParserTests.test_rejects_conservation_mismatch) ... ok
+test_rejects_detail_aggregate_count_mismatch (test_profile_parser.ProfileParserTests.test_rejects_detail_aggregate_count_mismatch) ... ok
+test_rejects_duplicate_or_extra_phase (test_profile_parser.ProfileParserTests.test_rejects_duplicate_or_extra_phase) ... ok
+test_rejects_extra_nonprefixed_event_line (test_profile_parser.ProfileParserTests.test_rejects_extra_nonprefixed_event_line) ... ok
+test_rejects_malformed_begin_or_end (test_profile_parser.ProfileParserTests.test_rejects_malformed_begin_or_end) ... ok
+test_rejects_missing_or_reordered_new_semantic_rows (test_profile_parser.ProfileParserTests.test_rejects_missing_or_reordered_new_semantic_rows) ... ok
+test_rejects_missing_or_truncated_phase (test_profile_parser.ProfileParserTests.test_rejects_missing_or_truncated_phase) ... ok
+test_rejects_nested_or_duplicate_begin (test_profile_parser.ProfileParserTests.test_rejects_nested_or_duplicate_begin) ... ok
+test_rejects_no_block (test_profile_parser.ProfileParserTests.test_rejects_no_block) ... ok
+test_rejects_nondecimal_or_malformed_phase_fields (test_profile_parser.ProfileParserTests.test_rejects_nondecimal_or_malformed_phase_fields) ... ok
+test_rejects_nonzero_elapsed_for_zero_count_phase (test_profile_parser.ProfileParserTests.test_rejects_nonzero_elapsed_for_zero_count_phase) ... ok
+test_rejects_out_of_order_or_unknown_phase (test_profile_parser.ProfileParserTests.test_rejects_out_of_order_or_unknown_phase) ... ok
+test_rejects_phase_sum_overflow (test_profile_parser.ProfileParserTests.test_rejects_phase_sum_overflow) ... ok
+test_rejects_u64_overflow_in_phase_and_end (test_profile_parser.ProfileParserTests.test_rejects_u64_overflow_in_phase_and_end) ... ok
+test_rejects_unmatched_end_and_extra_trace_line (test_profile_parser.ProfileParserTests.test_rejects_unmatched_end_and_extra_trace_line) ... ok
+test_rejects_wrong_or_malformed_prefix (test_profile_parser.ProfileParserTests.test_rejects_wrong_or_malformed_prefix) ... ok
+test_rejects_wrong_phase_count (test_profile_parser.ProfileParserTests.test_rejects_wrong_phase_count) ... ok
+
+----------------------------------------------------------------------
+Ran 21 tests in 0.001s
+
+OK

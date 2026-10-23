@@ -1,0 +1,281 @@
+[
+  {
+    "name": "rotation-1-control-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/rotation-1-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.19999666698276997,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-1-control",
+    "command": [
+      "/tmp/deadpan-one-leaf-replay-production-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/rotation-1-control.deadpan",
+      "--output",
+      "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/rotation-1-control-report"
+    ],
+    "exit": 0,
+    "seconds": 13.735402500256896,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-1-off-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/rotation-1-off.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.20368529204279184,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-1-off",
+    "command": [
+      "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/rotation-1-off.deadpan",
+      "--output",
+      "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/rotation-1-off-report"
+    ],
+    "exit": 0,
+    "seconds": 14.131462708115578,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-1-on-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/rotation-1-on.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.19054966699332,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-1-on",
+    "command": [
+      "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/rotation-1-on.deadpan",
+      "--output",
+      "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/rotation-1-on-report"
+    ],
+    "exit": 0,
+    "seconds": 13.823970584198833,
+    "profile_gate": "1"
+  },
+  {
+    "name": "rotation-2-off-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/rotation-2-off.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.19219870772212744,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-2-off",
+    "command": [
+      "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/rotation-2-off.deadpan",
+      "--output",
+      "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/rotation-2-off-report"
+    ],
+    "exit": 0,
+    "seconds": 13.77257450018078,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-2-on-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/rotation-2-on.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.18869524914771318,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-2-on",
+    "command": [
+      "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/rotation-2-on.deadpan",
+      "--output",
+      "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/rotation-2-on-report"
+    ],
+    "exit": 0,
+    "seconds": 14.095283333212137,
+    "profile_gate": "1"
+  },
+  {
+    "name": "rotation-2-control-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/rotation-2-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.18941558245569468,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-2-control",
+    "command": [
+      "/tmp/deadpan-one-leaf-replay-production-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/rotation-2-control.deadpan",
+      "--output",
+      "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/rotation-2-control-report"
+    ],
+    "exit": 0,
+    "seconds": 13.758289999328554,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-3-on-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/rotation-3-on.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.18963366746902466,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-3-on",
+    "command": [
+      "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/rotation-3-on.deadpan",
+      "--output",
+      "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/rotation-3-on-report"
+    ],
+    "exit": 0,
+    "seconds": 14.124817874282598,
+    "profile_gate": "1"
+  },
+  {
+    "name": "rotation-3-control-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/rotation-3-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.18613674957305193,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-3-control",
+    "command": [
+      "/tmp/deadpan-one-leaf-replay-production-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/rotation-3-control.deadpan",
+      "--output",
+      "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/rotation-3-control-report"
+    ],
+    "exit": 0,
+    "seconds": 13.639076875522733,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-3-off-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/rotation-3-off.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.18863233271986246,
+    "profile_gate": null
+  },
+  {
+    "name": "rotation-3-off",
+    "command": [
+      "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/rotation-3-off.deadpan",
+      "--output",
+      "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/rotation-3-off-report"
+    ],
+    "exit": 0,
+    "seconds": 13.834763165563345,
+    "profile_gate": null
+  }
+]

@@ -1,0 +1,20 @@
+{
+  "authorized": true,
+  "packager_sha256": "9cc04e54128d451bc45815df534d9ce422fdc253eb37aa6540cdb89a9a2c8db5",
+  "packager_review_sha256": "71ca3fbbe9d23dee3878025d9c29f85f46591571a863ae346cc45b82683fe9bb",
+  "source_map_sha256": "c4e2c6a8592dd5b819f81b49ad6f196d63b27cb8c68b8c20ee61ecb64bebdae5",
+  "parent_fine_map_sha256": "e58e62f56f0859cb184e54c56ac0def09b6ec9315b72838feafe1f9ae6c76351",
+  "source_review_sha256": "5f01225226cd7fc2fbbd79f23c5020621433c43205fa56d20c108c225af87ac7",
+  "driver_review_sha256": "c3053b8d074d7b07a08937d0e0ad72f9329b60b1e1978658fcd70ded00a495a2",
+  "driver_pins_sha256": "6af047d1d07f9cd756e539e1e4cd4d2b51718a492a2a917ca22c6719b999e0d4",
+  "parser_review_sha256": "d065254d9af6cb44874eebee647457a78048ec25a7758e22c8877cfd64e88a29",
+  "parser_test_receipt_sha256": "8987bd30514085f4cae2c6c5bff2e897fc81ee2f2cbc2a3f1bc3587c64a2e60d",
+  "host_observations_sha256": "3922982cf0a3d93f2011c3c1ea2122e0207f6532bfea21d806020309268903e5",
+  "freeze_provenance_sha256": "0bc8abfd79f07eca978fa2680e0bacbbdd6066211b93210cb244d7c0997879e7",
+  "qualified_source_identities_sha256": "0b61b120b75aa6bbcf350f7642a5fb731c711b8e6985c8fa61709229ed12696f",
+  "qualified_reference_provenance_sha256": "440e6cb2065ae39c15fbc069ca804a14bd8717d0da6a4808e905ff7d69d6749f",
+  "build_terminal_sha256": "44d10208630f2928477767661818c9c8d48f0eac2816f1295ee68aff5420b9ad",
+  "measurement_terminal_sha256": "0275f9fe394c86390f5ea5d437d5f5ced65332e649f7d8a33e0f917c028cfea9",
+  "retain_fixture_archives": true,
+  "scope": "Completed third private timing diagnostic only; no product optimization or target claim."
+}

@@ -1,0 +1,25 @@
+{
+  "scope": "Independent byte/archive verification and same-trial disjoint grouping; separate from immutable primary inventory",
+  "files": [
+    {
+      "path": "derive_totals.py",
+      "bytes": 2973,
+      "sha256": "967c3fbc75dc79620bec5d4ef6a2ae56123c7345bf9bae84f0fbe3495c8e43cb"
+    },
+    {
+      "path": "derived-disjoint-totals.json",
+      "bytes": 3053,
+      "sha256": "6c74a049c778caa8cb46dc8f9f26c66c781d86690740542175c2722f52655f45"
+    },
+    {
+      "path": "root-package-verification.json",
+      "bytes": 590,
+      "sha256": "1a9f372132b18dab85f89a735184343fd644aad37303de3c8f0b5234b0b25d35"
+    },
+    {
+      "path": "verify_package.py",
+      "bytes": 4485,
+      "sha256": "5c6d7138eb4225fcf32cb41db7538eb1a4861e458cba81ec0f28b5f54553a07f"
+    }
+  ]
+}

@@ -1,0 +1,226 @@
+{
+  "diagnostic_only": true,
+  "n_per_kind": 3,
+  "kinds": {
+    "control": {
+      "large_first_pause_input_to_commit_ms": {
+        "min": 193.269542,
+        "median": 195.141583,
+        "max": 196.9205
+      },
+      "large_first_pause_input_to_offscreen_background_composition_ms": {
+        "min": 195.89058400000002,
+        "median": 197.625042,
+        "max": 199.41929199999998
+      }
+    },
+    "off": {
+      "large_first_pause_input_to_commit_ms": {
+        "min": 194.352708,
+        "median": 195.83345899999998,
+        "max": 199.270208
+      },
+      "large_first_pause_input_to_offscreen_background_composition_ms": {
+        "min": 196.9655,
+        "median": 198.464459,
+        "max": 201.93645800000002
+      }
+    },
+    "on": {
+      "large_first_pause_input_to_commit_ms": {
+        "min": 194.51304199999998,
+        "median": 195.879042,
+        "max": 197.017875
+      },
+      "large_first_pause_input_to_offscreen_background_composition_ms": {
+        "min": 197.054375,
+        "median": 198.506125,
+        "max": 199.659584
+      }
+    }
+  },
+  "phase_accounting": "exclusive; exact conservation; timer/helper overhead included",
+  "no_percentile_target_or_memory_claim": true,
+  "exclusive_phases": {
+    "native_admission": {
+      "min_ns": 5540209,
+      "median_ns": 5652959,
+      "max_ns": 5668458
+    },
+    "semantic_plan": {
+      "min_ns": 221374,
+      "median_ns": 223750,
+      "max_ns": 227207
+    },
+    "native_continuation": {
+      "min_ns": 7244375,
+      "median_ns": 7250209,
+      "max_ns": 7686958
+    },
+    "store_entry_misc": {
+      "min_ns": 19584,
+      "median_ns": 20542,
+      "max_ns": 23375
+    },
+    "store_prepare": {
+      "min_ns": 3223125,
+      "median_ns": 3256249,
+      "max_ns": 3342208
+    },
+    "host_runtime_bank": {
+      "min_ns": 2959,
+      "median_ns": 3375,
+      "max_ns": 5250
+    },
+    "store_write": {
+      "min_ns": 7093417,
+      "median_ns": 7152958,
+      "max_ns": 7281917
+    },
+    "sqlite_commit": {
+      "min_ns": 5316541,
+      "median_ns": 6440833,
+      "max_ns": 6745542
+    },
+    "store_cache_publication": {
+      "min_ns": 833,
+      "median_ns": 1125,
+      "max_ns": 1166
+    },
+    "native_postcommit": {
+      "min_ns": 296333,
+      "median_ns": 304709,
+      "max_ns": 314583
+    },
+    "workspace_refresh": {
+      "min_ns": 4111291,
+      "median_ns": 4124458,
+      "max_ns": 4153875
+    },
+    "native_finish": {
+      "min_ns": 960709,
+      "median_ns": 994959,
+      "max_ns": 1029333
+    },
+    "native_publication": {
+      "min_ns": 3943000,
+      "median_ns": 4027000,
+      "max_ns": 4173416
+    },
+    "semantic_document_wire": {
+      "min_ns": 13396542,
+      "median_ns": 13583042,
+      "max_ns": 13655375
+    },
+    "semantic_leaf_apply": {
+      "min_ns": 3675458,
+      "median_ns": 3678916,
+      "max_ns": 3746416
+    },
+    "capability_snapshot": {
+      "min_ns": 4666,
+      "median_ns": 4750,
+      "max_ns": 5000
+    },
+    "replay_document_wire": {
+      "min_ns": 12976583,
+      "median_ns": 13100583,
+      "max_ns": 13337791
+    },
+    "reuse_eligibility_eq": {
+      "min_ns": 176041,
+      "median_ns": 177250,
+      "max_ns": 187000
+    },
+    "reuse_clone_exit": {
+      "min_ns": 417,
+      "median_ns": 583,
+      "max_ns": 667
+    },
+    "replay_net_aggregate": {
+      "min_ns": 7727541,
+      "median_ns": 7954292,
+      "max_ns": 7982209
+    },
+    "replay_misc": {
+      "min_ns": 709293,
+      "median_ns": 723875,
+      "max_ns": 737292
+    },
+    "store_compact_size": {
+      "min_ns": 11614709,
+      "median_ns": 11621541,
+      "max_ns": 11655709
+    },
+    "store_checkpoint_wire": {
+      "min_ns": 0,
+      "median_ns": 0,
+      "max_ns": 0
+    },
+    "store_visitor_authority": {
+      "min_ns": 195666,
+      "median_ns": 205375,
+      "max_ns": 206083
+    },
+    "history_codec_readback": {
+      "min_ns": 22278750,
+      "median_ns": 22706834,
+      "max_ns": 23047083
+    },
+    "history_inverse_restore": {
+      "min_ns": 1876709,
+      "median_ns": 1891459,
+      "max_ns": 1893875
+    },
+    "semantic_head_validate": {
+      "min_ns": 1449583,
+      "median_ns": 1471250,
+      "max_ns": 1476917
+    },
+    "semantic_context_admission": {
+      "min_ns": 7430875,
+      "median_ns": 7468584,
+      "max_ns": 7533459
+    },
+    "semantic_planner_setup": {
+      "min_ns": 2212750,
+      "median_ns": 2220958,
+      "max_ns": 2249042
+    },
+    "semantic_pause_target": {
+      "min_ns": 4283583,
+      "median_ns": 4340625,
+      "max_ns": 4362792
+    },
+    "semantic_pause_provider": {
+      "min_ns": 9852334,
+      "median_ns": 9884667,
+      "max_ns": 9888167
+    },
+    "semantic_children_refresh": {
+      "min_ns": 8786541,
+      "median_ns": 8828542,
+      "max_ns": 9040208
+    },
+    "leaf_insert_known": {
+      "min_ns": 31396709,
+      "median_ns": 31453791,
+      "max_ns": 31708083
+    },
+    "leaf_input_durations": {
+      "min_ns": 1282792,
+      "median_ns": 1284166,
+      "max_ns": 1286000
+    },
+    "leaf_net_construction": {
+      "min_ns": 7377709,
+      "median_ns": 7509334,
+      "max_ns": 7531875
+    }
+  },
+  "worker_outer_ns": [
+    189389125,
+    188328916,
+    190708834
+  ]
+}

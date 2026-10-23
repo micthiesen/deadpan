@@ -1,0 +1,13 @@
+
+running 8 tests
+test tests::pause_route_profile_inactive_hooks_do_not_create_a_session ... ok
+test tests::pause_route_profile_borrow_conflict_invalidates_without_panicking ... ok
+test tests::pause_route_profile_failure_and_cancel_leave_no_finished_block ... ok
+test tests::pause_route_profile_invalid_counters_markers_clock_and_stack_are_rejected ... ok
+test tests::pause_route_profile_out_of_order_drop_and_reentrant_activation_discard ... ok
+test tests::pause_route_profile_live_success_clears_before_returning_scalars ... ok
+test tests::pause_route_profile_wrong_counts_missing_success_and_broken_conservation_discard ... ok
+test tests::pause_route_profile_nested_exclusive_durations_conserve_and_resume_without_counts ... ok
+
+test result: ok. 8 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

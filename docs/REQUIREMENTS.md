@@ -27,6 +27,19 @@ planning/application work before selecting a bounded optimization. Temporary
 hooks remain outside main; no target, memory claim, requirement or gate closes.
 Coverage stays 89%, eight Complete and sixteen Partial; the full goal is active.
 
+## Semantic preflight leaf profile, 2026-10-23
+
+The [private V3 profile](qualification/semantic-preflight-leaf-profile-2026-10-23.md)
+adds nine exclusive child phases to the prior route trace. Three rotated
+control/off/on triplets pass seven pause workflow checks and one Kestrel check
+per run, with exact 35-row trace conservation and unchanged source/input guards.
+Enabled medians are 92.230291 ms for the semantic region, 43.943916 ms for the
+pure leaf region, and 32.736583 ms for legacy insertion including input-duration
+calculation. The separately measured 1.471250 ms head-validation and 1.284166 ms
+input-duration calls do not justify bypassing validation. The overlay is private;
+no requirement or gate closes, and the 100 ms/50 ms targets remain open.
+Coverage stays 89%, eight Complete and sixteen Partial.
+
 ## Coarse first-pause route costs, 2026-10-23
 
 The [private current-route diagnostic](qualification/current-pause-route-profile-2026-10-23.md)

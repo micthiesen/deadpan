@@ -1,0 +1,156 @@
+{
+  "prefix": "DEADPAN_PAUSE_ROUTE_PROFILE_V3",
+  "rows": 35,
+  "lines": 37,
+  "begin": "DEADPAN_PAUSE_ROUTE_PROFILE_V3 BEGIN count=1",
+  "phase_template": "DEADPAN_PAUSE_ROUTE_PROFILE_V3 PHASE name=<fixed> elapsed_ns=<u64 decimal> count=<fixed>",
+  "end_template": "DEADPAN_PAUSE_ROUTE_PROFILE_V3 END count=1 elapsed_ns=<u64 decimal> committed=1 refreshed=1 published=1",
+  "phases": [
+    {
+      "name": "native_admission",
+      "count": 1
+    },
+    {
+      "name": "semantic_plan",
+      "count": 1
+    },
+    {
+      "name": "native_continuation",
+      "count": 1
+    },
+    {
+      "name": "store_entry_misc",
+      "count": 1
+    },
+    {
+      "name": "store_prepare",
+      "count": 1
+    },
+    {
+      "name": "host_runtime_bank",
+      "count": 1
+    },
+    {
+      "name": "store_write",
+      "count": 1
+    },
+    {
+      "name": "sqlite_commit",
+      "count": 1
+    },
+    {
+      "name": "store_cache_publication",
+      "count": 1
+    },
+    {
+      "name": "native_postcommit",
+      "count": 1
+    },
+    {
+      "name": "workspace_refresh",
+      "count": 1
+    },
+    {
+      "name": "native_finish",
+      "count": 1
+    },
+    {
+      "name": "native_publication",
+      "count": 1
+    },
+    {
+      "name": "semantic_document_wire",
+      "count": 4
+    },
+    {
+      "name": "semantic_leaf_apply",
+      "count": 1
+    },
+    {
+      "name": "capability_snapshot",
+      "count": 1
+    },
+    {
+      "name": "replay_document_wire",
+      "count": 4
+    },
+    {
+      "name": "reuse_eligibility_eq",
+      "count": 1
+    },
+    {
+      "name": "reuse_clone_exit",
+      "count": 1
+    },
+    {
+      "name": "replay_net_aggregate",
+      "count": 1
+    },
+    {
+      "name": "replay_misc",
+      "count": 1
+    },
+    {
+      "name": "store_compact_size",
+      "count": 3
+    },
+    {
+      "name": "store_checkpoint_wire",
+      "count": 0
+    },
+    {
+      "name": "store_visitor_authority",
+      "count": 1
+    },
+    {
+      "name": "history_codec_readback",
+      "count": 1
+    },
+    {
+      "name": "history_inverse_restore",
+      "count": 1
+    },
+    {
+      "name": "semantic_head_validate",
+      "count": 1
+    },
+    {
+      "name": "semantic_context_admission",
+      "count": 1
+    },
+    {
+      "name": "semantic_planner_setup",
+      "count": 1
+    },
+    {
+      "name": "semantic_pause_target",
+      "count": 1
+    },
+    {
+      "name": "semantic_pause_provider",
+      "count": 1
+    },
+    {
+      "name": "semantic_children_refresh",
+      "count": 1
+    },
+    {
+      "name": "leaf_insert_known",
+      "count": 1
+    },
+    {
+      "name": "leaf_input_durations",
+      "count": 1
+    },
+    {
+      "name": "leaf_net_construction",
+      "count": 1
+    }
+  ],
+  "zero_count_requires_zero_ns": true,
+  "sum_exclusive_equals_end_ns": true,
+  "buffer_bytes": 4096,
+  "conservative_per_row_u64_bound_bytes": 3699,
+  "conservation_tight_max_bytes": 3647,
+  "trace_bound_explanation": "35 rows: one count-zero row is 0ns; 34 remaining row decimal lengths maximize at 16x19 +18x18 digits under u64 total; outer total has20 digits. Newlines included."
+}

@@ -1,0 +1,37 @@
+{
+  "owned": {
+    "crates/deadpan-core/src/pause_route_profile.rs": {
+      "before": "2a1e139b641150b56cb62c801d6d2c542ba60e22ca4803d2375f704c632b286e",
+      "proposed": "a2288a287cf3205f4471830bb05c49c509c2bfbeaa6dfb8917095a798241fac2"
+    },
+    "crates/deadpan-app/src/project/service.rs": {
+      "before": "73616d17199c35b9a373b6ab411a6541b79052dcd6592f2f1569607855dd6290",
+      "proposed": "3f290296af812245290ae9a39bbda1cfdb58a82e86ebba6f963bdb5e0c59a420"
+    },
+    "crates/deadpan-core/src/semantic/planner.rs": {
+      "before": "853f0bc214ea412feea69497421ac851abb725b1483f18c336d18e1bcc4dbd7d",
+      "proposed": "ba2472e4e153cc9860ad22bfe149a8c5655cfc73f1ceccdf5e75953e57fd1724"
+    },
+    "crates/deadpan-core/src/semantic/planner/pause.rs": {
+      "before": "3e5becb488709b1e3a42b60fa9d9ff7b58edb9d128a7a20ffcee218cdb987b4a",
+      "proposed": "ba342a9353679ecb47129fd45f3f6257f7b69b7bfee12af56b342a002514a3c2"
+    },
+    "crates/deadpan-core/src/semantic/planner/selection.rs": {
+      "before": "f8e16b78ed203dade31c1ff90632371f4d8dc1798db09178b03a3799d93ca526",
+      "proposed": "f404039bb76178c50e5cb6bf3e7272fdaf03dd05f2f7a1eff6ea7a857cd4db2c"
+    },
+    "crates/deadpan-core/src/command.rs": {
+      "before": "37e364c3e02ab670d372a7bdc37f7d53b9979347b5821303047a4fef61b563b5",
+      "proposed": "9320de37c497fdc66caa5b826b97f4197c74ebca28ccea87a9d2bda75dcb1f2a"
+    },
+    "crates/deadpan-core/src/insert_time.rs": {
+      "before": "0233854e6489ba9a082b6d5baeb5d5471f2e6f92d8b00c164ca47b0a6240cc58",
+      "proposed": "2ac5e076286bb3829a12f49edafd4d4c9d8adab84289e1471fe8ee64bc4b61ee"
+    }
+  },
+  "baseline_rust_count": 2054,
+  "changed_rust_count": 7,
+  "unchanged_nonowned_rust_count": 2047,
+  "six_inputs_unchanged": true,
+  "patch_sha256": "bb752631840e0b98ad35a765b448cf685c6169e0782a94c58d2e4bfb024093ac"
+}

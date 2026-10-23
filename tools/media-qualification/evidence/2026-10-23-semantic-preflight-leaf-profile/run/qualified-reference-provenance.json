@@ -1,0 +1,12 @@
+{
+  "qualified_code_commit": "5fdae748ac2fdc67e1a11793c5ab69f6b61da833",
+  "main_documentation_commit_at_check": "cc2d57d457b007dcb35ab94c3ba5c2da3d02f512",
+  "copied_reference": "qualified-source-identities.json",
+  "copied_reference_sha256": "0b61b120b75aa6bbcf350f7642a5fb731c711b8e6985c8fa61709229ed12696f",
+  "actual_copy_origin": "/tmp/deadpan-current-pause-detail-profile-2026-10-23/coarse-baseline-sources.json",
+  "origin_sha256": "0b61b120b75aa6bbcf350f7642a5fb731c711b8e6985c8fa61709229ed12696f",
+  "rust_files": 2053,
+  "current_main_visible_rust_map_matches": true,
+  "method": "exact source bytes copied from immutable fine parent reference; parsed map equals fresh rg --files -g *.rs Main map with each file SHA256",
+  "checked_at": "2026-10-23T22:30:43.364085+00:00"
+}

@@ -1,0 +1,12 @@
+{
+  "helper-unit": {
+    "executed": "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/helper-test-bin",
+    "retained": "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/test-bin/helper-unit/helper-test-bin",
+    "sha256": "1212dbdfc0a5bf45b644b1f751ced2d124b0cdee3fefff3cd05f73bc9e87f848"
+  },
+  "store-preparation": {
+    "executed": "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/target/release/deps/compound_preparation-439f3bd294ec4be6",
+    "retained": "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/test-bin/store-preparation/compound_preparation-439f3bd294ec4be6",
+    "sha256": "5361ded0243dff5309cfad1b3dc1a9c75ff4b15cf659f8d7f88c9a0bfc6114aa"
+  }
+}

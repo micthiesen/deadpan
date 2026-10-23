@@ -19,6 +19,18 @@ targets. Inspect remaining application/planning work before choosing a bounded
 change. Temporary hooks are not production code; residuals after adding child
 categories cannot be compared directly with the earlier unpartitioned rows.
 
+The [semantic preflight leaf profile](qualification/semantic-preflight-leaf-profile-2026-10-23.md)
+adds nine exclusive child phases in a separate private overlay. Across three
+rotated control/off/on triplets, the enabled semantic region median is
+92.230291 ms; the pure leaf region is 43.943916 ms and the legacy insertion
+region, including input-duration calculation, is 32.736583 ms. Head validation
+and input-duration calculation are measured separately at 1.471250 and
+1.284166 ms; neither supports a validation bypass. The 35-row traces conserve
+exactly. Control/off/on commit medians are 195.141583 /195.833459 /195.879042 ms.
+The measurements include uncalibrated instrumentation overhead and establish no
+percentile or target pass. The next step is a private retained-entry-duration
+borrow prototype around the existing interior split call; no gain is claimed.
+
 [Specification Section 25](spec/DEADPAN_SPEC.md#25-performance-requirements-and-instrumentation)
 sets engineering targets. This page maps each target to the measurement that
 evaluates it, describes the reproducible suite, and lists the diagnostics the

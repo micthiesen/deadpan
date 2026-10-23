@@ -1,0 +1,52 @@
+{
+  "status": "findings",
+  "review_kind": "independent_static_C_packager_review",
+  "draft": {
+    "path": "packaging-draft/package.py",
+    "sha256": "785d65ab82a3d6336a4d54574453ccea74272b5c7192d8d2034d764b06b70140"
+  },
+  "reviewed_basis": {
+    "source-review.json": "5f01225226cd7fc2fbbd79f23c5020621433c43205fa56d20c108c225af87ac7",
+    "parser-review.json": "d065254d9af6cb44874eebee647457a78048ec25a7758e22c8877cfd64e88a29",
+    "driver-review.json": "c3053b8d074d7b07a08937d0e0ad72f9329b60b1e1978658fcd70ded00a495a2",
+    "driver-pins.json": "6af047d1d07f9cd756e539e1e4cd4d2b51718a492a2a917ca22c6719b999e0d4",
+    "build.py": "98dad121911579bd529de5bd2f1eaf57ef2fc249b75f408f295e9c4613a965d8",
+    "measure.py": "1f6ed7152f647f146cb8d5c9ddcb226c20c4eff99df9b83cbf31661e73494020",
+    "expected-tests.json": "a675b04be1d59013290e93152e82a247326b538919c68b82b1c4cd9e7f4c05b9",
+    "baseline.json": "360274ff50be188af69fc6a52c91a0814a1d5892eeefc66009af724936892895",
+    "fine-frozen-sources.json": "e58e62f56f0859cb184e54c56ac0def09b6ec9315b72838feafe1f9ae6c76351",
+    "fine-baseline.json": "1d368aa2557e2d32bd523eb25f0ff254dff8976648e44d11382fb523d8b64308",
+    "fine-baseline-inputs.json": "b783a007ca4b3ab356c3488372a276c0ffa7ad4f9f34b31f1b0743b121e44317",
+    "fine-summary.json": "6a34da79ae6c80ed2294a23b4da2a3a3e2c6fbc388f408cf8f06d53d4bf18b0a",
+    "fine-next-action-analysis.md": "5096f444ed844c646195a817aacb3eb4e1d9a60ae7b806b5d4fb768beeed90b6",
+    "qualified-source-identities.json": "0b61b120b75aa6bbcf350f7642a5fb731c711b8e6985c8fa61709229ed12696f",
+    "freeze-provenance.md": "0bc8abfd79f07eca978fa2680e0bacbbdd6066211b93210cb244d7c0997879e7",
+    "parser-test-receipt.json": "8987bd30514085f4cae2c6c5bff2e897fc81ee2f2cbc2a3f1bc3587c64a2e60d",
+    "host-observations.json": "3922982cf0a3d93f2011c3c1ea2122e0207f6532bfea21d806020309268903e5"
+  },
+  "findings": [
+    {
+      "id": "CPKG01",
+      "severity": "must_fix",
+      "anchor": "package.py:74-78; main GO identity guards",
+      "problem": "New qualified-source-identities.json is checked only for2053entries and copied as a qualified identity reference. It is outside the active23driverpins and not bound by GO, nor is its copy-origin/qualified Main provenance validated. The reference can change independently while existing gates still pass.",
+      "required_change": "Preserve active pins. Retain explicit qualified-reference-provenance.json describing actual copy origin/hash and Main2053verification against the cc2d57d4/qualified5fdae748 source basis. Require GO.qualified_source_identities_sha256 and GO.qualified_reference_provenance_sha256 before any dynamic parser import, validate their mutually consistent fields and retain both. Current actual map SHA0b61b120b75aa6bbcf350f7642a5fb731c711b8e6985c8fa61709229ed12696f is byte-identical to the prior known qualified2053reference; this is a binding gap, not incorrect current bytes."
+    }
+  ],
+  "non_findings": [
+    "Full changed-gate comparison against final reviewed fine8dfe2d52script found no other mismatch. Destination/stage and self-retention use actual C names; source and historical references use existing fine-* paths; all five fine reference copies match their actual parent files by reads.",
+    "Source gates match equal2054fine/C mapsets, exactsevenchangedpaths,2047nonowned files/sixinputs and seven before/after snapshots. Source/driver/parser actual schema keys and patch/map bindings match reports and23pins.",
+    "Eight build stages, exact direct stdhelper compiler/output/retained paths and emptyCargoartifact guard,8helper/12Store name+summary guards, actual strict argv and producer log/receipt paths are retained.",
+    "Parser receipt check now uses actual python3command,21tests and Rootsourcehash-bound receipt. Strict V3prefix,35names/37emitterlines, original26counts plusnineones, zeroCP and raw/saved/trial equality are correct. Summary dynamically enumerates all35rows.",
+    "Raw exacttwofinite metrics bind to trial rows; full summary recomputation uses those validated rows. Nine balanced fresh trials/eighteencommands, native checks, binary/input/fixture identities, root-WAL-empty and sidecar exclusions retain reviewed behavior.",
+    "GO binds exact script and designated final no_findings report by hash/script_sha256, source/driver/parser/publichost/freeze/terminal identities before dynamic parser import. Self-report hash dependency remains noncircular. Build/measurement pending states fail closed.",
+    "Inline freeze provenance is required and truthful. Sanitized public host matches active pin; raw-private host excluded. All actual build/measure/make/compiler/native logs, text-source/history, safe bounded verified tar/gzip and inventory behaviors remain; no invented producer alias or executable/target/source archive retention.",
+    "A/B evidence stays immutable and separate from new C destination."
+  ],
+  "limitations": [
+    "Static reads and this review-note write only. No packager/parser/driver function, build/runtime/Git/Main/source write.",
+    "Build was in release-App stage and measurement had not started; static finding is not an observed runtime packaging failure.",
+    "Initial draft report pins actual785d65\u2026 SHA, not an agent-transcribed wrong suffix.",
+    "Final amended script requires new pinned final-review report before RootGO."
+  ]
+}

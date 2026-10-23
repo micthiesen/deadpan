@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-23T22:15:31.448Z",
+  "updated_at": "2026-10-23T22:53:26.000Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Fine pause-route measurements are complete: pure leaf application 43.467459 ms, remaining semantic planning 33.948583 ms, history codec/readback 22.490084 ms, and eleven named size sites 38.098416 ms per trial. Capability snapshot construction is only 0.004750 ms. All nine trials and 26-phase accounting checks pass; hooks remain private. A bounded nine-child microprofile is next to distinguish current validation, context/provider and leaf work before another optimization. Coverage stays 89%, eight Complete/sixteen Partial; the full goal and 100 ms/50 ms targets remain open.",
+  "focus": "The private semantic preflight leaf profile is complete on qualified code 5fdae748: three rotated control/off/on triplets, exact 35-phase conservation, and 21 parser tests. Enabled medians are 92.230291 ms semantic region, 43.943916 ms pure leaf, and 32.736583 ms legacy insertion including input-duration calculation. The 31.453791 ms leaf_insert_known row excludes that input call and is not all validation. A private retained-entry-duration borrow around the existing interior split is next; no gain or target pass is claimed. Coverage stays 89%, eight Complete/sixteen Partial; the full goal and 100 ms/50 ms targets remain open.",
   "features": [
     {
       "id": "editing",
@@ -1197,6 +1197,14 @@
       "revision": "f319cfd83d772425c0bb333b4a28f04a21b2163e",
       "retrospective": false,
       "summary": "Fine private pause profiling on baseline f319cfd8 completes with eight exact std-helper tests, twelve release Store tests, twenty parser tests, release App and strict Core/Store/App all-target checks. Nine fresh rotated trials pass 63 workflow/nine Kestrel checks and retain eighteen layout warnings. All 26 exclusive rows/counts conserve; checkpoint is count/time zero. Leaf application is 43.467459 ms, semantic residual 33.948583 ms, history codec/readback 22.490084 ms; eleven named size sites total same-trial median 38.098416 ms. Snapshot construction is 0.004750 ms, ruling out that call as the bottleneck. Control/off/on commit medians 194.051000/194.373417/194.426958 ms overlap; worker median is 188.133125 ms. Independent checks verify 195 payload files/4,749,341 bytes, 25 gzip streams and nine safe authored archives. Current-code inspection recommends one bounded validation/context/provider/leaf microprofile before an API change. Hooks remain outside main; coverage89/8 and all targets/gates unchanged."
+    },
+    {
+      "date": "2026-10-23",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "5fdae748ac2fdc67e1a11793c5ab69f6b61da833",
+      "retrospective": false,
+      "summary": "A private V3 semantic preflight leaf profile on qualified code 5fdae748 adds nine exclusive child phases to the prior 26-phase trace. Eight build stages, 21 parser tests and nine rotated control/off/on trials complete; all 63 pause workflow and nine Kestrel checks pass, with exact 35-row conservation, unchanged source/input guards and empty WAL. Enabled medians are 92.230291 ms semantic region, 43.943916 ms pure leaf and 32.736583 ms legacy insertion including input-duration calculation. leaf_insert_known alone is 31.453791 ms and excludes the 1.284166 ms input-duration call; head validation is 1.471250 ms. These measurements do not justify bypassing validation. The private release App is 274e8a04; instrumentation overhead is uncalibrated and the n=3 timing is diagnostic only. Independent rereading verifies 186 payload files /4,356,015 bytes, 31 gzip streams and nine safe fixture archives. No production change, gain, percentile, memory/source/PCM/display claim, target, requirement or gate closes. A private retained-entry-duration borrow around the existing interior split call is the next experiment; the 89% /8 Complete /16 Partial status and active full goal remain unchanged."
     }
   ]
 }

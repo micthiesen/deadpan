@@ -1,0 +1,70 @@
+{
+  "status": "no_findings",
+  "findings": [],
+  "script_sha256": "9cc04e54128d451bc45815df534d9ce422fdc253eb37aa6540cdb89a9a2c8db5",
+  "review_kind": "independent_static_final_C_packager_review",
+  "script_path": "packaging-draft/package_v2.py",
+  "reviewed_files": {
+    "packaging-draft/package.py": "785d65ab82a3d6336a4d54574453ccea74272b5c7192d8d2034d764b06b70140",
+    "packager-review.json": "2d1701d6ce92ccd219fd480f06d44246bf28a7acc39a0283060a5759b556b8d5",
+    "qualified-source-identities.json": "0b61b120b75aa6bbcf350f7642a5fb731c711b8e6985c8fa61709229ed12696f",
+    "qualified-reference-provenance.json": "440e6cb2065ae39c15fbc069ca804a14bd8717d0da6a4808e905ff7d69d6749f",
+    "source-review.json": "5f01225226cd7fc2fbbd79f23c5020621433c43205fa56d20c108c225af87ac7",
+    "parser-review.json": "d065254d9af6cb44874eebee647457a78048ec25a7758e22c8877cfd64e88a29",
+    "driver-review.json": "c3053b8d074d7b07a08937d0e0ad72f9329b60b1e1978658fcd70ded00a495a2",
+    "driver-pins.json": "6af047d1d07f9cd756e539e1e4cd4d2b51718a492a2a917ca22c6719b999e0d4",
+    "build.py": "98dad121911579bd529de5bd2f1eaf57ef2fc249b75f408f295e9c4613a965d8",
+    "measure.py": "1f6ed7152f647f146cb8d5c9ddcb226c20c4eff99df9b83cbf31661e73494020",
+    "expected-tests.json": "a675b04be1d59013290e93152e82a247326b538919c68b82b1c4cd9e7f4c05b9",
+    "baseline.json": "360274ff50be188af69fc6a52c91a0814a1d5892eeefc66009af724936892895",
+    "fine-frozen-sources.json": "e58e62f56f0859cb184e54c56ac0def09b6ec9315b72838feafe1f9ae6c76351",
+    "frozen-sources.json": "c4e2c6a8592dd5b819f81b49ad6f196d63b27cb8c68b8c20ee61ecb64bebdae5",
+    "freeze-provenance.md": "0bc8abfd79f07eca978fa2680e0bacbbdd6066211b93210cb244d7c0997879e7",
+    "parser-test-receipt.json": "8987bd30514085f4cae2c6c5bff2e897fc81ee2f2cbc2a3f1bc3587c64a2e60d",
+    "host-observations.json": "3922982cf0a3d93f2011c3c1ea2122e0207f6532bfea21d806020309268903e5"
+  },
+  "resolved_findings": [
+    {
+      "id": "CPKG01",
+      "resolution": "GO now requires both qualified reference and provenance file hashes before dynamic import. verify_source binds copied/origin hashes, qualified code and Main baseline commits,2053count and positive Main-map verification. Both records are retained. Active23driverpins unchanged."
+    }
+  ],
+  "verified": [
+    "Complete diff of final v2 against initially reviewed785d65draft contains only qualified-reference provenance/GO/retention and truthful original/self script retention changes. No source, driver, parser, mask, command or runtime gate is weakened.",
+    "New provenance actual_copy_origin resolves to the actual fine/coarse-baseline-sources.json. Independently compared source bytes and hashes to copied0b61b120reference, and fresh rg-visible Main2053file set plus all file hashes match the reference. cc2Main documentation/5fdaequalified code roles match pinned baseline; no Git was invoked.",
+    "Full2054fine/C equal sets, exact7owned/2047nonowned/sixinputs/snapshots and source/driver/parser review schemas retain their bindings. Qualified reference stays an independently pinned baseline reference rather than replacing the fine-parent source authority.",
+    "Eight actual stages, exact direct helper8/Store12artifact paths, compiler flags, empty Cargo-artifact direct adapter and actual python3/21parser receipt match current producers.",
+    "V3 requires35ordered phases, original26counts4/4/3/0plus9ones, zeroCP and strict raw/saved/trial profile equality. Exact2finite raw metric values bind to trial rows; complete35row summary is recomputed. Nine rotated fresh trials/eighteencommands, authored/WAL and binary/report identity guards remain.",
+    "GO binds current self and final no_findings/script_sha256 review before parser execution with noncircular report hash. Source/parser/driver/pin/host/freeze/qualifiedref/provenance/terminal hashes and explicit fixture approval remain mandatory.",
+    "Original package.py is retained as actual785d65bytes and running v2 is retained using actual basename; no version mislabel or guessed producer alias. Inline freeze note, static corrections/history and actual required producer logs remain.",
+    "Pinned public host is sanitized; private raw host excluded. Regular-only bounded fixture archives compare to guarded maps and are safely reread, gzip decoding is compared to source, inventory payload hashes reread, and A/B evidence stays separate."
+  ],
+  "go_schema": {
+    "path": "PACKAGING-GO.json",
+    "required_fields": {
+      "authorized": true,
+      "packager_sha256": "9cc04e54128d451bc45815df534d9ce422fdc253eb37aa6540cdb89a9a2c8db5",
+      "packager_review_sha256": "<SHA256 of this final review after writing>",
+      "source_map_sha256": "c4e2c6a8592dd5b819f81b49ad6f196d63b27cb8c68b8c20ee61ecb64bebdae5",
+      "source_review_sha256": "5f01225226cd7fc2fbbd79f23c5020621433c43205fa56d20c108c225af87ac7",
+      "driver_review_sha256": "c3053b8d074d7b07a08937d0e0ad72f9329b60b1e1978658fcd70ded00a495a2",
+      "driver_pins_sha256": "6af047d1d07f9cd756e539e1e4cd4d2b51718a492a2a917ca22c6719b999e0d4",
+      "parser_review_sha256": "d065254d9af6cb44874eebee647457a78048ec25a7758e22c8877cfd64e88a29",
+      "parser_test_receipt_sha256": "8987bd30514085f4cae2c6c5bff2e897fc81ee2f2cbc2a3f1bc3587c64a2e60d",
+      "host_observations_sha256": "3922982cf0a3d93f2011c3c1ea2122e0207f6532bfea21d806020309268903e5",
+      "freeze_provenance_sha256": "0bc8abfd79f07eca978fa2680e0bacbbdd6066211b93210cb244d7c0997879e7",
+      "qualified_source_identities_sha256": "0b61b120b75aa6bbcf350f7642a5fb731c711b8e6985c8fa61709229ed12696f",
+      "qualified_reference_provenance_sha256": "440e6cb2065ae39c15fbc069ca804a14bd8717d0da6a4808e905ff7d69d6749f",
+      "build_terminal_sha256": "<actual final successful eight-stage build-terminal SHA256>",
+      "measurement_terminal_sha256": "<actual final successful nine-trial eighteen-command measurement-terminal SHA256>",
+      "retain_fixture_archives": true
+    },
+    "types": "authorized and retain_fixture_archives must be literal JSON true; SHA values lowercase64hex. Replace placeholders with actual final bytes; they are not valid receipts.",
+    "creation_gate": "Root creates only after successful terminal build8steps and measurement9trials18commands. This review creates no GO or execution authorization."
+  },
+  "limitations": [
+    "Static review and data/hash comparisons only; no packager/parser/driver function, compiler/build/runtime/Git/Main/source write.",
+    "Build/measurement completion is not established here; no fineCphase cost/overhead/optimization/target/result claim.",
+    "All previous draft and findings review history preserved. Later bound-file or script edits require updated review/identities."
+  ]
+}

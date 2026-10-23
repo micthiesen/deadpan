@@ -4,7 +4,7 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Current continuation, 2026-10-23
 
-Qualified code remains 5fdae748; current main documentation baseline is f319cfd8.
+Qualified code remains 5fdae748; this study's main documentation baseline is cc2d57d4.
 The [production replay qualification](../qualification/one-leaf-replay-reuse-2026-10-23.md)
 remains separate. Keep production App SHA-256
 0cb2931562108a68b57915c6135f448bc74293ba20623c7484053152566d31ff
@@ -48,17 +48,23 @@ is also terminal in /tmp/deadpan-current-pause-route-profile-2026-10-23:
 build 33992 /measurement 62750. Keep its separate 184-payload inventory and
 three corrected independent-verifier assumptions. Never pool batches.
 
-Next: the fine root's next-action-analysis.md maps current validation, scope
-indexes, occupied IDs, real provider plans, refresh, Split/diff/result work.
-Their subcosts are unknown and exact-address proofs do not transfer to clones.
-Root chose one nine-child microprofile in the fresh private
-/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23, copied from fine e58e62.
-Seven source paths are being instrumented; no optimization/API bypass yet.
-Root owns review, standalone helper tests, release App/strict integration and
-new rotated measurements. No guessed attribution, validation shortcut, memory
-result, source/PCM/display qualification, target, requirement or gate closes.
-The full goal remains active at estimated 89%, eight Complete/sixteen Partial.
-Do not ship temporary diagnostic hooks.
+The [semantic preflight leaf profile](../qualification/semantic-preflight-leaf-profile-2026-10-23.md)
+is complete on the qualified implementation. Its private V3 overlay adds nine
+exclusive child phases to the prior trace; three control/off/on triplets pass
+63 pause workflow checks and nine Kestrel checks. The enabled semantic-region,
+pure-leaf and legacy-insertion medians are 92.230291, 43.943916 and 32.736583
+ms. The last includes a separately measured 1.284166 ms input-duration call;
+do not call the 31.453791 ms leaf_insert_known row all validation. Exact
+35-row conservation passes, with no calibrated overhead, percentile or target
+claim. The independently verified primary package contains 186 payloads /
+4,356,015 bytes.
+
+The next bounded experiment is a private retained-entry-duration borrow only
+around the existing legacy interior split_captured call. It must preserve
+complete validation and refusal order; no gain is claimed. Keep all diagnostic
+hooks outside main. The full goal remains active at estimated 89%, eight
+Complete/sixteen Partial. The 100 ms and 50 ms targets and all product gates
+remain open.
 
 ## Earlier qualification history, 2026-10-23
 

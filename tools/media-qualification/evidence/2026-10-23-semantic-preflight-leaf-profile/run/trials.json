@@ -1,0 +1,1277 @@
+[
+  {
+    "rotation": 1,
+    "kind": "control",
+    "binary_sha256": "0cb2931562108a68b57915c6135f448bc74293ba20623c7484053152566d31ff",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 196.9205,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 199.41929199999998
+    },
+    "profile": null,
+    "checks": 7,
+    "kestrel_checks": 1,
+    "warnings": 2,
+    "authored_input_unchanged": true,
+    "wal_empty": true
+  },
+  {
+    "rotation": 1,
+    "kind": "off",
+    "binary_sha256": "274e8a04a0a41b3656886663cea46f85169fa463d8b0e2c8d57b5d8d5638302a",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 199.270208,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 201.93645800000002
+    },
+    "profile": null,
+    "checks": 7,
+    "kestrel_checks": 1,
+    "warnings": 2,
+    "authored_input_unchanged": true,
+    "wal_empty": true
+  },
+  {
+    "rotation": 1,
+    "kind": "on",
+    "binary_sha256": "274e8a04a0a41b3656886663cea46f85169fa463d8b0e2c8d57b5d8d5638302a",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 195.879042,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 198.506125
+    },
+    "profile": {
+      "schema": "DEADPAN_PAUSE_ROUTE_PROFILE_V3",
+      "block_count": 1,
+      "selected_block_index": 0,
+      "selected": {
+        "phases": [
+          {
+            "name": "native_admission",
+            "elapsed_ns": 5652959,
+            "count": 1
+          },
+          {
+            "name": "semantic_plan",
+            "elapsed_ns": 221374,
+            "count": 1
+          },
+          {
+            "name": "native_continuation",
+            "elapsed_ns": 7250209,
+            "count": 1
+          },
+          {
+            "name": "store_entry_misc",
+            "elapsed_ns": 20542,
+            "count": 1
+          },
+          {
+            "name": "store_prepare",
+            "elapsed_ns": 3223125,
+            "count": 1
+          },
+          {
+            "name": "host_runtime_bank",
+            "elapsed_ns": 5250,
+            "count": 1
+          },
+          {
+            "name": "store_write",
+            "elapsed_ns": 7152958,
+            "count": 1
+          },
+          {
+            "name": "sqlite_commit",
+            "elapsed_ns": 6745542,
+            "count": 1
+          },
+          {
+            "name": "store_cache_publication",
+            "elapsed_ns": 1166,
+            "count": 1
+          },
+          {
+            "name": "native_postcommit",
+            "elapsed_ns": 296333,
+            "count": 1
+          },
+          {
+            "name": "workspace_refresh",
+            "elapsed_ns": 4153875,
+            "count": 1
+          },
+          {
+            "name": "native_finish",
+            "elapsed_ns": 1029333,
+            "count": 1
+          },
+          {
+            "name": "native_publication",
+            "elapsed_ns": 3943000,
+            "count": 1
+          },
+          {
+            "name": "semantic_document_wire",
+            "elapsed_ns": 13655375,
+            "count": 4
+          },
+          {
+            "name": "semantic_leaf_apply",
+            "elapsed_ns": 3746416,
+            "count": 1
+          },
+          {
+            "name": "capability_snapshot",
+            "elapsed_ns": 5000,
+            "count": 1
+          },
+          {
+            "name": "replay_document_wire",
+            "elapsed_ns": 12976583,
+            "count": 4
+          },
+          {
+            "name": "reuse_eligibility_eq",
+            "elapsed_ns": 187000,
+            "count": 1
+          },
+          {
+            "name": "reuse_clone_exit",
+            "elapsed_ns": 667,
+            "count": 1
+          },
+          {
+            "name": "replay_net_aggregate",
+            "elapsed_ns": 7727541,
+            "count": 1
+          },
+          {
+            "name": "replay_misc",
+            "elapsed_ns": 709293,
+            "count": 1
+          },
+          {
+            "name": "store_compact_size",
+            "elapsed_ns": 11621541,
+            "count": 3
+          },
+          {
+            "name": "store_checkpoint_wire",
+            "elapsed_ns": 0,
+            "count": 0
+          },
+          {
+            "name": "store_visitor_authority",
+            "elapsed_ns": 206083,
+            "count": 1
+          },
+          {
+            "name": "history_codec_readback",
+            "elapsed_ns": 22278750,
+            "count": 1
+          },
+          {
+            "name": "history_inverse_restore",
+            "elapsed_ns": 1876709,
+            "count": 1
+          },
+          {
+            "name": "semantic_head_validate",
+            "elapsed_ns": 1471250,
+            "count": 1
+          },
+          {
+            "name": "semantic_context_admission",
+            "elapsed_ns": 7430875,
+            "count": 1
+          },
+          {
+            "name": "semantic_planner_setup",
+            "elapsed_ns": 2220958,
+            "count": 1
+          },
+          {
+            "name": "semantic_pause_target",
+            "elapsed_ns": 4362792,
+            "count": 1
+          },
+          {
+            "name": "semantic_pause_provider",
+            "elapsed_ns": 9884667,
+            "count": 1
+          },
+          {
+            "name": "semantic_children_refresh",
+            "elapsed_ns": 8828542,
+            "count": 1
+          },
+          {
+            "name": "leaf_insert_known",
+            "elapsed_ns": 31708083,
+            "count": 1
+          },
+          {
+            "name": "leaf_input_durations",
+            "elapsed_ns": 1286000,
+            "count": 1
+          },
+          {
+            "name": "leaf_net_construction",
+            "elapsed_ns": 7509334,
+            "count": 1
+          }
+        ],
+        "schema": "DEADPAN_PAUSE_ROUTE_PROFILE_V3",
+        "begin_count": 1,
+        "end_count": 1,
+        "elapsed_ns": 189389125,
+        "phase_sum_ns": 189389125,
+        "committed": 1,
+        "refreshed": 1,
+        "published": 1
+      },
+      "blocks": [
+        {
+          "phases": [
+            {
+              "name": "native_admission",
+              "elapsed_ns": 5652959,
+              "count": 1
+            },
+            {
+              "name": "semantic_plan",
+              "elapsed_ns": 221374,
+              "count": 1
+            },
+            {
+              "name": "native_continuation",
+              "elapsed_ns": 7250209,
+              "count": 1
+            },
+            {
+              "name": "store_entry_misc",
+              "elapsed_ns": 20542,
+              "count": 1
+            },
+            {
+              "name": "store_prepare",
+              "elapsed_ns": 3223125,
+              "count": 1
+            },
+            {
+              "name": "host_runtime_bank",
+              "elapsed_ns": 5250,
+              "count": 1
+            },
+            {
+              "name": "store_write",
+              "elapsed_ns": 7152958,
+              "count": 1
+            },
+            {
+              "name": "sqlite_commit",
+              "elapsed_ns": 6745542,
+              "count": 1
+            },
+            {
+              "name": "store_cache_publication",
+              "elapsed_ns": 1166,
+              "count": 1
+            },
+            {
+              "name": "native_postcommit",
+              "elapsed_ns": 296333,
+              "count": 1
+            },
+            {
+              "name": "workspace_refresh",
+              "elapsed_ns": 4153875,
+              "count": 1
+            },
+            {
+              "name": "native_finish",
+              "elapsed_ns": 1029333,
+              "count": 1
+            },
+            {
+              "name": "native_publication",
+              "elapsed_ns": 3943000,
+              "count": 1
+            },
+            {
+              "name": "semantic_document_wire",
+              "elapsed_ns": 13655375,
+              "count": 4
+            },
+            {
+              "name": "semantic_leaf_apply",
+              "elapsed_ns": 3746416,
+              "count": 1
+            },
+            {
+              "name": "capability_snapshot",
+              "elapsed_ns": 5000,
+              "count": 1
+            },
+            {
+              "name": "replay_document_wire",
+              "elapsed_ns": 12976583,
+              "count": 4
+            },
+            {
+              "name": "reuse_eligibility_eq",
+              "elapsed_ns": 187000,
+              "count": 1
+            },
+            {
+              "name": "reuse_clone_exit",
+              "elapsed_ns": 667,
+              "count": 1
+            },
+            {
+              "name": "replay_net_aggregate",
+              "elapsed_ns": 7727541,
+              "count": 1
+            },
+            {
+              "name": "replay_misc",
+              "elapsed_ns": 709293,
+              "count": 1
+            },
+            {
+              "name": "store_compact_size",
+              "elapsed_ns": 11621541,
+              "count": 3
+            },
+            {
+              "name": "store_checkpoint_wire",
+              "elapsed_ns": 0,
+              "count": 0
+            },
+            {
+              "name": "store_visitor_authority",
+              "elapsed_ns": 206083,
+              "count": 1
+            },
+            {
+              "name": "history_codec_readback",
+              "elapsed_ns": 22278750,
+              "count": 1
+            },
+            {
+              "name": "history_inverse_restore",
+              "elapsed_ns": 1876709,
+              "count": 1
+            },
+            {
+              "name": "semantic_head_validate",
+              "elapsed_ns": 1471250,
+              "count": 1
+            },
+            {
+              "name": "semantic_context_admission",
+              "elapsed_ns": 7430875,
+              "count": 1
+            },
+            {
+              "name": "semantic_planner_setup",
+              "elapsed_ns": 2220958,
+              "count": 1
+            },
+            {
+              "name": "semantic_pause_target",
+              "elapsed_ns": 4362792,
+              "count": 1
+            },
+            {
+              "name": "semantic_pause_provider",
+              "elapsed_ns": 9884667,
+              "count": 1
+            },
+            {
+              "name": "semantic_children_refresh",
+              "elapsed_ns": 8828542,
+              "count": 1
+            },
+            {
+              "name": "leaf_insert_known",
+              "elapsed_ns": 31708083,
+              "count": 1
+            },
+            {
+              "name": "leaf_input_durations",
+              "elapsed_ns": 1286000,
+              "count": 1
+            },
+            {
+              "name": "leaf_net_construction",
+              "elapsed_ns": 7509334,
+              "count": 1
+            }
+          ],
+          "schema": "DEADPAN_PAUSE_ROUTE_PROFILE_V3",
+          "begin_count": 1,
+          "end_count": 1,
+          "elapsed_ns": 189389125,
+          "phase_sum_ns": 189389125,
+          "committed": 1,
+          "refreshed": 1,
+          "published": 1
+        }
+      ]
+    },
+    "checks": 7,
+    "kestrel_checks": 1,
+    "warnings": 2,
+    "authored_input_unchanged": true,
+    "wal_empty": true
+  },
+  {
+    "rotation": 2,
+    "kind": "off",
+    "binary_sha256": "274e8a04a0a41b3656886663cea46f85169fa463d8b0e2c8d57b5d8d5638302a",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 195.83345899999998,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 198.464459
+    },
+    "profile": null,
+    "checks": 7,
+    "kestrel_checks": 1,
+    "warnings": 2,
+    "authored_input_unchanged": true,
+    "wal_empty": true
+  },
+  {
+    "rotation": 2,
+    "kind": "on",
+    "binary_sha256": "274e8a04a0a41b3656886663cea46f85169fa463d8b0e2c8d57b5d8d5638302a",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 194.51304199999998,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 197.054375
+    },
+    "profile": {
+      "schema": "DEADPAN_PAUSE_ROUTE_PROFILE_V3",
+      "block_count": 1,
+      "selected_block_index": 0,
+      "selected": {
+        "phases": [
+          {
+            "name": "native_admission",
+            "elapsed_ns": 5668458,
+            "count": 1
+          },
+          {
+            "name": "semantic_plan",
+            "elapsed_ns": 223750,
+            "count": 1
+          },
+          {
+            "name": "native_continuation",
+            "elapsed_ns": 7244375,
+            "count": 1
+          },
+          {
+            "name": "store_entry_misc",
+            "elapsed_ns": 23375,
+            "count": 1
+          },
+          {
+            "name": "store_prepare",
+            "elapsed_ns": 3342208,
+            "count": 1
+          },
+          {
+            "name": "host_runtime_bank",
+            "elapsed_ns": 2959,
+            "count": 1
+          },
+          {
+            "name": "store_write",
+            "elapsed_ns": 7281917,
+            "count": 1
+          },
+          {
+            "name": "sqlite_commit",
+            "elapsed_ns": 5316541,
+            "count": 1
+          },
+          {
+            "name": "store_cache_publication",
+            "elapsed_ns": 1125,
+            "count": 1
+          },
+          {
+            "name": "native_postcommit",
+            "elapsed_ns": 314583,
+            "count": 1
+          },
+          {
+            "name": "workspace_refresh",
+            "elapsed_ns": 4124458,
+            "count": 1
+          },
+          {
+            "name": "native_finish",
+            "elapsed_ns": 994959,
+            "count": 1
+          },
+          {
+            "name": "native_publication",
+            "elapsed_ns": 4173416,
+            "count": 1
+          },
+          {
+            "name": "semantic_document_wire",
+            "elapsed_ns": 13396542,
+            "count": 4
+          },
+          {
+            "name": "semantic_leaf_apply",
+            "elapsed_ns": 3678916,
+            "count": 1
+          },
+          {
+            "name": "capability_snapshot",
+            "elapsed_ns": 4666,
+            "count": 1
+          },
+          {
+            "name": "replay_document_wire",
+            "elapsed_ns": 13100583,
+            "count": 4
+          },
+          {
+            "name": "reuse_eligibility_eq",
+            "elapsed_ns": 177250,
+            "count": 1
+          },
+          {
+            "name": "reuse_clone_exit",
+            "elapsed_ns": 583,
+            "count": 1
+          },
+          {
+            "name": "replay_net_aggregate",
+            "elapsed_ns": 7954292,
+            "count": 1
+          },
+          {
+            "name": "replay_misc",
+            "elapsed_ns": 723875,
+            "count": 1
+          },
+          {
+            "name": "store_compact_size",
+            "elapsed_ns": 11614709,
+            "count": 3
+          },
+          {
+            "name": "store_checkpoint_wire",
+            "elapsed_ns": 0,
+            "count": 0
+          },
+          {
+            "name": "store_visitor_authority",
+            "elapsed_ns": 195666,
+            "count": 1
+          },
+          {
+            "name": "history_codec_readback",
+            "elapsed_ns": 22706834,
+            "count": 1
+          },
+          {
+            "name": "history_inverse_restore",
+            "elapsed_ns": 1893875,
+            "count": 1
+          },
+          {
+            "name": "semantic_head_validate",
+            "elapsed_ns": 1449583,
+            "count": 1
+          },
+          {
+            "name": "semantic_context_admission",
+            "elapsed_ns": 7468584,
+            "count": 1
+          },
+          {
+            "name": "semantic_planner_setup",
+            "elapsed_ns": 2212750,
+            "count": 1
+          },
+          {
+            "name": "semantic_pause_target",
+            "elapsed_ns": 4340625,
+            "count": 1
+          },
+          {
+            "name": "semantic_pause_provider",
+            "elapsed_ns": 9852334,
+            "count": 1
+          },
+          {
+            "name": "semantic_children_refresh",
+            "elapsed_ns": 8786541,
+            "count": 1
+          },
+          {
+            "name": "leaf_insert_known",
+            "elapsed_ns": 31396709,
+            "count": 1
+          },
+          {
+            "name": "leaf_input_durations",
+            "elapsed_ns": 1284166,
+            "count": 1
+          },
+          {
+            "name": "leaf_net_construction",
+            "elapsed_ns": 7377709,
+            "count": 1
+          }
+        ],
+        "schema": "DEADPAN_PAUSE_ROUTE_PROFILE_V3",
+        "begin_count": 1,
+        "end_count": 1,
+        "elapsed_ns": 188328916,
+        "phase_sum_ns": 188328916,
+        "committed": 1,
+        "refreshed": 1,
+        "published": 1
+      },
+      "blocks": [
+        {
+          "phases": [
+            {
+              "name": "native_admission",
+              "elapsed_ns": 5668458,
+              "count": 1
+            },
+            {
+              "name": "semantic_plan",
+              "elapsed_ns": 223750,
+              "count": 1
+            },
+            {
+              "name": "native_continuation",
+              "elapsed_ns": 7244375,
+              "count": 1
+            },
+            {
+              "name": "store_entry_misc",
+              "elapsed_ns": 23375,
+              "count": 1
+            },
+            {
+              "name": "store_prepare",
+              "elapsed_ns": 3342208,
+              "count": 1
+            },
+            {
+              "name": "host_runtime_bank",
+              "elapsed_ns": 2959,
+              "count": 1
+            },
+            {
+              "name": "store_write",
+              "elapsed_ns": 7281917,
+              "count": 1
+            },
+            {
+              "name": "sqlite_commit",
+              "elapsed_ns": 5316541,
+              "count": 1
+            },
+            {
+              "name": "store_cache_publication",
+              "elapsed_ns": 1125,
+              "count": 1
+            },
+            {
+              "name": "native_postcommit",
+              "elapsed_ns": 314583,
+              "count": 1
+            },
+            {
+              "name": "workspace_refresh",
+              "elapsed_ns": 4124458,
+              "count": 1
+            },
+            {
+              "name": "native_finish",
+              "elapsed_ns": 994959,
+              "count": 1
+            },
+            {
+              "name": "native_publication",
+              "elapsed_ns": 4173416,
+              "count": 1
+            },
+            {
+              "name": "semantic_document_wire",
+              "elapsed_ns": 13396542,
+              "count": 4
+            },
+            {
+              "name": "semantic_leaf_apply",
+              "elapsed_ns": 3678916,
+              "count": 1
+            },
+            {
+              "name": "capability_snapshot",
+              "elapsed_ns": 4666,
+              "count": 1
+            },
+            {
+              "name": "replay_document_wire",
+              "elapsed_ns": 13100583,
+              "count": 4
+            },
+            {
+              "name": "reuse_eligibility_eq",
+              "elapsed_ns": 177250,
+              "count": 1
+            },
+            {
+              "name": "reuse_clone_exit",
+              "elapsed_ns": 583,
+              "count": 1
+            },
+            {
+              "name": "replay_net_aggregate",
+              "elapsed_ns": 7954292,
+              "count": 1
+            },
+            {
+              "name": "replay_misc",
+              "elapsed_ns": 723875,
+              "count": 1
+            },
+            {
+              "name": "store_compact_size",
+              "elapsed_ns": 11614709,
+              "count": 3
+            },
+            {
+              "name": "store_checkpoint_wire",
+              "elapsed_ns": 0,
+              "count": 0
+            },
+            {
+              "name": "store_visitor_authority",
+              "elapsed_ns": 195666,
+              "count": 1
+            },
+            {
+              "name": "history_codec_readback",
+              "elapsed_ns": 22706834,
+              "count": 1
+            },
+            {
+              "name": "history_inverse_restore",
+              "elapsed_ns": 1893875,
+              "count": 1
+            },
+            {
+              "name": "semantic_head_validate",
+              "elapsed_ns": 1449583,
+              "count": 1
+            },
+            {
+              "name": "semantic_context_admission",
+              "elapsed_ns": 7468584,
+              "count": 1
+            },
+            {
+              "name": "semantic_planner_setup",
+              "elapsed_ns": 2212750,
+              "count": 1
+            },
+            {
+              "name": "semantic_pause_target",
+              "elapsed_ns": 4340625,
+              "count": 1
+            },
+            {
+              "name": "semantic_pause_provider",
+              "elapsed_ns": 9852334,
+              "count": 1
+            },
+            {
+              "name": "semantic_children_refresh",
+              "elapsed_ns": 8786541,
+              "count": 1
+            },
+            {
+              "name": "leaf_insert_known",
+              "elapsed_ns": 31396709,
+              "count": 1
+            },
+            {
+              "name": "leaf_input_durations",
+              "elapsed_ns": 1284166,
+              "count": 1
+            },
+            {
+              "name": "leaf_net_construction",
+              "elapsed_ns": 7377709,
+              "count": 1
+            }
+          ],
+          "schema": "DEADPAN_PAUSE_ROUTE_PROFILE_V3",
+          "begin_count": 1,
+          "end_count": 1,
+          "elapsed_ns": 188328916,
+          "phase_sum_ns": 188328916,
+          "committed": 1,
+          "refreshed": 1,
+          "published": 1
+        }
+      ]
+    },
+    "checks": 7,
+    "kestrel_checks": 1,
+    "warnings": 2,
+    "authored_input_unchanged": true,
+    "wal_empty": true
+  },
+  {
+    "rotation": 2,
+    "kind": "control",
+    "binary_sha256": "0cb2931562108a68b57915c6135f448bc74293ba20623c7484053152566d31ff",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 193.269542,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 195.89058400000002
+    },
+    "profile": null,
+    "checks": 7,
+    "kestrel_checks": 1,
+    "warnings": 2,
+    "authored_input_unchanged": true,
+    "wal_empty": true
+  },
+  {
+    "rotation": 3,
+    "kind": "on",
+    "binary_sha256": "274e8a04a0a41b3656886663cea46f85169fa463d8b0e2c8d57b5d8d5638302a",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 197.017875,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 199.659584
+    },
+    "profile": {
+      "schema": "DEADPAN_PAUSE_ROUTE_PROFILE_V3",
+      "block_count": 1,
+      "selected_block_index": 0,
+      "selected": {
+        "phases": [
+          {
+            "name": "native_admission",
+            "elapsed_ns": 5540209,
+            "count": 1
+          },
+          {
+            "name": "semantic_plan",
+            "elapsed_ns": 227207,
+            "count": 1
+          },
+          {
+            "name": "native_continuation",
+            "elapsed_ns": 7686958,
+            "count": 1
+          },
+          {
+            "name": "store_entry_misc",
+            "elapsed_ns": 19584,
+            "count": 1
+          },
+          {
+            "name": "store_prepare",
+            "elapsed_ns": 3256249,
+            "count": 1
+          },
+          {
+            "name": "host_runtime_bank",
+            "elapsed_ns": 3375,
+            "count": 1
+          },
+          {
+            "name": "store_write",
+            "elapsed_ns": 7093417,
+            "count": 1
+          },
+          {
+            "name": "sqlite_commit",
+            "elapsed_ns": 6440833,
+            "count": 1
+          },
+          {
+            "name": "store_cache_publication",
+            "elapsed_ns": 833,
+            "count": 1
+          },
+          {
+            "name": "native_postcommit",
+            "elapsed_ns": 304709,
+            "count": 1
+          },
+          {
+            "name": "workspace_refresh",
+            "elapsed_ns": 4111291,
+            "count": 1
+          },
+          {
+            "name": "native_finish",
+            "elapsed_ns": 960709,
+            "count": 1
+          },
+          {
+            "name": "native_publication",
+            "elapsed_ns": 4027000,
+            "count": 1
+          },
+          {
+            "name": "semantic_document_wire",
+            "elapsed_ns": 13583042,
+            "count": 4
+          },
+          {
+            "name": "semantic_leaf_apply",
+            "elapsed_ns": 3675458,
+            "count": 1
+          },
+          {
+            "name": "capability_snapshot",
+            "elapsed_ns": 4750,
+            "count": 1
+          },
+          {
+            "name": "replay_document_wire",
+            "elapsed_ns": 13337791,
+            "count": 4
+          },
+          {
+            "name": "reuse_eligibility_eq",
+            "elapsed_ns": 176041,
+            "count": 1
+          },
+          {
+            "name": "reuse_clone_exit",
+            "elapsed_ns": 417,
+            "count": 1
+          },
+          {
+            "name": "replay_net_aggregate",
+            "elapsed_ns": 7982209,
+            "count": 1
+          },
+          {
+            "name": "replay_misc",
+            "elapsed_ns": 737292,
+            "count": 1
+          },
+          {
+            "name": "store_compact_size",
+            "elapsed_ns": 11655709,
+            "count": 3
+          },
+          {
+            "name": "store_checkpoint_wire",
+            "elapsed_ns": 0,
+            "count": 0
+          },
+          {
+            "name": "store_visitor_authority",
+            "elapsed_ns": 205375,
+            "count": 1
+          },
+          {
+            "name": "history_codec_readback",
+            "elapsed_ns": 23047083,
+            "count": 1
+          },
+          {
+            "name": "history_inverse_restore",
+            "elapsed_ns": 1891459,
+            "count": 1
+          },
+          {
+            "name": "semantic_head_validate",
+            "elapsed_ns": 1476917,
+            "count": 1
+          },
+          {
+            "name": "semantic_context_admission",
+            "elapsed_ns": 7533459,
+            "count": 1
+          },
+          {
+            "name": "semantic_planner_setup",
+            "elapsed_ns": 2249042,
+            "count": 1
+          },
+          {
+            "name": "semantic_pause_target",
+            "elapsed_ns": 4283583,
+            "count": 1
+          },
+          {
+            "name": "semantic_pause_provider",
+            "elapsed_ns": 9888167,
+            "count": 1
+          },
+          {
+            "name": "semantic_children_refresh",
+            "elapsed_ns": 9040208,
+            "count": 1
+          },
+          {
+            "name": "leaf_insert_known",
+            "elapsed_ns": 31453791,
+            "count": 1
+          },
+          {
+            "name": "leaf_input_durations",
+            "elapsed_ns": 1282792,
+            "count": 1
+          },
+          {
+            "name": "leaf_net_construction",
+            "elapsed_ns": 7531875,
+            "count": 1
+          }
+        ],
+        "schema": "DEADPAN_PAUSE_ROUTE_PROFILE_V3",
+        "begin_count": 1,
+        "end_count": 1,
+        "elapsed_ns": 190708834,
+        "phase_sum_ns": 190708834,
+        "committed": 1,
+        "refreshed": 1,
+        "published": 1
+      },
+      "blocks": [
+        {
+          "phases": [
+            {
+              "name": "native_admission",
+              "elapsed_ns": 5540209,
+              "count": 1
+            },
+            {
+              "name": "semantic_plan",
+              "elapsed_ns": 227207,
+              "count": 1
+            },
+            {
+              "name": "native_continuation",
+              "elapsed_ns": 7686958,
+              "count": 1
+            },
+            {
+              "name": "store_entry_misc",
+              "elapsed_ns": 19584,
+              "count": 1
+            },
+            {
+              "name": "store_prepare",
+              "elapsed_ns": 3256249,
+              "count": 1
+            },
+            {
+              "name": "host_runtime_bank",
+              "elapsed_ns": 3375,
+              "count": 1
+            },
+            {
+              "name": "store_write",
+              "elapsed_ns": 7093417,
+              "count": 1
+            },
+            {
+              "name": "sqlite_commit",
+              "elapsed_ns": 6440833,
+              "count": 1
+            },
+            {
+              "name": "store_cache_publication",
+              "elapsed_ns": 833,
+              "count": 1
+            },
+            {
+              "name": "native_postcommit",
+              "elapsed_ns": 304709,
+              "count": 1
+            },
+            {
+              "name": "workspace_refresh",
+              "elapsed_ns": 4111291,
+              "count": 1
+            },
+            {
+              "name": "native_finish",
+              "elapsed_ns": 960709,
+              "count": 1
+            },
+            {
+              "name": "native_publication",
+              "elapsed_ns": 4027000,
+              "count": 1
+            },
+            {
+              "name": "semantic_document_wire",
+              "elapsed_ns": 13583042,
+              "count": 4
+            },
+            {
+              "name": "semantic_leaf_apply",
+              "elapsed_ns": 3675458,
+              "count": 1
+            },
+            {
+              "name": "capability_snapshot",
+              "elapsed_ns": 4750,
+              "count": 1
+            },
+            {
+              "name": "replay_document_wire",
+              "elapsed_ns": 13337791,
+              "count": 4
+            },
+            {
+              "name": "reuse_eligibility_eq",
+              "elapsed_ns": 176041,
+              "count": 1
+            },
+            {
+              "name": "reuse_clone_exit",
+              "elapsed_ns": 417,
+              "count": 1
+            },
+            {
+              "name": "replay_net_aggregate",
+              "elapsed_ns": 7982209,
+              "count": 1
+            },
+            {
+              "name": "replay_misc",
+              "elapsed_ns": 737292,
+              "count": 1
+            },
+            {
+              "name": "store_compact_size",
+              "elapsed_ns": 11655709,
+              "count": 3
+            },
+            {
+              "name": "store_checkpoint_wire",
+              "elapsed_ns": 0,
+              "count": 0
+            },
+            {
+              "name": "store_visitor_authority",
+              "elapsed_ns": 205375,
+              "count": 1
+            },
+            {
+              "name": "history_codec_readback",
+              "elapsed_ns": 23047083,
+              "count": 1
+            },
+            {
+              "name": "history_inverse_restore",
+              "elapsed_ns": 1891459,
+              "count": 1
+            },
+            {
+              "name": "semantic_head_validate",
+              "elapsed_ns": 1476917,
+              "count": 1
+            },
+            {
+              "name": "semantic_context_admission",
+              "elapsed_ns": 7533459,
+              "count": 1
+            },
+            {
+              "name": "semantic_planner_setup",
+              "elapsed_ns": 2249042,
+              "count": 1
+            },
+            {
+              "name": "semantic_pause_target",
+              "elapsed_ns": 4283583,
+              "count": 1
+            },
+            {
+              "name": "semantic_pause_provider",
+              "elapsed_ns": 9888167,
+              "count": 1
+            },
+            {
+              "name": "semantic_children_refresh",
+              "elapsed_ns": 9040208,
+              "count": 1
+            },
+            {
+              "name": "leaf_insert_known",
+              "elapsed_ns": 31453791,
+              "count": 1
+            },
+            {
+              "name": "leaf_input_durations",
+              "elapsed_ns": 1282792,
+              "count": 1
+            },
+            {
+              "name": "leaf_net_construction",
+              "elapsed_ns": 7531875,
+              "count": 1
+            }
+          ],
+          "schema": "DEADPAN_PAUSE_ROUTE_PROFILE_V3",
+          "begin_count": 1,
+          "end_count": 1,
+          "elapsed_ns": 190708834,
+          "phase_sum_ns": 190708834,
+          "committed": 1,
+          "refreshed": 1,
+          "published": 1
+        }
+      ]
+    },
+    "checks": 7,
+    "kestrel_checks": 1,
+    "warnings": 2,
+    "authored_input_unchanged": true,
+    "wal_empty": true
+  },
+  {
+    "rotation": 3,
+    "kind": "control",
+    "binary_sha256": "0cb2931562108a68b57915c6135f448bc74293ba20623c7484053152566d31ff",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 195.141583,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 197.625042
+    },
+    "profile": null,
+    "checks": 7,
+    "kestrel_checks": 1,
+    "warnings": 2,
+    "authored_input_unchanged": true,
+    "wal_empty": true
+  },
+  {
+    "rotation": 3,
+    "kind": "off",
+    "binary_sha256": "274e8a04a0a41b3656886663cea46f85169fa463d8b0e2c8d57b5d8d5638302a",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 194.352708,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 196.9655
+    },
+    "profile": null,
+    "checks": 7,
+    "kestrel_checks": 1,
+    "warnings": 2,
+    "authored_input_unchanged": true,
+    "wal_empty": true
+  }
+]

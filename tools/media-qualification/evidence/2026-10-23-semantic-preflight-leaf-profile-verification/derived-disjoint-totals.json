@@ -1,0 +1,131 @@
+{
+  "basis": "same-trial sums of directly measured exclusive rows; no old-run subtraction",
+  "groups": {
+    "semantic_region": {
+      "phases": [
+        "semantic_plan",
+        "semantic_document_wire",
+        "semantic_leaf_apply",
+        "capability_snapshot",
+        "semantic_head_validate",
+        "semantic_context_admission",
+        "semantic_planner_setup",
+        "semantic_pause_target",
+        "semantic_pause_provider",
+        "semantic_children_refresh",
+        "leaf_insert_known",
+        "leaf_input_durations",
+        "leaf_net_construction"
+      ],
+      "trial_ns": [
+        92330666,
+        91472875,
+        92230291
+      ],
+      "min_ns": 91472875,
+      "median_ns": 92230291,
+      "max_ns": 92330666
+    },
+    "pure_leaf_region": {
+      "phases": [
+        "semantic_leaf_apply",
+        "leaf_insert_known",
+        "leaf_input_durations",
+        "leaf_net_construction"
+      ],
+      "trial_ns": [
+        44249833,
+        43737500,
+        43943916
+      ],
+      "min_ns": 43737500,
+      "median_ns": 43943916,
+      "max_ns": 44249833
+    },
+    "legacy_insertion_region": {
+      "phases": [
+        "leaf_insert_known",
+        "leaf_input_durations"
+      ],
+      "trial_ns": [
+        32994083,
+        32680875,
+        32736583
+      ],
+      "min_ns": 32680875,
+      "median_ns": 32736583,
+      "max_ns": 32994083
+    },
+    "semantic_preflight_provider_refresh": {
+      "phases": [
+        "semantic_plan",
+        "semantic_head_validate",
+        "semantic_context_admission",
+        "semantic_planner_setup",
+        "semantic_pause_target",
+        "semantic_pause_provider",
+        "semantic_children_refresh"
+      ],
+      "trial_ns": [
+        34420458,
+        34334167,
+        34698583
+      ],
+      "min_ns": 34334167,
+      "median_ns": 34420458,
+      "max_ns": 34698583
+    },
+    "two_named_head_and_input_calls": {
+      "phases": [
+        "semantic_head_validate",
+        "leaf_input_durations"
+      ],
+      "trial_ns": [
+        2757250,
+        2733749,
+        2759709
+      ],
+      "min_ns": 2733749,
+      "median_ns": 2757250,
+      "max_ns": 2759709
+    },
+    "store_prepare_region": {
+      "phases": [
+        "store_prepare",
+        "replay_document_wire",
+        "reuse_eligibility_eq",
+        "reuse_clone_exit",
+        "replay_net_aggregate",
+        "replay_misc",
+        "store_compact_size",
+        "store_checkpoint_wire",
+        "store_visitor_authority",
+        "history_codec_readback",
+        "history_inverse_restore"
+      ],
+      "trial_ns": [
+        60807292,
+        61709875,
+        62289625
+      ],
+      "min_ns": 60807292,
+      "median_ns": 61709875,
+      "max_ns": 62289625
+    },
+    "named_document_size_sites": {
+      "phases": [
+        "semantic_document_wire",
+        "replay_document_wire",
+        "store_compact_size"
+      ],
+      "trial_ns": [
+        38253499,
+        38111834,
+        38576542
+      ],
+      "min_ns": 38111834,
+      "median_ns": 38253499,
+      "max_ns": 38576542
+    }
+  }
+}

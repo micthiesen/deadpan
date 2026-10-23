@@ -1,0 +1,16 @@
+{
+  "command": [
+    "python3",
+    "-m",
+    "unittest",
+    "-v",
+    "test_profile_parser.py"
+  ],
+  "cwd": "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23",
+  "exit": 0,
+  "tests": 21,
+  "parser_sha256": "d7856844d550b05207cc75391a810008da0b44adeafeb38e70ec95892c9a4f61",
+  "test_source_sha256": "1a42c81cfdcdc958981aefa3267ced7d9485d3e352aa0a5f196030d5d12a4f63",
+  "parser_notes_sha256": "5944bd743f10b6ef57f0570fd85461e684f2556b64ce0474a5cb42ff69b69238",
+  "log_sha256": "ce4907d5768beead69cb37d2cc52b1fee4d1bd3844973bbaea27db37ab677d46"
+}
