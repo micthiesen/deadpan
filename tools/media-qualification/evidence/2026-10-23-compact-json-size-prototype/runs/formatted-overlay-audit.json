@@ -1,0 +1,12 @@
+{
+  "exact_rust_path_set_preserved": true,
+  "rust_files": 2050,
+  "changed_files": [
+    "crates/deadpan-core/src/document.rs",
+    "crates/deadpan-core/tests/compact_audio_bindings.rs",
+    "crates/deadpan-store/src/compound.rs",
+    "crates/deadpan-store/src/compound/tests.rs",
+    "crates/deadpan-store/src/lib.rs"
+  ],
+  "changes_match_five_reviewed_draft_files": true
+}

@@ -1,0 +1,121 @@
+<ctx task="ProjectDocument::compact_json_size and to_compact_json in crates/deadpan-core/src/document.rs; execute in crates/deadpan-store/src/compound.rs" route=" [routed: subtoken+body BM25 (--for&apos;s default) — no strong name hit, multi-word conceptual query]" bundle="auto" bodies="5"><!-- ripwire lens for "ProjectDocument::compact_json_size and to_compact_json in crates/deadpan-core/src/document.rs; execute in crates/deadpan-store/src/compound.rs" [mention anchor: 2 files + 4 symbols named in the task lifted near the top] [doc mentions: 2 docs discussing 2 top-ranked symbols surfaced]: reusable building blocks + quality facts for what you're about to touch (cx=complexity ccx=cognitive in=reuse-count churn=recent-commits amp=change-amplification clone=1(duplicated) tested=1) — prefer composing/reusing these; watch the high-churn/high-amp/cloned ones; bundle=auto: the top-ranked FULL bodies ride inline after the signatures in a bodies section (bodies=N on this root counts them; bodies=0 reason=budget when none fit the remaining budget whole; the signatures-only flag opts out) — read them here instead of opening the files. The bodies element discloses the house way: total=requested, shown=printed, capped=1 when they differ; each body's calls child lists its callee signatures, total= always, shown=/capped= only when that list is cut est_tokens="2739" --><sigs capped="1"><f p="./crates/deadpan-core/src/document.rs"><d l="913" n="to_compact_json" id="./crates/deadpan-core/src/document.rs::ProjectDocument::to_compact_json" cx="2" ccx="1" in="13" churn="64" amp="166" tested="1"><doc>The same document without indentation, for durable storage. Pretty output roughly doubles every …</doc>pub fn to_compact_json(&amp;self) -&gt; Result&lt;String, DocumentError&gt;</d><d l="2033" n="serialization_tests" cx="0" ccx="0" in="0" churn="64" amp="153">mod serialization_tests</d><d l="2037" n="canonical_json_limit_counts_escaping_utf8_and_terminal_newline" id="./crates/deadpan-core/src/document.rs::serialization_tests::canonical_json_limit_counts_escaping_utf8_and_terminal_newline" cx="2" ccx="1" in="0" churn="64" amp="153">fn canonical_json_limit_counts_escaping_utf8_and_terminal_newline()</d></f><f p="./crates/deadpan-core/src/command/patch_wire.rs"><d l="405" n="compact_and_complete_forms_decode_to_the_same_transaction" id="./crates/deadpan-core/src/command/patch_wire.rs::tests::compact_and_complete_forms_decode_to_the_same_transaction" cx="3" ccx="3" in="0" churn="3" amp="23">fn compact_and_complete_forms_decode_to_the_same_transaction()</d></f></sigs><bodies shown="5" total="6" capped="1"><b t="method" l="913" p="./crates/deadpan-core/src/document.rs" n="to_compact_json"><![CDATA[pub fn to_compact_json(&self) -> Result<String, DocumentError> {
+        let mut output = BoundedJson {
+            bytes: Vec::new(),
+            limit: MAX_DOCUMENT_JSON_BYTES,
+            exceeded: false,
+        };
+        let result = serde_json::to_writer(&mut output, self);
+        if output.exceeded {
+            return Err(json_limit());
+        }
+        result.map_err(DocumentError::json)?;
+        String::from_utf8(output.bytes)
+            .map_err(|error| DocumentError::new(DocumentErrorCode::InvalidJson, error.to_string()))
+    }]]><calls total="3"><c n="json_limit" l="2002">fn json_limit() -&gt; DocumentError</c><c n="new" l="2112">pub(crate) fn new(code: DocumentErrorCode, message: impl Into&lt;String&gt;) -&gt; Self</c><c n="Err" l="25">type Err = &amp;&apos;static str</c></calls></b><b t="other" l="2033" p="./crates/deadpan-core/src/document.rs" n="serialization_tests"><![CDATA[mod serialization_tests {
+    use super::*;
+
+    #[test]
+    fn canonical_json_limit_counts_escaping_utf8_and_terminal_newline() {
+        let mut document = ProjectDocument::new(
+            ProjectId::new("project").unwrap(),
+            RevisionId::new("initial").unwrap(),
+            PresentationBasis {
+                width: 1920,
+                height: 1080,
+                frame_rate: FrameRate::new(30, 1).unwrap(),
+                color_policy: ColorPolicy::SdrRec709,
+            },
+            NodeId::new("root").unwrap(),
+        )
+        .unwrap();
+        document
+            .nodes
+            .get_mut(&NodeId::new("root").unwrap())
+            .unwrap()
+            .label = "é \"quoted\"\nlabel".into();
+        let json = document.to_json().unwrap();
+        assert_eq!(document.to_json_with_limit(json.len()).unwrap(), json);
+        assert_eq!(ProjectDocument::from_json(&json).unwrap(), document);
+        for limit in [0, json.len() - 1, json.len() - 10] {
+            assert_eq!(
+                document.to_json_with_limit(limit).unwrap_err().code,
+                DocumentErrorCode::LimitExceeded
+            );
+        }
+    }
+}]]></b><b t="method" l="2037" p="./crates/deadpan-core/src/document.rs" n="canonical_json_limit_counts_escaping_utf8_and_terminal_newline"><![CDATA[fn canonical_json_limit_counts_escaping_utf8_and_terminal_newline() {
+        let mut document = ProjectDocument::new(
+            ProjectId::new("project").unwrap(),
+            RevisionId::new("initial").unwrap(),
+            PresentationBasis {
+                width: 1920,
+                height: 1080,
+                frame_rate: FrameRate::new(30, 1).unwrap(),
+                color_policy: ColorPolicy::SdrRec709,
+            },
+            NodeId::new("root").unwrap(),
+        )
+        .unwrap();
+        document
+            .nodes
+            .get_mut(&NodeId::new("root").unwrap())
+            .unwrap()
+            .label = "é \"quoted\"\nlabel".into();
+        let json = document.to_json().unwrap();
+        assert_eq!(document.to_json_with_limit(json.len()).unwrap(), json);
+        assert_eq!(ProjectDocument::from_json(&json).unwrap(), document);
+        for limit in [0, json.len() - 1, json.len() - 10] {
+            assert_eq!(
+                document.to_json_with_limit(limit).unwrap_err().code,
+                DocumentErrorCode::LimitExceeded
+            );
+        }
+    }]]><calls total="6"><c n="new" l="732">pub fn new( project_id: ProjectId, revision_id: RevisionId, presentation_basis: PresentationBasis, root: NodeId, ) -&gt; Result&lt;Self, DocumentError&gt;</c><c n="to_json" l="907">pub fn to_json(&amp;self) -&gt; Result&lt;String, DocumentError&gt;</c><c n="len" l="75">pub fn len(&amp;self) -&gt; u32</c><c n="len" l="51">pub fn len(&amp;self) -&gt; usize</c><c n="len" l="104">pub fn len(&amp;self) -&gt; usize</c><c n="new" l="81">pub fn new(numerator: u32, denominator: u32) -&gt; Result&lt;Self, TimeError&gt;</c></calls></b><b t="method" l="405" p="./crates/deadpan-core/src/command/patch_wire.rs" n="compact_and_complete_forms_decode_to_the_same_transaction"><![CDATA[fn compact_and_complete_forms_decode_to_the_same_transaction() {
+        for (count, slot) in [(3, 1), (40, 0), (40, 17), (40, 40), (500, 250)] {
+            let (_, edit) = insertion(count, slot);
+            let compact = serde_json::to_string(&edit).unwrap();
+            assert_eq!(
+                serde_json::from_str::<EditTransaction>(&compact).unwrap(),
+                edit
+            );
+            let complete = complete(&edit).to_string();
+            assert_eq!(
+                serde_json::from_str::<EditTransaction>(&complete).unwrap(),
+                edit
+            );
+            let spliced = count + 1 >= MIN_SPLICED_CHILDREN;
+            assert_eq!(compact.contains("after_children"), spliced, "{count}");
+            assert!(!compact.contains("\"inverse\""));
+            assert!(compact.len() < complete.len(), "{count}");
+            if count >= 500 {
+                // About one of the four child lists remains.
+                assert!(compact.len() * 3 < complete.len(), "{count}");
+            }
+            // The patch alone, as revision storage writes it.
+            let forward = serde_json::to_string(&edit.forward).unwrap();
+            assert_eq!(
+                serde_json::from_str::<DocumentPatch>(&forward).unwrap(),
+                edit.forward
+            );
+        }
+    }]]><calls total="2"><c n="insertion" l="340">fn insertion(count: usize, slot: usize) -&gt; (ProjectDocument, EditTransaction)</c><c n="complete" l="385">fn complete(edit: &amp;EditTransaction) -&gt; serde_json::Value</c></calls></b><b t="fn" l="2156" p="./crates/deadpan-core/src/audio_binding.rs" n="compact_json_bytes"><![CDATA[fn compact_json_bytes(json: &str) -> usize {
+    let mut count = 0;
+    let mut in_string = false;
+    let mut escaped = false;
+    for byte in json.bytes() {
+        if in_string {
+            count += 1;
+            if escaped {
+                escaped = false;
+            } else if byte == b'\\' {
+                escaped = true;
+            } else if byte == b'"' {
+                in_string = false;
+            }
+        } else if !matches!(byte, b' ' | b'\t' | b'\r' | b'\n') {
+            count += 1;
+            in_string = byte == b'"';
+        }
+    }
+    count
+}]]></b><!-- body omitted (over budget): execute --></bodies></ctx>

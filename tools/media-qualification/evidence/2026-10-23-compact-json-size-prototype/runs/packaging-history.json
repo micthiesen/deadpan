@@ -1,0 +1,9 @@
+{
+  "initial_exit": 1,
+  "initial_error": "archive input path not unique: Cargo.lock",
+  "initial_output_created": false,
+  "correction": "Use exact root member paths in the git source archive instead of suffix matching root and nested Cargo.lock names.",
+  "initial_script_sha256": "f8a19d4dd0f5ed437dcab69010cc022e631464e236ed8638b37a1993dc38d6b2",
+  "corrected_script_sha256": "75bd205ceb3e60c44a297c97ef4231a6ff4ede00cfcf3169c525d94eebdafca6",
+  "product_sources_tests_and_measurements_unchanged": true
+}

@@ -1,0 +1,334 @@
+--- a/crates/deadpan-core/src/document.rs
++++ b/crates/deadpan-core/src/document.rs
+@@ -924,6 +924,27 @@
+         String::from_utf8(output.bytes)
+             .map_err(|error| DocumentError::new(DocumentErrorCode::InvalidJson, error.to_string()))
+     }
++    /// The exact byte length of to_compact_json, without keeping its
++    /// output buffer. Uses the same serializer and byte limit.
++    pub fn compact_json_size(&self) -> Result<usize, DocumentError> {
++        self.compact_json_size_with_limit(MAX_DOCUMENT_JSON_BYTES)
++    }
++
++    fn compact_json_size_with_limit(&self, limit: usize) -> Result<usize, DocumentError> {
++        let mut output = BoundedJsonCount {
++            bytes: 0,
++            limit,
++            exceeded: false,
++        };
++        let result = serde_json::to_writer(&mut output, self);
++        // Preserve the materializing writer's limit-error precedence.
++        if output.exceeded {
++            return Err(json_limit());
++        }
++        result.map_err(DocumentError::json)?;
++        Ok(output.bytes)
++    }
++
+     fn to_json_with_limit(&self, limit: usize) -> Result<String, DocumentError> {
+         use std::io::Write;
+ 
+@@ -2029,9 +2050,131 @@
+     }
+ }
+ 
++/// The same compact JSON byte bound without retaining the emitted bytes.
++/// The serializer may still allocate its existing per-field temporary values.
++struct BoundedJsonCount {
++    bytes: usize,
++    limit: usize,
++    exceeded: bool,
++}
++
++impl std::io::Write for BoundedJsonCount {
++    fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
++        if bytes.len() > self.limit.saturating_sub(self.bytes) {
++            self.exceeded = true;
++            return Err(std::io::Error::other("document JSON exceeds byte limit"));
++        }
++        // The check above proves the sum fits and remains <= limit.
++        self.bytes += bytes.len();
++        Ok(bytes.len())
++    }
++
++    fn flush(&mut self) -> std::io::Result<()> {
++        Ok(())
++    }
++}
++
+ #[cfg(test)]
+ mod serialization_tests {
+     use super::*;
++
++    fn compact_document() -> ProjectDocument {
++        ProjectDocument::new(
++            ProjectId::new("compact-size").unwrap(),
++            RevisionId::new("initial").unwrap(),
++            PresentationBasis {
++                width: 1920,
++                height: 1080,
++                frame_rate: FrameRate::new(24, 1).unwrap(),
++                color_policy: ColorPolicy::SdrRec709,
++            },
++            NodeId::new("root").unwrap(),
++        )
++        .unwrap()
++    }
++
++    #[test]
++    fn compact_size_matches_exact_escaped_utf8_bytes_and_limit_errors() {
++        let mut document = compact_document();
++        for label in [
++            "",
++            "plain",
++            "é 🦀",
++            "\"quoted\"\\slash/\tline\r\n",
++            "{\"json\":\"text\"}",
++        ] {
++            document.nodes.get_mut(&NodeId::new("root").unwrap()).unwrap().label =
++                label.into();
++            let json = document.to_compact_json().unwrap();
++            assert_eq!(document.compact_json_size().unwrap(), json.len());
++            assert_eq!(
++                document.compact_json_size_with_limit(json.len()).unwrap(),
++                json.len()
++            );
++            assert!(!json.ends_with('\n'), "compact output has no terminal newline");
++            for limit in [0, json.len() - 1] {
++                // Compare the same compact serialization with the existing
++                // materializing sink, including the exact error vocabulary.
++                let mut materialized = BoundedJson {
++                    bytes: Vec::new(),
++                    limit,
++                    exceeded: false,
++                };
++                let result = serde_json::to_writer(&mut materialized, &document);
++                assert!(result.is_err() && materialized.exceeded);
++                assert_eq!(
++                    document.compact_json_size_with_limit(limit).unwrap_err(),
++                    json_limit()
++                );
++            }
++        }
++    }
++
++    #[test]
++    fn compact_count_matches_chunked_materialization_and_never_wraps() {
++        use std::io::Write as _;
++
++        for limit in [0, 1, 5, 10] {
++            let mut count = BoundedJsonCount {
++                bytes: 0,
++                limit,
++                exceeded: false,
++            };
++            let mut materialized = BoundedJson {
++                bytes: Vec::new(),
++                limit,
++                exceeded: false,
++            };
++            for chunk in [b"".as_slice(), b"ab", b"cde", b"fghij", b"z"] {
++                let counted = count.write(chunk);
++                let stored = materialized.write(chunk);
++                assert_eq!(counted.is_ok(), stored.is_ok());
++                assert_eq!(count.bytes, materialized.bytes.len());
++                assert_eq!(count.exceeded, materialized.exceeded);
++                if let (Err(counted), Err(stored)) = (counted, stored) {
++                    assert_eq!(counted.to_string(), stored.to_string());
++                }
++            }
++            count.flush().unwrap();
++            materialized.flush().unwrap();
++        }
++
++        let mut count = BoundedJsonCount {
++            bytes: usize::MAX - 1,
++            limit: usize::MAX,
++            exceeded: false,
++        };
++        assert!(count.write(b"ab").is_err());
++        assert_eq!(count.bytes, usize::MAX - 1);
++        assert!(count.exceeded);
++        // Empty and fitting writes never clear the sticky error flag.
++        assert_eq!(count.write(b"").unwrap(), 0);
++        assert_eq!(count.write(b"x").unwrap(), 1);
++        assert_eq!(count.bytes, usize::MAX);
++        assert!(count.write(b"y").is_err());
++        assert_eq!(count.bytes, usize::MAX);
++        assert!(count.exceeded);
++    }
+ 
+     #[test]
+     fn canonical_json_limit_counts_escaping_utf8_and_terminal_newline() {
+--- a/crates/deadpan-core/tests/compact_audio_bindings.rs
++++ b/crates/deadpan-core/tests/compact_audio_bindings.rs
+@@ -498,3 +498,26 @@
+         *after.audio_bindings()
+     );
+ }
++
++#[test]
++fn compact_document_size_matches_nested_binding_bytes_without_changing_wire() {
++    let document = document_with_hold();
++    let state = nested_state();
++    let state_json = state.to_json().unwrap();
++    let mut value = serde_json::to_value(&document).unwrap();
++    value["audio_bindings"] = serde_json::to_value(&state).unwrap();
++    let bound = ProjectDocument::from_json(&value.to_string()).unwrap();
++    let bound_json = bound.to_compact_json().unwrap();
++    assert_eq!(bound.compact_json_size().unwrap(), bound_json.len());
++    assert_eq!(bound.to_compact_json().unwrap(), bound_json);
++    assert_eq!(state.to_json().unwrap(), state_json);
++    assert_eq!(
++        ProjectDocument::from_json(&bound_json).unwrap(),
++        bound
++    );
++    let wire: Value = serde_json::from_str(&bound_json).unwrap();
++    let binding = &wire["audio_bindings"]["bindings"]["owner"];
++    assert!(binding["resume"].get("local_boundary").is_some());
++    assert_eq!(binding["resume"]["phase"]["terms"].as_array().unwrap().len(), 1);
++    assert_eq!(binding["reanchors"].as_array().unwrap().len(), 1);
++}
+--- a/crates/deadpan-store/src/lib.rs
++++ b/crates/deadpan-store/src/lib.rs
+@@ -1258,7 +1258,11 @@
+ }
+ 
+ fn check_document_size(json: &str) -> Result<(), StoreError> {
+-    if json.len() > schema::MAX_DOCUMENT_BYTES {
++    check_document_size_bytes(json.len())
++}
++
++fn check_document_size_bytes(bytes: usize) -> Result<(), StoreError> {
++    if bytes > schema::MAX_DOCUMENT_BYTES {
+         return Err(StoreError::Integrity(
+             "document exceeds the core document size limit".into(),
+         ));
+--- a/crates/deadpan-store/src/compound.rs
++++ b/crates/deadpan-store/src/compound.rs
+@@ -472,7 +472,7 @@
+     }
+     let mut steps: Vec<StepRecord> = Vec::new();
+     let mut checkpoint_bytes = 0_usize;
+-    let mut processed_bytes = current.to_compact_json()?.len();
++    let mut processed_bytes = current.compact_json_size()?;
+     let mut original_pastes = OriginalPasteMappings::default();
+     let outcome =
+         deadpan_core::replay_compound(current, request, |visit| -> Result<(), StoreError> {
+@@ -543,23 +543,29 @@
+                         &mut original_pastes,
+                     )?;
+                 }
+-                let json = visit.after.to_compact_json()?;
++                // Captured stages retain the identical compact bytes.
++                // Other stages need their exact byte charge, not an output buffer.
++                let document = capture_states
++                    .contains(&leaf.new_revision)
++                    .then(|| visit.after.to_compact_json())
++                    .transpose()?;
++                let bytes = match &document {
++                    Some(json) => json.len(),
++                    None => visit.after.compact_json_size()?,
++                };
+                 processed_bytes = processed_bytes
+-                    .checked_add(json.len())
++                    .checked_add(bytes)
+                     .filter(|bytes| *bytes <= MAX_PROCESSED_BYTES)
+                     .ok_or_else(|| invalid("compound staged document work exceeds 512 MiB"))?;
+                 if steps.len() >= MAX_STEPS {
+                     return Err(invalid("compound step limit"));
+                 }
+-                let document = if capture_states.contains(&leaf.new_revision) {
++                if document.is_some() {
+                     checkpoint_bytes = checkpoint_bytes
+-                        .checked_add(json.len())
++                        .checked_add(bytes)
+                         .filter(|bytes| *bytes <= MAX_CHECKPOINT_BYTES)
+                         .ok_or_else(|| invalid("compound capture checkpoints exceed 64 MiB"))?;
+-                    Some(json)
+-                } else {
+-                    None
+-                };
++                }
+                 steps.push(StepRecord {
+                     revision: leaf.new_revision.clone(),
+                     document,
+@@ -567,7 +573,7 @@
+             }
+             Ok(())
+         })?;
+-    crate::check_document_size(&outcome.document.to_compact_json()?)?;
++    crate::check_document_size_bytes(outcome.document.compact_json_size()?)?;
+     Ok((outcome, steps))
+ }
+ 
+--- a/crates/deadpan-store/src/compound/tests.rs
++++ b/crates/deadpan-store/src/compound/tests.rs
+@@ -918,3 +918,67 @@
+     drop(store);
+     assert!(ProjectStore::open(&path, crate::AccessMode::ReadOnly).is_err());
+ }
++
++#[test]
++fn compact_size_counting_retains_exact_staged_checkpoint_bytes_and_history() {
++    let directory = tempfile::tempdir().unwrap();
++    let path = directory.path().join("counted-checkpoints.deadpan");
++    let initial = document();
++    let mut store = ProjectStore::create(&path, &initial).unwrap();
++    let (command, _) = repeat_cut_paste(&initial);
++
++    // A reference visitor materializes every stage just as the old size path
++    // did. Only repeat-stage is a capture checkpoint for this exact fixture.
++    let mut expected = Vec::new();
++    let reference = deadpan_core::replay_compound::<StoreError>(
++        &initial,
++        &command,
++        |visit| {
++            if let Some(leaf) = visit.request {
++                let json = visit.after.to_compact_json()?;
++                assert_eq!(visit.after.compact_json_size()?, json.len());
++                let checkpoint = (leaf.new_revision == revision("repeat-stage")).then_some(json);
++                expected.push((leaf.new_revision.to_string(), checkpoint));
++            }
++            Ok(())
++        },
++    )
++    .unwrap();
++    assert_eq!(expected.len(), 3);
++    assert_eq!(expected.iter().filter(|(_, json)| json.is_some()).count(), 1);
++    assert_eq!(expected.iter().filter(|(_, json)| json.is_none()).count(), 2);
++    let before = cells(&store);
++    let (counted, staged) =
++        execute(&store.connection, &initial, &command, None).unwrap();
++    assert_eq!(counted.document, reference.document);
++    assert_eq!(counted.edit, reference.edit);
++    assert_eq!(counted.register_writes, reference.register_writes);
++    assert_eq!(
++        staged.iter().map(|step| (step.revision.to_string(), step.document.clone())).collect::<Vec<_>>(),
++        expected
++    );
++    assert_eq!(cells(&store), before, "preparation must not write storage");
++
++    let saved = store.commit_compound(&command, None).unwrap();
++    let committed = saved.committed.unwrap();
++    assert_eq!(committed.edit, reference.edit);
++    assert_eq!(store.snapshot().unwrap(), reference.document);
++    let persisted: Vec<(String, Option<String>)> = store.connection
++        .prepare("SELECT step_revision,document FROM transaction_steps WHERE owner_revision=?1 ORDER BY ordinal")
++        .unwrap()
++        .query_map([command.new_revision.as_str()], |row| Ok((row.get(0)?,row.get(1)?)))
++        .unwrap()
++        .map(Result::unwrap)
++        .collect();
++    assert_eq!(persisted, expected);
++    store.validate().unwrap();
++    store.undo(&command.new_revision, revision("counted-undo")).unwrap();
++    assert_eq!(store.snapshot().unwrap().duration().unwrap(), initial.duration().unwrap());
++    store.redo(&revision("counted-undo"), revision("counted-redo")).unwrap();
++    assert_eq!(store.snapshot().unwrap().duration().unwrap(), reference.document.duration().unwrap());
++    let expected_bank = store.registers().unwrap();
++    drop(store);
++    let reopened = ProjectStore::open(&path, crate::AccessMode::ReadOnly).unwrap();
++    assert_eq!(reopened.registers().unwrap(), expected_bank);
++    reopened.validate().unwrap();
++}

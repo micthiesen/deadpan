@@ -1,0 +1,26 @@
+{
+  "core-count-tests": {
+    "executed": "/tmp/deadpan-compact-json-size-2026-10-23/target/debug/deps/deadpan_core-b3aaf031552acdd6",
+    "retained": "/tmp/deadpan-compact-json-size-2026-10-23/focused-bin/deadpan_core-b3aaf031552acdd6",
+    "sha256": "b47726b63c80f6ae5a81a79bb78ac29152daa9ae290e0d51b510dc68826ccec9",
+    "selected_passed": 2,
+    "hash_recorded_after_execution": true,
+    "release_build_uses_separate_profile": true
+  },
+  "binding-tests": {
+    "executed": "/tmp/deadpan-compact-json-size-2026-10-23/target/debug/deps/compact_audio_bindings-20d36f56f067f373",
+    "retained": "/tmp/deadpan-compact-json-size-2026-10-23/focused-bin/compact_audio_bindings-20d36f56f067f373",
+    "sha256": "ad7ce8de72d937756eb766d5b510f354c0337ebf365fcf48f9b51f67a1735593",
+    "selected_passed": 9,
+    "hash_recorded_after_execution": true,
+    "release_build_uses_separate_profile": true
+  },
+  "store-checkpoint-test": {
+    "executed": "/tmp/deadpan-compact-json-size-2026-10-23/target/debug/deps/deadpan_store-935e4c49390febb0",
+    "retained": "/tmp/deadpan-compact-json-size-2026-10-23/focused-bin/deadpan_store-935e4c49390febb0",
+    "sha256": "53949468437548e138ab4da8da5c560c32ba0ea26849a4f59dba829e52b2ef9e",
+    "selected_passed": 1,
+    "hash_recorded_after_execution": true,
+    "release_build_uses_separate_profile": true
+  }
+}

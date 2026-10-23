@@ -1,0 +1,56 @@
+{
+  "state": "uncompiled-unformatted-draft",
+  "algorithm": "sha256",
+  "files": [
+    {
+      "path": "crates/deadpan-core/src/document.rs",
+      "original_sha256": "4be2f955e4c51d965ccf8f27913df72af31e6af5d4847bc3deccb3328fcf49a7",
+      "original_bytes": 96665,
+      "proposed_sha256": "69f91a5f80a24b6d3d33f219b2bc70b9f941c2ed20b9dfee5a3fc9e729fc4c5c",
+      "proposed_bytes": 101891,
+      "original_contents": "crates__deadpan-core__src__document.rs.original.rs.txt",
+      "proposed_contents": "crates__deadpan-core__src__document.rs.proposed.rs.txt",
+      "patch": "crates__deadpan-core__src__document.rs.patch"
+    },
+    {
+      "path": "crates/deadpan-core/tests/compact_audio_bindings.rs",
+      "original_sha256": "a2e531de57a6b917328ae98af1de9e43b421bc94e2ea7ddc358d6f7f7990e739",
+      "original_bytes": 19049,
+      "proposed_sha256": "18f1dc854e6e2c5f5741671023cb86eaaebbf9470e53e8014926648dd1ee6b06",
+      "proposed_bytes": 20143,
+      "original_contents": "crates__deadpan-core__tests__compact_audio_bindings.rs.original.rs.txt",
+      "proposed_contents": "crates__deadpan-core__tests__compact_audio_bindings.rs.proposed.rs.txt",
+      "patch": "crates__deadpan-core__tests__compact_audio_bindings.rs.patch"
+    },
+    {
+      "path": "crates/deadpan-store/src/lib.rs",
+      "original_sha256": "9b59c50f14881d3f28f03ed40be7323afd045e06c0b6f03d65f115fb29b885e8",
+      "original_bytes": 77761,
+      "proposed_sha256": "60e791a846e4ae64bd400194a7efe8d9123880490b8b18a2cf57a5d66c429227",
+      "proposed_bytes": 77872,
+      "original_contents": "crates__deadpan-store__src__lib.rs.original.rs.txt",
+      "proposed_contents": "crates__deadpan-store__src__lib.rs.proposed.rs.txt",
+      "patch": "crates__deadpan-store__src__lib.rs.patch"
+    },
+    {
+      "path": "crates/deadpan-store/src/compound.rs",
+      "original_sha256": "4e2c8070178a16f54f7a484b4e5189ca206fd00af85ef26492e90a847edb0dc2",
+      "original_bytes": 29869,
+      "proposed_sha256": "1d5f07d4bc517906ed8cd650e42620cfca5d9e19c474599b3fafdd87a9ebc8e4",
+      "proposed_bytes": 30200,
+      "original_contents": "crates__deadpan-store__src__compound.rs.original.rs.txt",
+      "proposed_contents": "crates__deadpan-store__src__compound.rs.proposed.rs.txt",
+      "patch": "crates__deadpan-store__src__compound.rs.patch"
+    },
+    {
+      "path": "crates/deadpan-store/src/compound/tests.rs",
+      "original_sha256": "d490fb9aacf88834362655d2b5d43bddbaf0f97c5e6c203539473eb0de893fe8",
+      "original_bytes": 31338,
+      "proposed_sha256": "d9822d6a69509864d0f4f1e9d4089040f4137119eb414a4653160ec3faa2fbcc",
+      "proposed_bytes": 34384,
+      "original_contents": "crates__deadpan-store__src__compound__tests.rs.original.rs.txt",
+      "proposed_contents": "crates__deadpan-store__src__compound__tests.rs.proposed.rs.txt",
+      "patch": "crates__deadpan-store__src__compound__tests.rs.patch"
+    }
+  ]
+}

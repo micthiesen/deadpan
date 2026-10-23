@@ -1,0 +1,8 @@
+{
+  "command": [
+    "python",
+    "/tmp/deadpan-compact-json-size-2026-10-23/measure.py"
+  ],
+  "exit": 0,
+  "seconds": 219.14541391748935
+}

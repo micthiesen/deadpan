@@ -1,0 +1,1 @@
+{"name": "clone-debug-cache", "command": ["cp", "-cR", "/Users/michael/Code/deadpan/target/debug", "/tmp/deadpan-compact-json-size-2026-10-23/target/debug"], "cwd": "/tmp/deadpan-compact-json-size-2026-10-23/source", "exit": -15, "seconds": 422.66544749960303}

@@ -1,0 +1,28 @@
+   Compiling libc v0.2.189
+   Compiling getrandom v0.3.4
+   Compiling proc-macro2 v1.0.107
+   Compiling serde_core v1.0.229
+   Compiling quote v1.0.47
+   Compiling zmij v1.0.23
+   Compiling rustix v1.1.5
+   Compiling zerocopy v0.8.57
+   Compiling serde_json v1.0.151
+   Compiling serde v1.0.229
+   Compiling num-traits v0.2.19
+   Compiling quick-error v1.2.3
+   Compiling errno v0.3.14
+   Compiling wait-timeout v0.2.1
+   Compiling ppv-lite86 v0.2.21
+   Compiling rand_core v0.9.5
+   Compiling syn v3.0.6
+   Compiling deadpan-chaos v0.1.0 (/private/tmp/deadpan-compact-json-size-2026-10-23/source/crates/deadpan-chaos)
+   Compiling rand v0.9.5
+   Compiling rand_xorshift v0.4.0
+   Compiling rand_chacha v0.9.0
+   Compiling tempfile v3.27.0
+   Compiling serde_derive v1.0.229
+   Compiling rusty-fork v0.3.1
+   Compiling proptest v1.11.0
+   Compiling deadpan-core v0.1.0 (/private/tmp/deadpan-compact-json-size-2026-10-23/source/crates/deadpan-core)
+    Finished `test` profile [optimized + debuginfo] target(s) in 7m 15s
+     Running unittests src/lib.rs (/tmp/deadpan-compact-json-size-2026-10-23/target/debug/deps/deadpan_core-b3aaf031552acdd6)

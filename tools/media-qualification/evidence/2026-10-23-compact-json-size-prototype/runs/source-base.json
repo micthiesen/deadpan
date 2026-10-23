@@ -1,0 +1,14 @@
+{
+  "base": "8dbea5ac77343a172bc4a4fd58bf34b015866b53",
+  "qualified_implementation": "91e17fe4db1aa44ccc63b3e27c70f6e6f7baa665",
+  "archive_sha256": "372bddd9a6d86e740fc1a9e7817202079e4a661092c81a699767b7f8ecef33e3",
+  "overlays": [
+    "crates/deadpan-core/src/document.rs",
+    "crates/deadpan-core/tests/compact_audio_bindings.rs",
+    "crates/deadpan-store/src/lib.rs",
+    "crates/deadpan-store/src/compound.rs",
+    "crates/deadpan-store/src/compound/tests.rs"
+  ],
+  "status": "uncompiled-unformatted-private-prototype",
+  "review": "read-only draft review found no concrete defects; no execution claim"
+}

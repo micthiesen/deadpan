@@ -1,0 +1,7 @@
+{
+  "beats": 10000,
+  "creation_ms": 179.666,
+  "package": "/tmp/deadpan-compact-json-size-2026-10-23/5-prototype.deadpan",
+  "stage": "make-large",
+  "stage_wall_ms": 189.063042
+}

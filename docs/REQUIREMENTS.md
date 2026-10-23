@@ -43,6 +43,18 @@ archived binaries without that warning. The first rerun wrapper failed before
 any test on an incorrect guard filename; its corrected wrapper and all native
 layout warnings remain in the evidence. No requirement or gate closes.
 
+## Compact JSON size-count prototype, 2026-10-23
+
+A separate [private prototype](qualification/compact-json-size-prototype-2026-10-23.md)
+counts exact compact JSON bytes for Store entry/final and uncaptured stages,
+retaining captured checkpoint bytes and every work charge. Its twelve focused
+tests and locked release build pass. Five guarded pairs give offscreen medians
+266.491583 /257.379000 ms, a 9.112583 ms diagnostic difference of about 3.42%.
+These samples are separate from the qualified leaf-result comparison and do
+not establish percentiles or the 100 ms/50 ms targets. Core 58 /SQLite 87 stay
+unchanged. Full production qualification remains owed; no requirement closes.
+The 161-file /1,362,070-byte evidence inventory verifies independently.
+
 ## Remaining preparation cost, 2026-10-23
 
 The isolated [prepared-Compound profile](qualification/prepared-compound-profile-2026-10-23.md)

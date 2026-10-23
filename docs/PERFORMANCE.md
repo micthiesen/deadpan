@@ -258,6 +258,15 @@ inverse and authoritative replay checks. These n=5 diagnostics establish no
 percentile or latency target PASS; the 100 ms fallback and 50 ms ordinary-edit
 targets remain open.
 
+The separate [compact JSON size-count prototype](qualification/compact-json-size-prototype-2026-10-23.md)
+removes complete output buffers for size-only Store traversals, retaining
+capture bytes, serialization work and every budget charge. Twelve focused
+tests and its locked release build pass. Five quiet guarded pairs measure
+offscreen control/prototype medians 266.491583 /257.379000 ms. The 9.112583 ms
+difference is about 3.42%; this remains a private unqualified prototype with
+no measured peak-memory benefit or percentile/target PASS. Full production
+checks remain owed. Do not pool this batch with earlier comparisons.
+
 | Section 25 target | Measurement | Notes |
 | --- | --- | --- |
 | Key event to command-state update, p95 < 8 ms | ui `rapid-input` `warm_navigation_input_cpu_ms` | Whole egui input frame CPU: an upper bound on the state update. Small replay fixture. |

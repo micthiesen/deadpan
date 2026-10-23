@@ -1,0 +1,5 @@
+{
+  "pid": 29179,
+  "script": "/tmp/deadpan-compact-json-size-2026-10-23/measure_after_build.py",
+  "waiting_for": "six successful resumed build rows, binary manifest and completed build marker"
+}

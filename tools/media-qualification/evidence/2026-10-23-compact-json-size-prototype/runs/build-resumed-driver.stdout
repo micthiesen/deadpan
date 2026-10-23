@@ -1,0 +1,7 @@
+{"name": "clone-release-cache", "command": ["cp", "-cR", "/Users/michael/Code/deadpan/target/release", "/tmp/deadpan-compact-json-size-2026-10-23/target/release"], "cwd": "/tmp/deadpan-compact-json-size-2026-10-23/source", "exit": 0, "seconds": 0.4270997494459152}
+{"name": "format", "command": ["cargo", "fmt", "--all"], "cwd": "/tmp/deadpan-compact-json-size-2026-10-23/source", "exit": 0, "seconds": 7.045606332831085}
+{"name": "core-count-tests", "command": ["cargo", "test", "--locked", "-p", "deadpan-core", "--lib", "document::serialization_tests::compact_"], "cwd": "/tmp/deadpan-compact-json-size-2026-10-23/source", "exit": 0, "seconds": 435.6407742500305}
+{"name": "binding-tests", "command": ["cargo", "test", "--locked", "-p", "deadpan-core", "--test", "compact_audio_bindings"], "cwd": "/tmp/deadpan-compact-json-size-2026-10-23/source", "exit": 0, "seconds": 9.332723417319357}
+{"name": "store-checkpoint-test", "command": ["cargo", "test", "--locked", "-p", "deadpan-store", "--lib", "compact_size_counting_retains_exact_staged_checkpoint_bytes_and_history"], "cwd": "/tmp/deadpan-compact-json-size-2026-10-23/source", "exit": 0, "seconds": 125.6266158754006}
+{"name": "release-build", "command": ["cargo", "build", "--locked", "--release", "-p", "deadpan-app", "--features", "ui-harness", "--bin", "deadpan-app"], "cwd": "/tmp/deadpan-compact-json-size-2026-10-23/source", "exit": 0, "seconds": 271.7232470419258}
+{"done": true, "app_sha256": "561c2072b910e42d9defe29a502e0d7fe7055d37e120d889663fb8a253d5ee18"}

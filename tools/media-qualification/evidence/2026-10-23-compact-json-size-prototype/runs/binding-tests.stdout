@@ -1,0 +1,14 @@
+
+running 9 tests
+test signed_nonzero_resume_values_and_phase_terms_remain_explicit_and_exact ... ok
+test six_exact_binding_defaults_omit_and_restore_with_fixed_wire_bytes ... ok
+test malformed_unknown_duplicate_and_null_nonoptional_fields_are_rejected ... ok
+test every_nondefault_clock_root_and_nonempty_lexical_path_roundtrips_exactly ... ok
+test present_argument_and_birth_vectors_keep_their_existing_admission_bound ... ok
+test audio_binding_state_preflight_accepts_absent_and_explicit_path_defaults_at_every_placement ... ok
+test compact_document_size_matches_nested_binding_bytes_without_changing_wire ... ok
+test audio_binding_state_preflight_rejects_null_duplicate_and_oversized_paths ... ok
+test captured_binding_state_and_insert_history_patch_roundtrip_compact_wire ... ok
+
+test result: ok. 9 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

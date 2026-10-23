@@ -176,15 +176,41 @@ Root independently verifies all 548 retained payload paths/bytes/hashes and
 gzip streams, totaling 13,363,276 bytes. Inventory SHA-256:
 d1805e2c757039581298c368938afdc8ef2a1d05da3ae76f3bdbc88444dbd9f4.
 
-Next: a separate compact JSON byte-count experiment. Its uncompiled,
-unformatted five-file draft and read-only reviews are in this scratch's
-next-size-study/draft/. Original/proposed sources and exact hashes are retained
-there. Count entry/final and uncaptured Store stages with the identical
-serializer; keep captured checkpoint bytes, error/limit ordering and every
-byte charge. No gain is measured. First use a separate source/target and the
-new qualified 1864c3ac app as control. Never combine timing batches. The
-remaining-work-map.md recommends finer disjoint preparation timers if needed;
-do not skip history reader roundtrips or invent a reusable result proof.
+The separate [compact JSON size-count prototype](../qualification/compact-json-size-prototype-2026-10-23.md)
+is complete in /tmp/deadpan-compact-json-size-2026-10-23. It has a separate
+source/target and five formatted Rust overlays against 8dbea5ac: three
+production files and two test files. Two Core counter tests, nine binding
+tests and one Store checkpoint/history test pass, as does the locked release
+build. Captured bytes, error/limit order and every budget charge remain.
+Core 58 /SQLite 87 are unchanged. Prototype app SHA-256:
+561c2072b910e42d9defe29a502e0d7fe7055d37e120d889663fb8a253d5ee18.
+Five quiet pairs against qualified app 1864c3ac give commit medians
+263.867166 /254.805167 ms and offscreen composition 266.491583 /257.379000 ms.
+The 9.112583 ms difference is about 3.42%, diagnostic only. No target closes.
+Evidence verifies 161 files /1,362,070 bytes, inventory SHA-256
+1f7875c23dde0259269d3054a67ff3bb7f195f3709fcc294452f2e5268d2ac51.
+
+Initial build_prototype.py is terminal after the deliberate SIGTERM of its
+422.7-second debug-cache clone, before any compilation/test. Resumed driver
+build_prototype_resumed.py completes all six steps; measure_after_build.py
+and measure.py complete ten guarded trials and twenty commands. Do not
+restart these completed owners. Preserve the pre-output packager Cargo.lock
+suffix-match refusal and its exact-path correction; no product result changed.
+
+The five formatted files are now applied as an uncommitted production
+candidate, with exact identity against the tested prototype source map.
+Both current-source reviews report no findings. Full qualification is live in
+/tmp/deadpan-compact-json-size-qualification-2026-10-23: qualify.py owns eight
+sequential main stages, starting with all Core; post.py waits for all eight
+successful rows before portable checks, five extra native scenarios and five
+quiet pairs against qualified app 1864c3ac. Inspect owner/receipt files before
+restarting anything. Expected counts 1,517 Core, 3,506 broader and 1,296 UI
+are expectations, not results. Full Core, broader/UI, strict, media/native,
+portable and final paired timings remain owed. Keep this prototype separate
+from production evidence. Its
+historical draft/review and remaining-work-map.md are in the previous scratch's
+next-size-study/. Finer disjoint timers may be needed later; do not skip
+history reader roundtrips or invent a reusable result proof.
 
 Refresh/verify progress artifact a3ysikxugbmr4 from the next pushed
 docs/progress.json after this implementation commit. Preserve foreign
