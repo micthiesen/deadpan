@@ -1,0 +1,370 @@
+{
+  "files": {
+    "README.md": {
+      "bytes": 1258,
+      "sha256": "74342fd9afba0256ec9f60d2c9ae23a06508064c84576f6f233c17d1c856788d"
+    },
+    "candidate-all-core-2-binaries.json": {
+      "bytes": 167336,
+      "sha256": "cee687bd8f102139329c848b3dca23fd896941b6eeab3c821fe1a7fd4ac83588"
+    },
+    "candidate-all-core-2-build-receipt.json": {
+      "bytes": 285,
+      "sha256": "ac5ab5da2a1becf1e061b430f93d4c971fc111dfadfda86e60e370b8109535ea"
+    },
+    "candidate-all-core-2-build.log": {
+      "bytes": 392,
+      "sha256": "a51ee6d09275e3bbd062b952a793fa3aebbbcf9389bef8d9c2353d2bef726d21"
+    },
+    "candidate-all-core-2-inputs.json": {
+      "bytes": 583,
+      "sha256": "b783a007ca4b3ab356c3488372a276c0ffa7ad4f9f34b31f1b0743b121e44317"
+    },
+    "candidate-all-core-2-list.json": {
+      "bytes": 274700,
+      "sha256": "697cffc34aa31da96e12aad188f9760e8493888d9b273fb8dd0a11559cdc6025"
+    },
+    "candidate-all-core-2-list.log": {
+      "bytes": 234,
+      "sha256": "232a5d0f209dd43af7ed88e744f11d14d5948a1c10cc7ed8560a07aa9698b5f0"
+    },
+    "candidate-all-core-2-overlays/crates/deadpan-core/src/audio_binding.rs.txt": {
+      "bytes": 99875,
+      "sha256": "94c43e887cb29d01a769a9e579fc82be278a5523e52cdfb24eb5df6951e0cac0"
+    },
+    "candidate-all-core-2-overlays/crates/deadpan-core/src/audio_context.rs.txt": {
+      "bytes": 24552,
+      "sha256": "0dfdb8f4cab7486026ed3fa52e68abbea91e0e01d8238ba4e74bb248696d9c12"
+    },
+    "candidate-all-core-2-overlays/crates/deadpan-core/src/audio_reference/explicit_edges.rs.txt": {
+      "bytes": 2674,
+      "sha256": "3ab8946cfc95ca6bf9a2f36c509fbf9bfc07fb6d3ae3c1fa02b13dbf2dd180d7"
+    },
+    "candidate-all-core-2-overlays/crates/deadpan-core/src/audio_reference.rs.txt": {
+      "bytes": 140107,
+      "sha256": "b4b675b292a234035f8e55ef919b4d1cc28d32089f395ab0864461d96910bb9f"
+    },
+    "candidate-all-core-2-overlays/crates/deadpan-core/src/document.rs.txt": {
+      "bytes": 96665,
+      "sha256": "4be2f955e4c51d965ccf8f27913df72af31e6af5d4847bc3deccb3328fcf49a7"
+    },
+    "candidate-all-core-2-overlays/crates/deadpan-core/src/legacy_audio_binding_v20.rs.txt": {
+      "bytes": 9158,
+      "sha256": "0e9c370533237a0f2f57f652396688e24d36dab3e789807cde6aec4395e5fe6a"
+    },
+    "candidate-all-core-2-overlays/crates/deadpan-core/src/legacy_audio_binding_v21.rs.txt": {
+      "bytes": 15072,
+      "sha256": "64235768794ebda5af16f0d5a0f2e9f474af52ec4e12396cda524d8d7010215e"
+    },
+    "candidate-all-core-2-overlays/crates/deadpan-core/src/legacy_audio_binding_v22.rs.txt": {
+      "bytes": 2885,
+      "sha256": "28a35732b601ff3c756dcacb54ae1b46d6b8bc7eaf6c3b1bdb2c982efb47faa1"
+    },
+    "candidate-all-core-2-overlays/crates/deadpan-core/src/legacy_audio_binding_v35.rs.txt": {
+      "bytes": 2677,
+      "sha256": "5fdc0a0b00ad7cff7d3ad5597cc57e31fefe534b39df75ff89358b9bf7022b8f"
+    },
+    "candidate-all-core-2-overlays/crates/deadpan-core/src/legacy_audio_binding_v36.rs.txt": {
+      "bytes": 11461,
+      "sha256": "c6e1ecd8c1a30f394350c0deccc843e109fe8d2be992040772191ef1ccc2f6e2"
+    },
+    "candidate-all-core-2-overlays/crates/deadpan-core/tests/audio_reference.rs.txt": {
+      "bytes": 31062,
+      "sha256": "3a65403c4140808e17e0780f39b2367055963784b54ff1e386326a7cd1a59be7"
+    },
+    "candidate-all-core-2-overlays/crates/deadpan-core/tests/command_work.rs.txt": {
+      "bytes": 30290,
+      "sha256": "79250c2e039e939fc4541ba52c0d06fa8871a8b24c69535326142c13a0731062"
+    },
+    "candidate-all-core-2-overlays/crates/deadpan-core/tests/compact_audio_bindings.rs.txt": {
+      "bytes": 19982,
+      "sha256": "a00556edbeb1ab256615f327348cae806969de8ff9a544e304be63e9cc9d1749"
+    },
+    "candidate-all-core-2-overlays/crates/deadpan-core/tests/compact_frozen_edges.rs.txt": {
+      "bytes": 9743,
+      "sha256": "5f76110e2b6cc27e23e5ac22a86f1529afcff00f390cc8c8a9864017f05002dd"
+    },
+    "candidate-all-core-2-overlays/crates/deadpan-store/src/schema.rs.txt": {
+      "bytes": 7598,
+      "sha256": "5999bf5133d287843a9e49ea8af2cbe5b718226d58e038fab6270cd50b18c8ec"
+    },
+    "candidate-all-core-2-overlays/crates/deadpan-store/tests/edited_slice/child_capture/range_compat.rs.txt": {
+      "bytes": 10449,
+      "sha256": "b77b1d0b110b3b98bd406bc4f050742a9bd0abaaa6669dff99b018ca54723cc8"
+    },
+    "candidate-all-core-2-overlays/crates/deadpan-store/tests/migration/development_break.rs.txt": {
+      "bytes": 7223,
+      "sha256": "70f3177c9429d7804b4db7ac77535b9632bdbb35e3d5314b559309a812c46f31"
+    },
+    "candidate-all-core-2-overlays/crates/deadpan-store/tests/revision_storage.rs.txt": {
+      "bytes": 30092,
+      "sha256": "f9964121a20bfcca83da5c5254a17cee95fb5e8d84a816d6ccc6c6077a9d5ad1"
+    },
+    "candidate-all-core-2-result.json": {
+      "bytes": 196,
+      "sha256": "c78eacd7e443933450678bb49ae64be4bebd725add10874e17812c0bc4cac34a"
+    },
+    "candidate-all-core-2-run-receipt.json": {
+      "bytes": 481,
+      "sha256": "1f29eea75994b9123182ff9e838016c04a109f83a45b9c4d223c3e42ba95fabf"
+    },
+    "candidate-all-core-2-run.log": {
+      "bytes": 222723,
+      "sha256": "3b72ab5d655ca0b8170c96331fb4ab8c63b9aabc430e7be3ad53b4bca1bf6c9c"
+    },
+    "candidate-all-core-2-source-identities.json": {
+      "bytes": 252880,
+      "sha256": "f39a9e082ad567c075857ebeccf21719af99e41d89315d057be362dd8a22caad"
+    },
+    "candidate-all-core-build-receipt.json": {
+      "bytes": 284,
+      "sha256": "76c0b853f847ba194ee983babec40d0ebfa59a1138ad88ddb97c33434897ab62"
+    },
+    "candidate-all-core-build.log": {
+      "bytes": 1404,
+      "sha256": "3442d6f495f244352908d84f29f8cc3d2278b886ade7baea12743c40f2844bfe"
+    },
+    "candidate-all-core-final-binaries.json": {
+      "bytes": 167612,
+      "sha256": "913df0ab06c312365f60cf15a83fcf0230a8aa893b212373bba29e4af47a1247"
+    },
+    "candidate-all-core-final-build-receipt.json": {
+      "bytes": 288,
+      "sha256": "18c9dd014beb30d4a0a34bd48c13329a598683fd83e131e80af33213f285a247"
+    },
+    "candidate-all-core-final-build.log": {
+      "bytes": 399,
+      "sha256": "0670ef1f16ea2bcab1f49606d50c7f72d96da94b3e8c903dae0b6922914e6217"
+    },
+    "candidate-all-core-final-inputs.json": {
+      "bytes": 583,
+      "sha256": "b783a007ca4b3ab356c3488372a276c0ffa7ad4f9f34b31f1b0743b121e44317"
+    },
+    "candidate-all-core-final-list.json": {
+      "bytes": 274988,
+      "sha256": "862851fe1415a47538e171c3abe6e80cdd63c4a01b898b80e350bf030fe8b93d"
+    },
+    "candidate-all-core-final-list.log": {
+      "bytes": 242,
+      "sha256": "5bca55dc12045c9c84492175b1325184358e6eea1a93f865f04a62f9a8e4e0cc"
+    },
+    "candidate-all-core-final-overlays/crates/deadpan-core/src/audio_binding.rs.txt": {
+      "bytes": 99875,
+      "sha256": "94c43e887cb29d01a769a9e579fc82be278a5523e52cdfb24eb5df6951e0cac0"
+    },
+    "candidate-all-core-final-overlays/crates/deadpan-core/src/audio_context.rs.txt": {
+      "bytes": 24552,
+      "sha256": "0dfdb8f4cab7486026ed3fa52e68abbea91e0e01d8238ba4e74bb248696d9c12"
+    },
+    "candidate-all-core-final-overlays/crates/deadpan-core/src/audio_reference/explicit_edges.rs.txt": {
+      "bytes": 2674,
+      "sha256": "3ab8946cfc95ca6bf9a2f36c509fbf9bfc07fb6d3ae3c1fa02b13dbf2dd180d7"
+    },
+    "candidate-all-core-final-overlays/crates/deadpan-core/src/audio_reference.rs.txt": {
+      "bytes": 140107,
+      "sha256": "b4b675b292a234035f8e55ef919b4d1cc28d32089f395ab0864461d96910bb9f"
+    },
+    "candidate-all-core-final-overlays/crates/deadpan-core/src/document.rs.txt": {
+      "bytes": 96665,
+      "sha256": "4be2f955e4c51d965ccf8f27913df72af31e6af5d4847bc3deccb3328fcf49a7"
+    },
+    "candidate-all-core-final-overlays/crates/deadpan-core/src/legacy_audio_binding_v20.rs.txt": {
+      "bytes": 9158,
+      "sha256": "0e9c370533237a0f2f57f652396688e24d36dab3e789807cde6aec4395e5fe6a"
+    },
+    "candidate-all-core-final-overlays/crates/deadpan-core/src/legacy_audio_binding_v21.rs.txt": {
+      "bytes": 15072,
+      "sha256": "64235768794ebda5af16f0d5a0f2e9f474af52ec4e12396cda524d8d7010215e"
+    },
+    "candidate-all-core-final-overlays/crates/deadpan-core/src/legacy_audio_binding_v22.rs.txt": {
+      "bytes": 2885,
+      "sha256": "28a35732b601ff3c756dcacb54ae1b46d6b8bc7eaf6c3b1bdb2c982efb47faa1"
+    },
+    "candidate-all-core-final-overlays/crates/deadpan-core/src/legacy_audio_binding_v35.rs.txt": {
+      "bytes": 2677,
+      "sha256": "5fdc0a0b00ad7cff7d3ad5597cc57e31fefe534b39df75ff89358b9bf7022b8f"
+    },
+    "candidate-all-core-final-overlays/crates/deadpan-core/src/legacy_audio_binding_v36.rs.txt": {
+      "bytes": 11461,
+      "sha256": "c6e1ecd8c1a30f394350c0deccc843e109fe8d2be992040772191ef1ccc2f6e2"
+    },
+    "candidate-all-core-final-overlays/crates/deadpan-core/tests/audio_reference.rs.txt": {
+      "bytes": 31062,
+      "sha256": "3a65403c4140808e17e0780f39b2367055963784b54ff1e386326a7cd1a59be7"
+    },
+    "candidate-all-core-final-overlays/crates/deadpan-core/tests/command_work.rs.txt": {
+      "bytes": 30290,
+      "sha256": "79250c2e039e939fc4541ba52c0d06fa8871a8b24c69535326142c13a0731062"
+    },
+    "candidate-all-core-final-overlays/crates/deadpan-core/tests/compact_audio_bindings.rs.txt": {
+      "bytes": 19049,
+      "sha256": "a2e531de57a6b917328ae98af1de9e43b421bc94e2ea7ddc358d6f7f7990e739"
+    },
+    "candidate-all-core-final-overlays/crates/deadpan-core/tests/compact_frozen_edges.rs.txt": {
+      "bytes": 9743,
+      "sha256": "5f76110e2b6cc27e23e5ac22a86f1529afcff00f390cc8c8a9864017f05002dd"
+    },
+    "candidate-all-core-final-overlays/crates/deadpan-store/src/schema.rs.txt": {
+      "bytes": 7598,
+      "sha256": "5999bf5133d287843a9e49ea8af2cbe5b718226d58e038fab6270cd50b18c8ec"
+    },
+    "candidate-all-core-final-overlays/crates/deadpan-store/tests/edited_slice/child_capture/range_compat.rs.txt": {
+      "bytes": 10449,
+      "sha256": "b77b1d0b110b3b98bd406bc4f050742a9bd0abaaa6669dff99b018ca54723cc8"
+    },
+    "candidate-all-core-final-overlays/crates/deadpan-store/tests/migration/development_break.rs.txt": {
+      "bytes": 7223,
+      "sha256": "70f3177c9429d7804b4db7ac77535b9632bdbb35e3d5314b559309a812c46f31"
+    },
+    "candidate-all-core-final-overlays/crates/deadpan-store/tests/revision_storage.rs.txt": {
+      "bytes": 30092,
+      "sha256": "f9964121a20bfcca83da5c5254a17cee95fb5e8d84a816d6ccc6c6077a9d5ad1"
+    },
+    "candidate-all-core-final-result.json": {
+      "bytes": 194,
+      "sha256": "81eed3ddeea77b812f10f07f79d92ecdd6f48e7cb7eb64932e8af67a3086b7aa"
+    },
+    "candidate-all-core-final-run-receipt.json": {
+      "bytes": 487,
+      "sha256": "fc9e3947fd41e441e1d9783e1d7da7bb0265ac0786416a253b280953a7e47b8e"
+    },
+    "candidate-all-core-final-run.log": {
+      "bytes": 221839,
+      "sha256": "7100aaec2c8d03a74c4a2d5c14dd9dce643c5abbbe0d6773be83c776a126590a"
+    },
+    "candidate-all-core-final-source-identities.json": {
+      "bytes": 252880,
+      "sha256": "c81bc4a344bdfce97e2ee29cd2d49fafbe89bf0129a355d9e00956d302997ec2"
+    },
+    "candidate-all-core-inputs.json": {
+      "bytes": 583,
+      "sha256": "b783a007ca4b3ab356c3488372a276c0ffa7ad4f9f34b31f1b0743b121e44317"
+    },
+    "candidate-all-core-overlays/crates/deadpan-core/src/audio_binding.rs.txt": {
+      "bytes": 99875,
+      "sha256": "94c43e887cb29d01a769a9e579fc82be278a5523e52cdfb24eb5df6951e0cac0"
+    },
+    "candidate-all-core-overlays/crates/deadpan-core/src/audio_context.rs.txt": {
+      "bytes": 24552,
+      "sha256": "0dfdb8f4cab7486026ed3fa52e68abbea91e0e01d8238ba4e74bb248696d9c12"
+    },
+    "candidate-all-core-overlays/crates/deadpan-core/src/audio_reference/explicit_edges.rs.txt": {
+      "bytes": 2674,
+      "sha256": "3ab8946cfc95ca6bf9a2f36c509fbf9bfc07fb6d3ae3c1fa02b13dbf2dd180d7"
+    },
+    "candidate-all-core-overlays/crates/deadpan-core/src/audio_reference.rs.txt": {
+      "bytes": 139558,
+      "sha256": "073395a7aee76d14a74f38c93b368d262c91dcf8f4b80f7e0f62a3069d7368bc"
+    },
+    "candidate-all-core-overlays/crates/deadpan-core/src/document.rs.txt": {
+      "bytes": 96665,
+      "sha256": "4be2f955e4c51d965ccf8f27913df72af31e6af5d4847bc3deccb3328fcf49a7"
+    },
+    "candidate-all-core-overlays/crates/deadpan-core/src/legacy_audio_binding_v20.rs.txt": {
+      "bytes": 9158,
+      "sha256": "0e9c370533237a0f2f57f652396688e24d36dab3e789807cde6aec4395e5fe6a"
+    },
+    "candidate-all-core-overlays/crates/deadpan-core/src/legacy_audio_binding_v21.rs.txt": {
+      "bytes": 15072,
+      "sha256": "64235768794ebda5af16f0d5a0f2e9f474af52ec4e12396cda524d8d7010215e"
+    },
+    "candidate-all-core-overlays/crates/deadpan-core/src/legacy_audio_binding_v22.rs.txt": {
+      "bytes": 2885,
+      "sha256": "28a35732b601ff3c756dcacb54ae1b46d6b8bc7eaf6c3b1bdb2c982efb47faa1"
+    },
+    "candidate-all-core-overlays/crates/deadpan-core/src/legacy_audio_binding_v35.rs.txt": {
+      "bytes": 2677,
+      "sha256": "5fdc0a0b00ad7cff7d3ad5597cc57e31fefe534b39df75ff89358b9bf7022b8f"
+    },
+    "candidate-all-core-overlays/crates/deadpan-core/src/legacy_audio_binding_v36.rs.txt": {
+      "bytes": 11461,
+      "sha256": "c6e1ecd8c1a30f394350c0deccc843e109fe8d2be992040772191ef1ccc2f6e2"
+    },
+    "candidate-all-core-overlays/crates/deadpan-core/tests/audio_reference.rs.txt": {
+      "bytes": 31062,
+      "sha256": "3a65403c4140808e17e0780f39b2367055963784b54ff1e386326a7cd1a59be7"
+    },
+    "candidate-all-core-overlays/crates/deadpan-core/tests/command_work.rs.txt": {
+      "bytes": 30290,
+      "sha256": "79250c2e039e939fc4541ba52c0d06fa8871a8b24c69535326142c13a0731062"
+    },
+    "candidate-all-core-overlays/crates/deadpan-core/tests/compact_audio_bindings.rs.txt": {
+      "bytes": 19982,
+      "sha256": "a00556edbeb1ab256615f327348cae806969de8ff9a544e304be63e9cc9d1749"
+    },
+    "candidate-all-core-overlays/crates/deadpan-core/tests/compact_frozen_edges.rs.txt": {
+      "bytes": 9743,
+      "sha256": "5f76110e2b6cc27e23e5ac22a86f1529afcff00f390cc8c8a9864017f05002dd"
+    },
+    "candidate-all-core-overlays/crates/deadpan-store/src/schema.rs.txt": {
+      "bytes": 7598,
+      "sha256": "5999bf5133d287843a9e49ea8af2cbe5b718226d58e038fab6270cd50b18c8ec"
+    },
+    "candidate-all-core-overlays/crates/deadpan-store/tests/edited_slice/child_capture/range_compat.rs.txt": {
+      "bytes": 10449,
+      "sha256": "b77b1d0b110b3b98bd406bc4f050742a9bd0abaaa6669dff99b018ca54723cc8"
+    },
+    "candidate-all-core-overlays/crates/deadpan-store/tests/migration/development_break.rs.txt": {
+      "bytes": 7223,
+      "sha256": "70f3177c9429d7804b4db7ac77535b9632bdbb35e3d5314b559309a812c46f31"
+    },
+    "candidate-all-core-overlays/crates/deadpan-store/tests/revision_storage.rs.txt": {
+      "bytes": 30092,
+      "sha256": "f9964121a20bfcca83da5c5254a17cee95fb5e8d84a816d6ccc6c6077a9d5ad1"
+    },
+    "candidate-all-core-source-identities.json": {
+      "bytes": 252880,
+      "sha256": "12dd469c0b319f3c31b616265763d2ef5a976c7ac0bdcc8c958d0b1f5e0ad7a6"
+    },
+    "core-driver-2.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "core-driver-2.stdout": {
+      "bytes": 838,
+      "sha256": "df8cce8567e70c46a5965f66e95b2041260c829130cda541d3dff4d88d760afa"
+    },
+    "core-driver-final.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "core-driver-final.stdout": {
+      "bytes": 845,
+      "sha256": "73ec28271dea876bd765d24fd694c4d2437fb359c2bebf96871643ecb2a41282"
+    },
+    "core-driver.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "core-driver.stdout": {
+      "bytes": 242,
+      "sha256": "cf11f25f3ba994cbf95474ea338c2a5c6d9360cb586ff9b3db5c6ef7d1217733"
+    },
+    "phase-source-attribution.json": {
+      "bytes": 342,
+      "sha256": "08016cc2d7b2d9bbd0f961384c9d2c11117b432669925764ac6a8bfced2eafbd"
+    },
+    "prepare_fixture_refinement.py": {
+      "bytes": 2444,
+      "sha256": "01d94dd463c33ae05a8a3762e04afd7d25009253837ed8293955217be0e62d74"
+    },
+    "qualify.py": {
+      "bytes": 5367,
+      "sha256": "aaf2ac2db0029fb5d345a00982213fcadf076205bd46bbb0bec0a14ae44204c1"
+    },
+    "refined-compact-audio-bindings.rs.txt": {
+      "bytes": 18967,
+      "sha256": "00b29c2d1c0950ae4e17602072a4d7f99f60c16646313b68d6bcf1f1c9dbc42c"
+    },
+    "reviews.json": {
+      "bytes": 926,
+      "sha256": "6cfb41dd0077a4e4479170d9268ce1d85d64c28d14e10633fb96abbea5f8bc4a"
+    },
+    "visible-pause-measurement-plan.md": {
+      "bytes": 5368,
+      "sha256": "5dd5186832aa8132fd7e17821ea9b64968232208022fc7ca345b971ca39d4829"
+    }
+  },
+  "payload_files": 91,
+  "payload_bytes": 3784283
+}

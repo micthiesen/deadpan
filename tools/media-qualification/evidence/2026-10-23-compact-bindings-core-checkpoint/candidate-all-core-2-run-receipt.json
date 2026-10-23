@@ -1,0 +1,21 @@
+{
+  "command": [
+    "cargo",
+    "nextest",
+    "run",
+    "--archive-file",
+    "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-all-core-2.tar.zst",
+    "--extract-to",
+    "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-all-core-2-extracted",
+    "--extract-overwrite",
+    "--workspace-remap",
+    "/Users/michael/Code/deadpan",
+    "-E",
+    "all()",
+    "--test-threads",
+    "8",
+    "--no-fail-fast"
+  ],
+  "exit": 100,
+  "seconds": 6.724034042097628
+}

@@ -1,0 +1,17 @@
+{
+  "base": "917f9a54eb992ea5c99244c395bf05d4c5ef63c5",
+  "general": {
+    "findings": []
+  },
+  "codec": {
+    "production_findings": [],
+    "test_fixture_issue": "Negative nested cases used default_binding without resume/reanchors; duplicate control expected three placements but had one.",
+    "resolution": "Prepared validated nested_state shared fixture, roundtrip positive control, all six null/overlimit fields plus duplicate placement loop. Independent re-review accepts; execution pending."
+  },
+  "capture": {
+    "production_findings": [],
+    "minor": "Unknown alias case fires cardinality fallback.",
+    "resolution": "Retained threshold case and added below-threshold unknown singleton for documents larger than two nodes."
+  },
+  "initial_build_failure": "Two mutable/immutable root-borrow errors in newly added private tests, corrected by capturing root before mutating nodes; production logic unchanged."
+}

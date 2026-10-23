@@ -2,6 +2,17 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
+## Compact bindings Core checkpoint, 2026-10-23
+
+The uncommitted Core 58 / SQLite 87 candidate passes all 1,513 Core tests across
+69 binaries, zero skipped. Independent production reviews report no defect;
+below-threshold unknown aliases and valid nested malformed-path fixtures were
+strengthened. Retain the initial test borrow errors and 1,512/1,513 run before
+the fixture correction. Broader Store/UI, strict checks, actual media/native,
+portable reopening and current-format performance remain owed. See
+[qualification and 91-file checkpoint evidence](qualification/compact-audio-bindings-2026-10-23.md).
+No requirement or gate closes.
+
 ## Binding and capture diagnostics, 2026-10-23
 
 Four isolated five-pair batches measure the remaining first-pause overhead.

@@ -1,0 +1,16 @@
+[
+  {
+    "before": "candidate-all-core",
+    "after": "candidate-all-core-2",
+    "changed_paths": [
+      "crates/deadpan-core/src/audio_reference.rs"
+    ]
+  },
+  {
+    "before": "candidate-all-core-2",
+    "after": "candidate-all-core-final",
+    "changed_paths": [
+      "crates/deadpan-core/tests/compact_audio_bindings.rs"
+    ]
+  }
+]

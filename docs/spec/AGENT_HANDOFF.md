@@ -9,9 +9,11 @@ a scoped projection that cannot be smaller than full capture. Disposable
 combined n=5 pairs measure first store-and-refresh median 111.576 → 91.629 ms.
 Those prototypes lack the standalone preflight fix and are not production or
 visible-picture qualification. Working Core 58 / SQLite 87 adds bounded optional
-path preflight and explicit historical test fixtures. Full Core tests and
-independent review are running; broader/UI/media/reopen and current-format
-timing remain owed. Diagnostic source and failures are retained in
+path preflight and explicit historical test fixtures. All 1,513 Core tests pass across 69 binaries, zero skipped, and independent
+production reviews report no defect. Initial test borrow errors and the
+1,512/1,513 malformed negative-fixture failure remain retained. Broader/UI,
+strict, actual media/native, portable reopening and current-format timing
+remain owed. See [Core checkpoint](../qualification/compact-audio-bindings-2026-10-23.md). Diagnostic source and failures are retained in
 [329 verified evidence files](../qualification/first-pause-binding-prototypes-2026-10-23.md).
 
 Compact timing qualified, 2026-10-23: Core 57 / SQLite 86 omits only default

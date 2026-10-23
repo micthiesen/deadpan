@@ -67,8 +67,11 @@ controls passed and the captured-state round trip failed. Its first direct
 rustc link also failed because Apple LLVM could not read Rust LLVM bitcode;
 Rust thin LTO linked the test. Receipts retain the original test-source hash,
 but the exact original draft was overwritten by later refinements before
-retention. The timing runs therefore do not establish reopening or history
-correctness, and no production qualification is inferred from them.
+retention. The perf runs do pass their writable/read-only reopening and head
+equality checks. Their receipts verify five revisions with zero replayed in the
+retained example, so they do not exercise the defective bound-state keyframe
+reader. Complete reopening/history correctness is not established, and no
+production qualification is inferred from these diagnostics.
 
 The working production candidate uses Core 58 / SQLite 87, accepts absent paths
 as zero preflight entries while bounding present paths, keeps old-header fixture
