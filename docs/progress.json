@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-22T23:51:00Z",
+  "updated_at": "2026-10-23T00:21:00Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Sound-owner endpoint grouping verified and source-audited. Coverage stays at 89%, with 8/24 requirement sections complete. Next: aligned grouping within broad retained Sequence scopes, preserving actual processor-interior refusals.",
+  "focus": "Sound-owner endpoint grouping is verified. Aligned grouping inside retained scopes is being checked for historical EQ context: 40 representation comparisons and 40 audible-effect controls pass. Production guards remain. Coverage stays at 89%, with 8/24 requirement sections complete.",
   "features": [
     {
       "id": "editing",

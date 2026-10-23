@@ -26,9 +26,19 @@ SQLite 84/core 55 stay unchanged. No requirement or gate is newly complete.
 
 Scratch sources, logs and orchestration are under
 `/tmp/deadpan-sound-group-endpoints-2026-10-22/`. A read-only next-scope design is
-there too; it is not implemented or verified. Next investigate aligned grouping
-inside an unnecessarily broad ordinary Sequence journal scope, proving narrower
-historical owner scopes before changing any refusal. Do not admit actual
+there too; it is not implemented or verified. Aligned grouping inside a broad
+ordinary Sequence journal scope remains under investigation. All 40 constrained
+scope-narrowing representation comparisons match complete PCM and signed context;
+40 independent ablations prove that Top EQ and the attached event affect PCM.
+The serial probe timed out after 30 completed cases; the remaining ten pass as
+individual cases. Four attempted partial Top captures refuse before audio at the
+existing supported-endpoint guard. These are research results, not implementation.
+Scratch evidence and an independent bit-array audit are under
+`/tmp/deadpan-aligned-sound-scope-2026-10-22/`. Scope narrowing drops old ancestor
+aliases, so keep production unchanged while qualifying cropped context and the
+birth of a new group processing owner. A draft explicit per-reference introduced
+group relation preserves old aliases without inventing historical group contexts;
+its capture, copy and mixed-history lifecycle is not yet established. Do not admit actual
 processor interiors or cropped/Repeat/Retime histories by dropping the guard.
 Partial copy, DeleteRange,
 MoveRange, pause insertion and RepeatSelection already work. Remaining temporal
