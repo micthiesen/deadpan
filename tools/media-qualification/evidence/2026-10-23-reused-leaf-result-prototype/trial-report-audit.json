@@ -1,0 +1,255 @@
+{
+  "trials": [
+    {
+      "trial": "1-control",
+      "report_failed": false,
+      "checks": {
+        "large_first_pause": 7,
+        "kestrel_shortcuts": 1
+      },
+      "findings": {
+        "kestrel-shortcuts": 0,
+        "large-first-pause": 2
+      },
+      "warnings": {
+        "kestrel-shortcuts": 0,
+        "large-first-pause": 2
+      },
+      "skipped": {
+        "kestrel-shortcuts": 0,
+        "large-first-pause": 3
+      },
+      "input_maps_equal_except_sqlite_sidecars": true,
+      "wal_bytes": 0
+    },
+    {
+      "trial": "1-prototype",
+      "report_failed": false,
+      "checks": {
+        "large_first_pause": 7,
+        "kestrel_shortcuts": 1
+      },
+      "findings": {
+        "kestrel-shortcuts": 0,
+        "large-first-pause": 2
+      },
+      "warnings": {
+        "kestrel-shortcuts": 0,
+        "large-first-pause": 2
+      },
+      "skipped": {
+        "kestrel-shortcuts": 0,
+        "large-first-pause": 3
+      },
+      "input_maps_equal_except_sqlite_sidecars": true,
+      "wal_bytes": 0
+    },
+    {
+      "trial": "2-prototype",
+      "report_failed": false,
+      "checks": {
+        "large_first_pause": 7,
+        "kestrel_shortcuts": 1
+      },
+      "findings": {
+        "kestrel-shortcuts": 0,
+        "large-first-pause": 2
+      },
+      "warnings": {
+        "kestrel-shortcuts": 0,
+        "large-first-pause": 2
+      },
+      "skipped": {
+        "kestrel-shortcuts": 0,
+        "large-first-pause": 3
+      },
+      "input_maps_equal_except_sqlite_sidecars": true,
+      "wal_bytes": 0
+    },
+    {
+      "trial": "2-control",
+      "report_failed": false,
+      "checks": {
+        "large_first_pause": 7,
+        "kestrel_shortcuts": 1
+      },
+      "findings": {
+        "kestrel-shortcuts": 0,
+        "large-first-pause": 2
+      },
+      "warnings": {
+        "kestrel-shortcuts": 0,
+        "large-first-pause": 2
+      },
+      "skipped": {
+        "kestrel-shortcuts": 0,
+        "large-first-pause": 3
+      },
+      "input_maps_equal_except_sqlite_sidecars": true,
+      "wal_bytes": 0
+    },
+    {
+      "trial": "3-control",
+      "report_failed": false,
+      "checks": {
+        "large_first_pause": 7,
+        "kestrel_shortcuts": 1
+      },
+      "findings": {
+        "kestrel-shortcuts": 0,
+        "large-first-pause": 2
+      },
+      "warnings": {
+        "kestrel-shortcuts": 0,
+        "large-first-pause": 2
+      },
+      "skipped": {
+        "kestrel-shortcuts": 0,
+        "large-first-pause": 3
+      },
+      "input_maps_equal_except_sqlite_sidecars": true,
+      "wal_bytes": 0
+    },
+    {
+      "trial": "3-prototype",
+      "report_failed": false,
+      "checks": {
+        "large_first_pause": 7,
+        "kestrel_shortcuts": 1
+      },
+      "findings": {
+        "kestrel-shortcuts": 0,
+        "large-first-pause": 2
+      },
+      "warnings": {
+        "kestrel-shortcuts": 0,
+        "large-first-pause": 2
+      },
+      "skipped": {
+        "kestrel-shortcuts": 0,
+        "large-first-pause": 3
+      },
+      "input_maps_equal_except_sqlite_sidecars": true,
+      "wal_bytes": 0
+    },
+    {
+      "trial": "4-prototype",
+      "report_failed": false,
+      "checks": {
+        "large_first_pause": 7,
+        "kestrel_shortcuts": 1
+      },
+      "findings": {
+        "kestrel-shortcuts": 0,
+        "large-first-pause": 2
+      },
+      "warnings": {
+        "kestrel-shortcuts": 0,
+        "large-first-pause": 2
+      },
+      "skipped": {
+        "kestrel-shortcuts": 0,
+        "large-first-pause": 3
+      },
+      "input_maps_equal_except_sqlite_sidecars": true,
+      "wal_bytes": 0
+    },
+    {
+      "trial": "4-control",
+      "report_failed": false,
+      "checks": {
+        "large_first_pause": 7,
+        "kestrel_shortcuts": 1
+      },
+      "findings": {
+        "kestrel-shortcuts": 0,
+        "large-first-pause": 2
+      },
+      "warnings": {
+        "kestrel-shortcuts": 0,
+        "large-first-pause": 2
+      },
+      "skipped": {
+        "kestrel-shortcuts": 0,
+        "large-first-pause": 3
+      },
+      "input_maps_equal_except_sqlite_sidecars": true,
+      "wal_bytes": 0
+    },
+    {
+      "trial": "5-control",
+      "report_failed": false,
+      "checks": {
+        "large_first_pause": 7,
+        "kestrel_shortcuts": 1
+      },
+      "findings": {
+        "kestrel-shortcuts": 0,
+        "large-first-pause": 2
+      },
+      "warnings": {
+        "kestrel-shortcuts": 0,
+        "large-first-pause": 2
+      },
+      "skipped": {
+        "kestrel-shortcuts": 0,
+        "large-first-pause": 3
+      },
+      "input_maps_equal_except_sqlite_sidecars": true,
+      "wal_bytes": 0
+    },
+    {
+      "trial": "5-prototype",
+      "report_failed": false,
+      "checks": {
+        "large_first_pause": 7,
+        "kestrel_shortcuts": 1
+      },
+      "findings": {
+        "kestrel-shortcuts": 0,
+        "large-first-pause": 2
+      },
+      "warnings": {
+        "kestrel-shortcuts": 0,
+        "large-first-pause": 2
+      },
+      "skipped": {
+        "kestrel-shortcuts": 0,
+        "large-first-pause": 3
+      },
+      "input_maps_equal_except_sqlite_sidecars": true,
+      "wal_bytes": 0
+    }
+  ],
+  "summary": {
+    "n_per_kind": 5,
+    "prototype_only": true,
+    "no_percentile_or_target_pass": true,
+    "kinds": {
+      "control": {
+        "large_first_pause_input_to_commit_ms": {
+          "min": 268.223667,
+          "median": 270.12154100000004,
+          "max": 271.988667
+        },
+        "large_first_pause_input_to_offscreen_background_composition_ms": {
+          "min": 270.81233399999996,
+          "median": 272.68483399999997,
+          "max": 274.605959
+        }
+      },
+      "prototype": {
+        "large_first_pause_input_to_commit_ms": {
+          "min": 263.887792,
+          "median": 266.234959,
+          "max": 266.685833
+        },
+        "large_first_pause_input_to_offscreen_background_composition_ms": {
+          "min": 266.42204200000003,
+          "median": 268.73812499999997,
+          "max": 269.314417
+        }
+      }
+    }
+  }
+}

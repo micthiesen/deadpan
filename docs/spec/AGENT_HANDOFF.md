@@ -120,13 +120,34 @@ Inventory verifies 129 files /1,718,991 bytes, SHA-256
 79090d0ded9ef8894ab40168e8bbe00545d07c758babb9ac84dad77a2a967677.
 All drivers are terminal; do not restart them or ship the temporary timers.
 
-Next: examine repeated planning/validation/staging while preserving authority,
-work bounds and durability. A read-only map is in progress in that scratch's
-next-map directory. One promising existing API is core apply_with_result:
-some semantic helpers call apply and then apply the returned forward patch,
-discarding a result the API can already return. Confirm exact guarantees,
-charges and refusal ordering before a narrow isolated experiment. No new
-optimization has been implemented or measured at this checkpoint.
+The read-only next-map study is complete in that scratch's next-map directory.
+It identifies the semantic commit_leaf apply/forward.apply duplication and
+separate size-only Store JSON allocation, while deferring sealed validation
+proof reuse. Do not combine these attribution experiments or weaken byte work
+charges, inverse restoration, capture/media admission or historical authority.
+
+A one-site [leaf-result prototype](../qualification/reused-leaf-result-prototype-2026-10-23.md)
+is complete in /tmp/deadpan-reused-leaf-result-2026-10-23: separate source/target,
+locked release build and five quiet control/prototype pairs all pass. Control
+input-to-commit/composition medians are 270.121541 /272.684834 ms; prototype
+266.234959 /268.738125 ms. This roughly 4 ms difference is diagnostic, not a
+percentile or target PASS. The private app SHA-256 is
+460aa0fb4ecccd06cc24fb0046d766f0df7f4857ebbb634120f17c2558266e8a.
+Inventory verifies 118 files /1,356,170 bytes, SHA-256
+b85c335624ba10b58cb86f7855d771c93fe8e00c0485e095e23dfa4f9c7e2e46.
+Never modify or restart that completed comparison.
+
+Next: qualify the uncommitted two-file Core candidate. Production commit_leaf
+now uses the same existing apply_with_result API; the new pause/setter test
+compares old leaf patches, returned results, authoritative replay, retained
+bindings/marks, inverse restoration and unchanged input. Both static reviews
+report no defects. No schema or other helper changes are involved.
+Scratch: /tmp/deadpan-reused-leaf-result-qualification-2026-10-23. focused.py is
+compiling the one selected Core test; qualify.py waits for its four successful
+steps before full Core, broader, UI, strict, debug/release media and native
+checks. Inspect owner/receipt files before restarting. A post driver for
+portable validation, extra native scenarios and final paired timings is still
+to be prepared. Preserve all failures and keep this candidate unqualified.
 
 Refresh/verify progress artifact a3ysikxugbmr4 from the next pushed
 docs/progress.json after this implementation commit. Preserve foreign

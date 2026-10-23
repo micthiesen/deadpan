@@ -1,0 +1,12 @@
+--- a/crates/deadpan-core/src/semantic/planner/pause.rs
++++ b/crates/deadpan-core/src/semantic/planner/pause.rs
+@@ -1067,8 +1067,7 @@
+ 
+     /// Apply one leaf to the staged document within the byte limits.
+     pub(super) fn commit_leaf(&mut self, edit: LeafEdit) -> Result<(), EditError> {
+-        let applied = crate::apply(&self.current, &edit.request(&self.current))?;
+-        let next = applied.forward.apply(&self.current)?;
++        let (_, next) = crate::apply_with_result(&self.current, &edit.request(&self.current))?;
+         charge(
+             &mut self.document_bytes,
+             wire::size(&next, MAX_DOCUMENT_JSON_BYTES)?,

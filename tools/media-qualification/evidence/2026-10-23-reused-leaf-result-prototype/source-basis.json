@@ -1,0 +1,10 @@
+{
+  "base_commit": "1e67fdb27bbb3a59d282e5240c65b860b4090b76",
+  "archive_sha256": "cd2371ddb03a44736012077eec77316d921b8f018c5ac221d04265b507634c63",
+  "one_production_file_changed": "crates/deadpan-core/src/semantic/planner/pause.rs",
+  "before_sha256": "9462060e367d8ca16ebbb415291db2129f4af83b165b8ab0421f0568ac05d749",
+  "after_sha256": "8b6e2f282b5d704afe6528e5dbdad5118028bb99d637fe0644410bb514fde15f",
+  "prototype_only": true,
+  "unchanged_charge_and_mutation_order": true,
+  "no_schema_change": true
+}

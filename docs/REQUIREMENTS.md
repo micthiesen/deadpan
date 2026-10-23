@@ -2,6 +2,25 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
+## Validated leaf-result reuse candidate, 2026-10-23
+
+A private one-site [prototype](qualification/reused-leaf-result-prototype-2026-10-23.md)
+reuses the validated document returned by the existing `apply_with_result`
+instead of applying its forward patch again. All byte charges, staged updates,
+identity/provider checks, Store admission and history checks remain.
+
+Five quiet fresh-package pairs measure input-to-commit medians
+270.121541 /266.234959 ms and offscreen composition 272.684834 /268.738125 ms.
+The roughly 4 ms difference is diagnostic, not a formal percentile or target
+PASS; this is a separate batch from the qualified shared-preparation result.
+All ten replay/input/source/binary guards pass. Evidence verifies 118 files
+/1,356,170 bytes.
+
+The same one-line change plus a pause/setter differential test is now an
+uncommitted production candidate. Static reviews report no defects; focused,
+Core, broader, UI, strict, media/native and final performance checks are owed.
+No requirement or gate closes.
+
 ## Remaining preparation cost, 2026-10-23
 
 The isolated [prepared-Compound profile](qualification/prepared-compound-profile-2026-10-23.md)

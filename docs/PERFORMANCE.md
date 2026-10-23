@@ -243,6 +243,15 @@ not establish a runtime-copy preparation bound. These results motivate
 examining planning/validation rather than weakening durability, with no
 additional production gain or percentile/target PASS.
 
+An isolated [leaf-result reuse prototype](qualification/reused-leaf-result-prototype-2026-10-23.md)
+replaces one semantic helper's `apply` then `forward.apply` pair with the
+existing `apply_with_result`. Five quiet pairs measure offscreen medians
+272.684834 /268.738125 ms, a small diagnostic difference with all replay and
+provenance guards passing. This is unqualified prototype evidence, separate
+from the earlier production comparison. The working candidate adds a
+differential pause/setter, binding/mark and inverse test; production checks
+remain pending. No percentile or latency target PASS follows.
+
 | Section 25 target | Measurement | Notes |
 | --- | --- | --- |
 | Key event to command-state update, p95 < 8 ms | ui `rapid-input` `warm_navigation_input_cpu_ms` | Whole egui input frame CPU: an upper bound on the state update. Small replay fixture. |
