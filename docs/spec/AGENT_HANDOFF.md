@@ -448,9 +448,21 @@ in history. UI initially refused an old supplemental CLI helper left in its
 reused extraction; history/stale-ui-helper-preflight retains both hashes and
 all receipts. The extraction was preserved and recreated; source guards for
 completed strict/Core/broad pass, so qualify_resumed.py resumes at step four
-without repeating them. UI passes from fresh extraction. Debug media is now
-running. The resumed qualification and post waiter are ACTIVE; inspect owner
-PIDs and receipts before any restart. Root owns Cargo, formatting, source and runtime producers.
+without repeating them. UI passes from fresh extraction. Debug and release neutral media pass
+(15 pictures/24,024 samples), and aligned release passes (19/30,430 final) at
+zero offset in 235.908 seconds with slow notices retained. The first new
+positive case fails before either commit on the old test reader stage label:
+plain no-voice/no-treatment authored PCM legitimately reports edge_faded_pcm_
+before_voice_effects. history/positive-media-pcm-stage-failure retains it.
+The reviewed one-file test helper fix preserves the old exact authored-bus
+expectation; the one-leaf reader requires the exact edge tag and proves all
+three predicates on the same opened session. No production source changed;
+all 2,052 other Rust files and six inputs match. Seven source reviews pass.
+The explicit pcm-reader-source-amendment.json retains completed Core/broad/UI
+maps, and final-source-identities.json records the new test helper. Strict
+and debug/release neutral/aligned controls plus the new positive case rerun;
+qualify_pcm_reader_resumed.py then continues to native. Both it and the post
+waiter are ACTIVE; inspect owner PIDs and receipts before any restart. Root owns Cargo, formatting, source and runtime producers.
 The isolated rerun script is prepared but unexecuted; final packaging and its
 GO marker remain pending. Independent packaging review findings were corrected
 before execution. No production performance result or target PASS is claimed.
