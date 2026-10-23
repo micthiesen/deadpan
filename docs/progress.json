@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-23T06:13:36Z",
+  "updated_at": "2026-10-23T06:24:55Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Compact timing candidate passes 1,503 Core, 3,499 broader selected and 1,292 UI-feature tests, strict Core/Store checks and formatting. Debug media verifies all 15 pictures and 24,024 samples at zero offset, with complete PCM/limiter bits and history controls. Four obsolete fixture assumptions were corrected without production changes; all failures remain retained. Both release exports and the 197-check native replay plus Kestrel now pass; independent portable validation and six strengthened codec tests pass. Explicit UI Clippy and current-format timing remain in progress. The prior prototype median 111.362 ms is not current-format qualification or a target PASS. Coverage stays 89%, 8/24 sections complete; no gate closes.",
+  "focus": "Compact frozen timing is implemented, reviewed, qualified and pushed. All 1,503 Core, 3,499 broader selected and 1,292 UI tests pass, plus six strengthened codec cases and strict Core/Store/UI checks. Debug/release media, 197 native checks plus Kestrel and both portable validations pass. Five quiet current-format pairs improve first-pause median from 130.636 to 114.691 ms, still above 100 ms before a picture; no p95 target PASS. Coverage remains 89%, with 8/24 sections complete. Next work measures the redundant full-slice capture and remaining default binding bytes; those experiments are isolated and unqualified.",
   "features": [
     {
       "id": "editing",
@@ -102,7 +102,7 @@
         "DP-18",
         "DP-24"
       ],
-      "note": "The Core 57 / SQLite 86 compact timing candidate passes 1,503 Core, 3,499 broader and 1,292 UI tests, strict Core/Store checks and debug encoded-media/history verification. Release/native and portable checks pass. Explicit UI Clippy and current-format timing remain owed. The prior disposable prototype improved first-pause median 127.513 to 111.362 ms, still above 100 ms. Remaining latency, worker memory and sleep policies stay open."
+      "note": "Core 57 / SQLite 86 compact timing is qualified across Core, broader, UI, strict, media, native and portable checks. Five quiet pairs improve first-pause median 130.636 to 114.691 ms; second medians are 33.206 / 33.265 ms. This still misses 100 ms without a picture, and native commit p95 is 85.747709 ms over nine samples. Remaining latency, worker memory and sleep policies stay open."
     },
     {
       "id": "models",
@@ -973,6 +973,14 @@
       "revision": "dae8d9ba8b1cead461f7706ccc2a8d02e4967d50",
       "retrospective": false,
       "summary": "Release media verifies fifteen pictures /24,024 samples and nineteen pictures /30,430 samples at zero offset. Native replay passes197 workflow checks plus Kestrel; existing layout warnings remain. Both nine-file extracted packages pass full validation and doctor without changing any path or byte. Six strengthened asymmetric/historical codec tests pass, using fixed bytes emitted by the immutable a18 library; further strict checks and old-code witness are running. Corrected lint scope attribution: completed xtask check covered changed Core/Store, while full UI Clippy is explicitly queued before current-format timing. UI tests passed1,292 cases. No current timing or target PASS, requirement or gate closure."
+    },
+    {
+      "date": "2026-10-23",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "6916ee0d578a11c37e6e66a470eb430b02773764",
+      "retrospective": false,
+      "summary": "Compact frozen timing is implemented and qualified under Core 57 / SQLite 86. All 1,503 Core, 3,499 broader selected and 1,292 UI tests pass, followed by six strengthened asymmetric/historical codec cases, strict Core/Store and explicit UI Clippy, formatting and the old-library witness. Debug/release verify all 15 pictures / 24,024 samples, and release verifies 19 pictures / 30,430 samples, at zero offset with complete PCM/history controls. Native passes 197 checks plus Kestrel; both nine-file portable packages validate/doctor unchanged. Five quiet current-format pairs measure first medians 130.636 / 114.691 ms and second 33.206 / 33.265 ms. No visible-Hold or p95 target PASS. All failures, lint-scope correction and two native layout warnings remain retained; inventory verifies 1,069 payload files / 46,387,246 bytes. No requirement or gate newly complete."
     }
   ]
 }

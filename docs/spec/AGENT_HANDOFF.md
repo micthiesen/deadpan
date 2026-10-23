@@ -22,8 +22,9 @@ Scratch /tmp/deadpan-compact-frozen-edges-2026-10-22 contains isolated next-prof
 capture timers and an early N−1 alias fallback prototype are prepared; none has
 been compiled/measured yet. A read-only byte audit finds 1,561,546 default binding
 bytes removable in the first compact history edit, without claiming speed.
-Next: commit the qualified compact feature, refresh/verify progress artifact,
-then measure the isolated capture/default-binding hypotheses. Preserve foreign
+Implementation 6916ee0d578a11c37e6e66a470eb430b02773764 is committed and pushed.
+Refresh/verify the progress artifact, then measure the isolated capture/default-
+binding hypotheses. Preserve foreign
 fuzz/Cargo.lock and .claude/. Keep the full goal active.
 
 First-pause profile, 2026-10-23: root scratch is
