@@ -1,0 +1,11 @@
+{
+  "source_commit": "3a32c923358c0cb7ca53f821bfb6db3e01ebb466",
+  "archive_sha256": "a7fa4c4c150db04776e21ca67eab2636afd5b047b02eee8b3969197a93a68cae",
+  "rust_files": 2051,
+  "all_baseline_files": 34585,
+  "six_inputs_equal_release_native_freeze": true,
+  "all_rust_equal_release_native_freeze": true,
+  "qualified_control_app": "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/release-native-bin/deadpan-app",
+  "qualified_control_app_sha256": "a9ce60a4d227e8c8107b06602915e6323e0cfabbf12610b67a85eda77bdd4a0f",
+  "state": "immutable baseline pinned; no overlay yet"
+}

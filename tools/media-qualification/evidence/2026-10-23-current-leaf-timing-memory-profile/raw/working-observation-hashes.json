@@ -1,0 +1,24 @@
+{
+  "state": "working-tree read only; NOT an immutable candidate baseline; wait for Root final commit",
+  "files": {
+    "crates/deadpan-app/src/project/service.rs": "d68879b682dc78607a9ac996fa6941dde1975b6860da375e2da97ab7222ff750",
+    "crates/deadpan-app/src/project/service/macros.rs": "b3d63ee05d49d3c1208a54a5492fe365c39b198b2a82448388df5a264e64c20c",
+    "crates/deadpan-core/src/lib.rs": "9087e729aeebf830f54717074e4a59835dea4b131a7b04f5a98224c0a3db9b2a",
+    "crates/deadpan-core/src/semantic/planner/pause.rs": "8b6e2f282b5d704afe6528e5dbdad5118028bb99d637fe0644410bb514fde15f",
+    "crates/deadpan-core/src/compound.rs": "5cc9f31f2b1a88267518b5edfb228c9de956cf3a4248434e77b70a312186db17",
+    "crates/deadpan-core/src/semantic/planner/selection.rs": "f8e16b78ed203dade31c1ff90632371f4d8dc1798db09178b03a3799d93ca526",
+    "crates/deadpan-core/tests/semantic_refresh.rs": "750a9d78e4db36c9efeab0a68aa7e0ef565d089dfca199ac2a1eadf5649c66bc",
+    "native/deadpan-process/src/lib.rs": "e41aaa69620973871c492554b3cd9b978dc455e9f95cdca9c8509f8279d23d52",
+    "native/deadpan-process/src/spawn.rs": "85bc1980138fe252faa4d9e23b6ca74c52358b1631ea7d629a6dcb9837c295cd",
+    "native/deadpan-process/Cargo.toml": "6a33b42b79d490f834584f799a66005171803e4cdc9e6ece5c7165180c889461"
+  },
+  "six_input_observations": {
+    "Cargo.lock": "1e39d18ae4de6c7b898edad39eb7104235fb3ffe3af84521ca94df2b6c25b71b",
+    "Cargo.toml": "121e4cfefb2227cf38d5c1758d6a2250ddc38465a1044dfe896368c7ac1b50f3",
+    "rust-toolchain.toml": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc",
+    ".cargo/config.toml": "b906738cab8f6f289180e1bcf32826d3e2996899cb5055dc7f0c6838655c340d",
+    "crates/deadpan-app/src/navigation/registry/baseline-routing.txt": "a181ba1d3f2db1c030fbdf1feaf2d5ae8efd5edd885114bcea9c161ac774cd8d",
+    "docs/COMMANDS.md": "b4fc50fffbb6d96406593dda90a56ee6c9f3b89a3790b6e7f69b87863f57beec"
+  },
+  "new_overlay_module_absent": true
+}

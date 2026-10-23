@@ -1,0 +1,69 @@
+{
+  "reviewer": "independent semantic_refresh_review subagent",
+  "completed_at_utc": "2026-10-23T16:37:00.576272+00:00",
+  "status": "no_findings",
+  "findings": [],
+  "scope": {
+    "source_files": [
+      "crates/deadpan-app/src/project/service.rs",
+      "crates/deadpan-app/src/project/service/macros.rs",
+      "crates/deadpan-core/src/compound.rs",
+      "crates/deadpan-core/src/leaf_profile.rs",
+      "crates/deadpan-core/src/lib.rs",
+      "crates/deadpan-core/src/semantic/planner/pause.rs"
+    ],
+    "runner_files": [
+      "memory_observer.rs",
+      "check_profile.py",
+      "test_profile_parser.py"
+    ],
+    "review_type": "independent source-only review of temporary diagnostic overlay and scratch runners; no build or runtime qualification"
+  },
+  "reviewed_source_sha256": {
+    "crates/deadpan-app/src/project/service.rs": "72895dd7e101b4f0b3c4129853a6d9a507402a5cd51e0bb9aef6422d6551d5ac",
+    "crates/deadpan-app/src/project/service/macros.rs": "c5feb7c202ffc9810df1c8bfb3b3f51896d8c9fed808b1c02c4c8f529673ecd3",
+    "crates/deadpan-core/src/compound.rs": "9aee17a68139fb0d084ec237df84e9e508e45c2c4e09b06e1fa9893d75c6a950",
+    "crates/deadpan-core/src/leaf_profile.rs": "f5c9f5d86126edb052014d093f8e6552dddefb63827bdc15ba3330b2718794f9",
+    "crates/deadpan-core/src/lib.rs": "8102b1ac89968e7503e898ded1832f2e2a451004c57a357abe323d02bccc729f",
+    "crates/deadpan-core/src/semantic/planner/pause.rs": "acd83b48fc4fd2f2b844ad7f81414e061cb12cf97469c70e448c0d947acd84bd"
+  },
+  "reviewed_dependency_sha256": {
+    "native/deadpan-process/src/lib.rs": "e41aaa69620973871c492554b3cd9b978dc455e9f95cdca9c8509f8279d23d52",
+    "native/deadpan-process/src/spawn.rs": "85bc1980138fe252faa4d9e23b6ca74c52358b1631ea7d629a6dcb9837c295cd",
+    "crates/deadpan-app/src/project/service/render.rs": "a2b951da1bee851bdf3708c0376a29afc595893c9f8406ed4258804898113ad5"
+  },
+  "reviewed_runner_and_contract_sha256": {
+    "memory_observer.rs": "4f2d35f88576cebea29427ca75fc6b18cf9050bc1af322487f07d7f29e5abd09",
+    "check_profile.py": "aa2d5700e87c7736fa0f316ad428d3e45612f012012921c2e130afcebfa26098",
+    "test_profile_parser.py": "0d7bad668db0be19b96dd470fc383238357a1873d8ac307ec1350a6f1fbe3423",
+    "schema.json": "ddb0d1ea20d4d9164c78600bb5642d76337af74a236090ce2ec7902764f15b60",
+    "PROPOSAL.md": "66be582e17cd6b5a8a1e4ff7e0add9e438e09bb9424f48950c3cec1b89471e95",
+    "worker-notes/HANDOFF.md": "1e3b9c44cd303c3e782d74007349448a1ab4024d870c800d3e7bae12852c49e6",
+    "worker-notes/instrumentation.patch": "0492d177388bf5e3edf30e15f8923068a14ca4d1d4292dd729ebf73f4e9847a0"
+  },
+  "concurrent_changes": {
+    "observed": false,
+    "files": [],
+    "method": "Final six source hashes still compared against exact hashes read at start and terminal worker handoff; no full-tree concurrency claim."
+  },
+  "checks": {
+    "exact_timing_scope": "Four fixed phases. Semantic guard brackets existing apply_with_result including edit.request argument setup, and ends before staged size charge/replacement/refresh. Replay guard brackets the ordinary apply_with_result(...)? .1 expression and ends before post-size charge/identity ledger/visitor. Isolation branch unchanged. These two spans are disjoint sequential calls for the specified one-leaf workload, contained by service outer route; they are inclusive apply costs, not reducer-only costs.",
+    "outer_success_publication": "Activation sits only in non-annotation user request dispatch and requires ProjectRequest::Macro plus exact env value 1. Outer guard starts immediately before original dispatch expression and drops after busy/reconciliation/shared publish. Marker occurs only after successful existing refresh, with original success/failure result branches retained. Output takes the snapshot after publication and outer drop; absent/duplicate marker or overflow discards output.",
+    "error_and_tls_lifecycle": "Leaf ? errors naturally drop active spans; unchanged service handling converts those failures into request receipts, then normal post-dispatch take clears the snapshot even when no success marker exists. begin refuses nesting without replacing an active snapshot. No catch_unwind loop was found on the service thread: a panic unwinds/drops spans and terminates that thread, so no stale buffer can contaminate a later request on it. This is not a general RAII activation API for arbitrary external callers.",
+    "gate_off": "With no activated snapshot, Span::start uses lazy bool::then(Instant::now), so no clock is read. App exact gate short-circuits begin; mark_refresh_success performs no clock. finish/output is not called. Disabled TLS/branch overhead remains and requires control qualification.",
+    "checked_counters": "Elapsed u128 and count u64 accumulation use checked_add; failure sets overflowed and suppresses report without changing saved result. Marker duration is constant zero. No measurements contain IDs, media, dynamic phase labels or authored fields.",
+    "semantics_and_authority": "Five existing-file diffs are imports/export, guards, final numeric output and equivalent temporary refresh-result binding. Existing fallible expressions, validation, allocation, charges, mutation, publication and success/failure handling remain. No Store/runtime adapter/source API/manifest changes. Diagnostic I/O is best-effort after work on service thread and cannot turn ordinary I/O failure into a saved-result error; malformed/partial/missing output must invalidate evidence.",
+    "parser": "Strict six prefix-line block, exact BEGIN/END, ordered constant phase/kind rows, fullmatch decimal syntax, u64/u128 limits, exact count=1, zero-time marker, checked disjoint sum and nonnegative outer residual. Rejects extra blocks/rows, unknown lines containing prefix and malformed lines; bounds per-line and total bytes. Gate-off mode requires complete profile absence. Synthetic cases cover these but were not run.",
+    "observer_ownership": "Observer launches executable directly through existing guarded spawn with process_group(0), keeps sole Child ownership, samples only owned_child_memory(&child), never uses arbitrary PID or try_wait and never reaps while sampling. Ok(None) ends sampling before cleanup and sole wait.",
+    "observer_cleanup": "Every ordinary post-spawn terminal path enters checked group teardown with monotonic deadline; failure attempts checked leader fallback. wait is attempted once only after confirmed exit, with reap_attempted set before wait. Group failure remains explicit and invalid even after leader fallback. Unconfirmed exit skips wait and records possible remaining child/descendants. Setup/output allocation happens before spawn; raw samples/receipt writing happens after cleanup.",
+    "observer_evidence": "Bounded 60000 rows/180-second cooperative runtime, 5ms requested gaps plus actual sample/query timestamps, checked counts/query sums and explicit errors. Trial requires natural exit, samples, no errors, group confirmation, successful sole reap/app exit and sample output. Zero samples retain null maxima. Maxima are correctly labeled sampled whole-main-app lower bounds, not exact/per-leaf/worker/GPU peaks."
+  },
+  "limitations": [
+    "No source edits, formatter, Cargo, build, parser tests, runtime, profiling or Git actions performed by reviewer.",
+    "All compilation, runtime counts/containment, failure injection, output behavior, observer permission/linkage and overhead calibration remain Root execution work.",
+    "Synchronous owned_child_memory/libproc queries are not preempted by the observer cooperative deadline; failed cleanup is reported rather than claimed successful.",
+    "Output filenames are trusted scratch-runner inputs; lexical distinctness does not prove distinct filesystem objects under aliasing/symlinks. Root must supply separate fresh files as planned.",
+    "Marker proves successful refresh before shared publication; it does not qualify caller/UI consumption or downstream GPU/scanout. Diagnostic stderr may overlap UI consumption.",
+    "No performance gain, memory ceiling, per-leaf memory or production release qualification is claimed."
+  ]
+}

@@ -99,6 +99,20 @@ target, requirement or gate closes; the 100 ms/50 ms targets remain open.
 
 ## Remaining preparation cost, 2026-10-23
 
+The [current leaf timing and owned-memory diagnostic](qualification/current-leaf-timing-memory-profile-2026-10-23.md)
+passes all 18 fresh native trials and 54 commands, with 126 workflow and
+18 Kestrel checks. Three enabled timing traces measure semantic and replay
+leaf medians 43.780792 /43.559500 ms inside a 233.354042 ms service route.
+The 146.001626 ms residual is computed per trial, not from subtracted medians.
+A separate memory lane retains 16,303 owned-app samples; observed footprint
+maxima are about 659–700 MiB with gaps up to 7.818667 ms. Sampled whole-app
+lower bounds cannot establish exact/per-leaf peaks, retention or a ceiling.
+The 376-file /4,211,716-byte inventory and two-file toolchain supplement verify;
+all failure history and 36 layout warnings remain. No production change,
+calibrated overhead, percentile or target PASS follows. A private one-leaf
+replay-reuse experiment is being prepared with exact value/mode binding and
+unchanged independent Core/Store authority.
+
 A private [semantic refresh duration reuse prototype](qualification/semantic-refresh-duration-reuse-prototype-2026-10-23.md)
 reuses one complete map for the same immutable staged refresh, preserving
 query/error order, assignments, both anchor indexes and all authority. Four

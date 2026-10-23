@@ -1,0 +1,213 @@
+--- a/crates/deadpan-app/src/project/service.rs
++++ b/crates/deadpan-app/src/project/service.rs
+@@ -9,6 +9,7 @@
+ use deadpan_core::{
+     AssetId, Command, CommandRequest, NodeId, NodeKind, ProjectDocument, ProjectId, RevisionId,
+ };
++use deadpan_core::leaf_profile;
+ use deadpan_plan::RenderPlan;
+ use deadpan_store::original_media::{OriginalMediaRecord, OriginalOwnership};
+ use deadpan_store::single_source::{SingleSourceInitialization, SingleSourceState};
+@@ -27,6 +28,38 @@
+ };
+ 
+ type Result<T> = std::result::Result<T, String>;
++
++fn finish_leaf_profile() {
++    use std::io::Write;
++
++    const PHASES: [(&str, &str); leaf_profile::PHASE_COUNT] = [
++        ("app_service_total", "inclusive_native_route"),
++        ("semantic_leaf_apply_call", "disjoint_leaf_call_in_semantics"),
++        ("replay_leaf_apply_call", "disjoint_leaf_call_in_replay"),
++        ("app_refresh_succeeded", "zero_time_success_marker"),
++    ];
++    let Some(snapshot) = leaf_profile::take() else {
++        return;
++    };
++    if snapshot.overflowed
++        || snapshot.phases[leaf_profile::Phase::AppRefreshSucceeded as usize].count != 1
++    {
++        return;
++    }
++    // Called only after shared publication and the outer service span drops.
++    // Diagnostic I/O errors must never change the completed save's result.
++    let stderr = std::io::stderr();
++    let mut output = stderr.lock();
++    let _ = writeln!(output, "DEADPAN_CURRENT_LEAF_PROFILE BEGIN count=1");
++    for ((phase, kind), measurement) in PHASES.into_iter().zip(snapshot.phases) {
++        let _ = writeln!(
++            output,
++            "DEADPAN_CURRENT_LEAF_PROFILE PHASE phase={phase} kind={kind} elapsed_ns={} count={}",
++            measurement.elapsed_ns, measurement.count,
++        );
++    }
++    let _ = writeln!(output, "DEADPAN_CURRENT_LEAF_PROFILE END count=1");
++}
+ 
+ mod backups;
+ mod cut_slice;
+@@ -340,6 +373,11 @@
+                 service.publish();
+             }
+             Ok(request) => {
++                let profiling_macro = matches!(&request, ProjectRequest::Macro(_))
++                    && std::env::var_os("DEADPAN_CURRENT_LEAF_PROFILE").as_deref()
++                        == Some(std::ffi::OsStr::new("1"))
++                    && leaf_profile::begin();
++                let total_profile = leaf_profile::Span::start(leaf_profile::Phase::AppServiceTotal);
+                 if service.dispatch_request(request) {
+                     #[cfg(test)]
+                     service.shared.request_completed(crate::project::Lane::User);
+@@ -349,6 +387,10 @@
+                 service.reconcile_slip();
+                 service.reconcile_trim();
+                 service.publish();
++                drop(total_profile);
++                if profiling_macro {
++                    finish_leaf_profile();
++                }
+             }
+             Err(RecvTimeoutError::Disconnected) => {
+                 requests_connected = false;
+--- a/crates/deadpan-app/src/project/service/macros.rs
++++ b/crates/deadpan-app/src/project/service/macros.rs
+@@ -867,7 +867,11 @@
+                         .render_commit_refresh_failure
+                         .swap(false, Ordering::AcqRel);
+                 }
+-                match self.refresh() {
++                let refresh_result = self.refresh();
++                if refresh_result.is_ok() {
++                    leaf_profile::mark_refresh_success();
++                }
++                match refresh_result {
+                     Ok(()) => {
+                         self.message = Some(if committed.is_some() {
+                             format!("{label} saved as one edit; Undo restores it")
+--- a/crates/deadpan-core/src/compound.rs
++++ b/crates/deadpan-core/src/compound.rs
+@@ -324,7 +324,10 @@
+                 isolation.extend(steps);
+                 next
+             } else {
+-                crate::apply_with_result(&current, leaf)?.1
++                let apply_profile = crate::leaf_profile::Span::start(crate::leaf_profile::Phase::ReplayLeafApplyCall);
++                let next = crate::apply_with_result(&current, leaf)?.1;
++                drop(apply_profile);
++                next
+             };
+             let size = wire::size(&next, crate::MAX_DOCUMENT_JSON_BYTES)?;
+             charge(
+--- /dev/null
++++ b/crates/deadpan-core/src/leaf_profile.rs
+@@ -0,0 +1,87 @@
++//! Temporary numeric diagnostics for one isolated native first-pause probe.
++//! The app owns environment policy and output; Core records no content.
++
++use std::cell::RefCell;
++use std::time::Instant;
++
++#[derive(Clone, Copy)]
++pub enum Phase {
++    AppServiceTotal,
++    SemanticLeafApplyCall,
++    ReplayLeafApplyCall,
++    AppRefreshSucceeded,
++}
++
++pub const PHASE_COUNT: usize = 4;
++
++#[derive(Default)]
++pub struct Measurement {
++    pub elapsed_ns: u128,
++    pub count: u64,
++}
++
++pub struct Snapshot {
++    pub phases: [Measurement; PHASE_COUNT],
++    pub overflowed: bool,
++}
++
++thread_local! {
++    static ACTIVE: RefCell<Option<Snapshot>> = const { RefCell::new(None) };
++}
++
++pub fn begin() -> bool {
++    ACTIVE.with(|active| {
++        let mut active = active.borrow_mut();
++        if active.is_some() {
++            return false;
++        }
++        *active = Some(Snapshot {
++            phases: std::array::from_fn(|_| Measurement::default()),
++            overflowed: false,
++        });
++        true
++    })
++}
++
++pub struct Span {
++    phase: Phase,
++    started: Option<Instant>,
++}
++
++impl Span {
++    pub fn start(phase: Phase) -> Self {
++        let started = ACTIVE.with(|active| active.borrow().is_some().then(Instant::now));
++        Self { phase, started }
++    }
++}
++
++impl Drop for Span {
++    fn drop(&mut self) {
++        if let Some(started) = self.started {
++            record(self.phase, started.elapsed().as_nanos());
++        }
++    }
++}
++
++fn record(phase: Phase, elapsed_ns: u128) {
++    ACTIVE.with(|active| {
++        if let Some(snapshot) = active.borrow_mut().as_mut() {
++            let measurement = &mut snapshot.phases[phase as usize];
++            match (measurement.elapsed_ns.checked_add(elapsed_ns), measurement.count.checked_add(1)) {
++                (Some(elapsed_ns), Some(count)) => {
++                    measurement.elapsed_ns = elapsed_ns;
++                    measurement.count = count;
++                }
++                _ => snapshot.overflowed = true,
++            }
++        }
++    });
++}
++
++pub fn mark_refresh_success() {
++    record(Phase::AppRefreshSucceeded, 0);
++}
++
++pub fn take() -> Option<Snapshot> {
++    ACTIVE.with(|active| active.borrow_mut().take())
++}
+--- a/crates/deadpan-core/src/lib.rs
++++ b/crates/deadpan-core/src/lib.rs
+@@ -26,6 +26,7 @@
+ mod caption;
+ mod command;
+ mod command_work;
++pub mod leaf_profile;
+ mod equalizer;
+ mod tail_sends;
+ #[cfg(any(test, feature = "test-support"))]
+--- a/crates/deadpan-core/src/semantic/planner/pause.rs
++++ b/crates/deadpan-core/src/semantic/planner/pause.rs
+@@ -1067,7 +1067,9 @@
+ 
+     /// Apply one leaf to the staged document within the byte limits.
+     pub(super) fn commit_leaf(&mut self, edit: LeafEdit) -> Result<(), EditError> {
++        let apply_profile = crate::leaf_profile::Span::start(crate::leaf_profile::Phase::SemanticLeafApplyCall);
+         let (_, next) = crate::apply_with_result(&self.current, &edit.request(&self.current))?;
++        drop(apply_profile);
+         charge(
+             &mut self.document_bytes,
+             wire::size(&next, MAX_DOCUMENT_JSON_BYTES)?,

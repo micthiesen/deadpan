@@ -1,0 +1,141 @@
+{
+  "captured_after_terminal_trials_at": "2026-10-23T16:56:13.370732+00:00",
+  "cargo_cache_original_path": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/target/.rustc_info.json",
+  "cached_compiler_release": "1.97.1",
+  "qualified_input_rust_toolchain_sha256": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc",
+  "observations": [
+    {
+      "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/source",
+      "command": [
+        "rustc",
+        "--version"
+      ],
+      "exit": 0,
+      "stdout": "rustc 1.97.1 (8bab26f4f 2026-07-14)\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/source",
+      "command": [
+        "cargo",
+        "--version"
+      ],
+      "exit": 0,
+      "stdout": "cargo 1.97.1 (c980f4866 2026-06-30)\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23",
+      "command": [
+        "rustc",
+        "--version"
+      ],
+      "exit": 0,
+      "stdout": "rustc 1.99.1 (58cf8f9c3 2026-10-13)\n",
+      "stderr": ""
+    },
+    {
+      "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23",
+      "command": [
+        "cargo",
+        "--version"
+      ],
+      "exit": 0,
+      "stdout": "cargo 1.99.1 (5f94df478 2026-08-27)\n",
+      "stderr": ""
+    }
+  ],
+  "report_runtime_rust_versions": [
+    {
+      "report": "timing-1-control-report/report.json",
+      "rust_field": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
+      "app_sha256": "a9ce60a4d227e8c8107b06602915e6323e0cfabbf12610b67a85eda77bdd4a0f"
+    },
+    {
+      "report": "timing-1-off-report/report.json",
+      "rust_field": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
+      "app_sha256": "14ef183594c33011c7557c8affd0bf516d24a55a9994d42a8d0648deb01e6ede"
+    },
+    {
+      "report": "timing-1-on-report/report.json",
+      "rust_field": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
+      "app_sha256": "14ef183594c33011c7557c8affd0bf516d24a55a9994d42a8d0648deb01e6ede"
+    },
+    {
+      "report": "timing-2-control-report/report.json",
+      "rust_field": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
+      "app_sha256": "a9ce60a4d227e8c8107b06602915e6323e0cfabbf12610b67a85eda77bdd4a0f"
+    },
+    {
+      "report": "timing-2-off-report/report.json",
+      "rust_field": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
+      "app_sha256": "14ef183594c33011c7557c8affd0bf516d24a55a9994d42a8d0648deb01e6ede"
+    },
+    {
+      "report": "timing-2-on-report/report.json",
+      "rust_field": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
+      "app_sha256": "14ef183594c33011c7557c8affd0bf516d24a55a9994d42a8d0648deb01e6ede"
+    },
+    {
+      "report": "timing-3-control-report/report.json",
+      "rust_field": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
+      "app_sha256": "a9ce60a4d227e8c8107b06602915e6323e0cfabbf12610b67a85eda77bdd4a0f"
+    },
+    {
+      "report": "timing-3-off-report/report.json",
+      "rust_field": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
+      "app_sha256": "14ef183594c33011c7557c8affd0bf516d24a55a9994d42a8d0648deb01e6ede"
+    },
+    {
+      "report": "timing-3-on-report/report.json",
+      "rust_field": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
+      "app_sha256": "14ef183594c33011c7557c8affd0bf516d24a55a9994d42a8d0648deb01e6ede"
+    },
+    {
+      "report": "memory-1-control-report/report.json",
+      "rust_field": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
+      "app_sha256": "a9ce60a4d227e8c8107b06602915e6323e0cfabbf12610b67a85eda77bdd4a0f"
+    },
+    {
+      "report": "memory-1-off-report/report.json",
+      "rust_field": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
+      "app_sha256": "14ef183594c33011c7557c8affd0bf516d24a55a9994d42a8d0648deb01e6ede"
+    },
+    {
+      "report": "memory-1-on-report/report.json",
+      "rust_field": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
+      "app_sha256": "14ef183594c33011c7557c8affd0bf516d24a55a9994d42a8d0648deb01e6ede"
+    },
+    {
+      "report": "memory-2-control-report/report.json",
+      "rust_field": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
+      "app_sha256": "a9ce60a4d227e8c8107b06602915e6323e0cfabbf12610b67a85eda77bdd4a0f"
+    },
+    {
+      "report": "memory-2-off-report/report.json",
+      "rust_field": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
+      "app_sha256": "14ef183594c33011c7557c8affd0bf516d24a55a9994d42a8d0648deb01e6ede"
+    },
+    {
+      "report": "memory-2-on-report/report.json",
+      "rust_field": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
+      "app_sha256": "14ef183594c33011c7557c8affd0bf516d24a55a9994d42a8d0648deb01e6ede"
+    },
+    {
+      "report": "memory-3-control-report/report.json",
+      "rust_field": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
+      "app_sha256": "a9ce60a4d227e8c8107b06602915e6323e0cfabbf12610b67a85eda77bdd4a0f"
+    },
+    {
+      "report": "memory-3-off-report/report.json",
+      "rust_field": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
+      "app_sha256": "14ef183594c33011c7557c8affd0bf516d24a55a9994d42a8d0648deb01e6ede"
+    },
+    {
+      "report": "memory-3-on-report/report.json",
+      "rust_field": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
+      "app_sha256": "14ef183594c33011c7557c8affd0bf516d24a55a9994d42a8d0648deb01e6ede"
+    }
+  ],
+  "interpretation": "The reports run rustc --version from the launch working directory and see default PATH toolchain 1.99.1. The fresh build target compiler cache and source-directory commands identify pinned compiler1.97.1. Runtime rust field is not build-compiler provenance. No report or original inventory was changed."
+}

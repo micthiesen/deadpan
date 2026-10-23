@@ -1,0 +1,7 @@
+{
+  "first_driver": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer_smoke.py",
+  "first_driver_sha256": "246d74a44dfa50a4d58b258b76d2e529ccf3ec22c18d03bc8c488d9f1445534a",
+  "corrected_driver": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer_smoke_resumed.py",
+  "corrected_driver_sha256": "73d1f659742e4e9ad9a1b319bbe74d2117ceeade5c957d304c3c96e260909c5d",
+  "correction": "Fix three overescaped newline literals in scratch harness helper/output; use distinct resumed directory. Initial helper compile failed before observer launch. First correction guard expected four literals but found three and wrote nothing; the subsequent missing-script attempt exited two before launching anything. Observer/application/adapter source unchanged."
+}

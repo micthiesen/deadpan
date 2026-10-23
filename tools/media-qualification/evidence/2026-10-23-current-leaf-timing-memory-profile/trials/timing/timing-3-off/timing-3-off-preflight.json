@@ -1,0 +1,83 @@
+{
+  "label": "timing-3-off",
+  "waited_seconds": 25.485,
+  "samples": [
+    {
+      "elapsed_seconds": 0.041,
+      "load_average": [
+        3.595703125,
+        2.48291015625,
+        2.54736328125
+      ],
+      "conflicting_processes": []
+    },
+    {
+      "elapsed_seconds": 5.123,
+      "load_average": [
+        3.3876953125,
+        2.4580078125,
+        2.5380859375
+      ],
+      "conflicting_processes": []
+    },
+    {
+      "elapsed_seconds": 10.213,
+      "load_average": [
+        3.1962890625,
+        2.43359375,
+        2.52880859375
+      ],
+      "conflicting_processes": []
+    },
+    {
+      "elapsed_seconds": 15.304,
+      "load_average": [
+        3.18017578125,
+        2.44287109375,
+        2.53125
+      ],
+      "conflicting_processes": []
+    },
+    {
+      "elapsed_seconds": 20.39,
+      "load_average": [
+        3.08544921875,
+        2.43505859375,
+        2.52783203125
+      ],
+      "conflicting_processes": []
+    },
+    {
+      "elapsed_seconds": 25.485,
+      "load_average": [
+        2.91796875,
+        2.4111328125,
+        2.5185546875
+      ],
+      "conflicting_processes": []
+    }
+  ],
+  "power": {
+    "battery": {
+      "command": [
+        "pmset",
+        "-g",
+        "batt"
+      ],
+      "exit": 0,
+      "stdout": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=22741091)\t80%; AC attached; not charging present: true\n",
+      "stderr": ""
+    },
+    "thermal": {
+      "command": [
+        "pmset",
+        "-g",
+        "therm"
+      ],
+      "exit": 0,
+      "stdout": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n",
+      "stderr": ""
+    }
+  },
+  "ready": true
+}

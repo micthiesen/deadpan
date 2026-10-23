@@ -1,0 +1,73 @@
+{
+  "lane": "timing",
+  "diagnostic_only": true,
+  "no_percentile_or_target_pass": true,
+  "n_per_kind": 3,
+  "kinds": {
+    "control": {
+      "large_first_pause_input_to_commit_ms": {
+        "min": 236.37012499999997,
+        "median": 236.850291,
+        "max": 246.01325
+      },
+      "large_first_pause_input_to_offscreen_background_composition_ms": {
+        "min": 239.059584,
+        "median": 239.352541,
+        "max": 248.642625
+      }
+    },
+    "off": {
+      "large_first_pause_input_to_commit_ms": {
+        "min": 239.84729099999998,
+        "median": 240.814792,
+        "max": 240.851584
+      },
+      "large_first_pause_input_to_offscreen_background_composition_ms": {
+        "min": 242.346958,
+        "median": 243.290584,
+        "max": 243.54008399999998
+      }
+    },
+    "on": {
+      "large_first_pause_input_to_commit_ms": {
+        "min": 238.6345,
+        "median": 239.753209,
+        "max": 240.494584
+      },
+      "large_first_pause_input_to_offscreen_background_composition_ms": {
+        "min": 241.21475,
+        "median": 242.28804200000002,
+        "max": 243.024834
+      }
+    }
+  },
+  "on_profile_phase_ms": {
+    "app_service_total": {
+      "min": 232.330625,
+      "median": 233.354042,
+      "max": 234.048625
+    },
+    "semantic_leaf_apply_call": {
+      "min": 43.766583,
+      "median": 43.780792,
+      "max": 43.792916
+    },
+    "replay_leaf_apply_call": {
+      "min": 43.140916,
+      "median": 43.5595,
+      "max": 43.871125
+    },
+    "app_refresh_succeeded": {
+      "min": 0.0,
+      "median": 0.0,
+      "max": 0.0
+    }
+  },
+  "on_other_service_cleanup_and_overhead_ms": {
+    "min": 145.423126,
+    "median": 146.001626,
+    "max": 146.396708
+  },
+  "instrumentation_overhead_qualified": false,
+  "queue_wait_measured": false
+}

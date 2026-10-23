@@ -1,0 +1,56 @@
+{
+  "state": "proposed only; no overlay implemented or measurement run",
+  "prefix": "DEADPAN_CURRENT_LEAF_PROFILE",
+  "gate": "DEADPAN_CURRENT_LEAF_PROFILE=1, app only",
+  "expected_profile_lines": 6,
+  "workload": "fresh10000-Hold ordinary root first InsertPause at frame17933, release native user lane",
+  "phases": [
+    {
+      "name": "app_service_total",
+      "kind": "inclusive_native_route",
+      "expected_count": 1,
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "semantic_leaf_apply_call",
+      "kind": "disjoint_leaf_call_in_semantics",
+      "expected_count": 1,
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "replay_leaf_apply_call",
+      "kind": "disjoint_leaf_call_in_replay",
+      "expected_count": 1,
+      "expected_elapsed_ns": null
+    },
+    {
+      "name": "app_refresh_succeeded",
+      "kind": "zero_time_success_marker",
+      "expected_count": 1,
+      "expected_elapsed_ns": 0
+    }
+  ],
+  "containment": [
+    {
+      "parent": "app_service_total",
+      "sum_disjoint_children": [
+        "semantic_leaf_apply_call",
+        "replay_leaf_apply_call"
+      ],
+      "nonnegative_residual": true,
+      "residual_label": "other service work, cleanup and instrumentation overhead"
+    }
+  ],
+  "output": "BEGIN count=1; four ordered PHASE phase=<constant> kind=<constant> elapsed_ns=<decimal> count=<decimal>; END count=1",
+  "memory": {
+    "adapter": "deadpan_native_process::owned_child_memory(&Child)",
+    "metric": "sampled whole-app phys_footprint and resident_size maxima; lower bounds, NOT exact peak or phase attribution",
+    "requested_interval_ms": 5,
+    "maximum_samples": 60000,
+    "maximum_runtime_seconds": 180,
+    "first_sampling": "immediately after guarded app spawn",
+    "stop_sampling": "Ok(None), before sole final reap",
+    "sample_errors": "retained and memory trial invalid; never invented zero",
+    "raw_sample_times": "observer monotonic elapsed_ns since spawn; not correlated to Core phase clocks"
+  }
+}

@@ -1,0 +1,272 @@
+[
+  {
+    "lane": "timing",
+    "round": 1,
+    "kind": "control",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 236.850291,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 239.352541
+    },
+    "profile": {
+      "profile_absent": true
+    },
+    "load_average": [
+      1.240234375,
+      2.14501953125,
+      2.47265625
+    ],
+    "process_power_observation": "timing-1-control-preflight.json",
+    "checks": 7,
+    "kestrel_checks": 1,
+    "source_binary_input_guards": true,
+    "authored_paths_bytes_unchanged": true,
+    "wal_empty": true,
+    "binary_sha256": "a9ce60a4d227e8c8107b06602915e6323e0cfabbf12610b67a85eda77bdd4a0f",
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c"
+  },
+  {
+    "lane": "timing",
+    "round": 1,
+    "kind": "off",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 240.851584,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 243.54008399999998
+    },
+    "profile": {
+      "profile_absent": true
+    },
+    "load_average": [
+      1.50634765625,
+      2.15478515625,
+      2.4697265625
+    ],
+    "process_power_observation": "timing-1-off-preflight.json",
+    "checks": 7,
+    "kestrel_checks": 1,
+    "source_binary_input_guards": true,
+    "authored_paths_bytes_unchanged": true,
+    "wal_empty": true,
+    "binary_sha256": "14ef183594c33011c7557c8affd0bf516d24a55a9994d42a8d0648deb01e6ede",
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c"
+  },
+  {
+    "lane": "timing",
+    "round": 1,
+    "kind": "on",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 240.494584,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 243.024834
+    },
+    "profile": {
+      "diagnostic_only": true,
+      "nanoseconds": {
+        "app_service_total": 234048625,
+        "semantic_leaf_apply_call": 43780792,
+        "replay_leaf_apply_call": 43871125,
+        "app_refresh_succeeded": 0
+      },
+      "counts": {
+        "app_service_total": 1,
+        "semantic_leaf_apply_call": 1,
+        "replay_leaf_apply_call": 1,
+        "app_refresh_succeeded": 1
+      },
+      "phase_count_sum": 4,
+      "other_service_cleanup_and_overhead_ns": 146396708,
+      "instrumentation_overhead_qualified": false
+    },
+    "load_average": [
+      1.701171875,
+      2.1630859375,
+      2.466796875
+    ],
+    "process_power_observation": "timing-1-on-preflight.json",
+    "checks": 7,
+    "kestrel_checks": 1,
+    "source_binary_input_guards": true,
+    "authored_paths_bytes_unchanged": true,
+    "wal_empty": true,
+    "binary_sha256": "14ef183594c33011c7557c8affd0bf516d24a55a9994d42a8d0648deb01e6ede",
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c"
+  },
+  {
+    "lane": "timing",
+    "round": 2,
+    "kind": "off",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 240.814792,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 243.290584
+    },
+    "profile": {
+      "profile_absent": true
+    },
+    "load_average": [
+      1.54541015625,
+      2.10546875,
+      2.4404296875
+    ],
+    "process_power_observation": "timing-2-off-preflight.json",
+    "checks": 7,
+    "kestrel_checks": 1,
+    "source_binary_input_guards": true,
+    "authored_paths_bytes_unchanged": true,
+    "wal_empty": true,
+    "binary_sha256": "14ef183594c33011c7557c8affd0bf516d24a55a9994d42a8d0648deb01e6ede",
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c"
+  },
+  {
+    "lane": "timing",
+    "round": 2,
+    "kind": "on",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 239.753209,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 242.28804200000002
+    },
+    "profile": {
+      "diagnostic_only": true,
+      "nanoseconds": {
+        "app_service_total": 233354042,
+        "semantic_leaf_apply_call": 43792916,
+        "replay_leaf_apply_call": 43559500,
+        "app_refresh_succeeded": 0
+      },
+      "counts": {
+        "app_service_total": 1,
+        "semantic_leaf_apply_call": 1,
+        "replay_leaf_apply_call": 1,
+        "app_refresh_succeeded": 1
+      },
+      "phase_count_sum": 4,
+      "other_service_cleanup_and_overhead_ns": 146001626,
+      "instrumentation_overhead_qualified": false
+    },
+    "load_average": [
+      1.8662109375,
+      2.1484375,
+      2.44921875
+    ],
+    "process_power_observation": "timing-2-on-preflight.json",
+    "checks": 7,
+    "kestrel_checks": 1,
+    "source_binary_input_guards": true,
+    "authored_paths_bytes_unchanged": true,
+    "wal_empty": true,
+    "binary_sha256": "14ef183594c33011c7557c8affd0bf516d24a55a9994d42a8d0648deb01e6ede",
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c"
+  },
+  {
+    "lane": "timing",
+    "round": 2,
+    "kind": "control",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 236.37012499999997,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 239.059584
+    },
+    "profile": {
+      "profile_absent": true
+    },
+    "load_average": [
+      1.732421875,
+      2.10986328125,
+      2.431640625
+    ],
+    "process_power_observation": "timing-2-control-preflight.json",
+    "checks": 7,
+    "kestrel_checks": 1,
+    "source_binary_input_guards": true,
+    "authored_paths_bytes_unchanged": true,
+    "wal_empty": true,
+    "binary_sha256": "a9ce60a4d227e8c8107b06602915e6323e0cfabbf12610b67a85eda77bdd4a0f",
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c"
+  },
+  {
+    "lane": "timing",
+    "round": 3,
+    "kind": "on",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 238.6345,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 241.21475
+    },
+    "profile": {
+      "diagnostic_only": true,
+      "nanoseconds": {
+        "app_service_total": 232330625,
+        "semantic_leaf_apply_call": 43766583,
+        "replay_leaf_apply_call": 43140916,
+        "app_refresh_succeeded": 0
+      },
+      "counts": {
+        "app_service_total": 1,
+        "semantic_leaf_apply_call": 1,
+        "replay_leaf_apply_call": 1,
+        "app_refresh_succeeded": 1
+      },
+      "phase_count_sum": 4,
+      "other_service_cleanup_and_overhead_ns": 145423126,
+      "instrumentation_overhead_qualified": false
+    },
+    "load_average": [
+      1.5693359375,
+      2.0546875,
+      2.40576171875
+    ],
+    "process_power_observation": "timing-3-on-preflight.json",
+    "checks": 7,
+    "kestrel_checks": 1,
+    "source_binary_input_guards": true,
+    "authored_paths_bytes_unchanged": true,
+    "wal_empty": true,
+    "binary_sha256": "14ef183594c33011c7557c8affd0bf516d24a55a9994d42a8d0648deb01e6ede",
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c"
+  },
+  {
+    "lane": "timing",
+    "round": 3,
+    "kind": "control",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 246.01325,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 248.642625
+    },
+    "profile": {
+      "profile_absent": true
+    },
+    "load_average": [
+      1.51025390625,
+      2.0185546875,
+      2.38671875
+    ],
+    "process_power_observation": "timing-3-control-preflight.json",
+    "checks": 7,
+    "kestrel_checks": 1,
+    "source_binary_input_guards": true,
+    "authored_paths_bytes_unchanged": true,
+    "wal_empty": true,
+    "binary_sha256": "a9ce60a4d227e8c8107b06602915e6323e0cfabbf12610b67a85eda77bdd4a0f",
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c"
+  },
+  {
+    "lane": "timing",
+    "round": 3,
+    "kind": "off",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 239.84729099999998,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 242.346958
+    },
+    "profile": {
+      "profile_absent": true
+    },
+    "load_average": [
+      2.91796875,
+      2.4111328125,
+      2.5185546875
+    ],
+    "process_power_observation": "timing-3-off-preflight.json",
+    "checks": 7,
+    "kestrel_checks": 1,
+    "source_binary_input_guards": true,
+    "authored_paths_bytes_unchanged": true,
+    "wal_empty": true,
+    "binary_sha256": "14ef183594c33011c7557c8affd0bf516d24a55a9994d42a8d0648deb01e6ede",
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c"
+  }
+]

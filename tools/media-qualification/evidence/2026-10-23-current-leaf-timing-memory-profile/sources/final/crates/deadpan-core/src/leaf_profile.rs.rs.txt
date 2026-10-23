@@ -1,0 +1,90 @@
+//! Temporary numeric diagnostics for one isolated native first-pause probe.
+//! The app owns environment policy and output; Core records no content.
+
+use std::cell::RefCell;
+use std::time::Instant;
+
+#[derive(Clone, Copy)]
+pub enum Phase {
+    AppServiceTotal,
+    SemanticLeafApplyCall,
+    ReplayLeafApplyCall,
+    AppRefreshSucceeded,
+}
+
+pub const PHASE_COUNT: usize = 4;
+
+#[derive(Default)]
+pub struct Measurement {
+    pub elapsed_ns: u128,
+    pub count: u64,
+}
+
+pub struct Snapshot {
+    pub phases: [Measurement; PHASE_COUNT],
+    pub overflowed: bool,
+}
+
+thread_local! {
+    static ACTIVE: RefCell<Option<Snapshot>> = const { RefCell::new(None) };
+}
+
+pub fn begin() -> bool {
+    ACTIVE.with(|active| {
+        let mut active = active.borrow_mut();
+        if active.is_some() {
+            return false;
+        }
+        *active = Some(Snapshot {
+            phases: std::array::from_fn(|_| Measurement::default()),
+            overflowed: false,
+        });
+        true
+    })
+}
+
+pub struct Span {
+    phase: Phase,
+    started: Option<Instant>,
+}
+
+impl Span {
+    pub fn start(phase: Phase) -> Self {
+        let started = ACTIVE.with(|active| active.borrow().is_some().then(Instant::now));
+        Self { phase, started }
+    }
+}
+
+impl Drop for Span {
+    fn drop(&mut self) {
+        if let Some(started) = self.started {
+            record(self.phase, started.elapsed().as_nanos());
+        }
+    }
+}
+
+fn record(phase: Phase, elapsed_ns: u128) {
+    ACTIVE.with(|active| {
+        if let Some(snapshot) = active.borrow_mut().as_mut() {
+            let measurement = &mut snapshot.phases[phase as usize];
+            match (
+                measurement.elapsed_ns.checked_add(elapsed_ns),
+                measurement.count.checked_add(1),
+            ) {
+                (Some(elapsed_ns), Some(count)) => {
+                    measurement.elapsed_ns = elapsed_ns;
+                    measurement.count = count;
+                }
+                _ => snapshot.overflowed = true,
+            }
+        }
+    });
+}
+
+pub fn mark_refresh_success() {
+    record(Phase::AppRefreshSucceeded, 0);
+}
+
+pub fn take() -> Option<Snapshot> {
+    ACTIVE.with(|active| active.borrow_mut().take())
+}

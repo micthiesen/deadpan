@@ -1,0 +1,396 @@
+//! DRAFT ONLY. Not compiled or executed. macOS owned-child diagnostic runner.
+//! Link the exact locked deadpan_native_process rlib from Root's copied source.
+#![deny(unsafe_code)]
+
+use std::ffi::OsString;
+use std::fs::File;
+use std::io::{self, BufWriter, Write};
+use std::os::unix::process::{CommandExt, ExitStatusExt};
+use std::path::PathBuf;
+use std::process::{Child, Command, ExitStatus, Stdio};
+use std::time::{Duration, Instant};
+
+const INTERVAL: Duration = Duration::from_millis(5);
+const MAX_RUNTIME: Duration = Duration::from_secs(180);
+const CLEANUP_TIMEOUT: Duration = Duration::from_secs(5);
+const MAX_SAMPLES: usize = 60_000;
+const MAX_ERRORS: usize = 12;
+
+struct Config {
+    receipt: PathBuf,
+    samples: PathBuf,
+    stdout: PathBuf,
+    stderr: PathBuf,
+    executable: OsString,
+    arguments: Vec<OsString>,
+}
+
+fn config() -> Result<Config, String> {
+    let mut args = std::env::args_os().skip(1);
+    let mut paths = Vec::new();
+    for expected in ["--receipt", "--samples", "--stdout", "--stderr"] {
+        if args.next().as_deref() != Some(std::ffi::OsStr::new(expected)) {
+            return Err(format!("expected {expected} <path>"));
+        }
+        paths.push(PathBuf::from(
+            args.next()
+                .ok_or_else(|| format!("missing {expected} path"))?,
+        ));
+    }
+    if args.next().as_deref() != Some(std::ffi::OsStr::new("--")) {
+        return Err("expected -- <app> <app arguments>".into());
+    }
+    let executable = args.next().ok_or("missing app executable")?;
+    for (index, path) in paths.iter().enumerate() {
+        if paths[..index].contains(path) {
+            return Err("output paths must be distinct".into());
+        }
+    }
+    let mut paths = paths.into_iter();
+    Ok(Config {
+        receipt: paths.next().ok_or("missing receipt")?,
+        samples: paths.next().ok_or("missing samples")?,
+        stdout: paths.next().ok_or("missing stdout")?,
+        stderr: paths.next().ok_or("missing stderr")?,
+        executable,
+        arguments: args.collect(),
+    })
+}
+
+fn quoted(value: &str) -> String {
+    let mut output = String::from("\"");
+    for character in value.chars() {
+        match character {
+            '"' => output.push_str("\\\""),
+            '\\' => output.push_str("\\\\"),
+            '\n' => output.push_str("\\n"),
+            '\r' => output.push_str("\\r"),
+            '\t' => output.push_str("\\t"),
+            control if control <= '\u{1f}' => {
+                output.push_str(&format!("\\u{:04x}", u32::from(control)))
+            }
+            other => output.push(other),
+        }
+    }
+    output.push('"');
+    output
+}
+
+fn note(errors: &mut Vec<String>, label: &str, error: impl std::fmt::Display) {
+    if errors.len() < MAX_ERRORS {
+        errors.push(format!("{label}: {error}").chars().take(512).collect());
+    }
+}
+
+struct Sample {
+    elapsed_ns: u128,
+    query_ns: u128,
+    footprint: u64,
+    resident: u64,
+}
+
+#[derive(Default)]
+struct Cleanup {
+    group_confirmed: bool,
+    leader_fallback_confirmed: bool,
+    exit_confirmed: bool,
+    reap_attempted: bool,
+    reaped: bool,
+    status: Option<ExitStatus>,
+}
+
+fn cleanup(child: &mut Child, exited: bool, errors: &mut Vec<String>) -> Cleanup {
+    let mut result = Cleanup {
+        exit_confirmed: exited,
+        ..Cleanup::default()
+    };
+    match Instant::now().checked_add(CLEANUP_TIMEOUT) {
+        Some(deadline) => match deadpan_native_process::terminate_owned_group(child, deadline) {
+            Ok(()) => {
+                result.group_confirmed = true;
+                result.exit_confirmed = true;
+            }
+            Err(error) => note(errors, "owned group teardown failed", error),
+        },
+        None => note(
+            errors,
+            "owned group teardown failed",
+            "cleanup deadline overflow",
+        ),
+    }
+    if !result.group_confirmed {
+        match Instant::now().checked_add(CLEANUP_TIMEOUT) {
+            Some(deadline) => match deadpan_native_process::terminate_owned_leader(child, deadline)
+            {
+                Ok(()) => {
+                    result.leader_fallback_confirmed = true;
+                    result.exit_confirmed = true;
+                }
+                Err(error) => note(errors, "checked leader fallback failed", error),
+            },
+            None => note(
+                errors,
+                "checked leader fallback failed",
+                "cleanup deadline overflow",
+            ),
+        }
+    }
+    // Never block in wait on an unconfirmed live leader. Never retry wait after
+    // an error: it may already have reaped, so its PID must never be reused here.
+    if result.exit_confirmed {
+        result.reap_attempted = true;
+        match child.wait() {
+            Ok(status) => {
+                result.reaped = true;
+                result.status = Some(status);
+            }
+            Err(error) => note(errors, "sole reap failed; no retry", error),
+        }
+    } else {
+        note(
+            errors,
+            "sole reap skipped",
+            "leader exit unconfirmed; live child or descendants may remain",
+        );
+    }
+    result
+}
+
+fn terminal(
+    receipt: &mut File,
+    reason: &str,
+    pid: Option<u32>,
+    rows: &[Sample],
+    elapsed_ns: u128,
+    max_gap_ns: u128,
+    query_sum_ns: u128,
+    cleanup: &Cleanup,
+    errors: &[String],
+    samples_written: bool,
+) -> io::Result<bool> {
+    let app_success = cleanup.status.as_ref().is_some_and(ExitStatus::success);
+    let valid = reason == "exited"
+        && !rows.is_empty()
+        && errors.is_empty()
+        && cleanup.group_confirmed
+        && cleanup.reaped
+        && app_success
+        && samples_written;
+    let footprint = rows.iter().map(|row| row.footprint).max();
+    let resident = rows.iter().map(|row| row.resident).max();
+    let number =
+        |value: Option<u64>| value.map_or_else(|| "null".into(), |value| value.to_string());
+    let pid_json = pid.map_or_else(|| "null".into(), |value| value.to_string());
+    let code = cleanup
+        .status
+        .as_ref()
+        .and_then(ExitStatus::code)
+        .map_or_else(|| "null".into(), |value| value.to_string());
+    let signal = cleanup
+        .status
+        .as_ref()
+        .and_then(|status| status.signal())
+        .map_or_else(|| "null".into(), |value| value.to_string());
+    let sample_count = u64::try_from(rows.len())
+        .map_err(|_| io::Error::other("sample count conversion overflow"))?;
+    let first_sample = rows
+        .first()
+        .map_or_else(|| "null".into(), |row| row.elapsed_ns.to_string());
+    let last_sample = rows
+        .last()
+        .map_or_else(|| "null".into(), |row| row.elapsed_ns.to_string());
+    let cleanup_unconfirmed = pid.is_some() && (!cleanup.group_confirmed || !cleanup.reaped);
+    let errors_json = errors
+        .iter()
+        .map(|error| quoted(error))
+        .collect::<Vec<_>>()
+        .join(",");
+    // The receipt file was opened before spawn, so even refused sampling has a
+    // terminal destination. An output-device failure still returns an error.
+    writeln!(
+        receipt,
+        "{{\"terminal\":true,\"valid_memory_trial\":{valid},\"reason\":{},\"owned_app_pid\":{pid_json},\"sample_count\":{sample_count},\"observed_max_phys_footprint_bytes\":{},\"observed_max_resident_size_bytes\":{},\"sampling_window_elapsed_ns\":{elapsed_ns},\"first_sample_start_elapsed_ns\":{first_sample},\"last_sample_start_elapsed_ns\":{last_sample},\"maximum_sample_start_gap_ns\":{max_gap_ns},\"sample_query_sum_ns\":{query_sum_ns},\"requested_interval_ms\":5,\"maximum_runtime_seconds\":180,\"maximum_samples\":60000,\"samples_written\":{samples_written},\"group_teardown_confirmed\":{},\"leader_fallback_exit_confirmed\":{},\"leader_exit_confirmed\":{},\"reap_attempted\":{},\"reaped\":{},\"app_exit_code\":{code},\"app_exit_signal\":{signal},\"cleanup_unconfirmed\":{cleanup_unconfirmed},\"sampled_lower_bound_only\":true,\"whole_app_lifetime_only\":true,\"per_leaf_memory\":false,\"memory_ceiling_qualified\":false,\"errors\":[{errors_json}]}}",
+        quoted(reason),
+        number(footprint),
+        number(resident),
+        cleanup.group_confirmed,
+        cleanup.leader_fallback_confirmed,
+        cleanup.exit_confirmed,
+        cleanup.reap_attempted,
+        cleanup.reaped
+    )?;
+    receipt.flush()?;
+    Ok(valid)
+}
+
+fn write_samples(file: File, rows: &[Sample]) -> io::Result<()> {
+    let mut writer = BufWriter::new(file);
+    writer.write_all(b"[\n")?;
+    for (index, row) in rows.iter().enumerate() {
+        if index != 0 {
+            writer.write_all(b",\n")?;
+        }
+        write!(
+            writer,
+            "{{\"elapsed_ns\":{},\"query_ns\":{},\"phys_footprint_bytes\":{},\"resident_size_bytes\":{}}}",
+            row.elapsed_ns, row.query_ns, row.footprint, row.resident
+        )?;
+    }
+    writer.write_all(b"\n]\n")?;
+    writer.flush()
+}
+
+fn observe(config: Config) -> io::Result<bool> {
+    // All ordinary output opens and bounded sample reservation happen before
+    // creating the child. No reader, shell or competing owner receives Child.
+    let mut receipt = File::create(config.receipt)?;
+    let mut errors = Vec::with_capacity(MAX_ERRORS);
+    let mut rows: Vec<Sample> = Vec::with_capacity(MAX_SAMPLES);
+    let mut command = Command::new(config.executable);
+    command
+        .args(config.arguments)
+        .stdin(Stdio::null())
+        .process_group(0);
+    let setup = (|| -> io::Result<File> {
+        let samples = File::create(config.samples)?;
+        command
+            .stdout(File::create(config.stdout)?)
+            .stderr(File::create(config.stderr)?);
+        Ok(samples)
+    })();
+    let samples = match setup {
+        Ok(file) => file,
+        Err(error) => {
+            note(&mut errors, "pre-spawn output setup failed", error);
+            return terminal(
+                &mut receipt,
+                "setup_failed",
+                None,
+                &rows,
+                0,
+                0,
+                0,
+                &Cleanup::default(),
+                &errors,
+                false,
+            );
+        }
+    };
+    let started = Instant::now();
+    let mut child = match deadpan_native_process::spawn(&mut command) {
+        Ok(child) => child,
+        Err(error) => {
+            note(&mut errors, "guarded spawn failed", error);
+            return terminal(
+                &mut receipt,
+                "spawn_failed",
+                None,
+                &rows,
+                started.elapsed().as_nanos(),
+                0,
+                0,
+                &Cleanup::default(),
+                &errors,
+                false,
+            );
+        }
+    };
+    let pid = child.id();
+    let mut max_gap_ns = 0_u128;
+    let mut query_sum_ns = 0_u128;
+    let mut count = 0_u64;
+    let mut exited = false;
+    let reason = loop {
+        if started.elapsed() >= MAX_RUNTIME {
+            break "runtime_bound";
+        }
+        if rows.len() >= MAX_SAMPLES {
+            break "sample_bound";
+        }
+        let elapsed_ns = started.elapsed().as_nanos();
+        let query_started = Instant::now();
+        let sample = Err::<Option<deadpan_native_process::WorkerMemory>, _>(io::Error::other("injected owned-child sample refusal"));
+        let query_ns = query_started.elapsed().as_nanos();
+        match sample {
+            Ok(Some(memory)) => {
+                let Some(next_count) = count.checked_add(1) else {
+                    note(&mut errors, "sample count overflow", "u64");
+                    break "counter_overflow";
+                };
+                let Some(next_sum) = query_sum_ns.checked_add(query_ns) else {
+                    note(&mut errors, "query duration sum overflow", "u128");
+                    break "counter_overflow";
+                };
+                if let Some(previous) = rows.last() {
+                    let Some(gap) = elapsed_ns.checked_sub(previous.elapsed_ns) else {
+                        note(
+                            &mut errors,
+                            "sample clock reversed",
+                            "monotonic timestamp ordering",
+                        );
+                        break "clock_error";
+                    };
+                    max_gap_ns = max_gap_ns.max(gap);
+                }
+                count = next_count;
+                query_sum_ns = next_sum;
+                rows.push(Sample {
+                    elapsed_ns,
+                    query_ns,
+                    footprint: memory.phys_footprint,
+                    resident: memory.resident_size,
+                });
+            }
+            Ok(None) => {
+                exited = true;
+                break "exited";
+            }
+            Err(error) => {
+                note(&mut errors, "owned child memory sample failed", error);
+                break "sample_error";
+            }
+        }
+        std::thread::park_timeout(INTERVAL);
+    };
+    let elapsed_ns = started.elapsed().as_nanos();
+    // Cleanup runs for every post-spawn terminal path, including sample errors,
+    // bounds and natural exit. Sampling ends before cleanup; it is not a phase peak.
+    let cleanup = cleanup(&mut child, exited, &mut errors);
+    let samples_written = match write_samples(samples, &rows) {
+        Ok(()) => true,
+        Err(error) => {
+            note(&mut errors, "raw sample output failed", error);
+            false
+        }
+    };
+    terminal(
+        &mut receipt,
+        reason,
+        Some(pid),
+        &rows,
+        elapsed_ns,
+        max_gap_ns,
+        query_sum_ns,
+        &cleanup,
+        &errors,
+        samples_written,
+    )
+}
+
+fn main() {
+    let config = match config() {
+        Ok(config) => config,
+        Err(error) => {
+            eprintln!("observer configuration rejected: {error}");
+            std::process::exit(2);
+        }
+    };
+    match observe(config) {
+        Ok(true) => {}
+        Ok(false) => std::process::exit(1),
+        Err(error) => {
+            eprintln!("observer receipt/output failure: {error}");
+            std::process::exit(1);
+        }
+    }
+}

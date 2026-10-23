@@ -1,0 +1,161 @@
+[
+  {
+    "name": "helper-build",
+    "command": [
+      "rustc",
+      "--edition",
+      "2024",
+      "--crate-name",
+      "observer_smoke_helper",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer-smoke-resumed/helper.rs.txt",
+      "-o",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer-smoke-resumed/helper"
+    ],
+    "exit": 0,
+    "seconds": 0.07960712444037199
+  },
+  {
+    "name": "timeout-build",
+    "command": [
+      "rustc",
+      "--edition",
+      "2024",
+      "--crate-name",
+      "observer_smoke_timeout",
+      "-C",
+      "opt-level=2",
+      "-C",
+      "lto=thin",
+      "-C",
+      "embed-bitcode=yes",
+      "-L",
+      "dependency=/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/target/release/deps",
+      "--extern",
+      "deadpan_native_process=/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/target/release/deps/libdeadpan_native_process-b790c355f0d48650.rlib",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer-smoke-resumed/timeout.rs.txt",
+      "-o",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer-smoke-resumed/timeout-observer"
+    ],
+    "exit": 0,
+    "seconds": 1.397627167403698
+  },
+  {
+    "name": "sample-refusal-build",
+    "command": [
+      "rustc",
+      "--edition",
+      "2024",
+      "--crate-name",
+      "observer_smoke_sample_refusal",
+      "-C",
+      "opt-level=2",
+      "-C",
+      "lto=thin",
+      "-C",
+      "embed-bitcode=yes",
+      "-L",
+      "dependency=/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/target/release/deps",
+      "--extern",
+      "deadpan_native_process=/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/target/release/deps/libdeadpan_native_process-b790c355f0d48650.rlib",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer-smoke-resumed/sample-refusal.rs.txt",
+      "-o",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer-smoke-resumed/sample-refusal-observer"
+    ],
+    "exit": 0,
+    "seconds": 1.398683208040893
+  },
+  {
+    "name": "natural",
+    "command": [
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-observer",
+      "--receipt",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer-smoke-resumed/natural/receipt.json",
+      "--samples",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer-smoke-resumed/natural/samples.json",
+      "--stdout",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer-smoke-resumed/natural/app.stdout",
+      "--stderr",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer-smoke-resumed/natural/app.stderr",
+      "--",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer-smoke-resumed/helper",
+      "80"
+    ],
+    "exit": 0,
+    "seconds": 0.09461524989455938
+  },
+  {
+    "name": "setup-failure",
+    "command": [
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-observer",
+      "--receipt",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer-smoke-resumed/setup-failure/receipt.json",
+      "--samples",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer-smoke-resumed/setup-failure/absent-parent/samples.json",
+      "--stdout",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer-smoke-resumed/setup-failure/app.stdout",
+      "--stderr",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer-smoke-resumed/setup-failure/app.stderr",
+      "--",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer-smoke-resumed/helper",
+      "80"
+    ],
+    "exit": 1,
+    "seconds": 0.004470124840736389
+  },
+  {
+    "name": "spawn-failure",
+    "command": [
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-observer",
+      "--receipt",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer-smoke-resumed/spawn-failure/receipt.json",
+      "--samples",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer-smoke-resumed/spawn-failure/samples.json",
+      "--stdout",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer-smoke-resumed/spawn-failure/app.stdout",
+      "--stderr",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer-smoke-resumed/spawn-failure/app.stderr",
+      "--",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer-smoke-resumed/missing-executable"
+    ],
+    "exit": 1,
+    "seconds": 0.004469292238354683
+  },
+  {
+    "name": "timeout",
+    "command": [
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer-smoke-resumed/timeout-observer",
+      "--receipt",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer-smoke-resumed/timeout/receipt.json",
+      "--samples",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer-smoke-resumed/timeout/samples.json",
+      "--stdout",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer-smoke-resumed/timeout/app.stdout",
+      "--stderr",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer-smoke-resumed/timeout/app.stderr",
+      "--",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer-smoke-resumed/helper",
+      "1000"
+    ],
+    "exit": 1,
+    "seconds": 0.038180249743163586
+  },
+  {
+    "name": "sample-refusal",
+    "command": [
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer-smoke-resumed/sample-refusal-observer",
+      "--receipt",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer-smoke-resumed/sample-refusal/receipt.json",
+      "--samples",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer-smoke-resumed/sample-refusal/samples.json",
+      "--stdout",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer-smoke-resumed/sample-refusal/app.stdout",
+      "--stderr",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer-smoke-resumed/sample-refusal/app.stderr",
+      "--",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer-smoke-resumed/helper",
+      "1000"
+    ],
+    "exit": 1,
+    "seconds": 0.00880491640418768
+  }
+]

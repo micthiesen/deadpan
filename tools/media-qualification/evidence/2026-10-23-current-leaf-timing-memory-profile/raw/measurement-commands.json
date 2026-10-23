@@ -1,0 +1,896 @@
+[
+  {
+    "name": "timing-1-control-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/timing-1-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/source",
+    "exit": 0,
+    "seconds": 0.19719016551971436
+  },
+  {
+    "name": "timing-1-control",
+    "command": [
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+      "--project",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/timing-1-control.deadpan",
+      "--output",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/timing-1-control-report"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23",
+    "exit": 0,
+    "seconds": 14.381311000324786
+  },
+  {
+    "name": "timing-1-control-parse",
+    "command": [
+      "python",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/check_profile.py",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/timing-1-control.stderr",
+      "--expect-off"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23",
+    "exit": 0,
+    "seconds": 0.024329625070095062
+  },
+  {
+    "name": "timing-1-off-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/timing-1-off.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/source",
+    "exit": 0,
+    "seconds": 0.18962075002491474
+  },
+  {
+    "name": "timing-1-off",
+    "command": [
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+      "--project",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/timing-1-off.deadpan",
+      "--output",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/timing-1-off-report"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23",
+    "exit": 0,
+    "seconds": 13.431076874956489
+  },
+  {
+    "name": "timing-1-off-parse",
+    "command": [
+      "python",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/check_profile.py",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/timing-1-off.stderr",
+      "--expect-off"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23",
+    "exit": 0,
+    "seconds": 0.02460900042206049
+  },
+  {
+    "name": "timing-1-on-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/timing-1-on.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/source",
+    "exit": 0,
+    "seconds": 0.19028762448579073
+  },
+  {
+    "name": "timing-1-on",
+    "command": [
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+      "--project",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/timing-1-on.deadpan",
+      "--output",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/timing-1-on-report"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23",
+    "exit": 0,
+    "seconds": 13.622185957618058
+  },
+  {
+    "name": "timing-1-on-parse",
+    "command": [
+      "python",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/check_profile.py",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/timing-1-on.stderr"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23",
+    "exit": 0,
+    "seconds": 0.024214458651840687
+  },
+  {
+    "name": "timing-2-off-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/timing-2-off.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/source",
+    "exit": 0,
+    "seconds": 0.18746058270335197
+  },
+  {
+    "name": "timing-2-off",
+    "command": [
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+      "--project",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/timing-2-off.deadpan",
+      "--output",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/timing-2-off-report"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23",
+    "exit": 0,
+    "seconds": 13.66100824996829
+  },
+  {
+    "name": "timing-2-off-parse",
+    "command": [
+      "python",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/check_profile.py",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/timing-2-off.stderr",
+      "--expect-off"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23",
+    "exit": 0,
+    "seconds": 0.02525416575372219
+  },
+  {
+    "name": "timing-2-on-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/timing-2-on.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/source",
+    "exit": 0,
+    "seconds": 0.19145749974995852
+  },
+  {
+    "name": "timing-2-on",
+    "command": [
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+      "--project",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/timing-2-on.deadpan",
+      "--output",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/timing-2-on-report"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23",
+    "exit": 0,
+    "seconds": 13.457109583541751
+  },
+  {
+    "name": "timing-2-on-parse",
+    "command": [
+      "python",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/check_profile.py",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/timing-2-on.stderr"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23",
+    "exit": 0,
+    "seconds": 0.024348000064492226
+  },
+  {
+    "name": "timing-2-control-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/timing-2-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/source",
+    "exit": 0,
+    "seconds": 0.19089316669851542
+  },
+  {
+    "name": "timing-2-control",
+    "command": [
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+      "--project",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/timing-2-control.deadpan",
+      "--output",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/timing-2-control-report"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23",
+    "exit": 0,
+    "seconds": 13.868050041608512
+  },
+  {
+    "name": "timing-2-control-parse",
+    "command": [
+      "python",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/check_profile.py",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/timing-2-control.stderr",
+      "--expect-off"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23",
+    "exit": 0,
+    "seconds": 0.024646416306495667
+  },
+  {
+    "name": "timing-3-on-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/timing-3-on.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/source",
+    "exit": 0,
+    "seconds": 0.18870354164391756
+  },
+  {
+    "name": "timing-3-on",
+    "command": [
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+      "--project",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/timing-3-on.deadpan",
+      "--output",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/timing-3-on-report"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23",
+    "exit": 0,
+    "seconds": 13.661411583423615
+  },
+  {
+    "name": "timing-3-on-parse",
+    "command": [
+      "python",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/check_profile.py",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/timing-3-on.stderr"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23",
+    "exit": 0,
+    "seconds": 0.02418425027281046
+  },
+  {
+    "name": "timing-3-control-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/timing-3-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/source",
+    "exit": 0,
+    "seconds": 0.18961295764893293
+  },
+  {
+    "name": "timing-3-control",
+    "command": [
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+      "--project",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/timing-3-control.deadpan",
+      "--output",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/timing-3-control-report"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23",
+    "exit": 0,
+    "seconds": 13.523552666418254
+  },
+  {
+    "name": "timing-3-control-parse",
+    "command": [
+      "python",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/check_profile.py",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/timing-3-control.stderr",
+      "--expect-off"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23",
+    "exit": 0,
+    "seconds": 0.024672292172908783
+  },
+  {
+    "name": "timing-3-off-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/timing-3-off.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/source",
+    "exit": 0,
+    "seconds": 0.19348875060677528
+  },
+  {
+    "name": "timing-3-off",
+    "command": [
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+      "--project",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/timing-3-off.deadpan",
+      "--output",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/timing-3-off-report"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23",
+    "exit": 0,
+    "seconds": 13.550007999874651
+  },
+  {
+    "name": "timing-3-off-parse",
+    "command": [
+      "python",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/check_profile.py",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/timing-3-off.stderr",
+      "--expect-off"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23",
+    "exit": 0,
+    "seconds": 0.02450129110366106
+  },
+  {
+    "name": "memory-1-control-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-1-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/source",
+    "exit": 0,
+    "seconds": 0.18987408373504877
+  },
+  {
+    "name": "memory-1-control-observer",
+    "command": [
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-observer",
+      "--receipt",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-1-control-observer-receipt.json",
+      "--samples",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-1-control-memory-samples.json",
+      "--stdout",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-1-control-app.stdout",
+      "--stderr",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-1-control-app.stderr",
+      "--",
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+      "--project",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-1-control.deadpan",
+      "--output",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-1-control-report"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23",
+    "exit": 0,
+    "seconds": 13.482753625139594
+  },
+  {
+    "name": "memory-1-control-parse",
+    "command": [
+      "python",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/check_profile.py",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-1-control-app.stderr",
+      "--expect-off"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23",
+    "exit": 0,
+    "seconds": 0.025515749119222164
+  },
+  {
+    "name": "memory-1-off-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-1-off.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/source",
+    "exit": 0,
+    "seconds": 0.19201266672462225
+  },
+  {
+    "name": "memory-1-off-observer",
+    "command": [
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-observer",
+      "--receipt",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-1-off-observer-receipt.json",
+      "--samples",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-1-off-memory-samples.json",
+      "--stdout",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-1-off-app.stdout",
+      "--stderr",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-1-off-app.stderr",
+      "--",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+      "--project",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-1-off.deadpan",
+      "--output",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-1-off-report"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23",
+    "exit": 0,
+    "seconds": 13.626043749973178
+  },
+  {
+    "name": "memory-1-off-parse",
+    "command": [
+      "python",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/check_profile.py",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-1-off-app.stderr",
+      "--expect-off"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23",
+    "exit": 0,
+    "seconds": 0.025511582382023335
+  },
+  {
+    "name": "memory-1-on-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-1-on.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/source",
+    "exit": 0,
+    "seconds": 0.18803391605615616
+  },
+  {
+    "name": "memory-1-on-observer",
+    "command": [
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-observer",
+      "--receipt",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-1-on-observer-receipt.json",
+      "--samples",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-1-on-memory-samples.json",
+      "--stdout",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-1-on-app.stdout",
+      "--stderr",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-1-on-app.stderr",
+      "--",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+      "--project",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-1-on.deadpan",
+      "--output",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-1-on-report"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23",
+    "exit": 0,
+    "seconds": 13.696902667172253
+  },
+  {
+    "name": "memory-1-on-parse",
+    "command": [
+      "python",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/check_profile.py",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-1-on-app.stderr"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23",
+    "exit": 0,
+    "seconds": 0.025910666212439537
+  },
+  {
+    "name": "memory-2-off-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-2-off.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/source",
+    "exit": 0,
+    "seconds": 0.19005449954420328
+  },
+  {
+    "name": "memory-2-off-observer",
+    "command": [
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-observer",
+      "--receipt",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-2-off-observer-receipt.json",
+      "--samples",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-2-off-memory-samples.json",
+      "--stdout",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-2-off-app.stdout",
+      "--stderr",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-2-off-app.stderr",
+      "--",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+      "--project",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-2-off.deadpan",
+      "--output",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-2-off-report"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23",
+    "exit": 0,
+    "seconds": 13.422701916657388
+  },
+  {
+    "name": "memory-2-off-parse",
+    "command": [
+      "python",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/check_profile.py",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-2-off-app.stderr",
+      "--expect-off"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23",
+    "exit": 0,
+    "seconds": 0.024456249549984932
+  },
+  {
+    "name": "memory-2-on-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-2-on.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/source",
+    "exit": 0,
+    "seconds": 0.1913739163428545
+  },
+  {
+    "name": "memory-2-on-observer",
+    "command": [
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-observer",
+      "--receipt",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-2-on-observer-receipt.json",
+      "--samples",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-2-on-memory-samples.json",
+      "--stdout",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-2-on-app.stdout",
+      "--stderr",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-2-on-app.stderr",
+      "--",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+      "--project",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-2-on.deadpan",
+      "--output",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-2-on-report"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23",
+    "exit": 0,
+    "seconds": 13.52112233452499
+  },
+  {
+    "name": "memory-2-on-parse",
+    "command": [
+      "python",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/check_profile.py",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-2-on-app.stderr"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23",
+    "exit": 0,
+    "seconds": 0.025490458123385906
+  },
+  {
+    "name": "memory-2-control-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-2-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/source",
+    "exit": 0,
+    "seconds": 0.187242042273283
+  },
+  {
+    "name": "memory-2-control-observer",
+    "command": [
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-observer",
+      "--receipt",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-2-control-observer-receipt.json",
+      "--samples",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-2-control-memory-samples.json",
+      "--stdout",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-2-control-app.stdout",
+      "--stderr",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-2-control-app.stderr",
+      "--",
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+      "--project",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-2-control.deadpan",
+      "--output",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-2-control-report"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23",
+    "exit": 0,
+    "seconds": 13.546245125122368
+  },
+  {
+    "name": "memory-2-control-parse",
+    "command": [
+      "python",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/check_profile.py",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-2-control-app.stderr",
+      "--expect-off"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23",
+    "exit": 0,
+    "seconds": 0.025985916145145893
+  },
+  {
+    "name": "memory-3-on-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-3-on.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/source",
+    "exit": 0,
+    "seconds": 0.18708204198628664
+  },
+  {
+    "name": "memory-3-on-observer",
+    "command": [
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-observer",
+      "--receipt",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-3-on-observer-receipt.json",
+      "--samples",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-3-on-memory-samples.json",
+      "--stdout",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-3-on-app.stdout",
+      "--stderr",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-3-on-app.stderr",
+      "--",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+      "--project",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-3-on.deadpan",
+      "--output",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-3-on-report"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23",
+    "exit": 0,
+    "seconds": 13.424203000031412
+  },
+  {
+    "name": "memory-3-on-parse",
+    "command": [
+      "python",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/check_profile.py",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-3-on-app.stderr"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23",
+    "exit": 0,
+    "seconds": 0.024423041380941868
+  },
+  {
+    "name": "memory-3-control-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-3-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/source",
+    "exit": 0,
+    "seconds": 0.19156649988144636
+  },
+  {
+    "name": "memory-3-control-observer",
+    "command": [
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-observer",
+      "--receipt",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-3-control-observer-receipt.json",
+      "--samples",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-3-control-memory-samples.json",
+      "--stdout",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-3-control-app.stdout",
+      "--stderr",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-3-control-app.stderr",
+      "--",
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+      "--project",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-3-control.deadpan",
+      "--output",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-3-control-report"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23",
+    "exit": 0,
+    "seconds": 13.889736332930624
+  },
+  {
+    "name": "memory-3-control-parse",
+    "command": [
+      "python",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/check_profile.py",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-3-control-app.stderr",
+      "--expect-off"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23",
+    "exit": 0,
+    "seconds": 0.02469958271831274
+  },
+  {
+    "name": "memory-3-off-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-3-off.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/source",
+    "exit": 0,
+    "seconds": 0.19101770874112844
+  },
+  {
+    "name": "memory-3-off-observer",
+    "command": [
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-observer",
+      "--receipt",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-3-off-observer-receipt.json",
+      "--samples",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-3-off-memory-samples.json",
+      "--stdout",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-3-off-app.stdout",
+      "--stderr",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-3-off-app.stderr",
+      "--",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift",
+      "--project",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-3-off.deadpan",
+      "--output",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-3-off-report"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23",
+    "exit": 0,
+    "seconds": 13.540585583075881
+  },
+  {
+    "name": "memory-3-off-parse",
+    "command": [
+      "python",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/check_profile.py",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-3-off-app.stderr",
+      "--expect-off"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23",
+    "exit": 0,
+    "seconds": 0.025927124544978142
+  }
+]

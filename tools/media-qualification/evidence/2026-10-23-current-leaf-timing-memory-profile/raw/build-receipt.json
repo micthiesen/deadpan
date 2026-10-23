@@ -1,0 +1,32 @@
+[
+  {
+    "name": "format-check",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all",
+      "--check"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/source",
+    "exit": 0,
+    "seconds": 6.401592665351927
+  },
+  {
+    "name": "build",
+    "command": [
+      "cargo",
+      "build",
+      "--locked",
+      "--release",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness",
+      "--bin",
+      "deadpan-app"
+    ],
+    "cwd": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/source",
+    "exit": 0,
+    "seconds": 274.3107577506453
+  }
+]

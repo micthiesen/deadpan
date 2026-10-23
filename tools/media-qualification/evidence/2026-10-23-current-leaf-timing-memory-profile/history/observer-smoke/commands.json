@@ -1,0 +1,17 @@
+[
+  {
+    "name": "helper-build",
+    "command": [
+      "rustc",
+      "--edition",
+      "2024",
+      "--crate-name",
+      "observer_smoke_helper",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer-smoke/helper.rs.txt",
+      "-o",
+      "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer-smoke/helper"
+    ],
+    "exit": 1,
+    "seconds": 0.02374512515962124
+  }
+]\n

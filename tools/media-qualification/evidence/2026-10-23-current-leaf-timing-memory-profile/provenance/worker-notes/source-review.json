@@ -1,0 +1,14 @@
+{
+  "complete_diff_source_review": true,
+  "four_phase_schema_matches_proposal": true,
+  "checked_phase_sum_and_count_overflow_discards": true,
+  "core_has_no_environment_or_output": true,
+  "only_native_macro_begins_profile": true,
+  "finish_after_outer_guard_drop_and_publish": true,
+  "refresh_marker_required": true,
+  "six_file_scope_and_nonowned_hashes_verified": true,
+  "formatter_run": false,
+  "compiled": false,
+  "tests_run": false,
+  "profile_run": false
+}

@@ -1,0 +1,27 @@
+{
+  "command": [
+    "rustc",
+    "--edition",
+    "2024",
+    "--crate-name",
+    "memory_observer",
+    "-C",
+    "opt-level=2",
+    "-C",
+    "lto=thin",
+    "-C",
+    "embed-bitcode=yes",
+    "-L",
+    "dependency=/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/target/release/deps",
+    "--extern",
+    "deadpan_native_process=/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/target/release/deps/libdeadpan_native_process-b790c355f0d48650.rlib",
+    "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory_observer.rs",
+    "-o",
+    "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-observer"
+  ],
+  "exit": 0,
+  "seconds": 1.4877366675063968,
+  "source_unchanged": true,
+  "source_sha256": "81062e249112b7c9d698b77f6041b6fda1795f8aa9de8553387a6c96c69cb97b",
+  "adapter_rlib_sha256": "7e82ce27e23d61df9f00fc986fb6b901c9eda84cd4a323d31d067c6679eeb1c4"
+}

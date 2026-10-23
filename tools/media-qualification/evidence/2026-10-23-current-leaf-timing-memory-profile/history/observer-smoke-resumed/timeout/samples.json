@@ -1,0 +1,6 @@
+[
+{"elapsed_ns":206292,"query_ns":2208,"phys_footprint_bytes":81992,"resident_size_bytes":32768},
+{"elapsed_ns":7733125,"query_ns":4208,"phys_footprint_bytes":1081632,"resident_size_bytes":1654784},
+{"elapsed_ns":15259084,"query_ns":4000,"phys_footprint_bytes":1081632,"resident_size_bytes":1654784},
+{"elapsed_ns":22782417,"query_ns":3875,"phys_footprint_bytes":1081632,"resident_size_bytes":1654784}
+]

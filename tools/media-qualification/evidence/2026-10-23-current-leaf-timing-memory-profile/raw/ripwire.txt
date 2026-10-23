@@ -1,0 +1,99 @@
+<ctx task="plan current first-pause diagnostics around semantic Planner::commit_leaf in semantic/planner/pause.rs, replay_compound_captured in compound.rs, native service Macro publication in project/service.rs and owned_child_memory pid_rusage in native/deadpan-process/src/lib.rs" route=" [routed: subtoken+body BM25 (--for&apos;s default) — no strong name hit, multi-word conceptual query]" bundle="auto" bodies="4"><!-- ripwire lens for "plan current first-pause diagnostics around semantic Planner::commit_leaf in semantic/planner/pause.rs, replay_compound_captured in compound.rs, native service Macro publication in project/service.rs and owned_child_memory pid_rusage in native/deadpan-process/src/lib.rs" [mention anchor: 3 files + 9 symbols named in the task lifted near the top] [doc mentions: 4 docs discussing 2 top-ranked symbols surfaced]: reusable building blocks + quality facts for what you're about to touch (cx=complexity ccx=cognitive in=reuse-count churn=recent-commits amp=change-amplification clone=1(duplicated) tested=1) — prefer composing/reusing these; watch the high-churn/high-amp/cloned ones; bundle=auto: the top-ranked FULL bodies ride inline after the signatures in a bodies section (bodies=N on this root counts them; bodies=0 reason=budget when none fit the remaining budget whole; the signatures-only flag opts out) — read them here instead of opening the files. The bodies element discloses the house way: total=requested, shown=printed, capped=1 when they differ; each body's calls child lists its callee signatures, total= always, shown=/capped= only when that list is cut est_tokens="4154" --><sigs capped="1"><f p="/Users/michael/Code/deadpan/tools/media-qualification/evidence/2026-10-23-core-planning-detail-profile/package-first-failure.py"><d l="26" n="CHANGED" cx="0" ccx="0" in="0" churn="1">CHANGED = [ &quot;crates/deadpan-app/src/project/service.rs&quot;, &quot;crates/deadpan-app/src/project/service/macros.rs&quot;, &quot;crates/deadpan-core/src/lib.rs&quot;, &quot;crates/deadpan-c…</d></f><f p="/Users/michael/Code/deadpan/tools/media-qualification/evidence/2026-10-23-core-planning-detail-profile/package_profile.py"><d l="26" n="CHANGED" cx="0" ccx="0" in="0" churn="1">CHANGED = [ &quot;crates/deadpan-app/src/project/service.rs&quot;, &quot;crates/deadpan-app/src/project/service/macros.rs&quot;, &quot;crates/deadpan-core/src/lib.rs&quot;, &quot;crates/deadpan-c…</d></f><f p="/Users/michael/Code/deadpan/tools/media-qualification/evidence/2026-10-23-core-planning-detail-profile/build_profile.py"><d l="24" n="expected" cx="0" ccx="0" in="0" churn="1">expected=</d></f><f p="/Users/michael/Code/deadpan/crates/deadpan-core/src/semantic/planner/pause.rs"><d l="282" n="insert_hold_with_intent" id="/Users/michael/Code/deadpan/crates/deadpan-core/src/semantic/planner/pause.rs::Planner::insert_hold_with_intent" cx="26" ccx="33" in="2" churn="21" amp="75" tested="1">fn insert_hold_with_intent( &amp;mut self, trace_index: usize, duration: FrameDuration, request_ai: bool, provider: impl FnOnce(&amp;mut Self) -&gt; Result&lt;super::PausePro…</d><d l="766" n="set_scoped_value_edit" id="/Users/michael/Code/deadpan/crates/deadpan-core/src/semantic/planner/pause.rs::Planner::set_scoped_value_edit" cx="8" ccx="8" in="2" churn="21" amp="75" tested="1">pub(super) fn set_scoped_value_edit( &amp;mut self, trace_index: usize, edit: crate::ScopedNodeEdit, scoped: SemanticScopedContext, action: &amp;str, ) -&gt; Result&lt;(), Ed…</d><d l="848" n="set_cutaway" id="/Users/michael/Code/deadpan/crates/deadpan-core/src/semantic/planner/pause.rs::Planner::set_cutaway" cx="5" ccx="5" in="2" churn="21" amp="75" tested="1">pub(super) fn set_cutaway( &amp;mut self, trace_index: usize, register: crate::RegisterName, fit: crate::CutawayFit, ) -&gt; Result&lt;(), EditError&gt;</d></f><f p="/Users/michael/Code/deadpan/crates/deadpan-app/src/project/service.rs"><d l="73" n="Service" cx="0" ccx="0" in="0" churn="82" amp="239">struct Service</d><d l="171" n="run" cx="32" ccx="39" in="3" churn="82" amp="242" tested="1">pub(super) fn run( shared: Arc&lt;Shared&gt;, requests: Receiver&lt;ProjectRequest&gt;, jobs: SyncSender&lt;Job&gt;, results: Receiver&lt;Reply&gt;, worker: JoinHandle&lt;()&gt;, library: Op…</d><d l="416" n="publish" id="/Users/michael/Code/deadpan/crates/deadpan-app/src/project/service.rs::Service::publish" cx="2" ccx="1" in="2" churn="82" amp="241" tested="1">fn publish(&amp;mut self)</d></f><f p="/Users/michael/Code/deadpan/native/deadpan-process/src/lib.rs"><d l="215" n="owned_child_memory" cx="2" ccx="1" in="1" churn="8" amp="62">pub fn owned_child_memory(child: &amp;Child) -&gt; io::Result&lt;Option&lt;WorkerMemory&gt;&gt;</d><d l="232" n="own_memory" cx="1" ccx="0" in="1" churn="8" amp="62">pub fn own_memory() -&gt; io::Result&lt;WorkerMemory&gt;</d><d l="522" n="live_child_memory_is_sampled_and_an_exited_child_reports_none" id="/Users/michael/Code/deadpan/native/deadpan-process/src/lib.rs::tests::live_child_memory_is_sampled_and_an_exited_child_reports_none" cx="1" ccx="0" in="0" churn="8" amp="61">fn live_child_memory_is_sampled_and_an_exited_child_reports_none()</d></f><f p="/Users/michael/Code/deadpan/tools/media-qualification/evidence/2026-10-23-ui-first-pause-profile/check_profile.py"><d l="8" n="expected" cx="0" ccx="0" in="0" churn="1">expected = [ (&apos;service_total&apos;, &apos;inclusive_total&apos;), (&apos;perform_macro_total&apos;, &apos;nested_inclusive_total&apos;), (&apos;context_validation&apos;, &apos;disjoint_child&apos;), (&apos;pre_edit_plan_scope&apos;, &apos;disjoint_child&apos;), (&apos;semantic_program_plan&apos;, &apos;disjoint_child&apos;), (&apos;transc</d></f><f p="/Users/michael/Code/deadpan/crates/deadpan-core/src/semantic/planner.rs"><d l="638" n="plan_semantic_with_provider" cx="6" ccx="8" in="2" churn="51" amp="101" tested="1">pub fn plan_semantic_with_provider( document: &amp;ProjectDocument, context: &amp;SemanticContext, program: &amp;SemanticProgram, registers: SemanticRegisterBank&lt;&apos;_&gt;, new_revision: RevisionId, allocate: impl FnMut(SemanticAllocationRequest) -&gt; Result&lt;S</d></f></sigs><bodies shown="4" total="6" capped="1"><b t="var" l="26" p="/Users/michael/Code/deadpan/tools/media-qualification/evidence/2026-10-23-core-planning-detail-profile/package-first-failure.py" n="CHANGED"><![CDATA[CHANGED = [
+    "crates/deadpan-app/src/project/service.rs",
+    "crates/deadpan-app/src/project/service/macros.rs",
+    "crates/deadpan-core/src/lib.rs",
+    "crates/deadpan-core/src/semantic/planner.rs",
+    "crates/deadpan-core/src/semantic/planner/pause.rs",
+    "crates/deadpan-core/src/compound.rs",
+    "crates/deadpan-core/src/command.rs",
+    "crates/deadpan-core/src/work_profile.rs",
+    "crates/deadpan-store/src/compound.rs",
+]]]></b><b t="var" l="26" p="/Users/michael/Code/deadpan/tools/media-qualification/evidence/2026-10-23-core-planning-detail-profile/package_profile.py" n="CHANGED"><![CDATA[CHANGED = [
+    "crates/deadpan-app/src/project/service.rs",
+    "crates/deadpan-app/src/project/service/macros.rs",
+    "crates/deadpan-core/src/lib.rs",
+    "crates/deadpan-core/src/semantic/planner.rs",
+    "crates/deadpan-core/src/semantic/planner/pause.rs",
+    "crates/deadpan-core/src/compound.rs",
+    "crates/deadpan-core/src/command.rs",
+    "crates/deadpan-core/src/work_profile.rs",
+    "crates/deadpan-store/src/compound.rs",
+]]]></b><b t="var" l="24" p="/Users/michael/Code/deadpan/tools/media-qualification/evidence/2026-10-23-core-planning-detail-profile/build_profile.py" n="expected"><![CDATA[expected={'crates/deadpan-app/src/project/service.rs','crates/deadpan-app/src/project/service/macros.rs','crates/deadpan-store/src/compound.rs','crates/deadpan-core/src/lib.rs','crates/deadpan-core/src/semantic/planner.rs','crates/deadpan-core/src/semantic/planner/pause.rs','crates/deadpan-core/src/compound.rs','crates/deadpan-core/src/command.rs','crates/deadpan-core/src/work_profile.rs'}]]></b><!-- body omitted (over budget): insert_hold_with_intent --><b t="method" l="766" p="/Users/michael/Code/deadpan/crates/deadpan-core/src/semantic/planner/pause.rs" n="set_scoped_value_edit"><![CDATA[pub(super) fn set_scoped_value_edit(
+        &mut self,
+        trace_index: usize,
+        edit: crate::ScopedNodeEdit,
+        scoped: SemanticScopedContext,
+        action: &str,
+    ) -> Result<(), EditError> {
+        framing::validate_scoped_context(&self.current, &self.context)?;
+        let requirements = self
+            .current
+            .scoped_edit_requirements(&scoped.target, &edit)?;
+        self.trace[trace_index].resolved_parent = Some(self.context.parent.clone());
+        self.trace[trace_index].resolved_selection = Some(SliceCaptureSelection::Child {
+            node: scoped.target.node.clone(),
+        });
+        if requirements.unchanged {
+            return Ok(());
+        }
+        self.charge_step(false)?;
+        let SemanticAllocation::Isolation {
+            new_revision,
+            identities,
+        } = (self.allocate)(SemanticAllocationRequest::Isolation {
+            step_index: self.steps.len(),
+            nodes: requirements.nodes,
+            marks: requirements.marks,
+        })?
+        else {
+            return Err(invalid(&format!(
+                "{action} requires an Isolation allocation"
+            )));
+        };
+        if identities.nodes.len() != requirements.nodes
+            || identities.marks.len() != requirements.marks
+        {
+            return Err(invalid(&format!(
+                "{action} requires its exact isolation identity pools"
+            )));
+        }
+        self.reserve_revision(&new_revision)?;
+        for node in &identities.nodes {
+            self.reserve_node(node)?;
+        }
+        for mark in &identities.marks {
+            if !self.marks.insert(mark.clone()) {
+                return Err(identity(
+                    "macro reuses an authored or allocated mark identity",
+                ));
+            }
+        }
+        let leaf = LeafEdit::new(
+            new_revision,
+            Command::EditScoped {
+                target: scoped.target.clone(),
+                edit,
+                identities,
+            },
+        )?;
+        let prepared = crate::prepare_scoped_edit(&self.current, &leaf.request(&self.current))?;
+        let mapped = SemanticScopedContext {
+            root: scoped.root,
+            target: prepared.map_target(&self.current, &scoped.target)?,
+            presentation: prepared.map_instance(&self.current, &scoped.presentation)?,
+        };
+        if !mapped
+            .target
+            .matches_instance(&prepared.document, &mapped.presentation)?
+        {
+            return Err(invalid(&format!(
+                "{action} lost its concrete presentation during isolation"
+            )));
+        }
+        self.commit_leaf(leaf)?;
+        self.trace[trace_index].resolved_selection = Some(SliceCaptureSelection::Child {
+            node: mapped.target.node.clone(),
+        });
+        self.context.scoped = Some(mapped);
+        framing::validate_scoped_context(&self.current, &self.context)
+    }]]><calls total="10"><c n="format" l="500">fn format(value: &amp;Value, codec_key: &amp;str) -&gt; Option&lt;Format&gt;</c><c n="new" l="80">pub fn new(new_revision: RevisionId, command: Command) -&gt; Result&lt;Self, EditError&gt;</c><c n="matches_instance" l="109">pub fn matches_instance( &amp;self, document: &amp;ProjectDocument, instance: &amp;InstancePath, ) -&gt; Result&lt;bool, EditError&gt;</c><c n="scoped_edit_requirements" l="275">pub fn scoped_edit_requirements( &amp;self, target: &amp;ScopedNodeTarget, edit: &amp;ScopedNodeEdit, ) -&gt; Result&lt;ScopedEditRequirements, EditError&gt;</c><c n="charge_step" l="624">pub(super) fn charge_step(&amp;mut self, capture: bool) -&gt; Result&lt;(), EditError&gt;</c><c n="reserve_revision" l="646">pub(super) fn reserve_revision(&amp;mut self, revision: &amp;RevisionId) -&gt; Result&lt;(), EditError&gt;</c><c n="reserve_node" l="653">pub(super) fn reserve_node(&amp;mut self, node: &amp;NodeId) -&gt; Result&lt;(), EditError&gt;</c><c n="validate_scoped_context" l="6">pub(super) fn validate_scoped_context( document: &amp;ProjectDocument, context: &amp;SemanticContext, ) -&gt; Result&lt;(), EditError&gt;</c><c n="commit_leaf" l="1069">pub(super) fn commit_leaf(&amp;mut self, edit: LeafEdit) -&gt; Result&lt;(), EditError&gt;</c><c n="Err" l="25">type Err = &amp;&apos;static str</c></calls></b><!-- body omitted (over budget): set_cutaway --></bodies></ctx>

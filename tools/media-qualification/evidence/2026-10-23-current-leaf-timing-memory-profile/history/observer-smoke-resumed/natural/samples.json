@@ -1,0 +1,14 @@
+[
+{"elapsed_ns":194458,"query_ns":1958,"phys_footprint_bytes":81992,"resident_size_bytes":32768},
+{"elapsed_ns":7721916,"query_ns":4958,"phys_footprint_bytes":1081632,"resident_size_bytes":1654784},
+{"elapsed_ns":15249416,"query_ns":4292,"phys_footprint_bytes":1081632,"resident_size_bytes":1654784},
+{"elapsed_ns":22774833,"query_ns":3917,"phys_footprint_bytes":1081632,"resident_size_bytes":1654784},
+{"elapsed_ns":30300375,"query_ns":3625,"phys_footprint_bytes":1081632,"resident_size_bytes":1654784},
+{"elapsed_ns":37827250,"query_ns":3375,"phys_footprint_bytes":1081632,"resident_size_bytes":1654784},
+{"elapsed_ns":45352916,"query_ns":3291,"phys_footprint_bytes":1081632,"resident_size_bytes":1654784},
+{"elapsed_ns":52877375,"query_ns":3417,"phys_footprint_bytes":1081632,"resident_size_bytes":1654784},
+{"elapsed_ns":60399875,"query_ns":3542,"phys_footprint_bytes":1081632,"resident_size_bytes":1654784},
+{"elapsed_ns":67928875,"query_ns":3375,"phys_footprint_bytes":1081632,"resident_size_bytes":1654784},
+{"elapsed_ns":75454333,"query_ns":3334,"phys_footprint_bytes":1081632,"resident_size_bytes":1654784},
+{"elapsed_ns":82977791,"query_ns":4125,"phys_footprint_bytes":1081632,"resident_size_bytes":1654784}
+]

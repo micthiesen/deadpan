@@ -1,0 +1,38 @@
+{
+  "label": "timing-2-control",
+  "waited_seconds": 0.04,
+  "samples": [
+    {
+      "elapsed_seconds": 0.04,
+      "load_average": [
+        1.732421875,
+        2.10986328125,
+        2.431640625
+      ],
+      "conflicting_processes": []
+    }
+  ],
+  "power": {
+    "battery": {
+      "command": [
+        "pmset",
+        "-g",
+        "batt"
+      ],
+      "exit": 0,
+      "stdout": "Now drawing from 'AC Power'\n -InternalBattery-0 (id=22741091)\t80%; AC attached; not charging present: true\n",
+      "stderr": ""
+    },
+    "thermal": {
+      "command": [
+        "pmset",
+        "-g",
+        "therm"
+      ],
+      "exit": 0,
+      "stdout": "Note: No thermal warning level has been recorded\nNote: No performance warning level has been recorded\nNote: No CPU power status has been recorded\n",
+      "stderr": ""
+    }
+  },
+  "ready": true
+}

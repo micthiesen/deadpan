@@ -1,0 +1,18 @@
+{
+  "diagnostic_only": true,
+  "nanoseconds": {
+    "app_service_total": 233354042,
+    "semantic_leaf_apply_call": 43792916,
+    "replay_leaf_apply_call": 43559500,
+    "app_refresh_succeeded": 0
+  },
+  "counts": {
+    "app_service_total": 1,
+    "semantic_leaf_apply_call": 1,
+    "replay_leaf_apply_call": 1,
+    "app_refresh_succeeded": 1
+  },
+  "phase_count_sum": 4,
+  "other_service_cleanup_and_overhead_ns": 146001626,
+  "instrumentation_overhead_qualified": false
+}

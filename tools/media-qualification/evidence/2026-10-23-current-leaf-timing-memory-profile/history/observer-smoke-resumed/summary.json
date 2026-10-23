@@ -1,0 +1,75 @@
+{
+  "source_unchanged": true,
+  "observer_binary_unchanged": true,
+  "adapter_unchanged": true,
+  "runtime_fault_variants_are_separate_binaries": {
+    "timeout": {
+      "source": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer-smoke-resumed/timeout.rs.txt",
+      "sha256": "a0985888a63e4fad068af4e911a341df2b28ebb630e071e55cc18d0812a2256c",
+      "only_exact_replacement": {
+        "before": "const MAX_RUNTIME: Duration = Duration::from_secs(180);",
+        "after": "const MAX_RUNTIME: Duration = Duration::from_millis(25);"
+      },
+      "binary": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer-smoke-resumed/timeout-observer",
+      "binary_sha256": "609adfe470575d4074dd87b26198fdaf564b4dcb213d67c0154e4c6912a0f5d3"
+    },
+    "sample-refusal": {
+      "source": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer-smoke-resumed/sample-refusal.rs.txt",
+      "sha256": "8b60cc89d5a6d3d7d6baddc88b325e45b1994aa733c154d72feb7727b9068edf",
+      "only_exact_replacement": {
+        "before": "let sample = deadpan_native_process::owned_child_memory(&child);",
+        "after": "let sample = Err::<Option<deadpan_native_process::WorkerMemory>, _>(io::Error::other(\"injected owned-child sample refusal\"));"
+      },
+      "binary": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer-smoke-resumed/sample-refusal-observer",
+      "binary_sha256": "3802609e5c77f7d2adc33c6a2b6a89acedc69c71cf2dbb124de97c4873bbfe54"
+    }
+  },
+  "cases": [
+    {
+      "case": "natural",
+      "receipt": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer-smoke-resumed/natural/receipt.json",
+      "expected_reason": "exited",
+      "expected_exit": 0,
+      "expected_valid": true,
+      "passed": true
+    },
+    {
+      "case": "setup-failure",
+      "receipt": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer-smoke-resumed/setup-failure/receipt.json",
+      "expected_reason": "setup_failed",
+      "expected_exit": 1,
+      "expected_valid": false,
+      "passed": true
+    },
+    {
+      "case": "spawn-failure",
+      "receipt": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer-smoke-resumed/spawn-failure/receipt.json",
+      "expected_reason": "spawn_failed",
+      "expected_exit": 1,
+      "expected_valid": false,
+      "passed": true
+    },
+    {
+      "case": "timeout",
+      "receipt": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer-smoke-resumed/timeout/receipt.json",
+      "expected_reason": "runtime_bound",
+      "expected_exit": 1,
+      "expected_valid": false,
+      "passed": true
+    },
+    {
+      "case": "sample-refusal",
+      "receipt": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer-smoke-resumed/sample-refusal/receipt.json",
+      "expected_reason": "sample_error",
+      "expected_exit": 1,
+      "expected_valid": false,
+      "passed": true
+    }
+  ],
+  "cases_passed": 5,
+  "limitations": [
+    "Fault builds change only the one retained expression/constant; they are not the memory-measurement executable.",
+    "Group-failure/leader-fallback and reap-error paths have source review only.",
+    "Sample refusal branch injected before adapter call; this does not claim a real libproc permission failure."
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "lane": "memory",
+  "diagnostic_only": true,
+  "no_percentile_or_target_pass": true,
+  "n_per_kind": 3,
+  "kinds": {
+    "control": {
+      "sampled_max_phys_footprint_bytes": {
+        "min": 727418128,
+        "median": 733791480,
+        "max": 734070008
+      },
+      "sampled_max_resident_size_bytes": {
+        "min": 696926208,
+        "median": 702496768,
+        "max": 723369984
+      }
+    },
+    "off": {
+      "sampled_max_phys_footprint_bytes": {
+        "min": 690488496,
+        "median": 690685080,
+        "max": 729810120
+      },
+      "sampled_max_resident_size_bytes": {
+        "min": 644169728,
+        "median": 644907008,
+        "max": 701628416
+      }
+    },
+    "on": {
+      "sampled_max_phys_footprint_bytes": {
+        "min": 713262280,
+        "median": 729842888,
+        "max": 732906672
+      },
+      "sampled_max_resident_size_bytes": {
+        "min": 680591360,
+        "median": 683737088,
+        "max": 701710336
+      }
+    }
+  },
+  "memory_is_separate_from_timing_lane": true,
+  "memory_measurement": "sampled lower bounds over whole main-app lifetime; observer load; not peak/phase/ceiling"
+}

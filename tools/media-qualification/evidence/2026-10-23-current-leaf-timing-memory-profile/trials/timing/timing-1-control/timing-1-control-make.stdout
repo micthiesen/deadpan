@@ -1,0 +1,7 @@
+{
+  "beats": 10000,
+  "creation_ms": 175.006,
+  "package": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/timing-1-control.deadpan",
+  "stage": "make-large",
+  "stage_wall_ms": 184.51483299999998
+}

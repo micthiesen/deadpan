@@ -1,0 +1,14 @@
+error: unknown start of token: \
+ --> /tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer-smoke/helper.rs.txt:1:139
+  |
+1 | ...p(); std::thread::sleep(std::time::Duration::from_millis(ms)); }\n
+  |                                                                    ^
+
+error: expected one of `!` or `::`, found `<eof>`
+ --> /tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer-smoke/helper.rs.txt:1:140
+  |
+1 | ...d::sleep(std::time::Duration::from_millis(ms)); }\n
+  |                                                      ^ expected one of `!` or `::`
+
+error: aborting due to 2 previous errors
+

@@ -1,0 +1,19 @@
+{
+  "guarded_manifests_pass": true,
+  "sample_summary_accepts_original_smoke": true,
+  "rejected_mutated_receipt_fields": [
+    "sample_count",
+    "observed_max_phys_footprint_bytes",
+    "observed_max_resident_size_bytes",
+    "first_sample_start_elapsed_ns",
+    "last_sample_start_elapsed_ns",
+    "maximum_sample_start_gap_ns",
+    "sample_query_sum_ns",
+    "sampling_window_elapsed_ns"
+  ],
+  "negative_cases": 8,
+  "measurement_not_started": true,
+  "driver_sha256": "a962ba8d1b3e2b1c35fcb42a045e6c55f0930e8109ac482d0a00f5abd263e505",
+  "actual_observer_sha256": "d1166aef7e1b30c787bb39fa536c18aee9af9da4f2327120d321432205fc0ed2",
+  "private_app_sha256": "14ef183594c33011c7557c8affd0bf516d24a55a9994d42a8d0648deb01e6ede"
+}

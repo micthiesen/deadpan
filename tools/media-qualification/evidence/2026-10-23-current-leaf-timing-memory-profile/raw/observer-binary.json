@@ -1,0 +1,12 @@
+{
+  "path": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory-observer",
+  "sha256": "d1166aef7e1b30c787bb39fa536c18aee9af9da4f2327120d321432205fc0ed2",
+  "source": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/memory_observer.rs",
+  "source_sha256": "81062e249112b7c9d698b77f6041b6fda1795f8aa9de8553387a6c96c69cb97b",
+  "reviewed_source_sha256": "4f2d35f88576cebea29427ca75fc6b18cf9050bc1af322487f07d7f29e5abd09",
+  "adapter_rlib": "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/target/release/deps/libdeadpan_native_process-b790c355f0d48650.rlib",
+  "adapter_rlib_sha256": "7e82ce27e23d61df9f00fc986fb6b901c9eda84cd4a323d31d067c6679eeb1c4",
+  "private_native_process_source_sha256": "e41aaa69620973871c492554b3cd9b978dc455e9f95cdca9c8509f8279d23d52",
+  "freshly_built": true,
+  "thin_lto": true
+}

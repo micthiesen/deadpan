@@ -341,10 +341,19 @@ mismatch checks pass. Private app SHA-256:
 14ef183594c33011c7557c8affd0bf516d24a55a9994d42a8d0648deb01e6ede.
 Observer SHA-256:
 d1166aef7e1b30c787bb39fa536c18aee9af9da4f2327120d321432205fc0ed2.
-measure.py is active: three rotated timing triplets followed by three separate
-memory triplets, with source/input/binary/Kestrel/fixture/WAL guards. Check its
-measurement-owner.json and terminal handle before any restart. No timing or
-memory result is claimed yet. The observer's initial standalone link failed on
+measure.py is terminal exit zero: 54 commands and all 18 trials pass. Do not
+restart it. Timing control/off/on composition medians are
+239.352541 /243.290584 /242.288042 ms. Enabled service/semantic leaf/replay leaf
+medians are 233.354042 /43.780792 /43.559500 ms; the per-trial residual median
+is 146.001626 ms. No calibrated overhead or latency target PASS.
+The separate memory lane has 16,303 samples, 1,790–1,855 per run and maximum
+gaps 7.526958–7.818667 ms. Footprint observed maxima are about 659–700 MiB;
+no per-leaf/exact peak/ceiling or memory-saving claim. All 126 pause workflow
+checks and 18 Kestrel checks pass; 36 layout/retry warnings remain.
+The independently re-read package verifies 376 files /4,211,716 bytes,
+inventory f2a703fcad7c4710a752de883afe4d938ea99f01134eae7f6d0a859cdc8c1613.
+Packaging succeeds first execution after actual-schema draft corrections.
+The observer's initial standalone link failed on
 Apple LLVM bitcode; matching workspace ThinLTO links without source changes.
 The first scratch helper compile failed on a literal escaped newline, before
 any observer launch; corrected distinct resumed smoke outputs pass. Retain
@@ -354,12 +363,24 @@ maxima are whole-lifetime lower bounds, not per-leaf peaks or a memory ceiling.
 Injected timeout/refusal smokes use separate binaries and do not replace the
 measurement observer. Group-failure/fallback and reap-error paths have source
 review only. No runtime adapter changed.
+Fresh Cargo compiler cache identifies pinned Rust 1.97.1; report runtime rust
+fields resolve PATH Rust 1.99.1 from the launch directory. The two-file /7,497-
+byte post-build supplement retains both facts, inventory
+74346bd582f1b55b830b64522a8a2c1b44da463e64ef9d2345282ac4cb9a0078.
+See [current diagnostic](../qualification/current-leaf-timing-memory-profile-2026-10-23.md).
 The read-only next-single-leaf-study/ concludes an opaque exact-value-bound
 cache may be feasible but must preserve current authority and explicit TLS
 entry/exit behavior. Current authored values use integers/rationals; the wire
 audit excludes provisional serialization and requires refuting regressions.
-No cache API or implementation is authorized by that study alone; measure
-current leaf cost and retention first.
+Root now accepts a PRIVATE experiment based on the current measured leaf
+cost. A source-only worker is preparing Core/Store/CLI capability plumbing and
+refuting tests in /tmp/deadpan-one-leaf-replay-reuse-prototype-2026-10-23,
+fresh baseline 3a32c923. One subworker owns only the standalone Core integration
+test. No prototype build, test, formatter or measurement has run. Main source
+stays unchanged. Wait for source handoff, review exact authority/TLS/mode/value
+binding, then qualify correctness and actual speed/retention before production
+adoption. No validation, work charge, first-error or durable authority can be
+weakened to make the experiment pass.
 The separate
 next-replay-count-study.md describes immutable borrowed count pairs and a
 post-validation finalizer; bare counts on mutable public outcomes are

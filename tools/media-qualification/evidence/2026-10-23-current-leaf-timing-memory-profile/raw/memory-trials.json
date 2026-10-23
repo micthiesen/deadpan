@@ -1,0 +1,371 @@
+[
+  {
+    "lane": "owned-observer-memory",
+    "round": 1,
+    "kind": "control",
+    "timing_metrics_observer_contaminated_do_not_pool": {
+      "large_first_pause_input_to_commit_ms": 240.05879199999998,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 242.57725
+    },
+    "profile": {
+      "profile_absent": true
+    },
+    "memory": {
+      "sample_count": 1797,
+      "observed_max_phys_footprint_bytes": 734070008,
+      "observed_max_resident_size_bytes": 696926208,
+      "first_sample_start_elapsed_ns": 483166,
+      "last_sample_start_elapsed_ns": 13469439958,
+      "sampling_window_elapsed_ns": 13476968208,
+      "maximum_sample_start_gap_ns": 7528250
+    },
+    "load_average": [
+      2.56005859375,
+      2.35791015625,
+      2.49658203125
+    ],
+    "process_power_observation": "memory-1-control-preflight.json",
+    "checks": 7,
+    "kestrel_checks": 1,
+    "source_binary_input_observer_guards": true,
+    "authored_paths_bytes_unchanged": true,
+    "wal_empty": true,
+    "binary_sha256": "a9ce60a4d227e8c8107b06602915e6323e0cfabbf12610b67a85eda77bdd4a0f",
+    "observer_sha256": "d1166aef7e1b30c787bb39fa536c18aee9af9da4f2327120d321432205fc0ed2",
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c",
+    "memory_interpretation": "sampled whole-app lifetime lower bound; not exact peak or phase attribution"
+  },
+  {
+    "lane": "owned-observer-memory",
+    "round": 1,
+    "kind": "off",
+    "timing_metrics_observer_contaminated_do_not_pool": {
+      "large_first_pause_input_to_commit_ms": 239.183167,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 241.696792
+    },
+    "profile": {
+      "profile_absent": true
+    },
+    "memory": {
+      "sample_count": 1816,
+      "observed_max_phys_footprint_bytes": 690488496,
+      "observed_max_resident_size_bytes": 644169728,
+      "first_sample_start_elapsed_ns": 508875,
+      "last_sample_start_elapsed_ns": 13612795666,
+      "sampling_window_elapsed_ns": 13620321833,
+      "maximum_sample_start_gap_ns": 7566000
+    },
+    "load_average": [
+      2.2138671875,
+      2.29052734375,
+      2.47021484375
+    ],
+    "process_power_observation": "memory-1-off-preflight.json",
+    "checks": 7,
+    "kestrel_checks": 1,
+    "source_binary_input_observer_guards": true,
+    "authored_paths_bytes_unchanged": true,
+    "wal_empty": true,
+    "binary_sha256": "14ef183594c33011c7557c8affd0bf516d24a55a9994d42a8d0648deb01e6ede",
+    "observer_sha256": "d1166aef7e1b30c787bb39fa536c18aee9af9da4f2327120d321432205fc0ed2",
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c",
+    "memory_interpretation": "sampled whole-app lifetime lower bound; not exact peak or phase attribution"
+  },
+  {
+    "lane": "owned-observer-memory",
+    "round": 1,
+    "kind": "on",
+    "timing_metrics_observer_contaminated_do_not_pool": {
+      "large_first_pause_input_to_commit_ms": 238.791208,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 241.395583
+    },
+    "profile": {
+      "diagnostic_only": true,
+      "nanoseconds": {
+        "app_service_total": 232440625,
+        "semantic_leaf_apply_call": 43859542,
+        "replay_leaf_apply_call": 43506834,
+        "app_refresh_succeeded": 0
+      },
+      "counts": {
+        "app_service_total": 1,
+        "semantic_leaf_apply_call": 1,
+        "replay_leaf_apply_call": 1,
+        "app_refresh_succeeded": 1
+      },
+      "phase_count_sum": 4,
+      "other_service_cleanup_and_overhead_ns": 145074249,
+      "instrumentation_overhead_qualified": false
+    },
+    "memory": {
+      "sample_count": 1832,
+      "observed_max_phys_footprint_bytes": 732906672,
+      "observed_max_resident_size_bytes": 683737088,
+      "first_sample_start_elapsed_ns": 498875,
+      "last_sample_start_elapsed_ns": 13683535166,
+      "sampling_window_elapsed_ns": 13691065041,
+      "maximum_sample_start_gap_ns": 7613958
+    },
+    "load_average": [
+      1.94384765625,
+      2.2265625,
+      2.44384765625
+    ],
+    "process_power_observation": "memory-1-on-preflight.json",
+    "checks": 7,
+    "kestrel_checks": 1,
+    "source_binary_input_observer_guards": true,
+    "authored_paths_bytes_unchanged": true,
+    "wal_empty": true,
+    "binary_sha256": "14ef183594c33011c7557c8affd0bf516d24a55a9994d42a8d0648deb01e6ede",
+    "observer_sha256": "d1166aef7e1b30c787bb39fa536c18aee9af9da4f2327120d321432205fc0ed2",
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c",
+    "memory_interpretation": "sampled whole-app lifetime lower bound; not exact peak or phase attribution"
+  },
+  {
+    "lane": "owned-observer-memory",
+    "round": 2,
+    "kind": "off",
+    "timing_metrics_observer_contaminated_do_not_pool": {
+      "large_first_pause_input_to_commit_ms": 237.894875,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 240.677167
+    },
+    "profile": {
+      "profile_absent": true
+    },
+    "memory": {
+      "sample_count": 1790,
+      "observed_max_phys_footprint_bytes": 729810120,
+      "observed_max_resident_size_bytes": 701628416,
+      "first_sample_start_elapsed_ns": 512250,
+      "last_sample_start_elapsed_ns": 13409435375,
+      "sampling_window_elapsed_ns": 13416962375,
+      "maximum_sample_start_gap_ns": 7638666
+    },
+    "load_average": [
+      2.0419921875,
+      2.23193359375,
+      2.44091796875
+    ],
+    "process_power_observation": "memory-2-off-preflight.json",
+    "checks": 7,
+    "kestrel_checks": 1,
+    "source_binary_input_observer_guards": true,
+    "authored_paths_bytes_unchanged": true,
+    "wal_empty": true,
+    "binary_sha256": "14ef183594c33011c7557c8affd0bf516d24a55a9994d42a8d0648deb01e6ede",
+    "observer_sha256": "d1166aef7e1b30c787bb39fa536c18aee9af9da4f2327120d321432205fc0ed2",
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c",
+    "memory_interpretation": "sampled whole-app lifetime lower bound; not exact peak or phase attribution"
+  },
+  {
+    "lane": "owned-observer-memory",
+    "round": 2,
+    "kind": "on",
+    "timing_metrics_observer_contaminated_do_not_pool": {
+      "large_first_pause_input_to_commit_ms": 239.24854200000001,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 241.945458
+    },
+    "profile": {
+      "diagnostic_only": true,
+      "nanoseconds": {
+        "app_service_total": 232832500,
+        "semantic_leaf_apply_call": 43783500,
+        "replay_leaf_apply_call": 43566958,
+        "app_refresh_succeeded": 0
+      },
+      "counts": {
+        "app_service_total": 1,
+        "semantic_leaf_apply_call": 1,
+        "replay_leaf_apply_call": 1,
+        "app_refresh_succeeded": 1
+      },
+      "phase_count_sum": 4,
+      "other_service_cleanup_and_overhead_ns": 145482042,
+      "instrumentation_overhead_qualified": false
+    },
+    "memory": {
+      "sample_count": 1802,
+      "observed_max_phys_footprint_bytes": 729842888,
+      "observed_max_resident_size_bytes": 701710336,
+      "first_sample_start_elapsed_ns": 535750,
+      "last_sample_start_elapsed_ns": 13507856291,
+      "sampling_window_elapsed_ns": 13515382708,
+      "maximum_sample_start_gap_ns": 7528292
+    },
+    "load_average": [
+      1.810546875,
+      2.1708984375,
+      2.41455078125
+    ],
+    "process_power_observation": "memory-2-on-preflight.json",
+    "checks": 7,
+    "kestrel_checks": 1,
+    "source_binary_input_observer_guards": true,
+    "authored_paths_bytes_unchanged": true,
+    "wal_empty": true,
+    "binary_sha256": "14ef183594c33011c7557c8affd0bf516d24a55a9994d42a8d0648deb01e6ede",
+    "observer_sha256": "d1166aef7e1b30c787bb39fa536c18aee9af9da4f2327120d321432205fc0ed2",
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c",
+    "memory_interpretation": "sampled whole-app lifetime lower bound; not exact peak or phase attribution"
+  },
+  {
+    "lane": "owned-observer-memory",
+    "round": 2,
+    "kind": "control",
+    "timing_metrics_observer_contaminated_do_not_pool": {
+      "large_first_pause_input_to_commit_ms": 238.851209,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 241.541125
+    },
+    "profile": {
+      "profile_absent": true
+    },
+    "memory": {
+      "sample_count": 1808,
+      "observed_max_phys_footprint_bytes": 727418128,
+      "observed_max_resident_size_bytes": 723369984,
+      "first_sample_start_elapsed_ns": 490834,
+      "last_sample_start_elapsed_ns": 13532878000,
+      "sampling_window_elapsed_ns": 13540409417,
+      "maximum_sample_start_gap_ns": 7572834
+    },
+    "load_average": [
+      1.7783203125,
+      2.1455078125,
+      2.4013671875
+    ],
+    "process_power_observation": "memory-2-control-preflight.json",
+    "checks": 7,
+    "kestrel_checks": 1,
+    "source_binary_input_observer_guards": true,
+    "authored_paths_bytes_unchanged": true,
+    "wal_empty": true,
+    "binary_sha256": "a9ce60a4d227e8c8107b06602915e6323e0cfabbf12610b67a85eda77bdd4a0f",
+    "observer_sha256": "d1166aef7e1b30c787bb39fa536c18aee9af9da4f2327120d321432205fc0ed2",
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c",
+    "memory_interpretation": "sampled whole-app lifetime lower bound; not exact peak or phase attribution"
+  },
+  {
+    "lane": "owned-observer-memory",
+    "round": 3,
+    "kind": "on",
+    "timing_metrics_observer_contaminated_do_not_pool": {
+      "large_first_pause_input_to_commit_ms": 249.446042,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 252.08754199999998
+    },
+    "profile": {
+      "diagnostic_only": true,
+      "nanoseconds": {
+        "app_service_total": 242965084,
+        "semantic_leaf_apply_call": 45134834,
+        "replay_leaf_apply_call": 47617958,
+        "app_refresh_succeeded": 0
+      },
+      "counts": {
+        "app_service_total": 1,
+        "semantic_leaf_apply_call": 1,
+        "replay_leaf_apply_call": 1,
+        "app_refresh_succeeded": 1
+      },
+      "phase_count_sum": 4,
+      "other_service_cleanup_and_overhead_ns": 150212292,
+      "instrumentation_overhead_qualified": false
+    },
+    "memory": {
+      "sample_count": 1796,
+      "observed_max_phys_footprint_bytes": 713262280,
+      "observed_max_resident_size_bytes": 680591360,
+      "first_sample_start_elapsed_ns": 507833,
+      "last_sample_start_elapsed_ns": 13411129792,
+      "sampling_window_elapsed_ns": 13418659083,
+      "maximum_sample_start_gap_ns": 7818667
+    },
+    "load_average": [
+      1.6787109375,
+      2.10498046875,
+      2.38232421875
+    ],
+    "process_power_observation": "memory-3-on-preflight.json",
+    "checks": 7,
+    "kestrel_checks": 1,
+    "source_binary_input_observer_guards": true,
+    "authored_paths_bytes_unchanged": true,
+    "wal_empty": true,
+    "binary_sha256": "14ef183594c33011c7557c8affd0bf516d24a55a9994d42a8d0648deb01e6ede",
+    "observer_sha256": "d1166aef7e1b30c787bb39fa536c18aee9af9da4f2327120d321432205fc0ed2",
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c",
+    "memory_interpretation": "sampled whole-app lifetime lower bound; not exact peak or phase attribution"
+  },
+  {
+    "lane": "owned-observer-memory",
+    "round": 3,
+    "kind": "control",
+    "timing_metrics_observer_contaminated_do_not_pool": {
+      "large_first_pause_input_to_commit_ms": 239.28395799999998,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 241.919375
+    },
+    "profile": {
+      "profile_absent": true
+    },
+    "memory": {
+      "sample_count": 1855,
+      "observed_max_phys_footprint_bytes": 733791480,
+      "observed_max_resident_size_bytes": 702496768,
+      "first_sample_start_elapsed_ns": 574500,
+      "last_sample_start_elapsed_ns": 13876692625,
+      "sampling_window_elapsed_ns": 13884225458,
+      "maximum_sample_start_gap_ns": 7597250
+    },
+    "load_average": [
+      1.75537109375,
+      2.099609375,
+      2.375
+    ],
+    "process_power_observation": "memory-3-control-preflight.json",
+    "checks": 7,
+    "kestrel_checks": 1,
+    "source_binary_input_observer_guards": true,
+    "authored_paths_bytes_unchanged": true,
+    "wal_empty": true,
+    "binary_sha256": "a9ce60a4d227e8c8107b06602915e6323e0cfabbf12610b67a85eda77bdd4a0f",
+    "observer_sha256": "d1166aef7e1b30c787bb39fa536c18aee9af9da4f2327120d321432205fc0ed2",
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c",
+    "memory_interpretation": "sampled whole-app lifetime lower bound; not exact peak or phase attribution"
+  },
+  {
+    "lane": "owned-observer-memory",
+    "round": 3,
+    "kind": "off",
+    "timing_metrics_observer_contaminated_do_not_pool": {
+      "large_first_pause_input_to_commit_ms": 238.54983299999998,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 241.06775
+    },
+    "profile": {
+      "profile_absent": true
+    },
+    "memory": {
+      "sample_count": 1807,
+      "observed_max_phys_footprint_bytes": 690685080,
+      "observed_max_resident_size_bytes": 644907008,
+      "first_sample_start_elapsed_ns": 512250,
+      "last_sample_start_elapsed_ns": 13527131125,
+      "sampling_window_elapsed_ns": 13534657417,
+      "maximum_sample_start_gap_ns": 7526958
+    },
+    "load_average": [
+      1.72314453125,
+      2.0771484375,
+      2.36181640625
+    ],
+    "process_power_observation": "memory-3-off-preflight.json",
+    "checks": 7,
+    "kestrel_checks": 1,
+    "source_binary_input_observer_guards": true,
+    "authored_paths_bytes_unchanged": true,
+    "wal_empty": true,
+    "binary_sha256": "14ef183594c33011c7557c8affd0bf516d24a55a9994d42a8d0648deb01e6ede",
+    "observer_sha256": "d1166aef7e1b30c787bb39fa536c18aee9af9da4f2327120d321432205fc0ed2",
+    "fixture_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c",
+    "memory_interpretation": "sampled whole-app lifetime lower bound; not exact peak or phase attribution"
+  }
+]

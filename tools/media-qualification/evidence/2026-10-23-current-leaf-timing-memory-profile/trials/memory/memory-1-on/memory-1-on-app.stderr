@@ -1,0 +1,6 @@
+DEADPAN_CURRENT_LEAF_PROFILE BEGIN count=1
+DEADPAN_CURRENT_LEAF_PROFILE PHASE phase=app_service_total kind=inclusive_native_route elapsed_ns=232440625 count=1
+DEADPAN_CURRENT_LEAF_PROFILE PHASE phase=semantic_leaf_apply_call kind=disjoint_leaf_call_in_semantics elapsed_ns=43859542 count=1
+DEADPAN_CURRENT_LEAF_PROFILE PHASE phase=replay_leaf_apply_call kind=disjoint_leaf_call_in_replay elapsed_ns=43506834 count=1
+DEADPAN_CURRENT_LEAF_PROFILE PHASE phase=app_refresh_succeeded kind=zero_time_success_marker elapsed_ns=0 count=1
+DEADPAN_CURRENT_LEAF_PROFILE END count=1

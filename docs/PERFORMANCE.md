@@ -313,6 +313,19 @@ batch. Earlier Core24 costs precede both layout and refresh reuse; current
 leaf timing and sampled whole-process memory should be measured before a
 one-leaf replay cache. No memory ceiling, percentile or latency target closes.
 
+The subsequent [current leaf timing and owned-memory diagnostic](qualification/current-leaf-timing-memory-profile-2026-10-23.md)
+passes nine rotated timing trials and nine separate memory trials. Enabled
+service/semantic-leaf/replay-leaf medians are 233.354042 /43.780792 /43.559500 ms;
+the per-trial outer-minus-two-disjoint-leaves residual is 146.001626 ms median.
+Control/off/on composition medians are 239.352541 /243.290584 /242.288042 ms,
+without calibrated instrumentation overhead. Memory observation samples the
+owned main app's whole lifetime only: 16,303 samples, maximum gaps up to
+7.818667 ms, with observed footprint maxima about 659–700 MiB. These are lower
+bounds, not exact peaks, per-leaf allocation, cache retention or a ceiling.
+The 376-file inventory and separate toolchain witness verify. No production
+code changes or target closes; a private opaque one-leaf replay-reuse
+experiment is being prepared against exact current authority.
+
 | Section 25 target | Measurement | Notes |
 | --- | --- | --- |
 | Key event to command-state update, p95 < 8 ms | ui `rapid-input` `warm_navigation_input_cpu_ms` | Whole egui input frame CPU: an upper bound on the state update. Small replay fixture. |

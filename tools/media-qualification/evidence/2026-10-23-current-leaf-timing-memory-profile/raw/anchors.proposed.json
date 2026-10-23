@@ -1,0 +1,31 @@
+[
+  {
+    "file": "crates/deadpan-app/src/project/service.rs",
+    "scope": "run: native Ok(request) user lane",
+    "boundary": "app_service_total",
+    "anchor": "if service.dispatch_request(request) {",
+    "after": "service.publish();",
+    "ordering": "begin on Macro before total; preserve dispatch argument/order; finish only after publish returns and total drops"
+  },
+  {
+    "file": "crates/deadpan-app/src/project/service/macros.rs",
+    "scope": "perform_macro: committed semantic request refresh",
+    "boundary": "app_refresh_succeeded",
+    "anchor": "match self.refresh() {",
+    "ordering": "retain one refresh invocation/result branches; record zero marker only on success"
+  },
+  {
+    "file": "crates/deadpan-core/src/semantic/planner/pause.rs",
+    "scope": "Planner::commit_leaf",
+    "boundary": "semantic_leaf_apply_call",
+    "anchor": "let (_, next) = crate::apply_with_result(&self.current, &edit.request(&self.current))?;",
+    "ordering": "start before existing expression, include LeafEdit::request argument, end after successful result and before charge"
+  },
+  {
+    "file": "crates/deadpan-core/src/compound.rs",
+    "scope": "replay_compound_captured ordinary non-isolation branch",
+    "boundary": "replay_leaf_apply_call",
+    "anchor": "crate::apply_with_result(&current, leaf)?.1",
+    "ordering": "start immediately before expression, finish after .1 expression; isolation branch unchanged"
+  }
+]

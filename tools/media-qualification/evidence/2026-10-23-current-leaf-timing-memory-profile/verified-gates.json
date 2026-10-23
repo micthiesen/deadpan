@@ -1,0 +1,185 @@
+{
+  "baseline_rust_paths": 2051,
+  "candidate_perf_sha256": "fa11b331dcd9b2f5645cb011af6f07a54986fa0c0055bcce63bd4af6a4ba3166",
+  "candidate_rust_paths": 2052,
+  "changed_paths": [
+    "crates/deadpan-app/src/project/service.rs",
+    "crates/deadpan-app/src/project/service/macros.rs",
+    "crates/deadpan-core/src/compound.rs",
+    "crates/deadpan-core/src/leaf_profile.rs",
+    "crates/deadpan-core/src/lib.rs",
+    "crates/deadpan-core/src/semantic/planner/pause.rs"
+  ],
+  "control_app_sha256": "a9ce60a4d227e8c8107b06602915e6323e0cfabbf12610b67a85eda77bdd4a0f",
+  "input_paths": {
+    ".cargo/config.toml": "b906738cab8f6f289180e1bcf32826d3e2996899cb5055dc7f0c6838655c340d",
+    "Cargo.lock": "1e39d18ae4de6c7b898edad39eb7104235fb3ffe3af84521ca94df2b6c25b71b",
+    "Cargo.toml": "121e4cfefb2227cf38d5c1758d6a2250ddc38465a1044dfe896368c7ac1b50f3",
+    "crates/deadpan-app/src/navigation/registry/baseline-routing.txt": "a181ba1d3f2db1c030fbdf1feaf2d5ae8efd5edd885114bcea9c161ac774cd8d",
+    "docs/COMMANDS.md": "b4fc50fffbb6d96406593dda90a56ee6c9f3b89a3790b6e7f69b87863f57beec",
+    "rust-toolchain.toml": "279d77167cec5426fa80f457cd066dc74a360fbe4e2816f4f3fa01487a918fdc"
+  },
+  "measurement": {
+    "memory_summary": {
+      "diagnostic_only": true,
+      "kinds": {
+        "control": {
+          "sampled_max_phys_footprint_bytes": {
+            "max": 734070008,
+            "median": 733791480,
+            "min": 727418128
+          },
+          "sampled_max_resident_size_bytes": {
+            "max": 723369984,
+            "median": 702496768,
+            "min": 696926208
+          }
+        },
+        "off": {
+          "sampled_max_phys_footprint_bytes": {
+            "max": 729810120,
+            "median": 690685080,
+            "min": 690488496
+          },
+          "sampled_max_resident_size_bytes": {
+            "max": 701628416,
+            "median": 644907008,
+            "min": 644169728
+          }
+        },
+        "on": {
+          "sampled_max_phys_footprint_bytes": {
+            "max": 732906672,
+            "median": 729842888,
+            "min": 713262280
+          },
+          "sampled_max_resident_size_bytes": {
+            "max": 701710336,
+            "median": 683737088,
+            "min": 680591360
+          }
+        }
+      },
+      "lane": "memory",
+      "memory_is_separate_from_timing_lane": true,
+      "memory_measurement": "sampled lower bounds over whole main-app lifetime; observer load; not peak/phase/ceiling",
+      "n_per_kind": 3,
+      "no_percentile_or_target_pass": true
+    },
+    "memory_trials": 9,
+    "profile_blocks": 6,
+    "timing_summary": {
+      "diagnostic_only": true,
+      "instrumentation_overhead_qualified": false,
+      "kinds": {
+        "control": {
+          "large_first_pause_input_to_commit_ms": {
+            "max": 246.01325,
+            "median": 236.850291,
+            "min": 236.37012499999997
+          },
+          "large_first_pause_input_to_offscreen_background_composition_ms": {
+            "max": 248.642625,
+            "median": 239.352541,
+            "min": 239.059584
+          }
+        },
+        "off": {
+          "large_first_pause_input_to_commit_ms": {
+            "max": 240.851584,
+            "median": 240.814792,
+            "min": 239.84729099999998
+          },
+          "large_first_pause_input_to_offscreen_background_composition_ms": {
+            "max": 243.54008399999998,
+            "median": 243.290584,
+            "min": 242.346958
+          }
+        },
+        "on": {
+          "large_first_pause_input_to_commit_ms": {
+            "max": 240.494584,
+            "median": 239.753209,
+            "min": 238.6345
+          },
+          "large_first_pause_input_to_offscreen_background_composition_ms": {
+            "max": 243.024834,
+            "median": 242.28804200000002,
+            "min": 241.21475
+          }
+        }
+      },
+      "lane": "timing",
+      "n_per_kind": 3,
+      "no_percentile_or_target_pass": true,
+      "on_other_service_cleanup_and_overhead_ms": {
+        "max": 146.396708,
+        "median": 146.001626,
+        "min": 145.423126
+      },
+      "on_profile_phase_ms": {
+        "app_refresh_succeeded": {
+          "max": 0.0,
+          "median": 0.0,
+          "min": 0.0
+        },
+        "app_service_total": {
+          "max": 234.048625,
+          "median": 233.354042,
+          "min": 232.330625
+        },
+        "replay_leaf_apply_call": {
+          "max": 43.871125,
+          "median": 43.5595,
+          "min": 43.140916
+        },
+        "semantic_leaf_apply_call": {
+          "max": 43.792916,
+          "median": 43.780792,
+          "min": 43.766583
+        }
+      },
+      "queue_wait_measured": false
+    },
+    "timing_trials": 9
+  },
+  "memory_observer_sha256": "d1166aef7e1b30c787bb39fa536c18aee9af9da4f2327120d321432205fc0ed2",
+  "private_app_sha256": "14ef183594c33011c7557c8affd0bf516d24a55a9994d42a8d0648deb01e6ede",
+  "schema_unchanged": {
+    "core": 58,
+    "sqlite": 87
+  },
+  "scope": {
+    "exact_peak_per_leaf_memory_or_memory_ceiling_claim": false,
+    "instrumentation_overhead_qualified": false,
+    "memory_is_sampled_whole_app_lifetime_lower_bound": true,
+    "queue_wait_measured": false
+  },
+  "source_commit": "3a32c923358c0cb7ca53f821bfb6db3e01ebb466",
+  "supporting_gates": {
+    "build_steps": 2,
+    "driver_negative_cases": 8,
+    "go": {
+      "authorized": true,
+      "measurement_commands": 54,
+      "memory_trials": 9,
+      "note": "Root reviewed final packager against terminal actual producer schemas before first execution.",
+      "root_collected_build_and_measure_exit_zero": true,
+      "timing_trials": 9,
+      "verified_at_utc": "2026-10-23T16:54:11.791700+00:00"
+    },
+    "initial_observer_build_exit": 1,
+    "observer_smoke_cases": 5,
+    "parser": {
+      "exit": 0,
+      "seconds": 0.0592711241915822,
+      "source_unchanged": true,
+      "sources": {
+        "check_profile.py": "aa2d5700e87c7736fa0f316ad428d3e45612f012012921c2e130afcebfa26098",
+        "test_profile_parser.py": "0d7bad668db0be19b96dd470fc383238357a1873d8ac307ec1350a6f1fbe3423"
+      }
+    },
+    "resumed_observer_build_exit": 0,
+    "review_status": "no_findings"
+  }
+}

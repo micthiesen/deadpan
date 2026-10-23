@@ -1,0 +1,44 @@
+{
+  "command": [
+    "rustfmt",
+    "--edition",
+    "2024",
+    "--config",
+    "skip_children=true",
+    "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/source/crates/deadpan-app/src/project/service.rs",
+    "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/source/crates/deadpan-app/src/project/service/macros.rs",
+    "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/source/crates/deadpan-core/src/compound.rs",
+    "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/source/crates/deadpan-core/src/leaf_profile.rs",
+    "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/source/crates/deadpan-core/src/lib.rs",
+    "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/source/crates/deadpan-core/src/semantic/planner/pause.rs"
+  ],
+  "exit": 0,
+  "seconds": 0.15256958454847336,
+  "reviewed_before": {
+    "crates/deadpan-app/src/project/service.rs": "72895dd7e101b4f0b3c4129853a6d9a507402a5cd51e0bb9aef6422d6551d5ac",
+    "crates/deadpan-app/src/project/service/macros.rs": "c5feb7c202ffc9810df1c8bfb3b3f51896d8c9fed808b1c02c4c8f529673ecd3",
+    "crates/deadpan-core/src/compound.rs": "9aee17a68139fb0d084ec237df84e9e508e45c2c4e09b06e1fa9893d75c6a950",
+    "crates/deadpan-core/src/leaf_profile.rs": "f5c9f5d86126edb052014d093f8e6552dddefb63827bdc15ba3330b2718794f9",
+    "crates/deadpan-core/src/lib.rs": "8102b1ac89968e7503e898ded1832f2e2a451004c57a357abe323d02bccc729f",
+    "crates/deadpan-core/src/semantic/planner/pause.rs": "acd83b48fc4fd2f2b844ad7f81414e061cb12cf97469c70e448c0d947acd84bd"
+  },
+  "formatted_after": {
+    "crates/deadpan-app/src/project/service.rs": "7d7b6136d2ff5e00a925b5a54748bc781c065ef7ad941f9827c6918936932f20",
+    "crates/deadpan-app/src/project/service/macros.rs": "c5feb7c202ffc9810df1c8bfb3b3f51896d8c9fed808b1c02c4c8f529673ecd3",
+    "crates/deadpan-core/src/compound.rs": "608c413872613d516c134f1ef874c5498374cedbbd6c1225817f6df4bc16dacd",
+    "crates/deadpan-core/src/leaf_profile.rs": "047d022270372e05b26c0f2231a4ee09b83c2cfc3451f38573361547bbafcee4",
+    "crates/deadpan-core/src/lib.rs": "ec81a69fbe7f36e64cec87132114b88c59ca47b9229703b1f75f660493fb5a93",
+    "crates/deadpan-core/src/semantic/planner/pause.rs": "f6a7a1dcb8df1177153ae3e803802492ce033a5be88f66b9d0f1ae45854aa796"
+  },
+  "changed": [
+    "crates/deadpan-app/src/project/service.rs",
+    "crates/deadpan-app/src/project/service/macros.rs",
+    "crates/deadpan-core/src/compound.rs",
+    "crates/deadpan-core/src/leaf_profile.rs",
+    "crates/deadpan-core/src/lib.rs",
+    "crates/deadpan-core/src/semantic/planner/pause.rs"
+  ],
+  "nonowned_rust_unchanged": 2046,
+  "inputs_unchanged": true,
+  "new_rust_count": 2052
+}

@@ -1,0 +1,16 @@
+{
+  "files": [
+    {
+      "path": "cargo-rustc-info.json",
+      "bytes": 1966,
+      "sha256": "cd45ed1fc6f559ed70a5697e16eecb6fa1e1ea41e2bd5f80e9580dc10907e84b"
+    },
+    {
+      "path": "postbuild-toolchain-observations.json",
+      "bytes": 5531,
+      "sha256": "094275dbf8b31061c89d48d817f012fbd651d21da980e9d50c5f312e1320df7c"
+    }
+  ],
+  "total_files": 2,
+  "total_bytes": 7497
+}

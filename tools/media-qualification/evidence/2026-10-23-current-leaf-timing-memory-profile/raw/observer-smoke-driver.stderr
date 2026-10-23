@@ -1,0 +1,5 @@
+Traceback (most recent call last):
+  File "/tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23/observer_smoke.py", line 15, in <module>
+    assert command('helper-build',['rustc','--edition','2024','--crate-name','observer_smoke_helper',str(helper),'-o',str(d/'helper')])==0
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError
