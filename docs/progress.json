@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-23T03:48:21Z",
+  "updated_at": "2026-10-23T04:20:52Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Neutral Ungroup is in progress after aligned sound grouping landed in c72abe12. Four old-code Source/RoomTone witnesses pass active EQ, event, limiter, source-admission, cold and partitioned PCM controls, then reach the expected retained-scope Ungroup refusal; the genuine later-capture rejection also passes. The bounded candidate has a clean source review; Core, persistence, PCM and end-to-end checks remain in progress. Coverage remains 89%, with 8/24 sections complete. The recorded 88.3 ms commit p95 remains an open performance target.",
+  "focus": "Neutral Ungroup remains an uncommitted candidate. It passes 1,497 Core tests, 3,499 broader selected tests, five PCM and two actual-media Store cases, plus strict ordinary/UI checks and formatting. Exact sound samples, limiter gain and durable history survive later edits. A passing broader output-handle warning does not recur in an isolated same-archive run. Full UI-feature tests, native replay and debug/release export qualification are running. Coverage remains 89%, with 8/24 sections complete; no gate closes.",
   "features": [
     {
       "id": "editing",
@@ -917,6 +917,14 @@
       "revision": "1a21d6b13a467103556411173a05a69416f4af97",
       "retrospective": false,
       "summary": "Neutral Ungroup candidate remains uncommitted and unqualified. Four frozen c72abe12 Source/RoomTone cases validate all 24,024 authored/limited/gain samples and active controls before the expected ownership guard refusal; the genuine later-capture negative passes. An initial provider-counter setup assertion was corrected, with the failed run retained separately. Source review reports no concrete defect. Candidate Core, persistence, PCM, native and export checks are still owed; no requirement or gate changes."
+    },
+    {
+      "date": "2026-10-23",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "52cde3f9b4c0613201000bae691aadeed736633e",
+      "retrospective": false,
+      "summary": "Neutral Ungroup working candidate passes all 1,497 Core tests across 67 binaries (zero skipped), all 3,499 broader selected tests (740 ignored or unselected), five focused PCM and two actual-media Store cases, strict ordinary/UI checks and formatting. Four Source/RoomTone cases retain all 24,024 authored/limited samples and limiter gain values, plus exact later displacement/return. Atomic history, source admission and portable copies pass. One passing output-handle warning clears in an isolated same-archive run; original evidence remains. Integrated source reviews report no findings. Native, full UI and encoded-file qualification remain owed; production is uncommitted and no requirement or gate changes."
     }
   ]
 }
