@@ -1,0 +1,7 @@
+{
+  "command": "cargo test --locked -p deadpan-app --features ui-harness --lib project::service::macros::tests",
+  "exit": 0,
+  "tests": 0,
+  "not_a_pass_for_new_native_test": true,
+  "correction": "Run all UI archive; explicitly assert new native case selected and passed. Test lives in binary, not lib."
+}

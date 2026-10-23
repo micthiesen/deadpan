@@ -1,0 +1,14 @@
+{
+  "matches": [
+    [
+      "/private/tmp/deadpan-compound-runtime-preparation-2026-10-23/candidate-broad-extracted/target/debug/deps/deadpan_app-6c91f3fd414f9cf2",
+      "project::service::macros::tests::transactional_runtime_preparation_rejects_bad_capture_before_saving_the_bank",
+      {
+        "status": "matches"
+      }
+    ]
+  ],
+  "passed": [
+    "PASS [   0.250s] ( 975/3505) deadpan-app::bin/deadpan-app project::service::macros::tests::transactional_runtime_preparation_rejects_bad_capture_before_saving_the_bank"
+  ]
+}

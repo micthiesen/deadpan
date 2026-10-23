@@ -1,0 +1,26 @@
+[
+  {
+    "step": 1,
+    "command": [
+      "python",
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/qualify_all_ui.py",
+      "candidate-broad",
+      "candidate",
+      "broad"
+    ],
+    "exit": 0,
+    "seconds": 633.1078676246107
+  },
+  {
+    "step": 2,
+    "command": [
+      "python",
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/qualify_all_ui.py",
+      "candidate-ui",
+      "candidate",
+      "ui"
+    ],
+    "exit": 0,
+    "seconds": 128.21992337424308
+  }
+]

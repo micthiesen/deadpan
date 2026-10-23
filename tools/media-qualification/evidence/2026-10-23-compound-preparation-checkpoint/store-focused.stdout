@@ -1,0 +1,10 @@
+
+running 5 tests
+test unavailable_transcript_authority_refuses_before_host_preparation ... ok
+test authoritative_refusals_happen_before_host_preparation ... ok
+test write_failure_discards_host_state_and_rolls_back_before_retry ... ok
+test host_failure_rolls_back_authored_and_register_only_preparation_and_allows_retry ... ok
+test prepared_commit_matches_preview_commit_history_and_reopening ... ok
+
+test result: ok. 5 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.34s
+

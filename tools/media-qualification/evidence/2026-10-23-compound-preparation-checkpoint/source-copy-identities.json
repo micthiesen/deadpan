@@ -1,0 +1,47 @@
+{
+  "source_base": "0418cd49274ed0ac4094a3993ac29cc15477a852",
+  "files": [
+    {
+      "path": "crates/deadpan-store/src/compound.rs",
+      "copy": "current-source__crates__deadpan-store__src__compound.rs.rs.txt",
+      "bytes": 29869,
+      "sha256": "4e2c8070178a16f54f7a484b4e5189ca206fd00af85ef26492e90a847edb0dc2",
+      "matches_candidate_ui_source_identity": true
+    },
+    {
+      "path": "crates/deadpan-store/src/lib.rs",
+      "copy": "current-source__crates__deadpan-store__src__lib.rs.rs.txt",
+      "bytes": 77761,
+      "sha256": "9b59c50f14881d3f28f03ed40be7323afd045e06c0b6f03d65f115fb29b885e8",
+      "matches_candidate_ui_source_identity": true
+    },
+    {
+      "path": "crates/deadpan-store/tests/compound_preparation.rs",
+      "copy": "current-source__crates__deadpan-store__tests__compound_preparation.rs.rs.txt",
+      "bytes": 14295,
+      "sha256": "7b9bd2b1f90e62c2519d1cd8f6606ea6f49a37b9c18aec4bd29194106fddaa44",
+      "matches_candidate_ui_source_identity": true
+    },
+    {
+      "path": "crates/deadpan-cli/src/macros.rs",
+      "copy": "current-source__crates__deadpan-cli__src__macros.rs.rs.txt",
+      "bytes": 51383,
+      "sha256": "c120ec8575fc5b72267bbccfd84481bf97fef1b39c96092b4048d6ca35165f7f",
+      "matches_candidate_ui_source_identity": true
+    },
+    {
+      "path": "crates/deadpan-app/src/project/service/macros.rs",
+      "copy": "current-source__crates__deadpan-app__src__project__service__macros.rs.rs.txt",
+      "bytes": 51866,
+      "sha256": "b3d63ee05d49d3c1208a54a5492fe365c39b198b2a82448388df5a264e64c20c",
+      "matches_candidate_ui_source_identity": true
+    },
+    {
+      "path": "crates/deadpan-app/src/project/service/macros/tests.rs",
+      "copy": "current-source__crates__deadpan-app__src__project__service__macros__tests.rs.rs.txt",
+      "bytes": 10956,
+      "sha256": "a8f96cc8e8825c3a7945c02a6e0a05f923bf1cdaa8a21379da401040c31dab14",
+      "matches_candidate_ui_source_identity": true
+    }
+  ]
+}

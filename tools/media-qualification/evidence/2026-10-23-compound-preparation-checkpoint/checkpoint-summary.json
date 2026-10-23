@@ -1,0 +1,31 @@
+{
+  "focused_store": {
+    "tests": 5,
+    "passed": 5,
+    "failed": 0
+  },
+  "initial_native_focused": {
+    "command": "cargo test --locked -p deadpan-app --features ui-harness --lib project::service::macros::tests",
+    "exit": 0,
+    "selected": 0,
+    "status": "not a pass for the new native test"
+  },
+  "broad": {
+    "tests": 3505,
+    "passed": 3505,
+    "skipped": 740,
+    "failed": 0
+  },
+  "ui": {
+    "tests": 1296,
+    "passed": true,
+    "skipped": 11,
+    "failed": 0,
+    "new_native_test": "transactional_runtime_preparation_rejects_bad_capture_before_saving_the_bank"
+  },
+  "review": {
+    "independent_reviews": 2,
+    "findings": 0,
+    "performed_before_executed_tests": true
+  }
+}

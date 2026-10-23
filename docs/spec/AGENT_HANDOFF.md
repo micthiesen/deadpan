@@ -71,13 +71,25 @@ fce683290a56b68a1af71de6449c0d8fa87e151485dba69dee214bc05163e040.
 The separate source/target and all terminal drivers remain in
 /tmp/deadpan-ui-pause-profile-2026-10-23. Never ship its temporary timers.
 
-Next: finish the uncommitted transaction-owned Compound preparation callback.
+Next: finish qualification of the uncommitted Compound preparation callback.
 The store prepares once inside its Immediate transaction, calls fallible native
 runtime-bank preparation before any write, and returns that private value only
 after durable commit. Preserve existing guard/identity/bank/capture/history
-checks and the old commit APIs. Store and native failure tests, independent
-review, broad/UI/strict checks, native/media/history and release performance
-are owed. Do not claim its roughly 120 ms potential saving before measurement.
+checks and the old commit APIs. Five focused Store tests, 3,505 broader cases
+(740 skipped) and 1,296 UI cases (eleven skipped) pass, with both reviews
+reporting no defects. The new native bad-capture rollback/retry case is selected
+and passes in both complete suites. The first targeted --lib invocation ran
+zero tests, explicitly not a pass. The
+[checkpoint](../qualification/compound-runtime-preparation-checkpoint-2026-10-23.md)
+retains 69 payload files /2,669,841 bytes.
+
+Current scratch: /tmp/deadpan-compound-runtime-preparation-2026-10-23. The live
+qualify.py driver has finished broad/UI and is running strict checks, then
+debug/release media and release native. post.py waits for all seven successful
+steps before extracted portable validation, five extra native scenarios and
+five quiet control/candidate first-pause pairs. Inspect owner/receipt files
+before restarting anything. Strict, native/media/history and release timing
+are still owed. Do not claim the potential saving before measurement.
 
 Refresh/verify progress artifact a3ysikxugbmr4 from the next pushed
 docs/progress.json after this implementation commit. Preserve foreign

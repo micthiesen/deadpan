@@ -1,0 +1,5 @@
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+    Finished `test` profile [optimized + debuginfo] target(s) in 44.97s
+     Running tests/compound_preparation.rs (target/debug/deps/compound_preparation-78a88d37577a7807)

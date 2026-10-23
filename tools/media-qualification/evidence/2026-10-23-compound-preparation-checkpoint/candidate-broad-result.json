@@ -1,0 +1,8 @@
+{
+  "source_base": "0418cd49274ed0ac4094a3993ac29cc15477a852",
+  "source_location": "candidate",
+  "exit": 0,
+  "tests": 3505,
+  "binaries": 110,
+  "sources_inputs_executables_unchanged": true
+}

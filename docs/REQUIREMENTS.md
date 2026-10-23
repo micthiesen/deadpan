@@ -13,10 +13,15 @@ refresh is 4.128667 ms. These are coarse diagnostic phases with inclusive
 totals, uncalibrated overhead and no queue-wait or percentile claim. See the
 [profile](qualification/ui-first-pause-profile-2026-10-23.md).
 
-A transaction-owned runtime-preparation callback is being implemented to avoid
-replaying the Compound for a separate preview. Its validation, rollback,
-runtime-bank, native/media and performance checks remain owed. No production
-improvement, requirement or gate closure is claimed for this candidate.
+A transaction-owned runtime-preparation callback avoids replaying the Compound
+for a separate preview. The uncommitted candidate passes five focused Store
+tests, all 3,505 broader selected tests (740 skipped) and all 1,296 UI tests
+(11 skipped). Its bad native capture-provenance case rejects before saving
+the bank and then retries successfully. Two reviews report no defects.
+The initial native `--lib` filter selected zero tests, which is retained as a
+qualification mistake. Strict, native/media, release and performance checks
+remain owed. No production gain, requirement or gate closure is claimed. See
+the [checkpoint](qualification/compound-runtime-preparation-checkpoint-2026-10-23.md).
 
 ## Large-project first-pause measurement, 2026-10-23
 
