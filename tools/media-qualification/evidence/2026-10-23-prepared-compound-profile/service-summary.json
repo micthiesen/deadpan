@@ -1,0 +1,115 @@
+{
+  "diagnostic_only": true,
+  "no_percentile_or_target_pass": true,
+  "n_per_kind": 3,
+  "kinds": {
+    "root-control": {
+      "large_first_pause_input_to_commit_ms": {
+        "min": 269.011083,
+        "median": 269.30616699999996,
+        "max": 269.714583
+      },
+      "large_first_pause_input_to_offscreen_background_composition_ms": {
+        "min": 271.55037500000003,
+        "median": 272.089542,
+        "max": 272.420166
+      }
+    },
+    "off": {
+      "large_first_pause_input_to_commit_ms": {
+        "min": 270.870834,
+        "median": 271.56912500000004,
+        "max": 272.16687499999995
+      },
+      "large_first_pause_input_to_offscreen_background_composition_ms": {
+        "min": 273.373875,
+        "median": 274.149209,
+        "max": 274.851583
+      }
+    },
+    "on": {
+      "large_first_pause_input_to_commit_ms": {
+        "min": 268.704416,
+        "median": 270.733875,
+        "max": 272.120083
+      },
+      "large_first_pause_input_to_offscreen_background_composition_ms": {
+        "min": 271.18620799999997,
+        "median": 273.230334,
+        "max": 274.825083
+      }
+    }
+  },
+  "phase_ms": {
+    "app_service_total": {
+      "min": 262.371792,
+      "median": 264.275166,
+      "max": 265.628875
+    },
+    "app_perform_macro_total": {
+      "min": 258.408083,
+      "median": 260.341166,
+      "max": 261.633042
+    },
+    "app_semantic_planning": {
+      "min": 108.326292,
+      "median": 108.336666,
+      "max": 109.241375
+    },
+    "app_prepared_commit_total": {
+      "min": 130.8115,
+      "median": 131.619125,
+      "max": 133.730709
+    },
+    "app_service_refresh": {
+      "min": 4.112208,
+      "median": 4.204375,
+      "max": 4.232333
+    },
+    "app_publication": {
+      "min": 3.928333,
+      "median": 3.958084,
+      "max": 3.991083
+    },
+    "store_prepared_commit_total": {
+      "min": 130.810833,
+      "median": 131.618375,
+      "max": 133.730125
+    },
+    "store_admission_immediate_guard": {
+      "min": 0.015167,
+      "median": 0.022958,
+      "max": 0.025792
+    },
+    "store_prepare_command": {
+      "min": 117.089083,
+      "median": 117.677375,
+      "max": 119.006583
+    },
+    "store_host_callback": {
+      "min": 0.000708,
+      "median": 0.000791,
+      "max": 0.000916
+    },
+    "store_write_plan_or_bank": {
+      "min": 7.193917,
+      "median": 7.352,
+      "max": 7.409417
+    },
+    "store_durable_sql_commit": {
+      "min": 6.344416,
+      "median": 6.503167,
+      "max": 7.511792
+    },
+    "store_cache_publication": {
+      "min": 0.000625,
+      "median": 0.000792,
+      "max": 0.000875
+    },
+    "app_refresh_succeeded": {
+      "min": 0.0,
+      "median": 0.0,
+      "max": 0.0
+    }
+  }
+}

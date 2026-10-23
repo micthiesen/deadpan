@@ -1,0 +1,260 @@
+[
+  {
+    "round": 1,
+    "kind": "root-control",
+    "load": [
+      2.93310546875,
+      2.58935546875,
+      2.45703125
+    ],
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 269.714583,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 272.420166
+    },
+    "profile": null,
+    "checks": 7,
+    "source_and_binary_guards": true,
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "binary_sha256": "69978abd09ffc52dcd281066bc615d7b3e1d5cb11653f5d888d0738015ba1496",
+    "fixture_main_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c"
+  },
+  {
+    "round": 1,
+    "kind": "off",
+    "load": [
+      2.50390625,
+      2.51025390625,
+      2.4306640625
+    ],
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 271.56912500000004,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 274.149209
+    },
+    "profile": null,
+    "checks": 7,
+    "source_and_binary_guards": true,
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "binary_sha256": "f995232c3c20570b1de5e9e52e77945495c1c4b5b230b8b1f0773c76f757cbbc",
+    "fixture_main_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c"
+  },
+  {
+    "round": 1,
+    "kind": "on",
+    "load": [
+      2.47119140625,
+      2.5009765625,
+      2.427734375
+    ],
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 270.733875,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 273.230334
+    },
+    "profile": {
+      "matched_macro_reports": 1,
+      "store_commit_count": 1,
+      "all_phase_counts": 1,
+      "nanoseconds": {
+        "app_service_total": 264275166,
+        "app_perform_macro_total": 260341166,
+        "app_semantic_planning": 109241375,
+        "app_prepared_commit_total": 131619125,
+        "app_service_refresh": 4112208,
+        "app_publication": 3928333,
+        "store_prepared_commit_total": 131618375,
+        "store_admission_immediate_guard": 25792,
+        "store_prepare_command": 117677375,
+        "store_host_callback": 708,
+        "store_write_plan_or_bank": 7409417,
+        "store_durable_sql_commit": 6503167,
+        "store_cache_publication": 875,
+        "app_refresh_succeeded": 0
+      },
+      "residual_nanoseconds": {
+        "store_other_and_timer_overhead": 1041,
+        "app_prepared_commit_wrapper_and_timer_overhead": 750,
+        "app_other_macro_work_and_timer_overhead": 15368458,
+        "app_other_dispatch_and_timer_overhead": 5667
+      }
+    },
+    "checks": 7,
+    "source_and_binary_guards": true,
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "binary_sha256": "f995232c3c20570b1de5e9e52e77945495c1c4b5b230b8b1f0773c76f757cbbc",
+    "fixture_main_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c"
+  },
+  {
+    "round": 2,
+    "kind": "off",
+    "load": [
+      2.27978515625,
+      2.45849609375,
+      2.4130859375
+    ],
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 270.870834,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 273.373875
+    },
+    "profile": null,
+    "checks": 7,
+    "source_and_binary_guards": true,
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "binary_sha256": "f995232c3c20570b1de5e9e52e77945495c1c4b5b230b8b1f0773c76f757cbbc",
+    "fixture_main_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c"
+  },
+  {
+    "round": 2,
+    "kind": "on",
+    "load": [
+      2.08251953125,
+      2.41015625,
+      2.396484375
+    ],
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 272.120083,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 274.825083
+    },
+    "profile": {
+      "matched_macro_reports": 1,
+      "store_commit_count": 1,
+      "all_phase_counts": 1,
+      "nanoseconds": {
+        "app_service_total": 265628875,
+        "app_perform_macro_total": 261633042,
+        "app_semantic_planning": 108326292,
+        "app_prepared_commit_total": 133730709,
+        "app_service_refresh": 4232333,
+        "app_publication": 3991083,
+        "store_prepared_commit_total": 133730125,
+        "store_admission_immediate_guard": 15167,
+        "store_prepare_command": 119006583,
+        "store_host_callback": 916,
+        "store_write_plan_or_bank": 7193917,
+        "store_durable_sql_commit": 7511792,
+        "store_cache_publication": 792,
+        "app_refresh_succeeded": 0
+      },
+      "residual_nanoseconds": {
+        "store_other_and_timer_overhead": 958,
+        "app_prepared_commit_wrapper_and_timer_overhead": 584,
+        "app_other_macro_work_and_timer_overhead": 15343708,
+        "app_other_dispatch_and_timer_overhead": 4750
+      }
+    },
+    "checks": 7,
+    "source_and_binary_guards": true,
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "binary_sha256": "f995232c3c20570b1de5e9e52e77945495c1c4b5b230b8b1f0773c76f757cbbc",
+    "fixture_main_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c"
+  },
+  {
+    "round": 2,
+    "kind": "root-control",
+    "load": [
+      1.98974609375,
+      2.37353515625,
+      2.38330078125
+    ],
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 269.30616699999996,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 272.089542
+    },
+    "profile": null,
+    "checks": 7,
+    "source_and_binary_guards": true,
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "binary_sha256": "69978abd09ffc52dcd281066bc615d7b3e1d5cb11653f5d888d0738015ba1496",
+    "fixture_main_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c"
+  },
+  {
+    "round": 3,
+    "kind": "on",
+    "load": [
+      1.99072265625,
+      2.35498046875,
+      2.3759765625
+    ],
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 268.704416,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 271.18620799999997
+    },
+    "profile": {
+      "matched_macro_reports": 1,
+      "store_commit_count": 1,
+      "all_phase_counts": 1,
+      "nanoseconds": {
+        "app_service_total": 262371792,
+        "app_perform_macro_total": 258408083,
+        "app_semantic_planning": 108336666,
+        "app_prepared_commit_total": 130811500,
+        "app_service_refresh": 4204375,
+        "app_publication": 3958084,
+        "store_prepared_commit_total": 130810833,
+        "store_admission_immediate_guard": 22958,
+        "store_prepare_command": 117089083,
+        "store_host_callback": 791,
+        "store_write_plan_or_bank": 7352000,
+        "store_durable_sql_commit": 6344416,
+        "store_cache_publication": 625,
+        "app_refresh_succeeded": 0
+      },
+      "residual_nanoseconds": {
+        "store_other_and_timer_overhead": 960,
+        "app_prepared_commit_wrapper_and_timer_overhead": 667,
+        "app_other_macro_work_and_timer_overhead": 15055542,
+        "app_other_dispatch_and_timer_overhead": 5625
+      }
+    },
+    "checks": 7,
+    "source_and_binary_guards": true,
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "binary_sha256": "f995232c3c20570b1de5e9e52e77945495c1c4b5b230b8b1f0773c76f757cbbc",
+    "fixture_main_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c"
+  },
+  {
+    "round": 3,
+    "kind": "root-control",
+    "load": [
+      1.7705078125,
+      2.28759765625,
+      2.35107421875
+    ],
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 269.011083,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 271.55037500000003
+    },
+    "profile": null,
+    "checks": 7,
+    "source_and_binary_guards": true,
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "binary_sha256": "69978abd09ffc52dcd281066bc615d7b3e1d5cb11653f5d888d0738015ba1496",
+    "fixture_main_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c"
+  },
+  {
+    "round": 3,
+    "kind": "off",
+    "load": [
+      1.67919921875,
+      2.240234375,
+      2.33203125
+    ],
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 272.16687499999995,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 274.851583
+    },
+    "profile": null,
+    "checks": 7,
+    "source_and_binary_guards": true,
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "binary_sha256": "f995232c3c20570b1de5e9e52e77945495c1c4b5b230b8b1f0773c76f757cbbc",
+    "fixture_main_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c"
+  }
+]

@@ -1,0 +1,118 @@
+{
+  "source_basis": {
+    "commit": "29a318547b491c7265e2c00c1a6dc2d7d18842e4",
+    "archive_sha256": "b26c37d9708199d2bce26637890d4f5c27952223c689ac042a275401e4b54c5d",
+    "applied_profile_files": 5,
+    "read_only_cli_basis_match": true
+  },
+  "profile_build_sources": [
+    {
+      "path": "crates/deadpan-app/src/project/service.rs",
+      "copy": "built-source/crates__deadpan-app__src__project__service.rs.rs.txt",
+      "bytes": 99852,
+      "sha256": "78fb6570392b610c65cd3318a99a43941373243e7afef11c3fc3f1fa7960bfdf",
+      "matches_exact_release_source_identity": true
+    },
+    {
+      "path": "crates/deadpan-app/src/project/service/macros.rs",
+      "copy": "built-source/crates__deadpan-app__src__project__service__macros.rs.rs.txt",
+      "bytes": 52656,
+      "sha256": "99e61454055094ef6e3192c0c545ddee8e819c2f306fb1cf4a662fee9366a861",
+      "matches_exact_release_source_identity": true
+    },
+    {
+      "path": "crates/deadpan-store/src/compound.rs",
+      "copy": "built-source/crates__deadpan-store__src__compound.rs.rs.txt",
+      "bytes": 31195,
+      "sha256": "87a4f9ec86f95391f9c624e751b503e08658a03b38a0c41cf38e14f7facbdf52",
+      "matches_exact_release_source_identity": true
+    },
+    {
+      "path": "crates/deadpan-store/src/lib.rs",
+      "copy": "built-source/crates__deadpan-store__src__lib.rs.rs.txt",
+      "bytes": 77796,
+      "sha256": "f69991866fd5dd1da8b4bdc5286b0cbf2bec17ba56ebf42e429acbbf11b65d48",
+      "matches_exact_release_source_identity": true
+    },
+    {
+      "path": "crates/deadpan-store/src/prepared_compound_profile.rs",
+      "copy": "built-source/crates__deadpan-store__src__prepared_compound_profile.rs.rs.txt",
+      "bytes": 3992,
+      "sha256": "7f9c339cc2875c173c589d6b5abf89c0d741747800c2827d8d110daa6c04ee8d",
+      "matches_exact_release_source_identity": true
+    }
+  ],
+  "draft_overlay_hashes": {
+    "algorithm": "sha256",
+    "repo": "/Users/michael/Code/deadpan",
+    "purpose": "optional future diagnostic; not executed",
+    "files": [
+      {
+        "path": "crates/deadpan-app/src/project/service.rs",
+        "original_sha256": "d68879b682dc78607a9ac996fa6941dde1975b6860da375e2da97ab7222ff750",
+        "proposed_sha256": "aa4d587bb2703a8b53eb63994bd047146bf7801766d578086e1e3dacb59ff730",
+        "proposed_contents": "crates__deadpan-app__src__project__service.rs.txt"
+      },
+      {
+        "path": "crates/deadpan-app/src/project/service/macros.rs",
+        "original_sha256": "b3d63ee05d49d3c1208a54a5492fe365c39b198b2a82448388df5a264e64c20c",
+        "proposed_sha256": "99e61454055094ef6e3192c0c545ddee8e819c2f306fb1cf4a662fee9366a861",
+        "proposed_contents": "crates__deadpan-app__src__project__service__macros.rs.txt"
+      },
+      {
+        "path": "crates/deadpan-store/src/compound.rs",
+        "original_sha256": "4e2c8070178a16f54f7a484b4e5189ca206fd00af85ef26492e90a847edb0dc2",
+        "proposed_sha256": "87a4f9ec86f95391f9c624e751b503e08658a03b38a0c41cf38e14f7facbdf52",
+        "proposed_contents": "crates__deadpan-store__src__compound.rs.txt"
+      },
+      {
+        "path": "crates/deadpan-store/src/lib.rs",
+        "original_sha256": "9b59c50f14881d3f28f03ed40be7323afd045e06c0b6f03d65f115fb29b885e8",
+        "proposed_sha256": "48b089eff2162df2c9725869088c3de2bf214d919092d188bb23d6de377192c7",
+        "proposed_contents": "crates__deadpan-store__src__lib.rs.txt"
+      },
+      {
+        "path": "crates/deadpan-store/src/prepared_compound_profile.rs",
+        "original_sha256": null,
+        "proposed_sha256": "9dd60a40414ab4d0a1a8028cc3698901f8dac97be04a419ff0de21e8e2a6f517",
+        "proposed_contents": "crates__deadpan-store__src__prepared_compound_profile.rs.txt"
+      }
+    ],
+    "read_only_route_basis": {
+      "path": "crates/deadpan-cli/src/macros.rs",
+      "sha256": "c120ec8575fc5b72267bbccfd84481bf97fef1b39c96092b4048d6ca35165f7f"
+    }
+  },
+  "original_source_snapshots": [
+    {
+      "path": "crates/deadpan-app/src/project/service.rs",
+      "copy": "original-source/crates__deadpan-app__src__project__service.rs.rs.txt",
+      "bytes": 99180,
+      "sha256": "d68879b682dc78607a9ac996fa6941dde1975b6860da375e2da97ab7222ff750"
+    },
+    {
+      "path": "crates/deadpan-app/src/project/service/macros.rs",
+      "copy": "original-source/crates__deadpan-app__src__project__service__macros.rs.rs.txt",
+      "bytes": 51866,
+      "sha256": "b3d63ee05d49d3c1208a54a5492fe365c39b198b2a82448388df5a264e64c20c"
+    },
+    {
+      "path": "crates/deadpan-store/src/compound.rs",
+      "copy": "original-source/crates__deadpan-store__src__compound.rs.rs.txt",
+      "bytes": 29869,
+      "sha256": "4e2c8070178a16f54f7a484b4e5189ca206fd00af85ef26492e90a847edb0dc2"
+    },
+    {
+      "path": "crates/deadpan-store/src/lib.rs",
+      "copy": "original-source/crates__deadpan-store__src__lib.rs.rs.txt",
+      "bytes": 77761,
+      "sha256": "9b59c50f14881d3f28f03ed40be7323afd045e06c0b6f03d65f115fb29b885e8"
+    },
+    {
+      "path": "crates/deadpan-store/src/prepared_compound_profile.rs",
+      "status": "absent before profile overlay",
+      "sha256": null
+    }
+  ],
+  "read_only_cli_basis_matches": true
+}

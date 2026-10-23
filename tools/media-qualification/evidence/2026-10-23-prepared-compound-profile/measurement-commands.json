@@ -1,0 +1,293 @@
+[
+  {
+    "name": "1-root-control-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-prepared-compound-profile-2026-10-23/1-root-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.19306883309036493
+  },
+  {
+    "name": "1-root-control",
+    "command": [
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/release-native-corrected-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-prepared-compound-profile-2026-10-23/1-root-control.deadpan",
+      "--output",
+      "/tmp/deadpan-prepared-compound-profile-2026-10-23/1-root-control-report"
+    ],
+    "exit": 0,
+    "seconds": 13.14994545839727
+  },
+  {
+    "name": "1-off-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-prepared-compound-profile-2026-10-23/1-off.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.18423491716384888
+  },
+  {
+    "name": "1-off",
+    "command": [
+      "/tmp/deadpan-prepared-compound-profile-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-prepared-compound-profile-2026-10-23/1-off.deadpan",
+      "--output",
+      "/tmp/deadpan-prepared-compound-profile-2026-10-23/1-off-report"
+    ],
+    "exit": 0,
+    "seconds": 13.828460042364895
+  },
+  {
+    "name": "1-on-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-prepared-compound-profile-2026-10-23/1-on.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.18705870769917965
+  },
+  {
+    "name": "1-on",
+    "command": [
+      "/tmp/deadpan-prepared-compound-profile-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-prepared-compound-profile-2026-10-23/1-on.deadpan",
+      "--output",
+      "/tmp/deadpan-prepared-compound-profile-2026-10-23/1-on-report"
+    ],
+    "exit": 0,
+    "seconds": 13.847896582446992
+  },
+  {
+    "name": "1-on-parse",
+    "command": [
+      "python",
+      "/tmp/deadpan-prepared-compound-profile-2026-10-23/check_profile.py",
+      "/tmp/deadpan-prepared-compound-profile-2026-10-23/1-on.stderr"
+    ],
+    "exit": 0,
+    "seconds": 0.020867332816123962
+  },
+  {
+    "name": "2-off-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-prepared-compound-profile-2026-10-23/2-off.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.19088750053197145
+  },
+  {
+    "name": "2-off",
+    "command": [
+      "/tmp/deadpan-prepared-compound-profile-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-prepared-compound-profile-2026-10-23/2-off.deadpan",
+      "--output",
+      "/tmp/deadpan-prepared-compound-profile-2026-10-23/2-off-report"
+    ],
+    "exit": 0,
+    "seconds": 13.631698624230921
+  },
+  {
+    "name": "2-on-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-prepared-compound-profile-2026-10-23/2-on.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.19189333450049162
+  },
+  {
+    "name": "2-on",
+    "command": [
+      "/tmp/deadpan-prepared-compound-profile-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-prepared-compound-profile-2026-10-23/2-on.deadpan",
+      "--output",
+      "/tmp/deadpan-prepared-compound-profile-2026-10-23/2-on-report"
+    ],
+    "exit": 0,
+    "seconds": 14.256057665683329
+  },
+  {
+    "name": "2-on-parse",
+    "command": [
+      "python",
+      "/tmp/deadpan-prepared-compound-profile-2026-10-23/check_profile.py",
+      "/tmp/deadpan-prepared-compound-profile-2026-10-23/2-on.stderr"
+    ],
+    "exit": 0,
+    "seconds": 0.02052391692996025
+  },
+  {
+    "name": "2-root-control-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-prepared-compound-profile-2026-10-23/2-root-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.18811708316206932
+  },
+  {
+    "name": "2-root-control",
+    "command": [
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/release-native-corrected-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-prepared-compound-profile-2026-10-23/2-root-control.deadpan",
+      "--output",
+      "/tmp/deadpan-prepared-compound-profile-2026-10-23/2-root-control-report"
+    ],
+    "exit": 0,
+    "seconds": 13.532462166622281
+  },
+  {
+    "name": "3-on-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-prepared-compound-profile-2026-10-23/3-on.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.1882905000820756
+  },
+  {
+    "name": "3-on",
+    "command": [
+      "/tmp/deadpan-prepared-compound-profile-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-prepared-compound-profile-2026-10-23/3-on.deadpan",
+      "--output",
+      "/tmp/deadpan-prepared-compound-profile-2026-10-23/3-on-report"
+    ],
+    "exit": 0,
+    "seconds": 14.402226791717112
+  },
+  {
+    "name": "3-on-parse",
+    "command": [
+      "python",
+      "/tmp/deadpan-prepared-compound-profile-2026-10-23/check_profile.py",
+      "/tmp/deadpan-prepared-compound-profile-2026-10-23/3-on.stderr"
+    ],
+    "exit": 0,
+    "seconds": 0.020596541464328766
+  },
+  {
+    "name": "3-root-control-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-prepared-compound-profile-2026-10-23/3-root-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.18772962503135204
+  },
+  {
+    "name": "3-root-control",
+    "command": [
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/release-native-corrected-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-prepared-compound-profile-2026-10-23/3-root-control.deadpan",
+      "--output",
+      "/tmp/deadpan-prepared-compound-profile-2026-10-23/3-root-control-report"
+    ],
+    "exit": 0,
+    "seconds": 13.794771167449653
+  },
+  {
+    "name": "3-off-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-prepared-compound-profile-2026-10-23/3-off.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.1891207927837968
+  },
+  {
+    "name": "3-off",
+    "command": [
+      "/tmp/deadpan-prepared-compound-profile-2026-10-23/bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-prepared-compound-profile-2026-10-23/3-off.deadpan",
+      "--output",
+      "/tmp/deadpan-prepared-compound-profile-2026-10-23/3-off-report"
+    ],
+    "exit": 0,
+    "seconds": 13.755085250362754
+  }
+]

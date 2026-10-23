@@ -233,6 +233,16 @@ the 100 ms fallback and 50 ms ordinary-edit targets remain open. Five samples
 per executable are diagnostic; they do not establish a formal percentile,
 physical display latency, source decoding or PCM performance.
 
+The subsequent [prepared-Compound profile](qualification/prepared-compound-profile-2026-10-23.md)
+passes three rotated control/off/on triplets. Diagnostic medians locate
+108.336666 ms in semantic planning and 117.677375 ms in Store preparation;
+history writing is 7.352000 ms, durable commit 6.503167 ms and refresh
+4.204375 ms. Nested totals are not added to their children. Queue wait and
+instrumentation overhead remain unqualified; the fixture's empty bank does
+not establish a runtime-copy preparation bound. These results motivate
+examining planning/validation rather than weakening durability, with no
+additional production gain or percentile/target PASS.
+
 | Section 25 target | Measurement | Notes |
 | --- | --- | --- |
 | Key event to command-state update, p95 < 8 ms | ui `rapid-input` `warm_navigation_input_cpu_ms` | Whole egui input frame CPU: an upper bound on the state update. Small replay fixture. |

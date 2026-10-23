@@ -105,13 +105,28 @@ dot check before timing. qualify_corrected.py is terminal with four successful
 steps, and post_corrected.py is terminal with all 25 steps successful and ten
 guarded trials. Do not restart them.
 
-Next, profile the remaining roughly 276 ms before choosing another optimization.
-An optional, uncompiled draft is in
-/tmp/deadpan-prepared-compound-profile-draft-2026-10-23. It proposes one buffered
-Store-owned profiler spanning app/Store totals and six disjoint Store phases,
-printed after shared publication. Verify source hashes, use an isolated source
-and target, retain control/overhead checks and explicitly exclude queue wait.
-Do not ship the timers or weaken admission, work bounds or durability.
+The [prepared-Compound profile](../qualification/prepared-compound-profile-2026-10-23.md)
+is complete in /tmp/deadpan-prepared-compound-profile-2026-10-23. Separate source
+and target, locked release build, nine guarded control/off/on trials and three
+strict profile parsers all pass. Profile app SHA-256:
+f995232c3c20570b1de5e9e52e77945495c1c4b5b230b8b1f0773c76f757cbbc.
+Control diagnostic medians are 269.306167 /272.089542 ms, a separate n=3 batch
+from the qualified five-pair comparison. On-phase medians are semantic planning
+108.336666 ms, Store preparation 117.677375 ms, writing 7.352000 ms, durable
+commit 6.503167 ms and refresh 4.204375 ms. The callback has an empty bank here.
+Nested totals overlap; six Store children are disjoint. Queue wait and timer
+overhead remain unqualified. No further production improvement is claimed.
+Inventory verifies 129 files /1,718,991 bytes, SHA-256
+79090d0ded9ef8894ab40168e8bbe00545d07c758babb9ac84dad77a2a967677.
+All drivers are terminal; do not restart them or ship the temporary timers.
+
+Next: examine repeated planning/validation/staging while preserving authority,
+work bounds and durability. A read-only map is in progress in that scratch's
+next-map directory. One promising existing API is core apply_with_result:
+some semantic helpers call apply and then apply the returned forward patch,
+discarding a result the API can already return. Confirm exact guarantees,
+charges and refusal ordering before a narrow isolated experiment. No new
+optimization has been implemented or measured at this checkpoint.
 
 Refresh/verify progress artifact a3ysikxugbmr4 from the next pushed
 docs/progress.json after this implementation commit. Preserve foreign

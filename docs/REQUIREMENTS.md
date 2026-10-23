@@ -2,6 +2,21 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
+## Remaining preparation cost, 2026-10-23
+
+The isolated [prepared-Compound profile](qualification/prepared-compound-profile-2026-10-23.md)
+passes nine fresh-process runs and exact source/binary/input guards. In three
+profile-on runs, median semantic planning is 108.336666 ms and Store command
+preparation 117.677375 ms, versus 7.352000 ms writing and 6.503167 ms durable
+commit. Refresh is 4.204375 ms. Totals are nested; children are disjoint. Queue
+wait and calibrated timer overhead remain unmeasured. The empty-bank callback
+cost is not a general bound for copied-content programs.
+
+This is a diagnostic after the qualified improvement below, with no further
+production change or target PASS. It directs the next investigation toward
+planning, validation and staging, while preserving work bounds and durability.
+Evidence verifies 129 files /1,718,991 bytes; no requirement or gate closes.
+
 ## Shared transactional runtime preparation, 2026-10-23
 
 Native semantic edits now prepare their Compound once inside the existing
