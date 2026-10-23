@@ -21,11 +21,14 @@ verifies all 19 emitted pictures and audio samples `[0,30430)` at zero offset,
 with no coverage or low-SNR flags. The native replay failed because its new
 helper expected committed presentation while the app displayed the exact
 proposed picture. The harness now checks the proposal identity and dismisses an
-open proposal during failure cleanup; independent source review agrees. This
-two-file UI-only correction remains unexecuted, so native and renewed UI checks
-are owed. The release aligned-scope media case also passes all 19 pictures and
+open proposal during failure cleanup; independent source review agrees. The
+corrected release replay passes 130 workflow checks plus Kestrel. It retains
+two layout-retry warnings; input-to-state p99 is 1.607 ms over 233 samples,
+while commit p95 is 88.299 ms over seven samples, so the full 50 ms target is
+not established. Renewed strict/UI checks are running. The release aligned-scope media case also passes all 19 pictures and
 30,430 samples at zero offset, with complete staged PCM/history controls; the
-121-picture endpoint regression is running. No requirement or gate closes.
+121-picture / 193,794-sample endpoint regression also passes at zero offset.
+No requirement or gate closes.
 
 The `integrated-eleventh` archive passes twelve focused audio checks. A new
 valid-control counterfactual first measured 7,581 changed output channel samples

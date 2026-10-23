@@ -25,11 +25,17 @@ while requested/decoded/displayed all consistently identify the Proposed
 frame 0 / Original 0, with no picture error. Corrected only two UI harness files:
 wait for the exact proposed ticket/content and Escape before failed cleanup.
 Independent source review agrees; `release-native-harness-correction-attribution.json`
-proves all other 2,037 Rust files and six inputs unchanged. The corrected native
-replay and renewed strict/UI checks remain owed. `release-media` passes the
+proves all other 2,037 Rust files and six inputs unchanged. `corrected-native`
+now passes all 130 workflow checks plus Kestrel, with frozen source/input and
+actual executable hashes unchanged. Retain both layout-retry warning findings.
+Input-to-state p99 is 1.607166 ms over 233 samples; commit p95 is 88.298625 ms
+over seven samples, so do not claim the complete 50 ms target. `harness-strict`
+is running, then `harness-ui` in `finish_harness_qualification.py`.
+`release-media` passes the
 aligned-scope fixture in 228.948 seconds: all staged canonical PCM/history
 controls, all 19 pictures and 30,430 samples at zero offset. The old 121-picture
-endpoint regression is running from the same archive. Native performance remains owed;
+endpoint regression also passes all 121 pictures and 193,794 samples at zero
+offset in 43.470 seconds from the same archive. Full performance remains open;
 the fresh scratch scripts are `qualify_candidate.py` and
 `qualify_native_media.py`. All production code is still uncommitted.
 
