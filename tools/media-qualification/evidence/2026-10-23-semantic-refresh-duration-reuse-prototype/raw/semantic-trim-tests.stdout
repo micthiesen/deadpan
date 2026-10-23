@@ -1,0 +1,8 @@
+
+running 3 tests
+test a_trim_without_enough_source_refuses_instead_of_clamping ... ok
+test a_recorded_slip_moves_the_selected_beat_by_exact_frames_or_refuses ... ok
+test a_recorded_trim_repeats_its_exact_values_on_the_next_beat ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

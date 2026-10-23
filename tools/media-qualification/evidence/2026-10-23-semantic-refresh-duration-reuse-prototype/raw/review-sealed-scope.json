@@ -1,0 +1,28 @@
+{
+  "completed_at_utc": "2026-10-23T15:22:56.786165+00:00",
+  "status": "no_findings",
+  "question": "Can moving the first complete validation outside derived_clock::with_sealed change admission of historical FrozenAudioLayout or contexts when current.derived_clocks is empty?",
+  "conclusion": "No reachable SEALED-sensitive historical validation path was found. The existing empty-current-derived-clock guard suffices for this specific difference. No preservation patch is required.",
+  "evidence": [
+    "Exhaustive rg over crates/deadpan-core/src for SEALED, sealed_active, require_integral_clocks and with_sealed found TLS reads only in derived_clock::require_integral_clocks, command::dispatch/command application and insert_time::occurrence::target resolution. The latter two operations are not invoked by complete document validation.",
+    "ProjectDocument::durations_shared and durations share require_integral_clocks. Its first disjunct returns success whenever current.derived_clocks is empty, independently of SEALED. Complete validation then calls the same validated_with_context_limits implementation.",
+    "Historical FrozenAudioLayout::require_integral_clocks in audio_reference/exact_clock.rs is a separate method. It checks only that the historical layout derived_clocks map is empty and does not consult SEALED. AudioContext::validate calls precisely this FrozenAudioLayout method after layout.validate, so a historical exact-clock context is rejected identically inside or outside SEALED.",
+    "FrozenAudioLayout::validate calls build_index, which validates the frozen recipe graph then index_exact_clocks. Both operate on FrozenAudioLayout data. Exact-clock validation and require_follow_speed_clocks do not read SEALED or reconstruct a historical ProjectDocument.",
+    "AudioBindingState::validation_work validates retained historical layouts and calls require_follow_speed_clocks, independently of SEALED. validate_for_after may capture_structural(document) for live sound-clock comparison, but this capture receives the same current ProjectDocument. It uses recipe_structural_durations and effective_durations directly and does not turn historical layouts into ProjectDocuments.",
+    "Picture context validation inspects retained picture transforms/canvases, with no SEALED read, duration query or ProjectDocument reconstruction. AudioContext validates retained inputs, treatments and assets directly; its only ProjectDocument call during validate is static validate_asset."
+  ],
+  "reviewed_file_sha256": {
+    "crates/deadpan-core/src/derived_clock.rs": "cd6b50d2cfbc2e29de3dec5be7dc9fb8ed9fe5d2e9bef2b15a2d6ed76b366225",
+    "crates/deadpan-core/src/document.rs": "2763bb86bbaba1afe9f11ade4e0077c154ffc12c9452bc2836fc9b0105865d10",
+    "crates/deadpan-core/src/audio_reference.rs": "ed3259f86f811e61adcffdc58972342057b9f3afa1622fd38bc42db5c44dd70d",
+    "crates/deadpan-core/src/audio_reference/exact_clock.rs": "e9a2e664d3f3928a22f128c53ae03c97984b6cab96932155662792503b11d60f",
+    "crates/deadpan-core/src/audio_context.rs": "0dfdb8f4cab7486026ed3fa52e68abbea91e0e01d8238ba4e74bb248696d9c12",
+    "crates/deadpan-core/src/audio_binding.rs": "94c43e887cb29d01a769a9e579fc82be278a5523e52cdfb24eb5df6951e0cac0",
+    "crates/deadpan-core/src/picture_context.rs": "180ed595b6f5fc08cf0b3de8ae534441ba37dd242b05866cb829998a8809a965",
+    "crates/deadpan-core/src/semantic/planner/selection.rs": "f8e16b78ed203dade31c1ff90632371f4d8dc1798db09178b03a3799d93ca526"
+  },
+  "limitations": [
+    "Read-only source review only; no source edits, Cargo, tests, runtime or performance measurements.",
+    "Root owns concurrent formatting/build; these hashes identify this focused read snapshot and do not extend the earlier unformatted-byte review to arbitrary subsequent changes."
+  ]
+}

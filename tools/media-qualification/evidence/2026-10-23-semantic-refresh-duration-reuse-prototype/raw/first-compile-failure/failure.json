@@ -1,0 +1,6 @@
+{
+  "error": "E0624: EditError::new is crate-private",
+  "stage": "compilation of standalone semantic_refresh integration target; no tests executed",
+  "production_change": false,
+  "correction": "Use existing public code/message/current_revision fields to construct identical injected InvalidCommand error; no public API or assertions changed"
+}

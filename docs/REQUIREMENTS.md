@@ -81,6 +81,16 @@ No formal percentile, memory target, requirement or gate closes.
 
 ## Remaining preparation cost, 2026-10-23
 
+A private [semantic refresh duration reuse prototype](qualification/semantic-refresh-duration-reuse-prototype-2026-10-23.md)
+reuses one complete map for the same immutable staged refresh, preserving
+query/error order, assignments, both anchor indexes and all authority. Four
+new integration tests plus three semantic-trim and three command-work tests
+pass. Five quiet pairs give commit medians 245.353334 /240.185084 ms and
+offscreen composition 248.012042 /242.880417 ms, a 5.131625 ms /2.07%
+diagnostic difference. The initial private-constructor compile failure and
+equivalent test-helper correction are retained. The 161-file /2,865,045-byte
+inventory verifies. Full production qualification remains owed; no target closes.
+
 A private [complete frozen-layout reuse prototype](qualification/full-timing-closure-reuse-prototype-2026-10-23.md)
 recognizes a full alias closure after all existing alias checks, retains the
 canonical wire guard, excludes provisional layouts and reuses its admitted

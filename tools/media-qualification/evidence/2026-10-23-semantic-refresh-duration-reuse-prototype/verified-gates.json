@@ -1,0 +1,68 @@
+{
+  "baseline": "56f748565189dd2c759f927f18c845faec3d1160",
+  "original_rust_files": 2050,
+  "candidate_rust_files": 2051,
+  "changed_sources": [
+    "crates/deadpan-core/src/semantic/planner/selection.rs",
+    "crates/deadpan-core/tests/semantic_refresh.rs"
+  ],
+  "guarded_inputs": 6,
+  "focus": {
+    "resumed_steps": 5,
+    "initial_failure_exit": 101,
+    "focused_tests": {
+      "semantic-refresh-tests": 4,
+      "semantic-trim-tests": 3,
+      "command-work-tests": 3
+    },
+    "executed_test_binaries": 3
+  },
+  "measurement": {
+    "commands": 20,
+    "trials": 10,
+    "metrics": [
+      "large_first_pause_input_to_commit_ms",
+      "large_first_pause_input_to_offscreen_background_composition_ms"
+    ],
+    "diagnostic_only": true,
+    "candidate_app_sha256": "9a5951c9a74e8f4e7f9536e20ec6036b56a2b631ef716871685c56c761f87ce6",
+    "control_app_sha256": "2761f275c70d471b202ffdf2faa9e047724a169c9607775ff4b4ee6208942608",
+    "summary": {
+      "n_per_kind": 5,
+      "prototype_only": true,
+      "no_percentile_or_target_pass": true,
+      "kinds": {
+        "control": {
+          "large_first_pause_input_to_commit_ms": {
+            "min": 244.8305,
+            "median": 245.35333400000002,
+            "max": 250.20750000000004
+          },
+          "large_first_pause_input_to_offscreen_background_composition_ms": {
+            "min": 247.342625,
+            "median": 248.01204199999998,
+            "max": 252.722083
+          }
+        },
+        "prototype": {
+          "large_first_pause_input_to_commit_ms": {
+            "min": 236.321375,
+            "median": 240.185084,
+            "max": 242.611333
+          },
+          "large_first_pause_input_to_offscreen_background_composition_ms": {
+            "min": 238.841542,
+            "median": 242.880417,
+            "max": 245.28033299999998
+          }
+        }
+      }
+    }
+  },
+  "reviews": [
+    "no findings",
+    "no findings"
+  ],
+  "core_schema": 58,
+  "sqlite_schema": 87
+}

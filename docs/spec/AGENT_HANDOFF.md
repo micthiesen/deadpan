@@ -295,6 +295,26 @@ Next: finish next-optimization-study/ in this qualification scratch. Old Core24
 subphase costs precede reuse; do not infer current costs from the end-to-end
 difference. Preserve all validation, work charges, provider/capture/refusal and
 history authority. No requirement or gate is newly complete.
+
+That study is complete. Its private
+[semantic refresh prototype](../qualification/semantic-refresh-duration-reuse-prototype-2026-10-23.md)
+is complete in /tmp/deadpan-semantic-refresh-duration-reuse-2026-10-23.
+Initial build_prototype.py is terminal at E0624 in a test helper, before any
+test execution; exact failure sources/maps/logs are in first-compile-failure/.
+Only injected() changes to the equivalent existing public error fields;
+all other test text and production code stay identical. Resumed build and
+measurement drivers are terminal: five stages, ten integration checks and ten
+guarded native trials pass. Do not restart them. Private app SHA-256:
+9a5951c9a74e8f4e7f9536e20ec6036b56a2b631ef716871685c56c761f87ce6.
+Five pairs against qualified2761f275 give commit 245.353334 /240.185084 ms and
+offscreen composition 248.012042 /242.880417 ms, a 5.131625 ms /2.07%
+diagnostic difference. No target PASS. Inventory verifies 161 files /2,865,045
+bytes, SHA-256 a08e6b54e60cc159945cc28136d4393876138caba980913fa9d42f24e30b6c70.
+Only selection.rs and new tests/semantic_refresh.rs change; nonlocal and derived
+fallbacks stay original. Full and sealed-clock source reviews report no findings.
+Next: adopt exact corrected formatted bytes and run full production checks using
+reviewed drivers in /tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23.
+The production control remains2761f275 until that qualification completes.
 The separate
 next-replay-count-study.md describes immutable borrowed count pairs and a
 post-validation finalizer; bare counts on mutable public outcomes are

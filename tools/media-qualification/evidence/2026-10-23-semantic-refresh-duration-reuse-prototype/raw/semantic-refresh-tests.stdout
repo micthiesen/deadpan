@@ -1,0 +1,9 @@
+
+running 4 tests
+test semantic_refresh_late_provider_and_allocator_failures_keep_order_and_inputs ... ok
+test semantic_refresh_nested_follow_speed_pauses_keep_the_derived_clock_fallback ... ok
+test semantic_refresh_nested_scope_keeps_zero_groups_marks_and_outside_siblings ... ok
+test semantic_refresh_wide_bound_document_replaces_the_proof_after_each_pause ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+

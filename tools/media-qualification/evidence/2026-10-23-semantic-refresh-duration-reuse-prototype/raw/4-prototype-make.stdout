@@ -1,0 +1,7 @@
+{
+  "beats": 10000,
+  "creation_ms": 168.116,
+  "package": "/tmp/deadpan-semantic-refresh-duration-reuse-2026-10-23/4-prototype.deadpan",
+  "stage": "make-large",
+  "stage_wall_ms": 177.5185
+}

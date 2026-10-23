@@ -1,0 +1,31 @@
+{
+  "n_per_kind": 5,
+  "prototype_only": true,
+  "no_percentile_or_target_pass": true,
+  "kinds": {
+    "control": {
+      "large_first_pause_input_to_commit_ms": {
+        "min": 244.8305,
+        "median": 245.35333400000002,
+        "max": 250.20750000000004
+      },
+      "large_first_pause_input_to_offscreen_background_composition_ms": {
+        "min": 247.342625,
+        "median": 248.01204199999998,
+        "max": 252.722083
+      }
+    },
+    "prototype": {
+      "large_first_pause_input_to_commit_ms": {
+        "min": 236.321375,
+        "median": 240.185084,
+        "max": 242.611333
+      },
+      "large_first_pause_input_to_offscreen_background_composition_ms": {
+        "min": 238.841542,
+        "median": 242.880417,
+        "max": 245.28033299999998
+      }
+    }
+  }
+}

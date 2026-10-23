@@ -1,0 +1,8 @@
+{
+  "changed": [
+    "crates/deadpan-core/src/semantic/planner/selection.rs",
+    "crates/deadpan-core/tests/semantic_refresh.rs"
+  ],
+  "nonowned_rust_unchanged": true,
+  "inputs_unchanged": true
+}

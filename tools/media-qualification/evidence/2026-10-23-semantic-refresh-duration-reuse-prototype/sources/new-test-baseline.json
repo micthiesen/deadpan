@@ -1,0 +1,5 @@
+{
+  "path": "crates/deadpan-core/tests/semantic_refresh.rs",
+  "present_in_original_source_map": false,
+  "historical_first_compile_attempt_retained": true
+}

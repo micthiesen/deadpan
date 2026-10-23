@@ -1,0 +1,14 @@
+{
+  "complete_diff_read": true,
+  "fallback_original_bytes_preserved": true,
+  "all_nonowned_unchanged": true,
+  "standalone_tests": [
+    "semantic_refresh_wide_bound_document_replaces_the_proof_after_each_pause",
+    "semantic_refresh_nested_scope_keeps_zero_groups_marks_and_outside_siblings",
+    "semantic_refresh_late_provider_and_allocator_failures_keep_order_and_inputs",
+    "semantic_refresh_nested_follow_speed_pauses_keep_the_derived_clock_fallback"
+  ],
+  "compiled": false,
+  "formatted": false,
+  "tests_executed": false
+}

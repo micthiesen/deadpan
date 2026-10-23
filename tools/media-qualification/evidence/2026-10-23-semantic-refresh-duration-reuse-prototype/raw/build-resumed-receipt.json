@@ -1,0 +1,79 @@
+[
+  {
+    "name": "format",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "cwd": "/tmp/deadpan-semantic-refresh-duration-reuse-2026-10-23/source",
+    "exit": 0,
+    "seconds": 6.188021750189364
+  },
+  {
+    "name": "semantic-refresh-tests",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--release",
+      "-p",
+      "deadpan-core",
+      "--test",
+      "semantic_refresh"
+    ],
+    "cwd": "/tmp/deadpan-semantic-refresh-duration-reuse-2026-10-23/source",
+    "exit": 0,
+    "seconds": 45.192889583297074
+  },
+  {
+    "name": "semantic-trim-tests",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--release",
+      "-p",
+      "deadpan-core",
+      "--test",
+      "semantic_trim"
+    ],
+    "cwd": "/tmp/deadpan-semantic-refresh-duration-reuse-2026-10-23/source",
+    "exit": 0,
+    "seconds": 40.364308999851346
+  },
+  {
+    "name": "command-work-tests",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--release",
+      "-p",
+      "deadpan-core",
+      "--test",
+      "command_work"
+    ],
+    "cwd": "/tmp/deadpan-semantic-refresh-duration-reuse-2026-10-23/source",
+    "exit": 0,
+    "seconds": 38.781544290483
+  },
+  {
+    "name": "release-build",
+    "command": [
+      "cargo",
+      "build",
+      "--locked",
+      "--release",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness",
+      "--bin",
+      "deadpan-app"
+    ],
+    "cwd": "/tmp/deadpan-semantic-refresh-duration-reuse-2026-10-23/source",
+    "exit": 0,
+    "seconds": 266.5472877500579
+  }
+]

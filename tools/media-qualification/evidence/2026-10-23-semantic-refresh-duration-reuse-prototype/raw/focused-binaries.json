@@ -1,0 +1,41 @@
+[
+  {
+    "step": "semantic-refresh-tests",
+    "source": "/tmp/deadpan-semantic-refresh-duration-reuse-2026-10-23/target/release/deps/semantic_refresh-5c911c9074bef855",
+    "retained_executed_copy": "/tmp/deadpan-semantic-refresh-duration-reuse-2026-10-23/focused-bin/semantic-refresh-tests-0",
+    "sha256": "3eeb7a8f6562968f9a1d14df8eac82bf28c27b0cd3deb7545059e0ea589b1a26",
+    "test_results": [
+      [
+        "4",
+        "0",
+        "0"
+      ]
+    ]
+  },
+  {
+    "step": "semantic-trim-tests",
+    "source": "/tmp/deadpan-semantic-refresh-duration-reuse-2026-10-23/target/release/deps/semantic_trim-bfb70a35a2f8b456",
+    "retained_executed_copy": "/tmp/deadpan-semantic-refresh-duration-reuse-2026-10-23/focused-bin/semantic-trim-tests-0",
+    "sha256": "79b6a6201086685aa36209cefaf3f2f7c998a6505c9c43f6659ea7a1c6e2cd56",
+    "test_results": [
+      [
+        "3",
+        "0",
+        "0"
+      ]
+    ]
+  },
+  {
+    "step": "command-work-tests",
+    "source": "/tmp/deadpan-semantic-refresh-duration-reuse-2026-10-23/target/release/deps/command_work-ba5d901dcb4c9adc",
+    "retained_executed_copy": "/tmp/deadpan-semantic-refresh-duration-reuse-2026-10-23/focused-bin/command-work-tests-0",
+    "sha256": "6f0849441f149abf47b4b6b97856ce2043b8200f6a638fcdb0d21a233d3071a0",
+    "test_results": [
+      [
+        "3",
+        "0",
+        "0"
+      ]
+    ]
+  }
+]

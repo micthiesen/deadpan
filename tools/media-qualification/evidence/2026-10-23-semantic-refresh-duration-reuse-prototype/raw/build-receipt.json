@@ -1,0 +1,41 @@
+[
+  {
+    "name": "clone-release-cache",
+    "command": [
+      "cp",
+      "-cR",
+      "/Users/michael/Code/deadpan/target/release",
+      "/tmp/deadpan-semantic-refresh-duration-reuse-2026-10-23/target/release"
+    ],
+    "cwd": "/tmp/deadpan-semantic-refresh-duration-reuse-2026-10-23/source",
+    "exit": 0,
+    "seconds": 0.43760316632688046
+  },
+  {
+    "name": "format",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "cwd": "/tmp/deadpan-semantic-refresh-duration-reuse-2026-10-23/source",
+    "exit": 0,
+    "seconds": 6.186477541923523
+  },
+  {
+    "name": "semantic-refresh-tests",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--release",
+      "-p",
+      "deadpan-core",
+      "--test",
+      "semantic_refresh"
+    ],
+    "cwd": "/tmp/deadpan-semantic-refresh-duration-reuse-2026-10-23/source",
+    "exit": 101,
+    "seconds": 72.87872508447617
+  }
+]

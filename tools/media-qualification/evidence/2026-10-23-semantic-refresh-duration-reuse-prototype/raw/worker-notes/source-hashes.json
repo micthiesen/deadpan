@@ -1,0 +1,22 @@
+{
+  "before": {
+    "crates/deadpan-core/src/semantic/planner/selection.rs": "5ae0181334ea3c12c7d0d4e0607c00fac2a18d345a06e89b3b651d0f80fba8ec",
+    "crates/deadpan-core/tests/semantic_refresh.rs": null
+  },
+  "proposed": {
+    "crates/deadpan-core/src/semantic/planner/selection.rs": "f8e16b78ed203dade31c1ff90632371f4d8dc1798db09178b03a3799d93ca526",
+    "crates/deadpan-core/tests/semantic_refresh.rs": "0dc91867afa34115ee40060d1c539dbefc94ef9efba985d03b80cd5f7723dfed"
+  },
+  "baseline_files": 34421,
+  "baseline_rust_files": 2050,
+  "nonowned_files_unchanged": 34420,
+  "changed_files": [
+    "crates/deadpan-core/src/semantic/planner/selection.rs",
+    "crates/deadpan-core/tests/semantic_refresh.rs"
+  ],
+  "new_files": [
+    "crates/deadpan-core/tests/semantic_refresh.rs"
+  ],
+  "uncompiled": true,
+  "unformatted": true
+}
