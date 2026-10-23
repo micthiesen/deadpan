@@ -13,7 +13,10 @@ checks and formatting pass. The only subsequent Rust change fixes a private
 UI replay assertion: the third Move clock names each live full owner, while
 the first two keep the pre-Split owner. `preview.rs` gates that file behind
 `ui-harness`, absent from the broad archive; exact one-file attribution is in
-scratch. `strict-final` passes after that correction. `final-ui` is building.
+scratch. `strict-final` passes after that correction. `final-ui` passes all
+1,292 tests, with 11 skipped, in 71.820 seconds by the nextest summary. Its
+2,039-file Rust, six-input and executed-binary guards pass. `debug-media`
+is building the real-media preflight.
 Native performance replay and debug/release actual-media checks remain owed;
 the fresh scratch scripts are `qualify_candidate.py` and
 `qualify_native_media.py`. All production code is still uncommitted.

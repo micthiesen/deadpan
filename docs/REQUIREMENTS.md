@@ -13,7 +13,9 @@ UI replay assertion was corrected to distinguish old pre-Split owner aliases
 from each live fragment in a later Move capture. That file is excluded by
 `ui-harness` in the ordinary broad build; all other 2,038 Rust hashes and six
 inputs remain unchanged. A fresh strict run passes after the correction.
-Full UI tests are building; native replay and emitted-media verification remain.
+The full UI-feature archive passes 1,292 tests, with 11 skipped. Its frozen
+source/input and executed-binary hashes remain unchanged. Native replay and
+emitted-media verification remain; the debug real-media preflight is building.
 
 The `integrated-eleventh` archive passes twelve focused audio checks. A new
 valid-control counterfactual first measured 7,581 changed output channel samples
