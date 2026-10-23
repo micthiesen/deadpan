@@ -55,6 +55,15 @@ pub struct CompoundPreview {
     pub register_bank: RegisterBank,
 }
 
+/// Store validation/publication and host preparation retain separate errors.
+#[derive(Debug, thiserror::Error)]
+pub enum CompoundPreparationError<E> {
+    #[error(transparent)]
+    Store(#[from] StoreError),
+    #[error("{0}")]
+    Preparation(E),
+}
+
 impl ProjectStore {
     /// Prepare authored edits and/or history-neutral register writes together.
     pub fn preview_compound(
@@ -111,24 +120,69 @@ impl ProjectStore {
         self.commit_compound_inner(request, relevance, Some(guard))
     }
 
+    /// Prepare host state from the authoritative final register bank before
+    /// publishing anything. The callback runs inside the same Immediate
+    /// transaction as validation and commit. It must do only bounded local
+    /// preparation: failures roll back, and its result is returned only after
+    /// durable commit. No prepared plan escapes for later reuse.
+    pub fn commit_compound_prepared<T, E>(
+        &mut self,
+        request: &CommandRequest,
+        relevance: Option<&crate::generation::RelevancePlan>,
+        prepare: impl FnOnce(&RegisterBank) -> Result<T, E>,
+    ) -> Result<(CompoundCommitOutcome, T), CompoundPreparationError<E>> {
+        self.commit_compound_prepared_inner(request, relevance, None, prepare)
+    }
+
+    /// Check consumed analysis inside the publication transaction before
+    /// preparing either the Compound or the host's derived runtime state.
+    pub fn commit_compound_with_transcript_guard_prepared<T, E>(
+        &mut self,
+        request: &CommandRequest,
+        relevance: Option<&crate::generation::RelevancePlan>,
+        guard: &crate::TranscriptSelectionGuard,
+        prepare: impl FnOnce(&RegisterBank) -> Result<T, E>,
+    ) -> Result<(CompoundCommitOutcome, T), CompoundPreparationError<E>> {
+        self.commit_compound_prepared_inner(request, relevance, Some(guard), prepare)
+    }
+
     fn commit_compound_inner(
         &mut self,
         request: &CommandRequest,
         relevance: Option<&crate::generation::RelevancePlan>,
         guard: Option<&crate::TranscriptSelectionGuard>,
     ) -> Result<CompoundCommitOutcome, StoreError> {
+        self.commit_compound_prepared_inner(request, relevance, guard, |_| {
+            Ok::<(), std::convert::Infallible>(())
+        })
+        .map(|(outcome, ())| outcome)
+        .map_err(|error| match error {
+            CompoundPreparationError::Store(error) => error,
+            CompoundPreparationError::Preparation(never) => match never {},
+        })
+    }
+
+    fn commit_compound_prepared_inner<T, E>(
+        &mut self,
+        request: &CommandRequest,
+        relevance: Option<&crate::generation::RelevancePlan>,
+        guard: Option<&crate::TranscriptSelectionGuard>,
+        prepare: impl FnOnce(&RegisterBank) -> Result<T, E>,
+    ) -> Result<(CompoundCommitOutcome, T), CompoundPreparationError<E>> {
         self.require_writer()?;
         require_compound(request)?;
         let documents = &self.documents;
         let transaction = self
             .connection
-            .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)?;
+            .transaction_with_behavior(rusqlite::TransactionBehavior::Immediate)
+            .map_err(StoreError::from)?;
         if let Some(guard) = guard {
             crate::transcript_selection::check_guard(&transaction, documents, guard)?;
         }
         let plan = crate::prepare_command(&transaction, documents, request)?;
         let prepared = plan.compound.as_ref().expect("compound plan");
         let register_bank = prepared.registers.bank.clone();
+        let host = prepare(&register_bank).map_err(CompoundPreparationError::Preparation)?;
         let committed = if prepared.steps.is_empty() {
             if prepared.writes {
                 crate::registers::write_prepared_bank(
@@ -147,15 +201,18 @@ impl ProjectStore {
                 self.context_resolver.as_deref(),
             )?)
         };
-        transaction.commit()?;
+        transaction.commit().map_err(StoreError::from)?;
         let committed = committed.map(|(outcome, next)| {
             documents.insert(next);
             outcome
         });
-        Ok(CompoundCommitOutcome {
-            committed,
-            register_bank,
-        })
+        Ok((
+            CompoundCommitOutcome {
+                committed,
+                register_bank,
+            },
+            host,
+        ))
     }
 }
 

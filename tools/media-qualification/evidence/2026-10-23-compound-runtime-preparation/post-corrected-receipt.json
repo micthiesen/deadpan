@@ -1,0 +1,377 @@
+[
+  {
+    "name": "corrected-native-macros",
+    "command": [
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/release-native-corrected-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "macros",
+      "--output",
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/corrected-native-macros",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+    ],
+    "exit": 0,
+    "seconds": 16.020093041472137
+  },
+  {
+    "name": "corrected-native-named-registers",
+    "command": [
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/release-native-corrected-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "named-registers",
+      "--output",
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/corrected-native-named-registers",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+    ],
+    "exit": 0,
+    "seconds": 13.414219457656145
+  },
+  {
+    "name": "corrected-native-dot-repeat",
+    "command": [
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/release-native-corrected-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "dot-repeat",
+      "--output",
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/corrected-native-dot-repeat",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+    ],
+    "exit": 0,
+    "seconds": 14.829152207821608
+  },
+  {
+    "name": "corrected-native-range-set-selectors",
+    "command": [
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/release-native-corrected-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "range-set-selectors",
+      "--output",
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/corrected-native-range-set-selectors",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+    ],
+    "exit": 0,
+    "seconds": 13.115002082660794
+  },
+  {
+    "name": "corrected-native-transcript-search-selectors",
+    "command": [
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/release-native-corrected-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "transcript-search-selectors",
+      "--output",
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/corrected-native-transcript-search-selectors",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+    ],
+    "exit": 0,
+    "seconds": 13.002292000688612
+  },
+  {
+    "name": "corrected-pair-1-control-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/corrected-pair-1-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.20122179109603167
+  },
+  {
+    "name": "corrected-pair-1-control",
+    "command": [
+      "/tmp/deadpan-large-pause-harness-2026-10-23/release-final-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/corrected-pair-1-control.deadpan",
+      "--output",
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/corrected-pair-1-control-report"
+    ],
+    "exit": 0,
+    "seconds": 13.745602790266275
+  },
+  {
+    "name": "corrected-pair-1-candidate-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/corrected-pair-1-candidate.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.1956011252477765
+  },
+  {
+    "name": "corrected-pair-1-candidate",
+    "command": [
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/release-native-corrected-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/corrected-pair-1-candidate.deadpan",
+      "--output",
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/corrected-pair-1-candidate-report"
+    ],
+    "exit": 0,
+    "seconds": 13.616752624511719
+  },
+  {
+    "name": "corrected-pair-2-candidate-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/corrected-pair-2-candidate.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.19413695856928825
+  },
+  {
+    "name": "corrected-pair-2-candidate",
+    "command": [
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/release-native-corrected-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/corrected-pair-2-candidate.deadpan",
+      "--output",
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/corrected-pair-2-candidate-report"
+    ],
+    "exit": 0,
+    "seconds": 13.481220041401684
+  },
+  {
+    "name": "corrected-pair-2-control-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/corrected-pair-2-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.19309079088270664
+  },
+  {
+    "name": "corrected-pair-2-control",
+    "command": [
+      "/tmp/deadpan-large-pause-harness-2026-10-23/release-final-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/corrected-pair-2-control.deadpan",
+      "--output",
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/corrected-pair-2-control-report"
+    ],
+    "exit": 0,
+    "seconds": 13.666338208131492
+  },
+  {
+    "name": "corrected-pair-3-control-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/corrected-pair-3-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.19283658266067505
+  },
+  {
+    "name": "corrected-pair-3-control",
+    "command": [
+      "/tmp/deadpan-large-pause-harness-2026-10-23/release-final-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/corrected-pair-3-control.deadpan",
+      "--output",
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/corrected-pair-3-control-report"
+    ],
+    "exit": 0,
+    "seconds": 13.566554583609104
+  },
+  {
+    "name": "corrected-pair-3-candidate-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/corrected-pair-3-candidate.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.19532133266329765
+  },
+  {
+    "name": "corrected-pair-3-candidate",
+    "command": [
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/release-native-corrected-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/corrected-pair-3-candidate.deadpan",
+      "--output",
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/corrected-pair-3-candidate-report"
+    ],
+    "exit": 0,
+    "seconds": 13.939607833512127
+  },
+  {
+    "name": "corrected-pair-4-candidate-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/corrected-pair-4-candidate.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.19644387532025576
+  },
+  {
+    "name": "corrected-pair-4-candidate",
+    "command": [
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/release-native-corrected-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/corrected-pair-4-candidate.deadpan",
+      "--output",
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/corrected-pair-4-candidate-report"
+    ],
+    "exit": 0,
+    "seconds": 14.049424999393523
+  },
+  {
+    "name": "corrected-pair-4-control-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/corrected-pair-4-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.1940269162878394
+  },
+  {
+    "name": "corrected-pair-4-control",
+    "command": [
+      "/tmp/deadpan-large-pause-harness-2026-10-23/release-final-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/corrected-pair-4-control.deadpan",
+      "--output",
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/corrected-pair-4-control-report"
+    ],
+    "exit": 0,
+    "seconds": 13.538462459109724
+  },
+  {
+    "name": "corrected-pair-5-control-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/corrected-pair-5-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.19552358333021402
+  },
+  {
+    "name": "corrected-pair-5-control",
+    "command": [
+      "/tmp/deadpan-large-pause-harness-2026-10-23/release-final-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/corrected-pair-5-control.deadpan",
+      "--output",
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/corrected-pair-5-control-report"
+    ],
+    "exit": 0,
+    "seconds": 13.456227416172624
+  },
+  {
+    "name": "corrected-pair-5-candidate-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/corrected-pair-5-candidate.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.19653312489390373
+  },
+  {
+    "name": "corrected-pair-5-candidate",
+    "command": [
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/release-native-corrected-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/corrected-pair-5-candidate.deadpan",
+      "--output",
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/corrected-pair-5-candidate-report"
+    ],
+    "exit": 0,
+    "seconds": 14.131738666445017
+  }
+]

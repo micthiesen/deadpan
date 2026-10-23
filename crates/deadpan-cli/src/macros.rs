@@ -139,6 +139,14 @@ pub struct HostSemanticPlan {
     pub transcript_guard: Option<deadpan_store::TranscriptSelectionGuard>,
 }
 
+/// Store/authority failures retain their protocol code; fallible host-only
+/// preparation retains its own error without publishing any prepared state.
+#[derive(Debug)]
+pub enum PreparedCommitError<E> {
+    Commit(LiveError),
+    Preparation(E),
+}
+
 impl std::ops::Deref for HostSemanticPlan {
     type Target = SemanticPlan;
     fn deref(&self) -> &Self::Target {
@@ -170,6 +178,36 @@ impl HostSemanticPlan {
             None => store.commit_compound(request, None),
         }
         .map_err(LiveError::store)
+    }
+
+    /// Prepare runtime copies from the authoritative bank while the store owns
+    /// the transaction. The callback must not publish state or perform I/O;
+    /// its value becomes available only after the durable commit succeeds.
+    pub fn commit_compound_prepared<T, E>(
+        &self,
+        store: &mut ProjectStore,
+        prepare: impl FnOnce(&RegisterBank) -> Result<T, E>,
+    ) -> Result<(deadpan_store::CompoundCommitOutcome, T), PreparedCommitError<E>> {
+        let request = self.request.as_ref().ok_or_else(|| {
+            PreparedCommitError::Commit(LiveError::new(
+                "InvalidCommand",
+                "Selection-only plan has no Compound",
+            ))
+        })?;
+        match &self.transcript_guard {
+            Some(guard) => {
+                store.commit_compound_with_transcript_guard_prepared(request, None, guard, prepare)
+            }
+            None => store.commit_compound_prepared(request, None, prepare),
+        }
+        .map_err(|error| match error {
+            deadpan_store::CompoundPreparationError::Store(error) => {
+                PreparedCommitError::Commit(LiveError::store(error))
+            }
+            deadpan_store::CompoundPreparationError::Preparation(error) => {
+                PreparedCommitError::Preparation(error)
+            }
+        })
     }
 
     pub fn validate_selection_at(

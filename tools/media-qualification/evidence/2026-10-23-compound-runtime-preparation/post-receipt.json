@@ -1,0 +1,62 @@
+[
+  {
+    "name": "portable",
+    "command": [
+      "python",
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/retain_media_and_check.py"
+    ],
+    "exit": 0,
+    "seconds": 0.5896276254206896
+  },
+  {
+    "name": "native-macros",
+    "command": [
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "macros",
+      "--output",
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/native-macros",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+    ],
+    "exit": 0,
+    "seconds": 15.741413917392492
+  },
+  {
+    "name": "native-named-registers",
+    "command": [
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "named-registers",
+      "--output",
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/native-named-registers",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+    ],
+    "exit": 0,
+    "seconds": 13.712958834134042
+  },
+  {
+    "name": "native-dot-repeat",
+    "command": [
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "dot-repeat",
+      "--output",
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/native-dot-repeat",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+    ],
+    "exit": 1,
+    "seconds": 13.058000042103231
+  }
+]

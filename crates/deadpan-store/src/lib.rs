@@ -93,7 +93,7 @@ use deadpan_core::{CommandRequest, EditTransaction, ProjectDocument, RevisionId}
 use rusqlite::{Connection, OpenFlags, params};
 use serde::Serialize;
 
-pub use compound::{CompoundCommitOutcome, CompoundPreview};
+pub use compound::{CompoundCommitOutcome, CompoundPreparationError, CompoundPreview};
 pub use error::StoreError;
 pub use migration::MigrationOutcome;
 

@@ -1,0 +1,11 @@
+{
+  "path": "crates/deadpan-app/src/preview/harness/semantic.rs",
+  "before_sha256": "ff2f024c597c84cc52a448030e8cde9eaad00901f4e3775adce27f547d5f3e78",
+  "after_sha256": "63d39ffa72263d78630df5246357033406a28235fea6394a54b60316987550a7",
+  "exactly_two_comment_lines_changed": true,
+  "all_six_callback_files_identical_to_qualified_source": true,
+  "after_all_25_post_steps_passed": true,
+  "format_exit": 0,
+  "format_seconds": 6.258726041764021,
+  "no_behavioral_change_or_timing_claim_for_comment": true
+}

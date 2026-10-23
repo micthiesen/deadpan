@@ -71,25 +71,47 @@ fce683290a56b68a1af71de6449c0d8fa87e151485dba69dee214bc05163e040.
 The separate source/target and all terminal drivers remain in
 /tmp/deadpan-ui-pause-profile-2026-10-23. Never ship its temporary timers.
 
-Next: finish qualification of the uncommitted Compound preparation callback.
-The store prepares once inside its Immediate transaction, calls fallible native
-runtime-bank preparation before any write, and returns that private value only
-after durable commit. Preserve existing guard/identity/bank/capture/history
-checks and the old commit APIs. Five focused Store tests, 3,505 broader cases
-(740 skipped) and 1,296 UI cases (eleven skipped) pass, with both reviews
-reporting no defects. The new native bad-capture rollback/retry case is selected
-and passes in both complete suites. The first targeted --lib invocation ran
-zero tests, explicitly not a pass. The
-[checkpoint](../qualification/compound-runtime-preparation-checkpoint-2026-10-23.md)
-retains 69 payload files /2,669,841 bytes.
+Shared Compound preparation is implemented and qualified. The store prepares
+once inside its Immediate transaction, invokes fallible native runtime-bank
+preparation before any write, and returns that private value after durable
+commit. Existing guard/identity/bank/capture/history checks and old commit APIs
+remain. Five focused Store tests, 3,505 broader cases (740 skipped), 1,296 UI
+cases (eleven skipped), changed-package/UI Clippy and formatting pass. Both
+reviews report no defects. Debug/release media verifies 15 pictures /24,024
+samples and release verifies 19 pictures /30,430 samples, at zero offset with
+canonical/history controls. Six release scenarios pass 1,340 workflow checks
+plus Kestrel per run; both nine-file extracted packages validate/doctor unchanged.
 
-Current scratch: /tmp/deadpan-compound-runtime-preparation-2026-10-23. The live
-qualify.py driver has finished broad/UI and is running strict checks, then
-debug/release media and release native. post.py waits for all seven successful
-steps before extracted portable validation, five extra native scenarios and
-five quiet control/candidate first-pause pairs. Inspect owner/receipt files
-before restarting anything. Strict, native/media/history and release timing
-are still owed. Do not claim the potential saving before measurement.
+Five quiet fresh-package pairs measure input-to-commit medians
+390.680250 /273.119542 ms and input-to-offscreen composition
+393.261916 /275.697709 ms. The 117.564207 ms composition reduction is about
+29.9%; n=5 is diagnostic, not a formal percentile or target PASS. The 100 ms
+fallback and 50 ms ordinary-edit targets stay open. Final executed app SHA-256:
+69978abd09ffc52dcd281066bc615d7b3e1d5cb11653f5d888d0738015ba1496.
+See the [qualification](../qualification/compound-runtime-preparation-2026-10-23.md).
+
+Retain the zero-test --lib filter, the stale Split expectation failing on both
+candidate and qualified baseline, and debug performance-mode refusal before
+replay. The harness now uses unsupported whole-Original insertion in the Edit
+domain; debug and release both pass 383 dot-repeat checks. A review concern
+about preserving Original-domain edits does not apply: the captured Edit
+context has original=None. The final two-line comment correction follows all
+runtime guards; its exact before/after source and formatting receipt are retained.
+All six callback source files stay byte-identical to the qualified build.
+
+Scratch: /tmp/deadpan-compound-runtime-preparation-2026-10-23. qualify.py is
+terminal with seven successful steps. The first post.py stopped at the stale
+dot check before timing. qualify_corrected.py is terminal with four successful
+steps, and post_corrected.py is terminal with all 25 steps successful and ten
+guarded trials. Do not restart them.
+
+Next, profile the remaining roughly 276 ms before choosing another optimization.
+An optional, uncompiled draft is in
+/tmp/deadpan-prepared-compound-profile-draft-2026-10-23. It proposes one buffered
+Store-owned profiler spanning app/Store totals and six disjoint Store phases,
+printed after shared publication. Verify source hashes, use an isolated source
+and target, retain control/overhead checks and explicitly exclude queue wait.
+Do not ship the timers or weaken admission, work bounds or durability.
 
 Refresh/verify progress artifact a3ysikxugbmr4 from the next pushed
 docs/progress.json after this implementation commit. Preserve foreign

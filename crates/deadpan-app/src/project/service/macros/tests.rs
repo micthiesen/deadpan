@@ -241,3 +241,51 @@ fn range_union_runtime_preparation_rejects_tampered_trace_geometry_mode_and_meta
         assert_eq!(fixture.store.registers().unwrap(), before_bank, "{name}");
     }
 }
+
+#[test]
+fn transactional_runtime_preparation_rejects_bad_capture_before_saving_the_bank() {
+    let mut fixture = Fixture::ranges();
+    let before = fixture.store.snapshot().unwrap();
+    let before_bank = fixture.store.registers().unwrap();
+    let before_history = fixture.store.history_availability().unwrap();
+    let mut plan = fixture.prepared.plan.take().unwrap();
+    let original = plan.plan.trace.clone();
+    plan.plan.trace[0].resolved_ranges.reverse();
+    let error = plan
+        .commit_compound_prepared(&mut fixture.store, |bank| {
+            prepare_runtime_bank(&fixture.id, &fixture.runtime, &before_bank, bank, &plan)
+        })
+        .unwrap_err();
+    assert!(matches!(
+        error,
+        deadpan_cli::macros::PreparedCommitError::Preparation(ref message)
+        if message == "Macro edited-union copy has no matching staged capture provenance"
+    ));
+    assert_eq!(fixture.store.snapshot().unwrap(), before);
+    assert_eq!(fixture.store.registers().unwrap(), before_bank);
+    assert_eq!(
+        fixture.store.history_availability().unwrap(),
+        before_history
+    );
+
+    // The same request can publish after its host-only provenance is repaired;
+    // failed preparation consumed neither the register version nor identities.
+    plan.plan.trace = original;
+    let (outcome, runtime) = plan
+        .commit_compound_prepared(&mut fixture.store, |bank| {
+            prepare_runtime_bank(&fixture.id, &fixture.runtime, &before_bank, bank, &plan)
+        })
+        .unwrap();
+    assert!(outcome.committed.is_none());
+    assert_eq!(fixture.store.snapshot().unwrap(), before);
+    assert_eq!(
+        fixture.store.history_availability().unwrap(),
+        before_history
+    );
+    assert_eq!(fixture.store.registers().unwrap(), outcome.register_bank);
+    assert_eq!(runtime.version, outcome.register_bank.version);
+    assert!(matches!(
+        runtime.entries.get(&'"'),
+        Some(Value::EditedSet(_))
+    ));
+}

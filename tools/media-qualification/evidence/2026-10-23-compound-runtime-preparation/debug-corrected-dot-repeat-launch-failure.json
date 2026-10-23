@@ -1,0 +1,5 @@
+{
+  "report_written": false,
+  "qualification_pass": false,
+  "reason": "Debug performance mode is explicitly refused. No scenario ran; captured stderr says performance checks require --release. Use visual mode for this debug correctness diagnostic; no debug timing claim."
+}

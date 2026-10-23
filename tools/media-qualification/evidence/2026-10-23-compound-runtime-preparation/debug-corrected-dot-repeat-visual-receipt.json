@@ -1,0 +1,29 @@
+{
+  "command": [
+    "/tmp/deadpan-compound-runtime-preparation-2026-10-23/candidate-ui-corrected-extracted/target/debug/deadpan-app",
+    "--ui-check",
+    "--mode",
+    "visual",
+    "--scenario",
+    "dot-repeat",
+    "--output",
+    "/tmp/deadpan-compound-runtime-preparation-2026-10-23/debug-corrected-dot-repeat-visual"
+  ],
+  "exit": 0,
+  "seconds": 17.817905250005424,
+  "binary_sha256": "22785443ca1687405ce61b30665b4909b2cd830b75167968d6ea8db15f521341",
+  "diagnostic_debug_correctness_only": true,
+  "report_written": true,
+  "scenarios": [
+    {
+      "name": "kestrel-shortcuts",
+      "checks": 1,
+      "failed_checks": []
+    },
+    {
+      "name": "dot-repeat",
+      "checks": 383,
+      "failed_checks": []
+    }
+  ]
+}

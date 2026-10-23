@@ -322,12 +322,14 @@ fn guards(d: &mut Driver<'_>) -> Result<(), String> {
 fn unsupported(d: &mut Driver<'_>, baseline: &ProjectDocument) -> Result<(), String> {
     at(d, 10)?;
     let before = d.revision();
-    d.key(Key::S)?;
+    // Split has semantic dot support. Whole-Original insertion has no dot
+    // recipe; its Edit-domain commit must invalidate the older cut.
+    d.command("insert")?;
     d.changed(&before)?;
-    let split = document(d)?.clone();
+    let inserted = document(d)?.clone();
     let accepted = copied(d, None)?;
     d.check(
-        "A committed Split clears the unsupported last edit",
+        "Whole-Original insertion clears the unsupported last edit",
         d.app()
             .semantic
             .snapshot()
@@ -338,9 +340,9 @@ fn unsupported(d: &mut Driver<'_>, baseline: &ProjectDocument) -> Result<(), Str
     d.key(Key::Period)?;
     unchanged(
         d,
-        &split,
+        &inserted,
         &accepted,
-        "Dot cannot silently repeat the older frame cut after Split",
+        "Dot cannot silently repeat the older frame cut after insertion",
     )?;
     undo(d, baseline)?;
     let restored = document(d)?.clone();

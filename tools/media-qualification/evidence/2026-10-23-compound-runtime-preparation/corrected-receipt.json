@@ -1,0 +1,44 @@
+[
+  {
+    "step": 1,
+    "command": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "exit": 0,
+    "seconds": 6.189478749409318
+  },
+  {
+    "step": 2,
+    "command": [
+      "python",
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/qualify_all_ui.py",
+      "candidate-ui-corrected",
+      "candidate",
+      "ui"
+    ],
+    "exit": 0,
+    "seconds": 132.2998777506873
+  },
+  {
+    "step": 3,
+    "command": [
+      "python",
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/ui_lint_corrected.py"
+    ],
+    "exit": 0,
+    "seconds": 19.83108379226178
+  },
+  {
+    "step": 4,
+    "command": [
+      "python",
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/qualify_native_media.py",
+      "release-native-corrected",
+      "native"
+    ],
+    "exit": 0,
+    "seconds": 167.2211983334273
+  }
+]

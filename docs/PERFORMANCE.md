@@ -222,6 +222,17 @@ diagnostic, with uncalibrated timer overhead and no queue-wait measurement,
 percentile or target PASS. It motivates sharing Compound preparation inside
 one transaction, while retaining fallible runtime preparation before writes.
 
+The [qualified shared preparation](qualification/compound-runtime-preparation-2026-10-23.md)
+implements that transaction-owned callback. Five quiet fresh-package pairs
+measure input-to-commit medians 390.680250 → 273.119542 ms and input through
+offscreen Background composition 393.261916 → 275.697709 ms. Every run passes
+its seven replay checks and source/binary/authored-input guards, with an empty
+WAL. Both executables use Core 58 /SQLite 87 and the same fixture and measured
+command. This reduces the latter median by 117.564207 ms, about 29.9%, while
+the 100 ms fallback and 50 ms ordinary-edit targets remain open. Five samples
+per executable are diagnostic; they do not establish a formal percentile,
+physical display latency, source decoding or PCM performance.
+
 | Section 25 target | Measurement | Notes |
 | --- | --- | --- |
 | Key event to command-state update, p95 < 8 ms | ui `rapid-input` `warm_navigation_input_cpu_ms` | Whole egui input frame CPU: an upper bound on the state update. Small replay fixture. |

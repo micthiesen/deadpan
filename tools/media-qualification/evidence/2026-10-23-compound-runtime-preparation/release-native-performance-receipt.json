@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/tmp/deadpan-compound-runtime-preparation-2026-10-23/release-native-bin/deadpan-app",
+    "--ui-check",
+    "--scenario",
+    "sound-group-endpoints",
+    "--mode",
+    "performance",
+    "--output",
+    "/tmp/deadpan-compound-runtime-preparation-2026-10-23/release-native-performance",
+    "--kestrel-source",
+    "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+  ],
+  "exit": 0,
+  "seconds": 14.454417709261179
+}

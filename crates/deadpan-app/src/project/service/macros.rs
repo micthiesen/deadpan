@@ -787,18 +787,20 @@ impl Service {
                     self.error = None;
                     return Ok(receipt);
                 };
-                let preview = plan
-                    .preview(self.store.as_ref().ok_or("Open a project first")?)
-                    .map_err(display)?
-                    .ok_or("The planned Compound is missing.")?;
-                let bank = prepare_runtime_bank(
-                    id,
-                    self.macro_runtime_bank(id)?,
-                    &stored,
-                    &preview.register_bank,
-                    &plan,
-                )?;
-                let outcome = plan.commit_compound(self.writer()?).map_err(display)?;
+                self.macro_runtime_bank(id)?;
+                let runtime =
+                    Arc::clone(self.registers.as_ref().ok_or("Missing runtime registers")?);
+                // The store prepares the Compound once, under its publication
+                // transaction. Runtime copies remain fallible and private until
+                // that same prepared edit and bank have durably committed.
+                let (outcome, bank) = plan
+                    .commit_compound_prepared(self.writer()?, |prepared| {
+                        prepare_runtime_bank(id, &runtime, &stored, prepared, &plan)
+                    })
+                    .map_err(|error| match error {
+                        deadpan_cli::macros::PreparedCommitError::Commit(error) => display(error),
+                        deadpan_cli::macros::PreparedCommitError::Preparation(error) => error,
+                    })?;
                 if let Some(saved) = &outcome.committed {
                     self.capture_preparation_notices(&saved.generation_preparation_notices);
                     if plan.context.original.is_some() {

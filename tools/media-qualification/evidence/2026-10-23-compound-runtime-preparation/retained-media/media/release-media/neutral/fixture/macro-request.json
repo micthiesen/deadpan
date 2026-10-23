@@ -1,0 +1,1 @@
+{"dry_run":false,"expected_bank_version":1,"expected_revision":"neutral-sound-ungroup-r11","operation":{"cursor":14,"parent":"aligned-top","program":{"instructions":[{"type":"ungroup"}]},"selected_child":"ff9feeab-99f5-4e55-b76b-da5055ade07c","type":"apply"},"project_id":"58a77107-7de4-4048-a577-b74376adc2d0","protocol":1}

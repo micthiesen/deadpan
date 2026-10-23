@@ -1,0 +1,6 @@
+{
+  "path": "crates/deadpan-app/src/preview/harness/semantic.rs",
+  "source": "HEAD tracked content before harness correction",
+  "sha256": "ed27ae2b90b125a7915aa7fa4bac2b22c8fb890c6513fb15d0eb648246026827",
+  "matches_completed_broad_source_manifest": true
+}

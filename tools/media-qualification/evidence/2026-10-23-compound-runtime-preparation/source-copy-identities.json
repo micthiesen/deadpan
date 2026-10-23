@@ -1,0 +1,66 @@
+{
+  "source_base": "09063d3a4169cd2b9fe4f567def147b20417c7b2",
+  "six_callback_and_store_sources": [
+    {
+      "path": "crates/deadpan-store/src/compound.rs",
+      "copy": "final-built__crates__deadpan-store__src__compound.rs.rs.txt",
+      "bytes": 29869,
+      "sha256": "4e2c8070178a16f54f7a484b4e5189ca206fd00af85ef26492e90a847edb0dc2",
+      "compiled_source_identity_match": true
+    },
+    {
+      "path": "crates/deadpan-store/src/lib.rs",
+      "copy": "final-built__crates__deadpan-store__src__lib.rs.rs.txt",
+      "bytes": 77761,
+      "sha256": "9b59c50f14881d3f28f03ed40be7323afd045e06c0b6f03d65f115fb29b885e8",
+      "compiled_source_identity_match": true
+    },
+    {
+      "path": "crates/deadpan-store/tests/compound_preparation.rs",
+      "copy": "final-built__crates__deadpan-store__tests__compound_preparation.rs.rs.txt",
+      "bytes": 14295,
+      "sha256": "7b9bd2b1f90e62c2519d1cd8f6606ea6f49a37b9c18aec4bd29194106fddaa44",
+      "compiled_source_identity_match": true
+    },
+    {
+      "path": "crates/deadpan-cli/src/macros.rs",
+      "copy": "final-built__crates__deadpan-cli__src__macros.rs.rs.txt",
+      "bytes": 51383,
+      "sha256": "c120ec8575fc5b72267bbccfd84481bf97fef1b39c96092b4048d6ca35165f7f",
+      "compiled_source_identity_match": true
+    },
+    {
+      "path": "crates/deadpan-app/src/project/service/macros.rs",
+      "copy": "final-built__crates__deadpan-app__src__project__service__macros.rs.rs.txt",
+      "bytes": 51866,
+      "sha256": "b3d63ee05d49d3c1208a54a5492fe365c39b198b2a82448388df5a264e64c20c",
+      "compiled_source_identity_match": true
+    },
+    {
+      "path": "crates/deadpan-app/src/project/service/macros/tests.rs",
+      "copy": "final-built__crates__deadpan-app__src__project__service__macros__tests.rs.rs.txt",
+      "bytes": 10956,
+      "sha256": "a8f96cc8e8825c3a7945c02a6e0a05f923bf1cdaa8a21379da401040c31dab14",
+      "compiled_source_identity_match": true
+    }
+  ],
+  "release_harness_source": {
+    "path": "crates/deadpan-app/src/preview/harness/semantic.rs",
+    "copy": "semantic-harness-built-before-comment.rs.txt",
+    "sha256": "ff2f024c597c84cc52a448030e8cde9eaad00901f4e3775adce27f547d5f3e78",
+    "matches_release_manifest": true
+  },
+  "final_comment_only_harness": {
+    "copy": "semantic-harness-final-after-comment.rs.txt",
+    "sha256": "63d39ffa72263d78630df5246357033406a28235fea6394a54b60316987550a7",
+    "sha256_record": "63d39ffa72263d78630df5246357033406a28235fea6394a54b60316987550a7",
+    "exactly_two_comment_lines_changed": true,
+    "format_check_exit": 0,
+    "behavioral_or_timing_change": false
+  },
+  "pre_harness_correction": {
+    "copy": "semantic-harness-before-harness-correction.rs.txt",
+    "sha256": "ed27ae2b90b125a7915aa7fa4bac2b22c8fb890c6513fb15d0eb648246026827",
+    "matches_completed_broad_manifest": true
+  }
+}

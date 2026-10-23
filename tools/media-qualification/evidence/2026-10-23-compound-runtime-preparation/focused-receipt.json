@@ -1,0 +1,62 @@
+[
+  {
+    "name": "format",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "exit": 0,
+    "seconds": 6.287940124981105
+  },
+  {
+    "name": "freeze",
+    "command": [
+      "python",
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/freeze.py",
+      "focused"
+    ],
+    "exit": 0,
+    "seconds": 0.3884655414149165
+  },
+  {
+    "name": "store-focused",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-store",
+      "--test",
+      "compound_preparation"
+    ],
+    "exit": 0,
+    "seconds": 45.3562430832535
+  },
+  {
+    "name": "native-focused",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness",
+      "--lib",
+      "project::service::macros::tests"
+    ],
+    "exit": 0,
+    "seconds": 60.730518207885325
+  },
+  {
+    "name": "source-guard",
+    "command": [
+      "python",
+      "/tmp/deadpan-compound-runtime-preparation-2026-10-23/guard.py",
+      "focused"
+    ],
+    "exit": 0,
+    "seconds": 0.1266835005953908
+  }
+]

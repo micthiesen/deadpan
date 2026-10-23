@@ -1,0 +1,48 @@
+{
+  "same_failure_on_qualified_baseline": true,
+  "baseline_executable_sha256": "3bf2d47c6fbc7eade3a259fc8e9ffc275043af2bd62e698a0b98c0937dcfd9bd",
+  "candidate_executable_sha256": "a6a59acb3aa03bacdb51d5d346ced6a85c546645249df17a233e67de2deb1ec2",
+  "runs": [
+    {
+      "run": "native-dot-repeat",
+      "failed": true,
+      "failed_checks": [
+        {
+          "scenario": "dot-repeat",
+          "check": "A committed Split clears the unsupported last edit",
+          "actual_semantic_repeat": {
+            "edit": {
+              "operation": "Parameter(Split)",
+              "register": null
+            },
+            "error": null,
+            "head": "7773ca68-efcf-4b91-964f-b22925df4b76",
+            "session": 1,
+            "version": 19
+          }
+        }
+      ]
+    },
+    {
+      "run": "baseline-dot-repeat",
+      "failed": true,
+      "failed_checks": [
+        {
+          "scenario": "dot-repeat",
+          "check": "A committed Split clears the unsupported last edit",
+          "actual_semantic_repeat": {
+            "edit": {
+              "operation": "Parameter(Split)",
+              "register": null
+            },
+            "error": null,
+            "head": "1f1af789-6b54-4616-b2c0-4eab7199d668",
+            "session": 1,
+            "version": 19
+          }
+        }
+      ]
+    }
+  ],
+  "correction": "Use unsupported whole-Original source insertion to test invalidation; Split has documented semantic-dot support. Production code unchanged."
+}

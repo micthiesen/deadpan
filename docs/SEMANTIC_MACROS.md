@@ -816,9 +816,14 @@ call depth is at most 16, a body at most 1024 instructions and 128 KiB, and an
 expanded run at most 4096 instructions. Calls, motions and clamped no-ops all
 consume fuel. Existing Compound step, document and capture limits also apply.
 
-The service binds the actual saved head and bank version, previews the whole
-Compound with ordinary media admission, and prepares its final runtime bank
-before committing. Every leaf and capture allocation is fresh. A run with edits
+The service binds the actual saved head and bank version. The store prepares
+the complete Compound with ordinary media admission inside its Immediate
+transaction, then invokes fallible host-only runtime-bank preparation before
+any write. It returns that private bank only after the same prepared Compound
+and bank durably commit. Preparation cannot publish state or perform I/O.
+Head, bank, allocation, capture and consumed-analysis checks remain in the
+transaction; an independent dry-run still previews without writing. Every
+leaf and capture allocation is fresh. A run with edits
 saves one reversible history entry and one final bank result. A yank-only run
 saves its copies without changing the document, Undo or Redo. A later failure
 saves neither. Undo/Redo replays frozen resolved instructions and never rereads a
