@@ -14,8 +14,12 @@ from each live fragment in a later Move capture. That file is excluded by
 `ui-harness` in the ordinary broad build; all other 2,038 Rust hashes and six
 inputs remain unchanged. A fresh strict run passes after the correction.
 The full UI-feature archive passes 1,292 tests, with 11 skipped. Its frozen
-source/input and executed-binary hashes remain unchanged. Native replay and
-emitted-media verification remain; the debug real-media preflight is building.
+source/input and executed-binary hashes remain unchanged. The debug real-media
+preflight passes complete PCM/limiter equality through neutral grouping and
+Split, moved/copied cold reads, durable Undo/Redo and portable reopening. It
+verifies all 19 emitted pictures and audio samples `[0,30430)` at zero offset,
+with no coverage or low-SNR flags. Native performance replay and release media
+qualification remain; the release app is building. No requirement or gate closes.
 
 The `integrated-eleventh` archive passes twelve focused audio checks. A new
 valid-control counterfactual first measured 7,581 changed output channel samples

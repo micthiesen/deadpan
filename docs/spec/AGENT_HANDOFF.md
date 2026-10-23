@@ -16,8 +16,11 @@ the first two keep the pre-Split owner. `preview.rs` gates that file behind
 scratch. `strict-final` passes after that correction. `final-ui` passes all
 1,292 tests, with 11 skipped, in 71.820 seconds by the nextest summary. Its
 2,039-file Rust, six-input and executed-binary guards pass. `debug-media`
-is building the real-media preflight.
-Native performance replay and debug/release actual-media checks remain owed;
+passes its real-media fixture in 237.756 seconds: complete canonical PCM and
+limiter bits, cold/partitioned reads, durable Undo/Redo and portable reopen,
+then all 19 encoded pictures and 30,430 samples at zero offset with no flags.
+Its archive hashes and source/input guards pass. `release-native` is building.
+Native performance replay and release actual-media checks remain owed;
 the fresh scratch scripts are `qualify_candidate.py` and
 `qualify_native_media.py`. All production code is still uncommitted.
 

@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-23T02:50:54Z",
+  "updated_at": "2026-10-23T02:56:40Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Aligned sound grouping remains uncommitted. Fresh runs pass 1,489 Core tests, 3,492 broader selected tests and 1,292 UI-feature tests (11 UI skips); strict ordinary/UI checks and formatting pass. Focused audio and Store checks cover Split, label/trim continuity, durable history and portable copy. Native replay and encoded-media qualification remain; debug media preflight is building. Coverage stays at 89%, with 8/24 requirement sections complete.",
+  "focus": "Aligned sound grouping remains uncommitted. Fresh runs pass 1,489 Core, 3,492 broader and 1,292 UI-feature tests; strict checks pass. Debug real-media qualification preserves canonical PCM and durable/portable history, then verifies all 19 encoded pictures and 30,430 audio samples at zero offset. Native performance replay and release media qualification remain; the release app is building. Coverage stays at 89%, with 8/24 requirement sections complete.",
   "features": [
     {
       "id": "editing",
