@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-23T10:41:11Z",
+  "updated_at": "2026-10-23T10:51:39Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "The uncommitted leaf-result reuse candidate passes its focused differential test and all 1,514 Core tests across 69 binaries, with zero skipped and exact source/input/executable guards. The initial test failed because it queried one physical mark anchor after a split; the corrected revision-aware logical mark query retains the exact frame-12 requirement and all replay, binding/mark, inverse and immutability assertions. Production code stayed unchanged during that fixture correction. The failed run and binary hash are retained in an 86-file /1,672,053-byte checkpoint. Broader, UI, strict, media/native and final timing checks are running or queued. The private five-pair difference of about 4 ms remains separate from production qualification. Coverage stays 89%, with 8/24 sections complete and no new target or gate PASS.",
+  "focus": "The uncommitted leaf-result reuse candidate passes the focused differential test, all 1,514 Core tests across 69 binaries (zero skipped), all 3,505 broader selected tests (740 skipped), and all 1,296 UI-feature tests (eleven skipped), with exact source/input/executable guards. The initial test failed on a raw primary mark lookup after a split; its corrected logical named-mark query retains frame 12 and all replay, binding/mark, inverse and immutable-entry assertions. The helper stayed unchanged during the fixture correction. The 86-file Core checkpoint retains that failure and correction. Strict checks are running; media/native, portable and final timing checks remain queued. The private five-pair difference of about 4 ms stays separate from production qualification. Coverage remains 89%, with 8/24 sections complete and no new target or gate PASS.",
   "features": [
     {
       "id": "editing",
