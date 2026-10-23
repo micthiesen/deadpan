@@ -412,10 +412,41 @@ peaks, retention or memory savings. The independently reread 394-file /
 5,809,852-byte inventory has SHA-256
 f4989f93e792915eec9470939a7ce9d0a7c987ae653ad6c84c426ba06935479b.
 See [private prototype](../qualification/one-leaf-replay-reuse-prototype-2026-10-23.md).
-Main Rust remains unchanged. Next adopt the exact final fourteen-file overlay,
-add a successful qualified-media cached-vs-uncached commit/PCM/history/export
-case in CLI preview_export/aligned_group_recipe.rs, and run full production
-qualification. Do not repeat completed private producers.
+The reviewed overlay is integrated in Main but not committed. Production
+qualification owns /tmp/deadpan-one-leaf-replay-production-2026-10-23.
+There are 17 changed Rust paths, 2,053 total, with six inputs unchanged:
+fourteen prototype paths, two positive-media test paths and one existing
+Store test-call correction. The new export-only test is
+group_endpoints_export::one_leaf_replay_qualified_media_commit_export_matches_uncached;
+the shared aligned recipe contains its Core/Store/PCM/history fixture helper.
+All 62 assertions and both complete exports remain required. Its result schema
+deadpan-one-leaf-media-parity-1 retains both movies and complete numerical
+controls. No successful positive-media runtime result is claimed yet.
+
+Three actual failures are retained under history/: initial-store-test-compile-
+failure (old private execute call missing optional None), shared-recipe-export-
+test-compile-failure (export-only test incorrectly in shared recipes), and
+test-module-layout-clippy-failure (cfg(test) module before production items).
+The first two fixes preserve all assertions. The third moves the complete
+unchanged 7,421-byte test module to EOF in Core insert_time/retimed.rs, leaving
+all production text and supported() documentation intact. Its final SHA-256 is
+0f4a3cd202ef5f3005c928b4085a5ed7b7f0e7a45ca38e3c0eba645d8591b9e8.
+Thirteen prototype paths remain byte-identical; this one has only that reviewed
+test relocation. Six independent source reviews are retained. Static producer
+and patch corrections are separately recorded without runtime-failure claims.
+
+Before the layout-only correction, 1,543 Core, 3,513 broader and 1,296 UI tests
+passed with 0/741/11 skipped. Core and broader each had one LEAK annotation;
+preserve them and run exact isolated cases when final builds/timing finish.
+All CLI test compilation contexts pass. The current restarted qualify.py runs
+strict FIRST, then Core/broad/UI, UI lint, debug/release media and release native.
+post.py waits for all eight successful steps before portable/native and five
+final quiet timing pairs. Both are ACTIVE; inspect owner PIDs and receipts
+before any restart. Root owns Cargo, formatting, source and runtime producers.
+The isolated rerun script is prepared but unexecuted; final packaging and its
+GO marker remain pending. Independent packaging review findings were corrected
+before execution. No production performance result or target PASS is claimed.
+Do not repeat completed private producers or pool their measurements.
 No validation, work charge, first-error or durable authority can be weakened
 to make the experiment pass.
 The separate
