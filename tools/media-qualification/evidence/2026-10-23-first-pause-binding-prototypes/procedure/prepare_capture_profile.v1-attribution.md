@@ -1,0 +1,1 @@
+Version 1 of prepare_capture_profile.py is retained verbatim in `prepare_capture_profile.v1.py.txt`. It was never executed. It incorrectly treated `candidate-all-core-final.tar.zst` as a source archive; that file is a nextest executable archive. Version 2 reads the exact per-file frozen source overlays instead.

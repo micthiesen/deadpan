@@ -1,0 +1,8 @@
+{
+  "measured": false,
+  "prototype_only": true,
+  "requested_default_classes": 6,
+  "implemented_omission_classes": 4,
+  "cause": "arguments and births received deserialize defaults but no skip_serializing_if; their empty arrays remained serialized. Caught by root diff inspection before any measurement.",
+  "correction": "Prepare isolated v2 with Vec::is_empty omissions; preserve original build and source evidence."
+}

@@ -1,0 +1,7 @@
+{
+  "beats": 10000,
+  "creation_ms": 166.063,
+  "package": "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/early-fallback-controlled/candidate-4.deadpan",
+  "stage": "make-large",
+  "stage_wall_ms": 175.44825
+}

@@ -2,6 +2,17 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
+## Binding and capture diagnostics, 2026-10-23
+
+Four isolated five-pair batches measure the remaining first-pause overhead.
+The combined prototype improves first store-and-refresh median from 111.576 to
+91.629 ms; the standalone binding reader is still incomplete in that prototype.
+A round-trip test exposes its missing-path preflight. The production candidate
+adds bounded optional paths, historical fixture preservation and Core 58 /
+SQLite 87; review, full tests, reopening, media and current-format timing remain
+owed. No visible-Hold, p95 or gate PASS is claimed. See the
+[diagnostic report and 329-file evidence inventory](qualification/first-pause-binding-prototypes-2026-10-23.md).
+
 ## Compact frozen timing, 2026-10-23
 
 Implemented and qualified: Core 57 / SQLite 86 omits only all-Automatic frozen

@@ -1,0 +1,37 @@
+{
+  "name": "capture-profile",
+  "source": "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/prepared-capture-profile-source",
+  "target": "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/capture-profile-target",
+  "command": [
+    "cargo",
+    "build",
+    "--locked",
+    "--release",
+    "-p",
+    "deadpan-cli",
+    "--example",
+    "perf",
+    "-j",
+    "8"
+  ],
+  "exit": 0,
+  "seconds": 178.29896820802242,
+  "modified_rust_paths": [
+    "crates/deadpan-cli/examples/perf/edit.rs",
+    "crates/deadpan-core/src/audio_binding_lifecycle.rs",
+    "crates/deadpan-core/src/audio_reference.rs",
+    "crates/deadpan-core/src/command.rs",
+    "crates/deadpan-core/src/insert_time.rs",
+    "crates/deadpan-store/src/lib.rs"
+  ],
+  "prepared_base_vs_shipping_difference_only_uncompiled_test_files": [
+    "crates/deadpan-core/tests/compact_frozen_edges.rs",
+    "crates/deadpan-store/tests/edited_slice/child_capture/range_compat.rs",
+    "crates/deadpan-store/tests/revision_storage.rs"
+  ],
+  "script_sha256": "4e66ea708576e8cfcb679d9bfeced754d100c3ff2a52e1ceed618949fd5d550e",
+  "binary": {
+    "path": "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/builds/capture-profile-perf",
+    "sha256": "44e9b1d1c8e99a419359f2187d74f0b8ba36caefaaf7eab9fdda4fb437b91ef9"
+  }
+}

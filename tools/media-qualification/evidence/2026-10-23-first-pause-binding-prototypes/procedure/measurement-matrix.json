@@ -1,0 +1,17 @@
+[
+  {
+    "experiment": "capture-profile",
+    "exit": 0,
+    "seconds": 27.183362416923046
+  },
+  {
+    "experiment": "early-fallback",
+    "exit": 0,
+    "seconds": 7.076709999702871
+  },
+  {
+    "experiment": "binding-defaults-v2",
+    "exit": 0,
+    "seconds": 6.864362874999642
+  }
+]

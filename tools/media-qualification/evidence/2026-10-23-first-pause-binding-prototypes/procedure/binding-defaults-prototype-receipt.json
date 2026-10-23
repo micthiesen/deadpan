@@ -1,0 +1,31 @@
+{
+  "audit": "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/default-binding-wire-audit.md",
+  "candidate_source": "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/prepared-candidate-source",
+  "candidate_source_unchanged": true,
+  "cargo_rustc_benchmarks_git_invoked": false,
+  "changed_rust_paths": [
+    "crates/deadpan-core/src/audio_binding.rs"
+  ],
+  "core_schema_version": 57,
+  "experimental_nonshipping": true,
+  "frozen_input_count": 6,
+  "future_target_directory": "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/binding-defaults-prototype-target",
+  "legacy_audio_binding_modules_unchanged": true,
+  "nondefault_data_and_validation_preserved": true,
+  "omissions": [
+    "AudioPlacementTemplate.arguments empty vector, with path_vec retained for present values",
+    "AudioPlacementTemplate.births empty vector, with path_vec retained for present values",
+    "AudioReferenceClock.root exact ProjectRootRoundEven only",
+    "OwnedAudioBinding.resume absent Option",
+    "AudioResume.local_boundary exact zero",
+    "AudioLocalPhase.constant exact zero"
+  ],
+  "overlay_file": "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/binding-defaults-prototype-overlay.rs.txt",
+  "overlay_sha256": "5a0b59ae5ff937fcda36cf8cff34c04f08e26ce3430cb20e849c522b3df70813",
+  "preparation_only": true,
+  "prototype_source": "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/binding-defaults-prototype-source",
+  "rust_file_count": 2047,
+  "script_executed": true,
+  "store_schema_version": 86,
+  "version_rationale": "disposable internal codec experiment; no shipping version decision"
+}

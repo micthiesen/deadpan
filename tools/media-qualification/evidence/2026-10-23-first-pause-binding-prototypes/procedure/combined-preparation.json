@@ -1,0 +1,10 @@
+{
+  "prototype_only": true,
+  "changed_rust": [
+    "crates/deadpan-core/src/audio_binding.rs",
+    "crates/deadpan-core/src/audio_reference.rs"
+  ],
+  "base_immutable": true,
+  "wire_versions_unchanged_for_disposable_experiment": true,
+  "cargo_invoked": false
+}

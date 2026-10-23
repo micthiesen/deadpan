@@ -1,0 +1,262 @@
+[
+  {
+    "name": "baseline-1-make",
+    "command": [
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/binding-defaults-v2-controlled/baseline-1.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.1891483748331666
+  },
+  {
+    "name": "baseline-1-edit",
+    "command": [
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/candidate-perf",
+      "edit",
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/binding-defaults-v2-controlled/baseline-1.deadpan",
+      "--cycles",
+      "2",
+      "--kinds",
+      "pause"
+    ],
+    "exit": 0,
+    "seconds": 0.4941596668213606
+  },
+  {
+    "name": "candidate-1-make",
+    "command": [
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/builds/binding-defaults-v2-perf",
+      "make-large",
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/binding-defaults-v2-controlled/candidate-1.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.19187904242426157
+  },
+  {
+    "name": "candidate-1-edit",
+    "command": [
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/builds/binding-defaults-v2-perf",
+      "edit",
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/binding-defaults-v2-controlled/candidate-1.deadpan",
+      "--cycles",
+      "2",
+      "--kinds",
+      "pause"
+    ],
+    "exit": 0,
+    "seconds": 0.45465133246034384
+  },
+  {
+    "name": "candidate-2-make",
+    "command": [
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/builds/binding-defaults-v2-perf",
+      "make-large",
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/binding-defaults-v2-controlled/candidate-2.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.19002616591751575
+  },
+  {
+    "name": "candidate-2-edit",
+    "command": [
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/builds/binding-defaults-v2-perf",
+      "edit",
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/binding-defaults-v2-controlled/candidate-2.deadpan",
+      "--cycles",
+      "2",
+      "--kinds",
+      "pause"
+    ],
+    "exit": 0,
+    "seconds": 0.4501304170116782
+  },
+  {
+    "name": "baseline-2-make",
+    "command": [
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/binding-defaults-v2-controlled/baseline-2.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.18647241592407227
+  },
+  {
+    "name": "baseline-2-edit",
+    "command": [
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/candidate-perf",
+      "edit",
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/binding-defaults-v2-controlled/baseline-2.deadpan",
+      "--cycles",
+      "2",
+      "--kinds",
+      "pause"
+    ],
+    "exit": 0,
+    "seconds": 0.49652954284101725
+  },
+  {
+    "name": "baseline-3-make",
+    "command": [
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/binding-defaults-v2-controlled/baseline-3.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.18523829150944948
+  },
+  {
+    "name": "baseline-3-edit",
+    "command": [
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/candidate-perf",
+      "edit",
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/binding-defaults-v2-controlled/baseline-3.deadpan",
+      "--cycles",
+      "2",
+      "--kinds",
+      "pause"
+    ],
+    "exit": 0,
+    "seconds": 0.49126487504690886
+  },
+  {
+    "name": "candidate-3-make",
+    "command": [
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/builds/binding-defaults-v2-perf",
+      "make-large",
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/binding-defaults-v2-controlled/candidate-3.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.18419937416911125
+  },
+  {
+    "name": "candidate-3-edit",
+    "command": [
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/builds/binding-defaults-v2-perf",
+      "edit",
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/binding-defaults-v2-controlled/candidate-3.deadpan",
+      "--cycles",
+      "2",
+      "--kinds",
+      "pause"
+    ],
+    "exit": 0,
+    "seconds": 0.4522805828601122
+  },
+  {
+    "name": "candidate-4-make",
+    "command": [
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/builds/binding-defaults-v2-perf",
+      "make-large",
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/binding-defaults-v2-controlled/candidate-4.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.19154104124754667
+  },
+  {
+    "name": "candidate-4-edit",
+    "command": [
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/builds/binding-defaults-v2-perf",
+      "edit",
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/binding-defaults-v2-controlled/candidate-4.deadpan",
+      "--cycles",
+      "2",
+      "--kinds",
+      "pause"
+    ],
+    "exit": 0,
+    "seconds": 0.4521225420758128
+  },
+  {
+    "name": "baseline-4-make",
+    "command": [
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/binding-defaults-v2-controlled/baseline-4.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.183916250243783
+  },
+  {
+    "name": "baseline-4-edit",
+    "command": [
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/candidate-perf",
+      "edit",
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/binding-defaults-v2-controlled/baseline-4.deadpan",
+      "--cycles",
+      "2",
+      "--kinds",
+      "pause"
+    ],
+    "exit": 0,
+    "seconds": 0.49180970899760723
+  },
+  {
+    "name": "baseline-5-make",
+    "command": [
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/binding-defaults-v2-controlled/baseline-5.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.1877685422077775
+  },
+  {
+    "name": "baseline-5-edit",
+    "command": [
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/candidate-perf",
+      "edit",
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/binding-defaults-v2-controlled/baseline-5.deadpan",
+      "--cycles",
+      "2",
+      "--kinds",
+      "pause"
+    ],
+    "exit": 0,
+    "seconds": 0.49642683286219835
+  },
+  {
+    "name": "candidate-5-make",
+    "command": [
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/builds/binding-defaults-v2-perf",
+      "make-large",
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/binding-defaults-v2-controlled/candidate-5.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.18572433479130268
+  },
+  {
+    "name": "candidate-5-edit",
+    "command": [
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/builds/binding-defaults-v2-perf",
+      "edit",
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/binding-defaults-v2-controlled/candidate-5.deadpan",
+      "--cycles",
+      "2",
+      "--kinds",
+      "pause"
+    ],
+    "exit": 0,
+    "seconds": 0.44798037502914667
+  }
+]

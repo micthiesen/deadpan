@@ -1,0 +1,37 @@
+{
+  "shipping_source_commit": "6916ee0d578a11c37e6e66a470eb430b02773764",
+  "experiment": {
+    "name": "early-fallback",
+    "source": "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/early-fallback-prototype-source",
+    "target": "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/early-fallback-prototype-target",
+    "command": [
+      "cargo",
+      "build",
+      "--locked",
+      "--release",
+      "-p",
+      "deadpan-cli",
+      "--example",
+      "perf",
+      "-j",
+      "8"
+    ],
+    "exit": 0,
+    "seconds": 179.5141448751092,
+    "modified_rust_paths": [
+      "crates/deadpan-core/src/audio_reference.rs"
+    ],
+    "prepared_base_vs_shipping_difference_only_uncompiled_test_files": [
+      "crates/deadpan-core/tests/compact_frozen_edges.rs",
+      "crates/deadpan-store/tests/edited_slice/child_capture/range_compat.rs",
+      "crates/deadpan-store/tests/revision_storage.rs"
+    ],
+    "script_sha256": "4e66ea708576e8cfcb679d9bfeced754d100c3ff2a52e1ceed618949fd5d550e",
+    "binary": {
+      "path": "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/builds/early-fallback-perf",
+      "sha256": "db76f78e1eb9232e2e042625c8d1fa892f4bb2222896ab4c6680fbea69372f43"
+    }
+  },
+  "control_is_current_qualified_perf": true,
+  "not_shipping_or_target_pass": true
+}

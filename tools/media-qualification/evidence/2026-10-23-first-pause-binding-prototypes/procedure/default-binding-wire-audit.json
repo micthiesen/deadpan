@@ -1,0 +1,48 @@
+{
+  "package": "/tmp/deadpan-first-pause-profile-2026-10-22/compact-edges-controlled/instrumented-1.deadpan",
+  "sqliteUri": "mode=ro&immutable=1",
+  "history": {
+    "id": 3,
+    "revision": "perf-rev-62759-4",
+    "command": "insert_time",
+    "description": "Insert pause",
+    "requestAtFrame": 17933,
+    "insertedHoldFrames": 12,
+    "editUtf8Bytes": 4515926,
+    "forwardAudioBindingsBytes": 4234473,
+    "timingChanges": 1,
+    "bindingChanges": 10001
+  },
+  "counts": {
+    "emptyArguments": 10001,
+    "emptyBirths": 10001,
+    "projectRootRoundEven": 10001,
+    "absentResume": 1495,
+    "presentResume": 8506,
+    "zeroLocalBoundary": 8505,
+    "zeroPhaseConstant": 8506,
+    "nonzeroLocalBoundary": 1
+  },
+  "omissionByteDeltas": {
+    "emptyArguments": 150015,
+    "emptyBirths": 120012,
+    "projectRootRoundEven": 420042,
+    "absentResume": 20930,
+    "zeroLocalBoundary": 450765,
+    "zeroPhaseConstant": 399782,
+    "combined": 1561546
+  },
+  "percentages": {
+    "ofForwardAudioBindings": 36.9,
+    "ofStoredEdit": 34.6
+  },
+  "packageHashesBeforeAndAfterInspectionIdentical": {
+    ".writer.lock": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "project.sqlite": "cf27bcc56e8dd67438530ec5775f98d31c12bfa1053e9a9c43c3c9ccf85bcbb5",
+    "project.sqlite-shm": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb",
+    "project.sqlite-wal": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "manifest.json": "8fce85b103ad4d3dafd2869369b57c72a89855e890518209ea1b9412aabcb9c7"
+  },
+  "sampleBindingJsonBounded": "{\"before\":null,\"after\":{\"lattice\":{\"reference\":{\"timing\":{\"allocation\":\"perf-rev-62759-4\",\"ordinal\":0},\"root\":{\"type\":\"project_root_round_even\"},\"physical\":\"hold-000000\"},\"arguments\":[],\"births\":[]},\"resume\":null}}",
+  "runtimeGainClaimed": false
+}

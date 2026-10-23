@@ -4,6 +4,16 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Current continuation, 2026-10-22
 
+Active candidate, 2026-10-23: omit six exact audio-binding defaults and skip
+a scoped projection that cannot be smaller than full capture. Disposable
+combined n=5 pairs measure first store-and-refresh median 111.576 → 91.629 ms.
+Those prototypes lack the standalone preflight fix and are not production or
+visible-picture qualification. Working Core 58 / SQLite 87 adds bounded optional
+path preflight and explicit historical test fixtures. Full Core tests and
+independent review are running; broader/UI/media/reopen and current-format
+timing remain owed. Diagnostic source and failures are retained in
+[329 verified evidence files](../qualification/first-pause-binding-prototypes-2026-10-23.md).
+
 Compact timing qualified, 2026-10-23: Core 57 / SQLite 86 omits only default
 frozen-node edge objects; standalone context codecs 1–12 preserve historical
 bytes. All 1,503 Core, 3,499 broader and 1,292 UI tests pass; six refined asymmetric/

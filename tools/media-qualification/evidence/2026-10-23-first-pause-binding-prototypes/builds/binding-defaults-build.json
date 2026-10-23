@@ -1,0 +1,32 @@
+{
+  "name": "binding-defaults",
+  "source": "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/binding-defaults-prototype-source",
+  "target": "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/binding-defaults-prototype-target",
+  "command": [
+    "cargo",
+    "build",
+    "--locked",
+    "--release",
+    "-p",
+    "deadpan-cli",
+    "--example",
+    "perf",
+    "-j",
+    "8"
+  ],
+  "exit": 0,
+  "seconds": 170.55675741657615,
+  "modified_rust_paths": [
+    "crates/deadpan-core/src/audio_binding.rs"
+  ],
+  "prepared_base_vs_shipping_difference_only_uncompiled_test_files": [
+    "crates/deadpan-core/tests/compact_frozen_edges.rs",
+    "crates/deadpan-store/tests/edited_slice/child_capture/range_compat.rs",
+    "crates/deadpan-store/tests/revision_storage.rs"
+  ],
+  "script_sha256": "4e66ea708576e8cfcb679d9bfeced754d100c3ff2a52e1ceed618949fd5d550e",
+  "binary": {
+    "path": "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/builds/binding-defaults-perf",
+    "sha256": "f6729fea8968b31bd8d928fb638718002110bf613b77edb0874fa678b00e7b0c"
+  }
+}

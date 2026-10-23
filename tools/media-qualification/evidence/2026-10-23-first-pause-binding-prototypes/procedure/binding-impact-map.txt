@@ -1,0 +1,40 @@
+<ctx task="AudioPlacementTemplate AudioReferenceClock AudioLocalPhase AudioResume OwnedAudioBinding sound_clock schema_version" route=" [routed: name-exact BM25 — query names a symbol (AudioPlacementTemplate); anchors: AudioPlacementTemplate(crates/.../audio_binding.rs) AudioReferenceClock(crates/.../audio_binding.rs) AudioLocalPhase(crates/.../audio_binding.rs) AudioResume(crates/.../audio_binding.rs) +3 more]" bundle="auto" bodies="6"><!-- ripwire lens for "AudioPlacementTemplate AudioReferenceClock AudioLocalPhase AudioResume OwnedAudioBinding sound_clock schema_version" [doc mentions: 3 docs discussing 2 top-ranked symbols surfaced]: reusable building blocks + quality facts for what you're about to touch (cx=complexity ccx=cognitive in=reuse-count churn=recent-commits amp=change-amplification clone=1(duplicated) tested=1) — prefer composing/reusing these; watch the high-churn/high-amp/cloned ones; bundle=auto: the top-ranked FULL bodies ride inline after the signatures in a bodies section (bodies=N on this root counts them; bodies=0 reason=budget when none fit the remaining budget whole; the signatures-only flag opts out) — read them here instead of opening the files. The bodies element discloses the house way: total=requested, shown=printed, capped=1 when they differ; each body's calls child lists its callee signatures, total= always, shown=/capped= only when that list is cut est_tokens="1368" --><sigs capped="1"><f p="./crates/deadpan-core/src/audio_binding.rs"><d l="60" n="AudioReferenceClock" cx="0" ccx="0" in="0" churn="18" amp="92">pub struct AudioReferenceClock</d><d l="105" n="AudioPlacementTemplate" cx="0" ccx="0" in="0" churn="18" amp="92">pub struct AudioPlacementTemplate</d><d l="141" n="AudioLocalPhase" cx="0" ccx="0" in="0" churn="18" amp="92">pub struct AudioLocalPhase</d><d l="158" n="AudioResume" cx="0" ccx="0" in="0" churn="18" amp="92">pub struct AudioResume</d></f></sigs><bodies shown="6" total="6" capped="0"><b t="cls" l="60" p="./crates/deadpan-core/src/audio_binding.rs" n="AudioReferenceClock"><![CDATA[pub struct AudioReferenceClock {
+    pub timing: AudioTimingId,
+    pub root: AudioClockRoot,
+    pub physical: NodeId,
+    #[serde(default, skip_serializing_if = "AudioRecipeKind::is_node")]
+    pub recipe: AudioRecipeKind,
+}]]></b><b t="cls" l="105" p="./crates/deadpan-core/src/audio_binding.rs" n="AudioPlacementTemplate"><![CDATA[pub struct AudioPlacementTemplate {
+    pub reference: AudioReferenceClock,
+    /// Historical physical-local coordinate = current physical-local coordinate
+    /// + this offset. It translates the origin, never the rate or sample grid.
+    #[serde(
+        default = "zero_reference_local_offset",
+        skip_serializing_if = "is_zero_reference_local_offset"
+    )]
+    pub reference_local_offset: ExactRatio,
+    /// The gap's own preceding play is separate from its outer Repeat path.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub gap_after: Option<AudioRepeatValue>,
+    #[serde(deserialize_with = "path_vec")]
+    pub arguments: Vec<AudioRepeatArgument>,
+    /// Outer-to-inner lexical order. The innermost matching birth wins.
+    #[serde(deserialize_with = "path_vec")]
+    pub births: Vec<AudioBirthClause>,
+}]]></b><b t="cls" l="141" p="./crates/deadpan-core/src/audio_binding.rs" n="AudioLocalPhase"><![CDATA[pub struct AudioLocalPhase {
+    pub constant: ExactRatio,
+    #[serde(deserialize_with = "term_vec")]
+    pub terms: Vec<AudioPhaseTerm>,
+}]]></b><b t="cls" l="158" p="./crates/deadpan-core/src/audio_binding.rs" n="AudioResume"><![CDATA[pub struct AudioResume {
+    pub local_boundary: ExactRatio,
+    pub phase: AudioLocalPhase,
+}]]></b><b t="cls" l="223" p="./crates/deadpan-core/src/audio_binding.rs" n="OwnedAudioBinding"><![CDATA[pub struct OwnedAudioBinding {
+    pub lattice: AudioPlacementTemplate,
+    pub resume: Option<AudioResume>,
+    #[serde(
+        default,
+        skip_serializing_if = "Vec::is_empty",
+        deserialize_with = "term_vec"
+    )]
+    pub reanchors: Vec<AudioReanchorStep>,
+}]]></b><b t="other" l="77" p="./crates/deadpan-core/src/lib.rs" n="sound_clock"><![CDATA[mod sound_clock;]]></b></bodies></ctx>

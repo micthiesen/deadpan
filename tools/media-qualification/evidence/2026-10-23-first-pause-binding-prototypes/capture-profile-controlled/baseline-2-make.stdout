@@ -1,0 +1,7 @@
+{
+  "beats": 10000,
+  "creation_ms": 167.297,
+  "package": "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/capture-profile-controlled/baseline-2.deadpan",
+  "stage": "make-large",
+  "stage_wall_ms": 176.696333
+}

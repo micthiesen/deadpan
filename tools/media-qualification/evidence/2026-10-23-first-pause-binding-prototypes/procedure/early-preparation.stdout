@@ -1,0 +1,10 @@
+{
+  "prototype_source": "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/early-fallback-prototype-source",
+  "future_target_directory": "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/early-fallback-prototype-target",
+  "overlay": "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/early-fallback-prototype-overlay.rs.txt",
+  "candidate_rust_files": 2047,
+  "changed_rust_paths": [
+    "crates/deadpan-core/src/audio_reference.rs"
+  ],
+  "cargo_invoked": false
+}

@@ -1,0 +1,386 @@
+#!/usr/bin/env python3
+"""Prepare guarded capture-profile source overlays; never builds or runs them.
+
+Running this script copies the immutable archived source, applies only Rust
+files whose SHA-256 differs from the candidate-all-core-final identity map,
+then applies the retained outer timers and bounded capture timers in a second
+scratch tree. It stops after writing source guards, receipts, and .rs.txt files.
+"""
+from __future__ import annotations
+
+import hashlib
+import json
+import shutil
+import subprocess
+import sys
+from pathlib import Path
+
+ROOT = Path('/tmp/deadpan-compact-frozen-edges-2026-10-22')
+PLAN = ROOT / 'next-profile-plan'
+ARCHIVE_ROOT = Path('/tmp/deadpan-first-pause-profile-2026-10-22')
+BASELINE = ARCHIVE_ROOT / 'source'
+BASELINE_IDENTITIES = ARCHIVE_ROOT / 'source-identities.json'
+CANDIDATE_OVERLAYS = ROOT / 'candidate-all-core-final-overlays'
+CANDIDATE_IDENTITIES = ROOT / 'candidate-all-core-final-source-identities.json'
+OUTER_OVERLAY = ARCHIVE_ROOT / 'overlay.py'
+CANDIDATE_SOURCE = PLAN / 'prepared-candidate-source'
+PROFILE_SOURCE = PLAN / 'prepared-capture-profile-source'
+RECEIPTS = PLAN / 'receipts'
+OVERLAY_TEXT = PLAN / 'timer-overlays'
+OUTER_TIMER_PATHS = [
+    'crates/deadpan-core/src/insert_time.rs',
+    'crates/deadpan-core/src/command.rs',
+    'crates/deadpan-store/src/lib.rs',
+    'crates/deadpan-cli/examples/perf/edit.rs',
+]
+
+
+def sha256_bytes(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest()
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open('rb') as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b''):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def rust_files(root: Path) -> list[str]:
+    result = subprocess.run(
+        ['rg', '--files', '-g', '*.rs'], cwd=root, check=True,
+        capture_output=True, text=True,
+    )
+    return sorted(result.stdout.splitlines())
+
+
+def source_hashes(root: Path) -> dict[str, str]:
+    return {relative: sha256_file(root / relative) for relative in rust_files(root)}
+
+
+def write_json(path: Path, value: object) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(value, indent=2) + '\n')
+
+
+def replace_once(root: Path, relative: str, anchor: str, replacement: str) -> dict[str, object]:
+    path = root / relative
+    original = path.read_text()
+    count = original.count(anchor)
+    if count != 1:
+        raise SystemExit(f'anchor mismatch {relative}: expected one exact occurrence, got {count}')
+    updated = original.replace(anchor, replacement, 1)
+    path.write_text(updated)
+    return {
+        'path': relative,
+        'anchor_sha256': sha256_bytes(anchor.encode()),
+        'before_sha256': sha256_bytes(original.encode()),
+        'after_sha256': sha256_bytes(updated.encode()),
+        'occurrences': count,
+    }
+
+
+def safe_relative(relative: str) -> Path:
+    path = Path(relative)
+    if path.is_absolute() or '..' in path.parts or path.suffix != '.rs':
+        raise SystemExit(f'unsafe or non-Rust candidate overlay path: {relative}')
+    return path
+
+
+def prepare_candidate_source() -> dict[str, object]:
+    if not BASELINE.is_dir() or not CANDIDATE_OVERLAYS.is_dir():
+        raise SystemExit('required immutable source or frozen candidate overlays are missing')
+    if not BASELINE_IDENTITIES.is_file() or not CANDIDATE_IDENTITIES.is_file():
+        raise SystemExit('required source identity guard is missing')
+    for destination in (CANDIDATE_SOURCE, PROFILE_SOURCE):
+        if destination.exists():
+            raise SystemExit(f'scratch destination already exists: {destination}')
+
+    baseline_expected = json.loads(BASELINE_IDENTITIES.read_text())
+    candidate_expected = json.loads(CANDIDATE_IDENTITIES.read_text())
+    baseline_actual = source_hashes(BASELINE)
+    if baseline_actual != baseline_expected:
+        raise SystemExit('immutable baseline Rust source identities do not match their manifest')
+
+    changed = [
+        relative for relative, expected in candidate_expected.items()
+        if baseline_expected.get(relative) != expected
+    ]
+    if set(candidate_expected) - set(baseline_expected) != {
+        relative for relative in changed if relative not in baseline_expected
+    }:
+        raise SystemExit('candidate identity delta is inconsistent')
+    for relative in changed:
+        safe_relative(relative)
+
+    def ignore_source_build_outputs(directory: str, names: list[str]) -> set[str]:
+        root = Path(directory).resolve() == BASELINE.resolve()
+        return {
+            name for name in names
+            if name == '.git' or (name == 'target' and root)
+        }
+
+    shutil.copytree(BASELINE, CANDIDATE_SOURCE, ignore=ignore_source_build_outputs)
+    overlay_receipts = []
+    for relative in changed:
+        overlay = CANDIDATE_OVERLAYS / (relative + '.txt')
+        if not overlay.is_file() or sha256_file(overlay) != candidate_expected[relative]:
+            raise SystemExit(f'frozen candidate source overlay hash mismatch: {relative}')
+        target = CANDIDATE_SOURCE / relative
+        target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(overlay, target)
+        overlay_receipts.append({
+            'path': relative,
+            'overlay_path': str(overlay),
+            'overlay_sha256': sha256_file(overlay),
+            'source_sha256': sha256_file(target),
+            'bytes': target.stat().st_size,
+        })
+
+    candidate_actual = source_hashes(CANDIDATE_SOURCE)
+    if candidate_actual != candidate_expected:
+        raise SystemExit('reconstructed candidate Rust identities do not match candidate manifest')
+    if not set(baseline_expected).issubset(candidate_actual):
+        raise SystemExit('candidate source omitted an original Rust path')
+
+    receipt = {
+        'preparation_only': True,
+        'git_calls': 0,
+        'baseline_source': str(BASELINE),
+        'baseline_identity_manifest': str(BASELINE_IDENTITIES),
+        'baseline_identity_manifest_sha256': sha256_file(BASELINE_IDENTITIES),
+        'baseline_rust_file_count': len(baseline_actual),
+        'candidate_overlay_directory': str(CANDIDATE_OVERLAYS),
+        'candidate_identity_manifest': str(CANDIDATE_IDENTITIES),
+        'candidate_identity_manifest_sha256': sha256_file(CANDIDATE_IDENTITIES),
+        'candidate_rust_file_count': len(candidate_actual),
+        'candidate_rust_identity_map_sha256': sha256_bytes(
+            json.dumps(candidate_actual, sort_keys=True, separators=(',', ':')).encode()
+        ),
+        'changed_rust_paths': [
+            {
+                'path': relative,
+                'baseline_sha256': baseline_expected.get(relative),
+                'candidate_sha256': candidate_expected[relative],
+            }
+            for relative in changed
+        ],
+        'verified_overlay_files': overlay_receipts,
+        'all_original_rust_paths_retained': set(baseline_expected).issubset(candidate_actual),
+    }
+    write_json(RECEIPTS / 'candidate-source-identity-guard.json', receipt)
+    return receipt
+
+
+def apply_outer_timers() -> dict[str, object]:
+    subprocess.run(
+        [sys.executable, str(OUTER_OVERLAY), '--source', str(CANDIDATE_SOURCE), '--dest', str(PROFILE_SOURCE)],
+        check=True,
+    )
+    snapshot_dir = OVERLAY_TEXT / 'outer-timers'
+    snapshot_dir.mkdir(parents=True, exist_ok=True)
+    snapshots = {}
+    for relative in OUTER_TIMER_PATHS:
+        source = PROFILE_SOURCE / relative
+        output = snapshot_dir / (relative.replace('/', '__') + '.txt')
+        shutil.copy2(source, output)
+        snapshots[relative] = {'overlay_text': str(output), 'bytes': output.stat().st_size,
+                               'sha256': sha256_file(output)}
+    receipt = {
+        'overlay_script': str(OUTER_OVERLAY),
+        'overlay_script_sha256': sha256_file(OUTER_OVERLAY),
+        'files': {
+            relative: {'bytes': (PROFILE_SOURCE / relative).stat().st_size,
+                       'sha256': sha256_file(PROFILE_SOURCE / relative)}
+            for relative in OUTER_TIMER_PATHS
+        },
+        'overlay_text_snapshots': snapshots,
+    }
+    write_json(RECEIPTS / 'outer-timer-overlay.json', receipt)
+    return receipt
+
+
+def apply_capture_timers() -> dict[str, object]:
+    edits: list[dict[str, object]] = []
+    core = 'crates/deadpan-core/src/audio_reference.rs'
+    lifecycle = 'crates/deadpan-core/src/audio_binding_lifecycle.rs'
+
+    edits.append(replace_once(
+        PROFILE_SOURCE, core,
+        '        let runs = Self::precharge(document)?;\n',
+        '        let _dp_scoped_precharge = std::time::Instant::now();\n'
+        '        let runs = Self::precharge(document)?;\n'
+        '        eprintln!("DP24 scoped_precharge_ms={:.3}", _dp_scoped_precharge.elapsed().as_secs_f64() * 1000.0);\n',
+    ))
+    edits.append(replace_once(
+        PROFILE_SOURCE, core,
+        '        let durations = match document.retained_durations() {\n'
+        '            Some(durations) => durations,\n'
+        '            None => Arc::new(document.durations()?),\n'
+        '        };\n',
+        '        let _dp_scoped_durations = std::time::Instant::now();\n'
+        '        let durations = match document.retained_durations() {\n'
+        '            Some(durations) => durations,\n'
+        '            None => Arc::new(document.durations()?),\n'
+        '        };\n'
+        '        eprintln!("DP24 scoped_durations_ms={:.3} retained_fast_path={}", _dp_scoped_durations.elapsed().as_secs_f64() * 1000.0, document.retained_durations().is_some());\n',
+    ))
+    edits.append(replace_once(
+        PROFILE_SOURCE, core,
+        '        let mut info: std::collections::HashMap<&NodeId, (Option<&NodeId>, FrameDuration)> =\n',
+        '        let _dp_scoped_complete_scan = std::time::Instant::now();\n'
+        '        let mut info: std::collections::HashMap<&NodeId, (Option<&NodeId>, FrameDuration)> =\n',
+    ))
+    edits.append(replace_once(
+        PROFILE_SOURCE, core,
+        '        let wire_bytes = wire.layout(document, rate)?;\n'
+        '        if wire_bytes > MAX_DOCUMENT_JSON_BYTES {\n',
+        '        let wire_bytes = wire.layout(document, rate)?;\n'
+        '        let wire_exceeds_limit = wire_bytes > MAX_DOCUMENT_JSON_BYTES;\n'
+        '        eprintln!("DP24 scoped_complete_scan_ms={:.3} wire_bytes={} exceeds_limit={}", _dp_scoped_complete_scan.elapsed().as_secs_f64() * 1000.0, wire_bytes, wire_exceeds_limit);\n'
+        '        if wire_exceeds_limit {\n',
+    ))
+    edits.append(replace_once(
+        PROFILE_SOURCE, core,
+        '        let mut keep: BTreeSet<&NodeId> = BTreeSet::new();\n',
+        '        let _dp_scoped_ancestor_closure = std::time::Instant::now();\n'
+        '        let mut keep: BTreeSet<&NodeId> = BTreeSet::new();\n',
+    ))
+    edits.append(replace_once(
+        PROFILE_SOURCE, core,
+        '        let duration_of = |id: &NodeId| info.get(id).map_or(FrameDuration::ZERO, |info| info.1);\n',
+        '        eprintln!("DP24 scoped_ancestor_closure_ms={:.3} required_aliases={} retained_nodes={}", _dp_scoped_ancestor_closure.elapsed().as_secs_f64() * 1000.0, required.len(), keep.len());\n'
+        '        let _dp_scoped_slice_admit = std::time::Instant::now();\n'
+        '        let duration_of = |id: &NodeId| info.get(id).map_or(FrameDuration::ZERO, |info| info.1);\n',
+    ))
+    edits.append(replace_once(
+        PROFILE_SOURCE, core,
+        '        let complete = CompleteCharge {\n',
+        '        eprintln!("DP24 scoped_slice_admit_ms={:.3} sliced_nodes={}", _dp_scoped_slice_admit.elapsed().as_secs_f64() * 1000.0, layout.nodes.len());\n'
+        '        let complete = CompleteCharge {\n',
+    ))
+    edits.append(replace_once(
+        PROFILE_SOURCE, core,
+        '        let index = layout.build_index()?;\n',
+        '        let _dp_admit_build_index = std::time::Instant::now();\n'
+        '        let index = layout.build_index()?;\n'
+        '        eprintln!("DP24 frozen_admit_build_index_ms={:.3}", _dp_admit_build_index.elapsed().as_secs_f64() * 1000.0);\n',
+    ))
+    edits.append(replace_once(
+        PROFILE_SOURCE, lifecycle,
+        '    capture.walk()?;\n'
+        '    if capture.bindings.is_empty()\n',
+        '    let _dp_capture_walk = std::time::Instant::now();\n'
+        '    capture.walk()?;\n'
+        '    eprintln!("DP24 capture_walk_ms={:.3} retained_durations_fast_path={}", _dp_capture_walk.elapsed().as_secs_f64() * 1000.0, document.retained_durations().is_some());\n'
+        '    if capture.bindings.is_empty()\n',
+    ))
+    edits.append(replace_once(
+        PROFILE_SOURCE, lifecycle,
+        '            match FrozenAudioLayout::capture_scoped(document, &required)? {\n'
+        '                Some(layout) => layout,\n'
+        '                None => FrozenAudioLayout::capture(document)?,\n'
+        '            }\n'
+        '        }\n'
+        '        None => FrozenAudioLayout::capture(document)?,\n',
+        '            let _dp_capture_scoped = std::time::Instant::now();\n'
+        '            let scoped = FrozenAudioLayout::capture_scoped(document, &required)?;\n'
+        '            eprintln!("DP24 capture_scoped_ms={:.3} returned_slice={}", _dp_capture_scoped.elapsed().as_secs_f64() * 1000.0, scoped.is_some());\n'
+        '            match scoped {\n'
+        '                Some(layout) => layout,\n'
+        '                None => {\n'
+        '                    let _dp_capture_complete_fallback = std::time::Instant::now();\n'
+        '                    let complete = FrozenAudioLayout::capture(document)?;\n'
+        '                    eprintln!("DP24 capture_complete_fallback_ms={:.3}", _dp_capture_complete_fallback.elapsed().as_secs_f64() * 1000.0);\n'
+        '                    complete\n'
+        '                }\n'
+        '            }\n'
+        '        }\n'
+        '        None => {\n'
+        '            let _dp_capture_complete = std::time::Instant::now();\n'
+        '            let complete = FrozenAudioLayout::capture(document)?;\n'
+        '            eprintln!("DP24 capture_complete_ms={:.3}", _dp_capture_complete.elapsed().as_secs_f64() * 1000.0);\n'
+        '            complete\n'
+        '        }\n',
+    ))
+
+    capture_targets = {str(edit['path']) for edit in edits}
+    paths = sorted(set(OUTER_TIMER_PATHS) | capture_targets)
+    overlay_dir = OVERLAY_TEXT / 'capture-profile'
+    overlay_dir.mkdir(parents=True, exist_ok=True)
+    files = {}
+    for relative in paths:
+        source = PROFILE_SOURCE / relative
+        flattened = relative.replace('/', '__') + '.txt'
+        output = overlay_dir / flattened
+        shutil.copy2(source, output)
+        files[relative] = {
+            'overlay_text': str(output),
+            'bytes': output.stat().st_size,
+            'sha256': sha256_file(output),
+            'source_bytes': source.stat().st_size,
+            'source_sha256': sha256_file(source),
+        }
+    receipt = {
+        'preparation_only': True,
+        'timer_script_sha256': sha256_file(Path(__file__)),
+        'no_per_node_timers': True,
+        'edits': edits,
+        'capture_timer_targets': sorted(capture_targets),
+        'final_timer_overlay_files': files,
+    }
+    write_json(RECEIPTS / 'capture-timer-overlay.json', receipt)
+    return receipt
+
+
+def main() -> None:
+    for path in (RECEIPTS, OVERLAY_TEXT):
+        if path.exists():
+            raise SystemExit(f'output already exists: {path}')
+    RECEIPTS.mkdir(parents=True)
+    OVERLAY_TEXT.mkdir(parents=True)
+    candidate = prepare_candidate_source()
+    outer = apply_outer_timers()
+    capture = apply_capture_timers()
+    # The final source must differ from the guarded candidate only at files in
+    # the retained outer overlay and these two bounded capture-overlay targets.
+    allowed = set(outer['files']) | set(capture['final_timer_overlay_files'])
+    final_hashes = source_hashes(PROFILE_SOURCE)
+    candidate_hashes = json.loads(CANDIDATE_IDENTITIES.read_text())
+    unexpected = [
+        relative for relative, actual in final_hashes.items()
+        if candidate_hashes.get(relative) != actual and relative not in allowed
+    ]
+    if unexpected:
+        raise SystemExit(f'unexpected instrumented source changes: {unexpected}')
+    final_receipt = {
+        'preparation_only': True,
+        'build_launched': False,
+        'runtime_launched': False,
+        'cargo_invoked': False,
+        'git_invoked': False,
+        'candidate_guard': candidate,
+        'outer_timer_overlay': outer,
+        'capture_timer_overlay': capture,
+        'final_rust_source_count': len(final_hashes),
+        'final_rust_identity_map_sha256': sha256_bytes(
+            json.dumps(final_hashes, sort_keys=True, separators=(',', ':')).encode()
+        ),
+        'unexpected_instrumented_paths': unexpected,
+        'stops_after_preparation': True,
+    }
+    write_json(RECEIPTS / 'preparation-complete.json', final_receipt)
+    print(json.dumps({
+        'prepared_candidate_source': str(CANDIDATE_SOURCE),
+        'prepared_profile_source': str(PROFILE_SOURCE),
+        'receipts': str(RECEIPTS),
+        'overlay_text': str(OVERLAY_TEXT),
+        'candidate_rust_files': candidate['candidate_rust_file_count'],
+        'capture_timer_targets': sorted(capture['final_timer_overlay_files']),
+        'build_launched': False,
+    }, indent=2))
+
+
+if __name__ == '__main__':
+    main()

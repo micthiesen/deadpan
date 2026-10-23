@@ -1,0 +1,262 @@
+[
+  {
+    "mode": "baseline",
+    "trial": 1,
+    "load_at_edit_start": [
+      2.90380859375,
+      3.75732421875,
+      3.45263671875
+    ],
+    "load_above_three": false,
+    "first_total_ms": 114.63,
+    "second_total_ms": 33.178,
+    "initial": {
+      "frames": 120000,
+      "nodes": 10001,
+      "root_children": 10000
+    },
+    "final": {
+      "database_bytes": 13592672,
+      "document_json_bytes": 12319659,
+      "frames": 120024,
+      "nodes": 10009,
+      "root_children": 10004
+    },
+    "phase": [],
+    "path_anomalies": []
+  },
+  {
+    "mode": "candidate",
+    "trial": 1,
+    "load_at_edit_start": [
+      2.90380859375,
+      3.75732421875,
+      3.45263671875
+    ],
+    "load_above_three": false,
+    "first_total_ms": 109.384,
+    "second_total_ms": 32.875,
+    "initial": {
+      "frames": 120000,
+      "nodes": 10001,
+      "root_children": 10000
+    },
+    "final": {
+      "database_bytes": 13592672,
+      "document_json_bytes": 12319659,
+      "frames": 120024,
+      "nodes": 10009,
+      "root_children": 10004
+    },
+    "phase": [],
+    "path_anomalies": []
+  },
+  {
+    "mode": "candidate",
+    "trial": 2,
+    "load_at_edit_start": [
+      2.7509765625,
+      3.71142578125,
+      3.43798828125
+    ],
+    "load_above_three": false,
+    "first_total_ms": 109.452,
+    "second_total_ms": 33.625,
+    "initial": {
+      "frames": 120000,
+      "nodes": 10001,
+      "root_children": 10000
+    },
+    "final": {
+      "database_bytes": 13592672,
+      "document_json_bytes": 12319659,
+      "frames": 120024,
+      "nodes": 10009,
+      "root_children": 10004
+    },
+    "phase": [],
+    "path_anomalies": []
+  },
+  {
+    "mode": "baseline",
+    "trial": 2,
+    "load_at_edit_start": [
+      2.7509765625,
+      3.71142578125,
+      3.43798828125
+    ],
+    "load_above_three": false,
+    "first_total_ms": 112.833,
+    "second_total_ms": 32.296,
+    "initial": {
+      "frames": 120000,
+      "nodes": 10001,
+      "root_children": 10000
+    },
+    "final": {
+      "database_bytes": 13592672,
+      "document_json_bytes": 12319659,
+      "frames": 120024,
+      "nodes": 10009,
+      "root_children": 10004
+    },
+    "phase": [],
+    "path_anomalies": []
+  },
+  {
+    "mode": "baseline",
+    "trial": 3,
+    "load_at_edit_start": [
+      2.7509765625,
+      3.71142578125,
+      3.43798828125
+    ],
+    "load_above_three": false,
+    "first_total_ms": 114.836,
+    "second_total_ms": 34.197,
+    "initial": {
+      "frames": 120000,
+      "nodes": 10001,
+      "root_children": 10000
+    },
+    "final": {
+      "database_bytes": 13592672,
+      "document_json_bytes": 12319659,
+      "frames": 120024,
+      "nodes": 10009,
+      "root_children": 10004
+    },
+    "phase": [],
+    "path_anomalies": []
+  },
+  {
+    "mode": "candidate",
+    "trial": 3,
+    "load_at_edit_start": [
+      2.7509765625,
+      3.71142578125,
+      3.43798828125
+    ],
+    "load_above_three": false,
+    "first_total_ms": 111.052,
+    "second_total_ms": 33.074,
+    "initial": {
+      "frames": 120000,
+      "nodes": 10001,
+      "root_children": 10000
+    },
+    "final": {
+      "database_bytes": 13592672,
+      "document_json_bytes": 12319659,
+      "frames": 120024,
+      "nodes": 10009,
+      "root_children": 10004
+    },
+    "phase": [],
+    "path_anomalies": []
+  },
+  {
+    "mode": "candidate",
+    "trial": 4,
+    "load_at_edit_start": [
+      2.7509765625,
+      3.71142578125,
+      3.43798828125
+    ],
+    "load_above_three": false,
+    "first_total_ms": 109.481,
+    "second_total_ms": 33.56,
+    "initial": {
+      "frames": 120000,
+      "nodes": 10001,
+      "root_children": 10000
+    },
+    "final": {
+      "database_bytes": 13592672,
+      "document_json_bytes": 12319659,
+      "frames": 120024,
+      "nodes": 10009,
+      "root_children": 10004
+    },
+    "phase": [],
+    "path_anomalies": []
+  },
+  {
+    "mode": "baseline",
+    "trial": 4,
+    "load_at_edit_start": [
+      2.7509765625,
+      3.71142578125,
+      3.43798828125
+    ],
+    "load_above_three": false,
+    "first_total_ms": 114.934,
+    "second_total_ms": 33.139,
+    "initial": {
+      "frames": 120000,
+      "nodes": 10001,
+      "root_children": 10000
+    },
+    "final": {
+      "database_bytes": 13592672,
+      "document_json_bytes": 12319659,
+      "frames": 120024,
+      "nodes": 10009,
+      "root_children": 10004
+    },
+    "phase": [],
+    "path_anomalies": []
+  },
+  {
+    "mode": "baseline",
+    "trial": 5,
+    "load_at_edit_start": [
+      2.7509765625,
+      3.71142578125,
+      3.43798828125
+    ],
+    "load_above_three": false,
+    "first_total_ms": 113.014,
+    "second_total_ms": 33.38,
+    "initial": {
+      "frames": 120000,
+      "nodes": 10001,
+      "root_children": 10000
+    },
+    "final": {
+      "database_bytes": 13592672,
+      "document_json_bytes": 12319659,
+      "frames": 120024,
+      "nodes": 10009,
+      "root_children": 10004
+    },
+    "phase": [],
+    "path_anomalies": []
+  },
+  {
+    "mode": "candidate",
+    "trial": 5,
+    "load_at_edit_start": [
+      2.6103515625,
+      3.666015625,
+      3.42333984375
+    ],
+    "load_above_three": false,
+    "first_total_ms": 110.098,
+    "second_total_ms": 33.674,
+    "initial": {
+      "frames": 120000,
+      "nodes": 10001,
+      "root_children": 10000
+    },
+    "final": {
+      "database_bytes": 13592672,
+      "document_json_bytes": 12319659,
+      "frames": 120024,
+      "nodes": 10009,
+      "root_children": 10004
+    },
+    "phase": [],
+    "path_anomalies": []
+  }
+]

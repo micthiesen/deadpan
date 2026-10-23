@@ -1,0 +1,52 @@
+DP24 measure_begin
+DP24 capture_walk_ms=1.862 retained_durations_fast_path=true
+DP24 scoped_precharge_ms=0.039
+DP24 scoped_durations_ms=0.000 retained_fast_path=true
+DP24 scoped_complete_scan_ms=0.681 wire_bytes=940159 exceeds_limit=false
+DP24 scoped_ancestor_closure_ms=1.652 required_aliases=10000 retained_nodes=10001
+DP24 capture_scoped_ms=4.718 returned_slice=false
+DP24 frozen_admit_build_index_ms=2.863
+DP24 capture_complete_fallback_ms=5.274
+DP24 core_capture_for_insertion_ms=17.331
+DP24 core_resume_owner_loop_ms=4.076 owners=8506
+DP24 core_new_binding_validation_ms=3.195
+DP24 core_leaf_insert_ms=2.053 core_reducer_total_ms=35.418
+DP24 frozen_admit_build_index_ms=2.863
+DP24 core_net_patch_and_result_validation_ms=6.089
+DP24 core_apply_validated_total_ms=51.951
+DP24 frozen_admit_build_index_ms=2.833
+DP24 store_prepare_command_ms=77.935
+DP24 store_write_plan_ms=14.443
+DP24 store_sqlite_commit_ms=15.493
+DP24 perf_refresh_ms=3.911 perf_commit_plus_refresh_ms=112.156
+DP24 measure_end
+DP24 measure_begin
+DP24 capture_walk_ms=1.422 retained_durations_fast_path=true
+DP24 scoped_precharge_ms=0.034
+DP24 scoped_durations_ms=0.000 retained_fast_path=true
+DP24 scoped_complete_scan_ms=0.910 wire_bytes=940811 exceeds_limit=false
+DP24 scoped_ancestor_closure_ms=0.001 required_aliases=2 retained_nodes=3
+DP24 frozen_admit_build_index_ms=0.004
+DP24 scoped_slice_admit_ms=0.144 sliced_nodes=6
+DP24 capture_scoped_ms=1.141 returned_slice=true
+DP24 core_capture_for_insertion_ms=4.452
+DP24 core_resume_owner_loop_ms=0.694 owners=1259
+DP24 core_new_binding_validation_ms=0.975
+DP24 core_leaf_insert_ms=1.974 core_reducer_total_ms=14.204
+DP24 frozen_admit_build_index_ms=0.009
+DP24 core_net_patch_and_result_validation_ms=1.938
+DP24 core_apply_validated_total_ms=17.098
+DP24 frozen_admit_build_index_ms=0.003
+DP24 store_prepare_command_ms=18.674
+DP24 store_write_plan_ms=0.672
+DP24 store_sqlite_commit_ms=8.072
+DP24 perf_refresh_ms=3.795 perf_commit_plus_refresh_ms=31.342
+DP24 measure_end
+DP24 frozen_admit_build_index_ms=0.005
+DP24 frozen_admit_build_index_ms=2.964
+DP24 frozen_admit_build_index_ms=0.004
+DP24 frozen_admit_build_index_ms=2.880
+DP24 frozen_admit_build_index_ms=0.004
+DP24 frozen_admit_build_index_ms=2.857
+DP24 frozen_admit_build_index_ms=0.003
+DP24 frozen_admit_build_index_ms=2.792

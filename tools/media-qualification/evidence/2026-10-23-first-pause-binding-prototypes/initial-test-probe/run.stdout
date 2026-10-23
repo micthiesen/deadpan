@@ -1,0 +1,23 @@
+
+running 6 tests
+test captured_binding_state_and_insert_history_patch_roundtrip_compact_wire ... FAILED
+test every_nondefault_clock_root_and_nonempty_lexical_path_roundtrips_exactly ... ok
+test malformed_unknown_duplicate_and_null_nonoptional_fields_are_rejected ... ok
+test present_argument_and_birth_vectors_keep_their_existing_admission_bound ... ok
+test signed_nonzero_resume_values_and_phase_terms_remain_explicit_and_exact ... ok
+test six_exact_binding_defaults_omit_and_restore_with_fixed_wire_bytes ... ok
+
+failures:
+
+---- captured_binding_state_and_insert_history_patch_roundtrip_compact_wire stdout ----
+
+thread 'captured_binding_state_and_insert_history_patch_roundtrip_compact_wire' (176414875) panicked at /tmp/deadpan-compact-frozen-edges-2026-10-22/production-test-drafts/compact_audio_bindings.rs.txt:228:71:
+called `Result::unwrap()` on an `Err` value: DocumentError { code: InvalidJson, message: "missing field `arguments` at line 1 column 80" }
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+
+failures:
+    captured_binding_state_and_insert_history_patch_roundtrip_compact_wire
+
+test result: FAILED. 5 passed; 1 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

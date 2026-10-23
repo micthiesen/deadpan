@@ -1,0 +1,552 @@
+Diff in /Users/michael/Code/deadpan/crates/deadpan-core/src/audio_binding.rs:125:
+     /// The gap's own preceding play is separate from its outer Repeat path.
+     #[serde(default, skip_serializing_if = "Option::is_none")]
+     pub gap_after: Option<AudioRepeatValue>,
+[31m-    #[serde(default, skip_serializing_if = "Vec::is_empty", deserialize_with = "path_vec")]
+(B[m[32m+    #[serde(
+(B[m[32m+        default,
+(B[m[32m+        skip_serializing_if = "Vec::is_empty",
+(B[m[32m+        deserialize_with = "path_vec"
+(B[m[32m+    )]
+(B[m     pub arguments: Vec<AudioRepeatArgument>,
+     /// Outer-to-inner lexical order. The innermost matching birth wins.
+[31m-    #[serde(default, skip_serializing_if = "Vec::is_empty", deserialize_with = "path_vec")]
+(B[m[32m+    #[serde(
+(B[m[32m+        default,
+(B[m[32m+        skip_serializing_if = "Vec::is_empty",
+(B[m[32m+        deserialize_with = "path_vec"
+(B[m[32m+    )]
+(B[m     pub births: Vec<AudioBirthClause>,
+ }
+ 
+Diff in /Users/michael/Code/deadpan/crates/deadpan-core/src/audio_reference.rs:3334:
+             let full = FrozenAudioLayout::capture(&document).unwrap();
+             for omitted in &ids {
+                 let required = ids.iter().filter(|id| *id != omitted).cloned().collect();
+[31m-                assert!(FrozenAudioLayout::capture_scoped(&document, &required)
+(B[m[31m-                    .unwrap()
+(B[m[31m-                    .is_none());
+(B[m[32m+                assert!(
+(B[m[32m+                    FrozenAudioLayout::capture_scoped(&document, &required)
+(B[m[32m+                        .unwrap()
+(B[m[32m+                        .is_none()
+(B[m[32m+                );
+(B[m                 let fallback = FrozenAudioLayout::capture(&document).unwrap();
+                 assert_eq!(fallback, full);
+                 assert_eq!(fallback.to_json().unwrap(), full.to_json().unwrap());
+Diff in /Users/michael/Code/deadpan/crates/deadpan-core/src/audio_reference.rs:3344:
+             let mut unknown: BTreeSet<_> = ids.iter().cloned().collect();
+             unknown.remove(document.root());
+             unknown.insert(NodeId::new("unknown-alias").unwrap());
+[31m-            assert!(FrozenAudioLayout::capture_scoped(&document, &unknown)
+(B[m[31m-                .unwrap()
+(B[m[31m-                .is_none());
+(B[m[32m+            assert!(
+(B[m[32m+                FrozenAudioLayout::capture_scoped(&document, &unknown)
+(B[m[32m+                    .unwrap()
+(B[m[32m+                    .is_none()
+(B[m[32m+            );
+(B[m         }
+         let (mut empty, _) = document(&mut random);
+         empty.nodes.clear();
+Diff in /Users/michael/Code/deadpan/crates/deadpan-core/src/audio_reference.rs:3353:
+[31m-        empty.nodes.insert(empty.root().clone(), BeatNode::sequence("Empty", vec![]));
+(B[m[32m+        empty
+(B[m[32m+            .nodes
+(B[m[32m+            .insert(empty.root().clone(), BeatNode::sequence("Empty", vec![]));
+(B[m         empty.validate().unwrap();
+[31m-        assert!(FrozenAudioLayout::capture_scoped(&empty, &BTreeSet::new())
+(B[m[31m-            .unwrap()
+(B[m[31m-            .is_none());
+(B[m[31m-        assert_eq!(FrozenAudioLayout::capture(&empty).unwrap().duration(), FrameDuration::ZERO);
+(B[m[32m+        assert!(
+(B[m[32m+            FrozenAudioLayout::capture_scoped(&empty, &BTreeSet::new())
+(B[m[32m+                .unwrap()
+(B[m[32m+                .is_none()
+(B[m[32m+        );
+(B[m[32m+        assert_eq!(
+(B[m[32m+            FrozenAudioLayout::capture(&empty).unwrap().duration(),
+(B[m[32m+            FrameDuration::ZERO
+(B[m[32m+        );
+(B[m     }
+ 
+     #[test]
+Diff in /Users/michael/Code/deadpan/crates/deadpan-core/src/legacy_audio_binding_v20.rs:163:
+             );
+         }
+         let legacy_wire = crate::legacy_audio_binding_v21::historical_wire(state);
+[31m-        let projected = serde_json::to_value(
+(B[m[31m-            super::LegacyAudioBindingState::project(state).unwrap(),
+(B[m[31m-        )
+(B[m[31m-        .unwrap();
+(B[m[32m+        let projected =
+(B[m[32m+            serde_json::to_value(super::LegacyAudioBindingState::project(state).unwrap()).unwrap();
+(B[m         assert_eq!(projected, legacy_wire);
+         let placement = &legacy_wire["bindings"]["hold"]["lattice"];
+         assert_eq!(
+Diff in /Users/michael/Code/deadpan/crates/deadpan-core/src/legacy_audio_binding_v21.rs:58:
+         let object = value
+             .as_object_mut()
+             .expect("serialized owned audio binding is an object");
+[31m-        object
+(B[m[31m-            .entry("resume")
+(B[m[31m-            .or_insert(serde_json::Value::Null);
+(B[m[32m+        object.entry("resume").or_insert(serde_json::Value::Null);
+(B[m         placement(
+             object
+                 .get_mut("lattice")
+Diff in /Users/michael/Code/deadpan/crates/deadpan-core/src/legacy_audio_binding_v21.rs:67:
+                 .expect("serialized binding has a lattice"),
+         );
+[31m-        if let Some(resume) = object.get_mut("resume").and_then(serde_json::Value::as_object_mut)
+(B[m[32m+        if let Some(resume) = object
+(B[m[32m+            .get_mut("resume")
+(B[m[32m+            .and_then(serde_json::Value::as_object_mut)
+(B[m         {
+             resume.entry("local_boundary").or_insert_with(|| {
+[31m-                serde_json::to_value(crate::ExactRatio::ZERO)
+(B[m[31m-                    .expect("zero exact ratio serializes")
+(B[m[32m+                serde_json::to_value(crate::ExactRatio::ZERO).expect("zero exact ratio serializes")
+(B[m             });
+             if let Some(phase) = resume
+                 .get_mut("phase")
+Diff in /Users/michael/Code/deadpan/crates/deadpan-core/tests/compact_audio_bindings.rs:1:
+ use deadpan_core::*;
+ use serde_json::{Value, json};
+ 
+[31m-fn id(value: &str) -> NodeId { NodeId::new(value).unwrap() }
+(B[m[31m-fn revision(value: &str) -> RevisionId { RevisionId::new(value).unwrap() }
+(B[m[32m+fn id(value: &str) -> NodeId {
+(B[m[32m+    NodeId::new(value).unwrap()
+(B[m[32m+}
+(B[m[32m+fn revision(value: &str) -> RevisionId {
+(B[m[32m+    RevisionId::new(value).unwrap()
+(B[m[32m+}
+(B[m fn exact(numerator: i128, denominator: i128) -> ExactRatio {
+     ExactRatio::new(numerator, denominator).unwrap()
+ }
+Diff in /Users/michael/Code/deadpan/crates/deadpan-core/tests/compact_audio_bindings.rs:9:
+ fn timing() -> AudioTimingId {
+[31m-    AudioTimingId { allocation: revision("timing"), ordinal: 0 }
+(B[m[32m+    AudioTimingId {
+(B[m[32m+        allocation: revision("timing"),
+(B[m[32m+        ordinal: 0,
+(B[m[32m+    }
+(B[m }
+ fn default_placement() -> AudioPlacementTemplate {
+     AudioPlacementTemplate {
+Diff in /Users/michael/Code/deadpan/crates/deadpan-core/tests/compact_audio_bindings.rs:40:
+ #[test]
+ fn six_exact_binding_defaults_omit_and_restore_with_fixed_wire_bytes() {
+     let binding = default_binding();
+[31m-    assert_eq!(serde_json::to_string(&binding).unwrap(), COMPACT_DEFAULT_BINDING);
+(B[m[32m+    assert_eq!(
+(B[m[32m+        serde_json::to_string(&binding).unwrap(),
+(B[m[32m+        COMPACT_DEFAULT_BINDING
+(B[m[32m+    );
+(B[m     let decoded: OwnedAudioBinding = serde_json::from_str(COMPACT_DEFAULT_BINDING).unwrap();
+     assert_eq!(decoded, binding);
+ 
+Diff in /Users/michael/Code/deadpan/crates/deadpan-core/tests/compact_audio_bindings.rs:47:
+     let legacy: OwnedAudioBinding =
+         serde_json::from_str(HISTORICAL_EXPLICIT_DEFAULT_BINDING).unwrap();
+     assert_eq!(legacy, binding);
+[31m-    assert_eq!(serde_json::to_string(&legacy).unwrap(), COMPACT_DEFAULT_BINDING);
+(B[m[32m+    assert_eq!(
+(B[m[32m+        serde_json::to_string(&legacy).unwrap(),
+(B[m[32m+        COMPACT_DEFAULT_BINDING
+(B[m[32m+    );
+(B[m 
+     // A present resume keeps its shape, while its exact zero boundary and
+     // phase constant independently use the same wire defaults.
+Diff in /Users/michael/Code/deadpan/crates/deadpan-core/tests/compact_audio_bindings.rs:54:
+     let zero_resume: OwnedAudioBinding = serde_json::from_str(COMPACT_ZERO_RESUME).unwrap();
+[31m-    assert_eq!(zero_resume.resume, Some(AudioResume {
+(B[m[31m-        local_boundary: ExactRatio::ZERO,
+(B[m[31m-        phase: AudioLocalPhase::default(),
+(B[m[31m-    }));
+(B[m[31m-    assert_eq!(serde_json::to_string(&zero_resume).unwrap(), COMPACT_ZERO_RESUME);
+(B[m[32m+    assert_eq!(
+(B[m[32m+        zero_resume.resume,
+(B[m[32m+        Some(AudioResume {
+(B[m[32m+            local_boundary: ExactRatio::ZERO,
+(B[m[32m+            phase: AudioLocalPhase::default(),
+(B[m[32m+        })
+(B[m[32m+    );
+(B[m[32m+    assert_eq!(
+(B[m[32m+        serde_json::to_string(&zero_resume).unwrap(),
+(B[m[32m+        COMPACT_ZERO_RESUME
+(B[m[32m+    );
+(B[m }
+ 
+ #[test]
+Diff in /Users/michael/Code/deadpan/crates/deadpan-core/tests/compact_audio_bindings.rs:63:
+ fn every_nondefault_clock_root_and_nonempty_lexical_path_roundtrips_exactly() {
+     let roots = [
+         AudioClockRoot::ProjectRootRoundEven,
+[31m-        AudioClockRoot::PreserveInputPointCeil { stage: id("provider") },
+(B[m[31m-        AudioClockRoot::DefinitionPointCeil { root: id("definition") },
+(B[m[31m-        AudioClockRoot::GapDefinitionPointCeil { repeat: id("gap-repeat") },
+(B[m[32m+        AudioClockRoot::PreserveInputPointCeil {
+(B[m[32m+            stage: id("provider"),
+(B[m[32m+        },
+(B[m[32m+        AudioClockRoot::DefinitionPointCeil {
+(B[m[32m+            root: id("definition"),
+(B[m[32m+        },
+(B[m[32m+        AudioClockRoot::GapDefinitionPointCeil {
+(B[m[32m+            repeat: id("gap-repeat"),
+(B[m[32m+        },
+(B[m     ];
+     let expected_roots = [
+         json!({"type":"project_root_round_even"}),
+Diff in /Users/michael/Code/deadpan/crates/deadpan-core/tests/compact_audio_bindings.rs:75:
+     ];
+     for (root, expected) in roots.into_iter().zip(expected_roots) {
+         let clock = AudioReferenceClock {
+[31m-            timing: timing(), root: root.clone(), physical: id("owner"),
+(B[m[32m+            timing: timing(),
+(B[m[32m+            root: root.clone(),
+(B[m[32m+            physical: id("owner"),
+(B[m             recipe: AudioRecipeKind::Node,
+         };
+         let encoded = serde_json::to_value(&clock).unwrap();
+Diff in /Users/michael/Code/deadpan/crates/deadpan-core/tests/compact_audio_bindings.rs:84:
+         } else {
+             assert_eq!(encoded["root"], expected);
+         }
+[31m-        assert_eq!(serde_json::from_value::<AudioReferenceClock>(encoded).unwrap(), clock);
+(B[m[32m+        assert_eq!(
+(B[m[32m+            serde_json::from_value::<AudioReferenceClock>(encoded).unwrap(),
+(B[m[32m+            clock
+(B[m[32m+        );
+(B[m     }
+ 
+     let mut placement = default_placement();
+Diff in /Users/michael/Code/deadpan/crates/deadpan-core/tests/compact_audio_bindings.rs:92:
+     placement.arguments = vec![
+         AudioRepeatArgument {
+             reference_repeat: id("outer"),
+[31m-            value: AudioRepeatValue::Live { repeat: id("outer") },
+(B[m[32m+            value: AudioRepeatValue::Live {
+(B[m[32m+                repeat: id("outer"),
+(B[m[32m+            },
+(B[m         },
+         AudioRepeatArgument {
+             reference_repeat: id("inner"),
+Diff in /Users/michael/Code/deadpan/crates/deadpan-core/tests/compact_audio_bindings.rs:99:
+             value: AudioRepeatValue::Captured {
+[31m-                iteration: IterationId { allocation: revision("plays"), ordinal: 7 },
+(B[m[32m+                iteration: IterationId {
+(B[m[32m+                    allocation: revision("plays"),
+(B[m[32m+                    ordinal: 7,
+(B[m[32m+                },
+(B[m             },
+         },
+     ];
+Diff in /Users/michael/Code/deadpan/crates/deadpan-core/tests/compact_audio_bindings.rs:104:
+     placement.births = vec![AudioBirthClause {
+         repeat: id("outer"),
+         survivors: AudioBirthSurvivors::Run {
+[31m-            allocation: revision("births"), first: 3, count: 5,
+(B[m[32m+            allocation: revision("births"),
+(B[m[32m+            first: 3,
+(B[m[32m+            count: 5,
+(B[m         },
+         definition_root: id("definition"),
+     }];
+Diff in /Users/michael/Code/deadpan/crates/deadpan-core/tests/compact_audio_bindings.rs:111:
+     let wire = serde_json::to_value(&placement).unwrap();
+[31m-    assert_eq!(wire["arguments"], json!([
+(B[m[31m-        {"reference_repeat":"outer","value":{"type":"live","repeat":"outer"}},
+(B[m[31m-        {"reference_repeat":"inner","value":{"type":"captured","iteration":{"allocation":"plays","ordinal":7}}}
+(B[m[31m-    ]));
+(B[m[31m-    assert_eq!(wire["births"], json!([
+(B[m[31m-        {"repeat":"outer","survivors":{"type":"run","allocation":"births","first":3,"count":5},"definition_root":"definition"}
+(B[m[31m-    ]));
+(B[m[31m-    assert_eq!(serde_json::from_value::<AudioPlacementTemplate>(wire).unwrap(), placement);
+(B[m[32m+    assert_eq!(
+(B[m[32m+        wire["arguments"],
+(B[m[32m+        json!([
+(B[m[32m+            {"reference_repeat":"outer","value":{"type":"live","repeat":"outer"}},
+(B[m[32m+            {"reference_repeat":"inner","value":{"type":"captured","iteration":{"allocation":"plays","ordinal":7}}}
+(B[m[32m+        ])
+(B[m[32m+    );
+(B[m[32m+    assert_eq!(
+(B[m[32m+        wire["births"],
+(B[m[32m+        json!([
+(B[m[32m+            {"repeat":"outer","survivors":{"type":"run","allocation":"births","first":3,"count":5},"definition_root":"definition"}
+(B[m[32m+        ])
+(B[m[32m+    );
+(B[m[32m+    assert_eq!(
+(B[m[32m+        serde_json::from_value::<AudioPlacementTemplate>(wire).unwrap(),
+(B[m[32m+        placement
+(B[m[32m+    );
+(B[m }
+ 
+ #[test]
+Diff in /Users/michael/Code/deadpan/crates/deadpan-core/tests/compact_audio_bindings.rs:125:
+     placement.reference.root = AudioClockRoot::DefinitionPointCeil { root: id("def") };
+     placement.arguments.push(AudioRepeatArgument {
+         reference_repeat: id("repeat"),
+[31m-        value: AudioRepeatValue::Live { repeat: id("repeat") },
+(B[m[32m+        value: AudioRepeatValue::Live {
+(B[m[32m+            repeat: id("repeat"),
+(B[m[32m+        },
+(B[m     });
+     let resume = AudioResume {
+         local_boundary: exact(7, 11),
+Diff in /Users/michael/Code/deadpan/crates/deadpan-core/tests/compact_audio_bindings.rs:138:
+             }],
+         },
+     };
+[31m-    let binding = OwnedAudioBinding { resume: Some(resume.clone()), ..default_binding() };
+(B[m[32m+    let binding = OwnedAudioBinding {
+(B[m[32m+        resume: Some(resume.clone()),
+(B[m[32m+        ..default_binding()
+(B[m[32m+    };
+(B[m     let wire = serde_json::to_value(&binding).unwrap();
+[31m-    assert_eq!(wire["resume"]["local_boundary"], json!({"numerator":"7","denominator":"11"}));
+(B[m[31m-    assert_eq!(wire["resume"]["phase"]["constant"], json!({"numerator":"-5","denominator":"13"}));
+(B[m[31m-    assert_eq!(wire["resume"]["phase"]["terms"][0]["from_local"], json!({"numerator":"-2","denominator":"7"}));
+(B[m[31m-    assert_eq!(wire["resume"]["phase"]["terms"][0]["to_local"], json!({"numerator":"9","denominator":"14"}));
+(B[m[32m+    assert_eq!(
+(B[m[32m+        wire["resume"]["local_boundary"],
+(B[m[32m+        json!({"numerator":"7","denominator":"11"})
+(B[m[32m+    );
+(B[m[32m+    assert_eq!(
+(B[m[32m+        wire["resume"]["phase"]["constant"],
+(B[m[32m+        json!({"numerator":"-5","denominator":"13"})
+(B[m[32m+    );
+(B[m[32m+    assert_eq!(
+(B[m[32m+        wire["resume"]["phase"]["terms"][0]["from_local"],
+(B[m[32m+        json!({"numerator":"-2","denominator":"7"})
+(B[m[32m+    );
+(B[m[32m+    assert_eq!(
+(B[m[32m+        wire["resume"]["phase"]["terms"][0]["to_local"],
+(B[m[32m+        json!({"numerator":"9","denominator":"14"})
+(B[m[32m+    );
+(B[m     assert!(wire["resume"].get("local_boundary").is_some());
+     assert!(wire["resume"]["phase"].get("constant").is_some());
+[31m-    assert_eq!(serde_json::from_value::<OwnedAudioBinding>(wire).unwrap(), binding);
+(B[m[32m+    assert_eq!(
+(B[m[32m+        serde_json::from_value::<OwnedAudioBinding>(wire).unwrap(),
+(B[m[32m+        binding
+(B[m[32m+    );
+(B[m }
+ 
+ #[test]
+Diff in /Users/michael/Code/deadpan/crates/deadpan-core/tests/compact_audio_bindings.rs:161:
+         r#"{"lattice":{"reference":{"timing":{"allocation":"timing","ordinal":0},"physical":"owner"},"arguments":[],"births":[]},"resume":{"local_boundary":{"numerator":"0","denominator":"1"},"phase":{"constant":null,"terms":[]}}}"#,
+     ];
+     for raw in malformed {
+[31m-        assert!(serde_json::from_str::<OwnedAudioBinding>(raw).is_err(), "accepted {raw}");
+(B[m[32m+        assert!(
+(B[m[32m+            serde_json::from_str::<OwnedAudioBinding>(raw).is_err(),
+(B[m[32m+            "accepted {raw}"
+(B[m[32m+        );
+(B[m     }
+     // `resume` is an Option and explicit null remains its valid historical form.
+[31m-    let mut null_resume = serde_json::from_str::<Value>(HISTORICAL_EXPLICIT_DEFAULT_BINDING).unwrap();
+(B[m[32m+    let mut null_resume =
+(B[m[32m+        serde_json::from_str::<Value>(HISTORICAL_EXPLICIT_DEFAULT_BINDING).unwrap();
+(B[m     null_resume["resume"] = Value::Null;
+     assert!(serde_json::from_value::<OwnedAudioBinding>(null_resume).is_ok());
+ }
+Diff in /Users/michael/Code/deadpan/crates/deadpan-core/tests/compact_audio_bindings.rs:228:
+             layout: FrozenAudioLayout::capture(&document).unwrap(),
+         }],
+         vec![(id("owner"), binding)].into_iter().collect(),
+[31m-    ).unwrap();
+(B[m[32m+    )
+(B[m[32m+    .unwrap();
+(B[m     state.validate_for(&document).unwrap();
+     let mut explicit_value: Value = serde_json::from_str(&state.to_json().unwrap()).unwrap();
+     let absent_value = explicit_value.clone();
+Diff in /Users/michael/Code/deadpan/crates/deadpan-core/tests/compact_audio_bindings.rs:248:
+     let mut absent_value = absent_value;
+     let owner = &mut absent_value["bindings"]["owner"];
+     set_paths(&mut owner["lattice"], false);
+[31m-    set_paths(&mut owner["resume"]["phase"]["terms"][0]["placement"], false);
+(B[m[32m+    set_paths(
+(B[m[32m+        &mut owner["resume"]["phase"]["terms"][0]["placement"],
+(B[m[32m+        false,
+(B[m[32m+    );
+(B[m     set_paths(&mut owner["reanchors"][0]["placement"], false);
+     let absent_state = AudioBindingState::from_json(&absent_value.to_string()).unwrap();
+     let explicit_state = AudioBindingState::from_json(&explicit_value.to_string()).unwrap();
+Diff in /Users/michael/Code/deadpan/crates/deadpan-core/tests/compact_audio_bindings.rs:255:
+     assert_eq!(absent_state, state);
+     assert_eq!(explicit_state, state);
+     let compact: Value = serde_json::from_str(&absent_state.to_json().unwrap()).unwrap();
+[31m-    assert!(compact["bindings"]["owner"]["lattice"].get("arguments").is_none());
+(B[m[31m-    assert!(compact["bindings"]["owner"]["lattice"].get("births").is_none());
+(B[m[32m+    assert!(
+(B[m[32m+        compact["bindings"]["owner"]["lattice"]
+(B[m[32m+            .get("arguments")
+(B[m[32m+            .is_none()
+(B[m[32m+    );
+(B[m[32m+    assert!(
+(B[m[32m+        compact["bindings"]["owner"]["lattice"]
+(B[m[32m+            .get("births")
+(B[m[32m+            .is_none()
+(B[m[32m+    );
+(B[m 
+     let nested_state = explicit_state;
+     let owner = &nested_state.bindings()[&id("owner")];
+Diff in /Users/michael/Code/deadpan/crates/deadpan-core/tests/compact_audio_bindings.rs:277:
+             layout: FrozenAudioLayout::capture(&document).unwrap(),
+         }],
+         vec![(id("owner"), default_binding())].into_iter().collect(),
+[31m-    ).unwrap();
+(B[m[32m+    )
+(B[m[32m+    .unwrap();
+(B[m     state.validate_for(&document).unwrap();
+     let base: Value = serde_json::from_str(&state.to_json().unwrap()).unwrap();
+ 
+Diff in /Users/michael/Code/deadpan/crates/deadpan-core/tests/compact_audio_bindings.rs:288:
+     null_births["bindings"]["owner"]["lattice"]["births"] = Value::Null;
+     assert!(AudioBindingState::from_json(&null_births.to_string()).is_err());
+     let mut null_term_path = base.clone();
+[31m-    null_term_path["bindings"]["owner"]["resume"]["phase"]["terms"][0]["placement"]["arguments"] = Value::Null;
+(B[m[32m+    null_term_path["bindings"]["owner"]["resume"]["phase"]["terms"][0]["placement"]["arguments"] =
+(B[m[32m+        Value::Null;
+(B[m     assert!(AudioBindingState::from_json(&null_term_path.to_string()).is_err());
+     let mut null_reanchor_path = base.clone();
+     null_reanchor_path["bindings"]["owner"]["reanchors"][0]["placement"]["births"] = Value::Null;
+Diff in /Users/michael/Code/deadpan/crates/deadpan-core/tests/compact_audio_bindings.rs:296:
+ 
+     let arg = json!({"reference_repeat":"repeat","value":{"type":"live","repeat":"repeat"}});
+     let mut oversized_args = base.clone();
+[31m-    oversized_args["bindings"]["owner"]["lattice"]["arguments"] = json!(vec![arg; MAX_DOCUMENT_DEPTH + 1]);
+(B[m[32m+    oversized_args["bindings"]["owner"]["lattice"]["arguments"] =
+(B[m[32m+        json!(vec![arg; MAX_DOCUMENT_DEPTH + 1]);
+(B[m     assert!(AudioBindingState::from_json(&oversized_args.to_string()).is_err());
+     let birth = json!({"repeat":"repeat","survivors":{"type":"run","allocation":"births","first":0,"count":1},"definition_root":"definition"});
+     let mut oversized_births = base;
+Diff in /Users/michael/Code/deadpan/crates/deadpan-core/tests/compact_audio_bindings.rs:303:
+[31m-    oversized_births["bindings"]["owner"]["lattice"]["births"] = json!(vec![birth; MAX_DOCUMENT_DEPTH + 1]);
+(B[m[32m+    oversized_births["bindings"]["owner"]["lattice"]["births"] =
+(B[m[32m+        json!(vec![birth; MAX_DOCUMENT_DEPTH + 1]);
+(B[m     assert!(AudioBindingState::from_json(&oversized_births.to_string()).is_err());
+ 
+     let compact = state.to_json().unwrap();
+Diff in /Users/michael/Code/deadpan/crates/deadpan-core/tests/compact_audio_bindings.rs:309:
+         "\"physical\":\"owner\"},\"arguments\":[],\"arguments\":[],\"births\":[]}",
+         1,
+     );
+[31m-    assert_ne!(duplicate, compact, "duplicate fixture must target lattice template");
+(B[m[32m+    assert_ne!(
+(B[m[32m+        duplicate, compact,
+(B[m[32m+        "duplicate fixture must target lattice template"
+(B[m[32m+    );
+(B[m     assert!(AudioBindingState::from_json(&duplicate).is_err());
+ 
+     // Exercise the raw-JSON preflight in each nested template location too.
+Diff in /Users/michael/Code/deadpan/crates/deadpan-core/tests/compact_audio_bindings.rs:321:
+     let mut duplicate_locations = 0;
+     while let Some(relative) = compact[from..].find(marker) {
+         let at = from + relative;
+[31m-        let malformed = format!("{}{}{}", &compact[..at], insertion, &compact[at + marker.len()..]);
+(B[m[32m+        let malformed = format!(
+(B[m[32m+            "{}{}{}",
+(B[m[32m+            &compact[..at],
+(B[m[32m+            insertion,
+(B[m[32m+            &compact[at + marker.len()..]
+(B[m[32m+        );
+(B[m         assert!(AudioBindingState::from_json(&malformed).is_err());
+         duplicate_locations += 1;
+         from = at + marker.len();
+Diff in /Users/michael/Code/deadpan/crates/deadpan-core/tests/compact_audio_bindings.rs:328:
+     }
+[31m-    assert_eq!(duplicate_locations, 3, "expected lattice, phase-term, and reanchor templates");
+(B[m[32m+    assert_eq!(
+(B[m[32m+        duplicate_locations, 3,
+(B[m[32m+        "expected lattice, phase-term, and reanchor templates"
+(B[m[32m+    );
+(B[m }
+ 
+ fn hold(frames: i64) -> BeatNode {
+Diff in /Users/michael/Code/deadpan/crates/deadpan-core/tests/compact_audio_bindings.rs:333:
+[31m-    BeatNode::hold("Hold", HoldRecipe {
+(B[m[31m-        picture_context: None,
+(B[m[31m-        duration: FrameDuration::new(frames).unwrap(),
+(B[m[31m-        video: HoldVideo::Background,
+(B[m[31m-        audio: HoldAudio::Silence,
+(B[m[31m-    })
+(B[m[32m+    BeatNode::hold(
+(B[m[32m+        "Hold",
+(B[m[32m+        HoldRecipe {
+(B[m[32m+            picture_context: None,
+(B[m[32m+            duration: FrameDuration::new(frames).unwrap(),
+(B[m[32m+            video: HoldVideo::Background,
+(B[m[32m+            audio: HoldAudio::Silence,
+(B[m[32m+        },
+(B[m[32m+    )
+(B[m }
+ fn document_with_hold() -> ProjectDocument {
+     let base = ProjectDocument::new(
+Diff in /Users/michael/Code/deadpan/crates/deadpan-core/tests/compact_audio_bindings.rs:342:
+         ProjectId::new("binding-history").unwrap(),
+         revision("initial"),
+         PresentationBasis {
+[31m-            width: 16, height: 16, frame_rate: FrameRate::new(30, 1).unwrap(),
+(B[m[32m+            width: 16,
+(B[m[32m+            height: 16,
+(B[m[32m+            frame_rate: FrameRate::new(30, 1).unwrap(),
+(B[m             color_policy: ColorPolicy::SdrRec709,
+         },
+         id("root"),
+Diff in /Users/michael/Code/deadpan/crates/deadpan-core/tests/compact_audio_bindings.rs:349:
+[31m-    ).unwrap();
+(B[m[32m+    )
+(B[m[32m+    .unwrap();
+(B[m     let mut wire = serde_json::to_value(base).unwrap();
+     wire["nodes"]["owner"] = serde_json::to_value(hold(4)).unwrap();
+[31m-    wire["nodes"]["root"] = serde_json::to_value(BeatNode::sequence("Root", vec![id("owner")])).unwrap();
+(B[m[32m+    wire["nodes"]["root"] =
+(B[m[32m+        serde_json::to_value(BeatNode::sequence("Root", vec![id("owner")])).unwrap();
+(B[m     ProjectDocument::from_json(&wire.to_string()).unwrap()
+ }
+ 
+Diff in /Users/michael/Code/deadpan/crates/deadpan-core/tests/compact_audio_bindings.rs:358:
+     let unbound = document_with_hold();
+     let captured = capture_unbound_audio_bindings(
+         &unbound,
+[31m-        AudioTimingId { allocation: revision("capture"), ordinal: 0 },
+(B[m[31m-    ).unwrap();
+(B[m[32m+        AudioTimingId {
+(B[m[32m+            allocation: revision("capture"),
+(B[m[32m+            ordinal: 0,
+(B[m[32m+        },
+(B[m[32m+    )
+(B[m[32m+    .unwrap();
+(B[m     let captured_wire = captured.to_json().unwrap();
+     let captured_again = AudioBindingState::from_json(&captured_wire).unwrap();
+     assert_eq!(captured_again, captured);
+Diff in /Users/michael/Code/deadpan/crates/deadpan-core/tests/compact_audio_bindings.rs:380:
+                 audio: HoldAudio::Silence,
+             },
+             id: id("pause-node"),
+[31m-            identities: SplitIdentities { nodes: (0..3).map(|n| id(&format!("split-{n}"))).collect() },
+(B[m[31m-            timing: AudioTimingId { allocation: revision("pause"), ordinal: 0 },
+(B[m[32m+            identities: SplitIdentities {
+(B[m[32m+                nodes: (0..3).map(|n| id(&format!("split-{n}"))).collect(),
+(B[m[32m+            },
+(B[m[32m+            timing: AudioTimingId {
+(B[m[32m+                allocation: revision("pause"),
+(B[m[32m+                ordinal: 0,
+(B[m[32m+            },
+(B[m         },
+     };
+     let transaction = apply(&bound, &request).unwrap();
+Diff in /Users/michael/Code/deadpan/crates/deadpan-core/tests/compact_audio_bindings.rs:391:
+     assert_eq!(decoded, transaction.forward);
+     let after = decoded.apply(&bound).unwrap();
+     assert_eq!(decoded.inverse().apply(&after).unwrap(), bound);
+[31m-    assert_eq!(AudioBindingState::from_json(&after.audio_bindings().to_json().unwrap()).unwrap(), *after.audio_bindings());
+(B[m[32m+    assert_eq!(
+(B[m[32m+        AudioBindingState::from_json(&after.audio_bindings().to_json().unwrap()).unwrap(),
+(B[m[32m+        *after.audio_bindings()
+(B[m[32m+    );
+(B[m }
+ 

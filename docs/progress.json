@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-23T06:24:55Z",
+  "updated_at": "2026-10-23T06:51:13Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Compact frozen timing is implemented, reviewed, qualified and pushed. All 1,503 Core, 3,499 broader selected and 1,292 UI tests pass, plus six strengthened codec cases and strict Core/Store/UI checks. Debug/release media, 197 native checks plus Kestrel and both portable validations pass. Five quiet current-format pairs improve first-pause median from 130.636 to 114.691 ms, still above 100 ms before a picture; no p95 target PASS. Coverage remains 89%, with 8/24 sections complete. Next work measures the redundant full-slice capture and remaining default binding bytes; those experiments are isolated and unqualified.",
+  "focus": "Compact frozen timing is qualified and pushed. Four isolated diagnostic batches now identify redundant full-slice capture and six exact binding defaults. Combined prototype n=5 first store-and-refresh medians are 111.576 / 91.629 ms, before picture display; its standalone reader gap was exposed by round-trip testing. Working Core 58 / SQLite 87 fixes bounded preflight and historical fixtures; independent review and full Core tests are underway, with broader/UI/media/reopening and current-format timing still owed. Coverage remains 89%, 8/24 sections complete; no p95, visible-Hold or gate PASS.",
   "features": [
     {
       "id": "editing",
@@ -981,6 +981,14 @@
       "revision": "6916ee0d578a11c37e6e66a470eb430b02773764",
       "retrospective": false,
       "summary": "Compact frozen timing is implemented and qualified under Core 57 / SQLite 86. All 1,503 Core, 3,499 broader selected and 1,292 UI tests pass, followed by six strengthened asymmetric/historical codec cases, strict Core/Store and explicit UI Clippy, formatting and the old-library witness. Debug/release verify all 15 pictures / 24,024 samples, and release verifies 19 pictures / 30,430 samples, at zero offset with complete PCM/history controls. Native passes 197 checks plus Kestrel; both nine-file portable packages validate/doctor unchanged. Five quiet current-format pairs measure first medians 130.636 / 114.691 ms and second 33.206 / 33.265 ms. No visible-Hold or p95 target PASS. All failures, lint-scope correction and two native layout warnings remain retained; inventory verifies 1,069 payload files / 46,387,246 bytes. No requirement or gate newly complete."
+    },
+    {
+      "date": "2026-10-23",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "917f9a54eb992ea5c99244c395bf05d4c5ef63c5",
+      "retrospective": false,
+      "summary": "Four isolated five-pair diagnostic batches compare qualified compact timing with capture instrumentation, early full-layout fallback, six binding defaults and their combination. Combined first store-and-refresh medians are 111.576 / 91.629 ms and second 32.645 / 29.280 ms; no picture or percentile target is established. The discarded scoped pass measures 4.718 ms; read-only wire audit identifies 1,561,546 default bytes. Initial four-field v1 was not measured. Scratch linking required Rust thin LTO, then captured-state roundtrip exposed missing arguments in standalone preflight (five controls passed). Prototype codecs remain incomplete. Working Core58/SQLite87 adds bounded optional paths, explicit historical fixtures and stronger tests; review and full Core verification are running, broader/UI/media/reopening and current-format timing remain owed. Diagnostic inventory verifies329 files /5,003,929 bytes. Coverage and gates unchanged."
     }
   ]
 }

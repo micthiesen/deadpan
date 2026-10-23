@@ -1,0 +1,12 @@
+{
+  "baseline": {
+    "source_path": "/Users/michael/Code/deadpan/target/release/examples/perf",
+    "executed_path": "/tmp/deadpan-compact-frozen-edges-2026-10-22/candidate-perf",
+    "sha256": "d8c0cd0fb54c22f8b697ed7e4c9e4f7944f6ea59b0e55f103c58d2ab61e2e7fd"
+  },
+  "candidate": {
+    "source_path": "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/early-fallback-prototype-target/release/examples/perf",
+    "executed_path": "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/builds/early-fallback-perf",
+    "sha256": "db76f78e1eb9232e2e042625c8d1fa892f4bb2222896ab4c6680fbea69372f43"
+  }
+}

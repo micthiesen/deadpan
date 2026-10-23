@@ -1,0 +1,22 @@
+{
+  "command": [
+    "rustc",
+    "-C",
+    "lto=thin",
+    "--edition",
+    "2024",
+    "--crate-name",
+    "compact_binding_probe",
+    "--test",
+    "/tmp/deadpan-compact-frozen-edges-2026-10-22/production-test-drafts/compact_audio_bindings.rs.txt",
+    "-L",
+    "dependency=/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/binding-defaults-v2-prototype-target/release/deps",
+    "-o",
+    "/tmp/deadpan-compact-frozen-edges-2026-10-22/production-test-drafts/prototype-tests",
+    "--extern",
+    "deadpan_core=/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/binding-defaults-v2-prototype-target/release/deps/libdeadpan_core-50104e954f70f69f.rlib",
+    "--extern",
+    "serde_json=/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/binding-defaults-v2-prototype-target/release/deps/libserde_json-7b5e96388f88d567.rlib"
+  ],
+  "exit": 0
+}

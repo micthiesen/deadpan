@@ -1,0 +1,88 @@
+{
+  "fresh_packages": true,
+  "phase_multiplicity_check": "not_applicable_uninstrumented_binaries",
+  "source": {
+    "shipping_source_commit": "6916ee0d578a11c37e6e66a470eb430b02773764",
+    "experiment": {
+      "name": "combined",
+      "source": "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/combined-prototype-source",
+      "target": "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/combined-prototype-target",
+      "command": [
+        "cargo",
+        "build",
+        "--locked",
+        "--release",
+        "-p",
+        "deadpan-cli",
+        "--example",
+        "perf",
+        "-j",
+        "8"
+      ],
+      "exit": 0,
+      "seconds": 161.30829837545753,
+      "modified_rust_paths": [
+        "crates/deadpan-core/src/audio_binding.rs",
+        "crates/deadpan-core/src/audio_reference.rs"
+      ],
+      "prepared_base_vs_shipping_difference_only_uncompiled_test_files": [
+        "crates/deadpan-core/tests/compact_frozen_edges.rs",
+        "crates/deadpan-store/tests/edited_slice/child_capture/range_compat.rs",
+        "crates/deadpan-store/tests/revision_storage.rs"
+      ],
+      "script_sha256": "e8a4646187141a342b32c0864e09c9fe743f370cd91edf7341393c64186239f8",
+      "binary": {
+        "path": "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/builds/combined-perf",
+        "sha256": "b142a8a20e5d55c017a4be370da6d49241e6faacc80affe1ad36272016f5e4cb"
+      }
+    },
+    "control_is_current_qualified_perf": true,
+    "not_shipping_or_target_pass": true,
+    "standalone_preflight_not_yet_updated": true
+  },
+  "binaries": {
+    "baseline": {
+      "source_path": "/Users/michael/Code/deadpan/target/release/examples/perf",
+      "executed_path": "/tmp/deadpan-compact-frozen-edges-2026-10-22/candidate-perf",
+      "sha256": "d8c0cd0fb54c22f8b697ed7e4c9e4f7944f6ea59b0e55f103c58d2ab61e2e7fd"
+    },
+    "candidate": {
+      "source_path": "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/combined-prototype-target/release/examples/perf",
+      "executed_path": "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/builds/combined-perf",
+      "sha256": "b142a8a20e5d55c017a4be370da6d49241e6faacc80affe1ad36272016f5e4cb"
+    }
+  },
+  "load_flags": [],
+  "path_anomalies": [],
+  "summary": {
+    "baseline": {
+      "first": {
+        "n": 5,
+        "min_ms": 109.706,
+        "median_ms": 111.576,
+        "max_ms": 112.886
+      },
+      "second": {
+        "n": 5,
+        "min_ms": 32.172,
+        "median_ms": 32.645,
+        "max_ms": 32.825
+      }
+    },
+    "candidate": {
+      "first": {
+        "n": 5,
+        "min_ms": 90.955,
+        "median_ms": 91.629,
+        "max_ms": 92.435
+      },
+      "second": {
+        "n": 5,
+        "min_ms": 28.727,
+        "median_ms": 29.28,
+        "max_ms": 29.438
+      }
+    }
+  },
+  "no_p95_or_target_pass_claim": true
+}

@@ -1,0 +1,18 @@
+instrumented archive copy: /private/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/prepared-capture-profile-source
+Run on a fresh 10k package: perf make-large <fresh-package> --beats 10000; then perf edit <fresh-package> --cycles 1 --kinds pause; retain stderr and binary/source hashes.
+{
+  "prepared_candidate_source": "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/prepared-candidate-source",
+  "prepared_profile_source": "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/prepared-capture-profile-source",
+  "receipts": "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/receipts",
+  "overlay_text": "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/timer-overlays",
+  "candidate_rust_files": 2047,
+  "capture_timer_targets": [
+    "crates/deadpan-cli/examples/perf/edit.rs",
+    "crates/deadpan-core/src/audio_binding_lifecycle.rs",
+    "crates/deadpan-core/src/audio_reference.rs",
+    "crates/deadpan-core/src/command.rs",
+    "crates/deadpan-core/src/insert_time.rs",
+    "crates/deadpan-store/src/lib.rs"
+  ],
+  "build_launched": false
+}

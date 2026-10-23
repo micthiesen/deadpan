@@ -1,0 +1,92 @@
+{
+  "fresh_packages": true,
+  "phase_multiplicity_check": "outer phases must be unique; conditional/nested capture phases retain all occurrences",
+  "source": {
+    "shipping_source_commit": "6916ee0d578a11c37e6e66a470eb430b02773764",
+    "experiment": {
+      "name": "capture-profile",
+      "source": "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/prepared-capture-profile-source",
+      "target": "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/capture-profile-target",
+      "command": [
+        "cargo",
+        "build",
+        "--locked",
+        "--release",
+        "-p",
+        "deadpan-cli",
+        "--example",
+        "perf",
+        "-j",
+        "8"
+      ],
+      "exit": 0,
+      "seconds": 178.29896820802242,
+      "modified_rust_paths": [
+        "crates/deadpan-cli/examples/perf/edit.rs",
+        "crates/deadpan-core/src/audio_binding_lifecycle.rs",
+        "crates/deadpan-core/src/audio_reference.rs",
+        "crates/deadpan-core/src/command.rs",
+        "crates/deadpan-core/src/insert_time.rs",
+        "crates/deadpan-store/src/lib.rs"
+      ],
+      "prepared_base_vs_shipping_difference_only_uncompiled_test_files": [
+        "crates/deadpan-core/tests/compact_frozen_edges.rs",
+        "crates/deadpan-store/tests/edited_slice/child_capture/range_compat.rs",
+        "crates/deadpan-store/tests/revision_storage.rs"
+      ],
+      "script_sha256": "4e66ea708576e8cfcb679d9bfeced754d100c3ff2a52e1ceed618949fd5d550e",
+      "binary": {
+        "path": "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/builds/capture-profile-perf",
+        "sha256": "44e9b1d1c8e99a419359f2187d74f0b8ba36caefaaf7eab9fdda4fb437b91ef9"
+      }
+    },
+    "control_is_current_qualified_perf": true,
+    "not_shipping_or_target_pass": true
+  },
+  "binaries": {
+    "baseline": {
+      "source_path": "/Users/michael/Code/deadpan/target/release/examples/perf",
+      "executed_path": "/tmp/deadpan-compact-frozen-edges-2026-10-22/candidate-perf",
+      "sha256": "d8c0cd0fb54c22f8b697ed7e4c9e4f7944f6ea59b0e55f103c58d2ab61e2e7fd"
+    },
+    "candidate": {
+      "source_path": "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/capture-profile-target/release/examples/perf",
+      "executed_path": "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/builds/capture-profile-perf",
+      "sha256": "44e9b1d1c8e99a419359f2187d74f0b8ba36caefaaf7eab9fdda4fb437b91ef9"
+    }
+  },
+  "load_flags": [],
+  "path_anomalies": [],
+  "summary": {
+    "baseline": {
+      "first": {
+        "n": 5,
+        "min_ms": 112.691,
+        "median_ms": 113.405,
+        "max_ms": 114.714
+      },
+      "second": {
+        "n": 5,
+        "min_ms": 32.456,
+        "median_ms": 32.699,
+        "max_ms": 35.18
+      }
+    },
+    "candidate": {
+      "first": {
+        "n": 5,
+        "min_ms": 112.736,
+        "median_ms": 113.544,
+        "max_ms": 114.472
+      },
+      "second": {
+        "n": 5,
+        "min_ms": 31.956,
+        "median_ms": 32.611,
+        "max_ms": 33.328
+      }
+    }
+  },
+  "no_p95_or_target_pass_claim": true,
+  "instrumentation_overhead_control": true
+}

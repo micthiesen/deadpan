@@ -1,0 +1,33 @@
+{
+  "name": "combined",
+  "source": "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/combined-prototype-source",
+  "target": "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/combined-prototype-target",
+  "command": [
+    "cargo",
+    "build",
+    "--locked",
+    "--release",
+    "-p",
+    "deadpan-cli",
+    "--example",
+    "perf",
+    "-j",
+    "8"
+  ],
+  "exit": 0,
+  "seconds": 161.30829837545753,
+  "modified_rust_paths": [
+    "crates/deadpan-core/src/audio_binding.rs",
+    "crates/deadpan-core/src/audio_reference.rs"
+  ],
+  "prepared_base_vs_shipping_difference_only_uncompiled_test_files": [
+    "crates/deadpan-core/tests/compact_frozen_edges.rs",
+    "crates/deadpan-store/tests/edited_slice/child_capture/range_compat.rs",
+    "crates/deadpan-store/tests/revision_storage.rs"
+  ],
+  "script_sha256": "e8a4646187141a342b32c0864e09c9fe743f370cd91edf7341393c64186239f8",
+  "binary": {
+    "path": "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/builds/combined-perf",
+    "sha256": "b142a8a20e5d55c017a4be370da6d49241e6faacc80affe1ad36272016f5e4cb"
+  }
+}

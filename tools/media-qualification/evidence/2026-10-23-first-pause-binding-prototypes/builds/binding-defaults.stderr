@@ -1,0 +1,168 @@
+   Compiling libc v0.2.189
+   Compiling bitflags v2.13.2
+   Compiling proc-macro2 v1.0.107
+   Compiling unicode-ident v1.0.26
+   Compiling quote v1.0.47
+   Compiling find-msvc-tools v0.1.13
+   Compiling shlex v2.0.1
+   Compiling cfg-if v1.0.5
+   Compiling objc2 v0.6.4
+   Compiling objc2-encode v4.1.0
+   Compiling cc v1.4.7
+   Compiling thiserror v2.0.20
+   Compiling once_cell v1.21.4
+   Compiling serde_core v1.0.229
+   Compiling libm v0.2.16
+   Compiling autocfg v1.5.1
+   Compiling itoa v1.0.18
+   Compiling zmij v1.0.23
+   Compiling num-traits v0.2.19
+   Compiling foldhash v0.2.0
+   Compiling syn v3.0.6
+   Compiling hashbrown v0.17.1
+   Compiling serde_json v1.0.151
+   Compiling cfg_aliases v0.2.2
+   Compiling serde v1.0.229
+   Compiling block2 v0.6.2
+   Compiling dispatch2 v0.3.1
+   Compiling memchr v2.8.3
+   Compiling arrayvec v0.7.8
+   Compiling log v0.4.34
+   Compiling errno v0.3.14
+   Compiling blake3 v1.8.7
+   Compiling objc2-core-foundation v0.3.2
+   Compiling smallvec v1.16.1
+   Compiling simd-adler32 v0.3.10
+   Compiling rustix v1.1.5
+   Compiling typenum v1.20.1
+   Compiling syn v2.0.119
+   Compiling zerocopy v0.8.57
+   Compiling crc32fast v1.5.2
+   Compiling adler2 v2.0.1
+   Compiling equivalent v1.0.2
+   Compiling indexmap v2.14.2
+   Compiling deadpan-diagnostics v0.1.0 (/private/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/binding-defaults-prototype-source/crates/deadpan-diagnostics)
+   Compiling hybrid-array v0.4.15
+   Compiling getrandom v0.3.4
+   Compiling thiserror-impl v2.0.20
+   Compiling bytemuck_derive v1.12.1
+   Compiling serde_derive v1.0.229
+   Compiling objc2-foundation v0.3.2
+   Compiling rustc-hash v1.1.0
+   Compiling naga-types v30.0.1
+   Compiling bytemuck v1.25.2
+   Compiling block-buffer v0.12.1
+   Compiling crypto-common v0.2.2
+   Compiling miniz_oxide v0.9.1
+   Compiling ring v0.17.14
+   Compiling deadpan-source v0.1.0 (/private/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/binding-defaults-prototype-source/native/deadpan-source)
+   Compiling naga v30.0.1
+   Compiling bit-vec v0.9.1
+   Compiling zerocopy-derive v0.8.57
+   Compiling parking_lot_core v0.9.12
+   Compiling unicode-width v0.2.2
+   Compiling codespan-reporting v0.13.1
+   Compiling bit-set v0.10.0
+   Compiling digest v0.11.3
+   Compiling flate2 v1.1.10
+   Compiling objc2-core-graphics v0.3.2
+   Compiling miniz_oxide v0.8.9
+   Compiling fdeflate v0.3.7
+   Compiling deadpan-core v0.1.0 (/private/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/binding-defaults-prototype-source/crates/deadpan-core)
+   Compiling objc2-metal v0.3.2
+   Compiling cpufeatures v0.3.1
+   Compiling scopeguard v1.2.0
+   Compiling quick-error v2.0.1
+   Compiling fastrand v2.5.0
+   Compiling raw-window-handle v0.6.2
+   Compiling zeroize v1.9.0
+   Compiling pkg-config v0.3.34
+   Compiling zune-core v0.5.3
+   Compiling static_assertions v1.1.0
+   Compiling vcpkg v0.2.15
+   Compiling byteorder-lite v0.1.0
+   Compiling pxfm v0.1.30
+   Compiling image-webp v0.2.4
+   Compiling zune-jpeg v0.5.15
+   Compiling libsqlite3-sys v0.38.2
+   Compiling wgpu-types v30.0.1
+   Compiling rustls-pki-types v1.15.1
+   Compiling objc2-quartz-core v0.3.2
+   Compiling half v2.7.1
+   Compiling moxcms v0.8.1
+   Compiling tempfile v3.27.0
+   Compiling lock_api v0.4.14
+   Compiling sha2 v0.11.0
+   Compiling png v0.18.1
+   Compiling deadpan-native-process v0.1.0 (/private/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/binding-defaults-prototype-source/native/deadpan-process)
+   Compiling wgpu-hal v30.0.1
+   Compiling getrandom v0.2.17
+   Compiling getrandom v0.4.3
+   Compiling untrusted v0.9.0
+   Compiling core-foundation-sys v0.8.7
+   Compiling constant_time_eq v0.4.2
+   Compiling parking_lot v0.12.5
+   Compiling raw-window-metal v1.1.0
+   Compiling objc2-core-audio-types v0.3.2
+   Compiling libloading v0.8.9
+   Compiling profiling v1.0.18
+   Compiling httparse v1.10.1
+   Compiling rustls v0.23.45
+   Compiling objc2-core-audio v0.3.2
+   Compiling rustls-webpki v0.103.16
+   Compiling image v0.25.10
+   Compiling core-foundation v0.10.1
+   Compiling security-framework-sys v2.17.0
+   Compiling hashlink v0.12.2
+   Compiling deadpan-dsp v0.1.0 (/private/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/binding-defaults-prototype-source/native/deadpan-dsp)
+   Compiling wgpu-core v30.0.1
+   Compiling fallible-streaming-iterator v0.1.9
+   Compiling fallible-iterator v0.3.0
+   Compiling subtle v2.6.1
+   Compiling litrs v1.0.0
+   Compiling bytes v1.12.1
+   Compiling document-features v0.2.12
+   Compiling http v1.5.0
+   Compiling uuid v1.26.1
+   Compiling wgpu-naga-bridge v30.0.1
+   Compiling wgpu-core-deps-apple v30.0.1
+   Compiling security-framework v3.7.0
+   Compiling deadpan-audio v0.1.0 (/private/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/binding-defaults-prototype-source/crates/deadpan-audio)
+   Compiling deadpan-store v0.1.0 (/private/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/binding-defaults-prototype-source/crates/deadpan-store)
+   Compiling objc2-audio-toolbox v0.3.2
+   Compiling font-types v0.12.5
+   Compiling wgpu v30.0.1
+   Compiling base64 v0.23.1
+   Compiling cpal v0.18.2
+   Compiling ureq-proto v0.6.4
+   Compiling read-fonts v0.41.0
+   Compiling coreaudio-rs v0.14.2
+   Compiling rustls-platform-verifier v0.7.1
+   Compiling webpki-roots v1.0.10
+   Compiling deadpan-filesystem v0.1.0 (/private/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/binding-defaults-prototype-source/native/deadpan-filesystem)
+   Compiling deadpan-encode v0.1.0 (/private/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/binding-defaults-prototype-source/native/deadpan-encode)
+   Compiling deadpan-fileclone v0.1.0 (/private/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/binding-defaults-prototype-source/native/deadpan-fileclone)
+   Compiling utf8-zero v0.8.1
+   Compiling mach2 v0.6.0
+   Compiling signal-hook v0.3.18
+   Compiling dasp_sample v0.11.0
+   Compiling percent-encoding v2.3.2
+   Compiling ureq v3.4.2
+   Compiling deadpan-analysis v0.1.0 (/private/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/binding-defaults-prototype-source/crates/deadpan-analysis)
+   Compiling deadpan-media v0.1.0 (/private/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/binding-defaults-prototype-source/crates/deadpan-media)
+   Compiling deadpan-jobs v0.1.0 (/private/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/binding-defaults-prototype-source/crates/deadpan-jobs)
+   Compiling deadpan-plan v0.1.0 (/private/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/binding-defaults-prototype-source/crates/deadpan-plan)
+   Compiling rusqlite v0.40.2
+   Compiling deadpan-sqlite-status v0.1.0 (/private/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/binding-defaults-prototype-source/native/deadpan-sqlite-status)
+   Compiling skrifa v0.44.0
+   Compiling objc2-app-kit v0.3.2
+   Compiling signal-hook-registry v1.4.8
+   Compiling rtrb v0.4.0
+   Compiling deadpan-output v0.1.0 (/private/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/binding-defaults-prototype-source/native/deadpan-output)
+   Compiling deadpan-render v0.1.0 (/private/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/binding-defaults-prototype-source/crates/deadpan-render)
+   Compiling deadpan-models v0.1.0 (/private/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/binding-defaults-prototype-source/crates/deadpan-models)
+   Compiling pollster v1.0.1
+   Compiling deadpan-chaos v0.1.0 (/private/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/binding-defaults-prototype-source/crates/deadpan-chaos)
+   Compiling deadpan-playback v0.1.0 (/private/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/binding-defaults-prototype-source/crates/deadpan-playback)
+   Compiling deadpan-cli v0.1.0 (/private/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/binding-defaults-prototype-source/crates/deadpan-cli)
+    Finished `release` profile [optimized] target(s) in 2m 50s

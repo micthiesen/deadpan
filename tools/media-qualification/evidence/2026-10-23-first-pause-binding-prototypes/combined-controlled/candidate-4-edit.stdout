@@ -1,0 +1,163 @@
+{
+  "cycles": 2,
+  "document_json_bytes": {
+    "max": 9136733.0,
+    "mean": 9134445.5,
+    "min": 9132158.0,
+    "n": 2,
+    "p50": 9132158.0,
+    "p95": 9136733.0
+  },
+  "final": {
+    "database_bytes": 7674008,
+    "document_json_bytes": 9136733,
+    "frames": 120024,
+    "nodes": 10009,
+    "root_children": 10004
+  },
+  "initial": {
+    "frames": 120000,
+    "nodes": 10001,
+    "root_children": 10000
+  },
+  "insert_pause": {
+    "command_preparation_ms": {
+      "max": 1.852,
+      "mean": 1.175,
+      "min": 0.498,
+      "n": 2,
+      "p50": 0.498,
+      "p95": 1.852
+    },
+    "committed": 2,
+    "deferred_keyframe_ms": {
+      "n": 0
+    },
+    "raw_total_ms": [
+      91.629,
+      29.28
+    ],
+    "refusals": [],
+    "refused": 0,
+    "store_commit_ms": {
+      "max": 87.046,
+      "mean": 55.294,
+      "min": 23.542,
+      "n": 2,
+      "p50": 23.542,
+      "p95": 87.046
+    },
+    "total_ms": {
+      "max": 91.629,
+      "mean": 60.454,
+      "min": 29.28,
+      "n": 2,
+      "p50": 29.28,
+      "p95": 91.629
+    },
+    "total_ms_in_commit_order_buckets": [
+      {
+        "max": 91.629,
+        "mean": 91.629,
+        "min": 91.629,
+        "n": 1,
+        "p50": 91.629,
+        "p95": 91.629
+      },
+      {
+        "max": 29.28,
+        "mean": 29.28,
+        "min": 29.28,
+        "n": 1,
+        "p50": 29.28,
+        "p95": 29.28
+      }
+    ],
+    "workspace_refresh_ms": {
+      "max": 4.085,
+      "mean": 3.985,
+      "min": 3.886,
+      "n": 2,
+      "p50": 3.886,
+      "p95": 4.085
+    }
+  },
+  "open_writable_ms": 36.834,
+  "package": "/tmp/deadpan-compact-frozen-edges-2026-10-22/next-profile-plan/combined-controlled/candidate-4.deadpan",
+  "reopen_head_ms": 41.186,
+  "reopen_read_only_with_head_ms": 79.381,
+  "reopen_validation": {
+    "replayed": 0,
+    "revisions": 5,
+    "verified_by_receipt": 5
+  },
+  "reopen_writable_ms": 62.865,
+  "repeat_wrap": {
+    "command_preparation_ms": {
+      "n": 0
+    },
+    "committed": 0,
+    "deferred_keyframe_ms": {
+      "n": 0
+    },
+    "raw_total_ms": [],
+    "refusals": [],
+    "refused": 0,
+    "store_commit_ms": {
+      "n": 0
+    },
+    "total_ms": {
+      "n": 0
+    },
+    "total_ms_in_commit_order_buckets": [],
+    "workspace_refresh_ms": {
+      "n": 0
+    }
+  },
+  "split": {
+    "command_preparation_ms": {
+      "n": 0
+    },
+    "committed": 0,
+    "deferred_keyframe_ms": {
+      "n": 0
+    },
+    "raw_total_ms": [],
+    "refusals": [],
+    "refused": 0,
+    "store_commit_ms": {
+      "n": 0
+    },
+    "total_ms": {
+      "n": 0
+    },
+    "total_ms_in_commit_order_buckets": [],
+    "workspace_refresh_ms": {
+      "n": 0
+    }
+  },
+  "stage": "edit",
+  "stage_wall_ms": 431.575458,
+  "undo": {
+    "command_preparation_ms": {
+      "n": 0
+    },
+    "committed": 0,
+    "deferred_keyframe_ms": {
+      "n": 0
+    },
+    "raw_total_ms": [],
+    "refusals": [],
+    "refused": 0,
+    "store_commit_ms": {
+      "n": 0
+    },
+    "total_ms": {
+      "n": 0
+    },
+    "total_ms_in_commit_order_buckets": [],
+    "workspace_refresh_ms": {
+      "n": 0
+    }
+  }
+}
