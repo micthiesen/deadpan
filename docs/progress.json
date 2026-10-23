@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-23T14:24:33.742Z",
+  "updated_at": "2026-10-23T14:43:08.958Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about \u00b15 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "The private complete frozen-layout reuse prototype passes all 123 selected Core checks and five guarded native timing pairs. Offscreen medians are 260.609875/247.164042 ms, a 13.445833 ms diagnostic difference of about 5.16%; commit medians are 257.887084/244.544917 ms. All 138 evidence files verify. The exact tested source bytes are now in the checkout and full production qualification is running: Core, broader/UI, strict, real media/history, native workflows, portable copies and a separate final comparison remain owed. The branch preserves the full alias closure, wire-size refusal, provisional handling and reference behavior. No requirement or target closes. Coverage stays 89%, with 8 Complete and 16 Partial requirements and the 100 ms/50 ms targets open.",
+  "focus": "Production qualification of complete frozen-layout reuse is progressing: all 1,522 Core tests across 69 binaries pass with zero skipped, and all 3,506 broader selected tests pass with 740 skipped. Source/input/executable guards pass. UI is compiling; strict checks, actual media/history, native workflows, portable copies and a separate final timing comparison remain owed. The earlier private prototype passes 123 selected checks and five guarded pairs, with offscreen medians 260.609875/247.164042 ms (about 5.16% diagnostic difference); its 138-file inventory verifies. The adopted source bytes equal that tested prototype, and the production change is not committed yet. Coverage stays 89%, with 8 Complete and 16 Partial requirements and the 100 ms/50 ms targets open.",
   "features": [
     {
       "id": "editing",
