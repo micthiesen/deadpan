@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-23T11:04:51Z",
+  "updated_at": "2026-10-23T11:15:22Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "The uncommitted leaf-result reuse candidate passes its focused differential test, all 1,514 Core tests (zero skipped), all 3,505 broader selected tests (740 skipped), all 1,296 UI-feature tests (eleven skipped), strict Core/UI Clippy and formatting. Debug/release media verifies 15 pictures and 24,024 samples, and release verifies 19 pictures and 30,430 samples, with canonical PCM/history controls. Both suite tests reported as leaky pass isolated reruns from the same archived binaries without that warning. The corrected logical named-mark fixture and its initial failure remain in the Core checkpoint; the production helper stayed unchanged. The final native release build is running; native/portable checks and final paired timing measurements remain owed. The private five-pair difference of about 4 ms stays separate from production qualification. Coverage remains 89%, with 8/24 sections complete and no new target or gate PASS.",
+  "focus": "Validated leaf-result reuse is implemented, reviewed, qualified and pushed. All 1,514 Core tests (zero skipped), 3,505 broader tests (740 skipped), 1,296 UI tests (eleven skipped), strict checks, actual debug/release media/history, six native scenarios and both portable extractions pass. Five quiet pairs measure input-to-commit medians 272.579417/265.164417 ms and offscreen composition 275.099042/267.862584 ms, about 7.24 ms apart. These are diagnostic samples, not percentiles or a 100 ms/50 ms target PASS. The 548-file evidence inventory is independently verified and retains the fixture correction, wrapper setup error, isolated leak reruns and native warnings. Next is a separate compact JSON size-count experiment; its draft is uncompiled and has no measured gain. Coverage remains 89%, with 8/24 sections complete and no gate closed.",
   "features": [
     {
       "id": "editing",
@@ -102,7 +102,7 @@
         "DP-18",
         "DP-24"
       ],
-      "note": "Shared Compound preparation avoids a separate native preview replay while preserving transactional authority and fallible runtime preparation before writes. Broader, UI, strict, media/history, native and portable checks pass. Five quiet native pairs improve the offscreen first-pause median from 393.261916 to 275.697709 ms, about 29.9%. Five samples do not establish a percentile or the 100 ms/50 ms edit targets. Remaining native latency, worker-memory and sleep qualification stay open. A later isolated profile places the remaining cost in semantic planning and Store preparation; writing and durable commit are much smaller. Reusing existing validated results is under investigation, with no new code or gain claim. A private validated-leaf-result reuse experiment measures a further small difference in five pairs. Its one-line production candidate is uncommitted and awaits full qualification. Its corrected differential test and all 1,514 Core tests now pass, zero skipped. The initial physical-mark lookup failure is retained; remaining production qualification is still owed."
+      "note": "Shared Compound preparation avoids a separate native preview replay while preserving transactional authority and fallible runtime preparation before writes. Its five quiet native pairs improve offscreen first-pause median from 393.261916 to 275.697709 ms, about 29.9%. A later isolated profile locates remaining cost in semantic planning and Store preparation. One-site validated leaf-result reuse is now qualified through complete Core, broader/UI, strict, actual media/history, native and portable checks. A separate final five-pair comparison gives offscreen control/candidate medians 275.099042/267.862584 ms, a 7.236458 ms difference of about 2.63%. The batches are not pooled. Five samples establish neither percentiles nor the 100 ms fallback/50 ms ordinary-edit target. The size-only JSON allocation experiment remains an uncompiled draft with no gain claim. Native latency, worker-memory and sleep qualification remain open."
     },
     {
       "id": "models",
@@ -1077,6 +1077,14 @@
       "revision": "596655d3be199ce3fea61ce2cf0510900542cdc4",
       "retrospective": false,
       "summary": "The uncommitted leaf-result reuse candidate passes the selected pause/setter differential case and all 1,514 Core tests across 69 binaries, zero skipped, with unchanged source/input/executable guards. The first selected test failed OutsideMapping when it queried only the primary physical mark coordinate after an interior split. Its fixture now uses revision-aware logical named-mark resolution, still requiring frame 12 plus complete old leaf/replay, binding/mark, inverse and immutable-entry equality. Only the test changed after that failure; the production helper stayed fixed. Static reviews and the fixture-correction review report no defects, separately from execution. The failed binary hash, original and corrected tests and exact source records are retained in 86 files /1,672,053 bytes. Broader, UI, strict, media/native, portable and final paired timings remain owed. Prototype timing stays diagnostic; no requirement or gate closes."
+    },
+    {
+      "date": "2026-10-23",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "91e17fe4db1aa44ccc63b3e27c70f6e6f7baa665",
+      "retrospective": false,
+      "summary": "One-site Core leaf-result reuse is implemented and qualified without schema changes or altered byte charges, Store authority or history work. The corrected differential case and all 1,514 Core tests pass (zero skipped), alongside 3,505 broader tests (740 skipped), 1,296 UI tests (eleven skipped), strict Core/UI checks and formatting. Debug/release verifies 15 pictures/24,024 samples; release also verifies 19 pictures/30,430 samples, at zero offset with canonical PCM/history controls. Six native scenarios pass 1,340 workflow checks plus six Kestrel checks, and both nine-file portable copies validate/doctor unchanged. Both passing suite tests reported as leaky pass isolated same-archive reruns without that warning. The initial mark-fixture failure, rerun-wrapper pretest setup error and native layout warnings remain retained. Five quiet final pairs measure commit 272.579417/265.164417 ms and offscreen composition 275.099042/267.862584 ms, a 7.236458 ms/~2.63% diagnostic difference. The 548-file/13,363,276-byte inventory verifies independently. These are not percentile or latency target PASSes. No requirement or gate closes; the next size-count draft has no execution or gain claim."
     }
   ]
 }
