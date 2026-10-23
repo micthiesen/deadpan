@@ -454,6 +454,20 @@ where
     }
 
     pub(super) fn refresh_children(&mut self) -> Result<(), EditError> {
+        if crate::command_work::local() && self.current.derived_clocks().is_empty() {
+            let current = &self.current;
+            let parent = &self.context.parent;
+            let durations = current.durations_shared()?;
+            let bounds = &mut self.bounds;
+            let ends = &mut self.child_ends;
+            let indices = &mut self.child_indices;
+            return current.with_proved_durations(durations, || {
+                *bounds = scope_bounds(current, parent)?;
+                *ends = child_ends(current, parent, *bounds)?;
+                *indices = child_indices(ends);
+                Ok(())
+            });
+        }
         self.bounds = scope_bounds(&self.current, &self.context.parent)?;
         self.child_ends = child_ends(&self.current, &self.context.parent, self.bounds)?;
         self.child_indices = child_indices(&self.child_ends);
