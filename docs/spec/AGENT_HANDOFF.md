@@ -441,8 +441,16 @@ preserve them and run exact isolated cases when final builds/timing finish.
 All CLI test compilation contexts pass. The current restarted qualify.py runs
 strict FIRST, then Core/broad/UI, UI lint, debug/release media and release native.
 post.py waits for all eight successful steps before portable/native and five
-final quiet timing pairs. Both are ACTIVE; inspect owner PIDs and receipts
-before any restart. Root owns Cargo, formatting, source and runtime producers.
+final quiet timing pairs. Strict, Core (1,543/0 skipped), broader (3,513/741)
+and UI (1,296/11), plus UI lint/format, now pass on the final layout. Core/UI
+have no LEAK; broader has one final marks case. Earlier warning cases remain
+in history. UI initially refused an old supplemental CLI helper left in its
+reused extraction; history/stale-ui-helper-preflight retains both hashes and
+all receipts. The extraction was preserved and recreated; source guards for
+completed strict/Core/broad pass, so qualify_resumed.py resumes at step four
+without repeating them. UI passes from fresh extraction. Debug media is now
+running. The resumed qualification and post waiter are ACTIVE; inspect owner
+PIDs and receipts before any restart. Root owns Cargo, formatting, source and runtime producers.
 The isolated rerun script is prepared but unexecuted; final packaging and its
 GO marker remain pending. Independent packaging review findings were corrected
 before execution. No production performance result or target PASS is claimed.
