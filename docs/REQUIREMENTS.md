@@ -4,19 +4,25 @@ All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_
 
 ## Aligned sound-scope research, 2026-10-23
 
-The uncommitted context-preserving candidate passes 19 focused public Core
-cases; one additional copy fixture has invalid absolute range coordinates and
-does not establish its intended behavior. The isolated correspondence prototype
-passes all 678 Core library tests. Independent source reviews report no concrete
-findings, but the new-group copy audio test finds a real processing-history gap:
-one retained input sample is lost and 1,899 canonical PCM channel samples differ
-from the delivered-at-group-birth oracle. All witness controls pass. The fix and
-optimized integrated suite remain in progress; these are not release results.
-The first processing-birth fix now passes all five focused audio checks: the
-terminal raw sample and suppression state match, and all 30,430 stereo output
-samples match the explicit EQ oracle. Eight private route tests pass, including
-retention of pre-birth losses. Late-birth, authority and Split qualification are
-still owed before the feature can be committed.
+The uncommitted context-preserving candidate passes all 679 integrated Core
+library tests. The corrected partial-copy fixture requires entering its group
+before slicing. Independent source reviews report no concrete findings. The
+first processing-birth fix preserves the terminal raw sample and suppression
+state, and all 30,430 stereo output samples match the explicit EQ oracle. Eight
+private route tests pass, including retention of pre-birth losses.
+
+The expanded `integrated-fifth` audio run passes six of nine checks, including
+the ordered-journal authority positive and ten rejection cases. A standalone
+neutral Split witness confirms a real failure with all controls valid: the
+complete group input and 2,048-sample filter halo remain identical, but 7,581
+output channel samples change, with maximum absolute difference
+0.009660936455475166. The later-move witness cannot establish a separate defect
+while that neutral-Split control fails. The late-birth fixture still fails its
+setup assertion and establishes no audio result. The archived executable is
+`9627184bb29f11f8bb49ee89445b33bfabc3d0744da9d62b87b6920c7f9e29c2`;
+all 2,031 Rust source identities and six build inputs match their frozen hashes
+before and after the run. Split context retention and final qualification remain
+in progress; candidate core 56/store 85 are not committed or release-qualified.
 No coverage percentage, requirement completion or gate changes.
 
 [Research qualification](qualification/sound-scope-research-2026-10-23.md)

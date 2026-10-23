@@ -6,9 +6,9 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 Working candidate update, 2026-10-23: explicit introduced-group correspondence,
 bounded aligned single-leaf admission, copy renaming and later clock transport
-are integrated locally and uncommitted. Nineteen focused public Core cases pass;
-one copy test uses an invalid absolute range and needs its setup corrected.
-The isolated proof prototype passes 678 Core library tests. Source reviews found
+are integrated locally and uncommitted. All 679 integrated Core library tests
+pass; the corrected partial-copy fixture requires entering the group first.
+Source reviews found
 no concrete defect, but the actual new-group birth/copy PCM test fails with all
 controls valid: one terminal input channel sample disappears and 1,899 output
 channel samples change. Its executable SHA-256 is
@@ -16,8 +16,8 @@ channel samples change. Its executable SHA-256 is
 Raw evidence is under the task scratch's
 `integrated-first-probe-evidence/new-group-birth/`. Preserve pre-birth delivery
 masks and expand only the genuinely post-birth processing history; changing
-`all(expands_history)` to `any` is insufficient. The optimized archive build is
-still pending. Candidate core 56/store 85 are not yet committed or qualified.
+`all(expands_history)` to `any` is insufficient. Candidate core 56/store 85 are
+not yet committed or qualified.
 
 The first fix is now exercised: `integrated-second` preserves the terminal
 input/suppression and every one of 30,430 stereo output samples, with all active
@@ -27,9 +27,21 @@ and eight route geometry tests pass. The executed audio SHA-256 is
 the complete 2,033-file Rust source set and six inputs match their frozen hashes
 before and after the archived run. The corrected partial-copy fixture requires
 entering the group before slicing, then filters the exterior group relation.
-Before committing, finish independent late-birth and Split witnesses plus the
-complete ordered-journal authority negatives, broad/strict checks and vertical
-qualification. Root owns builds; the audio test worker is writing child tests.
+The expanded `integrated-fifth` archive passes six of nine checks. Ordered-journal
+authority passes its positive and ten negatives. The standalone neutral-Split
+witness has valid controls and identical complete G input, including the
+2,048-sample filter halo, but 7,581 output channel samples differ (maximum
+absolute difference 0.009660936455475166). Its later-move witness is not a
+separately qualified defect because the neutral-Split control fails. Late birth
+still fails a setup assertion, so it establishes no audio result. Executed SHA-256:
+`9627184bb29f11f8bb49ee89445b33bfabc3d0744da9d62b87b6920c7f9e29c2`.
+The frozen 2,031-file Rust source set and six inputs are unchanged before/after.
+Evidence: `/tmp/deadpan-aligned-sound-scope-2026-10-22/integrated-fifth-evidence/`.
+Split narrows the journal away from its genuine ordinary ancestor G; preserve
+strict context correspondence without erasing real fragment delivery crops.
+Before committing, finish Split context retention, late-birth qualification,
+broad/strict checks and vertical qualification. Root owns builds; the audio test
+worker owns only the late-birth fixture repair.
 
 Ordinary `GroupSelection` endpoint Splits now use existing sound transport with
 one shared complete pre-edit audio layout. Aligned grouping keeps tables and
