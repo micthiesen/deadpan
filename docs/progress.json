@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-23T08:55:45Z",
+  "updated_at": "2026-10-23T09:16:13Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "The native first-pause profile is complete: nine fresh-process trials pass all replay and source/binary/input guards. Root-control diagnostic medians are 385.551042 ms to commit and 388.289833 ms through offscreen composition. Instrumented service medians locate 108.376500 ms in semantic planning, 119.775334 ms in preview/runtime-bank preparation, and 130.474125 ms in Compound commit; refresh is 4.128667 ms. These coarse n=3 diagnostics have uncalibrated timer overhead and no queue-wait, percentile or target PASS. Evidence verifies 105 files /1,575,313 bytes. A transaction-owned preparation callback is being implemented to avoid the separate preview replay while preserving all authority checks and fallible runtime preparation before writes. The candidate is uncommitted and unqualified. Coverage remains 89%, 8/24 sections complete; no gate closes.",
+  "focus": "The transaction-owned Compound preparation candidate passes five focused Store tests, all 3,505 broader selected tests (740 skipped), and all 1,296 UI-feature tests (11 skipped). Its native bad-capture rollback/retry test passes in both complete suites; two independent reviews report no defects. The initial targeted --lib command selected zero tests and is explicitly retained as a qualification mistake. The candidate remains uncommitted and unqualified while strict, native/media, release and paired performance checks run. Checkpoint evidence verifies 69 files /2,669,841 bytes. The earlier service profile motivates removing duplicate preview preparation but no production latency gain is claimed yet. Coverage remains 89%, 8/24 sections complete; no gate closes.",
   "features": [
     {
       "id": "editing",
@@ -102,7 +102,7 @@
         "DP-18",
         "DP-24"
       ],
-      "note": "Core 58 / SQLite 87 binding defaults and early full-capture fallback are qualified across Core, broader, UI, strict, media/native and portable checks. Five quiet pairs improve first store-and-refresh median 114.587 to 93.633 ms and second 32.896 to 28.906 ms. These exclude picture display and formal percentile qualification. Native descriptive commit p95 is 90.561250 ms over nine samples. Remaining latency, worker memory and sleep policies stay open. A verified large-first-pause replay now measures one fresh 10,000-Hold insertion through native semantic routing: 393.681375 ms to commit and 396.208834 ms to offscreen composition in the final release diagnostic. This n=1 does not qualify a percentile or either edit target. Service-phase profiling is in progress. Nine isolated service-profile trials pass. The root-control offscreen median is 388.289833 ms; semantic planning, preview preparation and commit dominate. A shared transactional preparation candidate remains unqualified."
+      "note": "Core 58 / SQLite 87 binding defaults and early full-capture fallback are qualified across Core, broader, UI, strict, media/native and portable checks. Five quiet pairs improve first store-and-refresh median 114.587 to 93.633 ms and second 32.896 to 28.906 ms. These exclude picture display and formal percentile qualification. Native descriptive commit p95 is 90.561250 ms over nine samples. Remaining latency, worker memory and sleep policies stay open. A verified large-first-pause replay now measures one fresh 10,000-Hold insertion through native semantic routing: 393.681375 ms to commit and 396.208834 ms to offscreen composition in the final release diagnostic. This n=1 does not qualify a percentile or either edit target. Service-phase profiling is in progress. Nine isolated service-profile trials pass. The root-control offscreen median is 388.289833 ms; semantic planning, preview preparation and commit dominate. A shared transactional preparation candidate remains unqualified. The uncommitted transaction-owned preparation candidate passes 3,505 broader and 1,296 UI tests, with two clean reviews. Strict/native/media/release/performance qualification remains pending."
     },
     {
       "id": "models",
@@ -1029,6 +1029,14 @@
       "revision": "be5736140eb19315897a394bde5efa2a24cb60b5",
       "retrospective": false,
       "summary": "Completed and retained nine rotated fresh-process UI first-pause trials (root-control, instrumentation off and on; three each). Every replay passes seven checks and source/binary/authored-input guards; all WALs stay empty. Root-control input-to-commit/composition medians are385.551042/388.289833ms. Instrumented service medians locate108.376500ms semantic planning,119.775334ms preview/runtime-bank preparation,130.474125ms Compound commit and4.128667ms refresh. Inclusive totals remain separate from disjoint children, queue wait is unmeasured, and uncalibrated timer overhead is disclosed. All three profile parsers pass exact phase counts; six controls emit no profile. Evidence verifies105files/1,575,313bytes and retains layout warnings. No production optimization, percentile or target PASS. A transaction-owned fallible runtime-preparation callback is now being implemented; full qualification remains owed. Coverage and gates unchanged."
+    },
+    {
+      "date": "2026-10-23",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "724b1a12db433814ae7c1ebdf95c8d622161f8c3",
+      "retrospective": false,
+      "summary": "The uncommitted Store/CLI/native candidate prepares a Compound once inside the existing Immediate transaction, then performs fallible host runtime-bank preparation before any write and returns it only after durable commit. Existing guard, identity, capture, bank and history checks and old commit APIs remain. All five focused Store,3,505 broader selected and1,296 UI-feature tests pass, with740 and11 skipped respectively. The new native bad-capture rollback/retry case is selected and passes in both complete suites. Two independent reviews report no defects. The initial --lib native filter selected zero tests; that qualification mistake is retained, not counted as a pass. Checkpoint inventory verifies69files/2,669,841bytes. Strict,native/media,release and paired timing checks remain owed. No production latency gain, percentile/targetPASS or gate closure is claimed."
     }
   ]
 }
