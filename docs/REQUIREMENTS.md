@@ -54,6 +54,11 @@ These samples are separate from the qualified leaf-result comparison and do
 not establish percentiles or the 100 ms/50 ms targets. Core 58 /SQLite 87 stay
 unchanged. Full production qualification remains owed; no requirement closes.
 The 161-file /1,362,070-byte evidence inventory verifies independently.
+The identical production candidate now passes all 1,517 Core tests across
+69 binaries, zero skipped, with source/input/executable guards. The
+[Core checkpoint](qualification/compact-json-size-core-checkpoint-2026-10-23.md)
+retains 18 files /362,018 bytes. Broader, UI, strict, media/native, portable
+and final production timing checks remain owed.
 
 ## Remaining preparation cost, 2026-10-23
 

@@ -201,16 +201,25 @@ The five formatted files are now applied as an uncommitted production
 candidate, with exact identity against the tested prototype source map.
 Both current-source reviews report no findings. Full qualification is live in
 /tmp/deadpan-compact-json-size-qualification-2026-10-23: qualify.py owns eight
-sequential main stages, starting with all Core; post.py waits for all eight
+sequential main stages; all Core is complete with 1,517 passing tests across
+69 binaries, zero skipped and exact source/input/executable guards. Broader
+checks are building. The [Core checkpoint](../qualification/compact-json-size-core-checkpoint-2026-10-23.md)
+retains 18 files /362,018 bytes, inventory SHA-256
+be3a1e48ebb73e6a53069361ffd9f534e0f0fa6803a78f681aab9626c46bcd88.
+post.py waits for all eight
 successful rows before portable checks, five extra native scenarios and five
 quiet pairs against qualified app 1864c3ac. Inspect owner/receipt files before
-restarting anything. Expected counts 1,517 Core, 3,506 broader and 1,296 UI
-are expectations, not results. Full Core, broader/UI, strict, media/native,
+restarting anything. Expected counts 3,506 broader and 1,296 UI are
+expectations, not results. Broader/UI, strict, media/native,
 portable and final paired timings remain owed. Keep this prototype separate
 from production evidence. Its
 historical draft/review and remaining-work-map.md are in the previous scratch's
 next-size-study/. Finer disjoint timers may be needed later; do not skip
 history reader roundtrips or invent a reusable result proof.
+The read-only next-replay-count-study.md in the current qualification scratch
+describes borrowed read-only count pairs and a post-validation finalizer;
+bare counts on mutable public outcomes are insufficient. No implementation
+or gain is established. Measure finer phases before accepting more API churn.
 
 Refresh/verify progress artifact a3ysikxugbmr4 from the next pushed
 docs/progress.json after this implementation commit. Preserve foreign

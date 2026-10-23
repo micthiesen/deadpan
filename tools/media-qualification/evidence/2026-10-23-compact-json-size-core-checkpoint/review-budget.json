@@ -1,0 +1,39 @@
+{
+  "result": "no_findings",
+  "lens": "exact accounting, refusal ordering and evidence scope",
+  "base": "91e17fe4",
+  "findings": [],
+  "scope": [
+    "crates/deadpan-core/src/document.rs",
+    "crates/deadpan-core/tests/compact_audio_bindings.rs",
+    "crates/deadpan-store/src/lib.rs",
+    "crates/deadpan-store/src/compound.rs",
+    "crates/deadpan-store/src/compound/tests.rs"
+  ],
+  "source_sha256": {
+    "crates/deadpan-core/src/document.rs": "2763bb86bbaba1afe9f11ade4e0077c154ffc12c9452bc2836fc9b0105865d10",
+    "crates/deadpan-core/tests/compact_audio_bindings.rs": "31482d26cc21208520528d6e58c9164976aaaa288e0c684b29e86c44e5d60a01",
+    "crates/deadpan-store/src/lib.rs": "60e791a846e4ae64bd400194a7efe8d9123880490b8b18a2cf57a5d66c429227",
+    "crates/deadpan-store/src/compound.rs": "1d5f07d4bc517906ed8cd650e42620cfca5d9e19c474599b3fafdd87a9ebc8e4",
+    "crates/deadpan-store/src/compound/tests.rs": "cef529c2160c229a25741be09f7257e7d7340608ea5fa571ee0b72092c03b0be"
+  },
+  "verified_by_source_review": [
+    "entry, every authored leaf and final state retain their exact compact byte accounting",
+    "captured stages still materialize and persist actual compact JSON bytes",
+    "processed byte charge precedes step bound and captured checkpoint charge, as before",
+    "counter uses the same compact serializer and exceeded-first DocumentError mapping",
+    "Store final bound and message remain through the extracted byte-count helper",
+    "tests exercise escaped UTF-8, exact private limits, chunked/overflow behavior, nested bindings, captured/uncaptured stages and persisted history",
+    "implementation comments claim output-buffer removal only, without whole-traversal allocation, memory-budget or latency-target qualification"
+  ],
+  "checks_run": [
+    "read-only five-file diff and exact source inspection"
+  ],
+  "checks_not_run": [
+    "Cargo",
+    "rustfmt",
+    "runtime",
+    "performance"
+  ],
+  "evidence_limit": "Parent-reported focused tests and five-pair diagnostics are not independent full qualification; full root checks remain owed."
+}

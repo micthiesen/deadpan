@@ -1,0 +1,2664 @@
+use std::collections::BTreeMap;
+use std::sync::Arc;
+use std::{error::Error, fmt};
+
+use serde::{Deserialize, Deserializer, Serialize, de};
+
+use crate::{
+    AudioSample, BasisState, FrameDuration, FrameRange, FrameRate, IterationOrder, Mark,
+    PlayOverrides, RepeatLayout, SourceAudioMapping, SourceEditWindow, SourceTimestamp,
+    SourceVideoMapping, TimeError,
+};
+
+pub const DOCUMENT_SCHEMA_VERSION: u32 = 58;
+/// Bounds apply before traversal. Structure is walked iteratively, never recursively.
+pub const MAX_DOCUMENT_NODES: usize = 100_000;
+pub const MAX_DOCUMENT_ASSETS: usize = 100_000;
+pub const MAX_DOCUMENT_MARKS: usize = 100_000;
+pub const MAX_DOCUMENT_DEPTH: usize = 256;
+pub const MAX_DOCUMENT_JSON_BYTES: usize = 64 * 1024 * 1024;
+pub const MAX_IDENTITY_BYTES: usize = 128;
+
+/// Lexicographic byte order, exactly `<[u8] as Ord>::cmp` (and so the order
+/// of the text), compared inline eight bytes at a time. Identity keys are
+/// short and often share long prefixes, and every ordered-map lookup compares
+/// several of them; the library comparison calls the platform `memcmp` for
+/// each, which dominated lookups in large documents.
+#[inline]
+fn compare_identity(left: &[u8], right: &[u8]) -> std::cmp::Ordering {
+    let common = left.len().min(right.len());
+    let (mut left_chunks, mut right_chunks) = (
+        left[..common].chunks_exact(8),
+        right[..common].chunks_exact(8),
+    );
+    for (a, b) in (&mut left_chunks).zip(&mut right_chunks) {
+        let a = u64::from_be_bytes(a.try_into().expect("eight-byte chunk"));
+        let b = u64::from_be_bytes(b.try_into().expect("eight-byte chunk"));
+        if a != b {
+            return a.cmp(&b);
+        }
+    }
+    for (a, b) in left_chunks.remainder().iter().zip(right_chunks.remainder()) {
+        if a != b {
+            return a.cmp(b);
+        }
+    }
+    left.len().cmp(&right.len())
+}
+
+macro_rules! identifier {
+    ($name:ident) => {
+        /// Shared immutable text: identities are cloned and dropped with
+        /// every document copy, so a clone is a reference count rather than
+        /// an allocation. Equality, ordering, hashing and serialization are
+        /// those of the text.
+        #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+        #[serde(try_from = "String", into = "String")]
+        pub struct $name(Arc<str>);
+        impl Ord for $name {
+            fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+                compare_identity(self.0.as_bytes(), other.0.as_bytes())
+            }
+        }
+        impl PartialOrd for $name {
+            fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+                Some(self.cmp(other))
+            }
+        }
+        impl $name {
+            pub fn new(value: impl Into<String>) -> Result<Self, DocumentError> {
+                let value: String = value.into();
+                if value.is_empty()
+                    || value.len() > MAX_IDENTITY_BYTES
+                    || !value
+                        .bytes()
+                        .all(|b| b.is_ascii_alphanumeric() || b"-_".contains(&b))
+                {
+                    return Err(DocumentError::new(
+                        DocumentErrorCode::InvalidIdentity,
+                        concat!(
+                            stringify!($name),
+                            " must contain 1–128 ASCII letters, digits, hyphens, or underscores"
+                        ),
+                    ));
+                }
+                Ok(Self(Arc::from(value)))
+            }
+            pub fn as_str(&self) -> &str {
+                &self.0
+            }
+        }
+        impl TryFrom<String> for $name {
+            type Error = DocumentError;
+            fn try_from(value: String) -> Result<Self, Self::Error> {
+                Self::new(value)
+            }
+        }
+        impl From<$name> for String {
+            fn from(value: $name) -> Self {
+                String::from(&*value.0)
+            }
+        }
+        impl fmt::Display for $name {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                f.write_str(&self.0)
+            }
+        }
+    };
+}
+
+identifier!(ProjectId);
+identifier!(RevisionId);
+identifier!(NodeId);
+identifier!(AssetId);
+identifier!(MarkId);
+identifier!(SoundId);
+identifier!(TargetId);
+
+/// BLAKE3 identity of a canonical host qualification receipt. The core retains
+/// the binding; only the host can establish receipt ownership and validity.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
+#[serde(try_from = "String", into = "String")]
+pub struct SourceQualificationId(String);
+
+impl SourceQualificationId {
+    pub fn new(value: String) -> Result<Self, DocumentError> {
+        if value.len() != 64
+            || !value
+                .bytes()
+                .all(|byte| byte.is_ascii_digit() || (b'a'..=b'f').contains(&byte))
+        {
+            return Err(DocumentError::new(
+                DocumentErrorCode::InvalidIdentity,
+                "source qualification identity must contain exactly 64 lowercase hexadecimal digits",
+            ));
+        }
+        Ok(Self(value))
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+impl TryFrom<String> for SourceQualificationId {
+    type Error = DocumentError;
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        Self::new(value)
+    }
+}
+
+impl From<SourceQualificationId> for String {
+    fn from(value: SourceQualificationId) -> Self {
+        value.0
+    }
+}
+
+impl fmt::Display for SourceQualificationId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.0)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct PresentationBasis {
+    pub width: u32,
+    pub height: u32,
+    pub frame_rate: FrameRate,
+    pub color_policy: ColorPolicy,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ColorPolicy {
+    SdrRec709,
+    HdrRec2020Pq,
+    HdrRec2020Hlg,
+}
+
+/// A half-open interval in one original stream's timestamp clock.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(try_from = "SourceSpanWire")]
+pub struct SourceSpan {
+    start: SourceTimestamp,
+    end: SourceTimestamp,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct SourceSpanWire {
+    start: SourceTimestamp,
+    end: SourceTimestamp,
+}
+
+impl TryFrom<SourceSpanWire> for SourceSpan {
+    type Error = DocumentError;
+    fn try_from(value: SourceSpanWire) -> Result<Self, Self::Error> {
+        Self::new(value.start, value.end)
+    }
+}
+
+impl SourceSpan {
+    pub fn new(start: SourceTimestamp, end: SourceTimestamp) -> Result<Self, DocumentError> {
+        if start.time_base != end.time_base
+            || start.ticks >= end.ticks
+            || end.ticks.checked_sub(start.ticks).is_none()
+        {
+            return Err(DocumentError::new(
+                DocumentErrorCode::SourceRangeInvalid,
+                "source span must be positive, representable, and use one time base",
+            ));
+        }
+        Ok(Self { start, end })
+    }
+    pub fn start(self) -> SourceTimestamp {
+        self.start
+    }
+    pub fn end(self) -> SourceTimestamp {
+        self.end
+    }
+    pub fn contains_span(self, span: Self) -> bool {
+        self.start.time_base == span.start.time_base
+            && self.start.ticks <= span.start.ticks
+            && span.end.ticks <= self.end.ticks
+    }
+    pub fn contains(self, timestamp: SourceTimestamp) -> bool {
+        self.start.time_base == timestamp.time_base
+            && self.start.ticks <= timestamp.ticks
+            && timestamp.ticks < self.end.ticks
+    }
+}
+
+/// Immutable media identity and measured stream bounds. Locations belong to the host.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AssetRecord {
+    pub label: String,
+    pub content_hash: String,
+    pub video: Option<SourceSpan>,
+    pub audio: Option<SourceSpan>,
+    pub still_image: bool,
+    /// Original presentation-frame count, required for accepted generated intervals.
+    pub frame_count: Option<FrameDuration>,
+    /// Canonical host receipt retained with an imported original asset.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source_qualification: Option<SourceQualificationId>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
+pub enum SourceVideo {
+    Stream { asset: AssetId, span: SourceSpan },
+    Still { asset: AssetId },
+    Blank,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SourceAudio {
+    pub asset: AssetId,
+    pub span: SourceSpan,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum LinkRelation {
+    Linked,
+    Independent,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SourceNode {
+    pub duration: FrameDuration,
+    /// Exact selected editorial interval in this physical owner's local clock,
+    /// after the independent audio offset. Selected audio mapping support is
+    /// stored before that offset.
+    /// Absence denotes generic intent without a declared common window. Stream
+    /// mappings still control rendering; this interval grants no media authority.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub edit_window: Option<SourceEditWindow>,
+    pub video: SourceVideo,
+    /// Exact picture placement and selected-span endpoint behavior.
+    pub video_mapping: SourceVideoMapping,
+    pub audio: Option<SourceAudio>,
+    /// Explicit audio destination placement, independent of picture timing.
+    pub audio_mapping: SourceAudioMapping,
+    pub link: LinkRelation,
+    /// Signed alignment in the project mix clock; never discard source PTS origins.
+    pub audio_offset: AudioSample,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
+pub enum HoldVideo {
+    Background,
+    Freeze {
+        asset: AssetId,
+        timestamp: SourceTimestamp,
+    },
+    /// References owned, explicitly accepted media, never a model or pending job.
+    Accepted {
+        asset: AssetId,
+        frames: FrameRange,
+    },
+    /// Explicitly accepted generated media with its original deterministic fallback.
+    Generated {
+        accepted: Box<AcceptedGeneration>,
+    },
+    /// Plays an Original picture span backwards at its natural rate from the
+    /// exact origin (the span's end when omitted). Adjacent endpoint pictures
+    /// hold outside the span. No new media exists: the span is the measured Original.
+    Reverse {
+        asset: AssetId,
+        span: SourceSpan,
+        /// Exact source ticks at local boundary zero. Defaults to span.end;
+        /// a captured passage retains its project-clock phase independently of
+        /// the containing decoded-picture intervals.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        origin: Option<crate::ExactRatio>,
+    },
+    /// Plays an Original picture span forward at its natural rate from the
+    /// exact origin (the span's start when omitted), holding adjacent endpoint
+    /// pictures outside the span: the picture of a bleep, whose sound is replaced.
+    Play {
+        asset: AssetId,
+        span: SourceSpan,
+        /// Exact source ticks at local boundary zero; defaults to span.start.
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        origin: Option<crate::ExactRatio>,
+    },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
+pub enum HoldFallback {
+    Background,
+    Freeze {
+        asset: AssetId,
+        timestamp: SourceTimestamp,
+    },
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct AcceptedGeneration {
+    pub artifact: crate::GeneratedArtifact,
+    pub fallback: HoldFallback,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
+pub enum HoldAudio {
+    Silence,
+    RoomTone {
+        source: SourceAudio,
+    },
+    /// A hanging effect tail: the wet output of `effect` fed with the two
+    /// seconds of the selected `input` just before this Hold occurrence in
+    /// the current edit: processed Original or explicitly selected sends.
+    /// Shared ancestors apply once, on the tail output. A live reference, not a
+    /// captured recording: edits before the pause change what rings. It rings
+    /// for `maximum` frames, fades to exact digital silence and stays silent
+    /// for the rest of the Hold; the dry sound itself is never repeated.
+    Tail {
+        maximum: FrameDuration,
+        #[serde(default, skip_serializing_if = "TailEffect::is_reverb")]
+        effect: TailEffect,
+        #[serde(default, skip_serializing_if = "crate::TailInput::is_original")]
+        input: crate::TailInput,
+    },
+    /// Plays the source audio backwards at its natural rate from the Hold's
+    /// start: Hold-local sample `n` hears the source sample `n` before its
+    /// span end. Silence follows once the span is exhausted.
+    Reverse {
+        source: SourceAudio,
+    },
+    /// A synthesized sine tone for the whole Hold (a bleep), with 2 ms linear
+    /// ramps at both ends. Reads no media.
+    Tone {
+        frequency_hz: u32,
+        level: crate::GainDb,
+    },
+}
+
+/// Hold effects prepare their whole input in one bounded block.
+pub const MAX_HOLD_EFFECT_INPUT_SAMPLES: i128 = 1_048_576;
+
+/// Bleep tones are audible-range sines at or below full scale.
+pub const TONE_FREQUENCY_HZ: std::ops::RangeInclusive<u32> = 20..=20_000;
+
+/// The fixed, versioned effect that produces a hanging tail. Parameters are
+/// part of the effect identity so preview and export render the same bytes.
+#[derive(
+    Debug, Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize,
+)]
+#[serde(rename_all = "snake_case")]
+pub enum TailEffect {
+    /// A dense deterministic room reverb (per-channel comb/all-pass network;
+    /// its impulse response falls 60 dB in about 1.1 s).
+    #[default]
+    Reverb,
+    /// A feedback echo of 300 ms repeats, each 6 dB quieter.
+    Delay,
+}
+
+impl TailEffect {
+    pub fn is_reverb(&self) -> bool {
+        *self == Self::Reverb
+    }
+
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::Reverb => "reverb",
+            Self::Delay => "delay",
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct HoldRecipe {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub picture_context: Option<crate::CapturedFraming>,
+    pub duration: FrameDuration,
+    pub video: HoldVideo,
+    pub audio: HoldAudio,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum PitchPolicy {
+    Preserve,
+    FollowSpeed,
+    /// Pitch-preserving processing with a fixed shift of whole semitones,
+    /// independent of the duration (specification §8.3 "Pitch shift"). A
+    /// unity-rate Retime with a shift still runs the processor. Nonzero,
+    /// within ±24 like the qualified DSP adapter.
+    Shift {
+        semitones: i8,
+    },
+}
+
+/// The fixed pitch shift range of the canonical time/pitch processor.
+pub const MAX_PITCH_SHIFT_SEMITONES: i8 = 24;
+
+impl PitchPolicy {
+    /// Pitch-preserving time/pitch processing, with or without a shift.
+    pub const fn preserves(self) -> bool {
+        matches!(self, Self::Preserve | Self::Shift { .. })
+    }
+
+    /// The fixed shift in semitones; zero for every other policy.
+    pub const fn semitones(self) -> i8 {
+        match self {
+            Self::Shift { semitones } => semitones,
+            Self::Preserve | Self::FollowSpeed => 0,
+        }
+    }
+
+    /// Whether a Retime with this policy runs the time/pitch processor:
+    /// pitch-preserving with a nonunity rate or a nonzero shift. Every other
+    /// Retime maps samples transparently or as tape speed.
+    pub const fn processes(self, unity_rate: bool) -> bool {
+        self.preserves() && (!unity_rate || self.semitones() != 0)
+    }
+
+    /// A shift of `semitones` on pitch-preserving processing; zero is plain
+    /// Preserve.
+    pub fn shifted(semitones: i8) -> Result<Self, DocumentError> {
+        match semitones {
+            0 => Ok(Self::Preserve),
+            value if value.unsigned_abs() <= MAX_PITCH_SHIFT_SEMITONES.unsigned_abs() => {
+                Ok(Self::Shift { semitones: value })
+            }
+            _ => Err(DocumentError::new(
+                DocumentErrorCode::InvalidTree,
+                "a pitch shift is a nonzero whole number of semitones within ±24",
+            )),
+        }
+    }
+}
+
+/// An ordinary authored crop constrains audio filtering and introduces edit
+/// edges. A transparent partition retains its child's complete processing and
+/// envelope domains, exposing only the selected unity-rate output interval.
+/// This is a splice building block, not a Split command or a resume anchor.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum RetimePurpose {
+    #[default]
+    Edit,
+    Partition,
+}
+
+impl RetimePurpose {
+    pub fn is_edit(&self) -> bool {
+        *self == Self::Edit
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
+pub enum NodeKind {
+    Source {
+        source: SourceNode,
+    },
+    Sequence {
+        children: Vec<NodeId>,
+    },
+    Hold {
+        recipe: HoldRecipe,
+    },
+    Repeat {
+        child: NodeId,
+        iterations: IterationOrder,
+        gap: Option<HoldRecipe>,
+        /// Per-play gain and scale progression; see [`crate::RepeatEscalation`].
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        escalation: Option<crate::RepeatEscalation>,
+    },
+    Retime {
+        child: NodeId,
+        duration: FrameDuration,
+        mapping: FrameRange,
+        pitch: PitchPolicy,
+        #[serde(default, skip_serializing_if = "RetimePurpose::is_edit")]
+        purpose: RetimePurpose,
+    },
+}
+
+impl NodeKind {
+    pub fn children(&self) -> &[NodeId] {
+        match self {
+            Self::Sequence { children } => children,
+            Self::Repeat { child, .. } | Self::Retime { child, .. } => std::slice::from_ref(child),
+            Self::Source { .. } | Self::Hold { .. } => &[],
+        }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct BeatNode {
+    pub label: String,
+    pub kind: NodeKind,
+    #[serde(default, skip_serializing_if = "crate::AudioTreatments::is_empty")]
+    pub audio_treatments: crate::AudioTreatments,
+    #[serde(
+        default,
+        skip_serializing_if = "crate::AudioEdgePolicies::is_automatic"
+    )]
+    pub audio_edges: crate::AudioEdgePolicies,
+    #[serde(default, skip_serializing_if = "crate::AudioEditorialEdges::is_empty")]
+    pub audio_editorial_edges: crate::AudioEditorialEdges,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub framing: Option<crate::Framing>,
+    /// Picture-only attachments in this beat's local clock.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub cutaways: Vec<crate::Cutaway>,
+    /// Text drawn over the picture in this beat's local clock.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub captions: Vec<crate::Caption>,
+}
+
+impl BeatNode {
+    pub fn sequence(label: impl Into<String>, children: Vec<NodeId>) -> Self {
+        Self {
+            label: label.into(),
+            kind: NodeKind::Sequence { children },
+            audio_treatments: Default::default(),
+            audio_edges: crate::AudioEdgePolicies::default(),
+            audio_editorial_edges: Default::default(),
+            framing: None,
+            cutaways: Vec::new(),
+            captions: Vec::new(),
+        }
+    }
+    pub fn hold(label: impl Into<String>, recipe: HoldRecipe) -> Self {
+        Self {
+            label: label.into(),
+            kind: NodeKind::Hold { recipe },
+            audio_treatments: Default::default(),
+            audio_edges: crate::AudioEdgePolicies::default(),
+            audio_editorial_edges: Default::default(),
+            framing: None,
+            cutaways: Vec::new(),
+            captions: Vec::new(),
+        }
+    }
+}
+
+/// Flat storage keeps JSON depth independent of authored nesting. Only validated
+/// documents can be constructed; callers receive immutable maps. JSON ingress
+/// goes through `from_json` so a generic deserializer cannot bypass its byte cap.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct ProjectDocument {
+    pub(crate) schema_version: u32,
+    pub(crate) project_id: ProjectId,
+    pub(crate) revision_id: RevisionId,
+    pub(crate) presentation_basis: PresentationBasis,
+    pub(crate) basis_state: BasisState,
+    pub(crate) root: NodeId,
+    pub(crate) nodes: crate::shared_map::SharedMap<NodeId, BeatNode>,
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub(crate) derived_clocks: BTreeMap<NodeId, crate::DerivedRetimeClock>,
+    pub(crate) assets: BTreeMap<AssetId, AssetRecord>,
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub(crate) source_interpretations: BTreeMap<AssetId, crate::SourceInterpretation>,
+    pub(crate) marks: BTreeMap<MarkId, Mark>,
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub(crate) sounds: BTreeMap<SoundId, crate::SoundEvent>,
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub(crate) beat_sounds: BTreeMap<NodeId, BTreeMap<SoundId, crate::BeatSound>>,
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub(crate) sound_routes: BTreeMap<SoundId, crate::RootSoundRoute>,
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub(crate) sound_allowances: BTreeMap<SoundId, crate::SoundHoldAllowances>,
+    pub(crate) overrides: BTreeMap<NodeId, PlayOverrides>,
+    /// Independently owned gap subtrees, keyed by the stable preceding play.
+    /// A final play retains its override without rendering trailing time.
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub(crate) gap_overrides: BTreeMap<NodeId, PlayOverrides>,
+    #[serde(skip_serializing_if = "crate::shared_map::is_empty")]
+    pub(crate) audio_lineage: crate::shared_map::SharedMap<NodeId, crate::AudioLineageId>,
+    #[serde(skip_serializing_if = "crate::AudioBindingState::is_empty")]
+    pub(crate) audio_bindings: crate::AudioBindingState,
+    /// Attention targets followed in source time.
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub(crate) targets: BTreeMap<TargetId, crate::AttentionTarget>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct DocumentWire {
+    schema_version: u32,
+    project_id: ProjectId,
+    revision_id: RevisionId,
+    presentation_basis: PresentationBasis,
+    basis_state: BasisState,
+    root: NodeId,
+    #[serde(deserialize_with = "crate::audio_gain::node_map")]
+    nodes: BTreeMap<NodeId, BeatNode>,
+    #[serde(default, deserialize_with = "unique_map")]
+    derived_clocks: BTreeMap<NodeId, crate::DerivedRetimeClock>,
+    #[serde(deserialize_with = "unique_map")]
+    assets: BTreeMap<AssetId, AssetRecord>,
+    #[serde(default, deserialize_with = "unique_map")]
+    source_interpretations: BTreeMap<AssetId, crate::SourceInterpretation>,
+    #[serde(deserialize_with = "unique_map")]
+    marks: BTreeMap<MarkId, Mark>,
+    #[serde(default, deserialize_with = "unique_map")]
+    sounds: BTreeMap<SoundId, crate::SoundEvent>,
+    #[serde(default, deserialize_with = "crate::sound_events::beat_sounds_map")]
+    beat_sounds: BTreeMap<NodeId, BTreeMap<SoundId, crate::BeatSound>>,
+    #[serde(default, deserialize_with = "unique_map")]
+    sound_routes: BTreeMap<SoundId, crate::RootSoundRoute>,
+    #[serde(default, deserialize_with = "unique_map")]
+    sound_allowances: BTreeMap<SoundId, crate::SoundHoldAllowances>,
+    #[serde(deserialize_with = "unique_map")]
+    overrides: BTreeMap<NodeId, PlayOverrides>,
+    #[serde(default, deserialize_with = "unique_map")]
+    gap_overrides: BTreeMap<NodeId, PlayOverrides>,
+    #[serde(default, deserialize_with = "unique_map")]
+    audio_lineage: BTreeMap<NodeId, crate::AudioLineageId>,
+    #[serde(default)]
+    audio_bindings: crate::AudioBindingState,
+    #[serde(default, deserialize_with = "unique_map")]
+    targets: BTreeMap<TargetId, crate::AttentionTarget>,
+}
+
+impl TryFrom<DocumentWire> for ProjectDocument {
+    type Error = DocumentError;
+    fn try_from(value: DocumentWire) -> Result<Self, Self::Error> {
+        let document = Self::from_wire(value);
+        document.validate()?;
+        Ok(document)
+    }
+}
+
+/// Immutable snapshots embedded in bounded command history use the same
+/// strict document grammar and complete validation as standalone documents.
+pub(crate) fn deserialize_snapshot<'de, D: serde::Deserializer<'de>>(
+    deserializer: D,
+) -> Result<Box<ProjectDocument>, D::Error> {
+    // The outer command reader has already bounded this value and refused
+    // duplicate keys. Internally tagged serde enums buffer their fields,
+    // while AudioBindingState's bounded RawValue parser requires JSON text.
+    // Reconstitute only this bounded snapshot before using its strict reader.
+    let value = serde_json::Value::deserialize(deserializer)?;
+    let json = serde_json::to_string(&value).map_err(serde::de::Error::custom)?;
+    if json.len() > crate::MAX_DOCUMENT_JSON_BYTES {
+        return Err(serde::de::Error::custom(
+            "restored snapshot exceeds document byte limit",
+        ));
+    }
+    let wire = serde_json::from_str::<DocumentWire>(&json).map_err(serde::de::Error::custom)?;
+    ProjectDocument::try_from(wire)
+        .map(Box::new)
+        .map_err(serde::de::Error::custom)
+}
+
+impl ProjectDocument {
+    /// Unvalidated; every caller validates before exposing the document.
+    fn from_wire(value: DocumentWire) -> Self {
+        Self {
+            schema_version: value.schema_version,
+            project_id: value.project_id,
+            revision_id: value.revision_id,
+            presentation_basis: value.presentation_basis,
+            basis_state: value.basis_state,
+            root: value.root,
+            nodes: value.nodes.into(),
+            derived_clocks: value.derived_clocks,
+            assets: value.assets,
+            source_interpretations: value.source_interpretations,
+            marks: value.marks,
+            sounds: value.sounds,
+            beat_sounds: value.beat_sounds,
+            sound_routes: value.sound_routes,
+            sound_allowances: value.sound_allowances,
+            overrides: value.overrides,
+            gap_overrides: value.gap_overrides,
+            audio_lineage: value.audio_lineage.into(),
+            audio_bindings: value.audio_bindings,
+            targets: value.targets,
+        }
+    }
+}
+
+impl ProjectDocument {
+    pub fn new(
+        project_id: ProjectId,
+        revision_id: RevisionId,
+        presentation_basis: PresentationBasis,
+        root: NodeId,
+    ) -> Result<Self, DocumentError> {
+        let document = Self {
+            schema_version: DOCUMENT_SCHEMA_VERSION,
+            project_id,
+            revision_id,
+            presentation_basis,
+            basis_state: BasisState::explicit(),
+            nodes: BTreeMap::from([(root.clone(), BeatNode::sequence("Sequence", vec![]))]).into(),
+            derived_clocks: BTreeMap::new(),
+            root,
+            assets: BTreeMap::new(),
+            source_interpretations: BTreeMap::new(),
+            marks: BTreeMap::new(),
+            sounds: BTreeMap::new(),
+            beat_sounds: BTreeMap::new(),
+            sound_routes: BTreeMap::new(),
+            sound_allowances: BTreeMap::new(),
+            overrides: BTreeMap::new(),
+            gap_overrides: BTreeMap::new(),
+            audio_lineage: Default::default(),
+            audio_bindings: crate::AudioBindingState::default(),
+            targets: BTreeMap::new(),
+        };
+        document.validate()?;
+        Ok(document)
+    }
+    /// Start with the audio-only default, still eligible for first-primary adoption.
+    pub fn new_automatic(
+        project_id: ProjectId,
+        revision_id: RevisionId,
+        root: NodeId,
+    ) -> Result<Self, DocumentError> {
+        let mut document = Self::new(project_id, revision_id, crate::basis::default_basis(), root)?;
+        document.basis_state = BasisState::provisional();
+        Ok(document)
+    }
+    /// Build a detached, validated view of one captured immutable source.
+    /// The project, revision and presentation basis are retained, but authored
+    /// structural edits, bindings, marks and framing are not copied into this
+    /// view. The selected asset's authored source interpretation is retained.
+    /// This constructs no edit transaction and never changes the captured document.
+    pub fn source_view(
+        &self,
+        asset: &AssetId,
+        source: SourceNode,
+        root: NodeId,
+        node: NodeId,
+    ) -> Result<Self, DocumentError> {
+        if root == node {
+            return Err(DocumentError::new(
+                DocumentErrorCode::InvalidTree,
+                "source view root and source identities must differ",
+            ));
+        }
+        let record = self.assets.get(asset).ok_or_else(|| {
+            DocumentError::new(
+                DocumentErrorCode::MissingAsset,
+                "source view asset is absent",
+            )
+        })?;
+        let mut view = Self::new(
+            self.project_id.clone(),
+            self.revision_id.clone(),
+            self.presentation_basis.clone(),
+            root.clone(),
+        )?;
+        view.assets.insert(asset.clone(), record.clone());
+        if let Some(interpretation) = self.source_interpretations.get(asset) {
+            view.source_interpretations
+                .insert(asset.clone(), *interpretation);
+        }
+        view.nodes
+            .insert(root, BeatNode::sequence("Original", vec![node.clone()]));
+        view.nodes.insert(
+            node,
+            BeatNode {
+                audio_treatments: Default::default(),
+                label: record.label.clone(),
+                framing: None,
+                audio_editorial_edges: Default::default(),
+                audio_edges: Default::default(),
+                kind: NodeKind::Source { source },
+                cutaways: Vec::new(),
+                captions: Vec::new(),
+            },
+        );
+        view.validate()?;
+        Ok(view)
+    }
+    pub fn schema_version(&self) -> u32 {
+        self.schema_version
+    }
+    pub fn project_id(&self) -> &ProjectId {
+        &self.project_id
+    }
+    pub fn revision_id(&self) -> &RevisionId {
+        &self.revision_id
+    }
+    pub fn presentation_basis(&self) -> &PresentationBasis {
+        &self.presentation_basis
+    }
+    pub fn basis_state(&self) -> &BasisState {
+        &self.basis_state
+    }
+    pub fn root(&self) -> &NodeId {
+        &self.root
+    }
+    pub fn nodes(&self) -> &BTreeMap<NodeId, BeatNode> {
+        &self.nodes
+    }
+    pub fn assets(&self) -> &BTreeMap<AssetId, AssetRecord> {
+        &self.assets
+    }
+    pub fn source_interpretations(&self) -> &BTreeMap<AssetId, crate::SourceInterpretation> {
+        &self.source_interpretations
+    }
+    pub fn marks(&self) -> &BTreeMap<MarkId, Mark> {
+        &self.marks
+    }
+    pub fn sound_routes(&self) -> &BTreeMap<SoundId, crate::RootSoundRoute> {
+        &self.sound_routes
+    }
+
+    pub fn sounds(&self) -> &BTreeMap<SoundId, crate::SoundEvent> {
+        &self.sounds
+    }
+    pub fn beat_sounds(&self) -> &BTreeMap<NodeId, BTreeMap<SoundId, crate::BeatSound>> {
+        &self.beat_sounds
+    }
+    pub fn targets(&self) -> &BTreeMap<TargetId, crate::AttentionTarget> {
+        &self.targets
+    }
+
+    pub fn sound_allowances(&self) -> &BTreeMap<SoundId, crate::SoundHoldAllowances> {
+        &self.sound_allowances
+    }
+    pub fn overrides(&self) -> &BTreeMap<NodeId, PlayOverrides> {
+        &self.overrides
+    }
+    pub fn gap_overrides(&self) -> &BTreeMap<NodeId, PlayOverrides> {
+        &self.gap_overrides
+    }
+    pub fn audio_lineage(&self) -> &BTreeMap<NodeId, crate::AudioLineageId> {
+        &self.audio_lineage
+    }
+    pub fn audio_bindings(&self) -> &crate::AudioBindingState {
+        &self.audio_bindings
+    }
+
+    /// All owned structural children, including sparse Repeat override roots.
+    /// Use this for tree traversal instead of the primitive-only NodeKind list.
+    pub fn children<'a>(&'a self, id: &NodeId) -> impl DoubleEndedIterator<Item = &'a NodeId> {
+        self.nodes
+            .get(id)
+            .into_iter()
+            .flat_map(|node| node.kind.children())
+            .chain(
+                self.overrides
+                    .get(id)
+                    .into_iter()
+                    .flat_map(|entries| entries.iter().map(|(_, root)| root)),
+            )
+            .chain(
+                self.gap_overrides
+                    .get(id)
+                    .into_iter()
+                    .flat_map(|entries| entries.iter().map(|(_, root)| root)),
+            )
+    }
+
+    pub fn to_json(&self) -> Result<String, DocumentError> {
+        self.to_json_with_limit(MAX_DOCUMENT_JSON_BYTES)
+    }
+
+    /// The same document without indentation, for durable storage. Pretty
+    /// output roughly doubles every stored revision; readers accept both.
+    pub fn to_compact_json(&self) -> Result<String, DocumentError> {
+        let mut output = BoundedJson {
+            bytes: Vec::new(),
+            limit: MAX_DOCUMENT_JSON_BYTES,
+            exceeded: false,
+        };
+        let result = serde_json::to_writer(&mut output, self);
+        if output.exceeded {
+            return Err(json_limit());
+        }
+        result.map_err(DocumentError::json)?;
+        String::from_utf8(output.bytes)
+            .map_err(|error| DocumentError::new(DocumentErrorCode::InvalidJson, error.to_string()))
+    }
+    /// The exact byte length of to_compact_json, without keeping its
+    /// output buffer. Uses the same serializer and byte limit.
+    pub fn compact_json_size(&self) -> Result<usize, DocumentError> {
+        self.compact_json_size_with_limit(MAX_DOCUMENT_JSON_BYTES)
+    }
+
+    fn compact_json_size_with_limit(&self, limit: usize) -> Result<usize, DocumentError> {
+        let mut output = BoundedJsonCount {
+            bytes: 0,
+            limit,
+            exceeded: false,
+        };
+        let result = serde_json::to_writer(&mut output, self);
+        // Preserve the materializing writer's limit-error precedence.
+        if output.exceeded {
+            return Err(json_limit());
+        }
+        result.map_err(DocumentError::json)?;
+        Ok(output.bytes)
+    }
+
+    fn to_json_with_limit(&self, limit: usize) -> Result<String, DocumentError> {
+        use std::io::Write;
+
+        let mut output = BoundedJson {
+            bytes: Vec::new(),
+            limit,
+            exceeded: false,
+        };
+        let result = serde_json::to_writer_pretty(&mut output, self);
+        if output.exceeded {
+            return Err(json_limit());
+        }
+        result.map_err(DocumentError::json)?;
+        output.write_all(b"\n").map_err(|_| json_limit())?;
+        // serde_json only writes valid UTF-8. Avoid an unchecked conversion so
+        // the invariant remains enforced if the serializer ever changes.
+        String::from_utf8(output.bytes)
+            .map_err(|error| DocumentError::new(DocumentErrorCode::InvalidJson, error.to_string()))
+    }
+    pub fn from_json(json: &str) -> Result<Self, DocumentError> {
+        if json.len() > MAX_DOCUMENT_JSON_BYTES {
+            return Err(json_limit());
+        }
+        crate::framing::preflight(json)?;
+        crate::picture_context::preflight(json)?;
+        let wire: DocumentWire = serde_json::from_str(json).map_err(DocumentError::json)?;
+        Self::try_from(wire)
+    }
+
+    pub fn validate(&self) -> Result<(), DocumentError> {
+        if validated::durations(self).is_some() {
+            return Ok(());
+        }
+        self.recipe_durations_shared().map(|_| ())
+    }
+    pub fn duration(&self) -> Result<FrameDuration, DocumentError> {
+        self.node_duration(&self.root)
+    }
+    /// The root duration from the structural pass alone. For a validated
+    /// document this equals [`Self::duration`] without repeating the
+    /// document-wide binding, mark and effect checks.
+    pub fn structural_duration(&self) -> Result<FrameDuration, DocumentError> {
+        if !self.derived_clocks.is_empty() {
+            let recipes = self.recipe_structural_durations()?;
+            return crate::derived_clock::integral(self.effective_durations(&recipes)?[&self.root]);
+        }
+        self.structural_durations()?
+            .get(&self.root)
+            .copied()
+            .ok_or_else(|| {
+                DocumentError::new(DocumentErrorCode::MissingNode, "root does not exist")
+            })
+    }
+    pub fn node_duration(&self, id: &NodeId) -> Result<FrameDuration, DocumentError> {
+        if !self.derived_clocks.is_empty() {
+            let exact = self.exact_durations()?;
+            return exact
+                .get(id)
+                .copied()
+                .ok_or_else(|| {
+                    DocumentError::new(
+                        DocumentErrorCode::MissingNode,
+                        format!("node {id} does not exist"),
+                    )
+                })
+                .and_then(crate::derived_clock::integral);
+        }
+        self.durations()?.get(id).copied().ok_or_else(|| {
+            DocumentError::new(
+                DocumentErrorCode::MissingNode,
+                format!("node {id} does not exist"),
+            )
+        })
+    }
+
+    pub(crate) fn parent_of(&self, id: &NodeId) -> Option<NodeId> {
+        // `children` without a node lookup per candidate: primitive children,
+        // then override and gap-branch roots.
+        let branches = |parent: &NodeId| {
+            self.overrides
+                .get(parent)
+                .into_iter()
+                .chain(self.gap_overrides.get(parent))
+                .flat_map(|entries| entries.iter().map(|(_, root)| root))
+        };
+        let plain = self.overrides.is_empty() && self.gap_overrides.is_empty();
+        self.nodes
+            .iter()
+            .find(|(parent, node)| {
+                node.kind.children().contains(id)
+                    || (!plain && branches(parent).any(|child| child == id))
+            })
+            .map(|(id, _)| id.clone())
+    }
+
+    /// [`Self::durations`], shared without copying when an enclosing
+    /// validation scope retains them for this exact document.
+    pub fn durations_shared(&self) -> Result<Arc<BTreeMap<NodeId, FrameDuration>>, DocumentError> {
+        self.require_integral_clocks()?;
+        self.recipe_durations_shared()
+    }
+
+    /// Integral recipe counts, never effective allocations. Consumers must
+    /// obtain `exact_durations` separately to place or sample the structure.
+    pub fn recipe_durations_shared(
+        &self,
+    ) -> Result<Arc<BTreeMap<NodeId, FrameDuration>>, DocumentError> {
+        match validated::durations(self) {
+            Some(durations) => Ok(durations),
+            None => self
+                .durations_with_context_limits(
+                    crate::MAX_CAPTURED_FRAMING_RECORDS,
+                    crate::MAX_GAIN_RECORDS,
+                )
+                .map(Arc::new),
+        }
+    }
+
+    /// Legacy integral allocation query. Refuses derived clocks, even when
+    /// the root is integral; use `exact_durations` for the effective graph.
+    pub fn durations(&self) -> Result<BTreeMap<NodeId, FrameDuration>, DocumentError> {
+        self.require_integral_clocks()?;
+        if let Some(durations) = validated::durations(self) {
+            return Ok(durations.as_ref().clone());
+        }
+        self.durations_with_context_limits(
+            crate::MAX_CAPTURED_FRAMING_RECORDS,
+            crate::MAX_GAIN_RECORDS,
+        )
+    }
+
+    /// Private intermediate state only: the pending edit can retire copied
+    /// context. Public validation still enforces the ordinary document budget.
+    pub(crate) fn validate_isolated_context(&self) -> Result<(), DocumentError> {
+        self.durations_with_context_limits(
+            crate::picture_context::MAX_ISOLATED_FRAMING_RECORDS,
+            crate::audio_gain::MAX_ISOLATED_GAIN_RECORDS,
+        )
+        .map(|_| ())
+    }
+
+    fn durations_with_context_limits(
+        &self,
+        context_limit: usize,
+        gain_limit: usize,
+    ) -> Result<BTreeMap<NodeId, FrameDuration>, DocumentError> {
+        self.validated_with_context_limits(context_limit, gain_limit, None, None)
+            .map(|(durations, _)| durations)
+    }
+
+    /// Complete validation of this document. With `previous`, the audio
+    /// binding owners that the patch left unchanged reuse their proved
+    /// placement checks (see `AudioBindingState::validation_work`); every
+    /// other invariant is checked over the complete document.
+    /// Complete validation, retaining the per-owner binding proof.
+    pub(crate) fn validated_with_proof(
+        &self,
+    ) -> Result<
+        (
+            BTreeMap<NodeId, FrameDuration>,
+            crate::audio_binding::BindingProof,
+        ),
+        DocumentError,
+    > {
+        self.validated_with_structure(None)
+    }
+
+    /// Complete validation, given this document's structural durations when
+    /// a caller already computed them for exactly these nodes, overrides,
+    /// assets, basis and root.
+    pub(crate) fn validated_with_structure(
+        &self,
+        structure: Option<crate::command::SharedDurations>,
+    ) -> Result<
+        (
+            BTreeMap<NodeId, FrameDuration>,
+            crate::audio_binding::BindingProof,
+        ),
+        DocumentError,
+    > {
+        self.validated_with_context_limits(
+            crate::MAX_CAPTURED_FRAMING_RECORDS,
+            crate::MAX_GAIN_RECORDS,
+            None,
+            structure,
+        )
+    }
+
+    pub(crate) fn validate_after(
+        &self,
+        previous: &ValidatedDocument,
+        bindings: Option<&crate::AudioBindingPatch>,
+    ) -> Result<
+        (
+            BTreeMap<NodeId, FrameDuration>,
+            crate::audio_binding::BindingProof,
+        ),
+        DocumentError,
+    > {
+        self.validate_after_with(previous, bindings, None)
+    }
+
+    /// [`Self::validate_after`], given known structural durations as in
+    /// [`Self::validated_with_structure`].
+    pub(crate) fn validate_after_with(
+        &self,
+        previous: &ValidatedDocument,
+        bindings: Option<&crate::AudioBindingPatch>,
+        structure: Option<crate::command::SharedDurations>,
+    ) -> Result<
+        (
+            BTreeMap<NodeId, FrameDuration>,
+            crate::audio_binding::BindingProof,
+        ),
+        DocumentError,
+    > {
+        self.validated_with_context_limits(
+            crate::MAX_CAPTURED_FRAMING_RECORDS,
+            crate::MAX_GAIN_RECORDS,
+            Some((&previous.bindings, bindings)),
+            structure,
+        )
+    }
+
+    fn validated_with_context_limits(
+        &self,
+        context_limit: usize,
+        gain_limit: usize,
+        previous: Option<(
+            &crate::audio_binding::BindingProof,
+            Option<&crate::AudioBindingPatch>,
+        )>,
+        structure: Option<crate::command::SharedDurations>,
+    ) -> Result<
+        (
+            BTreeMap<NodeId, FrameDuration>,
+            crate::audio_binding::BindingProof,
+        ),
+        DocumentError,
+    > {
+        // The structural pass is a pure function of the nodes, overrides,
+        // assets, basis and root; a caller that computed it for exactly
+        // these hands over its result.
+        let durations = match structure {
+            Some(structure) => {
+                #[cfg(debug_assertions)]
+                assert!(
+                    self.recipe_structural_durations().as_ref() == Ok(&*structure),
+                    "given structural durations describe another structure"
+                );
+                Arc::try_unwrap(structure).unwrap_or_else(|shared| (*shared).clone())
+            }
+            None => self.recipe_structural_durations()?,
+        };
+        if !self.derived_clocks.is_empty() {
+            self.effective_durations(&durations)?;
+        }
+        crate::sound_events::validate(self, &durations)?;
+        crate::sound_allowance::validate(self)?;
+        crate::framing::validate_document(self)?;
+        for node in self.nodes.values() {
+            if !(node.cutaways.is_empty() && node.captions.is_empty())
+                && !matches!(node.kind, NodeKind::Source { .. } | NodeKind::Hold { .. })
+            {
+                return Err(DocumentError::new(
+                    DocumentErrorCode::InvalidTree,
+                    "cutaways and captions belong to a Source or Hold beat, whose local clock is its content",
+                ));
+            }
+            crate::cutaway::validate(&node.cutaways, &self.assets)?;
+            crate::caption::validate(&node.captions)?;
+        }
+        self.validate_tails_outside_speed_stages()?;
+        crate::target::validate_targets(&self.targets, &self.assets)?;
+        crate::source_interpretation::validate(self)?;
+        crate::audio_gain::validate_document(self, gain_limit)?;
+        crate::picture_context::validate_nodes_with_limit(self.nodes.values(), context_limit)?;
+        self.validate_basis_state(&durations)?;
+        crate::audio_lineage::validate(self)?;
+        let bindings = self.audio_bindings.validate_for_after(self, previous)?;
+        crate::marks::validate_marks(self, &durations)?;
+        Ok((durations, bindings))
+    }
+
+    /// A hanging tail is fed by what is heard before it on the edit clock.
+    /// Inside a speed change (a nonunity Retime, either pitch policy) that
+    /// clock does not exist and the ring would be stretched or pitch-shifted,
+    /// so a tail Hold or Repeat gap there is invalid. Transparent Partitions
+    /// and unity Retimes keep the edit clock.
+    fn validate_tails_outside_speed_stages(&self) -> Result<(), DocumentError> {
+        let speed_stage = |id: &NodeId, kind: &NodeKind| {
+            if let Some(clock) = self.derived_clocks.get(id) {
+                return clock.child_end.checked_sub(clock.child_start) != Ok(clock.extent);
+            }
+            matches!(
+                kind,
+                NodeKind::Retime { duration, mapping, purpose, pitch, .. }
+                    if purpose.is_edit()
+                        && (*duration != mapping.duration() || pitch.semitones() != 0)
+            )
+        };
+        // Only a node below a speed stage can carry a tail into it.
+        if !self
+            .nodes
+            .iter()
+            .any(|(id, node)| speed_stage(id, &node.kind))
+        {
+            return Ok(());
+        }
+        let tail = |audio: &HoldAudio| matches!(audio, HoldAudio::Tail { .. });
+        let mut stack = vec![(&self.root, false)];
+        while let Some((id, inside)) = stack.pop() {
+            let Some(node) = self.nodes.get(id) else {
+                continue;
+            };
+            let carried = match &node.kind {
+                NodeKind::Hold { recipe } => inside && tail(&recipe.audio),
+                NodeKind::Repeat { gap, .. } => {
+                    inside && gap.as_ref().is_some_and(|gap| tail(&gap.audio))
+                }
+                _ => false,
+            };
+            if carried {
+                return Err(DocumentError::new(
+                    DocumentErrorCode::InvalidTree,
+                    format!(
+                        "a hanging tail cannot sit inside a speed change (at {id}); put the pause outside the Retime"
+                    ),
+                ));
+            }
+            let speed = speed_stage(id, &node.kind);
+            for child in self.children(id) {
+                stack.push((child, inside || speed));
+            }
+        }
+        Ok(())
+    }
+
+    /// Structural validation precedes mark transforms; no anchor validation
+    /// calls back into this traversal or into public `durations()`.
+    pub(crate) fn structural_durations(
+        &self,
+    ) -> Result<BTreeMap<NodeId, FrameDuration>, DocumentError> {
+        self.require_integral_clocks()?;
+        self.recipe_structural_durations()
+    }
+
+    pub(crate) fn recipe_structural_durations(
+        &self,
+    ) -> Result<BTreeMap<NodeId, FrameDuration>, DocumentError> {
+        // Complete validation retains the integral recipe graph separately
+        // from its effective clock validation.
+        if let Some(durations) = validated::durations(self) {
+            return Ok(durations.as_ref().clone());
+        }
+        if self.schema_version != DOCUMENT_SCHEMA_VERSION {
+            return Err(DocumentError::new(
+                DocumentErrorCode::UnsupportedSchema,
+                format!(
+                    "unsupported document schema {}; expected {DOCUMENT_SCHEMA_VERSION}",
+                    self.schema_version
+                ),
+            ));
+        }
+        if self.nodes.len() > MAX_DOCUMENT_NODES || self.assets.len() > MAX_DOCUMENT_ASSETS {
+            return Err(DocumentError::new(
+                DocumentErrorCode::LimitExceeded,
+                "document exceeds 100,000 nodes or assets",
+            ));
+        }
+        if self.overrides.len() > MAX_DOCUMENT_NODES
+            || self.gap_overrides.len() > MAX_DOCUMENT_NODES
+        {
+            return Err(DocumentError::new(
+                DocumentErrorCode::LimitExceeded,
+                "too many override owners",
+            ));
+        }
+        for (id, entries) in self.overrides.iter().chain(&self.gap_overrides) {
+            if entries.is_empty()
+                || !matches!(
+                    self.nodes.get(id).map(|node| &node.kind),
+                    Some(NodeKind::Repeat { .. })
+                )
+            {
+                return Err(DocumentError::new(
+                    DocumentErrorCode::InvalidTree,
+                    "nonempty overrides must belong to an existing Repeat",
+                ));
+            }
+        }
+        // Every structural reference: primitive children plus override roots.
+        // Override owners were checked to be existing nodes above.
+        let mut edge_count = 0usize;
+        for count in self
+            .nodes
+            .values()
+            .map(|node| node.kind.children().len())
+            .chain(
+                self.overrides
+                    .values()
+                    .chain(self.gap_overrides.values())
+                    .map(|entries| entries.iter().count()),
+            )
+        {
+            edge_count = edge_count.checked_add(count).ok_or_else(|| {
+                DocumentError::new(
+                    DocumentErrorCode::LimitExceeded,
+                    "too many structural references",
+                )
+            })?;
+            if edge_count > MAX_DOCUMENT_NODES {
+                return Err(DocumentError::new(
+                    DocumentErrorCode::LimitExceeded,
+                    "document exceeds 100,000 structural references",
+                ));
+            }
+        }
+        let basis = &self.presentation_basis;
+        if basis.width == 0 || basis.height == 0 || basis.width > 65_536 || basis.height > 65_536 {
+            return Err(DocumentError::new(
+                DocumentErrorCode::InvalidPresentation,
+                "presentation dimensions must be in 1..=65536",
+            ));
+        }
+        for (id, asset) in &self.assets {
+            Self::validate_asset(id, asset)?;
+        }
+        if !matches!(
+            self.nodes.get(&self.root).map(|n| &n.kind),
+            Some(NodeKind::Sequence { .. })
+        ) {
+            return Err(DocumentError::new(
+                DocumentErrorCode::InvalidRoot,
+                "root must reference a Sequence",
+            ));
+        }
+        // Borrow identities during the walk; only the returned map owns them.
+        // The transient indexes are hashed; the result is built sorted.
+        let mut seen = crate::id_hash::id_set(self.nodes.len());
+        let mut stack: Vec<(&NodeId, usize, Option<&BeatNode>)> = vec![(&self.root, 0usize, None)];
+        let mut durations: crate::id_hash::IdMap<&NodeId, FrameDuration> =
+            crate::id_hash::id_map(self.nodes.len());
+        let no_overrides = self.overrides.is_empty() && self.gap_overrides.is_empty();
+        while let Some((id, depth, visited)) = stack.pop() {
+            if depth > MAX_DOCUMENT_DEPTH {
+                return Err(DocumentError::new(
+                    DocumentErrorCode::LimitExceeded,
+                    "document structural depth exceeds 256 edges",
+                ));
+            }
+            let Some(node) = visited else {
+                let node = self.nodes.get(id).ok_or_else(|| {
+                    DocumentError::new(
+                        DocumentErrorCode::MissingNode,
+                        format!("node {id} does not exist"),
+                    )
+                })?;
+                if !seen.insert(id) {
+                    return Err(DocumentError::new(
+                        DocumentErrorCode::InvalidTree,
+                        format!("node {id} has multiple parents or forms a cycle"),
+                    ));
+                }
+                validate_label(&node.label)?;
+                node.audio_edges.validate(&node.kind)?;
+                stack.push((id, depth, Some(node)));
+                if no_overrides {
+                    for child in node.kind.children().iter().rev() {
+                        stack.push((child, depth + 1, None));
+                    }
+                    continue;
+                }
+                // The same order as `children`: primitive, override, gap roots.
+                let overrides = self
+                    .overrides
+                    .get(id)
+                    .into_iter()
+                    .flat_map(|entries| entries.iter().map(|(_, root)| root));
+                let gaps = self
+                    .gap_overrides
+                    .get(id)
+                    .into_iter()
+                    .flat_map(|entries| entries.iter().map(|(_, root)| root));
+                let children: Vec<&NodeId> = node
+                    .kind
+                    .children()
+                    .iter()
+                    .chain(overrides)
+                    .chain(gaps)
+                    .collect();
+                for child in children.into_iter().rev() {
+                    stack.push((child, depth + 1, None));
+                }
+                continue;
+            };
+            let child_duration = |id: &NodeId| -> Result<FrameDuration, DocumentError> {
+                durations.get(id).copied().ok_or_else(|| {
+                    DocumentError::new(
+                        DocumentErrorCode::InvalidTree,
+                        format!("child {id} is not evaluated"),
+                    )
+                })
+            };
+            let duration = match &node.kind {
+                NodeKind::Source { source } => {
+                    positive(source.duration, "source")?;
+                    if let Some(window) = source.edit_window {
+                        window.validate(source.duration)?;
+                    }
+                    match &source.video {
+                        SourceVideo::Stream { asset, span } => {
+                            self.validate_video_span(asset, *span)?;
+                            source
+                                .video_mapping
+                                .selection_in_source(*span, source.duration)?;
+                        }
+                        SourceVideo::Still { asset } => {
+                            if !self.asset(asset)?.still_image {
+                                return Err(DocumentError::new(
+                                    DocumentErrorCode::SourceRangeInvalid,
+                                    format!("asset {asset} is not a still image"),
+                                ));
+                            }
+                        }
+                        SourceVideo::Blank => {}
+                    }
+                    if !matches!(source.video, SourceVideo::Stream { .. })
+                        && source.video_mapping != SourceVideoMapping::FitBeat
+                    {
+                        return Err(DocumentError::new(
+                            DocumentErrorCode::SourceRangeInvalid,
+                            "an explicit video duration requires selected video",
+                        ));
+                    }
+                    if let Some(audio) = &source.audio {
+                        self.validate_audio(audio)?;
+                        let frames = source.audio_mapping.duration_frames(source.duration)?;
+                        if matches!(
+                            source.audio_mapping,
+                            SourceAudioMapping::Placement { .. }
+                                | SourceAudioMapping::SelectedPlacement { .. }
+                        ) {
+                            source
+                                .audio_mapping
+                                .start_frames_with_offset(
+                                    source.audio_offset,
+                                    self.presentation_basis.frame_rate,
+                                )?
+                                .checked_add(frames)?;
+                        }
+                        source.audio_mapping.selection_frames_with_offset(
+                            source.duration,
+                            source.audio_offset,
+                            self.presentation_basis.frame_rate,
+                        )?;
+                    } else if source.audio_mapping != SourceAudioMapping::FitBeat {
+                        return Err(DocumentError::new(
+                            DocumentErrorCode::SourceRangeInvalid,
+                            "an explicit audio duration requires selected audio",
+                        ));
+                    }
+                    if matches!(source.video, SourceVideo::Blank) && source.audio.is_none() {
+                        return Err(DocumentError::new(
+                            DocumentErrorCode::SourceRangeInvalid,
+                            format!("source {id} has no media; use a Hold for blank time"),
+                        ));
+                    }
+                    if source.link == LinkRelation::Linked
+                        && (matches!(source.video, SourceVideo::Blank) || source.audio.is_none())
+                    {
+                        return Err(DocumentError::new(
+                            DocumentErrorCode::SourceRangeInvalid,
+                            "linked source requires both picture and audio",
+                        ));
+                    }
+                    source.duration
+                }
+                NodeKind::Sequence { children } => {
+                    let mut sum = FrameDuration::ZERO;
+                    for child in children {
+                        sum = sum.checked_add(child_duration(child)?)?;
+                    }
+                    sum
+                }
+                NodeKind::Hold { recipe } => {
+                    self.validate_hold(recipe)?;
+                    recipe.duration
+                }
+                NodeKind::Repeat {
+                    child,
+                    iterations,
+                    gap,
+                    escalation,
+                } => {
+                    iterations.validate()?;
+                    if let Some(escalation) = escalation {
+                        let plays = iterations.len();
+                        escalation.validate(plays).map_err(|error| {
+                            DocumentError::new(
+                                DocumentErrorCode::InvalidTree,
+                                format!("Repeat escalation: {error}"),
+                            )
+                        })?;
+                    }
+                    if let Some(gap) = gap {
+                        self.validate_hold(gap)?;
+                    }
+                    // The layout reads only these evaluated branch roots.
+                    let branches: BTreeMap<NodeId, FrameDuration> = self
+                        .children(id)
+                        .filter_map(|branch| {
+                            durations
+                                .get(branch)
+                                .map(|duration| (branch.clone(), *duration))
+                        })
+                        .collect();
+                    RepeatLayout::compile_with_gap_overrides(
+                        iterations,
+                        child,
+                        self.overrides.get(id),
+                        gap.as_ref().map_or(FrameDuration::ZERO, |gap| gap.duration),
+                        self.gap_overrides.get(id),
+                        &branches,
+                    )?
+                    .duration()
+                }
+                NodeKind::Retime {
+                    child,
+                    duration,
+                    mapping,
+                    purpose,
+                    pitch,
+                } => {
+                    positive(*duration, "retime")?;
+                    if let PitchPolicy::Shift { semitones } = pitch
+                        && (PitchPolicy::shifted(*semitones)? != *pitch
+                            || *purpose == RetimePurpose::Partition)
+                    {
+                        return Err(DocumentError::new(
+                            DocumentErrorCode::InvalidTree,
+                            "a pitch shift is a nonzero whole number of semitones within ±24 on an ordinary Retime",
+                        ));
+                    }
+                    if *purpose == RetimePurpose::Partition
+                        && (*duration != mapping.duration()
+                            || !node
+                                .audio_editorial_edges
+                                .permits_partition_policies(node.audio_edges))
+                    {
+                        return Err(DocumentError::new(
+                            DocumentErrorCode::InvalidTree,
+                            "a partition requires unity timing and Hard policies only on marked editorial sides",
+                        ));
+                    }
+                    let child_frames = child_duration(child)?.frames();
+                    if mapping.start().0 < 0
+                        || mapping.duration() == FrameDuration::ZERO
+                        || mapping.end().0 > child_frames
+                    {
+                        return Err(DocumentError::new(
+                            DocumentErrorCode::SourceRangeInvalid,
+                            format!(
+                                "retime {id} mapping must be a positive range within child {child}"
+                            ),
+                        ));
+                    }
+                    *duration
+                }
+            };
+            durations.insert(id, duration);
+        }
+        if seen.len() != self.nodes.len() {
+            return Err(DocumentError::new(
+                DocumentErrorCode::InvalidTree,
+                "document contains nodes unreachable from its root",
+            ));
+        }
+        // Every node was reached, so every node has a duration; the sorted
+        // node keys build the result in bulk.
+        Ok(self
+            .nodes
+            .keys()
+            .map(|id| (id.clone(), durations[id]))
+            .collect())
+    }
+
+    /// [`Self::structural_durations`] of `self`, where `self` is `base` with
+    /// one new Hold `leaf` inserted into the root Sequence and nothing else
+    /// structural changed, given `base`'s structural durations. Only the leaf
+    /// and the root can differ, so this repeats exactly the checks the
+    /// complete pass could newly fail, in its order: the node and edge
+    /// limits, the leaf's own checks, then the root's sum. Every other node,
+    /// asset, override and the basis were proven for `base`.
+    ///
+    /// `Ok(None)` when `self` is not such a document; the caller then runs the
+    /// complete pass. Debug builds compare the result with the complete pass
+    /// wherever it is shared (`command::shared_structure`).
+    ///
+    /// Provenance: the only caller (`insert_time::insert_leaf_shared`) passes
+    /// the result of reducing one `Command::Insert` of a single-node subtree
+    /// into the root of `base`. The checks below cover the root and the leaf;
+    /// debug builds also assert that every other node is unchanged, which the
+    /// release build takes from that provenance.
+    pub(crate) fn structural_durations_after_root_leaf(
+        &self,
+        base: &ProjectDocument,
+        base_durations: &BTreeMap<NodeId, FrameDuration>,
+        leaf: &NodeId,
+    ) -> Result<Option<BTreeMap<NodeId, FrameDuration>>, DocumentError> {
+        let (Some(NodeKind::Sequence { children }), Some(NodeKind::Sequence { children: before })) = (
+            self.nodes.get(&self.root).map(|node| &node.kind),
+            base.nodes.get(&base.root).map(|node| &node.kind),
+        ) else {
+            return Ok(None);
+        };
+        let Some(NodeKind::Hold { recipe }) = self.nodes.get(leaf).map(|node| &node.kind) else {
+            return Ok(None);
+        };
+        let Some(&base_root) = base_durations.get(&base.root) else {
+            return Ok(None);
+        };
+        if self.root != base.root
+            || self.schema_version != base.schema_version
+            || self.presentation_basis != base.presentation_basis
+            || base.nodes.contains_key(leaf)
+            || self.nodes.len() != base.nodes.len() + 1
+            || base_durations.len() != base.nodes.len()
+            || children.len() != before.len() + 1
+            || self.assets != base.assets
+            || self.overrides != base.overrides
+            || self.gap_overrides != base.gap_overrides
+            || self.nodes[&self.root].label != base.nodes[&base.root].label
+            || self.nodes[&self.root].audio_edges != base.nodes[&base.root].audio_edges
+        {
+            return Ok(None);
+        }
+        let Some(slot) = children.iter().position(|child| child == leaf) else {
+            return Ok(None);
+        };
+        if children[..slot] != before[..slot] || children[slot + 1..] != before[slot..] {
+            return Ok(None);
+        }
+        debug_assert!(
+            self.nodes
+                .iter()
+                .filter(|(id, _)| *id != leaf && **id != self.root)
+                .eq(base.nodes.iter().filter(|(id, _)| **id != base.root)),
+            "a root-leaf derivation was given a document with other node changes"
+        );
+        if self.schema_version != DOCUMENT_SCHEMA_VERSION {
+            return Err(DocumentError::new(
+                DocumentErrorCode::UnsupportedSchema,
+                format!(
+                    "unsupported document schema {}; expected {DOCUMENT_SCHEMA_VERSION}",
+                    self.schema_version
+                ),
+            ));
+        }
+        if self.nodes.len() > MAX_DOCUMENT_NODES {
+            return Err(DocumentError::new(
+                DocumentErrorCode::LimitExceeded,
+                "document exceeds 100,000 nodes or assets",
+            ));
+        }
+        // The complete pass counts every primitive child and override root.
+        let edges = self
+            .nodes
+            .values()
+            .map(|node| node.kind.children().len())
+            .chain(
+                self.overrides
+                    .values()
+                    .chain(self.gap_overrides.values())
+                    .map(|entries| entries.iter().count()),
+            )
+            .try_fold(0usize, |total, count| total.checked_add(count));
+        match edges {
+            None => {
+                return Err(DocumentError::new(
+                    DocumentErrorCode::LimitExceeded,
+                    "too many structural references",
+                ));
+            }
+            Some(edges) if edges > MAX_DOCUMENT_NODES => {
+                return Err(DocumentError::new(
+                    DocumentErrorCode::LimitExceeded,
+                    "document exceeds 100,000 structural references",
+                ));
+            }
+            Some(_) => {}
+        }
+        // The leaf is visited before the root's sum, at depth one.
+        let node = &self.nodes[leaf];
+        validate_label(&node.label)?;
+        node.audio_edges.validate(&node.kind)?;
+        self.validate_hold(recipe)?;
+        let root = base_root.checked_add(recipe.duration)?;
+        let mut durations = base_durations.clone();
+        durations.insert(leaf.clone(), recipe.duration);
+        durations.insert(self.root.clone(), root);
+        Ok(Some(durations))
+    }
+
+    pub(crate) fn validate_asset(id: &AssetId, asset: &AssetRecord) -> Result<(), DocumentError> {
+        validate_label(&asset.label)?;
+        let sha256 = asset.content_hash.len() == 64
+            && asset
+                .content_hash
+                .bytes()
+                .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b));
+        let generated = asset
+            .content_hash
+            .strip_prefix("blake3:")
+            .is_some_and(|digest| crate::GeneratedContentId::new(digest.to_owned()).is_ok());
+        if !sha256 && !generated {
+            return Err(DocumentError::new(
+                DocumentErrorCode::InvalidAsset,
+                format!("asset {id} requires a lowercase SHA-256 or typed BLAKE3 content hash"),
+            ));
+        }
+        if asset.video.is_none() && asset.audio.is_none() && !asset.still_image {
+            return Err(DocumentError::new(
+                DocumentErrorCode::InvalidAsset,
+                format!("asset {id} has no supported media stream"),
+            ));
+        }
+        if let Some(count) = asset.frame_count {
+            positive(count, "asset frame count")?;
+            if asset.video.is_none() {
+                return Err(DocumentError::new(
+                    DocumentErrorCode::InvalidAsset,
+                    format!("asset {id} frame count requires a video stream"),
+                ));
+            }
+        }
+        Ok(())
+    }
+    fn asset(&self, id: &AssetId) -> Result<&AssetRecord, DocumentError> {
+        self.assets.get(id).ok_or_else(|| {
+            DocumentError::new(
+                DocumentErrorCode::MissingAsset,
+                format!("asset {id} does not exist"),
+            )
+        })
+    }
+    fn validate_video_span(&self, id: &AssetId, span: SourceSpan) -> Result<(), DocumentError> {
+        if !self
+            .asset(id)?
+            .video
+            .is_some_and(|bounds| bounds.contains_span(span))
+        {
+            return Err(DocumentError::new(
+                DocumentErrorCode::SourceRangeInvalid,
+                format!(
+                    "video selection exceeds asset {id} stream bounds or uses a different time base"
+                ),
+            ));
+        }
+        Ok(())
+    }
+    fn validate_audio(&self, audio: &SourceAudio) -> Result<(), DocumentError> {
+        if !self
+            .asset(&audio.asset)?
+            .audio
+            .is_some_and(|bounds| bounds.contains_span(audio.span))
+        {
+            return Err(DocumentError::new(
+                DocumentErrorCode::SourceRangeInvalid,
+                format!(
+                    "audio selection exceeds asset {} stream bounds or uses a different time base",
+                    audio.asset
+                ),
+            ));
+        }
+        Ok(())
+    }
+    pub(crate) fn validate_hold(&self, recipe: &HoldRecipe) -> Result<(), DocumentError> {
+        positive(recipe.duration, "hold")?;
+        if let Some(context) = &recipe.picture_context {
+            context.validate()?;
+        }
+        match &recipe.video {
+            HoldVideo::Background => {}
+            HoldVideo::Freeze { asset, timestamp } => {
+                if !self
+                    .asset(asset)?
+                    .video
+                    .is_some_and(|bounds| bounds.contains(*timestamp))
+                {
+                    return Err(DocumentError::new(
+                        DocumentErrorCode::SourceRangeInvalid,
+                        format!("freeze timestamp is outside asset {asset} video"),
+                    ));
+                }
+            }
+            HoldVideo::Accepted { asset, frames } => {
+                let record = self.asset(asset)?;
+                if frames.start().0 < 0
+                    || frames.duration() != recipe.duration
+                    || !record
+                        .frame_count
+                        .is_some_and(|count| frames.end().0 <= count.frames())
+                {
+                    return Err(DocumentError::new(
+                        DocumentErrorCode::SourceRangeInvalid,
+                        format!(
+                            "accepted artifact {asset} must cover exactly the authored hold duration within its frame bounds"
+                        ),
+                    ));
+                }
+            }
+            HoldVideo::Generated { accepted } => {
+                self.validate_generated(recipe.duration, accepted)?;
+            }
+            HoldVideo::Reverse {
+                asset,
+                span,
+                origin,
+            }
+            | HoldVideo::Play {
+                asset,
+                span,
+                origin,
+            } => {
+                self.validate_video_span(asset, *span)?;
+                if let Some(origin) = origin {
+                    let base = span.start().time_base;
+                    let rate = self.presentation_basis.frame_rate;
+                    let delta = crate::ExactRatio::new(
+                        i128::from(rate.denominator()) * i128::from(base.denominator()),
+                        i128::from(rate.numerator()) * i128::from(base.numerator()),
+                    )?
+                    .checked_mul(crate::ExactRatio::integer(recipe.duration.frames()))?;
+                    if matches!(recipe.video, HoldVideo::Reverse { .. }) {
+                        origin.checked_sub(delta)?;
+                    } else {
+                        origin.checked_add(delta)?;
+                    }
+                }
+            }
+        }
+        match &recipe.audio {
+            HoldAudio::Silence => {}
+            HoldAudio::Tone {
+                frequency_hz,
+                level,
+            } => {
+                if !TONE_FREQUENCY_HZ.contains(frequency_hz) || level.millidecibels() > 0 {
+                    return Err(DocumentError::new(
+                        DocumentErrorCode::SourceRangeInvalid,
+                        "a tone is 20 Hz to 20 kHz at or below full scale",
+                    ));
+                }
+            }
+            HoldAudio::RoomTone { source } => self.validate_audio(source)?,
+            HoldAudio::Reverse { source } => {
+                self.validate_audio(source)?;
+                // The reversal reads its whole span in one bounded block.
+                let base = source.span.start().time_base;
+                let seconds = crate::ExactRatio::new(
+                    i128::from(source.span.end().ticks - source.span.start().ticks)
+                        * i128::from(base.numerator()),
+                    i128::from(base.denominator()),
+                )
+                .map_err(|_| {
+                    DocumentError::new(DocumentErrorCode::SourceRangeInvalid, "reverse span")
+                })?;
+                if seconds
+                    .checked_mul(crate::ExactRatio::integer(i64::from(
+                        crate::MIX_SAMPLE_RATE,
+                    )))
+                    .ok()
+                    .and_then(|samples| samples.ceil().ok())
+                    .is_none_or(|samples| samples > MAX_HOLD_EFFECT_INPUT_SAMPLES)
+                {
+                    return Err(DocumentError::new(
+                        DocumentErrorCode::SourceRangeInvalid,
+                        "a reversed span is at most 1,048,576 samples at 48 kHz (about 21.8 s)",
+                    ));
+                }
+            }
+            HoldAudio::Tail { maximum, .. } => {
+                positive(*maximum, "tail maximum")?;
+                if *maximum > recipe.duration {
+                    return Err(DocumentError::new(
+                        DocumentErrorCode::SourceRangeInvalid,
+                        "tail maximum exceeds hold duration",
+                    ));
+                }
+            }
+        }
+        Ok(())
+    }
+
+    fn validate_generated(
+        &self,
+        duration: FrameDuration,
+        accepted: &AcceptedGeneration,
+    ) -> Result<(), DocumentError> {
+        let artifact = &accepted.artifact;
+        if artifact
+            .content_aspect
+            .is_some_and(|[width, height]| width == 0 || height == 0)
+        {
+            return Err(DocumentError::new(
+                DocumentErrorCode::InvalidTree,
+                "a generated Hold's content aspect has positive dimensions",
+            ));
+        }
+        if artifact.sampling.project_rate() != self.presentation_basis.frame_rate
+            || duration > artifact.sampling.output_frame_count()
+        {
+            return Err(DocumentError::new(
+                DocumentErrorCode::SourceRangeInvalid,
+                "generated Hold sampling must use the project rate and cover its authored duration",
+            ));
+        }
+        self.validate_generated_asset(
+            &artifact.sampled_asset,
+            &artifact.sampled_object,
+            artifact.sampling.output_frame_count(),
+        )?;
+        self.validate_generated_asset(
+            &artifact.native_asset,
+            &artifact.native_object,
+            artifact.sampling.native_frame_count(),
+        )?;
+        self.validate_hold_fallback(&accepted.fallback)
+    }
+
+    fn validate_generated_asset(
+        &self,
+        id: &AssetId,
+        object: &crate::GeneratedObjectRef,
+        frames: FrameDuration,
+    ) -> Result<(), DocumentError> {
+        let record = self.asset(id)?;
+        if record.video.is_none()
+            || record.audio.is_some()
+            || record.still_image
+            || record.frame_count != Some(frames)
+            || record.content_hash != object.content().to_string()
+        {
+            return Err(DocumentError::new(
+                DocumentErrorCode::InvalidAsset,
+                format!(
+                    "generated asset {id} must be video-only and exactly match its object and frame count"
+                ),
+            ));
+        }
+        Ok(())
+    }
+
+    fn validate_hold_fallback(&self, fallback: &HoldFallback) -> Result<(), DocumentError> {
+        match fallback {
+            HoldFallback::Background => Ok(()),
+            HoldFallback::Freeze { asset, timestamp } => {
+                if self
+                    .asset(asset)?
+                    .video
+                    .is_some_and(|bounds| bounds.contains(*timestamp))
+                {
+                    Ok(())
+                } else {
+                    Err(DocumentError::new(
+                        DocumentErrorCode::SourceRangeInvalid,
+                        format!("freeze timestamp is outside asset {asset} video"),
+                    ))
+                }
+            }
+        }
+    }
+}
+
+fn json_limit() -> DocumentError {
+    DocumentError::new(
+        DocumentErrorCode::LimitExceeded,
+        "document JSON exceeds its byte limit (64 MiB maximum)",
+    )
+}
+
+/// Bounds allocation during serialization, including escaping and formatting.
+/// This is an in-memory sink; the pure domain layer performs no external I/O.
+struct BoundedJson {
+    bytes: Vec<u8>,
+    limit: usize,
+    exceeded: bool,
+}
+
+impl std::io::Write for BoundedJson {
+    fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
+        if bytes.len() > self.limit.saturating_sub(self.bytes.len()) {
+            self.exceeded = true;
+            return Err(std::io::Error::other("document JSON exceeds byte limit"));
+        }
+        self.bytes.extend_from_slice(bytes);
+        Ok(bytes.len())
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        Ok(())
+    }
+}
+
+/// The same compact JSON byte bound without retaining the emitted bytes.
+/// The serializer may still allocate its existing per-field temporary values.
+struct BoundedJsonCount {
+    bytes: usize,
+    limit: usize,
+    exceeded: bool,
+}
+
+impl std::io::Write for BoundedJsonCount {
+    fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
+        if bytes.len() > self.limit.saturating_sub(self.bytes) {
+            self.exceeded = true;
+            return Err(std::io::Error::other("document JSON exceeds byte limit"));
+        }
+        // The check above proves the sum fits and remains <= limit.
+        self.bytes += bytes.len();
+        Ok(bytes.len())
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod serialization_tests {
+    use super::*;
+
+    fn compact_document() -> ProjectDocument {
+        ProjectDocument::new(
+            ProjectId::new("compact-size").unwrap(),
+            RevisionId::new("initial").unwrap(),
+            PresentationBasis {
+                width: 1920,
+                height: 1080,
+                frame_rate: FrameRate::new(24, 1).unwrap(),
+                color_policy: ColorPolicy::SdrRec709,
+            },
+            NodeId::new("root").unwrap(),
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn compact_size_matches_exact_escaped_utf8_bytes_and_limit_errors() {
+        let mut document = compact_document();
+        for label in [
+            "",
+            "plain",
+            "é 🦀",
+            "\"quoted\"\\slash/\tline\r\n",
+            "{\"json\":\"text\"}",
+        ] {
+            document
+                .nodes
+                .get_mut(&NodeId::new("root").unwrap())
+                .unwrap()
+                .label = label.into();
+            let json = document.to_compact_json().unwrap();
+            assert_eq!(document.compact_json_size().unwrap(), json.len());
+            assert_eq!(
+                document.compact_json_size_with_limit(json.len()).unwrap(),
+                json.len()
+            );
+            assert!(
+                !json.ends_with('\n'),
+                "compact output has no terminal newline"
+            );
+            for limit in [0, json.len() - 1] {
+                // Compare the same compact serialization with the existing
+                // materializing sink, including the exact error vocabulary.
+                let mut materialized = BoundedJson {
+                    bytes: Vec::new(),
+                    limit,
+                    exceeded: false,
+                };
+                let result = serde_json::to_writer(&mut materialized, &document);
+                assert!(result.is_err() && materialized.exceeded);
+                assert_eq!(
+                    document.compact_json_size_with_limit(limit).unwrap_err(),
+                    json_limit()
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn compact_count_matches_chunked_materialization_and_never_wraps() {
+        use std::io::Write as _;
+
+        for limit in [0, 1, 5, 10] {
+            let mut count = BoundedJsonCount {
+                bytes: 0,
+                limit,
+                exceeded: false,
+            };
+            let mut materialized = BoundedJson {
+                bytes: Vec::new(),
+                limit,
+                exceeded: false,
+            };
+            for chunk in [b"".as_slice(), b"ab", b"cde", b"fghij", b"z"] {
+                let counted = count.write(chunk);
+                let stored = materialized.write(chunk);
+                assert_eq!(counted.is_ok(), stored.is_ok());
+                assert_eq!(count.bytes, materialized.bytes.len());
+                assert_eq!(count.exceeded, materialized.exceeded);
+                if let (Err(counted), Err(stored)) = (counted, stored) {
+                    assert_eq!(counted.to_string(), stored.to_string());
+                }
+            }
+            count.flush().unwrap();
+            materialized.flush().unwrap();
+        }
+
+        let mut count = BoundedJsonCount {
+            bytes: usize::MAX - 1,
+            limit: usize::MAX,
+            exceeded: false,
+        };
+        assert!(count.write(b"ab").is_err());
+        assert_eq!(count.bytes, usize::MAX - 1);
+        assert!(count.exceeded);
+        // Empty and fitting writes never clear the sticky error flag.
+        assert_eq!(count.write(b"").unwrap(), 0);
+        assert_eq!(count.write(b"x").unwrap(), 1);
+        assert_eq!(count.bytes, usize::MAX);
+        assert!(count.write(b"y").is_err());
+        assert_eq!(count.bytes, usize::MAX);
+        assert!(count.exceeded);
+    }
+
+    #[test]
+    fn canonical_json_limit_counts_escaping_utf8_and_terminal_newline() {
+        let mut document = ProjectDocument::new(
+            ProjectId::new("project").unwrap(),
+            RevisionId::new("initial").unwrap(),
+            PresentationBasis {
+                width: 1920,
+                height: 1080,
+                frame_rate: FrameRate::new(30, 1).unwrap(),
+                color_policy: ColorPolicy::SdrRec709,
+            },
+            NodeId::new("root").unwrap(),
+        )
+        .unwrap();
+        document
+            .nodes
+            .get_mut(&NodeId::new("root").unwrap())
+            .unwrap()
+            .label = "é \"quoted\"\nlabel".into();
+        let json = document.to_json().unwrap();
+        assert_eq!(document.to_json_with_limit(json.len()).unwrap(), json);
+        assert_eq!(ProjectDocument::from_json(&json).unwrap(), document);
+        for limit in [0, json.len() - 1, json.len() - 10] {
+            assert_eq!(
+                document.to_json_with_limit(limit).unwrap_err().code,
+                DocumentErrorCode::LimitExceeded
+            );
+        }
+    }
+}
+
+pub(crate) fn validate_label(label: &str) -> Result<(), DocumentError> {
+    if label.len() > 1024 || label.contains('\0') {
+        return Err(DocumentError::new(
+            DocumentErrorCode::LimitExceeded,
+            "labels must contain at most 1024 UTF-8 bytes and no NUL",
+        ));
+    }
+    Ok(())
+}
+
+fn positive(duration: FrameDuration, subject: &str) -> Result<(), DocumentError> {
+    if duration == FrameDuration::ZERO {
+        return Err(DocumentError::new(
+            DocumentErrorCode::InvalidDuration,
+            format!("{subject} duration must be positive"),
+        ));
+    }
+    Ok(())
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+pub enum DocumentErrorCode {
+    InvalidIdentity,
+    InvalidPresentation,
+    InvalidAsset,
+    InvalidRoot,
+    InvalidTree,
+    MissingNode,
+    MissingAsset,
+    SourceRangeInvalid,
+    InvalidDuration,
+    TimingOverflow,
+    LimitExceeded,
+    UnsupportedSchema,
+    InvalidJson,
+    InvalidAnchor,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct DocumentError {
+    pub code: DocumentErrorCode,
+    pub message: String,
+}
+
+impl DocumentError {
+    pub(crate) fn new(code: DocumentErrorCode, message: impl Into<String>) -> Self {
+        Self {
+            code,
+            message: message.into(),
+        }
+    }
+    pub(crate) fn json(error: serde_json::Error) -> Self {
+        Self::new(DocumentErrorCode::InvalidJson, error.to_string())
+    }
+}
+impl fmt::Display for DocumentError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.message)
+    }
+}
+impl Error for DocumentError {}
+impl From<TimeError> for DocumentError {
+    fn from(value: TimeError) -> Self {
+        Self::new(
+            if value == TimeError::Overflow {
+                DocumentErrorCode::TimingOverflow
+            } else {
+                DocumentErrorCode::InvalidDuration
+            },
+            value.to_string(),
+        )
+    }
+}
+
+/// serde's BTreeMap accepts duplicate JSON keys; authored identities must not.
+pub(crate) fn unique_map<'de, D, K, V>(deserializer: D) -> Result<BTreeMap<K, V>, D::Error>
+where
+    D: Deserializer<'de>,
+    K: Deserialize<'de> + Ord,
+    V: Deserialize<'de>,
+{
+    struct Visitor<K, V>(std::marker::PhantomData<(K, V)>);
+    impl<'de, K: Deserialize<'de> + Ord, V: Deserialize<'de>> de::Visitor<'de> for Visitor<K, V> {
+        type Value = BTreeMap<K, V>;
+        fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            f.write_str("an object with unique identity keys")
+        }
+        fn visit_map<A: de::MapAccess<'de>>(self, mut access: A) -> Result<Self::Value, A::Error> {
+            let mut values = BTreeMap::new();
+            while let Some((key, value)) = access.next_entry()? {
+                if values.insert(key, value).is_some() {
+                    return Err(de::Error::custom("duplicate identity key"));
+                }
+                if values.len() > MAX_DOCUMENT_NODES.max(MAX_DOCUMENT_ASSETS) {
+                    return Err(de::Error::custom("identity map exceeds 100,000 entries"));
+                }
+            }
+            Ok(values)
+        }
+    }
+    deserializer.deserialize_map(Visitor(std::marker::PhantomData))
+}
+
+/// A document proved valid, with the durations its validation computed.
+///
+/// The document is shared and never mutably reachable, so the proof cannot be
+/// invalidated. Inside [`ValidatedDocument::scope`], validation queries on this
+/// exact document return the retained result instead of repeating the
+/// whole-document traversal: a pure function memoized on an immutable value.
+#[derive(Debug, Clone)]
+pub struct ValidatedDocument {
+    document: Arc<ProjectDocument>,
+    durations: Arc<BTreeMap<NodeId, FrameDuration>>,
+    /// Retained per-owner audio binding work, for the next validation.
+    bindings: Arc<crate::audio_binding::BindingProof>,
+}
+
+impl ValidatedDocument {
+    /// Validate a document once.
+    pub fn new(document: Arc<ProjectDocument>) -> Result<Self, DocumentError> {
+        let (durations, bindings) = document.validated_with_context_limits(
+            crate::MAX_CAPTURED_FRAMING_RECORDS,
+            crate::MAX_GAIN_RECORDS,
+            None,
+            None,
+        )?;
+        Ok(Self {
+            document,
+            durations: Arc::new(durations),
+            bindings: Arc::new(bindings),
+        })
+    }
+
+    /// A result whose complete validation produced `durations` and `bindings`.
+    pub(crate) fn from_validation(
+        document: ProjectDocument,
+        durations: BTreeMap<NodeId, FrameDuration>,
+        bindings: crate::audio_binding::BindingProof,
+    ) -> Self {
+        Self {
+            document: Arc::new(document),
+            durations: Arc::new(durations),
+            bindings: Arc::new(bindings),
+        }
+    }
+
+    pub fn document(&self) -> &Arc<ProjectDocument> {
+        &self.document
+    }
+
+    /// Apply a guarded patch and validate the result once. A stored patch
+    /// names every binding owner and timing table it changes, so unchanged
+    /// owners reuse their proved checks (see `AudioBindingState`).
+    pub fn apply_patch(&self, patch: &crate::DocumentPatch) -> Result<Self, crate::EditError> {
+        let next = patch.apply_stored(&self.document)?;
+        let (durations, bindings) = next.validate_after(self, patch.audio_bindings.as_ref())?;
+        Ok(Self::from_validation(next, durations, bindings))
+    }
+
+    /// Recompute this document's validation from scratch, outside any
+    /// retained scope, and require exactly the retained result. Hosts call
+    /// this in debug builds to check that reused validation matched the
+    /// complete one.
+    pub fn check_against_complete_validation(&self) -> Result<(), DocumentError> {
+        let (durations, bindings) = self.document.validated_with_context_limits(
+            crate::MAX_CAPTURED_FRAMING_RECORDS,
+            crate::MAX_GAIN_RECORDS,
+            None,
+            None,
+        )?;
+        if durations != *self.durations || bindings != *self.bindings {
+            return Err(DocumentError::new(
+                DocumentErrorCode::InvalidTree,
+                "retained validation differs from complete validation",
+            ));
+        }
+        Ok(())
+    }
+
+    pub(crate) fn binding_proof(&self) -> &crate::audio_binding::BindingProof {
+        &self.bindings
+    }
+
+    pub(crate) fn into_document(self) -> Arc<ProjectDocument> {
+        self.document
+    }
+
+    pub fn durations(&self) -> Result<&BTreeMap<NodeId, FrameDuration>, DocumentError> {
+        self.document.require_integral_clocks()?;
+        Ok(&self.durations)
+    }
+
+    pub(crate) fn recipe_durations(&self) -> &BTreeMap<NodeId, FrameDuration> {
+        &self.durations
+    }
+
+    /// Run `f` with this document's validation retained for queries on it.
+    pub fn scope<R>(&self, f: impl FnOnce() -> R) -> R {
+        let _guard = validated::enter(&self.document, &self.durations, &self.bindings);
+        f()
+    }
+}
+
+impl ProjectDocument {
+    /// Complete validation of an intermediate edit result. Inside a validated
+    /// document's scope, binding owners unchanged from that document reuse
+    /// its proof exactly as a committed result does (`validate_after`): the
+    /// reused checks are pure functions of the binding and the immutable
+    /// tables it names, so the outcome equals [`Self::validated_with_proof`].
+    pub(crate) fn validated_in_scope(
+        &self,
+    ) -> Result<
+        (
+            BTreeMap<NodeId, FrameDuration>,
+            crate::audio_binding::BindingProof,
+        ),
+        DocumentError,
+    > {
+        match validated::innermost_proof().filter(|_| crate::command_work::local()) {
+            Some((head, proof)) => {
+                let patch =
+                    crate::AudioBindingPatch::between(&head.audio_bindings, &self.audio_bindings);
+                self.validated_with_context_limits(
+                    crate::MAX_CAPTURED_FRAMING_RECORDS,
+                    crate::MAX_GAIN_RECORDS,
+                    Some((&proof, patch.as_ref())),
+                    None,
+                )
+            }
+            None => self.validated_with_proof(),
+        }
+    }
+
+    /// `state.validate_for(self)`, reusing the scoped proof as
+    /// [`Self::validated_in_scope`] does.
+    pub(crate) fn validate_bindings_in_scope(
+        &self,
+        state: &crate::AudioBindingState,
+    ) -> Result<(), DocumentError> {
+        match validated::innermost_proof().filter(|_| crate::command_work::local()) {
+            Some((head, proof)) => {
+                let patch = crate::AudioBindingPatch::between(&head.audio_bindings, state);
+                state
+                    .validate_for_after(self, Some((&proof, patch.as_ref())))
+                    .map(|_| ())
+            }
+            None => state.validate_for(self),
+        }
+    }
+
+    /// The durations retained for this exact document by an enclosing
+    /// validation scope, shared rather than copied.
+    pub(crate) fn retained_durations(&self) -> Option<Arc<BTreeMap<NodeId, FrameDuration>>> {
+        validated::durations(self)
+    }
+
+    /// Run `f` with `self` treated as validated with `durations`.
+    ///
+    /// Callers prove that complete validation of `self` would succeed and
+    /// return exactly `durations`; the usual proof is that `self` differs
+    /// from a validated document only in its audio binding state, which
+    /// `AudioBindingState::validate_for` accepted against that document (no
+    /// other invariant reads the binding state, and none of them reads it).
+    /// The borrow keeps `self` unchanged while the scope exists.
+    pub(crate) fn with_proved_durations<R>(
+        &self,
+        durations: Arc<BTreeMap<NodeId, FrameDuration>>,
+        f: impl FnOnce() -> R,
+    ) -> R {
+        #[cfg(debug_assertions)]
+        {
+            let complete = self.durations_with_context_limits(
+                crate::MAX_CAPTURED_FRAMING_RECORDS,
+                crate::MAX_GAIN_RECORDS,
+            );
+            assert!(
+                complete
+                    .as_ref()
+                    .is_ok_and(|complete| *complete == *durations),
+                "proved durations differ from complete validation"
+            );
+        }
+        let _guard = validated::enter_borrowed(self, durations);
+        f()
+    }
+}
+
+impl std::ops::Deref for ValidatedDocument {
+    type Target = ProjectDocument;
+    fn deref(&self) -> &ProjectDocument {
+        &self.document
+    }
+}
+
+impl ProjectDocument {
+    /// Parse and validate once, retaining the proof.
+    pub fn from_json_validated(json: &str) -> Result<ValidatedDocument, DocumentError> {
+        if json.len() > MAX_DOCUMENT_JSON_BYTES {
+            return Err(json_limit());
+        }
+        crate::framing::preflight(json)?;
+        crate::picture_context::preflight(json)?;
+        let wire: DocumentWire = serde_json::from_str(json).map_err(DocumentError::json)?;
+        ValidatedDocument::new(Arc::new(Self::from_wire(wire)))
+    }
+}
+
+impl PartialEq for ValidatedDocument {
+    fn eq(&self, other: &Self) -> bool {
+        self.document == other.document
+    }
+}
+
+mod validated {
+    use super::*;
+    use std::cell::RefCell;
+
+    /// A scoped document, its durations, and for a [`ValidatedDocument`] the
+    /// shared document with its binding proof.
+    type Entry = (
+        *const ProjectDocument,
+        Arc<BTreeMap<NodeId, FrameDuration>>,
+        Option<Proved>,
+    );
+    pub(super) type Proved = (
+        Arc<ProjectDocument>,
+        Arc<crate::audio_binding::BindingProof>,
+    );
+
+    thread_local! {
+        static SCOPES: RefCell<Vec<Entry>> = const { RefCell::new(Vec::new()) };
+    }
+
+    pub(super) struct Guard;
+
+    impl Drop for Guard {
+        fn drop(&mut self) {
+            SCOPES.with(|scopes| {
+                scopes.borrow_mut().pop();
+            });
+        }
+    }
+
+    /// The guard lives inside `ValidatedDocument::scope`, which borrows the
+    /// shared document for the whole scope, so the address cannot be reused
+    /// by another document while the entry exists.
+    pub(super) fn enter(
+        document: &Arc<ProjectDocument>,
+        durations: &Arc<BTreeMap<NodeId, FrameDuration>>,
+        bindings: &Arc<crate::audio_binding::BindingProof>,
+    ) -> Guard {
+        SCOPES.with(|scopes| {
+            scopes.borrow_mut().push((
+                Arc::as_ptr(document),
+                Arc::clone(durations),
+                Some((Arc::clone(document), Arc::clone(bindings))),
+            ));
+        });
+        Guard
+    }
+
+    /// The innermost validated document in scope and its binding proof.
+    pub(super) fn innermost_proof() -> Option<Proved> {
+        SCOPES.with(|scopes| {
+            scopes
+                .borrow()
+                .iter()
+                .rev()
+                .find_map(|(_, _, proved)| proved.clone())
+        })
+    }
+
+    /// [`enter`] for a document borrowed for the guard's whole lifetime.
+    pub(super) fn enter_borrowed(
+        document: &ProjectDocument,
+        durations: Arc<BTreeMap<NodeId, FrameDuration>>,
+    ) -> Guard {
+        SCOPES.with(|scopes| {
+            scopes
+                .borrow_mut()
+                .push((std::ptr::from_ref(document), durations, None));
+        });
+        Guard
+    }
+
+    pub(super) fn durations(
+        document: &ProjectDocument,
+    ) -> Option<Arc<BTreeMap<NodeId, FrameDuration>>> {
+        SCOPES.with(|scopes| {
+            scopes
+                .borrow()
+                .iter()
+                .rev()
+                .find(|(pointer, _, _)| std::ptr::eq(*pointer, document))
+                .map(|(_, durations, _)| Arc::clone(durations))
+        })
+    }
+}
+
+#[cfg(test)]
+#[path = "validated_tests.rs"]
+mod validated_tests;
+
+#[cfg(test)]
+mod identity_order_tests {
+    use super::*;
+
+    /// The inline comparison equals the byte (and text) order, including
+    /// shared prefixes of every length around the eight-byte chunks.
+    #[test]
+    fn identity_order_is_the_text_order() {
+        let mut state = 0x9e37_79b9_7f4a_7c15_u64;
+        let mut next = move |bound: u64| {
+            state = state
+                .wrapping_mul(6_364_136_223_846_793_005)
+                .wrapping_add(1_442_695_040_888_963_407);
+            (state >> 33) % bound
+        };
+        let alphabet = b"-0_aZ";
+        let mut texts = Vec::new();
+        for _ in 0..600 {
+            let length = 1 + next(40) as usize;
+            texts.push(
+                (0..length)
+                    .map(|_| alphabet[next(alphabet.len() as u64) as usize] as char)
+                    .collect::<String>(),
+            );
+        }
+        // Long shared prefixes that differ only late or only in length.
+        for length in 1..=33 {
+            let base = "perf-12345-".repeat(4)[..length].to_owned();
+            texts.push(base.clone());
+            texts.push(format!("{base}a"));
+            texts.push(format!("{base}-"));
+        }
+        let ids: Vec<NodeId> = texts
+            .iter()
+            .map(|text| NodeId::new(text.clone()).unwrap())
+            .collect();
+        for (a, left) in texts.iter().zip(&ids) {
+            for (b, right) in texts.iter().zip(&ids) {
+                assert_eq!(left.cmp(right), a.as_bytes().cmp(b.as_bytes()), "{a} {b}");
+                assert_eq!(left.cmp(right), a.cmp(b));
+                assert_eq!(left.partial_cmp(right), Some(a.cmp(b)));
+                assert_eq!(left == right, a == b);
+            }
+        }
+    }
+}

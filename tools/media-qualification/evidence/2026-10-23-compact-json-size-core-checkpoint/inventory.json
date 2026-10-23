@@ -1,0 +1,96 @@
+{
+  "files": [
+    {
+      "path": "README.md",
+      "bytes": 832,
+      "sha256": "37d6bf14d8b01c7f594d99ca8de1aad72ca6981c4658cb02b73cecde2489eb47"
+    },
+    {
+      "path": "candidate-all-core-binaries.json.gz",
+      "bytes": 41398,
+      "sha256": "44bcad5177d0c420742faf9e4ea89e71d66af1248ddad7f39e8c1e33ca0bcdcc"
+    },
+    {
+      "path": "candidate-all-core-build-receipt.json",
+      "bytes": 291,
+      "sha256": "b2a3c6191f685a859bb65564d2bd2390a4b602f1ef737a84d08f8dc0307deed7"
+    },
+    {
+      "path": "candidate-all-core-build.log.gz",
+      "bytes": 250,
+      "sha256": "035e854dc09fe8cf27afc304dc00d4b90e54be987d495cb6006714bf3f52a7a4"
+    },
+    {
+      "path": "candidate-all-core-inputs.json",
+      "bytes": 583,
+      "sha256": "b783a007ca4b3ab356c3488372a276c0ffa7ad4f9f34b31f1b0743b121e44317"
+    },
+    {
+      "path": "candidate-all-core-list.json.gz",
+      "bytes": 41712,
+      "sha256": "beae04239bb6f097d1d21ab76a92b4e6426342f249167ac357e193644c717ded"
+    },
+    {
+      "path": "candidate-all-core-list.log.gz",
+      "bytes": 143,
+      "sha256": "bd6683c2a8bf483d089a3136fb16ca1c122e491f963377754be1d94185f8ae5b"
+    },
+    {
+      "path": "candidate-all-core-result.json",
+      "bytes": 194,
+      "sha256": "0c06cdfcfefea53b2f61bf4e658908be96020a68abac972300cb7a7e7f40fd6d"
+    },
+    {
+      "path": "candidate-all-core-run-receipt.json",
+      "bytes": 493,
+      "sha256": "053ea6949e864f24d6af6e282d782e2ad108be0bc43e8d95bff08c56b6d39525"
+    },
+    {
+      "path": "candidate-all-core-run.log.gz",
+      "bytes": 45406,
+      "sha256": "ad1ef01644a8b806fb0454412aa1adf39d4c4d0118f78084a9b878a86c720316"
+    },
+    {
+      "path": "candidate-all-core-source-identities.json.gz",
+      "bytes": 98992,
+      "sha256": "69fe362f6d71912f6b9bf868a29501ab7825c4bc56f7820d24c6b2995e1a3a01"
+    },
+    {
+      "path": "crates__deadpan-core__src__document.rs.rs.txt",
+      "bytes": 101989,
+      "sha256": "2763bb86bbaba1afe9f11ade4e0077c154ffc12c9452bc2836fc9b0105865d10"
+    },
+    {
+      "path": "crates__deadpan-core__tests__compact_audio_bindings.rs.rs.txt",
+      "bytes": 20182,
+      "sha256": "31482d26cc21208520528d6e58c9164976aaaa288e0c684b29e86c44e5d60a01"
+    },
+    {
+      "path": "expected-counts.json",
+      "bytes": 242,
+      "sha256": "39076da1cf2d75d1c60d4a933f17ee71b3fe61d74e8079107857bb0f91908e48"
+    },
+    {
+      "path": "qualify_all_ui.py",
+      "bytes": 5434,
+      "sha256": "8139dd14f2735441e014ed29a287366e76445880f6570f7a5ac464c0395f1d95"
+    },
+    {
+      "path": "review-budget.json",
+      "bytes": 2080,
+      "sha256": "210c6fe15cc3500fecfc9a61657f3450d51a17f8bfaa16c5b2c503f933616cea"
+    },
+    {
+      "path": "review-general.json",
+      "bytes": 1060,
+      "sha256": "9bb9a70a3f1ea79f270900d5c8daa4e57ee25a4978bea2bdebc372a4f53c76db"
+    },
+    {
+      "path": "source-reviews.json",
+      "bytes": 737,
+      "sha256": "b3e4c31ee3f6c22474d90200e61ffbe9225160a0792fd43f61b4719fbd2bc1b8"
+    }
+  ],
+  "total_files": 18,
+  "total_bytes": 362018
+}
