@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-23T10:06:21Z",
+  "updated_at": "2026-10-23T10:30:00Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "The further isolated profile is complete: nine guarded runs pass, with exact phase counts and successful refresh markers. Diagnostic medians locate 108.336666 ms in semantic planning and 117.677375 ms in Store command preparation, compared with 7.352000 ms writing, 6.503167 ms durable commit and 4.204375 ms refresh. This directs the next investigation toward planning and validation while preserving durability. Totals are nested, timer overhead and queue wait remain unqualified, and no additional production gain is claimed. Evidence verifies 129 files /1,718,991 bytes. The qualified shared-preparation change still improves the separate five-pair offscreen median from 393.261916 to 275.697709 ms. The 100 ms/50 ms targets remain open; coverage stays 89%, with 8/24 sections complete. Existing validated-result reuse is under investigation; no new optimization has been implemented.",
+  "focus": "A private one-site prototype reuses the validated leaf result from the existing apply_with_result API. Five quiet pairs pass all replay and provenance guards and measure offscreen medians of 272.684834 ms for control and 268.738125 ms for the prototype, a small diagnostic difference of about 4 ms. This is a separate batch, not a percentile or target PASS. The same one-line change plus a pause/setter, binding/mark and inverse differential test is now an uncommitted production candidate. Static reviews report no defects; the focused test is compiling, with full Core, broader, UI, strict, media/native and final timing checks queued. Prototype evidence verifies 118 files /1,356,170 bytes. The qualified shared-preparation improvement remains unchanged, as do coverage of 89%, 8/24 sections complete and the open 100 ms/50 ms targets.",
   "features": [
     {
       "id": "editing",
@@ -102,7 +102,7 @@
         "DP-18",
         "DP-24"
       ],
-      "note": "Shared Compound preparation avoids a separate native preview replay while preserving transactional authority and fallible runtime preparation before writes. Broader, UI, strict, media/history, native and portable checks pass. Five quiet native pairs improve the offscreen first-pause median from 393.261916 to 275.697709 ms, about 29.9%. Five samples do not establish a percentile or the 100 ms/50 ms edit targets. Remaining native latency, worker-memory and sleep qualification stay open. A later isolated profile places the remaining cost in semantic planning and Store preparation; writing and durable commit are much smaller. Reusing existing validated results is under investigation, with no new code or gain claim."
+      "note": "Shared Compound preparation avoids a separate native preview replay while preserving transactional authority and fallible runtime preparation before writes. Broader, UI, strict, media/history, native and portable checks pass. Five quiet native pairs improve the offscreen first-pause median from 393.261916 to 275.697709 ms, about 29.9%. Five samples do not establish a percentile or the 100 ms/50 ms edit targets. Remaining native latency, worker-memory and sleep qualification stay open. A later isolated profile places the remaining cost in semantic planning and Store preparation; writing and durable commit are much smaller. Reusing existing validated results is under investigation, with no new code or gain claim. A private validated-leaf-result reuse experiment measures a further small difference in five pairs. Its one-line production candidate is uncommitted and awaits full qualification."
     },
     {
       "id": "models",
@@ -1061,6 +1061,14 @@
       "revision": "fed9ed44f30bc9c56f689c843da8d9d01b0719af",
       "retrospective": false,
       "summary": "Completed a finer isolated prepared-Compound profile with nine rotated root-control/off/on trials. All seven replay checks and source/binary/authored-input guards pass per run; all WALs stay empty. Three strict profile parsers require one Macro, one Store commit, exact phase counts, nested timing containment and a successful refresh marker; six controls emit no profile. On medians locate 108.336666 ms semantic planning and 117.677375 ms Store preparation, versus 7.352000 ms writing, 6.503167 ms durable commit and 4.204375 ms refresh. Queue wait and calibrated overhead remain unmeasured; the empty-bank callback is not a bound for copied-content programs. Root-control medians of 269.306167/272.089542 ms are a separate diagnostic batch and do not replace the qualified five-pair improvement. The 129-file, 1,718,991-byte inventory, exact instrumented sources and independent timing audit are verified. No new production optimization, percentile or target PASS. The next investigation checks existing validated-result reuse without weakening admission, work bounds or durability; coverage and gates are unchanged."
+    },
+    {
+      "date": "2026-10-23",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "0244cddcc9e530895930268068472c0bbd3e0588",
+      "retrospective": false,
+      "summary": "An isolated one-site prototype uses the existing validated apply_with_result document instead of computing an edit and applying its forward patch again. All charge, mutation, identity/provider, Store admission and history work remains. The locked release build and ten fresh-package guarded replays pass. Five quiet pairs measure control/prototype input-to-commit medians of 270.121541/266.234959 ms and offscreen composition of 272.684834/268.738125 ms, about 4 ms apart. These short diagnostics are not pooled with earlier batches and establish no percentile or target PASS. The 118-file, 1,356,170-byte inventory and exact sources/binaries are verified. The same one-line change plus a focused differential pause/setter test is now an uncommitted candidate; reviews report no defects, but focused/full Core, broader, UI, strict, media/native and final performance checks remain owed. No requirement or gate closes."
     }
   ]
 }
