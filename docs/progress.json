@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-23T10:51:39Z",
+  "updated_at": "2026-10-23T11:04:51Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "The uncommitted leaf-result reuse candidate passes the focused differential test, all 1,514 Core tests across 69 binaries (zero skipped), all 3,505 broader selected tests (740 skipped), and all 1,296 UI-feature tests (eleven skipped), with exact source/input/executable guards. The initial test failed on a raw primary mark lookup after a split; its corrected logical named-mark query retains frame 12 and all replay, binding/mark, inverse and immutable-entry assertions. The helper stayed unchanged during the fixture correction. The 86-file Core checkpoint retains that failure and correction. Strict checks are running; media/native, portable and final timing checks remain queued. The private five-pair difference of about 4 ms stays separate from production qualification. Coverage remains 89%, with 8/24 sections complete and no new target or gate PASS.",
+  "focus": "The uncommitted leaf-result reuse candidate passes its focused differential test, all 1,514 Core tests (zero skipped), all 3,505 broader selected tests (740 skipped), all 1,296 UI-feature tests (eleven skipped), strict Core/UI Clippy and formatting. Debug/release media verifies 15 pictures and 24,024 samples, and release verifies 19 pictures and 30,430 samples, with canonical PCM/history controls. Both suite tests reported as leaky pass isolated reruns from the same archived binaries without that warning. The corrected logical named-mark fixture and its initial failure remain in the Core checkpoint; the production helper stayed unchanged. The final native release build is running; native/portable checks and final paired timing measurements remain owed. The private five-pair difference of about 4 ms stays separate from production qualification. Coverage remains 89%, with 8/24 sections complete and no new target or gate PASS.",
   "features": [
     {
       "id": "editing",
