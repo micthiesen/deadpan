@@ -1,0 +1,262 @@
+[
+  {
+    "name": "baseline-1-make",
+    "command": [
+      "/tmp/deadpan-first-pause-profile-2026-10-22/baseline-perf",
+      "make-large",
+      "/tmp/deadpan-first-pause-profile-2026-10-22/compact-edges-controlled/baseline-1.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.19770225044339895
+  },
+  {
+    "name": "baseline-1-edit",
+    "command": [
+      "/tmp/deadpan-first-pause-profile-2026-10-22/baseline-perf",
+      "edit",
+      "/tmp/deadpan-first-pause-profile-2026-10-22/compact-edges-controlled/baseline-1.deadpan",
+      "--cycles",
+      "2",
+      "--kinds",
+      "pause"
+    ],
+    "exit": 0,
+    "seconds": 0.5901394998654723
+  },
+  {
+    "name": "instrumented-1-make",
+    "command": [
+      "/tmp/deadpan-first-pause-profile-2026-10-22/compact-edges-perf",
+      "make-large",
+      "/tmp/deadpan-first-pause-profile-2026-10-22/compact-edges-controlled/instrumented-1.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.18874166626483202
+  },
+  {
+    "name": "instrumented-1-edit",
+    "command": [
+      "/tmp/deadpan-first-pause-profile-2026-10-22/compact-edges-perf",
+      "edit",
+      "/tmp/deadpan-first-pause-profile-2026-10-22/compact-edges-controlled/instrumented-1.deadpan",
+      "--cycles",
+      "2",
+      "--kinds",
+      "pause"
+    ],
+    "exit": 0,
+    "seconds": 0.488666458055377
+  },
+  {
+    "name": "instrumented-2-make",
+    "command": [
+      "/tmp/deadpan-first-pause-profile-2026-10-22/compact-edges-perf",
+      "make-large",
+      "/tmp/deadpan-first-pause-profile-2026-10-22/compact-edges-controlled/instrumented-2.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.18498650006949902
+  },
+  {
+    "name": "instrumented-2-edit",
+    "command": [
+      "/tmp/deadpan-first-pause-profile-2026-10-22/compact-edges-perf",
+      "edit",
+      "/tmp/deadpan-first-pause-profile-2026-10-22/compact-edges-controlled/instrumented-2.deadpan",
+      "--cycles",
+      "2",
+      "--kinds",
+      "pause"
+    ],
+    "exit": 0,
+    "seconds": 0.485342750325799
+  },
+  {
+    "name": "baseline-2-make",
+    "command": [
+      "/tmp/deadpan-first-pause-profile-2026-10-22/baseline-perf",
+      "make-large",
+      "/tmp/deadpan-first-pause-profile-2026-10-22/compact-edges-controlled/baseline-2.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.18598891701549292
+  },
+  {
+    "name": "baseline-2-edit",
+    "command": [
+      "/tmp/deadpan-first-pause-profile-2026-10-22/baseline-perf",
+      "edit",
+      "/tmp/deadpan-first-pause-profile-2026-10-22/compact-edges-controlled/baseline-2.deadpan",
+      "--cycles",
+      "2",
+      "--kinds",
+      "pause"
+    ],
+    "exit": 0,
+    "seconds": 0.5477148750796914
+  },
+  {
+    "name": "baseline-3-make",
+    "command": [
+      "/tmp/deadpan-first-pause-profile-2026-10-22/baseline-perf",
+      "make-large",
+      "/tmp/deadpan-first-pause-profile-2026-10-22/compact-edges-controlled/baseline-3.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.1864666249603033
+  },
+  {
+    "name": "baseline-3-edit",
+    "command": [
+      "/tmp/deadpan-first-pause-profile-2026-10-22/baseline-perf",
+      "edit",
+      "/tmp/deadpan-first-pause-profile-2026-10-22/compact-edges-controlled/baseline-3.deadpan",
+      "--cycles",
+      "2",
+      "--kinds",
+      "pause"
+    ],
+    "exit": 0,
+    "seconds": 0.5530710415914655
+  },
+  {
+    "name": "instrumented-3-make",
+    "command": [
+      "/tmp/deadpan-first-pause-profile-2026-10-22/compact-edges-perf",
+      "make-large",
+      "/tmp/deadpan-first-pause-profile-2026-10-22/compact-edges-controlled/instrumented-3.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.1897419998422265
+  },
+  {
+    "name": "instrumented-3-edit",
+    "command": [
+      "/tmp/deadpan-first-pause-profile-2026-10-22/compact-edges-perf",
+      "edit",
+      "/tmp/deadpan-first-pause-profile-2026-10-22/compact-edges-controlled/instrumented-3.deadpan",
+      "--cycles",
+      "2",
+      "--kinds",
+      "pause"
+    ],
+    "exit": 0,
+    "seconds": 0.4875331250950694
+  },
+  {
+    "name": "instrumented-4-make",
+    "command": [
+      "/tmp/deadpan-first-pause-profile-2026-10-22/compact-edges-perf",
+      "make-large",
+      "/tmp/deadpan-first-pause-profile-2026-10-22/compact-edges-controlled/instrumented-4.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.18663520738482475
+  },
+  {
+    "name": "instrumented-4-edit",
+    "command": [
+      "/tmp/deadpan-first-pause-profile-2026-10-22/compact-edges-perf",
+      "edit",
+      "/tmp/deadpan-first-pause-profile-2026-10-22/compact-edges-controlled/instrumented-4.deadpan",
+      "--cycles",
+      "2",
+      "--kinds",
+      "pause"
+    ],
+    "exit": 0,
+    "seconds": 0.4880469162017107
+  },
+  {
+    "name": "baseline-4-make",
+    "command": [
+      "/tmp/deadpan-first-pause-profile-2026-10-22/baseline-perf",
+      "make-large",
+      "/tmp/deadpan-first-pause-profile-2026-10-22/compact-edges-controlled/baseline-4.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.18690945766866207
+  },
+  {
+    "name": "baseline-4-edit",
+    "command": [
+      "/tmp/deadpan-first-pause-profile-2026-10-22/baseline-perf",
+      "edit",
+      "/tmp/deadpan-first-pause-profile-2026-10-22/compact-edges-controlled/baseline-4.deadpan",
+      "--cycles",
+      "2",
+      "--kinds",
+      "pause"
+    ],
+    "exit": 0,
+    "seconds": 0.5548312915489078
+  },
+  {
+    "name": "baseline-5-make",
+    "command": [
+      "/tmp/deadpan-first-pause-profile-2026-10-22/baseline-perf",
+      "make-large",
+      "/tmp/deadpan-first-pause-profile-2026-10-22/compact-edges-controlled/baseline-5.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.18570841755717993
+  },
+  {
+    "name": "baseline-5-edit",
+    "command": [
+      "/tmp/deadpan-first-pause-profile-2026-10-22/baseline-perf",
+      "edit",
+      "/tmp/deadpan-first-pause-profile-2026-10-22/compact-edges-controlled/baseline-5.deadpan",
+      "--cycles",
+      "2",
+      "--kinds",
+      "pause"
+    ],
+    "exit": 0,
+    "seconds": 0.5469987094402313
+  },
+  {
+    "name": "instrumented-5-make",
+    "command": [
+      "/tmp/deadpan-first-pause-profile-2026-10-22/compact-edges-perf",
+      "make-large",
+      "/tmp/deadpan-first-pause-profile-2026-10-22/compact-edges-controlled/instrumented-5.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.1865209173411131
+  },
+  {
+    "name": "instrumented-5-edit",
+    "command": [
+      "/tmp/deadpan-first-pause-profile-2026-10-22/compact-edges-perf",
+      "edit",
+      "/tmp/deadpan-first-pause-profile-2026-10-22/compact-edges-controlled/instrumented-5.deadpan",
+      "--cycles",
+      "2",
+      "--kinds",
+      "pause"
+    ],
+    "exit": 0,
+    "seconds": 0.48806445952504873
+  }
+]

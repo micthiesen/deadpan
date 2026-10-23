@@ -100,17 +100,33 @@ All these runs are short diagnostics, including the quiet ones.
 Inspection found 10,001 all-Automatic edge-policy records in the frozen layout.
 Omitting just those redundant values would reduce this JSON payload by
 1,900,190 bytes, from 6,416,116 to 4,515,926. That is a counterfactual byte count,
-not a runtime result. A disposable prototype now tests default-edge omission
-and the matching exact wire-size counter. It has not changed production; its
-format/version decision, tests, actual performance and media verification
-remain open. Keep all explicit policies, strict decoding, bounds, round-trip
-and inverse checks, full lattice capture and durable commit semantics.
+not a runtime result.
+
+## Disposable compact-edge prototype results
+
+A disposable Core56/SQLite85 prototype omitted all-Automatic policies from
+frozen layout JSON and updated the exact wire-size counter. Five fresh-package
+pairs produced first-pause medians (n=5) of 127.513 ms for baseline and
+111.362 ms for the prototype. The baseline/prototype document JSON sizes were 15,611,962 /
+12,319,659 bytes; SQLite database sizes were 17,404,896 / 13,592,672 bytes.
+These are prototype measurements, not production qualification. The first-pause
+median remains above the 100 ms Hold-insertion bound; that requirement stays open.
+
+Both measured binaries were uninstrumented and phase parsing was disabled.
+Therefore `complete_phase_multiplicity_check: true` in the copied prototype
+summary is NOT APPLICABLE; the attribution sidecar records why. The prototype
+is disposable, does not change production, and is not production qualification.
+Keep strict decoding, bounds, round-trip and inverse checks, full lattice capture
+and durable commit semantics.
 
 ## Evidence
 
 [Retained records](../../tools/media-qualification/evidence/2026-10-23-first-pause-profile/)
 include raw command output, source overlays, full source hash sets, executed
 binary identities, load and phase records, package file hashes, setup failures
-and scripts. Generated SQLite packages are identified by hash rather than
-embedded in Git. No media decoding, listening or native input/display claim
-follows from this headless Background/Silence workload. DP-24 remains partial.
+and scripts. The compact-edge prototype's build receipts, scripts, source
+identities, overlay, controlled logs and package command receipts are retained;
+its binaries, source tree and SQLite packages are excluded. The attribution
+sidecar corrects the prototype summary's phase-multiplicity field. No media
+decoding, listening or native input/display claim follows from this headless
+Background/Silence workload. DP-24 remains partial.

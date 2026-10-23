@@ -1,0 +1,262 @@
+[
+  {
+    "mode": "baseline",
+    "trial": 1,
+    "load_at_edit_start": [
+      2.89404296875,
+      3.04736328125,
+      3.12255859375
+    ],
+    "load_above_three": false,
+    "first_total_ms": 126.534,
+    "second_total_ms": 32.091,
+    "initial": {
+      "frames": 120000,
+      "nodes": 10001,
+      "root_children": 10000
+    },
+    "final": {
+      "database_bytes": 17404896,
+      "document_json_bytes": 15611962,
+      "frames": 120024,
+      "nodes": 10009,
+      "root_children": 10004
+    },
+    "phase": [],
+    "path_anomalies": []
+  },
+  {
+    "mode": "instrumented",
+    "trial": 1,
+    "load_at_edit_start": [
+      2.89404296875,
+      3.04736328125,
+      3.12255859375
+    ],
+    "load_above_three": false,
+    "first_total_ms": 111.362,
+    "second_total_ms": 32.441,
+    "initial": {
+      "frames": 120000,
+      "nodes": 10001,
+      "root_children": 10000
+    },
+    "final": {
+      "database_bytes": 13592672,
+      "document_json_bytes": 12319659,
+      "frames": 120024,
+      "nodes": 10009,
+      "root_children": 10004
+    },
+    "phase": [],
+    "path_anomalies": []
+  },
+  {
+    "mode": "instrumented",
+    "trial": 2,
+    "load_at_edit_start": [
+      2.89404296875,
+      3.04736328125,
+      3.12255859375
+    ],
+    "load_above_three": false,
+    "first_total_ms": 110.773,
+    "second_total_ms": 32.044,
+    "initial": {
+      "frames": 120000,
+      "nodes": 10001,
+      "root_children": 10000
+    },
+    "final": {
+      "database_bytes": 13592672,
+      "document_json_bytes": 12319659,
+      "frames": 120024,
+      "nodes": 10009,
+      "root_children": 10004
+    },
+    "phase": [],
+    "path_anomalies": []
+  },
+  {
+    "mode": "baseline",
+    "trial": 2,
+    "load_at_edit_start": [
+      2.89404296875,
+      3.04736328125,
+      3.12255859375
+    ],
+    "load_above_three": false,
+    "first_total_ms": 127.41,
+    "second_total_ms": 32.876,
+    "initial": {
+      "frames": 120000,
+      "nodes": 10001,
+      "root_children": 10000
+    },
+    "final": {
+      "database_bytes": 17404896,
+      "document_json_bytes": 15611962,
+      "frames": 120024,
+      "nodes": 10009,
+      "root_children": 10004
+    },
+    "phase": [],
+    "path_anomalies": []
+  },
+  {
+    "mode": "baseline",
+    "trial": 3,
+    "load_at_edit_start": [
+      2.89404296875,
+      3.04736328125,
+      3.12255859375
+    ],
+    "load_above_three": false,
+    "first_total_ms": 127.513,
+    "second_total_ms": 32.783,
+    "initial": {
+      "frames": 120000,
+      "nodes": 10001,
+      "root_children": 10000
+    },
+    "final": {
+      "database_bytes": 17404896,
+      "document_json_bytes": 15611962,
+      "frames": 120024,
+      "nodes": 10009,
+      "root_children": 10004
+    },
+    "phase": [],
+    "path_anomalies": []
+  },
+  {
+    "mode": "instrumented",
+    "trial": 3,
+    "load_at_edit_start": [
+      2.982421875,
+      3.06298828125,
+      3.12744140625
+    ],
+    "load_above_three": false,
+    "first_total_ms": 111.756,
+    "second_total_ms": 32.406,
+    "initial": {
+      "frames": 120000,
+      "nodes": 10001,
+      "root_children": 10000
+    },
+    "final": {
+      "database_bytes": 13592672,
+      "document_json_bytes": 12319659,
+      "frames": 120024,
+      "nodes": 10009,
+      "root_children": 10004
+    },
+    "phase": [],
+    "path_anomalies": []
+  },
+  {
+    "mode": "instrumented",
+    "trial": 4,
+    "load_at_edit_start": [
+      2.982421875,
+      3.06298828125,
+      3.12744140625
+    ],
+    "load_above_three": false,
+    "first_total_ms": 111.36,
+    "second_total_ms": 32.202,
+    "initial": {
+      "frames": 120000,
+      "nodes": 10001,
+      "root_children": 10000
+    },
+    "final": {
+      "database_bytes": 13592672,
+      "document_json_bytes": 12319659,
+      "frames": 120024,
+      "nodes": 10009,
+      "root_children": 10004
+    },
+    "phase": [],
+    "path_anomalies": []
+  },
+  {
+    "mode": "baseline",
+    "trial": 4,
+    "load_at_edit_start": [
+      2.982421875,
+      3.06298828125,
+      3.12744140625
+    ],
+    "load_above_three": false,
+    "first_total_ms": 128.968,
+    "second_total_ms": 33.092,
+    "initial": {
+      "frames": 120000,
+      "nodes": 10001,
+      "root_children": 10000
+    },
+    "final": {
+      "database_bytes": 17404896,
+      "document_json_bytes": 15611962,
+      "frames": 120024,
+      "nodes": 10009,
+      "root_children": 10004
+    },
+    "phase": [],
+    "path_anomalies": []
+  },
+  {
+    "mode": "baseline",
+    "trial": 5,
+    "load_at_edit_start": [
+      2.982421875,
+      3.06298828125,
+      3.12744140625
+    ],
+    "load_above_three": false,
+    "first_total_ms": 128.316,
+    "second_total_ms": 32.679,
+    "initial": {
+      "frames": 120000,
+      "nodes": 10001,
+      "root_children": 10000
+    },
+    "final": {
+      "database_bytes": 17404896,
+      "document_json_bytes": 15611962,
+      "frames": 120024,
+      "nodes": 10009,
+      "root_children": 10004
+    },
+    "phase": [],
+    "path_anomalies": []
+  },
+  {
+    "mode": "instrumented",
+    "trial": 5,
+    "load_at_edit_start": [
+      2.982421875,
+      3.06298828125,
+      3.12744140625
+    ],
+    "load_above_three": false,
+    "first_total_ms": 111.444,
+    "second_total_ms": 33.007,
+    "initial": {
+      "frames": 120000,
+      "nodes": 10001,
+      "root_children": 10000
+    },
+    "final": {
+      "database_bytes": 13592672,
+      "document_json_bytes": 12319659,
+      "frames": 120024,
+      "nodes": 10009,
+      "root_children": 10004
+    },
+    "phase": [],
+    "path_anomalies": []
+  }
+]

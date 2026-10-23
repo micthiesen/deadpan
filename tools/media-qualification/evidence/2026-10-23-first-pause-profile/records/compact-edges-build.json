@@ -1,0 +1,20 @@
+{
+  "command": [
+    "cargo",
+    "build",
+    "--locked",
+    "--release",
+    "-p",
+    "deadpan-cli",
+    "--example",
+    "perf"
+  ],
+  "cwd": "/tmp/deadpan-first-pause-profile-2026-10-22/compact-edges-source",
+  "target_dir": "/tmp/deadpan-first-pause-profile-2026-10-22/compact-edges-target",
+  "exit": 0,
+  "seconds": 159.02515495941043,
+  "script_sha256": "625f75a4b8a7e9a521de7cc77e6fa443df3d41cac33569ce7a5cd370f70c0894",
+  "overlay_sha256": "2110031dd5c531d32f68827cde037737f97cda1b0c1ebdac7e76da34f0fb170c",
+  "prototype_only": true,
+  "format_version_unchanged_for_experiment_not_shipping": true
+}

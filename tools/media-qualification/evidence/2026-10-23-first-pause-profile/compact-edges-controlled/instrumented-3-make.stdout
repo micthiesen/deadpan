@@ -1,0 +1,7 @@
+{
+  "beats": 10000,
+  "creation_ms": 169.524,
+  "package": "/tmp/deadpan-first-pause-profile-2026-10-22/compact-edges-controlled/instrumented-3.deadpan",
+  "stage": "make-large",
+  "stage_wall_ms": 178.89920800000002
+}

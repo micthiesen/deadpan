@@ -2,8 +2,8 @@
   "source_commit": "a18ff65443aa8fd1aa5ab63fa33678c9afd88220",
   "files": {
     "README.md": {
-      "bytes": 1176,
-      "sha256": "84019293ff5f0645b2a556c018d22b63dca59fe5d4757aab49f171b4b05389ef"
+      "bytes": 1804,
+      "sha256": "d07ba94bfdec7b01bedb517db37c1cddc8cf3549de511c90468aaddf721c641c"
     },
     "attempt-1/commands.json": {
       "bytes": 727,
@@ -36,6 +36,222 @@
     "attempt-1/run.py": {
       "bytes": 5887,
       "sha256": "e16c7b07aa743619c92e1af5a7d6c855d5b55c3720aa220c44411a6be12afc5c"
+    },
+    "compact-edges-attribution.json": {
+      "bytes": 560,
+      "sha256": "464afd6c16dca7a50e9520f2c796677c760378bb0a1e3456200d92cc3dc204d4"
+    },
+    "compact-edges-controlled/baseline-1-edit.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "compact-edges-controlled/baseline-1-edit.stdout": {
+      "bytes": 3083,
+      "sha256": "6427864fd7f3cb9986a19ece942fa459e74f81bb65b38bdbab7719845cee1ff0"
+    },
+    "compact-edges-controlled/baseline-1-make.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "compact-edges-controlled/baseline-1-make.stdout": {
+      "bytes": 207,
+      "sha256": "85fd3af63d287f073e789a5d4042b95dcc29d97aa795b6d43523ce459f78e3f3"
+    },
+    "compact-edges-controlled/baseline-1-pre-edit.json": {
+      "bytes": 868,
+      "sha256": "9d847fa87ec0057fcefac0f6f1c986abec9cb7cbfe8858cfca5b2e8556a18add"
+    },
+    "compact-edges-controlled/baseline-2-edit.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "compact-edges-controlled/baseline-2-edit.stdout": {
+      "bytes": 3077,
+      "sha256": "76f0230907974779516dc2cf5ab3336347e98c0395250eac86498c7258bdbd19"
+    },
+    "compact-edges-controlled/baseline-2-make.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "compact-edges-controlled/baseline-2-make.stdout": {
+      "bytes": 207,
+      "sha256": "9c796455cdd88b43c71be06018493deba8d2209a36a7956ed391a08935088937"
+    },
+    "compact-edges-controlled/baseline-2-pre-edit.json": {
+      "bytes": 134,
+      "sha256": "d584b9ef4d1a20325ec5bdd4a31745ee0d87f821cc3c1c3572e5fc8c56add730"
+    },
+    "compact-edges-controlled/baseline-3-edit.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "compact-edges-controlled/baseline-3-edit.stdout": {
+      "bytes": 3083,
+      "sha256": "b46729d0244af234d474bf117db45435c0dd330ce18929ed4462651659b4d863"
+    },
+    "compact-edges-controlled/baseline-3-make.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "compact-edges-controlled/baseline-3-make.stdout": {
+      "bytes": 207,
+      "sha256": "d5f3f7c0ff5b462edf5fea7266eff2a7e202e61d798b27d2bbec2a6c5eb328ab"
+    },
+    "compact-edges-controlled/baseline-3-pre-edit.json": {
+      "bytes": 134,
+      "sha256": "d584b9ef4d1a20325ec5bdd4a31745ee0d87f821cc3c1c3572e5fc8c56add730"
+    },
+    "compact-edges-controlled/baseline-4-edit.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "compact-edges-controlled/baseline-4-edit.stdout": {
+      "bytes": 3087,
+      "sha256": "d6a86a601e5b942217a413724773d00fd7f5888cd26a93ce5a5850c0f38982a5"
+    },
+    "compact-edges-controlled/baseline-4-make.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "compact-edges-controlled/baseline-4-make.stdout": {
+      "bytes": 215,
+      "sha256": "c4e12b0cac61ef75435762dda17f44ebb80ee56021490acd95be3ffdf1792e8d"
+    },
+    "compact-edges-controlled/baseline-4-pre-edit.json": {
+      "bytes": 132,
+      "sha256": "baec54dcdd17c845ad0609301d5be0c1d87218d12f6e3bc7dc0152ae3e78cf2f"
+    },
+    "compact-edges-controlled/baseline-5-edit.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "compact-edges-controlled/baseline-5-edit.stdout": {
+      "bytes": 3085,
+      "sha256": "ab8f11b455413bcc2ec07dc9fa94a7b740723989a2ec1e0c20ec62ab7ee24519"
+    },
+    "compact-edges-controlled/baseline-5-make.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "compact-edges-controlled/baseline-5-make.stdout": {
+      "bytes": 214,
+      "sha256": "12d9436437ceec30208e9252522a27562c474db2a6db1a52cbbf9317729c06bf"
+    },
+    "compact-edges-controlled/baseline-5-pre-edit.json": {
+      "bytes": 132,
+      "sha256": "baec54dcdd17c845ad0609301d5be0c1d87218d12f6e3bc7dc0152ae3e78cf2f"
+    },
+    "compact-edges-controlled/commands.json": {
+      "bytes": 6929,
+      "sha256": "fd380cfbdab03a808266b0806c5ae07631ceaec13735d2b1b1a12de3d7d4d868"
+    },
+    "compact-edges-controlled/instrumented-1-edit.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "compact-edges-controlled/instrumented-1-edit.stdout": {
+      "bytes": 3090,
+      "sha256": "0eba63dc752b696042b7c48f594533b23f1edd8d828aa0e75feb7af17d601f46"
+    },
+    "compact-edges-controlled/instrumented-1-make.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "compact-edges-controlled/instrumented-1-make.stdout": {
+      "bytes": 219,
+      "sha256": "73fa878af38d321bc24b98b5dcf92b56c28e9e789e0dfc17752d622c8034b46a"
+    },
+    "compact-edges-controlled/instrumented-1-pre-edit.json": {
+      "bytes": 134,
+      "sha256": "d584b9ef4d1a20325ec5bdd4a31745ee0d87f821cc3c1c3572e5fc8c56add730"
+    },
+    "compact-edges-controlled/instrumented-2-edit.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "compact-edges-controlled/instrumented-2-edit.stdout": {
+      "bytes": 3090,
+      "sha256": "5d9b9620a5d12ec36f9d311f102cce406749db6ff5ea55ff78f2c45fede522f3"
+    },
+    "compact-edges-controlled/instrumented-2-make.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "compact-edges-controlled/instrumented-2-make.stdout": {
+      "bytes": 209,
+      "sha256": "e0f9cd917043ae1eacf00bbc69cd32a1f9dc45edb1d2ac6334e6cff68dfee6af"
+    },
+    "compact-edges-controlled/instrumented-2-pre-edit.json": {
+      "bytes": 134,
+      "sha256": "d584b9ef4d1a20325ec5bdd4a31745ee0d87f821cc3c1c3572e5fc8c56add730"
+    },
+    "compact-edges-controlled/instrumented-3-edit.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "compact-edges-controlled/instrumented-3-edit.stdout": {
+      "bytes": 3090,
+      "sha256": "c9b7dba7598d6ad079fc70c0af387c8586033fae01e080e14cce334414b305f7"
+    },
+    "compact-edges-controlled/instrumented-3-make.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "compact-edges-controlled/instrumented-3-make.stdout": {
+      "bytes": 219,
+      "sha256": "09fae63c05fb9423d9fc272ff6e502ba8670b9120b7e51c09b64359141b608dd"
+    },
+    "compact-edges-controlled/instrumented-3-pre-edit.json": {
+      "bytes": 132,
+      "sha256": "baec54dcdd17c845ad0609301d5be0c1d87218d12f6e3bc7dc0152ae3e78cf2f"
+    },
+    "compact-edges-controlled/instrumented-4-edit.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "compact-edges-controlled/instrumented-4-edit.stdout": {
+      "bytes": 3082,
+      "sha256": "74c2b73030df50f6159de77b5794c66a5d4ba0e92a7e722371bf6e7b53934332"
+    },
+    "compact-edges-controlled/instrumented-4-make.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "compact-edges-controlled/instrumented-4-make.stdout": {
+      "bytes": 211,
+      "sha256": "3dc26bd12f9fa12dc707536f71b1fd966f11c2beec66d610450ad1b337acf76d"
+    },
+    "compact-edges-controlled/instrumented-4-pre-edit.json": {
+      "bytes": 132,
+      "sha256": "baec54dcdd17c845ad0609301d5be0c1d87218d12f6e3bc7dc0152ae3e78cf2f"
+    },
+    "compact-edges-controlled/instrumented-5-edit.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "compact-edges-controlled/instrumented-5-edit.stdout": {
+      "bytes": 3087,
+      "sha256": "3d75db7e1d51caeec5e7f03b47f132d5b8c53b46f2dd135c18c990365b71f90a"
+    },
+    "compact-edges-controlled/instrumented-5-make.stderr": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "compact-edges-controlled/instrumented-5-make.stdout": {
+      "bytes": 211,
+      "sha256": "ae318823f6c0d1ce0e43a9feb023da9ce4e56c9c3d2332ad2e433a2f3b6829eb"
+    },
+    "compact-edges-controlled/instrumented-5-pre-edit.json": {
+      "bytes": 132,
+      "sha256": "baec54dcdd17c845ad0609301d5be0c1d87218d12f6e3bc7dc0152ae3e78cf2f"
+    },
+    "compact-edges-controlled/summary.json": {
+      "bytes": 1807,
+      "sha256": "ee5bd93317e0fc9f4f864cdc66024190125909c58cd91f0f3182c472076301e3"
+    },
+    "compact-edges-controlled/trials.json": {
+      "bytes": 5511,
+      "sha256": "2f460ec125b09ac9c1f90fdaf55c14e1d1e650c9d994fb3825d78023658fc63e"
     },
     "controlled/baseline-1-edit.stderr": {
       "bytes": 0,
@@ -592,6 +808,38 @@
     "records/commands.json": {
       "bytes": 8611,
       "sha256": "a4ce4bd406d281ad560a3e7d8ab063163fea9703177bc63767370bbb77926e5f"
+    },
+    "records/compact-edges-binaries.json": {
+      "bytes": 568,
+      "sha256": "3e7033fe9420731f09cfae0333021eb93da7268ff52911343d0efe355cb37d38"
+    },
+    "records/compact-edges-build.json": {
+      "bytes": 611,
+      "sha256": "10f5d08ff309ea29db00cf3c10fad950ccd5ff008cb835e180b92be7f582d0b3"
+    },
+    "records/compact-edges-build.stderr": {
+      "bytes": 7468,
+      "sha256": "96e1e9de9091eee78bd7f5f57f105aeab71307b525ec4a70dfea2864c8b5ea0c"
+    },
+    "records/compact-edges-build.stdout": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "records/compact-edges-driver.log": {
+      "bytes": 5669,
+      "sha256": "a20d3a75b0713102bc22829a0eb1e255b7d9abaf9594872b49cfa1eec32fe3a3"
+    },
+    "records/compact-edges-measure.py": {
+      "bytes": 4182,
+      "sha256": "b1ad0b80dcced9e126f93e8b207faeb70fd681145975dac36541d9392362ab7c"
+    },
+    "records/compact-edges-overlay.rs.txt": {
+      "bytes": 136604,
+      "sha256": "2110031dd5c531d32f68827cde037737f97cda1b0c1ebdac7e76da34f0fb170c"
+    },
+    "records/compact-edges-source-identities.json.gz": {
+      "bytes": 98258,
+      "sha256": "4d6183d4239dfe41e75e214d95c5323f65fa6656836aede34339ce77fd854aaa"
     },
     "records/compact_edges.py": {
       "bytes": 4128,

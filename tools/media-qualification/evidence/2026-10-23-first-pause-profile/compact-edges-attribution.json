@@ -1,0 +1,11 @@
+{
+  "summary_record": "compact-edges-controlled/summary.json",
+  "field": "complete_phase_multiplicity_check",
+  "recorded_value": true,
+  "attribution": "NOT APPLICABLE",
+  "reason": "Both prototype binaries were uninstrumented; phase parsing was disabled in compact-edges-measure.py. The true value is a copied summary template field, not a completed check.",
+  "binary_sha256": {
+    "baseline": "af725eba81e35a2a005a1b1e6c855684ff1a5e7328c7c093e86c3a5dc6ce6f28",
+    "instrumented": "1528430960f8b0c95a2466445d1b4c88b95b2d2ad7e748de77fd92b1a451cd0a"
+  }
+}

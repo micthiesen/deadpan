@@ -2,7 +2,7 @@
 
 The [qualification note](../../../../docs/qualification/first-pause-profile-2026-10-23.md)
 describes the method and limitations. These are short diagnostic runs, with no
-performance-target PASS or optimization claim.
+performance-target PASS or production optimization claim.
 
 `records/source.json` pins the immutable Git source archive. Source hash maps,
 four initial timer overlays and the later full Store overlay reconstruct the
@@ -19,3 +19,7 @@ Packages contain generated Background/Silence Holds and no source media. Their
 file hashes are retained, together with the exact fixture-generation commands;
 the large SQLite files themselves are not included. `inventory.json` covers
 every other retained payload by size and SHA-256.
+
+`compact-edges-controlled/` and its adjacent `records/compact-edges-*` files retain a disposable compact-edge prototype. The controlled run used
+the uninstrumented baseline and prototype binaries; `compact-edges-attribution.json` clarifies that the copied
+summary's `complete_phase_multiplicity_check: true` is NOT APPLICABLE because phase parsing was disabled. The prototype is Core56/SQLite85-only and is not production qualification. The executable, source tree and SQLite packages are excluded; source hashes, overlay, build receipts, exact binary identities, scripts, logs, and package command receipts remain.
