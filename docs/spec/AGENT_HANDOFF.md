@@ -335,10 +335,25 @@ Use this executed copy rather than the private prototype.
 Next: current-baseline semantic/replay leaf timing and owned main-process
 memory diagnostics in /tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23.
 Root accepted the six-file temporary overlay and separate rotated timing/memory
-lanes. Source-only worker preparation is in progress; no build or measurement
-has run. The observer samples existing owned-child RSS/footprint only: observed
+lanes. Independent review, formatting, the fresh-target locked release build,
+ten parser tests, five observer lifecycle smokes and eight driver receipt-
+mismatch checks pass. Private app SHA-256:
+14ef183594c33011c7557c8affd0bf516d24a55a9994d42a8d0648deb01e6ede.
+Observer SHA-256:
+d1166aef7e1b30c787bb39fa536c18aee9af9da4f2327120d321432205fc0ed2.
+measure.py is active: three rotated timing triplets followed by three separate
+memory triplets, with source/input/binary/Kestrel/fixture/WAL guards. Check its
+measurement-owner.json and terminal handle before any restart. No timing or
+memory result is claimed yet. The observer's initial standalone link failed on
+Apple LLVM bitcode; matching workspace ThinLTO links without source changes.
+The first scratch helper compile failed on a literal escaped newline, before
+any observer launch; corrected distinct resumed smoke outputs pass. Retain
+those failures and the failed correction guard/missing-script attempt.
+The observer samples existing owned-child RSS/footprint only: observed
 maxima are whole-lifetime lower bounds, not per-leaf peaks or a memory ceiling.
-Review parser/observer failure paths and exact source diff before execution.
+Injected timeout/refusal smokes use separate binaries and do not replace the
+measurement observer. Group-failure/fallback and reap-error paths have source
+review only. No runtime adapter changed.
 The read-only next-single-leaf-study/ concludes an opaque exact-value-bound
 cache may be feasible but must preserve current authority and explicit TLS
 entry/exit behavior. Current authored values use integers/rationals; the wire
