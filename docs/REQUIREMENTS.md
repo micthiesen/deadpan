@@ -13,7 +13,8 @@ private route tests pass, including retention of pre-birth losses.
 
 The expanded `integrated-fifth` audio run passes six of nine checks, including
 the ordered-journal authority positive and ten rejection cases. A standalone
-neutral Split witness confirms a real failure with all controls valid: the
+[neutral Split witness](qualification/neutral-split-research-2026-10-23.md)
+confirms a real failure with all controls valid: the
 complete group input and 2,048-sample filter halo remain identical, but 7,581
 output channel samples change, with maximum absolute difference
 0.009660936455475166. The later-move witness cannot establish a separate defect

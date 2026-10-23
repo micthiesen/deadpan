@@ -1,0 +1,150 @@
+//! Immutable structural picture and audio plans shared by preview and export callers.
+//!
+//! Compilation validates one authored revision and indexes sequence boundaries
+//! and compact repeat identity runs. Sampling maps project frame centers through
+//! exact affine retimes without rounding intermediate coordinates. This crate
+//! evaluates owner-local framing values but performs no decoding, GPU work,
+//! pixel effects, audio processing, or external I/O.
+
+mod audio_envelope;
+mod audio_mix;
+mod audio_projected_root;
+mod audio_projection;
+mod audio_reference;
+mod audio_routed;
+mod audio_sampling;
+mod audio_sound_event;
+mod audio_sound_route;
+mod audio_source_root;
+mod audio_tape;
+mod picture;
+mod plan;
+
+pub use audio_envelope::{AudioEnvelope, AudioEnvelopeEndpoint};
+pub use audio_mix::{AudioMixGate, AudioMixQuery, AudioMixVoiceQuery, AudioSignalMix};
+pub use audio_projected_root::AudioProjectedRoot;
+pub use audio_projection::{
+    AudioOwnedProjectionKey, AudioProjectionIdentity, AudioSourceProjectionKey,
+    AudioStageProjection,
+};
+pub use audio_reference::{
+    AudioReferencePlan, ReferenceAudioClock, ReferenceAudioContent, ReferenceAudioQuery,
+    ReferenceAudioSpan, ReferenceClockOwner, ReferenceProcessingDomain, ReferenceProcessingKind,
+    ReferenceSample, RetainedRootMap,
+};
+pub use audio_routed::{
+    AudioRoutedRoot, AudioRoutedRootInput, AudioRoutedSignal, AudioRoutedSignalInput,
+};
+pub use audio_sampling::{AudioBoundaryRule, AudioSampleGrid, AudioSampleMap};
+pub use audio_sound_event::{AudioRootSound, AudioSoundGateQuery, AudioSoundGateSpan};
+pub use audio_sound_route::{
+    AudioOccurrenceWindow, AudioSoundRoute, AudioSoundRouteQuery, AudioSoundRouteSpan,
+};
+pub use audio_source_root::AudioRootSource;
+pub use audio_tape::{AudioSignalTape, AudioSignalTapeRun};
+
+pub use picture::{Picture, PictureCaption, PictureFraming, PictureSample};
+pub use plan::follow_pose;
+pub use plan::{
+    AudioBound, AudioBoundDomain, AudioFadeEdge, AudioFadeQuery, AudioFadeSpan, AudioPolicyQuery,
+};
+pub use plan::{
+    AudioBoundaries, AudioBoundaryKind, AudioBoundaryOrigin, AudioContent, AudioDomain, AudioQuery,
+    AudioQueryLimits, AudioRetimeStage, AudioSpan, AudioTransform, LookupStats, NodeInspection,
+    NodeType, PlanInspection, PlanMetadata, RenderPlan, SilenceReason, SourceSamplingSupport,
+    StorageStats,
+};
+pub use plan::{AudioDefinition, AudioDefinitionSelector, AudioPointDomain, AudioRootPlacement};
+pub use plan::{AudioHoldIssuer, AudioHoldPolicyQuery, AudioHoldRule};
+pub use plan::{AudioOccurrenceAlias, AudioSoundClockBinding, AudioSoundClockScope};
+pub use plan::{
+    AudioOwnerClock, AudioOwnerClockOrigin, AudioOwnerKind, AudioOwnerQuery, AudioOwnerSpan,
+    AudioOwnerSupport, AudioTreatmentBoundary,
+};
+pub use plan::{
+    AudioOwnerInput, AudioOwnerInputScope, AudioOwnerOccurrence, AudioOwnerOccurrenceMap,
+    AudioOwnerOccurrences, AudioOwnerRetainedInput,
+};
+pub use plan::{
+    AudioProcessingQuery, AudioProcessingSpan, AudioSignal, AudioSignalContent, AudioSignalQuery,
+    AudioSignalSpan, AudioStage, AudioStageDescriptor, SignalSample, SignalTransform,
+};
+pub use plan::{
+    AudioSoundOwnerContext, AudioSoundProcessingHistory, AudioSourceOccurrence,
+    AudioSourceOccurrences, AudioSourceVoice, AudioSourceVoiceIdentity, AudioSourceVoiceRecipe,
+};
+pub use plan::{
+    DefinitionPictureCoverage, DefinitionPictureSample, DefinitionPictureSpan,
+    HoldContextUnavailable, MAX_DEFINITION_PICTURE_SPANS, MAX_HOLD_CONTEXT_BATCH,
+    MAX_HOLD_CONTEXT_FRAMES, PictureClockSlope, ProviderClockCoverage, ProviderClockSpan,
+    ProviderLeafKind, ScopedHoldBoundaries, ScopedHoldContext, ScopedHoldContextObservation,
+    ScopedHoldContextRequest,
+};
+
+use deadpan_core::{
+    AssetId, DocumentError, ExactRatio, FrameDuration, NodeId, ProjectFrame, SourceFrameId,
+    SourceTimeBase, TimeError,
+};
+use thiserror::Error;
+
+#[derive(Debug, Error)]
+pub enum PlanError {
+    #[error("authored audio timing bindings are not yet supported by the render walker")]
+    UnsupportedAudioBindings,
+    #[error("a retained audio context cannot render picture")]
+    AudioOnlyContext,
+    #[error(transparent)]
+    Document(#[from] DocumentError),
+    #[error(transparent)]
+    Time(#[from] TimeError),
+    #[error(transparent)]
+    Framing(#[from] deadpan_core::FramingError),
+    #[error("project frame {frame:?} is outside the plan's {duration:?} duration")]
+    FrameOutOfRange {
+        frame: ProjectFrame,
+        duration: FrameDuration,
+    },
+    #[error("picture definition {0} is absent from the plan")]
+    InvalidPictureDefinition(NodeId),
+    #[error("definition {definition} position {position:?} is outside its {duration:?} duration")]
+    DefinitionPictureOutOfRange {
+        definition: NodeId,
+        // Keep the i128-based coordinate's size and alignment out of every
+        // plan error and the host error types that contain one.
+        position: Box<ExactRatio>,
+        duration: Box<ExactRatio>,
+    },
+    #[error("invalid scoped Hold: {0}")]
+    InvalidScopedHold(&'static str),
+    #[error("{0}")]
+    HoldContextUnavailable(HoldContextUnavailable),
+    #[error("picture query exceeded its {0} budget")]
+    PictureQueryLimit(&'static str),
+    #[error("picture has no source video frame to select")]
+    NoSourceFrame,
+    #[error("audio sample range is reversed or outside the plan's mix duration")]
+    AudioRangeOutOfRange,
+    #[error("audio query limits must be positive and within the supported bounds")]
+    InvalidAudioLimits,
+    #[error("audio definition selector does not name an available definition: {0:?}")]
+    InvalidAudioDefinitionSelector(AudioDefinitionSelector),
+    #[error("invalid source voice occurrence: {0}")]
+    InvalidAudioSourceOccurrence(&'static str),
+    #[error("invalid owned audio root placement: {0}")]
+    InvalidAudioRootPlacement(&'static str),
+    #[error("audio query exceeded its {0} budget")]
+    AudioQueryLimit(&'static str),
+    #[error("audio span has no linearly mapped source audio")]
+    NoSourceAudio,
+    #[error("source index belongs to {actual}, expected {expected}")]
+    IndexAssetMismatch { expected: AssetId, actual: AssetId },
+    #[error("source index clock {actual:?} differs from expected {expected:?}")]
+    IndexClockMismatch {
+        expected: SourceTimeBase,
+        actual: SourceTimeBase,
+    },
+    #[error("original source frame {frame:?} is missing from the presentation index")]
+    MissingSourceFrame { frame: SourceFrameId },
+    #[error("compiled plan invariant failed: {0}")]
+    InvalidPlan(&'static str),
+}

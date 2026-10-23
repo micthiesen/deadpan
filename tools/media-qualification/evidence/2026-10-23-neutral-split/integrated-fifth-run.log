@@ -1,0 +1,80 @@
+  Extracting 1 binary, 1 build script output directory, and 4 linked paths to /private/tmp/deadpan-aligned-sound-scope-2026-10-22/integrated-fifth-extracted
+   Extracted 22 files to /private/tmp/deadpan-aligned-sound-scope-2026-10-22/integrated-fifth-extracted in 0.03s
+────────────
+ Nextest run ID b54f9376-2d40-4e9a-8b34-396c3dba1478 with nextest profile: default
+    Starting 9 tests across 1 binary (154 tests skipped)
+        PASS [   0.014s] (1/9) deadpan-audio::audio_definition voice_occurrence::beat_sounds::sound_clocks::aligned_scope::aligned_scope_admission_still_refuses_nonordinary_processing_or_placement_paths_atomically
+        PASS [   0.012s] (2/9) deadpan-audio::audio_definition voice_occurrence::beat_sounds::sound_clocks::new_group_birth::authority::group_birth_processing_history_rejects_incomplete_foreign_and_forged_authority
+        PASS [   0.070s] (3/9) deadpan-audio::audio_definition voice_occurrence::beat_sounds::sound_clocks::aligned_scope::aligned_scope_group_introduction_keeps_historical_source_admission_live
+        FAIL [   0.015s] (4/9) deadpan-audio::audio_definition voice_occurrence::beat_sounds::sound_clocks::new_group_birth::later::later_born_equalized_group_does_not_revive_prebirth_terminal_when_copy_widens
+  stdout ───
+
+    running 1 test
+    test voice_occurrence::beat_sounds::sound_clocks::new_group_birth::later::later_born_equalized_group_does_not_revive_prebirth_terminal_when_copy_widens ... FAILED
+
+    failures:
+
+    failures:
+        voice_occurrence::beat_sounds::sound_clocks::new_group_birth::later::later_born_equalized_group_does_not_revive_prebirth_terminal_when_copy_widens
+
+    test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 162 filtered out; finished in 0.01s
+
+  stderr ───
+    later-birth evidence: /tmp/deadpan-aligned-sound-scope-2026-10-22/integrated-fifth-evidence/new-group-birth-later
+    controls_valid=false passed=false failure={"error":"terminal pad changed earlier clocks or duration","stage":"later pad"}
+
+    thread 'voice_occurrence::beat_sounds::sound_clocks::new_group_birth::later::later_born_equalized_group_does_not_revive_prebirth_terminal_when_copy_widens' (175024380) panicked at crates/deadpan-audio/tests/audio_definition/sound_clocks/new_group_birth_later.rs:327:5:
+    later-birth control evidence retained
+    note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+        FAIL [   1.516s] (5/9) deadpan-audio::audio_definition voice_occurrence::beat_sounds::sound_clocks::new_group_birth::split::neutral_split_inside_born_equalized_group_preserves_full_input_halo_and_pcm
+  stdout ───
+
+    running 1 test
+    test voice_occurrence::beat_sounds::sound_clocks::new_group_birth::split::neutral_split_inside_born_equalized_group_preserves_full_input_halo_and_pcm ... FAILED
+
+    failures:
+
+    failures:
+        voice_occurrence::beat_sounds::sound_clocks::new_group_birth::split::neutral_split_inside_born_equalized_group_preserves_full_input_halo_and_pcm
+
+    test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 162 filtered out; finished in 1.51s
+
+  stderr ───
+    neutral Split evidence: /tmp/deadpan-aligned-sound-scope-2026-10-22/integrated-fifth-evidence/new-group-birth-neutral-split
+    {"actual_neutral_split_failure":true,"classification":"actual neutral Split failure: full G input halo unchanged, canonical PCM changed","controls_valid":true,"failure":null,"numeric_pcm":{"first_sample":15575,"last_sample":19650,"maximum_absolute_difference":0.009660936455475166,"numerically_different_channel_samples":7581},"pcm_equal":false,"raw_equal":true}
+
+    thread 'voice_occurrence::beat_sounds::sound_clocks::new_group_birth::split::neutral_split_inside_born_equalized_group_preserves_full_input_halo_and_pcm' (175024383) panicked at crates/deadpan-audio/tests/audio_definition/sound_clocks/new_group_birth_split.rs:521:5:
+    neutral-Split canonical PCM mismatch evidence retained
+    note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+        PASS [   1.895s] (6/9) deadpan-audio::audio_definition voice_occurrence::beat_sounds::sound_clocks::new_group_birth::candidate_new_group_birth_copy_keeps_mixed_history_terminal
+        FAIL [   1.649s] (7/9) deadpan-audio::audio_definition voice_occurrence::beat_sounds::sound_clocks::new_group_birth::split::split_inside_born_equalized_group_keeps_its_terminal_after_later_move
+  stdout ───
+
+    running 1 test
+    test voice_occurrence::beat_sounds::sound_clocks::new_group_birth::split::split_inside_born_equalized_group_keeps_its_terminal_after_later_move ... FAILED
+
+    failures:
+
+    failures:
+        voice_occurrence::beat_sounds::sound_clocks::new_group_birth::split::split_inside_born_equalized_group_keeps_its_terminal_after_later_move
+
+    test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 162 filtered out; finished in 1.64s
+
+  stderr ───
+    split evidence: /tmp/deadpan-aligned-sound-scope-2026-10-22/integrated-fifth-evidence/new-group-birth-split
+    controls_valid=false passed=false failure=null
+
+    thread 'voice_occurrence::beat_sounds::sound_clocks::new_group_birth::split::split_inside_born_equalized_group_keeps_its_terminal_after_later_move' (175024428) panicked at crates/deadpan-audio/tests/audio_definition/sound_clocks/new_group_birth_split.rs:286:5:
+    split control evidence retained
+    note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+        PASS [  16.613s] (8/9) deadpan-audio::audio_definition voice_occurrence::beat_sounds::sound_clocks::aligned_scope::aligned_scope_old_controls_preserve_all_source_and_hold_pcm
+        PASS [  23.933s] (9/9) deadpan-audio::audio_definition voice_occurrence::beat_sounds::sound_clocks::aligned_scope::aligned_scope_grouping_preserves_source_and_hold_journals_without_changing_pcm
+────────────
+     Summary [  23.934s] 9 tests run: 6 passed, 3 failed, 154 skipped
+        FAIL [   0.015s] (4/9) deadpan-audio::audio_definition voice_occurrence::beat_sounds::sound_clocks::new_group_birth::later::later_born_equalized_group_does_not_revive_prebirth_terminal_when_copy_widens
+        FAIL [   1.516s] (5/9) deadpan-audio::audio_definition voice_occurrence::beat_sounds::sound_clocks::new_group_birth::split::neutral_split_inside_born_equalized_group_preserves_full_input_halo_and_pcm
+        FAIL [   1.649s] (7/9) deadpan-audio::audio_definition voice_occurrence::beat_sounds::sound_clocks::new_group_birth::split::split_inside_born_equalized_group_keeps_its_terminal_after_later_move
+error: test run failed

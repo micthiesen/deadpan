@@ -1,0 +1,830 @@
+//! One transport around the structural reducer, using its caller-owned clock.
+
+use std::collections::{BTreeMap, BTreeSet};
+
+use super::{SoundClockJournal, SoundClockReference, SoundClocks};
+use crate::{
+    AudioTimingId, BeatSound, Command, EditError, EditErrorCode, ExactRatio, FrameRange,
+    FrozenAudioLayout, InstancePath, MAX_DOCUMENT_NODES, NodeId, NodeKind, ProjectDocument,
+    RevisionId, SoundId,
+};
+
+/// Only commands with an explicit clock and ordinary Sequence interval semantics
+/// participate. Other time edits retain their existing truthful refusal.
+pub(crate) fn timing(command: &Command) -> Option<&AudioTimingId> {
+    match command {
+        Command::InsertTime { timing, .. }
+        | Command::InsertAiTime { timing, .. }
+        | Command::InsertOccurrenceTime { timing, .. }
+        | Command::SpliceSource { timing, .. }
+        | Command::SpliceSourceAt { timing, .. }
+        | Command::ReplaceSource { timing, .. }
+        | Command::ReplaceSourceChildren { timing, .. }
+        | Command::DeleteRipple { timing, .. }
+        | Command::DeleteChildren { timing, .. }
+        | Command::DeleteRange { timing, .. }
+        | Command::MoveRange { timing, .. }
+        | Command::SpliceSlice { timing, .. }
+        | Command::SpliceEditSet { timing, .. }
+        | Command::SpliceSliceAt { timing, .. }
+        | Command::ReplaceSlice { timing, .. }
+        | Command::ReplaceSliceChildren { timing, .. }
+        | Command::GroupSelection { timing, .. }
+        | Command::RepeatSelection { timing, .. }
+        | Command::SetRepeatPlays { timing, .. }
+        | Command::SetRepeatGaps { timing, .. }
+        | Command::TrimSource { timing, .. }
+        | Command::RollSources { timing, .. } => Some(timing),
+        Command::ApplySourceTrim { resources, .. } => resources.timing.as_ref(),
+        _ => None,
+    }
+}
+
+/// The capture identity for one command leaf. A plain Split, Hold duration
+/// or speed change, and a Trim that retains no audio clock, names no clock;
+/// its new layout takes the leaf's own revision at ordinal zero, which no
+/// other table of that revision uses.
+/// Whether this command captures the pre-edit layout and transports attached
+/// sound clocks (an owner scope that changes still refuses at restore).
+pub(crate) fn transports(command: &Command) -> bool {
+    timing(command).is_some()
+        || matches!(
+            command,
+            Command::Split { .. }
+                | Command::SetHoldDuration { .. }
+                | Command::WrapRetime { .. }
+                | Command::SetRetime { .. }
+                | Command::ApplySourceTrim { .. }
+        )
+}
+
+fn capture_timing(command: &Command, allocation: &RevisionId) -> Option<AudioTimingId> {
+    let derived = || AudioTimingId {
+        allocation: allocation.clone(),
+        ordinal: 0,
+    };
+    match command {
+        Command::Split { .. }
+        | Command::SetHoldDuration { .. }
+        | Command::WrapRetime { .. }
+        | Command::SetRetime { .. } => Some(derived()),
+        Command::ApplySourceTrim { resources, .. } => {
+            Some(resources.timing.clone().unwrap_or_else(derived))
+        }
+        command => timing(command).cloned(),
+    }
+}
+
+pub(crate) struct SoundClockEditCapture {
+    events: BTreeMap<NodeId, BTreeMap<SoundId, BeatSound>>,
+    journals: SoundClocks,
+    retained: BTreeMap<AudioTimingId, FrozenAudioLayout>,
+    before: FrozenAudioLayout,
+    timing: AudioTimingId,
+    removed: BTreeSet<NodeId>,
+    repeat_edit: bool,
+    introduced: Option<NodeId>,
+    /// Exact Split provenance, independent of labels or equal-shaped nodes.
+    owners: BTreeMap<NodeId, NodeId>,
+    /// External Repeat placements also acquire aliases when their full input
+    /// is cloned behind a Split delivery Partition.
+    repeat_aliases: BTreeMap<NodeId, NodeId>,
+    split_owners: BTreeSet<NodeId>,
+    // Only the containing processor's output can ignore this changed input.
+    // Outside Hold moves retain their existing full-scope capture semantics.
+    resized_hold: Option<NodeId>,
+}
+
+impl SoundClockEditCapture {
+    pub(crate) fn prepare(
+        document: &ProjectDocument,
+        command: &Command,
+        allocation: &RevisionId,
+    ) -> Result<Option<Self>, EditError> {
+        // Aligned neutral grouping changes no delivery crop. Preserve its
+        // existing journals and timing tables without detach or recapture.
+        if let Command::GroupSelection {
+            parent, selection, ..
+        } = command
+            && document
+                .group_selection(parent, selection)?
+                .required_split_ids
+                == 0
+        {
+            return Ok(None);
+        }
+        let Some(timing) =
+            capture_timing(command, allocation).filter(|_| !document.beat_sounds.is_empty())
+        else {
+            return Ok(None);
+        };
+        let timing = &timing;
+        if &timing.allocation != allocation {
+            return Err(invalid(
+                "sound clock allocation must equal the new revision",
+            ));
+        }
+        if document.audio_bindings.timings.contains_key(timing) {
+            return Err(invalid("sound clock capture identity already exists"));
+        }
+        let before = FrozenAudioLayout::capture(document)?;
+        if document.beat_sounds.contains_key(document.root()) {
+            return Err(invalid("root-owned beat sounds cannot yet be transported"));
+        }
+        let journals = document.audio_bindings.sound_clocks.clone();
+        let mut retained = BTreeMap::new();
+        for events in journals.values() {
+            for journal in events.values() {
+                for reference in journal.clocks() {
+                    retained
+                        .entry(reference.timing().clone())
+                        .or_insert_with(|| {
+                            document.audio_bindings.timings[reference.timing()].clone()
+                        });
+                }
+            }
+        }
+        Ok(Some(Self {
+            events: document.beat_sounds.clone(),
+            journals,
+            retained,
+            before,
+            timing: timing.clone(),
+            removed: removed_owners(document, command)?,
+            repeat_edit: matches!(
+                command,
+                Command::RepeatSelection { .. }
+                    | Command::InsertOccurrenceTime { .. }
+                    | Command::SetRepeatPlays { .. }
+                    | Command::SetRepeatGaps { .. }
+            ),
+            introduced: match command {
+                Command::RepeatSelection { identities, .. } => Some(identities.repeat.clone()),
+                _ => None,
+            },
+            owners: document
+                .beat_sounds
+                .keys()
+                .map(|id| (id.clone(), id.clone()))
+                .collect(),
+            repeat_aliases: document
+                .nodes
+                .iter()
+                .filter(|(_, node)| matches!(node.kind, NodeKind::Repeat { .. }))
+                .map(|(id, _)| (id.clone(), id.clone()))
+                .collect(),
+            split_owners: BTreeSet::new(),
+            resized_hold: match command {
+                Command::SetHoldDuration { node, duration }
+                    if document.nodes.get(node).is_some_and(|node| {
+                        matches!(&node.kind,
+                        NodeKind::Hold { recipe } if recipe.duration != *duration)
+                    }) =>
+                {
+                    Some(node.clone())
+                }
+                _ => None,
+            },
+        }))
+    }
+
+    /// Split retains complete contexts behind disjoint delivery Partitions.
+    /// Record both aliases while the structural reducer has sounds detached.
+    pub(crate) fn split(&mut self, mapping: &BTreeMap<NodeId, NodeId>) -> Result<(), EditError> {
+        let repeat_copies: Vec<_> = mapping
+            .iter()
+            .filter_map(|(old, new)| {
+                self.repeat_aliases
+                    .get(old)
+                    .map(|original| (new.clone(), original.clone()))
+            })
+            .collect();
+        if self
+            .repeat_aliases
+            .len()
+            .checked_add(repeat_copies.len())
+            .is_none_or(|count| count > MAX_DOCUMENT_NODES)
+        {
+            return Err(EditError::new(
+                EditErrorCode::LimitExceeded,
+                "split exceeds the sound Repeat alias limit",
+            ));
+        }
+        let copies: Vec<_> = mapping
+            .iter()
+            .filter_map(|(old, new)| {
+                self.owners
+                    .get(old)
+                    .map(|original| (old.clone(), new.clone(), original.clone()))
+            })
+            .collect();
+        let count = self
+            .owners
+            .values()
+            .map(|owner| self.events[owner].len())
+            .sum::<usize>()
+            + copies
+                .iter()
+                .map(|(_, _, owner)| self.events[owner].len())
+                .sum::<usize>();
+        if count > crate::MAX_DOCUMENT_SOUNDS {
+            return Err(EditError::new(
+                EditErrorCode::LimitExceeded,
+                "split exceeds the attached sound limit",
+            ));
+        }
+        for (new, original) in repeat_copies {
+            if self.repeat_aliases.insert(new, original).is_some() {
+                return Err(invalid("split sound Repeat alias already exists"));
+            }
+        }
+        for (old, new, original) in copies {
+            if self.owners.insert(new.clone(), original).is_some() {
+                return Err(invalid("split sound owner alias already exists"));
+            }
+            self.split_owners.insert(old);
+            self.split_owners.insert(new);
+        }
+        Ok(())
+    }
+
+    pub(crate) fn detach(&self, document: &mut ProjectDocument) {
+        document.beat_sounds.clear();
+        document.audio_bindings.sound_clocks.clear();
+        crate::audio_binding_lifecycle::prune(document);
+    }
+
+    pub(crate) fn restore(self, document: &mut ProjectDocument) -> Result<(), EditError> {
+        // Imported events already belong to the result. Never replace that map
+        // with the entry snapshot, and never transport their newly born clocks.
+        let current = FrozenAudioLayout::capture(document)?;
+        let mut moved = BTreeMap::new();
+        let mut historical = BTreeMap::new();
+        let mut work = 0usize;
+        let output_owner = if let Some(hold) = &self.resized_hold {
+            let (scope, used) = self.before.sound_processing_scope(hold, budget(work)?)?;
+            work = work.checked_add(used).ok_or_else(exhausted)?;
+            Some(scope)
+        } else {
+            None
+        };
+        for (owner, original) in self.owners {
+            let split = self.split_owners.contains(&owner);
+            let output_owner_edit = output_owner.as_ref() == Some(&original);
+            let events = &self.events[&original];
+            if !document.nodes.contains_key(&owner) {
+                if self.removed.contains(&original) || split {
+                    continue;
+                }
+                return Err(invalid(
+                    "sound owner disappeared without whole-owner deletion",
+                ));
+            }
+            let (top, used) =
+                self.before
+                    .branch_below(self.before.root(), &original, budget(work)?)?;
+            work = work.checked_add(used).ok_or_else(exhausted)?;
+            if document
+                .beat_sounds
+                .insert(owner.clone(), events.clone())
+                .is_some()
+            {
+                return Err(invalid(
+                    "imported beat sound owner collides with a surviving owner",
+                ));
+            }
+            for id in events.keys() {
+                let previous = self
+                    .journals
+                    .get(&original)
+                    .and_then(|events| events.get(id));
+                // An output-owned sound under ordinary groups depends on
+                // its own fixed stage, not on the whole top root branch.
+                // Both bounded ancestry walks must keep that owner as scope;
+                // an enclosing Edit Retime leaves this case on the full path.
+                let output_scopes = if output_owner_edit
+                    && !split
+                    && matches!(
+                        &self.before.nodes()[&original].kind,
+                        crate::FrozenAudioKind::Retime {
+                            purpose: crate::RetimePurpose::Edit,
+                            ..
+                        }
+                    )
+                    && matches!(
+                        &current.nodes()[&owner].kind,
+                        crate::FrozenAudioKind::Retime {
+                            purpose: crate::RetimePurpose::Edit,
+                            ..
+                        }
+                    ) {
+                    let (old, used) = self
+                        .before
+                        .sound_processing_scope(&original, budget(work)?)?;
+                    work = work.checked_add(used).ok_or_else(exhausted)?;
+                    let (live, used) = current.sound_processing_scope(&owner, budget(work)?)?;
+                    work = work.checked_add(used).ok_or_else(exhausted)?;
+                    (old == original && live == owner).then_some((old, live))
+                } else {
+                    None
+                };
+                let (old_scope, live_scope) = if let Some(scopes) = output_scopes {
+                    scopes
+                } else if split {
+                    let (old, used) = self
+                        .before
+                        .sound_processing_scope(&original, budget(work)?)?;
+                    work = work.checked_add(used).ok_or_else(exhausted)?;
+                    let (live, used) = current.sound_processing_scope(&owner, budget(work)?)?;
+                    work = work.checked_add(used).ok_or_else(exhausted)?;
+                    let (old_repeats, used) =
+                        self.before.sound_placement_repeats(&old, budget(work)?)?;
+                    work = work.checked_add(used).ok_or_else(exhausted)?;
+                    let (live_repeats, used) =
+                        current.sound_placement_repeats(&live, budget(work)?)?;
+                    work = work.checked_add(used).ok_or_else(exhausted)?;
+                    // Keep the complete ancestor order, using only exact Split
+                    // provenance. A newly authored wrapper has its own initial
+                    // cohort below and is absent from the prior placement.
+                    let mapped_repeats = live_repeats
+                        .iter()
+                        .filter(|repeat| self.introduced.as_ref() != Some(*repeat))
+                        .map(|repeat| self.repeat_aliases.get(repeat));
+                    if !mapped_repeats.eq(old_repeats.iter().map(Some)) {
+                        return Err(invalid(
+                            "split sound owner Repeat ancestry has no complete occurrence route",
+                        ));
+                    }
+                    (old, live)
+                } else if self.repeat_edit {
+                    let (scope, used) =
+                        self.before.sound_processing_scope(&owner, budget(work)?)?;
+                    work = work.checked_add(used).ok_or_else(exhausted)?;
+                    (scope.clone(), scope)
+                } else {
+                    match &previous {
+                        Some(previous) => {
+                            if !document.nodes.contains_key(previous.scope()) {
+                                return Err(invalid(
+                                    "sound owner scope disappeared without whole-owner deletion",
+                                ));
+                            }
+                            (previous.scope().clone(), previous.scope().clone())
+                        }
+                        None => {
+                            let live_scope =
+                                current.branch_below(current.root(), &owner, budget(work)?)?;
+                            work = work.checked_add(live_scope.1).ok_or_else(exhausted)?;
+                            (top.clone(), live_scope.0)
+                        }
+                    }
+                };
+                let (ancestors, used) =
+                    current.sound_placement_repeats(&live_scope, budget(work)?)?;
+                work = work.checked_add(used).ok_or_else(exhausted)?;
+                let before_map = crate::SoundClockRepeatMap::new(
+                    ancestors
+                        .iter()
+                        .map(|repeat| {
+                            if self.introduced.as_ref() == Some(repeat) {
+                                Ok(crate::SoundClockRepeatStep::Introduced {
+                                    live_repeat: repeat.clone(),
+                                    plays: introduced_plays(&current, repeat).clone(),
+                                })
+                            } else {
+                                Ok(crate::SoundClockRepeatStep::Shared {
+                                    live_repeat: repeat.clone(),
+                                    historical_repeat: self
+                                        .repeat_aliases
+                                        .get(repeat)
+                                        .ok_or_else(|| {
+                                            invalid("sound Repeat has no structural alias")
+                                        })?
+                                        .clone(),
+                                })
+                            }
+                        })
+                        .collect::<Result<Vec<_>, EditError>>()?,
+                )?;
+                let key = (
+                    old_scope.clone(),
+                    live_scope.clone(),
+                    split,
+                    (output_owner_edit
+                        && !split
+                        && self.before.sound_uses_output_owner_proof(
+                            &current,
+                            (&old_scope, &live_scope),
+                            (&original, &owner),
+                        ))
+                    .then(|| (original.clone(), owner.clone())),
+                );
+                let (proof, changed_placement) = if let Some((proof, changed)) = moved.get(&key) {
+                    (crate::SoundClockCorrespondence::clone(proof), *changed)
+                } else {
+                    if !split {
+                        let (same_crop, used) = self.before.sound_placement_crop_unchanged(
+                            &current,
+                            &old_scope,
+                            &live_scope,
+                            budget(work)?,
+                        )?;
+                        work = work.checked_add(used).ok_or_else(exhausted)?;
+                        if !same_crop {
+                            return Err(invalid(
+                                "sound owner interval changes require an attachment route",
+                            ));
+                        }
+                    }
+                    let proof = if output_owner_edit && !split {
+                        self.before.sound_owner_clock_correspondence_with_repeats(
+                            &current,
+                            &old_scope,
+                            &live_scope,
+                            (&original, &owner),
+                            &before_map,
+                            budget(work)?,
+                        )?
+                    } else {
+                        self.before.sound_clock_correspondence_with_repeats(
+                            &current,
+                            &old_scope,
+                            &live_scope,
+                            &before_map,
+                            budget(work)?,
+                        )?
+                    };
+                    work = work.checked_add(proof.work()).ok_or_else(exhausted)?;
+                    let changed = if split {
+                        // Even an unmoved left fragment introduces a delivery
+                        // crop. Retain the old allocation for processing input.
+                        true
+                    } else if !ancestors.is_empty() {
+                        let (same, used) = self.before.sound_placement_unchanged(
+                            &current,
+                            &old_scope,
+                            budget(work)?,
+                        )?;
+                        work = work.checked_add(used).ok_or_else(exhausted)?;
+                        !same
+                    } else {
+                        let (old, used) = origin(&self.before, &old_scope, budget(work)?)?;
+                        work = work.checked_add(used).ok_or_else(exhausted)?;
+                        let (new, used) = origin(&current, &live_scope, budget(work)?)?;
+                        work = work.checked_add(used).ok_or_else(exhausted)?;
+                        old != new
+                    };
+                    moved.insert(key, (proof.clone(), changed));
+                    (proof, changed)
+                };
+                // Each live owner must pair with its recorded pre-edit owner,
+                // even when another event already populated the scope cache.
+                // A same-shaped sibling is not an alias.
+                if proof.historical_node(&owner) != Some(&original) {
+                    return Err(invalid("sound owner moved outside its captured scope"));
+                }
+                let mut references = Vec::new();
+                if let Some(previous) = &previous {
+                    for reference in previous.clocks() {
+                        let layout = &self.retained[reference.timing()];
+                        // A cache key owns the relation, so charge its complete
+                        // size before cloning it even on a cache hit.
+                        charge(&mut work, reference.introduced_groups().len())?;
+                        let key = (
+                            reference.timing().clone(),
+                            reference.scope().clone(),
+                            previous.scope().clone(),
+                            reference.repeats().clone(),
+                            reference.introduced_groups().clone(),
+                            (reference.introduced_groups().contains(previous.scope())
+                                || layout.sound_uses_output_owner_proof(
+                                    &self.before,
+                                    (reference.scope(), previous.scope()),
+                                    (reference.owner(), &original),
+                                ))
+                            .then(|| (reference.owner().clone(), original.clone())),
+                        );
+                        if !historical.contains_key(&key) {
+                            let historical_proof = layout
+                                .sound_owner_clock_correspondence_with_groups(
+                                    &self.before,
+                                    (reference.scope(), previous.scope()),
+                                    (reference.owner(), &original),
+                                    reference.repeats(),
+                                    reference.introduced_groups(),
+                                    budget(work)?,
+                                )?;
+                            work = work
+                                .checked_add(historical_proof.work())
+                                .ok_or_else(exhausted)?;
+                            charge(&mut work, reference.introduced_groups().len())?;
+                            historical.insert(key.clone(), historical_proof);
+                        }
+                        let historical_proof = historical
+                            .get(&key)
+                            .expect("historical sound clock proof was inserted");
+                        if historical_proof.historical_node(&original) != Some(reference.owner()) {
+                            return Err(invalid("sound owner processing subtree changed"));
+                        }
+                        // The existing scope may itself be an unpaired live
+                        // group. Keeping that scope retains its original
+                        // historical scope, rather than inventing an alias for
+                        // a group absent when the reference was captured.
+                        let scope = if &old_scope == previous.scope() {
+                            reference.scope()
+                        } else if let Some(scope) = historical_proof.historical_node(&old_scope) {
+                            scope
+                        } else if reference.introduced_groups().contains(&old_scope) {
+                            // Only the explicit unary-root proof below may
+                            // admit this smaller, historically absent scope.
+                            reference.owner()
+                        } else {
+                            return Err(invalid(
+                                "sound clock cannot narrow outside its captured scope",
+                            ));
+                        };
+                        let mut introduced_groups = BTreeSet::new();
+                        if !reference.introduced_groups().is_empty() {
+                            for (live_node, before_node) in proof.node_pairs() {
+                                charge(&mut work, 1)?;
+                                if reference.introduced_groups().contains(before_node) {
+                                    introduced_groups.insert(live_node.clone());
+                                }
+                            }
+                        }
+                        let repeats = crate::SoundClockRepeatMap::new(
+                            ancestors.iter().map(|repeat| {
+                                if self.introduced.as_ref() == Some(repeat) {
+                                    return Ok(crate::SoundClockRepeatStep::Introduced {
+                                        live_repeat: repeat.clone(),
+                                        plays: introduced_plays(&current, repeat).clone(),
+                                    });
+                                }
+                                let prior_repeat = self.repeat_aliases.get(repeat)
+                                    .ok_or_else(|| invalid("sound Repeat has no structural alias"))?;
+                                let introduced = reference.repeats().steps().iter().find_map(|step| {
+                                    match step {
+                                        crate::SoundClockRepeatStep::Introduced { live_repeat, plays }
+                                            if live_repeat == prior_repeat => Some(plays),
+                                        _ => None,
+                                    }
+                                });
+                                if let Some(plays) = introduced {
+                                    Ok(crate::SoundClockRepeatStep::Introduced {
+                                        live_repeat: repeat.clone(), plays: plays.clone(),
+                                    })
+                                } else {
+                                    Ok(crate::SoundClockRepeatStep::Shared {
+                                        live_repeat: repeat.clone(),
+                                        historical_repeat: historical_proof.historical_node(prior_repeat)
+                                            .ok_or_else(|| invalid("sound Repeat has no proven historical alias"))?.clone(),
+                                    })
+                                }
+                            }).collect::<Result<Vec<_>, EditError>>()?,
+                        )?;
+                        let transported = SoundClockReference::new(
+                            reference.timing().clone(),
+                            scope.clone(),
+                            reference.owner().clone(),
+                        )
+                        .with_repeats(repeats)
+                        .with_introduced_groups(introduced_groups)?;
+                        // A narrowing through an unpaired group must establish
+                        // its real unary path. The prior complete-scope proof
+                        // alone cannot grant that new root relation.
+                        if &old_scope != previous.scope()
+                            && historical_proof.historical_node(&old_scope).is_none()
+                        {
+                            let narrowed = layout.sound_owner_clock_correspondence_with_groups(
+                                &current,
+                                (transported.scope(), &live_scope),
+                                (transported.owner(), &owner),
+                                transported.repeats(),
+                                transported.introduced_groups(),
+                                budget(work)?,
+                            )?;
+                            charge(&mut work, narrowed.work())?;
+                        }
+                        references.push(transported);
+                    }
+                }
+                if changed_placement {
+                    references.push(
+                        SoundClockReference::new(
+                            self.timing.clone(),
+                            old_scope.clone(),
+                            original.clone(),
+                        )
+                        .with_repeats(before_map),
+                    );
+                }
+                if !references.is_empty() {
+                    let journal = SoundClockJournal::new(live_scope, references)?;
+                    for reference in journal.clocks() {
+                        let layout = if reference.timing() == &self.timing {
+                            &self.before
+                        } else {
+                            &self.retained[reference.timing()]
+                        };
+                        install_layout(document, reference.timing(), layout)?;
+                    }
+                    document
+                        .audio_bindings
+                        .sound_clocks
+                        .entry(owner.clone())
+                        .or_default()
+                        .insert(id.clone(), journal);
+                }
+            }
+        }
+        Ok(())
+    }
+}
+
+fn introduced_plays<'a>(
+    layout: &'a FrozenAudioLayout,
+    repeat: &NodeId,
+) -> &'a crate::IterationOrder {
+    let crate::FrozenAudioKind::Repeat { iterations, .. } = &layout.nodes()[repeat].kind else {
+        unreachable!("admitted Repeat ancestry")
+    };
+    iterations
+}
+
+fn install_layout(
+    document: &mut ProjectDocument,
+    timing: &AudioTimingId,
+    layout: &FrozenAudioLayout,
+) -> Result<(), EditError> {
+    if let Some(existing) = document.audio_bindings.timings.get(timing) {
+        if existing != layout {
+            return Err(invalid(
+                "sound clock identity names a different structural layout",
+            ));
+        }
+    } else {
+        document
+            .audio_bindings
+            .timings
+            .insert(timing.clone(), layout.clone());
+    }
+    Ok(())
+}
+
+fn origin(
+    layout: &FrozenAudioLayout,
+    top: &NodeId,
+    maximum_work: usize,
+) -> Result<(ExactRatio, usize), EditError> {
+    // A direct root child has no Repeat ancestry. This is its geometric origin,
+    // used only to decide whether transport is needed, never its audible extent.
+    let projection = layout.project(
+        &InstancePath {
+            node: top.clone(),
+            repeats: vec![],
+        },
+        ExactRatio::ZERO,
+        None,
+        maximum_work,
+    )?;
+    Ok((projection.origin, projection.work))
+}
+
+fn removed_owners(
+    document: &ProjectDocument,
+    command: &Command,
+) -> Result<BTreeSet<NodeId>, EditError> {
+    let roots = match command {
+        Command::DeleteRipple { node, .. } => {
+            if !document.nodes.contains_key(node) {
+                return Err(invalid("deleted sound subtree is missing"));
+            }
+            vec![node.clone()]
+        }
+        Command::SetRepeatPlays { node, plays, .. } => {
+            let Some(crate::BeatNode {
+                kind: NodeKind::Repeat { iterations, .. },
+                ..
+            }) = document.nodes().get(node)
+            else {
+                return Err(invalid("sound clock count edit needs a Repeat"));
+            };
+            let entries = document
+                .overrides()
+                .get(node)
+                .map_or(0, crate::PlayOverrides::len)
+                + document
+                    .gap_overrides()
+                    .get(node)
+                    .map_or(0, crate::PlayOverrides::len);
+            if entries
+                .checked_mul(iterations.segment_count())
+                .is_none_or(|work| work > MAX_DOCUMENT_NODES)
+            {
+                return Err(exhausted());
+            }
+            document
+                .overrides()
+                .get(node)
+                .into_iter()
+                .chain(document.gap_overrides().get(node))
+                .flat_map(|entries| entries.iter())
+                .filter(|(play, _)| {
+                    iterations
+                        .position(play)
+                        .is_some_and(|position| position >= *plays)
+                })
+                .map(|(_, root)| root.clone())
+                .collect()
+        }
+        Command::SetRepeatGaps { node, .. } => document
+            .gap_overrides()
+            .get(node)
+            .into_iter()
+            .flat_map(|entries| entries.iter())
+            .map(|(_, root)| root.clone())
+            .collect(),
+        Command::DeleteChildren {
+            parent,
+            first,
+            last,
+            ..
+        }
+        | Command::ReplaceSourceChildren {
+            parent,
+            first,
+            last,
+            ..
+        }
+        | Command::ReplaceSliceChildren {
+            parent,
+            first,
+            last,
+            ..
+        } => {
+            let span = document.sequence_children(parent, first, last)?;
+            let NodeKind::Sequence { children } = &document.nodes[parent].kind else {
+                unreachable!()
+            };
+            children[span.first..span.end].to_vec()
+        }
+        Command::DeleteRange { parent, range, .. }
+        | Command::ReplaceSource { parent, range, .. }
+        | Command::ReplaceSlice { parent, range, .. } => complete_roots(document, parent, *range)?,
+        _ => vec![],
+    };
+    let mut removed = BTreeSet::new();
+    for root in roots {
+        removed.extend(crate::occurrence_edit::subtree_order(document, &root)?);
+    }
+    Ok(removed)
+}
+
+fn complete_roots(
+    document: &ProjectDocument,
+    parent: &NodeId,
+    range: FrameRange,
+) -> Result<Vec<NodeId>, EditError> {
+    let mut start = document.source_splice_boundary(parent, 0)?;
+    let NodeKind::Sequence { children } = &document.nodes[parent].kind else {
+        unreachable!()
+    };
+    let durations = document.durations()?;
+    let mut roots = Vec::new();
+    for child in children {
+        let end = crate::ProjectFrame(
+            start
+                .0
+                .checked_add(durations[child].frames())
+                .ok_or_else(exhausted)?,
+        );
+        if start >= range.start() && end <= range.end() {
+            roots.push(child.clone());
+        }
+        start = end;
+    }
+    Ok(roots)
+}
+
+fn budget(work: usize) -> Result<usize, EditError> {
+    MAX_DOCUMENT_NODES
+        .checked_sub(work)
+        .filter(|remaining| *remaining > 0)
+        .ok_or_else(exhausted)
+}
+fn charge(work: &mut usize, additional: usize) -> Result<(), EditError> {
+    *work = work
+        .checked_add(additional)
+        .filter(|used| *used <= MAX_DOCUMENT_NODES)
+        .ok_or_else(exhausted)?;
+    Ok(())
+}
+fn exhausted() -> EditError {
+    EditError::new(
+        EditErrorCode::LimitExceeded,
+        "sound clock transport work limit",
+    )
+}
+fn invalid(message: &str) -> EditError {
+    EditError::new(EditErrorCode::InvalidCommand, message)
+}

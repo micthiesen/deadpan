@@ -1,0 +1,1 @@
+{"actual_neutral_split_failure":true,"classification":"actual neutral Split failure: full G input halo unchanged, canonical PCM changed","controls_valid":true,"failure":null,"numeric_pcm":{"first_sample":15575,"last_sample":19650,"maximum_absolute_difference":0.009660936455475166,"numerically_different_channel_samples":7581},"pcm_equal":false,"raw_equal":true}

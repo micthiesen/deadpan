@@ -1,0 +1,22 @@
+{
+  "exit": 100,
+  "seconds": 24.00204116664827,
+  "command": [
+    "cargo",
+    "nextest",
+    "run",
+    "--archive-file",
+    "/tmp/deadpan-aligned-sound-scope-2026-10-22/integrated-fifth.tar.zst",
+    "--extract-to",
+    "/tmp/deadpan-aligned-sound-scope-2026-10-22/integrated-fifth-extracted",
+    "--extract-overwrite",
+    "--workspace-remap",
+    "/Users/michael/Code/deadpan",
+    "-E",
+    "test(new_group_birth) | test(aligned_scope)",
+    "--test-threads",
+    "4",
+    "--no-fail-fast"
+  ],
+  "binary_sha256": "9627184bb29f11f8bb49ee89445b33bfabc3d0744da9d62b87b6920c7f9e29c2"
+}

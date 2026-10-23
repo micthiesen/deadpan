@@ -1,0 +1,525 @@
+//! Split must retain the processing birth of an existing treated ancestor G.
+//! No copy recapture is allowed to conceal a lost G alias before relocation.
+use super::*;
+
+fn prefix_one(document: &ProjectDocument) -> Trial<ProjectDocument> {
+    let NodeKind::Hold { recipe } = hold(1, HoldAudio::Silence).kind else {
+        unreachable!()
+    };
+    command(
+        document,
+        "split-move-one",
+        Command::InsertTime {
+            at: ProjectFrame(0),
+            hold: recipe,
+            id: id("split-move-prefix"),
+            identities: SplitIdentities::default(),
+            timing: timing("split-move-one"),
+        },
+    )
+}
+pub(super) fn expected_input(
+    born: &Input,
+    birth_first: i64,
+    shift: i64,
+    first: i64,
+    end: i64,
+) -> (Vec<[f64; 2]>, Vec<bool>) {
+    let mut samples = Vec::new();
+    let mut suppressed = Vec::new();
+    for at in first..end {
+        let index = at - shift - birth_first;
+        if (0..born.samples.len() as i64).contains(&index) {
+            samples.push(born.samples[index as usize]);
+            suppressed.push(born.suppressed[index as usize]);
+        } else {
+            samples.push([0.0; 2]);
+            suppressed.push(true);
+        }
+    }
+    (samples, suppressed)
+}
+pub(super) fn equalize_delivered(
+    born: &Input,
+    birth_first: i64,
+    shift: i64,
+    first: i64,
+    end: i64,
+    total: i64,
+    recipe: EqualizerRecipe,
+) -> Trial<Vec<[f32; 2]>> {
+    let mut filter = deadpan_audio::Equalizer::new(recipe, &AtomicBool::new(false))
+        .map_err(|e| error("independent EQ compile", e))?;
+    let mut result = vec![[0.0; 2]; total as usize];
+    for tile in (first.div_euclid(1024) * 1024..end).step_by(1024) {
+        let mut left = vec![0.0; 5120];
+        let mut right = vec![0.0; 5120];
+        for index in 0..5120 {
+            let born_index = tile - 2048 + index as i64 - shift - birth_first;
+            if (0..born.samples.len() as i64).contains(&born_index) {
+                left[index] = born.samples[born_index as usize][0];
+                right[index] = born.samples[born_index as usize][1];
+            }
+        }
+        let mut a = vec![0.0; 1024];
+        let mut b = vec![0.0; 1024];
+        filter
+            .process_tile(&left, &right, &mut a, &mut b, &AtomicBool::new(false))
+            .map_err(|e| error("independent EQ tile", e))?;
+        for at in tile.max(first)..(tile + 1024).min(end) {
+            let index = (at - tile) as usize;
+            result[at as usize] = [a[index] as f32, b[index] as f32];
+        }
+    }
+    Ok(result)
+}
+pub(super) fn raw_comparison(
+    first: i64,
+    expected: &[[f64; 2]],
+    suppressed: &[bool],
+    actual: &Input,
+) -> serde_json::Value {
+    let differences = differences64(first, expected, &actual.samples);
+    let suppression = suppressed
+        .iter()
+        .zip(&actual.suppressed)
+        .enumerate()
+        .filter_map(|(index, (a, b))| {
+            (a != b).then(|| {
+                serde_json::json!({
+                    "sample":first+index as i64,"expected":a,"actual":b,
+                })
+            })
+        })
+        .collect::<Vec<_>>();
+    serde_json::json!({
+        "passed":differences["length_equal"]==true
+            && differences["different_channel_samples"]==0 && suppression.is_empty(),
+        "pcm":differences,"suppression":suppression,
+    })
+}
+pub(super) fn active(a: &[[f32; 2]], b: &[[f32; 2]]) -> usize {
+    a.iter()
+        .zip(b)
+        .filter(|(a, b)| a[0] != b[0] || a[1] != b[1])
+        .count()
+}
+
+fn run(directory: &std::path::Path) -> Trial<serde_json::Value> {
+    let birth = setup(directory)?;
+    let born = input(&birth, &id("birth-g"), BIRTH_FIRST, BIRTH_END, &[256])?;
+    require(
+        born.samples.len() == 6407,
+        "split birth",
+        "expected6407 delivered labels",
+    )?;
+    let split = command(
+        &birth,
+        "birth-split-owner",
+        Command::Split {
+            node: id("owner"),
+            at: FrameDuration::new(2).unwrap(),
+            identities: SplitIdentities {
+                nodes: ["birth-split-left", "birth-split-right", "birth-split-copy"]
+                    .map(id)
+                    .to_vec(),
+            },
+        },
+    )?;
+    retain(directory, "split-at-birth.json", &split)?;
+    require(
+        split.beat_sounds().len() == 2 && split.duration().unwrap() == birth.duration().unwrap(),
+        "split structure",
+        "expected two complete event aliases and unchanged picture duration",
+    )?;
+    let NodeKind::Sequence { children } = &split.nodes()[&id("birth-g")].kind else {
+        return Err(error(
+            "split G",
+            "treated ancestor is no longer ordinary Sequence",
+        ));
+    };
+    require(
+        children.len() == 2
+            && split.nodes()[&id("birth-g")].audio_treatments
+                == birth.nodes()[&id("birth-g")].audio_treatments,
+        "split structure",
+        "G EQ or two fragment delivery changed",
+    )?;
+    let birth_total = frame_sample_boundary(15);
+    let before_split_pcm = read_bus(&birth, 0, birth_total, &[1021])?;
+    let after_split_pcm = read_bus(&split, 0, birth_total, &[37, 509, 1021, 173])?;
+    let split_neutral = differences32(&before_split_pcm, &after_split_pcm);
+    let after_split_raw = input(&split, &id("birth-g"), BIRTH_FIRST, BIRTH_END, &[173, 256])?;
+    let split_raw_neutral = differences64(BIRTH_FIRST, &born.samples, &after_split_raw.samples);
+    let control = prefix_one(&birth)?;
+    let moved = prefix_one(&split)?;
+    retain(directory, "unsplit-moved.json", &control)?;
+    retain(directory, "split-moved.json", &moved)?;
+    let first = 16_016;
+    let end = 22_422;
+    let shift = 1_602;
+    let total = 25_626;
+    require(
+        frame_sample_boundary(10) == first
+            && frame_sample_boundary(14) == end
+            && frame_sample_boundary(16) == total
+            && BIRTH_END - 1 + shift == end,
+        "split literal oracle",
+        "unexpected6407-to6406 movement",
+    )?;
+    let recipe = birth.nodes()[&id("birth-g")]
+        .audio_treatments
+        .equalizer()
+        .unwrap();
+    let expected = equalize_delivered(&born, BIRTH_FIRST, shift, first, end, total, recipe)?;
+    let a = read_bus(&control, 0, total, &[1021])?;
+    let b = read_bus(&moved, 0, total, &[37, 509, 1021, 173])?;
+    let control_oracle = differences32(&expected, &a);
+    let candidate_oracle = differences32(&expected, &b);
+    let paired_pcm = differences32(&a, &b);
+    let partitions = differences32(&b, &read_bus(&moved, 0, total, &[1021])?);
+    let raw_first = first - 2048;
+    let raw_end = end + 2048;
+    let (expected_raw, expected_suppressed) =
+        expected_input(&born, BIRTH_FIRST, shift, raw_first, raw_end);
+    let raw_control = input(&control, &id("birth-g"), raw_first, raw_end, &[256])?;
+    let raw_candidate = input(&moved, &id("birth-g"), raw_first, raw_end, &[37, 173, 256])?;
+    let control_input =
+        raw_comparison(raw_first, &expected_raw, &expected_suppressed, &raw_control);
+    let candidate_input = raw_comparison(
+        raw_first,
+        &expected_raw,
+        &expected_suppressed,
+        &raw_candidate,
+    );
+    retain(directory, "raw-control.json", &input_evidence(&raw_control))?;
+    retain(
+        directory,
+        "raw-candidate.json",
+        &input_evidence(&raw_candidate),
+    )?;
+    retain(directory, "raw-birth.json", &input_evidence(&born))?;
+    let no_eq = command(
+        &moved,
+        "split-ablate-g-eq",
+        Command::SetAudioTreatments {
+            node: id("birth-g"),
+            treatments: AudioTreatments::default(),
+        },
+    )?;
+    let mut no_event = moved.clone();
+    for (index, owner) in moved.beat_sounds().keys().enumerate() {
+        no_event = command(
+            &no_event,
+            &format!("split-ablate-event-{index}"),
+            Command::DeleteBeatSound {
+                owner: owner.clone(),
+                id: sound_id("effect"),
+            },
+        )?;
+    }
+    let no_eq_pcm = read_bus(&no_eq, 0, total, &[1021])?;
+    let no_event_pcm = read_bus(&no_event, 0, total, &[1021])?;
+    let eq_active = active(&b, &no_eq_pcm);
+    let event_active = active(&b, &no_event_pcm);
+    let mut cold = Vec::new();
+    for at in [first - 1, first, end - 1, total - 3] {
+        let fresh = read_bus(&moved, at, at + 3, &[3])?;
+        cold.push(serde_json::json!({"first":at,"comparison":differences32(&b[at as usize..at as usize+3],&fresh)}));
+    }
+    let terminal = (end - raw_first) as usize;
+    let controls_valid = born.samples.last().unwrap().iter().any(|v| *v != 0.0)
+        && split_neutral["different_channel_samples"] == 0
+        && split_raw_neutral["different_channel_samples"] == 0
+        && control_oracle["different_channel_samples"] == 0
+        && control_input["passed"] == true
+        && raw_control.samples[terminal].iter().any(|v| *v != 0.0)
+        && eq_active > 0
+        && event_active > 0
+        && partitions["different_channel_samples"] == 0
+        && cold
+            .iter()
+            .all(|row| row["comparison"]["different_channel_samples"] == 0);
+    Ok(serde_json::json!({
+        "controls_valid":controls_valid,
+        "passed":candidate_input["passed"]==true && candidate_oracle["different_channel_samples"]==0
+            && paired_pcm["different_channel_samples"]==0,
+        "literal_oracle":{"birth":[BIRTH_FIRST,BIRTH_END],"destination":[first,end],"shift":shift,
+            "retained_terminal":end,"whole_project_samples":total},
+        "split_at_birth":split_neutral,"raw_split_at_birth":split_raw_neutral,
+        "control_oracle":control_oracle,"candidate_oracle":candidate_oracle,"paired_pcm":paired_pcm,
+        "control_input":control_input,"candidate_input":candidate_input,
+        "control_terminal_bits":raw_control.samples[terminal].map(f64::to_bits),
+        "candidate_terminal_bits":raw_candidate.samples[terminal].map(f64::to_bits),
+        "partitions":partitions,"cold":cold,"eq_active_samples":eq_active,"event_active_samples":event_active,
+        "expected_pcm_bits":expected.iter().map(|s|s.map(f32::to_bits)).collect::<Vec<_>>(),
+        "control_pcm_bits":a.iter().map(|s|s.map(f32::to_bits)).collect::<Vec<_>>(),
+        "candidate_pcm_bits":b.iter().map(|s|s.map(f32::to_bits)).collect::<Vec<_>>(),
+        "no_eq_pcm_bits":no_eq_pcm.iter().map(|s|s.map(f32::to_bits)).collect::<Vec<_>>(),
+        "no_event_pcm_bits":no_event_pcm.iter().map(|s|s.map(f32::to_bits)).collect::<Vec<_>>(),
+        "executed_by_draft_author":false,"independent_dsp_claim":false,
+    }))
+}
+#[test]
+fn split_inside_born_equalized_group_keeps_its_terminal_after_later_move() {
+    let directory = std::env::var_os("DEADPAN_SCOPE_PROBE_EVIDENCE")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(|| {
+            std::env::temp_dir().join(format!("deadpan-group-birth-split-{}", std::process::id()))
+        })
+        .join("new-group-birth-split");
+    std::fs::create_dir_all(&directory).unwrap();
+    let result = run(&directory).unwrap_or_else(|failure| {
+        serde_json::json!({
+            "controls_valid":false,"passed":false,"failure":failure,
+            "classification":"guard/admission/setup/API failure; no DSP conclusion",
+        })
+    });
+    retain(&directory, "result.json", &result).unwrap();
+    eprintln!(
+        "split evidence: {}\ncontrols_valid={} passed={} failure={}",
+        directory.display(),
+        result["controls_valid"],
+        result["passed"],
+        result["failure"]
+    );
+    assert!(
+        result["controls_valid"] == true,
+        "split control evidence retained"
+    );
+    assert!(
+        result["passed"] == true,
+        "split/move mismatch evidence retained"
+    );
+}
+
+// This regression ends at Split. The actual unchanged pre-edit bus and full
+// signed G input halo are its oracles, independently of any later move.
+fn pcm_numeric_differences(expected: &[[f32; 2]], actual: &[[f32; 2]]) -> serde_json::Value {
+    let mut first = None;
+    let mut last = None;
+    let mut count = 0;
+    let mut maximum = 0.0_f64;
+    for (sample, (a, b)) in expected.iter().zip(actual).enumerate() {
+        for channel in 0..2 {
+            if a[channel] != b[channel] {
+                count += 1;
+                first.get_or_insert(sample);
+                last = Some(sample);
+                maximum = maximum.max((f64::from(a[channel]) - f64::from(b[channel])).abs());
+            }
+        }
+    }
+    serde_json::json!({"numerically_different_channel_samples":count,
+        "first_sample":first,"last_sample":last,"maximum_absolute_difference":maximum})
+}
+fn neutral_ablate(
+    document: &ProjectDocument,
+    prefix: &str,
+) -> Trial<(Vec<[f32; 2]>, Vec<[f32; 2]>)> {
+    let no_eq = command(
+        document,
+        &format!("{prefix}-eq"),
+        Command::SetAudioTreatments {
+            node: id("birth-g"),
+            treatments: AudioTreatments::default(),
+        },
+    )?;
+    let mut no_event = document.clone();
+    for (index, owner) in document.beat_sounds().keys().enumerate() {
+        no_event = command(
+            &no_event,
+            &format!("{prefix}-event-{index}"),
+            Command::DeleteBeatSound {
+                owner: owner.clone(),
+                id: sound_id("effect"),
+            },
+        )?;
+    }
+    Ok((
+        read_bus(&no_eq, 0, frame_sample_boundary(15), &[1021])?,
+        read_bus(&no_event, 0, frame_sample_boundary(15), &[1021])?,
+    ))
+}
+fn run_neutral(directory: &std::path::Path) -> Trial<serde_json::Value> {
+    let before = setup(directory)?;
+    let after = command(
+        &before,
+        "neutral-split-owner",
+        Command::Split {
+            node: id("owner"),
+            at: FrameDuration::new(2).unwrap(),
+            identities: SplitIdentities {
+                nodes: [
+                    "neutral-split-left",
+                    "neutral-split-right",
+                    "neutral-split-copy",
+                ]
+                .map(id)
+                .to_vec(),
+            },
+        },
+    )?;
+    require(
+        before.duration().unwrap().frames() == 15
+            && after.duration().unwrap() == before.duration().unwrap()
+            && after.beat_sounds().len() == 2
+            && after.nodes()[&id("birth-g")].audio_treatments
+                == before.nodes()[&id("birth-g")].audio_treatments,
+        "neutral Split structure",
+        "Split changed time, event alias count or G EQ",
+    )?;
+    retain(directory, "before-split.json", &before)?;
+    retain(directory, "after-split.json", &after)?;
+    let first = BIRTH_FIRST - 2048;
+    let end = BIRTH_END + 2048;
+    let raw_before = input(&before, &id("birth-g"), first, end, &[256])?;
+    let raw_after = input(&after, &id("birth-g"), first, end, &[37, 173, 256])?;
+    let raw_before_repeat = input(&before, &id("birth-g"), first, end, &[37, 173, 256])?;
+    let raw_after_repeat = input(&after, &id("birth-g"), first, end, &[256])?;
+    retain(
+        directory,
+        "raw-before-halo.json",
+        &input_evidence(&raw_before),
+    )?;
+    retain(
+        directory,
+        "raw-after-halo.json",
+        &input_evidence(&raw_after),
+    )?;
+    let raw_diff = raw_comparison(
+        first,
+        &raw_before.samples,
+        &raw_before.suppressed,
+        &raw_after,
+    );
+    let raw_before_partition = raw_comparison(
+        first,
+        &raw_before.samples,
+        &raw_before.suppressed,
+        &raw_before_repeat,
+    );
+    let raw_after_partition = raw_comparison(
+        first,
+        &raw_after.samples,
+        &raw_after.suppressed,
+        &raw_after_repeat,
+    );
+    let total = frame_sample_boundary(15);
+    let expected = read_bus(&before, 0, total, &[1021])?;
+    let actual = read_bus(&after, 0, total, &[37, 509, 1021, 173])?;
+    let pcm_diff = differences32(&expected, &actual);
+    let numeric = pcm_numeric_differences(&expected, &actual);
+    let before_partition = differences32(
+        &expected,
+        &read_bus(&before, 0, total, &[37, 509, 1021, 173])?,
+    );
+    let after_partition = differences32(&actual, &read_bus(&after, 0, total, &[1021])?);
+    let mut cold = Vec::new();
+    for at in [
+        BIRTH_FIRST - 1,
+        frame_sample_boundary(11) - 1,
+        BIRTH_END - 1,
+        total - 3,
+    ] {
+        let a = read_bus(&before, at, at + 3, &[3])?;
+        let b = read_bus(&after, at, at + 3, &[3])?;
+        cold.push(serde_json::json!({"first":at,
+            "before":differences32(&expected[at as usize..at as usize+3],&a),
+            "after":differences32(&actual[at as usize..at as usize+3],&b)}));
+    }
+    let (before_no_eq, before_no_event) = neutral_ablate(&before, "neutral-before-ablation")?;
+    let (after_no_eq, after_no_event) = neutral_ablate(&after, "neutral-after-ablation")?;
+    let before_eq_active = active(&expected, &before_no_eq);
+    let before_event_active = active(&expected, &before_no_event);
+    let after_eq_active = active(&actual, &after_no_eq);
+    let after_event_active = active(&actual, &after_no_event);
+    let nominal = (BIRTH_FIRST - first) as usize..(BIRTH_END - first) as usize;
+    let nominal_diff = differences64(
+        BIRTH_FIRST,
+        &raw_before.samples[nominal.clone()],
+        &raw_after.samples[nominal],
+    );
+    let controls_valid = before_eq_active > 0
+        && before_event_active > 0
+        && after_eq_active > 0
+        && after_event_active > 0
+        && before_partition["different_channel_samples"] == 0
+        && after_partition["different_channel_samples"] == 0
+        && raw_before_partition["passed"] == true
+        && raw_after_partition["passed"] == true
+        && cold.iter().all(|row| {
+            row["before"]["different_channel_samples"] == 0
+                && row["after"]["different_channel_samples"] == 0
+        });
+    let raw_equal = raw_diff["passed"] == true && raw_before.support == raw_after.support;
+    let pcm_equal = pcm_diff["different_channel_samples"] == 0;
+    let classification = if !controls_valid {
+        "control/read invariance failure; no neutral-Split conclusion"
+    } else if raw_equal && !pcm_equal {
+        "actual neutral Split failure: full G input halo unchanged, canonical PCM changed"
+    } else if !raw_equal {
+        "actual neutral Split failure: full G input halo or suppression changed"
+    } else {
+        "neutral Split preserves full G input and canonical PCM"
+    };
+    Ok(serde_json::json!({
+        "classification":classification,"controls_valid":controls_valid,"raw_equal":raw_equal,
+        "pcm_equal":pcm_equal,"actual_neutral_split_failure":controls_valid && (!raw_equal || !pcm_equal),
+        "raw_halo":[first,end],"raw":raw_diff,"nominal_raw":nominal_diff,
+        "raw_before_support":raw_before.support,"raw_after_support":raw_after.support,
+        "full_pcm":pcm_diff,"numeric_pcm":numeric,
+        "before_partitions":before_partition,"after_partitions":after_partition,
+        "raw_before_partitions":raw_before_partition,"raw_after_partitions":raw_after_partition,
+        "cold":cold,"before_eq_active_samples":before_eq_active,
+        "before_event_active_samples":before_event_active,"after_eq_active_samples":after_eq_active,
+        "after_event_active_samples":after_event_active,
+        "expected_pcm_bits":expected.iter().map(|s|s.map(f32::to_bits)).collect::<Vec<_>>(),
+        "actual_pcm_bits":actual.iter().map(|s|s.map(f32::to_bits)).collect::<Vec<_>>(),
+        "before_no_eq_pcm_bits":before_no_eq.iter().map(|s|s.map(f32::to_bits)).collect::<Vec<_>>(),
+        "before_no_event_pcm_bits":before_no_event.iter().map(|s|s.map(f32::to_bits)).collect::<Vec<_>>(),
+        "after_no_eq_pcm_bits":after_no_eq.iter().map(|s|s.map(f32::to_bits)).collect::<Vec<_>>(),
+        "after_no_event_pcm_bits":after_no_event.iter().map(|s|s.map(f32::to_bits)).collect::<Vec<_>>(),
+        "executed_by_draft_author":false,"independent_dsp_claim":false,"later_move_tested":false,
+    }))
+}
+#[test]
+fn neutral_split_inside_born_equalized_group_preserves_full_input_halo_and_pcm() {
+    let directory = std::env::var_os("DEADPAN_SCOPE_PROBE_EVIDENCE")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(|| {
+            std::env::temp_dir().join(format!(
+                "deadpan-group-birth-neutral-split-{}",
+                std::process::id()
+            ))
+        })
+        .join("new-group-birth-neutral-split");
+    std::fs::create_dir_all(&directory).unwrap();
+    let result = run_neutral(&directory).unwrap_or_else(|failure| {
+        serde_json::json!({
+            "controls_valid":false,"raw_equal":false,"pcm_equal":false,"failure":failure,
+            "classification":"guard/admission/setup/API failure; no neutral-Split conclusion",
+        })
+    });
+    retain(&directory, "result.json", &result).unwrap();
+    let summary = serde_json::json!({
+        "classification":result["classification"],"controls_valid":result["controls_valid"],
+        "raw_equal":result["raw_equal"],"pcm_equal":result["pcm_equal"],
+        "actual_neutral_split_failure":result["actual_neutral_split_failure"],
+        "numeric_pcm":result["numeric_pcm"],"failure":result["failure"],
+    });
+    retain(&directory, "summary.json", &summary).unwrap();
+    eprintln!("neutral Split evidence: {}\n{summary}", directory.display());
+    assert!(
+        result["controls_valid"] == true,
+        "neutral-Split control evidence retained"
+    );
+    assert!(
+        result["raw_equal"] == true,
+        "neutral-Split full input mismatch evidence retained"
+    );
+    assert!(
+        result["pcm_equal"] == true,
+        "neutral-Split canonical PCM mismatch evidence retained"
+    );
+}

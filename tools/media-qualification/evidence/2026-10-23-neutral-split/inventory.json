@@ -1,0 +1,230 @@
+{
+  "integrated-fifth-binary.json": {
+    "bytes": 227,
+    "sha256": "7c3c79af247ee848d25e7077e27bd62aa0a0b34e98b0f881e8951de6aad92ebb"
+  },
+  "integrated-fifth-build-result.json": {
+    "bytes": 402,
+    "sha256": "f754a9413cc1859ed51370778ae163a3504c6cce9e59e8248ba7c6fd4bd5851a"
+  },
+  "integrated-fifth-build.log": {
+    "bytes": 426,
+    "sha256": "de548beefb7f2890f08cb8250d1ecb33905087738ad80448125b834ec7c3e87e"
+  },
+  "integrated-fifth-lock.json": {
+    "bytes": 583,
+    "sha256": "b783a007ca4b3ab356c3488372a276c0ffa7ad4f9f34b31f1b0743b121e44317"
+  },
+  "integrated-fifth-run-result.json": {
+    "bytes": 592,
+    "sha256": "b9de11c34f2b42651f650f84c6682df3b71f7ad592ae3e49aa1cb35e7508c949"
+  },
+  "integrated-fifth-run.log": {
+    "bytes": 6639,
+    "sha256": "6e1af57e3f7009cd2a2af1102b00b995d164200a61c30b9903e81759f3978675"
+  },
+  "integrated-fifth-source-identities.json": {
+    "bytes": 250502,
+    "sha256": "9003797ed44d2c1180ef90f39e2629d45245d270d54c61efe30e265d84bfa142"
+  },
+  "neutral-split/after-group-before-eq.json": {
+    "bytes": 5173,
+    "sha256": "97bd462d315c36583d2c3400395eb582285ff24508d51ee0edf6a264075e9acd"
+  },
+  "neutral-split/after-split.json": {
+    "bytes": 9321,
+    "sha256": "22a9b144dc0adc5b47c3c137aa952456caa8c602287822082ffa4c75356fe840"
+  },
+  "neutral-split/before-group.json": {
+    "bytes": 5065,
+    "sha256": "febf42775c270802f61e9408843c30ab761454ffd3da3f8b9d3eb1372afa6c4f"
+  },
+  "neutral-split/before-split.json": {
+    "bytes": 5287,
+    "sha256": "a323351839ec87a080b53ea92503105fcf075edd16f092707990e78e6b10a828"
+  },
+  "neutral-split/birth.json": {
+    "bytes": 5287,
+    "sha256": "a323351839ec87a080b53ea92503105fcf075edd16f092707990e78e6b10a828"
+  },
+  "neutral-split/raw-after-halo.json": {
+    "bytes": 301167,
+    "sha256": "e837d2a67e94a9595aa2d481505a722a288621b4d7d98ba1dddc55700b34ab85"
+  },
+  "neutral-split/raw-before-halo.json": {
+    "bytes": 299704,
+    "sha256": "516a58ea56ec3aa17026b8ffe45d6cd34a881a57f6063a09eca67b05f408e133"
+  },
+  "neutral-split/result.json": {
+    "bytes": 2346096,
+    "sha256": "eb313cc896f4fe16e632ae6c4f9679cd18f79e333896dae413a33cfeceb4b1c7"
+  },
+  "neutral-split/summary.json": {
+    "bytes": 362,
+    "sha256": "156d18674153e929ad622ccafa267ce46432e91f5301be482b39f8cf2174059f"
+  },
+  "source-record.json": {
+    "bytes": 2892,
+    "sha256": "f8b146af1cf73bc4a2c18e8450d3808caad64caa8208e08f35ef30012a9dcfd4"
+  },
+  "sources/crates/deadpan-audio/src/beat_sounds.rs.txt": {
+    "bytes": 17923,
+    "sha256": "955c80a268318b90d94b0222449fa68e9bd991bca4060bd4a85092918a34df94"
+  },
+  "sources/crates/deadpan-audio/src/shared_components.rs.txt": {
+    "bytes": 19556,
+    "sha256": "4a70d4fb6f54bd06735d3860e299dd1bd37bfa148f0cbc9247a18f112ddffe10"
+  },
+  "sources/crates/deadpan-audio/src/shared_eq.rs.txt": {
+    "bytes": 36196,
+    "sha256": "5b13ac46525dba842acc0b49e74d64079974a73e10635a9dd21b7d07ad2aafc6"
+  },
+  "sources/crates/deadpan-audio/src/shared_mix.rs.txt": {
+    "bytes": 19333,
+    "sha256": "f9c1c97574012afa8963760f04a99b683c88bda1735a5b8e50cf3bd30e9be1eb"
+  },
+  "sources/crates/deadpan-audio/tests/audio_definition/sound_clocks/aligned_scope.rs.txt": {
+    "bytes": 17037,
+    "sha256": "a9e1f899a3cc795fd523a20aa2ca88492342bf9e411e3e9458287e58f3551ddd"
+  },
+  "sources/crates/deadpan-audio/tests/audio_definition/sound_clocks/new_group_birth.rs.txt": {
+    "bytes": 31208,
+    "sha256": "020340b7069a5172c5190f41bfeed16760f98b0ba00bf7030169496845843aed"
+  },
+  "sources/crates/deadpan-audio/tests/audio_definition/sound_clocks/new_group_birth_authority.rs.txt": {
+    "bytes": 12614,
+    "sha256": "b1f88f97b4fecb2dc9ef2691e810936bf4de36d0485d11e597956d7a88e792e2"
+  },
+  "sources/crates/deadpan-audio/tests/audio_definition/sound_clocks/new_group_birth_later.rs.txt": {
+    "bytes": 13342,
+    "sha256": "e8dd994dedbcc172c18b2304ce11d73678b0ac1f3051add40c663fc9aae8b712"
+  },
+  "sources/crates/deadpan-audio/tests/audio_definition/sound_clocks/new_group_birth_split.rs.txt": {
+    "bytes": 21666,
+    "sha256": "44d9854f014130a322e99c74e265d1bffe2c6c1a4f85f83e1069489527875a0c"
+  },
+  "sources/crates/deadpan-audio/tests/audio_definition/sound_clocks.rs.txt": {
+    "bytes": 37469,
+    "sha256": "aa0d6daef84e09d320bbf9e24d422cc49b423162d6fb52bdab46300fbcbbe022"
+  },
+  "sources/crates/deadpan-core/src/audio_binding.rs.txt": {
+    "bytes": 98508,
+    "sha256": "b921c74cf80a3b08bd621776fa461ac387ea7db29a171eac3147cff0fb16adce"
+  },
+  "sources/crates/deadpan-core/src/audio_reference/group_correspondence_tests.rs.txt": {
+    "bytes": 22574,
+    "sha256": "a469660c59b0831889f9b1eaaaa52a9bce5a1dd0a14ffe8f5b17d5a11b690a4e"
+  },
+  "sources/crates/deadpan-core/src/audio_reference.rs.txt": {
+    "bytes": 135887,
+    "sha256": "d08576c54d5b81aee1e452fee4596a0e910a1a9f6e9214935a0af5761ba11e5b"
+  },
+  "sources/crates/deadpan-core/src/command.rs.txt": {
+    "bytes": 154430,
+    "sha256": "2eb52e39924f578d6cac0dfb7b5e3febdf15750e676125300df131d1382ae726"
+  },
+  "sources/crates/deadpan-core/src/document.rs.txt": {
+    "bytes": 96665,
+    "sha256": "a389a60c59b1cd03f3553bb9fddc496b918b416d8f3b08345bef5e11ddc8d9bc"
+  },
+  "sources/crates/deadpan-core/src/edit_slice/rename.rs.txt": {
+    "bytes": 39146,
+    "sha256": "633f9469d8e4538fc9024cb40a8bff0c5aa24bc5197df202ab6df21a31a6d3ae"
+  },
+  "sources/crates/deadpan-core/src/edit_slice/sound_clocks.rs.txt": {
+    "bytes": 10304,
+    "sha256": "ad49affb1bff26fd32f1dd6014d40bea344e2390b690913ed5fc738cd64410f9"
+  },
+  "sources/crates/deadpan-core/src/group_selection.rs.txt": {
+    "bytes": 9017,
+    "sha256": "e3dac23c749eef75cddffd7a948bed766135bde9983321bbb285c143d7a6b1c0"
+  },
+  "sources/crates/deadpan-core/src/lib.rs.txt": {
+    "bytes": 5888,
+    "sha256": "3356444bae4126710a3e01e673234edf32b4aadde874ad478d4e14a7fc1f9325"
+  },
+  "sources/crates/deadpan-core/src/occurrence_edit.rs.txt": {
+    "bytes": 28403,
+    "sha256": "b5384ae48cc2d9f70c6d23bafd25ec5523c82c31aae7ea21d1a1243959e6f8bc"
+  },
+  "sources/crates/deadpan-core/src/sound_clock/edit.rs.txt": {
+    "bytes": 36371,
+    "sha256": "9ce6e66070c47befc5120e2e525686328d1a4768e9bbc6050f096122efef14b6"
+  },
+  "sources/crates/deadpan-core/src/sound_clock/grouping.rs.txt": {
+    "bytes": 12512,
+    "sha256": "2e78630412afa0736c7f549b9ae83af43ae4206401b8662e791c3d179170ad45"
+  },
+  "sources/crates/deadpan-core/src/sound_clock/introduced_groups_tests.rs.txt": {
+    "bytes": 1584,
+    "sha256": "5878863131884819bf494355a125c738a3f7ff373d14a5967a7edc0069cd4f44"
+  },
+  "sources/crates/deadpan-core/src/sound_clock/tests/edits/grouping.rs.txt": {
+    "bytes": 8806,
+    "sha256": "7d88b349db66f65b8a506260669b3f59a9db73ae6c7b3b4a8aaf0b21130dec89"
+  },
+  "sources/crates/deadpan-core/src/sound_clock.rs.txt": {
+    "bytes": 14171,
+    "sha256": "72abb2d483b253ad0742518f799884164443dbf49b541a7cad447b17a7422619"
+  },
+  "sources/crates/deadpan-core/src/sound_events.rs.txt": {
+    "bytes": 33070,
+    "sha256": "6a79aee73baf3c4b24f2b5f880f80d15f9bcf1d54f623ecf0ecbe71ad73acab1"
+  },
+  "sources/crates/deadpan-core/src/split.rs.txt": {
+    "bytes": 16607,
+    "sha256": "c80cd7da57c3740985befec7e87834c547fa8626acead92ee6efb39126f02d97"
+  },
+  "sources/crates/deadpan-core/tests/aligned_sound_scope_counterfactual.rs.txt": {
+    "bytes": 22832,
+    "sha256": "db63a8adfc14928a25b6055fd569b3f45668898b7ef6ad6158917cbda42197a5"
+  },
+  "sources/crates/deadpan-core/tests/introduced_sound_group_copies.rs.txt": {
+    "bytes": 15948,
+    "sha256": "0c87b1150e25cc860719212fe47cf08243e9b9c4c29d74b591e57563adfa5c58"
+  },
+  "sources/crates/deadpan-core/tests/introduced_sound_group_transport.rs.txt": {
+    "bytes": 10938,
+    "sha256": "d75f61c3064053e26506a8fbd515bf8b2cb5c380af23e28b94f1c6159beb4df9"
+  },
+  "sources/crates/deadpan-plan/src/audio_signal.rs.txt": {
+    "bytes": 50140,
+    "sha256": "d7af21c10858d9e257d48d67a4ecc4290f3276aa4fefffdbf10fdc090097412d"
+  },
+  "sources/crates/deadpan-plan/src/audio_sound_processing_history.rs.txt": {
+    "bytes": 13066,
+    "sha256": "a7201fa6a876e5f852471ca1cc20593bef082b703328fac334dd5837dc7d08b0"
+  },
+  "sources/crates/deadpan-plan/src/audio_sound_route.rs.txt": {
+    "bytes": 41819,
+    "sha256": "3b89b2c514ca7e4660c8ac78743f063694739f25f39c8ebca3506a7db837b57d"
+  },
+  "sources/crates/deadpan-plan/src/audio_source_occurrence.rs.txt": {
+    "bytes": 42144,
+    "sha256": "09ae1c1d25d3b15eafd83484ffc498c53232e229f1cb7d33ece0f6faee047656"
+  },
+  "sources/crates/deadpan-plan/src/lib.rs.txt": {
+    "bytes": 6569,
+    "sha256": "a0a0951a64688fb52b4b7a7c3ee8a85f8966de28b8d3e7c3d8543c77a4f33600"
+  },
+  "sources/crates/deadpan-plan/src/plan.rs.txt": {
+    "bytes": 73301,
+    "sha256": "060e3e93ccfe689dd536707147fc62542251796eb7d8bce87d8b3adf4051f5fd"
+  },
+  "sources/crates/deadpan-store/src/schema.rs.txt": {
+    "bytes": 7329,
+    "sha256": "3824a5b5fb91274beb0361e947a60b560eff0463e71ef372d4e8cab399df9448"
+  },
+  "sources/crates/deadpan-store/tests/migration/development_break.rs.txt": {
+    "bytes": 7215,
+    "sha256": "fa56c4ccb43d14eab7860217c10d9c079d8e27f0dbd06b4f8b110cfd8d547841"
+  },
+  "sources/crates/deadpan-store/tests/source_registration/sounds/sound_clocks/introduced_groups.rs.txt": {
+    "bytes": 20261,
+    "sha256": "8111c9da3fa62b60e6362d59c92eb9bb41f358ffafd39421ff765a4d4f786433"
+  },
+  "sources/crates/deadpan-store/tests/source_registration/sounds/sound_clocks.rs.txt": {
+    "bytes": 23447,
+    "sha256": "f108b2fd0f7ab69e1fd9c5484046eff3d839e2a9379e6f674bd5d36667393df1"
+  }
+}
