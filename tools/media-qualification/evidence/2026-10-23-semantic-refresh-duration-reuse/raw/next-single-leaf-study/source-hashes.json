@@ -1,0 +1,19 @@
+{
+  "crates/deadpan-core/src/semantic/planner.rs": "67e5d86a9f6c96b98bb6289b838f8b1375ac4ee0559dbf26417819e7e3e17c1f",
+  "crates/deadpan-core/src/semantic/planner/pause.rs": "8b6e2f282b5d704afe6528e5dbdad5118028bb99d637fe0644410bb514fde15f",
+  "crates/deadpan-core/src/semantic/planner/selection.rs": "f8e16b78ed203dade31c1ff90632371f4d8dc1798db09178b03a3799d93ca526",
+  "crates/deadpan-core/src/compound.rs": "5cc9f31f2b1a88267518b5edfb228c9de956cf3a4248434e77b70a312186db17",
+  "crates/deadpan-core/src/compound/identities.rs": "43d159bf373ff37d341e30d8f40352b41bbbb8fa229e905427efb9a607bacb5a",
+  "crates/deadpan-core/src/command.rs": "37e364c3e02ab670d372a7bdc37f7d53b9979347b5821303047a4fef61b563b5",
+  "crates/deadpan-core/src/command_work.rs": "c06e518513e82a8b52daf516d4eb134e7056a898f9a34f8e8f991670a7f84606",
+  "crates/deadpan-core/src/document.rs": "2763bb86bbaba1afe9f11ade4e0077c154ffc12c9452bc2836fc9b0105865d10",
+  "crates/deadpan-core/src/shared_map.rs": "08270640fa48e0614ad33e384cf92723ccde4c5f06bc2a0a3c54c8fabe409e26",
+  "crates/deadpan-core/src/audio_binding.rs": "94c43e887cb29d01a769a9e579fc82be278a5523e52cdfb24eb5df6951e0cac0",
+  "crates/deadpan-core/src/audio_binding_lifecycle.rs": "bac4f558f42595384b542f538c8aefbcfc58538bfd29314599d58368e345c33b",
+  "crates/deadpan-core/src/derived_clock.rs": "cd6b50d2cfbc2e29de3dec5be7dc9fb8ed9fe5d2e9bef2b15a2d6ed76b366225",
+  "crates/deadpan-core/src/insert_time/retimed.rs": "d5cd1bb8a12c777275fb2af286ba42c120572723f5143b15f36ed9def3ef5358",
+  "crates/deadpan-store/src/compound.rs": "1d5f07d4bc517906ed8cd650e42620cfca5d9e19c474599b3fafdd87a9ebc8e4",
+  "crates/deadpan-store/src/lib.rs": "60e791a846e4ae64bd400194a7efe8d9123880490b8b18a2cf57a5d66c429227",
+  "crates/deadpan-cli/src/macros.rs": "c120ec8575fc5b72267bbccfd84481bf97fef1b39c96092b4048d6ca35165f7f",
+  "crates/deadpan-app/src/project/service/macros.rs": "b3d63ee05d49d3c1208a54a5492fe365c39b198b2a82448388df5a264e64c20c"
+}

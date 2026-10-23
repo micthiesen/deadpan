@@ -79,6 +79,24 @@ retains all three emitted movies and decoder/control reports. See the
 [production qualification](qualification/full-timing-closure-reuse-2026-10-23.md).
 No formal percentile, memory target, requirement or gate closes.
 
+## Semantic refresh duration reuse, 2026-10-23
+
+Selection refresh now shares the same immutable staged document's proved
+durations while retaining bounds/index query order and reference/derived
+fallbacks. Four new differential tests pass in the full 1,526-test Core run
+across 70 binaries, with zero skipped. Broader 3,506 tests (740 skipped), UI
+1,296 tests (eleven skipped), strict Core/UI checks and formatting pass without
+leak annotations. Debug/release media and canonical history controls, six
+native workflows and both portable copies pass.
+
+Five final quiet pairs give commit medians 246.381375 /238.914458 ms and
+offscreen composition 248.946250 /241.268958 ms, a 7.677292 ms /3.08%
+diagnostic difference. The 470-file /15,087,083-byte inventory verifies,
+including all three emitted movies and decoder/control reports. See the
+[production qualification](qualification/semantic-refresh-duration-reuse-2026-10-23.md).
+The private prototype below remains a separate batch. No percentile, memory
+target, requirement or gate closes; the 100 ms/50 ms targets remain open.
+
 ## Remaining preparation cost, 2026-10-23
 
 A private [semantic refresh duration reuse prototype](qualification/semantic-refresh-duration-reuse-prototype-2026-10-23.md)
@@ -89,7 +107,7 @@ pass. Five quiet pairs give commit medians 245.353334 /240.185084 ms and
 offscreen composition 248.012042 /242.880417 ms, a 5.131625 ms /2.07%
 diagnostic difference. The initial private-constructor compile failure and
 equivalent test-helper correction are retained. The 161-file /2,865,045-byte
-inventory verifies. Full production qualification remains owed; no target closes.
+inventory verifies. Production qualification is complete above; no target closes.
 
 A private [complete frozen-layout reuse prototype](qualification/full-timing-closure-reuse-prototype-2026-10-23.md)
 recognizes a full alias closure after all existing alias checks, retains the

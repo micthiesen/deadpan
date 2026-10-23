@@ -1,0 +1,46 @@
+{
+  "audio_windows": 1,
+  "blocks_compared": 7,
+  "canonical_channels": 2,
+  "canonical_pcm_evidence": {
+    "before": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgqyiYt/fixture/aligned-before-pcm.json",
+    "final": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgqyiYt/fixture/aligned-final-pcm.json",
+    "moved": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgqyiYt/fixture/aligned-moved-pcm.json",
+    "treated": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgqyiYt/fixture/aligned-treated-pcm.json"
+  },
+  "declared_audio_priming": 2048,
+  "failures": [],
+  "final_canonical_samples_compared": 30430,
+  "fixture": "aligned-sound-scope",
+  "frames": 19,
+  "independent_DSP_claim": false,
+  "listening_claim": false,
+  "max_block_level_db": 0.04030333230835126,
+  "max_thumbnail_mad": 0.06052989130434783,
+  "min_block_snr_db": 33.58879915639939,
+  "min_chroma_psnr_db": 52.49632237750613,
+  "min_luma_psnr_db": 55.342474004846366,
+  "min_neighbor_margin_db": 0.0,
+  "move_PCM_translation_claim": false,
+  "movie": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgqyiYt/exports/aligned-sound-scope.mp4",
+  "neutral_group_and_split_canonical_samples_compared": 24024,
+  "notes": [
+    "Actual qualified cfr-bframes Original moment [27,31), finite independent Original audio [48000,52096) at +37 samples, event EQ and ancestor Top EQ. A public event-off control proves that the finite BeatSound affects actual PCM, and durable Undo restores every authored field and journal. A five-frame root prefix creates a broad retained Top journal. Native-equivalent semantic GroupSelectedBeat wraps the complete Source as new G without Split identities, preserving every authored/limited PCM and limiter-gain bit. New G EQ and saturation affect actual PCM; a subsequent neutral Source Split preserves every bit. The complete Top moves from Root [9,15) into the lead at global frame 8, retaining G at [8,12); G's editable copy appends at Root frame 15. Cold/partition reads, durable Undo/Redo, reopened history, portable owned media, literal picture provenance and complete emitted-file comparison are checked. The unselected Top treatment is not part of the copied G. This is not an independent DSP or naive PCM-translation oracle and makes no listening claim."
+  ],
+  "offsets": [
+    [
+      "verified_zero",
+      0
+    ]
+  ],
+  "package": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpgqyiYt/fixture/aligned-sound-scope-portable.deadpan",
+  "passed": true,
+  "pictures": 19,
+  "render_seconds": 2.929029666,
+  "revision": "2a60dae7-54c0-4b1b-9e19-af3605428f1d",
+  "rows": [
+    "Aligned sound-owner grouping in retained ancestor scope"
+  ],
+  "signal_windows": 1,
+  "verify_seconds": 2.34492775
+}

@@ -1,0 +1,73 @@
+<ctx task="semantic planner commit_leaf SemanticPlan replay_compound replay_compound_with prepare execute apply_with_result InsertTime IdentityLedger command_work derived_clock one leaf immutable cache" route=" [routed: subtoken+body BM25 (--for&apos;s default) — no strong name hit, multi-word conceptual query]" bundle="auto" bodies="4"><!-- ripwire lens for "semantic planner commit_leaf SemanticPlan replay_compound replay_compound_with prepare execute apply_with_result InsertTime IdentityLedger command_work derived_clock one leaf immutable cache" [doc mentions: 2 docs discussing 2 top-ranked symbols surfaced]: reusable building blocks + quality facts for what you're about to touch (cx=complexity ccx=cognitive in=reuse-count churn=recent-commits amp=change-amplification clone=1(duplicated) tested=1) — prefer composing/reusing these; watch the high-churn/high-amp/cloned ones; bundle=auto: the top-ranked FULL bodies ride inline after the signatures in a bodies section (bodies=N on this root counts them; bodies=0 reason=budget when none fit the remaining budget whole; the signatures-only flag opts out) — read them here instead of opening the files. The bodies element discloses the house way: total=requested, shown=printed, capped=1 when they differ; each body's calls child lists its callee signatures, total= always, shown=/capped= only when that list is cut est_tokens="4876" --><sigs capped="1"><f p="./crates/deadpan-store/src/compound.rs"><d l="77" n="preview_compound_with_transcript_guard" id="./crates/deadpan-store/src/compound.rs::ProjectStore::preview_compound_with_transcript_guard" cx="1" ccx="0" in="1" churn="13" amp="18" tested="1">pub fn preview_compound_with_transcript_guard( &amp;self, request: &amp;CommandRequest, guard: &amp;crate::TranscriptSelectionGuard, ) -&gt; Result&lt;CompoundPreview, StoreError&gt;</d><d l="104" n="commit_compound" id="./crates/deadpan-store/src/compound.rs::ProjectStore::commit_compound" cx="1" ccx="0" in="0" churn="13" amp="17">pub fn commit_compound( &amp;mut self, request: &amp;CommandRequest, relevance: Option&lt;&amp;crate::generatio…</d><d l="114" n="commit_compound_with_transcript_guard" id="./crates/deadpan-store/src/compound.rs::ProjectStore::commit_compound_with_transcript_guard" cx="1" ccx="0" in="2" churn="13" amp="19" tested="1">pub fn commit_compound_with_transcript_guard( &amp;mut self, request: &amp;CommandRequest, relevance: Option&lt;&amp;crate::generation::RelevancePlan&gt;, guard: &amp;crate::Transcri…</d><d l="128" n="commit_compound_prepared" id="./crates/deadpan-store/src/compound.rs::ProjectStore::commit_compound_prepared" cx="1" ccx="0" in="0" churn="13" amp="17">pub fn commit_compound_prepared&lt;T, E&gt;( &amp;mut self, request: &amp;CommandRequest, relevance: Option&lt;&amp;crate::generation::RelevancePlan&gt;, prepare: impl FnOnce(&amp;RegisterBank) -&gt; Result&lt;T, E&gt;, ) -&gt; Result&lt;(CompoundCommitOutcome, T), CompoundPreparati</d><d l="139" n="commit_compound_with_transcript_guard_prepared" id="./crates/deadpan-store/src/compound.rs::ProjectStore::commit_compound_with_transcript_guard_prepared" cx="1" ccx="0" in="2" churn="13" amp="19" tested="1"><doc>Check consumed analysis inside the publication transaction before preparing either the Compound …</doc>pub fn commit_compound_with_transcript_guard_prepared&lt;T, E&gt;( &amp;mut self, request: &amp;CommandRequest, relevance: Option&lt;&amp;crate::generation::RelevancePlan&gt;, guard: &amp;…</d><d l="165" n="commit_compound_prepared_inner" id="./crates/deadpan-store/src/compound.rs::ProjectStore::commit_compound_prepared_inner" cx="4" ccx="5" in="3" churn="13" amp="20" tested="1">fn commit_compound_prepared_inner&lt;T, E&gt;( &amp;mut self, request: &amp;CommandRequest, relevance: Option&lt;&amp;crate::generation::RelevancePlan&gt;, guard: Option&lt;&amp;crate::Transc…</d><d l="708" n="replay" cx="7" ccx="6" in="1" churn="13" amp="18" tested="1">pub(crate) fn replay( connection: &amp;Connection, current: &amp;ProjectDocument, request: &amp;CommandRequest, admitted: &amp;BTreeSet&lt;RevisionId&gt;, ) -&gt; Result&lt;EditTransaction, StoreError&gt;</d></f><f p="./crates/deadpan-store/src/boundary_transition.rs"><d l="40" n="prepare" cx="3" ccx="2" in="46" churn="3" amp="46" tested="1">pub(crate) fn prepare( connection: &amp;Connection, current: &amp;ValidatedDocument, request: &amp;CommandRequest, mut base: CommandPlan, pending: Option&lt;&amp;AcceptedOriginRec…</d><d l="85" n="replay" cx="6" ccx="7" in="1" churn="3" amp="1" tested="1"><doc>Replay the admitted base first, including every Compound leaf/capture, then prove the exact auto…</doc>pub(crate) fn replay( connection: &amp;Connection, current: &amp;ValidatedDocument, request: &amp;CommandRequest, admitted: &amp;BTreeSet&lt;RevisionId&gt;, heads: &amp;[IntentHead], ) -…</d></f><f p="./crates/deadpan-core/src/scoped_edit/proof.rs"><d l="296" n="derive_scoped_isolation" cx="2" ccx="1" in="14" churn="3" amp="14" tested="1"><doc>Derived through the production command reducer. Direct commands without isolation produce an emp…</doc>pub fn derive_scoped_isolation&lt;&apos;a&gt;( before: &amp;&apos;a ProjectDocument, request: &amp;CommandRequest, after: &amp;&apos;a ProjectDocument, ) -&gt; Result&lt;ValidatedScopedIsolation&lt;&apos;a&gt;,…</d></f><f p="./crates/deadpan-core/src/boundary_replacement/tests.rs"><d l="286" n="compound_keeps_leaf_revisions_frozen_capture_and_register_writes" cx="1" ccx="0" in="0" churn="6" amp="14">fn compound_keeps_leaf_revisions_frozen_capture_and_register_writes()</d><d l="611" n="constructor_and_wire_refuse_empty_duplicate_noncanonical_and_nested_entries" cx="2" ccx="1" in="0" churn="6" amp="14">fn constructor_and_wire_refuse_empty_duplicate_noncanonical_and_nested_entries()</d></f><f p="./crates/deadpan-core/src/compound.rs"><d l="234" n="replay_compound" cx="1" ccx="0" in="23" churn="10" amp="23" tested="1">pub fn replay_compound&lt;E: From&lt;EditError&gt;&gt;( document: &amp;ProjectDocument, request: &amp;CommandRequest, visit: impl FnMut(CompoundVisit&lt;&apos;_&gt;) -&gt; Result&lt;(), E&gt;, ) -&gt; Re…</d><d l="242" n="replay_compound_captured" cx="18" ccx="26" in="1" churn="10" amp="1" tested="1">pub(crate) fn replay_compound_captured&lt;E: From&lt;EditError&gt;&gt;( document: &amp;ProjectDocument, request: &amp;CommandRequest, mut visit: impl FnMut(CompoundVisit&lt;&apos;_&gt;) -&gt; Re…</d></f><f p="./crates/deadpan-core/src/scoped_edit/tests.rs"><d l="853" n="compound_scoped_steps_have_one_inverse_and_reject_identity_reuse_or_late_failure" cx="1" ccx="0" in="0" churn="8" amp="8">fn compound_scoped_steps_have_one_inverse_and_reject_identity_reuse_or_late_failure()</d></f><f p="./crates/deadpan-core/src/semantic/planner/role_repeat.rs"><d l="320" n="parameter_leaf" id="./crates/deadpan-core/src/semantic/planner/role_repeat.rs::Planner::parameter_leaf" cx="1" ccx="0" in="1" churn="6" amp="15">fn parameter_leaf(&amp;mut self, command: Command) -&gt; Result&lt;(), EditError&gt;</d></f><f p="./crates/deadpan-core/src/semantic/planner/pause.rs"><d l="1069" n="commit_leaf" id="./crates/deadpan-core/src/semantic/planner/pause.rs::Planner::commit_leaf" cx="1" ccx="0" in="37" churn="21" amp="110" tested="1">pub(super) fn commit_leaf(&amp;mut self, edit: LeafEdit) -&gt; Result&lt;(), EditError&gt;</d></f><f p="./crates/deadpan-cli/src/macros.rs"><d l="169" n="commit_compound" id="./crates/deadpan-cli/src/macros.rs::HostSemanticPlan::commit_compound" cx="3" ccx="1" in="1" churn="33" amp="44" tested="1">pub fn commit_compound( &amp;self, store: &amp;mut ProjectStore, ) -&gt; Result&lt;deadpan_store::CompoundCommitOutcome, LiveError&gt;</d></f></sigs><bodies shown="4" total="6" capped="1"><b t="method" l="139" p="./crates/deadpan-store/src/compound.rs" n="commit_compound_with_transcript_guard_prepared"><![CDATA[pub fn commit_compound_with_transcript_guard_prepared<T, E>(
+        &mut self,
+        request: &CommandRequest,
+        relevance: Option<&crate::generation::RelevancePlan>,
+        guard: &crate::TranscriptSelectionGuard,
+        prepare: impl FnOnce(&RegisterBank) -> Result<T, E>,
+    ) -> Result<(CompoundCommitOutcome, T), CompoundPreparationError<E>> {
+        self.commit_compound_prepared_inner(request, relevance, Some(guard), prepare)
+    }]]><calls total="1"><c n="commit_compound_prepared_inner" l="165">fn commit_compound_prepared_inner&lt;T, E&gt;( &amp;mut self, request: &amp;CommandRequest, relevance: Option&lt;&amp;crate::generation::RelevancePlan&gt;, guard: Option&lt;&amp;crate::TranscriptSelectionGuard&gt;, prepare: impl FnOnce(&amp;RegisterBank) -&gt; Result&lt;T, E&gt;, ) -&gt; R</c></calls></b><b t="fn" l="85" p="./crates/deadpan-store/src/boundary_transition.rs" n="replay"><![CDATA[pub(crate) fn replay(
+    connection: &Connection,
+    current: &ValidatedDocument,
+    request: &CommandRequest,
+    admitted: &BTreeSet<RevisionId>,
+    heads: &[IntentHead],
+) -> Result<(EditTransaction, Vec<Birth>), StoreError> {
+    let base = base_request(request);
+    let base_edit = if matches!(base.command, Command::Compound { .. }) {
+        crate::compound::replay(connection, current, &base, admitted)?
+    } else {
+        deadpan_core::apply_validated(current, &base)?.0
+    };
+    let intermediate = current.apply_patch(&base_edit.forward)?;
+    if !matches!(base.command, Command::Compound { .. }) {
+        crate::compound::validate_ordinary_history(
+            connection,
+            current,
+            &intermediate,
+            &base,
+            admitted,
+        )?;
+    }
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    crate::source_registration::validate_hold_audio_source(
+        connection,
+        current,
+        &intermediate,
+        &base,
+    )?;
+    let derived = derive(connection, current, &base, &intermediate, heads, None)?;
+    // Unlike first preparation, historical ordinary commands must already
+    // contain the exact derived envelope when a provider tail is required.
+    require_envelope(request, &derived.entries)?;
+    if !derived.entries.is_empty()
+        && !matches!(request.command, Command::WithBoundaryReplacements { .. })
+    {
+        return Err(invalid("history omitted required boundary replacements"));
+    }
+    let edit = if derived.entries.is_empty() {
+        base_edit
+    } else {
+        deadpan_core::apply_validated(current, request)?.0
+    };
+    Ok((edit, derived.births))
+}]]><calls total="11"><c n="apply_patch" l="2369">pub fn apply_patch(&amp;self, patch: &amp;crate::DocumentPatch) -&gt; Result&lt;Self, crate::EditError&gt;</c><c n="Err" l="25">type Err = &amp;&apos;static str</c><c n="base_request" l="132">fn base_request(request: &amp;CommandRequest) -&gt; CommandRequest</c><c n="require_envelope" l="139">fn require_envelope( request: &amp;CommandRequest, entries: &amp;[BoundaryReplacement], ) -&gt; Result&lt;(), StoreError&gt;</c><c n="derive" l="153">fn derive( connection: &amp;Connection, before: &amp;ProjectDocument, request: &amp;CommandRequest, after: &amp;ValidatedDocument, heads: &amp;[IntentHead], pending: Option&lt;&amp;AcceptedOriginReceipt&gt;, ) -&gt; Result&lt;Derived, StoreError&gt;</c><c n="invalid" l="369">fn invalid(reason: &amp;str) -&gt; StoreError</c><c n="replay" l="708">pub(crate) fn replay( connection: &amp;Connection, current: &amp;ProjectDocument, request: &amp;CommandRequest, admitted: &amp;BTreeSet&lt;RevisionId&gt;, ) -&gt; Result&lt;EditTransaction, StoreError&gt;</c><c n="validate_ordinary_history" l="740">pub(crate) fn validate_ordinary_history( connection: &amp;Connection, current: &amp;ProjectDocument, next: &amp;ProjectDocument, request: &amp;CommandRequest, admitted: &amp;BTreeSet&lt;RevisionId&gt;, ) -&gt; Result&lt;(), StoreError&gt;</c><c n="matches" l="95">fn matches(&amp;self, record: &amp;AssetRecord) -&gt; bool</c><c n="is_empty" l="211">pub fn is_empty(&amp;self) -&gt; bool</c><c n="validate_hold_audio_source" l="1323">pub(crate) fn validate_hold_audio_source( connection: &amp;Connection, current: &amp;ProjectDocument, next: &amp;ProjectDocument, request: &amp;CommandRequest, ) -&gt; Result&lt;(), StoreError&gt;</c></calls></b><b t="fn" l="296" p="./crates/deadpan-core/src/scoped_edit/proof.rs" n="derive_scoped_isolation"><![CDATA[pub fn derive_scoped_isolation<'a>(
+    before: &'a ProjectDocument,
+    request: &CommandRequest,
+    after: &'a ProjectDocument,
+) -> Result<ValidatedScopedIsolation<'a>, EditError> {
+    let (_, computed, steps) = crate::command::apply_with_isolation(before, request)?;
+    if &computed != after {
+        return Err(invalid(
+            "scoped isolation result differs from the actual command result",
+        ));
+    }
+    let record = ScopedIsolationRecord::from_execution(before, request, after, steps)?;
+    Ok(ValidatedScopedIsolation::new(record, before, after))
+}]]><calls total="4"><c n="apply_with_isolation" l="1143">pub(crate) fn apply_with_isolation( document: &amp;ProjectDocument, request: &amp;CommandRequest, ) -&gt; Result&lt; ( EditTransaction, ProjectDocument, Vec&lt;crate::ScopedIsolationStep&gt;, ), EditError, &gt;</c><c n="from_execution" l="224">pub(crate) fn from_execution( before: &amp;ProjectDocument, request: &amp;CommandRequest, after: &amp;ProjectDocument, steps: Vec&lt;ScopedIsolationStep&gt;, ) -&gt; Result&lt;Self, EditError&gt;</c><c n="new" l="320">fn new( record: ScopedIsolationRecord, before: &amp;&apos;a ProjectDocument, after: &amp;&apos;a ProjectDocument, ) -&gt; Self</c><c n="Err" l="25">type Err = &amp;&apos;static str</c></calls></b><!-- body omitted (over budget): compound_keeps_leaf_revisions_frozen_capture_and_register_writes --><b t="fn" l="234" p="./crates/deadpan-core/src/compound.rs" n="replay_compound"><![CDATA[pub fn replay_compound<E: From<EditError>>(
+    document: &ProjectDocument,
+    request: &CommandRequest,
+    visit: impl FnMut(CompoundVisit<'_>) -> Result<(), E>,
+) -> Result<CompoundOutcome, E> {
+    replay_compound_captured(document, request, visit, None)
+}]]><calls total="1"><c n="replay_compound_captured" l="242">pub(crate) fn replay_compound_captured&lt;E: From&lt;EditError&gt;&gt;( document: &amp;ProjectDocument, request: &amp;CommandRequest, mut visit: impl FnMut(CompoundVisit&lt;&apos;_&gt;) -&gt; Result&lt;(), E&gt;, mut isolation: Option&lt;&amp;mut Vec&lt;crate::ScopedIsolationStep&gt;&gt;, ) -&gt; R</c></calls></b><!-- body omitted (over budget): replay_compound_captured --></bodies></ctx>

@@ -1,0 +1,77 @@
+{
+  "bank_version": 1,
+  "before_bank_version": 1,
+  "before_revision": "d534aa1a-28eb-4207-a669-bda1f1662a44",
+  "committed": true,
+  "committed_registers": null,
+  "committed_revision": "a579841e-e206-4322-93d0-a011ce126308",
+  "context": {
+    "cursor": 9,
+    "original": null,
+    "parent": "aligned-top",
+    "scoped": null,
+    "selected_child": "b58aee26-b729-476b-8a83-475935a86b81",
+    "visual_selection": null
+  },
+  "edit": {
+    "changed_ids": [
+      "aligned-top",
+      "b58aee26-b729-476b-8a83-475935a86b81"
+    ],
+    "description": "Apply resolved transaction",
+    "duration_delta": 0,
+    "new_revision": "a579841e-e206-4322-93d0-a011ce126308"
+  },
+  "generation_preparation_notices": [],
+  "generation_preparations": [],
+  "instruction_count": 1,
+  "mark_changes": [],
+  "operation": "apply",
+  "project_id": "69c11cc0-eb88-4659-b90d-f6420c89a252",
+  "protocol": 1,
+  "register_writes": [],
+  "trace": [
+    {
+      "after_cursor": 9,
+      "after_original": null,
+      "after_parent": "aligned-top",
+      "after_scoped": null,
+      "after_selected_child": "b58aee26-b729-476b-8a83-475935a86b81",
+      "after_visual_selection": null,
+      "before_cursor": 14,
+      "before_original": null,
+      "before_revision": "d534aa1a-28eb-4207-a669-bda1f1662a44",
+      "before_scope": {
+        "end": 15,
+        "start": 9
+      },
+      "before_scoped": null,
+      "before_selected_child": "9eda2b0f-de8c-40d3-a54c-87bdc6e423b6",
+      "before_visual_selection": null,
+      "capture": null,
+      "capture_set": null,
+      "captured_child_label": null,
+      "depth": 0,
+      "instruction": {
+        "label": "New processing G",
+        "selector": {
+          "type": "selected_beat"
+        },
+        "type": "group"
+      },
+      "parent": "aligned-top",
+      "removed_range": null,
+      "resolved_nodes": [],
+      "resolved_parent": "aligned-top",
+      "resolved_range": {
+        "end": 13,
+        "start": 9
+      },
+      "resolved_ranges": [],
+      "resolved_selection": {
+        "node": "9eda2b0f-de8c-40d3-a54c-87bdc6e423b6",
+        "type": "child"
+      }
+    }
+  ]
+}

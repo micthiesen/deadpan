@@ -1,0 +1,6 @@
+2051 Rust files frozen for debug-media
+build {"command": ["cargo", "nextest", "archive", "--locked", "-p", "deadpan-cli", "--test", "preview_export", "--features", "synthetic-worker", "--archive-file", "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/debug-media.tar.zst", "--zstd-level=-1"], "exit": 0, "seconds": 91.16940391715616}
+Frozen Rust path set, all SHA256 identities and Cargo.lock unchanged: debug-media 2051
+Frozen Rust path set, all SHA256 identities and Cargo.lock unchanged: debug-media 2051
+neutral {"command": ["cargo", "nextest", "run", "--archive-file", "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/debug-media.tar.zst", "--extract-to", "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/debug-media-extracted", "--extract-overwrite", "--workspace-remap", "/Users/michael/Code/deadpan", "-E", "test(neutral_unpaired_sound_group_ungroup_preserves_complete_pcm_and_verified_export)", "--run-ignored", "all", "--test-threads", "1", "--no-fail-fast"], "exit": 0, "seconds": 35.78066570870578}
+Frozen Rust path set, all SHA256 identities and Cargo.lock unchanged: debug-media 2051

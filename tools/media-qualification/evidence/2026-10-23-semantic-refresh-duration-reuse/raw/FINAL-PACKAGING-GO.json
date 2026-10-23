@@ -1,0 +1,8 @@
+{
+  "authorized": true,
+  "root_verified_at": "2026-10-23T16:29:32.010705+00:00",
+  "qualification_commands": 8,
+  "post_commands": 26,
+  "qualification_and_post_drivers_terminal": true,
+  "note": "Root collected both exit-zero terminal handles; retain actual logs and no invented rerun receipts."
+}

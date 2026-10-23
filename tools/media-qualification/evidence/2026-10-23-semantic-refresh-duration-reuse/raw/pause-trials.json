@@ -1,0 +1,192 @@
+[
+  {
+    "pair": 1,
+    "kind": "control",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 252.84279199999997,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 255.44116700000004
+    },
+    "load": [
+      1.93994140625,
+      2.55712890625,
+      3.119140625
+    ],
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "source_binary_guards": true,
+    "binary_sha256": "2761f275c70d471b202ffdf2faa9e047724a169c9607775ff4b4ee6208942608",
+    "checks": 7,
+    "kestrel_checks": 1
+  },
+  {
+    "pair": 1,
+    "kind": "candidate",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 239.821167,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 242.393667
+    },
+    "load": [
+      2.013671875,
+      2.544921875,
+      3.1044921875
+    ],
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "source_binary_guards": true,
+    "binary_sha256": "a9ce60a4d227e8c8107b06602915e6323e0cfabbf12610b67a85eda77bdd4a0f",
+    "checks": 7,
+    "kestrel_checks": 1
+  },
+  {
+    "pair": 2,
+    "kind": "candidate",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 238.914458,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 241.268958
+    },
+    "load": [
+      1.78857421875,
+      2.46875,
+      3.06689453125
+    ],
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "source_binary_guards": true,
+    "binary_sha256": "a9ce60a4d227e8c8107b06602915e6323e0cfabbf12610b67a85eda77bdd4a0f",
+    "checks": 7,
+    "kestrel_checks": 1
+  },
+  {
+    "pair": 2,
+    "kind": "control",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 245.88945800000002,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 248.631208
+    },
+    "load": [
+      2.72802734375,
+      2.62841796875,
+      3.1123046875
+    ],
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "source_binary_guards": true,
+    "binary_sha256": "2761f275c70d471b202ffdf2faa9e047724a169c9607775ff4b4ee6208942608",
+    "checks": 7,
+    "kestrel_checks": 1
+  },
+  {
+    "pair": 3,
+    "kind": "control",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 246.38137500000002,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 248.94625000000002
+    },
+    "load": [
+      2.53564453125,
+      2.59033203125,
+      3.0927734375
+    ],
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "source_binary_guards": true,
+    "binary_sha256": "2761f275c70d471b202ffdf2faa9e047724a169c9607775ff4b4ee6208942608",
+    "checks": 7,
+    "kestrel_checks": 1
+  },
+  {
+    "pair": 3,
+    "kind": "candidate",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 238.493125,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 241.038791
+    },
+    "load": [
+      2.9267578125,
+      2.74267578125,
+      3.130859375
+    ],
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "source_binary_guards": true,
+    "binary_sha256": "a9ce60a4d227e8c8107b06602915e6323e0cfabbf12610b67a85eda77bdd4a0f",
+    "checks": 7,
+    "kestrel_checks": 1
+  },
+  {
+    "pair": 4,
+    "kind": "candidate",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 240.914416,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 243.428041
+    },
+    "load": [
+      2.6474609375,
+      2.689453125,
+      3.1044921875
+    ],
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "source_binary_guards": true,
+    "binary_sha256": "a9ce60a4d227e8c8107b06602915e6323e0cfabbf12610b67a85eda77bdd4a0f",
+    "checks": 7,
+    "kestrel_checks": 1
+  },
+  {
+    "pair": 4,
+    "kind": "control",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 247.773458,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 250.29395799999998
+    },
+    "load": [
+      2.28173828125,
+      2.60595703125,
+      3.06689453125
+    ],
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "source_binary_guards": true,
+    "binary_sha256": "2761f275c70d471b202ffdf2faa9e047724a169c9607775ff4b4ee6208942608",
+    "checks": 7,
+    "kestrel_checks": 1
+  },
+  {
+    "pair": 5,
+    "kind": "control",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 244.91008300000001,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 247.44912499999998
+    },
+    "load": [
+      2.1572265625,
+      2.56005859375,
+      3.0419921875
+    ],
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "source_binary_guards": true,
+    "binary_sha256": "2761f275c70d471b202ffdf2faa9e047724a169c9607775ff4b4ee6208942608",
+    "checks": 7,
+    "kestrel_checks": 1
+  },
+  {
+    "pair": 5,
+    "kind": "candidate",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 238.33974999999998,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 240.910458
+    },
+    "load": [
+      2.060546875,
+      2.515625,
+      3.01708984375
+    ],
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "source_binary_guards": true,
+    "binary_sha256": "a9ce60a4d227e8c8107b06602915e6323e0cfabbf12610b67a85eda77bdd4a0f",
+    "checks": 7,
+    "kestrel_checks": 1
+  }
+]

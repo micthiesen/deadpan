@@ -1,0 +1,136 @@
+{
+  "reported_baseline": "ae5eedd0",
+  "state": "read-only feasibility; no candidate implemented",
+  "construction": {
+    "file": "crates/deadpan-core/src/semantic/planner/pause.rs",
+    "function": "Planner::commit_leaf",
+    "line": 1069,
+    "point": "Core-private apply-owning helper seals only successful apply_with_result next; one result maximum"
+  },
+  "shape_finalize": {
+    "file": "crates/deadpan-core/src/semantic/planner.rs",
+    "function": "plan_semantic_with_provider",
+    "lines": [
+      745,
+      413
+    ],
+    "point": "private optional cache field, retain only exact one Edit InsertTime transaction"
+  },
+  "lookup": {
+    "file": "crates/deadpan-core/src/compound.rs",
+    "function": "replay_compound_captured",
+    "line": 327,
+    "prefix": [
+      "outer check_revision",
+      "transaction.validate",
+      "leaf-revision exclusions",
+      "initial size",
+      "Ledger::reserve",
+      "pre-leaf size+charge"
+    ],
+    "suffix": [
+      "post-leaf size+charge",
+      "Ledger::observe",
+      "visit",
+      "outer revision",
+      "final size+charge",
+      "net_transaction"
+    ]
+  },
+  "tls": [
+    {
+      "file": "crates/deadpan-core/src/command_work.rs",
+      "symbols": [
+        "local",
+        "with_scoped_timing_captures"
+      ],
+      "policy": "normal local create+use only; internal scoped mode derived from exact input"
+    },
+    {
+      "file": "crates/deadpan-core/src/audio_binding_lifecycle.rs",
+      "symbol": "compact_representation",
+      "line": 755,
+      "policy": "normal compact create+use only"
+    },
+    {
+      "file": "crates/deadpan-core/src/derived_clock.rs",
+      "symbol": "with_sealed",
+      "line": 44,
+      "policy": "before+after derived clocks empty"
+    },
+    {
+      "file": "crates/deadpan-core/src/insert_time/retimed.rs",
+      "symbol": "take_exact_edit",
+      "line": 132,
+      "policy": "ordinary entry take_exact_edit before leaf check_revision, plus ordinary exit if !take_exact_edit { sealed_preserved(current,next)? }; empty-derived fast result; both consumers required"
+    },
+    {
+      "file": "crates/deadpan-core/src/document.rs",
+      "symbol": "validated::durations",
+      "line": 2601,
+      "policy": "no raw pointers or external proofs cached"
+    }
+  ],
+  "store": [
+    {
+      "file": "crates/deadpan-store/src/compound.rs",
+      "functions": [
+        "commit_compound_prepared_inner",
+        "prepare",
+        "execute"
+      ],
+      "lines": [
+        165,
+        386,
+        430,
+        478
+      ]
+    },
+    {
+      "file": "crates/deadpan-store/src/lib.rs",
+      "functions": [
+        "prepare_command",
+        "prepare_command_with_admission",
+        "prepare_current_command_with_admission",
+        "prepare_base_command"
+      ],
+      "lines": [
+        1284,
+        1304,
+        1326,
+        1353
+      ]
+    },
+    {
+      "file": "crates/deadpan-cli/src/macros.rs",
+      "function": "HostSemanticPlan::commit_compound_prepared",
+      "line": 192
+    }
+  ],
+  "first_probe": "cargo test -p deadpan-core --locked --test semantic_leaf_replay",
+  "measurement_state": "all current leaf, lookup, clone and memory costs unmeasured",
+  "independent_authority": "all outer/transaction/ledger/cumulative-byte/host/final aggregate/Store checks remain; second pure leaf execution is explicitly reused",
+  "implementation_status": "not authorized by this study; root reviews contract and current-baseline timing/memory option first",
+  "wire_equality": {
+    "conclusion": "For successfully serialized nonprovisional current authored values, full value Eq implies identical same-current compact serializer bytes; no stored f32/f64",
+    "ratio_anchor": "crates/deadpan-core/src/exact.rs:9-64",
+    "custom_equality": [
+      "SharedMap at shared_map.rs:91",
+      "FrozenAudioLayout at audio_reference.rs:303",
+      "ValidatedDocument at document.rs:2523"
+    ],
+    "provisional_creation": [
+      "semantic/planner.rs:664 initial wire size",
+      "semantic/planner/pause.rs:1072-1077 post-leaf wire size/charge",
+      "explicit before/next no-provisional guards before candidate exposure"
+    ],
+    "provisional_use": [
+      "compound.rs:264 initial wire size",
+      "compound.rs:314 pre-leaf wire size + charge",
+      "lookup after these checks",
+      "explicit current/cached no-provisional guard"
+    ],
+    "details": "wire-equality-conclusion.md"
+  },
+  "selected_next_action": "current-baseline leaf timing plus owned peak-memory diagnostic before cross-crate API implementation"
+}

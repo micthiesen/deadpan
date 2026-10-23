@@ -1,0 +1,434 @@
+//! Refresh reuses validation only for one immutable staged document. Exercise
+//! complete semantic programs against the existing reference implementation.
+
+use std::cell::{Cell, RefCell};
+use std::collections::BTreeMap;
+use std::num::NonZeroU32;
+use std::sync::Arc;
+
+use deadpan_core::*;
+use serde_json::json;
+
+fn id(value: &str) -> NodeId {
+    NodeId::new(value).unwrap()
+}
+fn revision(value: &str) -> RevisionId {
+    RevisionId::new(value).unwrap()
+}
+fn frames(value: i64) -> FrameDuration {
+    FrameDuration::new(value).unwrap()
+}
+fn range(start: i64, end: i64) -> FrameRange {
+    FrameRange::new(ProjectFrame(start), ProjectFrame(end)).unwrap()
+}
+fn hold(value: i64) -> BeatNode {
+    BeatNode::hold(
+        "Hold",
+        HoldRecipe {
+            duration: frames(value),
+            picture_context: None,
+            video: HoldVideo::Background,
+            audio: HoldAudio::Silence,
+        },
+    )
+}
+fn tree(children: Vec<NodeId>, mut nodes: BTreeMap<NodeId, BeatNode>) -> ProjectDocument {
+    nodes.insert(id("root"), BeatNode::sequence("Root", children));
+    ProjectDocument::from_json(&json!({
+        "schema_version": DOCUMENT_SCHEMA_VERSION, "project_id": "refresh", "revision_id": "entry",
+        "presentation_basis": {"width":16,"height":16,"frame_rate":{"numerator":30,"denominator":1},"color_policy":"sdr_rec709"},
+        "basis_state": {"rate_origin":"explicit","geometry_origin":"explicit","primary":null},
+        "root":"root", "nodes":nodes, "assets":{}, "marks":{}, "overrides":{}
+    }).to_string()).unwrap()
+}
+fn context(parent: &str, cursor: i64) -> SemanticContext {
+    SemanticContext {
+        original: None,
+        scoped: None,
+        hold_duration: None,
+        shared_hold_duration: None,
+        mixed_hold_duration: None,
+        selected_hold_duration: None,
+        parent: id(parent),
+        cursor: ProjectFrame(cursor),
+        selected_child: None,
+        visual_selection: None,
+    }
+}
+fn pause(value: u32) -> SemanticInstruction {
+    SemanticInstruction::InsertPause {
+        length: PauseLength::Frames {
+            frames: NonZeroU32::new(value).unwrap(),
+        },
+        black: false,
+    }
+}
+fn motion(value: u32) -> SemanticInstruction {
+    SemanticInstruction::MoveFrames {
+        forward: true,
+        count: NonZeroU32::new(value).unwrap(),
+    }
+}
+fn cut(value: u32) -> SemanticInstruction {
+    SemanticInstruction::CutFrames {
+        operation: FrameCut::new(value).unwrap(),
+        register: RegisterName::new('b').unwrap(),
+    }
+}
+fn apply(document: &ProjectDocument, name: &str, command: Command) -> ProjectDocument {
+    let (edit, after) = apply_with_result(
+        document,
+        &CommandRequest {
+            project_id: document.project_id().clone(),
+            expected_revision: document.revision_id().clone(),
+            new_revision: revision(name),
+            command,
+        },
+    )
+    .unwrap();
+    assert_eq!(edit.forward.apply(document).unwrap(), after);
+    assert_eq!(edit.inverse.apply(&after).unwrap(), *document);
+    after
+}
+fn marked(document: &ProjectDocument, owner: &str, position: i64) -> ProjectDocument {
+    apply(
+        document,
+        "marked",
+        Command::SetMark {
+            id: MarkId::new("native-mark-m").unwrap(),
+            owner: id(owner),
+            label: "m".into(),
+            boundary: BoundaryAnchor {
+                coordinate: Anchor::Local {
+                    node: id(owner),
+                    position: ExactRatio::integer(position),
+                },
+                bias: InsertionBias::Right,
+            },
+            loss_policy: AnchorLossPolicy::DeleteOwned,
+        },
+    )
+}
+
+#[derive(Clone, Copy)]
+enum Failure {
+    None,
+    SecondProvider,
+    SecondPauseAllocation,
+}
+#[derive(Debug, PartialEq, Eq)]
+enum Event {
+    Allocate(SemanticAllocationRequest),
+    Provider {
+        revision: RevisionId,
+        site: PauseSite,
+    },
+}
+fn injected() -> EditError {
+    EditError {
+        code: EditErrorCode::InvalidCommand,
+        message: "injected second pause failure".into(),
+        current_revision: None,
+    }
+}
+fn allocate(request: SemanticAllocationRequest) -> SemanticAllocation {
+    match request {
+        SemanticAllocationRequest::InsertPause {
+            step_index,
+            required_split_ids,
+        } => SemanticAllocation::InsertPause {
+            new_revision: revision(&format!("leaf-{step_index}")),
+            id: id(&format!("pause-{step_index}")),
+            split: SplitIdentities {
+                nodes: (0..required_split_ids)
+                    .map(|index| id(&format!("pause-split-{step_index}-{index}")))
+                    .collect(),
+            },
+        },
+        SemanticAllocationRequest::Cut {
+            step_index,
+            required_split_ids,
+        } => SemanticAllocation::Cut {
+            new_revision: revision(&format!("leaf-{step_index}")),
+            capture_revision: revision(&format!("capture-{step_index}")),
+            split_identities: SplitIdentities {
+                nodes: (0..required_split_ids)
+                    .map(|index| id(&format!("cut-split-{step_index}-{index}")))
+                    .collect(),
+            },
+        },
+        SemanticAllocationRequest::ParameterEdit { step_index } => {
+            SemanticAllocation::ParameterEdit {
+                new_revision: revision(&format!("leaf-{step_index}")),
+            }
+        }
+        other => panic!("unexpected allocation {other:?}"),
+    }
+}
+fn plan(
+    document: &ProjectDocument,
+    context: &SemanticContext,
+    program: &SemanticProgram,
+    bank: &BTreeMap<RegisterName, Arc<RegisterValue>>,
+    failure: Failure,
+) -> (Result<SemanticPlan, EditError>, Vec<Event>) {
+    let events = RefCell::new(Vec::new());
+    let pause_allocations = Cell::new(0);
+    let providers = Cell::new(0);
+    let result = plan_semantic_with_speech(
+        document,
+        context,
+        program,
+        SemanticRegisterBank {
+            entries: bank,
+            version: 7,
+        },
+        revision("outer"),
+        |request| {
+            events.borrow_mut().push(Event::Allocate(request.clone()));
+            if matches!(request, SemanticAllocationRequest::InsertPause { .. }) {
+                pause_allocations.set(pause_allocations.get() + 1);
+                if matches!(failure, Failure::SecondPauseAllocation) && pause_allocations.get() == 2
+                {
+                    return Err(injected());
+                }
+            }
+            Ok(allocate(request))
+        },
+        |_, _| panic!("the program reads no Original register"),
+        |_| panic!("the program reads no speech analysis"),
+        |staged, site| {
+            events.borrow_mut().push(Event::Provider {
+                revision: staged.revision_id().clone(),
+                site,
+            });
+            providers.set(providers.get() + 1);
+            if matches!(failure, Failure::SecondProvider) && providers.get() == 2 {
+                return Err(injected());
+            }
+            Ok(PauseProvider {
+                video: HoldVideo::Background,
+                picture_context: None,
+                audio: HoldAudio::Silence,
+            })
+        },
+    );
+    (result, events.into_inner())
+}
+fn assert_plan_eq(local: &SemanticPlan, reference: &SemanticPlan) {
+    assert_eq!(local.document, reference.document);
+    assert_eq!(
+        local.document.to_compact_json().unwrap(),
+        reference.document.to_compact_json().unwrap()
+    );
+    assert_eq!(local.request, reference.request);
+    assert_eq!(
+        serde_json::to_string(&local.request).unwrap(),
+        serde_json::to_string(&reference.request).unwrap()
+    );
+    assert_eq!(local.context, reference.context);
+    assert_eq!(local.selected_child, reference.selected_child);
+    assert_eq!(local.register_writes, reference.register_writes);
+    assert_eq!(local.trace, reference.trace);
+}
+fn compare_and_replay(
+    document: &ProjectDocument,
+    context: &SemanticContext,
+    program: &SemanticProgram,
+) -> SemanticPlan {
+    let bank = BTreeMap::new();
+    let entry = document.to_compact_json().unwrap();
+    let (local, events) = plan(document, context, program, &bank, Failure::None);
+    let (reference, reference_events) =
+        with_reference_command_work(|| plan(document, context, program, &bank, Failure::None));
+    assert_eq!(events, reference_events);
+    let local = local.unwrap();
+    assert_plan_eq(&local, &reference.unwrap());
+    let request = local.request.as_ref().unwrap();
+    let replay = replay_compound::<EditError>(document, request, |_| Ok(())).unwrap();
+    let reference_replay =
+        with_reference_command_work(|| replay_compound::<EditError>(document, request, |_| Ok(())))
+            .unwrap();
+    assert_eq!(replay.document, reference_replay.document);
+    assert_eq!(replay.edit, reference_replay.edit);
+    assert_eq!(replay.register_writes, reference_replay.register_writes);
+    assert_eq!(replay.document, local.document);
+    assert_eq!(replay.register_writes, local.register_writes);
+    assert_eq!(replay.edit.forward.apply(document).unwrap(), local.document);
+    assert_eq!(
+        replay.edit.inverse.apply(&local.document).unwrap(),
+        *document
+    );
+    assert_eq!(
+        replay.edit.forward.restores(document, &local.document),
+        Ok(true)
+    );
+    assert_eq!(
+        replay.edit.inverse.restores(&local.document, document),
+        Ok(true)
+    );
+    assert_eq!(document.to_compact_json().unwrap(), entry);
+    local
+}
+
+#[test]
+fn semantic_refresh_wide_bound_document_replaces_the_proof_after_each_pause() {
+    let children: Vec<_> = (0..128)
+        .map(|index| id(&format!("hold-{index:03}")))
+        .collect();
+    let nodes = children
+        .iter()
+        .map(|node| (node.clone(), hold(4)))
+        .collect();
+    let document = marked(&tree(children, nodes), "hold-010", 2);
+    let document = apply(
+        &document,
+        "bound",
+        Command::InsertTime {
+            at: ProjectFrame(512),
+            hold: HoldRecipe {
+                duration: frames(2),
+                picture_context: None,
+                video: HoldVideo::Background,
+                audio: HoldAudio::Silence,
+            },
+            id: id("seed-pause"),
+            identities: SplitIdentities { nodes: vec![] },
+            timing: AudioTimingId {
+                allocation: revision("bound"),
+                ordinal: 0,
+            },
+        },
+    );
+    assert!(!document.audio_bindings().is_empty());
+    assert!(!document.marks().is_empty());
+    let program = SemanticProgram::new(vec![pause(3), motion(7), pause(2), motion(1)]).unwrap();
+    let planned = compare_and_replay(&document, &context("root", 41), &program);
+    assert_eq!(planned.trace[0].before_scope, range(0, 514));
+    assert_eq!(planned.trace[0].resolved_range, Some(range(41, 44)));
+    assert_eq!(planned.trace[1].before_scope, range(0, 517));
+    assert_eq!(planned.trace[1].after.cursor, ProjectFrame(48));
+    assert_eq!(planned.trace[2].before_scope, range(0, 517));
+    assert_eq!(planned.trace[2].resolved_range, Some(range(48, 50)));
+    assert_eq!(planned.trace[3].before_scope, range(0, 519));
+    assert_eq!(planned.context.cursor, ProjectFrame(49));
+    assert_eq!(planned.context.selected_child, Some(id("pause-1")));
+    assert_eq!(planned.document.duration().unwrap(), frames(519));
+}
+
+#[test]
+fn semantic_refresh_nested_scope_keeps_zero_groups_marks_and_outside_siblings() {
+    let document = tree(
+        vec![id("prefix"), id("group"), id("outside-empty"), id("tail")],
+        BTreeMap::from([
+            (id("prefix"), hold(3)),
+            (id("tail"), hold(5)),
+            (id("outside-empty"), BeatNode::sequence("Empty", vec![])),
+            (
+                id("group"),
+                BeatNode::sequence("Group", vec![id("empty"), id("a"), id("zero"), id("b")]),
+            ),
+            (id("empty"), BeatNode::sequence("Empty", vec![])),
+            (id("zero"), BeatNode::sequence("Zero", vec![])),
+            (id("a"), hold(8)),
+            (id("b"), hold(6)),
+        ]),
+    );
+    let document = marked(&document, "b", 3);
+    let program = SemanticProgram::new(vec![pause(2), motion(5), cut(2), motion(100)]).unwrap();
+    let planned = compare_and_replay(&document, &context("group", 4), &program);
+    assert_eq!(planned.trace[0].before_scope, range(3, 17));
+    assert_eq!(planned.trace[0].resolved_range, Some(range(4, 6)));
+    assert_eq!(planned.trace[1].before_scope, range(3, 19));
+    assert_eq!(planned.trace[2].resolved_range, Some(range(9, 11)));
+    assert_eq!(planned.trace[3].before_scope, range(3, 17));
+    assert_eq!(planned.context.cursor, ProjectFrame(17));
+    assert_eq!(planned.context.parent, id("group"));
+    assert!(!planned.register_writes.is_empty());
+    assert!(!planned.document.marks().is_empty());
+    for name in ["prefix", "tail", "outside-empty", "empty", "zero"] {
+        assert_eq!(
+            planned.document.nodes()[&id(name)],
+            document.nodes()[&id(name)]
+        );
+    }
+}
+
+#[test]
+fn semantic_refresh_late_provider_and_allocator_failures_keep_order_and_inputs() {
+    let document = tree(vec![id("held")], BTreeMap::from([(id("held"), hold(40))]));
+    let context = context("root", 3);
+    let bank = BTreeMap::from([(
+        RegisterName::new('a').unwrap(),
+        Arc::new(RegisterValue::Macro {
+            program: Arc::new(SemanticProgram::new(vec![motion(1)]).unwrap()),
+        }),
+    )]);
+    let document_before = document.to_compact_json().unwrap();
+    let context_before = context.clone();
+    let bank_before = bank.clone();
+    let program = SemanticProgram::new(vec![cut(2), pause(3), motion(7), pause(2)]).unwrap();
+    for failure in [Failure::SecondProvider, Failure::SecondPauseAllocation] {
+        let (local, events) = plan(&document, &context, &program, &bank, failure);
+        let (reference, reference_events) =
+            with_reference_command_work(|| plan(&document, &context, &program, &bank, failure));
+        assert_eq!(local.unwrap_err(), injected());
+        assert_eq!(reference.unwrap_err(), injected());
+        assert_eq!(events, reference_events);
+        let order: Vec<_> = events
+            .iter()
+            .map(|event| match event {
+                Event::Provider { .. } => "provider",
+                Event::Allocate(SemanticAllocationRequest::Cut { .. }) => "cut allocation",
+                Event::Allocate(SemanticAllocationRequest::InsertPause { .. }) => {
+                    "pause allocation"
+                }
+                other => panic!("unexpected event {other:?}"),
+            })
+            .collect();
+        let mut expected = vec!["cut allocation", "provider", "pause allocation", "provider"];
+        if matches!(failure, Failure::SecondPauseAllocation) {
+            expected.push("pause allocation");
+        }
+        assert_eq!(order, expected);
+        assert_eq!(document.to_compact_json().unwrap(), document_before);
+        assert_eq!(context, context_before);
+        assert_eq!(bank, bank_before);
+    }
+}
+
+#[test]
+fn semantic_refresh_nested_follow_speed_pauses_keep_the_derived_clock_fallback() {
+    let speed = |child: &str, duration: i64, end: i64| {
+        let mut node = hold(duration);
+        node.kind = NodeKind::Retime {
+            child: id(child),
+            duration: frames(duration),
+            mapping: range(0, end),
+            pitch: PitchPolicy::FollowSpeed,
+            purpose: RetimePurpose::Edit,
+        };
+        node
+    };
+    let document = tree(
+        vec![id("outer-speed")],
+        BTreeMap::from([
+            (id("outer-speed"), speed("inner-speed", 160, 240)),
+            (id("inner-speed"), speed("body-group", 240, 120)),
+            (
+                id("body-group"),
+                BeatNode::sequence("Body", vec![id("body")]),
+            ),
+            (id("body"), hold(120)),
+        ]),
+    );
+    let program = SemanticProgram::new(vec![pause(3), motion(12), pause(1)]).unwrap();
+    let planned = compare_and_replay(&document, &context("root", 17), &program);
+    assert!(!planned.document.derived_clocks().is_empty());
+    assert_eq!(
+        planned.document.exact_durations().unwrap()[document.root()],
+        ExactRatio::integer(164)
+    );
+    assert_eq!(planned.context.cursor, ProjectFrame(29));
+    assert_eq!(planned.context.selected_child, Some(id("outer-speed")));
+}

@@ -1,0 +1,17 @@
+{
+  "crates/deadpan-core/src/exact.rs": "7b7939f9a2744867d7aadacf7be38cbe3a7c95c3a67641f9b3fea37fde84b587",
+  "crates/deadpan-core/src/framing.rs": "b0903b5d1f7119a748e342a7b8d8176125178e37c8c43c44ea3cc8ebfa5a2c2b",
+  "crates/deadpan-core/src/picture_context.rs": "180ed595b6f5fc08cf0b3de8ae534441ba37dd242b05866cb829998a8809a965",
+  "crates/deadpan-core/src/audio_gain.rs": "587be536bfe5d823bd762ed71499381a096a9d5fe67646146104e18b538e0ae1",
+  "crates/deadpan-core/src/equalizer.rs": "6fa80229ffeb5643e1d78667edac81ad92c7b1460aa5601e4f70971b2143d75b",
+  "crates/deadpan-core/src/document.rs": "2763bb86bbaba1afe9f11ade4e0077c154ffc12c9452bc2836fc9b0105865d10",
+  "crates/deadpan-core/src/command.rs": "37e364c3e02ab670d372a7bdc37f7d53b9979347b5821303047a4fef61b563b5",
+  "crates/deadpan-core/src/shared_map.rs": "08270640fa48e0614ad33e384cf92723ccde4c5f06bc2a0a3c54c8fabe409e26",
+  "crates/deadpan-core/src/audio_binding.rs": "94c43e887cb29d01a769a9e579fc82be278a5523e52cdfb24eb5df6951e0cac0",
+  "crates/deadpan-core/src/audio_reference.rs": "ed3259f86f811e61adcffdc58972342057b9f3afa1622fd38bc42db5c44dd70d",
+  "crates/deadpan-core/src/generated.rs": "d5953397c5155f6e2273c95410e6867b73b53e0f0c0ddc206e0541a4f4e754d3",
+  "crates/deadpan-core/src/compound/wire.rs": "1f348d2134666bb3703c44eed959e686c7464df368234e24475aa3f46a660cad",
+  "crates/deadpan-core/src/edit_slice/wire.rs": "d64a0449e459418b5334ae02679131af2335a10e946f2128be032ee669f9cf7e",
+  "crates/deadpan-core/src/audio_reference/preflight.rs": "1a591a629370a9a5ffce325abc21d28cad001e1e006f3e50384090484573dfec",
+  "crates/deadpan-core/src/semantic/gags.rs": "95410dcc1ca881c3945b0278a19ae5b7ca3f6b530d73416a64b894746d91e641"
+}

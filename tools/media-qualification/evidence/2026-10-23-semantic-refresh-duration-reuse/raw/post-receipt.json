@@ -1,0 +1,386 @@
+[
+  {
+    "name": "portable",
+    "command": [
+      "python",
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/retain_media_and_check.py"
+    ],
+    "exit": 0,
+    "seconds": 0.5844904175028205
+  },
+  {
+    "name": "native-macros",
+    "command": [
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "macros",
+      "--output",
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/native-macros",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+    ],
+    "exit": 0,
+    "seconds": 15.460822332650423
+  },
+  {
+    "name": "native-named-registers",
+    "command": [
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "named-registers",
+      "--output",
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/native-named-registers",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+    ],
+    "exit": 0,
+    "seconds": 13.425847083330154
+  },
+  {
+    "name": "native-dot-repeat",
+    "command": [
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "dot-repeat",
+      "--output",
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/native-dot-repeat",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+    ],
+    "exit": 0,
+    "seconds": 14.275811542756855
+  },
+  {
+    "name": "native-range-set-selectors",
+    "command": [
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "range-set-selectors",
+      "--output",
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/native-range-set-selectors",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+    ],
+    "exit": 0,
+    "seconds": 13.37329208292067
+  },
+  {
+    "name": "native-transcript-search-selectors",
+    "command": [
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "transcript-search-selectors",
+      "--output",
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/native-transcript-search-selectors",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+    ],
+    "exit": 0,
+    "seconds": 13.535197333432734
+  },
+  {
+    "name": "pair-1-control-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/pair-1-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.2007358344271779
+  },
+  {
+    "name": "pair-1-control",
+    "command": [
+      "/tmp/deadpan-full-timing-closure-reuse-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/pair-1-control.deadpan",
+      "--output",
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/pair-1-control-report"
+    ],
+    "exit": 0,
+    "seconds": 13.774148208089173
+  },
+  {
+    "name": "pair-1-candidate-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/pair-1-candidate.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.19225641712546349
+  },
+  {
+    "name": "pair-1-candidate",
+    "command": [
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/pair-1-candidate.deadpan",
+      "--output",
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/pair-1-candidate-report"
+    ],
+    "exit": 0,
+    "seconds": 14.329372333362699
+  },
+  {
+    "name": "pair-2-candidate-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/pair-2-candidate.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.19032795820385218
+  },
+  {
+    "name": "pair-2-candidate",
+    "command": [
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/pair-2-candidate.deadpan",
+      "--output",
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/pair-2-candidate-report"
+    ],
+    "exit": 0,
+    "seconds": 13.94163104146719
+  },
+  {
+    "name": "pair-2-control-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/pair-2-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.1877194158732891
+  },
+  {
+    "name": "pair-2-control",
+    "command": [
+      "/tmp/deadpan-full-timing-closure-reuse-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/pair-2-control.deadpan",
+      "--output",
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/pair-2-control-report"
+    ],
+    "exit": 0,
+    "seconds": 14.039090290665627
+  },
+  {
+    "name": "pair-3-control-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/pair-3-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.18808529153466225
+  },
+  {
+    "name": "pair-3-control",
+    "command": [
+      "/tmp/deadpan-full-timing-closure-reuse-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/pair-3-control.deadpan",
+      "--output",
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/pair-3-control-report"
+    ],
+    "exit": 0,
+    "seconds": 14.114993249997497
+  },
+  {
+    "name": "pair-3-candidate-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/pair-3-candidate.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.19060674961656332
+  },
+  {
+    "name": "pair-3-candidate",
+    "command": [
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/pair-3-candidate.deadpan",
+      "--output",
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/pair-3-candidate-report"
+    ],
+    "exit": 0,
+    "seconds": 13.80426387488842
+  },
+  {
+    "name": "pair-4-candidate-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/pair-4-candidate.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.18754916731268167
+  },
+  {
+    "name": "pair-4-candidate",
+    "command": [
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/pair-4-candidate.deadpan",
+      "--output",
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/pair-4-candidate-report"
+    ],
+    "exit": 0,
+    "seconds": 13.672264708206058
+  },
+  {
+    "name": "pair-4-control-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/pair-4-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.1889870846644044
+  },
+  {
+    "name": "pair-4-control",
+    "command": [
+      "/tmp/deadpan-full-timing-closure-reuse-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/pair-4-control.deadpan",
+      "--output",
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/pair-4-control-report"
+    ],
+    "exit": 0,
+    "seconds": 14.125243582762778
+  },
+  {
+    "name": "pair-5-control-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/pair-5-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.1895687496289611
+  },
+  {
+    "name": "pair-5-control",
+    "command": [
+      "/tmp/deadpan-full-timing-closure-reuse-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/pair-5-control.deadpan",
+      "--output",
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/pair-5-control-report"
+    ],
+    "exit": 0,
+    "seconds": 13.90239283349365
+  },
+  {
+    "name": "pair-5-candidate-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/pair-5-candidate.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.18757412489503622
+  },
+  {
+    "name": "pair-5-candidate",
+    "command": [
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/pair-5-candidate.deadpan",
+      "--output",
+      "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/pair-5-candidate-report"
+    ],
+    "exit": 0,
+    "seconds": 14.153215625323355
+  }
+]

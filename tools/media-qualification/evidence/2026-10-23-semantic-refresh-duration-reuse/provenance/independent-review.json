@@ -1,0 +1,51 @@
+{
+  "reviewer": "independent semantic_refresh_review subagent",
+  "completed_at_utc": "2026-10-23T15:21:39.398594+00:00",
+  "status": "no_findings",
+  "findings": [],
+  "scope": [
+    "14-line guarded branch in Planner::refresh_children",
+    "new four-test standalone semantic_refresh integration target"
+  ],
+  "baseline": {
+    "selection_sha256": "5ae0181334ea3c12c7d0d4e0607c00fac2a18d345a06e89b3b651d0f80fba8ec",
+    "test_file_previously_absent": true,
+    "source": "worker-notes/before exact original; independent text diff confirmed insertion-only production change"
+  },
+  "reviewed_file_sha256": {
+    "crates/deadpan-core/src/semantic/planner/selection.rs": "f8e16b78ed203dade31c1ff90632371f4d8dc1798db09178b03a3799d93ca526",
+    "crates/deadpan-core/tests/semantic_refresh.rs": "0dc91867afa34115ee40060d1c539dbefc94ef9efba985d03b80cd5f7723dfed",
+    "AGENTS.md": "b933f28ba04835b59ba4371ca18c41023b67f30afa115bb651b1dc0f94608811",
+    "crates/deadpan-core/src/document.rs": "2763bb86bbaba1afe9f11ade4e0077c154ffc12c9452bc2836fc9b0105865d10",
+    "crates/deadpan-core/src/command_work.rs": "c06e518513e82a8b52daf516d4eb134e7056a898f9a34f8e8f991670a7f84606",
+    "crates/deadpan-core/src/derived_clock.rs": "cd6b50d2cfbc2e29de3dec5be7dc9fb8ed9fe5d2e9bef2b15a2d6ed76b366225",
+    "crates/deadpan-core/src/semantic/planner.rs": "67e5d86a9f6c96b98bb6289b838f8b1375ac4ee0559dbf26417819e7e3e17c1f",
+    "crates/deadpan-core/src/semantic/planner/pause.rs": "8b6e2f282b5d704afe6528e5dbdad5118028bb99d637fe0644410bb514fde15f",
+    "crates/deadpan-core/src/insert_time/source_splice.rs": "affc0d7563ff25b968e8ae53c0718e47c0f338eb04e28fb490e93552e640cd38",
+    "crates/deadpan-core/src/semantic/planner/tests/pause.rs": "febd9d852ee043b496960a9442cdc8ed34cae1e497442ce7a46e400867dcc276",
+    "crates/deadpan-core/Cargo.toml": "8666a4f8c4eb88df504d14195f5b69f5744df7bff97cb1ee0ed5fd41f89cf292"
+  },
+  "concurrent_changes": {
+    "observed": false,
+    "files": [],
+    "method": "Initial and final reviewed source/test SHA256 compared with terminal worker hashes. No claim of full-tree concurrent-change detection."
+  },
+  "checks": {
+    "first_error_order": "durations_shared and durations both call require_integral_clocks then the same complete validation with identical context/gain limits. With empty derived clocks the sealed flag cannot alter admission. Old initial scope_bounds starts with source_splice_boundary(parent,0), whose first operation is durations. Parent/index/ancestry checks therefore retain their original order after successful validation.",
+    "complete_validation": "Same validation includes structure, sound events/allowances, framing, cutaways/captions, tails, targets, interpretation, gains, picture context, basis, lineage, binding checks and marks. Reuse retains exactly that duration map for the same immutable current.",
+    "borrow_lifetime": "Only current and context.parent are immutably borrowed; closure mutates disjoint bounds/child_ends/child_indices. No command, provider, allocator, replacement or move of current occurs inside. Existing borrowed TLS guard is address-specific and drops on return/unwind. No binding-proof entry is invented.",
+    "partial_failure_updates": "Separate assignments and question-mark propagation preserve original partial update semantics: bounds changes only after scope_bounds succeeds; child_ends only after child_ends succeeds; indices only after both succeed.",
+    "reference_derived_debug": "Reference and nonempty-derived branches execute the original statements. Debug with_proved_durations recomputes complete validation and asserts equality before entering scope. That adds debug validation work but changes no intended result.",
+    "charges": "Production diff touches no charge_step, serialization, document/capture byte charge, allocation, provider or commit behavior. commit_leaf still charges staged bytes before replacing current, recording step and refreshing.",
+    "all_six_plan_fields": "assert_plan_eq compares request, document, context, selected_child, register_writes and trace; document/request also compared in serialized forms.",
+    "regression_scenarios": "Four tests cover a 128-child marked/bound root with two mutations, nested ordinary scope with empty groups/outside siblings and cut writes, late second-provider/second-allocation failures with exact event order and unchanged document/context/bank, and nested FollowSpeed derived-clock fallback. Success helper compares local/reference events and complete plans and checks replay forward/inverse restoration.",
+    "late_failures": "Provider events retain staged revision and PauseSite, allocator events retain exact requests. Explicit expected call-order arrays require second provider before second pause allocator; failures occur after a cut has staged register writes. Error equality and input/bank comparisons cover atomic failure surface."
+  },
+  "limitations": [
+    "No Cargo, formatter, test execution, Git, runtime, profiling or performance measurement was performed by this reviewer.",
+    "New fixture construction, trait/API compilation and exact expected coordinates remain to be established by parent execution.",
+    "First-error and partial-derived-field failure ordering were inspected statically; new tests do not directly inject malformed refresh state.",
+    "No performance claim or acceptance of production qualification is made.",
+    "Relevant AGENTS sections and ripwire skill were consulted; ripwire routing was incomplete and direct bounded source reads supplied the review evidence."
+  ]
+}

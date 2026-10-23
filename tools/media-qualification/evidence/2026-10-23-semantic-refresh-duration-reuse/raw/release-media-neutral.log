@@ -1,0 +1,8 @@
+  Extracting 2 binaries (including 1 non-test binary) and 7 linked paths to /private/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/release-media-extracted
+   Extracted 51 files to /private/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/release-media-extracted in 0.10s
+────────────
+ Nextest run ID 0bd1c200-037c-47eb-a66f-ec675c1b97fb with nextest profile: default
+    Starting 1 test across 1 binary (64 tests skipped)
+        PASS [  34.563s] (1/1) deadpan-cli::preview_export group_endpoints_export::neutral_unpaired_sound_group_ungroup_preserves_complete_pcm_and_verified_export
+────────────
+     Summary [  34.563s] 1 test run: 1 passed, 64 skipped

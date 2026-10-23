@@ -1,0 +1,47 @@
+{
+  "audio_windows": 1,
+  "authored_limited_and_limiter_gain_bits_equal": true,
+  "blocks_compared": 3,
+  "canonical_channels": 2,
+  "canonical_pcm_evidence": {
+    "after": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpWaQpZv/fixture/neutral-ungroup-after-pcm.json",
+    "before": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpWaQpZv/fixture/neutral-ungroup-before-pcm.json",
+    "event_off": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpWaQpZv/fixture/aligned-event-off-pcm.json",
+    "event_off_control": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpWaQpZv/fixture/aligned-event-control.json",
+    "history": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpWaQpZv/fixture/neutral-ungroup-history.json",
+    "later_edit_control": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpWaQpZv/fixture/neutral-ungroup-later-edit-control.json"
+  },
+  "canonical_samples_compared": 24024,
+  "declared_audio_priming": 2048,
+  "failures": [],
+  "fixture": "neutral-sound-ungroup",
+  "frames": 15,
+  "independent_DSP_claim": false,
+  "listening_claim": false,
+  "max_block_level_db": 0.006559857537837388,
+  "max_thumbnail_mad": 0.07168817934782609,
+  "min_block_snr_db": 31.975771025830536,
+  "min_chroma_psnr_db": 53.68406796712638,
+  "min_luma_psnr_db": 55.37953041281065,
+  "min_neighbor_margin_db": 0.0,
+  "movie": "/private/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpWaQpZv/exports/neutral-sound-ungroup.mp4",
+  "notes": [
+    "Actual qualified cfr-bframes Original [27,31), Top EQ, finite independent Original sound [48000,52096) at +37 samples and event EQ. A five-frame root prefix captures Top before neutral G is introduced. Later group/sibling labels and event trim are committed before public semantic Ungroup promotes the Source. The event-off and later-trim controls prove the independent sound is active. Full authored/limited PCM and limiter gain bits remain identical through Ungroup, durable Undo/Redo, reopen and owned portable copy. All timing tables, recipes and journal relationships remain unchanged except removal of G's introduced marker. The literal 15-picture oracle and complete emitted-file audio window are verified. No independent DSP or listening claim."
+  ],
+  "offsets": [
+    [
+      "verified_zero",
+      0
+    ]
+  ],
+  "package": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpWaQpZv/fixture/neutral-ungroup-portable.deadpan",
+  "passed": true,
+  "pictures": 15,
+  "render_seconds": 1.281653042,
+  "revision": "a40a6ff6-8a24-4f41-a539-497389ff5164",
+  "rows": [
+    "Neutral Ungroup inside an old independent sound scope"
+  ],
+  "signal_windows": 1,
+  "verify_seconds": 0.465125375
+}

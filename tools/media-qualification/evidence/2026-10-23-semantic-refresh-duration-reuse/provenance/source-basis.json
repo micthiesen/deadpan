@@ -1,0 +1,8 @@
+{
+  "base": "56f748565189dd2c759f927f18c845faec3d1160",
+  "qualified_implementation": "ae5eedd065b851242917b38a428ee40a3588978d",
+  "archive_sha256": "900ebcec6866985ed1af6b2edb01f3054b605a5c808e225e9925edafe7847319",
+  "rust_files": 2050,
+  "qualified_control_app_sha256": "2761f275c70d471b202ffdf2faa9e047724a169c9607775ff4b4ee6208942608",
+  "scope": "private semantic duration refresh reuse candidate only; no claimed improvement"
+}

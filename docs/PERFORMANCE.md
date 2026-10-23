@@ -301,6 +301,18 @@ a 9.377208 ms /3.60% diagnostic difference. This is separate from the earlier
 private prototype's 5.16% batch. The 100 ms/50 ms targets and peak memory remain
 open; no percentile follows from these five pairs.
 
+The [semantic refresh duration reuse qualification](qualification/semantic-refresh-duration-reuse-2026-10-23.md)
+passes all 1,526 Core tests, broader/UI and strict checks, actual media/history,
+six native workflows and both portable copies. Refresh shares a proved map
+for the same immutable staged document while retaining both anchor indexes,
+query/error order and reference/derived fallbacks. Five final quiet pairs give
+commit medians 246.381375 /238.914458 ms and offscreen composition
+248.946250 /241.268958 ms, a 7.677292 ms /3.08% diagnostic difference. Its
+470-file inventory verifies. This is separate from the prototype's 2.07%
+batch. Earlier Core24 costs precede both layout and refresh reuse; current
+leaf timing and sampled whole-process memory should be measured before a
+one-leaf replay cache. No memory ceiling, percentile or latency target closes.
+
 | Section 25 target | Measurement | Notes |
 | --- | --- | --- |
 | Key event to command-state update, p95 < 8 ms | ui `rapid-input` `warm_navigation_input_cpu_ms` | Whole egui input frame CPU: an upper bound on the state update. Small replay fixture. |

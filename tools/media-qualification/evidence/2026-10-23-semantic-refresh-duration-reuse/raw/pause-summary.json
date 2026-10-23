@@ -1,0 +1,31 @@
+{
+  "n_per_kind": 5,
+  "diagnostic_only": true,
+  "no_percentile_or_target_pass": true,
+  "kinds": {
+    "control": {
+      "large_first_pause_input_to_commit_ms": {
+        "min": 244.91008300000001,
+        "median": 246.38137500000002,
+        "max": 252.84279199999997
+      },
+      "large_first_pause_input_to_offscreen_background_composition_ms": {
+        "min": 247.44912499999998,
+        "median": 248.94625000000002,
+        "max": 255.44116700000004
+      }
+    },
+    "candidate": {
+      "large_first_pause_input_to_commit_ms": {
+        "min": 238.33974999999998,
+        "median": 238.914458,
+        "max": 240.914416
+      },
+      "large_first_pause_input_to_offscreen_background_composition_ms": {
+        "min": 240.910458,
+        "median": 241.268958,
+        "max": 243.428041
+      }
+    }
+  }
+}

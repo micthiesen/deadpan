@@ -1,0 +1,6 @@
+2051 Rust files frozen for release-native
+build {"command": ["cargo", "build", "--locked", "-p", "deadpan-app", "--release", "--features", "ui-harness", "--bin", "deadpan-app"], "exit": 0, "seconds": 268.6604197919369}
+Frozen Rust path set, all SHA256 identities and Cargo.lock unchanged: release-native 2051
+Frozen Rust path set, all SHA256 identities and Cargo.lock unchanged: release-native 2051
+performance {"command": ["/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/release-native-bin/deadpan-app", "--ui-check", "--scenario", "sound-group-endpoints", "--mode", "performance", "--output", "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/release-native-performance", "--kestrel-source", "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"], "exit": 0, "seconds": 14.967420250177383}
+Frozen Rust path set, all SHA256 identities and Cargo.lock unchanged: release-native 2051

@@ -1,0 +1,190 @@
+{
+  "source_base": "ae5eedd065b851242917b38a428ee40a3588978d",
+  "rust_files": 2051,
+  "input_files": 6,
+  "phases": {
+    "candidate-all-core": {
+      "tests": 1526,
+      "passed": 1526,
+      "skipped": 0,
+      "leaky": 0,
+      "matching_suites": 70
+    },
+    "candidate-broad": {
+      "tests": 3506,
+      "passed": 3506,
+      "skipped": 740,
+      "leaky": 0,
+      "matching_suites": 110
+    },
+    "candidate-ui": {
+      "tests": 1296,
+      "passed": 1296,
+      "skipped": 11,
+      "leaky": 0,
+      "matching_suites": 2
+    }
+  },
+  "native_report_checks": {
+    "workflow_checks": 1340,
+    "kestrel_checks": 6,
+    "reports": [
+      {
+        "report": "release-native-performance/report.json",
+        "workflow_checks": 197,
+        "kestrel_checks": 1
+      },
+      {
+        "report": "native-macros/report.json",
+        "workflow_checks": 401,
+        "kestrel_checks": 1
+      },
+      {
+        "report": "native-named-registers/report.json",
+        "workflow_checks": 171,
+        "kestrel_checks": 1
+      },
+      {
+        "report": "native-dot-repeat/report.json",
+        "workflow_checks": 383,
+        "kestrel_checks": 1
+      },
+      {
+        "report": "native-range-set-selectors/report.json",
+        "workflow_checks": 85,
+        "kestrel_checks": 1
+      },
+      {
+        "report": "native-transcript-search-selectors/report.json",
+        "workflow_checks": 103,
+        "kestrel_checks": 1
+      }
+    ],
+    "finding_severity_counts": {
+      "warning": 12
+    },
+    "finding_prefix_counts": {
+      "# frame(s) settled their layout only on a second retry": 6,
+      "egui discard warning": 6
+    },
+    "media_fixtures": [
+      {
+        "phase": "debug-media",
+        "fixture": "neutral",
+        "frames": 15,
+        "pictures": 15,
+        "offsets": [
+          [
+            "verified_zero",
+            0
+          ]
+        ],
+        "canonical_samples_compared": 24024,
+        "final_canonical_samples_compared": null,
+        "claim_flags": {
+          "authored_limited_and_limiter_gain_bits_equal": true,
+          "independent_DSP_claim": false,
+          "listening_claim": false
+        }
+      },
+      {
+        "phase": "release-media",
+        "fixture": "neutral",
+        "frames": 15,
+        "pictures": 15,
+        "offsets": [
+          [
+            "verified_zero",
+            0
+          ]
+        ],
+        "canonical_samples_compared": 24024,
+        "final_canonical_samples_compared": null,
+        "claim_flags": {
+          "authored_limited_and_limiter_gain_bits_equal": true,
+          "independent_DSP_claim": false,
+          "listening_claim": false
+        }
+      },
+      {
+        "phase": "release-media",
+        "fixture": "aligned",
+        "frames": 19,
+        "pictures": 19,
+        "offsets": [
+          [
+            "verified_zero",
+            0
+          ]
+        ],
+        "canonical_samples_compared": null,
+        "final_canonical_samples_compared": 30430,
+        "claim_flags": {
+          "independent_DSP_claim": false,
+          "listening_claim": false,
+          "move_PCM_translation_claim": false
+        }
+      }
+    ]
+  },
+  "post": {
+    "post_commands": 26,
+    "timing_trials": 10,
+    "candidate_app_sha256": "a9ce60a4d227e8c8107b06602915e6323e0cfabbf12610b67a85eda77bdd4a0f",
+    "control_app_sha256": "2761f275c70d471b202ffdf2faa9e047724a169c9607775ff4b4ee6208942608",
+    "timing_medians": {
+      "n_per_kind": 5,
+      "diagnostic_only": true,
+      "no_percentile_or_target_pass": true,
+      "kinds": {
+        "control": {
+          "large_first_pause_input_to_commit_ms": {
+            "min": 244.91008300000001,
+            "median": 246.38137500000002,
+            "max": 252.84279199999997
+          },
+          "large_first_pause_input_to_offscreen_background_composition_ms": {
+            "min": 247.44912499999998,
+            "median": 248.94625000000002,
+            "max": 255.44116700000004
+          }
+        },
+        "candidate": {
+          "large_first_pause_input_to_commit_ms": {
+            "min": 238.33974999999998,
+            "median": 238.914458,
+            "max": 240.914416
+          },
+          "large_first_pause_input_to_offscreen_background_composition_ms": {
+            "min": 240.910458,
+            "median": 241.268958,
+            "max": 243.428041
+          }
+        }
+      }
+    }
+  },
+  "reviews": "no findings",
+  "changed_sources": {
+    "crates/deadpan-core/src/semantic/planner/selection.rs": {
+      "before": "5ae0181334ea3c12c7d0d4e0607c00fac2a18d345a06e89b3b651d0f80fba8ec",
+      "tested_after": "f8e16b78ed203dade31c1ff90632371f4d8dc1798db09178b03a3799d93ca526"
+    },
+    "crates/deadpan-core/tests/semantic_refresh.rs": {
+      "before": null,
+      "tested_after": "750a9d78e4db36c9efeab0a68aa7e0ef565d089dfca199ac2a1eadf5649c66bc"
+    }
+  },
+  "go": {
+    "authorized": true,
+    "root_verified_at": "2026-10-23T16:29:32.010705+00:00",
+    "qualification_commands": 8,
+    "post_commands": 26,
+    "qualification_and_post_drivers_terminal": true,
+    "note": "Root collected both exit-zero terminal handles; retain actual logs and no invented rerun receipts."
+  },
+  "schema": {
+    "core": 58,
+    "sqlite": 87
+  }
+}

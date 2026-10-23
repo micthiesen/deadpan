@@ -312,9 +312,39 @@ diagnostic difference. No target PASS. Inventory verifies 161 files /2,865,045
 bytes, SHA-256 a08e6b54e60cc159945cc28136d4393876138caba980913fa9d42f24e30b6c70.
 Only selection.rs and new tests/semantic_refresh.rs change; nonlocal and derived
 fallbacks stay original. Full and sealed-clock source reviews report no findings.
-Next: adopt exact corrected formatted bytes and run full production checks using
-reviewed drivers in /tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23.
-The production control remains 2761f275 until that qualification completes.
+Production qualification is complete in
+/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23.
+Both drivers are terminal: eight qualification stages and 26 post commands
+pass. Do not restart them. Source commit
+3a32c923358c0cb7ca53f821bfb6db3e01ebb466 matches the tested two-file overlay;
+post-commit source/input guard passes. All 1,526 Core tests across 70 binaries
+(zero skipped), 3,506 broader tests (740 skipped), 1,296 UI tests (eleven skipped),
+strict Core/UI checks and formatting pass without leak annotations. All three
+media runs, six native workflows and both portable copies pass. Aligned media
+takes 224.988 seconds, retaining its slow annotations. Twelve native layout
+warnings remain. Five final pairs give commit 246.381375 /238.914458 ms and
+offscreen composition 248.946250 /241.268958 ms, a 7.677292 ms /3.08%
+diagnostic difference. No latency target PASS.
+See [qualification](../qualification/semantic-refresh-duration-reuse-2026-10-23.md).
+The independently re-read inventory verifies 470 files /15,087,083 bytes,
+SHA-256 aa437121fee062db0e63f0ea285f909a73916736ea59ac5b6f263fca63d7c02d.
+The new qualified control is release-native-bin/deadpan-app in that scratch,
+SHA-256 a9ce60a4d227e8c8107b06602915e6323e0cfabbf12610b67a85eda77bdd4a0f.
+Use this executed copy rather than the private prototype.
+
+Next: current-baseline semantic/replay leaf timing and owned main-process
+memory diagnostics in /tmp/deadpan-current-leaf-timing-memory-profile-2026-10-23.
+Root accepted the six-file temporary overlay and separate rotated timing/memory
+lanes. Source-only worker preparation is in progress; no build or measurement
+has run. The observer samples existing owned-child RSS/footprint only: observed
+maxima are whole-lifetime lower bounds, not per-leaf peaks or a memory ceiling.
+Review parser/observer failure paths and exact source diff before execution.
+The read-only next-single-leaf-study/ concludes an opaque exact-value-bound
+cache may be feasible but must preserve current authority and explicit TLS
+entry/exit behavior. Current authored values use integers/rationals; the wire
+audit excludes provisional serialization and requires refuting regressions.
+No cache API or implementation is authorized by that study alone; measure
+current leaf cost and retention first.
 The separate
 next-replay-count-study.md describes immutable borrowed count pairs and a
 post-validation finalizer; bare counts on mutable public outcomes are

@@ -1,0 +1,70 @@
+{
+  "executed_cli": {
+    "source": "target/release/deadpan-cli",
+    "path": "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/release-media-extracted/target/release/deadpan-cli",
+    "sha256": "9a895a6f180d663f25362405af68f4678a1c821b4fe119fb7796d8efef19ff87"
+  },
+  "safe_relative_regular_files_only": true,
+  "cases": [
+    {
+      "label": "neutral",
+      "package": "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/owner-portable-check/neutral/neutral-ungroup-portable.deadpan",
+      "regular_files": 9,
+      "archive_sha256": "7e1b4f940a417f86b735ecf18c9b54cf06a75f8b8f8d23722771bfeae0406c73",
+      "commands": [
+        {
+          "command": [
+            "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/release-media-extracted/target/release/deadpan-cli",
+            "project",
+            "validate",
+            "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/owner-portable-check/neutral/neutral-ungroup-portable.deadpan"
+          ],
+          "exit": 0,
+          "seconds": 0.04492054134607315,
+          "package_paths_and_bytes_unchanged": true
+        },
+        {
+          "command": [
+            "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/release-media-extracted/target/release/deadpan-cli",
+            "doctor",
+            "--project",
+            "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/owner-portable-check/neutral/neutral-ungroup-portable.deadpan"
+          ],
+          "exit": 0,
+          "seconds": 0.03679291717708111,
+          "package_paths_and_bytes_unchanged": true
+        }
+      ]
+    },
+    {
+      "label": "aligned",
+      "package": "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/owner-portable-check/aligned/aligned-sound-scope-portable.deadpan",
+      "regular_files": 9,
+      "archive_sha256": "040f169dae9947e47cef6bb84a2e169b20e44c918ce66c180b3153928065d87b",
+      "commands": [
+        {
+          "command": [
+            "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/release-media-extracted/target/release/deadpan-cli",
+            "project",
+            "validate",
+            "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/owner-portable-check/aligned/aligned-sound-scope-portable.deadpan"
+          ],
+          "exit": 0,
+          "seconds": 0.06905887555330992,
+          "package_paths_and_bytes_unchanged": true
+        },
+        {
+          "command": [
+            "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/release-media-extracted/target/release/deadpan-cli",
+            "doctor",
+            "--project",
+            "/tmp/deadpan-semantic-refresh-duration-reuse-qualification-2026-10-23/owner-portable-check/aligned/aligned-sound-scope-portable.deadpan"
+          ],
+          "exit": 0,
+          "seconds": 0.038718707859516144,
+          "package_paths_and_bytes_unchanged": true
+        }
+      ]
+    }
+  ]
+}

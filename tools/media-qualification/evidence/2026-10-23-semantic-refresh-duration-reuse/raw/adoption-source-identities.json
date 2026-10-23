@@ -1,0 +1,15 @@
+{
+  "base": "ae5eedd065b851242917b38a428ee40a3588978d",
+  "files": {
+    "crates/deadpan-core/src/semantic/planner/selection.rs": {
+      "before": "5ae0181334ea3c12c7d0d4e0607c00fac2a18d345a06e89b3b651d0f80fba8ec",
+      "tested_after": "f8e16b78ed203dade31c1ff90632371f4d8dc1798db09178b03a3799d93ca526",
+      "private_source": "/tmp/deadpan-semantic-refresh-duration-reuse-2026-10-23/source/crates/deadpan-core/src/semantic/planner/selection.rs"
+    },
+    "crates/deadpan-core/tests/semantic_refresh.rs": {
+      "before": null,
+      "tested_after": "750a9d78e4db36c9efeab0a68aa7e0ef565d089dfca199ac2a1eadf5649c66bc",
+      "private_source": "/tmp/deadpan-semantic-refresh-duration-reuse-2026-10-23/source/crates/deadpan-core/tests/semantic_refresh.rs"
+    }
+  }
+}

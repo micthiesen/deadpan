@@ -1,0 +1,1 @@
+{"command":{"command":"delete_range","identities":{"nodes":[]},"parent":"77d3f4cb-d407-4232-96b4-47143b67d97c","range":{"end":120,"start":0},"timing":{"allocation":"aligned-sound-scope-r01","ordinal":0}},"expected_revision":"5770104b-bb7a-4234-b457-9f3b3d41e80a","new_revision":"aligned-sound-scope-r01","project_id":"7e9aff8b-23d6-4485-9443-088158f5505e","protocol":1}

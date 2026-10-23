@@ -1,0 +1,16 @@
+{
+  "reviewer": "root",
+  "scope": "Integration helper visibility correction only",
+  "before_test_sha256": "41ed2885830409e653fc5049fdda9e0f0491c601eb0bc0e8fbd1b289e3c8df50",
+  "after_test_sha256": "750a9d78e4db36c9efeab0a68aa7e0ef565d089dfca199ac2a1eadf5649c66bc",
+  "all_text_outside_injected_helper_identical": true,
+  "before_and_after_error_value": {
+    "code": "InvalidCommand",
+    "message": "injected second pause failure",
+    "current_revision": null
+  },
+  "private_constructor_source": "crates/deadpan-core/src/command.rs:3729",
+  "production_source_unchanged": true,
+  "no_assertion_or_fixture_changes": true,
+  "result": "equivalent public-field construction"
+}
