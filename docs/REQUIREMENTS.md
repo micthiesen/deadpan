@@ -23,7 +23,9 @@ helper expected committed presentation while the app displayed the exact
 proposed picture. The harness now checks the proposal identity and dismisses an
 open proposal during failure cleanup; independent source review agrees. This
 two-file UI-only correction remains unexecuted, so native and renewed UI checks
-are owed. Release media qualification is building. No requirement or gate closes.
+are owed. The release aligned-scope media case also passes all 19 pictures and
+30,430 samples at zero offset, with complete staged PCM/history controls; the
+121-picture endpoint regression is running. No requirement or gate closes.
 
 The `integrated-eleventh` archive passes twelve focused audio checks. A new
 valid-control counterfactual first measured 7,581 changed output channel samples
