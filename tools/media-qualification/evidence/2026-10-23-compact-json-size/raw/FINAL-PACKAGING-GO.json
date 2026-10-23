@@ -1,0 +1,10 @@
+{
+  "authorized": true,
+  "by": "root",
+  "at": "2026-10-23T12:51:29.906805+00:00",
+  "drivers_terminal": true,
+  "main_rows": 8,
+  "post_rows": 26,
+  "timing_trials": 10,
+  "ui_isolated_leak_rerun_passed_without_warning": true
+}

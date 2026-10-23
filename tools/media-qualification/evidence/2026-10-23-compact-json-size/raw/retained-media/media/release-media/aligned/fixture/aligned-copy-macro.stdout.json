@@ -1,0 +1,143 @@
+{
+  "bank_version": 2,
+  "before_bank_version": 1,
+  "before_revision": "cb52a02c-385e-482b-b782-f7e1dfbe7899",
+  "committed": true,
+  "committed_registers": {
+    "bank_version": 2,
+    "project_id": "6091ef94-9683-4dcc-8f02-3d00aadb6d01",
+    "revision_id": "5dc303bc-f2d7-42f8-af43-49dc35507b04"
+  },
+  "committed_revision": "5dc303bc-f2d7-42f8-af43-49dc35507b04",
+  "context": {
+    "cursor": 15,
+    "original": null,
+    "parent": "f1a44789-9b3e-47a6-b089-68f4b0eb6b5c",
+    "scoped": null,
+    "selected_child": "a93869e4-bb0b-43ab-b49b-e46bded40a24",
+    "visual_selection": null
+  },
+  "edit": {
+    "changed_ids": [
+      "496386b5-14d5-4d83-a720-28c105745d35",
+      "49d5917a-48e8-495e-94f0-1382d326bba3",
+      "a93869e4-bb0b-43ab-b49b-e46bded40a24",
+      "d03662a9-be31-45bb-a8c5-9f1ae00ba72f",
+      "e13dc58f-a724-4dbf-ad27-f2fa0f612934",
+      "e7e6a0e8-5d13-4b2d-b185-75d22e048ac3",
+      "f1a44789-9b3e-47a6-b089-68f4b0eb6b5c"
+    ],
+    "description": "Apply resolved transaction",
+    "duration_delta": 4,
+    "new_revision": "5dc303bc-f2d7-42f8-af43-49dc35507b04"
+  },
+  "generation_preparation_notices": [],
+  "generation_preparations": [],
+  "instruction_count": 2,
+  "mark_changes": [],
+  "operation": "apply",
+  "project_id": "6091ef94-9683-4dcc-8f02-3d00aadb6d01",
+  "protocol": 1,
+  "register_writes": [
+    "\"",
+    "c"
+  ],
+  "trace": [
+    {
+      "after_cursor": 15,
+      "after_original": null,
+      "after_parent": "f1a44789-9b3e-47a6-b089-68f4b0eb6b5c",
+      "after_scoped": null,
+      "after_selected_child": "aligned-sound-scope-n18",
+      "after_visual_selection": null,
+      "before_cursor": 15,
+      "before_original": null,
+      "before_revision": "cb52a02c-385e-482b-b782-f7e1dfbe7899",
+      "before_scope": {
+        "end": 15,
+        "start": 0
+      },
+      "before_scoped": null,
+      "before_selected_child": "aligned-sound-scope-n18",
+      "before_visual_selection": null,
+      "capture": {
+        "bounds": {
+          "end": 14,
+          "start": 8
+        },
+        "parent": "aligned-top",
+        "scope": [
+          "aligned-top"
+        ],
+        "scope_labels": [
+          "Retained ancestor Top"
+        ],
+        "timing": {
+          "allocation": "6b6f535f-f2e6-4cb6-8254-b4455a3e897a",
+          "ordinal": 0
+        }
+      },
+      "capture_set": null,
+      "captured_child_label": "New processing G",
+      "depth": 0,
+      "instruction": {
+        "register": "c",
+        "selector": {
+          "node": "9150e172-e647-4755-844b-7ae79c76a37c",
+          "type": "node"
+        },
+        "type": "yank"
+      },
+      "parent": "f1a44789-9b3e-47a6-b089-68f4b0eb6b5c",
+      "removed_range": null,
+      "resolved_nodes": [],
+      "resolved_parent": "aligned-top",
+      "resolved_range": {
+        "end": 12,
+        "start": 8
+      },
+      "resolved_ranges": [],
+      "resolved_selection": {
+        "node": "9150e172-e647-4755-844b-7ae79c76a37c",
+        "type": "child"
+      }
+    },
+    {
+      "after_cursor": 15,
+      "after_original": null,
+      "after_parent": "f1a44789-9b3e-47a6-b089-68f4b0eb6b5c",
+      "after_scoped": null,
+      "after_selected_child": "a93869e4-bb0b-43ab-b49b-e46bded40a24",
+      "after_visual_selection": null,
+      "before_cursor": 15,
+      "before_original": null,
+      "before_revision": "cb52a02c-385e-482b-b782-f7e1dfbe7899",
+      "before_scope": {
+        "end": 15,
+        "start": 0
+      },
+      "before_scoped": null,
+      "before_selected_child": "aligned-sound-scope-n18",
+      "before_visual_selection": null,
+      "capture": null,
+      "capture_set": null,
+      "captured_child_label": null,
+      "depth": 0,
+      "instruction": {
+        "before": false,
+        "register": "c",
+        "type": "paste"
+      },
+      "parent": "f1a44789-9b3e-47a6-b089-68f4b0eb6b5c",
+      "removed_range": null,
+      "resolved_nodes": [],
+      "resolved_parent": "f1a44789-9b3e-47a6-b089-68f4b0eb6b5c",
+      "resolved_range": {
+        "end": 19,
+        "start": 15
+      },
+      "resolved_ranges": [],
+      "resolved_selection": null
+    }
+  ]
+}

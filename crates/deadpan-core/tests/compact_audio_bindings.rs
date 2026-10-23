@@ -498,3 +498,29 @@ fn captured_binding_state_and_insert_history_patch_roundtrip_compact_wire() {
         *after.audio_bindings()
     );
 }
+
+#[test]
+fn compact_document_size_matches_nested_binding_bytes_without_changing_wire() {
+    let document = document_with_hold();
+    let state = nested_state();
+    let state_json = state.to_json().unwrap();
+    let mut value = serde_json::to_value(&document).unwrap();
+    value["audio_bindings"] = serde_json::to_value(&state).unwrap();
+    let bound = ProjectDocument::from_json(&value.to_string()).unwrap();
+    let bound_json = bound.to_compact_json().unwrap();
+    assert_eq!(bound.compact_json_size().unwrap(), bound_json.len());
+    assert_eq!(bound.to_compact_json().unwrap(), bound_json);
+    assert_eq!(state.to_json().unwrap(), state_json);
+    assert_eq!(ProjectDocument::from_json(&bound_json).unwrap(), bound);
+    let wire: Value = serde_json::from_str(&bound_json).unwrap();
+    let binding = &wire["audio_bindings"]["bindings"]["owner"];
+    assert!(binding["resume"].get("local_boundary").is_some());
+    assert_eq!(
+        binding["resume"]["phase"]["terms"]
+            .as_array()
+            .unwrap()
+            .len(),
+        1
+    );
+    assert_eq!(binding["reanchors"].as_array().unwrap().len(), 1);
+}

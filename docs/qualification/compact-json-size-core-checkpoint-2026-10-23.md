@@ -1,5 +1,8 @@
 # Compact JSON size-count Core checkpoint, 2026-10-23
 
+The subsequent [production qualification](compact-json-size-2026-10-23.md)
+is complete. The checkpoint below preserves the earlier Core-only result.
+
 The uncommitted five-file candidate passes all **1,517 Core tests across 69
 binaries**, with zero skipped. Source, input and executable guards pass.
 The archive build and run exit zero. The new counter/escaping/limit cases and

@@ -1,0 +1,51 @@
+{
+  "archive_path": "media/debug-media/neutral/portable-package.tar.gz",
+  "archive_sha256": "05b3f1cd4e57ad5b7ac304220ee029d84ec70a8187f985ac3fff5e2a989cdec9",
+  "regular_files": [
+    {
+      "path": "neutral-ungroup-portable.deadpan/.render-candidates.lock",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    {
+      "path": "neutral-ungroup-portable.deadpan/.writer.lock",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    {
+      "path": "neutral-ungroup-portable.deadpan/Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+      "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+      "size": 39157
+    },
+    {
+      "path": "neutral-ungroup-portable.deadpan/Media/RenderCandidates/blake3-217de5898296373c55154dac3c8f82a7c1847e9ffb300a8ff81334e8d58b8767",
+      "sha256": "4ff07d42243446a4c417af059c8e709c9ef64413236ee19523a69af2c380a872",
+      "size": 7857
+    },
+    {
+      "path": "neutral-ungroup-portable.deadpan/Media/RenderCandidates/blake3-aab1a1be935da9b8940dcbd1768797b0705cea37068eb1972703d655f9261fc4",
+      "sha256": "76a78d1d70f2ddedb61069821dc8259e005aa74119c9d9831776d1db36abd478",
+      "size": 15103
+    },
+    {
+      "path": "neutral-ungroup-portable.deadpan/manifest.json",
+      "sha256": "1f9e17d9b3eb8d59b4441c8a87aa8a7237e95c51738693f1e2e6512c679fb1b5",
+      "size": 82
+    },
+    {
+      "path": "neutral-ungroup-portable.deadpan/project.sqlite",
+      "sha256": "3602d13768b4b216a5e4800780f586198321153a3e69a9d255d0b22e144ad4e8",
+      "size": 618496
+    },
+    {
+      "path": "neutral-ungroup-portable.deadpan/project.sqlite-shm",
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb",
+      "size": 32768
+    },
+    {
+      "path": "neutral-ungroup-portable.deadpan/project.sqlite-wal",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    }
+  ]
+}

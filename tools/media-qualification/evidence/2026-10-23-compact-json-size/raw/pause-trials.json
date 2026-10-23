@@ -1,0 +1,182 @@
+[
+  {
+    "pair": 1,
+    "kind": "control",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 266.14545899999996,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 268.77329199999997
+    },
+    "load": [
+      2.86865234375,
+      3.7900390625,
+      5.22900390625
+    ],
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "source_binary_guards": true,
+    "binary_sha256": "1864c3acd798d7ce68a8d3a62ee144ec6956cdc4750c568bf0001d7c2a67be4c",
+    "checks": 7
+  },
+  {
+    "pair": 1,
+    "kind": "candidate",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 260.42650000000003,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 263.27475
+    },
+    "load": [
+      2.75537109375,
+      3.71875,
+      5.177734375
+    ],
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "source_binary_guards": true,
+    "binary_sha256": "c36b894466eb4f16fe976924b05c02ada87b0e8872f7f9a7fc6028a60a342037",
+    "checks": 7
+  },
+  {
+    "pair": 2,
+    "kind": "candidate",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 259.609333,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 262.44120799999996
+    },
+    "load": [
+      2.66796875,
+      3.650390625,
+      5.12744140625
+    ],
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "source_binary_guards": true,
+    "binary_sha256": "c36b894466eb4f16fe976924b05c02ada87b0e8872f7f9a7fc6028a60a342037",
+    "checks": 7
+  },
+  {
+    "pair": 2,
+    "kind": "control",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 265.014584,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 267.46529200000003
+    },
+    "load": [
+      2.64501953125,
+      3.61181640625,
+      5.09619140625
+    ],
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "source_binary_guards": true,
+    "binary_sha256": "1864c3acd798d7ce68a8d3a62ee144ec6956cdc4750c568bf0001d7c2a67be4c",
+    "checks": 7
+  },
+  {
+    "pair": 3,
+    "kind": "control",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 265.047333,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 267.673625
+    },
+    "load": [
+      2.865234375,
+      3.61376953125,
+      5.0703125
+    ],
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "source_binary_guards": true,
+    "binary_sha256": "1864c3acd798d7ce68a8d3a62ee144ec6956cdc4750c568bf0001d7c2a67be4c",
+    "checks": 7
+  },
+  {
+    "pair": 3,
+    "kind": "candidate",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 257.71274999999997,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 260.36087499999996
+    },
+    "load": [
+      2.814453125,
+      3.56640625,
+      5.02783203125
+    ],
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "source_binary_guards": true,
+    "binary_sha256": "c36b894466eb4f16fe976924b05c02ada87b0e8872f7f9a7fc6028a60a342037",
+    "checks": 7
+  },
+  {
+    "pair": 4,
+    "kind": "candidate",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 259.015416,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 261.593583
+    },
+    "load": [
+      2.7138671875,
+      3.50537109375,
+      4.97998046875
+    ],
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "source_binary_guards": true,
+    "binary_sha256": "c36b894466eb4f16fe976924b05c02ada87b0e8872f7f9a7fc6028a60a342037",
+    "checks": 7
+  },
+  {
+    "pair": 4,
+    "kind": "control",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 269.240083,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 272.156417
+    },
+    "load": [
+      2.62255859375,
+      3.44677734375,
+      4.93310546875
+    ],
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "source_binary_guards": true,
+    "binary_sha256": "1864c3acd798d7ce68a8d3a62ee144ec6956cdc4750c568bf0001d7c2a67be4c",
+    "checks": 7
+  },
+  {
+    "pair": 5,
+    "kind": "control",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 267.692125,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 270.404625
+    },
+    "load": [
+      2.6376953125,
+      3.40771484375,
+      4.89306640625
+    ],
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "source_binary_guards": true,
+    "binary_sha256": "1864c3acd798d7ce68a8d3a62ee144ec6956cdc4750c568bf0001d7c2a67be4c",
+    "checks": 7
+  },
+  {
+    "pair": 5,
+    "kind": "candidate",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 256.39029200000004,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 259.09754200000003
+    },
+    "load": [
+      2.63720703125,
+      3.37060546875,
+      4.853515625
+    ],
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "source_binary_guards": true,
+    "binary_sha256": "c36b894466eb4f16fe976924b05c02ada87b0e8872f7f9a7fc6028a60a342037",
+    "checks": 7
+  }
+]

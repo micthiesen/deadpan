@@ -918,3 +918,81 @@ fn compound_macro_inputs_are_frozen_and_invalid_programs_fail_historical_reopen(
     drop(store);
     assert!(ProjectStore::open(&path, crate::AccessMode::ReadOnly).is_err());
 }
+
+#[test]
+fn compact_size_counting_retains_exact_staged_checkpoint_bytes_and_history() {
+    let directory = tempfile::tempdir().unwrap();
+    let path = directory.path().join("counted-checkpoints.deadpan");
+    let initial = document();
+    let mut store = ProjectStore::create(&path, &initial).unwrap();
+    let (command, _) = repeat_cut_paste(&initial);
+
+    // A reference visitor materializes every stage just as the old size path
+    // did. Only repeat-stage is a capture checkpoint for this exact fixture.
+    let mut expected = Vec::new();
+    let reference = deadpan_core::replay_compound::<StoreError>(&initial, &command, |visit| {
+        if let Some(leaf) = visit.request {
+            let json = visit.after.to_compact_json()?;
+            assert_eq!(visit.after.compact_json_size()?, json.len());
+            let checkpoint = (leaf.new_revision == revision("repeat-stage")).then_some(json);
+            expected.push((leaf.new_revision.to_string(), checkpoint));
+        }
+        Ok(())
+    })
+    .unwrap();
+    assert_eq!(expected.len(), 3);
+    assert_eq!(
+        expected.iter().filter(|(_, json)| json.is_some()).count(),
+        1
+    );
+    assert_eq!(
+        expected.iter().filter(|(_, json)| json.is_none()).count(),
+        2
+    );
+    let before = cells(&store);
+    let (counted, staged) = execute(&store.connection, &initial, &command, None).unwrap();
+    assert_eq!(counted.document, reference.document);
+    assert_eq!(counted.edit, reference.edit);
+    assert_eq!(counted.register_writes, reference.register_writes);
+    assert_eq!(
+        staged
+            .iter()
+            .map(|step| (step.revision.to_string(), step.document.clone()))
+            .collect::<Vec<_>>(),
+        expected
+    );
+    assert_eq!(cells(&store), before, "preparation must not write storage");
+
+    let saved = store.commit_compound(&command, None).unwrap();
+    let committed = saved.committed.unwrap();
+    assert_eq!(committed.edit, reference.edit);
+    assert_eq!(store.snapshot().unwrap(), reference.document);
+    let persisted: Vec<(String, Option<String>)> = store.connection
+        .prepare("SELECT step_revision,document FROM transaction_steps WHERE owner_revision=?1 ORDER BY ordinal")
+        .unwrap()
+        .query_map([command.new_revision.as_str()], |row| Ok((row.get(0)?,row.get(1)?)))
+        .unwrap()
+        .map(Result::unwrap)
+        .collect();
+    assert_eq!(persisted, expected);
+    store.validate().unwrap();
+    store
+        .undo(&command.new_revision, revision("counted-undo"))
+        .unwrap();
+    assert_eq!(
+        store.snapshot().unwrap().duration().unwrap(),
+        initial.duration().unwrap()
+    );
+    store
+        .redo(&revision("counted-undo"), revision("counted-redo"))
+        .unwrap();
+    assert_eq!(
+        store.snapshot().unwrap().duration().unwrap(),
+        reference.document.duration().unwrap()
+    );
+    let expected_bank = store.registers().unwrap();
+    drop(store);
+    let reopened = ProjectStore::open(&path, crate::AccessMode::ReadOnly).unwrap();
+    assert_eq!(reopened.registers().unwrap(), expected_bank);
+    reopened.validate().unwrap();
+}

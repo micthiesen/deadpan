@@ -1258,7 +1258,11 @@ fn read_command_snapshot(
 }
 
 fn check_document_size(json: &str) -> Result<(), StoreError> {
-    if json.len() > schema::MAX_DOCUMENT_BYTES {
+    check_document_size_bytes(json.len())
+}
+
+fn check_document_size_bytes(bytes: usize) -> Result<(), StoreError> {
+    if bytes > schema::MAX_DOCUMENT_BYTES {
         return Err(StoreError::Integrity(
             "document exceeds the core document size limit".into(),
         ));

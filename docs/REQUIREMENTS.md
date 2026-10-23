@@ -43,22 +43,25 @@ archived binaries without that warning. The first rerun wrapper failed before
 any test on an incorrect guard filename; its corrected wrapper and all native
 layout warnings remain in the evidence. No requirement or gate closes.
 
-## Compact JSON size-count prototype, 2026-10-23
+## Exact compact JSON size counting, 2026-10-23
 
-A separate [private prototype](qualification/compact-json-size-prototype-2026-10-23.md)
-counts exact compact JSON bytes for Store entry/final and uncaptured stages,
-retaining captured checkpoint bytes and every work charge. Its twelve focused
-tests and locked release build pass. Five guarded pairs give offscreen medians
-266.491583 /257.379000 ms, a 9.112583 ms diagnostic difference of about 3.42%.
-These samples are separate from the qualified leaf-result comparison and do
-not establish percentiles or the 100 ms/50 ms targets. Core 58 /SQLite 87 stay
-unchanged. Full production qualification remains owed; no requirement closes.
-The 161-file /1,362,070-byte evidence inventory verifies independently.
-The identical production candidate now passes all 1,517 Core tests across
-69 binaries, zero skipped, with source/input/executable guards. The
-[Core checkpoint](qualification/compact-json-size-core-checkpoint-2026-10-23.md)
-retains 18 files /362,018 bytes. Broader, UI, strict, media/native, portable
-and final production timing checks remain owed.
+Size-only Store traversals now use the identical compact serializer without
+retaining complete output buffers. Captured checkpoint bytes, all work charges
+and refusal order remain. Core 58 /SQLite 87 stay unchanged. All 1,517 Core
+tests (zero skipped), 3,506 broader tests (740 skipped), 1,296 UI tests (eleven
+skipped), strict Core/Store/UI checks and formatting pass. The UI suite's one
+leak warning does not recur in an isolated same-archive rerun. Debug/release
+media, six native workflows and both portable extractions pass.
+
+Five final quiet pairs give commit medians 266.145459 /259.015416 ms and
+offscreen composition 268.773292 /261.593583 ms. The latter difference is
+7.179709 ms, about 2.67%, diagnostic only. The 100 ms/50 ms targets stay open.
+The [final qualification](qualification/compact-json-size-2026-10-23.md) retains
+467 files /15,051,302 bytes, including three emitted movies and complete
+decoder/control evidence, all independently verified. The earlier
+[private prototype](qualification/compact-json-size-prototype-2026-10-23.md)
+and [Core checkpoint](qualification/compact-json-size-core-checkpoint-2026-10-23.md)
+remain separate historical records. No requirement or gate closes.
 
 ## Remaining preparation cost, 2026-10-23
 

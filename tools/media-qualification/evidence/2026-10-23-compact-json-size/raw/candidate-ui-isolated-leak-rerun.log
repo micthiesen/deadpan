@@ -1,0 +1,8 @@
+  Extracting 3 binaries (including 1 non-test binary) and 7 linked paths to /private/tmp/deadpan-compact-json-size-qualification-2026-10-23/candidate-ui-extracted
+   Extracted 58 files to /private/tmp/deadpan-compact-json-size-qualification-2026-10-23/candidate-ui-extracted in 0.28s
+────────────
+ Nextest run ID dbff22d4-cecc-426b-85e6-31fb997084e6 with nextest profile: default
+    Starting 1 test across 2 binaries (1306 tests skipped)
+        PASS [   0.120s] (1/1) deadpan-app::bin/deadpan-app project::tests::render::unchanged_preview_cannot_reuse_an_earlier_commit_receipt
+────────────
+     Summary [   0.121s] 1 test run: 1 passed, 1306 skipped

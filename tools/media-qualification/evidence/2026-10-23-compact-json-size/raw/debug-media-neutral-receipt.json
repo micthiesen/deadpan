@@ -1,0 +1,23 @@
+{
+  "command": [
+    "cargo",
+    "nextest",
+    "run",
+    "--archive-file",
+    "/tmp/deadpan-compact-json-size-qualification-2026-10-23/debug-media.tar.zst",
+    "--extract-to",
+    "/tmp/deadpan-compact-json-size-qualification-2026-10-23/debug-media-extracted",
+    "--extract-overwrite",
+    "--workspace-remap",
+    "/Users/michael/Code/deadpan",
+    "-E",
+    "test(neutral_unpaired_sound_group_ungroup_preserves_complete_pcm_and_verified_export)",
+    "--run-ignored",
+    "all",
+    "--test-threads",
+    "1",
+    "--no-fail-fast"
+  ],
+  "exit": 0,
+  "seconds": 35.293012416921556
+}

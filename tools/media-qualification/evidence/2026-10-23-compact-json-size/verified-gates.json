@@ -1,0 +1,189 @@
+{
+  "source_base": "91e17fe4db1aa44ccc63b3e27c70f6e6f7baa665",
+  "rust_files": 2050,
+  "input_files": 6,
+  "phases": {
+    "candidate-all-core": {
+      "tests": 1517,
+      "passed": 1517,
+      "skipped": 0,
+      "leaky": 0,
+      "matching_suites": 69
+    },
+    "candidate-broad": {
+      "tests": 3506,
+      "passed": 3506,
+      "skipped": 740,
+      "leaky": 0,
+      "matching_suites": 110
+    },
+    "candidate-ui": {
+      "tests": 1296,
+      "passed": 1296,
+      "skipped": 11,
+      "leaky": 1,
+      "matching_suites": 2
+    }
+  },
+  "native_report_checks": {
+    "workflow_checks": 1340,
+    "kestrel_checks": 6,
+    "reports": [
+      {
+        "report": "release-native-performance/report.json",
+        "workflow_checks": 197,
+        "kestrel_checks": 1
+      },
+      {
+        "report": "native-macros/report.json",
+        "workflow_checks": 401,
+        "kestrel_checks": 1
+      },
+      {
+        "report": "native-named-registers/report.json",
+        "workflow_checks": 171,
+        "kestrel_checks": 1
+      },
+      {
+        "report": "native-dot-repeat/report.json",
+        "workflow_checks": 383,
+        "kestrel_checks": 1
+      },
+      {
+        "report": "native-range-set-selectors/report.json",
+        "workflow_checks": 85,
+        "kestrel_checks": 1
+      },
+      {
+        "report": "native-transcript-search-selectors/report.json",
+        "workflow_checks": 103,
+        "kestrel_checks": 1
+      }
+    ],
+    "finding_severity_counts": {
+      "warning": 12
+    },
+    "finding_prefix_counts": {
+      "# frame(s) settled their layout only on a second retry": 6,
+      "egui discard warning": 6
+    },
+    "media_fixtures": [
+      {
+        "phase": "debug-media",
+        "fixture": "neutral",
+        "frames": 15,
+        "pictures": 15,
+        "offsets": [
+          [
+            "verified_zero",
+            0
+          ]
+        ],
+        "canonical_samples_compared": 24024,
+        "final_canonical_samples_compared": null,
+        "claim_flags": {
+          "authored_limited_and_limiter_gain_bits_equal": true,
+          "independent_DSP_claim": false,
+          "listening_claim": false
+        }
+      },
+      {
+        "phase": "release-media",
+        "fixture": "neutral",
+        "frames": 15,
+        "pictures": 15,
+        "offsets": [
+          [
+            "verified_zero",
+            0
+          ]
+        ],
+        "canonical_samples_compared": 24024,
+        "final_canonical_samples_compared": null,
+        "claim_flags": {
+          "authored_limited_and_limiter_gain_bits_equal": true,
+          "independent_DSP_claim": false,
+          "listening_claim": false
+        }
+      },
+      {
+        "phase": "release-media",
+        "fixture": "aligned",
+        "frames": 19,
+        "pictures": 19,
+        "offsets": [
+          [
+            "verified_zero",
+            0
+          ]
+        ],
+        "canonical_samples_compared": null,
+        "final_canonical_samples_compared": 30430,
+        "claim_flags": {
+          "independent_DSP_claim": false,
+          "listening_claim": false,
+          "move_PCM_translation_claim": false
+        }
+      }
+    ]
+  },
+  "post": {
+    "post_commands": 26,
+    "timing_trials": 10,
+    "candidate_app_sha256": "c36b894466eb4f16fe976924b05c02ada87b0e8872f7f9a7fc6028a60a342037",
+    "control_app_sha256": "1864c3acd798d7ce68a8d3a62ee144ec6956cdc4750c568bf0001d7c2a67be4c",
+    "timing_medians": {
+      "n_per_kind": 5,
+      "diagnostic_only": true,
+      "no_percentile_or_target_pass": true,
+      "kinds": {
+        "control": {
+          "large_first_pause_input_to_commit_ms": {
+            "min": 265.014584,
+            "median": 266.14545899999996,
+            "max": 269.240083
+          },
+          "large_first_pause_input_to_offscreen_background_composition_ms": {
+            "min": 267.46529200000003,
+            "median": 268.77329199999997,
+            "max": 272.156417
+          }
+        },
+        "candidate": {
+          "large_first_pause_input_to_commit_ms": {
+            "min": 256.39029200000004,
+            "median": 259.015416,
+            "max": 260.42650000000003
+          },
+          "large_first_pause_input_to_offscreen_background_composition_ms": {
+            "min": 259.09754200000003,
+            "median": 261.593583,
+            "max": 263.27475
+          }
+        }
+      }
+    }
+  },
+  "reviews": "no findings",
+  "changed_sources": {
+    "crates/deadpan-core/src/document.rs": "2763bb86bbaba1afe9f11ade4e0077c154ffc12c9452bc2836fc9b0105865d10",
+    "crates/deadpan-core/tests/compact_audio_bindings.rs": "31482d26cc21208520528d6e58c9164976aaaa288e0c684b29e86c44e5d60a01",
+    "crates/deadpan-store/src/lib.rs": "60e791a846e4ae64bd400194a7efe8d9123880490b8b18a2cf57a5d66c429227",
+    "crates/deadpan-store/src/compound.rs": "1d5f07d4bc517906ed8cd650e42620cfca5d9e19c474599b3fafdd87a9ebc8e4",
+    "crates/deadpan-store/src/compound/tests.rs": "cef529c2160c229a25741be09f7257e7d7340608ea5fa571ee0b72092c03b0be"
+  },
+  "go": {
+    "authorized": true,
+    "by": "root",
+    "at": "2026-10-23T12:51:29.906805+00:00",
+    "drivers_terminal": true,
+    "main_rows": 8,
+    "post_rows": 26,
+    "timing_trials": 10,
+    "ui_isolated_leak_rerun_passed_without_warning": true
+  },
+  "schema": {
+    "core": 58,
+    "sqlite": 87
+  }
+}

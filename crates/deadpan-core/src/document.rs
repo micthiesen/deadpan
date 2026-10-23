@@ -924,6 +924,27 @@ impl ProjectDocument {
         String::from_utf8(output.bytes)
             .map_err(|error| DocumentError::new(DocumentErrorCode::InvalidJson, error.to_string()))
     }
+    /// The exact byte length of to_compact_json, without keeping its
+    /// output buffer. Uses the same serializer and byte limit.
+    pub fn compact_json_size(&self) -> Result<usize, DocumentError> {
+        self.compact_json_size_with_limit(MAX_DOCUMENT_JSON_BYTES)
+    }
+
+    fn compact_json_size_with_limit(&self, limit: usize) -> Result<usize, DocumentError> {
+        let mut output = BoundedJsonCount {
+            bytes: 0,
+            limit,
+            exceeded: false,
+        };
+        let result = serde_json::to_writer(&mut output, self);
+        // Preserve the materializing writer's limit-error precedence.
+        if output.exceeded {
+            return Err(json_limit());
+        }
+        result.map_err(DocumentError::json)?;
+        Ok(output.bytes)
+    }
+
     fn to_json_with_limit(&self, limit: usize) -> Result<String, DocumentError> {
         use std::io::Write;
 
@@ -2029,9 +2050,137 @@ impl std::io::Write for BoundedJson {
     }
 }
 
+/// The same compact JSON byte bound without retaining the emitted bytes.
+/// The serializer may still allocate its existing per-field temporary values.
+struct BoundedJsonCount {
+    bytes: usize,
+    limit: usize,
+    exceeded: bool,
+}
+
+impl std::io::Write for BoundedJsonCount {
+    fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
+        if bytes.len() > self.limit.saturating_sub(self.bytes) {
+            self.exceeded = true;
+            return Err(std::io::Error::other("document JSON exceeds byte limit"));
+        }
+        // The check above proves the sum fits and remains <= limit.
+        self.bytes += bytes.len();
+        Ok(bytes.len())
+    }
+
+    fn flush(&mut self) -> std::io::Result<()> {
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod serialization_tests {
     use super::*;
+
+    fn compact_document() -> ProjectDocument {
+        ProjectDocument::new(
+            ProjectId::new("compact-size").unwrap(),
+            RevisionId::new("initial").unwrap(),
+            PresentationBasis {
+                width: 1920,
+                height: 1080,
+                frame_rate: FrameRate::new(24, 1).unwrap(),
+                color_policy: ColorPolicy::SdrRec709,
+            },
+            NodeId::new("root").unwrap(),
+        )
+        .unwrap()
+    }
+
+    #[test]
+    fn compact_size_matches_exact_escaped_utf8_bytes_and_limit_errors() {
+        let mut document = compact_document();
+        for label in [
+            "",
+            "plain",
+            "é 🦀",
+            "\"quoted\"\\slash/\tline\r\n",
+            "{\"json\":\"text\"}",
+        ] {
+            document
+                .nodes
+                .get_mut(&NodeId::new("root").unwrap())
+                .unwrap()
+                .label = label.into();
+            let json = document.to_compact_json().unwrap();
+            assert_eq!(document.compact_json_size().unwrap(), json.len());
+            assert_eq!(
+                document.compact_json_size_with_limit(json.len()).unwrap(),
+                json.len()
+            );
+            assert!(
+                !json.ends_with('\n'),
+                "compact output has no terminal newline"
+            );
+            for limit in [0, json.len() - 1] {
+                // Compare the same compact serialization with the existing
+                // materializing sink, including the exact error vocabulary.
+                let mut materialized = BoundedJson {
+                    bytes: Vec::new(),
+                    limit,
+                    exceeded: false,
+                };
+                let result = serde_json::to_writer(&mut materialized, &document);
+                assert!(result.is_err() && materialized.exceeded);
+                assert_eq!(
+                    document.compact_json_size_with_limit(limit).unwrap_err(),
+                    json_limit()
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn compact_count_matches_chunked_materialization_and_never_wraps() {
+        use std::io::Write as _;
+
+        for limit in [0, 1, 5, 10] {
+            let mut count = BoundedJsonCount {
+                bytes: 0,
+                limit,
+                exceeded: false,
+            };
+            let mut materialized = BoundedJson {
+                bytes: Vec::new(),
+                limit,
+                exceeded: false,
+            };
+            for chunk in [b"".as_slice(), b"ab", b"cde", b"fghij", b"z"] {
+                let counted = count.write(chunk);
+                let stored = materialized.write(chunk);
+                assert_eq!(counted.is_ok(), stored.is_ok());
+                assert_eq!(count.bytes, materialized.bytes.len());
+                assert_eq!(count.exceeded, materialized.exceeded);
+                if let (Err(counted), Err(stored)) = (counted, stored) {
+                    assert_eq!(counted.to_string(), stored.to_string());
+                }
+            }
+            count.flush().unwrap();
+            materialized.flush().unwrap();
+        }
+
+        let mut count = BoundedJsonCount {
+            bytes: usize::MAX - 1,
+            limit: usize::MAX,
+            exceeded: false,
+        };
+        assert!(count.write(b"ab").is_err());
+        assert_eq!(count.bytes, usize::MAX - 1);
+        assert!(count.exceeded);
+        // Empty and fitting writes never clear the sticky error flag.
+        assert_eq!(count.write(b"").unwrap(), 0);
+        assert_eq!(count.write(b"x").unwrap(), 1);
+        assert_eq!(count.bytes, usize::MAX);
+        assert!(count.write(b"y").is_err());
+        assert_eq!(count.bytes, usize::MAX);
+        assert!(count.exceeded);
+    }
 
     #[test]
     fn canonical_json_limit_counts_escaping_utf8_and_terminal_newline() {

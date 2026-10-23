@@ -1,5 +1,8 @@
 # Compact JSON size-counting prototype, 2026-10-23
 
+The subsequent [production qualification](compact-json-size-2026-10-23.md)
+is complete. This earlier private comparison remains a separate diagnostic batch.
+
 The isolated prototype passes twelve focused tests and ten guarded native
 timing replays. Five control/prototype pairs give input-to-commit medians
 263.867166 /254.805167 ms and offscreen Background composition

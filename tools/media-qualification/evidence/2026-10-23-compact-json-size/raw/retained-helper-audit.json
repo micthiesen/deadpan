@@ -1,0 +1,110 @@
+[
+  {
+    "phase": "candidate-broad",
+    "tool": "deadpan-app",
+    "retained_matches": true,
+    "mutable_build_source_still_matches": false
+  },
+  {
+    "phase": "candidate-broad",
+    "tool": "deadpan-cli",
+    "retained_matches": true,
+    "mutable_build_source_still_matches": false
+  },
+  {
+    "phase": "candidate-broad",
+    "tool": "deadpan-media-worker",
+    "retained_matches": true,
+    "mutable_build_source_still_matches": true
+  },
+  {
+    "phase": "candidate-broad",
+    "tool": "deadpan-transcribe",
+    "retained_matches": true,
+    "mutable_build_source_still_matches": true
+  },
+  {
+    "phase": "candidate-broad",
+    "tool": "deadpan-track",
+    "retained_matches": true,
+    "mutable_build_source_still_matches": true
+  },
+  {
+    "phase": "candidate-ui",
+    "tool": "deadpan-app",
+    "retained_matches": true,
+    "mutable_build_source_still_matches": true
+  },
+  {
+    "phase": "candidate-ui",
+    "tool": "deadpan-cli",
+    "retained_matches": true,
+    "mutable_build_source_still_matches": false
+  },
+  {
+    "phase": "candidate-ui",
+    "tool": "deadpan-media-worker",
+    "retained_matches": true,
+    "mutable_build_source_still_matches": true
+  },
+  {
+    "phase": "candidate-ui",
+    "tool": "deadpan-transcribe",
+    "retained_matches": true,
+    "mutable_build_source_still_matches": true
+  },
+  {
+    "phase": "candidate-ui",
+    "tool": "deadpan-track",
+    "retained_matches": true,
+    "mutable_build_source_still_matches": true
+  },
+  {
+    "phase": "debug-media",
+    "tool": "deadpan-cli",
+    "retained_matches": true,
+    "mutable_build_source_still_matches": true
+  },
+  {
+    "phase": "debug-media",
+    "tool": "deadpan-media-worker",
+    "retained_matches": true,
+    "mutable_build_source_still_matches": true
+  },
+  {
+    "phase": "debug-media",
+    "tool": "deadpan-transcribe",
+    "retained_matches": true,
+    "mutable_build_source_still_matches": true
+  },
+  {
+    "phase": "debug-media",
+    "tool": "deadpan-track",
+    "retained_matches": true,
+    "mutable_build_source_still_matches": true
+  },
+  {
+    "phase": "release-media",
+    "tool": "deadpan-cli",
+    "retained_matches": true,
+    "mutable_build_source_still_matches": true
+  },
+  {
+    "phase": "release-media",
+    "tool": "deadpan-media-worker",
+    "retained_matches": true,
+    "mutable_build_source_still_matches": true
+  },
+  {
+    "phase": "release-media",
+    "tool": "deadpan-transcribe",
+    "retained_matches": true,
+    "mutable_build_source_still_matches": true
+  },
+  {
+    "phase": "release-media",
+    "tool": "deadpan-track",
+    "retained_matches": true,
+    "mutable_build_source_still_matches": true
+  }
+]

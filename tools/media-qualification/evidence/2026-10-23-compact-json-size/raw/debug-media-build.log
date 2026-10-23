@@ -1,0 +1,16 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling deadpan-source v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-source)
+   Compiling deadpan-analysis v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-analysis)
+   Compiling deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+   Compiling deadpan-render v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-render)
+   Compiling deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+   Compiling deadpan-encode v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-encode)
+   Compiling deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+   Compiling deadpan-audio v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-audio)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+   Compiling deadpan-models v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-models)
+   Compiling deadpan-cli v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-cli)
+   Compiling deadpan-playback v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-playback)
+    Finished `test` profile [optimized + debuginfo] target(s) in 2m 01s
+   Archiving 2 binaries (including 1 non-test binary), 7 linked paths, and 1 standard library to /tmp/deadpan-compact-json-size-qualification-2026-10-23/debug-media.tar.zst
+    Archived 57 files to /tmp/deadpan-compact-json-size-qualification-2026-10-23/debug-media.tar.zst in 0.08s

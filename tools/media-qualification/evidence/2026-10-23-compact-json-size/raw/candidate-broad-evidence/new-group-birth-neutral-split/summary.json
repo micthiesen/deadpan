@@ -1,0 +1,1 @@
+{"actual_neutral_split_failure":false,"classification":"neutral Split preserves full G input and canonical PCM","controls_valid":true,"failure":null,"numeric_pcm":{"first_sample":null,"last_sample":null,"maximum_absolute_difference":0.0,"numerically_different_channel_samples":0},"pcm_equal":true,"raw_equal":true}

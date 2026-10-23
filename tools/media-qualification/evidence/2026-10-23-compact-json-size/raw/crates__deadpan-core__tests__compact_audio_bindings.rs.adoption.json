@@ -1,0 +1,5 @@
+{
+  "path": "crates/deadpan-core/tests/compact_audio_bindings.rs",
+  "before_sha256": "a2e531de57a6b917328ae98af1de9e43b421bc94e2ea7ddc358d6f7f7990e739",
+  "after_sha256": "31482d26cc21208520528d6e58c9164976aaaa288e0c684b29e86c44e5d60a01"
+}

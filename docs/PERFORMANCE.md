@@ -263,9 +263,13 @@ removes complete output buffers for size-only Store traversals, retaining
 capture bytes, serialization work and every budget charge. Twelve focused
 tests and its locked release build pass. Five quiet guarded pairs measure
 offscreen control/prototype medians 266.491583 /257.379000 ms. The 9.112583 ms
-difference is about 3.42%; this remains a private unqualified prototype with
-no measured peak-memory benefit or percentile/target PASS. Full production
-checks remain owed. Do not pool this batch with earlier comparisons.
+difference is about 3.42%; this private batch remains separate from the
+[completed production qualification](qualification/compact-json-size-2026-10-23.md).
+All Core, broader/UI, strict, actual media/native and portable checks pass.
+Five final production pairs give commit medians 266.145459 /259.015416 ms and
+offscreen composition 268.773292 /261.593583 ms, a 7.179709 ms difference of
+about 2.67%. Peak memory remains unmeasured. No percentile or 100 ms/50 ms
+target PASS follows; do not pool the independent batches.
 
 | Section 25 target | Measurement | Notes |
 | --- | --- | --- |

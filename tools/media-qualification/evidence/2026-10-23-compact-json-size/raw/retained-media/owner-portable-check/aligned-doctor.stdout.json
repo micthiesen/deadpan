@@ -1,0 +1,541 @@
+{
+  "application": "deadpan",
+  "architecture": "aarch64",
+  "database_schema": 87,
+  "device_output": "macos-bounded-limited-sequence-audition",
+  "diagnostics": {
+    "file_io": {
+      "audio_decoder_input": {
+        "read_bytes": 0,
+        "read_ops": 0,
+        "write_bytes": 0,
+        "write_ops": 0
+      },
+      "decoder_input": {
+        "read_bytes": 0,
+        "read_ops": 0,
+        "write_bytes": 0,
+        "write_ops": 0
+      },
+      "media_snapshots": {
+        "read_bytes": 0,
+        "read_ops": 0,
+        "write_bytes": 0,
+        "write_ops": 0
+      },
+      "objects": {
+        "read_bytes": 0,
+        "read_ops": 0,
+        "write_bytes": 0,
+        "write_ops": 0
+      },
+      "pcm_cache_file": {
+        "read_bytes": 0,
+        "read_ops": 0,
+        "write_bytes": 0,
+        "write_ops": 0
+      },
+      "proxy": {
+        "read_bytes": 0,
+        "read_ops": 0,
+        "write_bytes": 0,
+        "write_ops": 0
+      },
+      "store_revisions": {
+        "read_bytes": 782183,
+        "read_ops": 342,
+        "write_bytes": 0,
+        "write_ops": 0
+      }
+    },
+    "file_io_note": "the store's revision rows (logical payload bytes; pages are in sqlite_pages), object-store copies and snapshots, media snapshots, video and audio decoder descriptor reads, the private PCM cache file and proxy reads; one operation is one buffered call",
+    "gpu_submissions": {
+      "completions": 0,
+      "last_us": 0,
+      "max_us": 0,
+      "note": "shared picture pipeline only; doctor submits no GPU work",
+      "recent_p50_us": null,
+      "recent_p95_us": null,
+      "submissions": 0
+    },
+    "model_workers": {
+      "failed_samples": 0,
+      "live": {
+        "current": 0,
+        "high": 0
+      },
+      "phys_footprint_bytes": {
+        "current": 0,
+        "high": 0
+      },
+      "samples": 0
+    },
+    "other_workers": {
+      "failed_samples": 0,
+      "live": {
+        "current": 0,
+        "high": 0
+      },
+      "phys_footprint_bytes": {
+        "current": 0,
+        "high": 0
+      },
+      "samples": 0
+    },
+    "pcm_caches": {
+      "decoded_pcm": {
+        "bytes": {
+          "current": 0,
+          "high": 0
+        },
+        "entries": {
+          "current": 0,
+          "high": 0
+        },
+        "evictions": 0,
+        "hit_rate": null,
+        "hits": 0,
+        "misses": 0
+      },
+      "limiter_inputs": {
+        "bytes": {
+          "current": 0,
+          "high": 0
+        },
+        "entries": {
+          "current": 0,
+          "high": 0
+        },
+        "evictions": 0,
+        "hit_rate": null,
+        "hits": 0,
+        "misses": 0
+      },
+      "limiter_tiles": {
+        "bytes": {
+          "current": 0,
+          "high": 0
+        },
+        "entries": {
+          "current": 0,
+          "high": 0
+        },
+        "evictions": 0,
+        "hit_rate": null,
+        "hits": 0,
+        "misses": 0
+      }
+    },
+    "picture_caches": {
+      "proxies": {
+        "bytes": {
+          "current": 0,
+          "high": 0
+        },
+        "entries": {
+          "current": 0,
+          "high": 0
+        },
+        "evictions": 0,
+        "hit_rate": null,
+        "hits": 0,
+        "misses": 0
+      },
+      "thumbnails": {
+        "bytes": {
+          "current": 0,
+          "high": 0
+        },
+        "entries": {
+          "current": 0,
+          "high": 0
+        },
+        "evictions": 0,
+        "hit_rate": null,
+        "hits": 0,
+        "misses": 0
+      }
+    },
+    "picture_caches_note": "card thumbnails count one lookup per card when it appears or its picture changes (entries only); preview proxies count lookups of an Original's published proxy and cleanup evictions (no residency)",
+    "process_memory": {
+      "failed_samples": 0,
+      "note": "this process, sampled when diagnostics are read; the footprint includes its Metal allocations, not broken out",
+      "phys_footprint_bytes": {
+        "current": 6947272,
+        "high": 6947272
+      },
+      "resident_bytes": {
+        "current": 23724032,
+        "high": 23724032
+      },
+      "samples": 1
+    },
+    "queue_depths": {
+      "endpoint_pictures": {
+        "current": 0,
+        "high": 0
+      },
+      "picture_preview": {
+        "current": 0,
+        "high": 0
+      },
+      "playback_device_packets": {
+        "current": 0,
+        "high": 0
+      },
+      "playback_prefill_frames": {
+        "current": 0,
+        "high": 0
+      },
+      "playback_prepared": {
+        "current": 0,
+        "high": 0
+      },
+      "playback_prepared_frames": {
+        "current": 0,
+        "high": 0
+      },
+      "thumbnails": {
+        "current": 0,
+        "high": 0
+      },
+      "waveforms": {
+        "current": 0,
+        "high": 0
+      }
+    },
+    "scope": "process-local counters for this deadpan-cli process only; a running app's sessions, GPU work and workers are not visible here",
+    "sqlite_pages": {
+      "hit_rate": 0.9217922606924643,
+      "hits": 2263,
+      "misses": 192,
+      "note": "database pages of store connections, published at history-row reads and writes and when a store closes",
+      "spills": 0,
+      "writes": 0
+    },
+    "workers_note": "physical footprint of live supervised workers sampled every 500 ms by their supervisor; doctor starts none"
+  },
+  "document_schema": 58,
+  "downloader": {
+    "baseline": "managed",
+    "distribution": "managed development install; run inside Deadpan.app for the bundled baseline",
+    "ejs": "0.8.0",
+    "helpers": [
+      {
+        "license": "Unlicense",
+        "name": "yt-dlp",
+        "path": "/Users/michael/Library/Application Support/Deadpan/helpers/yt-dlp/2026.08.19/yt-dlp_macos",
+        "present": true,
+        "problem": null,
+        "version": "2026.08.19"
+      },
+      {
+        "license": "MIT",
+        "name": "deno",
+        "path": "/Users/michael/Library/Application Support/Deadpan/helpers/deno/2.9.7/deno",
+        "present": true,
+        "problem": null,
+        "version": "2.9.7"
+      }
+    ],
+    "root": "/Users/michael/Library/Application Support/Deadpan/helpers",
+    "source": "managed",
+    "update": {
+      "active": "baseline",
+      "note": null,
+      "root": "/Users/michael/Library/Application Support/Deadpan/helpers",
+      "state": null
+    }
+  },
+  "edge_faded_pcm": "authored-boundary-exceptions-after-time-mapping-before-voice-effects",
+  "internal_audio_sample_rate": 48000,
+  "limited_pcm": "original-and-root-sound-bus-with-finite-oversampled-limiter-before-missing-voice-effects",
+  "os": "macos",
+  "partial": [
+    "structural-editing-commands",
+    "sqlite-project-history",
+    "schema-1-through-57-development-format-refusal",
+    "persistent-copy-registers",
+    "resolved-compound-transactions",
+    "native-semantic-macros",
+    "headless-semantic-macros",
+    "single-original-project-baseline",
+    "headless-youtube-original-import",
+    "native-documents-project-library",
+    "indexed-picture-plan",
+    "indexed-audio-plan",
+    "worker-dsp-adapter",
+    "source-audio-preparation",
+    "plan-driven-source-pcm",
+    "transparent-audio-partitions",
+    "retained-context-split",
+    "atomic-sequence-pause-insertion",
+    "logical-mark-bindings",
+    "exact-boundary-selectors",
+    "persistent-marks",
+    "sparse-play-overrides",
+    "nested-occurrence-edits",
+    "persistent-generation-requests",
+    "persistent-generation-attempts",
+    "authored-generated-hold-semantics",
+    "generated-media-conversion",
+    "native-bridge-bundle-qualification",
+    "durable-generated-bundle-acceptance",
+    "durable-original-byte-ownership",
+    "identity-checked-relinking",
+    "persistent-source-decoding",
+    "measured-source-audio-indexes",
+    "independent-source-audio-mapping",
+    "independent-source-video-mapping",
+    "exact-source-stream-placement",
+    "measured-import-timing-candidates",
+    "measured-original-moment-candidates",
+    "exact-source-audio-selections",
+    "durable-source-qualification",
+    "atomic-source-registration-and-insertion",
+    "background-import-preparation",
+    "automatic-presentation-basis",
+    "timed-basis-locking",
+    "explicit-canvas-geometry",
+    "shared-sdr-picture-pipeline",
+    "authored-framing-envelopes",
+    "ordered-canvas-framing",
+    "captured-hold-framing",
+    "native-camera-draft",
+    "native-source-preview",
+    "native-project-workspace",
+    "native-sequence-audition",
+    "native-original-audition",
+    "selection-loop-audition",
+    "native-structural-speed-editing",
+    "root-sound-event-commands-and-mixing",
+    "saved-beat-sound-commands",
+    "root-sound-ripple-edit-history",
+    "hold-audio-policy-commands"
+  ],
+  "project": {
+    "decoder_path": "one persistent descriptor-only FFmpeg decoder per retained Original snapshot (deadpan-source); picture, audio and export sessions each open their own",
+    "document": {
+      "assets": 1,
+      "duration_frames": 19,
+      "marks": 0,
+      "nodes": 19,
+      "root_children": 5,
+      "timed_nodes": 19
+    },
+    "encoder_path": "automatic_sdr_v1 (H.264) or automatic_hdr_v1 (HEVC Main10) hardware/software admission probe at render time, chosen by output_color (see render report provenance)",
+    "history_validation": {
+      "replayed": 0,
+      "revisions": 26,
+      "verified_by_receipt": 26
+    },
+    "package": "/tmp/deadpan-compact-json-size-qualification-2026-10-23/owner-portable-check/aligned/aligned-sound-scope-portable.deadpan",
+    "plan": {
+      "duration": 19,
+      "presentation_basis": {
+        "color_policy": "sdr_rec709",
+        "frame_rate": {
+          "denominator": 1001,
+          "numerator": 30000
+        },
+        "height": 180,
+        "width": 320
+      },
+      "project_id": "6091ef94-9683-4dcc-8f02-3d00aadb6d01",
+      "revision_id": "35e8d2cd-1c38-48e0-95d9-a53e1a57eb94",
+      "root": "f1a44789-9b3e-47a6-b089-68f4b0eb6b5c",
+      "storage": {
+        "authored_nodes": 19,
+        "iteration_run_entries": 0,
+        "referenced_plays": 0,
+        "repeat_segment_entries": 0,
+        "sequence_prefix_entries": 12,
+        "sparse_override_entries": 0
+      }
+    },
+    "preview": {
+      "canvas": [
+        320,
+        180
+      ],
+      "color_policy": "sdr_rec709",
+      "frame_rate": {
+        "denominator": 1001,
+        "numerator": 30000
+      },
+      "output_color": {
+        "hdr_sources": false,
+        "mastering": null,
+        "output": "sdr_rec709",
+        "reason": "sdr_sources",
+        "tone_map_peak_nits": 1000
+      },
+      "quality_tier": "full canvas; no automatic proxy or reduced preview tier is implemented"
+    },
+    "revision": "35e8d2cd-1c38-48e0-95d9-a53e1a57eb94",
+    "single_sample_ms": {
+      "anchor_index": 0.049,
+      "head_snapshot": 0.972,
+      "open_read_only": 9.161,
+      "plan_compile": 0.128,
+      "validate_durations": 0.045
+    },
+    "sources": [
+      {
+        "asset": "37018f4b-3c95-47e1-b96e-9d4e11ff5afc",
+        "audio_layout": "Native { channels: 2, mask: 3 }",
+        "label": "original",
+        "original_bytes": 39157,
+        "original_managed": true,
+        "qualification": "qualified",
+        "video": {
+          "clean_aperture": null,
+          "codec": "h264",
+          "height": 180,
+          "indexed_frames": 120,
+          "keyframes": 8,
+          "max_keyframe_spacing_frames": 15,
+          "pixel_format": "yuv420p",
+          "rotation_quarter_turns": 0,
+          "width": 320
+        }
+      }
+    ],
+    "storage": {
+      "database_bytes": 786432,
+      "wal_bytes": 0
+    }
+  },
+  "render": "automatic-sdr-committed-revision-macos-apfs",
+  "render_entrypoints": [
+    "native-cmd-e-and-render-command",
+    "closed-project-headless-render-and-recovery"
+  ],
+  "render_preview_choices": [
+    "commit-and-render",
+    "discard-and-render",
+    "keep-editing"
+  ],
+  "room_tone_pcm": "explicit-source-range-exact-overlap-before-effects",
+  "runtime": {
+    "ai_runtime": {
+      "bundled": null,
+      "ffmpeg": "/opt/homebrew/Cellar/ffmpeg/9.0.2_1/bin/ffmpeg",
+      "identity": null,
+      "lookup": "development runtime from DEADPAN_BRIDGE_* variables and development defaults",
+      "missing": null,
+      "model_data": "/Users/michael/Library/Caches/Deadpan/ltx-qualification",
+      "python": "/Users/michael/Library/Caches/Deadpan/ltx-runtime/ltx-2-mlx-3392d75934120b7e69eefbe55893f7ef82be92a4/.venv/bin/python3",
+      "ready": true,
+      "worker": "/Users/michael/Code/deadpan/tools/model-qualification/worker.py"
+    },
+    "bundle": null,
+    "executable": "/private/tmp/deadpan-compact-json-size-qualification-2026-10-23/release-media-extracted/target/release/deadpan-cli",
+    "ffmpeg": [
+      {
+        "inside_bundle": false,
+        "library": "avcodec",
+        "loaded": true,
+        "path": null
+      },
+      {
+        "inside_bundle": false,
+        "library": "avformat",
+        "loaded": true,
+        "path": null
+      },
+      {
+        "inside_bundle": false,
+        "library": "avutil",
+        "loaded": true,
+        "path": null
+      },
+      {
+        "inside_bundle": false,
+        "library": "swscale",
+        "loaded": true,
+        "path": null
+      },
+      {
+        "inside_bundle": false,
+        "library": "avfilter",
+        "loaded": true,
+        "path": null
+      }
+    ],
+    "models": [
+      {
+        "bytes": 148849309,
+        "installed": null,
+        "note": null,
+        "pack_id": "whisper-base-en",
+        "pack_version": "2",
+        "previous_version": null
+      },
+      {
+        "bytes": 36152862913,
+        "installed": null,
+        "note": null,
+        "pack_id": "ltx-2.3-q4-bridge",
+        "pack_version": "1",
+        "previous_version": null
+      },
+      {
+        "bytes": 36152862913,
+        "installed": "/Users/michael/Library/Application Support/Deadpan/Models/ltx-2.3-q4-extension/1",
+        "note": null,
+        "pack_id": "ltx-2.3-q4-extension",
+        "pack_version": "1",
+        "previous_version": null
+      }
+    ],
+    "models_root": "/Users/michael/Library/Application Support/Deadpan/Models",
+    "packaged": false,
+    "workers": [
+      {
+        "inside_bundle": false,
+        "name": "deadpan-media-worker",
+        "path": "/private/tmp/deadpan-compact-json-size-qualification-2026-10-23/release-media-extracted/target/release/deadpan-media-worker",
+        "present": true
+      },
+      {
+        "inside_bundle": false,
+        "name": "deadpan-transcribe",
+        "path": "/private/tmp/deadpan-compact-json-size-qualification-2026-10-23/release-media-extracted/target/release/deadpan-transcribe",
+        "present": true
+      },
+      {
+        "inside_bundle": false,
+        "name": "deadpan-track",
+        "path": "/private/tmp/deadpan-compact-json-size-qualification-2026-10-23/release-media-extracted/target/release/deadpan-track",
+        "present": true
+      }
+    ]
+  },
+  "schema_version": 1,
+  "sequence_audition": "immutable-revision-device-clock-pictures-exact-paused-sample-resume",
+  "sqlite_version": "3.53.2",
+  "stage": "development-foundation",
+  "time_mapped_pcm": "bounded-continuous-preserve-before-effects",
+  "timing_probe": {
+    "frame": 1,
+    "frame_rate_denominator": 1001,
+    "frame_rate_numerator": 30000,
+    "sample_boundary": 1602
+  },
+  "unimplemented": [
+    "mastered-preview-audio",
+    "full-device-and-acoustic-qualification",
+    "full-keyboard-editor",
+    "analysis",
+    "ai-generation",
+    "native-youtube-import",
+    "full-render-mastering",
+    "hdr-render",
+    "open-project-render-ipc",
+    "native-render-recovery-browser",
+    "signed-downloader-updates",
+    "developer-id-notarized-distribution"
+  ],
+  "version": "0.1.0"
+}

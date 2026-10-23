@@ -1,0 +1,1 @@
+{"command":{"command":"set_audio_treatments","node":"9150e172-e647-4755-844b-7ae79c76a37c","treatments":{"clip_gain":null,"equalizer":{"bass":4500,"middle":-2500,"treble":1500},"order":["equalizer"]}},"expected_revision":"c83c81c9-7184-4a3b-b20a-6d5e94db1a7f","new_revision":"aligned-sound-scope-r09","project_id":"6091ef94-9683-4dcc-8f02-3d00aadb6d01","protocol":1}

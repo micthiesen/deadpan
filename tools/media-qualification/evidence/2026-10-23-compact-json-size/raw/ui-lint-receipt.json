@@ -1,0 +1,32 @@
+[
+  {
+    "name": "clippy",
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness",
+      "--all-targets",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "exit": 0,
+    "seconds": 83.59055795799941
+  },
+  {
+    "name": "format",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "exit": 0,
+    "seconds": 6.825088624842465
+  }
+]

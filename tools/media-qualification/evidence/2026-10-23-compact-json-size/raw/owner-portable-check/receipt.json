@@ -1,0 +1,70 @@
+{
+  "executed_cli": {
+    "source": "target/release/deadpan-cli",
+    "path": "/tmp/deadpan-compact-json-size-qualification-2026-10-23/release-media-extracted/target/release/deadpan-cli",
+    "sha256": "700f0f70421a9d99eeaf4f1bcb39f05089e138f5a73de695f504a26ca10b8d38"
+  },
+  "safe_relative_regular_files_only": true,
+  "cases": [
+    {
+      "label": "neutral",
+      "package": "/tmp/deadpan-compact-json-size-qualification-2026-10-23/owner-portable-check/neutral/neutral-ungroup-portable.deadpan",
+      "regular_files": 9,
+      "archive_sha256": "654b5bb006b6b4e1220f147b9f222b2a69bfc5a5b7c9d26dce13f109a083ac8a",
+      "commands": [
+        {
+          "command": [
+            "/tmp/deadpan-compact-json-size-qualification-2026-10-23/release-media-extracted/target/release/deadpan-cli",
+            "project",
+            "validate",
+            "/tmp/deadpan-compact-json-size-qualification-2026-10-23/owner-portable-check/neutral/neutral-ungroup-portable.deadpan"
+          ],
+          "exit": 0,
+          "seconds": 0.04461641609668732,
+          "package_paths_and_bytes_unchanged": true
+        },
+        {
+          "command": [
+            "/tmp/deadpan-compact-json-size-qualification-2026-10-23/release-media-extracted/target/release/deadpan-cli",
+            "doctor",
+            "--project",
+            "/tmp/deadpan-compact-json-size-qualification-2026-10-23/owner-portable-check/neutral/neutral-ungroup-portable.deadpan"
+          ],
+          "exit": 0,
+          "seconds": 0.03698658291250467,
+          "package_paths_and_bytes_unchanged": true
+        }
+      ]
+    },
+    {
+      "label": "aligned",
+      "package": "/tmp/deadpan-compact-json-size-qualification-2026-10-23/owner-portable-check/aligned/aligned-sound-scope-portable.deadpan",
+      "regular_files": 9,
+      "archive_sha256": "aeb0f61a8c9e1bad9876e5aa8d5d167434fad6bcb43e2263518a2206283dd266",
+      "commands": [
+        {
+          "command": [
+            "/tmp/deadpan-compact-json-size-qualification-2026-10-23/release-media-extracted/target/release/deadpan-cli",
+            "project",
+            "validate",
+            "/tmp/deadpan-compact-json-size-qualification-2026-10-23/owner-portable-check/aligned/aligned-sound-scope-portable.deadpan"
+          ],
+          "exit": 0,
+          "seconds": 0.06692683324217796,
+          "package_paths_and_bytes_unchanged": true
+        },
+        {
+          "command": [
+            "/tmp/deadpan-compact-json-size-qualification-2026-10-23/release-media-extracted/target/release/deadpan-cli",
+            "doctor",
+            "--project",
+            "/tmp/deadpan-compact-json-size-qualification-2026-10-23/owner-portable-check/aligned/aligned-sound-scope-portable.deadpan"
+          ],
+          "exit": 0,
+          "seconds": 0.0382731668651104,
+          "package_paths_and_bytes_unchanged": true
+        }
+      ]
+    }
+  ]
+}

@@ -472,7 +472,7 @@ fn execute(
     }
     let mut steps: Vec<StepRecord> = Vec::new();
     let mut checkpoint_bytes = 0_usize;
-    let mut processed_bytes = current.to_compact_json()?.len();
+    let mut processed_bytes = current.compact_json_size()?;
     let mut original_pastes = OriginalPasteMappings::default();
     let outcome =
         deadpan_core::replay_compound(current, request, |visit| -> Result<(), StoreError> {
@@ -543,23 +543,29 @@ fn execute(
                         &mut original_pastes,
                     )?;
                 }
-                let json = visit.after.to_compact_json()?;
+                // Captured stages retain the identical compact bytes.
+                // Other stages need their exact byte charge, not an output buffer.
+                let document = capture_states
+                    .contains(&leaf.new_revision)
+                    .then(|| visit.after.to_compact_json())
+                    .transpose()?;
+                let bytes = match &document {
+                    Some(json) => json.len(),
+                    None => visit.after.compact_json_size()?,
+                };
                 processed_bytes = processed_bytes
-                    .checked_add(json.len())
+                    .checked_add(bytes)
                     .filter(|bytes| *bytes <= MAX_PROCESSED_BYTES)
                     .ok_or_else(|| invalid("compound staged document work exceeds 512 MiB"))?;
                 if steps.len() >= MAX_STEPS {
                     return Err(invalid("compound step limit"));
                 }
-                let document = if capture_states.contains(&leaf.new_revision) {
+                if document.is_some() {
                     checkpoint_bytes = checkpoint_bytes
-                        .checked_add(json.len())
+                        .checked_add(bytes)
                         .filter(|bytes| *bytes <= MAX_CHECKPOINT_BYTES)
                         .ok_or_else(|| invalid("compound capture checkpoints exceed 64 MiB"))?;
-                    Some(json)
-                } else {
-                    None
-                };
+                }
                 steps.push(StepRecord {
                     revision: leaf.new_revision.clone(),
                     document,
@@ -567,7 +573,7 @@ fn execute(
             }
             Ok(())
         })?;
-    crate::check_document_size(&outcome.document.to_compact_json()?)?;
+    crate::check_document_size_bytes(outcome.document.compact_json_size()?)?;
     Ok((outcome, steps))
 }
 

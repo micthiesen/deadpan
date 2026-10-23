@@ -1,0 +1,11 @@
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.13s
+     Running `target/debug/xtask check --since 91e17fe4db1aa44ccc63b3e27c70f6e6f7baa665 --no-test`
+check: packages changed since 91e17fe4db1aa44ccc63b3e27c70f6e6f7baa665: deadpan-core, deadpan-store
+    Checking deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+   Compiling deadpan-store v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-store)
+    Checking deadpan-source v0.1.0 (/Users/michael/Code/deadpan/native/deadpan-source)
+    Checking deadpan-analysis v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-analysis)
+    Checking deadpan-plan v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-plan)
+    Checking deadpan-media v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-media)
+    Checking deadpan-jobs v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-jobs)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 3m 53s

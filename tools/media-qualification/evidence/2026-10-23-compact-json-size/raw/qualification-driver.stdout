@@ -1,0 +1,8 @@
+{"step": 1, "command": ["python", "/tmp/deadpan-compact-json-size-qualification-2026-10-23/qualify_all_ui.py", "candidate-all-core", "candidate", "allcore"], "exit": 0, "seconds": 532.3721422087401}
+{"step": 2, "command": ["python", "/tmp/deadpan-compact-json-size-qualification-2026-10-23/qualify_all_ui.py", "candidate-broad", "candidate", "broad"], "exit": 0, "seconds": 893.0387094169855}
+{"step": 3, "command": ["python", "/tmp/deadpan-compact-json-size-qualification-2026-10-23/qualify_all_ui.py", "candidate-ui", "candidate", "ui"], "exit": 0, "seconds": 233.42619195766747}
+{"step": 4, "command": ["python", "/tmp/deadpan-compact-json-size-qualification-2026-10-23/qualify_all_ui.py", "candidate-strict", "candidate", "strict"], "exit": 0, "seconds": 241.34829741623253}
+{"step": 5, "command": ["python", "/tmp/deadpan-compact-json-size-qualification-2026-10-23/ui_lint.py"], "exit": 0, "seconds": 91.01506408303976}
+{"step": 6, "command": ["python", "/tmp/deadpan-compact-json-size-qualification-2026-10-23/qualify_native_media.py", "debug-media", "preflight"], "exit": 0, "seconds": 158.3961676666513}
+{"step": 7, "command": ["python", "/tmp/deadpan-compact-json-size-qualification-2026-10-23/qualify_native_media.py", "release-media", "release-media"], "exit": 0, "seconds": 481.86239137500525}
+{"step": 8, "command": ["python", "/tmp/deadpan-compact-json-size-qualification-2026-10-23/qualify_native_media.py", "release-native", "native"], "exit": 0, "seconds": 283.7313237087801}

@@ -1,0 +1,7 @@
+{
+  "beats": 10000,
+  "creation_ms": 164.132,
+  "package": "/tmp/deadpan-compact-json-size-qualification-2026-10-23/pair-4-control.deadpan",
+  "stage": "make-large",
+  "stage_wall_ms": 173.686375
+}

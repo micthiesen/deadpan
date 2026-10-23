@@ -197,29 +197,41 @@ and measure.py complete ten guarded trials and twenty commands. Do not
 restart these completed owners. Preserve the pre-output packager Cargo.lock
 suffix-match refusal and its exact-path correction; no product result changed.
 
-The five formatted files are now applied as an uncommitted production
-candidate, with exact identity against the tested prototype source map.
-Both current-source reviews report no findings. Full qualification is live in
-/tmp/deadpan-compact-json-size-qualification-2026-10-23: qualify.py owns eight
-sequential main stages; all Core is complete with 1,517 passing tests across
-69 binaries, zero skipped and exact source/input/executable guards. Broader
-checks are building. The [Core checkpoint](../qualification/compact-json-size-core-checkpoint-2026-10-23.md)
-retains 18 files /362,018 bytes, inventory SHA-256
-be3a1e48ebb73e6a53069361ffd9f534e0f0fa6803a78f681aab9626c46bcd88.
-post.py waits for all eight
-successful rows before portable checks, five extra native scenarios and five
-quiet pairs against qualified app 1864c3ac. Inspect owner/receipt files before
-restarting anything. Expected counts 3,506 broader and 1,296 UI are
-expectations, not results. Broader/UI, strict, media/native,
-portable and final paired timings remain owed. Keep this prototype separate
-from production evidence. Its
-historical draft/review and remaining-work-map.md are in the previous scratch's
-next-size-study/. Finer disjoint timers may be needed later; do not skip
-history reader roundtrips or invent a reusable result proof.
-The read-only next-replay-count-study.md in the current qualification scratch
-describes borrowed read-only count pairs and a post-validation finalizer;
-bare counts on mutable public outcomes are insufficient. No implementation
-or gain is established. Measure finer phases before accepting more API churn.
+The five-file [production change](../qualification/compact-json-size-2026-10-23.md)
+is qualified, with unchanged source/input/executable guards. Both reviews
+report no findings. All 1,517 Core tests (zero skipped), 3,506 broader (740
+skipped), 1,296 UI (eleven skipped), strict Core/Store/UI checks and formatting
+pass. One UI LEAK case passes its isolated same-archive rerun without that
+warning; preserve the original. Debug/release verifies 15 pictures /24,024
+samples; release also verifies 19 pictures /30,430 samples, all at zero offset
+with canonical/history controls. Six native scenarios pass 1,340 workflow
+checks plus six Kestrel checks. Both nine-file portable copies validate/doctor
+unchanged. Native layout warnings and false independent-DSP/listening/ordinary
+Move PCM claims remain recorded.
+
+In /tmp/deadpan-compact-json-size-qualification-2026-10-23, qualify.py is
+terminal with all eight stages successful; post.py is terminal with 26
+successful steps and ten guarded trials. Do not restart them. Final app
+SHA-256: c36b894466eb4f16fe976924b05c02ada87b0e8872f7f9a7fc6028a60a342037.
+Five final quiet control/candidate pairs give commit medians
+266.145459 /259.015416 ms and offscreen composition 268.773292 /261.593583 ms.
+The 7.179709 ms difference is about 2.67%, diagnostic only. Both latency
+targets stay open. Final evidence verifies 467 files /15,051,302 bytes,
+including three emitted movies. Inventory SHA-256:
+dda2a29542a845ca25e58341ca9a1c90173434a2d552b3aefc29ac25791a47e3.
+The private prototype and 18-file Core checkpoint remain separate records.
+
+Next: measure finer Store-only preparation phases using next-profile-design/
+in that qualification scratch. The read-only plan has exact source anchors,
+33 phase/count definitions and parser containment rules; no overlays or jobs
+have started. Core and CLI must remain unmodified. Use a fresh separate
+source/target against qualified c36b8944, preserve all serializations, decodes,
+inverse/host checks and emit buffered traces only after native publication.
+Subphase costs and control/off/on overhead remain unmeasured. The separate
+next-replay-count-study.md describes immutable borrowed count pairs and a
+post-validation finalizer; bare counts on mutable public outcomes are
+insufficient. Do not implement that API or skip validation/history work
+without measured evidence.
 
 Refresh/verify progress artifact a3ysikxugbmr4 from the next pushed
 docs/progress.json after this implementation commit. Preserve foreign

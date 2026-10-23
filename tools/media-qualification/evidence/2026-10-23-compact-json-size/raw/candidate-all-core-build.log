@@ -1,0 +1,4 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+    Finished `test` profile [optimized + debuginfo] target(s) in 8m 42s
+   Archiving 69 binaries and 1 standard library to /tmp/deadpan-compact-json-size-qualification-2026-10-23/candidate-all-core.tar.zst
+    Archived 72 files to /tmp/deadpan-compact-json-size-qualification-2026-10-23/candidate-all-core.tar.zst in 0.36s

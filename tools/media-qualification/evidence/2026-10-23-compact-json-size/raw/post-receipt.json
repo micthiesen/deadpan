@@ -1,0 +1,386 @@
+[
+  {
+    "name": "portable",
+    "command": [
+      "python",
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/retain_media_and_check.py"
+    ],
+    "exit": 0,
+    "seconds": 0.5879285000264645
+  },
+  {
+    "name": "native-macros",
+    "command": [
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "macros",
+      "--output",
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/native-macros",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+    ],
+    "exit": 0,
+    "seconds": 15.681931583210826
+  },
+  {
+    "name": "native-named-registers",
+    "command": [
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "named-registers",
+      "--output",
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/native-named-registers",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+    ],
+    "exit": 0,
+    "seconds": 13.64903841726482
+  },
+  {
+    "name": "native-dot-repeat",
+    "command": [
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "dot-repeat",
+      "--output",
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/native-dot-repeat",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+    ],
+    "exit": 0,
+    "seconds": 14.755063083022833
+  },
+  {
+    "name": "native-range-set-selectors",
+    "command": [
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "range-set-selectors",
+      "--output",
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/native-range-set-selectors",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+    ],
+    "exit": 0,
+    "seconds": 13.30064083263278
+  },
+  {
+    "name": "native-transcript-search-selectors",
+    "command": [
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "transcript-search-selectors",
+      "--output",
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/native-transcript-search-selectors",
+      "--kestrel-source",
+      "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+    ],
+    "exit": 0,
+    "seconds": 13.472963833250105
+  },
+  {
+    "name": "pair-1-control-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/pair-1-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.19721058290451765
+  },
+  {
+    "name": "pair-1-control",
+    "command": [
+      "/tmp/deadpan-reused-leaf-result-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/pair-1-control.deadpan",
+      "--output",
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/pair-1-control-report"
+    ],
+    "exit": 0,
+    "seconds": 13.871917249634862
+  },
+  {
+    "name": "pair-1-candidate-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/pair-1-candidate.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.18895191699266434
+  },
+  {
+    "name": "pair-1-candidate",
+    "command": [
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/pair-1-candidate.deadpan",
+      "--output",
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/pair-1-candidate-report"
+    ],
+    "exit": 0,
+    "seconds": 13.773228582926095
+  },
+  {
+    "name": "pair-2-candidate-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/pair-2-candidate.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.18787875026464462
+  },
+  {
+    "name": "pair-2-candidate",
+    "command": [
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/pair-2-candidate.deadpan",
+      "--output",
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/pair-2-candidate-report"
+    ],
+    "exit": 0,
+    "seconds": 14.209721125662327
+  },
+  {
+    "name": "pair-2-control-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/pair-2-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.20210458245128393
+  },
+  {
+    "name": "pair-2-control",
+    "command": [
+      "/tmp/deadpan-reused-leaf-result-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/pair-2-control.deadpan",
+      "--output",
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/pair-2-control-report"
+    ],
+    "exit": 0,
+    "seconds": 14.204890167340636
+  },
+  {
+    "name": "pair-3-control-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/pair-3-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.19099087547510862
+  },
+  {
+    "name": "pair-3-control",
+    "command": [
+      "/tmp/deadpan-reused-leaf-result-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/pair-3-control.deadpan",
+      "--output",
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/pair-3-control-report"
+    ],
+    "exit": 0,
+    "seconds": 13.96100137475878
+  },
+  {
+    "name": "pair-3-candidate-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/pair-3-candidate.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.1886922074481845
+  },
+  {
+    "name": "pair-3-candidate",
+    "command": [
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/pair-3-candidate.deadpan",
+      "--output",
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/pair-3-candidate-report"
+    ],
+    "exit": 0,
+    "seconds": 14.465170208364725
+  },
+  {
+    "name": "pair-4-candidate-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/pair-4-candidate.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.19245566707104445
+  },
+  {
+    "name": "pair-4-candidate",
+    "command": [
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/pair-4-candidate.deadpan",
+      "--output",
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/pair-4-candidate-report"
+    ],
+    "exit": 0,
+    "seconds": 13.989656041376293
+  },
+  {
+    "name": "pair-4-control-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/pair-4-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.18389741703867912
+  },
+  {
+    "name": "pair-4-control",
+    "command": [
+      "/tmp/deadpan-reused-leaf-result-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/pair-4-control.deadpan",
+      "--output",
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/pair-4-control-report"
+    ],
+    "exit": 0,
+    "seconds": 14.272912540473044
+  },
+  {
+    "name": "pair-5-control-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/pair-5-control.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.1919125420972705
+  },
+  {
+    "name": "pair-5-control",
+    "command": [
+      "/tmp/deadpan-reused-leaf-result-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/pair-5-control.deadpan",
+      "--output",
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/pair-5-control-report"
+    ],
+    "exit": 0,
+    "seconds": 14.250558416359127
+  },
+  {
+    "name": "pair-5-candidate-make",
+    "command": [
+      "/tmp/deadpan-compact-audio-bindings-2026-10-23/candidate-perf",
+      "make-large",
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/pair-5-candidate.deadpan",
+      "--beats",
+      "10000"
+    ],
+    "exit": 0,
+    "seconds": 0.19015724956989288
+  },
+  {
+    "name": "pair-5-candidate",
+    "command": [
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/release-native-bin/deadpan-app",
+      "--ui-check",
+      "--mode",
+      "performance",
+      "--scenario",
+      "large-first-pause",
+      "--project",
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/pair-5-candidate.deadpan",
+      "--output",
+      "/tmp/deadpan-compact-json-size-qualification-2026-10-23/pair-5-candidate-report"
+    ],
+    "exit": 0,
+    "seconds": 14.318988707847893
+  }
+]
