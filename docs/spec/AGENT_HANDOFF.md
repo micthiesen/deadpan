@@ -19,8 +19,15 @@ scratch. `strict-final` passes after that correction. `final-ui` passes all
 passes its real-media fixture in 237.756 seconds: complete canonical PCM and
 limiter bits, cold/partitioned reads, durable Undo/Redo and portable reopen,
 then all 19 encoded pictures and 30,430 samples at zero offset with no flags.
-Its archive hashes and source/input guards pass. `release-native` is building.
-Native performance replay and release actual-media checks remain owed;
+Its archive hashes and source/input guards pass. `release-native` builds but
+fails at the first proposal picture: the harness called committed `settled()`
+while requested/decoded/displayed all consistently identify the Proposed
+frame 0 / Original 0, with no picture error. Corrected only two UI harness files:
+wait for the exact proposed ticket/content and Escape before failed cleanup.
+Independent source review agrees; `release-native-harness-correction-attribution.json`
+proves all other 2,037 Rust files and six inputs unchanged. The corrected native
+replay and renewed strict/UI checks remain owed. `release-media` is building;
+native performance and release actual-media checks remain owed;
 the fresh scratch scripts are `qualify_candidate.py` and
 `qualify_native_media.py`. All production code is still uncommitted.
 

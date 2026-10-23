@@ -18,8 +18,12 @@ source/input and executed-binary hashes remain unchanged. The debug real-media
 preflight passes complete PCM/limiter equality through neutral grouping and
 Split, moved/copied cold reads, durable Undo/Redo and portable reopening. It
 verifies all 19 emitted pictures and audio samples `[0,30430)` at zero offset,
-with no coverage or low-SNR flags. Native performance replay and release media
-qualification remain; the release app is building. No requirement or gate closes.
+with no coverage or low-SNR flags. The native replay failed because its new
+helper expected committed presentation while the app displayed the exact
+proposed picture. The harness now checks the proposal identity and dismisses an
+open proposal during failure cleanup; independent source review agrees. This
+two-file UI-only correction remains unexecuted, so native and renewed UI checks
+are owed. Release media qualification is building. No requirement or gate closes.
 
 The `integrated-eleventh` archive passes twelve focused audio checks. A new
 valid-control counterfactual first measured 7,581 changed output channel samples
