@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-23T15:43:28.206Z",
+  "updated_at": "2026-10-23T16:05:45.968Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about \u00b15 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "The private semantic refresh duration-reuse prototype passes ten selected integration checks and five guarded native timing pairs. Offscreen medians are 248.012042/242.880417 ms, a 5.131625 ms/about 2.07% diagnostic difference; commit medians are 245.353334/240.185084 ms. Its 161-file evidence inventory verifies. Initial E0624 compilation failure is retained; only the injected-error helper changed to equivalent public fields, with all other test text and production code unchanged. The exact tested selection.rs and new semantic_refresh.rs bytes are adopted locally, and full Core, broader/UI, strict, actual media/history, native, portable and final timing qualification is running. The earlier full-layout reuse remains the latest qualified production baseline. Coverage stays 89%, with 8 Complete and 16 Partial requirements and the 100 ms/50 ms targets open.",
+  "focus": "Production qualification of semantic refresh duration reuse now passes all 1,526 Core tests across 70 binaries with zero skipped, plus all 3,506 broader selected tests with 740 skipped. Source/input/executable guards pass. UI is compiling; strict checks, actual media/history, native workflows, portable copies and a separate final timing comparison remain owed. The private prototype passes ten selected checks and five guarded pairs, with offscreen medians 248.012042/242.880417 ms (about 2.07% diagnostic difference); its 161-file inventory verifies and retains the initial compile failure and equivalent helper-only correction. The production change is not committed yet. A separate read-only single-leaf replay-cache study is complete but unimplemented and unmeasured. Coverage stays 89%, with 8 Complete and 16 Partial requirements and the 100 ms/50 ms targets open.",
   "features": [
     {
       "id": "editing",
