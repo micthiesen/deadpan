@@ -13,6 +13,7 @@ pub(super) struct PreparedBeatSound<'plan, 'history> {
 
 pub(super) struct PreparedOccurrence<'plan, 'history> {
     pub(super) voice: AudioSourceOccurrence<'plan>,
+    pub(super) permission_family: Option<deadpan_plan::AudioSoundPermissionFamily<'plan>>,
     pub(super) samples: Range<AudioSample>,
     pub(super) input: PreparedBeatInput<'plan, 'history>,
     pub(super) fades: Vec<deadpan_plan::AudioSoundGateSpan>,
@@ -86,6 +87,17 @@ impl StageAudio {
                 let mut occurrences = Vec::with_capacity(batch.voices().len());
                 for voice in batch.voices() {
                     control.check()?;
+                    let permission_family = if let Some(context) = context {
+                        let (family, work) = voice.split_permission_family(
+                            &scopes,
+                            context,
+                            control.query_limits()?,
+                        )?;
+                        control.spend_plan_work(work)?;
+                        family
+                    } else {
+                        None
+                    };
                     let extent = voice.samples();
                     let interval = samples.start.max(extent.start)..samples.end.min(extent.end);
                     if interval.start >= interval.end && context.is_none() {
@@ -153,6 +165,18 @@ impl StageAudio {
                                     &alias,
                                     routed.route(),
                                 )?
+                            } else if let Some(context) = context {
+                                let (history, work) = voice
+                                    .complete_processing_history_after_birth(
+                                        &original,
+                                        &alias,
+                                        routed.route(),
+                                        &scopes,
+                                        context,
+                                        control.query_limits()?,
+                                    )?;
+                                control.spend_plan_work(work)?;
+                                history
                             } else {
                                 None
                             };
@@ -251,6 +275,7 @@ impl StageAudio {
                     sound_events::validate_gate_envelopes(&fades.spans, interval.clone())?;
                     occurrences.push(PreparedOccurrence {
                         voice: voice.clone(),
+                        permission_family,
                         samples: interval,
                         input,
                         fades: fades.spans,

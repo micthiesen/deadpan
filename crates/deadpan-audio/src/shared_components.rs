@@ -197,6 +197,7 @@ impl<'plan> Components<'plan> {
     pub(super) fn finish(
         mut self,
         output_voice: Option<usize>,
+        output_aliases: Permissions,
         control: WorkControl<'_>,
         mut equalize: impl FnMut(
             &AudioOwnerClock<'plan>,
@@ -427,7 +428,9 @@ impl<'plan> Components<'plan> {
             let mut permitted = false;
             for (id, route) in self.routes.iter().enumerate() {
                 let gain = std::mem::take(&mut gains[id]);
-                if route.pcm[at].permitted && output_voice.is_none_or(|voice| voice == route.voice)
+                if route.pcm[at].permitted
+                    && (output_voice.is_none_or(|voice| voice == route.voice)
+                        || output_aliases.contains(route.voice))
                 {
                     permitted = true;
                     let value = gain.apply_wide(route.pcm[at].value)?;

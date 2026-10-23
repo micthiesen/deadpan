@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-23T03:14:43Z",
+  "updated_at": "2026-10-23T03:20:54Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Aligned sound grouping remains uncommitted. Core/broad tests and debug/release media checks pass: 19-picture and 121-picture exports verify at zero audio offset with exact PCM/history controls. The corrected native replay passes 130 workflow checks plus Kestrel. Layout warnings and the 88.3 ms commit p95 remain recorded; full performance is open. Renewed strict/UI checks are running. Coverage stays at 89%, with 8/24 requirement sections complete.",
+  "focus": "Aligned sound grouping is implemented and locally verified; the scoped commit is being prepared. Fresh checks pass 1,489 Core, 3,492 broader and 1,292 UI tests, strict checks and formatting. Native replay passes 130 checks plus Kestrel; both release exports verify at zero audio offset, and extracted projects validate unchanged. Full performance remains open, including the recorded 88.3 ms commit p95. Coverage stays at 89%, with 8/24 requirement sections complete.",
   "features": [
     {
       "id": "editing",
@@ -44,7 +44,7 @@
       "requirements": [
         "DP-09"
       ],
-      "note": "Playback, gain, sounds, native EQ, Tail sends, continuous returns and independent sound treatments work. Fixed Retime output sounds retain exact phase and history through ordinary interior Hold edits. Fractional retained owner support and the complete nonzero nonlinear master are verified. Partial sound copy, move, deletion, Repeat and GroupSelection endpoint transport work outside retained processing scopes. Retained processing-scope interiors, root-owned BeatSound transport, wider loop/tail qualification and persistent filtered caching remain."
+      "note": "Playback, gain, sounds, native EQ, Tail sends, continuous returns and independent sound treatments work. Fixed Retime output sounds retain exact phase and history through ordinary interior Hold edits. Fractional owner support and the nonzero nonlinear master are verified. Partial sound copy, move, deletion, Repeat and endpoint grouping work outside retained processing scopes. Aligned single-Source/Hold grouping now works inside an ordinary retained sound scope, preserving shared EQ/saturation through explicit Split forests, whole-group copy, relocation and durable history. Broader processing-scope edits, root-owned BeatSound transport, wider loop/tail qualification and persistent filtered caching remain."
     },
     {
       "id": "analysis",

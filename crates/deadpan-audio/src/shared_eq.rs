@@ -62,6 +62,8 @@ struct Graph<'plan> {
     event_nodes: std::collections::BTreeSet<EventKey>,
     event_filters: BTreeMap<EventKey, crate::Equalizer>,
     voices: BTreeMap<Voice, usize>,
+    permission_families:
+        BTreeMap<(InstancePath, usize), Option<deadpan_plan::AudioSoundPermissionFamily<'plan>>>,
     sends: Option<deadpan_core::TailEffect>,
     skip: Vec<authored_gain::OwnerIdentity>,
     original_only: bool,
@@ -74,7 +76,7 @@ pub(super) struct InputSelection<'a> {
     pub(super) skip: &'a [authored_gain::OwnerIdentity],
     pub(super) original_only: bool,
 }
-impl Graph<'_> {
+impl<'plan> Graph<'plan> {
     fn voice(&mut self, voice: Voice) -> Result<usize, StageAudioError> {
         if let Some(id) = self.voices.get(&voice) {
             return Ok(*id);
@@ -85,6 +87,76 @@ impl Graph<'_> {
         let id = self.voices.len();
         self.voices.insert(voice, id);
         Ok(id)
+    }
+
+    /// The consuming voice may be absent from a later halo input block. Resolve
+    /// its identity in the complete owner context once, independently of that
+    /// block's active occurrences, then retain only bounded checked handles.
+    fn selected_split_families(
+        &mut self,
+        context: &AudioSoundOwnerContext<'plan>,
+        selected: Permissions,
+        control: WorkControl<'_>,
+    ) -> Result<Vec<(usize, deadpan_plan::AudioSoundPermissionFamily<'plan>)>, StageAudioError>
+    {
+        control.spend_plan_work(self.voices.len())?;
+        let mut selected_voices = Vec::new();
+        for (voice, id) in &self.voices {
+            if selected.contains(*id)
+                && let Voice::Beat(owner, sound, instance) = voice
+            {
+                control.spend_plan_work(3 + instance.repeats.len())?;
+                selected_voices.push((*id, owner.clone(), sound.clone(), instance.clone()));
+            }
+        }
+        let mut result = Vec::new();
+        for (id, owner, sound, instance) in selected_voices {
+            control.spend_plan_work(1 + context.owner().repeats.len())?;
+            let key = (context.owner().clone(), id);
+            if !self.permission_families.contains_key(&key) {
+                if self.permission_families.len() == shared_mix::MAX_VOICES {
+                    return Err(StageAudioError::Limit("shared Split family count"));
+                }
+                let scopes = self.plan.beat_sound_clock_scopes(
+                    &owner,
+                    &sound,
+                    control.query_limits()?.maximum_work,
+                )?;
+                for scope in &scopes {
+                    control.spend_plan_work(scope.proof_work())?;
+                }
+                let family = if scopes.iter().any(|scope| scope.has_split_alias()) {
+                    let event = self
+                        .plan
+                        .beat_sounds()
+                        .get(&owner)
+                        .and_then(|events| events.get(&sound))
+                        .ok_or(PlanError::InvalidPlan("selected Split event absent"))?;
+                    let voice = context.source_voice_occurrence(
+                        instance,
+                        deadpan_plan::AudioSourceVoiceRecipe {
+                            source: event.source.clone(),
+                            mapping: event.mapping,
+                            offset: event.offset,
+                        },
+                        control.query_limits()?,
+                    )?;
+                    control.spend_plan_work(voice.construction_work())?;
+                    let (family, used) =
+                        voice.split_permission_family(&scopes, context, control.query_limits()?)?;
+                    control.spend_plan_work(used)?;
+                    family
+                } else {
+                    None
+                };
+                self.permission_families.insert(key.clone(), family);
+            }
+            if let Some(family) = &self.permission_families[&key] {
+                control.spend_plan_work(family.comparison_work())?;
+                result.push((id, family.clone()));
+            }
+        }
+        Ok(result)
     }
 }
 #[derive(Clone, Copy)]
@@ -110,6 +182,37 @@ fn sound_context<'a, 'plan>(
         Sounds::Owner(context) => Some(context),
         _ => None,
     }
+}
+
+/// Expand only the contribution identity used inside this temporal owner's
+/// input. Raw sample permissions and delivery supports are still checked by
+/// add_sound. Families cannot be inferred from a shared label or sound ID.
+fn split_family_aliases(
+    families: &[(usize, deadpan_plan::AudioSoundPermissionFamily<'_>)],
+    selected: Permissions,
+    control: WorkControl<'_>,
+) -> Result<Permissions, StageAudioError> {
+    let mut aliases = Permissions::default();
+    for (id, family) in families {
+        if selected.contains(*id) {
+            continue;
+        }
+        for (candidate, other) in families {
+            if !selected.contains(*candidate) {
+                continue;
+            }
+            control.spend_plan_work(
+                family
+                    .comparison_work()
+                    .saturating_add(other.comparison_work()),
+            )?;
+            if family == other {
+                aliases.insert(*id)?;
+                break;
+            }
+        }
+    }
+    Ok(aliases)
 }
 
 impl StageAudio {
@@ -149,6 +252,7 @@ impl StageAudio {
             event_nodes: Default::default(),
             event_filters: BTreeMap::new(),
             voices: BTreeMap::new(),
+            permission_families: BTreeMap::new(),
             sends: selection.sends,
             skip: selection.skip.to_vec(),
             original_only: selection.original_only,
@@ -350,6 +454,7 @@ impl StageAudio {
             Vec::new()
         };
         let mut beat_routes = Vec::new();
+        let mut families = Vec::new();
         for beat in &beats {
             for occurrence in &beat.occurrences {
                 let id = graph.voice(Voice::Beat(
@@ -357,6 +462,10 @@ impl StageAudio {
                     beat.id.clone(),
                     occurrence.voice.instance().clone(),
                 ))?;
+                if let Some(family) = &occurrence.permission_family {
+                    control.spend_plan_work(family.comparison_work())?;
+                    families.push((id, family.clone()));
+                }
                 beat_routes.push((
                     id,
                     mix.route(
@@ -368,6 +477,23 @@ impl StageAudio {
                 ));
             }
         }
+        if let Some(context) = context {
+            let mut selected = program.allowed.unwrap_or_default();
+            if let Some(output) = program.output_voice {
+                selected.insert(output)?;
+            }
+            families.extend(graph.selected_split_families(context, selected, control)?);
+        }
+        let allowed_aliases = program
+            .allowed
+            .map(|selected| split_family_aliases(&families, selected, control))
+            .transpose()?
+            .unwrap_or_default();
+        if let Some(output) = program.output_voice {
+            let mut selected = Permissions::default();
+            selected.insert(output)?;
+            mix.include_output_aliases(split_family_aliases(&families, selected, control)?);
+        }
         let reservation = u64::from(frames)
             .checked_mul(12)
             .and_then(|n| n.checked_add(mix.resident_frames().ok()?))
@@ -378,7 +504,9 @@ impl StageAudio {
             mix.allocate();
             let mut dependencies = Dependencies::new();
             let mut relative_depth = 0;
-            let admitted = |id| program.allowed.is_none_or(|mask| mask.contains(id));
+            let admitted = |id| {
+                program.allowed.is_none_or(|mask| mask.contains(id)) || allowed_aliases.contains(id)
+            };
             if let Some(owners) = owners {
                 let raw = match &program.context.original {
                     Context::Root => self.read_controlled(

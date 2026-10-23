@@ -177,10 +177,13 @@ pub struct RenderPlan {
 pub struct AudioSoundClockScope<'plan> {
     live_plan: &'plan RenderPlan,
     live_owner: NodeId,
+    live_sound: deadpan_core::SoundId,
+    journal_ordinal: usize,
     timing: &'plan deadpan_core::AudioTimingId,
     historical_scope: &'plan NodeId,
     historical_owner: &'plan NodeId,
     historical_layout: &'plan deadpan_core::FrozenAudioLayout,
+    introduced_splits: &'plan [deadpan_core::SoundClockSplit],
     correspondence: deadpan_core::SoundClockCorrespondence,
     recipe: crate::AudioSourceVoiceRecipe,
 }
@@ -231,6 +234,12 @@ impl<'plan> AudioSoundClockScope<'plan> {
 
     pub fn proof_work(&self) -> usize {
         self.correspondence.work()
+    }
+
+    /// Whether this live event owner participates in a certified complete
+    /// Split forest, rather than only an ordinary one-to-one correspondence.
+    pub fn has_split_alias(&self) -> bool {
+        self.correspondence.split_alias(&self.live_owner).is_some()
     }
 
     pub fn remap_instance(&self, live: &InstancePath) -> Result<InstancePath, PlanError> {
@@ -1141,7 +1150,7 @@ impl RenderPlan {
             offset: event.offset,
         };
         let mut remaining_work = maximum_work;
-        for reference in journal.clocks() {
+        for (journal_ordinal, reference) in journal.clocks().iter().enumerate() {
             let historical_layout = self
                 .audio_bindings
                 .timings()
@@ -1149,14 +1158,15 @@ impl RenderPlan {
                 .ok_or(PlanError::InvalidPlan(
                     "beat sound clock refers to a missing frozen layout",
                 ))?;
-            let correspondence = historical_layout.sound_owner_clock_correspondence_with_repeats(
-                current_layout,
-                reference.scope(),
-                journal.scope(),
-                (reference.owner(), owner),
-                reference.repeats(),
-                remaining_work,
-            )?;
+            let correspondence = historical_layout
+                .sound_owner_clock_correspondence_with_relations(
+                    current_layout,
+                    (reference.scope(), journal.scope()),
+                    (reference.owner(), owner),
+                    reference.repeats(),
+                    (reference.introduced_groups(), reference.introduced_splits()),
+                    remaining_work,
+                )?;
             remaining_work = remaining_work.checked_sub(correspondence.work()).ok_or(
                 PlanError::AudioQueryLimit("sound clock correspondence work"),
             )?;
@@ -1168,10 +1178,13 @@ impl RenderPlan {
             scopes.push(AudioSoundClockScope {
                 live_plan: self,
                 live_owner: owner.clone(),
+                live_sound: sound.clone(),
+                journal_ordinal,
                 timing: reference.timing(),
                 historical_scope: reference.scope(),
                 historical_owner: reference.owner(),
                 historical_layout,
+                introduced_splits: reference.introduced_splits(),
                 correspondence,
                 recipe: recipe.clone(),
             });

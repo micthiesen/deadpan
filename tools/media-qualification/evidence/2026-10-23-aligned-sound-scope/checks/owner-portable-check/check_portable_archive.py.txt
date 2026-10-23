@@ -1,0 +1,40 @@
+from pathlib import Path,PurePosixPath
+import hashlib,json,subprocess,tarfile,time
+s=Path('/tmp/deadpan-aligned-sound-scope-2026-10-22')
+e=Path('tools/media-qualification/evidence/2026-10-23-aligned-sound-scope')
+dest=s/'owner-portable-check';dest.mkdir(exist_ok=False)
+manifest=json.loads((s/'release-media-binaries.json').read_text())
+cli=manifest['helpers']['deadpan-cli']
+binary=Path(cli['path'])
+def sha(p): return hashlib.sha256(p.read_bytes()).hexdigest()
+assert sha(binary)==cli['sha256']
+rows=[]
+for label in ['aligned','endpoints']:
+ meta=json.loads((e/'media/release-media'/label/'portable-package-checksums.json').read_text())
+ archive=e/meta['archive_path'];assert sha(archive)==meta['archive_sha256']
+ root=dest/label;root.mkdir()
+ expected={x['path']:{'sha256':x['sha256'],'size':x['size']}for x in meta['regular_files']}
+ with tarfile.open(archive,'r:gz')as tar:
+  members=tar.getmembers()
+  assert {m.name for m in members}==set(expected)
+  for member in members:
+   p=PurePosixPath(member.name)
+   assert member.isfile()and not p.is_absolute()and '..'not in p.parts
+   data=tar.extractfile(member).read()
+   assert len(data)==expected[member.name]['size']and hashlib.sha256(data).hexdigest()==expected[member.name]['sha256']
+   out=root.joinpath(*p.parts);out.parent.mkdir(parents=True,exist_ok=True);out.write_bytes(data)
+ def snapshot():return {str(p.relative_to(root)):{'sha256':sha(p),'size':p.stat().st_size}for p in root.rglob('*')if p.is_file()}
+ assert snapshot()==expected
+ package=root/next(iter(expected)).split('/')[0];commands=[]
+ for name,args in [('validate',['project','validate',str(package)]),('doctor',['doctor','--project',str(package)])]:
+  start=time.monotonic()
+  with(dest/f'{label}-{name}.stdout.json').open('w')as out,(dest/f'{label}-{name}.stderr.txt').open('w')as err:
+   r=subprocess.run([str(binary),*args],stdout=out,stderr=err)
+  assert r.returncode==0,(label,name,r.returncode)
+  assert sha(binary)==cli['sha256']and snapshot()==expected
+  commands.append({'command':[str(binary),*args],'exit':r.returncode,'seconds':time.monotonic()-start,'package_paths_and_bytes_unchanged':True})
+ rows.append({'label':label,'archive_sha256':meta['archive_sha256'],'package':str(package),'files':expected,'commands':commands})
+receipt={'executed_cli':cli,'safe_relative_regular_files_only':True,'cases':rows}
+(dest/'receipt.json').write_text(json.dumps(receipt,indent=2)+'\n')
+subprocess.run(['python',str(s/'guard.py'),'release-media'],check=True)
+print(json.dumps({'cases':[{'label':r['label'],'regular_files':len(r['files']),'commands':r['commands']}for r in rows],'actual_cli_sha256':cli['sha256']},indent=2))

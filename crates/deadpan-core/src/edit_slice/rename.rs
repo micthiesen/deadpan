@@ -89,6 +89,8 @@ impl Inventory {
             for (owner, journals) in &slice.audio_bindings.sound_clocks {
                 for journal in journals.values() {
                     for reference in journal.clocks() {
+                        result.charge(reference.introduced_groups().len())?;
+                        result.charge(reference.split_work_count())?;
                         for step in reference.repeats().steps() {
                             if let crate::SoundClockRepeatStep::Introduced { live_repeat, plays } =
                                 step
@@ -106,27 +108,30 @@ impl Inventory {
                             reference.scope().clone(),
                             journal.scope().clone(),
                             reference.repeats().clone(),
-                            historical
-                                .sound_uses_output_owner_proof(
+                            reference.introduced_groups().clone(),
+                            reference.introduced_splits().to_vec(),
+                            (reference.introduced_groups().contains(journal.scope())
+                                || historical.sound_uses_output_owner_proof(
                                     &live,
                                     (reference.scope(), journal.scope()),
                                     (reference.owner(), owner),
-                                )
-                                .then(|| (reference.owner().clone(), owner.clone())),
+                                ))
+                            .then(|| (reference.owner().clone(), owner.clone())),
                         );
                         if !proofs.contains_key(&key) {
                             let remaining = MAX_AUDIO_BINDING_ENTRIES
                                 .checked_sub(result.work)
                                 .filter(|remaining| *remaining > 0)
                                 .ok_or_else(|| limit("slice sound clock identity work limit"))?;
-                            let proof = historical.sound_owner_clock_correspondence_with_repeats(
-                                &live,
-                                reference.scope(),
-                                journal.scope(),
-                                (reference.owner(), owner),
-                                reference.repeats(),
-                                remaining.min(MAX_DOCUMENT_NODES),
-                            )?;
+                            let proof = historical
+                                .sound_owner_clock_correspondence_with_relations(
+                                    &live,
+                                    (reference.scope(), journal.scope()),
+                                    (reference.owner(), owner),
+                                    reference.repeats(),
+                                    (reference.introduced_groups(), reference.introduced_splits()),
+                                    remaining.min(MAX_DOCUMENT_NODES),
+                                )?;
                             result.charge(proof.work())?;
                             // Only proven corresponding Repeat definitions share a
                             // fresh play family. Equal old strings alone prove none.
@@ -925,7 +930,39 @@ pub(super) fn prepare(
                                 rename.historical(reference.timing(), reference.scope())?,
                                 rename.historical(reference.timing(), reference.owner())?,
                             )
-                            .with_repeats(repeats))
+                            .with_repeats(repeats)
+                            .with_introduced_groups(
+                                reference
+                                    .introduced_groups()
+                                    .iter()
+                                    .map(|group| rename.live(group))
+                                    .collect::<Result<BTreeSet<_>, EditError>>()?,
+                            )?
+                            .with_introduced_splits(
+                                reference
+                                    .introduced_splits()
+                                    .iter()
+                                    .map(|split| {
+                                        Ok(crate::SoundClockSplit::new(
+                                            rename.historical(
+                                                reference.timing(),
+                                                &split.historical_node,
+                                            )?,
+                                            split
+                                                .pieces
+                                                .iter()
+                                                .map(|piece| {
+                                                    Ok(crate::SoundClockSplitPiece {
+                                                        partition: rename.live(&piece.partition)?,
+                                                        full_owner: rename
+                                                            .live(&piece.full_owner)?,
+                                                    })
+                                                })
+                                                .collect::<Result<Vec<_>, EditError>>()?,
+                                        )?)
+                                    })
+                                    .collect::<Result<Vec<_>, EditError>>()?,
+                            )?)
                         })
                         .collect::<Result<_, EditError>>()?;
                     Ok((

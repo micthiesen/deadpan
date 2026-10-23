@@ -13,6 +13,7 @@ use serde::{Deserialize, Deserializer, Serialize};
 use crate::{AudioTimingId, DocumentError, DocumentErrorCode, MAX_DOCUMENT_DEPTH, NodeId, SoundId};
 
 pub(crate) mod edit;
+pub(crate) mod grouping;
 
 pub const MAX_SOUND_CLOCKS: usize = 1024;
 pub const MAX_SOUND_CLOCK_BYTES: usize = 1024 * 1024;
@@ -114,6 +115,150 @@ impl SoundClockRepeatMap {
     }
 }
 
+/// One current delivery Partition and its complete retained input owner.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct SoundClockSplitPiece {
+    pub partition: NodeId,
+    pub full_owner: NodeId,
+}
+
+/// Explicit provenance for a historical leaf replaced by a complete Split forest.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(try_from = "SplitWire")]
+pub struct SoundClockSplit {
+    pub historical_node: NodeId,
+    pub pieces: Vec<SoundClockSplitPiece>,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct SplitWire {
+    historical_node: NodeId,
+    #[serde(deserialize_with = "split_pieces")]
+    pieces: Vec<SoundClockSplitPiece>,
+}
+
+fn split_pieces<'de, D: Deserializer<'de>>(
+    decoder: D,
+) -> Result<Vec<SoundClockSplitPiece>, D::Error> {
+    struct Pieces;
+    impl<'de> Visitor<'de> for Pieces {
+        type Value = Vec<SoundClockSplitPiece>;
+        fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            f.write_str("bounded unique sound clock Split pieces")
+        }
+        fn visit_seq<A: SeqAccess<'de>>(self, mut seq: A) -> Result<Self::Value, A::Error> {
+            let mut pieces = Vec::new();
+            while let Some(piece) = seq.next_element()? {
+                if pieces.len() == crate::MAX_DOCUMENT_NODES {
+                    return Err(de::Error::custom("sound clock Split piece limit"));
+                }
+                pieces.push(piece);
+            }
+            Ok(pieces)
+        }
+    }
+    decoder.deserialize_seq(Pieces)
+}
+
+impl TryFrom<SplitWire> for SoundClockSplit {
+    type Error = DocumentError;
+    fn try_from(wire: SplitWire) -> Result<Self, Self::Error> {
+        Self::new(wire.historical_node, wire.pieces)
+    }
+}
+
+impl SoundClockSplit {
+    pub fn new(
+        historical_node: NodeId,
+        pieces: Vec<SoundClockSplitPiece>,
+    ) -> Result<Self, DocumentError> {
+        Self::validate_pieces(&pieces)?;
+        Ok(Self {
+            historical_node,
+            pieces,
+        })
+    }
+
+    fn validate_pieces(pieces: &[SoundClockSplitPiece]) -> Result<(), DocumentError> {
+        if pieces.len() < 2 {
+            return Err(invalid("sound clock Split requires at least two pieces"));
+        }
+        if pieces.len() > crate::MAX_DOCUMENT_NODES {
+            return Err(limit("sound clock Split piece limit"));
+        }
+        let mut partitions = BTreeSet::new();
+        let mut owners = BTreeSet::new();
+        for piece in pieces {
+            if !partitions.insert(&piece.partition) || !owners.insert(&piece.full_owner) {
+                return Err(invalid("duplicate sound clock Split piece identity"));
+            }
+        }
+        Ok(())
+    }
+
+    pub fn work_count(&self) -> usize {
+        self.pieces.len().saturating_add(1)
+    }
+}
+
+fn validate_splits(splits: &[SoundClockSplit]) -> Result<usize, DocumentError> {
+    if splits.len() > crate::MAX_DOCUMENT_NODES {
+        return Err(limit("sound clock Split relation limit"));
+    }
+    let mut historical = BTreeSet::new();
+    let mut pieces = 0usize;
+    for split in splits {
+        // Public identity fields are convenient for explicit lifecycle remaps;
+        // recheck them at every reference admission.
+        SoundClockSplit::validate_pieces(&split.pieces)?;
+        if !historical.insert(&split.historical_node) {
+            return Err(invalid("duplicate historical sound clock Split"));
+        }
+        pieces = pieces
+            .checked_add(split.pieces.len())
+            .filter(|count| *count <= crate::MAX_DOCUMENT_NODES)
+            .ok_or_else(|| limit("sound clock Split piece limit"))?;
+    }
+    splits
+        .len()
+        .checked_add(pieces)
+        .ok_or_else(|| limit("sound clock Split relation work limit"))
+}
+
+fn introduced_splits<'de, D: Deserializer<'de>>(
+    decoder: D,
+) -> Result<Vec<SoundClockSplit>, D::Error> {
+    struct Splits;
+    impl<'de> Visitor<'de> for Splits {
+        type Value = Vec<SoundClockSplit>;
+        fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            f.write_str("bounded unique introduced sound clock Splits")
+        }
+        fn visit_seq<A: SeqAccess<'de>>(self, mut seq: A) -> Result<Self::Value, A::Error> {
+            let mut splits = Vec::new();
+            let mut historical = BTreeSet::new();
+            let mut pieces = 0usize;
+            while let Some(split) = seq.next_element::<SoundClockSplit>()? {
+                if splits.len() == crate::MAX_DOCUMENT_NODES {
+                    return Err(de::Error::custom("sound clock Split relation limit"));
+                }
+                if !historical.insert(split.historical_node.clone()) {
+                    return Err(de::Error::custom("duplicate historical sound clock Split"));
+                }
+                pieces = pieces
+                    .checked_add(split.pieces.len())
+                    .filter(|count| *count <= crate::MAX_DOCUMENT_NODES)
+                    .ok_or_else(|| de::Error::custom("sound clock Split piece limit"))?;
+                splits.push(split);
+            }
+            Ok(splits)
+        }
+    }
+    decoder.deserialize_seq(Splits)
+}
+
 /// One historical owner's clock in a frozen processing scope.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -123,6 +268,20 @@ pub struct SoundClockReference {
     owner: NodeId,
     #[serde(default, skip_serializing_if = "SoundClockRepeatMap::is_empty")]
     repeats: SoundClockRepeatMap,
+    /// Ordinary live wrappers introduced after this capture. They preserve
+    /// old aliases but own no historical processing context themselves.
+    #[serde(
+        default,
+        skip_serializing_if = "BTreeSet::is_empty",
+        deserialize_with = "introduced_group_ids"
+    )]
+    introduced_groups: BTreeSet<NodeId>,
+    #[serde(
+        default,
+        skip_serializing_if = "Vec::is_empty",
+        deserialize_with = "introduced_splits"
+    )]
+    introduced_splits: Vec<SoundClockSplit>,
 }
 
 impl SoundClockReference {
@@ -132,6 +291,8 @@ impl SoundClockReference {
             scope,
             owner,
             repeats: SoundClockRepeatMap::default(),
+            introduced_groups: BTreeSet::new(),
+            introduced_splits: Vec::new(),
         }
     }
 
@@ -155,6 +316,67 @@ impl SoundClockReference {
     pub fn repeats(&self) -> &SoundClockRepeatMap {
         &self.repeats
     }
+
+    pub fn with_introduced_groups(
+        mut self,
+        groups: BTreeSet<NodeId>,
+    ) -> Result<Self, DocumentError> {
+        if groups.len() > crate::MAX_DOCUMENT_NODES {
+            return Err(limit("sound clock introduced group limit"));
+        }
+        self.introduced_groups = groups;
+        Ok(self)
+    }
+
+    pub fn introduced_groups(&self) -> &BTreeSet<NodeId> {
+        &self.introduced_groups
+    }
+
+    pub fn with_introduced_splits(
+        mut self,
+        splits: Vec<SoundClockSplit>,
+    ) -> Result<Self, DocumentError> {
+        validate_splits(&splits)?;
+        self.introduced_splits = splits;
+        Ok(self)
+    }
+
+    pub fn introduced_splits(&self) -> &[SoundClockSplit] {
+        &self.introduced_splits
+    }
+
+    pub fn split_work_count(&self) -> usize {
+        self.introduced_splits.iter().fold(0usize, |work, split| {
+            work.saturating_add(split.work_count())
+        })
+    }
+}
+
+fn introduced_group_ids<'de, D: Deserializer<'de>>(
+    decoder: D,
+) -> Result<BTreeSet<NodeId>, D::Error> {
+    struct Groups;
+    impl<'de> Visitor<'de> for Groups {
+        type Value = BTreeSet<NodeId>;
+
+        fn expecting(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            f.write_str("bounded unique introduced sound clock group IDs")
+        }
+
+        fn visit_seq<A: SeqAccess<'de>>(self, mut seq: A) -> Result<Self::Value, A::Error> {
+            let mut groups = BTreeSet::new();
+            while let Some(group) = seq.next_element::<NodeId>()? {
+                if groups.len() == crate::MAX_DOCUMENT_NODES {
+                    return Err(de::Error::custom("sound clock introduced group limit"));
+                }
+                if !groups.insert(group) {
+                    return Err(de::Error::custom("duplicate introduced sound clock group"));
+                }
+            }
+            Ok(groups)
+        }
+    }
+    decoder.deserialize_seq(Groups)
 }
 
 /// Chronological pre-edit clocks. The current document supplies the final clock.
@@ -367,3 +589,9 @@ fn limit(message: &str) -> DocumentError {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod introduced_groups_tests;
+
+#[cfg(test)]
+mod introduced_splits_tests;

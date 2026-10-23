@@ -19,6 +19,12 @@ mod split_owner;
 #[path = "sound_clocks/group_endpoints.rs"]
 mod group_endpoints;
 
+#[path = "sound_clocks/aligned_scope.rs"]
+mod aligned_scope;
+
+#[path = "sound_clocks/new_group_birth.rs"]
+mod new_group_birth;
+
 struct ClockProvider {
     fixture: FixtureProvider,
     revision: RevisionId,

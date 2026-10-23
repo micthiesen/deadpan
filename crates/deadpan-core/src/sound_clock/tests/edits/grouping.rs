@@ -109,13 +109,6 @@ fn sound_clock_scope_interiors_and_removal_refuse_atomically() {
             id: node("group"),
             label: "Inside scope".into(),
         },
-        selected_group(
-            &before,
-            "top",
-            SliceCaptureSelection::Child {
-                node: node("owner"),
-            },
-        ),
         Command::Ungroup { node: node("top") },
     ] {
         let error = apply(&before, &request(&before, "grouped", command)).unwrap_err();
@@ -124,6 +117,36 @@ fn sound_clock_scope_interiors_and_removal_refuse_atomically() {
             "{error}"
         );
         assert_eq!(before.to_json().unwrap(), snapshot);
+    }
+}
+
+#[test]
+fn aligned_selected_group_preserves_broad_sound_scope_with_explicit_relation() {
+    let before = edit(&fixture(), "shifted", insert("shifted", 0, 2));
+    let grouped = edit(
+        &before,
+        "grouped",
+        selected_group(
+            &before,
+            "top",
+            SliceCaptureSelection::Child {
+                node: node("owner"),
+            },
+        ),
+    );
+    assert_eq!(
+        grouped.audio_bindings.timings,
+        before.audio_bindings.timings
+    );
+    assert_eq!(grouped.beat_sounds, before.beat_sounds);
+    let old = &before.audio_bindings.sound_clocks[&node("owner")][&sound("effect")];
+    let new = &grouped.audio_bindings.sound_clocks[&node("owner")][&sound("effect")];
+    assert_eq!(new.scope(), old.scope());
+    assert_eq!(new.clocks().len(), old.clocks().len());
+    for (old, new) in old.clocks().iter().zip(new.clocks()) {
+        let mut groups = old.introduced_groups().clone();
+        groups.insert(node("group"));
+        assert_eq!(new, &old.clone().with_introduced_groups(groups).unwrap());
     }
 }
 

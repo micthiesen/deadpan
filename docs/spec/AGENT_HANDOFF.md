@@ -30,14 +30,21 @@ now passes all 130 workflow checks plus Kestrel, with frozen source/input and
 actual executable hashes unchanged. Retain both layout-retry warning findings.
 Input-to-state p99 is 1.607166 ms over 233 samples; commit p95 is 88.298625 ms
 over seven samples, so do not claim the complete 50 ms target. `harness-strict`
-is running, then `harness-ui` in `finish_harness_qualification.py`.
+passes both strict variants and formatting; `harness-ui` passes all 1,292 tests,
+with 11 skipped, in 70.029 seconds. All source/input/executable guards pass.
 `release-media` passes the
 aligned-scope fixture in 228.948 seconds: all staged canonical PCM/history
 controls, all 19 pictures and 30,430 samples at zero offset. The old 121-picture
 endpoint regression also passes all 121 pictures and 193,794 samples at zero
-offset in 43.470 seconds from the same archive. Full performance remains open;
+offset in 43.470 seconds from the same archive. Both safely extracted nine-file
+release packages pass full validation and doctor without changing any package
+path or byte. Receipts are in `owner-portable-check/`. Full performance remains open;
 the fresh scratch scripts are `qualify_candidate.py` and
-`qualify_native_media.py`. All production code is still uncommitted.
+`qualify_native_media.py`. All scoped checks are complete; finish the evidence
+inventory and scoped implementation commit. Full qualification is in
+`docs/qualification/aligned-sound-scope-2026-10-23.md`. A read-only next-scope
+design is `next-neutral-ungroup-design.json` in the same scratch directory:
+neutral removal of a still-unpaired introduced group, without widening scope.
 
 Earlier checkpoint: `integrated-eleventh` passes all twelve focused
 audio checks. Valid-control label/trim failures (7,581/7,570 changed channel

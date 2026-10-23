@@ -16,6 +16,10 @@ pub use owner_context::AudioSoundOwnerContext;
 mod processing_history;
 pub use processing_history::AudioSoundProcessingHistory;
 
+#[path = "audio_sound_permission_family.rs"]
+mod permission_family;
+pub use permission_family::AudioSoundPermissionFamily;
+
 /// A borrowed preparation recipe for one concrete current occurrence.
 ///
 /// The constructor resolves structure and stable plays, never a cursor or a

@@ -1,0 +1,501 @@
+//! Aligned grouping inside an ordinary placement scope preserves all real PCM.
+//! Uses the existing 8197-sample FixtureProvider WAV and ClockProvider convention.
+use super::*;
+
+const TOTAL_SAMPLES: i64 = 32_032;
+
+#[derive(Clone, Copy, Debug)]
+enum OwnerPolicy {
+    Source,
+    RoomTone,
+    Silence,
+}
+
+#[derive(Clone, Copy, Debug)]
+struct Case {
+    owner: OwnerPolicy,
+    event_eq: bool,
+    owner_eq: bool,
+}
+
+fn cases() -> [Case; 5] {
+    [
+        Case {
+            owner: OwnerPolicy::Source,
+            event_eq: false,
+            owner_eq: false,
+        },
+        Case {
+            owner: OwnerPolicy::Source,
+            event_eq: true,
+            owner_eq: false,
+        },
+        Case {
+            owner: OwnerPolicy::Source,
+            event_eq: true,
+            owner_eq: true,
+        },
+        Case {
+            owner: OwnerPolicy::RoomTone,
+            event_eq: true,
+            owner_eq: true,
+        },
+        Case {
+            owner: OwnerPolicy::Silence,
+            event_eq: true,
+            owner_eq: true,
+        },
+    ]
+}
+
+fn timing(name: &str) -> AudioTimingId {
+    AudioTimingId {
+        allocation: RevisionId::new(name).unwrap(),
+        ordinal: 0,
+    }
+}
+
+fn eq(gains: [i32; 3]) -> AudioTreatments {
+    AudioTreatments::default()
+        .with_equalizer(Some(
+            EqualizerRecipe::new(gains.map(|gain| GainDb::new(gain).unwrap()), None, None).unwrap(),
+        ))
+        .unwrap()
+}
+
+fn initial(case: Case) -> ProjectDocument {
+    let rate = FrameRate::new(30_000, 1001).unwrap();
+    let owner = match case.owner {
+        OwnerPolicy::Source => picture_only(rate, 12),
+        OwnerPolicy::RoomTone => hold(
+            12,
+            HoldAudio::RoomTone {
+                source: audio(512..640),
+            },
+        ),
+        OwnerPolicy::Silence => hold(12, HoldAudio::Silence),
+    };
+    let document = document(
+        rate,
+        &["lead", "top"],
+        [
+            ("lead", picture_only(rate, 2)),
+            (
+                "top",
+                BeatNode::sequence("Ordinary placement", vec![id("owner"), id("sibling")]),
+            ),
+            ("owner", owner),
+            ("sibling", picture_only(rate, 5)),
+        ],
+        BTreeMap::new(),
+    );
+    let source = audio(0..8197);
+    let event = BeatSound {
+        label: "Finite independent event".into(),
+        mapping: SourceAudioMapping::natural_rate(source.span, rate).unwrap(),
+        source,
+        offset: AudioSample(37),
+        treatments: if case.event_eq {
+            eq([6000, -6000, 3000])
+        } else {
+            AudioTreatments::default()
+        },
+        start_edge: AudioEdgePolicy::Hard,
+        end_edge: AudioEdgePolicy::Hard,
+        overflow: SoundOverflowPolicy::Reject,
+    };
+    let mut wire = serde_json::to_value(document).unwrap();
+    // Established test-provider marker, not a production qualification receipt.
+    wire["assets"]["media"]["source_qualification"] = serde_json::json!("c".repeat(64));
+    wire["beat_sounds"] = serde_json::json!({"owner":{"effect":event}});
+    if case.owner_eq {
+        wire["nodes"]["owner"]["audio_treatments"] =
+            serde_json::to_value(eq([3000, -1500, 1000])).unwrap();
+    }
+    ProjectDocument::from_json(&wire.to_string()).unwrap()
+}
+
+fn prefixed(initial: &ProjectDocument) -> ProjectDocument {
+    let before = insert_prefix(initial);
+    assert_eq!(before.duration().unwrap().frames(), 20);
+    assert_eq!(frame_sample_boundary(20), TOTAL_SAMPLES);
+    assert_eq!(frame_sample_boundary(3), 4805);
+    assert_eq!(frame_sample_boundary(15), 24024);
+    assert_eq!(frame_sample_boundary(3) + 37, 4842);
+    // The pre-prefix origin phase is retained: B(2)+37+8197 + [B(3)-B(2)].
+    assert_eq!(3203 + 37 + 8197 + (4805 - 3203), 13039);
+    let journal = &before.audio_bindings().sound_clocks()[&id("owner")][&sound_id("effect")];
+    assert_eq!(journal.scope(), &id("top"));
+    assert_eq!(journal.clocks().len(), 1);
+    assert_eq!(journal.clocks()[0].timing(), &timing("moved"));
+    assert_eq!(journal.clocks()[0].scope(), &id("top"));
+    assert_eq!(journal.clocks()[0].owner(), &id("owner"));
+    assert!(journal.clocks()[0].repeats().is_empty());
+    before
+}
+
+fn group(document: &ProjectDocument, name: &str, parent: &str, child: &str) -> Command {
+    let selection = SliceCaptureSelection::Child { node: id(child) };
+    assert_eq!(
+        document
+            .group_selection(&id(parent), &selection)
+            .unwrap()
+            .required_split_ids,
+        0
+    );
+    Command::GroupSelection {
+        parent: id(parent),
+        selection,
+        label: "Complete unchanged sound owner".into(),
+        identities: GroupSelectionIdentities {
+            group: id(name),
+            split: SplitIdentities::default(),
+        },
+        timing: timing(name),
+    }
+}
+
+fn read(document: &ProjectDocument, first: i64, last: i64, partitions: &[u32]) -> Vec<[f32; 2]> {
+    assert!(!partitions.is_empty() && partitions.iter().all(|count| *count > 0));
+    let mut renderer = StageAudio::new(compile(document, false));
+    let mut provider = ClockProvider::new(document);
+    let mut output = Vec::with_capacity(usize::try_from(last - first).unwrap());
+    let mut at = first;
+    let mut partition = 0;
+    while at < last {
+        let count = u32::try_from((last - at).min(i64::from(partitions[partition]))).unwrap();
+        output.extend(bus(&mut renderer, &mut provider, at, count).samples);
+        at += i64::from(count);
+        partition = (partition + 1) % partitions.len();
+    }
+    // Cold silent windows need no source reads; only audible complete journals
+    // must exercise historical admission. Never replace PCM checks with this.
+    if first == 0
+        && last == TOTAL_SAMPLES
+        && !document.audio_bindings().sound_clocks().is_empty()
+        && output.iter().any(|sample| *sample != [0.0; 2])
+    {
+        assert!(provider.fixture.context_calls > 0);
+    }
+    output
+}
+
+fn complete(document: &ProjectDocument) -> Vec<[f32; 2]> {
+    assert_eq!(document.duration().unwrap().frames(), 20);
+    read(document, 0, TOTAL_SAMPLES, &[1021])
+}
+
+fn assert_pictures(before: &ProjectDocument, after: &ProjectDocument) {
+    let before = compile(before, false);
+    let after = compile(after, false);
+    for frame in 0..20 {
+        assert_eq!(
+            after.picture(ProjectFrame(frame)).unwrap().picture,
+            before.picture(ProjectFrame(frame)).unwrap().picture,
+            "picture identity at frame {frame}",
+        );
+    }
+}
+
+fn assert_complete(document: &ProjectDocument, expected: &[[f32; 2]], label: &str) {
+    assert_eq!(expected.len(), usize::try_from(TOTAL_SAMPLES).unwrap());
+    assert_eq!(
+        complete(document),
+        expected,
+        "{label}: 1021-sample partitions"
+    );
+    assert_eq!(
+        read(document, 0, TOTAL_SAMPLES, &[37, 509, 1021, 173]),
+        expected,
+        "{label}: different partitions",
+    );
+    // Every cold read owns a fresh renderer/provider. Check the exact boundary
+    // labels and their neighbors; the complete checks include every other sample.
+    for (first, last) in [
+        (4804, 4807),
+        (4841, 4844),
+        (13038, 13041),
+        (24023, 24026),
+        (32029, 32032),
+    ] {
+        assert_eq!(
+            read(document, first, last, &[1021]),
+            expected[usize::try_from(first).unwrap()..usize::try_from(last).unwrap()],
+            "{label}: cold [{first},{last})",
+        );
+    }
+}
+
+fn assert_event_policy(document: &ProjectDocument, case: Case, expected: &[[f32; 2]]) {
+    let removed = edit(
+        document,
+        "delete-event-control",
+        Command::DeleteBeatSound {
+            owner: id("owner"),
+            id: sound_id("effect"),
+        },
+    );
+    let carrier = complete(&removed);
+    match case.owner {
+        OwnerPolicy::Silence => {
+            assert!(expected.iter().all(|sample| *sample == [0.0; 2]));
+            assert_eq!(
+                carrier, expected,
+                "default silent Hold suppresses independent sound"
+            );
+        }
+        OwnerPolicy::Source | OwnerPolicy::RoomTone => {
+            assert!(
+                expected[8000..8256]
+                    .iter()
+                    .zip(&carrier[8000..8256])
+                    .any(|(a, b)| a != b),
+                "{case:?}: DeleteBeatSound must remove audible interior PCM",
+            );
+            if matches!(case.owner, OwnerPolicy::RoomTone) {
+                assert!(
+                    carrier[8000..8256].iter().any(|sample| *sample != [0.0; 2]),
+                    "RoomTone carrier itself must also be audible"
+                );
+            }
+        }
+    }
+}
+
+fn controls(case: Case) -> (ProjectDocument, Vec<[f32; 2]>) {
+    let initial = initial(case);
+    let before = prefixed(&initial);
+    let expected = complete(&before);
+    assert_event_policy(&before, case, &expected);
+
+    // Old-source control A: neutral grouping before journal creation, then the
+    // very same temporal command. The real decoded PCM is an independent oracle.
+    let pre_group = edit(
+        &initial,
+        "control-before-prefix",
+        group(&initial, "control-before-prefix", "top", "owner"),
+    );
+    assert_eq!(pre_group.audio_bindings(), initial.audio_bindings());
+    assert_eq!(pre_group.beat_sounds(), initial.beat_sounds());
+    let equivalent = prefixed(&pre_group);
+    assert_eq!(
+        equivalent.nodes()[&id("owner")],
+        before.nodes()[&id("owner")]
+    );
+    assert_pictures(&before, &equivalent);
+    assert_complete(&equivalent, &expected, "group-before-prefix control");
+
+    // Old-source control B: group the retained scope from outside. Existing
+    // journals and all frozen timing/physical binding tables must stay identical.
+    let outside = edit(
+        &before,
+        "outside-group",
+        group(&before, "outside-group", "root", "top"),
+    );
+    assert_eq!(outside.audio_bindings(), before.audio_bindings());
+    assert_eq!(outside.beat_sounds(), before.beat_sounds());
+    assert_pictures(&before, &outside);
+    assert_complete(&outside, &expected, "outside-scope control");
+    (before, expected)
+}
+
+#[test]
+fn aligned_scope_old_controls_preserve_all_source_and_hold_pcm() {
+    for case in cases() {
+        controls(case);
+    }
+}
+
+fn target(before: &ProjectDocument) -> ProjectDocument {
+    let frozen = before.to_json().unwrap();
+    let request = CommandRequest {
+        project_id: before.project_id().clone(),
+        expected_revision: before.revision_id().clone(),
+        new_revision: RevisionId::new("aligned-inner").unwrap(),
+        command: group(before, "aligned-inner", "top", "owner"),
+    };
+    let result = apply(before, &request);
+    assert_eq!(before.to_json().unwrap(), frozen);
+    assert!(
+        result.is_ok(),
+        "aligned unchanged owner should preserve its clock: {:?}",
+        result.as_ref().err()
+    );
+    let transaction = result.unwrap();
+    let after = transaction.forward.apply(before).unwrap();
+    assert_eq!(
+        transaction
+            .inverse
+            .apply(&after)
+            .unwrap()
+            .to_json()
+            .unwrap(),
+        frozen,
+        "inverse must restore exact old broad journals and group relations"
+    );
+    assert_eq!(
+        ProjectDocument::from_json(&after.to_json().unwrap()).unwrap(),
+        after
+    );
+    assert_eq!(after.duration().unwrap(), before.duration().unwrap());
+    assert_eq!(
+        after.node_duration(&id("aligned-inner")).unwrap().frames(),
+        12
+    );
+    assert_eq!(after.nodes()[&id("owner")], before.nodes()[&id("owner")]);
+    assert_eq!(after.beat_sounds(), before.beat_sounds());
+
+    let old = &before.audio_bindings().sound_clocks()[&id("owner")][&sound_id("effect")];
+    let references = old
+        .clocks()
+        .iter()
+        .map(|reference| {
+            assert_eq!(reference.owner(), &id("owner"));
+            let mut groups = reference.introduced_groups().clone();
+            groups.insert(id("aligned-inner"));
+            reference.clone().with_introduced_groups(groups).unwrap()
+        })
+        .collect();
+    let expected_journal = SoundClockJournal::new(old.scope().clone(), references).unwrap();
+    let mut expected_clocks = before.audio_bindings().sound_clocks().clone();
+    expected_clocks
+        .get_mut(&id("owner"))
+        .unwrap()
+        .insert(sound_id("effect"), expected_journal);
+    let expected_bindings = AudioBindingState::new_with_sound_clocks(
+        before
+            .audio_bindings()
+            .timings()
+            .iter()
+            .map(|(id, layout)| AudioTimingRecord {
+                id: id.clone(),
+                layout: layout.clone(),
+            })
+            .collect(),
+        before.audio_bindings().bindings().clone(),
+        before.audio_bindings().gap_bindings().clone(),
+        expected_clocks,
+    )
+    .unwrap();
+    assert_eq!(
+        after.audio_bindings(),
+        &expected_bindings,
+        "only the introduced-group relation changes; scopes, recipes, timings and physical bindings stay exact"
+    );
+    after
+}
+
+#[test]
+fn aligned_scope_grouping_preserves_source_and_hold_journals_without_changing_pcm() {
+    for case in cases() {
+        // Independently constructed pre-capture and exterior groups establish
+        // the unchanged audio before the new interior relation is exercised.
+        let (before, expected) = controls(case);
+        let after = target(&before);
+        assert_pictures(&before, &after);
+        assert_complete(&after, &expected, &format!("aligned target {case:?}"));
+        assert_event_policy(&after, case, &expected);
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+enum ExcludedPath {
+    Retime,
+    Repeat,
+    Partition,
+}
+
+fn excluded(path: ExcludedPath) -> ProjectDocument {
+    let base = initial(Case {
+        owner: OwnerPolicy::Source,
+        event_eq: true,
+        owner_eq: true,
+    });
+    let mut wrapper = retime("owner", 12, 0..12, PitchPolicy::FollowSpeed);
+    match path {
+        ExcludedPath::Retime => {}
+        ExcludedPath::Partition => {
+            let NodeKind::Retime { purpose, .. } = &mut wrapper.kind else {
+                unreachable!()
+            };
+            *purpose = RetimePurpose::Partition;
+        }
+        ExcludedPath::Repeat => {
+            wrapper = BeatNode {
+                kind: NodeKind::Repeat {
+                    child: id("owner"),
+                    iterations: IterationOrder::new(RevisionId::new("excluded-plays").unwrap(), 2)
+                        .unwrap(),
+                    gap: None,
+                    escalation: None,
+                },
+                ..BeatNode::sequence("Excluded Repeat placement", vec![])
+            };
+        }
+    }
+    let mut wire = serde_json::to_value(base).unwrap();
+    wire["nodes"]["excluded"] = serde_json::to_value(wrapper).unwrap();
+    wire["nodes"]["top"]["kind"]["children"] = serde_json::json!(["excluded", "sibling"]);
+    let before = insert_prefix(&ProjectDocument::from_json(&wire.to_string()).unwrap());
+    assert_eq!(
+        before.audio_bindings().sound_clocks()[&id("owner")][&sound_id("effect")].scope(),
+        &id("top"),
+    );
+    before
+}
+
+#[test]
+fn aligned_scope_admission_still_refuses_nonordinary_processing_or_placement_paths_atomically() {
+    for path in [
+        ExcludedPath::Retime,
+        ExcludedPath::Repeat,
+        ExcludedPath::Partition,
+    ] {
+        let before = excluded(path);
+        let frozen = before.to_json().unwrap();
+        let request = CommandRequest {
+            project_id: before.project_id().clone(),
+            expected_revision: before.revision_id().clone(),
+            new_revision: RevisionId::new("excluded-group").unwrap(),
+            command: group(&before, "excluded-group", "top", "excluded"),
+        };
+        let error = apply(&before, &request).unwrap_err();
+        assert_eq!(
+            error.code,
+            EditErrorCode::InvalidCommand,
+            "{path:?}: {error}"
+        );
+        assert_eq!(
+            before.to_json().unwrap(),
+            frozen,
+            "{path:?}: atomic refusal"
+        );
+    }
+}
+
+#[test]
+fn aligned_scope_group_introduction_keeps_historical_source_admission_live() {
+    let before = prefixed(&initial(Case {
+        owner: OwnerPolicy::Source,
+        event_eq: true,
+        owner_eq: true,
+    }));
+    let after = target(&before);
+    let mut renderer = StageAudio::new(compile(&after, false));
+    let mut provider = ClockProvider::new(&after);
+    let expected = bus(&mut renderer, &mut provider, 8008, 32).samples;
+    assert!(expected.iter().any(|sample| *sample != [0.0; 2]));
+    provider.fixture.unavailable = true;
+    assert!(matches!(
+        renderer.prepare_authored_bus(
+            &mut provider,
+            AudioSample(8008),
+            32,
+            TIMEOUT,
+            &AtomicBool::new(false),
+        ),
+        Err(StageAudioError::Preparation(
+            PreparationError::SourceUnavailable(_)
+        )),
+    ));
+}

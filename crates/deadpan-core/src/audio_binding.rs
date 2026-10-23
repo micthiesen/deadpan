@@ -1305,6 +1305,8 @@ impl AudioBindingState {
         for journals in self.sound_clocks.values() {
             for journal in journals.values() {
                 for reference in journal.clocks() {
+                    work.spend(reference.introduced_groups().len())?;
+                    work.spend(reference.split_work_count())?;
                     let timing = reference.timing();
                     if !self.timings.contains_key(timing) {
                         return Err(invalid("sound clock timing identity is missing"));
@@ -1461,27 +1463,33 @@ impl AudioBindingState {
                     }
                     for reference in journal.clocks() {
                         let timing = reference.timing();
+                        // Bound relation cloning in the cache key even when a
+                        // shared correspondence avoids another tree traversal.
+                        work.spend(reference.introduced_groups().len())?;
+                        work.spend(reference.split_work_count())?;
                         let key = (
                             timing.clone(),
                             reference.scope().clone(),
                             journal.scope().clone(),
                             reference.repeats().clone(),
-                            self.timings[timing]
-                                .sound_uses_output_owner_proof(
+                            reference.introduced_groups().clone(),
+                            reference.introduced_splits().to_vec(),
+                            (reference.introduced_groups().contains(journal.scope())
+                                || self.timings[timing].sound_uses_output_owner_proof(
                                     &live,
                                     (reference.scope(), journal.scope()),
                                     (reference.owner(), owner),
-                                )
-                                .then(|| (reference.owner().clone(), owner.clone())),
+                                ))
+                            .then(|| (reference.owner().clone(), owner.clone())),
                         );
                         if !checked.contains_key(&key) {
                             let proof = self.timings[timing]
-                                .sound_owner_clock_correspondence_with_repeats(
+                                .sound_owner_clock_correspondence_with_relations(
                                     &live,
-                                    reference.scope(),
-                                    journal.scope(),
+                                    (reference.scope(), journal.scope()),
                                     (reference.owner(), owner),
                                     reference.repeats(),
+                                    (reference.introduced_groups(), reference.introduced_splits()),
                                     work.remaining()?,
                                 )?;
                             work.spend(proof.work())?;

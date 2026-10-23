@@ -6,6 +6,9 @@ use deadpan_core::{BeatSound, EqualizerRecipe};
 use deadpan_store::single_source::SingleSourceState;
 use std::sync::atomic::AtomicBool;
 
+#[path = "aligned_group_recipe.rs"]
+pub mod aligned;
+
 pub const TOTAL_SAMPLES: i64 = 193_794;
 
 fn boundary(frame: i64) -> Result<i64> {

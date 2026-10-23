@@ -15,6 +15,9 @@ mod partial;
 #[path = "sound_clocks/group_endpoints.rs"]
 mod group_endpoints;
 
+#[path = "sound_clocks/introduced_groups.rs"]
+mod introduced_groups;
+
 fn capture_child(
     document: &ProjectDocument,
     parent: &NodeId,

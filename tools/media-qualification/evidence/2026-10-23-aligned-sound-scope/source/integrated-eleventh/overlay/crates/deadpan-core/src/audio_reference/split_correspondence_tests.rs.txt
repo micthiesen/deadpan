@@ -1,0 +1,293 @@
+use super::*;
+
+fn id(value: &str) -> NodeId {
+    NodeId::new(value).unwrap()
+}
+fn duration(value: i64) -> FrameDuration {
+    FrameDuration::new(value).unwrap()
+}
+fn sequence(children: &[&str], frames: i64) -> FrozenAudioNode {
+    FrozenAudioNode {
+        duration: duration(frames),
+        edges: Default::default(),
+        editorial_edges: Default::default(),
+        kind: FrozenAudioKind::Sequence {
+            children: children.iter().map(|child| id(child)).collect(),
+        },
+    }
+}
+fn source() -> FrozenAudioNode {
+    FrozenAudioNode {
+        duration: duration(6),
+        edges: Default::default(),
+        editorial_edges: Default::default(),
+        kind: FrozenAudioKind::Source { placement: None },
+    }
+}
+fn partition(child: &str, start: i64, end: i64) -> FrozenAudioNode {
+    let mapping = FrameRange::new(crate::ProjectFrame(start), crate::ProjectFrame(end)).unwrap();
+    FrozenAudioNode {
+        duration: mapping.duration(),
+        edges: Default::default(),
+        editorial_edges: Default::default(),
+        kind: FrozenAudioKind::Retime {
+            child: id(child),
+            mapping,
+            pitch: PitchPolicy::Preserve,
+            purpose: RetimePurpose::Partition,
+        },
+    }
+}
+fn admit(nodes: Vec<(&str, FrozenAudioNode)>) -> FrozenAudioLayout {
+    FrozenAudioLayout::from_renamed_parts(
+        id("root"),
+        FrameRate::new(30_000, 1001).unwrap(),
+        nodes
+            .into_iter()
+            .map(|(name, node)| (id(name), node))
+            .collect(),
+        BTreeMap::new(),
+        BTreeMap::new(),
+        BTreeMap::new(),
+        BTreeMap::new(),
+    )
+    .unwrap()
+}
+fn old(group: bool) -> FrozenAudioLayout {
+    if group {
+        admit(vec![
+            ("root", sequence(&["g"], 6)),
+            ("g", sequence(&["owner"], 6)),
+            ("owner", source()),
+        ])
+    } else {
+        admit(vec![("root", sequence(&["owner"], 6)), ("owner", source())])
+    }
+}
+fn split_live() -> FrozenAudioLayout {
+    admit(vec![
+        ("root", sequence(&["g"], 6)),
+        ("g", sequence(&["left", "right"], 6)),
+        ("left", partition("owner", 0, 2)),
+        ("right", partition("copy", 2, 6)),
+        ("owner", source()),
+        ("copy", source()),
+    ])
+}
+fn witness(historical: &str, pieces: &[(&str, &str)]) -> crate::SoundClockSplit {
+    crate::SoundClockSplit::new(
+        id(historical),
+        pieces
+            .iter()
+            .map(|(partition, owner)| crate::SoundClockSplitPiece {
+                partition: id(partition),
+                full_owner: id(owner),
+            })
+            .collect(),
+    )
+    .unwrap()
+}
+fn prove(
+    old: &FrozenAudioLayout,
+    live: &FrozenAudioLayout,
+    introduced: bool,
+    splits: &[crate::SoundClockSplit],
+    budget: usize,
+) -> Result<SoundClockCorrespondence, DocumentError> {
+    old.sound_owner_clock_correspondence_with_relations(
+        live,
+        (&id(if introduced { "owner" } else { "g" }), &id("g")),
+        (&id("owner"), &id("copy")),
+        &crate::SoundClockRepeatMap::default(),
+        &if introduced {
+            BTreeSet::from([id("g")])
+        } else {
+            BTreeSet::new()
+        },
+        splits,
+        budget,
+    )
+}
+
+#[test]
+fn explicit_complete_split_keeps_genuine_group_and_exact_full_leaf_aliases() {
+    let old = old(true);
+    let live = split_live();
+    let relation = witness("owner", &[("left", "owner"), ("right", "copy")]);
+    assert!(
+        old.sound_owner_clock_correspondence_with_groups(
+            &live,
+            (&id("g"), &id("g")),
+            (&id("owner"), &id("copy")),
+            &crate::SoundClockRepeatMap::default(),
+            &BTreeSet::new(),
+            MAX_DOCUMENT_NODES
+        )
+        .is_err()
+    );
+    let proof = prove(&old, &live, false, &[relation], MAX_DOCUMENT_NODES).unwrap();
+    assert_eq!(proof.historical_node(&id("g")), Some(&id("g")));
+    for owner in ["owner", "copy"] {
+        assert_eq!(proof.historical_node(&id(owner)), Some(&id("owner")));
+        assert_eq!(proof.split_alias(&id(owner)), Some(&id("owner")));
+        assert_eq!(
+            proof
+                .remap_instance(&InstancePath {
+                    node: id(owner),
+                    repeats: vec![]
+                })
+                .unwrap()
+                .node,
+            id("owner")
+        );
+    }
+    for partition in ["left", "right"] {
+        assert_eq!(proof.historical_node(&id(partition)), None);
+        assert_eq!(proof.split_alias(&id(partition)), None);
+    }
+}
+
+#[test]
+fn complete_split_under_introduced_root_does_not_invent_a_group_alias() {
+    let proof = prove(
+        &old(false),
+        &split_live(),
+        true,
+        &[witness("owner", &[("left", "owner"), ("right", "copy")])],
+        MAX_DOCUMENT_NODES,
+    )
+    .unwrap();
+    assert_eq!(proof.historical_node(&id("g")), None);
+    assert_eq!(proof.historical_node(&id("copy")), Some(&id("owner")));
+    assert_eq!(
+        proof
+            .remap_instance(&InstancePath {
+                node: id("copy"),
+                repeats: vec![]
+            })
+            .unwrap()
+            .node,
+        id("owner")
+    );
+}
+
+#[test]
+fn transparent_partition_refinement_retains_full_leaf_and_old_partition_path() {
+    let old = split_live();
+    let live = admit(vec![
+        ("root", sequence(&["g"], 6)),
+        ("g", sequence(&["left", "middle", "right"], 6)),
+        ("left", partition("owner", 0, 1)),
+        ("middle", partition("third", 1, 2)),
+        ("right", partition("copy", 2, 6)),
+        ("owner", source()),
+        ("third", source()),
+        ("copy", source()),
+    ]);
+    let proof = old
+        .sound_owner_clock_correspondence_with_relations(
+            &live,
+            (&id("g"), &id("g")),
+            (&id("owner"), &id("third")),
+            &crate::SoundClockRepeatMap::default(),
+            &BTreeSet::new(),
+            &[witness("left", &[("left", "owner"), ("middle", "third")])],
+            MAX_DOCUMENT_NODES,
+        )
+        .unwrap();
+    assert_eq!(proof.historical_node(&id("g")), Some(&id("g")));
+    assert_eq!(proof.split_alias(&id("third")), Some(&id("owner")));
+    assert_eq!(proof.historical_node(&id("left")), None);
+    assert_eq!(proof.historical_node(&id("right")), Some(&id("right")));
+    assert_eq!(
+        proof
+            .remap_instance(&InstancePath {
+                node: id("third"),
+                repeats: vec![]
+            })
+            .unwrap()
+            .node,
+        id("owner")
+    );
+}
+
+#[test]
+fn introduced_split_scope_rejects_missing_owner_pairs_without_panicking() {
+    let historical = old(false);
+    let live = split_live();
+    for (scope, owner, live_owner) in [
+        ("owner", "owner", "missing"),
+        ("missing", "missing", "copy"),
+    ] {
+        assert!(
+            historical
+                .sound_owner_clock_correspondence_with_relations(
+                    &live,
+                    (&id(scope), &id("g")),
+                    (&id(owner), &id(live_owner)),
+                    &crate::SoundClockRepeatMap::default(),
+                    &BTreeSet::from([id("g")]),
+                    &[witness("owner", &[("left", "owner"), ("right", "copy")])],
+                    MAX_DOCUMENT_NODES,
+                )
+                .is_err()
+        );
+    }
+}
+
+#[test]
+fn malformed_forests_wrong_aliases_and_exterior_relations_refuse() {
+    let old = old(true);
+    let live = split_live();
+    let valid = witness("owner", &[("left", "owner"), ("right", "copy")]);
+    let mut reversed = valid.clone();
+    reversed.pieces.reverse();
+    let mut duplicate = valid.clone();
+    duplicate.pieces[1] = duplicate.pieces[0].clone();
+    let mut wrong_owner = valid.clone();
+    wrong_owner.pieces[1].full_owner = id("owner");
+    let mut wrong_history = valid.clone();
+    wrong_history.historical_node = id("g");
+    for bad in [reversed, duplicate, wrong_owner, wrong_history] {
+        assert!(prove(&old, &live, false, &[bad], MAX_DOCUMENT_NODES).is_err());
+    }
+    let partial = admit(vec![
+        ("root", sequence(&["g"], 5)),
+        ("g", sequence(&["left", "right"], 5)),
+        ("left", partition("owner", 0, 2)),
+        ("right", partition("copy", 3, 6)),
+        ("owner", source()),
+        ("copy", source()),
+    ]);
+    assert!(prove(&old, &partial, false, &[valid.clone()], MAX_DOCUMENT_NODES).is_err());
+    assert!(
+        old.sound_owner_clock_correspondence_with_relations(
+            &live,
+            (&id("owner"), &id("owner")),
+            (&id("owner"), &id("owner")),
+            &crate::SoundClockRepeatMap::default(),
+            &BTreeSet::new(),
+            &[valid],
+            MAX_DOCUMENT_NODES
+        )
+        .is_err()
+    );
+}
+
+#[test]
+fn split_proof_work_is_bounded_and_frozen_layouts_roundtrip() {
+    let old = old(true);
+    let live = split_live();
+    let splits = [witness("owner", &[("left", "owner"), ("right", "copy")])];
+    let proof = prove(&old, &live, false, &splits, MAX_DOCUMENT_NODES).unwrap();
+    assert!(prove(&old, &live, false, &splits, proof.work() - 1).is_err());
+    assert!(prove(&old, &live, false, &splits, proof.work()).is_ok());
+    assert_eq!(
+        FrozenAudioLayout::from_json(&old.to_json().unwrap()).unwrap(),
+        old
+    );
+    assert_eq!(
+        FrozenAudioLayout::from_json(&live.to_json().unwrap()).unwrap(),
+        live
+    );
+}

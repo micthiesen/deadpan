@@ -45,7 +45,7 @@ New Repeat plays start on their own clock. Changes to the owner's complete
 processing extent, including Repeat-owned sounds during count changes, still
 fail explicitly.
 
-Database 81 stores core schema 53. Earlier unused development packages refuse
+Database 85 stores core schema 56. Earlier unused development packages refuse
 before writes; see [development formats](DEVELOPMENT_FORMATS.md).
 
 ## Saved independent clocks
@@ -271,9 +271,9 @@ subtree.
 one shared complete pre-edit audio layout. Source/Hold fragments retain the full
 owner's processing input, independent event recipes, phase, prior journals and
 delivery crops. The group parent must remain outside every retained processing
-scope. Aligned grouping skips this capture entirely. Grouping or ungrouping
-inside a retained scope, root-owned BeatSound transport and removing a Sequence
-that owns sounds still refuse atomically. Separate root SoundEvents coexist
+scope. Aligned grouping skips this capture entirely when outside retained scopes.
+Root-owned BeatSound transport and removing a Sequence that owns sounds still
+refuse atomically. Separate root SoundEvents coexist
 without changing their recipes.
 Core tests cover direct, child, sibling and range groups plus refusals; the audio
 definition test compares rendered occurrence PCM before grouping, after a later
@@ -281,6 +281,30 @@ Hold insertion and deletion, and after Ungroup.
 See [endpoint grouping qualification](qualification/sound-group-endpoints-2026-10-22.md)
 for complete PCM, durable history, native workflow and real-media checks, plus
 the current qualification status and retained failures.
+
+An aligned `GroupSelection` can also wrap one complete direct Source or Hold
+inside an ordinary Sequence retained by a sound journal. It preserves every old
+scope, timing table and recipe, and records the fresh wrapper as introduced only
+in references that predate it. The wrapper has no historical alias before its
+birth. Later captures include its real processing clock. Endpoint Splits,
+composite selections and Repeat/Retime paths do not gain this permission.
+
+A subsequent explicit `Split` retains an ordered certificate connecting the
+complete historical Source or Hold to its adjacent delivery Partitions. The
+certificate admits repeated refinement only while the pieces cover that same
+complete input. It does not infer authority from matching labels, similar trees
+or a helper Split performed by another command. Whole-group copies rename the
+complete relation; partial captures discard relations outside their scope.
+
+The planner proves each reference against the complete ordered journal and
+derives when the wrapper was born. Shared group EQ and saturation keep one
+complete input across certified fragments, while each fragment retains its own
+delivery crop, gain, edges and Hold policy. Label and trim edits preserve this
+family; replacing the sound recipe retires it. Pre-birth gaps remain gaps, even
+when a later treatment could produce a filter tail there. Unsupported scope
+changes still refuse atomically. See the
+[aligned-scope qualification](qualification/aligned-sound-scope-2026-10-23.md)
+for measured controls, source identities and remaining vertical checks.
 
 ## Authored bus and remaining work
 
@@ -297,7 +321,7 @@ PCM cannot hide a revoked dependency.
 The final product still requires all of the following:
 
 - Extend independent sound clocks to edits inside a surviving processing branch.
-- Preserve or transform sound intervals through Trim, grouping inside a
+- Preserve or transform sound intervals through Trim, broader grouping inside a
   retained scope or with endpoint Splits, Repeat, Retime and occurrence
   isolation. A plain `Split` of an attached sound owner (or its ancestor) now
   uses the same transport as interior pauses: its new layout takes the leaf's

@@ -1,0 +1,350 @@
+//! Later temporal edits preserve the exact birth of ordinary sound groups.
+
+use deadpan_core::*;
+use std::collections::BTreeMap;
+
+fn id(value: &str) -> NodeId {
+    NodeId::new(value).unwrap()
+}
+fn revision(value: &str) -> RevisionId {
+    RevisionId::new(value).unwrap()
+}
+fn timing(value: &str) -> AudioTimingId {
+    AudioTimingId {
+        allocation: revision(value),
+        ordinal: 0,
+    }
+}
+fn frames(value: i64) -> FrameDuration {
+    FrameDuration::new(value).unwrap()
+}
+fn sound() -> SoundId {
+    SoundId::new("effect").unwrap()
+}
+fn hold(duration: i64) -> BeatNode {
+    BeatNode::hold(
+        "Same label",
+        HoldRecipe {
+            duration: frames(duration),
+            video: HoldVideo::Background,
+            picture_context: None,
+            audio: HoldAudio::Silence,
+        },
+    )
+}
+fn fixture() -> ProjectDocument {
+    let rate = FrameRate::new(30_000, 1001).unwrap();
+    let time_base = SourceTimeBase::new(1, 48_000).unwrap();
+    let span = SourceSpan::new(
+        SourceTimestamp {
+            ticks: 0,
+            time_base,
+        },
+        SourceTimestamp {
+            ticks: 8197,
+            time_base,
+        },
+    )
+    .unwrap();
+    let asset = AssetId::new("effect").unwrap();
+    let document = ProjectDocument::new(
+        ProjectId::new("introduced-group-transport").unwrap(),
+        revision("initial"),
+        PresentationBasis {
+            width: 16,
+            height: 16,
+            frame_rate: rate,
+            color_policy: ColorPolicy::SdrRec709,
+        },
+        id("root"),
+    )
+    .unwrap();
+    let mut wire = serde_json::to_value(document).unwrap();
+    wire["nodes"] = serde_json::to_value(BTreeMap::from([
+        (
+            id("root"),
+            BeatNode::sequence("Root", vec![id("lead"), id("top"), id("tail")]),
+        ),
+        (id("lead"), hold(2)),
+        (
+            id("top"),
+            BeatNode::sequence("Same label", vec![id("owner"), id("sibling")]),
+        ),
+        (id("owner"), hold(12)),
+        (id("sibling"), hold(5)),
+        (id("tail"), hold(3)),
+    ]))
+    .unwrap();
+    wire["assets"] = serde_json::to_value(BTreeMap::from([(
+        asset.clone(),
+        AssetRecord {
+            label: "Effect".into(),
+            content_hash: "a".repeat(64),
+            audio: Some(span),
+            video: None,
+            frame_count: None,
+            still_image: false,
+            source_qualification: Some(SourceQualificationId::new("b".repeat(64)).unwrap()),
+        },
+    )]))
+    .unwrap();
+    wire["beat_sounds"] = serde_json::to_value(BTreeMap::from([(
+        id("owner"),
+        BTreeMap::from([(
+            sound(),
+            BeatSound {
+                label: "Effect".into(),
+                source: SourceAudio { asset, span },
+                mapping: SourceAudioMapping::natural_rate(span, rate).unwrap(),
+                offset: AudioSample(37),
+                treatments: AudioTreatments::default(),
+                start_edge: AudioEdgePolicy::Hard,
+                end_edge: AudioEdgePolicy::Hard,
+                overflow: SoundOverflowPolicy::Reject,
+            },
+        )]),
+    )]))
+    .unwrap();
+    ProjectDocument::from_json(&wire.to_string()).unwrap()
+}
+fn request(document: &ProjectDocument, name: &str, command: Command) -> CommandRequest {
+    CommandRequest {
+        project_id: document.project_id().clone(),
+        expected_revision: document.revision_id().clone(),
+        new_revision: revision(name),
+        command,
+    }
+}
+fn edit(document: &ProjectDocument, name: &str, command: Command) -> ProjectDocument {
+    let before = document.to_json().unwrap();
+    let transaction = apply(document, &request(document, name, command)).unwrap();
+    let result = transaction.forward.apply(document).unwrap();
+    assert_eq!(
+        transaction
+            .inverse
+            .apply(&result)
+            .unwrap()
+            .to_json()
+            .unwrap(),
+        before
+    );
+    assert_eq!(document.to_json().unwrap(), before);
+    assert_eq!(
+        ProjectDocument::from_json(&result.to_json().unwrap()).unwrap(),
+        result
+    );
+    result
+}
+fn prefix(name: &str) -> Command {
+    let NodeKind::Hold { recipe } = hold(1).kind else {
+        unreachable!()
+    };
+    Command::InsertTime {
+        at: ProjectFrame(0),
+        hold: recipe,
+        id: id(name),
+        identities: SplitIdentities::default(),
+        timing: timing(name),
+    }
+}
+fn grouped() -> ProjectDocument {
+    let document = edit(&fixture(), "birth", prefix("birth"));
+    edit(
+        &document,
+        "grouped",
+        Command::GroupSelection {
+            parent: id("top"),
+            selection: SliceCaptureSelection::Child { node: id("owner") },
+            label: "Same label".into(),
+            identities: GroupSelectionIdentities {
+                group: id("fresh"),
+                split: SplitIdentities::default(),
+            },
+            timing: timing("grouped"),
+        },
+    )
+}
+fn journal(document: &ProjectDocument) -> &SoundClockJournal {
+    &document.audio_bindings().sound_clocks()[&id("owner")][&sound()]
+}
+
+fn paste(document: &ProjectDocument, slice: CapturedEditSlice, name: &str) -> ProjectDocument {
+    let required = slice.identity_requirements().unwrap();
+    edit(
+        document,
+        name,
+        Command::SpliceSlice {
+            parent: id("root"),
+            index: 0,
+            slice,
+            timing: timing(name),
+            identities: SlicePasteIdentities {
+                authored: OccurrenceIdentities {
+                    nodes: (0..required.nodes)
+                        .map(|n| id(&format!("{name}-node-{n}")))
+                        .collect(),
+                    marks: (0..required.marks)
+                        .map(|n| MarkId::new(format!("{name}-mark-{n}")).unwrap())
+                        .collect(),
+                },
+                aliases: (0..required.aliases)
+                    .map(|n| id(&format!("{name}-alias-{n}")))
+                    .collect(),
+            },
+        },
+    )
+}
+
+#[test]
+fn later_move_keeps_unpaired_live_scope_root_and_its_historical_owner_scope() {
+    let document = grouped();
+    let slice = CapturedEditSlice::capture_selection(
+        &document,
+        &id("top"),
+        &SliceCaptureSelection::Child { node: id("fresh") },
+        timing("capture"),
+    )
+    .unwrap();
+    let pasted = paste(&document, slice, "pasted");
+    let owner = pasted
+        .beat_sounds()
+        .keys()
+        .find(|owner| owner.as_str().starts_with("pasted-"))
+        .unwrap()
+        .clone();
+    let before = &pasted.audio_bindings().sound_clocks()[&owner][&sound()];
+    assert_eq!(before.clocks().len(), 2);
+    let old = before.clocks()[0].clone();
+    assert_eq!(old.scope(), old.owner());
+    assert!(old.introduced_groups().contains(before.scope()));
+    assert!(before.clocks()[1].introduced_groups().is_empty());
+    let moved = edit(&pasted, "move-pasted", prefix("move-pasted"));
+    let after = &moved.audio_bindings().sound_clocks()[&owner][&sound()];
+    assert_eq!(after.scope(), before.scope());
+    assert_eq!(after.clocks().len(), 3);
+    assert_eq!(after.clocks()[0], old);
+    assert_eq!(after.clocks()[1], before.clocks()[1]);
+    assert_eq!(after.clocks()[2].scope(), before.scope());
+    assert!(after.clocks()[2].introduced_groups().is_empty());
+}
+
+#[test]
+fn move_away_and_back_preserves_old_groups_and_appends_genuine_new_contexts() {
+    let grouped = grouped();
+    let old = journal(&grouped).clocks()[0].clone();
+    assert_eq!(
+        old.introduced_groups(),
+        &std::collections::BTreeSet::from([id("fresh")])
+    );
+    let moved = edit(&grouped, "away", prefix("away"));
+    let returned = edit(
+        &moved,
+        "back",
+        Command::DeleteRipple {
+            node: id("away"),
+            timing: timing("back"),
+        },
+    );
+    let journal = journal(&returned);
+    assert_eq!(journal.scope(), &id("top"));
+    assert_eq!(journal.clocks().len(), 3);
+    assert_eq!(journal.clocks()[0], old);
+    for reference in &journal.clocks()[1..] {
+        assert!(reference.introduced_groups().is_empty());
+        let layout = &returned.audio_bindings().timings()[reference.timing()];
+        assert!(layout.nodes().contains_key(&id("fresh")));
+    }
+    assert_eq!(returned.beat_sounds(), grouped.beat_sounds());
+}
+
+#[test]
+fn exterior_sibling_duration_edit_preserves_relations_without_another_capture() {
+    let document = grouped();
+    let after = edit(
+        &document,
+        "tail-duration",
+        Command::SetHoldDuration {
+            node: id("tail"),
+            duration: frames(8),
+        },
+    );
+    assert_eq!(journal(&after), journal(&document));
+    assert_eq!(
+        after.audio_bindings().timings(),
+        document.audio_bindings().timings()
+    );
+}
+
+#[test]
+fn split_retains_complete_scope_group_history_and_explicit_full_owner_aliases() {
+    let document = grouped();
+    let after = edit(
+        &document,
+        "split",
+        Command::Split {
+            node: id("owner"),
+            at: frames(4),
+            identities: SplitIdentities {
+                nodes: vec![id("left"), id("right"), id("copy")],
+            },
+        },
+    );
+    assert_eq!(after.beat_sounds().len(), 2);
+    for events in after.audio_bindings().sound_clocks().values() {
+        let journal = &events[&sound()];
+        assert_eq!(journal.scope(), &id("top"));
+        assert_eq!(journal.clocks().len(), 2);
+        assert!(
+            journal
+                .clocks()
+                .iter()
+                .all(|reference| reference.introduced_splits().len() == 1)
+        );
+        assert!(
+            journal.clocks()[0]
+                .introduced_groups()
+                .contains(&id("fresh"))
+        );
+        assert!(journal.clocks()[1].introduced_groups().is_empty());
+        assert_eq!(journal.clocks()[0].owner(), &id("owner"));
+    }
+}
+
+#[test]
+fn changed_owner_duration_still_refuses_atomically() {
+    let document = grouped();
+    let before = document.to_json().unwrap();
+    let error = apply(
+        &document,
+        &request(
+            &document,
+            "resized",
+            Command::SetHoldDuration {
+                node: id("owner"),
+                duration: frames(13),
+            },
+        ),
+    )
+    .unwrap_err();
+    assert_eq!(error.code, EditErrorCode::InvalidCommand);
+    assert_eq!(document.to_json().unwrap(), before);
+}
+
+#[test]
+fn malformed_or_missing_group_relations_cannot_enter_later_transport() {
+    let document = grouped();
+    let before = document.to_json().unwrap();
+    for groups in [
+        serde_json::json!([]),
+        serde_json::json!(["missing"]),
+        serde_json::json!(["root"]),
+        serde_json::json!(["sibling"]),
+        serde_json::json!(["fresh", "fresh"]),
+    ] {
+        let mut wire = serde_json::to_value(&document).unwrap();
+        wire["audio_bindings"]["sound_clocks"]["owner"]["effect"]["clocks"][0]["introduced_groups"] =
+            groups;
+        assert!(ProjectDocument::from_json(&wire.to_string()).is_err());
+    }
+    assert_eq!(document.to_json().unwrap(), before);
+}

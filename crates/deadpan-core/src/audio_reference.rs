@@ -6,6 +6,7 @@ mod preflight;
 mod scale_projection;
 pub use exact_clock::FrozenRetimeClock;
 mod sound_placement;
+mod split_correspondence;
 pub use sound_placement::FrozenSoundPlacement;
 
 use std::collections::{BTreeMap, BTreeSet};
@@ -353,6 +354,7 @@ pub struct SoundClockCorrespondence {
 #[derive(Debug)]
 struct SoundClockCorrespondenceInner {
     live_to_historical: BTreeMap<NodeId, NodeId>,
+    split_aliases: BTreeMap<NodeId, NodeId>,
     introduced: BTreeMap<NodeId, IterationOrder>,
     historical_placement_repeats: BTreeSet<NodeId>,
     historical_path: ScopedPathIndex,
@@ -384,6 +386,12 @@ impl SoundClockCorrespondence {
     /// Historical node corresponding to a live node in the paired scope.
     pub fn historical_node(&self, live: &NodeId) -> Option<&NodeId> {
         self.inner.live_to_historical.get(live)
+    }
+
+    /// Exact leaf aliases established by an explicit complete Split forest.
+    /// Delivery Partitions themselves never acquire a historical alias.
+    pub fn split_alias(&self, live: &NodeId) -> Option<&NodeId> {
+        self.inner.split_aliases.get(live)
     }
 
     /// All proven pairs, ordered by the live NodeId.
@@ -1162,10 +1170,10 @@ impl FrozenAudioLayout {
     ) -> Result<SoundClockCorrespondence, DocumentError> {
         self.sound_clock_correspondence_inner(
             current,
-            historical_scope,
-            live_scope,
+            (historical_scope, live_scope),
             repeats,
             None,
+            (&BTreeSet::new(), &[]),
             maximum_work,
         )
     }
@@ -1211,12 +1219,60 @@ impl FrozenAudioLayout {
         repeats: &crate::SoundClockRepeatMap,
         maximum_work: usize,
     ) -> Result<SoundClockCorrespondence, DocumentError> {
+        self.sound_owner_clock_correspondence_with_groups(
+            current,
+            (historical_scope, live_scope),
+            owners,
+            repeats,
+            &BTreeSet::new(),
+            maximum_work,
+        )
+    }
+
+    /// Pair one independent sound owner while passing through only explicitly
+    /// introduced ordinary Sequence wrappers inside its live scope. A listed
+    /// scope itself may only be a unary chain to the recorded Source/Hold owner
+    /// when the historical scope is that historical owner. Every old node still
+    /// has an ordered pair; a new wrapper has no historical alias.
+    /// This is clock correspondence only, not source or processing authority.
+    pub fn sound_owner_clock_correspondence_with_groups(
+        &self,
+        current: &Self,
+        scopes: (&NodeId, &NodeId),
+        owners: (&NodeId, &NodeId),
+        repeats: &crate::SoundClockRepeatMap,
+        introduced_groups: &BTreeSet<NodeId>,
+        maximum_work: usize,
+    ) -> Result<SoundClockCorrespondence, DocumentError> {
+        self.sound_owner_clock_correspondence_with_relations(
+            current,
+            scopes,
+            owners,
+            repeats,
+            (introduced_groups, &[]),
+            maximum_work,
+        )
+    }
+
+    /// Opt-in correspondence through explicitly certified complete Split
+    /// forests, in addition to introduced ordinary groups. Every old alias
+    /// stays paired; only certified full leaf copies may share an old leaf.
+    /// The relation pair contains introduced groups followed by Split forests.
+    pub fn sound_owner_clock_correspondence_with_relations(
+        &self,
+        current: &Self,
+        scopes: (&NodeId, &NodeId),
+        owners: (&NodeId, &NodeId),
+        repeats: &crate::SoundClockRepeatMap,
+        introduced: (&BTreeSet<NodeId>, &[crate::SoundClockSplit]),
+        maximum_work: usize,
+    ) -> Result<SoundClockCorrespondence, DocumentError> {
         self.sound_clock_correspondence_inner(
             current,
-            historical_scope,
-            live_scope,
+            scopes,
             repeats,
             Some(owners),
+            introduced,
             maximum_work,
         )
     }
@@ -1224,12 +1280,14 @@ impl FrozenAudioLayout {
     fn sound_clock_correspondence_inner(
         &self,
         current: &Self,
-        historical_scope: &NodeId,
-        live_scope: &NodeId,
+        scopes: (&NodeId, &NodeId),
         repeats: &crate::SoundClockRepeatMap,
         owners: Option<(&NodeId, &NodeId)>,
+        introduced: (&BTreeSet<NodeId>, &[crate::SoundClockSplit]),
         maximum_work: usize,
     ) -> Result<SoundClockCorrespondence, DocumentError> {
+        let (historical_scope, live_scope) = scopes;
+        let (introduced_groups, introduced_splits) = introduced;
         if maximum_work == 0 || maximum_work > MAX_DOCUMENT_NODES {
             return Err(limit("invalid sound clock comparison budget"));
         }
@@ -1244,6 +1302,26 @@ impl FrozenAudioLayout {
         }
 
         let mut work = 0usize;
+        let mut split_state =
+            split_correspondence::SplitProofState::new(introduced_splits, &mut work, maximum_work)?;
+        // Charge the complete relation before looking up its entries or
+        // allocating the visited set. Unused and exterior entries are rejected
+        // after the subtree walk, rather than searching unrelated branches.
+        spend(&mut work, introduced_groups.len(), maximum_work)?;
+        for group in introduced_groups {
+            if group == &current.root
+                || self.nodes.contains_key(group)
+                || owners.is_some_and(|(_, live_owner)| group == live_owner)
+                || current.derived_clocks.contains_key(group)
+                || !matches!(
+                    current.nodes.get(group).map(|node| &node.kind),
+                    Some(FrozenAudioKind::Sequence { .. })
+                )
+            {
+                return Err(invalid("invalid introduced sound clock group"));
+            }
+        }
+        let mut visited_groups = BTreeSet::new();
         let mut live_to_historical = BTreeMap::new();
         let mut historical_seen = BTreeSet::new();
         let mut live_parents = BTreeMap::new();
@@ -1303,13 +1381,111 @@ impl FrozenAudioLayout {
                 }
             }
         }
-        let mut pending = vec![(historical_scope.clone(), live_scope.clone())];
-        while let Some((historical_id, live_id)) = pending.pop() {
+        let mut pending =
+            if introduced_groups.contains(live_scope) {
+                let (historical_owner, live_owner) = owners.ok_or_else(|| {
+                    invalid("introduced sound clock scope requires an owner pair")
+                })?;
+                if historical_scope != historical_owner
+                    || !matches!(
+                        self.nodes.get(historical_owner).map(|node| &node.kind),
+                        Some(FrozenAudioKind::Source { .. } | FrozenAudioKind::Hold { .. })
+                    )
+                    || !matches!(
+                        current.nodes.get(live_owner).map(|node| &node.kind),
+                        Some(FrozenAudioKind::Source { .. } | FrozenAudioKind::Hold { .. })
+                    )
+                    || self.derived_clocks.contains_key(historical_owner)
+                    || current.derived_clocks.contains_key(live_owner)
+                    || self.node_extent(historical_owner)? != current.node_extent(live_scope)?
+                {
+                    return Err(invalid(
+                        "introduced sound clock scope is not one complete owner",
+                    ));
+                }
+                // Retain the narrow unary-root contract, extended only by an exact
+                // certified full Split forest at the end of that recorded chain.
+                let mut group = live_scope;
+                loop {
+                    spend(&mut work, 1, maximum_work)?;
+                    if !introduced_groups.contains(group) {
+                        return Err(invalid(
+                            "introduced sound clock scope has an unlisted wrapper",
+                        ));
+                    }
+                    let FrozenAudioKind::Sequence { children } = &current.nodes[group].kind else {
+                        return Err(invalid("introduced sound clock scope is not a Sequence"));
+                    };
+                    if children.len() == 1 {
+                        spend(&mut work, 1, maximum_work)?;
+                        if !current.index.parents.get(&children[0]).is_some_and(
+                            |(parent, offset)| parent == group && *offset == ExactRatio::ZERO,
+                        ) {
+                            return Err(invalid(
+                                "introduced sound clock scope has an invalid child edge",
+                            ));
+                        }
+                    }
+                    if children.len() == 1 && &children[0] == live_owner {
+                        break;
+                    }
+                    if split_state.root_forest(historical_scope, children) {
+                        break;
+                    }
+                    if children.len() != 1 || !introduced_groups.contains(&children[0]) {
+                        return Err(invalid(
+                            "introduced sound clock scope is not unary or a complete Split forest",
+                        ));
+                    }
+                    group = &children[0];
+                }
+                let parent = &current.index.parents[live_scope].0;
+                let depth = live_parents.len().saturating_sub(1);
+                let pairs = split_correspondence::SequenceRelations {
+                    historical: self,
+                    current,
+                    groups: introduced_groups,
+                    visited_groups: &mut visited_groups,
+                    live_parents: &mut live_parents,
+                    historical_parents: &mut historical_parents,
+                    splits: &mut split_state,
+                    work: &mut work,
+                    maximum: maximum_work,
+                }
+                .pair(
+                    None,
+                    std::slice::from_ref(historical_scope),
+                    (parent, std::slice::from_ref(live_scope), depth),
+                    Some(live_scope),
+                )?;
+                let mut pending = Vec::with_capacity(pairs.len());
+                for pair in pairs {
+                    if live_parents
+                        .insert(pair.live.clone(), pair.live_parent)
+                        .is_some()
+                    {
+                        return Err(invalid("introduced sound clock scope has a shared owner"));
+                    }
+                    pending.push((pair.historical, pair.live, pair.live_depth));
+                }
+                pending
+            } else {
+                vec![(
+                    historical_scope.clone(),
+                    live_scope.clone(),
+                    live_parents.len(),
+                )]
+            };
+        while let Some((historical_id, live_id, live_depth)) = pending.pop() {
+            if live_depth > MAX_DOCUMENT_DEPTH {
+                return Err(limit("sound clock subtree depth exceeds limit"));
+            }
             spend(&mut work, 1, maximum_work)?;
             if live_to_historical
                 .insert(live_id.clone(), historical_id.clone())
                 .is_some()
                 || !historical_seen.insert(historical_id.clone())
+                    && split_state.aliases.get(&live_id) != Some(&historical_id)
             {
                 return Err(invalid(
                     "sound clock subtree correspondence is not one-to-one",
@@ -1329,7 +1505,15 @@ impl FrozenAudioLayout {
             spend(&mut work, pair_work, maximum_work)?;
             if historical_node.duration != live_node.duration
                 || self.derived_clocks.get(&historical_id) != current.derived_clocks.get(&live_id)
-                || !same_sound_clock_kind(&historical_node.kind, &live_node.kind)
+                || !(same_sound_clock_kind(&historical_node.kind, &live_node.kind)
+                    || (!introduced_groups.is_empty() || !introduced_splits.is_empty())
+                        && matches!(
+                            (&historical_node.kind, &live_node.kind),
+                            (
+                                FrozenAudioKind::Sequence { .. },
+                                FrozenAudioKind::Sequence { .. }
+                            )
+                        ))
             {
                 return Err(invalid("sound clock processing subtree changed"));
             }
@@ -1349,8 +1533,41 @@ impl FrozenAudioLayout {
                 });
             let children = if output_owner {
                 Vec::new()
+            } else if let (
+                FrozenAudioKind::Sequence {
+                    children: historical,
+                },
+                FrozenAudioKind::Sequence { children: live },
+            ) = (&historical_node.kind, &live_node.kind)
+            {
+                split_correspondence::SequenceRelations {
+                    historical: self,
+                    current,
+                    groups: introduced_groups,
+                    visited_groups: &mut visited_groups,
+                    live_parents: &mut live_parents,
+                    historical_parents: &mut historical_parents,
+                    splits: &mut split_state,
+                    work: &mut work,
+                    maximum: maximum_work,
+                }
+                .pair(
+                    Some(&historical_id),
+                    historical,
+                    (&live_id, live, live_depth),
+                    None,
+                )?
             } else {
                 paired_sound_clock_children(self, current, &historical_id, &live_id)?
+                    .into_iter()
+                    .map(|(historical, live)| SoundClockChildPair {
+                        historical,
+                        live,
+                        live_parent: live_id.clone(),
+                        historical_parent: None,
+                        live_depth: live_depth + 1,
+                    })
+                    .collect()
             };
             if let FrozenAudioKind::Repeat { iterations, .. } = &live_node.kind {
                 let historical_repeat = scoped_repeat(self, &historical_id)?;
@@ -1362,23 +1579,39 @@ impl FrozenAudioLayout {
                 live_repeats.insert(live_id.clone(), live_repeat);
                 historical_repeats.insert(historical_id.clone(), historical_repeat);
             }
-            for (historical_child, live_child) in children {
-                if historical_parents
-                    .insert(historical_child.clone(), historical_id.clone())
+            for child in children {
+                let historical_parent = child
+                    .historical_parent
+                    .unwrap_or_else(|| historical_id.clone());
+                let previous_parent =
+                    historical_parents.insert(child.historical.clone(), historical_parent.clone());
+                if previous_parent.is_some_and(|previous| {
+                    split_state.aliases.get(&child.live) != Some(&child.historical)
+                        || previous != historical_parent
+                }) || live_parents
+                    .insert(child.live.clone(), child.live_parent)
                     .is_some()
-                    || live_parents
-                        .insert(live_child.clone(), live_id.clone())
-                        .is_some()
                 {
                     return Err(invalid("sound clock subtree contains a shared child"));
                 }
-                pending.push((historical_child, live_child));
+                pending.push((child.historical, child.live, child.live_depth));
             }
+        }
+        if visited_groups.len() != introduced_groups.len() {
+            return Err(invalid(
+                "introduced sound clock group is outside the paired subtree",
+            ));
+        }
+        if !split_state.complete() {
+            return Err(invalid(
+                "sound clock Split relation is outside the paired subtree",
+            ));
         }
 
         Ok(SoundClockCorrespondence {
             inner: Arc::new(SoundClockCorrespondenceInner {
                 live_to_historical,
+                split_aliases: split_state.aliases,
                 introduced,
                 historical_placement_repeats: historical_ancestors.into_iter().collect(),
                 historical_path: ScopedPathIndex {
@@ -2108,6 +2341,64 @@ impl FrozenAudioLayout {
         Ok((repeats, work))
     }
 
+    /// Whether this node's complete placement path contains only ordinary
+    /// Sequences. Uses the admitted parent index, including override roots.
+    pub(crate) fn ordinary_sound_ancestry(
+        &self,
+        target: &NodeId,
+        maximum_work: usize,
+    ) -> Result<(bool, usize), DocumentError> {
+        if maximum_work == 0 || maximum_work > MAX_DOCUMENT_NODES {
+            return Err(limit("invalid sound grouping ancestry budget"));
+        }
+        if !self.nodes.contains_key(target) {
+            return Err(invalid("sound grouping owner is missing"));
+        }
+        let mut node = target;
+        let mut work = 0;
+        loop {
+            spend(&mut work, 1, maximum_work)?;
+            if self.derived_clocks.contains_key(node) {
+                return Ok((false, work));
+            }
+            if node == &self.root {
+                return Ok((true, work));
+            }
+            let (parent, _) = self
+                .index
+                .parents
+                .get(node)
+                .ok_or_else(|| invalid("sound grouping owner ancestry is missing"))?;
+            if !matches!(self.nodes[parent].kind, FrozenAudioKind::Sequence { .. }) {
+                return Ok((false, work));
+            }
+            node = parent;
+        }
+    }
+
+    pub(crate) fn sound_scope_contains(
+        &self,
+        scope: &NodeId,
+        target: &NodeId,
+        maximum_work: usize,
+    ) -> Result<(bool, usize), DocumentError> {
+        if !self.nodes.contains_key(scope) || !self.nodes.contains_key(target) {
+            return Ok((false, 0));
+        }
+        let mut node = target;
+        let mut work = 0;
+        loop {
+            spend(&mut work, 1, maximum_work)?;
+            if node == scope {
+                return Ok((true, work));
+            }
+            if node == &self.root {
+                return Ok((false, work));
+            }
+            node = &self.index.parents[node].0;
+        }
+    }
+
     /// Immediate owned child on the target's path below an explicit ancestor.
     /// Sparse overrides are indexed parents, so unrelated branches cost no work.
     pub(crate) fn branch_below(
@@ -2237,6 +2528,14 @@ fn sound_clock_pair_work(
     node_work(historical, historical_id)?
         .checked_add(node_work(current, live_id)?)
         .ok_or_else(|| limit("sound clock pair work overflow"))
+}
+
+struct SoundClockChildPair {
+    historical: NodeId,
+    historical_parent: Option<NodeId>,
+    live: NodeId,
+    live_parent: NodeId,
+    live_depth: usize,
 }
 
 fn paired_sound_clock_children(
@@ -2872,6 +3171,11 @@ mod scoped_capture_tests {
         }
     }
 }
+
+#[cfg(test)]
+mod group_correspondence_tests;
+#[cfg(test)]
+mod split_correspondence_tests;
 
 #[cfg(test)]
 mod scoped_capture_property {

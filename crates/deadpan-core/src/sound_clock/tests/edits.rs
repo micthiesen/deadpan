@@ -2,6 +2,7 @@ use super::*;
 
 mod grouping;
 mod repeats;
+mod split_forests;
 
 fn timing(name: &str) -> AudioTimingId {
     AudioTimingId {

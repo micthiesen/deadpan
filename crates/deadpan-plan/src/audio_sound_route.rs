@@ -451,6 +451,178 @@ impl AudioSoundRoute<AudioSample> {
         ))
     }
 
+    /// Geometric part of a checked processing-birth transform. The caller must
+    /// establish the boundary from the exact context/journal chronology. This
+    /// private method does not grant authority to choose a processing birth.
+    ///
+    /// Preserve every original delivery mask through `boundary`, inclusive.
+    /// Only the later complete-operand suffix is reduced to one exact physical
+    /// sample translation. In particular, widening later windows cannot revive
+    /// a label discarded by the retained prefix.
+    ///
+    /// Returns the conservative preparation work charged before cloning any
+    /// node, grid, or window. The supplied budget is one caller-owned budget.
+    pub(crate) fn processing_history_from_boundary(
+        &self,
+        boundary: usize,
+        maximum_work: usize,
+    ) -> Result<(Option<Self>, usize), PlanError> {
+        let chain = self.occurrence.as_ref().ok_or(PlanError::InvalidPlan(
+            "sound history requires occurrence windows",
+        ))?;
+        if boundary >= chain.windows.len() {
+            return Err(PlanError::InvalidPlan(
+                "sound processing birth is outside its placement chain",
+            ));
+        }
+        let prefix = boundary.checked_add(1).ok_or(TimeError::Overflow)?;
+        // Occurrence admission already proves a full unary identity chain:
+        // each retained Ripple owns one Keep. This covers scanning windows and
+        // suffix deltas, cloning each prefix node/map/grid/window, and the two
+        // linear constructors below. Charge before those allocations.
+        let work = chain
+            .windows
+            .len()
+            .checked_mul(3)
+            .and_then(|work| {
+                prefix
+                    .checked_mul(8)
+                    .and_then(|copy| work.checked_add(copy))
+            })
+            .and_then(|work| work.checked_add(16))
+            .filter(|work| *work <= maximum_work)
+            .ok_or(PlanError::AudioQueryLimit("sound processing history work"))?;
+        let extent = self.route.recipe_extent();
+        // The birth's complete operand must itself be established. A crop in
+        // an earlier delivery is retained; a crop at or after the proposed
+        // processing birth cannot be widened by this narrow primitive.
+        if chain.windows[boundary..]
+            .iter()
+            .any(|window| window.selection != (ExactRatio::ZERO..extent))
+        {
+            return Ok((None, work));
+        }
+        if prefix == chain.windows.len() {
+            // The owner exists only at the final/live placement. Its input is
+            // exactly the bus already delivered there; there is no suffix to
+            // expand and no reason to consume another route-node slot.
+            return Ok((Some(self.clone()), work));
+        }
+        let shift = chain.deltas[prefix..]
+            .iter()
+            .try_fold(0_i128, |shift, delta| {
+                shift.checked_sub(*delta).ok_or(TimeError::Overflow)
+            })?;
+        let terminal_grid = self.grids[boundary].translated_samples(shift)?;
+        let keep = deadpan_core::SoundRippleMap::new(
+            extent,
+            0,
+            vec![deadpan_core::SoundRippleNode::Keep {
+                range: deadpan_core::ExactFrameRange::new(ExactRatio::ZERO, extent)?,
+            }],
+        )?;
+        let input = u32::try_from(boundary).map_err(|_| TimeError::Overflow)?;
+        let root = input.checked_add(1).ok_or(TimeError::Overflow)?;
+        let output_length = prefix.checked_add(1).ok_or(TimeError::Overflow)?;
+        let mut nodes = Vec::with_capacity(output_length);
+        nodes.extend_from_slice(&self.route.nodes()[..prefix]);
+        nodes.push(SoundRouteNode::Ripple { input, map: keep });
+        let route = SoundRoute::new(extent, root, nodes)?;
+        let mut grids = Vec::with_capacity(output_length);
+        grids.extend_from_slice(&self.grids[..prefix]);
+        grids.push(terminal_grid);
+        let mut windows = Vec::with_capacity(output_length);
+        windows.extend_from_slice(&chain.windows[..prefix]);
+        // Anchor deltas from the discarded suffix are already carried by
+        // `shift`. An integral translation gives the same delta for every
+        // anchor; retaining the original identity anchor matches the existing
+        // all-history transform when boundary == 0.
+        windows.push(AudioOccurrenceWindow {
+            selection: ExactRatio::ZERO..extent,
+            anchor: self.identity_anchor,
+        });
+        Ok((
+            Some(
+                Self::new_inner(route, grids, AudioBoundaryRule::RoundEven)?
+                    .with_occurrence_windows(windows)?,
+            ),
+            work,
+        ))
+    }
+
+    /// Number of checked chronological occurrence placements. A general
+    /// non-occurrence route cannot establish journal placement correspondence.
+    pub(crate) fn occurrence_placement_count(&self) -> usize {
+        self.occurrence
+            .as_ref()
+            .map_or(0, |chain| chain.windows.len())
+    }
+
+    /// A certified Split divides one continuing temporal input into delivery
+    /// pieces. Keep every crop, including all pre-birth losses, but place the
+    /// later crops on that owner's retained physical clock. Each shift is
+    /// established by the caller from the exact paired context chronology.
+    /// A fragment's independently rounded delivery anchor is not that clock.
+    pub(crate) fn processing_history_with_context_shifts(
+        &self,
+        boundary: usize,
+        shifts: &[i128],
+        maximum_work: usize,
+    ) -> Result<(Option<Self>, usize), PlanError> {
+        let chain = self.occurrence.as_ref().ok_or(PlanError::InvalidPlan(
+            "sound context history requires occurrence windows",
+        ))?;
+        if boundary >= chain.windows.len()
+            || shifts.len() != chain.windows.len()
+            || shifts[boundary] != 0
+        {
+            return Err(PlanError::InvalidPlan(
+                "incomplete sound context clock shifts",
+            ));
+        }
+        let work = chain
+            .windows
+            .len()
+            .checked_mul(12)
+            .and_then(|used| used.checked_add(16))
+            .filter(|used| *used <= maximum_work)
+            .ok_or(PlanError::AudioQueryLimit("sound context history work"))?;
+        if chain.windows[boundary].selection != (ExactRatio::ZERO..self.route.recipe_extent()) {
+            return Ok((None, work));
+        }
+        let mut grids = Vec::with_capacity(self.grids.len());
+        grids.extend_from_slice(&self.grids[..=boundary]);
+        for shift in &shifts[boundary + 1..] {
+            grids.push(self.grids[boundary].translated_samples(*shift)?);
+        }
+        Ok((
+            Some(
+                Self::new_inner(self.route.clone(), grids, AudioBoundaryRule::RoundEven)?
+                    .with_occurrence_windows(chain.windows.clone())?,
+            ),
+            work,
+        ))
+    }
+
+    /// Exact geometric comparison for a placement independently reconstructed
+    /// from its checked journal reference. Grid phase, tie parity, selection,
+    /// and delivery anchor all participate.
+    pub(crate) fn occurrence_placement_matches(
+        &self,
+        index: usize,
+        grid: &AudioSampleGrid<AudioSample>,
+        window: &AudioOccurrenceWindow,
+    ) -> bool {
+        self.grids
+            .get(index)
+            .is_some_and(|stored| *stored == grid.rebrand::<ReferenceSample>())
+            && self
+                .occurrence
+                .as_ref()
+                .and_then(|chain| chain.windows.get(index))
+                .is_some_and(|stored| stored == window)
+    }
+
     pub(crate) fn occurrence_transitions(
         &self,
     ) -> Result<
@@ -642,5 +814,352 @@ mod processing_history_tests {
                 delivery.recipe_grid().at(AudioSample(sample - 1)).unwrap()
             );
         }
+    }
+}
+
+#[cfg(test)]
+mod processing_birth_geometry_tests {
+    use super::*;
+
+    fn ratio(n: i128, d: i128) -> ExactRatio {
+        ExactRatio::new(n, d).unwrap()
+    }
+
+    fn chain(
+        extent: ExactRatio,
+        origins: &[ExactRatio],
+        selections: &[Range<ExactRatio>],
+    ) -> AudioSoundRoute<AudioSample> {
+        assert_eq!(origins.len(), selections.len());
+        let keep = deadpan_core::SoundRippleMap::new(
+            extent,
+            0,
+            vec![deadpan_core::SoundRippleNode::Keep {
+                range: deadpan_core::ExactFrameRange::new(ExactRatio::ZERO, extent).unwrap(),
+            }],
+        )
+        .unwrap();
+        let mut nodes = vec![SoundRouteNode::Recipe {}];
+        nodes.extend((1..origins.len()).map(|index| SoundRouteNode::Ripple {
+            input: u32::try_from(index - 1).unwrap(),
+            map: keep.clone(),
+        }));
+        let route =
+            SoundRoute::new(extent, u32::try_from(origins.len() - 1).unwrap(), nodes).unwrap();
+        let grids = origins
+            .iter()
+            .map(|origin| {
+                AudioSampleGrid::new(*origin, ExactRatio::ONE, AudioBoundaryRule::RoundEven)
+                    .unwrap()
+            })
+            .collect();
+        let windows = selections
+            .iter()
+            .cloned()
+            .map(|selection| AudioOccurrenceWindow {
+                selection,
+                anchor: ExactRatio::ZERO,
+            })
+            .collect();
+        AudioSoundRoute::<AudioSample>::new(route, grids)
+            .unwrap()
+            .with_occurrence_windows(windows)
+            .unwrap()
+    }
+
+    fn all_full(origins: &[ExactRatio]) -> AudioSoundRoute<AudioSample> {
+        let extent = ratio(5, 2);
+        chain(
+            extent,
+            origins,
+            &vec![ExactRatio::ZERO..extent; origins.len()],
+        )
+    }
+
+    fn mapped(route: &AudioSoundRoute<AudioSample>, sample: i64) -> Option<ExactRatio> {
+        let support = route.samples();
+        if sample < support.start.0 || sample >= support.end.0 {
+            return None;
+        }
+        let query = route
+            .query(
+                AudioSample(sample)..AudioSample(sample + 1),
+                Default::default(),
+            )
+            .unwrap();
+        assert_eq!(query.spans.len(), 1);
+        query.spans[0]
+            .sampling
+            .map(|map| map.local_at(AudioSample(sample)).unwrap())
+    }
+
+    #[test]
+    fn boundary_zero_matches_existing_all_history_transform() {
+        let delivery = all_full(&[ratio(-1, 2), ExactRatio::ZERO, ratio(-1, 2), ratio(-5, 2)]);
+        let old = delivery.complete_processing_history().unwrap().unwrap();
+        let (new, work) = delivery.processing_history_from_boundary(0, 1000).unwrap();
+        let new = new.unwrap();
+        assert!(work > 0);
+        assert_eq!(new.route, old.route);
+        assert_eq!(new.grids, old.grids);
+        assert_eq!(new.allocations, old.allocations);
+        assert_eq!(
+            new.occurrence.as_ref().unwrap().windows,
+            old.occurrence.as_ref().unwrap().windows
+        );
+        assert_eq!(
+            new.occurrence.as_ref().unwrap().deltas,
+            old.occurrence.as_ref().unwrap().deltas
+        );
+        assert_eq!(
+            new.query(new.samples(), Default::default()).unwrap(),
+            old.query(old.samples(), Default::default()).unwrap()
+        );
+    }
+
+    #[test]
+    fn a_group_born_before_phase_loss_retains_the_terminal_label() {
+        // Initial allocation [0,3), then [0,2), then [0,3), finally [2,5).
+        // Ordinary delivery loses old label 2 at the second placement.
+        let delivery = all_full(&[ratio(-1, 2), ExactRatio::ZERO, ratio(-1, 2), ratio(-5, 2)]);
+        assert_eq!(delivery.recipe_samples(), AudioSample(0)..AudioSample(3));
+        assert_eq!(delivery.samples(), AudioSample(2)..AudioSample(5));
+        assert!(mapped(&delivery, 4).is_none());
+        let (history, _) = delivery.processing_history_from_boundary(0, 1000).unwrap();
+        let history = history.unwrap();
+        assert_eq!(history.samples(), AudioSample(2)..AudioSample(5));
+        assert_eq!(
+            mapped(&history, 4),
+            Some(delivery.recipe_grid().at(AudioSample(2)).unwrap())
+        );
+    }
+
+    #[test]
+    fn a_later_birth_preserves_prior_loss_even_after_widening() {
+        let delivery = all_full(&[ratio(-1, 2), ExactRatio::ZERO, ratio(-1, 2), ratio(-5, 2)]);
+        // Birth follows the loss and a return to the larger nominal allocation.
+        let (history, _) = delivery.processing_history_from_boundary(2, 1000).unwrap();
+        let history = history.unwrap();
+        assert_eq!(history.samples(), AudioSample(2)..AudioSample(5));
+        assert!(
+            mapped(&history, 4).is_none(),
+            "a pre-birth clipped label must remain silent"
+        );
+        assert!(mapped(&history, 2).is_some());
+        assert!(mapped(&history, 3).is_some());
+        assert_eq!(&history.route.nodes()[..3], &delivery.route.nodes()[..3]);
+        assert_eq!(&history.grids[..3], &delivery.grids[..3]);
+        assert_eq!(&history.allocations[..3], &delivery.allocations[..3]);
+        assert_eq!(
+            &history.occurrence.as_ref().unwrap().windows[..3],
+            &delivery.occurrence.as_ref().unwrap().windows[..3]
+        );
+        assert_eq!(
+            &history.occurrence.as_ref().unwrap().deltas[..3],
+            &delivery.occurrence.as_ref().unwrap().deltas[..3]
+        );
+        assert_eq!(
+            history.route.nodes().len(),
+            4,
+            "one terminal Keep after the exact prefix"
+        );
+    }
+
+    #[test]
+    fn an_earlier_explicit_crop_remains_silent_after_a_later_full_birth() {
+        let extent = ExactRatio::integer(3);
+        let delivery = chain(
+            extent,
+            &[
+                ExactRatio::ZERO,
+                ExactRatio::ZERO,
+                ExactRatio::ZERO,
+                ExactRatio::integer(-2),
+            ],
+            &[
+                ExactRatio::ZERO..extent,
+                ExactRatio::ONE..extent,
+                ExactRatio::ZERO..extent,
+                ExactRatio::ZERO..extent,
+            ],
+        );
+        let (early, _) = delivery.processing_history_from_boundary(0, 1000).unwrap();
+        assert!(
+            early.is_none(),
+            "cannot widen a crop at/after the proposed birth"
+        );
+        let (late, _) = delivery.processing_history_from_boundary(2, 1000).unwrap();
+        let late = late.unwrap();
+        assert_eq!(late.samples(), AudioSample(2)..AudioSample(5));
+        assert!(mapped(&late, 2).is_none());
+        assert!(mapped(&late, 3).is_some());
+        assert!(mapped(&late, 4).is_some());
+    }
+
+    #[test]
+    fn a_post_birth_crop_refuses_expansion_without_mutating_delivery() {
+        let extent = ExactRatio::integer(3);
+        let delivery = chain(
+            extent,
+            &[ExactRatio::ZERO, ExactRatio::ZERO, ExactRatio::ZERO],
+            &[
+                ExactRatio::ZERO..extent,
+                ExactRatio::ZERO..extent,
+                ExactRatio::ONE..extent,
+            ],
+        );
+        let before = delivery
+            .query(delivery.samples(), Default::default())
+            .unwrap();
+        let (history, _) = delivery.processing_history_from_boundary(1, 1000).unwrap();
+        assert!(history.is_none());
+        assert_eq!(
+            delivery
+                .query(delivery.samples(), Default::default())
+                .unwrap(),
+            before
+        );
+    }
+
+    #[test]
+    fn boundary_and_budget_are_checked_before_prefix_allocation() {
+        let delivery = all_full(&[ratio(-1, 2), ExactRatio::ZERO, ratio(-1, 2), ratio(-5, 2)]);
+        assert!(delivery.processing_history_from_boundary(4, 1000).is_err());
+        let (_, used) = delivery.processing_history_from_boundary(2, 1000).unwrap();
+        assert!(matches!(
+            delivery.processing_history_from_boundary(2, used - 1),
+            Err(PlanError::AudioQueryLimit("sound processing history work")),
+        ));
+        assert!(
+            delivery
+                .processing_history_from_boundary(2, used)
+                .unwrap()
+                .0
+                .is_some()
+        );
+    }
+
+    #[test]
+    fn a_live_only_birth_keeps_the_complete_delivery_chain() {
+        let delivery = all_full(&[ratio(-1, 2), ExactRatio::ZERO, ratio(-1, 2), ratio(-5, 2)]);
+        let (history, _) = delivery.processing_history_from_boundary(3, 1000).unwrap();
+        let history = history.unwrap();
+        assert_eq!(history.route, delivery.route);
+        assert_eq!(history.grids, delivery.grids);
+        assert_eq!(history.allocations, delivery.allocations);
+        assert!(mapped(&history, 4).is_none());
+    }
+
+    fn ntsc_split_piece(
+        birth: i64,
+        destination: i64,
+        selection: Range<ExactRatio>,
+    ) -> AudioSoundRoute<AudioSample> {
+        let extent = ExactRatio::integer(4);
+        let selections = [
+            ExactRatio::ZERO..extent,
+            ExactRatio::ZERO..extent,
+            selection.clone(),
+            selection,
+        ];
+        let origins = [4, birth, birth, destination].map(|frame| ExactRatio::integer(-frame));
+        let template = chain(extent, &origins, &selections);
+        let grids = origins
+            .iter()
+            .map(|origin| {
+                AudioSampleGrid::new(*origin, ratio(5, 8008), AudioBoundaryRule::RoundEven).unwrap()
+            })
+            .collect();
+        AudioSoundRoute::<AudioSample>::new(template.route, grids)
+            .unwrap()
+            .with_occurrence_windows(template.occurrence.unwrap().windows)
+            .unwrap()
+    }
+
+    #[test]
+    fn split_pieces_keep_one_birth_clock_through_a_fractional_move() {
+        let mut pieces = Vec::new();
+        for selection in [
+            ExactRatio::ZERO..ExactRatio::integer(2),
+            ExactRatio::integer(2)..ExactRatio::integer(4),
+        ] {
+            let delivery = ntsc_split_piece(9, 10, selection);
+            let (history, _) = delivery
+                .processing_history_with_context_shifts(1, &[0, 0, 0, 1602], 1000)
+                .unwrap();
+            let history = history.unwrap();
+            let born = ntsc_split_piece(
+                9,
+                9,
+                delivery.occurrence.as_ref().unwrap().windows[2]
+                    .selection
+                    .clone(),
+            );
+            for sample in history.samples().start.0..history.samples().end.0 {
+                assert_eq!(mapped(&history, sample), mapped(&born, sample - 1602));
+            }
+            pieces.push(history);
+        }
+        assert_eq!(pieces[0].samples(), AudioSample(16016)..AudioSample(19220));
+        assert_eq!(pieces[1].samples(), AudioSample(19220)..AudioSample(22423));
+        assert!(mapped(&pieces[0], 19220).is_none());
+        assert!(mapped(&pieces[1], 19219).is_none());
+        assert!(mapped(&pieces[1], 22422).is_some());
+    }
+
+    #[test]
+    fn split_context_translation_cannot_revive_a_prebirth_terminal_loss() {
+        let delivery = ntsc_split_piece(10, 17, ExactRatio::integer(2)..ExactRatio::integer(4));
+        let (history, used) = delivery
+            .processing_history_with_context_shifts(1, &[0, 0, 0, 11211], 1000)
+            .unwrap();
+        let history = history.unwrap();
+        assert!(mapped(&history, 33632).is_some());
+        assert!(mapped(&history, 33633).is_none());
+        assert!(
+            delivery
+                .processing_history_with_context_shifts(1, &[0, 0, 0, 11211], used - 1,)
+                .is_err()
+        );
+        assert!(
+            delivery
+                .processing_history_with_context_shifts(1, &[0, 0], 1000)
+                .is_err()
+        );
+        assert!(
+            delivery
+                .processing_history_with_context_shifts(1, &[0, 1, 0, 11211], 1000)
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn placement_comparison_requires_exact_grid_window_and_tie_parity() {
+        let delivery = all_full(&[ratio(-1, 2), ExactRatio::ZERO, ratio(-1, 2), ratio(-5, 2)]);
+        let grid = delivery.grids[0].rebrand::<AudioSample>();
+        let window = delivery.occurrence.as_ref().unwrap().windows[0].clone();
+        assert_eq!(delivery.occurrence_placement_count(), 4);
+        assert!(delivery.occurrence_placement_matches(0, &grid, &window));
+        assert!(!delivery.occurrence_placement_matches(4, &grid, &window));
+        let wrong_ties = grid
+            .translated_samples(1)
+            .unwrap()
+            .translated_frames(ExactRatio::ONE)
+            .unwrap();
+        assert_eq!(grid.frame_origin(), wrong_ties.frame_origin());
+        assert!(!delivery.occurrence_placement_matches(0, &wrong_ties, &window));
+        let mut wrong_window = window.clone();
+        wrong_window.anchor = ExactRatio::ONE;
+        assert!(!delivery.occurrence_placement_matches(0, &grid, &wrong_window));
+        wrong_window = window.clone();
+        wrong_window.selection.start = ExactRatio::ONE;
+        assert!(!delivery.occurrence_placement_matches(0, &grid, &wrong_window));
+        let bare = AudioSoundRoute::<AudioSample>::new(
+            SoundRoute::identity(ratio(5, 2)).unwrap(),
+            vec![grid],
+        )
+        .unwrap();
+        assert_eq!(bare.occurrence_placement_count(), 0);
+        assert!(!bare.occurrence_placement_matches(0, &grid, &window));
     }
 }

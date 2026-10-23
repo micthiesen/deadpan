@@ -1,0 +1,57 @@
+{
+  "archive_path": "media/release-media/aligned/aligned-sound-scope-portable.deadpan.tar.gz",
+  "archive_sha256": "3502257e767148f4c13dec701e47702fef2c35aa1359c98e9088c37dc002eebb",
+  "claim": "byte retention; public portable/reopen test execution retained separately",
+  "gzip_mtime": 0,
+  "regular_files": [
+    {
+      "path": "aligned-sound-scope-portable.deadpan/.render-candidates.lock",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    {
+      "path": "aligned-sound-scope-portable.deadpan/.writer.lock",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    {
+      "path": "aligned-sound-scope-portable.deadpan/Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+      "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+      "size": 39157
+    },
+    {
+      "path": "aligned-sound-scope-portable.deadpan/Media/RenderCandidates/blake3-185724c1a185555e3d399bc466ab7f157d6a81a71a3220e0fc2eac6c0b736d9c",
+      "sha256": "190e790d7ff5f2f300cd574ef114f4e997750de7d7392b8b01eba23cc921cbbc",
+      "size": 14718
+    },
+    {
+      "path": "aligned-sound-scope-portable.deadpan/Media/RenderCandidates/blake3-981565d48b45bc2cc5ffa7f946f114451b860da82e679ec10829c6bb82206184",
+      "sha256": "41b2eac4a1bc1e04719dcf1d9749ca365e07a8296837a3ebf1b5d2b897ccb142",
+      "size": 15091
+    },
+    {
+      "path": "aligned-sound-scope-portable.deadpan/manifest.json",
+      "sha256": "3e199c7ef0e1fea60245a6cf619b0b08b07199e9b56d9a429c924718311528e2",
+      "size": 82
+    },
+    {
+      "path": "aligned-sound-scope-portable.deadpan/project.sqlite",
+      "sha256": "7f7845a6cdd1b02b4bbe7e9549402c006d96a5aef855362f6cd3201ac5df3576",
+      "size": 856064
+    },
+    {
+      "path": "aligned-sound-scope-portable.deadpan/project.sqlite-shm",
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb",
+      "size": 32768
+    },
+    {
+      "path": "aligned-sound-scope-portable.deadpan/project.sqlite-wal",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    }
+  ],
+  "relative_members_only": true,
+  "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmpQ25yNW/fixture/aligned-sound-scope-portable.deadpan",
+  "symlinks": false,
+  "uncompressed_tar_sha256": "c765ff11a677ed1814029842a3f2b427eedc54acc2fc5566834dafe09fe89731"
+}

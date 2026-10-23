@@ -129,6 +129,7 @@ pub(super) struct SharedMix<'plan> {
     components: shared_components::Components<'plan>,
     separate: bool,
     output_voice: Option<usize>,
+    output_aliases: Permissions,
 }
 
 pub(super) struct MixedBlock {
@@ -194,7 +195,12 @@ impl<'plan> SharedMix<'plan> {
             components: shared_components::Components::new(start, frames, sends, skip),
             separate: separate || output_voice.is_some() || sends.is_some(),
             output_voice,
+            output_aliases: Permissions::default(),
         }
+    }
+
+    pub(super) fn include_output_aliases(&mut self, aliases: Permissions) {
+        self.output_aliases = aliases;
     }
 
     pub(super) fn route(
@@ -520,7 +526,12 @@ impl<'plan> SharedMix<'plan> {
         ) -> Result<[f64; 2], StageAudioError>,
     ) -> Result<MixedBlock, StageAudioError> {
         if self.separate {
-            return self.components.finish(self.output_voice, control, equalize);
+            return self.components.finish(
+                self.output_voice,
+                self.output_aliases,
+                control,
+                equalize,
+            );
         }
         let mut order: Vec<_> = self.by_owner.values().copied().collect();
         order.sort_by_key(|&id| std::cmp::Reverse(self.buses[id].depth));

@@ -308,7 +308,17 @@ pub(crate) fn validate_command(
     document: &ProjectDocument,
     command: &Command,
 ) -> Result<(), EditError> {
-    validate_group_ownership(document, command)?;
+    validate_command_with_grouping(document, command, None)
+}
+
+pub(crate) fn validate_command_with_grouping(
+    document: &ProjectDocument,
+    command: &Command,
+    grouping: Option<&crate::sound_clock::grouping::PreparedSoundGrouping>,
+) -> Result<(), EditError> {
+    if !grouping.is_some_and(|prepared| prepared.matches(document, command)) {
+        validate_group_ownership(document, command)?;
+    }
     // Every other timed edit captures the pre-edit layout and transports each
     // attached sound whose processing scope only moved; a changed scope refuses.
     if !document.beat_sounds.is_empty()

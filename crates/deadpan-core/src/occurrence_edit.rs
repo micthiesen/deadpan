@@ -482,6 +482,7 @@ pub(crate) fn clone_nodes(
     allocation: &RevisionId,
 ) -> Result<(), EditError> {
     let mut sound_clocks = Vec::new();
+    let mut sound_group_work = 0usize;
     for (owner, copy) in mapping {
         if let Some(events) = document.audio_bindings.sound_clocks.get(owner) {
             let mut cloned = BTreeMap::new();
@@ -493,6 +494,11 @@ pub(crate) fn clone_nodes(
                     .clocks()
                     .iter()
                     .map(|reference| {
+                        sound_group_work = sound_group_work
+                            .checked_add(reference.introduced_groups().len())
+                            .and_then(|work| work.checked_add(reference.split_work_count()))
+                            .filter(|work| *work <= crate::MAX_AUDIO_BINDING_ENTRIES)
+                            .ok_or_else(|| invalid("sound clock isolation group limit"))?;
                         let repeats = crate::SoundClockRepeatMap::new(
                             reference
                                 .repeats()
@@ -521,7 +527,63 @@ pub(crate) fn clone_nodes(
                                 })
                                 .collect(),
                         )?;
-                        Ok(reference.clone().with_repeats(repeats))
+                        let groups = reference
+                            .introduced_groups()
+                            .iter()
+                            .map(|group| {
+                                if !matches!(
+                                    document.nodes.get(group).map(|node| &node.kind),
+                                    Some(NodeKind::Sequence { .. })
+                                ) {
+                                    return Err(invalid(
+                                        "introduced sound clock group is missing during isolation",
+                                    ));
+                                }
+                                Ok(mapping.get(group).unwrap_or(group).clone())
+                            })
+                            .collect::<Result<BTreeSet<_>, EditError>>()?;
+                        let splits = reference
+                            .introduced_splits()
+                            .iter()
+                            .map(|split| {
+                                let touched = split.pieces.iter().any(|piece| {
+                                    mapping.contains_key(&piece.partition)
+                                        || mapping.contains_key(&piece.full_owner)
+                                });
+                                if touched
+                                    && !split.pieces.iter().all(|piece| {
+                                        mapping.contains_key(&piece.partition)
+                                            && mapping.contains_key(&piece.full_owner)
+                                    })
+                                {
+                                    return Err(invalid(
+                                        "sound clock isolation requires a complete Split forest",
+                                    ));
+                                }
+                                Ok(crate::SoundClockSplit::new(
+                                    split.historical_node.clone(),
+                                    split
+                                        .pieces
+                                        .iter()
+                                        .map(|piece| crate::SoundClockSplitPiece {
+                                            partition: mapping
+                                                .get(&piece.partition)
+                                                .unwrap_or(&piece.partition)
+                                                .clone(),
+                                            full_owner: mapping
+                                                .get(&piece.full_owner)
+                                                .unwrap_or(&piece.full_owner)
+                                                .clone(),
+                                        })
+                                        .collect(),
+                                )?)
+                            })
+                            .collect::<Result<Vec<_>, EditError>>()?;
+                        Ok(reference
+                            .clone()
+                            .with_repeats(repeats)
+                            .with_introduced_groups(groups)?
+                            .with_introduced_splits(splits)?)
                     })
                     .collect::<Result<Vec<_>, EditError>>()?;
                 cloned.insert(

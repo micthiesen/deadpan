@@ -1273,7 +1273,12 @@ fn apply_with_durations_captured(
     // isolated occurrence. Public structs can be constructed without serde.
     crate::picture_context::validate_command(&request.command)?;
     crate::audio_gain::validate_command(&request.command)?;
-    crate::sound_events::validate_command(document, &request.command)?;
+    let sound_grouping = crate::sound_clock::grouping::prepare(document, request)?;
+    crate::sound_events::validate_command_with_grouping(
+        document,
+        &request.command,
+        sound_grouping.as_ref(),
+    )?;
     if let Some(prepared) =
         crate::scoped_edit::prepare_fixed_occurrence_hold_duration_command(document, request)?
     {
@@ -1537,9 +1542,12 @@ fn apply_with_durations_captured(
             crate::edit_slice::apply_set(input, &request.command, context)?
         }
         Command::MoveRange { .. } => crate::move_range::apply(input, &request.command, context)?,
-        Command::GroupSelection { .. } => {
-            crate::group_selection::apply(input, &request.command, context)?
-        }
+        Command::GroupSelection { .. } => crate::group_selection::apply(
+            input,
+            &request.command,
+            context,
+            sound_grouping.as_ref(),
+        )?,
         Command::RepeatSelection { .. }
         | Command::SetRepeatPlays { .. }
         | Command::SetRepeatGaps { .. } => {

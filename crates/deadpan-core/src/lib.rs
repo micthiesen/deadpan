@@ -153,7 +153,7 @@ pub use semantic::*;
 pub use sound_allowance::*;
 pub use sound_clock::{
     MAX_SOUND_CLOCK_BYTES, MAX_SOUND_CLOCKS, SoundClockJournal, SoundClockReference,
-    SoundClockRepeatMap, SoundClockRepeatStep,
+    SoundClockRepeatMap, SoundClockRepeatStep, SoundClockSplit, SoundClockSplitPiece,
 };
 pub use sound_events::*;
 pub use sound_route::*;

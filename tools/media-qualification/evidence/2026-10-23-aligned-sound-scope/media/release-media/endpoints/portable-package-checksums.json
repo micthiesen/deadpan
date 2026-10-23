@@ -1,0 +1,57 @@
+{
+  "archive_path": "media/release-media/endpoints/sound-group-endpoints-portable.deadpan.tar.gz",
+  "archive_sha256": "5c022396a00d80a0b9d8c36431a742cd102caa436d8ebbdee9fd6e2625632e0d",
+  "claim": "byte retention; public portable/reopen test execution retained separately",
+  "gzip_mtime": 0,
+  "regular_files": [
+    {
+      "path": "sound-group-endpoints-portable.deadpan/.render-candidates.lock",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    {
+      "path": "sound-group-endpoints-portable.deadpan/.writer.lock",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    },
+    {
+      "path": "sound-group-endpoints-portable.deadpan/Media/Originals/blake3-16614ec12d06396d3c0f0e7b91cc902c6dc30ad89c28d74b805cf64dc60d8aa1",
+      "sha256": "5a820a79bf550d484d8ecb37ffddd048d0636794ebce5db83e4f5ce5f5e64918",
+      "size": 39157
+    },
+    {
+      "path": "sound-group-endpoints-portable.deadpan/Media/RenderCandidates/blake3-25c959ca07a603dfa1942c40d1b848d56d3327ad5f24583890d290a244d04d1c",
+      "sha256": "49c316f35a11ca98b1431bcd55d6d1f60c305fe955d00418ea34b664d381c8f2",
+      "size": 15105
+    },
+    {
+      "path": "sound-group-endpoints-portable.deadpan/Media/RenderCandidates/blake3-5b423a454a1ef12e758720033419a435fbdb4e3e079deacfee2580e3fb71e876",
+      "sha256": "21f89c774c1aa88311b7e8a12ecbc9804d7fd1796823b27fca192a001d3cc66f",
+      "size": 42563
+    },
+    {
+      "path": "sound-group-endpoints-portable.deadpan/manifest.json",
+      "sha256": "5b87513cf217ea4684307264ecb4a693b2a6b89f840dea6fef1ef012c44d748a",
+      "size": 82
+    },
+    {
+      "path": "sound-group-endpoints-portable.deadpan/project.sqlite",
+      "sha256": "18d8ac3924971bd6d825b40e100fb3bd4eef384087b9c9cf3f20b3d095f8a4eb",
+      "size": 614400
+    },
+    {
+      "path": "sound-group-endpoints-portable.deadpan/project.sqlite-shm",
+      "sha256": "fd4c9fda9cd3f9ae7c962b0ddf37232294d55580e1aa165aa06129b8549389eb",
+      "size": 32768
+    },
+    {
+      "path": "sound-group-endpoints-portable.deadpan/project.sqlite-wal",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size": 0
+    }
+  ],
+  "relative_members_only": true,
+  "source": "/var/folders/37/7y1z4kxn5mv9bkbckqxrnzy40000gn/T/.tmp7ppJJZ/fixture/sound-group-endpoints-portable.deadpan",
+  "symlinks": false,
+  "uncompressed_tar_sha256": "eb5d02ca57cf3d7c48e0d664522249fc3f6640e02ccb90368e417cf708004c86"
+}

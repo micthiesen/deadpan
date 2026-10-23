@@ -8,6 +8,7 @@ use deadpan_core::{
 use deadpan_store::{AccessMode, ProjectStore};
 use egui::{Key, Modifiers};
 
+mod aligned;
 mod fixture;
 const NAME: &str = "Sound endpoints \"six\"";
 const ORIGINAL_CURSOR: u64 = 31;
@@ -51,12 +52,20 @@ pub(super) fn run(d: &mut Driver<'_>) -> Result<(), String> {
     };
     let scratch = tempfile::tempdir().map_err(|e| e.to_string())?;
     let path = scratch.path().join("sound-group-endpoints.deadpan");
-    fixture::create(&previous, &path, freeze)?;
+    fixture::create(&previous, &path, freeze.clone())?;
+    let aligned_path = scratch.path().join("sound-group-aligned.deadpan");
+    fixture::create_aligned(&previous, &aligned_path, freeze)?;
     let result = (|| {
         open(d, &path, ORIGINAL_CURSOR)?;
-        exercise(d)
+        exercise(d)?;
+        open(d, &aligned_path, ORIGINAL_CURSOR)?;
+        aligned::exercise(d)
     })();
     let cleanup = (|| {
+        if d.app().splice.is_some() {
+            d.key(Key::Escape)?;
+            idle(d)?;
+        }
         d.app().service.submit(ProjectRequest::Close)?;
         d.wait_for("Close the private sound endpoint project writer", |app| {
             app.workspace.is_none() && !app.service.is_busy()

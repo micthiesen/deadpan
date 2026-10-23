@@ -38,6 +38,19 @@ fn commit(store: &mut ProjectStore, command: Command, name: &str) -> Result<(), 
 }
 
 pub(super) fn create(source: &Path, path: &Path, freeze: HoldVideo) -> Result<(), String> {
+    create_scoped(source, path, freeze, false)
+}
+
+pub(super) fn create_aligned(source: &Path, path: &Path, freeze: HoldVideo) -> Result<(), String> {
+    create_scoped(source, path, freeze, true)
+}
+
+fn create_scoped(
+    source: &Path,
+    path: &Path,
+    freeze: HoldVideo,
+    aligned: bool,
+) -> Result<(), String> {
     deadpan_store::portable::copy_portable(
         source,
         path,
@@ -102,7 +115,7 @@ pub(super) fn create(source: &Path, path: &Path, freeze: HoldVideo) -> Result<()
     commit(
         &mut store,
         Command::SetBeatSound {
-            owner,
+            owner: owner.clone(),
             id: SoundId::new("ui-sound-group-event").map_err(|e| e.to_string())?,
             event: BeatSound {
                 label: "Independent ten-frame Original event".into(),
@@ -121,6 +134,28 @@ pub(super) fn create(source: &Path, path: &Path, freeze: HoldVideo) -> Result<()
         },
         "event",
     )?;
+    if aligned {
+        let top = NodeId::new("ui-sound-group-top").map_err(|e| e.to_string())?;
+        commit(
+            &mut store,
+            Command::Group {
+                parent: before.root().clone(),
+                start: 0,
+                end: 1,
+                id: top.clone(),
+                label: "Top".into(),
+            },
+            "top",
+        )?;
+        commit(
+            &mut store,
+            Command::SetAudioTreatments {
+                node: top,
+                treatments: treatment([4500, -2500, 1500])?,
+            },
+            "top-eq",
+        )?;
+    }
     commit(
         &mut store,
         Command::InsertTime {

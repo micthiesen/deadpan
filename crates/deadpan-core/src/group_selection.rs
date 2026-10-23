@@ -85,6 +85,7 @@ pub(crate) fn apply(
     document: &ProjectDocument,
     command: &Command,
     context: crate::command::EditContext<'_>,
+    sound_grouping: Option<&crate::sound_clock::grouping::PreparedSoundGrouping>,
 ) -> Result<ProjectDocument, EditError> {
     let Command::GroupSelection {
         parent,
@@ -152,6 +153,9 @@ pub(crate) fn apply(
     );
     crate::audio_lineage::reconcile(&before_group, &mut working, command)?;
     working.marks = crate::marks::transform_marks(&before_group, &working, command)?;
+    if let Some(prepared) = sound_grouping {
+        prepared.install(&mut working, command)?;
+    }
     working.validate()?;
     Ok(working)
 }
@@ -184,7 +188,7 @@ pub(crate) fn child_range(
     ))
 }
 
-fn validate_identities(
+pub(crate) fn validate_identities(
     document: &ProjectDocument,
     identities: &GroupSelectionIdentities,
     required: usize,
@@ -211,7 +215,7 @@ fn validate_identities(
     Ok(())
 }
 
-fn validate_timing(
+pub(crate) fn validate_timing(
     document: &ProjectDocument,
     timing: &AudioTimingId,
     allocation: &RevisionId,

@@ -164,7 +164,7 @@ pub(crate) fn apply_validated(
         allowances.split(&copied)?;
     }
     if let Some(sounds) = edit_context.sound_clocks {
-        sounds.split(&copied)?;
+        sounds.split(&copied, document, target, (&left, &right), context)?;
     }
     if root {
         result.nodes.insert(left_context.clone(), original.clone());
