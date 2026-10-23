@@ -13,10 +13,10 @@ p95 qualification. All existing checks remain intact. A disposable prototype
 completed five quiet pairs with first medians 127.513 ms before and 111.362 ms
 after, still above 100 ms. The production candidate uses Core 57 / SQLite 86
 and preserves standalone context schemas 1–12. All 1,503 Core, 3,499 broader
-selected and 1,292 UI-feature tests pass, plus strict checks and debug media
+selected and 1,292 UI-feature tests pass, plus strict Core/Store checks and debug media
 verification of 15 pictures / 24,024 samples at zero offset. Initial fixture
-failures and corrections are retained. Release/native, portable validation,
-stronger historical codec tests and current-format performance remain owed.
+failures and corrections are retained. Release/native, portable validation and stronger historical codec checks now
+pass. Explicit UI Clippy and current-format performance remain owed.
 See the [candidate checkpoint](qualification/compact-frozen-edges-2026-10-23.md) and the
 [profile and retained evidence](qualification/first-pause-profile-2026-10-23.md).
 DP-24 remains partial; no requirement or gate closes.

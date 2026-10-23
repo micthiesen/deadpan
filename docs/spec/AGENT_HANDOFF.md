@@ -6,7 +6,7 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 Compact timing checkpoint, 2026-10-23: Core 57 / SQLite 86 remains an
 uncommitted candidate. All 1,503 Core, 3,499 broader selected and 1,292 UI tests
-pass, plus strict ordinary/UI and formatting. Debug media passes all 15 pictures
+pass, plus strict Core/Store and formatting. Debug media passes all 15 pictures
 and 24,024 samples at zero offset with full canonical PCM/history controls.
 Four fixture assumptions were corrected without production edits. Source-verified
 baseline witness has 2 expected omission failures and 4 passing controls.
@@ -14,7 +14,10 @@ See ../qualification/compact-frozen-edges-2026-10-23.md and its 203-file checkpo
 Serialized driver PID 10303 (started 22:41:19 local) is live in root scratch;
 final-driver.stdout/stderr and final-qualification-receipt.json are authoritative.
 Its stdout is redirected, so an expired harness handle is not termination.
-Release media/native are running. prepare_performance.py then validates portable
+Release media/native pass, including197 workflow checks plus Kestrel. Both portable
+packages validate unchanged and six refined codec tests pass. Explicit UI Clippy
+is queued in measure.py before timing; initial xtask strict scope was Core/Store
+only. prepare_performance.py validates portable
 packages, applies the reviewed test-only refinement, runs six stronger codec
 tests/Clippy/old-code witness, and only then builds/measures current-format perf.
 The refinement draft and immutable historical codec probe are in scratch.

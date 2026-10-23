@@ -1,9 +1,9 @@
 # Compact frozen audio edges, 2026-10-23
 
-The Core 57 / SQLite 86 candidate passes Core, broader, UI-feature, strict and
-debug media checks. Release media, native replay, independent portable
-validation and current-format performance remain in progress. No requirement
-or gate closes.
+The Core 57 / SQLite 86 candidate passes Core, broader, UI-feature, strict
+Core/Store, debug/release media, native replay and portable validation checks.
+Explicit UI Clippy and current-format performance remain in progress. No
+requirement or gate closes.
 
 The current project/history encoding omits only all-Automatic frozen-node edge
 objects and restores the same six policies when absent. Nondefault objects stay
@@ -17,7 +17,7 @@ without mutation, under the development-format authorization.
 | Core | 1,503 tests / 68 binaries, zero skipped |
 | Broader selected | 3,499 tests / 109 binaries; 740 skipped or unselected |
 | UI-feature | 1,292 tests / 2 binaries; 11 skipped |
-| Strict ordinary/UI and formatting | Pass |
+| Strict Core/Store and formatting | Pass; explicit UI Clippy is queued |
 | Debug media | 15 pictures / 24,024 samples, verified zero offset |
 
 The debug fixture compares complete authored/limited PCM and limiter-gain bits,
@@ -65,3 +65,12 @@ overlays stored as .rs.txt. Root scratch is
 /tmp/deadpan-compact-frozen-edges-2026-10-22. PID 10303 owns the current serialized
 driver and writes final-driver.stdout/stderr plus per-step records. No binary,
 nextest archive or large SQLite benchmark package is included in this checkpoint.
+
+Follow-up: both release media fixtures pass, including all 19 pictures and
+30,430 final samples at zero offset in the larger case. Native replay passes
+197 workflow checks plus Kestrel and retains the existing two layout warnings.
+Both nine-file portable packages validate and doctor with unchanged paths/bytes.
+Six strengthened codec tests pass after the test-only refinement. The initial
+xtask lint checked changed Core/Store packages only; the prior ordinary/UI
+wording was broader than that command. Explicit UI Clippy is now queued before
+timing. Remaining raw follow-up evidence will join the final inventory.
