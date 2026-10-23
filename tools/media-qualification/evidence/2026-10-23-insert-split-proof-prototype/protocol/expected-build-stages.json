@@ -1,0 +1,12 @@
+[
+  "rustc",
+  "cargo",
+  "format",
+  "core-unit-build",
+  "core-split-proof",
+  "core-wide-reference",
+  "core-integration",
+  "store-preparation",
+  "release-app",
+  "strict"
+]

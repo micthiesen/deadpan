@@ -1,0 +1,55 @@
+[
+  {
+    "name": "rustc",
+    "command": [
+      "rustc",
+      "--version",
+      "--verbose"
+    ],
+    "cwd": "/tmp/deadpan-insert-split-proof-prototype-2026-10-23/source",
+    "exit": 0,
+    "seconds": 0.03794141672551632,
+    "validation": "passed"
+  },
+  {
+    "name": "cargo",
+    "command": [
+      "cargo",
+      "--version"
+    ],
+    "cwd": "/tmp/deadpan-insert-split-proof-prototype-2026-10-23/source",
+    "exit": 0,
+    "seconds": 0.03927058260887861,
+    "validation": "passed"
+  },
+  {
+    "name": "format",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all",
+      "--check"
+    ],
+    "cwd": "/tmp/deadpan-insert-split-proof-prototype-2026-10-23/source",
+    "exit": 0,
+    "seconds": 6.334309083409607,
+    "validation": "passed"
+  },
+  {
+    "name": "core-unit-build",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "-p",
+      "deadpan-core",
+      "--lib",
+      "--no-run",
+      "--message-format=json-render-diagnostics"
+    ],
+    "cwd": "/tmp/deadpan-insert-split-proof-prototype-2026-10-23/source",
+    "exit": 101,
+    "seconds": 19.09233620762825,
+    "validation": "pending"
+  }
+]

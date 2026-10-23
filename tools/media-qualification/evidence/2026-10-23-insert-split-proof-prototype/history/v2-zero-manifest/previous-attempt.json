@@ -1,0 +1,16 @@
+{
+  "root": "/tmp/deadpan-insert-split-proof-prototype-2026-10-23",
+  "terminal": {
+    "status": "failed",
+    "stage": "core-unit-build",
+    "exception": "SystemExit",
+    "message": "101"
+  },
+  "failure": "E0659 test-only ambiguous invalid helper; corrected to super::invalid",
+  "old_source_sha256": "5e645cdf7afa23288340c05b2cd7d367b6396e06903932e5341d28c783b83313",
+  "new_source_sha256": "76bcc37b4367d9e610d67950af26198afc6ac4986299f02635799513f0bc08b1",
+  "old_terminal_sha256": "e716f6fedc887d41dca8f9f4423602a4c66a67c396b91743104655f73962e7d3",
+  "old_stderr_sha256": "126f6f18e14fecd02f7e223dd1994f2b2dbbdedddf1fdf1221d40726b5087502",
+  "production_changed": false,
+  "measurements_ran": false
+}

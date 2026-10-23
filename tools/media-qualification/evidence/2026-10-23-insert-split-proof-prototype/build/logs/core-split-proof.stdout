@@ -1,0 +1,11 @@
+
+running 6 tests
+test insert_time::tests::insert_split_proof_reference_representation_and_seams_keep_existing_path ... ok
+test insert_time::tests::insert_split_proof_changed_same_revision_inputs_fail_before_installing_scope ... ok
+test insert_time::tests::insert_split_proof_binding_only_bridge_is_exact_and_pops_on_error_and_unwind ... ok
+test insert_time::tests::insert_split_proof_mark_growth_refusal_cleans_both_scopes ... ok
+test insert_time::tests::insert_split_proof_phase_budget_refusal_and_early_identity_limits_are_exact ... ok
+test insert_time::tests::insert_split_proof_plain_and_scoped_successive_pauses_match_complete_reference ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 726 filtered out; finished in 0.25s
+

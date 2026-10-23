@@ -1,0 +1,11 @@
+{
+  "original_reference": "/tmp/deadpan-semantic-preflight-leaf-profile-2026-10-23/qualified-source-identities.json",
+  "copied_reference_sha256": "0b61b120b75aa6bbcf350f7642a5fb731c711b8e6985c8fa61709229ed12696f",
+  "qualified_code_commit": "5fdae748ac2fdc67e1a11793c5ab69f6b61da833",
+  "main_documentation_commit_at_check": "79a14b8b7227e4bc222f1a965d274405d0ffaccb",
+  "checked_at": "2026-10-23T23:14:04.935741+00:00",
+  "rust_files": 2053,
+  "current_main_visible_rust_map_matches": true,
+  "root": "/Users/michael/Code/deadpan",
+  "six_inputs_match": true
+}

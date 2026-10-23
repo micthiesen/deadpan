@@ -1,0 +1,44 @@
+{
+  "status": "findings",
+  "review_kind": "independent_static_prototype_measure_driver_review",
+  "reviewed_file": {
+    "path": "measure.py",
+    "sha256": "f54ef383f76c6a7a2014c240e246f2ec4db279d5fcf3608fa833cb875a0a1a22"
+  },
+  "reviewed_files": {
+    "measure.py": "f54ef383f76c6a7a2014c240e246f2ec4db279d5fcf3608fa833cb875a0a1a22",
+    "baseline.json": "360274ff50be188af69fc6a52c91a0814a1d5892eeefc66009af724936892895",
+    "baseline-provenance.json": "85a9b1fb396c83376833f233aa7484ff5fe1f18737e0d2a10a9dc4552bc5f7bf",
+    "baseline-inputs.json": "b783a007ca4b3ab356c3488372a276c0ffa7ad4f9f34b31f1b0743b121e44317",
+    "baseline-sources.json": "c4e2c6a8592dd5b819f81b49ad6f196d63b27cb8c68b8c20ee61ecb64bebdae5",
+    "check_profile.py": "d7856844d550b05207cc75391a810008da0b44adeafeb38e70ec95892c9a4f61",
+    "expected-tests.json": "a675b04be1d59013290e93152e82a247326b538919c68b82b1c4cd9e7f4c05b9"
+  },
+  "findings": [
+    {
+      "id": "MEASURE01",
+      "severity": "must_fix_before_execution",
+      "anchor": "measure.py:42-44",
+      "problem": "The build gate changed from exact8rows to len>=8 and accepts any8+ successful rows with terminal status complete. It does not require the prototype planned qualification stages or agreement between terminal.steps and completed rows. A missing required stage replaced by duplicate/unrelated successes can reach measurement.",
+      "required_change": "Once Root finalizes the prototype build script, bind an exact expected stage-name manifest (or explicit required/allowed stage set) into static driver pins, and require exact names/order/count plus terminal.steps equality and all exits0 before measurement. This permits legitimate added prototype tests without an open-ended count gate."
+    }
+  ],
+  "verified": [
+    "Compared complete script to audited C driver: only studyroot, build-row gate, three-lane identity, sixorders, profile gating, counts and per-lane summary change.",
+    "Sixorders are exactly allpermutations(control,baseline,candidate), giving6freshprocess trials/lane,18trials/36make+Appcommands and126workflow/18Kestrelchecks.",
+    "Control resolves to qualified0cb29315. Matched baseline provenance names CApp274e8a04 and Csourcec4e2c6a8; candidate uses its own built binaries.json entry. All lane executable hashes and candidate helper hashes rechecked; baseline-provenance must enter final static pins.",
+    "Both baseline and candidate set gate1 and require one strictV3block with35rows/counts/conservation through the identical copied parser; control clears gate and forbids profilefamily. Parser is loaded only after static pin verification.",
+    "Lane metric min/median/max summaries are separate; baseline/candidate each have their own6profile blocks,35phase summaries and outer interval lists. No phase pooling between these lanes occurs.",
+    "Fresh fixture/output refusal, exact10000beat maker and native scenario, full unchanged native check set, authored-byte/rootWAL guards, source/input/bin/PERF/staticpins, quiet/load/preflight history and terminal failure capture are preserved.",
+    "Exact2unique known finite nonnegative nonbool metrics, release/toolchain/fixture/lock/binary metadata and7+1native checks remain required."
+  ],
+  "pending": [
+    "Build script/qualification stage manifest and final static pins are not yet present/final at this measurement-only review.",
+    "Candidate source freeze/source review and new proof-correctness tests remain separately required before build/measurement.",
+    "Stay available for later insert_time.rs source audit; this report does not inspect ongoing writer edits."
+  ],
+  "limitations": [
+    "Static review and review-note write only. No driver/parser/build/runtime/Git/source/Main operation executed.",
+    "No performance improvement, current candidate artifact or actual trial result is claimed."
+  ]
+}

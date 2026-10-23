@@ -1,0 +1,16 @@
+{
+  "status": "no_findings",
+  "findings": [],
+  "script_sha256": "1c9f4b4d9ef3a75b41d91c7a44ec6373615e6ab7adb7045fa6d1155b35f60cb6",
+  "reviewed_path_hashes": {
+    "build.py": "1c9f4b4d9ef3a75b41d91c7a44ec6373615e6ab7adb7045fa6d1155b35f60cb6",
+    "expected-tests.json": "d8f69efc40e84524f9d2780086225a14c002b1276d464a4bcaa329d48d6850d0",
+    "expected-build-stages.json": "2ac579aa0f3f3c53bfe6e3047c204024eae36b5afa510e092d7f553b508fed03"
+  },
+  "parent_review": "/tmp/deadpan-insert-split-proof-prototype-2026-10-23/build-final-review-v2.json",
+  "parent_review_sha256": "29a46ada1d9e0cd5cb10bd6b3a8173ed9db438c0eb1e4c01b2f3569cd130c340",
+  "scope": "Exact byte comparison proves only one S-root literal substitution from the reviewed ce3c45f5 driver. Both manifests byte-identical. Exclusive ownership/receipt preservation, ten-stage protocol, exact test and artifact validation remain unchanged.",
+  "limitations": [
+    "Static comparison only; no driver functions or runtime executed."
+  ]
+}

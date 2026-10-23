@@ -1,0 +1,23 @@
+{
+  "status": "no_findings",
+  "review_kind": "independent_static_measure_driver_ownership_followup_review",
+  "reviewed_file": {
+    "path": "measure.py",
+    "sha256": "9ee53a2e4b90adea5606055d1012b58c7204fe648ee54cbc386c1eb9a5714699"
+  },
+  "verified": [
+    "The driver refuses to start if the measurement receipt, terminal receipt or owner record already exists.",
+    "It acquires measurement-owner.json with exclusive create before any trial command and marks ownership only after acquisition.",
+    "Per-command receipts continue using the claimed measurement receipt; terminal success and failure records are created exclusively, so an existing terminal is never overwritten.",
+    "A refusal before owner acquisition writes a unique nanosecond-named refusal record, preserving existing run evidence.",
+    "The previously reviewed exact stage, source/input/binary, fixture, report, profile and offscreen-readback guards remain present.",
+    "Python AST parsing succeeds. No build, test, runtime, Git or source operation was performed."
+  ],
+  "pending_before_execution": [
+    "Root must complete and pin the final driver and all source/build/baseline/review manifests before execution."
+  ],
+  "findings": [],
+  "limitations": [
+    "Narrow static ownership follow-up only; no measurement result is asserted."
+  ]
+}

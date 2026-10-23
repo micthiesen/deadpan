@@ -1,0 +1,7 @@
+{
+  "beats": 10000,
+  "creation_ms": 171.417,
+  "package": "/tmp/deadpan-insert-split-proof-prototype-v3-2026-10-23/rotation-3-control.deadpan",
+  "stage": "make-large",
+  "stage_wall_ms": 180.7645
+}

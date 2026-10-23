@@ -1,0 +1,57 @@
+[
+  {
+    "seconds": 0.02998070791363716,
+    "load": [
+      3.69677734375,
+      3.16552734375,
+      2.34228515625
+    ],
+    "conflicting_processes": [],
+    "ps_exit": 0,
+    "ps_stderr": ""
+  },
+  {
+    "seconds": 5.108044541440904,
+    "load": [
+      3.560546875,
+      3.14599609375,
+      2.33984375
+    ],
+    "conflicting_processes": [],
+    "ps_exit": 0,
+    "ps_stderr": ""
+  },
+  {
+    "seconds": 10.185058875009418,
+    "load": [
+      3.1728515625,
+      3.0751953125,
+      2.32373046875
+    ],
+    "conflicting_processes": [],
+    "ps_exit": 0,
+    "ps_stderr": ""
+  },
+  {
+    "seconds": 15.260422916151583,
+    "load": [
+      3.1728515625,
+      3.0751953125,
+      2.32373046875
+    ],
+    "conflicting_processes": [],
+    "ps_exit": 0,
+    "ps_stderr": ""
+  },
+  {
+    "seconds": 20.34361912496388,
+    "load": [
+      2.91845703125,
+      3.02294921875,
+      2.31396484375
+    ],
+    "conflicting_processes": [],
+    "ps_exit": 0,
+    "ps_stderr": ""
+  }
+]

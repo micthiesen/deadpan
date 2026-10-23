@@ -1,0 +1,409 @@
+--- baseline/insert_time.rs
++++ candidate/insert_time.rs
+@@ -230,14 +230,39 @@
+     )?;
+     let mut working = document.clone();
+     working.audio_bindings = bindings;
++    // The successful entry query already proved this unchanged borrow. Keep
++    // its map alive through the tail, but expose it only to the existing
++    // binding-only bridge for the legacy interior Split.
++    let entry_durations = if interior.is_some()
++        && crate::command_work::local()
++        && crate::audio_binding_lifecycle::compact_representation()
++        && document.derived_clocks().is_empty()
++        && document.retained_durations().is_none()
++    {
++        Some(std::sync::Arc::new(durations))
++    } else {
++        None
++    };
+     // The structural durations of `working`, which binding changes below
+     // never alter: the head's, or the Split result's complete validation.
+     let working_durations;
+     let insertion_slot = if let Some((target, cut)) = &interior {
+         let cut = FrameDuration::new(*cut).map_err(crate::DocumentError::from)?;
+-        let (split, (durations, _)) = split_captured(document, &working, |working| {
+-            crate::split::apply_validated(working, target, cut, identities, context)
+-        })?;
++        let split = || {
++            split_captured(document, &working, |working| {
++                crate::split::apply_validated(working, target, cut, identities, context)
++            })
++        };
++        let (split, (durations, _)) = match &entry_durations {
++            Some(durations) => {
++                document.with_proved_durations(std::sync::Arc::clone(durations), || {
++                    #[cfg(test)]
++                    tests::note_entry_scope(document);
++                    split()
++                })
++            }
++            None => split(),
++        }?;
+         working = split;
+         working_durations = Some(std::sync::Arc::new(durations));
+         slot + 1
+@@ -857,3 +882,363 @@
+         "pause insertion time overflow",
+     )
+ }
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++    use crate::*;
++    use std::cell::Cell;
++    use std::sync::Arc;
++
++    thread_local! {
++        static ENTRY_SCOPES: Cell<usize> = const { Cell::new(0) };
++    }
++
++    pub(super) fn note_entry_scope(document: &ProjectDocument) {
++        assert!(document.retained_durations().is_some());
++        ENTRY_SCOPES.with(|count| count.set(count.get().checked_add(1).unwrap()));
++    }
++
++    fn scopes() -> usize {
++        ENTRY_SCOPES.with(Cell::get)
++    }
++
++    fn id(name: &str) -> NodeId {
++        NodeId::new(name).unwrap()
++    }
++
++    fn hold(frames: i64) -> HoldRecipe {
++        HoldRecipe {
++            duration: FrameDuration::new(frames).unwrap(),
++            picture_context: None,
++            video: HoldVideo::Background,
++            audio: HoldAudio::Silence,
++        }
++    }
++
++    fn fixture(count: usize) -> ProjectDocument {
++        let mut document = ProjectDocument::new(
++            ProjectId::new("split-proof").unwrap(),
++            RevisionId::new("entry").unwrap(),
++            crate::basis::default_basis(),
++            id("root"),
++        )
++        .unwrap();
++        let children: Vec<_> = (0..count).map(|i| id(&format!("b{i:04}"))).collect();
++        for child in &children {
++            document
++                .nodes
++                .insert(child.clone(), BeatNode::hold("Beat", hold(8)));
++        }
++        document
++            .nodes
++            .insert(id("root"), BeatNode::sequence("Root", children));
++        document.validate().unwrap();
++        document
++    }
++
++    fn pause(document: &ProjectDocument, revision: &str, at: i64) -> CommandRequest {
++        let split = document
++            .insert_time_target(ProjectFrame(at))
++            .unwrap()
++            .split
++            .unwrap();
++        CommandRequest {
++            project_id: document.project_id().clone(),
++            expected_revision: document.revision_id().clone(),
++            new_revision: RevisionId::new(revision).unwrap(),
++            command: Command::InsertTime {
++                at: ProjectFrame(at),
++                hold: hold(3),
++                id: id(&format!("{revision}-pause")),
++                identities: SplitIdentities {
++                    nodes: (0..split.required_ids)
++                        .map(|i| id(&format!("{revision}-split-{i}")))
++                        .collect(),
++                },
++                timing: AudioTimingId {
++                    allocation: RevisionId::new(revision).unwrap(),
++                    ordinal: 0,
++                },
++            },
++        }
++    }
++
++    fn compare_success(before: &ProjectDocument, request: &CommandRequest) -> ProjectDocument {
++        assert!(before.retained_durations().is_none());
++        let bytes = before.to_compact_json().unwrap();
++        let count = scopes();
++        let (edit, after) = crate::apply_with_result(before, request).unwrap();
++        assert_eq!(scopes() - count, 1);
++        assert!(before.retained_durations().is_none());
++        assert!(after.retained_durations().is_none());
++        let reference =
++            crate::with_reference_command_work(|| crate::apply_with_result(before, request))
++                .unwrap();
++        assert_eq!(scopes() - count, 1);
++        let validated = ValidatedDocument::new(Arc::new(before.clone())).unwrap();
++        let scoped = validated
++            .scope(|| crate::apply_with_result(validated.document(), request))
++            .unwrap();
++        assert_eq!(scopes() - count, 1);
++        assert!(validated.retained_durations().is_none());
++        assert_eq!((&edit, &after), (&reference.0, &reference.1));
++        assert_eq!((&edit, &after), (&scoped.0, &scoped.1));
++        assert_eq!(
++            after.to_compact_json().unwrap(),
++            reference.1.to_compact_json().unwrap()
++        );
++        assert_eq!(
++            serde_json::to_string(&edit).unwrap(),
++            serde_json::to_string(&reference.0).unwrap()
++        );
++        assert_eq!(edit.forward.apply(before).unwrap(), after);
++        assert_eq!(edit.inverse.apply(&after).unwrap(), *before);
++        assert_eq!(edit.forward.restores(before, &after), Ok(true));
++        assert_eq!(edit.inverse.restores(&after, before), Ok(true));
++        assert_eq!(before.to_compact_json().unwrap(), bytes);
++        after.validate().unwrap();
++        after
++    }
++
++    #[test]
++    fn insert_split_proof_plain_and_scoped_successive_pauses_match_complete_reference() {
++        let mut document = fixture(128);
++        document.marks.insert(
++            MarkId::new("cue").unwrap(),
++            Mark {
++                owner: id("b0004"),
++                label: "Cue".into(),
++                boundary: BoundaryAnchor {
++                    coordinate: Anchor::Local {
++                        node: id("b0004"),
++                        position: ExactRatio::integer(3),
++                    },
++                    bias: InsertionBias::Right,
++                },
++                loss_policy: AnchorLossPolicy::DeleteOwned,
++                state: MarkState::Bound,
++                fragments: Vec::new(),
++            },
++        );
++        for (index, at) in [67, 151, 243].into_iter().enumerate() {
++            let request = pause(&document, &format!("r{index}"), at);
++            document = compare_success(&document, &request);
++        }
++        assert!(!document.audio_bindings().is_empty());
++        assert!(!document.marks().is_empty());
++    }
++
++    #[test]
++    fn insert_split_proof_reference_representation_and_seams_keep_existing_path() {
++        let document = fixture(16);
++        let request = pause(&document, "pause", 19);
++        let count = scopes();
++        let local = crate::with_reference_timing_representation(|| {
++            crate::apply_with_result(&document, &request)
++        })
++        .unwrap();
++        let reference = crate::with_reference_timing_representation(|| {
++            crate::with_reference_command_work(|| crate::apply_with_result(&document, &request))
++        })
++        .unwrap();
++        assert_eq!(local, reference);
++        assert_eq!(scopes(), count);
++        let mut seam = request.clone();
++        let Command::InsertTime { at, identities, .. } = &mut seam.command else {
++            unreachable!()
++        };
++        *at = ProjectFrame(16);
++        identities.nodes.clear();
++        assert_eq!(
++            crate::apply_with_result(&document, &seam).unwrap(),
++            crate::with_reference_command_work(|| crate::apply_with_result(&document, &seam))
++                .unwrap()
++        );
++        assert_eq!(scopes(), count);
++        assert!(document.retained_durations().is_none());
++    }
++
++    fn compare_error(document: &ProjectDocument, request: &CommandRequest) -> EditError {
++        let before = document.to_compact_json().unwrap();
++        let error = crate::apply_with_result(document, request).unwrap_err();
++        let reference =
++            crate::with_reference_command_work(|| crate::apply_with_result(document, request))
++                .unwrap_err();
++        assert_eq!(error, reference);
++        assert_eq!(document.to_compact_json().unwrap(), before);
++        assert!(document.retained_durations().is_none());
++        error
++    }
++
++    #[test]
++    fn insert_split_proof_changed_same_revision_inputs_fail_before_installing_scope() {
++        let document = fixture(16);
++        let request = pause(&document, "pause", 19);
++        let mut label = document.clone();
++        label.nodes.get_mut(&id("b0000")).unwrap().label.push('\0');
++        let mut missing = document.clone();
++        missing.nodes.remove(&id("b0000"));
++        let mut bindings = document.clone();
++        bindings.audio_bindings = crate::audio_binding_lifecycle::capture_unbound_audio_bindings(
++            &document,
++            AudioTimingId {
++                allocation: RevisionId::new("captured").unwrap(),
++                ordinal: 0,
++            },
++        )
++        .unwrap();
++        bindings
++            .audio_bindings
++            .bindings
++            .get_mut(&id("b0000"))
++            .unwrap()
++            .lattice
++            .reference
++            .physical = id("absent");
++        let count = scopes();
++        for changed in [label, missing, bindings] {
++            assert_eq!(changed.revision_id(), document.revision_id());
++            compare_error(&changed, &request);
++            assert_eq!(scopes(), count);
++        }
++        compare_success(&document, &request);
++    }
++
++    #[test]
++    fn insert_split_proof_mark_growth_refusal_cleans_both_scopes() {
++        let mut document = fixture(1);
++        let target = id("b0000");
++        document.marks.insert(
++            MarkId::new("cue").unwrap(),
++            Mark {
++                owner: target.clone(),
++                label: "Cue".into(),
++                boundary: BoundaryAnchor {
++                    coordinate: Anchor::Local {
++                        node: target.clone(),
++                        position: ExactRatio::ZERO,
++                    },
++                    bias: InsertionBias::Right,
++                },
++                loss_policy: AnchorLossPolicy::DeleteOwned,
++                state: MarkState::Bound,
++                fragments: (1..MAX_MARK_BINDINGS)
++                    .map(|i| MarkFragment {
++                        owner: target.clone(),
++                        coordinate: Anchor::Local {
++                            node: target.clone(),
++                            position: ExactRatio::new(i as i128, MAX_MARK_BINDINGS as i128)
++                                .unwrap(),
++                        },
++                        state: MarkState::Bound,
++                    })
++                    .collect(),
++            },
++        );
++        document.validate().unwrap();
++        let request = pause(&document, "pause", 3);
++        let count = scopes();
++        assert_eq!(
++            compare_error(&document, &request).code,
++            EditErrorCode::LimitExceeded
++        );
++        assert_eq!(scopes() - count, 1);
++        let fresh = fixture(1);
++        compare_success(&fresh, &pause(&fresh, "recovery", 3));
++    }
++
++    #[test]
++    fn insert_split_proof_phase_budget_refusal_and_early_identity_limits_are_exact() {
++        let mut document = fixture(1);
++        let mut state = crate::audio_binding_lifecycle::capture_unbound_audio_bindings(
++            &document,
++            AudioTimingId {
++                allocation: RevisionId::new("captured").unwrap(),
++                ordinal: 0,
++            },
++        )
++        .unwrap();
++        let binding = state.bindings.get_mut(&id("b0000")).unwrap();
++        binding.resume = Some(AudioResume {
++            local_boundary: ExactRatio::ZERO,
++            phase: AudioLocalPhase {
++                constant: ExactRatio::ZERO,
++                terms: vec![
++                    AudioPhaseTerm {
++                        placement: binding.lattice.clone(),
++                        from_local: ExactRatio::ZERO,
++                        to_local: ExactRatio::ZERO
++                    };
++                    MAX_AUDIO_BINDING_TERMS
++                ],
++            },
++        });
++        document.audio_bindings = state;
++        document.validate().unwrap();
++        let request = pause(&document, "pause", 3);
++        assert_eq!(
++            compare_error(&document, &request).code,
++            EditErrorCode::LimitExceeded
++        );
++        let fresh = fixture(1);
++        let mut request = pause(&fresh, "early", 3);
++        let Command::InsertTime { identities, .. } = &mut request.command else {
++            unreachable!()
++        };
++        identities.nodes = vec![id("unused"); MAX_DOCUMENT_NODES + 1];
++        let count = scopes();
++        assert_eq!(
++            compare_error(&fresh, &request).code,
++            EditErrorCode::LimitExceeded
++        );
++        assert_eq!(scopes(), count);
++        compare_success(&fresh, &pause(&fresh, "recovery", 3));
++    }
++
++    #[test]
++    fn insert_split_proof_binding_only_bridge_is_exact_and_pops_on_error_and_unwind() {
++        let document = fixture(16);
++        let durations = Arc::new(document.durations().unwrap());
++        let mut working = document.clone();
++        working.audio_bindings = crate::audio_binding_lifecycle::capture_unbound_audio_bindings(
++            &document,
++            AudioTimingId {
++                allocation: RevisionId::new("captured").unwrap(),
++                ordinal: 0,
++            },
++        )
++        .unwrap();
++        assert_eq!(working.durations().unwrap(), *durations);
++        let sentinel = super::invalid("test-only Split refusal");
++        let error = document
++            .with_proved_durations(Arc::clone(&durations), || {
++                split_captured(&document, &working, |borrow| -> Result<(), EditError> {
++                    assert!(Arc::ptr_eq(
++                        &borrow.retained_durations().unwrap(),
++                        &durations
++                    ));
++                    Err(sentinel.clone())
++                })
++            })
++            .unwrap_err();
++        assert_eq!(error, sentinel);
++        assert!(document.retained_durations().is_none());
++        assert!(working.retained_durations().is_none());
++        let panic = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
++            document.with_proved_durations(Arc::clone(&durations), || {
++                split_captured(&document, &working, |borrow| -> Result<(), EditError> {
++                    assert!(Arc::ptr_eq(
++                        &borrow.retained_durations().unwrap(),
++                        &durations
++                    ));
++                    panic!("test-only Split unwind");
++                })
++            })
++        }));
++        assert!(panic.is_err());
++        assert!(document.retained_durations().is_none());
++        assert!(working.retained_durations().is_none());
++        compare_success(&document, &pause(&document, "recovery", 19));
++    }
++}

@@ -1,0 +1,6 @@
+{
+  "file": "v2/measure-final-review.json",
+  "current_sha256": "e8fc7da481000df734319b269b1e3d62756aad90e11331a4c316907d3d01bdae",
+  "prior_frozen_reference_sha256": "092e4058e28945f5c0679431ee59fa278c32f762ae112eac182a5ea6bf67762a",
+  "note": "The current file was written during an earlier agent response after the V2 root had frozen its prior review pin. This package records the current bytes and the mismatch; it does not rewrite or treat the current file as the frozen prior review."
+}

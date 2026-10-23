@@ -1,0 +1,6 @@
+{
+  "status": "failed",
+  "stage": "core-unit-build",
+  "exception": "SystemExit",
+  "message": "101"
+}

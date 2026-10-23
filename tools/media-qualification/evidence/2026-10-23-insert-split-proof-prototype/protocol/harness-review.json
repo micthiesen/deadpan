@@ -1,0 +1,19 @@
+{
+  "status": "no_findings",
+  "reviewer": "Root, narrow carry-forward from independent V2 source and harness reviews",
+  "source_review_inherited_byte_identical": "440086711022cbb2b540167ac5dfcf3b45ee8d25674b0d538c7c994ba1a6373f",
+  "previous_build_review": "9dbe9ae858c07d14a6eba19b7b119adb1e69134dd03b866087be9c50da715f2f",
+  "previous_measure_review": "092e4058e28945f5c0679431ee59fa278c32f762ae112eac182a5ea6bf67762a",
+  "changes": [
+    "Exact S root substitution in both drivers",
+    "One exact expected unit name corrected from tests to scoped_capture_property, independently discovered from actual retained binary"
+  ],
+  "reviewed": {
+    "build.py": "60795011d6576142c382d1e2af0c12c5d61f7b10f6806a135dd7494e61acb9d4",
+    "measure.py": "cde85546df884a26d5df644c1c9fb67611f42dbfc7e4df06fd63cd5cf902fa07",
+    "expected-build-stages.json": "2ac579aa0f3f3c53bfe6e3047c204024eae36b5afa510e092d7f553b508fed03",
+    "expected-tests.json": "01b23a3c8accd9f1ab5ad7b7a576958862a347901563ea9802a4ffe1694c1005",
+    "frozen-sources.json": "ddf4b90c48877c24206c09cf4cf89f9f51c233b8b6fd158b95d5e08c15f31bf1"
+  },
+  "findings": []
+}

@@ -1,0 +1,11 @@
+{
+  "command": [
+    "/tmp/deadpan-insert-split-proof-prototype-v2-2026-10-23/test-bin/core-unit-build/deadpan_core-bf7ceed176dd1c4c",
+    "--list",
+    "full_layout_reuse_ten_thousand_hold_interior_pause_matches_reference"
+  ],
+  "binary_sha256": "06b8edf927467636cb7a2d193e1dbb09d6e01478bfd7ddf9881797898fae4015",
+  "exit": 0,
+  "stdout": "audio_reference::scoped_capture_property::full_layout_reuse_ten_thousand_hold_interior_pause_matches_reference: test\n\n1 test, 0 benchmarks\n",
+  "stderr": ""
+}

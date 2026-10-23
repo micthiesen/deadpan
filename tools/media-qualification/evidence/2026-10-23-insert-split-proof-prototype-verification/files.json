@@ -1,0 +1,30 @@
+{
+  "payload_files": 5,
+  "files": [
+    {
+      "path": "paired-analysis-run.json",
+      "bytes": 523,
+      "sha256": "cd9158b4fcb71469e4b162ba12090fe03aca0bbd3669c2831954eb93a74dd0b8"
+    },
+    {
+      "path": "root-package-verification.json",
+      "bytes": 556,
+      "sha256": "108c1a40cd4331b91420b597cd1941279cf004d215e28316ddb89d9a87f4337a"
+    },
+    {
+      "path": "verification.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "verification.stdout",
+      "bytes": 518,
+      "sha256": "07ca3d400544a65e1daa0bea7cbe6eb7e0a623875a2cd586319cad9ceb5c8884"
+    },
+    {
+      "path": "verify_package.py",
+      "bytes": 4796,
+      "sha256": "4f0baf6ec3a32ea2b330209e075283e27d955d981d71b668bd8aeb35388be6ac"
+    }
+  ]
+}

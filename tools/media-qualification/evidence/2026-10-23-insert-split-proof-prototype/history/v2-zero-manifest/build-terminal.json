@@ -1,0 +1,6 @@
+{
+  "status": "failed",
+  "stage": "core-wide-reference",
+  "exception": "AssertionError",
+  "message": "('core-wide-reference', ['0'])"
+}

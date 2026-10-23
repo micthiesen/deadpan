@@ -2,6 +2,17 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
+## Insert-split proof prototype, 2026-10-23
+
+The [private prototype](qualification/insert-split-proof-prototype-2026-10-23.md)
+reuses a validated entry duration map only around the existing interior Split
+bridge for a narrow InsertTime case. Six matched diagnostic pairs report a
+4.502272 ms median input-to-commit difference and a 4.452875 ms median
+offscreen-composition difference. All 35 phase counts and sums conserve; all
+126 pause and 18 Kestrel checks pass. The prototype has not been qualified as
+production code, and the 100 ms/50 ms targets remain open. Coverage remains
+89%, eight Complete and sixteen Partial.
+
 ## Detailed first-pause costs, 2026-10-23
 
 The [private fine diagnostic](qualification/current-pause-detail-profile-2026-10-23.md)

@@ -1,0 +1,260 @@
+{
+  "diagnostic_only": true,
+  "n_pairs": 6,
+  "method": "same-rotation baseline minus candidate, independent fresh processes; no percentile, target or calibrated overhead claim",
+  "trials_sha256": "bf4bfe6f53ed182ce1a7ed46cb98a0d6d0bb6db6458eeee578715d2f82e2077c",
+  "pairs": [
+    {
+      "rotation": 1,
+      "values": {
+        "baseline": {
+          "input_to_commit_ms": 201.35125000000002,
+          "input_to_offscreen_composition_ms": 203.837166,
+          "worker_ms": 194.806584,
+          "legacy_insertion_including_input_ms": 34.207792,
+          "pure_leaf_region_ms": 46.01825
+        },
+        "candidate": {
+          "input_to_commit_ms": 192.842125,
+          "input_to_offscreen_composition_ms": 195.25737500000002,
+          "worker_ms": 186.347209,
+          "legacy_insertion_including_input_ms": 30.161917,
+          "pure_leaf_region_ms": 41.334583
+        }
+      },
+      "baseline_minus_candidate_ms": {
+        "input_to_commit_ms": 8.509125000000012,
+        "input_to_offscreen_composition_ms": 8.579790999999972,
+        "worker_ms": 8.459374999999994,
+        "legacy_insertion_including_input_ms": 4.045874999999999,
+        "pure_leaf_region_ms": 4.683667
+      },
+      "relative_reduction_percent": {
+        "input_to_commit_ms": 4.226010516448252,
+        "input_to_offscreen_composition_ms": 4.2091396619986226,
+        "worker_ms": 4.342448199800062,
+        "legacy_insertion_including_input_ms": 11.827349160682452,
+        "pure_leaf_region_ms": 10.177846832506667
+      }
+    },
+    {
+      "rotation": 2,
+      "values": {
+        "baseline": {
+          "input_to_commit_ms": 194.824292,
+          "input_to_offscreen_composition_ms": 197.22258300000001,
+          "worker_ms": 188.492708,
+          "legacy_insertion_including_input_ms": 32.596125,
+          "pure_leaf_region_ms": 43.619584
+        },
+        "candidate": {
+          "input_to_commit_ms": 192.153875,
+          "input_to_offscreen_composition_ms": 194.71908399999998,
+          "worker_ms": 185.785542,
+          "legacy_insertion_including_input_ms": 29.8335,
+          "pure_leaf_region_ms": 41.053708
+        }
+      },
+      "baseline_minus_candidate_ms": {
+        "input_to_commit_ms": 2.6704170000000147,
+        "input_to_offscreen_composition_ms": 2.5034990000000334,
+        "worker_ms": 2.707166000000001,
+        "legacy_insertion_including_input_ms": 2.762625,
+        "pure_leaf_region_ms": 2.565876000000003
+      },
+      "relative_reduction_percent": {
+        "input_to_commit_ms": 1.3706796891632047,
+        "input_to_offscreen_composition_ms": 1.2693774525810937,
+        "worker_ms": 1.4362178933733611,
+        "legacy_insertion_including_input_ms": 8.475317234794012,
+        "pure_leaf_region_ms": 5.882394476756135
+      }
+    },
+    {
+      "rotation": 3,
+      "values": {
+        "baseline": {
+          "input_to_commit_ms": 196.28841699999998,
+          "input_to_offscreen_composition_ms": 198.830833,
+          "worker_ms": 189.539666,
+          "legacy_insertion_including_input_ms": 33.3565,
+          "pure_leaf_region_ms": 44.709958
+        },
+        "candidate": {
+          "input_to_commit_ms": 191.851,
+          "input_to_offscreen_composition_ms": 194.319583,
+          "worker_ms": 185.400208,
+          "legacy_insertion_including_input_ms": 29.832417,
+          "pure_leaf_region_ms": 40.944292
+        }
+      },
+      "baseline_minus_candidate_ms": {
+        "input_to_commit_ms": 4.437416999999982,
+        "input_to_offscreen_composition_ms": 4.511250000000018,
+        "worker_ms": 4.139458000000019,
+        "legacy_insertion_including_input_ms": 3.5240829999999974,
+        "pure_leaf_region_ms": 3.765666000000003
+      },
+      "relative_reduction_percent": {
+        "input_to_commit_ms": 2.260661667061069,
+        "input_to_offscreen_composition_ms": 2.2688885480855063,
+        "worker_ms": 2.1839534105752927,
+        "legacy_insertion_including_input_ms": 10.564906390058901,
+        "pure_leaf_region_ms": 8.422432425456547
+      }
+    },
+    {
+      "rotation": 4,
+      "values": {
+        "baseline": {
+          "input_to_commit_ms": 194.289541,
+          "input_to_offscreen_composition_ms": 196.717791,
+          "worker_ms": 187.85175,
+          "legacy_insertion_including_input_ms": 32.417334,
+          "pure_leaf_region_ms": 43.693125
+        },
+        "candidate": {
+          "input_to_commit_ms": 190.367791,
+          "input_to_offscreen_composition_ms": 192.978875,
+          "worker_ms": 184.017334,
+          "legacy_insertion_including_input_ms": 29.725334,
+          "pure_leaf_region_ms": 40.624834
+        }
+      },
+      "baseline_minus_candidate_ms": {
+        "input_to_commit_ms": 3.921750000000003,
+        "input_to_offscreen_composition_ms": 3.7389160000000174,
+        "worker_ms": 3.8344160000000045,
+        "legacy_insertion_including_input_ms": 2.6919999999999966,
+        "pure_leaf_region_ms": 3.068291000000002
+      },
+      "relative_reduction_percent": {
+        "input_to_commit_ms": 2.018508036930306,
+        "input_to_offscreen_composition_ms": 1.9006496468842604,
+        "worker_ms": 2.041192589369013,
+        "legacy_insertion_including_input_ms": 8.304199228721266,
+        "pure_leaf_region_ms": 7.0223656467693765
+      }
+    },
+    {
+      "rotation": 5,
+      "values": {
+        "baseline": {
+          "input_to_commit_ms": 197.57929099999998,
+          "input_to_offscreen_composition_ms": 200.063833,
+          "worker_ms": 191.228416,
+          "legacy_insertion_including_input_ms": 33.0025,
+          "pure_leaf_region_ms": 44.077291
+        },
+        "candidate": {
+          "input_to_commit_ms": 190.155292,
+          "input_to_offscreen_composition_ms": 192.757958,
+          "worker_ms": 183.975209,
+          "legacy_insertion_including_input_ms": 29.598084,
+          "pure_leaf_region_ms": 40.522542
+        }
+      },
+      "baseline_minus_candidate_ms": {
+        "input_to_commit_ms": 7.423998999999981,
+        "input_to_offscreen_composition_ms": 7.305874999999986,
+        "worker_ms": 7.253207000000003,
+        "legacy_insertion_including_input_ms": 3.4044159999999977,
+        "pure_leaf_region_ms": 3.554749000000001
+      },
+      "relative_reduction_percent": {
+        "input_to_commit_ms": 3.7574783077847878,
+        "input_to_offscreen_composition_ms": 3.651771982195296,
+        "worker_ms": 3.7929545993833904,
+        "legacy_insertion_including_input_ms": 10.315630634042869,
+        "pure_leaf_region_ms": 8.064808247857158
+      }
+    },
+    {
+      "rotation": 6,
+      "values": {
+        "baseline": {
+          "input_to_commit_ms": 196.27045900000002,
+          "input_to_offscreen_composition_ms": 198.70974999999999,
+          "worker_ms": 189.852709,
+          "legacy_insertion_including_input_ms": 33.061125,
+          "pure_leaf_region_ms": 44.548167
+        },
+        "candidate": {
+          "input_to_commit_ms": 191.70333300000001,
+          "input_to_offscreen_composition_ms": 194.31525,
+          "worker_ms": 185.478042,
+          "legacy_insertion_including_input_ms": 29.738958,
+          "pure_leaf_region_ms": 40.741875
+        }
+      },
+      "baseline_minus_candidate_ms": {
+        "input_to_commit_ms": 4.567126000000002,
+        "input_to_offscreen_composition_ms": 4.394499999999994,
+        "worker_ms": 4.3746670000000165,
+        "legacy_insertion_including_input_ms": 3.3221669999999968,
+        "pure_leaf_region_ms": 3.806291999999999
+      },
+      "relative_reduction_percent": {
+        "input_to_commit_ms": 2.3269553774264122,
+        "input_to_offscreen_composition_ms": 2.211517049364711,
+        "worker_ms": 2.304242601036584,
+        "legacy_insertion_including_input_ms": 10.048560053537189,
+        "pure_leaf_region_ms": 8.544216869798479
+      }
+    }
+  ],
+  "paired_difference_ms": {
+    "input_to_commit_ms": {
+      "minimum": 2.6704170000000147,
+      "median": 4.502271499999992,
+      "maximum": 8.509125000000012
+    },
+    "input_to_offscreen_composition_ms": {
+      "minimum": 2.5034990000000334,
+      "median": 4.452875000000006,
+      "maximum": 8.579790999999972
+    },
+    "worker_ms": {
+      "minimum": 2.707166000000001,
+      "median": 4.257062500000018,
+      "maximum": 8.459374999999994
+    },
+    "legacy_insertion_including_input_ms": {
+      "minimum": 2.6919999999999966,
+      "median": 3.363291499999997,
+      "maximum": 4.045874999999999
+    },
+    "pure_leaf_region_ms": {
+      "minimum": 2.565876000000003,
+      "median": 3.660207500000002,
+      "maximum": 4.683667
+    }
+  },
+  "paired_relative_reduction_percent": {
+    "input_to_commit_ms": {
+      "minimum": 1.3706796891632047,
+      "median": 2.2938085222437405,
+      "maximum": 4.226010516448252
+    },
+    "input_to_offscreen_composition_ms": {
+      "minimum": 1.2693774525810937,
+      "median": 2.2402027987251087,
+      "maximum": 4.2091396619986226
+    },
+    "worker_ms": {
+      "minimum": 1.4362178933733611,
+      "median": 2.244098005805938,
+      "maximum": 4.342448199800062
+    },
+    "legacy_insertion_including_input_ms": {
+      "minimum": 8.304199228721266,
+      "median": 10.182095343790028,
+      "maximum": 11.827349160682452
+    },
+    "pure_leaf_region_ms": {
+      "minimum": 5.882394476756135,
+      "median": 8.243620336656853,
+      "maximum": 10.177846832506667
+    }
+  }
+}

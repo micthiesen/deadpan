@@ -1,0 +1,8 @@
+{
+  "status": "go",
+  "pins_sha256": "5f94ebf6cae6d455ee598c8c20bba40a03c78aaa058471734c44983ea2bfc16e",
+  "source_map_sha256": "ddf4b90c48877c24206c09cf4cf89f9f51c233b8b6fd158b95d5e08c15f31bf1",
+  "source_identical_v2": true,
+  "fresh_target": true,
+  "no_prior_attempt_overwritten": true
+}

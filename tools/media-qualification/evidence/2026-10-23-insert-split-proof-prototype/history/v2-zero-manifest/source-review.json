@@ -1,0 +1,15 @@
+{
+  "status": "no_findings",
+  "findings": [],
+  "source_map_sha256": "ddf4b90c48877c24206c09cf4cf89f9f51c233b8b6fd158b95d5e08c15f31bf1",
+  "reviewed_path_hashes": {
+    "crates/deadpan-core/src/insert_time.rs": "76bcc37b4367d9e610d67950af26198afc6ac4986299f02635799513f0bc08b1"
+  },
+  "parent_source_review": "/tmp/deadpan-insert-split-proof-prototype-2026-10-23/source-review.json",
+  "parent_source_review_sha256": "ff46735bd4e4e19363c4e8034ed7e1bd6303ce2e79c35758d1bfb81f71dc117a",
+  "scope": "Narrow independent source-only amendment review. All2054 final Rust bytes rehashed; only insert_time.rs differs from reviewed v1, exactly the test sentinel call invalid -> super::invalid. All2053 other Rust files and6 inputs unchanged. Production implementation and every test assertion unchanged.",
+  "failure_provenance": "Root reports v1 core-unit-build failed E0659 before measurements; this review makes no execution claim. V1 retained unchanged.",
+  "limitations": [
+    "No Cargo/compiler/formatter/runtime/Git execution or source edits. Original broader source review stands; this amendment explicitly resolves ambiguous glob-import name lookup."
+  ]
+}

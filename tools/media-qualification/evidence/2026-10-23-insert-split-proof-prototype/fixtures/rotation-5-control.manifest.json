@@ -1,0 +1,21 @@
+{
+  "members": [
+    {
+      "path": ".writer.lock",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "manifest.json",
+      "bytes": 62,
+      "sha256": "8fce85b103ad4d3dafd2869369b57c72a89855e890518209ea1b9412aabcb9c7"
+    },
+    {
+      "path": "project.sqlite",
+      "bytes": 4489216,
+      "sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c"
+    }
+  ],
+  "archive_sha256": "ddcf0e477fa576874ff5ccc3224cb73751b27cc4840df966d672fce4f913cd09",
+  "archive_bytes": 260250
+}

@@ -1,0 +1,233 @@
+{
+  "core-unit-build": {
+    "built": "/private/tmp/deadpan-insert-split-proof-prototype-v3-2026-10-23/target/debug/deps/deadpan_core-bf7ceed176dd1c4c",
+    "cargo_profile": "debug",
+    "profile": {
+      "opt_level": "0",
+      "debuginfo": "line-tables-only",
+      "debug_assertions": true,
+      "overflow_checks": true,
+      "test": true
+    },
+    "target": {
+      "kind": [
+        "lib"
+      ],
+      "crate_types": [
+        "lib"
+      ],
+      "name": "deadpan_core",
+      "src_path": "/private/tmp/deadpan-insert-split-proof-prototype-v3-2026-10-23/source/crates/deadpan-core/src/lib.rs",
+      "edition": "2024",
+      "doc": true,
+      "doctest": true,
+      "test": true
+    },
+    "sha256": "fb82610ff125590238728a63f8e6a2e303fe4436eb6e9f29e3f4a1f9a665d56b",
+    "name": "deadpan_core",
+    "retained": "/tmp/deadpan-insert-split-proof-prototype-v3-2026-10-23/test-bin/core-unit-build/deadpan_core-bf7ceed176dd1c4c"
+  },
+  "core-split-proof": {
+    "built": "/private/tmp/deadpan-insert-split-proof-prototype-v3-2026-10-23/target/debug/deps/deadpan_core-bf7ceed176dd1c4c",
+    "cargo_profile": "debug",
+    "profile": {
+      "opt_level": "0",
+      "debuginfo": "line-tables-only",
+      "debug_assertions": true,
+      "overflow_checks": true,
+      "test": true
+    },
+    "target": {
+      "kind": [
+        "lib"
+      ],
+      "crate_types": [
+        "lib"
+      ],
+      "name": "deadpan_core",
+      "src_path": "/private/tmp/deadpan-insert-split-proof-prototype-v3-2026-10-23/source/crates/deadpan-core/src/lib.rs",
+      "edition": "2024",
+      "doc": true,
+      "doctest": true,
+      "test": true
+    },
+    "sha256": "fb82610ff125590238728a63f8e6a2e303fe4436eb6e9f29e3f4a1f9a665d56b",
+    "name": "deadpan_core",
+    "retained": "/tmp/deadpan-insert-split-proof-prototype-v3-2026-10-23/test-bin/core-unit-build/deadpan_core-bf7ceed176dd1c4c",
+    "executed": "/tmp/deadpan-insert-split-proof-prototype-v3-2026-10-23/test-bin/core-unit-build/deadpan_core-bf7ceed176dd1c4c",
+    "tests": {
+      "executed_tests": [
+        "insert_time::tests::insert_split_proof_reference_representation_and_seams_keep_existing_path",
+        "insert_time::tests::insert_split_proof_changed_same_revision_inputs_fail_before_installing_scope",
+        "insert_time::tests::insert_split_proof_binding_only_bridge_is_exact_and_pops_on_error_and_unwind",
+        "insert_time::tests::insert_split_proof_mark_growth_refusal_cleans_both_scopes",
+        "insert_time::tests::insert_split_proof_phase_budget_refusal_and_early_identity_limits_are_exact",
+        "insert_time::tests::insert_split_proof_plain_and_scoped_successive_pauses_match_complete_reference"
+      ],
+      "passed_per_summary": [
+        6
+      ],
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  "core-wide-reference": {
+    "built": "/private/tmp/deadpan-insert-split-proof-prototype-v3-2026-10-23/target/debug/deps/deadpan_core-bf7ceed176dd1c4c",
+    "cargo_profile": "debug",
+    "profile": {
+      "opt_level": "0",
+      "debuginfo": "line-tables-only",
+      "debug_assertions": true,
+      "overflow_checks": true,
+      "test": true
+    },
+    "target": {
+      "kind": [
+        "lib"
+      ],
+      "crate_types": [
+        "lib"
+      ],
+      "name": "deadpan_core",
+      "src_path": "/private/tmp/deadpan-insert-split-proof-prototype-v3-2026-10-23/source/crates/deadpan-core/src/lib.rs",
+      "edition": "2024",
+      "doc": true,
+      "doctest": true,
+      "test": true
+    },
+    "sha256": "fb82610ff125590238728a63f8e6a2e303fe4436eb6e9f29e3f4a1f9a665d56b",
+    "name": "deadpan_core",
+    "retained": "/tmp/deadpan-insert-split-proof-prototype-v3-2026-10-23/test-bin/core-unit-build/deadpan_core-bf7ceed176dd1c4c",
+    "executed": "/tmp/deadpan-insert-split-proof-prototype-v3-2026-10-23/test-bin/core-unit-build/deadpan_core-bf7ceed176dd1c4c",
+    "tests": {
+      "executed_tests": [
+        "audio_reference::scoped_capture_property::full_layout_reuse_ten_thousand_hold_interior_pause_matches_reference"
+      ],
+      "passed_per_summary": [
+        1
+      ],
+      "failed": 0,
+      "ignored": 0
+    }
+  },
+  "core-integration": {
+    "audio_reference": {
+      "built": "/private/tmp/deadpan-insert-split-proof-prototype-v3-2026-10-23/target/debug/deps/audio_reference-e08ec461d66ed53b",
+      "cargo_profile": "debug",
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": "line-tables-only",
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": true
+      },
+      "target": {
+        "kind": [
+          "test"
+        ],
+        "crate_types": [
+          "bin"
+        ],
+        "name": "audio_reference",
+        "src_path": "/private/tmp/deadpan-insert-split-proof-prototype-v3-2026-10-23/source/crates/deadpan-core/tests/audio_reference.rs",
+        "edition": "2024",
+        "doc": false,
+        "doctest": false,
+        "test": true
+      },
+      "sha256": "6b3d270c69929d5225ae4d8e460ee14a0d83973b1b324599da12ebd74cc0954d",
+      "executed": "/private/tmp/deadpan-insert-split-proof-prototype-v3-2026-10-23/target/debug/deps/audio_reference-e08ec461d66ed53b",
+      "name": "audio_reference",
+      "retained": "/tmp/deadpan-insert-split-proof-prototype-v3-2026-10-23/test-bin/core-integration/audio_reference-e08ec461d66ed53b"
+    },
+    "command_work": {
+      "built": "/private/tmp/deadpan-insert-split-proof-prototype-v3-2026-10-23/target/debug/deps/command_work-8737fb0ac7fb2aa7",
+      "cargo_profile": "debug",
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": "line-tables-only",
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": true
+      },
+      "target": {
+        "kind": [
+          "test"
+        ],
+        "crate_types": [
+          "bin"
+        ],
+        "name": "command_work",
+        "src_path": "/private/tmp/deadpan-insert-split-proof-prototype-v3-2026-10-23/source/crates/deadpan-core/tests/command_work.rs",
+        "edition": "2024",
+        "doc": false,
+        "doctest": false,
+        "test": true
+      },
+      "sha256": "9c6ad5d309431a7f3366cdd43c033f727ad5351bbbc58c606ccf02928c4b5134",
+      "executed": "/private/tmp/deadpan-insert-split-proof-prototype-v3-2026-10-23/target/debug/deps/command_work-8737fb0ac7fb2aa7",
+      "name": "command_work",
+      "retained": "/tmp/deadpan-insert-split-proof-prototype-v3-2026-10-23/test-bin/core-integration/command_work-8737fb0ac7fb2aa7"
+    },
+    "semantic_refresh": {
+      "built": "/private/tmp/deadpan-insert-split-proof-prototype-v3-2026-10-23/target/debug/deps/semantic_refresh-2c75c15caa34783a",
+      "cargo_profile": "debug",
+      "profile": {
+        "opt_level": "0",
+        "debuginfo": "line-tables-only",
+        "debug_assertions": true,
+        "overflow_checks": true,
+        "test": true
+      },
+      "target": {
+        "kind": [
+          "test"
+        ],
+        "crate_types": [
+          "bin"
+        ],
+        "name": "semantic_refresh",
+        "src_path": "/private/tmp/deadpan-insert-split-proof-prototype-v3-2026-10-23/source/crates/deadpan-core/tests/semantic_refresh.rs",
+        "edition": "2024",
+        "doc": false,
+        "doctest": false,
+        "test": true
+      },
+      "sha256": "8c8db65fb51e74743ceb6b4ce92650abde085953c93b5c8a487e3508233db3eb",
+      "executed": "/private/tmp/deadpan-insert-split-proof-prototype-v3-2026-10-23/target/debug/deps/semantic_refresh-2c75c15caa34783a",
+      "name": "semantic_refresh",
+      "retained": "/tmp/deadpan-insert-split-proof-prototype-v3-2026-10-23/test-bin/core-integration/semantic_refresh-2c75c15caa34783a"
+    }
+  },
+  "store-preparation": {
+    "compound_preparation": {
+      "built": "/private/tmp/deadpan-insert-split-proof-prototype-v3-2026-10-23/target/release/deps/compound_preparation-439f3bd294ec4be6",
+      "cargo_profile": "release",
+      "profile": {
+        "opt_level": "3",
+        "debuginfo": 0,
+        "debug_assertions": false,
+        "overflow_checks": true,
+        "test": true
+      },
+      "target": {
+        "kind": [
+          "test"
+        ],
+        "crate_types": [
+          "bin"
+        ],
+        "name": "compound_preparation",
+        "src_path": "/private/tmp/deadpan-insert-split-proof-prototype-v3-2026-10-23/source/crates/deadpan-store/tests/compound_preparation.rs",
+        "edition": "2024",
+        "doc": false,
+        "doctest": false,
+        "test": true
+      },
+      "sha256": "9425beadda3f38d2da4b808c09f14eb22978c883aaa97334cacea73c8a66e812",
+      "executed": "/private/tmp/deadpan-insert-split-proof-prototype-v3-2026-10-23/target/release/deps/compound_preparation-439f3bd294ec4be6",
+      "name": "compound_preparation",
+      "retained": "/tmp/deadpan-insert-split-proof-prototype-v3-2026-10-23/test-bin/store-preparation/compound_preparation-439f3bd294ec4be6"
+    }
+  }
+}

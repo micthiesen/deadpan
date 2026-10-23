@@ -1,0 +1,14 @@
+{
+  "command": [
+    "python3",
+    "/tmp/deadpan-insert-split-proof-prototype-v3-2026-10-23/analyse_pairs.py"
+  ],
+  "exit": 0,
+  "root_observed_tool_completion": true,
+  "script_sha256": "6322729c51651745e26aa1cfd3404362a657132631da4457b9ff47d8fd976117",
+  "input_sha256": "bf4bfe6f53ed182ce1a7ed46cb98a0d6d0bb6db6458eeee578715d2f82e2077c",
+  "output_sha256": "5adf94241fbc17c00eb2e37d8fa15d7c55f19fd755a3f2cb1438c47421bbbcfa",
+  "output": "paired-analysis.json",
+  "execution_count": 1,
+  "seconds_not_recorded": true
+}

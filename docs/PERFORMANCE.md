@@ -28,8 +28,13 @@ and input-duration calculation are measured separately at 1.471250 and
 1.284166 ms; neither supports a validation bypass. The 35-row traces conserve
 exactly. Control/off/on commit medians are 195.141583 /195.833459 /195.879042 ms.
 The measurements include uncalibrated instrumentation overhead and establish no
-percentile or target pass. The next step is a private retained-entry-duration
-borrow prototype around the existing interior split call; no gain is claimed.
+percentile or target pass. The private retained-entry-duration borrow
+experiment is recorded in the
+[insert-split proof prototype](qualification/insert-split-proof-prototype-2026-10-23.md).
+Six matched pairs report a 4.502272 ms median commit difference and a
+4.452875 ms median offscreen-composition difference. These are prototype
+diagnostics, not production qualification or a latency-target pass. The 100 ms
+and 50 ms targets remain open.
 
 [Specification Section 25](spec/DEADPAN_SPEC.md#25-performance-requirements-and-instrumentation)
 sets engineering targets. This page maps each target to the measurement that

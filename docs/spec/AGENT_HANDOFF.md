@@ -4,7 +4,7 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Current continuation, 2026-10-23
 
-Qualified code remains 5fdae748; this study's main documentation baseline is cc2d57d4.
+Qualified code remains 5fdae748; this prototype's main documentation baseline is 79a14b8b.
 The [production replay qualification](../qualification/one-leaf-replay-reuse-2026-10-23.md)
 remains separate. Keep production App SHA-256
 0cb2931562108a68b57915c6135f448bc74293ba20623c7484053152566d31ff
@@ -59,12 +59,33 @@ do not call the 31.453791 ms leaf_insert_known row all validation. Exact
 claim. The independently verified primary package contains 186 payloads /
 4,356,015 bytes.
 
-The next bounded experiment is a private retained-entry-duration borrow only
-around the existing legacy interior split_captured call. It must preserve
-complete validation and refusal order; no gain is claimed. Keep all diagnostic
-hooks outside main. The full goal remains active at estimated 89%, eight
-Complete/sixteen Partial. The 100 ms and 50 ms targets and all product gates
-remain open.
+That private retained-entry-duration experiment is complete. The
+[insert-split proof prototype](../qualification/insert-split-proof-prototype-2026-10-23.md)
+reuses the previously validated entry duration map only around the existing
+interior Split bridge for the narrow local/compact/no-derived-clock/no-prior-map
+case. Six matched pairs show a 4.502272 ms median commit difference and a
+4.452875 ms median offscreen-composition difference; all 126 pause and 18
+Kestrel checks pass. This is private diagnostic evidence, not production
+qualification or a target pass. Its 286-payload package has independently
+verified inventory SHA-256
+3059af729aeb692cb5d230cf661674d61d4232e088b235dd1255efd3a9fa237d. V1's
+test-only E0659 compile failure and V2's zero-test oracle selection remain
+separate retained history. Do not pool these results with the earlier one-leaf
+prototype or production qualification. A separate uninstrumented production
+qualification is still required. Keep diagnostic hooks outside Main. The full
+goal remains active at estimated 89%, eight Complete/sixteen Partial; the
+100 ms and 50 ms targets and all product gates remain open.
+
+Uninstrumented qualification is active in
+/tmp/deadpan-insert-split-proof-production-2026-10-23. Its 2,053-file map
+ee77ff2f40c620cbf4542f41c877295e982adaec32722796f357331b21b7915e
+differs from qualified Main only in insert_time.rs; all thirteen diagnostic
+paths were restored and the temporary helper removed. Independent source and
+driver reviews are clear. The nine-stage build has passed all 724 Core unit
+tests, 22 integration tests and twelve Store tests; release App and strict
+checks are still running. Root owns build session 63825. Five fresh native
+pairs and the qualified-media Some/None PCM/history/export test are still owed.
+Do not promote, call this a production gain, or restart active producers.
 
 ## Earlier qualification history, 2026-10-23
 

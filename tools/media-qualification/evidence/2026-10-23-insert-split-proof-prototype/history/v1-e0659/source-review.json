@@ -1,0 +1,43 @@
+{
+  "status": "no_findings",
+  "findings": [],
+  "review_kind": "independent source-only proof and tests review",
+  "source_map_sha256": "57361ac8e296ce4ab578aafe8fbe8d159532d247fa4bd920f3ce7ab1a0548f18",
+  "reviewed_path_hashes": {
+    "crates/deadpan-core/src/insert_time.rs": "5e645cdf7afa23288340c05b2cd7d367b6396e06903932e5341d28c783b83313"
+  },
+  "baseline_path_hashes": {
+    "crates/deadpan-core/src/insert_time.rs": "400f02917aa920c457138c27af1983e6b20ed27d24cbe4a68189da9756d8882f"
+  },
+  "patch_sha256": "dca04c4149f1deb2d78957d3af898cd465635041e923c48827a86b8b95cdca7c",
+  "scope": {
+    "full_rust_file_count": 2054,
+    "changed_paths": [
+      "crates/deadpan-core/src/insert_time.rs"
+    ],
+    "unchanged_nonowned_rust_files": 2053,
+    "six_inputs_unchanged": true,
+    "production_main_modified_by_reviewer": false,
+    "new_unit_cases": 6
+  },
+  "proof_review": [
+    "insert_time.rs:91 retains the original successful entry durations query and every preceding rejection. Capture at 226-230 still completes before eligibility or scope installation.",
+    "insert_time.rs:236-245 permits only a legacy interior Split in local command work and compact timing representation, with empty live derived clocks and no retained proof for the exact entry borrow.",
+    "The owned entry map is moved into an Arc held by entry_durations through the original function tail. The entry borrow remains immutable. No timing/layout capture, serialization or work charge was removed.",
+    "insert_time.rs:251-269 encloses only split_captured plus its existing Split reducer call. Existing split_captured bridges only the binding-only working clone. Both scope guards pop on return, error or unwind before working is assigned the changed Split result.",
+    "document.rs:2480-2508 checks complete validation in debug builds and scopes the exact borrowed document pointer. document.rs:2578 searches past duration-only entries to preserve an enclosing BindingProof. No TLS borrow is held over the reducer call.",
+    "audio_binding_lifecycle.rs:270-417 retains input validation, aggregate capture charges, scoped/provisional layout rules, validation of captured binding state and wire-size refusal. Only audio_bindings changes between document and working.",
+    "split.rs:233 retains complete changed-result validation. The returned result durations feed the unchanged resume, prune, rescope, binding validation and insert_leaf_shared tail. No entry proof is attached to a changed document.",
+    "Reference command/representation, seams, retimed/composite/derived paths and existing retained-entry scopes keep their prior branch behavior."
+  ],
+  "test_review": [
+    "Three successive plain pauses assert exactly one actual new scope each, match complete-reference and already-scoped transactions/documents, compare wire bytes, restore forward/inverse results, retain marks/bindings and preserve entry bytes.",
+    "Reference representation and seam cases assert no new entry scope. Malformed same-revision label, missing node and invalid binding cases match exact reference errors before scope activation.",
+    "Production mark-growth, phase-term and identity-pool limits compare exact errors and unchanged input. Mark-growth asserts actual activation and recovery; oversized identity input asserts no activation.",
+    "A separate exact binding-only bridge test checks Arc identity, returned sentinel refusal and panic cleanup of both borrowed scopes, followed by successful recovery."
+  ],
+  "limitations": [
+    "Static source review only. No Cargo, rustc, formatter, runtime, Git or measurement commands were run by this reviewer.",
+    "Compiler/lint outcomes, test execution and performance gain remain for Root to establish. New unit tests do not replace the unchanged wide reference, command-work, semantic-refresh and Store authority oracles."
+  ]
+}

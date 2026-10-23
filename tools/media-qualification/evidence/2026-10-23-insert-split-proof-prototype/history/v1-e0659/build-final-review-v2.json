@@ -1,0 +1,22 @@
+{
+  "status": "no_findings",
+  "findings": [],
+  "script_sha256": "ce3c45f5fc1de26d583c5a43914d2d77111b28fa4edec2b41179bfb71d75b525",
+  "reviewed_path_hashes": {
+    "build.py": "ce3c45f5fc1de26d583c5a43914d2d77111b28fa4edec2b41179bfb71d75b525",
+    "expected-build-stages.json": "2ac579aa0f3f3c53bfe6e3047c204024eae36b5afa510e092d7f553b508fed03",
+    "expected-tests.json": "d8f69efc40e84524f9d2780086225a14c002b1276d464a4bcaa329d48d6850d0"
+  },
+  "prior_review": "build-final-review.json",
+  "prior_review_sha256": "44f355ee8e57bd733418b3c64a58d845a678a91be59adf24d850263108cb4183",
+  "resolved_findings": [
+    {
+      "id": "BUILD01",
+      "resolution": "Fresh/preexisting guards run before exclusive build-owner creation. OWNED becomes true only after acquiring that owner. Unowned preflight failures create a separate uniquely named refused-build receipt; owned failures and success both create build-terminal.json exclusively. Existing terminal and owner receipts cannot be overwritten by this invocation."
+    }
+  ],
+  "scope": "Narrow static re-read of ownership, exclusive receipt creation, completion and failure paths; original ten-stage, artifact/path/hash and exact test-count review stands.",
+  "limitations": [
+    "No build driver functions, Cargo, compiler, formatter, tests, native runtime or Git were executed. No source or driver edits made."
+  ]
+}

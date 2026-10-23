@@ -1,0 +1,37 @@
+{
+  "core-split-proof": [
+    "insert_time::tests::insert_split_proof_plain_and_scoped_successive_pauses_match_complete_reference",
+    "insert_time::tests::insert_split_proof_reference_representation_and_seams_keep_existing_path",
+    "insert_time::tests::insert_split_proof_changed_same_revision_inputs_fail_before_installing_scope",
+    "insert_time::tests::insert_split_proof_mark_growth_refusal_cleans_both_scopes",
+    "insert_time::tests::insert_split_proof_phase_budget_refusal_and_early_identity_limits_are_exact",
+    "insert_time::tests::insert_split_proof_binding_only_bridge_is_exact_and_pops_on_error_and_unwind"
+  ],
+  "core-wide-reference": [
+    "audio_reference::scoped_capture_property::full_layout_reuse_ten_thousand_hold_interior_pause_matches_reference"
+  ],
+  "core-integration": {
+    "targets": [
+      "semantic_refresh",
+      "command_work",
+      "audio_reference"
+    ],
+    "summaries": 3,
+    "minimum_passed_per_binary": 1,
+    "ignored_per_binary": 0
+  },
+  "store-preparation": [
+    "host_failure_rolls_back_authored_and_register_only_preparation_and_allows_retry",
+    "authoritative_refusals_happen_before_host_preparation",
+    "prepared_commit_matches_preview_commit_history_and_reopening",
+    "one_leaf_replay_prepared_commit_retains_exact_history_undo_redo_and_copy",
+    "one_leaf_replay_store_refusals_precede_callback_and_leave_no_writes",
+    "one_leaf_replay_host_and_sql_failures_roll_back_even_after_a_hit",
+    "one_leaf_replay_transcript_guard_is_current_authority_before_preparation",
+    "one_leaf_replay_admitted_reverse_audio_rechecks_stored_qualification",
+    "one_leaf_replay_changed_corrections_invalidate_admitted_transcript_guard",
+    "one_leaf_replay_historical_allocations_refuse_before_preparation",
+    "write_failure_discards_host_state_and_rolls_back_before_retry",
+    "unavailable_transcript_authority_refuses_before_host_preparation"
+  ]
+}

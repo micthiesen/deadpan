@@ -1,0 +1,21 @@
+{
+  "status": "no_findings",
+  "review_kind": "independent_static_measure_driver_v2_review",
+  "reviewed_file": {
+    "path": "measure.py",
+    "sha256": "4b472bf2515606ab7f164dc33846faac770ce2968d2b789a428d97fc36ca7321"
+  },
+  "verified": [
+    "Python AST parsing succeeds.",
+    "The v2 driver differs from the reviewed v1 only by the scratch-root path; trial protocol and guards are unchanged.",
+    "The corrected v2 build source identity and the V1 E0659 failed compile are separately recorded in previous-attempt.json; that failure predates all measurements and is not represented as a passing test.",
+    "The driver requires all ten named build stages and successful validation, checks the frozen source/input maps and executed binary hashes before and after every trial, and refuses prior measurement receipt/terminal/owner files.",
+    "All six three-lane rotations are explicit; each trial uses a fresh 10,000-beat fixture, checks authored input/WAL state, validates seven pause checks and one Kestrel check, and validates profile output only in the profile-on baseline/candidate lanes.",
+    "Timing summaries are separated from profile phase summaries; diagnostic metadata explicitly disclaims percentile, target, and memory claims.",
+    "Offscreen readback and physical-display measurement are asserted false."
+  ],
+  "findings": [],
+  "limitations": [
+    "Static review only. The V2 build and measurement are not shown as complete by this review."
+  ]
+}

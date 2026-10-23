@@ -1,0 +1,24 @@
+{
+  "status": "no_findings",
+  "findings": [],
+  "script_sha256": "6322729c51651745e26aa1cfd3404362a657132631da4457b9ff47d8fd976117",
+  "reviewed_inputs": {
+    "measure.py": "cde85546df884a26d5df644c1c9fb67611f42dbfc7e4df06fd63cd5cf902fa07",
+    "check_profile.py": "d7856844d550b05207cc75391a810008da0b44adeafeb38e70ec95892c9a4f61",
+    "previous-attempts.json": "1ca87aa4cb5f0a75e4cccf86427dbb460a25077dd69b532db4edf9415b882041"
+  },
+  "scope": "Independent static review of paired arithmetic and producer/schema compatibility. No analysis functions executed.",
+  "verified": [
+    "Actual producer rows use rotation, kind, metrics, profile.selected.phases, elapsed_ns, checks, kestrel_checks, authored_input_unchanged and wal_empty exactly as read by analysis.",
+    "The driver emits six rotations, each a permutation of control/baseline/candidate. Analysis requires eighteen total rows and all three kinds in every rotation1..6; those combined cardinalities exclude missing, duplicate or outside-rotation rows.",
+    "Only same-rotation baseline/candidate values are subtracted. Control is checked for group presence and is not pooled with diagnostic lanes. No earlier batch is read.",
+    "Legacy insertion is the same-trial sum of exclusive leaf_insert_known and leaf_input_durations. Pure leaf is semantic_leaf_apply residual plus leaf_insert_known, leaf_input_durations and leaf_net_construction; these are disjoint exclusive rows, not inclusive parent durations.",
+    "Thirty-five unique phase names and exact outer conservation are checked. The upstream strict parser also enforces exact ordered names/counts, integer bounds, zero checkpoint and single block; measure requires finite nonnegative metrics, exact checks and immutable inputs.",
+    "Differences and relative reductions are computed per pair before min/median/max aggregation. The method labels independent fresh invocations and diagnostic status and makes no percentile, target, calibrated overhead or significance claim.",
+    "Completed measurement terminal is required and output uses exclusive creation. A zero baseline denominator fails rather than silently manufacturing a relative result; actual values remain unknown before measurement."
+  ],
+  "limitations": [
+    "Measurement has not been reviewed or executed here. No measured gain or validation pass is claimed.",
+    "The analysis trusts the completed guarded producer records; later packaging must continue to bind raw reports, trials, source/binary identities and terminal receipts."
+  ]
+}
