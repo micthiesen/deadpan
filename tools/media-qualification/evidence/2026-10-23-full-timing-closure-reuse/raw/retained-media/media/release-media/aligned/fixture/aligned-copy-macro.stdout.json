@@ -1,0 +1,143 @@
+{
+  "bank_version": 2,
+  "before_bank_version": 1,
+  "before_revision": "f8b3cd0e-a8ca-48ee-a31f-2ed4032ff39d",
+  "committed": true,
+  "committed_registers": {
+    "bank_version": 2,
+    "project_id": "e9b8de03-f2cc-40e8-99df-5e4d8a60c9d6",
+    "revision_id": "b9c405d3-f0dd-4165-a5b7-c2a5c070f65c"
+  },
+  "committed_revision": "b9c405d3-f0dd-4165-a5b7-c2a5c070f65c",
+  "context": {
+    "cursor": 15,
+    "original": null,
+    "parent": "8585e8ca-b152-4a3b-98c3-91963167d804",
+    "scoped": null,
+    "selected_child": "c56cfc26-6dd9-4f36-b09e-ef84725c73f1",
+    "visual_selection": null
+  },
+  "edit": {
+    "changed_ids": [
+      "14024930-a3ef-4ff9-afb3-d613222da570",
+      "7420e6a9-dd3f-44dd-b4da-446d3fd8c8fe",
+      "8585e8ca-b152-4a3b-98c3-91963167d804",
+      "a041cdde-da46-4bb7-8805-b4f7e5c75184",
+      "b2fed3f9-e75e-409e-ad96-3be1787bfdbc",
+      "c56cfc26-6dd9-4f36-b09e-ef84725c73f1",
+      "f7283ad5-c442-47de-88be-233cc08e3e01"
+    ],
+    "description": "Apply resolved transaction",
+    "duration_delta": 4,
+    "new_revision": "b9c405d3-f0dd-4165-a5b7-c2a5c070f65c"
+  },
+  "generation_preparation_notices": [],
+  "generation_preparations": [],
+  "instruction_count": 2,
+  "mark_changes": [],
+  "operation": "apply",
+  "project_id": "e9b8de03-f2cc-40e8-99df-5e4d8a60c9d6",
+  "protocol": 1,
+  "register_writes": [
+    "\"",
+    "c"
+  ],
+  "trace": [
+    {
+      "after_cursor": 15,
+      "after_original": null,
+      "after_parent": "8585e8ca-b152-4a3b-98c3-91963167d804",
+      "after_scoped": null,
+      "after_selected_child": "aligned-sound-scope-n18",
+      "after_visual_selection": null,
+      "before_cursor": 15,
+      "before_original": null,
+      "before_revision": "f8b3cd0e-a8ca-48ee-a31f-2ed4032ff39d",
+      "before_scope": {
+        "end": 15,
+        "start": 0
+      },
+      "before_scoped": null,
+      "before_selected_child": "aligned-sound-scope-n18",
+      "before_visual_selection": null,
+      "capture": {
+        "bounds": {
+          "end": 14,
+          "start": 8
+        },
+        "parent": "aligned-top",
+        "scope": [
+          "aligned-top"
+        ],
+        "scope_labels": [
+          "Retained ancestor Top"
+        ],
+        "timing": {
+          "allocation": "5fd81e48-2647-4c05-a36e-49573b5e95c2",
+          "ordinal": 0
+        }
+      },
+      "capture_set": null,
+      "captured_child_label": "New processing G",
+      "depth": 0,
+      "instruction": {
+        "register": "c",
+        "selector": {
+          "node": "037d3933-f859-4c0f-b075-ad902998bf3b",
+          "type": "node"
+        },
+        "type": "yank"
+      },
+      "parent": "8585e8ca-b152-4a3b-98c3-91963167d804",
+      "removed_range": null,
+      "resolved_nodes": [],
+      "resolved_parent": "aligned-top",
+      "resolved_range": {
+        "end": 12,
+        "start": 8
+      },
+      "resolved_ranges": [],
+      "resolved_selection": {
+        "node": "037d3933-f859-4c0f-b075-ad902998bf3b",
+        "type": "child"
+      }
+    },
+    {
+      "after_cursor": 15,
+      "after_original": null,
+      "after_parent": "8585e8ca-b152-4a3b-98c3-91963167d804",
+      "after_scoped": null,
+      "after_selected_child": "c56cfc26-6dd9-4f36-b09e-ef84725c73f1",
+      "after_visual_selection": null,
+      "before_cursor": 15,
+      "before_original": null,
+      "before_revision": "f8b3cd0e-a8ca-48ee-a31f-2ed4032ff39d",
+      "before_scope": {
+        "end": 15,
+        "start": 0
+      },
+      "before_scoped": null,
+      "before_selected_child": "aligned-sound-scope-n18",
+      "before_visual_selection": null,
+      "capture": null,
+      "capture_set": null,
+      "captured_child_label": null,
+      "depth": 0,
+      "instruction": {
+        "before": false,
+        "register": "c",
+        "type": "paste"
+      },
+      "parent": "8585e8ca-b152-4a3b-98c3-91963167d804",
+      "removed_range": null,
+      "resolved_nodes": [],
+      "resolved_parent": "8585e8ca-b152-4a3b-98c3-91963167d804",
+      "resolved_range": {
+        "end": 19,
+        "start": 15
+      },
+      "resolved_ranges": [],
+      "resolved_selection": null
+    }
+  ]
+}

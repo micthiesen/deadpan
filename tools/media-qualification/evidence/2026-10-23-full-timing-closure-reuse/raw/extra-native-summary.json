@@ -1,0 +1,32 @@
+[
+  {
+    "scenario": "macros",
+    "checks": 402,
+    "findings": 2,
+    "failed": false
+  },
+  {
+    "scenario": "named-registers",
+    "checks": 172,
+    "findings": 2,
+    "failed": false
+  },
+  {
+    "scenario": "dot-repeat",
+    "checks": 384,
+    "findings": 2,
+    "failed": false
+  },
+  {
+    "scenario": "range-set-selectors",
+    "checks": 86,
+    "findings": 2,
+    "failed": false
+  },
+  {
+    "scenario": "transcript-search-selectors",
+    "checks": 104,
+    "findings": 2,
+    "failed": false
+  }
+]

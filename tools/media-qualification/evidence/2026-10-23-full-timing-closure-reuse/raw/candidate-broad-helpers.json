@@ -1,0 +1,27 @@
+{
+  "deadpan-app": {
+    "source": "/Users/michael/Code/deadpan/target/debug/deadpan-app",
+    "path": "/tmp/deadpan-full-timing-closure-reuse-qualification-2026-10-23/candidate-broad-extracted/target/debug/deadpan-app",
+    "sha256": "e49ecf7d368fa1a9f60531b45c63d3510ef4cf4f099655682151a81413895f74"
+  },
+  "deadpan-cli": {
+    "source": "/Users/michael/Code/deadpan/target/debug/deadpan-cli",
+    "path": "/tmp/deadpan-full-timing-closure-reuse-qualification-2026-10-23/candidate-broad-extracted/target/debug/deadpan-cli",
+    "sha256": "704a6c2a0e2128cd6692a769a2fa1110de7ee18d9f8d93536f42b02c8c808ef2"
+  },
+  "deadpan-media-worker": {
+    "source": "/Users/michael/Code/deadpan/target/debug/deadpan-media-worker",
+    "path": "/tmp/deadpan-full-timing-closure-reuse-qualification-2026-10-23/candidate-broad-extracted/target/debug/deadpan-media-worker",
+    "sha256": "786672d36a58e024be1acb18f353c350c06a7c83dd88c84369e69a9512a13c5d"
+  },
+  "deadpan-transcribe": {
+    "source": "/Users/michael/Code/deadpan/target/debug/deadpan-transcribe",
+    "path": "/tmp/deadpan-full-timing-closure-reuse-qualification-2026-10-23/candidate-broad-extracted/target/debug/deadpan-transcribe",
+    "sha256": "473b69ac2024d691236637017ebea298a08e0f88de2ff3801a948bf866f71362"
+  },
+  "deadpan-track": {
+    "source": "/Users/michael/Code/deadpan/target/debug/deadpan-track",
+    "path": "/tmp/deadpan-full-timing-closure-reuse-qualification-2026-10-23/candidate-broad-extracted/target/debug/deadpan-track",
+    "sha256": "18861c06d2d468b4e161c2b99110ffc1d5ea99a926e1685d5893437583760244"
+  }
+}

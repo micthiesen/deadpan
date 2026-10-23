@@ -1,0 +1,29 @@
+[
+  {
+    "phase": "debug-media",
+    "fixture": "neutral",
+    "name": "neutral-sound-ungroup.mp4",
+    "bytes": 7857,
+    "sha256": "92026443f8fe6ba81adbec25d53f8879a4d70d98ed114b05c3b77e1c9d8c913b",
+    "original_and_retained_equal": true,
+    "verified_report": "debug-media-neutral-fixture.json"
+  },
+  {
+    "phase": "release-media",
+    "fixture": "neutral",
+    "name": "neutral-sound-ungroup.mp4",
+    "bytes": 7857,
+    "sha256": "36ae1158a8143461e5e087fc4feab42ba40ca1f600be1f5b6709b50d4a79c0d7",
+    "original_and_retained_equal": true,
+    "verified_report": "release-media-neutral-fixture.json"
+  },
+  {
+    "phase": "release-media",
+    "fixture": "aligned",
+    "name": "aligned-sound-scope.mp4",
+    "bytes": 14718,
+    "sha256": "586a0565007990cdf9786e2790259fd3b03f61ab474ed6efdc73bbb92f805ee7",
+    "original_and_retained_equal": true,
+    "verified_report": "release-media-aligned-fixture.json"
+  }
+]

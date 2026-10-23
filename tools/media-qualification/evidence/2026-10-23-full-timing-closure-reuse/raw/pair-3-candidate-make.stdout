@@ -1,0 +1,7 @@
+{
+  "beats": 10000,
+  "creation_ms": 170.324,
+  "package": "/tmp/deadpan-full-timing-closure-reuse-qualification-2026-10-23/pair-3-candidate.deadpan",
+  "stage": "make-large",
+  "stage_wall_ms": 179.65562500000001
+}

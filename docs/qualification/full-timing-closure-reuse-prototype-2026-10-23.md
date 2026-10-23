@@ -7,7 +7,8 @@ input-to-commit medians of 257.887084 /244.544917 ms and offscreen composition
 260.609875 /247.164042 ms. The composition difference is 13.445833 ms, about
 5.16%, diagnostic only. No percentile or 100 ms/50 ms target PASS follows.
 
-This is prototype evidence. Full production qualification remains pending;
+This is prototype evidence. The subsequent
+[production qualification](full-timing-closure-reuse-2026-10-23.md) is complete;
 do not pool this batch with earlier profiles or production comparisons.
 
 ## Change and safety

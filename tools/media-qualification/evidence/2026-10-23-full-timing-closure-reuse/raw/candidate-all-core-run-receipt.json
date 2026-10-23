@@ -1,0 +1,21 @@
+{
+  "command": [
+    "cargo",
+    "nextest",
+    "run",
+    "--archive-file",
+    "/tmp/deadpan-full-timing-closure-reuse-qualification-2026-10-23/candidate-all-core.tar.zst",
+    "--extract-to",
+    "/tmp/deadpan-full-timing-closure-reuse-qualification-2026-10-23/candidate-all-core-extracted",
+    "--extract-overwrite",
+    "--workspace-remap",
+    "/Users/michael/Code/deadpan",
+    "-E",
+    "all()",
+    "--test-threads",
+    "8",
+    "--no-fail-fast"
+  ],
+  "exit": 0,
+  "seconds": 6.510751750320196
+}

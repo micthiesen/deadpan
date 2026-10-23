@@ -1,0 +1,70 @@
+{
+  "executed_cli": {
+    "source": "target/release/deadpan-cli",
+    "path": "/tmp/deadpan-full-timing-closure-reuse-qualification-2026-10-23/release-media-extracted/target/release/deadpan-cli",
+    "sha256": "978500baa1e1a9c537ec225efdc93d43111e679564c01b28cc5b4a524beb9845"
+  },
+  "safe_relative_regular_files_only": true,
+  "cases": [
+    {
+      "label": "neutral",
+      "package": "/tmp/deadpan-full-timing-closure-reuse-qualification-2026-10-23/owner-portable-check/neutral/neutral-ungroup-portable.deadpan",
+      "regular_files": 9,
+      "archive_sha256": "247e6f5de62ad9beeaf5c790a6cce04cfff1fb762a99f0c460372daf7e8c2c26",
+      "commands": [
+        {
+          "command": [
+            "/tmp/deadpan-full-timing-closure-reuse-qualification-2026-10-23/release-media-extracted/target/release/deadpan-cli",
+            "project",
+            "validate",
+            "/tmp/deadpan-full-timing-closure-reuse-qualification-2026-10-23/owner-portable-check/neutral/neutral-ungroup-portable.deadpan"
+          ],
+          "exit": 0,
+          "seconds": 0.04472008254379034,
+          "package_paths_and_bytes_unchanged": true
+        },
+        {
+          "command": [
+            "/tmp/deadpan-full-timing-closure-reuse-qualification-2026-10-23/release-media-extracted/target/release/deadpan-cli",
+            "doctor",
+            "--project",
+            "/tmp/deadpan-full-timing-closure-reuse-qualification-2026-10-23/owner-portable-check/neutral/neutral-ungroup-portable.deadpan"
+          ],
+          "exit": 0,
+          "seconds": 0.03530816733837128,
+          "package_paths_and_bytes_unchanged": true
+        }
+      ]
+    },
+    {
+      "label": "aligned",
+      "package": "/tmp/deadpan-full-timing-closure-reuse-qualification-2026-10-23/owner-portable-check/aligned/aligned-sound-scope-portable.deadpan",
+      "regular_files": 9,
+      "archive_sha256": "ec725cfe7e4d0f67aa4a2beb8be06f8f31deda46603e2693983074cafc429187",
+      "commands": [
+        {
+          "command": [
+            "/tmp/deadpan-full-timing-closure-reuse-qualification-2026-10-23/release-media-extracted/target/release/deadpan-cli",
+            "project",
+            "validate",
+            "/tmp/deadpan-full-timing-closure-reuse-qualification-2026-10-23/owner-portable-check/aligned/aligned-sound-scope-portable.deadpan"
+          ],
+          "exit": 0,
+          "seconds": 0.0678572915494442,
+          "package_paths_and_bytes_unchanged": true
+        },
+        {
+          "command": [
+            "/tmp/deadpan-full-timing-closure-reuse-qualification-2026-10-23/release-media-extracted/target/release/deadpan-cli",
+            "doctor",
+            "--project",
+            "/tmp/deadpan-full-timing-closure-reuse-qualification-2026-10-23/owner-portable-check/aligned/aligned-sound-scope-portable.deadpan"
+          ],
+          "exit": 0,
+          "seconds": 0.039026583544909954,
+          "package_paths_and_bytes_unchanged": true
+        }
+      ]
+    }
+  ]
+}

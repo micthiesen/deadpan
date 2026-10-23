@@ -1,0 +1,8 @@
+{"step": 1, "command": ["python", "/tmp/deadpan-full-timing-closure-reuse-qualification-2026-10-23/qualify_all_ui.py", "candidate-all-core", "candidate", "allcore"], "exit": 0, "seconds": 324.2976485416293}
+{"step": 2, "command": ["python", "/tmp/deadpan-full-timing-closure-reuse-qualification-2026-10-23/qualify_all_ui.py", "candidate-broad", "candidate", "broad"], "exit": 0, "seconds": 722.6459170831367}
+{"step": 3, "command": ["python", "/tmp/deadpan-full-timing-closure-reuse-qualification-2026-10-23/qualify_all_ui.py", "candidate-ui", "candidate", "ui"], "exit": 0, "seconds": 144.08433512505144}
+{"step": 4, "command": ["python", "/tmp/deadpan-full-timing-closure-reuse-qualification-2026-10-23/qualify_all_ui.py", "candidate-strict", "candidate", "strict"], "exit": 0, "seconds": 143.206875000149}
+{"step": 5, "command": ["python", "/tmp/deadpan-full-timing-closure-reuse-qualification-2026-10-23/ui_lint.py"], "exit": 0, "seconds": 78.00140287447721}
+{"step": 6, "command": ["python", "/tmp/deadpan-full-timing-closure-reuse-qualification-2026-10-23/qualify_native_media.py", "debug-media", "preflight"], "exit": 0, "seconds": 96.93905225023627}
+{"step": 7, "command": ["python", "/tmp/deadpan-full-timing-closure-reuse-qualification-2026-10-23/qualify_native_media.py", "release-media", "release-media"], "exit": 0, "seconds": 465.7420441675931}
+{"step": 8, "command": ["python", "/tmp/deadpan-full-timing-closure-reuse-qualification-2026-10-23/qualify_native_media.py", "release-native", "native"], "exit": 0, "seconds": 282.63700724951923}

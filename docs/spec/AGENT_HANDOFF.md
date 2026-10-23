@@ -267,10 +267,34 @@ verifies, SHA-256 10e1516fae9e4fd44d36a8a73ec249e6784017470946dc3e229374f9808d57
 Only audio_reference.rs changes: sliced completes its existing alias closure
 and derived-clock fallback, then local complete nonprovisional full-closure
 tables run wire_bytes and return the same Arc. Reference behavior stays old.
-Next: adopt those exact formatted bytes and run full production qualification.
-Draft drivers are in /tmp/deadpan-full-timing-closure-reuse-qualification-2026-10-23;
-Root must review them before execution. Preserve all serialization, validation,
-historical-reader, inverse and host checks. Production checks remain owed.
+The exact formatted bytes are adopted and fully qualified, production commit
+ae5eedd065b851242917b38a428ee40a3588978d. In
+/tmp/deadpan-full-timing-closure-reuse-qualification-2026-10-23 both qualifier
+and post drivers are terminal, all eight and 26 commands successful. Do not
+restart them. Core 1,522/69 passes with zero skipped; broader 3,506/740 skipped,
+UI 1,296/eleven skipped, strict Core/UI/fmt all pass. No LEAK annotations.
+Actual debug/release neutral and release aligned media verify 15/24,024 and
+19/30,430 pictures/samples at zero offset with full canonical/history controls.
+The aligned test passes after 238.739 seconds with slow annotations retained.
+Six native scenarios pass 1,340 workflow plus six Kestrel checks; both nine-file
+portable copies validate/doctor unchanged. Native twelve layout warnings and
+false independent-DSP/listening/ordinary Move PCM claims remain.
+
+Final app SHA-256:
+2761f275c70d471b202ffdf2faa9e047724a169c9607775ff4b4ee6208942608.
+Use this qualified executed copy as the next control, not the private prototype.
+Five final quiet pairs give commit 257.618792 /248.292125 ms and offscreen
+composition 260.353458 /250.976250 ms, a 9.377208 ms /3.60% diagnostic
+difference, separate from the prototype. The 100 ms/50 ms targets remain open.
+See [qualification](../qualification/full-timing-closure-reuse-2026-10-23.md).
+Root verifies 455 files /14,990,467 bytes including three emitted movies and
+decoder/control reports; inventory SHA-256
+697803f666c8860fc997333a0378bbdca0371399a8612a718ddd0c36067418ad.
+No packaging execution failed; draft assumptions were corrected before running.
+Next: finish next-optimization-study/ in this qualification scratch. Old Core24
+subphase costs precede reuse; do not infer current costs from the end-to-end
+difference. Preserve all validation, work charges, provider/capture/refusal and
+history authority. No requirement or gate is newly complete.
 The separate
 next-replay-count-study.md describes immutable borrowed count pairs and a
 post-validation finalizer; bare counts on mutable public outcomes are

@@ -1,0 +1,182 @@
+[
+  {
+    "pair": 1,
+    "kind": "control",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 261.99370799999997,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 264.710416
+    },
+    "load": [
+      2.109375,
+      2.5615234375,
+      2.9599609375
+    ],
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "source_binary_guards": true,
+    "binary_sha256": "c36b894466eb4f16fe976924b05c02ada87b0e8872f7f9a7fc6028a60a342037",
+    "checks": 7
+  },
+  {
+    "pair": 1,
+    "kind": "candidate",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 248.704167,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 251.37520899999998
+    },
+    "load": [
+      2.275390625,
+      2.58056640625,
+      2.9599609375
+    ],
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "source_binary_guards": true,
+    "binary_sha256": "2761f275c70d471b202ffdf2faa9e047724a169c9607775ff4b4ee6208942608",
+    "checks": 7
+  },
+  {
+    "pair": 2,
+    "kind": "candidate",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 245.104208,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 247.817541
+    },
+    "load": [
+      2.52099609375,
+      2.6171875,
+      2.9658203125
+    ],
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "source_binary_guards": true,
+    "binary_sha256": "2761f275c70d471b202ffdf2faa9e047724a169c9607775ff4b4ee6208942608",
+    "checks": 7
+  },
+  {
+    "pair": 2,
+    "kind": "control",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 255.78841699999998,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 258.409834
+    },
+    "load": [
+      2.18310546875,
+      2.537109375,
+      2.9306640625
+    ],
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "source_binary_guards": true,
+    "binary_sha256": "c36b894466eb4f16fe976924b05c02ada87b0e8872f7f9a7fc6028a60a342037",
+    "checks": 7
+  },
+  {
+    "pair": 3,
+    "kind": "control",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 256.787625,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 259.569958
+    },
+    "load": [
+      1.919921875,
+      2.4609375,
+      2.89599609375
+    ],
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "source_binary_guards": true,
+    "binary_sha256": "c36b894466eb4f16fe976924b05c02ada87b0e8872f7f9a7fc6028a60a342037",
+    "checks": 7
+  },
+  {
+    "pair": 3,
+    "kind": "candidate",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 252.2915,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 255.12116699999999
+    },
+    "load": [
+      1.85107421875,
+      2.4208984375,
+      2.8740234375
+    ],
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "source_binary_guards": true,
+    "binary_sha256": "2761f275c70d471b202ffdf2faa9e047724a169c9607775ff4b4ee6208942608",
+    "checks": 7
+  },
+  {
+    "pair": 4,
+    "kind": "candidate",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 248.292125,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 250.97625000000002
+    },
+    "load": [
+      1.82177734375,
+      2.3837890625,
+      2.85205078125
+    ],
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "source_binary_guards": true,
+    "binary_sha256": "2761f275c70d471b202ffdf2faa9e047724a169c9607775ff4b4ee6208942608",
+    "checks": 7
+  },
+  {
+    "pair": 4,
+    "kind": "control",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 257.618792,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 260.353458
+    },
+    "load": [
+      1.70654296875,
+      2.3310546875,
+      2.82421875
+    ],
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "source_binary_guards": true,
+    "binary_sha256": "c36b894466eb4f16fe976924b05c02ada87b0e8872f7f9a7fc6028a60a342037",
+    "checks": 7
+  },
+  {
+    "pair": 5,
+    "kind": "control",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 257.843792,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 260.513667
+    },
+    "load": [
+      1.59765625,
+      2.28662109375,
+      2.802734375
+    ],
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "source_binary_guards": true,
+    "binary_sha256": "c36b894466eb4f16fe976924b05c02ada87b0e8872f7f9a7fc6028a60a342037",
+    "checks": 7
+  },
+  {
+    "pair": 5,
+    "kind": "candidate",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 246.143833,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 248.8315
+    },
+    "load": [
+      1.46435546875,
+      2.22265625,
+      2.7705078125
+    ],
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "source_binary_guards": true,
+    "binary_sha256": "2761f275c70d471b202ffdf2faa9e047724a169c9607775ff4b4ee6208942608",
+    "checks": 7
+  }
+]

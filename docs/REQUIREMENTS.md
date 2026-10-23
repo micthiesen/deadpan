@@ -63,6 +63,22 @@ decoder/control evidence, all independently verified. The earlier
 and [Core checkpoint](qualification/compact-json-size-core-checkpoint-2026-10-23.md)
 remain separate historical records. No requirement or gate closes.
 
+## Complete frozen-layout reuse, 2026-10-23
+
+Complete immutable frozen timing tables now reuse their admitted storage after
+the full alias closure and canonical wire guard; provisional, partial and
+reference behavior remain. All 1,522 Core tests (zero skipped), 3,506 broader
+tests (740 skipped), 1,296 UI tests (eleven skipped), strict Core/UI checks and
+formatting pass, without leak annotations. Debug/release media and canonical
+history controls, six native workflows and both portable copies pass.
+
+Five final quiet pairs give commit medians 257.618792 /248.292125 ms and
+offscreen composition 260.353458 /250.976250 ms, a 9.377208 ms /3.60%
+diagnostic difference. The 455-file /14,990,467-byte inventory verifies and
+retains all three emitted movies and decoder/control reports. See the
+[production qualification](qualification/full-timing-closure-reuse-2026-10-23.md).
+No formal percentile, memory target, requirement or gate closes.
+
 ## Remaining preparation cost, 2026-10-23
 
 A private [complete frozen-layout reuse prototype](qualification/full-timing-closure-reuse-prototype-2026-10-23.md)
@@ -72,8 +88,9 @@ immutable table. Five new regressions plus eleven scoped-capture, three
 command-work and 104 InsertTime tests pass. Five quiet native pairs pass every
 guard and measure commit medians 257.887084 /244.544917 ms and offscreen
 composition 260.609875 /247.164042 ms, a 13.445833 ms /5.16% diagnostic
-difference. The 138-file evidence inventory verifies. Production qualification
-is pending; no requirement, gate or latency target closes.
+difference. The 138-file evidence inventory verifies. Those prototype results
+remain separate from the completed production qualification above; no latency
+target closes.
 
 The subsequent [Core detail profile](qualification/core-planning-detail-profile-2026-10-23.md)
 passes nine rotated control/off/on trials with all pause/shortcut and identity

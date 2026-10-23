@@ -1,0 +1,14 @@
+{
+  "authorized": true,
+  "reviewed_by": "root",
+  "producers_terminal": true,
+  "qualification_steps": 8,
+  "post_commands": 26,
+  "no_leak_warnings_in_core_broad_ui": true,
+  "source_sha256": "ed3259f86f811e61adcffdc58972342057b9f3afa1622fd38bc42db5c44dd70d",
+  "draft_review_corrections": [
+    "no LEAK receipt when all three terminal suite logs contain none",
+    "before-source snapshot uses original worker snapshot rather than formatted private_source",
+    "require exact alternating final pair order"
+  ]
+}

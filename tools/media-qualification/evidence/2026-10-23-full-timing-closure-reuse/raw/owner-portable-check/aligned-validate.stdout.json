@@ -1,0 +1,27 @@
+{
+  "basis_state": {
+    "geometry_origin": "primary_source",
+    "primary": {
+      "asset": "f583025b-3c6e-4763-8c32-b8e5698379ad",
+      "qualification": "c6bc3e81ab69906267164469d11739cf1363eea546436761ddd219069ed496b6"
+    },
+    "rate_origin": "primary_source"
+  },
+  "duration_frames": 19,
+  "mark_count": 0,
+  "node_count": 19,
+  "presentation_basis": {
+    "color_policy": "sdr_rec709",
+    "frame_rate": {
+      "denominator": 1001,
+      "numerator": 30000
+    },
+    "height": 180,
+    "width": 320
+  },
+  "project_id": "e9b8de03-f2cc-40e8-99df-5e4d8a60c9d6",
+  "protocol": 1,
+  "revision_id": "c1c32d1c-3ba9-4e91-8e2f-5d714e0f5d5c",
+  "root": "8585e8ca-b152-4a3b-98c3-91963167d804",
+  "valid": true
+}

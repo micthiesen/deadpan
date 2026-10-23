@@ -1,0 +1,5 @@
+    Finished `dev` profile [optimized + debuginfo] target(s) in 0.11s
+     Running `target/debug/xtask check --since ca40995b64fc4acdc0a5e046660a36a1faa7cee5 --no-test`
+check: package changed since ca40995b64fc4acdc0a5e046660a36a1faa7cee5: deadpan-core
+    Checking deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 2m 15s

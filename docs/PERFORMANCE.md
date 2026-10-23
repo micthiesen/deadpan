@@ -291,6 +291,16 @@ Those inclusive groups still need attribution to a concrete repeated operation
 before choosing a fix. This separate n=3 diagnostic adds no production gain,
 calibrated overhead, percentile or target PASS.
 
+The [complete frozen-layout reuse qualification](qualification/full-timing-closure-reuse-2026-10-23.md)
+passes all 1,522 Core tests, broader/UI and strict checks, actual media/history,
+six native workflows and both portable copies. Full alias closure reuses an
+already admitted immutable table after its exact wire guard, retaining partial,
+provisional and reference behavior. Five final quiet pairs measure commit
+257.618792 /248.292125 ms and offscreen composition 260.353458 /250.976250 ms,
+a 9.377208 ms /3.60% diagnostic difference. This is separate from the earlier
+private prototype's 5.16% batch. The 100 ms/50 ms targets and peak memory remain
+open; no percentile follows from these five pairs.
+
 | Section 25 target | Measurement | Notes |
 | --- | --- | --- |
 | Key event to command-state update, p95 < 8 ms | ui `rapid-input` `warm_navigation_input_cpu_ms` | Whole egui input frame CPU: an upper bound on the state update. Small replay fixture. |

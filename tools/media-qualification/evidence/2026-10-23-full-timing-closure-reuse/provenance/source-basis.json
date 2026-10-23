@@ -1,0 +1,8 @@
+{
+  "base": "594dd38f969c996a07117374ec1b4949ab75273f",
+  "qualified_implementation": "ca40995b64fc4acdc0a5e046660a36a1faa7cee5",
+  "archive_sha256": "8317ab9d68b654ae6c98c45ab4be8338d9c37402b1234218cfea6bc5273e69b3",
+  "rust_files": 2050,
+  "qualified_control_app_sha256": "c36b894466eb4f16fe976924b05c02ada87b0e8872f7f9a7fc6028a60a342037",
+  "scope": "private candidate experiment only; no claimed improvement"
+}
