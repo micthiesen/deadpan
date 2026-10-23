@@ -1,0 +1,15 @@
+{
+  "revision": "v2 static corrections",
+  "status": "unexecuted draft; requires Root review and identity-bound PACKAGING-GO.json",
+  "preserved_prior_draft": "package-v1.py.txt",
+  "corrections": [
+    "Compare final Rust map to baseline by exact path set and exact four changed existing hashes plus one added helper.",
+    "Require and verify driver pins and final review identities before parser execution; GO binds script, maps, reviews, pins, and terminal receipts.",
+    "Bind raw report timing values to trial rows and those rows to saved and raw-stderr parsed profiles; recompute the complete summary.",
+    "Retain the actual release-app, make, build-driver, measurement-driver, parser-test, freeze, and packager records under actual producer names.",
+    "Use sanitized host-observations.json only; never retain host-observations-private.json.",
+    "Compare fixture full maps to guarded after maps, reject links and special files, create normalized regular-file-only archives, and reread archive members.",
+    "Verify every compressed payload by decoding it and comparing original size and SHA-256."
+  ],
+  "not_run": true
+}

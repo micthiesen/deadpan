@@ -7,6 +7,17 @@ complete picture coverage and no underruns, faults or padding. Its seek/edit
 samples are smoke checks; broader effects, rendering and latency distributions
 remain unqualified by that workload.
 
+The [current first-pause route diagnostic](qualification/current-pause-route-profile-2026-10-23.md)
+uses the qualified one-leaf implementation as control and a separate private
+source/target for thirteen exclusive timing categories. Three enabled runs give
+worker-route median 188.710583 ms, including semantic planning 91.664125 ms and
+Store preparation 60.879542 ms. All nine rotated control/off/on replays pass;
+their commit medians 195.230667 /194.561208 /195.100625 ms overlap in observed
+spread. This neither resolves profiler overhead nor closes the 100 ms/50 ms
+targets. Direct finer measurements of the two dominant regions are next. The
+temporary timers are not production code; earlier inclusive phase costs are
+historical and must not be substituted for these current exclusive results.
+
 [Specification Section 25](spec/DEADPAN_SPEC.md#25-performance-requirements-and-instrumentation)
 sets engineering targets. This page maps each target to the measurement that
 evaluates it, describes the reproducible suite, and lists the diagnostics the

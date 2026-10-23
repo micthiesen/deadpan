@@ -1,0 +1,102 @@
+{
+  "verified_gzip_payloads": [
+    {
+      "decoded_bytes": 253495,
+      "decoded_sha256": "0b61b120b75aa6bbcf350f7642a5fb731c711b8e6985c8fa61709229ed12696f",
+      "source": "/tmp/deadpan-current-pause-route-profile-2026-10-23/baseline-sources.json",
+      "stored": "run/baseline-sources.json.gz",
+      "stored_sha256": "183ca1c3e3777775c09d768753a90085e5ca9bb1129aa031bed0e500ec22a2e2"
+    },
+    {
+      "decoded_bytes": 253615,
+      "decoded_sha256": "12acb33168d093a788cba673ba98c532c6729c6f73564ee75d57d7c473e8ab41",
+      "source": "/tmp/deadpan-current-pause-route-profile-2026-10-23/frozen-sources.json",
+      "stored": "run/frozen-sources.json.gz",
+      "stored_sha256": "9b3ddb9c43bfeb44394e1d8e165f6a8df5d12e7aa607800999b131b64e7b1ae0"
+    },
+    {
+      "decoded_bytes": 101887,
+      "decoded_sha256": "c1ac96c2cd6d051ef70a4f60a2063a53a0e15e8208f8d9ad4a79e28f537dbb89",
+      "source": "/tmp/deadpan-current-pause-route-profile-2026-10-23/source-retention/after/crates/deadpan-app/src/project/service.rs.txt",
+      "stored": "source-retention/after/crates/deadpan-app/src/project/service.rs.txt.gz",
+      "stored_sha256": "2e814945aad9bcc7289b3d6f813f2ec0714b0a62bb85dee5151b5cc25279d7d0"
+    },
+    {
+      "decoded_bytes": 101689,
+      "decoded_sha256": "03226763607612ef43004bbf683c2c730aaa2dbf8b9976104bd7488602e974ba",
+      "source": "/tmp/deadpan-current-pause-route-profile-2026-10-23/implementer-notes/after/crates/deadpan-app/src/project/service.rs.txt",
+      "stored": "implementer-notes/after/crates/deadpan-app/src/project/service.rs.txt.gz",
+      "stored_sha256": "ccfe59a520f757f913bd409b976efae772ca5d87c153bb2fc70ea2521185b649"
+    },
+    {
+      "decoded_bytes": 253615,
+      "decoded_sha256": "38bcb9471e4c35adfa2487b77fe5b70d4d863e2a90ab732c19119f63ce2d5b9e",
+      "source": "/tmp/deadpan-current-pause-route-profile-2026-10-23/implementer-notes/proposed-sources.json",
+      "stored": "implementer-notes/proposed-sources.json.gz",
+      "stored_sha256": "391733bb670c3c17279addbf371f2b30fc37498824dde61c8af53b5a6f2b827d"
+    },
+    {
+      "decoded_bytes": 1695960,
+      "decoded_sha256": "8b5ad84313e18e17fb59690fc548b2fe3d5d6ab693000b882b5abf340e51fbd6",
+      "source": "/tmp/deadpan-current-pause-route-profile-2026-10-23/rotation-1-control-report/report.json",
+      "stored": "trials/rotation-1-control-report/report.json.gz",
+      "stored_sha256": "c6e504eee2516401eabd3d35d4cc01200c56bd036f6b9cbe4bfde31413edd57e"
+    },
+    {
+      "decoded_bytes": 1686411,
+      "decoded_sha256": "21277a026cb7ede3f6d1f6f9f177115a2e30a9d96140a37f1ee90cfee5106ef5",
+      "source": "/tmp/deadpan-current-pause-route-profile-2026-10-23/rotation-1-off-report/report.json",
+      "stored": "trials/rotation-1-off-report/report.json.gz",
+      "stored_sha256": "9e09ded29d6c67c2bd3d78afeffc2a7a4d0245a2259147dfdc0b7f8efac5ae22"
+    },
+    {
+      "decoded_bytes": 1680684,
+      "decoded_sha256": "c15df962729938fdc3be9204816f5620ea33c2b267f29bd577df0908faea05e8",
+      "source": "/tmp/deadpan-current-pause-route-profile-2026-10-23/rotation-1-on-report/report.json",
+      "stored": "trials/rotation-1-on-report/report.json.gz",
+      "stored_sha256": "9ac42f862b0f3d192cbc38d5a1b0dc03b28635d39c4e91fad4f08f49dd990475"
+    },
+    {
+      "decoded_bytes": 1683069,
+      "decoded_sha256": "5fbd8cdf7d9a5588aba5663b127c5d5053043a313fb69aa7a8ed6c649a0bd363",
+      "source": "/tmp/deadpan-current-pause-route-profile-2026-10-23/rotation-2-off-report/report.json",
+      "stored": "trials/rotation-2-off-report/report.json.gz",
+      "stored_sha256": "9e7a5ac22c6fcc5d5bbb162ad4bd316a3b87bc640fd81ab0b94387565094e31e"
+    },
+    {
+      "decoded_bytes": 1694986,
+      "decoded_sha256": "22a270bbc0b1c13387ca8c4cc730e9da7caa385e05641828215fc59f1ab7cc9b",
+      "source": "/tmp/deadpan-current-pause-route-profile-2026-10-23/rotation-2-on-report/report.json",
+      "stored": "trials/rotation-2-on-report/report.json.gz",
+      "stored_sha256": "c2a336be1934bb99e78dfa91947ef3e0addc0adc30496a85a6cff28bbedc3fcd"
+    },
+    {
+      "decoded_bytes": 1686733,
+      "decoded_sha256": "9ae132198e07352d0e8d6b5ac83ca99b9c1690383eb957719363155de11e1f8c",
+      "source": "/tmp/deadpan-current-pause-route-profile-2026-10-23/rotation-2-control-report/report.json",
+      "stored": "trials/rotation-2-control-report/report.json.gz",
+      "stored_sha256": "0429fab9c59ac83f7fc229abc987026bb2d158e6f57d0cc18fbfd161a8fe8c21"
+    },
+    {
+      "decoded_bytes": 1695821,
+      "decoded_sha256": "e9200f0884f0f9463dc7095d5fad1329c1cc1f7e52e06a5cbb83c5aff3f857ac",
+      "source": "/tmp/deadpan-current-pause-route-profile-2026-10-23/rotation-3-on-report/report.json",
+      "stored": "trials/rotation-3-on-report/report.json.gz",
+      "stored_sha256": "ac78a4a2150c53c2bf386bf6cbfb7dfed07c349b7ae65327eeccb00ee49de4e0"
+    },
+    {
+      "decoded_bytes": 1669643,
+      "decoded_sha256": "36869a383775e161ccf7265a1a4feb8ce74a576aa3724980b92a83b0b30d8c8f",
+      "source": "/tmp/deadpan-current-pause-route-profile-2026-10-23/rotation-3-control-report/report.json",
+      "stored": "trials/rotation-3-control-report/report.json.gz",
+      "stored_sha256": "473899b48e1a1e7ba38dece248f67f13453a761dd07f9d1463fcb0ca8264f76a"
+    },
+    {
+      "decoded_bytes": 1690255,
+      "decoded_sha256": "57f1d373d45f9f8b76e44122851e2f251427166adc4f7bf08b970aa1959f78b1",
+      "source": "/tmp/deadpan-current-pause-route-profile-2026-10-23/rotation-3-off-report/report.json",
+      "stored": "trials/rotation-3-off-report/report.json.gz",
+      "stored_sha256": "e31192f178a043af1863d35b5e1b973a71e234e0ddf4e35edf3992b4da41272d"
+    }
+  ]
+}

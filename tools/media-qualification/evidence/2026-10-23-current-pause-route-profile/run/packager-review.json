@@ -1,0 +1,78 @@
+{
+  "status": "findings",
+  "review_kind": "independent_static_packager_review",
+  "draft": {
+    "path": "packaging-draft/package.py",
+    "sha256": "549f04820581deb8c9f4e5f69cd6a40c18515affc3730bbe148bb3cefd7fea3c"
+  },
+  "reviewed_basis": {
+    "build.py": "10f111d458cf8c6c035b895040d382cc2892686adf84ca82fcce6a1500ab2ca4",
+    "measure.py": "77613940194ab91bbb1f5413f9418e93ac9ad0b227617f3e920d3cdf483b3c2a",
+    "freeze.py": "70e0eded95838cf5332c567500b9b25a70fb07418af03aa1b5e182d7fd36c9c9",
+    "driver-pins.json": "73dd6459ec4d086b20cd2bf4f30d08624375346de63b813be9240f2393bf6eda",
+    "source-review.json": "2306a3e167ec852659617ba2d005dc536039976a73f2c18c12a9cf7359ef79b5",
+    "driver-followup-review.json": "d421c1ac4076e91bde6e451edde9b719da451e204e6c24ba34775a0fee56ccb4",
+    "expected-tests.json": "a16aa50be4e9cae44704969c45a0c7726a17d8052bbd1337b9a05bb56054d48a",
+    "check_profile.py": "c8eb97ccc7b55effa58956a2ab4e926700527193706a8107392056aa2ec873ea",
+    "baseline.json": "0cfe1894895f85ae39f24a6a398b4215db3819f3ba0002a4aa68972dea1e38bd",
+    "overlay-audit.json": "1e71ca976ff165bc63c58f4ad7f02e7bc3fcea8a5787be00cfa8032af9512ba8",
+    "retention-plan.json": "fc35aa9030d5e11c8daa5c95f48f54f0cd64368efefb7eb0d93611320e48bd1e"
+  },
+  "findings": [
+    {
+      "id": "PKG01",
+      "severity": "must_fix",
+      "anchor": "package.py:103-109",
+      "problem": "The source path-set assertion cannot accept the actual reviewed overlay: set(base_sources)-changed has 2049 entries, but set(source_map)-added has 2053 because it still includes all four changed existing paths.",
+      "required_change": "Require the exact four reviewed changed existing paths and single added helper. Compare complete base keys to final keys minus added, or subtract changed on both sides; separately require exactly those four baseline hashes to differ and all others to match."
+    },
+    {
+      "id": "PKG02",
+      "severity": "must_fix",
+      "anchor": "package.py:234-242",
+      "problem": "gather requires nonexistent review-followup.json and host-observations-public.json. Actual producers/reviews write driver-followup-review.json and sanitized host-observations.json. Neither reviewed drivers nor setup currently produces parser-test-receipt.json, which is also unconditional.",
+      "required_change": "Use the actual driver-followup-review.json and sanitized host-observations.json names. Bind any future parser-test receipt to an explicit producer/schema/output path before requiring it. Do not create compatibility aliases or package host-observations-private.json/raw private observations."
+    },
+    {
+      "id": "PKG03",
+      "severity": "must_fix",
+      "anchor": "package.py:56-132, 181-184",
+      "problem": "driver-pins.json is only copied, never checked. The final driver review is neither loaded nor verified, and the parser is executed without checking its reviewed bytes. A changed parser or changed source/baseline/review input can therefore be accepted despite the reviewed driver contract. GO is only a boolean and does not bind this draft or final input identity. Test checks also omit the producer successful summary/zero ignored guard and actual artifact identity.",
+      "required_change": "Before executing the parser, verify every driver-pins entry and require the final driver/source review statuses and exact file/source-map identities. Bind GO to the final reviewed packager and pin-manifest identities. Recheck the eight/twelve-test summaries and test-binaries identities against raw Cargo artifacts/retained hashes. Validate command paths/arguments/profile gates and rust metadata against the actual reviewed producer schema rather than only row names."
+    },
+    {
+      "id": "PKG04",
+      "severity": "must_fix",
+      "anchor": "package.py:154-214",
+      "problem": "Raw native timing rows are never compared to trials[].metrics. Empty metric dicts pass the summary loop vacuously, and unexpected/nonfinite/bool values are not rejected. Likewise reparsed raw stderr is compared only to the saved per-trial profile file, while phase/outer summaries use trials[].profile without ever requiring those profiles equal. The two independent chains can disagree while packaging succeeds.",
+      "required_change": "Extract the exact two unique known finite nonnegative non-bool metrics from each raw report and require exact equality with its trial row. Require on-row profile == saved profile == strict raw-stderr reparse; require off/control profile None. Recompute the complete expected metric/phase/outer summary with exact keys and metadata flags from those validated raw values, then compare the whole expected summary."
+    },
+    {
+      "id": "PKG05",
+      "severity": "must_fix",
+      "anchor": "package.py:270-282, 293-307",
+      "problem": "Fixture archives accept arbitrary live trees without comparing their current bytes to the guarded after maps. tar.add recursively retains symlinks/hardlinks or special files, including unsafe link targets, and archive members are never reread or validated. The 50 MiB regular-file sum alone is not a safe archive contract. General gzip payloads are also only hashed in compressed form, not decompressed and checked against their originals as required by the retention plan.",
+      "required_change": "Require all nine intended fixtures if retaining them, compare current regular-file inventories/hashes to the exact after snapshots, reject symlinks/special files and unsafe relative paths, construct bounded regular-file/directory-only tar members, and reread the archive member paths/types/counts/bytes/hashes. Normalize metadata if claiming deterministic archives. Independently decompress every compressed payload and compare decoded length/hash to the source; retain that validation receipt. Explicit GO should authorize the bounded fixture artifacts."
+    },
+    {
+      "id": "PKG06",
+      "severity": "must_fix",
+      "anchor": "package.py:221-268",
+      "problem": "The retained evidence omits material actual producer files: freeze.py, the final packager itself, release-app.stdout/stderr, the build/measurement driver stdout/stderr, and all nine rotation-*-make stdout/stderr logs. Trial stdout and preflight files are silently optional even though the producer must create them. Parser test output is not retained via any concrete checked path. This falls short of the stated all-producer/all-command/failure retention plan.",
+      "required_change": "Retain the actual producer scripts and complete named command/driver logs, with required files required after terminal success. Include concrete parser-test command/output/receipt evidence and all new independent review reports. Preserve reconstructed driver history with its reconstruction.json/README provenance, and distinguish static findings/setup corrections from actual runtime failures. Continue excluding target/bin/source archive trees and private host data."
+    }
+  ],
+  "non_findings": [
+    "GO, complete seven-step build and complete nine-trial/eighteen-command measurement gates are checked before destination staging.",
+    "The nine trial lane/rotation pairs and eighteen balanced rotated command names are checked explicitly.",
+    "Actual source tree and six input bytes are checked, and the source review correctly uses its actual source_map_sha256 schema.",
+    "Raw reports require success, binary/release/fixture/lock identities, correct scenario order and seven plus one passed checks. Physical-display claims are rejected.",
+    "Staging is isolated under the intended new evidence destination and rename occurs only after inventory reread/hash checks. Existing production evidence is not modified.",
+    "Source retention is selected as .txt/.patch/.json and no target or executable directory is intentionally gathered. Historical plan status has an explicit PLAN-STATUS.md clarification."
+  ],
+  "limitations": [
+    "Static reads and review-note creation only. No packager/driver/parser functions were executed, and no build/runtime/Git/Main/source writes occurred.",
+    "Build was running and measurement/GO/terminal outputs did not yet exist at review time. Missing future outputs are not described as actual runtime failures.",
+    "These findings apply to draft549f048 only and require a fresh pinned follow-up review after amendments."
+  ]
+}

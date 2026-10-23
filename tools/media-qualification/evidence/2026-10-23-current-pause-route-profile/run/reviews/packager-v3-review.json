@@ -1,0 +1,34 @@
+{
+  "status": "findings",
+  "findings": [
+    {
+      "id": "PKGv3-01",
+      "severity": "must_fix",
+      "anchor": "package_v3.py:136-159, 414-425",
+      "problem": "The sanitizer is dynamically executed after checking only identities in its own mutable receipt; the identity-bound GO does not pin that receipt. Replacing sanitizer, derived output and receipt together would pass GO and execute unreviewed code.",
+      "required_change": "Require GO.sanitization_receipt_sha256 to match the receipt hash before any dynamic execution. The receipt then binds reviewed sanitizer and derived output hashes."
+    }
+  ],
+  "draft": {
+    "path": "packaging-draft/package_v3.py",
+    "sha256": "06fa93f224e2f1ffb17e36674c0b5e12c69c6cdab7b80539d5fb964607994338"
+  },
+  "resolved_v2_findings": [
+    "Freeze-produced fifth empty before snapshot is now required and checked as exactly empty.",
+    "Strict argv exactly matches reviewed Core/Store/App all-targets producer.",
+    "Unproduced measurement cwd requirement removed; exact producer command paths and pinned driver remain.",
+    "Pinned raw host file preserved; separately derived sanitized metadata excludes command stderr and replaces numeric battery ID. Receipt hashes and actual output fields independently matched by reads."
+  ],
+  "sanitizer_basis": {
+    "sanitize_host.py": "881cacccefde874624df2d3eaa4532d04c3c5dbdcd6699c33e45a2f091ab4c91",
+    "host-observations-sanitized.json": "dd06361a33d3f28efa1787914163c9816b708ae916df5810ca2ad2d2f552fc99",
+    "sanitization-receipt.json": "ae6982759d76c0a0b92b4af1fc706822f6b61b9226a1ede756677b35ab17c432",
+    "host-observations.json": "eb96925c329a55e32336403cc8eb439ee47ccea5153f5258ddb9ed9721c07d7e",
+    "driver-pins.json": "73dd6459ec4d086b20cd2bf4f30d08624375346de63b813be9240f2393bf6eda"
+  },
+  "limitations": [
+    "Static review only; no packager/parser/sanitizer/driver function executed.",
+    "No build/runtime/Git/Main/source edits.",
+    "No actual runtime packaging failure claimed; prior reports preserved."
+  ]
+}

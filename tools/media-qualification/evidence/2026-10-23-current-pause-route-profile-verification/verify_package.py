@@ -1,0 +1,63 @@
+from pathlib import Path, PurePosixPath
+import gzip
+import hashlib
+import json
+import tarfile
+
+S = Path('/tmp/deadpan-current-pause-route-profile-2026-10-23')
+ROOT = Path('/Users/michael/Code/deadpan/tools/media-qualification/evidence/2026-10-23-current-pause-route-profile')
+
+
+def sha(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+inventory = json.loads((ROOT / 'inventory.json').read_text())
+rows = inventory['files']
+by_path = {row['path']: row for row in rows}
+assert len(by_path) == len(rows) == 184
+actual = {str(p.relative_to(ROOT)) for p in ROOT.rglob('*') if p.is_file()}
+assert actual == set(by_path) | {'inventory.json', 'PACKAGE-SUMMARY.md'}
+for rel, row in by_path.items():
+    assert (ROOT / rel).stat().st_size == row['bytes'] and sha(ROOT / rel) == row['sha256'], rel
+assert sum(row['bytes'] for row in rows) == inventory['total_bytes'] == 4143448
+compressed = archives = members = 0
+for path in sorted(ROOT.rglob('*.gz')):
+    gzip.decompress(path.read_bytes())
+    compressed += 1
+    if not path.name.endswith('.tar.gz'):
+        continue
+    archives += 1
+    stem = path.name.removesuffix('.tar.gz')
+    after = json.loads((S / (stem + '-input-after.json')).read_text())
+    before = json.loads((S / (stem + '-input-before.json')).read_text())
+    excluded = {'project.sqlite-shm', 'project.sqlite-wal'}
+    assert after.get('project.sqlite-wal', {}).get('bytes', 0) == 0
+    expected = {k: v for k, v in after.items() if k not in excluded}
+    assert expected == {k: v for k, v in before.items() if k not in excluded}
+    with tarfile.open(path, 'r:gz') as archive:
+        seen = {}
+        for member in archive.getmembers():
+            name = PurePosixPath(member.name)
+            assert member.isfile() and not name.is_absolute() and '..' not in name.parts
+            rel = str(name)
+            assert rel in expected
+            assert rel not in seen
+            stream = archive.extractfile(member)
+            data = stream.read()
+            assert len(data) == member.size
+            seen[rel] = {'bytes': len(data), 'sha256': hashlib.sha256(data).hexdigest()}
+            members += 1
+        assert seen == expected, path
+assert archives == 9
+assert not any(p.name.endswith('.rs') or p.name.endswith('.deadpan') for p in ROOT.rglob('*'))
+assert not any('host-observations-private' in p or p.endswith('/host-observations.json') for p in actual)
+result = {'inventory_sha256': sha(ROOT / 'inventory.json'), 'payload_files': len(rows),
+          'payload_bytes': sum(row['bytes'] for row in rows), 'all_files': len(actual),
+          'gzip_streams_decoded': compressed, 'safe_fixture_archives': archives,
+          'archive_regular_members': members, 'all_payload_sizes_and_hashes_reread': True,
+          'all_tar_members_match_authored_after_maps': True,
+          'excluded_root_sidecars': sorted(excluded), 'each_wal_verified_empty': True,
+          'raw_host_and_rs_files_excluded': True}
+(S / 'root-package-verification.json').write_text(json.dumps(result, indent=2) + '\n')
+print(json.dumps(result))

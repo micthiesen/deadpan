@@ -1,0 +1,64 @@
+{
+  "gate": "DEADPAN_PAUSE_ROUTE_PROFILE=1",
+  "prefix": "DEADPAN_PAUSE_ROUTE_PROFILE_V1",
+  "lines": 15,
+  "begin": "DEADPAN_PAUSE_ROUTE_PROFILE_V1 BEGIN count=1",
+  "phases": [
+    {
+      "name": "native_admission",
+      "count": 1
+    },
+    {
+      "name": "semantic_plan",
+      "count": 1
+    },
+    {
+      "name": "native_continuation",
+      "count": 1
+    },
+    {
+      "name": "store_entry_misc",
+      "count": 1
+    },
+    {
+      "name": "store_prepare",
+      "count": 1
+    },
+    {
+      "name": "host_runtime_bank",
+      "count": 1
+    },
+    {
+      "name": "store_write",
+      "count": 1
+    },
+    {
+      "name": "sqlite_commit",
+      "count": 1
+    },
+    {
+      "name": "store_cache_publication",
+      "count": 1
+    },
+    {
+      "name": "native_postcommit",
+      "count": 1
+    },
+    {
+      "name": "workspace_refresh",
+      "count": 1
+    },
+    {
+      "name": "native_finish",
+      "count": 1
+    },
+    {
+      "name": "native_publication",
+      "count": 1
+    }
+  ],
+  "row": "DEADPAN_PAUSE_ROUTE_PROFILE_V1 PHASE name=<fixed> elapsed_ns=<u64 decimal> count=1",
+  "end": "DEADPAN_PAUSE_ROUTE_PROFILE_V1 END count=1 elapsed_ns=<u64 decimal> committed=1 refreshed=1 published=1",
+  "exclusive": true,
+  "sum_equals_outer": true
+}

@@ -1,0 +1,111 @@
+[
+  {
+    "name": "rustc",
+    "command": [
+      "rustc",
+      "--version",
+      "--verbose"
+    ],
+    "cwd": "/tmp/deadpan-current-pause-route-profile-2026-10-23/source",
+    "exit": 0,
+    "seconds": 0.029004625044763088
+  },
+  {
+    "name": "cargo",
+    "command": [
+      "cargo",
+      "--version"
+    ],
+    "cwd": "/tmp/deadpan-current-pause-route-profile-2026-10-23/source",
+    "exit": 0,
+    "seconds": 0.019231166690587997
+  },
+  {
+    "name": "format",
+    "command": [
+      "cargo",
+      "fmt",
+      "--all",
+      "--check"
+    ],
+    "cwd": "/tmp/deadpan-current-pause-route-profile-2026-10-23/source",
+    "exit": 0,
+    "seconds": 6.25521987490356
+  },
+  {
+    "name": "helper-unit",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--release",
+      "-p",
+      "deadpan-core",
+      "--lib",
+      "pause_route_profile",
+      "--message-format=json-render-diagnostics"
+    ],
+    "cwd": "/tmp/deadpan-current-pause-route-profile-2026-10-23/source",
+    "exit": 0,
+    "seconds": 727.5610542092472
+  },
+  {
+    "name": "store-preparation",
+    "command": [
+      "cargo",
+      "test",
+      "--locked",
+      "--release",
+      "-p",
+      "deadpan-store",
+      "--test",
+      "compound_preparation",
+      "--message-format=json-render-diagnostics"
+    ],
+    "cwd": "/tmp/deadpan-current-pause-route-profile-2026-10-23/source",
+    "exit": 0,
+    "seconds": 132.4279659166932
+  },
+  {
+    "name": "release-app",
+    "command": [
+      "cargo",
+      "build",
+      "--locked",
+      "--release",
+      "-p",
+      "deadpan-app",
+      "--features",
+      "ui-harness",
+      "--bin",
+      "deadpan-app"
+    ],
+    "cwd": "/tmp/deadpan-current-pause-route-profile-2026-10-23/source",
+    "exit": 0,
+    "seconds": 274.5715451678261
+  },
+  {
+    "name": "strict",
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "--release",
+      "-p",
+      "deadpan-core",
+      "-p",
+      "deadpan-store",
+      "-p",
+      "deadpan-app",
+      "--all-targets",
+      "--features",
+      "ui-harness",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "cwd": "/tmp/deadpan-current-pause-route-profile-2026-10-23/source",
+    "exit": 0,
+    "seconds": 31.246076041832566
+  }
+]

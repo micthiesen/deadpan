@@ -1,0 +1,814 @@
+--- a/crates/deadpan-app/src/project/service.rs
++++ b/crates/deadpan-app/src/project/service.rs
+@@ -6,6 +6,7 @@
+ use std::thread::JoinHandle;
+ use std::time::Duration;
+ 
++use deadpan_core::pause_route_profile::{self, Phase as PausePhase};
+ use deadpan_core::{
+     AssetId, Command, CommandRequest, NodeId, NodeKind, ProjectDocument, ProjectId, RevisionId,
+ };
+@@ -178,6 +179,8 @@
+     backend: super::generation::Backend,
+     tracking: super::targets::Backend,
+ ) {
++    let pause_route_profile_enabled = std::env::var_os("DEADPAN_PAUSE_ROUTE_PROFILE").as_deref()
++        == Some(std::ffi::OsStr::new("1"));
+     let mut service = Service {
+         shared,
+         store: None,
+@@ -340,15 +343,34 @@
+                 service.publish();
+             }
+             Ok(request) => {
++                let pause_route = if pause_route_profile_enabled
++                    && matches!(
++                        &request,
++                        ProjectRequest::Macro(crate::project::macros::Operation::Apply { instruction, .. })
++                            if matches!(instruction.as_ref(), deadpan_core::SemanticInstruction::InsertPause { .. })
++                    ) {
++                    Some(pause_route_profile::Profile::begin())
++                } else {
++                    None
++                };
+                 if service.dispatch_request(request) {
+                     #[cfg(test)]
+                     service.shared.request_completed(crate::project::Lane::User);
+                     service.shared.busy.store(false, Ordering::Release);
+                 }
++                if pause_route.is_some() {
++                    pause_route_profile::set(PausePhase::NativePublication);
++                }
+                 service.invalidate_changed_splice();
+                 service.reconcile_slip();
+                 service.reconcile_trim();
+                 service.publish();
++                if let Some(profile) = pause_route {
++                    profile.published();
++                    if let Some(snapshot) = profile.finish() {
++                        emit_pause_route_profile(snapshot);
++                    }
++                }
+             }
+             Err(RecvTimeoutError::Disconnected) => {
+                 requests_connected = false;
+@@ -410,6 +432,56 @@
+     let _ = worker.join();
+     shared.shutdown_complete.store(true, Ordering::Release);
+     (shared.wake)();
++}
++
++fn emit_pause_route_profile(snapshot: pause_route_profile::Snapshot) {
++    use std::io::Write;
++
++    const NAMES: [&str; pause_route_profile::PHASE_COUNT] = [
++        "native_admission",
++        "semantic_plan",
++        "native_continuation",
++        "store_entry_misc",
++        "store_prepare",
++        "host_runtime_bank",
++        "store_write",
++        "sqlite_commit",
++        "store_cache_publication",
++        "native_postcommit",
++        "workspace_refresh",
++        "native_finish",
++        "native_publication",
++    ];
++    if snapshot.counts != [1; pause_route_profile::PHASE_COUNT] {
++        return;
++    }
++    let mut bytes = [0u8; 4096];
++    let length = {
++        let mut output = std::io::Cursor::new(&mut bytes[..]);
++        if writeln!(output, "DEADPAN_PAUSE_ROUTE_PROFILE_V1 BEGIN count=1").is_err() {
++            return;
++        }
++        for (name, elapsed) in NAMES.into_iter().zip(snapshot.elapsed_ns) {
++            if writeln!(
++                output,
++                "DEADPAN_PAUSE_ROUTE_PROFILE_V1 PHASE name={name} elapsed_ns={elapsed} count=1"
++            )
++            .is_err()
++            {
++                return;
++            }
++        }
++        if writeln!(output, "DEADPAN_PAUSE_ROUTE_PROFILE_V1 END count=1 elapsed_ns={} committed=1 refreshed=1 published=1", snapshot.total_ns).is_err() {
++            return;
++        }
++        let Ok(length) = usize::try_from(output.position()) else {
++            return;
++        };
++        length
++    };
++    if let Some(message) = bytes.get(..length) {
++        let _ = std::io::stderr().lock().write_all(message);
++    }
+ }
+ 
+ impl Service {
+--- a/crates/deadpan-app/src/project/service/macros.rs
++++ b/crates/deadpan-app/src/project/service/macros.rs
+@@ -710,6 +710,7 @@
+                     context,
+                 )?;
+                 let invocation = SemanticProgram::new(vec![instruction]).map_err(display)?;
++                pause_route_profile::set(PausePhase::SemanticPlan);
+                 let plan = deadpan_cli::macros::plan_program_with_transcript_guard(
+                     self.store.as_ref().ok_or("Open a project first")?,
+                     &document,
+@@ -720,6 +721,7 @@
+                     id.transcript_guard.as_deref(),
+                 )
+                 .map_err(display)?;
++                pause_route_profile::set(PausePhase::NativeContinuation);
+                 if let Some(consumed) = &plan.transcript_guard {
+                     let displayed = self
+                         .workspace
+@@ -801,6 +803,10 @@
+                         deadpan_cli::macros::PreparedCommitError::Commit(error) => display(error),
+                         deadpan_cli::macros::PreparedCommitError::Preparation(error) => error,
+                     })?;
++                pause_route_profile::set(PausePhase::NativePostcommit);
++                if outcome.committed.is_some() {
++                    pause_route_profile::committed();
++                }
+                 if let Some(saved) = &outcome.committed {
+                     self.capture_preparation_notices(&saved.generation_preparation_notices);
+                     if plan.context.original.is_some() {
+@@ -867,8 +873,11 @@
+                         .render_commit_refresh_failure
+                         .swap(false, Ordering::AcqRel);
+                 }
++                pause_route_profile::set(PausePhase::WorkspaceRefresh);
+                 match self.refresh() {
+                     Ok(()) => {
++                        pause_route_profile::set(PausePhase::NativeFinish);
++                        pause_route_profile::refreshed();
+                         self.message = Some(if committed.is_some() {
+                             format!("{label} saved as one edit; Undo restores it")
+                         } else {
+@@ -876,6 +885,7 @@
+                         })
+                     }
+                     Err(error) => {
++                        pause_route_profile::set(PausePhase::NativeFinish);
+                         let message = format!(
+                             "{label} saved, but the preview could not refresh: {error}. Reopen this project before editing or undoing."
+                         );
+--- a/crates/deadpan-core/src/lib.rs
++++ b/crates/deadpan-core/src/lib.rs
+@@ -66,6 +66,8 @@
+ mod occurrence;
+ mod occurrence_edit;
+ mod output_color;
++#[doc(hidden)]
++pub mod pause_route_profile;
+ mod picture_context;
+ mod preserve_input;
+ mod register;
+--- a/crates/deadpan-core/src/pause_route_profile.rs
++++ b/crates/deadpan-core/src/pause_route_profile.rs
+@@ -0,0 +1,582 @@
++//! Temporary private-study scalar timing. Activation and output belong to the
++//! native service; inactive calls read no clock and retain no authored values.
++
++use std::cell::{Cell, RefCell};
++use std::marker::PhantomData;
++use std::rc::Rc;
++use std::time::Instant;
++
++pub const PHASE_COUNT: usize = 13;
++const STACK_LIMIT: usize = 8;
++
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++#[repr(usize)]
++pub enum Phase {
++    NativeAdmission,
++    SemanticPlan,
++    NativeContinuation,
++    StoreEntryMisc,
++    StorePrepare,
++    HostRuntimeBank,
++    StoreWrite,
++    SqliteCommit,
++    StoreCachePublication,
++    NativePostcommit,
++    WorkspaceRefresh,
++    NativeFinish,
++    NativePublication,
++}
++
++#[derive(Clone, Copy, Debug, PartialEq, Eq)]
++pub struct Snapshot {
++    pub elapsed_ns: [u64; PHASE_COUNT],
++    pub counts: [u64; PHASE_COUNT],
++    pub total_ns: u64,
++}
++
++#[derive(Clone, Copy)]
++struct Frame {
++    phase: Phase,
++    token: u64,
++}
++
++const EMPTY_FRAME: Frame = Frame {
++    phase: Phase::NativeAdmission,
++    token: 0,
++};
++
++struct Counters {
++    elapsed_ns: [u64; PHASE_COUNT],
++    counts: [u64; PHASE_COUNT],
++    stack: [Frame; STACK_LIMIT],
++    depth: usize,
++    next_token: u64,
++    last_ns: u64,
++    markers: [u64; 3],
++    invalid: bool,
++}
++
++impl Counters {
++    const fn empty() -> Self {
++        Self {
++            elapsed_ns: [0; PHASE_COUNT],
++            counts: [0; PHASE_COUNT],
++            stack: [EMPTY_FRAME; STACK_LIMIT],
++            depth: 0,
++            next_token: 0,
++            last_ns: 0,
++            markers: [0; 3],
++            invalid: false,
++        }
++    }
++
++    fn started() -> Self {
++        let mut counters = Self::empty();
++        counters.stack[0] = Frame {
++            phase: Phase::NativeAdmission,
++            token: 1,
++        };
++        counters.depth = 1;
++        counters.next_token = 1;
++        counters.counts[Phase::NativeAdmission as usize] = 1;
++        counters
++    }
++
++    fn charge(&mut self, now: u64) -> bool {
++        let frame = self
++            .depth
++            .checked_sub(1)
++            .and_then(|index| self.stack.get(index));
++        let Some(frame) = frame.filter(|_| !self.invalid) else {
++            self.invalid = true;
++            return false;
++        };
++        let index = frame.phase as usize;
++        let next = now
++            .checked_sub(self.last_ns)
++            .and_then(|delta| self.elapsed_ns[index].checked_add(delta));
++        let Some(next) = next else {
++            self.invalid = true;
++            return false;
++        };
++        self.elapsed_ns[index] = next;
++        self.last_ns = now;
++        true
++    }
++
++    fn count(&mut self, phase: Phase) -> bool {
++        let count = &mut self.counts[phase as usize];
++        match count.checked_add(1) {
++            Some(next) => {
++                *count = next;
++                true
++            }
++            None => {
++                self.invalid = true;
++                false
++            }
++        }
++    }
++
++    fn set_at(&mut self, phase: Phase, now: u64) {
++        if self.depth != 1 {
++            self.invalid = true;
++            return;
++        }
++        if self.charge(now) && self.count(phase) {
++            self.stack[0].phase = phase;
++        }
++    }
++
++    fn enter_at(&mut self, phase: Phase, now: u64) -> Option<(u64, usize)> {
++        if self.depth == 0 || self.depth >= STACK_LIMIT {
++            self.invalid = true;
++            return None;
++        }
++        let Some(token) = self.next_token.checked_add(1) else {
++            self.invalid = true;
++            return None;
++        };
++        if !self.charge(now) || !self.count(phase) {
++            return None;
++        }
++        self.stack[self.depth] = Frame { phase, token };
++        self.depth += 1;
++        self.next_token = token;
++        Some((token, self.depth))
++    }
++
++    fn leave_at(&mut self, token: u64, depth: usize, now: u64) {
++        let top = self
++            .depth
++            .checked_sub(1)
++            .and_then(|index| self.stack.get(index));
++        if self.depth != depth || depth < 2 || top.is_none_or(|frame| frame.token != token) {
++            self.invalid = true;
++            return;
++        }
++        if self.charge(now) {
++            self.depth -= 1;
++        }
++    }
++
++    fn mark(&mut self, index: usize) {
++        let Some(marker) = self.markers.get_mut(index) else {
++            self.invalid = true;
++            return;
++        };
++        match marker.checked_add(1) {
++            Some(next) => *marker = next,
++            None => self.invalid = true,
++        }
++    }
++
++    fn finish_at(mut self, now: u64) -> Option<Snapshot> {
++        if self.invalid
++            || self.depth != 1
++            || self.stack[0].phase != Phase::NativePublication
++            || self.counts != [1; PHASE_COUNT]
++            || self.markers != [1; 3]
++            || !self.charge(now)
++        {
++            return None;
++        }
++        let sum = self
++            .elapsed_ns
++            .iter()
++            .try_fold(0u64, |sum, value| sum.checked_add(*value))?;
++        (sum == now).then_some(Snapshot {
++            elapsed_ns: self.elapsed_ns,
++            counts: self.counts,
++            total_ns: now,
++        })
++    }
++}
++
++struct State {
++    generation: u64,
++    origin: Option<Instant>,
++    counters: Counters,
++}
++
++impl State {
++    const fn empty() -> Self {
++        Self {
++            generation: 0,
++            origin: None,
++            counters: Counters::empty(),
++        }
++    }
++
++    fn now(&mut self) -> Option<u64> {
++        if self.counters.invalid {
++            return None;
++        }
++        // The origin is absent on every inactive path, before any clock read.
++        let origin = self.origin.as_ref()?;
++        match u64::try_from(origin.elapsed().as_nanos()) {
++            Ok(now) => Some(now),
++            Err(_) => {
++                self.counters.invalid = true;
++                None
++            }
++        }
++    }
++
++    fn clear(&mut self) {
++        self.origin = None;
++        self.counters = Counters::empty();
++    }
++}
++
++struct Local {
++    state: RefCell<State>,
++    fault: Cell<bool>,
++    cancelled: Cell<Option<u64>>,
++}
++
++thread_local! {
++    static LOCAL: Local = const { Local {
++        state: RefCell::new(State::empty()), fault: Cell::new(false), cancelled: Cell::new(None),
++    } };
++}
++
++fn access<T>(operation: impl FnOnce(&mut State, &Cell<bool>) -> Option<T>) -> Option<T> {
++    LOCAL
++        .try_with(|local| {
++            let Ok(mut state) = local.state.try_borrow_mut() else {
++                local.fault.set(true);
++                return None;
++            };
++            if local
++                .cancelled
++                .take()
++                .is_some_and(|generation| generation == state.generation)
++            {
++                state.clear();
++                local.fault.set(false);
++            }
++            if local.fault.get() {
++                state.counters.invalid = true;
++            }
++            operation(&mut state, &local.fault)
++        })
++        .ok()
++        .flatten()
++}
++
++fn cancel(generation: u64) {
++    let _ = LOCAL.try_with(|local| local.cancelled.set(Some(generation)));
++    // If another diagnostic hook holds the borrow, the next access performs
++    // this generation's pending clear before starting any fresh activation.
++    let _ = access(|_, _| Some(()));
++}
++
++/// A service-owned activation. It cannot move to a different thread. Dropping
++/// it without finishing cancels and clears this diagnostic only.
++pub struct Profile {
++    generation: Option<u64>,
++    _local: PhantomData<Rc<()>>,
++}
++
++impl Profile {
++    pub fn begin() -> Self {
++        let generation = access(|state, fault| {
++            if state.origin.is_some() {
++                state.counters.invalid = true;
++                return None;
++            }
++            let generation = state.generation.checked_add(1)?;
++            state.generation = generation;
++            state.counters = Counters::started();
++            fault.set(false);
++            state.origin = Some(Instant::now());
++            Some(generation)
++        });
++        Self {
++            generation,
++            _local: PhantomData,
++        }
++    }
++
++    /// Called only after the native service's store_update and wake return.
++    pub fn published(&self) {
++        let Some(generation) = self.generation else {
++            return;
++        };
++        let _ = access(|state, _| {
++            if state.generation == generation && state.origin.is_some() {
++                state.counters.mark(2);
++            }
++            Some(())
++        });
++    }
++
++    pub fn finish(mut self) -> Option<Snapshot> {
++        let generation = self.generation.take()?;
++        let result = access(|state, fault| {
++            if state.generation != generation || state.origin.is_none() {
++                return None;
++            }
++            let now = state.now();
++            let counters = std::mem::replace(&mut state.counters, Counters::empty());
++            state.origin = None;
++            fault.set(false);
++            now.and_then(|now| counters.finish_at(now))
++        });
++        cancel(generation);
++        result
++    }
++}
++
++impl Drop for Profile {
++    fn drop(&mut self) {
++        let Some(generation) = self.generation else {
++            return;
++        };
++        cancel(generation);
++    }
++}
++
++/// Replace the native root category. Resuming a parent never calls this.
++pub fn set(phase: Phase) {
++    let _ = access(|state, _| {
++        let now = state.now()?;
++        state.counters.set_at(phase, now);
++        Some(())
++    });
++}
++
++/// A disjoint child category. Invalid or inactive entries remain no-ops.
++pub struct Span {
++    identity: Option<(u64, u64, usize)>,
++    _local: PhantomData<Rc<()>>,
++}
++
++pub fn enter(phase: Phase) -> Span {
++    let identity = access(|state, _| {
++        let now = state.now()?;
++        let (token, depth) = state.counters.enter_at(phase, now)?;
++        Some((state.generation, token, depth))
++    });
++    Span {
++        identity,
++        _local: PhantomData,
++    }
++}
++
++impl Drop for Span {
++    fn drop(&mut self) {
++        let Some((generation, token, depth)) = self.identity else {
++            return;
++        };
++        let _ = access(|state, _| {
++            if state.generation == generation {
++                let now = state.now()?;
++                state.counters.leave_at(token, depth, now);
++            }
++            Some(())
++        });
++    }
++}
++
++pub fn committed() {
++    mark(0);
++}
++pub fn refreshed() {
++    mark(1);
++}
++
++fn mark(index: usize) {
++    let _ = access(|state, _| {
++        if state.origin.is_some() {
++            state.counters.mark(index);
++        }
++        Some(())
++    });
++}
++
++#[cfg(test)]
++mod tests {
++    use super::*;
++
++    fn complete_counters() -> Counters {
++        let mut counters = Counters::started();
++        counters.set_at(Phase::SemanticPlan, 1);
++        counters.set_at(Phase::NativeContinuation, 2);
++        let (store, store_depth) = counters.enter_at(Phase::StoreEntryMisc, 3).unwrap();
++        for (phase, start) in [
++            (Phase::StorePrepare, 4),
++            (Phase::HostRuntimeBank, 6),
++            (Phase::StoreWrite, 8),
++            (Phase::SqliteCommit, 10),
++            (Phase::StoreCachePublication, 12),
++        ] {
++            let (token, depth) = counters.enter_at(phase, start).unwrap();
++            counters.leave_at(token, depth, start + 1);
++        }
++        counters.leave_at(store, store_depth, 14);
++        counters.set_at(Phase::NativePostcommit, 15);
++        counters.mark(0);
++        counters.set_at(Phase::WorkspaceRefresh, 16);
++        counters.set_at(Phase::NativeFinish, 17);
++        counters.mark(1);
++        counters.set_at(Phase::NativePublication, 18);
++        counters.mark(2);
++        counters
++    }
++
++    fn complete_live(profile: Profile) -> Option<Snapshot> {
++        set(Phase::SemanticPlan);
++        set(Phase::NativeContinuation);
++        let store = enter(Phase::StoreEntryMisc);
++        for phase in [
++            Phase::StorePrepare,
++            Phase::HostRuntimeBank,
++            Phase::StoreWrite,
++            Phase::SqliteCommit,
++            Phase::StoreCachePublication,
++        ] {
++            let span = enter(phase);
++            drop(span);
++        }
++        drop(store);
++        set(Phase::NativePostcommit);
++        committed();
++        set(Phase::WorkspaceRefresh);
++        refreshed();
++        set(Phase::NativeFinish);
++        set(Phase::NativePublication);
++        profile.published();
++        profile.finish()
++    }
++
++    #[test]
++    fn pause_route_profile_nested_exclusive_durations_conserve_and_resume_without_counts() {
++        let snapshot = complete_counters().finish_at(19).unwrap();
++        assert_eq!(snapshot.counts, [1; PHASE_COUNT]);
++        assert_eq!(snapshot.elapsed_ns, [1, 1, 2, 6, 1, 1, 1, 1, 1, 1, 1, 1, 1]);
++        assert_eq!(snapshot.total_ns, 19);
++        assert_eq!(
++            snapshot.elapsed_ns.into_iter().sum::<u64>(),
++            snapshot.total_ns
++        );
++    }
++
++    #[test]
++    fn pause_route_profile_live_success_clears_before_returning_scalars() {
++        let snapshot = complete_live(Profile::begin()).unwrap();
++        assert_eq!(snapshot.counts, [1; PHASE_COUNT]);
++        assert_eq!(
++            snapshot.elapsed_ns.into_iter().sum::<u64>(),
++            snapshot.total_ns
++        );
++        assert!(access(|state, _| Some(state.origin.is_none())).unwrap());
++    }
++
++    #[test]
++    fn pause_route_profile_failure_and_cancel_leave_no_finished_block() {
++        let failed = Profile::begin();
++        set(Phase::SemanticPlan);
++        assert!(failed.finish().is_none());
++        let cancelled = Profile::begin();
++        let stale_span = enter(Phase::StoreEntryMisc);
++        drop(cancelled);
++        let next = Profile::begin();
++        drop(stale_span);
++        assert!(complete_live(next).is_some());
++    }
++
++    #[test]
++    fn pause_route_profile_out_of_order_drop_and_reentrant_activation_discard() {
++        let profile = Profile::begin();
++        let parent = enter(Phase::StoreEntryMisc);
++        let child = enter(Phase::StorePrepare);
++        drop(parent);
++        drop(child);
++        assert!(profile.finish().is_none());
++        let outer = Profile::begin();
++        let inner = Profile::begin();
++        assert!(inner.finish().is_none());
++        assert!(outer.finish().is_none());
++        assert!(complete_live(Profile::begin()).is_some());
++    }
++
++    #[test]
++    fn pause_route_profile_borrow_conflict_invalidates_without_panicking() {
++        let profile = Profile::begin();
++        LOCAL.with(|local| {
++            let _held = local.state.borrow_mut();
++            set(Phase::SemanticPlan);
++        });
++        assert!(profile.finish().is_none());
++        assert!(complete_live(Profile::begin()).is_some());
++        let finishing = Profile::begin();
++        LOCAL.with(|local| {
++            let _held = local.state.borrow_mut();
++            assert!(finishing.finish().is_none());
++        });
++        assert!(complete_live(Profile::begin()).is_some());
++        let cancelling = Profile::begin();
++        LOCAL.with(|local| {
++            let _held = local.state.borrow_mut();
++            drop(cancelling);
++        });
++        assert!(complete_live(Profile::begin()).is_some());
++    }
++
++    #[test]
++    fn pause_route_profile_invalid_counters_markers_clock_and_stack_are_rejected() {
++        let mut overflow = Counters::started();
++        overflow.elapsed_ns[0] = u64::MAX;
++        overflow.set_at(Phase::SemanticPlan, 1);
++        assert!(overflow.invalid);
++        let mut count = Counters::started();
++        count.counts[Phase::SemanticPlan as usize] = u64::MAX;
++        count.set_at(Phase::SemanticPlan, 0);
++        assert!(count.invalid);
++        let mut marker = complete_counters();
++        marker.markers[0] = u64::MAX;
++        marker.mark(0);
++        assert!(marker.finish_at(19).is_none());
++        let mut backwards = Counters::started();
++        backwards.set_at(Phase::SemanticPlan, 2);
++        backwards.set_at(Phase::NativeContinuation, 1);
++        assert!(backwards.invalid);
++        let mut stack = Counters::started();
++        for _ in 1..STACK_LIMIT {
++            assert!(stack.enter_at(Phase::StorePrepare, 0).is_some());
++        }
++        assert!(stack.enter_at(Phase::StorePrepare, 0).is_none());
++        assert!(stack.invalid);
++    }
++
++    #[test]
++    fn pause_route_profile_wrong_counts_missing_success_and_broken_conservation_discard() {
++        let mut counts = complete_counters();
++        counts.counts[Phase::StorePrepare as usize] = 2;
++        assert!(counts.finish_at(19).is_none());
++        for marker in 0..3 {
++            let mut missing = complete_counters();
++            missing.markers[marker] = 0;
++            assert!(missing.finish_at(19).is_none());
++        }
++        let mut sum = complete_counters();
++        sum.elapsed_ns[0] += 1;
++        assert!(sum.finish_at(19).is_none());
++    }
++
++    #[test]
++    fn pause_route_profile_inactive_hooks_do_not_create_a_session() {
++        set(Phase::SemanticPlan);
++        drop(enter(Phase::StorePrepare));
++        committed();
++        refreshed();
++        assert!(
++            access(|state, _| Some(
++                state.origin.is_none() && state.counters.counts == [0; PHASE_COUNT]
++            ))
++            .unwrap()
++        );
++    }
++}
+--- a/crates/deadpan-store/src/compound.rs
++++ b/crates/deadpan-store/src/compound.rs
+@@ -3,6 +3,7 @@
+ 
+ use std::collections::BTreeSet;
+ 
++use deadpan_core::pause_route_profile::{self, Phase as PausePhase};
+ use deadpan_core::{
+     Command, CommandRequest, EditTransaction, ProjectDocument, RegisterValue, ResolvedStep,
+     RevisionId,
+@@ -184,6 +185,7 @@
+         candidate: Option<&deadpan_core::OneLeafReplay>,
+         prepare: impl FnOnce(&RegisterBank) -> Result<T, E>,
+     ) -> Result<(CompoundCommitOutcome, T), CompoundPreparationError<E>> {
++        let _pause_store = pause_route_profile::enter(PausePhase::StoreEntryMisc);
+         self.require_writer()?;
+         require_compound(request)?;
+         let documents = &self.documents;
+@@ -194,11 +196,15 @@
+         if let Some(guard) = guard {
+             crate::transcript_selection::check_guard(&transaction, documents, guard)?;
+         }
++        let pause_prepare = pause_route_profile::enter(PausePhase::StorePrepare);
+         let plan =
+             crate::prepare_command_with_one_leaf(&transaction, documents, request, candidate)?;
++        drop(pause_prepare);
+         let prepared = plan.compound.as_ref().expect("compound plan");
++        let pause_runtime = pause_route_profile::enter(PausePhase::HostRuntimeBank);
+         let register_bank = prepared.registers.bank.clone();
+         let host = prepare(&register_bank).map_err(CompoundPreparationError::Preparation)?;
++        drop(pause_runtime);
+         let committed = if prepared.steps.is_empty() {
+             if prepared.writes {
+                 crate::registers::write_prepared_bank(
+@@ -209,15 +215,21 @@
+             }
+             None
+         } else {
+-            Some(crate::write_command_plan(
++            let pause_write = pause_route_profile::enter(PausePhase::StoreWrite);
++            let written = crate::write_command_plan(
+                 &transaction,
+                 documents,
+                 plan,
+                 relevance,
+                 self.context_resolver.as_deref(),
+-            )?)
++            )?;
++            drop(pause_write);
++            Some(written)
+         };
++        let pause_commit = pause_route_profile::enter(PausePhase::SqliteCommit);
+         transaction.commit().map_err(StoreError::from)?;
++        drop(pause_commit);
++        let _pause_cache = pause_route_profile::enter(PausePhase::StoreCachePublication);
+         let committed = committed.map(|(outcome, next)| {
+             documents.insert(next);
+             outcome

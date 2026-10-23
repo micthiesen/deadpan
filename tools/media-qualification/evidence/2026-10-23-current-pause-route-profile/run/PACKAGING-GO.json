@@ -1,0 +1,14 @@
+{
+  "authorized": true,
+  "packager_sha256": "6660823cd7081bec64987e0bbdb3849b58f5329bbdd03050b2dc26654b7a4a4d",
+  "source_map_sha256": "12acb33168d093a788cba673ba98c532c6729c6f73564ee75d57d7c473e8ab41",
+  "source_review_sha256": "2306a3e167ec852659617ba2d005dc536039976a73f2c18c12a9cf7359ef79b5",
+  "driver_review_sha256": "d421c1ac4076e91bde6e451edde9b719da451e204e6c24ba34775a0fee56ccb4",
+  "driver_pins_sha256": "73dd6459ec4d086b20cd2bf4f30d08624375346de63b813be9240f2393bf6eda",
+  "sanitization_receipt_sha256": "ae6982759d76c0a0b92b4af1fc706822f6b61b9226a1ede756677b35ab17c432",
+  "build_terminal_sha256": "a9d1162c3113cdc443165b8f49e91d726c8d5ab84fc5ebc66693177bc2f8b09e",
+  "measurement_terminal_sha256": "0275f9fe394c86390f5ea5d437d5f5ced65332e649f7d8a33e0f917c028cfea9",
+  "packager_review_sha256": "44ba3ee11b839477b0e429d62e5d9ca1104c3a499a642e8d7099678bf1d71e00",
+  "retain_fixture_archives": true,
+  "scope": "Retain completed private diagnostic evidence only; no mainline source patch or product target claim."
+}

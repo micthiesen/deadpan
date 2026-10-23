@@ -1,0 +1,13 @@
+{
+  "command": [
+    "python",
+    "-m",
+    "unittest",
+    "-v",
+    "test_profile_parser.py"
+  ],
+  "cwd": "/tmp/deadpan-current-pause-route-profile-2026-10-23",
+  "exit": 0,
+  "seconds": 0.058093625120818615,
+  "tests": 18
+}

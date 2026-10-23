@@ -1,0 +1,23 @@
+{
+  "before": {
+    "crates/deadpan-app/src/project/service.rs": "d68879b682dc78607a9ac996fa6941dde1975b6860da375e2da97ab7222ff750",
+    "crates/deadpan-app/src/project/service/macros.rs": "b3d63ee05d49d3c1208a54a5492fe365c39b198b2a82448388df5a264e64c20c",
+    "crates/deadpan-core/src/lib.rs": "b7746cc15dd05b11d13c842229ddc5ee3081e3f351ca03c7d894d6eda67f99ac",
+    "crates/deadpan-core/src/pause_route_profile.rs": null,
+    "crates/deadpan-store/src/compound.rs": "852c4a4982ad28536649fe6ed91005503424bd941eb16de2877c26ed7f82d7b2"
+  },
+  "proposed": {
+    "crates/deadpan-app/src/project/service.rs": "03226763607612ef43004bbf683c2c730aaa2dbf8b9976104bd7488602e974ba",
+    "crates/deadpan-app/src/project/service/macros.rs": "1d64321deba7812b0133917af1145c01f5b1465f84d5f196d3e0fef632aba5cc",
+    "crates/deadpan-core/src/lib.rs": "8a48d848fe6add491d380ffdea26ef8538a6023c4d47ec2a9d5ed9dbf5dd6f01",
+    "crates/deadpan-core/src/pause_route_profile.rs": "aaa8b1516d0bdff99179da1addc9699efa008d8caa9770be06a6fc5242a23201",
+    "crates/deadpan-store/src/compound.rs": "aee0f2d5066b9e86afe3ac9475714abb06381f191e12604a8ef565b9ec9c645d"
+  },
+  "baseline_rust": 2053,
+  "proposed_rust": 2054,
+  "nonowned_rust_byte_identical": 2049,
+  "six_inputs_byte_identical": true,
+  "uncompiled": true,
+  "unformatted": true,
+  "unexecuted": true
+}

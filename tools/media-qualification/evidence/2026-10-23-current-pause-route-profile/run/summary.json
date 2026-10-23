@@ -1,0 +1,116 @@
+{
+  "diagnostic_only": true,
+  "n_per_kind": 3,
+  "kinds": {
+    "control": {
+      "large_first_pause_input_to_commit_ms": {
+        "min": 194.115083,
+        "median": 195.23066699999998,
+        "max": 197.15991599999998
+      },
+      "large_first_pause_input_to_offscreen_background_composition_ms": {
+        "min": 196.568083,
+        "median": 197.80208299999998,
+        "max": 199.574416
+      }
+    },
+    "off": {
+      "large_first_pause_input_to_commit_ms": {
+        "min": 194.480916,
+        "median": 194.56120800000002,
+        "max": 194.859333
+      },
+      "large_first_pause_input_to_offscreen_background_composition_ms": {
+        "min": 197.078,
+        "median": 197.164875,
+        "max": 197.304833
+      }
+    },
+    "on": {
+      "large_first_pause_input_to_commit_ms": {
+        "min": 193.153667,
+        "median": 195.100625,
+        "max": 195.840084
+      },
+      "large_first_pause_input_to_offscreen_background_composition_ms": {
+        "min": 195.603917,
+        "median": 197.47270799999998,
+        "max": 198.295209
+      }
+    }
+  },
+  "phase_accounting": "exclusive; exact conservation; timer/helper overhead included",
+  "no_percentile_target_or_memory_claim": true,
+  "exclusive_phases": {
+    "native_admission": {
+      "min_ns": 5571167,
+      "median_ns": 5581625,
+      "max_ns": 5760791
+    },
+    "semantic_plan": {
+      "min_ns": 91330500,
+      "median_ns": 91664125,
+      "max_ns": 92212417
+    },
+    "native_continuation": {
+      "min_ns": 7159500,
+      "median_ns": 7258251,
+      "max_ns": 7308250
+    },
+    "store_entry_misc": {
+      "min_ns": 14874,
+      "median_ns": 23208,
+      "max_ns": 24709
+    },
+    "store_prepare": {
+      "min_ns": 60446042,
+      "median_ns": 60879542,
+      "max_ns": 61075666
+    },
+    "host_runtime_bank": {
+      "min_ns": 791,
+      "median_ns": 958,
+      "max_ns": 959
+    },
+    "store_write": {
+      "min_ns": 6961375,
+      "median_ns": 7279584,
+      "max_ns": 7303041
+    },
+    "sqlite_commit": {
+      "min_ns": 5242291,
+      "median_ns": 6334875,
+      "max_ns": 6739459
+    },
+    "store_cache_publication": {
+      "min_ns": 834,
+      "median_ns": 1042,
+      "max_ns": 1125
+    },
+    "native_postcommit": {
+      "min_ns": 288750,
+      "median_ns": 305541,
+      "max_ns": 307666
+    },
+    "workspace_refresh": {
+      "min_ns": 4123334,
+      "median_ns": 4141250,
+      "max_ns": 4161166
+    },
+    "native_finish": {
+      "min_ns": 977709,
+      "median_ns": 986000,
+      "max_ns": 1003209
+    },
+    "native_publication": {
+      "min_ns": 4089791,
+      "median_ns": 4107083,
+      "max_ns": 4133041
+    }
+  },
+  "worker_outer_ns": [
+    186788500,
+    188710583,
+    189302458
+  ]
+}

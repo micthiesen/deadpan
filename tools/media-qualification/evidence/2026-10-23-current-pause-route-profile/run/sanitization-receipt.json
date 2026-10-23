@@ -1,0 +1,9 @@
+{
+  "source": "host-observations.json",
+  "source_sha256": "eb96925c329a55e32336403cc8eb439ee47ccea5153f5258ddb9ed9721c07d7e",
+  "output": "host-observations-sanitized.json",
+  "output_sha256": "dd06361a33d3f28efa1787914163c9816b708ae916df5810ca2ad2d2f552fc99",
+  "producer": "sanitize_host.py",
+  "producer_sha256": "881cacccefde874624df2d3eaa4532d04c3c5dbdcd6699c33e45a2f091ab4c91",
+  "method": "derive() whitelist/removal/redaction; pinned source unchanged"
+}

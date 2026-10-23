@@ -1,0 +1,20 @@
+{
+  "baseline_commit": "40959c5e26f5fc9713eda5a02ccd61377cc65a28",
+  "code_commit": "5fdae748ac2fdc67e1a11793c5ab69f6b61da833",
+  "baseline_rust": 2053,
+  "private_rust": 2054,
+  "changed": [
+    "crates/deadpan-app/src/project/service.rs",
+    "crates/deadpan-app/src/project/service/macros.rs",
+    "crates/deadpan-core/src/lib.rs",
+    "crates/deadpan-store/src/compound.rs"
+  ],
+  "new": [
+    "crates/deadpan-core/src/pause_route_profile.rs"
+  ],
+  "inputs_unchanged": 6,
+  "source_map_sha256": "12acb33168d093a788cba673ba98c532c6729c6f73564ee75d57d7c473e8ab41",
+  "patch_sha256": "a2ee8866fced7b496dd72c4a7b5db97776dc54730f0805c44fdcb70425d64aad",
+  "helper_tests": 8,
+  "store_tests": 12
+}

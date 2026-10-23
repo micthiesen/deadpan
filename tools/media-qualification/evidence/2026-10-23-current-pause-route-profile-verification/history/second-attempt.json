@@ -1,0 +1,8 @@
+{
+  "status": "verification script failed at first tar member before completing archives",
+  "error": "AssertionError name.parts[0] == stem + .deadpan",
+  "cause": "Root assumed outer package directory in archive; producer uses safe root-relative member names",
+  "correction": "use exact member paths as keys in actual after-map; retain regular/path-safety checks and exact byte/hash map equality",
+  "product_or_packager_failure": false,
+  "package_bytes_modified": false
+}

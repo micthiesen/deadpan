@@ -1,0 +1,58 @@
+{
+  "archives": [
+    {
+      "bytes": 4489278,
+      "files": 3,
+      "path": "fixtures/rotation-1-control.tar.gz",
+      "verified": true
+    },
+    {
+      "bytes": 4489278,
+      "files": 3,
+      "path": "fixtures/rotation-1-off.tar.gz",
+      "verified": true
+    },
+    {
+      "bytes": 4489278,
+      "files": 3,
+      "path": "fixtures/rotation-1-on.tar.gz",
+      "verified": true
+    },
+    {
+      "bytes": 4489278,
+      "files": 3,
+      "path": "fixtures/rotation-2-off.tar.gz",
+      "verified": true
+    },
+    {
+      "bytes": 4489278,
+      "files": 3,
+      "path": "fixtures/rotation-2-on.tar.gz",
+      "verified": true
+    },
+    {
+      "bytes": 4489278,
+      "files": 3,
+      "path": "fixtures/rotation-2-control.tar.gz",
+      "verified": true
+    },
+    {
+      "bytes": 4489278,
+      "files": 3,
+      "path": "fixtures/rotation-3-on.tar.gz",
+      "verified": true
+    },
+    {
+      "bytes": 4489278,
+      "files": 3,
+      "path": "fixtures/rotation-3-control.tar.gz",
+      "verified": true
+    },
+    {
+      "bytes": 4489278,
+      "files": 3,
+      "path": "fixtures/rotation-3-off.tar.gz",
+      "verified": true
+    }
+  ]
+}

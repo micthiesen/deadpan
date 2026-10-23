@@ -4,6 +4,49 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Current continuation, 2026-10-23
 
+The qualified one-leaf implementation is 5fdae748; documentation/progress baseline
+is 40959c5e. Its full production qualification remains in
+[one-leaf replay reuse](../qualification/one-leaf-replay-reuse-2026-10-23.md).
+Keep executed production App SHA-256
+0cb2931562108a68b57915c6135f448bc74293ba20623c7484053152566d31ff
+as control, not a private instrumented executable.
+
+The [current route study](../qualification/current-pause-route-profile-2026-10-23.md)
+is terminal: eight helper, twelve transaction and eighteen parser tests,
+strict release Core/Store/App all-target Clippy/format, nine fresh native
+trials, 63 workflow/nine Kestrel checks. Eighteen layout warnings remain.
+All source/input/binary/authored-byte guards and thirteen-phase conservation
+checks pass. No source-decode, display, percentile, memory, latency-target or
+requirement claim closes.
+
+Three enabled exclusive worker intervals are 186.788500, 188.710583 and
+189.302458 ms. Semantic planning median is 91.664125 ms; Store preparation
+60.879542 ms. Control/off/on commit medians 195.230667 /194.561208 /
+195.100625 ms have overlapping spread. These current regions need direct finer
+measurements; old inclusive costs and residual subtractions are not substitutes.
+
+Scratch /tmp/deadpan-current-pause-route-profile-2026-10-23 has terminal build
+session 33992 and measurement session 62750, both exit zero. Do not restart.
+Private App SHA-256 is
+1bac97db7cdb7830592fe8f896e6c54f509b998501a3ae047e60746a7decafcb.
+The primary package has 184 payload files /4,143,448 bytes, inventory SHA-256
+769b2da713cc347640af179acacf7f0785d5f041f6d254511793569fd46ee63b.
+The separate verifier supplement preserves three corrected archive assumptions;
+final independent checks reread every hash, 23 gzip streams and nine safe
+authored fixture archives with 27 files. Root sidecars are excluded only after
+checking the WAL empty. The full development goal remains active at 89%.
+
+The next private fine study is being prepared in
+/tmp/deadpan-current-pause-detail-profile-2026-10-23, copied from the immutable
+coarse 2,054-file source map 12acb331. Only the two dominant regions are being
+refined; no optimization is authorized by an attributed guess. Root owns
+format/build/runtime and will test the exact scalar helper source separately
+instead of recompiling all Core unit tests merely to filter eight cases.
+Release native integration and strict Core/Store/App checks remain required.
+Do not ship temporary diagnostic hooks.
+
+## Earlier qualification history, 2026-10-23
+
 Core 58 / SQLite 87 compact bindings and early full-capture fallback are
 implemented, reviewed and qualified. All 1,513 Core, 3,499 broader selected and
 1,292 UI-feature tests pass, strict changed Core/Store and explicit UI Clippy

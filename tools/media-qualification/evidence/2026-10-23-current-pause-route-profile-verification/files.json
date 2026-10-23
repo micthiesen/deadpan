@@ -1,0 +1,40 @@
+{
+  "scope": "Independent verifier supplement; separate from immutable primary package inventory",
+  "files": [
+    {
+      "path": "history/first-attempt.json",
+      "bytes": 423,
+      "sha256": "39100d26e4c77be074b92c035219dc2cdbadb3488266c79a6af241fc17bed0ea"
+    },
+    {
+      "path": "history/second-attempt.json",
+      "bytes": 476,
+      "sha256": "c400c91ae4ff3f0a9178cf732e61280a5f7563f70220ba6a75f98b84112f9ece"
+    },
+    {
+      "path": "history/second-attempt.py.txt",
+      "bytes": 2678,
+      "sha256": "880456d35f245b707afa13d72647a93a0cca9c8cc06c7d3146d4e12f2fe79c49"
+    },
+    {
+      "path": "history/third-attempt.json",
+      "bytes": 534,
+      "sha256": "2e78cd24cdcd99f4fc7630e129267355854f13a7219123f39bcffea525b275f9"
+    },
+    {
+      "path": "history/third-attempt.py.txt",
+      "bytes": 2633,
+      "sha256": "36c304b8697eb4c0d737f64d78d6a0dd9f8e311cd96c7f871dc506873494ec68"
+    },
+    {
+      "path": "root-package-verification.json",
+      "bytes": 521,
+      "sha256": "a468758bafcbe68ba2fd891ddac4e0367343aa80be1454307ef42f6f5380e508"
+    },
+    {
+      "path": "verify_package.py",
+      "bytes": 3062,
+      "sha256": "3c2763d58e32bf022a42dca234f8fbe78963fad825353370a3adeefdb7e00e89"
+    }
+  ]
+}

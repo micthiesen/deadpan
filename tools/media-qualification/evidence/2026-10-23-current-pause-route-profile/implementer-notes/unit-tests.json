@@ -1,0 +1,15 @@
+{
+  "count": 8,
+  "names": [
+    "pause_route_profile_nested_exclusive_durations_conserve_and_resume_without_counts",
+    "pause_route_profile_live_success_clears_before_returning_scalars",
+    "pause_route_profile_failure_and_cancel_leave_no_finished_block",
+    "pause_route_profile_out_of_order_drop_and_reentrant_activation_discard",
+    "pause_route_profile_borrow_conflict_invalidates_without_panicking",
+    "pause_route_profile_invalid_counters_markers_clock_and_stack_are_rejected",
+    "pause_route_profile_wrong_counts_missing_success_and_broken_conservation_discard",
+    "pause_route_profile_inactive_hooks_do_not_create_a_session"
+  ],
+  "executed": false,
+  "filter": "pause_route_profile"
+}

@@ -1,0 +1,1 @@
+Initial driver review found static gaps before any driver execution. The pre-fix scripts are reconstructed from the exact creation patches in this session, with reverse replacements verified against the post-review scripts. These are not failed runtime attempts. The initial source hashes in the independent review identify the reviewed versions when recorded.

@@ -1,0 +1,7 @@
+{
+  "method": "exact inverse of applied review edits; AST valid; never executed",
+  "hashes": {
+    "build.py": "5881fd16a75d0e1a728ec99d6e95485589012eed6cac84bd0acefc15b28f9817",
+    "measure.py": "7842ebbb9068bc17ffb5e8d662414563d40e584a3740e033d54290d0678ffe21"
+  }
+}

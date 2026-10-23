@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-23T20:45:15.190Z",
+  "updated_at": "2026-10-23T21:38:52.771Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "One-leaf replay reuse is qualified at 5fdae748. An opaque complete-value/mode capability reuses Core’s successful pure leaf result while retaining boundary traversal charges, revisions, TLS, ledger, final history and independent current Store authority. All 1,543 Core, 3,513 broader and 1,296 UI tests pass with 0/741/11 skipped, plus strict and UI Clippy/format. Original executed maps remain across a reviewed single-file PCM test-helper amendment; strict and affected real-media controls rerun afterward. Debug/release neutral verify 15 pictures/24,024 samples; aligned release verifies 19/30,430 final in 232.393 seconds with slow notices. The genuine-capability and explicit-None real-media paths match transactions, documents, banks, full authored/limited PCM and limiter-gain bits through durable Undo/Redo/reopen; both exports verify every 45 pictures/72,072 samples at zero offset. Six native reports pass 1,340 workflow/six Kestrel checks and two portable copies validate unchanged. Five final quiet pairs measure commit 240.560333/195.108542 ms and offscreen composition 243.137083/197.389583 ms, a 45.747500 ms/about 18.82% diagnostic difference. All 995 files/23,149,781 bytes verify independently, including five movies. Five actual failures, 32 final layout warnings and original LEAK annotations remain; exact final warning-case isolation is clean, and two historical cases pass on final binaries without claiming old-binary reexecution. Seven source reviews and independent packager review pass. Private prototype/memory results remain separate. No percentile, peak/retention memory, target, requirement or gate closes. Next measure remaining current-route work before another optimization; coverage remains 89%, eight Complete and sixteen Partial, with the 100 ms/50 ms targets open.",
+  "focus": "Current pause-route profiling is complete on the qualified one-leaf implementation. Three enabled runs measure exclusive semantic planning at 91.664125 ms and Store preparation at 60.879542 ms within a 188.710583 ms median worker route. All nine rotated control/off/on replays and source/input/binary guards pass. The temporary timers remain outside main. Finer direct measurements of those two dominant regions are underway before another optimization. Coverage remains 89%, eight Complete and sixteen Partial; the 100 ms/50 ms targets and full goal stay open.",
   "features": [
     {
       "id": "editing",
@@ -102,7 +102,7 @@
         "DP-18",
         "DP-24"
       ],
-      "note": "Prepared one-leaf replay reuse passes Core/Store/CLI/UI, strict checks, actual PCM/history and both cached/uncached exports, native and portable qualification. Final n=5 offscreen composition medians are 243.137083/197.389583 ms, about 18.82% apart. Original test maps and the reviewed test-only reader correction remain explicit. This batch is separate from private and earlier optimizations; no percentile, memory ceiling/retention result or 100 ms/50 ms target closes. Remaining current-route costs need measurement."
+      "note": "Qualified one-leaf replay reuse remains the production baseline. A private current-route study passes eight helper, twelve transaction and eighteen parser tests, strict release checks, and nine native trials (63 workflow/nine Kestrel checks). Planning/preparation medians are 91.664125/60.879542 ms; control/off/on commit observations overlap. Every phase sum and authored-input guard passes. No percentile, memory, physical-display or 100 ms/50 ms target closes. Refine the two dominant regions next."
     },
     {
       "id": "models",
@@ -1181,6 +1181,14 @@
       "revision": "5fdae748ac2fdc67e1a11793c5ab69f6b61da833",
       "retrospective": false,
       "summary": "One-leaf replay reuse is qualified at 5fdae748. An opaque complete-value/mode capability reuses Core’s successful pure leaf result while retaining boundary traversal charges, revisions, TLS, ledger, final history and independent current Store authority. All 1,543 Core, 3,513 broader and 1,296 UI tests pass with 0/741/11 skipped, plus strict and UI Clippy/format. Original executed maps remain across a reviewed single-file PCM test-helper amendment; strict and affected real-media controls rerun afterward. Debug/release neutral verify 15 pictures/24,024 samples; aligned release verifies 19/30,430 final in 232.393 seconds with slow notices. The genuine-capability and explicit-None real-media paths match transactions, documents, banks, full authored/limited PCM and limiter-gain bits through durable Undo/Redo/reopen; both exports verify every 45 pictures/72,072 samples at zero offset. Six native reports pass 1,340 workflow/six Kestrel checks and two portable copies validate unchanged. Five final quiet pairs measure commit 240.560333/195.108542 ms and offscreen composition 243.137083/197.389583 ms, a 45.747500 ms/about 18.82% diagnostic difference. All 995 files/23,149,781 bytes verify independently, including five movies. Five actual failures, 32 final layout warnings and original LEAK annotations remain; exact final warning-case isolation is clean, and two historical cases pass on final binaries without claiming old-binary reexecution. Seven source reviews and independent packager review pass. Private prototype/memory results remain separate. No percentile, peak/retention memory, target, requirement or gate closes."
+    },
+    {
+      "date": "2026-10-23",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "40959c5e26f5fc9713eda5a02ccd61377cc65a28",
+      "retrospective": false,
+      "summary": "Private current-route profiling of qualified one-leaf code 5fdae748 is complete on baseline 40959c5e. Eight helper, twelve transaction and eighteen parser tests plus strict release Core/Store/App all-target checks pass. Nine fresh rotated control/off/on trials pass 63 workflow/nine Kestrel checks and retain eighteen layout warnings. Control/off/on commit medians are 195.230667/194.561208/195.100625 ms with overlapping spread, not an overhead bound. Three enabled worker intervals conserve exactly across thirteen exclusive phases; planning/preparation medians are 91.664125/60.879542 ms and worker median 188.710583 ms. Independent rereading verifies 184 payload files/4,143,448 bytes, 23 gzip streams and nine safe authored-fixture archives. Three corrected independent-verifier assumptions remain in a separate supplement. Timers stay outside main; finer direct measurement of the two dominant regions is next. No target, memory claim, requirement or gate closes."
     }
   ]
 }

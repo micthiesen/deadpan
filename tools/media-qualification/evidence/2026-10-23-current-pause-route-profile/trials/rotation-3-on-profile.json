@@ -1,0 +1,161 @@
+{
+  "schema": "DEADPAN_PAUSE_ROUTE_PROFILE_V1",
+  "block_count": 1,
+  "selected_block_index": 0,
+  "selected": {
+    "phases": [
+      {
+        "name": "native_admission",
+        "elapsed_ns": 5760791,
+        "count": 1
+      },
+      {
+        "name": "semantic_plan",
+        "elapsed_ns": 92212417,
+        "count": 1
+      },
+      {
+        "name": "native_continuation",
+        "elapsed_ns": 7258251,
+        "count": 1
+      },
+      {
+        "name": "store_entry_misc",
+        "elapsed_ns": 14874,
+        "count": 1
+      },
+      {
+        "name": "store_prepare",
+        "elapsed_ns": 60879542,
+        "count": 1
+      },
+      {
+        "name": "host_runtime_bank",
+        "elapsed_ns": 791,
+        "count": 1
+      },
+      {
+        "name": "store_write",
+        "elapsed_ns": 7279584,
+        "count": 1
+      },
+      {
+        "name": "sqlite_commit",
+        "elapsed_ns": 6334875,
+        "count": 1
+      },
+      {
+        "name": "store_cache_publication",
+        "elapsed_ns": 1125,
+        "count": 1
+      },
+      {
+        "name": "native_postcommit",
+        "elapsed_ns": 288750,
+        "count": 1
+      },
+      {
+        "name": "workspace_refresh",
+        "elapsed_ns": 4161166,
+        "count": 1
+      },
+      {
+        "name": "native_finish",
+        "elapsed_ns": 1003209,
+        "count": 1
+      },
+      {
+        "name": "native_publication",
+        "elapsed_ns": 4107083,
+        "count": 1
+      }
+    ],
+    "schema": "DEADPAN_PAUSE_ROUTE_PROFILE_V1",
+    "begin_count": 1,
+    "end_count": 1,
+    "elapsed_ns": 189302458,
+    "phase_sum_ns": 189302458,
+    "committed": 1,
+    "refreshed": 1,
+    "published": 1
+  },
+  "blocks": [
+    {
+      "phases": [
+        {
+          "name": "native_admission",
+          "elapsed_ns": 5760791,
+          "count": 1
+        },
+        {
+          "name": "semantic_plan",
+          "elapsed_ns": 92212417,
+          "count": 1
+        },
+        {
+          "name": "native_continuation",
+          "elapsed_ns": 7258251,
+          "count": 1
+        },
+        {
+          "name": "store_entry_misc",
+          "elapsed_ns": 14874,
+          "count": 1
+        },
+        {
+          "name": "store_prepare",
+          "elapsed_ns": 60879542,
+          "count": 1
+        },
+        {
+          "name": "host_runtime_bank",
+          "elapsed_ns": 791,
+          "count": 1
+        },
+        {
+          "name": "store_write",
+          "elapsed_ns": 7279584,
+          "count": 1
+        },
+        {
+          "name": "sqlite_commit",
+          "elapsed_ns": 6334875,
+          "count": 1
+        },
+        {
+          "name": "store_cache_publication",
+          "elapsed_ns": 1125,
+          "count": 1
+        },
+        {
+          "name": "native_postcommit",
+          "elapsed_ns": 288750,
+          "count": 1
+        },
+        {
+          "name": "workspace_refresh",
+          "elapsed_ns": 4161166,
+          "count": 1
+        },
+        {
+          "name": "native_finish",
+          "elapsed_ns": 1003209,
+          "count": 1
+        },
+        {
+          "name": "native_publication",
+          "elapsed_ns": 4107083,
+          "count": 1
+        }
+      ],
+      "schema": "DEADPAN_PAUSE_ROUTE_PROFILE_V1",
+      "begin_count": 1,
+      "end_count": 1,
+      "elapsed_ns": 189302458,
+      "phase_sum_ns": 189302458,
+      "committed": 1,
+      "refreshed": 1,
+      "published": 1
+    }
+  ]
+}

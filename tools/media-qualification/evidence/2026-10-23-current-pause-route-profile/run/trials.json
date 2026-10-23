@@ -1,0 +1,617 @@
+[
+  {
+    "rotation": 1,
+    "kind": "control",
+    "binary_sha256": "0cb2931562108a68b57915c6135f448bc74293ba20623c7484053152566d31ff",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 197.15991599999998,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 199.574416
+    },
+    "profile": null,
+    "checks": 7,
+    "kestrel_checks": 1,
+    "warnings": 2,
+    "authored_input_unchanged": true,
+    "wal_empty": true
+  },
+  {
+    "rotation": 1,
+    "kind": "off",
+    "binary_sha256": "1bac97db7cdb7830592fe8f896e6c54f509b998501a3ae047e60746a7decafcb",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 194.859333,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 197.304833
+    },
+    "profile": null,
+    "checks": 7,
+    "kestrel_checks": 1,
+    "warnings": 2,
+    "authored_input_unchanged": true,
+    "wal_empty": true
+  },
+  {
+    "rotation": 1,
+    "kind": "on",
+    "binary_sha256": "1bac97db7cdb7830592fe8f896e6c54f509b998501a3ae047e60746a7decafcb",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 193.153667,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 195.603917
+    },
+    "profile": {
+      "schema": "DEADPAN_PAUSE_ROUTE_PROFILE_V1",
+      "block_count": 1,
+      "selected_block_index": 0,
+      "selected": {
+        "phases": [
+          {
+            "name": "native_admission",
+            "elapsed_ns": 5581625,
+            "count": 1
+          },
+          {
+            "name": "semantic_plan",
+            "elapsed_ns": 91330500,
+            "count": 1
+          },
+          {
+            "name": "native_continuation",
+            "elapsed_ns": 7308250,
+            "count": 1
+          },
+          {
+            "name": "store_entry_misc",
+            "elapsed_ns": 24709,
+            "count": 1
+          },
+          {
+            "name": "store_prepare",
+            "elapsed_ns": 60446042,
+            "count": 1
+          },
+          {
+            "name": "host_runtime_bank",
+            "elapsed_ns": 959,
+            "count": 1
+          },
+          {
+            "name": "store_write",
+            "elapsed_ns": 7303041,
+            "count": 1
+          },
+          {
+            "name": "sqlite_commit",
+            "elapsed_ns": 5242291,
+            "count": 1
+          },
+          {
+            "name": "store_cache_publication",
+            "elapsed_ns": 1042,
+            "count": 1
+          },
+          {
+            "name": "native_postcommit",
+            "elapsed_ns": 307666,
+            "count": 1
+          },
+          {
+            "name": "workspace_refresh",
+            "elapsed_ns": 4123334,
+            "count": 1
+          },
+          {
+            "name": "native_finish",
+            "elapsed_ns": 986000,
+            "count": 1
+          },
+          {
+            "name": "native_publication",
+            "elapsed_ns": 4133041,
+            "count": 1
+          }
+        ],
+        "schema": "DEADPAN_PAUSE_ROUTE_PROFILE_V1",
+        "begin_count": 1,
+        "end_count": 1,
+        "elapsed_ns": 186788500,
+        "phase_sum_ns": 186788500,
+        "committed": 1,
+        "refreshed": 1,
+        "published": 1
+      },
+      "blocks": [
+        {
+          "phases": [
+            {
+              "name": "native_admission",
+              "elapsed_ns": 5581625,
+              "count": 1
+            },
+            {
+              "name": "semantic_plan",
+              "elapsed_ns": 91330500,
+              "count": 1
+            },
+            {
+              "name": "native_continuation",
+              "elapsed_ns": 7308250,
+              "count": 1
+            },
+            {
+              "name": "store_entry_misc",
+              "elapsed_ns": 24709,
+              "count": 1
+            },
+            {
+              "name": "store_prepare",
+              "elapsed_ns": 60446042,
+              "count": 1
+            },
+            {
+              "name": "host_runtime_bank",
+              "elapsed_ns": 959,
+              "count": 1
+            },
+            {
+              "name": "store_write",
+              "elapsed_ns": 7303041,
+              "count": 1
+            },
+            {
+              "name": "sqlite_commit",
+              "elapsed_ns": 5242291,
+              "count": 1
+            },
+            {
+              "name": "store_cache_publication",
+              "elapsed_ns": 1042,
+              "count": 1
+            },
+            {
+              "name": "native_postcommit",
+              "elapsed_ns": 307666,
+              "count": 1
+            },
+            {
+              "name": "workspace_refresh",
+              "elapsed_ns": 4123334,
+              "count": 1
+            },
+            {
+              "name": "native_finish",
+              "elapsed_ns": 986000,
+              "count": 1
+            },
+            {
+              "name": "native_publication",
+              "elapsed_ns": 4133041,
+              "count": 1
+            }
+          ],
+          "schema": "DEADPAN_PAUSE_ROUTE_PROFILE_V1",
+          "begin_count": 1,
+          "end_count": 1,
+          "elapsed_ns": 186788500,
+          "phase_sum_ns": 186788500,
+          "committed": 1,
+          "refreshed": 1,
+          "published": 1
+        }
+      ]
+    },
+    "checks": 7,
+    "kestrel_checks": 1,
+    "warnings": 2,
+    "authored_input_unchanged": true,
+    "wal_empty": true
+  },
+  {
+    "rotation": 2,
+    "kind": "off",
+    "binary_sha256": "1bac97db7cdb7830592fe8f896e6c54f509b998501a3ae047e60746a7decafcb",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 194.56120800000002,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 197.164875
+    },
+    "profile": null,
+    "checks": 7,
+    "kestrel_checks": 1,
+    "warnings": 2,
+    "authored_input_unchanged": true,
+    "wal_empty": true
+  },
+  {
+    "rotation": 2,
+    "kind": "on",
+    "binary_sha256": "1bac97db7cdb7830592fe8f896e6c54f509b998501a3ae047e60746a7decafcb",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 195.100625,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 197.47270799999998
+    },
+    "profile": {
+      "schema": "DEADPAN_PAUSE_ROUTE_PROFILE_V1",
+      "block_count": 1,
+      "selected_block_index": 0,
+      "selected": {
+        "phases": [
+          {
+            "name": "native_admission",
+            "elapsed_ns": 5571167,
+            "count": 1
+          },
+          {
+            "name": "semantic_plan",
+            "elapsed_ns": 91664125,
+            "count": 1
+          },
+          {
+            "name": "native_continuation",
+            "elapsed_ns": 7159500,
+            "count": 1
+          },
+          {
+            "name": "store_entry_misc",
+            "elapsed_ns": 23208,
+            "count": 1
+          },
+          {
+            "name": "store_prepare",
+            "elapsed_ns": 61075666,
+            "count": 1
+          },
+          {
+            "name": "host_runtime_bank",
+            "elapsed_ns": 958,
+            "count": 1
+          },
+          {
+            "name": "store_write",
+            "elapsed_ns": 6961375,
+            "count": 1
+          },
+          {
+            "name": "sqlite_commit",
+            "elapsed_ns": 6739459,
+            "count": 1
+          },
+          {
+            "name": "store_cache_publication",
+            "elapsed_ns": 834,
+            "count": 1
+          },
+          {
+            "name": "native_postcommit",
+            "elapsed_ns": 305541,
+            "count": 1
+          },
+          {
+            "name": "workspace_refresh",
+            "elapsed_ns": 4141250,
+            "count": 1
+          },
+          {
+            "name": "native_finish",
+            "elapsed_ns": 977709,
+            "count": 1
+          },
+          {
+            "name": "native_publication",
+            "elapsed_ns": 4089791,
+            "count": 1
+          }
+        ],
+        "schema": "DEADPAN_PAUSE_ROUTE_PROFILE_V1",
+        "begin_count": 1,
+        "end_count": 1,
+        "elapsed_ns": 188710583,
+        "phase_sum_ns": 188710583,
+        "committed": 1,
+        "refreshed": 1,
+        "published": 1
+      },
+      "blocks": [
+        {
+          "phases": [
+            {
+              "name": "native_admission",
+              "elapsed_ns": 5571167,
+              "count": 1
+            },
+            {
+              "name": "semantic_plan",
+              "elapsed_ns": 91664125,
+              "count": 1
+            },
+            {
+              "name": "native_continuation",
+              "elapsed_ns": 7159500,
+              "count": 1
+            },
+            {
+              "name": "store_entry_misc",
+              "elapsed_ns": 23208,
+              "count": 1
+            },
+            {
+              "name": "store_prepare",
+              "elapsed_ns": 61075666,
+              "count": 1
+            },
+            {
+              "name": "host_runtime_bank",
+              "elapsed_ns": 958,
+              "count": 1
+            },
+            {
+              "name": "store_write",
+              "elapsed_ns": 6961375,
+              "count": 1
+            },
+            {
+              "name": "sqlite_commit",
+              "elapsed_ns": 6739459,
+              "count": 1
+            },
+            {
+              "name": "store_cache_publication",
+              "elapsed_ns": 834,
+              "count": 1
+            },
+            {
+              "name": "native_postcommit",
+              "elapsed_ns": 305541,
+              "count": 1
+            },
+            {
+              "name": "workspace_refresh",
+              "elapsed_ns": 4141250,
+              "count": 1
+            },
+            {
+              "name": "native_finish",
+              "elapsed_ns": 977709,
+              "count": 1
+            },
+            {
+              "name": "native_publication",
+              "elapsed_ns": 4089791,
+              "count": 1
+            }
+          ],
+          "schema": "DEADPAN_PAUSE_ROUTE_PROFILE_V1",
+          "begin_count": 1,
+          "end_count": 1,
+          "elapsed_ns": 188710583,
+          "phase_sum_ns": 188710583,
+          "committed": 1,
+          "refreshed": 1,
+          "published": 1
+        }
+      ]
+    },
+    "checks": 7,
+    "kestrel_checks": 1,
+    "warnings": 2,
+    "authored_input_unchanged": true,
+    "wal_empty": true
+  },
+  {
+    "rotation": 2,
+    "kind": "control",
+    "binary_sha256": "0cb2931562108a68b57915c6135f448bc74293ba20623c7484053152566d31ff",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 195.23066699999998,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 197.80208299999998
+    },
+    "profile": null,
+    "checks": 7,
+    "kestrel_checks": 1,
+    "warnings": 2,
+    "authored_input_unchanged": true,
+    "wal_empty": true
+  },
+  {
+    "rotation": 3,
+    "kind": "on",
+    "binary_sha256": "1bac97db7cdb7830592fe8f896e6c54f509b998501a3ae047e60746a7decafcb",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 195.840084,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 198.295209
+    },
+    "profile": {
+      "schema": "DEADPAN_PAUSE_ROUTE_PROFILE_V1",
+      "block_count": 1,
+      "selected_block_index": 0,
+      "selected": {
+        "phases": [
+          {
+            "name": "native_admission",
+            "elapsed_ns": 5760791,
+            "count": 1
+          },
+          {
+            "name": "semantic_plan",
+            "elapsed_ns": 92212417,
+            "count": 1
+          },
+          {
+            "name": "native_continuation",
+            "elapsed_ns": 7258251,
+            "count": 1
+          },
+          {
+            "name": "store_entry_misc",
+            "elapsed_ns": 14874,
+            "count": 1
+          },
+          {
+            "name": "store_prepare",
+            "elapsed_ns": 60879542,
+            "count": 1
+          },
+          {
+            "name": "host_runtime_bank",
+            "elapsed_ns": 791,
+            "count": 1
+          },
+          {
+            "name": "store_write",
+            "elapsed_ns": 7279584,
+            "count": 1
+          },
+          {
+            "name": "sqlite_commit",
+            "elapsed_ns": 6334875,
+            "count": 1
+          },
+          {
+            "name": "store_cache_publication",
+            "elapsed_ns": 1125,
+            "count": 1
+          },
+          {
+            "name": "native_postcommit",
+            "elapsed_ns": 288750,
+            "count": 1
+          },
+          {
+            "name": "workspace_refresh",
+            "elapsed_ns": 4161166,
+            "count": 1
+          },
+          {
+            "name": "native_finish",
+            "elapsed_ns": 1003209,
+            "count": 1
+          },
+          {
+            "name": "native_publication",
+            "elapsed_ns": 4107083,
+            "count": 1
+          }
+        ],
+        "schema": "DEADPAN_PAUSE_ROUTE_PROFILE_V1",
+        "begin_count": 1,
+        "end_count": 1,
+        "elapsed_ns": 189302458,
+        "phase_sum_ns": 189302458,
+        "committed": 1,
+        "refreshed": 1,
+        "published": 1
+      },
+      "blocks": [
+        {
+          "phases": [
+            {
+              "name": "native_admission",
+              "elapsed_ns": 5760791,
+              "count": 1
+            },
+            {
+              "name": "semantic_plan",
+              "elapsed_ns": 92212417,
+              "count": 1
+            },
+            {
+              "name": "native_continuation",
+              "elapsed_ns": 7258251,
+              "count": 1
+            },
+            {
+              "name": "store_entry_misc",
+              "elapsed_ns": 14874,
+              "count": 1
+            },
+            {
+              "name": "store_prepare",
+              "elapsed_ns": 60879542,
+              "count": 1
+            },
+            {
+              "name": "host_runtime_bank",
+              "elapsed_ns": 791,
+              "count": 1
+            },
+            {
+              "name": "store_write",
+              "elapsed_ns": 7279584,
+              "count": 1
+            },
+            {
+              "name": "sqlite_commit",
+              "elapsed_ns": 6334875,
+              "count": 1
+            },
+            {
+              "name": "store_cache_publication",
+              "elapsed_ns": 1125,
+              "count": 1
+            },
+            {
+              "name": "native_postcommit",
+              "elapsed_ns": 288750,
+              "count": 1
+            },
+            {
+              "name": "workspace_refresh",
+              "elapsed_ns": 4161166,
+              "count": 1
+            },
+            {
+              "name": "native_finish",
+              "elapsed_ns": 1003209,
+              "count": 1
+            },
+            {
+              "name": "native_publication",
+              "elapsed_ns": 4107083,
+              "count": 1
+            }
+          ],
+          "schema": "DEADPAN_PAUSE_ROUTE_PROFILE_V1",
+          "begin_count": 1,
+          "end_count": 1,
+          "elapsed_ns": 189302458,
+          "phase_sum_ns": 189302458,
+          "committed": 1,
+          "refreshed": 1,
+          "published": 1
+        }
+      ]
+    },
+    "checks": 7,
+    "kestrel_checks": 1,
+    "warnings": 2,
+    "authored_input_unchanged": true,
+    "wal_empty": true
+  },
+  {
+    "rotation": 3,
+    "kind": "control",
+    "binary_sha256": "0cb2931562108a68b57915c6135f448bc74293ba20623c7484053152566d31ff",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 194.115083,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 196.568083
+    },
+    "profile": null,
+    "checks": 7,
+    "kestrel_checks": 1,
+    "warnings": 2,
+    "authored_input_unchanged": true,
+    "wal_empty": true
+  },
+  {
+    "rotation": 3,
+    "kind": "off",
+    "binary_sha256": "1bac97db7cdb7830592fe8f896e6c54f509b998501a3ae047e60746a7decafcb",
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 194.480916,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 197.078
+    },
+    "profile": null,
+    "checks": 7,
+    "kestrel_checks": 1,
+    "warnings": 2,
+    "authored_input_unchanged": true,
+    "wal_empty": true
+  }
+]

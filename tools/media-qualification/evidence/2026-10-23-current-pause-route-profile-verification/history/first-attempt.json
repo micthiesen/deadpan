@@ -1,0 +1,8 @@
+{
+  "status": "verification script failed before any tar comparison",
+  "error": "FileNotFoundError rotation-1-control.tar.gz-input-after.json",
+  "cause": "Root assumed archive suffix .deadpan.tar.gz; actual produced suffix .tar.gz",
+  "correction": "derive stem from actual .tar.gz suffix, then compare member root stem.deadpan and after maps",
+  "product_or_packager_failure": false,
+  "package_bytes_modified": false
+}

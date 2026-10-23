@@ -2,6 +2,28 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
+## Current first-pause route costs, 2026-10-23
+
+The [private current-route diagnostic](qualification/current-pause-route-profile-2026-10-23.md)
+measures the qualified one-leaf implementation with thirteen disjoint worker
+categories. Three rotated control/off/on triplets pass 63 workflow and nine
+Kestrel checks, retaining eighteen layout warnings and unchanged authored
+inputs. All eight new helper, twelve transaction and eighteen parser tests,
+strict release Core/Store/App all-target Clippy and formatting pass.
+
+Enabled worker-route median is 188.710583 ms. Semantic planning is
+91.664125 ms and Store preparation 60.879542 ms; each trial's thirteen scalar
+intervals conserves exactly. Control/off/on commit medians are
+195.230667 /194.561208 /195.100625 ms, with overlapping observations and no
+overhead bound. The independent reread verifies 184 payload files /4,143,448
+bytes, 23 gzip streams and nine authored-fixture archives. Three corrected
+independent-verifier assumptions are retained separately.
+
+The temporary timers remain outside main. Refine those two dominant regions
+before choosing another optimization. No percentile, memory, physical-display,
+100 ms/50 ms target, requirement or gate closes; coverage stays 89%, eight
+Complete and sixteen Partial. The full goal remains active.
+
 ## Validated leaf-result reuse, 2026-10-23
 
 A private one-site [prototype](qualification/reused-leaf-result-prototype-2026-10-23.md)

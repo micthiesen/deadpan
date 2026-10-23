@@ -1,0 +1,15 @@
+DEADPAN_PAUSE_ROUTE_PROFILE_V1 BEGIN count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V1 PHASE name=native_admission elapsed_ns=5581625 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V1 PHASE name=semantic_plan elapsed_ns=91330500 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V1 PHASE name=native_continuation elapsed_ns=7308250 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V1 PHASE name=store_entry_misc elapsed_ns=24709 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V1 PHASE name=store_prepare elapsed_ns=60446042 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V1 PHASE name=host_runtime_bank elapsed_ns=959 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V1 PHASE name=store_write elapsed_ns=7303041 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V1 PHASE name=sqlite_commit elapsed_ns=5242291 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V1 PHASE name=store_cache_publication elapsed_ns=1042 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V1 PHASE name=native_postcommit elapsed_ns=307666 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V1 PHASE name=workspace_refresh elapsed_ns=4123334 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V1 PHASE name=native_finish elapsed_ns=986000 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V1 PHASE name=native_publication elapsed_ns=4133041 count=1
+DEADPAN_PAUSE_ROUTE_PROFILE_V1 END count=1 elapsed_ns=186788500 committed=1 refreshed=1 published=1

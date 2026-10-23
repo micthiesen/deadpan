@@ -1,0 +1,52 @@
+{
+  "status": "checklist only; no diagnostic results or package inventory asserted",
+  "separation": {
+    "existing_production_evidence": "Keep the existing 995-file production evidence package and inventory unchanged and separate.",
+    "new_diagnostic_evidence": "Create a distinct package and inventory only after terminal gates and an explicit packaging go-ahead."
+  },
+  "required_retained_payloads": [
+    {
+      "item": "Plan and setup chronology",
+      "include": ["plan.md", "setup-history.json", "initial setup failure output", "corrected historical source/input mapping and its verification"],
+      "truth_notes": "The first setup attempt failed because a broad exclusion omitted mapped historical source files. This is setup evidence, not a product failure."
+    },
+    {
+      "item": "Source and execution identity",
+      "include": ["terminal baseline source map", "six pinned input identities", "exact private overlay source files as .rs.txt", "baseline-to-overlay patch and hashes", "actual executed app hash per trial", "compiler-at-build-entry receipt", "hardware and OS identity", "driver and command order"],
+      "gate": "All source, input, executable, and fixture identities must agree with their producer receipts."
+    },
+    {
+      "item": "Parser and diagnostic contract",
+      "include": ["check_profile.py", "test_profile_parser.py", "parser-notes.json", "parser test output and hashes", "exact environment gate and trace schema"],
+      "gate": "Require a complete valid block, 13 ordered phase rows with count 1, checked integer durations, exact phase-sum conservation, and committed/refreshed/published markers."
+    },
+    {
+      "item": "Qualification/build receipts",
+      "include": ["terminal qualification receipts relevant to source/build identity", "strict checks and parser checks", "all producer scripts and command receipts", "stdout/stderr logs", "failures and corrections"],
+      "truth_notes": "Preserve failed attempts and corrections; do not relabel setup or packaging failures as product failures or erase them."
+    },
+    {
+      "item": "Three-lane rotated timing trials",
+      "include": ["fresh-package input-before and input-after full maps", "source/input/executable guards", "empty-WAL and exact SQLite-sidecar observations", "load/power observations", "per-trial raw stderr", "parsed per-trial phase JSON", "outer elapsed values", "trial order and terminal receipts"],
+      "gate": "At least three rotations of uninstrumented control, diagnostic overlay with gate off, and overlay with gate on; compare state and authored-input parity before timing interpretation.",
+      "summary": "Recompute per-lane and per-phase summaries from raw validated trials. Keep lanes separate; report observed spread and do not claim p95 from these samples."
+    },
+    {
+      "item": "Inventory and integrity",
+      "include": ["deterministic complete file list with path, bytes, and SHA-256", "total file and byte counts", "inventory SHA-256", "independent reread and compressed-payload validation receipt"],
+      "gate": "Populate values only after the package is complete and independently verified."
+    }
+  ],
+  "exclude_or_keep_separate": [
+    "Do not merge or rewrite the existing production evidence inventory.",
+    "Do not retain build target trees, executable binaries, source archives, or generated project databases unless a later approved evidence design requires a bounded fixture artifact.",
+    "If owned-memory measurements are added later, keep their observer runs and summaries separate from timing trials; label sampled whole-process values as lower bounds, not exact peaks or a ceiling."
+  ],
+  "claims_not_supported_by_this_plan": [
+    "No measured current phase cost until terminal trial data exists.",
+    "No p95 or formal latency-target pass.",
+    "No memory ceiling or exact peak claim.",
+    "No source-decode, physical-display, or PCM-performance claim.",
+    "No mainline patch, optimization, requirement completion, or product gate closure."
+  ]
+}

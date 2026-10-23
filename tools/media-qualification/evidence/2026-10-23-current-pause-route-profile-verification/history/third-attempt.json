@@ -1,0 +1,8 @@
+{
+  "status": "verification script failed at first tar map comparison",
+  "error": "AssertionError seen == expected",
+  "cause": "Root compared authored archive members with after-map including SQLite shared memory and empty WAL; producer explicitly excludes both root sidecars",
+  "correction": "require authored before/after equality and WAL empty, then compare exact regular member bytes to the after-map with only the two root SQLite sidecars excluded",
+  "product_or_packager_failure": false,
+  "package_bytes_modified": false
+}

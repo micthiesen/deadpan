@@ -1,0 +1,24 @@
+{
+  "schema": "DEADPAN_PAUSE_ROUTE_PROFILE_V1",
+  "phase_order": [
+    "native_admission",
+    "semantic_plan",
+    "native_continuation",
+    "store_entry_misc",
+    "store_prepare",
+    "host_runtime_bank",
+    "store_write",
+    "sqlite_commit",
+    "store_cache_publication",
+    "native_postcommit",
+    "workspace_refresh",
+    "native_finish",
+    "native_publication"
+  ],
+  "trace_line_form": "Each event line begins with the exact schema prefix, one space, then its event fields.",
+  "block_count": 15,
+  "multiple_blocks": "Allowed. Retained in order; selected is block index zero, matching producer command order. Timestamps are not used to identify commands.",
+  "duration": "Unsigned decimal u64 nanoseconds. Checked phase sum must equal END elapsed_ns without overflow.",
+  "unrelated_stderr": "Allowed outside trace rows, including between rows. Trace-looking malformed or unmatched rows are rejected.",
+  "output": "JSON includes all validated blocks, selected_block_index=0, and selected as the first block."
+}

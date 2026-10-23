@@ -1,0 +1,12 @@
+{
+  "helper-unit": {
+    "executed": "/tmp/deadpan-current-pause-route-profile-2026-10-23/target/release/deps/deadpan_core-e938e0404317f499",
+    "retained": "/tmp/deadpan-current-pause-route-profile-2026-10-23/test-bin/helper-unit/deadpan_core-e938e0404317f499",
+    "sha256": "9be07c1b9b222db4bb8d237bd7555615df38eae4be82ba61eb71731c2c7d6c3c"
+  },
+  "store-preparation": {
+    "executed": "/tmp/deadpan-current-pause-route-profile-2026-10-23/target/release/deps/compound_preparation-439f3bd294ec4be6",
+    "retained": "/tmp/deadpan-current-pause-route-profile-2026-10-23/test-bin/store-preparation/compound_preparation-439f3bd294ec4be6",
+    "sha256": "28948cb0032b9b3c96cc8c0e3fbe05c0d070da3e9d7d6194154ac99a9eee4677"
+  }
+}

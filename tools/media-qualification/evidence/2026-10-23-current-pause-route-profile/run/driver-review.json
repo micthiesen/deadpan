@@ -1,0 +1,73 @@
+{
+  "status": "findings",
+  "review_kind": "independent_static_driver_review",
+  "reviewed_files": {
+    "history/driver-static-review/build.py": "5881fd16a75d0e1a728ec99d6e95485589012eed6cac84bd0acefc15b28f9817",
+    "history/driver-static-review/measure.py": "7842ebbb9068bc17ffb5e8d662414563d40e584a3740e033d54290d0678ffe21",
+    "check_profile.py": "c8eb97ccc7b55effa58956a2ab4e926700527193706a8107392056aa2ec873ea",
+    "test_profile_parser.py": "5e16b55acb8ae59a2e8cd2ac92cf1518a8f5759d3dcc12a1427297f5d2c6d575",
+    "plan.md": "739ee673ee85ec46fe0b53c99f279f70de19713c603feca2a49bc2b10a57dca4",
+    "baseline.json": "0cfe1894895f85ae39f24a6a398b4215db3819f3ba0002a4aa68972dea1e38bd"
+  },
+  "identity_note": "The original build.py and measure.py reads were not hashed before concurrent fixes. The retained history copies are parent-reconstructed by inverse edits, with reconstruction.json explicitly identifying their provenance. Their content matches the defects observed during the initial static reads; they are not claimed as original captured files or runtime evidence.",
+  "baseline": {
+    "commit": "40959c5e26f5fc9713eda5a02ccd61377cc65a28",
+    "code_commit": "5fdae748ac2fdc67e1a11793c5ab69f6b61da833",
+    "control_sha256": "0cb2931562108a68b57915c6135f448bc74293ba20623c7484053152566d31ff",
+    "rust_files": 2053,
+    "pinned_inputs": 6
+  },
+  "findings": [
+    {
+      "id": "DRV01",
+      "severity": "must_fix",
+      "anchor": "history/driver-static-review/build.py:72-87",
+      "problem": "A successful Cargo test command and one compiler-artifact do not prove that any selected tests ran. The pause_route_profile substring can match zero tests while Cargo exits zero and produces the expected executable.",
+      "required_change": "Bind exact expected nonempty test names and counts to the reviewed source; require harness run/result records, no failed or ignored tests, and retain the executed artifact hash."
+    },
+    {
+      "id": "DRV02",
+      "severity": "must_fix",
+      "anchor": "history/driver-static-review/measure.py:124-126",
+      "problem": "Constructing a dict and checking len == 2 permits duplicate timing rows to collapse, unexpected metric names, and bool, negative or nonfinite values. Such values can reach the summary.",
+      "required_change": "Require exactly one raw row for each of large_first_pause_input_to_commit_ms and large_first_pause_input_to_offscreen_background_composition_ms, with finite nonnegative numeric non-bool values."
+    },
+    {
+      "id": "DRV03",
+      "severity": "must_fix",
+      "anchor": "history/driver-static-review/measure.py:40-58; build.py:25-33",
+      "problem": "The driver guards do not bind the parser/driver bytes, source review and baseline manifests, and measurement rechecks only the two app identities and fixture maker, omitting the copied runtime helpers. Mutations after build can therefore change the interpreted evidence or executed helper set without rejection.",
+      "required_change": "Freeze an explicit driver/input/review identity manifest and recheck it plus every executed app/helper before and after each step and trial. Bind baseline/control and source-map identities to that manifest."
+    },
+    {
+      "id": "DRV04",
+      "severity": "must_fix",
+      "anchor": "history/driver-static-review/build.py:57-105; measure.py:60-85, 106-160",
+      "problem": "Only subprocess exit receipts and a success print are retained. Parser, metadata, identity or conservation failures after a successful subprocess leave only an exit-zero command receipt, with no terminal failed status/stage. The quiet preflight timeout loses its accumulated observations.",
+      "required_change": "Persist one terminal complete/failed receipt including current stage/trial and exception or exit reason; save preflight observations on failure as well as success. Measurement must require the complete build terminal receipt."
+    },
+    {
+      "id": "DRV05",
+      "severity": "must_fix",
+      "anchor": "history/driver-static-review/build.py:25-33; baseline.json; plan.md",
+      "problem": "Equality with a frozen private source map proves immutability but does not establish that the private map came from the stated main baseline with only the five authorized diagnostic source changes. The initial drivers contain no baseline-to-overlay scope check.",
+      "required_change": "At source freeze, prove the baseline commit/code identity, exact 2053-file inventory and six inputs, require only the five authorized diagnostic paths to differ (including the new helper), and bind the resulting scope/source/review receipts into driver pins."
+    }
+  ],
+  "non_findings": [
+    "Fresh target and existing receipt refusal are explicit in the original build driver.",
+    "The rotation order balances control/off/on across three positions, creates nine distinct fresh fixtures, and expects eighteen subprocesses.",
+    "The parser statically rejects malformed profile-family rows, missing/extra/reordered phases, non-unit markers, incomplete or nested blocks, u64 and sum overflow, and conservation failures; measurement requires exactly one complete block.",
+    "Control/off clears the opt-in environment variable and rejects profile output; on explicitly sets it to 1.",
+    "Fixture before/after snapshots, empty WAL, binary metadata, release/toolchain/lock identity and workflow checks are asserted.",
+    "The summary is explicitly diagnostic with three trials per kind and makes no percentile target or physical-display/memory claim."
+  ],
+  "pending": "Parent has accepted these static findings and is amending drivers. Final expected-tests, baseline scope freeze and driver-pins are pending the source worker. This report does not approve the concurrently edited drivers; review their final frozen bytes separately.",
+  "limitations": [
+    "No reviewed script or parser function was executed by this reviewer.",
+    "No Cargo, build, test, formatter, runtime, browser or Git command was run.",
+    "No diagnostic Rust implementation review is included.",
+    "The reported parser test pass is parent/worker evidence, not independently rerun here.",
+    "These are static findings, not observed runtime failures."
+  ]
+}

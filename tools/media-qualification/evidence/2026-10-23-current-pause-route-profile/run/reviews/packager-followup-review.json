@@ -1,0 +1,70 @@
+{
+  "status": "findings",
+  "review_kind": "independent_static_packager_followup",
+  "draft": {
+    "path": "packaging-draft/package_v2.py",
+    "sha256": "3da8c4718f70d9b5ba0f72cbbbe888c56aad1e154efc790270902be0140e3035"
+  },
+  "prior_review": {
+    "path": "packager-review.json",
+    "sha256": "cc0e72f24d88ac393fd822b4965b99d51f71bf6978a196b684d93eafc1ad4f24",
+    "preserved": true
+  },
+  "reviewed_basis": {
+    "build.py": "10f111d458cf8c6c035b895040d382cc2892686adf84ca82fcce6a1500ab2ca4",
+    "measure.py": "77613940194ab91bbb1f5413f9418e93ac9ad0b227617f3e920d3cdf483b3c2a",
+    "freeze.py": "70e0eded95838cf5332c567500b9b25a70fb07418af03aa1b5e182d7fd36c9c9",
+    "source-review.json": "2306a3e167ec852659617ba2d005dc536039976a73f2c18c12a9cf7359ef79b5",
+    "driver-followup-review.json": "d421c1ac4076e91bde6e451edde9b719da451e204e6c24ba34775a0fee56ccb4",
+    "driver-pins.json": "73dd6459ec4d086b20cd2bf4f30d08624375346de63b813be9240f2393bf6eda",
+    "parser-test-receipt.json": "503f028fdf2d7a7baa98a9db8ebe01e7866d11dd83078d41985b6dd2dc6b8a8e",
+    "host-observations.json": "eb96925c329a55e32336403cc8eb439ee47ccea5153f5258ddb9ed9721c07d7e"
+  },
+  "findings": [
+    {
+      "id": "PKGv2-01",
+      "severity": "must_fix",
+      "anchor": "package_v2.py:103-117; freeze.py:47-52",
+      "problem": "The actual freeze producer writes before and after snapshots for changed|new, representing the new helper before state with a zero-byte file. v2 instead requires only four before files and explicitly forbids the new helper snapshot. It will reject the current valid retained source evidence.",
+      "required_change": "Match the actual freeze contract: require all five before/after paths, verify four existing before hashes against baseline, and require the added helper before snapshot to have exactly zero bytes (empty SHA256 e3b0c442...). Preserve the existing snapshots."
+    },
+    {
+      "id": "PKGv2-02",
+      "severity": "must_fix",
+      "anchor": "package_v2.py:188; build.py:57-59",
+      "problem": "The strict build command expected by v2 is the historical App-only --bin command. The frozen reviewed build.py executes cargo clippy --locked --release -p deadpan-core -p deadpan-store -p deadpan-app --all-targets --features ui-harness -- -D warnings. A successful final build receipt will therefore be rejected.",
+      "required_change": "Use the exact current reviewed strict command, preserving all-targets coverage. Do not alter the running producer or accept both historical and final command variants."
+    },
+    {
+      "id": "PKGv2-03",
+      "severity": "must_fix",
+      "anchor": "package_v2.py:227; measure.py:76-78",
+      "problem": "v2 requires cwd in every measurement receipt row, but measure.py writes name, command, exit, seconds and profile_gate only. Its subprocess cwd is statically SOURCE, and no cwd field is emitted. Every genuine measurement row will fail this check.",
+      "required_change": "Validate the actual frozen schema and rely on the pinned producer fixed cwd plus exact command paths, or use an explicitly reviewed future producer amendment. Do not invent or retrofit fields into actual command receipts."
+    },
+    {
+      "id": "PKGv2-04",
+      "severity": "must_fix",
+      "anchor": "package_v2.py:424-428; host-observations.json",
+      "problem": "The current pinned host-observations.json (SHA eb96925c...) still contains hardware stderr with a PID/thread tuple and an InternalBattery numeric identifier in power stdout. v2 correctly rejects these, contrary to the assumption that this file was already fully sanitized. Replacing the pinned file in place would break running driver pin checks.",
+      "required_change": "Preserve the pinned original. Derive a clearly named public whitelist-only host artifact under an explicit producer/schema, removing hardware stderr identifiers and the battery ID while retaining useful AC/thermal state. Bind, validate and retain that derived public file; keep original/private identifier-bearing host records excluded from the public package."
+    }
+  ],
+  "resolved_or_improved": [
+    "PKG01 path-set arithmetic is corrected and changed/new path sets are exact.",
+    "Actual final driver-followup-review.json is loaded and verified; driver pins are checked before parser execution. GO binds exact packager, map, reviews, pins and terminal receipts.",
+    "A concrete parser-test receipt/log now exists and matches the expected command/exit/eighteen-test schema.",
+    "Raw exact two finite nonnegative metrics bind to trials; raw strict stderr parse binds to saved and trial profiles; full summary is recomputed exactly.",
+    "Fixture archives compare live regular-file maps to guarded after snapshots, exclude sidecars, reject links/special files, normalize metadata and reread every member. Each compressed text payload is independently decoded and size/hash checked.",
+    "Producer/release/make/driver logs and scripts are now retained, with required trial stdout/stderr/preflight files. Historical corrected driver reconstruction remains textual with supplied provenance.",
+    "Private raw host files, target trees, executable trees and source archives are not intentionally gathered."
+  ],
+  "minor_cleanup": [
+    "package_v2.py is copied in names and again via put(Path(__file__)); remove the redundant self-copy to keep the retention path single-owned. Current file size is below compression threshold, so this is not itself a blocking data-integrity failure."
+  ],
+  "limitations": [
+    "No packager, driver or parser function was executed. No Cargo/build/runtime/Git/Main/source writes were performed.",
+    "Build was still running and measurement/GO outputs were future at review time. Findings are static producer-schema mismatches, not observed runtime failures.",
+    "v1 and all earlier review reports are preserved."
+  ]
+}
