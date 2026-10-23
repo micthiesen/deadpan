@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-23T11:56:24Z",
+  "updated_at": "2026-10-23T12:07:23Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Leaf-result reuse remains implemented and fully qualified. The separate compact JSON size-count prototype passes twelve focused tests, a locked release build and ten guarded native trials. Five pairs give offscreen control/prototype medians 266.491583/257.379000 ms, a 9.112583 ms diagnostic difference of about 3.42%. Its 161-file evidence inventory verifies independently; setup interruption and wrapper correction are retained. The identical five-file change is now an uncommitted production candidate with two no-finding reviews. Full qualification is running, starting with Core; broader/UI, strict, actual media/native, portable and final timings remain owed. The overview now matches the tracker: 8 Complete and 16 Partial requirements. Coverage stays 89%; the 100 ms/50 ms targets and remaining gates stay open.",
+  "focus": "The uncommitted exact JSON size-count candidate now passes all 1,517 Core tests across 69 binaries, zero skipped, with source/input/executable guards. The identical private prototype previously passed twelve focused tests and ten guarded native diagnostic replays. Both current-source reviews report no findings. The 18-file Core checkpoint is retained and verified. Broader checks are building; UI, strict, actual media/native, portable and final paired production timings remain owed. The separate prototype medians of 266.491583/257.379000 ms do not establish percentile or target PASSes. Leaf-result reuse remains the last fully qualified code change. Coverage stays 89%, with 8 Complete and 16 Partial requirements and the 100 ms/50 ms targets open.",
   "features": [
     {
       "id": "editing",
@@ -102,7 +102,7 @@
         "DP-18",
         "DP-24"
       ],
-      "note": "Shared Compound preparation avoids a separate native preview replay while preserving transactional authority and fallible runtime preparation before writes. Its five quiet native pairs improve offscreen first-pause median from 393.261916 to 275.697709 ms, about 29.9%. A later isolated profile locates remaining cost in semantic planning and Store preparation. One-site validated leaf-result reuse is now qualified through complete Core, broader/UI, strict, actual media/history, native and portable checks. A separate final five-pair comparison gives offscreen control/candidate medians 275.099042/267.862584 ms, a 7.236458 ms difference of about 2.63%. The batches are not pooled. Five samples establish neither percentiles nor the 100 ms fallback/50 ms ordinary-edit target. A separate size-only JSON prototype passes twelve focused tests and five guarded pairs: offscreen medians 266.491583/257.379000 ms, about 3.42% apart. Its identical five-file production candidate is uncommitted and awaits full qualification. Neither this separate diagnostic batch nor buffer removal establishes percentile or peak-memory targets. Native latency, worker-memory and sleep qualification remain open."
+      "note": "Shared Compound preparation avoids a separate native preview replay while preserving transactional authority and fallible runtime preparation before writes. Its five quiet native pairs improve offscreen first-pause median from 393.261916 to 275.697709 ms, about 29.9%. A later isolated profile locates remaining cost in semantic planning and Store preparation. One-site validated leaf-result reuse is now qualified through complete Core, broader/UI, strict, actual media/history, native and portable checks. A separate final five-pair comparison gives offscreen control/candidate medians 275.099042/267.862584 ms, a 7.236458 ms difference of about 2.63%. The batches are not pooled. Five samples establish neither percentiles nor the 100 ms fallback/50 ms ordinary-edit target. A separate size-only JSON prototype passes twelve focused tests and five guarded pairs: offscreen medians 266.491583/257.379000 ms, about 3.42% apart. Its identical five-file production candidate is uncommitted; all 1,517 Core tests pass with zero skipped, while broader/UI, strict, media/native and final production checks remain owed. Neither this separate diagnostic batch nor buffer removal establishes percentile or peak-memory targets. Native latency, worker-memory and sleep qualification remain open."
     },
     {
       "id": "models",
@@ -1093,6 +1093,14 @@
       "revision": "bc3b1b4e5e8989989d0f7887ca6faa9c3d6eacca",
       "retrospective": false,
       "summary": "A separate five-file compact JSON size-count prototype uses the identical bounded serializer without complete output buffers for Store entry/final and uncaptured stages; captured checkpoint bytes, charge order and Core 58/SQLite 87 remain unchanged. Two Core counter tests, nine binding tests and one persisted-checkpoint/history test pass, as does the locked release build. Five guarded fresh-project control/prototype pairs measure commit 263.867166/254.805167 ms and offscreen composition 266.491583/257.379000 ms, a 9.112583 ms/~3.42% diagnostic difference. The 161-file/1,362,070-byte inventory verifies independently, retaining the deliberately interrupted pre-test cache clone and corrected pre-output packager lookup failure. No percentile, peak-memory, physical-display or PCM performance target is established. The identical production candidate is now applied but uncommitted, both static reviews report no findings, and all full production checks remain owed. README now reflects verified capabilities and the canonical 8 Complete/16 Partial status without changing readiness or scope. No requirement or gate closes."
+    },
+    {
+      "date": "2026-10-23",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "b45a247c28522123be2b06d1f7d5790d683a993f",
+      "retrospective": false,
+      "summary": "The five-file exact compact JSON size-count candidate passes all 1,517 Core tests across 69 binaries with zero skipped. The complete source/input/executable guards pass, and both current-source reviews report no findings. The 18-file/362,018-byte Core checkpoint inventory verifies independently. This includes the new counter escaping/limit/overflow and nested-binding size tests plus all existing Core properties and codecs. Broader checks are building; UI, strict, actual media/native, portable and final paired production timings remain owed. The private twelve-case/five-pair prototype remains separate and does not qualify the production candidate or establish percentiles, peak memory, physical display or the 100 ms/50 ms targets. No requirement or gate closes."
     }
   ]
 }
