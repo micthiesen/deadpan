@@ -1,0 +1,112 @@
+//! Temporary isolated-build profiling. Never print project or content data.
+//! Child phases are disjoint; ServiceTotal and PerformMacroTotal are inclusive.
+
+use std::cell::RefCell;
+use std::time::Instant;
+
+#[derive(Clone, Copy)]
+pub(super) enum Phase {
+    ServiceTotal,
+    PerformMacroTotal,
+    ContextValidation,
+    PreEditPlanScope,
+    SemanticProgramPlan,
+    TranscriptGuard,
+    FinalPlanScopeReceipt,
+    PreviewRuntimeBank,
+    CommitCompound,
+    PostCommitReceipt,
+    ServiceRefresh,
+    PostRefreshReceipt,
+    PostDispatchPublication,
+}
+
+const PHASES: [(&str, &str); 13] = [
+    ("service_total", "inclusive_total"),
+    ("perform_macro_total", "nested_inclusive_total"),
+    ("context_validation", "disjoint_child"),
+    ("pre_edit_plan_scope", "disjoint_child"),
+    ("semantic_program_plan", "disjoint_child"),
+    ("transcript_guard", "disjoint_child"),
+    ("final_plan_scope_receipt", "disjoint_child"),
+    ("preview_runtime_bank", "disjoint_child"),
+    ("commit_compound", "disjoint_child"),
+    ("post_commit_receipt", "disjoint_child"),
+    ("service_refresh", "disjoint_child"),
+    ("post_refresh_receipt", "disjoint_child"),
+    ("post_dispatch_publication", "disjoint_service_child"),
+];
+
+#[derive(Default)]
+struct Measurement {
+    nanoseconds: u128,
+    count: u64,
+}
+
+struct Profile {
+    phases: [Measurement; PHASES.len()],
+}
+
+thread_local! {
+    static ACTIVE: RefCell<Option<Profile>> = const { RefCell::new(None) };
+}
+
+pub(super) fn begin() -> bool {
+    if std::env::var_os("DEADPAN_UI_PAUSE_PROFILE").as_deref() != Some(std::ffi::OsStr::new("1")) {
+        return false;
+    }
+    ACTIVE.with(|active| {
+        let mut active = active.borrow_mut();
+        if active.is_some() {
+            return false;
+        }
+        *active = Some(Profile {
+            phases: std::array::from_fn(|_| Measurement::default()),
+        });
+        true
+    })
+}
+
+pub(super) struct Span {
+    phase: Phase,
+    started: Option<Instant>,
+}
+
+impl Span {
+    pub(super) fn start(phase: Phase) -> Self {
+        let started = ACTIVE.with(|active| active.borrow().is_some().then(Instant::now));
+        Self { phase, started }
+    }
+}
+
+impl Drop for Span {
+    fn drop(&mut self) {
+        let Some(started) = self.started else {
+            return;
+        };
+        let elapsed = started.elapsed().as_nanos();
+        ACTIVE.with(|active| {
+            if let Some(profile) = active.borrow_mut().as_mut() {
+                let measurement = &mut profile.phases[self.phase as usize];
+                measurement.nanoseconds = measurement.nanoseconds.saturating_add(elapsed);
+                measurement.count = measurement.count.saturating_add(1);
+            }
+        });
+    }
+}
+
+pub(super) fn finish() {
+    let profile = ACTIVE.with(|active| active.borrow_mut().take());
+    let Some(profile) = profile else {
+        return;
+    };
+    // Output occurs only after the measured service route and publication.
+    eprintln!("DEADPAN_UI_PAUSE_PROFILE BEGIN count=1");
+    for ((phase, kind), measurement) in PHASES.into_iter().zip(profile.phases) {
+        eprintln!(
+            "DEADPAN_UI_PAUSE_PROFILE PHASE phase={phase} kind={kind} elapsed_ns={} count={}",
+            measurement.nanoseconds, measurement.count,
+        );
+    }
+    eprintln!("DEADPAN_UI_PAUSE_PROFILE END count=1");
+}

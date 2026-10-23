@@ -1,0 +1,242 @@
+[
+  {
+    "round": 1,
+    "kind": "root-control",
+    "load": [
+      2.69482421875,
+      2.68212890625,
+      2.3525390625
+    ],
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 385.485583,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 388.208666
+    },
+    "profile": null,
+    "checks": 7,
+    "source_and_binary_guards": true,
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "binary_sha256": "3bf2d47c6fbc7eade3a259fc8e9ffc275043af2bd62e698a0b98c0937dcfd9bd",
+    "fixture_main_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c"
+  },
+  {
+    "round": 1,
+    "kind": "off",
+    "load": [
+      2.79345703125,
+      2.7109375,
+      2.36865234375
+    ],
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 389.598917,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 392.284958
+    },
+    "profile": null,
+    "checks": 7,
+    "source_and_binary_guards": true,
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "binary_sha256": "997ce5d6499dcb01d59fc9b5a743307f91307e80736fe767882518abf87e62ff",
+    "fixture_main_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c"
+  },
+  {
+    "round": 1,
+    "kind": "on",
+    "load": [
+      2.3955078125,
+      2.6259765625,
+      2.34375
+    ],
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 388.363209,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 391.181084
+    },
+    "profile": {
+      "matched_reports": 1,
+      "all_phase_counts": 1,
+      "nanoseconds": {
+        "service_total": 381847917,
+        "perform_macro_total": 377865042,
+        "context_validation": 145083,
+        "pre_edit_plan_scope": 5573917,
+        "semantic_program_plan": 108376500,
+        "transcript_guard": 42,
+        "final_plan_scope_receipt": 7306250,
+        "preview_runtime_bank": 120611584,
+        "commit_compound": 129137167,
+        "post_commit_receipt": 311083,
+        "service_refresh": 4128667,
+        "post_refresh_receipt": 2084,
+        "post_dispatch_publication": 3979875
+      },
+      "perform_uninstrumented_and_timer_overhead_ns": 2272665,
+      "service_other_dispatch_and_timer_overhead_ns": 3000
+    },
+    "checks": 7,
+    "source_and_binary_guards": true,
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "binary_sha256": "997ce5d6499dcb01d59fc9b5a743307f91307e80736fe767882518abf87e62ff",
+    "fixture_main_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c"
+  },
+  {
+    "round": 2,
+    "kind": "off",
+    "load": [
+      2.0859375,
+      2.54541015625,
+      2.3193359375
+    ],
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 392.703375,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 395.34312500000004
+    },
+    "profile": null,
+    "checks": 7,
+    "source_and_binary_guards": true,
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "binary_sha256": "997ce5d6499dcb01d59fc9b5a743307f91307e80736fe767882518abf87e62ff",
+    "fixture_main_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c"
+  },
+  {
+    "round": 2,
+    "kind": "on",
+    "load": [
+      2.0048828125,
+      2.50244140625,
+      2.3076171875
+    ],
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 390.08720800000003,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 392.633958
+    },
+    "profile": {
+      "matched_reports": 1,
+      "all_phase_counts": 1,
+      "nanoseconds": {
+        "service_total": 383589084,
+        "perform_macro_total": 379574583,
+        "context_validation": 142500,
+        "pre_edit_plan_scope": 5485791,
+        "semantic_program_plan": 109066458,
+        "transcript_guard": 0,
+        "final_plan_scope_receipt": 7320666,
+        "preview_runtime_bank": 119775334,
+        "commit_compound": 130884667,
+        "post_commit_receipt": 321125,
+        "service_refresh": 4263042,
+        "post_refresh_receipt": 1833,
+        "post_dispatch_publication": 4011791
+      },
+      "perform_uninstrumented_and_timer_overhead_ns": 2313167,
+      "service_other_dispatch_and_timer_overhead_ns": 2710
+    },
+    "checks": 7,
+    "source_and_binary_guards": true,
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "binary_sha256": "997ce5d6499dcb01d59fc9b5a743307f91307e80736fe767882518abf87e62ff",
+    "fixture_main_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c"
+  },
+  {
+    "round": 2,
+    "kind": "root-control",
+    "load": [
+      1.93017578125,
+      2.46875,
+      2.2978515625
+    ],
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 385.97891699999997,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 388.449667
+    },
+    "profile": null,
+    "checks": 7,
+    "source_and_binary_guards": true,
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "binary_sha256": "3bf2d47c6fbc7eade3a259fc8e9ffc275043af2bd62e698a0b98c0937dcfd9bd",
+    "fixture_main_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c"
+  },
+  {
+    "round": 3,
+    "kind": "on",
+    "load": [
+      2.1298828125,
+      2.49267578125,
+      2.3095703125
+    ],
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 387.233875,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 389.92041700000004
+    },
+    "profile": {
+      "matched_reports": 1,
+      "all_phase_counts": 1,
+      "nanoseconds": {
+        "service_total": 380865042,
+        "perform_macro_total": 376984500,
+        "context_validation": 100833,
+        "pre_edit_plan_scope": 5554167,
+        "semantic_program_plan": 107884125,
+        "transcript_guard": 125,
+        "final_plan_scope_receipt": 7181834,
+        "preview_runtime_bank": 119182667,
+        "commit_compound": 130474125,
+        "post_commit_receipt": 303375,
+        "service_refresh": 4063292,
+        "post_refresh_receipt": 1500,
+        "post_dispatch_publication": 3877417
+      },
+      "perform_uninstrumented_and_timer_overhead_ns": 2238457,
+      "service_other_dispatch_and_timer_overhead_ns": 3125
+    },
+    "checks": 7,
+    "source_and_binary_guards": true,
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "binary_sha256": "997ce5d6499dcb01d59fc9b5a743307f91307e80736fe767882518abf87e62ff",
+    "fixture_main_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c"
+  },
+  {
+    "round": 3,
+    "kind": "root-control",
+    "load": [
+      1.94677734375,
+      2.43505859375,
+      2.2919921875
+    ],
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 385.551042,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 388.289833
+    },
+    "profile": null,
+    "checks": 7,
+    "source_and_binary_guards": true,
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "binary_sha256": "3bf2d47c6fbc7eade3a259fc8e9ffc275043af2bd62e698a0b98c0937dcfd9bd",
+    "fixture_main_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c"
+  },
+  {
+    "round": 3,
+    "kind": "off",
+    "load": [
+      1.736328125,
+      2.3642578125,
+      2.2685546875
+    ],
+    "metrics": {
+      "large_first_pause_input_to_commit_ms": 399.611375,
+      "large_first_pause_input_to_offscreen_background_composition_ms": 402.4735
+    },
+    "profile": null,
+    "checks": 7,
+    "source_and_binary_guards": true,
+    "authored_input_unchanged": true,
+    "wal_empty": true,
+    "binary_sha256": "997ce5d6499dcb01d59fc9b5a743307f91307e80736fe767882518abf87e62ff",
+    "fixture_main_sha256": "40e5750e454cdc1c2e3aceb556f0fb1b12996cdc5780518ee03227a12787515c"
+  }
+]

@@ -1,0 +1,7 @@
+Patch dry-run passed against scratch copies of the two exact original service sources.
+PASS: valid synthetic report
+PASS: duplicate synthetic report
+PASS: missing phase
+PASS: zero execution count
+PASS: overlapping child totals
+No Rust compilation or real UI sample performed by this scratch-only task.

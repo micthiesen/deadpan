@@ -2,6 +2,22 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
+## Native first-pause service profile, 2026-10-23
+
+Three rotated root-control/instrumentation-off/on triplets all pass seven
+replay checks and source/binary/input guards. Root-control median is 385.551042
+ms input to commit and 388.289833 ms through offscreen composition. Instrumented
+service phase medians locate 108.376500 ms in semantic planning, 119.775334 ms
+in preview/runtime-bank preparation and 130.474125 ms in Compound commit;
+refresh is 4.128667 ms. These are coarse diagnostic phases with inclusive
+totals, uncalibrated overhead and no queue-wait or percentile claim. See the
+[profile](qualification/ui-first-pause-profile-2026-10-23.md).
+
+A transaction-owned runtime-preparation callback is being implemented to avoid
+replaying the Compound for a separate preview. Its validation, rollback,
+runtime-bank, native/media and performance checks remain owed. No production
+improvement, requirement or gate closure is claimed for this candidate.
+
 ## Large-project first-pause measurement, 2026-10-23
 
 The verified `large-first-pause` replay measures one production `hold 12f`

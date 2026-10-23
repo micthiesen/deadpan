@@ -1,0 +1,30 @@
+{
+  "algorithm": "sha256",
+  "repo": "/Users/michael/Code/deadpan",
+  "files": [
+    {
+      "path": "crates/deadpan-app/src/project/service.rs",
+      "original_sha256": "d68879b682dc78607a9ac996fa6941dde1975b6860da375e2da97ab7222ff750",
+      "original_bytes": 99180,
+      "proposed_sha256": "b2d2e27ecf0aa900028d9ad22d665bb955a5a44f15b3f11792a820cc642dde6b",
+      "proposed_bytes": 99830,
+      "proposed_contents": "crates__deadpan-app__src__project__service.rs.txt"
+    },
+    {
+      "path": "crates/deadpan-app/src/project/service/macros.rs",
+      "original_sha256": "ef4bb81a999564d2110ee3ab6cde5fb5976b7d71dd7507142517c40dd07374d0",
+      "original_bytes": 51514,
+      "proposed_sha256": "e2183aee2a2c507b3596d666bb43eedee2296cd83b6c6a25e893291433b03074",
+      "proposed_bytes": 53233,
+      "proposed_contents": "crates__deadpan-app__src__project__service__macros.rs.txt"
+    },
+    {
+      "path": "crates/deadpan-app/src/project/service/macro_profile.rs",
+      "original_sha256": null,
+      "original_bytes": null,
+      "proposed_sha256": "ddeb253107181b8d91d8173efda15818be527bf26394f76a30df488f6d270e29",
+      "proposed_bytes": 3338,
+      "proposed_contents": "crates__deadpan-app__src__project__service__macro_profile.rs.txt"
+    }
+  ]
+}

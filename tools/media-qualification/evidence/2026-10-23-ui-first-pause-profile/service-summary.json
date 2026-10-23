@@ -1,0 +1,110 @@
+{
+  "diagnostic_only": true,
+  "no_percentile_or_target_pass": true,
+  "n_per_kind": 3,
+  "kinds": {
+    "root-control": {
+      "large_first_pause_input_to_commit_ms": {
+        "min": 385.485583,
+        "median": 385.551042,
+        "max": 385.97891699999997
+      },
+      "large_first_pause_input_to_offscreen_background_composition_ms": {
+        "min": 388.208666,
+        "median": 388.289833,
+        "max": 388.449667
+      }
+    },
+    "off": {
+      "large_first_pause_input_to_commit_ms": {
+        "min": 389.598917,
+        "median": 392.703375,
+        "max": 399.611375
+      },
+      "large_first_pause_input_to_offscreen_background_composition_ms": {
+        "min": 392.284958,
+        "median": 395.34312500000004,
+        "max": 402.4735
+      }
+    },
+    "on": {
+      "large_first_pause_input_to_commit_ms": {
+        "min": 387.233875,
+        "median": 388.363209,
+        "max": 390.08720800000003
+      },
+      "large_first_pause_input_to_offscreen_background_composition_ms": {
+        "min": 389.92041700000004,
+        "median": 391.181084,
+        "max": 392.633958
+      }
+    }
+  },
+  "phase_ms": {
+    "service_total": {
+      "min": 380.865042,
+      "median": 381.847917,
+      "max": 383.589084
+    },
+    "perform_macro_total": {
+      "min": 376.9845,
+      "median": 377.865042,
+      "max": 379.574583
+    },
+    "context_validation": {
+      "min": 0.100833,
+      "median": 0.1425,
+      "max": 0.145083
+    },
+    "pre_edit_plan_scope": {
+      "min": 5.485791,
+      "median": 5.554167,
+      "max": 5.573917
+    },
+    "semantic_program_plan": {
+      "min": 107.884125,
+      "median": 108.3765,
+      "max": 109.066458
+    },
+    "transcript_guard": {
+      "min": 0.0,
+      "median": 4.2e-05,
+      "max": 0.000125
+    },
+    "final_plan_scope_receipt": {
+      "min": 7.181834,
+      "median": 7.30625,
+      "max": 7.320666
+    },
+    "preview_runtime_bank": {
+      "min": 119.182667,
+      "median": 119.775334,
+      "max": 120.611584
+    },
+    "commit_compound": {
+      "min": 129.137167,
+      "median": 130.474125,
+      "max": 130.884667
+    },
+    "post_commit_receipt": {
+      "min": 0.303375,
+      "median": 0.311083,
+      "max": 0.321125
+    },
+    "service_refresh": {
+      "min": 4.063292,
+      "median": 4.128667,
+      "max": 4.263042
+    },
+    "post_refresh_receipt": {
+      "min": 0.0015,
+      "median": 0.001833,
+      "max": 0.002084
+    },
+    "post_dispatch_publication": {
+      "min": 3.877417,
+      "median": 3.979875,
+      "max": 4.011791
+    }
+  }
+}

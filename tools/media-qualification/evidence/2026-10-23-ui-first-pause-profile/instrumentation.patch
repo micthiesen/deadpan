@@ -1,0 +1,265 @@
+--- a/crates/deadpan-app/src/project/service.rs
++++ b/crates/deadpan-app/src/project/service.rs
+@@ -36,6 +36,7 @@
+ mod gain;
+ mod generation;
+ mod headless;
++mod macro_profile;
+ mod macros;
+ mod marks;
+ mod moment;
+@@ -340,15 +341,28 @@
+                 service.publish();
+             }
+             Ok(request) => {
+-                if service.dispatch_request(request) {
+-                    #[cfg(test)]
+-                    service.shared.request_completed(crate::project::Lane::User);
+-                    service.shared.busy.store(false, Ordering::Release);
++                let profiling_macro = matches!(&request, ProjectRequest::Macro(_))
++                    && macro_profile::begin();
++                {
++                    let _total =
++                        macro_profile::Span::start(macro_profile::Phase::ServiceTotal);
++                    let completed = service.dispatch_request(request);
++                    let _publication = macro_profile::Span::start(
++                        macro_profile::Phase::PostDispatchPublication,
++                    );
++                    if completed {
++                        #[cfg(test)]
++                        service.shared.request_completed(crate::project::Lane::User);
++                        service.shared.busy.store(false, Ordering::Release);
++                    }
++                    service.invalidate_changed_splice();
++                    service.reconcile_slip();
++                    service.reconcile_trim();
++                    service.publish();
+                 }
+-                service.invalidate_changed_splice();
+-                service.reconcile_slip();
+-                service.reconcile_trim();
+-                service.publish();
++                if profiling_macro {
++                    macro_profile::finish();
++                }
+             }
+             Err(RecvTimeoutError::Disconnected) => {
+                 requests_connected = false;
+--- a/crates/deadpan-app/src/project/service/macros.rs
++++ b/crates/deadpan-app/src/project/service/macros.rs
+@@ -552,9 +552,12 @@
+     }
+ 
+     fn perform_macro(&mut self, operation: &Operation) -> Result<Receipt> {
++        let _total = macro_profile::Span::start(macro_profile::Phase::PerformMacroTotal);
++        let context_profile = macro_profile::Span::start(macro_profile::Phase::ContextValidation);
+         self.observe_semantic();
+         let id = operation.id();
+         let (document, stored) = self.check_macro_context(id)?;
++        drop(context_profile);
+         match operation {
+             Operation::Save {
+                 register, program, ..
+@@ -698,6 +701,8 @@
+                     ),
+                     Operation::Save { .. } => unreachable!("save handled separately"),
+                 };
++                let pre_edit_profile =
++                    macro_profile::Span::start(macro_profile::Phase::PreEditPlanScope);
+                 let picture_plan = RenderPlan::compile(&document).map_err(display)?;
+                 let owner = scope.resolve_document(&document, &picture_plan)?;
+                 if owner.owner != &context.parent {
+@@ -710,6 +715,9 @@
+                     context,
+                 )?;
+                 let invocation = SemanticProgram::new(vec![instruction]).map_err(display)?;
++                drop(pre_edit_profile);
++                let plan_profile =
++                    macro_profile::Span::start(macro_profile::Phase::SemanticProgramPlan);
+                 let plan = deadpan_cli::macros::plan_program_with_transcript_guard(
+                     self.store.as_ref().ok_or("Open a project first")?,
+                     &document,
+@@ -720,6 +728,9 @@
+                     id.transcript_guard.as_deref(),
+                 )
+                 .map_err(display)?;
++                drop(plan_profile);
++                let guard_profile =
++                    macro_profile::Span::start(macro_profile::Phase::TranscriptGuard);
+                 if let Some(consumed) = &plan.transcript_guard {
+                     let displayed = self
+                         .workspace
+@@ -732,6 +743,9 @@
+                         return Err("The displayed transcript changed or was unavailable when this command was entered. Enter the command again.".into());
+                     }
+                 }
++                drop(guard_profile);
++                let final_profile =
++                    macro_profile::Span::start(macro_profile::Phase::FinalPlanScopeReceipt);
+                 let final_picture_plan = RenderPlan::compile(&plan.document).map_err(display)?;
+                 let final_scope = SequenceScope::from_historical_parent(
+                     &plan.document,
+@@ -770,6 +784,7 @@
+                         Operation::Save { .. } => unreachable!("save handled separately"),
+                     },
+                 };
++                drop(final_profile);
+                 let Some(_) = &plan.request else {
+                     plan.validate_selection_at(
+                         self.store.as_ref().ok_or("Open a project first")?,
+@@ -787,6 +802,8 @@
+                     self.error = None;
+                     return Ok(receipt);
+                 };
++                let preview_profile =
++                    macro_profile::Span::start(macro_profile::Phase::PreviewRuntimeBank);
+                 let preview = plan
+                     .preview(self.store.as_ref().ok_or("Open a project first")?)
+                     .map_err(display)?
+@@ -798,7 +815,13 @@
+                     &preview.register_bank,
+                     &plan,
+                 )?;
++                drop(preview_profile);
++                let commit_profile =
++                    macro_profile::Span::start(macro_profile::Phase::CommitCompound);
+                 let outcome = plan.commit_compound(self.writer()?).map_err(display)?;
++                drop(commit_profile);
++                let receipt_profile =
++                    macro_profile::Span::start(macro_profile::Phase::PostCommitReceipt);
+                 if let Some(saved) = &outcome.committed {
+                     self.capture_preparation_notices(&saved.generation_preparation_notices);
+                     if plan.context.original.is_some() {
+@@ -865,7 +888,14 @@
+                         .render_commit_refresh_failure
+                         .swap(false, Ordering::AcqRel);
+                 }
+-                match self.refresh() {
++                drop(receipt_profile);
++                let refresh_profile =
++                    macro_profile::Span::start(macro_profile::Phase::ServiceRefresh);
++                let refresh_result = self.refresh();
++                drop(refresh_profile);
++                let _post_refresh_profile =
++                    macro_profile::Span::start(macro_profile::Phase::PostRefreshReceipt);
++                match refresh_result {
+                     Ok(()) => {
+                         self.message = Some(if committed.is_some() {
+                             format!("{label} saved as one edit; Undo restores it")
+--- /dev/null
++++ b/crates/deadpan-app/src/project/service/macro_profile.rs
+@@ -0,0 +1,114 @@
++//! Temporary isolated-build profiling. Never print project or content data.
++//! Child phases are disjoint; ServiceTotal and PerformMacroTotal are inclusive.
++
++use std::cell::RefCell;
++use std::time::Instant;
++
++#[derive(Clone, Copy)]
++pub(super) enum Phase {
++    ServiceTotal,
++    PerformMacroTotal,
++    ContextValidation,
++    PreEditPlanScope,
++    SemanticProgramPlan,
++    TranscriptGuard,
++    FinalPlanScopeReceipt,
++    PreviewRuntimeBank,
++    CommitCompound,
++    PostCommitReceipt,
++    ServiceRefresh,
++    PostRefreshReceipt,
++    PostDispatchPublication,
++}
++
++const PHASES: [(&str, &str); 13] = [
++    ("service_total", "inclusive_total"),
++    ("perform_macro_total", "nested_inclusive_total"),
++    ("context_validation", "disjoint_child"),
++    ("pre_edit_plan_scope", "disjoint_child"),
++    ("semantic_program_plan", "disjoint_child"),
++    ("transcript_guard", "disjoint_child"),
++    ("final_plan_scope_receipt", "disjoint_child"),
++    ("preview_runtime_bank", "disjoint_child"),
++    ("commit_compound", "disjoint_child"),
++    ("post_commit_receipt", "disjoint_child"),
++    ("service_refresh", "disjoint_child"),
++    ("post_refresh_receipt", "disjoint_child"),
++    ("post_dispatch_publication", "disjoint_service_child"),
++];
++
++#[derive(Default)]
++struct Measurement {
++    nanoseconds: u128,
++    count: u64,
++}
++
++struct Profile {
++    phases: [Measurement; PHASES.len()],
++}
++
++thread_local! {
++    static ACTIVE: RefCell<Option<Profile>> = const { RefCell::new(None) };
++}
++
++pub(super) fn begin() -> bool {
++    if std::env::var_os("DEADPAN_UI_PAUSE_PROFILE").as_deref()
++        != Some(std::ffi::OsStr::new("1"))
++    {
++        return false;
++    }
++    ACTIVE.with(|active| {
++        let mut active = active.borrow_mut();
++        if active.is_some() {
++            return false;
++        }
++        *active = Some(Profile {
++            phases: std::array::from_fn(|_| Measurement::default()),
++        });
++        true
++    })
++}
++
++pub(super) struct Span {
++    phase: Phase,
++    started: Option<Instant>,
++}
++
++impl Span {
++    pub(super) fn start(phase: Phase) -> Self {
++        let started = ACTIVE.with(|active| active.borrow().is_some().then(Instant::now));
++        Self { phase, started }
++    }
++}
++
++impl Drop for Span {
++    fn drop(&mut self) {
++        let Some(started) = self.started else {
++            return;
++        };
++        let elapsed = started.elapsed().as_nanos();
++        ACTIVE.with(|active| {
++            if let Some(profile) = active.borrow_mut().as_mut() {
++                let measurement = &mut profile.phases[self.phase as usize];
++                measurement.nanoseconds = measurement.nanoseconds.saturating_add(elapsed);
++                measurement.count = measurement.count.saturating_add(1);
++            }
++        });
++    }
++}
++
++pub(super) fn finish() {
++    let profile = ACTIVE.with(|active| active.borrow_mut().take());
++    let Some(profile) = profile else {
++        return;
++    };
++    // Output occurs only after the measured service route and publication.
++    eprintln!("DEADPAN_UI_PAUSE_PROFILE BEGIN count=1");
++    for ((phase, kind), measurement) in PHASES.into_iter().zip(profile.phases) {
++        eprintln!(
++            "DEADPAN_UI_PAUSE_PROFILE PHASE phase={phase} kind={kind} elapsed_ns={} count={}",
++            measurement.nanoseconds, measurement.count,
++        );
++    }
++    eprintln!("DEADPAN_UI_PAUSE_PROFILE END count=1");
++}

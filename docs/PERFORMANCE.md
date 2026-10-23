@@ -211,7 +211,16 @@ forty independent fresh invocations are required before a UI percentile claim.
 These measurements include native semantic-command/service work absent from
 the direct 93.633 ms store-and-refresh median. They do not attribute the delay
 to the store, establish either edit target, or measure a physical display,
-source decoding or PCM. App-service profiling is the next diagnostic step.
+source decoding or PCM. The subsequent
+[isolated app-service profile](qualification/ui-first-pause-profile-2026-10-23.md)
+uses three rotated fresh-process triplets. Uninstrumented input-to-composition
+median is 388.289833 ms; the instrumented service has median semantic planning
+108.376500 ms, preview/runtime-bank preparation 119.775334 ms, Compound commit
+130.474125 ms and refresh 4.128667 ms. Inclusive totals and disjoint children
+are kept separate. All nine replays and provenance guards pass. This is a
+diagnostic, with uncalibrated timer overhead and no queue-wait measurement,
+percentile or target PASS. It motivates sharing Compound preparation inside
+one transaction, while retaining fallible runtime preparation before writes.
 
 | Section 25 target | Measurement | Notes |
 | --- | --- | --- |

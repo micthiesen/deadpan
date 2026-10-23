@@ -58,13 +58,26 @@ not retained, while its original main DB hash matched. Keep that failure.
 
 Scratch harness final driver is terminal, all rows zero:
 /tmp/deadpan-large-pause-harness-2026-10-23/qualify_final.py. Do not restart it.
-Next, build the reviewed temporary service instrumentation in the isolated
-/tmp/deadpan-ui-pause-profile-2026-10-23/source with its separate target.
-Its source is the e9be3a8d archive plus the exact final harness and profiling
-overlays. Root owns Cargo and runtime. The env-gated diagnostic measures
-disjoint service phases, explicitly excluding queue wait. Preserve source,
-binary and input hashes and unchanged replay checks; never ship the timers or
-attribute the roughly 396 ms UI measurement to store time without evidence.
+The isolated [service profile](../qualification/ui-first-pause-profile-2026-10-23.md)
+completed nine guarded fresh-process trials, three rotated triplets of root
+control/profile off/profile on. All seven checks pass in each. Root-control
+median is 385.551042 /388.289833 ms; instrumentation-off 392.703375 /395.343125
+and on 388.363209 /391.181084 ms. These are diagnostics, not an overhead bound
+or percentile PASS. On-phase medians are semantic planning 108.376500 ms,
+preview/runtime-bank preparation 119.775334 ms, Compound commit 130.474125 ms,
+and refresh 4.128667 ms. Queue wait remains unmeasured; totals are inclusive.
+Evidence verifies 105 files /1,575,313 bytes, inventory SHA-256
+fce683290a56b68a1af71de6449c0d8fa87e151485dba69dee214bc05163e040.
+The separate source/target and all terminal drivers remain in
+/tmp/deadpan-ui-pause-profile-2026-10-23. Never ship its temporary timers.
+
+Next: finish the uncommitted transaction-owned Compound preparation callback.
+The store prepares once inside its Immediate transaction, calls fallible native
+runtime-bank preparation before any write, and returns that private value only
+after durable commit. Preserve existing guard/identity/bank/capture/history
+checks and the old commit APIs. Store and native failure tests, independent
+review, broad/UI/strict checks, native/media/history and release performance
+are owed. Do not claim its roughly 120 ms potential saving before measurement.
 
 Refresh/verify progress artifact a3ysikxugbmr4 from the next pushed
 docs/progress.json after this implementation commit. Preserve foreign
