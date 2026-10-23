@@ -1,0 +1,4 @@
+   Compiling deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+    Finished `test` profile [optimized + debuginfo] target(s) in 5.68s
+   Archiving 1 binary and 1 standard library to /tmp/deadpan-compact-frozen-edges-2026-10-22/refined-core.tar.zst
+    Archived 4 files to /tmp/deadpan-compact-frozen-edges-2026-10-22/refined-core.tar.zst in 0.03s

@@ -1,0 +1,27 @@
+{
+  "tests": {
+    "/private/tmp/deadpan-compact-frozen-edges-2026-10-22/debug-media-extracted/target/debug/deps/preview_export-a88d124621cb7ef2": "d6fd1a5fc7e2986e260802fe617ac234f7da5de7a23290b3c317a25fd335c79b"
+  },
+  "helpers": {
+    "deadpan-cli": {
+      "source": "target/debug/deadpan-cli",
+      "path": "/tmp/deadpan-compact-frozen-edges-2026-10-22/debug-media-extracted/target/debug/deadpan-cli",
+      "sha256": "0f90a1c1d5260d037433f7426dfcfbc1eabb73340c5e48cb3889f9df3e20ea67"
+    },
+    "deadpan-media-worker": {
+      "source": "target/debug/deadpan-media-worker",
+      "path": "/tmp/deadpan-compact-frozen-edges-2026-10-22/debug-media-extracted/target/debug/deadpan-media-worker",
+      "sha256": "786672d36a58e024be1acb18f353c350c06a7c83dd88c84369e69a9512a13c5d"
+    },
+    "deadpan-transcribe": {
+      "source": "target/debug/deadpan-transcribe",
+      "path": "/tmp/deadpan-compact-frozen-edges-2026-10-22/debug-media-extracted/target/debug/deadpan-transcribe",
+      "sha256": "473b69ac2024d691236637017ebea298a08e0f88de2ff3801a948bf866f71362"
+    },
+    "deadpan-track": {
+      "source": "target/debug/deadpan-track",
+      "path": "/tmp/deadpan-compact-frozen-edges-2026-10-22/debug-media-extracted/target/debug/deadpan-track",
+      "sha256": "18861c06d2d468b4e161c2b99110ffc1d5ea99a926e1685d5893437583760244"
+    }
+  }
+}

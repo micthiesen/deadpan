@@ -1,0 +1,36 @@
+{
+  "source_base": "a18ff65443aa8fd1aa5ab63fa33678c9afd88220",
+  "baseline_source_manifest": "/tmp/deadpan-compact-frozen-edges-2026-10-22/baseline-core-source-identities.json",
+  "library": "/tmp/deadpan-compact-frozen-edges-2026-10-22/baseline-target/debug/deps/libdeadpan_core-f8bf927af8c4fe6f.rlib",
+  "library_sha256": "532aa006494ea2c3e8050c1bf14d460d4c550f3ed3cf67b38992ae9b4832673b",
+  "probe_source_sha256": "d846a174a77fd0643055899e59cc90c1202aa59572c062c8a64330e6384192e0",
+  "build_command": [
+    "rustc",
+    "--edition",
+    "2024",
+    "/tmp/deadpan-compact-frozen-edges-2026-10-22/historical-codec-probe/probe.rs",
+    "--extern",
+    "deadpan_core=/tmp/deadpan-compact-frozen-edges-2026-10-22/baseline-target/debug/deps/libdeadpan_core-f8bf927af8c4fe6f.rlib",
+    "-L",
+    "dependency=/tmp/deadpan-compact-frozen-edges-2026-10-22/baseline-target/debug/deps",
+    "-o",
+    "/tmp/deadpan-compact-frozen-edges-2026-10-22/historical-codec-probe/probe"
+  ],
+  "build_exit": 0,
+  "probe_sha256": "13cae30c55e0c9643c3f91957d114b90dd694c9c779dee7050c9b73d544bb2af",
+  "cases": [
+    {
+      "case": "automatic",
+      "exit": 0,
+      "input_sha256": "599b66e5a1b9e6ccd06bafb8f41b7b93c39e10db9a1c6193a11c3e6cdffd8373",
+      "output_sha256": "ae2c176815ef7947e2d451c52cce2d10e560ac9cce52ef640c8fb6b882a30e40"
+    },
+    {
+      "case": "asymmetric",
+      "exit": 0,
+      "input_sha256": "ebfa150c6a8018e349e31e47fdd465daa4d6d2b231fcae3989c1ac1c3d778fcf",
+      "output_sha256": "f07e03024c41da162c5c68fc67e43714f64f90b3531edf47dfb51e62a1f3bf54"
+    }
+  ],
+  "old_library_unchanged": true
+}

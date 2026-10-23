@@ -110,6 +110,7 @@ pub struct FrozenAudioContext {
     schema_version: u32,
     project_id: ProjectId,
     revision_id: RevisionId,
+    #[serde(serialize_with = "FrozenAudioLayout::serialize_explicit_edges")]
     layout: FrozenAudioLayout,
     inputs: BTreeMap<NodeId, FrozenAudioInput>,
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]

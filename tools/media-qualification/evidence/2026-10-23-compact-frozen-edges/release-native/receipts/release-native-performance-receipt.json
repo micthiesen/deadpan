@@ -1,0 +1,16 @@
+{
+  "command": [
+    "/tmp/deadpan-compact-frozen-edges-2026-10-22/release-native-bin/deadpan-app",
+    "--ui-check",
+    "--scenario",
+    "sound-group-endpoints",
+    "--mode",
+    "performance",
+    "--output",
+    "/tmp/deadpan-compact-frozen-edges-2026-10-22/release-native-performance",
+    "--kestrel-source",
+    "/Users/michael/.dotfiles/kestrel/Sources/Kestrel/Shortcuts.swift"
+  ],
+  "exit": 0,
+  "seconds": 14.19989920873195
+}

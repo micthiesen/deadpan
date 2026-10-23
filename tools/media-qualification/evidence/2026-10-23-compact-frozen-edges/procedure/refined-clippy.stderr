@@ -1,0 +1,8 @@
+    Checking rustix v1.1.5
+    Checking num-traits v0.2.19
+    Checking serde v1.0.229
+    Checking deadpan-core v0.1.0 (/Users/michael/Code/deadpan/crates/deadpan-core)
+    Checking tempfile v3.27.0
+    Checking rusty-fork v0.3.1
+    Checking proptest v1.11.0
+    Finished `dev` profile [optimized + debuginfo] target(s) in 2m 00s

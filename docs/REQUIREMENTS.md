@@ -2,24 +2,29 @@
 
 All DP-01 through DP-24 requirements in [specification Section 29](spec/DEADPAN_SPEC.md#29-requirements-traceability) remain in scope. Their detailed sections are normative. This tracker records the current implementation and measured evidence, not a reduced release scope.
 
-## First-pause diagnostics, 2026-10-23
+## Compact frozen timing, 2026-10-23
 
-Two quiet five-pair batches reproduce the 10,000-Hold first-pause delay at
-128.497 and 131.432 ms uninstrumented medians. The finer profile measures a
-6,416,116-byte history payload, with 26.656 ms for edit round-trip checking,
-14.981 ms for the history write and 16.824 ms for durable transaction commit.
-These overlapping phase and total measurements are short diagnostics, not
-p95 qualification. All existing checks remain intact. A disposable prototype
-completed five quiet pairs with first medians 127.513 ms before and 111.362 ms
-after, still above 100 ms. The production candidate uses Core 57 / SQLite 86
-and preserves standalone context schemas 1–12. All 1,503 Core, 3,499 broader
-selected and 1,292 UI-feature tests pass, plus strict Core/Store checks and debug media
-verification of 15 pictures / 24,024 samples at zero offset. Initial fixture
-failures and corrections are retained. Release/native, portable validation and stronger historical codec checks now
-pass. Explicit UI Clippy and current-format performance remain owed.
-See the [candidate checkpoint](qualification/compact-frozen-edges-2026-10-23.md) and the
-[profile and retained evidence](qualification/first-pause-profile-2026-10-23.md).
-DP-24 remains partial; no requirement or gate closes.
+Implemented and qualified: Core 57 / SQLite 86 omits only all-Automatic frozen
+edge objects, retaining exact policies and the complete timing lattice.
+Standalone context codecs 1–12 preserve their historical bytes. Old unused
+packages are refused without mutation.
+
+All 1,503 Core, 3,499 broader selected and 1,292 UI tests pass, followed by six
+strengthened codec cases, strict Core/Store and UI Clippy, and formatting.
+Debug/release verify 15 pictures / 24,024 samples; release also verifies
+19 pictures / 30,430 samples, all at zero offset with full PCM/history controls.
+Native replay passes 197 checks plus Kestrel, and both nine-file portable
+packages validate and doctor unchanged. Retain two layout findings and all
+fixture/setup/driver failures. The earlier lint-scope attribution is corrected.
+
+Five quiet current-format pairs measure first-pause median 130.636 ms before
+and 114.691 ms after, with second medians 33.206 / 33.265 ms. This improves the
+observed first median by 15.945 ms but remains above 100 ms without a picture;
+no p95 or visible-Hold target is established. Native commit p95 remains
+85.747709 ms over nine samples, so the full ordinary-edit 50 ms target stays
+open. DP-24 remains partial and no gate closes. See
+[qualification and evidence](qualification/compact-frozen-edges-2026-10-23.md)
+and the earlier [diagnostic profile](qualification/first-pause-profile-2026-10-23.md).
 
 ## Neutral retained-scope Ungroup, 2026-10-23
 

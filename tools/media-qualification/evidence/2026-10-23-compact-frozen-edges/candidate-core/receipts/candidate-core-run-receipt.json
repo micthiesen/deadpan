@@ -1,0 +1,21 @@
+{
+  "command": [
+    "cargo",
+    "nextest",
+    "run",
+    "--archive-file",
+    "/tmp/deadpan-compact-frozen-edges-2026-10-22/candidate-core.tar.zst",
+    "--extract-to",
+    "/tmp/deadpan-compact-frozen-edges-2026-10-22/candidate-core-extracted",
+    "--extract-overwrite",
+    "--workspace-remap",
+    "/Users/michael/Code/deadpan",
+    "-E",
+    "all()",
+    "--test-threads",
+    "8",
+    "--no-fail-fast"
+  ],
+  "exit": 0,
+  "seconds": 0.055732292123138905
+}

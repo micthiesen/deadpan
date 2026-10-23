@@ -1,0 +1,18 @@
+{
+  "command": [
+    "cargo",
+    "clippy",
+    "--locked",
+    "-p",
+    "deadpan-app",
+    "--features",
+    "ui-harness",
+    "--all-targets",
+    "--",
+    "-D",
+    "warnings"
+  ],
+  "exit": 0,
+  "seconds": 76.00495749991387,
+  "scope_correction": "Initial xtask check covered only changed Core/Store packages. This explicitly supplies the UI Clippy evidence."
+}

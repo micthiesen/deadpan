@@ -1,0 +1,11 @@
+  Extracting 2 binaries (including 1 non-test binary) and 7 linked paths to /private/tmp/deadpan-compact-frozen-edges-2026-10-22/release-media-extracted
+   Extracted 51 files to /private/tmp/deadpan-compact-frozen-edges-2026-10-22/release-media-extracted in 0.08s
+────────────
+ Nextest run ID a1779b1f-75f6-432b-8e45-b17526423303 with nextest profile: default
+    Starting 1 test across 1 binary (64 tests skipped)
+        SLOW [> 60.000s] (───) deadpan-cli::preview_export group_endpoints_export::aligned_sound_scope_group_split_move_copy_preserves_canonical_pcm_and_verified_export
+        SLOW [>120.000s] (───) deadpan-cli::preview_export group_endpoints_export::aligned_sound_scope_group_split_move_copy_preserves_canonical_pcm_and_verified_export
+        SLOW [>180.000s] (───) deadpan-cli::preview_export group_endpoints_export::aligned_sound_scope_group_split_move_copy_preserves_canonical_pcm_and_verified_export
+        PASS [ 237.762s] (1/1) deadpan-cli::preview_export group_endpoints_export::aligned_sound_scope_group_split_move_copy_preserves_canonical_pcm_and_verified_export
+────────────
+     Summary [ 237.763s] 1 test run: 1 passed (1 slow), 64 skipped

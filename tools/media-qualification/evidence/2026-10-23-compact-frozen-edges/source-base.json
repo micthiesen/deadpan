@@ -1,0 +1,7 @@
+{
+  "git_commit": "a18ff65443aa8fd1aa5ab63fa33678c9afd88220",
+  "prior_compact_prototype_evidence": "tools/media-qualification/evidence/2026-10-23-first-pause-profile",
+  "reconstruction": "unpacked immutable source plus exact frozen phase overlays; changed Rust files are stored as .rs.txt",
+  "source_archive_sha256": "56e12fbe340f6d15a292472a1de9be1f594473299faff4fd799fa810b995f489",
+  "source_metadata": "prototype/first-pause-source.json"
+}

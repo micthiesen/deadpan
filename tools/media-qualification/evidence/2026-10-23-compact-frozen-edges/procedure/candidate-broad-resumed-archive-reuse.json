@@ -1,0 +1,32 @@
+{
+  "archive": "/tmp/deadpan-compact-frozen-edges-2026-10-22/candidate-broad.tar.zst",
+  "sha256": "cca46260a489f8c6952d0b3985374a1b0f2267f1412feec05ff10c393e5a36ac",
+  "original_build": {
+    "command": [
+      "cargo",
+      "nextest",
+      "archive",
+      "--locked",
+      "-p",
+      "deadpan-plan",
+      "-p",
+      "deadpan-audio",
+      "-p",
+      "deadpan-analysis",
+      "-p",
+      "deadpan-store",
+      "-p",
+      "deadpan-app",
+      "-p",
+      "deadpan-cli",
+      "--features",
+      "deadpan-cli/synthetic-worker",
+      "--archive-file",
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/candidate-broad.tar.zst",
+      "--zstd-level=-1"
+    ],
+    "exit": 0,
+    "seconds": 470.42859125044197
+  },
+  "sources_and_inputs_match": true
+}

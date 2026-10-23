@@ -5,9 +5,9 @@ use std::collections::BTreeMap;
 use std::error::Error;
 
 use deadpan_core::{
-    AudioTimingId, BeatNode, ColorPolicy, Command, CommandRequest, FrameDuration, FrameRate,
-    HoldAudio, HoldRecipe, HoldVideo, NodeId, PresentationBasis, ProjectDocument, ProjectFrame,
-    ProjectId, RevisionId, SplitIdentities, Subtree,
+    AudioTimingId, BeatNode, ColorPolicy, Command, CommandRequest, EditTransaction, FrameDuration,
+    FrameRate, HoldAudio, HoldRecipe, HoldVideo, NodeId, PresentationBasis, ProjectDocument,
+    ProjectFrame, ProjectId, RevisionId, SplitIdentities, Subtree,
 };
 use deadpan_store::{AccessMode, ProjectStore};
 use rusqlite::Connection;
@@ -508,13 +508,32 @@ fn pause_history_records_only_changed_timing_state() -> Result {
             [revision.as_str()],
             |row| row.get::<_, i64>(0),
         )?);
+        let encoded: String = database.query_row(
+            "SELECT edit FROM history WHERE revision_id=?1",
+            [revision.as_str()],
+            |row| row.get(0),
+        )?;
+        let transaction: EditTransaction = serde_json::from_str(&encoded)?;
+        let patch = transaction.forward.audio_bindings.as_ref().unwrap();
+        let new_layouts: Vec<_> = patch
+            .timings
+            .iter()
+            .filter_map(|change| change.after.as_ref())
+            .collect();
+        if index == 2 {
+            // Assert the complete initial capture directly, independently of
+            // its current JSON encoding size.
+            assert!(new_layouts.iter().any(|layout| layout.nodes().len() >= 400));
+            assert!(patch.bindings.len() >= 400);
+        } else {
+            assert!(new_layouts.iter().all(|layout| layout.nodes().len() < 16));
+        }
     }
     let document = store.snapshot()?;
     // The first pause binds every Hold; later pauses add one small timing
     // table and a few bindings, never another copy of the project. Their
     // remaining bytes are the parent Sequence's child list in the node patch,
     // stored once (its new list is a splice and the inverse is implied).
-    assert!(sizes[0] > 150_000, "{sizes:?}");
     for size in &sizes[1..] {
         assert!(*size < 30_000, "{sizes:?}");
     }

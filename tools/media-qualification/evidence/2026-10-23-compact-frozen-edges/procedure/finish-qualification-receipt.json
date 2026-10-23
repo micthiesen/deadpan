@@ -1,0 +1,32 @@
+[
+  {
+    "command": [
+      "python",
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/qualify_native_media.py",
+      "debug-media",
+      "preflight"
+    ],
+    "exit": 0,
+    "seconds": 136.7787223327905
+  },
+  {
+    "command": [
+      "python",
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/qualify_native_media.py",
+      "release-media",
+      "release-media"
+    ],
+    "exit": 0,
+    "seconds": 459.8396719172597
+  },
+  {
+    "command": [
+      "python",
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/qualify_native_media.py",
+      "release-native",
+      "native"
+    ],
+    "exit": 0,
+    "seconds": 281.89100629184395
+  }
+]

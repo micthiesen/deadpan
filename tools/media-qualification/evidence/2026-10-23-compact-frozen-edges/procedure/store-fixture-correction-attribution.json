@@ -1,0 +1,12 @@
+{
+  "changed_only": [
+    "crates/deadpan-store/tests/edited_slice/child_capture/range_compat.rs",
+    "crates/deadpan-store/tests/revision_storage.rs"
+  ],
+  "all_production_and_core_test_sources_unchanged": true,
+  "original_broad_result": "3497 passed,2 failed,740 skipped",
+  "causes": [
+    "Literal expected current serialization still included seven default frozen edge objects; adapt only expected values, preserving historical literal rows.",
+    "Initial history-size lower bound150000 no longer holds after compaction (122829 bytes); replace it with direct complete initial timing capture and changed-only later layout assertions."
+  ]
+}

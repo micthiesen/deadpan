@@ -1,0 +1,60 @@
+{
+  "binary_sha256": "cf5f0d1eb4f29180e1ad796cda5c12daf5c0eeff7d1aa0010c9bd5d05ce19079",
+  "failed": false,
+  "scenarios": [
+    {
+      "name": "kestrel-shortcuts",
+      "checks": 1,
+      "all_checks_passed": true,
+      "findings": [],
+      "timings": {}
+    },
+    {
+      "name": "sound-group-endpoints",
+      "checks": 197,
+      "all_checks_passed": true,
+      "findings": [
+        "51 frame(s) settled their layout only on a second retry: [{\"frame\":120,\"input\":\"Command sequence\",\"reasons\":[\"pass 0: native comma",
+        "egui discard warning: 7 run(s) of 3+ consecutive retrying frames, each frame with its own cause: [[{\"frame\":438,\"input\":\"Key Modif"
+      ],
+      "timings": {
+        "input_to_state_ms": {
+          "completed": {
+            "max_ms": 2.338333,
+            "n": 330,
+            "p50_ms": 0.5724159999999999,
+            "p95_ms": 1.11125,
+            "p99_ms": 1.565791
+          },
+          "failed": 0,
+          "samples": 330,
+          "timed_out": 0
+        },
+        "input_to_commit_ms": {
+          "completed": {
+            "max_ms": 85.747709,
+            "n": 9,
+            "p50_ms": 7.122542,
+            "p95_ms": 85.747709,
+            "p99_ms": 85.747709
+          },
+          "failed": 0,
+          "samples": 9,
+          "timed_out": 0
+        },
+        "input_to_picture_complete_ms": {
+          "completed": {
+            "max_ms": 94.538667,
+            "n": 99,
+            "p50_ms": 2.001208,
+            "p95_ms": 8.864042000000001,
+            "p99_ms": 94.538667
+          },
+          "failed": 0,
+          "samples": 99,
+          "timed_out": 0
+        }
+      }
+    }
+  ]
+}

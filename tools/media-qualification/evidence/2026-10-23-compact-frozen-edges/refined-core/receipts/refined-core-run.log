@@ -1,0 +1,13 @@
+  Extracting 1 binary to /private/tmp/deadpan-compact-frozen-edges-2026-10-22/refined-core-extracted
+   Extracted 4 files to /private/tmp/deadpan-compact-frozen-edges-2026-10-22/refined-core-extracted in 0.01s
+────────────
+ Nextest run ID ee2822f9-0d8f-450a-9b22-34a81051cea0 with nextest profile: default
+    Starting 6 tests across 1 binary
+        PASS [   0.007s] (1/6) deadpan-core::compact_frozen_edges malformed_edge_objects_are_rejected_at_layout_ingress
+        PASS [   0.007s] (2/6) deadpan-core::compact_frozen_edges source_and_repeat_edge_policies_survive_a_mixed_layout_roundtrip
+        PASS [   0.007s] (3/6) deadpan-core::compact_frozen_edges automatic_edges_are_omitted_and_restore_exactly
+        PASS [   0.007s] (4/6) deadpan-core::compact_frozen_edges explicit_automatic_edges_from_older_wire_still_decode
+        PASS [   0.008s] (5/6) deadpan-core::compact_frozen_edges explicit_nondefault_allowed_edges_survive_exactly
+        PASS [   0.008s] (6/6) deadpan-core::compact_frozen_edges standalone_context_preserves_historical_codec_bytes_for_all_schemas
+────────────
+     Summary [   0.008s] 6 tests run: 6 passed, 0 skipped

@@ -1,0 +1,13 @@
+[
+  {
+    "command": [
+      "python",
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/resume_archived_broad.py",
+      "candidate-broad-resumed",
+      "candidate",
+      "broad"
+    ],
+    "exit": 100,
+    "seconds": 296.0696050832048
+  }
+]

@@ -585,7 +585,10 @@ fn frozen_copy_lineage_preflight_is_closed_unique_and_bounded() {
 
 #[test]
 fn admission_rejects_tampered_structure_durations_placements_and_policies() {
-    let original = wire();
+    let mut original = wire();
+    // Default policies are omitted from compact layouts. Materialize the
+    // complete object before testing an invalid policy on this Hold.
+    original["nodes"]["pre"]["edges"] = serde_json::to_value(AudioEdgePolicies::default()).unwrap();
     for (pointer, replacement) in [
         ("/root", json!("pre")),
         (

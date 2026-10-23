@@ -1,0 +1,11 @@
+{
+  "source_test_sha256": "5f76110e2b6cc27e23e5ac22a86f1529afcff00f390cc8c8a9864017f05002dd",
+  "library_sha256": {
+    "deadpan_core": "532aa006494ea2c3e8050c1bf14d460d4c550f3ed3cf67b38992ae9b4832673b",
+    "serde_json": "3df2fac801f703895158ab3daf414e9fe9a7936a13cacd3b6c520732ef823b8f"
+  },
+  "executed_binary_sha256": "94320ad4024a17f8cde3bb5c1e19907f2f825cc1ef2b31a6fa1b35c03da3e0b3",
+  "expected_omission_failures": 2,
+  "controls_passed": 4,
+  "old_libraries_unchanged": true
+}

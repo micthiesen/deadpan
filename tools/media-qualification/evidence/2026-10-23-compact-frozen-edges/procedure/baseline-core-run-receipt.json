@@ -1,0 +1,21 @@
+{
+  "command": [
+    "cargo",
+    "nextest",
+    "run",
+    "--archive-file",
+    "/tmp/deadpan-compact-frozen-edges-2026-10-22/baseline-core.tar.zst",
+    "--extract-to",
+    "/tmp/deadpan-compact-frozen-edges-2026-10-22/baseline-core-extracted",
+    "--extract-overwrite",
+    "--workspace-remap",
+    "/tmp/deadpan-compact-frozen-edges-2026-10-22/baseline",
+    "-E",
+    "all()",
+    "--test-threads",
+    "8",
+    "--no-fail-fast"
+  ],
+  "exit": 100,
+  "seconds": 0.05432345811277628
+}

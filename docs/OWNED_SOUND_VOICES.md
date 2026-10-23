@@ -45,7 +45,7 @@ New Repeat plays start on their own clock. Changes to the owner's complete
 processing extent, including Repeat-owned sounds during count changes, still
 fail explicitly.
 
-Database 85 stores core schema 56. Earlier unused development packages refuse
+Database 86 stores core schema 57. Earlier unused development packages refuse
 before writes; see [development formats](DEVELOPMENT_FORMATS.md).
 
 ## Saved independent clocks

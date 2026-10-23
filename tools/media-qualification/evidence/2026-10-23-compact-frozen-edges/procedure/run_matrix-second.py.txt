@@ -1,0 +1,11 @@
+from pathlib import Path
+import subprocess,json,time
+s=Path('/tmp/deadpan-compact-frozen-edges-2026-10-22')
+trials=[('candidate-all-core-corrected','candidate','allcore'),('baseline-core','baseline','core'),('candidate-broad','candidate','broad'),('candidate-ui','candidate','ui'),('candidate-strict','candidate','strict')]
+rows=[]
+for phase,location,kind in trials:
+ start=time.monotonic()
+ code=subprocess.run(['python',str(s/'qualify.py'),phase,location,kind]).returncode
+ rows.append({'phase':phase,'exit':code,'seconds':time.monotonic()-start})
+ (s/'matrix-corrected-receipt.json').write_text(json.dumps(rows,indent=2)+'\n')
+ if code and location!='baseline':raise SystemExit(code)

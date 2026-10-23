@@ -1,0 +1,64 @@
+{
+  "fresh_packages": true,
+  "phase_multiplicity_check": "not_applicable_uninstrumented_binaries",
+  "source": {
+    "base": "a18ff65443aa8fd1aa5ab63fa33678c9afd88220",
+    "candidate": "uncommitted Core57/SQLite86 source identities in release-perf-source-identities.json",
+    "baseline": {
+      "commit": "a18ff65443aa8fd1aa5ab63fa33678c9afd88220",
+      "archive_sha256": "56e12fbe340f6d15a292472a1de9be1f594473299faff4fd799fa810b995f489",
+      "timer_overlay_sha256": "e5154a4e3f47fa98b27203fb79eb56e217570d92afdc083028f85b88ddb1a801",
+      "modified_sources": [
+        "crates/deadpan-cli/examples/perf/edit.rs",
+        "crates/deadpan-core/src/insert_time.rs",
+        "crates/deadpan-core/src/command.rs",
+        "crates/deadpan-store/src/lib.rs"
+      ]
+    }
+  },
+  "binaries": {
+    "baseline": {
+      "source_path": "/Users/michael/Code/deadpan/target/release/examples/perf",
+      "executed_path": "/tmp/deadpan-first-pause-profile-2026-10-22/baseline-perf",
+      "sha256": "af725eba81e35a2a005a1b1e6c855684ff1a5e7328c7c093e86c3a5dc6ce6f28"
+    },
+    "candidate": {
+      "source_path": "/Users/michael/Code/deadpan/target/release/examples/perf",
+      "executed_path": "/tmp/deadpan-compact-frozen-edges-2026-10-22/candidate-perf",
+      "sha256": "d8c0cd0fb54c22f8b697ed7e4c9e4f7944f6ea59b0e55f103c58d2ab61e2e7fd"
+    }
+  },
+  "load_flags": [],
+  "path_anomalies": [],
+  "summary": {
+    "baseline": {
+      "first": {
+        "n": 5,
+        "min_ms": 130.485,
+        "median_ms": 130.636,
+        "max_ms": 131.493
+      },
+      "second": {
+        "n": 5,
+        "min_ms": 32.5,
+        "median_ms": 33.206,
+        "max_ms": 34.673
+      }
+    },
+    "candidate": {
+      "first": {
+        "n": 5,
+        "min_ms": 113.103,
+        "median_ms": 114.691,
+        "max_ms": 115.853
+      },
+      "second": {
+        "n": 5,
+        "min_ms": 32.547,
+        "median_ms": 33.265,
+        "max_ms": 34.175
+      }
+    }
+  },
+  "no_p95_or_target_pass_claim": true
+}

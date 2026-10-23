@@ -1,0 +1,9 @@
+{
+  "changed_only": [
+    "crates/deadpan-core/tests/compact_frozen_edges.rs"
+  ],
+  "all_production_and_other_tests_unchanged": true,
+  "before_sha256": "097882ce4272a5bf18045419e438110819f88ee813db14325a27626e2bdc11ad",
+  "after_sha256": "5f76110e2b6cc27e23e5ac22a86f1529afcff00f390cc8c8a9864017f05002dd",
+  "cause": "Asymmetric policies and fixed historical codec bytes from immutable a18 library replace self-derived expectations."
+}

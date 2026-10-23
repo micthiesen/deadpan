@@ -1,0 +1,17 @@
+[
+  {
+    "phase": "candidate-all-core-final",
+    "exit": 0,
+    "seconds": 14.749470416456461
+  },
+  {
+    "phase": "baseline-core",
+    "exit": 100,
+    "seconds": 19.42628049943596
+  },
+  {
+    "phase": "candidate-broad",
+    "exit": 120,
+    "seconds": 470.70831683371216
+  }
+]

@@ -1,0 +1,29 @@
+
+running 6 tests
+test automatic_edges_are_omitted_and_restore_exactly ... FAILED
+test explicit_automatic_edges_from_older_wire_still_decode ... ok
+test explicit_nondefault_allowed_edges_survive_exactly ... ok
+test malformed_edge_objects_are_rejected_at_layout_ingress ... ok
+test source_and_repeat_edge_policies_survive_a_mixed_layout_roundtrip ... FAILED
+test standalone_context_preserves_historical_codec_bytes_for_all_schemas ... ok
+
+failures:
+
+---- automatic_edges_are_omitted_and_restore_exactly stdout ----
+
+thread 'automatic_edges_are_omitted_and_restore_exactly' (176292822) panicked at /Users/michael/Code/deadpan/crates/deadpan-core/tests/compact_frozen_edges.rs:28:5:
+assertion failed: encoded["nodes"]["root"].get("edges").is_none()
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- source_and_repeat_edge_policies_survive_a_mixed_layout_roundtrip stdout ----
+
+thread 'source_and_repeat_edge_policies_survive_a_mixed_layout_roundtrip' (176292826) panicked at /Users/michael/Code/deadpan/crates/deadpan-core/tests/compact_frozen_edges.rs:172:5:
+assertion failed: encoded["nodes"]["root"].get("edges").is_none()
+
+
+failures:
+    automatic_edges_are_omitted_and_restore_exactly
+    source_and_repeat_edge_policies_survive_a_mixed_layout_roundtrip
+
+test result: FAILED. 4 passed; 2 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

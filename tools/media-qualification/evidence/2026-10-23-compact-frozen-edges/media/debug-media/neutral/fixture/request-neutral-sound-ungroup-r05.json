@@ -1,0 +1,1 @@
+{"command":{"command":"set_audio_treatments","node":"aligned-top","treatments":{"clip_gain":null,"equalizer":{"bass":3000,"middle":-1500,"treble":1000},"order":["equalizer"]}},"expected_revision":"neutral-sound-ungroup-r04","new_revision":"neutral-sound-ungroup-r05","project_id":"3b19d40d-30cf-45f5-8d1b-77b09f7c8b12","protocol":1}

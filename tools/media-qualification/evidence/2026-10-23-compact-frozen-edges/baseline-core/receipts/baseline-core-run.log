@@ -1,0 +1,52 @@
+  Extracting 1 binary to /private/tmp/deadpan-compact-frozen-edges-2026-10-22/baseline-core-extracted
+   Extracted 4 files to /private/tmp/deadpan-compact-frozen-edges-2026-10-22/baseline-core-extracted in 0.01s
+────────────
+ Nextest run ID 7c97afba-8c23-4346-a017-1c8b55846f24 with nextest profile: default
+    Starting 6 tests across 1 binary
+        FAIL [   0.006s] (1/6) deadpan-core::compact_frozen_edges automatic_edges_are_omitted_and_restore_exactly
+  stdout ───
+
+    running 1 test
+    test automatic_edges_are_omitted_and_restore_exactly ... FAILED
+
+    failures:
+
+    failures:
+        automatic_edges_are_omitted_and_restore_exactly
+
+    test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+  stderr ───
+
+    thread 'automatic_edges_are_omitted_and_restore_exactly' (176021535) panicked at crates/deadpan-core/tests/compact_frozen_edges.rs:28:5:
+    assertion failed: encoded["nodes"]["root"].get("edges").is_none()
+    note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+        PASS [   0.007s] (2/6) deadpan-core::compact_frozen_edges explicit_automatic_edges_from_older_wire_still_decode
+        FAIL [   0.007s] (3/6) deadpan-core::compact_frozen_edges source_and_repeat_edge_policies_survive_a_mixed_layout_roundtrip
+  stdout ───
+
+    running 1 test
+    test source_and_repeat_edge_policies_survive_a_mixed_layout_roundtrip ... FAILED
+
+    failures:
+
+    failures:
+        source_and_repeat_edge_policies_survive_a_mixed_layout_roundtrip
+
+    test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 5 filtered out; finished in 0.00s
+
+  stderr ───
+
+    thread 'source_and_repeat_edge_policies_survive_a_mixed_layout_roundtrip' (176021536) panicked at crates/deadpan-core/tests/compact_frozen_edges.rs:173:5:
+    assertion failed: encoded["nodes"]["root"].get("edges").is_none()
+    note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+        PASS [   0.007s] (4/6) deadpan-core::compact_frozen_edges malformed_edge_objects_are_rejected_at_layout_ingress
+        PASS [   0.008s] (5/6) deadpan-core::compact_frozen_edges standalone_context_keeps_legacy_explicit_edges_and_schema_bytes
+        PASS [   0.008s] (6/6) deadpan-core::compact_frozen_edges explicit_nondefault_allowed_edges_survive_exactly
+────────────
+     Summary [   0.008s] 6 tests run: 4 passed, 2 failed, 0 skipped
+        FAIL [   0.006s] (1/6) deadpan-core::compact_frozen_edges automatic_edges_are_omitted_and_restore_exactly
+        FAIL [   0.007s] (3/6) deadpan-core::compact_frozen_edges source_and_repeat_edge_policies_survive_a_mixed_layout_roundtrip
+error: test run failed

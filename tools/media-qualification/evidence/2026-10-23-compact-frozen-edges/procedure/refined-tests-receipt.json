@@ -1,0 +1,84 @@
+[
+  {
+    "command": [
+      "python",
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/retain_media_and_check.py"
+    ],
+    "exit": 0,
+    "seconds": 0.5478916252031922
+  },
+  {
+    "command": [
+      "cargo",
+      "fmt",
+      "--all"
+    ],
+    "exit": 0,
+    "seconds": 6.641794833354652
+  },
+  {
+    "command": [
+      "python",
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/qualify.py",
+      "refined-core",
+      "candidate",
+      "core"
+    ],
+    "exit": 0,
+    "seconds": 6.398116542026401
+  },
+  {
+    "command": [
+      "cargo",
+      "clippy",
+      "--locked",
+      "-p",
+      "deadpan-core",
+      "--all-targets",
+      "--",
+      "-D",
+      "warnings"
+    ],
+    "exit": 0,
+    "seconds": 120.25710620824248
+  },
+  {
+    "command": [
+      "cargo",
+      "fmt",
+      "--all",
+      "--",
+      "--check"
+    ],
+    "exit": 0,
+    "seconds": 6.650445208884776
+  },
+  {
+    "command": [
+      "rustc",
+      "--edition",
+      "2024",
+      "--test",
+      "/Users/michael/Code/deadpan/crates/deadpan-core/tests/compact_frozen_edges.rs",
+      "-L",
+      "dependency=/tmp/deadpan-compact-frozen-edges-2026-10-22/baseline-target/debug/deps",
+      "-o",
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/historical-codec-probe/refined-old-tests",
+      "--extern",
+      "deadpan_core=/tmp/deadpan-compact-frozen-edges-2026-10-22/baseline-target/debug/deps/libdeadpan_core-f8bf927af8c4fe6f.rlib",
+      "--extern",
+      "serde_json=/tmp/deadpan-compact-frozen-edges-2026-10-22/baseline-target/debug/deps/libserde_json-8e2dfcf1f14f69bf.rlib"
+    ],
+    "exit": 0,
+    "seconds": 0.24159004259854555
+  },
+  {
+    "command": [
+      "/tmp/deadpan-compact-frozen-edges-2026-10-22/historical-codec-probe/refined-old-tests",
+      "--test-threads",
+      "1"
+    ],
+    "exit": 101,
+    "seconds": 0.0050647081807255745
+  }
+]

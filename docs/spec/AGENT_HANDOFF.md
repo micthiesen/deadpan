@@ -4,26 +4,27 @@ Read version 1.1 of `DEADPAN_SPEC.md` as the current normative full-product spec
 
 ## Current continuation, 2026-10-22
 
-Compact timing checkpoint, 2026-10-23: Core 57 / SQLite 86 remains an
-uncommitted candidate. All 1,503 Core, 3,499 broader selected and 1,292 UI tests
-pass, plus strict Core/Store and formatting. Debug media passes all 15 pictures
-and 24,024 samples at zero offset with full canonical PCM/history controls.
-Four fixture assumptions were corrected without production edits. Source-verified
-baseline witness has 2 expected omission failures and 4 passing controls.
-See ../qualification/compact-frozen-edges-2026-10-23.md and its 203-file checkpoint.
-Serialized driver PID 10303 (started 22:41:19 local) is live in root scratch;
-final-driver.stdout/stderr and final-qualification-receipt.json are authoritative.
-Its stdout is redirected, so an expired harness handle is not termination.
-Release media/native pass, including197 workflow checks plus Kestrel. Both portable
-packages validate unchanged and six refined codec tests pass. Explicit UI Clippy
-is queued in measure.py before timing; initial xtask strict scope was Core/Store
-only. prepare_performance.py validates portable
-packages, applies the reviewed test-only refinement, runs six stronger codec
-tests/Clippy/old-code witness, and only then builds/measures current-format perf.
-The refinement draft and immutable historical codec probe are in scratch.
-Do not edit Rust during this driver. No current-format timing claim or target PASS.
-Future capture/default-binding audits and preparation-only scripts are isolated
-in next-profile-plan; no production optimization beyond compact edges is applied.
+Compact timing qualified, 2026-10-23: Core 57 / SQLite 86 omits only default
+frozen-node edge objects; standalone context codecs 1–12 preserve historical
+bytes. All 1,503 Core, 3,499 broader and 1,292 UI tests pass; six refined asymmetric/
+historical codec cases, strict Core/Store+UI Clippy and formatting pass.
+Debug/release 15-picture/24,024-sample and release 19-picture/30,430-sample exports
+verify at zero offset with complete PCM/history controls. Native passes 197
+checks plus Kestrel; both 9-file portable packages validate/doctor unchanged.
+Retain 51 second-retry frames and 7 retry runs; native commit p95 is 85.747709 ms / 9.
+Five quiet current-format pairs give first medians 130.636 / 114.691 ms and second
+33.206 / 33.265 ms. No 100 ms visible-Hold or 50 ms ordinary-edit target PASS.
+All source/input/executable guards and final inventory checks pass. The
+qualification record retains 1,069 payload files / 46,387,246 bytes, inventory SHA
+2848b62c95487b8c927b7b130faa040bc19fbfd085328d529d101fd0d57e9716.
+The serialized driver completed successfully; no Cargo/runtime job remains.
+Scratch /tmp/deadpan-compact-frozen-edges-2026-10-22 contains isolated next-profile-plan:
+capture timers and an early N−1 alias fallback prototype are prepared; none has
+been compiled/measured yet. A read-only byte audit finds 1,561,546 default binding
+bytes removable in the first compact history edit, without claiming speed.
+Next: commit the qualified compact feature, refresh/verify progress artifact,
+then measure the isolated capture/default-binding hypotheses. Preserve foreign
+fuzz/Cargo.lock and .claude/. Keep the full goal active.
 
 First-pause profile, 2026-10-23: root scratch is
 `/tmp/deadpan-first-pause-profile-2026-10-22`. Initial and finer controlled

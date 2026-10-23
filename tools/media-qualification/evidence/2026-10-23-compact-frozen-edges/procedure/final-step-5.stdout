@@ -1,0 +1,3 @@
+2047 Rust files frozen for release-perf
+Frozen Rust path set, all SHA256 identities and Cargo.lock unchanged: release-perf 2047
+{"baseline": {"source_path": "/Users/michael/Code/deadpan/target/release/examples/perf", "executed_path": "/tmp/deadpan-first-pause-profile-2026-10-22/baseline-perf", "sha256": "af725eba81e35a2a005a1b1e6c855684ff1a5e7328c7c093e86c3a5dc6ce6f28"}, "candidate": {"source_path": "/Users/michael/Code/deadpan/target/release/examples/perf", "executed_path": "/tmp/deadpan-compact-frozen-edges-2026-10-22/candidate-perf", "sha256": "d8c0cd0fb54c22f8b697ed7e4c9e4f7944f6ea59b0e55f103c58d2ab61e2e7fd"}}

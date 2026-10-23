@@ -1,0 +1,7 @@
+{"command": ["python", "/tmp/deadpan-compact-frozen-edges-2026-10-22/qualify.py", "candidate-broad-final", "candidate", "broad"], "exit": 0, "seconds": 476.16531304176897}
+{"command": ["python", "/tmp/deadpan-compact-frozen-edges-2026-10-22/qualify.py", "candidate-ui", "candidate", "ui"], "exit": 0, "seconds": 199.24293029122055}
+{"command": ["python", "/tmp/deadpan-compact-frozen-edges-2026-10-22/qualify.py", "candidate-strict", "candidate", "strict"], "exit": 0, "seconds": 224.51026475057006}
+{"command": ["python", "/tmp/deadpan-compact-frozen-edges-2026-10-22/finish_qualification.py"], "exit": 0, "seconds": 878.5349710425362}
+{"command": ["python", "/tmp/deadpan-compact-frozen-edges-2026-10-22/prepare_performance.py"], "exit": 0, "seconds": 283.696364833042}
+{"command": ["python", "/tmp/deadpan-compact-frozen-edges-2026-10-22/measure.py"], "exit": 0, "seconds": 83.7490743342787}
+Frozen Rust path set, all SHA256 identities and Cargo.lock unchanged: release-perf 2047

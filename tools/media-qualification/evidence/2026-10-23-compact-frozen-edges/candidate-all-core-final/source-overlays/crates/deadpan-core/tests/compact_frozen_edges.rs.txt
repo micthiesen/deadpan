@@ -1,0 +1,263 @@
+use deadpan_core::*;
+use serde_json::{Value, json};
+
+fn empty_document() -> ProjectDocument {
+    ProjectDocument::new(
+        ProjectId::new("compact-frozen-edges").unwrap(),
+        RevisionId::new("initial").unwrap(),
+        PresentationBasis {
+            width: 16,
+            height: 16,
+            frame_rate: FrameRate::new(30, 1).unwrap(),
+            color_policy: ColorPolicy::SdrRec709,
+        },
+        NodeId::new("root").unwrap(),
+    )
+    .unwrap()
+}
+
+fn compact_wire() -> Value {
+    let layout = FrozenAudioLayout::capture(&empty_document()).unwrap();
+    serde_json::from_str(&layout.to_json().unwrap()).unwrap()
+}
+
+#[test]
+fn automatic_edges_are_omitted_and_restore_exactly() {
+    let layout = FrozenAudioLayout::capture(&empty_document()).unwrap();
+    let encoded: Value = serde_json::from_str(&layout.to_json().unwrap()).unwrap();
+    assert!(encoded["nodes"]["root"].get("edges").is_none());
+    assert_eq!(
+        FrozenAudioLayout::from_json(&encoded.to_string()).unwrap(),
+        layout
+    );
+    assert_eq!(
+        FrozenAudioLayout::from_json(&encoded.to_string())
+            .unwrap()
+            .nodes()[&NodeId::new("root").unwrap()]
+            .edges,
+        AudioEdgePolicies::default()
+    );
+}
+
+#[test]
+fn explicit_automatic_edges_from_older_wire_still_decode() {
+    let mut old_form = compact_wire();
+    old_form["nodes"]["root"]["edges"] = json!({
+        "node_start": "automatic",
+        "node_end": "automatic",
+        "source_placement_start": "automatic",
+        "source_placement_end": "automatic",
+        "repeat_gap_start": "automatic",
+        "repeat_gap_end": "automatic"
+    });
+
+    let expected = FrozenAudioLayout::capture(&empty_document()).unwrap();
+    let decoded = FrozenAudioLayout::from_json(&old_form.to_string()).unwrap();
+    assert_eq!(decoded, expected);
+    assert_eq!(
+        decoded.nodes()[&NodeId::new("root").unwrap()].edges,
+        AudioEdgePolicies::default()
+    );
+}
+
+#[test]
+fn explicit_nondefault_allowed_edges_survive_exactly() {
+    let mut wire = compact_wire();
+    wire["nodes"]["root"]["edges"] = json!({
+        "node_start": "hard",
+        "node_end": "hard",
+        "source_placement_start": "automatic",
+        "source_placement_end": "automatic",
+        "repeat_gap_start": "automatic",
+        "repeat_gap_end": "automatic"
+    });
+
+    let decoded = FrozenAudioLayout::from_json(&wire.to_string()).unwrap();
+    assert_eq!(
+        decoded.nodes()[&NodeId::new("root").unwrap()].edges,
+        AudioEdgePolicies {
+            node_start: AudioEdgePolicy::Hard,
+            node_end: AudioEdgePolicy::Hard,
+            ..AudioEdgePolicies::default()
+        }
+    );
+    let encoded: Value = serde_json::from_str(&decoded.to_json().unwrap()).unwrap();
+    assert_eq!(
+        encoded["nodes"]["root"]["edges"],
+        wire["nodes"]["root"]["edges"]
+    );
+    assert_eq!(
+        FrozenAudioLayout::from_json(&encoded.to_string()).unwrap(),
+        decoded
+    );
+}
+
+#[test]
+fn source_and_repeat_edge_policies_survive_a_mixed_layout_roundtrip() {
+    let mut wire = compact_wire();
+    let policies = |source_start, source_end, gap_start, gap_end| AudioEdgePolicies {
+        source_placement_start: source_start,
+        source_placement_end: source_end,
+        repeat_gap_start: gap_start,
+        repeat_gap_end: gap_end,
+        ..AudioEdgePolicies::default()
+    };
+    let node = |frames, edges, kind| FrozenAudioNode {
+        duration: FrameDuration::new(frames).unwrap(),
+        edges,
+        editorial_edges: AudioEditorialEdges::default(),
+        kind,
+    };
+    let nodes = json!({
+        "root": node(
+            6,
+            AudioEdgePolicies::default(),
+            FrozenAudioKind::Sequence {
+                children: vec![NodeId::new("source").unwrap(), NodeId::new("repeat").unwrap()]
+            }
+        ),
+        "source": node(
+            3,
+            policies(AudioEdgePolicy::Hard, AudioEdgePolicy::Hard,
+                AudioEdgePolicy::Automatic, AudioEdgePolicy::Automatic),
+            FrozenAudioKind::Source { placement: None }
+        ),
+        "repeat": node(
+            3,
+            policies(AudioEdgePolicy::Automatic, AudioEdgePolicy::Automatic,
+                AudioEdgePolicy::Hard, AudioEdgePolicy::Hard),
+            FrozenAudioKind::Repeat {
+                child: NodeId::new("hold").unwrap(),
+                iterations: IterationOrder::new(RevisionId::new("plays").unwrap(), 2).unwrap(),
+                gap_duration: FrameDuration::new(1).unwrap(),
+                gap_audio: ReferenceAudibility::Silence,
+            }
+        ),
+        "hold": node(
+            1,
+            AudioEdgePolicies::default(),
+            FrozenAudioKind::Hold { audio: ReferenceAudibility::Silence }
+        )
+    });
+    wire["nodes"] = nodes;
+
+    let decoded = FrozenAudioLayout::from_json(&wire.to_string()).unwrap();
+    assert_eq!(
+        decoded.nodes()[&NodeId::new("root").unwrap()].edges,
+        AudioEdgePolicies::default()
+    );
+    assert_eq!(
+        decoded.nodes()[&NodeId::new("source").unwrap()].edges,
+        policies(
+            AudioEdgePolicy::Hard,
+            AudioEdgePolicy::Hard,
+            AudioEdgePolicy::Automatic,
+            AudioEdgePolicy::Automatic
+        )
+    );
+    assert_eq!(
+        decoded.nodes()[&NodeId::new("repeat").unwrap()].edges,
+        policies(
+            AudioEdgePolicy::Automatic,
+            AudioEdgePolicy::Automatic,
+            AudioEdgePolicy::Hard,
+            AudioEdgePolicy::Hard
+        )
+    );
+    assert_eq!(
+        decoded.nodes()[&NodeId::new("hold").unwrap()].edges,
+        AudioEdgePolicies::default()
+    );
+
+    let encoded: Value = serde_json::from_str(&decoded.to_json().unwrap()).unwrap();
+    assert!(encoded["nodes"]["root"].get("edges").is_none());
+    assert!(encoded["nodes"]["hold"].get("edges").is_none());
+    assert_eq!(
+        encoded["nodes"]["source"]["edges"],
+        wire["nodes"]["source"]["edges"]
+    );
+    assert_eq!(
+        encoded["nodes"]["repeat"]["edges"],
+        wire["nodes"]["repeat"]["edges"]
+    );
+    assert_eq!(
+        FrozenAudioLayout::from_json(&encoded.to_string()).unwrap(),
+        decoded
+    );
+}
+
+#[test]
+fn standalone_context_keeps_legacy_explicit_edges_and_schema_bytes() {
+    let document = empty_document();
+    let context = FrozenAudioContext::capture(&document).unwrap();
+    let canonical = context.to_json().unwrap();
+    let canonical_value: Value = serde_json::from_str(&canonical).unwrap();
+    assert_eq!(canonical_value["schema_version"], json!(12));
+    assert_eq!(
+        canonical_value["layout"]["nodes"]["root"]["edges"],
+        json!({
+            "node_start": "automatic",
+            "node_end": "automatic",
+            "source_placement_start": "automatic",
+            "source_placement_end": "automatic",
+            "repeat_gap_start": "automatic",
+            "repeat_gap_end": "automatic"
+        })
+    );
+    assert_eq!(serde_json::to_value(&context).unwrap(), canonical_value);
+
+    for schema in 1..=12 {
+        let expected = canonical.replacen(
+            "\"schema_version\":12",
+            &format!("\"schema_version\":{schema}"),
+            1,
+        );
+        let decoded = FrozenAudioContext::from_json(&expected).unwrap();
+        assert_eq!(
+            decoded.to_json().unwrap(),
+            expected,
+            "schema {schema} changed canonical bytes"
+        );
+        let reencoded: Value = serde_json::from_str(&decoded.to_json().unwrap()).unwrap();
+        assert_eq!(reencoded["schema_version"], json!(schema));
+        assert!(
+            decoded.matches_document(&document).unwrap(),
+            "schema {schema}"
+        );
+    }
+}
+
+#[test]
+fn malformed_edge_objects_are_rejected_at_layout_ingress() {
+    let malformed = [
+        json!({"node_start": "hard"}),
+        json!({
+            "node_start": "automatic",
+            "node_end": "automatic",
+            "source_placement_start": "automatic",
+            "source_placement_end": "automatic",
+            "repeat_gap_start": "automatic",
+            "repeat_gap_end": "automatic",
+            "unexpected": "automatic"
+        }),
+        json!(null),
+        json!({
+            "node_start": "mystery",
+            "node_end": "automatic",
+            "source_placement_start": "automatic",
+            "source_placement_end": "automatic",
+            "repeat_gap_start": "automatic",
+            "repeat_gap_end": "automatic"
+        }),
+    ];
+
+    for edges in malformed {
+        let mut wire = compact_wire();
+        wire["nodes"]["root"]["edges"] = edges;
+        assert!(
+            FrozenAudioLayout::from_json(&wire.to_string()).is_err(),
+            "accepted malformed edge object: {}",
+            wire["nodes"]["root"]["edges"]
+        );
+    }
+}

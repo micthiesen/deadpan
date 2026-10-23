@@ -13,6 +13,8 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::io::Write;
 use std::sync::Arc;
 
+mod explicit_edges;
+
 use serde::{Deserialize, Serialize};
 
 use crate::document::unique_map;
@@ -210,6 +212,7 @@ impl FrozenAudioKind {
 #[serde(deny_unknown_fields)]
 pub struct FrozenAudioNode {
     pub duration: FrameDuration,
+    #[serde(default, skip_serializing_if = "AudioEdgePolicies::is_automatic")]
     pub edges: AudioEdgePolicies,
     #[serde(default, skip_serializing_if = "crate::AudioEditorialEdges::is_empty")]
     pub editorial_edges: crate::AudioEditorialEdges,
@@ -2785,15 +2788,17 @@ impl WireCount {
         self.nodes += 1;
         self.add(id.as_str().len() + 3)?;
         self.add("{\"duration\":".len() + frozen.duration.frames().to_string().len())?;
-        let edges = match self.edges.iter().find(|(edges, _)| *edges == frozen.edges) {
-            Some((_, bytes)) => *bytes,
-            None => {
-                let bytes = json_len(&frozen.edges)?;
-                self.edges.push((frozen.edges, bytes));
-                bytes
-            }
-        };
-        self.add(",\"edges\":".len() + edges)?;
+        if !frozen.edges.is_automatic() {
+            let edges = match self.edges.iter().find(|(edges, _)| *edges == frozen.edges) {
+                Some((_, bytes)) => *bytes,
+                None => {
+                    let bytes = json_len(&frozen.edges)?;
+                    self.edges.push((frozen.edges, bytes));
+                    bytes
+                }
+            };
+            self.add(",\"edges\":".len() + edges)?;
+        }
         if !frozen.editorial_edges.is_empty() {
             self.add(",\"editorial_edges\":".len() + json_len(&frozen.editorial_edges)?)?;
         }

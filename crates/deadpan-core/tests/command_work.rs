@@ -803,8 +803,9 @@ fn merged_diff_matches_key_union_lookup() {
 #[test]
 fn binding_byte_check_equals_to_json_on_both_sides_of_the_structural_bound() {
     // A small state fits the structural bound; 12,000 newly bound Holds
-    // exceed it (each binding's bound is about 5.6 KB), so the check
-    // counts the state exactly. Both must agree with `to_json`.
+    // with long owner identities exceed it, so the check counts the state
+    // exactly without exceeding the independent binding-work budget.
+    // Both must agree with `to_json`.
     for beats in [12usize, 12_000] {
         let document = ProjectDocument::new(
             ProjectId::new("byte-bound").unwrap(),
@@ -821,7 +822,7 @@ fn binding_byte_check_equals_to_json_on_both_sides_of_the_structural_bound() {
         let mut nodes = BTreeMap::new();
         let mut children = Vec::new();
         for index in 0..beats {
-            let node = id(&format!("hold-{index:06}"));
+            let node = id(&format!("hold-with-a-longer-wire-bound-owner-{index:06}"));
             nodes.insert(node.clone(), BeatNode::hold("Beat", hold(2)));
             children.push(node);
         }

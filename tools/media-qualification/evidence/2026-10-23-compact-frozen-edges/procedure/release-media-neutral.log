@@ -1,0 +1,8 @@
+  Extracting 2 binaries (including 1 non-test binary) and 7 linked paths to /private/tmp/deadpan-compact-frozen-edges-2026-10-22/release-media-extracted
+   Extracted 51 files to /private/tmp/deadpan-compact-frozen-edges-2026-10-22/release-media-extracted in 0.09s
+────────────
+ Nextest run ID 3bff0574-a85b-4c08-82f0-6a6a58e72e74 with nextest profile: default
+    Starting 1 test across 1 binary (64 tests skipped)
+        PASS [  34.633s] (1/1) deadpan-cli::preview_export group_endpoints_export::neutral_unpaired_sound_group_ungroup_preserves_complete_pcm_and_verified_export
+────────────
+     Summary [  34.633s] 1 test run: 1 passed, 64 skipped

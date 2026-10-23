@@ -1,0 +1,15 @@
+{
+  "base": "a18ff65443aa8fd1aa5ab63fa33678c9afd88220",
+  "candidate": "uncommitted Core57/SQLite86 source identities in release-perf-source-identities.json",
+  "baseline": {
+    "commit": "a18ff65443aa8fd1aa5ab63fa33678c9afd88220",
+    "archive_sha256": "56e12fbe340f6d15a292472a1de9be1f594473299faff4fd799fa810b995f489",
+    "timer_overlay_sha256": "e5154a4e3f47fa98b27203fb79eb56e217570d92afdc083028f85b88ddb1a801",
+    "modified_sources": [
+      "crates/deadpan-cli/examples/perf/edit.rs",
+      "crates/deadpan-core/src/insert_time.rs",
+      "crates/deadpan-core/src/command.rs",
+      "crates/deadpan-store/src/lib.rs"
+    ]
+  }
+}

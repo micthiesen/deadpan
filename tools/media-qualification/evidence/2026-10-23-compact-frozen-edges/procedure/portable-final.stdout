@@ -1,0 +1,71 @@
+Frozen Rust path set, all SHA256 identities and Cargo.lock unchanged: release-media 2047
+{
+  "executed_cli": {
+    "source": "target/release/deadpan-cli",
+    "path": "/tmp/deadpan-compact-frozen-edges-2026-10-22/release-media-extracted/target/release/deadpan-cli",
+    "sha256": "0d1f25a7f9e6cd6f7ac14b26b81f96d8f56ada627f9423dd486b17b71182df44"
+  },
+  "safe_relative_regular_files_only": true,
+  "cases": [
+    {
+      "label": "neutral",
+      "package": "/tmp/deadpan-compact-frozen-edges-2026-10-22/owner-portable-check/neutral/neutral-ungroup-portable.deadpan",
+      "regular_files": 9,
+      "archive_sha256": "3612a723a7ecd4d140d9af7c540a8f89f61531ecef3e6718e1b871850a3ce781",
+      "commands": [
+        {
+          "command": [
+            "/tmp/deadpan-compact-frozen-edges-2026-10-22/release-media-extracted/target/release/deadpan-cli",
+            "project",
+            "validate",
+            "/tmp/deadpan-compact-frozen-edges-2026-10-22/owner-portable-check/neutral/neutral-ungroup-portable.deadpan"
+          ],
+          "exit": 0,
+          "seconds": 0.045896667055785656,
+          "package_paths_and_bytes_unchanged": true
+        },
+        {
+          "command": [
+            "/tmp/deadpan-compact-frozen-edges-2026-10-22/release-media-extracted/target/release/deadpan-cli",
+            "doctor",
+            "--project",
+            "/tmp/deadpan-compact-frozen-edges-2026-10-22/owner-portable-check/neutral/neutral-ungroup-portable.deadpan"
+          ],
+          "exit": 0,
+          "seconds": 0.03659770917147398,
+          "package_paths_and_bytes_unchanged": true
+        }
+      ]
+    },
+    {
+      "label": "aligned",
+      "package": "/tmp/deadpan-compact-frozen-edges-2026-10-22/owner-portable-check/aligned/aligned-sound-scope-portable.deadpan",
+      "regular_files": 9,
+      "archive_sha256": "3048bb1246dae717563bae89976a85638dff338c9310fd1a725f1e4e37988a9d",
+      "commands": [
+        {
+          "command": [
+            "/tmp/deadpan-compact-frozen-edges-2026-10-22/release-media-extracted/target/release/deadpan-cli",
+            "project",
+            "validate",
+            "/tmp/deadpan-compact-frozen-edges-2026-10-22/owner-portable-check/aligned/aligned-sound-scope-portable.deadpan"
+          ],
+          "exit": 0,
+          "seconds": 0.0685046250000596,
+          "package_paths_and_bytes_unchanged": true
+        },
+        {
+          "command": [
+            "/tmp/deadpan-compact-frozen-edges-2026-10-22/release-media-extracted/target/release/deadpan-cli",
+            "doctor",
+            "--project",
+            "/tmp/deadpan-compact-frozen-edges-2026-10-22/owner-portable-check/aligned/aligned-sound-scope-portable.deadpan"
+          ],
+          "exit": 0,
+          "seconds": 0.03956849966198206,
+          "package_paths_and_bytes_unchanged": true
+        }
+      ]
+    }
+  ]
+}

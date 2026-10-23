@@ -1,5 +1,6 @@
 //! Literal range command shapes survive the deliberate development-format break.
 use super::*;
+use deadpan_core::AudioEdgePolicies;
 use deadpan_store::StoreError;
 use serde_json::Value;
 
@@ -27,6 +28,22 @@ fn current_test_document(old_json: &str) -> Result<ProjectDocument> {
     assert_eq!(value["schema_version"], 34);
     value["schema_version"] = serde_json::to_value(DOCUMENT_SCHEMA_VERSION)?;
     Ok(ProjectDocument::from_json(&value.to_string())?)
+}
+
+// Adapt only the expected current writer value. The literal historical
+// capture and database rows remain unchanged and still decode directly.
+fn compact_expected_timing_edges(capture: &mut Value) {
+    let automatic = serde_json::to_value(AudioEdgePolicies::default()).unwrap();
+    for timing in capture["audio_bindings"]["timings"].as_array_mut().unwrap() {
+        for node in timing["layout"]["nodes"]
+            .as_object_mut()
+            .unwrap()
+            .values_mut()
+        {
+            let removed = node.as_object_mut().unwrap().remove("edges");
+            assert_eq!(removed.as_ref(), Some(&automatic));
+        }
+    }
 }
 
 // Restore literal old rows into a fresh package shell. No request is applied to
@@ -84,6 +101,7 @@ fn literal_range_command_shapes_match_on_test_only_current_header_documents() ->
         let mut expected_capture: Value = serde_json::from_str(text(&literal, "capture"))?;
         assert!(expected_capture.get("beat_sounds").is_none());
         expected_capture["beat_sounds"] = serde_json::json!({});
+        compact_expected_timing_edges(&mut expected_capture);
         assert_eq!(
             serde_json::from_str::<Value>(&slice.to_json()?)?,
             expected_capture
@@ -139,6 +157,7 @@ fn literal_range_command_shapes_match_on_test_only_current_header_documents() ->
                     .is_none()
             );
             expected_request["command"]["slice"]["beat_sounds"] = serde_json::json!({});
+            compact_expected_timing_edges(&mut expected_request["command"]["slice"]);
             assert_eq!(serde_json::to_value(&command)?, expected_request);
             let actual = apply(&before, &command)?;
             assert_eq!(

@@ -1,0 +1,8 @@
+use deadpan_core::FrozenAudioContext;
+fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let path = std::env::args().nth(1).expect("context JSON path");
+    let input = std::fs::read_to_string(path)?;
+    let context = FrozenAudioContext::from_json(&input)?;
+    print!("{}", context.to_json()?);
+    Ok(())
+}

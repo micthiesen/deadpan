@@ -1,0 +1,7 @@
+{
+  "base": "a18ff65443aa8fd1aa5ab63fa33678c9afd88220",
+  "overlay": "crates/deadpan-core/tests/compact_frozen_edges.rs",
+  "sha256": "097882ce4272a5bf18045419e438110819f88ee813db14325a27626e2bdc11ad",
+  "all_other_rust_unchanged": true,
+  "source_files": 2046
+}
