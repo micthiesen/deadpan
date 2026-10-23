@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-23T10:30:00Z",
+  "updated_at": "2026-10-23T10:41:11Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "A private one-site prototype reuses the validated leaf result from the existing apply_with_result API. Five quiet pairs pass all replay and provenance guards and measure offscreen medians of 272.684834 ms for control and 268.738125 ms for the prototype, a small diagnostic difference of about 4 ms. This is a separate batch, not a percentile or target PASS. The same one-line change plus a pause/setter, binding/mark and inverse differential test is now an uncommitted production candidate. Static reviews report no defects; the focused test is compiling, with full Core, broader, UI, strict, media/native and final timing checks queued. Prototype evidence verifies 118 files /1,356,170 bytes. The qualified shared-preparation improvement remains unchanged, as do coverage of 89%, 8/24 sections complete and the open 100 ms/50 ms targets.",
+  "focus": "The uncommitted leaf-result reuse candidate passes its focused differential test and all 1,514 Core tests across 69 binaries, with zero skipped and exact source/input/executable guards. The initial test failed because it queried one physical mark anchor after a split; the corrected revision-aware logical mark query retains the exact frame-12 requirement and all replay, binding/mark, inverse and immutability assertions. Production code stayed unchanged during that fixture correction. The failed run and binary hash are retained in an 86-file /1,672,053-byte checkpoint. Broader, UI, strict, media/native and final timing checks are running or queued. The private five-pair difference of about 4 ms remains separate from production qualification. Coverage stays 89%, with 8/24 sections complete and no new target or gate PASS.",
   "features": [
     {
       "id": "editing",
@@ -102,7 +102,7 @@
         "DP-18",
         "DP-24"
       ],
-      "note": "Shared Compound preparation avoids a separate native preview replay while preserving transactional authority and fallible runtime preparation before writes. Broader, UI, strict, media/history, native and portable checks pass. Five quiet native pairs improve the offscreen first-pause median from 393.261916 to 275.697709 ms, about 29.9%. Five samples do not establish a percentile or the 100 ms/50 ms edit targets. Remaining native latency, worker-memory and sleep qualification stay open. A later isolated profile places the remaining cost in semantic planning and Store preparation; writing and durable commit are much smaller. Reusing existing validated results is under investigation, with no new code or gain claim. A private validated-leaf-result reuse experiment measures a further small difference in five pairs. Its one-line production candidate is uncommitted and awaits full qualification."
+      "note": "Shared Compound preparation avoids a separate native preview replay while preserving transactional authority and fallible runtime preparation before writes. Broader, UI, strict, media/history, native and portable checks pass. Five quiet native pairs improve the offscreen first-pause median from 393.261916 to 275.697709 ms, about 29.9%. Five samples do not establish a percentile or the 100 ms/50 ms edit targets. Remaining native latency, worker-memory and sleep qualification stay open. A later isolated profile places the remaining cost in semantic planning and Store preparation; writing and durable commit are much smaller. Reusing existing validated results is under investigation, with no new code or gain claim. A private validated-leaf-result reuse experiment measures a further small difference in five pairs. Its one-line production candidate is uncommitted and awaits full qualification. Its corrected differential test and all 1,514 Core tests now pass, zero skipped. The initial physical-mark lookup failure is retained; remaining production qualification is still owed."
     },
     {
       "id": "models",
@@ -1069,6 +1069,14 @@
       "revision": "0244cddcc9e530895930268068472c0bbd3e0588",
       "retrospective": false,
       "summary": "An isolated one-site prototype uses the existing validated apply_with_result document instead of computing an edit and applying its forward patch again. All charge, mutation, identity/provider, Store admission and history work remains. The locked release build and ten fresh-package guarded replays pass. Five quiet pairs measure control/prototype input-to-commit medians of 270.121541/266.234959 ms and offscreen composition of 272.684834/268.738125 ms, about 4 ms apart. These short diagnostics are not pooled with earlier batches and establish no percentile or target PASS. The 118-file, 1,356,170-byte inventory and exact sources/binaries are verified. The same one-line change plus a focused differential pause/setter test is now an uncommitted candidate; reviews report no defects, but focused/full Core, broader, UI, strict, media/native and final performance checks remain owed. No requirement or gate closes."
+    },
+    {
+      "date": "2026-10-23",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "596655d3be199ce3fea61ce2cf0510900542cdc4",
+      "retrospective": false,
+      "summary": "The uncommitted leaf-result reuse candidate passes the selected pause/setter differential case and all 1,514 Core tests across 69 binaries, zero skipped, with unchanged source/input/executable guards. The first selected test failed OutsideMapping when it queried only the primary physical mark coordinate after an interior split. Its fixture now uses revision-aware logical named-mark resolution, still requiring frame 12 plus complete old leaf/replay, binding/mark, inverse and immutable-entry equality. Only the test changed after that failure; the production helper stayed fixed. Static reviews and the fixture-correction review report no defects, separately from execution. The failed binary hash, original and corrected tests and exact source records are retained in 86 files /1,672,053 bytes. Broader, UI, strict, media/native, portable and final paired timings remain owed. Prototype timing stays diagnostic; no requirement or gate closes."
     }
   ]
 }
