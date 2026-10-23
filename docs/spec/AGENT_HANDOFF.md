@@ -17,12 +17,18 @@ prototype completed five quiet pairs: first medians 127.513 versus 111.362 ms,
 still above 100 ms; second medians 32.783 versus 32.406 ms. It is not shipping
 qualification. Current production candidate uses Core 57 / SQLite 86, preserving
 standalone context schemas 1–12 through a borrowed explicit-edge serializer.
-Six focused regressions pass, and both reviewers find the codec concern resolved.
-Qualification is active in /tmp/deadpan-compact-frozen-edges-2026-10-22; the
-matrix owns Cargo. Baseline witness, broader, UI, strict, native/media and
-current-format performance are still owed. Progress artifact was verified at
-157194739f264a848304c477cf601556fe1ed2d3 (947 lines); refresh it after the next
-pushed checkpoint. Preserve foreign fuzz/Cargo.lock and .claude/.
+All 1,503 Core tests across 68 binaries pass, zero skipped, after two fixture
+corrections with unchanged production. The intermediate 14k-node fixture hit the
+binding-work budget; final byte-bound fixture retains 12k nodes and longer IDs.
+The a18ff654 witness fails exactly two omission cases; four strict/legacy
+controls pass. Both reviewers find no remaining codec or fixture defect.
+Qualification is active in /tmp/deadpan-compact-frozen-edges-2026-10-22.
+Matrix PID 85560 (started Thu Oct22 22:24:01 local) owns Cargo and is building
+the broader suite. Its original PTY handle expired, but ps confirms it live.
+after_matrix.py waits for the complete successful matrix before native/media
+and quiet current-format performance. Do not restart a live owner. The latest
+artifact checkpoint is updated through Core verification; refresh after the
+next pushed results. Preserve foreign fuzz/Cargo.lock and .claude/.
 
 Neutral Ungroup qualified, 2026-10-23: Core admission removes only a
 neutral unary introduced wrapper around a Source/Hold when every affected

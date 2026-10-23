@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-23T05:14:02Z",
+  "updated_at": "2026-10-23T05:29:27Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "The compact frozen-edge prototype completed five quiet pairs: first-pause medians were 127.513 ms before and 111.362 ms after. This is diagnostic evidence, still above 100 ms, with no p95 or target PASS. A production candidate now uses Core 57 / SQLite 86 while preserving standalone audio-context schemas 1–12 and their explicit canonical encoding. Six focused format regressions pass and independent reviews find no remaining codec defect. Previous-code witnesses, broader tests, native/media checks and current-format performance are underway. Coverage remains 89%, with 8/24 sections complete; no gate closes.",
+  "focus": "The Core 57 / SQLite 86 compact timing candidate passes all 1,503 Core tests across 68 binaries, zero skipped. Two existing fixture assumptions were corrected without production changes; original failures remain retained. The previous-code witness fails exactly the two omission tests while four legacy/strict controls pass. Standalone audio-context schemas 1–12 keep explicit canonical encoding. Broader, UI, strict, native/media and current-format performance checks remain in progress. The disposable prototype median improved from 127.513 to 111.362 ms, still above 100 ms and not a target PASS. Coverage stays 89%, 8/24 sections complete; no gate closes.",
   "features": [
     {
       "id": "editing",
@@ -102,7 +102,7 @@
         "DP-18",
         "DP-24"
       ],
-      "note": "Fresh quiet first-pause diagnostics reproduce 128–131 ms medians on 10,000 Holds. A disposable compact-edge prototype reduces a separate paired median from 127.513 to 111.362 ms, still above 100 ms. The Core 57 / SQLite 86 production candidate passes six focused regressions and codec review; broader and actual-media qualification remain owed. Model loading uses observed headroom and a non-overridable byte reserve; real inference/playback and sleep interruption are qualified. Remaining latency, worker memory and sleep policies stay open."
+      "note": "The Core 57 / SQLite 86 compact timing candidate passes all 1,503 Core tests and its previous-code witness, with two test-fixture corrections retained. Standalone audio-context encoding remains unchanged. Broader and actual-media qualification are underway. A disposable five-pair prototype reduces first-pause median from 127.513 to 111.362 ms, still above the 100 ms bound; current-format measurement is owed. Remaining latency, worker memory and sleep policies stay open."
     },
     {
       "id": "models",
@@ -949,6 +949,14 @@
       "revision": "157194739f264a848304c477cf601556fe1ed2d3",
       "retrospective": false,
       "summary": "Disposable uninstrumented compact-edge prototype completed five quiet fresh-package pairs: first medians 127.513 versus 111.362 ms, second 32.783 versus 32.406 ms. Its old format is experimental, not shipping qualification. The working production candidate advances Core to 57 and SQLite to 86, refuses obsolete packages without mutation, omits only all-Automatic project/history edge objects and preserves standalone audio-context schemas 1–12 via a borrowed explicit-edge serializer. Six focused tests pass; both reviewers confirm the earlier standalone-codec concern is resolved. Broader tests, baseline witness, native/media verification and current-format performance remain owed. No requirement or gate changes."
+    },
+    {
+      "date": "2026-10-23",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "c32a5461",
+      "retrospective": false,
+      "summary": "Compact frozen-edge candidate now passes all 1,503 Core tests across68 binaries, zero skipped. First full run passed1,501 with two outdated fixture assumptions; an intermediate14k-node byte-bound fixture hit the independent binding-work budget. Final fixture materializes the omitted default edge object before tampering and retains12k nodes with longer IDs to cross only the byte-bound threshold. Production stayed unchanged through these corrections, which independent review accepts. Immutable a18ff654 witness fails exactly two omission cases, with four legacy/strict controls passing. Broader, UI, strict, native/media and current-format performance remain owed. Prototype evidence is committed with its metadata correction; no requirement or gate newly complete."
     }
   ]
 }
