@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
-  "updated_at": "2026-10-23T03:23:14Z",
+  "updated_at": "2026-10-23T03:48:21Z",
   "estimate_note": "Engineering estimate of implemented and verified spec coverage, about ±5 percentage points. This is not a count of closed requirements or an estimate of time remaining.",
-  "focus": "Aligned sound grouping landed in c72abe12 with exact PCM/history and debug/release media verification. Fresh checks pass 1,489 Core, 3,492 broader and 1,292 UI tests, strict checks and formatting; native replay passes 130 checks plus Kestrel. Both exported fixtures verify at zero audio offset. Full performance remains open, including the recorded 88.3 ms commit p95. Continuing with neutral ungrouping. Coverage stays at 89%, with 8/24 requirement sections complete.",
+  "focus": "Neutral Ungroup is in progress after aligned sound grouping landed in c72abe12. Four old-code Source/RoomTone witnesses pass active EQ, event, limiter, source-admission, cold and partitioned PCM controls, then reach the expected retained-scope Ungroup refusal; the genuine later-capture rejection also passes. The bounded candidate has a clean source review; Core, persistence, PCM and end-to-end checks remain in progress. Coverage remains 89%, with 8/24 sections complete. The recorded 88.3 ms commit p95 remains an open performance target.",
   "features": [
     {
       "id": "editing",
@@ -909,6 +909,14 @@
       "revision": "c72abe12965b08f7705e0c9a61ab2298d5a562ae",
       "retrospective": false,
       "summary": "Aligned complete Source/Hold grouping inside ordinary retained sound scopes now keeps explicit introduced-group and Split relations, shared group EQ/saturation, exact phase and pre-birth delivery masks through whole-group copy and relocation. Verified 1,489 Core, 3,492 selected broader and 1,292 UI tests; fresh strict checks; 130 native workflow checks plus Kestrel; debug/release 19-picture and release 121-picture exports with complete canonical PCM/history controls and zero audio offsets. Extracted portable packages validate without byte changes. Retained counterexamples, replay correction and warnings; 88.3 ms commit p95 over seven samples does not establish the 50 ms target. No requirement or gate newly complete."
+    },
+    {
+      "date": "2026-10-23",
+      "percent": 89,
+      "complete_sections": 8,
+      "revision": "1a21d6b13a467103556411173a05a69416f4af97",
+      "retrospective": false,
+      "summary": "Neutral Ungroup candidate remains uncommitted and unqualified. Four frozen c72abe12 Source/RoomTone cases validate all 24,024 authored/limited/gain samples and active controls before the expected ownership guard refusal; the genuine later-capture negative passes. An initial provider-counter setup assertion was corrected, with the failed run retained separately. Source review reports no concrete defect. Candidate Core, persistence, PCM, native and export checks are still owed; no requirement or gate changes."
     }
   ]
 }
